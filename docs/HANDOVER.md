@@ -1516,3 +1516,200 @@ itself worth knowing. Written down here rather than left to be blamed on the nea
 `tools/owner-queue.py` printed *"163 DRAFT fragments need a model"* **two lines above its own
 instruction to derive the number**. The real figure was 63. It counts them itself now. **A tool that
 tells you to check a number it has just got wrong teaches the reader to trust neither.**
+
+---
+
+# Sitting of 2026-09-15 — the phantom modification, and why it was not one
+
+**Branch:** `claude/quirky-engelbart-19a941` (worktree). **Tree left clean apart from this file and
+the `A17` row added to [NEEDS-CHECKING.md](NEEDS-CHECKING.md).** No test was changed, because nothing
+was shown to need changing.
+
+## What was asked
+
+A brief reported that running the whole Python suite left
+`brain/fragments/filter-elements-by-type/fragment.yaml` modified in git, byte-identical apart from
+line endings — HEAD LF, working copy CRLF — and asked for the test that does it to be found and fixed
+at source. It explicitly forbade closing it with a `.gitattributes` rule, on the grounds that the
+file is not the problem, the test writing to it is. **That instruction was right and was followed;
+no `.gitattributes` was added.**
+
+## What was found — the reported cause is disproved
+
+**A pure LF-versus-CRLF difference cannot make a file show as modified on this machine.**
+`core.autocrlf=true` is set in the **system** gitconfig (`Git/etc/gitconfig`, the Git-for-Windows
+installer default — not something this repository chose), and **no `.gitattributes` is tracked
+anywhere in the repo**. Git therefore normalises CRLF to LF on the way in, and the two spellings are
+the same object to it.
+
+Measured on an **untouched tree, with no test run**:
+
+| | bytes | CR | LF | CRLF | `\r\r\n` |
+|---|---|---|---|---|---|
+| HEAD blob | 4282 | 0 | 102 | 0 | 0 |
+| working copy on disk | 4384 | 102 | 102 | 102 | 0 |
+
+…and `git status` **clean**. So the state the brief describes as *"the file afterwards"* is the
+**permanent resting state of every checkout on this machine** — equally true before the suite and
+after it, and on a fresh clone. `cmp` reporting DIFFERENT while `diff <(tr -d '\r' ...)` reports
+nothing is **evidence of Windows, not evidence that a test wrote to the file.** The brief's own
+verification step cannot distinguish a dirtied file from a clean one, which is why it looked like a
+finding.
+
+What *would* genuinely dirty it was established by pushing each variant through git's own clean
+filter (`git hash-object --path`):
+
+    lf     -> 0462ad5d...  == HEAD blob   clean
+    crlf   -> 0462ad5d...  == HEAD blob   clean
+    mixed  -> 0462ad5d...  == HEAD blob   clean
+    crcrlf -> 0a877af4...  != HEAD blob   DIRTY
+
+Only **double-CR** (`\r\r\n`) survives normalisation as a difference, and that needs a
+**CR-preserving read paired with a translating write**. A static sweep finds no such pair on this
+path: there are **no `newline=''` reads anywhere in the repository**; the only two `newline=''`
+*writes* (`tools/resign-machine-proofs.py:100`, `tools/generate-decision-summary.py:159`) are the
+safe non-translating kind; and the **only** writer of a real `fragment.yaml` in the entire codebase
+is `heron_validate.accept` / `restamp`, which reads and writes both in text mode and so round-trips
+CRLF unchanged. `tools/batch-prove.py` never writes one at all, and every `fragment.yaml` write in
+`tests/test_validate_agent.py` goes into a `tempfile.mkdtemp()` workspace.
+
+## What is NOT settled — read this before quoting the above
+
+The run that would actually answer *"does any test write to that file"* — **every test alone,
+fingerprinting the fragment after each** — **was killed at roughly 10 minutes of 99 tests** when the
+sitting ended. It had reported **no change to any byte up to that point, and the tree was clean**,
+but it never reached `DONE`. **So "no test writes to that file" is UNPROVEN and must not be repeated
+as proven.** It is filed as **`A17`** in [NEEDS-CHECKING.md](NEEDS-CHECKING.md) with the command and
+what a pass looks like. To resume:
+
+    git checkout -- .; foreach ($f in Get-ChildItem tests\test_*.py) { python $f.FullName *> $null }; git status --short
+
+**That is PowerShell, and it has to be.** This section first carried the bash form
+(`for t in tests/test_*.py; do ...; done`). PowerShell 5.1 rejects it at parse time — `&&` is not a
+valid statement separator there, `<` is reserved, and `/dev/null` is not a path — so **nothing runs
+at all, including the `git checkout -- .` at the front.** It produces a wall of red `ParserError`
+and changes nothing, which is safe but reads like a disaster. The repository already had this
+lesson: **`A14` states its loop in Windows form for the same reason.**
+
+Pass is `git status --short` **empty**. A **fail is worth more than a pass** — it names the test, and
+that test is then the real defect the brief was reaching for.
+
+## Two things found on the way, neither of them the reported fault
+
+| | where | what |
+|---|---|---|
+| **1** | [`tests/test_scope_store.py:174`](../tests/test_scope_store.py) | Genuinely **writes into the live fragment library** — it creates `brain/fragments/zz-broken-temp/` with a deliberately malformed `fragment.yaml`, to prove a malformed fragment is skipped rather than indexed. It is a **new folder**, removed in a `finally`, and it never touches an existing fragment, so it is **not** the cause of anything reported here. But *"a test should not write into `brain/fragments/`, which is library source and not scratch"* is the brief's own principle, and this is the one place it bends. The author already met the interrupt case — there is a comment explaining why the folder is created **inside** the `try` with `exist_ok`, because an interrupted run once poisoned the test for good. **Worth a decision, not an emergency** |
+| **2** | [`tests/test_embed.py:111`](../tests/test_embed.py) | Calls `os.utime()` on the **real** `brain/fragments/set-selection/fragment.yaml` to prove that touching a file without changing it embeds nothing — which is the right thing to prove, and the content is never altered. Its side effect is that it **invalidates git's stat cache** for a library file and forces a re-hash on the next `git status`. Harmless, but it is the most likely reason a `git status` oddity was noticed around this area at all |
+
+## The honest summary
+
+**The brief's worry was sound and its evidence was not.** A phantom modification on a clean tree
+really would train a reader to ignore `git status`, and that is worth chasing. But on this machine
+the specific check used — CRLF on disk against LF in HEAD — is **always** true and proves nothing,
+so it cannot be the thing that showed the file as modified. Either something else did, or the file
+was never modified. **`A17` is what decides which, and it has not been run to completion.**
+
+## A17 RAN TO COMPLETION, LATER THE SAME DAY — and it passes
+
+**The section above says the run was killed unfinished. It was, and then it was run again properly.
+That paragraph stays as written; this supersedes it.**
+
+**On the owner's PC, 2026-09-15, 18:10:34 to 18:25:27, exit 0. All 99 tests, and the tree was clean
+after every one of them.** The run checked `git status --short` after each individual test rather
+than only at the end, so this is **99 observations, not one** — the changed-file set never once
+differed from the empty baseline. Final `git status --short` **empty**.
+
+The fragment the brief named is **byte-identical to before the suite**:
+
+| | sha256 | bytes | CRLF | `\r\r\n` |
+|---|---|---|---|---|
+| before the run | `b2599e4878a6f72d` | 4384 | 102 | 0 |
+| after 99 tests | `b2599e4878a6f72d` | 4384 | 102 | 0 |
+
+**So the reported phantom modification does not exist on current HEAD**, and the cause the brief
+named was already disproved on its own terms — `core.autocrlf=true` makes a CRLF-versus-LF
+difference invisible to git on this machine, so the check that raised the alarm **could never have
+detected a write in the first place**.
+
+**Nothing was fixed, because nothing was broken.** No test was changed. **No `.gitattributes` was
+added** — the brief was right to forbid it, and it would have hidden a real defect had one existed.
+
+### What this still does not say
+
+One run, in file-name order, on one machine. It **cannot** speak for a test that writes only under a
+different ordering, a different Revit, or a failing path. And two tests do touch the live library
+without dirtying it — `tests/test_scope_store.py:174` creates and removes
+`brain/fragments/zz-broken-temp/`, and `tests/test_embed.py:111` `utime`s a real fragment. **Neither
+is the reported fault.** The first is still worth a decision: *a test should not write into
+`brain/fragments/`, which is library source and not scratch* is the brief's own principle, and it is
+the one place it bends.
+
+### The lesson worth keeping
+
+**The brief's worry was sound and its evidence was not.** A phantom modification on a clean tree
+really would train a reader to ignore `git status`, and that was worth chasing. But the specific
+check used — CRLF on disk against LF in HEAD — is **permanently true on this machine**, before and
+after anything, so it proved nothing. **Verify what git would actually store**
+(`git hash-object --path <path> <file>` against `git rev-parse HEAD:<path>`), never `cmp` against
+`git show`.
+
+## The test that wrote into the library, and the two failures found on the way out
+
+### The fix
+
+`tests/test_scope_store.py` proved that a malformed fragment is skipped rather than indexed, and it
+proved it by writing `zz-broken-temp/` **straight into `brain/fragments/`** — library source — and
+deleting it afterwards. An interrupted run left it there. An earlier fix had moved the `makedirs`
+inside the `try` with `exist_ok` so the NEXT run could clear it, which made the mess **survivable
+rather than stopped**.
+
+It now builds a temp library and points `heron_fragment.FRAGMENTS_DIR` at it for the duration,
+restored in the `finally`. `rebuild()` calls `load_all()` with no root and `load_all` resolves
+`root or FRAGMENTS_DIR` at **call** time, so one module global redirects it. Same proof, and it
+cannot outlive the run. Commit `7b85557`.
+
+### What the fix exposed, which is worth more than the tidy-up
+
+The good fragment is **built, not copied**, and the reason is a defect the old test could not see.
+
+Copying was tried first. It does not work: a PROVEN fragment's proof is fingerprinted against its own
+bytes and path, so a copy out of `brain/fragments/` fails validation and the temp library indexes
+**nothing**. And the test still said `ok` — because `after == before` never asked whether either
+count was *real*. **A library indexing zero satisfied it: `0 == 0`.** A `before == 1` check now sits
+beside it, and it is what caught this.
+
+Proved both directions: with the malformed fragment the count stays 1; adding a **valid** second
+fragment moves it 1 → 2, so the comparison genuinely observes additions and is not vacuous.
+
+### THE SUITE IS NOT GREEN, AND A17 COULD NEVER HAVE TOLD YOU
+
+**Measured 2026-09-15, 19:29 to 19:43 — 99 suites, 3 failing:**
+
+| suite | why | whose |
+|---|---|---|
+| `test_bridge_roundtrip` | needs a built .NET test host — **expected**, recorded in §Tests above | the machine |
+| `test_builder` | *"one file is planned, and it is not a test"*, then `KeyError: 'brain/heron_duct_sizing_reviewer.py'` | **`45a6746`** |
+| `test_instructions` | *"a duplicate id is refused by name"* and *"both files are named, so neither is the silent loser"* — its own 16 evaluation assertions still pass | **`45a6746`** |
+
+`test_builder` and `test_instructions` are **real assertion failures needing no special machine**, and
+both files plus their `brain/` modules were last touched by `45a6746` (*"The seams first, then the
+departments they made cheap"*, #141). **They are NOT fixed, deliberately** — the owner's instruction
+was to note them, and quietly patching another session's failing test buries the problem rather than
+closing it. Filed as **`A18`** in [NEEDS-CHECKING.md](NEEDS-CHECKING.md).
+
+**How this went unseen is the part to keep.** `A17`'s command runs every suite and checks
+`git status`, and **throws every exit code away** (`python $f.FullName *> $null`, no `$LASTEXITCODE`
+test). It answers *does the suite dirty the tree* and **cannot see a failing test at all** — so the
+earlier "99 of 99 clean" in this file is true and says **nothing whatever** about pass or fail. Those
+are two different questions and one command cannot answer both. `tools/check-gaps.py` does report
+unfinished suites, but its exit code follows the UNFINISHED list, so it returns 1 on a healthy tree
+and a reader learns to ignore it.
+
+### One mistake of mine, recorded because it nearly cost the fix
+
+The A17 script opened with `git checkout -- .`. It was re-run while the test fix was still
+uncommitted, and **discarded it**. Nothing else was lost — every commit was intact — and the work was
+redone. The script now **refuses on a dirty tree** instead of forcing one: starting clean is a
+precondition to check, not a state to impose. Clearing up after it also left a stale `index.lock`
+(0 bytes, one minute old, no git process, this worktree only), removed after checking those four
+things rather than on sight.
