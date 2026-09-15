@@ -1,5 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `elements` and `symbol` are in scope; leaves
-// `swappedInPlace`, `replaced`, `notASheet` and `refused` behind.
+// `swappedInPlace`, `replaced`, `notASheet`, `alreadyCarried` and `refused`
+// behind.
 //
 // ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 //
@@ -26,6 +27,7 @@
 var swappedInPlace = 0;
 var replaced = new List<string>();
 var notASheet = 0;
+var alreadyCarried = 0;
 var refused = new List<string>();
 
 if (symbol == null || !symbol.IsValidObject)
@@ -87,11 +89,17 @@ else
 
                 var sameFamily = false;
                 var wasCalled = "(no title block)";
+                // READ BEFORE THE WRITE, because after it `onThisSheet` IS the
+                // new type - the same instance, re-pointed. Without this there
+                // is nothing left to compare against and a swap that swapped
+                // NOTHING is indistinguishable from one that did.
+                ElementId wasTypeId = null;
                 if (onThisSheet != null)
                 {
                     try
                     {
                         wasCalled = onThisSheet.Symbol.Family.Name + " : " + onThisSheet.Symbol.Name;
+                        wasTypeId = onThisSheet.Symbol.Id;
                         sameFamily = onThisSheet.Symbol.Family.Id == symbol.Family.Id;
                     }
                     catch (Exception) { }
@@ -149,7 +157,24 @@ else
 
                 if (onThisSheet != null && sameFamily)
                 {
-                    swappedInPlace++;
+                    // A SWAP THAT SWAPPED NOTHING IS NOT A SWAP. The sheet was
+                    // already on this exact type, so the assignment above was a
+                    // call that changed nothing - and counting it says "1 sheet
+                    // updated" to somebody whose drawing set is untouched. The
+                    // fragment's own positive case says "the same family, A
+                    // DIFFERENT TYPE"; this is the other half of that sentence.
+                    if (wasTypeId != null && wasTypeId == symbol.Id) alreadyCarried++;
+                    else swappedInPlace++;
+                }
+                else if (onThisSheet == null)
+                {
+                    // NOTHING WAS DELETED, SO IT MUST NOT SAY SO. A sheet that
+                    // never had a border and a sheet that lost its data are
+                    // different outcomes and only one of them needs checking
+                    // afterwards - cases.yaml names this distinction itself.
+                    replaced.Add(string.Format("sheet {0} - had NO title block, and '{1} : {2}' was "
+                        + "placed on it. Nothing was lost; there was nothing there",
+                        sheet.SheetNumber, symbol.Family.Name, symbol.Name));
                 }
                 else
                 {

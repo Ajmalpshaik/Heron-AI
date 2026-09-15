@@ -1,0 +1,137 @@
+# The five fragments D-72 unblocked, meeting a model for the first time.
+#
+#     python tools/batch-prove.py tools/jobs/new-inputs-2026-09-15.yaml --dry-run
+#
+# Every one of these was unreachable yesterday - not because of anything in a
+# model, but because `FromRequest` had no way to turn text into the object the
+# contract asked for. The add-in was rebuilt and deployed for 2020, 2024 and
+# 2027 with Revit closed, and nothing in it had met a model. This is that.
+#
+# `set-global-parameter` is NOT here and is not blocked by code any more:
+# `report-global-parameters` says this project holds ZERO globals, so there is
+# nothing to write into. Making one is `create-global-parameter`, which is
+# `risk: ADMIN` and is the owner's decision, not a job file's.
+
+model: Snowdon-scratch_ajmal.al (9,638 elements, 6 links), Revit 2024, session 28236
+
+defaults:
+  # PROVE ON A SMALL SELECTION. `FloorPlan: M1` holds 22 ducts where `L3` holds
+  # 307, and 307 is where a write once timed out. A timeout says nothing at all
+  # about a fragment.
+  set:
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: M1"
+  negative-set:
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: M1"
+
+jobs:
+  # ---- the pipe separator, D-72's first half -------------------------------
+  #
+  # No setup chain at all: every value is the caller's. That is the whole point
+  # of this one - `pointPairs` was the only need in the library that could not
+  # be typed, so nothing could reach this fragment by any route.
+  #
+  # THE NEGATIVE IS THE FRAGMENT'S OWN DECLARED CASE. Two points typed the same
+  # is the ordinary way to ask for a line shorter than Revit's tolerance, and
+  # such a line cannot exist. It counts in `tooShort` - accounting - and
+  # `created` comes back empty, which is exactly the shape D-30 wants.
+  - fragment: create-line
+    write: true
+    expect: created
+    set:
+      pointPairs: "0,0,0; 5000,0,0 | 0,0,0; 0,5000,0"
+      asDetail: "true"
+      view: "FloorPlan: M1"
+    negative-set:
+      pointPairs: "0,0,0; 0,0,0"
+      asDetail: "true"
+      view: "FloorPlan: M1"
+
+  # ---- `selected` for a LIST of ids ----------------------------------------
+  #
+  # Row 68 recorded this fragment as unblocked by the word `selected` and was
+  # WRONG: the word reached OneElement, which binds exactly ONE, and never
+  # reached the id-list branch. It does now, and means the whole selection.
+  #
+  # THE NEGATIVE IS A DELIBERATELY EMPTY LIST, not a cleared selection. Blank
+  # text reaches the binder as "the caller typed nothing on purpose" - an
+  # omission never gets that far, BindNeeds reports it unbound - so this is the
+  # empty-list case row 80 built, arriving by the front door.
+  - fragment: filter-elements-by-id
+    expect: elements
+    setup:
+      - select-by-category-name
+      - set-selection
+    set:
+      elementIds: selected
+    negative-set:
+      elementIds: ""
+
+  # ---- OverrideGraphicSettings, three fragments ----------------------------
+  #
+  # THE NEGATIVE IS A VIEW THAT CANNOT CARRY OVERRIDES, which is the fragment's
+  # own first branch: `AreGraphicsOverridesAllowed()` is asked ONCE, before any
+  # element is touched, and a schedule answers no. Every element is then
+  # reported skipped rather than half the view being changed.
+  #
+  # That is a better negative than an empty selection, because it exercises the
+  # guard the fragment was written around instead of proving that nothing does
+  # nothing.
+  - fragment: override-graphics-in-view
+    write: true
+    expect: overridden
+    setup:
+      - select-by-category-name
+      - set-selection
+    set:
+      view: "FloorPlan: M1"
+      overrides: "halftone=true; transparency=50"
+    negative-set:
+      view: "Space Schedule"
+      overrides: "halftone=true; transparency=50"
+
+  # A DIFFERENT VIEW FROM THE OTHER TWO, AND THE MODEL DECIDED IT. The first
+  # attempt used `FloorPlan: M1` like its neighbours and came back
+  # `overridden 0, refused [Ducts]` - because M1 CARRIES A VIEW TEMPLATE, and a
+  # template holding V/G makes SetCategoryOverrides throw. Element overrides
+  # still work there, which is why `override-graphics-in-view` passed on the
+  # same view in the same run: `AreGraphicsOverridesAllowed()` is true and the
+  # CATEGORY half is still locked.
+  #
+  # So M1 becomes the NEGATIVE, and it is a better one than a schedule would
+  # be. It is the case this fragment's own header names as the one that
+  # actually happens in real projects - *"the user asks for the grayout, the
+  # view has a template, and nothing appears to happen"* - and the fragment
+  # answers it by NAMING the category rather than reporting a success that
+  # changed nothing.
+  #
+  # `Model Linking` is one of the six working views this project keeps without
+  # a template, found with `find-views-without-template`.
+  - fragment: set-category-graphics
+    write: true
+    expect: overridden
+    set:
+      view: "Model Linking"
+      categories: Ducts
+      overrides: "halftone=true; projection-line-colour=255,0,0"
+    negative-set:
+      view: "FloorPlan: M1"
+      categories: Ducts
+      overrides: "halftone=true; projection-line-colour=255,0,0"
+
+  # The six loaded links come from the chain rather than the Revit selection -
+  # a link instance is not something you box-select in a plan - so the chain
+  # has to be KEPT rather than reset.
+  - fragment: set-link-graphics
+    write: true
+    expect: overridden
+    setup:
+      - list-linked-models
+    keep-chain: true
+    set:
+      view: "FloorPlan: M1"
+      overrides: "halftone=true"
+    negative-set:
+      view: "Space Schedule"
+      overrides: "halftone=true"

@@ -169,6 +169,13 @@ RECEIVABLE = frozenset([
     # separated list cannot express it: "0,0,0,1000,0,0" is two points only if
     # you already know they come in threes.
     "XYZ", "IList<XYZ>", "List<XYZ>", "ICollection<XYZ>", "IEnumerable<XYZ>",
+    # PAIRS OF POINTS, added 2026-09-14. A PIPE between pairs - "0,0,0; 5000,0,0
+    # | 0,0,0; 0,5000,0" is two lines. `create-line`'s `pointPairs` is the only
+    # need in the library shaped like this, and it was the only need that could
+    # not be typed AT ALL; the third separator was held back until a fragment
+    # wanted one rather than invented on spec. FRAGMENT-ISSUES row 91.
+    "IList<IList<XYZ>>", "List<IList<XYZ>>", "IList<List<XYZ>>", "List<List<XYZ>>",
+    "ICollection<IList<XYZ>>", "IEnumerable<IList<XYZ>>",
     "IList<View>", "List<View>", "ICollection<View>", "IEnumerable<View>",
     "IList<BuiltInCategory>", "List<BuiltInCategory>", "ICollection<BuiltInCategory>",
     "IList<Category>", "List<Category>", "ICollection<Category>",
@@ -198,8 +205,26 @@ RECEIVABLE = frozenset([
     # need's NAME decides the class, and a name the table does not hold is
     # refused rather than guessed at.
     "ElementId",
+    # AND A LIST OF IDS ALSO TAKES THE WORD `selected`, added 2026-09-14 - the
+    # whole Revit selection, where the singular `Element` takes `selected` to
+    # mean exactly ONE. Row 68 claimed `filter-elements-by-id` was already
+    # unblocked by that word; it was not, because the word reached OneElement
+    # and never reached the id-list branch.
     "IList<ElementId>", "List<ElementId>",
     "ICollection<ElementId>", "IEnumerable<ElementId>",
+    # THE STRUCTURED VALUES, added 2026-09-14 at the owner's request. Each is an
+    # object with no name to look up, so each is BUILT from what was typed:
+    #
+    #   OverrideGraphicSettings  "halftone=true; transparency=50"   9 settings
+    #   ForgeTypeId              "Length" / "Text" / "YesNo"        by reflection,
+    #                            because the type arrived at Revit 2021 and this
+    #                            add-in compiles from one source for 2020 to 2027
+    #   ParameterValue           "length 2700" / "integer 3"        the KIND is
+    #                            said first, because 2700 alone could be a
+    #                            length, a count or a price
+    #
+    # FRAGMENT-ISSUES row 91.
+    "OverrideGraphicSettings", "ForgeTypeId", "ParameterValue",
 ])
 
 # The two `FromRequest` refuses BY NAME, with the reason it gives. Everything
@@ -211,11 +236,15 @@ RECEIVABLE = frozenset([
 # waiting on a UNITS DECISION and an id on a 2024 TYPE CHANGE, which are
 # different problems with different fixes, and neither is "the fragment is bad".
 NAMED_REFUSALS = [
+    # WHAT IS LEFT OF THE POINT REFUSAL after 2026-09-14. A point, a list of
+    # points and a list of PAIRS are all typeable now; anything nesting deeper
+    # is not, and the row is kept rather than deleted so an absent shape does
+    # not read as an overlooked one.
     ("XYZ",
      lambda t: "XYZ" in t,
-     "points nested deeper than a list - a point is three millimetre numbers "
-     "and a list of them is written \"0,0,0; 5000,0,0\", but this nests them "
-     "further and there is no way to write that yet"),
+     "points nested deeper than pairs - a point is three millimetre numbers, a "
+     "list of them is written \"0,0,0; 5000,0,0\" and pairs are separated with "
+     "a pipe, but this nests them further and there is no way to write that yet"),
     # THE ElementId ROW LEFT THIS LIST ON 2026-09-13. It used to read "its type
     # changed size at Revit 2024 and the add-in builds 2020 to 2027 from one
     # source. Name the thing instead, or select it" - and naming the thing is
@@ -223,6 +252,17 @@ NAMED_REFUSALS = [
     # type by name and takes `.Id` off it. An id that is never CONSTRUCTED never
     # meets the constructor that changed, so the reason retired itself.
     # FRAGMENT-ISSUES row 28.
+    # A FACE, AND IT IS NOT A MISSING RULE. Added to this list 2026-09-14 when
+    # the other four structured types left it: without a row here
+    # `place-family-on-face` fell to the catch-all, which ends "this is not one
+    # of them YET" - and yet is exactly wrong. A Reference is produced by a
+    # mouse coming to rest on geometry and no text names one, so there is
+    # nothing here waiting to be written. D-72.
+    ("Reference",
+     lambda t: t == "Reference" or ("Reference>" in t and "Referenc" in t),
+     "a FACE - a particular solid, on a particular element, seen in a "
+     "particular view. It is picked with a mouse and no text names one, so "
+     "this is not a rule waiting to be written: it needs Revit's own picking"),
     ("IDictionary",
      lambda t: t.startswith("IDictionary") or t.startswith("Dictionary"),
      "pairs of values, and there is no way to type a pair in yet - one blank "
@@ -549,6 +589,34 @@ def how_to_type(declared):
     """
     wanted = (declared or "").replace(" ", "")
     hints = []
+
+    # THE THREE BUILT VALUES. Each is an object with no name to look up, so the
+    # hint has to carry the whole syntax - there is nothing to go and read in
+    # Revit's own interface that would tell somebody how to write it.
+    if wanted == "OverrideGraphicSettings":
+        return ('settings separated by semicolons - "halftone=true; '
+                'transparency=50; projection-line-colour=255,0,0". Also takes '
+                'detail-level, cut-line-colour, surface-colour, cut-colour, '
+                'projection-line-weight and cut-line-weight')
+    if wanted == "ForgeTypeId":
+        return ('what the parameter HOLDS - Length, Number, Integer, Angle, '
+                'Area, Volume, Mass, Currency, Text or YesNo')
+    if wanted == "ParameterValue":
+        # THE KIND FIRST, because "2700" alone could be a length, a count or a
+        # price, and a built ParameterValue has that choice already inside it.
+        return ('the KIND first, then the value - "length 2700" (MILLIMETRES), '
+                '"number 4.5", "integer 3", "text Level 2" or "yesno true"')
+
+    if "IList<IList<XYZ>>" in wanted or "List<List<XYZ>>" in wanted             or "IList<List<XYZ>>" in wanted or "List<IList<XYZ>>" in wanted:
+        # PAIRS, AND THE PIPE IS THE HALF THAT IS EASY TO MISS. Falling through
+        # to the plain point hint below would say "separated by semicolons",
+        # which is true WITHIN a pair and silently wrong between them - two
+        # lines typed that way become one pair of four points and are refused,
+        # or worse, read as a different set of lines.
+        return ('MILLIMETRES, two points per line - "0,0,0; 5000,0,0" - and one '
+                'line separated from the next by a PIPE: '
+                '"0,0,0; 5000,0,0 | 0,0,0; 0,5000,0"')
+
     if "XYZ" in wanted:
         # THE UNIT FIRST, and on its own, because a point typed in metres looks
         # exactly like a point typed correctly. Nothing downstream can catch it.

@@ -32,6 +32,8 @@ of work waiting on a person is not a build failure.
 """
 import os
 import re
+import glob
+import io
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -197,8 +199,30 @@ def main():
     say("NOT COVERED HERE, because no register owns them as rows:")
     say("  - open defects in FRAGMENT-ISSUES.md - read section 5")
     say("  - anything in docs/work-notes/plans/ - those are schedules")
-    say("  - the fragment library itself: 163 DRAFT fragments need a model.")
-    say("    Derive: grep -rh '^heron-status:' brain/fragments/*/fragment.yaml"
+    # DERIVED, NOT TYPED. This line said "163 DRAFT fragments" from the day it
+    # was written until 2026-09-15, by which time the real number was 62 - and
+    # it sat two lines above its own instruction to derive it. A tool that
+    # tells you to check a number it has just got wrong teaches the reader to
+    # trust neither. It counts them itself now.
+    draft = proven = 0
+    for path in glob.glob(os.path.join(ROOT, "brain", "fragments",
+                                       "*", "fragment.yaml")):
+        try:
+            with io.open(path, encoding="utf-8") as fh:
+                head = fh.read(2048)
+        except OSError:
+            continue
+        match = re.search(r"^heron-status:\s*(\S+)", head, re.M)
+        if not match:
+            continue
+        if match.group(1) == "DRAFT":
+            draft += 1
+        elif match.group(1) in ("PROVEN", "PRODUCTION"):
+            proven += 1
+    say("  - the fragment library itself: %d DRAFT fragment(s) need a model, "
+        "against %d proved." % (draft, proven))
+    say("    Derive it yourself the same way:")
+    say("    grep -h '^heron-status:' brain/fragments/*/fragment.yaml"
           " | sort | uniq -c")
     return 0
 

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-LNK-015
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -87,6 +87,30 @@ contract:
     - name: appliedTo
       role: result
       type: IList<string>
+
+proof:
+  date: '2026-09-15'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 28236
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    list-linked-models with this phase''s own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned appliedTo 6 item(s) [''Snowdon
+    Towers Sample Architectural.rvt'' in ''M1'': halftone ..., ''Snowdon Towers Sample Structural.rvt''
+    in ''M1'': halftone Tru..., ''Snowdon Towers Sample Facades.rvt'' in ''M1'': halftone
+    True, ..., ...], notALink 0, overridden 6, refused 1 item(s) [''M1'' follows a view template.
+    If the link still looks the sa...]. inputs came view as given; elements from list-linked-models
+    (6); overrides as given. on Snowdon-scratch_ajmal.al'
+  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: M1, overrides=halftone=true,
+    view=Space Schedule instead - chosen because it should not contain what this fragment
+    reports - the arrangement was re-made first by running list-linked-models with this phase''s
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned appliedTo 0 item(s), notALink 0, overridden 0, refused 1 item(s)
+    [''Space Schedule'' (Schedule) does not accept graphic override...]. inputs came view
+    as given; elements from list-linked-models (6); overrides as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 48a82f36e5dcdff2
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

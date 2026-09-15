@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -69,6 +69,35 @@ contract:
       # (D-52).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-09-14'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 29048
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned created 22 item(s)
+    [1543854, 1543861, 1543868, ...], handed 22, notVisibleHere 0, padding 0.984251968503937,
+    paddingMm 300, refusalReasons 0 item(s), refused 0 item(s), revision Revision, revisionMissing
+    false, revitDeclined 0, tooSmallToCloud 0, viewName 'M1', viewProblem (null), viewRefused
+    false. inputs came view as given; elements from the selection (22); revisionId as given;
+    paddingMm as given. on Snowdon-scratch_ajmal.al
+  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: M1, view=3D HVAC Layout,
+    revisionId=Seq. 1 - Revision 1, paddingMm=300 instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running select-by-category-name,
+    set-selection with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned created 0 item(s), handed 22, notVisibleHere
+    0, padding 0.984251968503937, paddingMm 300, refusalReasons 1 item(s) [''3D HVAC Layout''
+    is a 3D view. A cloud is a 2D annotation an...], refused 22 item(s) [1447716, 1447725,
+    1447768, ...], revision Revision, revisionMissing false, revitDeclined 0, tooSmallToCloud
+    0, viewName ''3D HVAC Layout'', viewProblem ''3D HVAC Layout'' is a 3D view. A cloud is
+    a 2D annotation and has no plane to sit in there - Revit''s own Revision Cloud tool is
+    unavailable in a 3D view too, viewRefused true. inputs came view as given; elements from
+    the selection (22); revisionId as given; paddingMm as given. on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 197e432b6c1bf5ed
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

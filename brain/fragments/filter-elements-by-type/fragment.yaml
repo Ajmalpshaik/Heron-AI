@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -43,6 +43,25 @@ contract:
     - name: found
       role: result
       type: int
+
+proof:
+  date: '2026-09-14'
+  by: Ajmal PS
+  model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 29048
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase's own values. returned elements 22 item(s)
+    [Tees, Tees, Tees, ...], found 22, typeId 1 item(s) [id 139186]. inputs came exemplar
+    as given; inViewOnly as given. on Snowdon-scratch_ajmal.al
+  negative_case: 'run with minMm=-25940,4250,1600, maxMm=-22360,11410,5055, exact=false, categories=Ducts,
+    exemplar=selected, inViewOnly=FloorPlan: L1 - Block 35 instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase''s own values. returned elements 0 item(s),
+    found 0, typeId 1 item(s) [id 139186]. inputs came exemplar as given; inViewOnly as given.
+    on Snowdon-scratch_ajmal.al'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 3afd3c1ba1ee33c8
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

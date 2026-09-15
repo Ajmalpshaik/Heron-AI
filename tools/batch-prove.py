@@ -353,6 +353,22 @@ def judge(record, frag, expect=None):
 
     verdict, reason = positive_worked(positive, frag, expect)
 
+    # A FLAG IS THE EVIDENCE WHEN IT FLIPS, and this runner has to agree with
+    # `heron_validate` about that or a job reads PASS here and is then refused
+    # at `accept`, or the other way round. Both ask the same function.
+    #
+    # `_as_count` reads a boolean as zero ON PURPOSE - see _flag_flipped - so a
+    # fragment whose only declared result is a bool arrives here as POSITIVE
+    # EMPTY however well it was arranged. `apply-view-filter` is that fragment:
+    # `applied true` on a view that took the filter against `applied false` on
+    # one that refused it, which is D-30's comparison exactly.
+    if verdict is not None:
+        flipped = HV._flag_flipped(positive, negative, frag)
+        if flipped:
+            verdict = None
+            reason = ("%s is true in the positive and false in the negative"
+                      % flipped)
+
     if not negative or not negative.get("ok"):
         why = HV.phase_failure(negative)
         if negative and negative.get("error") == "no_reply":
@@ -435,6 +451,25 @@ def run_one(job, env, quiet=True):
     """
     record_path = os.path.join(RUNS, "%s.json" % job["fragment"])
     argv = validate_command(job, record_path)
+
+    # THE OLD RECORD GOES BEFORE THE RUN, BECAUSE "the file is there" IS NOT
+    # "this run wrote it". The check below only ever asked whether the path
+    # exists, so a record left by ANY earlier run - another session, another
+    # model, another day - was read and judged as if it were this one.
+    #
+    # Measured 2026-09-14. `transfer-project-parameters-between-documents` is
+    # risk: ADMIN, so `validate` refused it and wrote nothing; the runner read a
+    # record from 01:45 the previous day, on a different Revit session, and
+    # reported POSITIVE EMPTY with numbers nobody had just measured. A refusal
+    # had been turned into a result.
+    #
+    # Deleting first makes the existing check honest: no file means nothing ran,
+    # which is exactly what DID NOT RUN is for.
+    try:
+        if os.path.isfile(record_path):
+            os.remove(record_path)
+    except OSError:
+        pass
 
     try:
         # stdin is closed rather than inherited. `validate` with no negative

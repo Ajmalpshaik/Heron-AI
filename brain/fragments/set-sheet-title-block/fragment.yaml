@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -72,12 +72,41 @@ contract:
       # of what it was GIVEN and could not use, never a thing it found (D-52).
       role: accounting
       type: int
+    - name: alreadyCarried
+      # Sheets that were ALREADY on this exact type, so the assignment changed
+      # nothing. Evidence it looked and found the work already done - never a
+      # sheet it changed (D-52), and kept out of `swappedInPlace` because
+      # "1 sheet updated" to somebody whose set is untouched is a lie a count
+      # tells quietly.
+      role: accounting
+      type: int
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-09-14'
+  by: Ajmal PS
+  model: test projject (3,570 elements), Revit 2024, session 33220
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    find-sheets with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyCarried 0, notASheet 0,
+    refused 0 item(s), replaced 1 item(s) [sheet HERON-05 - had NO title block, and ''A1 metric
+    : A1 met...], swappedInPlace 0. inputs came elements from find-sheets (1); symbol as given.
+    on test projject'
+  negative_case: run with numberOrNameContains=HERON-01, symbol=A1 metric instead - chosen
+    because it should not contain what this fragment reports - the arrangement was re-made
+    first by running find-sheets with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyCarried
+    1, notASheet 0, refused 0 item(s), replaced 0 item(s), swappedInPlace 0. inputs came elements
+    from find-sheets (1); symbol as given. on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 13fb2f950180114f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

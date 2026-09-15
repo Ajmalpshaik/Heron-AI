@@ -13,6 +13,26 @@
 //
 // A TITLE IS NOT AN IDENTIFIER. Two open projects can be called "Project1", so
 // the path is matched first and two matches is a refusal rather than a guess.
+//
+// REVIT WILL NOT DO THIS AT ALL, AND THAT WAS MEASURED FOUR WAYS ON 2026-09-15
+// WITH TWO PROJECTS GENUINELY OPEN - `test projject` in front and
+// `Snowdon-scratch_ajmal.al` behind. Every attempt answered with the same
+// sentence, which is Revit's own:
+//
+//     "Changing the active view is not applicable to inactive documents."
+//
+//   1. RequestViewChange on the HOST's UIDocument            refused
+//   2. RequestViewChange on a UIDocument built for the TARGET refused
+//   3. the ActiveView SETTER on that same target UIDocument   refused
+//   4. naming a view already OPEN in the target               refused
+//
+// The header below still describes how this fragment is built, and it is built
+// correctly - the path matching, the ambiguity refusal, the already-there case
+// and the honesty about a request not being a confirmation all work and were
+// checked. What cannot be done is the operation itself. THE CAPABILITY IS NOT
+// OFFERED BY THE API, so this cannot be proved by any arrangement and the
+// remaining route is Revit's own window list, which is a person's click.
+// FRAGMENT-ISSUES rows 90 and 94.
 
 var candidates = new List<string>();
 var findings = new List<string>();
@@ -79,7 +99,21 @@ else
         var wantedDoc = matches[0];
         requestedTitle = wantedDoc.Title ?? "";
 
-        if (ReferenceEquals(wantedDoc, current))
+        // THE SAME DOCUMENT IS NOT THE SAME OBJECT. `app.Documents` and
+        // `uidoc.Document` can hand back DIFFERENT managed wrappers around one
+        // open file, so ReferenceEquals answers "no" for the model you are
+        // standing in - and the already-active case then fell through to
+        // RequestViewChange, which Revit refuses because the view is already
+        // the one on screen. That is the refusal row 86 recorded in BOTH
+        // directions. Compared by what identifies the file instead: its path
+        // when it has one, and Equals when it has never been saved.
+        var isCurrent = current != null && current.IsValidObject
+            && (!string.IsNullOrEmpty(wantedDoc.PathName)
+                    ? string.Equals(wantedDoc.PathName, current.PathName,
+                                    StringComparison.OrdinalIgnoreCase)
+                    : wantedDoc.Equals(current));
+
+        if (isCurrent)
         {
             switched = true;
             findings.Add("\"" + requestedTitle + "\" is already the active project. "
@@ -147,7 +181,14 @@ else
             {
                 try
                 {
-                    uidoc.RequestViewChange(chosen);
+                    // THE REQUEST BELONGS TO THE TARGET'S UIDocument, NOT THIS
+                    // ONE. `uidoc` wraps the document in FRONT, and its
+                    // RequestViewChange takes a view of its OWN document - so
+                    // handing it a view from the project being switched TO is
+                    // refused every time, which is the other half of row 86.
+                    // A UIDocument constructed for the target is the one that
+                    // can be asked, and constructing one opens nothing.
+                    new UIDocument(wantedDoc).RequestViewChange(chosen);
                     switched = true;
                     viewUsed = chosen.Name ?? "";
 
@@ -162,9 +203,31 @@ else
                 }
                 catch (Exception ex)
                 {
-                    findings.Add("Revit refused to change to the view \"" + (chosen.Name ?? "")
-                        + "\" in \"" + requestedTitle + "\", so the active project is UNCHANGED: "
-                        + ex.Message + ". Nothing in any model was altered.");
+                    // REVIT'S OWN WORDS COME FIRST. The reply renders a list
+                    // item short, so a refusal that opens with sixty
+                    // characters of our own context arrives with the only
+                    // sentence that matters cut off the end - which is how
+                    // this one stayed unexplained from 2026-09-10 to today.
+                    // REVIT'S OWN WORDS COME FIRST, AND THAT IS WHAT FINALLY
+                    // EXPLAINED THIS. The reply renders a list item short, so a
+                    // refusal opening with sixty characters of our own context
+                    // arrives with the only sentence that matters cut off the
+                    // end - and this one read as an unexplained "Revit refused"
+                    // from 2026-09-10 until the order was reversed on
+                    // 2026-09-14. What it actually says is:
+                    //
+                    //   "Changing the active view is not applicable to
+                    //    inactive documents."
+                    //
+                    // RequestViewChange changes the view WITHIN the active
+                    // document. It cannot bring another one forward, so the
+                    // premise in this fragment's header - that changing the
+                    // view is how Revit offers the switch - does not hold
+                    // across documents.
+                    findings.Add(ex.Message + " [" + ex.GetType().Name + "]"
+                        + " -- asked for the view \"" + (chosen.Name ?? "")
+                        + "\" in \"" + requestedTitle + "\". The active project is UNCHANGED and "
+                        + "nothing in any model was altered.");
                 }
             }
         }

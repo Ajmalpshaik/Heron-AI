@@ -1,0 +1,38 @@
+# Ajmal's own picks, 2026-09-14. He named twelve; these are the ones that can
+# actually be arranged today, and the arrangement for the first one is HIS.
+#
+#     python tools/batch-prove.py tools/jobs/aj-picks-2026-09-14.yaml --dry-run
+#
+model: test projject (3,570 elements), Revit 2024, session 33220
+
+jobs:
+  # HE ARRANGED THIS ONE HIMSELF AND HE WAS RIGHT.
+  # `report-sheet-title-blocks` on the live model says:
+  #     HERON-01  A1 metric : A1 metric
+  #     HERON-04  A1 metric : A1 metric
+  #     HERON-05  NO TITLE BLOCK
+  #
+  # Row 67 and row 76 both failed on this fragment for the SAME reason: every
+  # sheet in both models already carried the only title block type loaded, so
+  # setting it changed nothing and `swappedInPlace` counted the call anyway.
+  # A sheet with NO title block is the one arrangement that escapes that -
+  # the fragment takes its other branch, PLACES an instance, reads it back and
+  # fills `replaced`. `replaced` cannot be filled by a call that did nothing.
+  #
+  # So the halves are a blank sheet against an already-correct sheet, and
+  # `expect: replaced` is what keeps `swappedInPlace` out of the judgement.
+  - fragment: set-sheet-title-block
+    expect: replaced
+    write: true
+    setup:
+      - find-sheets
+    keep-chain: true
+    set:
+      numberOrNameContains: HERON-05
+      symbol: A1 metric
+    negative-set:
+      # SPELLED OUT, NOT INHERITED. `negative-set:` merges over the DEFAULTS'
+      # negative-set, never over this job's own `set:` - so a value left out
+      # here arrives unbound and the negative leg never runs at all.
+      numberOrNameContains: HERON-01
+      symbol: A1 metric

@@ -1,0 +1,45 @@
+# Snowdon round 4 - the workshared group. list-worksets reports
+# `workshared true`, 2 worksets ("Shared Levels and Grids", "Workset1"),
+# which test projject could not offer at all.
+model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 29048
+
+defaults:
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: M1"
+  negative-set:
+    categoryName: "Air Terminals"
+    inViewOnly: "FloorPlan: M1"
+
+jobs:
+  # worksetId is an int and list-worksets does not expose one, so 0 is the
+  # first guess and a refusal naming the real ids is as useful as a pass.
+  - fragment: set-element-workset
+    write: true
+    set: { worksetId: 0 }
+    negative-set: { worksetId: 0 }
+
+  - fragment: create-workset-3d-views
+    write: true
+    setup: []
+    set: { namePrefix: "HERON WS" }
+    negative-set: { namePrefix: "HERON WS" }
+
+  - fragment: add-revision-cloud
+    write: true
+    set:
+      view: "FloorPlan: M1"
+      revisionId: "Seq. 1 - Revision 1"
+      paddingMm: 300
+    negative-set:
+      view: "FloorPlan: M1"
+      revisionId: "Seq. 1 - Revision 1"
+      paddingMm: 300
+
+  - fragment: report-open-documents
+    setup: []
+    set: {}
+    negative-set: {}

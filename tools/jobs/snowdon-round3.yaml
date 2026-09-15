@@ -1,0 +1,80 @@
+# Snowdon round 3 - everything the HOST document can feed.
+# Host holds: 22 ducts / 10 air terminals / 2 equipment / 16 fittings in
+# FloorPlan: M1, 17 sheets, 11 levels, 6 RVT links. Doors and rooms are in the
+# Architectural link and are NOT reachable downstream (row 75).
+model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 29048
+
+defaults:
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Ducts
+    inViewOnly: "FloorPlan: M1"
+  negative-set:
+    categoryName: "Air Terminals"
+    inViewOnly: "FloorPlan: M1"
+
+jobs:
+  # Demoted this morning after its units were fixed (targetZ went to Revit as
+  # feet). This is the re-proof the demotion asked for.
+  - fragment: align-mep-elevation
+    write: true
+    set: { edge: top, targetZ: 3000 }
+    negative-set: { edge: top, targetZ: 3000 }
+
+  # Air terminals are point-based, which ducts are not - the thing that blocked
+  # this on test projject until equipment was placed there.
+  - fragment: move-to-ray-hit
+    write: true
+    set:
+      categoryName: "Air Terminals"
+      view3d: "3D HVAC Layout"
+      direction: "0,0,-1000"
+      maxDistance: 50000
+      offsetAlongRay: 0
+    negative-set:
+      categoryName: "Air Terminals"
+      view3d: "3D HVAC Layout"
+      direction: "0,0,1000"
+      maxDistance: 1
+      offsetAlongRay: 0
+
+  - fragment: set-sheet-title-block
+    write: true
+    keep-chain: true
+    setup: [list-sheets]
+    set: { symbol: "A1 metric" }
+    negative-set: { symbol: "A1 metric" }
+
+  - fragment: describe-blank-parameters
+    keep-chain: true
+    setup: [select-by-category-name, set-selection, read-element-parameters]
+    set: { parameterNames: "Comments", parameterName: "Comments" }
+    negative-set: { parameterNames: "Comments", parameterName: "ZZZ NO SUCH PARAMETER" }
+
+  - fragment: stack-tags
+    write: true
+    set:
+      view: "FloorPlan: M1"
+      stackAt: "-22000,8000,0"
+      gapMm: 500
+    negative-set:
+      view: "FloorPlan: M1"
+      stackAt: "-22000,8000,0"
+      gapMm: 500
+
+  - fragment: select-touching
+    setup: [select-in-region, set-selection]
+    set:
+      minMm: "-25940,4250,1600"
+      maxMm: "-22360,11410,5055"
+      exact: false
+      categories: Ducts
+      target: selected
+    negative-set:
+      minMm: "-25940,4250,1600"
+      maxMm: "-22360,11410,5055"
+      exact: false
+      categories: Ducts
+      target: selected

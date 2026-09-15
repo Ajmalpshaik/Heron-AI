@@ -1,0 +1,78 @@
+# Snowdon-scratch, Revit 2024 - the first batch run against a model with real
+# MEP content, and the first to use `selected` (the add-in change made today).
+#
+# ONE DUCT, ON PURPOSE. The default setup selects a box holding exactly ONE
+# duct, because `selected` means exactly one and the add-in refuses two. That
+# box was found by halving: 22 ducts in FloorPlan: M1 -> 12 -> 4 -> 2 -> 1.
+model: Snowdon-scratch_ajmal.al (9,638 elements), Revit 2024, session 29048
+
+defaults:
+  setup:
+    - select-in-region
+    - set-selection
+  set:
+    minMm: "-25940,4250,1600"
+    maxMm: "-22360,11410,5055"
+    exact: false
+    categories: Ducts
+  negative-set:
+    minMm: "-25940,4250,1600"
+    maxMm: "-22360,11410,5055"
+    exact: false
+    categories: Ducts
+
+jobs:
+  # ---- the `selected` fragments: one Element, no working set ----
+  - fragment: trace-connectivity
+    set: { start: selected, maxSteps: 200 }
+    negative-set: { start: selected, maxSteps: 0 }
+
+  - fragment: select-by-host
+    set: { host: selected }
+    negative-set: { host: selected }
+
+  - fragment: filter-elements-by-type
+    set: { exemplar: selected, inViewOnly: "FloorPlan: M1" }
+    negative-set: { exemplar: selected, inViewOnly: "FloorPlan: L3" }
+
+  - fragment: select-group-members
+    set: { group: selected }
+    negative-set: { group: selected }
+
+  # ---- content this model has and test projject did not ----
+  - fragment: connect-air-terminals
+    write: true
+    setup: [select-by-category-name, set-selection]
+    set:
+      categoryName: "Air Terminals"
+      inViewOnly: "FloorPlan: M1"
+      maxDistanceMm: 3000
+    negative-set:
+      categoryName: "Ducts"
+      inViewOnly: "FloorPlan: M1"
+      maxDistanceMm: 3000
+
+  - fragment: tag-elements-in-view
+    write: true
+    setup: [select-by-category-name, set-selection]
+    set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+      view: "FloorPlan: M1"
+      tagTypeHintId: none
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+      view: "3D HVAC Layout"
+      tagTypeHintId: none
+
+  - fragment: select-subcomponents
+    setup: [select-by-category-name, set-selection]
+    set:
+      categoryName: "Air Terminals"
+      inViewOnly: "FloorPlan: M1"
+      recursive: true
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "FloorPlan: M1"
+      recursive: true
