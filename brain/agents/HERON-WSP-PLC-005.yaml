@@ -1,0 +1,84 @@
+# File Placement Agent - HERON-WSP-PLC-005
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY. It writes nothing: a folder comes back and the caller writes
+# the file.
+
+agent: HERON-WSP-PLC-005
+version: 1.0.0
+
+input:
+  artefact:
+    type: map
+    required: true
+    description: >
+      {kind, name}. The DECLARED kind is the only thing that decides the
+      folder. Golden Rule 19 makes an artefact's own name data rather
+      than instruction, so the name chooses nothing - a thing called
+      `Skills/helper.py` does not go to Skills because of what it is
+      called.
+  project:
+    type: string
+    required: false
+    description: >
+      Scopes the placement to one project. Taken as given and NOT
+      reduced to a safe filename: a reduced name is a different name.
+      PROPOSALS F14 measured three project names reaching one file.
+  asked:
+    type: callable
+    required: false
+    description: >
+      The one scoped question this tier may put, asked ONLY when the
+      declared kind is not one of the eight. Its answer is checked
+      against the same rules as everything else - an answer from a model
+      is data too.
+
+output:
+  placed:
+    type: boolean
+    description: Always false. The caller writes the file.
+  folder:
+    type: string
+    description: Where it belongs - one of the eight, under Projects if scoped.
+  kind:
+    type: string
+    description: The kind that decided it, after any asking.
+  of:
+    type: string
+    description: The artefact's name, carried through having chosen nothing.
+  class:
+    type: string
+    description: >
+      What HERON-WSP-PTH-007 makes of that folder. Always data: the eight
+      kinds ARE docs/06 s2's data row.
+  project:
+    type: string
+    description: The project it was scoped to, as given, or null.
+  asked:
+    type: string
+    description: What the question answered, or null if none was put.
+  why:
+    type: string
+    description: The kind, the folder, its class, and that nothing was written.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was written or looked up, that the
+      KIND decided rather than the name, that nothing is placed in
+      product or in derived, and that a name is refused rather than
+      cleaned up - PROPOSALS F14.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NO_KIND
+  - NAME_IS_NOT_A_PLACE
+  - NOT_A_KIND
+  - THE_ANSWER_IS_NOT_A_PLACE
+
+retry:
+  attempts: 0
+  on-failures: []

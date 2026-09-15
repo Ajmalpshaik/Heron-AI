@@ -941,3 +941,69 @@ copy.
 **Not fixed here.** The fix is either a path-aware `classify()` that only matches at the top level,
 or a documented statement that the leaf-name answer is the intended one. Both change what four
 agents do to a folder, so it is the owner's call — the same reason F11 is still open.
+
+---
+
+### 🔴 F14. Three different projects write to one knowledge file, and the code says why that is a breach
+
+**Found by:** building `HERON-WSP-PLC-005`, the File Placement Agent, 2026-09-15.
+**Status:** open. **Measured, not read** — the numbers below come from running the code.
+
+`brain/heron_scope.py`'s `scope_path()` turns a project key into a filename through `_safe_key()`,
+which replaces every character outside `[A-Za-z0-9._-]` with a hyphen:
+
+```bash
+cd brain && HERON_KNOWLEDGE=/tmp/hk python -c "
+import heron_scope as S
+for k in ['Tower B', 'Tower/B', 'Tower-B']:
+    print('%-10r -> %s' % (k, S.scope_path('project', k)))"
+```
+
+```
+'Tower B'  -> /tmp/hk/projects/Tower-B.db
+'Tower/B'  -> /tmp/hk/projects/Tower-B.db
+'Tower-B'  -> /tmp/hk/projects/Tower-B.db
+```
+
+**Three projects, one file.** Two lines above the function that does it, `scope_path()`'s own
+docstring says what that costs:
+
+> Heron does not guess which project this is: guessing wrong writes one client's knowledge into
+> another's file, which is a **contractual breach rather than a bug** (docs/10 §2).
+
+It refuses to guess when the key is **missing** and then quietly collapses two keys that are
+**present and different**. The second is the same harm as the first, arrived at more quietly.
+
+**What keeps it from biting today, and what does not.** The key is *meant* to be the document's
+Project Information `UniqueId` — hex and hyphens, which never collides. Nothing enforces that.
+`scope_path()` accepts any string, and three shipped command lines document handing it a typed name:
+
+| | |
+|---|---|
+| `brain/heron_conflict.py:12` | `--scopes company,project --project "Tower B"` — the agent's own usage line |
+| `brain/heron_ingest.py:1593` | `project = _flag(argv, "--project")` |
+| `brain/heron_research.py:741` | `project = _flag(argv, "--project")` |
+
+So the safe case is the intended one and the unsafe case is the documented one.
+
+**Not fixed here**, and the reason is not caution. Any fix moves where existing knowledge lives:
+
+- **reject a key that is not a UniqueId** — correct, and it breaks the three command lines above and
+  every store already named after a typed name;
+- **hash the key instead of reducing it** — removes the collision and makes every existing
+  `projects/*.db` unreachable, so it needs a migration under [docs/07 §8](07-installation-and-update.md)
+  (idempotent, versioned, reversible-or-backed-up) — which `HERON-WSP-MIG-008` can now plan;
+- **keep the reduction and record the original key inside the store** — smallest change, detects a
+  collision after it has happened rather than preventing it.
+
+Picking among those is the owner's call, and it is the same shape as D-05: do not extrapolate.
+
+**What the new agent does about it.** `HERON-WSP-PLC-005` takes the opposite rule and states it:
+**a name that would have to be rewritten to be usable is refused, never cleaned up.** A project
+called `Tower/B` is a refusal (`NAME_IS_NOT_A_PLACE`); `Tower B` is placed at `Projects/Tower B/…`
+*as given*, space and all. The suite proves the rule by running `heron_scope` and watching the three
+names arrive at one file, so the finding cannot quietly stop being true:
+
+```bash
+python tests/test_placement.py     # 3. A name is refused, never cleaned up - and here is the cost
+```
