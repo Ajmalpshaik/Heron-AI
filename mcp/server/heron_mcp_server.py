@@ -310,6 +310,77 @@ def revit_select_by_category(category: str = "ducts") -> str:
 
 
 @server.tool()
+def revit_links() -> str:
+    """
+    List the linked models in the open Revit model — what is linked, whether
+    each one is loaded, and how many elements each holds.
+
+    Use whenever a count or a selection looks too low, and whenever the user
+    asks about links, linked models, consultant models or an xref. On a real
+    job the ductwork, the structure and the architecture usually arrive as
+    links, and elements inside a link ARE NOT in the host model — so "412
+    ducts" can be a correct answer to the wrong question. This tool is how to
+    tell.
+
+    It reads only. Nothing is loaded, unloaded or reloaded, so a link that is
+    unloaded stays unloaded and its element count comes back as not known
+    rather than as zero.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    reply = session.request("list_links")
+    session.close()
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return wrong_model
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+
+    links = reply.get("links") or []
+    if not links:
+        return ("%s has no linked models. Its %s elements are all its own."
+                % (where, "{:,}".format(reply.get("hostElements", 0))))
+
+    lines = ["%s links %d model(s), placed %d time(s):"
+             % (where, reply.get("linkTypes", 0), reply.get("placements", 0)), ""]
+    for link in links:
+        count = link.get("elements")
+        # NOT KNOWN IS NOT ZERO, and the line a person reads must not blur
+        # the two. An unloaded link holds whatever it holds; nobody looked.
+        held = ("%s elements" % "{:,}".format(count)) if isinstance(count, int) \
+            else "element count not known (%s)" % (link.get("elementsWhy") or "not loaded")
+        lines.append("  %-28s %-22s %s%s"
+                     % (link.get("name"), link.get("status"), held,
+                        "  [nested]" if link.get("nested") else ""))
+
+    lines.append("")
+    lines.append("This model holds %s elements of its own. The loaded links hold %s more, "
+                 "and those are INVISIBLE to a count or a selection over this model - they "
+                 "belong to another file."
+                 % ("{:,}".format(reply.get("hostElements", 0)),
+                    "{:,}".format(reply.get("linkedElements", 0))))
+
+    counted, total = reply.get("countedLinks", 0), reply.get("linkTypes", 0)
+    if counted != total:
+        lines.append("%d of %d links are not loaded, so nothing is known about what they "
+                     "hold. Heron did not load them - that would change the model's state."
+                     % (total - counted, total))
+
+    return "\n".join(lines)
+
+
+@server.tool()
 def heron_version() -> str:
     """
     Report Heron's version, the protocol it speaks, and the version of each

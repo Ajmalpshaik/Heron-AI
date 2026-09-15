@@ -100,6 +100,20 @@ that the failures **do not share a reason**, because a lump total is how a real 
 
 `test_mcp_serves.py` exits **3**, not 1, so `check-gaps.py` reports it as waiting rather than failing.
 
+**Install them rather than excusing them.** On 2026-09-15 a session treated all three as unavoidable
+on Linux for weeks. They are not: the three commands above take a few minutes on a fresh container and
+**all 163 suites then pass**. None of them ever needed Windows or Revit. If a run reports these three
+and nothing else, the honest next step is to install and re-run, not to write "the known three".
+
+Two wrinkles worth not re-discovering:
+
+* `pip install --user mcp` alone leaves the SDK importable but **panicking** on some images —
+  `pyo3_runtime.PanicException` out of the distro's `cryptography`. `pip install --user --upgrade
+  cryptography` fixes it.
+* The .NET SDK is an apt package (`dotnet-sdk-8.0`), but 2025–2027 need the **WindowsDesktop targets**
+  that only `dotnet-sdk-10.0` carries — `tools/check-compile.py` says so itself when it skips them, and
+  a skip is not a pass. Run `apt-get update` first; a stale index 404s on the .deb.
+
 **Nothing else should fail on any machine.** `test_graph.py` and `test_reachable.py` were on this list
 until 2026-09-12, when both were fixed rather than excused — each had a fixture describing a repository
 that had moved on, and neither test's claim changed. `.github/workflows/gates.yml` holds the same list

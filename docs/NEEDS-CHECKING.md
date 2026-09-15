@@ -715,6 +715,26 @@ button releasing it, and two Revits not interfering.
 | **H9** | `revit_health` from a chat holding **nothing**, with a free Revit open. Then ask from a *second* chat | The second chat is **granted**. A health check must NOT have claimed the free Revit — that bug existed for one commit: it called `count_elements` on every session, which is not lease-exempt |
 | **H10** | First chat mid-request, second chat connects and is refused. Watch the FIRST chat | It loses that one reply and recovers on the next. Known limitation, [docs/25](25-multi-session-and-binding.md): the pipe is displaced at connect, before the lease can speak. If a **write** was in flight it must report the outcome as *unknown*, never as failed |
 
+## Group L — linked models (needs Revit and a model that links something)
+
+`HERON-REVIT-LNK-015` — [`revit/Heron.Revit.Addin/RevitLinks.cs`](../revit/Heron.Revit.Addin/RevitLinks.cs).
+Compiles on 2020–2027, 0 warnings, 2026-09-15. **Never run.** Read-only, so nothing here can damage a
+model — but every claim below is a claim about an API surface, not about behaviour.
+
+Use a real job file: one with an architectural or structural link, and ideally one broken link.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **L1** | Open a model with links and ask Heron *"what links does this model have?"* | Every link in Manage Links is listed, with the same names. A link Revit shows and Heron does not is the finding |
+| **L2** | Compare `hostElements` against `count_elements` for the same model | **The same number.** If they differ, one of the two collectors is not doing what its comment says |
+| **L3** | Unload one link in Manage Links, ask again | That link reads `unloaded` and its element count reads **not known**, never `0`. Revit's own Manage Links still shows it as unloaded afterwards — Heron must not have reloaded it |
+| **L4** | Rename or move a linked file on disk, reopen the host, ask again | The link reads `not found`. This is the status a real job hits most often |
+| **L5** | A model with one link placed twice | `linkTypes` is 1 and `placements` is 2. They are different facts and the answer must not merge them |
+| **L6** | A nested link (a link inside a link) | It is listed and marked `[nested]`. A nested link is not attached to this model, so *"reload it"* is answered somewhere else |
+| **L7** | Check the path shown | It matches what Manage Links shows — including the `RSN://` or BIM 360 form for a server model, not a raw internal path |
+
+---
+
 ## Group G — hard to force, do last
 
 Not blocking. Listed so they are not mistaken for tested.
