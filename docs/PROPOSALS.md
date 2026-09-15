@@ -1475,3 +1475,47 @@ One of two, and both are the owner's:
 
 **Not acted on.** §151 is a `[NOTE]` proposing enforcement, and changing what it proposes is not a
 build decision. The agent is built to option 1 today and says so in its own answer.
+
+---
+
+## F25 — should the import walk skip `.git`, `node_modules` and build folders?
+
+Found while building [`HERON-IMP-FIL-002`](../brain/heron_walk.py), whose register row is *"Walks the
+folder, identifies file types"*.
+
+[docs/10 §5](10-memory-and-knowledge.md) names the folders this feature exists for — `AJ-Tools`,
+`PyRevit-Tools`, `AEB-Tools`. Every one of those is a working folder, and a working folder is rarely
+only source:
+
+| what is really in there | what a complete walk reports |
+|---|---|
+| `.git/` | thousands of entries, nearly all with no extension — they land in `unnamed` |
+| `__pycache__/`, `bin/`, `obj/` | `.pyc`, `.dll`, `.pdb` — outputs, not knowledge |
+| `node_modules/` | tens of thousands of `.js` |
+
+**The walk skips none of them today, and that is deliberate.** A skip list is a guess about somebody
+else's folder. `.git` is a safe guess; `bin` is not — plenty of people keep hand-written tooling in a
+folder called `bin`, and a silent skip would drop exactly the fragments the import exists to find.
+Golden Rule 14 says never silently discard, and a filter nobody asked for is a silent discard with a
+sensible-sounding name.
+
+### What it costs to leave it
+
+The manifest [`HERON-IMP-APR-014`](../brain/heron_import.py) presents is the thing a human reads
+before anything is committed. *"Found 47 candidate fragments"* is reviewable. *"Found 61,400 files,
+54,000 of them with no extension"* is not — the review that constraint 2 depends on stops being
+possible. So this is not cosmetic.
+
+### What is proposed
+
+One of two, and both are the owner's:
+
+1. **A skip list the user sees and can turn off**, shipped with `.git`, `__pycache__`, `node_modules`,
+   `bin` and `obj` in it, and reported in the answer — *"skipped 54,013 entries in 4 folders"* — so a
+   skip is never silent and the reviewer can ask for the full walk.
+2. **Read the folder's own `.gitignore`**, the way [`HERON-GIT-CMT-004`](../brain/heron_commit.py)
+   reads Heron's. It is the author's own statement about what is not source, so it is not a guess —
+   but it covers `bin` and `obj` and does **not** cover `.git`, so it is half an answer at best.
+
+**Not acted on.** Neither is derivable from anything written down, and the first one is a list of
+names somebody has to choose.

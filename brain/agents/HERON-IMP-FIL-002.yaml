@@ -1,0 +1,93 @@
+# Import File Discovery Agent - HERON-IMP-FIL-002
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. Nothing is opened and nothing is written - names, sizes and
+# the shape of the tree, and the source folder is untouched.
+
+agent: HERON-IMP-FIL-002
+version: 1.0.0
+
+input:
+  folder:
+    type: path
+    required: true
+    description: >
+      The folder the user offered - "import this folder into Heron".
+      It is walked read-only and never modified, which is docs/10 s5
+      constraint 1.
+
+output:
+  walked:
+    type: boolean
+    description: True when the folder was listed.
+  root:
+    type: path
+    description: >
+      The absolute folder that was walked, recorded so a reviewer can
+      go and look (docs/10 s5 constraint 4, provenance).
+  of:
+    type: integer
+    description: >
+      Every entry seen. It equals files + never_imported +
+      not_followed + unreadable, so nothing is silently discarded
+      (Golden Rule 14).
+  files:
+    type: list
+    description: >
+      Each {name, at, extension, bytes} to carry forward, in sorted
+      order so a resumed import lists the folder the way the first run
+      did. The extension is the last suffix, lower case.
+  types:
+    type: map
+    description: >
+      Extension to count, the empty string included so the counts add
+      up. This is the whole of what "identifies file types" means
+      here - a suffix, not a category.
+  unnamed:
+    type: list
+    description: >
+      The files carrying no extension, each with WHICH of the two
+      cases it is - a name with no dot at all, or a name that is
+      entirely a dot-suffix like `.gitignore`. These entries are in
+      `files` as well.
+  never_imported:
+    type: list
+    description: >
+      Revit models found and kept out of the manifest. The extension
+      list is HERON-RPT-RED-003's, borrowed rather than retyped, and
+      HERON-IMP-APR-014 draws the same line at the manifest door.
+  not_followed:
+    type: list
+    description: >
+      Symlinks, reported and never opened. A link can point anywhere
+      on the machine and the folder is what was offered.
+  unreadable:
+    type: list
+    description: >
+      Folders that could not be listed and files that could not be
+      measured. os.walk's default is to skip these without saying so,
+      so `onerror` is supplied and they are named.
+  why:
+    type: string
+    description: The counts, and what each bucket holds.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That WHAT any file is was not decided - that
+      is HERON-IMP-CLS-003's row and it is T2 for a reason; that only
+      the last suffix was read; that nothing was skipped, because a
+      skip list is a guess about somebody else's folder (PROPOSALS
+      F25); and that nothing was opened or written.
+
+allowed-tools: []
+
+timeout-seconds: 120
+
+failures:
+  - NOTHING_TO_WALK
+  - NOT_A_FOLDER
+
+retry:
+  attempts: 0
+  on-failures: []

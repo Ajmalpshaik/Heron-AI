@@ -726,6 +726,7 @@ Not blocking. Listed so they are not mistaken for tested.
 | **G3** | After all of the above passes | Set `write.enabled` back to **false** until you actually want Heron writing |
 | **G4** | After a move, open the newest file in `%APPDATA%\Heron\audit` | The entry carries **every moved element's UniqueId**, the document identity and the undo entry name, all under one Workflow ID. A count alone cannot answer *"which ducts?"* |
 | **G5** | `python tests/test_golden.py` after re-proving anything | The re-proved case stops reading **STALE**. Seven Phase 0 proofs are stale right now — they were taken against a build that no longer exists |
+| **G6** | `python tests\test_walk.py` from an account that is **not** an administrator, on a folder holding a subfolder you have no permission to open | Section 9 stops saying *UNTESTED* and names the folder in `unreadable`. `os.walk` throws such a folder away in silence by default; [`HERON-IMP-FIL-002`](../brain/heron_walk.py) supplies `onerror` so it does not, and that branch has never actually run — a mode-0 folder does not stop root here, and does not stop an administrator on Windows either |
 
 ---
 
