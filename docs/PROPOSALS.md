@@ -817,3 +817,49 @@ file invisible, which is the precise thing `HERON-WSP-REG-012` refuses to do.
 **Worth adding whichever way it goes:** a check that reports one id claimed by more than one file.
 Today that costs nothing to add and surfaces a real ambiguity; it stops costing nothing the first time
 a rename half-lands and two files disagree about what they are.
+
+### 🟠 F11. docs/06 §2 draws nineteen folders and classifies fourteen
+
+**Found 2026-09-15 by `HERON-WSP-CRE-002`**, which reads the tree out of that section rather than
+carrying a copy — so the first thing it did was ask each folder what class it was in.
+
+[docs/06 §2](06-heron-platform.md) draws the workspace as nineteen folders, then immediately puts
+folders into **Product / Data / Derived**. The table covers fourteen. These five are drawn and
+classified by nothing:
+
+```
+RAG   Community   Configuration   Tests   Documentation
+```
+
+Derive it:
+
+```bash
+python brain/heron_folders.py            # the five are listed under "NO CLASS"
+```
+
+**The class is not a label — it is the only thing that answers three questions**, and every one of
+them is now asked by an agent in this repository:
+
+| question | who asks | what the wrong answer does |
+|---|---|---|
+| may a product update replace it wholesale? | `HERON-OPS-UPD-010` rule 6 | a practice's work is gone |
+| may a cleanup delete it outright? | `HERON-WSP-CLN-009` | same, more quietly |
+| does a backup cover it? | `HERON-WSP-BAK-010` | it is not there when needed |
+
+**`Configuration` is the one to settle first.** [docs/21 §9](21-resilience-and-operations.md) makes
+configuration a **security boundary** — it holds the security policy, the update policy and the
+company standards, and `HERON-INS-CFG-006` already splits it into machine-specific and portable
+halves. If the folder reads as **product**, an update replaces a practice's security policy with the
+shipped defaults, and nothing in the specification currently says it must not.
+
+The other four have plausible answers that are still nobody's decision on record:
+
+- **`RAG`** — [docs/07 §8](07-installation-and-update.md) says *"the vector index is the easy case — it is derived"*, which points at **derived**. But the folder may hold more than the index.
+- **`Community`** — [docs/00d §37](00d-additional-requirements.md) says imported community components are untrusted by default. `Packages` is product; is `Community` product too, or data because the user installed it?
+- **`Tests`**, **`Documentation`** — most likely **product**, and cheap to say so.
+
+**Not fixed here.** Adding a row to the class table changes what four agents do to a folder, and
+`HERON-WSP-PTH-007` is deliberately not extrapolated — the same reason D-05 refuses to guess a Revit
+release. Until it is answered, `heron_paths.classify()` returns `UNKNOWN` for all five and `may()`
+reads UNKNOWN as **data**, so nothing removes or overwrites them. That is the safe failure, not a fix:
+it also means a backup does not cover them and a cleanup leaves rubbish behind.
