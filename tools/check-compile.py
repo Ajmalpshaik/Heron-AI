@@ -27,6 +27,11 @@ distributions - so the compile gate runs anywhere, and found a real 2020-only
 error the first time it ran. Every session from here on can compile before it
 claims anything. See docs/30-compiling-away-from-windows.md.
 
+EVERY READ-ONLY FACT THIS SCRIPT USES IS HERON-DEV-NET-006's, in
+brain/heron_dotnet.py, and imported rather than kept here a second time. That
+agent answers what a build would NEED, in seconds and without a compiler; this
+script is what BUILDS, and its answer is the only one that counts.
+
 WHAT A PASS DOES AND DOES NOT MEAN
 ----------------------------------
 A pass means the code is CONSISTENT WITH THAT VERSION'S API SURFACE: every type
@@ -67,126 +72,35 @@ import os
 import subprocess
 import sys
 
-# Every project, in dependency order so the first failure is the deepest one.
-PROJECTS = [
-    "platform/Heron.Core/Heron.Core.csproj",
-    "revit/Heron.Bridge/Heron.Bridge.csproj",
-    "revit/Heron.Revit.Addin/Heron.Revit.Addin.csproj",
-    "tests/Heron.Bridge.TestHost/Heron.Bridge.TestHost.csproj",
-]
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "brain"))
 
-# The range Directory.Build.props knows how to target. Kept as an explicit list
-# rather than a range() so that adding a Revit release is a deliberate edit
-# here AND there - D-05 says an unlisted release is an error, never a guess.
-ALL_VERSIONS = ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+import heron_dotnet as NET  # noqa: E402
 
-# Releases whose runtime is a windows-suffixed TFM. The add-in uses WPF there,
-# so these need the WindowsDesktop MSBuild targets and the targeting packs.
-# Not "unsupported" - just needing more installed, which is a different
-# sentence and has to stay one.
-NEEDS_WINDOWS_DESKTOP = {"2025", "2026", "2027"}
+# EVERY READ-ONLY FACT BELOW USED TO LIVE IN THIS FILE, under
+# `Heron-Agent: none`. It is HERON-DEV-NET-006 - "which target framework
+# does this need, is it available, is the package set compatible, will it
+# build on all supported versions", READ-ONLY - and it was the whole of
+# this script except the part that actually builds.
+#
+# Golden Rule 4: keep, extend, adapt, version-branch, in that order. So it
+# moved to brain/heron_dotnet.py rather than being copied, and this script
+# imports it back. There is ONE SDK probe and one runtime table, and the
+# agent and the gate can no longer disagree about what this machine can do.
+#
+# What stayed here is `build()` and the report. The agent compiles nothing;
+# this script is what compiles, and its answer is the only one that counts.
+PROJECTS = NET.PROJECTS
+ALL_VERSIONS = NET.RELEASES
+NEEDS_WINDOWS_DESKTOP = NET.NEEDS_WINDOWS_DESKTOP
+MINIMUM_DOTNET_MAJOR = NET.MINIMUM_DOTNET_MAJOR
+UNKNOWN_TOOLCHAIN = NET.UNKNOWN_TOOLCHAIN
+WINDOWS = NET.WINDOWS
 
-# The .NET major each release's TFM requires, for the ones that need one newer
-# than the SDK a 2020-2024 build gets by with. Mirrors Directory.Build.props -
-# D-05 again: the runtime table is never guessed, and never extrapolated.
-MINIMUM_DOTNET_MAJOR = {"2025": 8, "2026": 8, "2027": 10}
-
-# Returned by the probe when the SDK list could not be read at all - distinct
-# from "read it, the targets are not there". Not knowing is not the same as
-# knowing it is absent, and only one of the two justifies a skip.
-UNKNOWN_TOOLCHAIN = "unknown"
-
-WINDOWS = os.name == "nt"
-
-
-def have_dotnet():
-    try:
-        out = subprocess.run(["dotnet", "--version"],
-                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        return out.returncode == 0, out.stdout.decode("utf-8", "replace").strip()
-    except OSError as exc:
-        return False, str(exc)
-
-
-def installed_sdks():
-    """Every .NET SDK on this machine, as (major, path-to-sdk-folder)."""
-    try:
-        out = subprocess.run(["dotnet", "--list-sdks"],
-                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    except OSError:
-        return []
-    if out.returncode != 0:
-        return []
-
-    found = []
-    for line in out.stdout.decode("utf-8", "replace").splitlines():
-        # "10.0.111 [/usr/lib/dotnet/sdk]"
-        if " [" not in line or not line.endswith("]"):
-            continue
-        version, root = line.split(" [", 1)
-        version, root = version.strip(), root[:-1].strip()
-        try:
-            major = int(version.split(".")[0])
-        except ValueError:
-            continue
-        found.append((major, os.path.join(root, version)))
-    return found
-
-
-def windows_desktop_toolchain():
-    """The newest .NET major whose SDK carries the WindowsDesktop targets.
-
-    Probed rather than inferred from the operating system. Ubuntu's .NET 8 SDK
-    package omits those targets and its .NET 10 one ships them, so "am I on
-    Windows" answers a different question than the one being asked, and
-    answering it wrongly is what left three Revit releases unchecked.
-    """
-    sdks = installed_sdks()
-    if not sdks:
-        # Could not enumerate at all - "dotnet --list-sdks" failed or printed
-        # something unexpected. That is ignorance, not absence, and the two must
-        # not be reported as the same thing. Say so and let the build decide.
-        return UNKNOWN_TOOLCHAIN
-
-    best = None
-    for major, path in sdks:
-        if os.path.isdir(os.path.join(path, "Sdks", "Microsoft.NET.Sdk.WindowsDesktop")):
-            if best is None or major > best:
-                best = major
-    return best
-
-
-def why_unbuildable(version, desktop_major):
-    """The reason this release cannot be built here, or None if it can.
-
-    Returns a sentence naming what is missing, because "SKIPPED" on its own
-    tells whoever reads it nothing about whether that is fixable in a minute
-    or needs a different machine. It is nearly always the former.
-    """
-    if version not in NEEDS_WINDOWS_DESKTOP:
-        return None
-    if desktop_major is UNKNOWN_TOOLCHAIN:
-        # Attempt it. A build that then fails on the missing targets says so in
-        # its own error, which is better than this script inventing a reason.
-        return None
-
-    needed = MINIMUM_DOTNET_MAJOR[version]
-
-    # The advice names .NET 10 whatever the release needs, because an SDK builds
-    # target frameworks older than itself and the .NET 10 SDK is the one MEASURED
-    # to carry these targets on Ubuntu - its dotnet-sdk-8.0 package does not.
-    # Naming dotnet-sdk-8.0 here would send a reader to the package that fails.
-    fix = ("install an SDK that has them - on Ubuntu that is dotnet-sdk-10.0, "
-           "whose SDK builds every target framework Heron uses")
-
-    if desktop_major is None:
-        return ("no installed .NET SDK carries the WindowsDesktop targets, and "
-                "the add-in uses WPF for its ribbon icons; %s" % fix)
-    if desktop_major < needed:
-        return ("this release needs .NET %d and the newest SDK here carrying "
-                "the WindowsDesktop targets is .NET %d; %s"
-                % (needed, desktop_major, fix))
-    return None
+have_dotnet = NET.have_dotnet
+installed_sdks = NET.installed_sdks
+windows_desktop_toolchain = NET.windows_desktop_toolchain
+why_unbuildable = NET.why_unbuildable
 
 
 def build(project, version):

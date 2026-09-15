@@ -1,0 +1,98 @@
+# .NET Compatibility Check Agent - HERON-DEV-NET-006
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ and says READ-ONLY in its row. It starts no build: it reports
+# what a build would need. tools/check-compile.py is what builds, and it
+# imports this agent rather than keeping a second copy of these facts.
+
+agent: HERON-DEV-NET-006
+version: 1.0.0
+
+input:
+  releases:
+    type: list
+    required: false
+    description: >
+      Which Revit releases to answer for. Omitted means all of them. An
+      EMPTY list is refused rather than treated as all - those are
+      different requests.
+  table:
+    type: map
+    required: false
+    description: >
+      Release to .NET target. Omitted means read Directory.Build.props
+      through HERON-FRG-MTX-009's parse of it, which is the only place
+      that table is written down.
+
+output:
+  checked:
+    type: boolean
+    description: True when the machine was probed and the releases read.
+  dotnet:
+    type: string
+    description: The .NET SDK version this machine answers with.
+  sdks:
+    type: list
+    description: Every installed SDK major, distinct and sorted.
+  desktop:
+    type: string
+    description: >
+      The newest .NET major whose SDK carries the WindowsDesktop
+      targets, None when none does, or "unknown" when the SDK list could
+      not be read at all. Not knowing is not the same as knowing it is
+      absent, and only one of the two justifies a skip.
+  of:
+    type: integer
+    description: How many releases were asked about.
+  buildable:
+    type: list
+    description: >
+      Each release this machine could build, with its target framework
+      and what it needs. COULD, not did - nothing was compiled.
+  blocked:
+    type: list
+    description: >
+      Each release it could not, with a sentence naming what is missing.
+      Not "unsupported" - nearly always one package away, and those are
+      different sentences.
+  mismatches:
+    type: list
+    description: >
+      Rows where the tables mirroring Directory.Build.props have
+      drifted from it. Both are derivable - a `-windows` suffix means
+      the desktop targets, `net8.0-windows` means .NET 8 - and nothing
+      checked them before this agent existed.
+  packages:
+    type: list
+    description: >
+      Every PackageReference as written, with whether its version
+      follows the Revit release. Nothing is resolved or fetched.
+  compiled:
+    type: boolean
+    description: Always false. This agent starts no build.
+  why:
+    type: string
+    description: The counts, and that nothing was compiled.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was compiled and which file does
+      compile; which releases were blocked and that blocked is not
+      unsupported; whether the mirrored tables have drifted; that
+      whether NuGet publishes a package for a given year was not looked
+      up; and that the release list is a deliberate edit rather than a
+      derivation, because D-05 says an unlisted release is an error.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_CHECK
+  - UNKNOWN_RELEASE
+  - NO_DOTNET
+
+retry:
+  attempts: 0
+  on-failures: []
