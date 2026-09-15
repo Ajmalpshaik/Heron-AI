@@ -1,0 +1,70 @@
+# Fragment Merge Agent - HERON-FRG-MRG-004
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent SUGGEST and T2. The one scoped call that makes it T2 - which of
+# merge, replace or deprecate applies - is the host's under D-01, and this
+# agent makes none. It writes nothing.
+
+agent: HERON-FRG-MRG-004
+version: 1.0.0
+
+input:
+  fragments:
+    type: list
+    required: true
+    description: >
+      The fragments to compare. Near-identical is a relation, so fewer
+      than two is refused. A fragment with no readable contract is
+      listed rather than dropped - one nothing can compare is not one
+      that matched nothing.
+
+output:
+  looked:
+    type: boolean
+    description: True when the fragments were compared.
+  of:
+    type: integer
+    description: How many had a contract to compare.
+  decided:
+    type: list
+    description: >
+      Groups sharing a contract signature while declaring DIFFERENT
+      capabilities. Decided here as "keep separate": the signature
+      matched because the plumbing matched, and there is nothing to
+      merge. This is the only verdict this agent gives on its own.
+  for_the_host:
+    type: list
+    description: >
+      Groups sharing a signature AND a capability, with the other three
+      verdicts left open. Merge, replace and deprecate all turn on which
+      implementation is better, which is in neither card. Each carries
+      the evidence - the rows, which are at PRODUCTION, which are
+      already leaving - and no recommendation.
+  unreadable:
+    type: list
+    description: Fragments with no comparable contract, each with why.
+  why:
+    type: string
+    description: The counts, decided against left open.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was merged and docs/09 s118 binds
+      this row; which groups went to the host and why they are not this
+      agent's to pick; which were decided here; which could not be
+      compared; and that only the contract was read, so two fragments
+      doing different work through the same plumbing look identical.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_COMPARE
+  - NOT_A_FRAGMENT
+  - DUPLICATE_ID
+
+retry:
+  attempts: 0
+  on-failures: []
