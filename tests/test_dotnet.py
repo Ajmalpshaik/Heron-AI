@@ -108,6 +108,39 @@ def main():
     check(hasattr(gate, "build") and gate.build.__module__ != "heron_dotnet",
           "and `build` stayed in the gate, where compiling belongs")
 
+    print("\n2a. the gate still needs nothing but the standard library")
+    # THE REGRESSION CI FOUND ON 2026-09-15. Moving these facts out of
+    # check-compile.py hoisted `import heron_matrix` to the top of this
+    # module; that reaches heron_fragment, which imports PyYAML. The CI
+    # compile job installs a .NET SDK and nothing else, so the gate died
+    # with ModuleNotFoundError in under a second, before one project was
+    # built. The probe half must import with the standard library alone.
+    import importlib.abc
+    import subprocess as _sub
+
+    blocked = _sub.run(
+        [sys.executable, "-c",
+         "import sys, importlib.abc\n"
+         "class Block(importlib.abc.MetaPathFinder):\n"
+         "    def find_spec(self, name, path=None, target=None):\n"
+         "        if name == 'yaml' or name.startswith('yaml.'):\n"
+         "            raise ModuleNotFoundError(\"No module named 'yaml'\")\n"
+         "        return None\n"
+         "sys.meta_path.insert(0, Block())\n"
+         "sys.path.insert(0, %r)\n"
+         "import heron_dotnet as NET\n"
+         "assert NET.why_unbuildable('2020', None) is None\n"
+         "assert NET.RELEASES and NET.PROJECTS\n"
+         "print('ok')\n" % os.path.join(ROOT, "brain")],
+        stdout=_sub.PIPE, stderr=_sub.STDOUT)
+    check(blocked.returncode == 0,
+          "the module imports and probes with PyYAML BLOCKED: %s"
+          % blocked.stdout.decode("utf-8", "replace").strip().splitlines()[-1])
+    check("import heron_matrix" not in logic.split("def _table(")[0],
+          "and heron_matrix is not imported at module level")
+    check("import heron_matrix" in logic,
+          "it is imported inside the one function that reads the props")
+
     print("\n3. the mirrored tables are checked against the props")
     check(NET.disagreements() == [],
           "as they stand today, every row agrees")

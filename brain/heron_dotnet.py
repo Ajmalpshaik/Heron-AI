@@ -79,8 +79,6 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import heron_matrix as MTX  # noqa: E402
-
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Every project, in dependency order so the first failure is the deepest one.
@@ -120,6 +118,29 @@ WINDOWS = os.name == "nt"
 THE_GATE = "tools/check-compile.py"
 
 _TFM_MAJOR = re.compile(r"^net(\d+)\.")
+
+
+def _table():
+    """
+    Release -> .NET target, from Directory.Build.props.
+
+    IMPORTED HERE AND NOT AT THE TOP, and that is not tidiness.
+    HERON-FRG-MTX-009 reaches heron_fragment, which imports PyYAML, and
+    tools/check-compile.py imports this module. The compile job on CI
+    installs a .NET SDK and NOTHING ELSE - no PyYAML - because compiling
+    C# has never needed one.
+
+    Hoisting this import gave that gate a third-party dependency it had
+    never had, and it failed in under a second with ModuleNotFoundError
+    before a single project was built. Found by CI on 2026-09-15, in the
+    change that moved these facts out of that file.
+
+    So the probe half - which is all the gate uses - stays importable
+    with the standard library alone, and the props table is read only by
+    the two functions that actually need it.
+    """
+    import heron_matrix as MTX
+    return MTX.runtimes()
 
 
 def have_dotnet():
@@ -222,7 +243,7 @@ def disagreements(table=None):
     desktop targets, and `net8.0-windows` means .NET 8 - so a mirror is
     only worth keeping if something checks it. Nothing did.
     """
-    table = MTX.runtimes() if table is None else table
+    table = _table() if table is None else table
     out = []
 
     listed, parsed = set(RELEASES), set(table)
@@ -308,7 +329,7 @@ def check(releases=None, table=None):
                        "docs/30-compiling-away-from-windows.md - it takes "
                        "about five minutes on any Linux container." % said}
 
-    table = MTX.runtimes() if table is None else table
+    table = _table() if table is None else table
     desktop = windows_desktop_toolchain()
     sdks = sorted(set(major for major, _ in installed_sdks()))
 
