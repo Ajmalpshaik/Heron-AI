@@ -1,0 +1,95 @@
+# Pull Request Agent - HERON-GIT-PR-005
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent PUBLISH and puts "explicit confirmation, every time" in bold. Nothing
+# here opens anything: allowed-tools is empty and there is no network.
+
+agent: HERON-GIT-PR-005
+version: 1.0.0
+
+input:
+  request:
+    type: map
+    required: true
+    description: >
+      {title, body, head, base} and optionally `attachments` and
+      `draft`. A head equal to its base is refused - a pull request from
+      a branch into itself has no diff.
+  confirmation:
+    type: map
+    required: false
+    description: >
+      {by, at, head}. `head` is what makes it a confirmation of THIS
+      pull request: without it the confirmation covers this one and the
+      next one too, which is what "every time" rules out. `by` must be a
+      person - the machine-word list is HERON-LRN-PRO-004's, imported.
+      Absent, the pull request is refused, not opened with a warning.
+  secrets:
+    type: object
+    required: false
+    description: >
+      The credential store to check the title and body against. Defaults
+      to a fresh heron_secrets.Secrets().
+
+output:
+  prepared:
+    type: boolean
+    description: True when the pull request may be opened.
+  may_open:
+    type: boolean
+    description: Always true when prepared - the verdict, stated plainly.
+  head:
+    type: string
+  base:
+    type: string
+  title:
+    type: string
+  body:
+    type: string
+  draft:
+    type: boolean
+    description: Defaults to true.
+  confirmed_by:
+    type: string
+    description: The person who confirmed, by name.
+  confirmed_at:
+    type: string
+  where:
+    type: string
+    description: >
+      On a refusal for a credential, which field carried one. The VALUE
+      never appears in any output of this agent - only that it was there.
+  found:
+    type: list
+    description: What kind of credential, by label, never by value.
+  attachments:
+    type: list
+    description: On a refusal for a model, which names were Revit files.
+  why:
+    type: string
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was opened; that the confirmation
+      named this head and nothing stores it; that neither the change nor
+      the confirmer's understanding was judged; and that nothing here
+      looked at the diff.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_OPEN
+  - NOT_A_PULL_REQUEST
+  - SAME_BRANCH
+  - CARRIES_A_MODEL
+  - CARRIES_A_SECRET
+  - NOT_CONFIRMED
+  - CONFIRMED_BY_A_MACHINE
+  - CONFIRMATION_IS_STANDING
+
+retry:
+  attempts: 0
+  on-failures: []
