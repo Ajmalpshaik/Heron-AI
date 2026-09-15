@@ -1,0 +1,102 @@
+# Regression Testing Agent - HERON-FRG-REG-006
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. It builds nothing and runs nothing - the results come in.
+#
+# docs/09 s8 gives six numbered steps and calls them "Golden Rule 4 made
+# executable". Steps 1 and 2 belong to HERON-FRG-VAL-001 and
+# HERON-FRG-MTX-009; steps 3 to 6 are this agent's, done in that order
+# because the order is the argument.
+
+agent: HERON-FRG-REG-006
+version: 1.0.0
+
+input:
+  before:
+    type: map
+    required: true
+    description: >
+      The fragment as it stands. Its `revit` list is the CLAIM, and the
+      claim is the previous behaviour - so no second set of results is
+      needed, which is what makes this usable on the first change after
+      a release.
+  after:
+    type: map
+    required: true
+    description: The fragment as it would be.
+  results:
+    type: map
+    required: true
+    description: >
+      release -> "pass" or "fail", after the change. A third word is
+      refused: interpreting a test result is how "inconclusive" becomes
+      "fine". A claimed release with no result is refused too - a
+      release nobody ran is not a release that passed.
+  preserved:
+    type: string
+    required: false
+    description: >
+      Where the previous implementation is kept. Required on an
+      otherwise safe change - docs/09 s8 step 6, and Golden Rule 14.
+
+output:
+  checked:
+    type: boolean
+    description: True when the change was read through all four steps.
+  safe:
+    type: boolean
+    description: Always true when checked. An unsafe change is refused.
+  claimed:
+    type: list
+    description: The releases the before side claimed.
+  tested:
+    type: list
+    description: The releases a result came back for.
+  passing:
+    type: list
+    description: The releases that passed.
+  gained:
+    type: list
+    description: >
+      Releases the after side claims and the before side did not.
+      Reported, not checked - docs/09 s8 asks only that an old release
+      was not lost.
+  preserved:
+    type: string
+    description: Where the previous implementation is kept, as given.
+  steps:
+    type: list
+    description: >
+      docs/09 s8's six, each with who owns it and whether this agent did
+      it.
+  releases:
+    type: list
+    description: On any refusal, which releases it was about.
+  why:
+    type: string
+    description: The counts, or the releases that make the change unsafe.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That steps 1 and 2 were not done here; which
+      releases were gained and that gaining is not checked; that passing
+      is not improving; and that the preserved location was read back
+      rather than opened.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_CHECK
+  - NOT_A_FRAGMENT
+  - NOT_A_RESULT
+  - NOT_TESTED
+  - A_RELEASE_REGRESSED
+  - A_RELEASE_WAS_DROPPED
+  - NOT_PRESERVED
+
+retry:
+  attempts: 0
+  on-failures: []
