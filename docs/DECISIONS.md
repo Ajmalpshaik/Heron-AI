@@ -141,6 +141,8 @@ an edit.
 | [D-70](#d-70--heron-keeps-a-usage-counter-on-the-machine-and-it-is-numbers-rather-than-a-diary) | Heron keeps a usage counter, on the machine, and it is numbers rather than a diary | ✅ Accepted · 2026-09-12 |
 | [D-71](#d-71--every-length-a-caller-types-is-millimetres-and-the-fragment-converts-it) | Every length a caller types is millimetres, and the fragment converts it | ✅ Accepted · 2026-09-13 |
 | [D-72](#d-72--four-values-a-caller-could-not-type-are-now-built-from-what-they-type-and-a-face-still-is-not) | Four values a caller could not type are now built from what they type, and a face still is not | • status not stated |
+| [D-73](#d-73--a-table-by-name-is-two-separators-and-the-key-is-the-models-word-not-ours) | A table by name is two separators, and the key is the model's word, not ours | 🕐 Proposed - **owner has not read this back** |
+| [D-74](#d-74--a-write-is-aimed-at-the-model-it-was-told-about-not-guarded-against-the-one-in-front) | A write is AIMED at the model it was told about, not guarded against the one in front | 🕐 Proposed - **owner has not read this back** |
 
 ## Format
 
@@ -4448,3 +4450,177 @@ one still owes a run against a model with both halves, and a signature that is a
 ([D-30](#d-30--a-proof-needs-a-positive-and-a-negative-and-a-person-signs-it)).
 
 **It does not touch `place-family-on-face`.** That one is named above and stays where it is.
+
+
+---
+
+## D-73 — A table by name is two separators, and the key is the model's word, not ours
+
+**Status:** Proposed - the owner asked for the best answer rather than picking one, so this row is
+what was done and why, for him to accept or send back · **Date:** 2026-09-15
+**Found during:** being asked to prove `check-minimum-clearance` and finding it had never run a line
+**Affects:** `check-minimum-clearance`, `check-model-standards`,
+[D-72](#d-72--four-values-a-caller-could-not-type-are-now-built-from-what-they-type-and-a-face-still-is-not),
+[D-71](#d-71--every-length-a-caller-types-is-millimetres-and-the-fragment-converts-it),
+[FRAGMENT-ISSUES rows 97 and 98](FRAGMENT-ISSUES.md)
+
+### Context
+
+`check-minimum-clearance` was asked for by name. It could not run, and neither could it be made to:
+
+- **Without the value:** `[needs_request_values]` - *"'rules (IDictionary<string, double>)' is a value
+  the CALLER supplies"*.
+- **With one:** `--set "rules=Walls=150"` gives `[bad_request_value]` - *"IDictionary<string, double>
+  is not one of them yet"*.
+
+`FromRequest` refused `IDictionary` by name, the need is `source: request`, and the `optional:` key
+three other needs declare is read by nothing ([row 96](FRAGMENT-ISSUES.md)). The two refusals close
+the loop on each other. `tools/jobs/defect-finders-2.yaml` had predicted it in its own note and left
+`rules` unset to find out.
+
+**Two needs in 1,215 are dictionaries the caller supplies**, and both fragments were dark:
+`check-minimum-clearance.rules` (`<string, double>`) and `check-model-standards.namePatterns`
+(`<string, string>`).
+
+### Decision
+
+**A table crosses as `name=value` pairs separated by semicolons**, the same shape D-72 gave
+`OverrideGraphicSettings` and for the same reason - a value may already contain commas, so the comma
+cannot also separate entries.
+
+```
+--set "rules=Walls=150; Structural Framing=50"
+--set "namePatterns=view=*-Mech*; sheet=A-*"
+```
+
+**Everything after the FIRST equals sign is the value**, so `view=a=b` is the pattern `a=b` rather
+than a refusal.
+
+### The key is kept exactly as typed, and that is the half worth writing down
+
+`OneOverride` lower-cases its keys and turns spaces into hyphens. Copying that here would have been
+the natural thing to do and would have been **silently wrong**.
+
+An override's keys are nine words the method defines itself. These keys are **the model's own words**:
+`check-minimum-clearance` looks each one up against `target.Category.Name`, which returns
+`Structural Framing` - capital S, capital F, and a space in the middle. A normalised key matches
+nothing, every pair falls through to `defaultClearance`, and the run reports a clean sweep with a
+`judgedBy` column saying `default` all the way down. **A rule that silently never fires is worse than
+one that is refused**, and nothing downstream could tell the two apart.
+
+### The number stays in the unit it was typed in
+
+[D-71](#d-71--every-length-a-caller-types-is-millimetres-and-the-fragment-converts-it) puts length
+conversion in the FRAGMENT, and this changes nothing about that. `NamedValues` cannot know whether a
+number is a length, an airflow or a count - here it does not even know what the KEY means - so `150`
+arrives as `150` and `check-minimum-clearance` divides by 304.8 itself, on the line its
+`defaultClearance` already went through.
+
+That line did not exist until today. **`rules` was used raw against a gap in feet**, so
+`Walls=150` demanded 150 FEET while the default-judged pairs stayed correct - the D-71 sweep looked
+for a bare `double` and a dictionary is not one ([row 97](FRAGMENT-ISSUES.md)).
+
+### An empty table is allowed; a repeated key is not
+
+**Empty means no entries**, because both fragments document that reading - `defaultClearance` catches
+whatever the table does not name, and a section with no pattern reports NOT CHECKED rather than a
+pass. Refusing it would make the ordinary case - one blanket clearance, no exceptions - the one that
+cannot be asked for.
+
+**A repeated key is refused**, because last-one-wins throws a number away on an ordering nobody can
+see.
+
+### What this does not do
+
+**It does not prove either fragment.** Two dictionaries becoming typeable makes two fragments
+*arrangeable*. The parser itself was run - the real method, lifted out of `RevitFragment.cs` at build
+time into a harness with no Revit in it, twelve cases including the capitals-and-space one - and that
+is evidence about the parser, not about a fragment. Both still owe a run with both halves and a
+signature ([D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)).
+
+**It does not implement `optional:`.** That key is still read by nothing and still recorded as
+[row 96](FRAGMENT-ISSUES.md). Making a need omittable changes what a refusal means library-wide, and
+`BindNeeds` refuses rather than supplying an empty value on purpose.
+
+
+---
+
+## D-74 — A write is AIMED at the model it was told about, not guarded against the one in front
+
+**Status:** Proposed · **Date:** 2026-09-15 · **Asked for by:** Ajmal PS, in his own words, at the
+keyboard while the failure was on screen
+**Found during:** running E11 against Revit for the first time
+**Supersedes the MECHANISM of** [D-73](#d-73--a-table-by-name-is-two-separators-and-the-key-is-the-models-word-not-ours)'s
+neighbour, the `expectProject` guard — which stays, but is no longer what keeps a write in the right model
+
+### Context — the guard was green everywhere and did not work
+
+`revit_change` committed inside a `TransactionGroup` and only afterwards did the server compare its
+pin against the reply, so a refusal arrived after the act. That was fixed by sending the pinned
+project key WITH the request and refusing above the transaction group. CI was green: 5/5 checks, 188
+tests, compiled 2020 through 2027.
+
+**E11 was then run in front of Revit and failed.** Pinned to Project1, switched to Project2, asked
+again:
+
+```
+CREATE_LEVEL ran in Project2.
+```
+
+`ProjectKey` is `doc.ProjectInformation.UniqueId`, and **that is inherited from the template**:
+
+| Document | key |
+|---|---|
+| Project1 (Revit 2024) | `8764c510-…-0000c160` |
+| Project2 (Revit 2024) | `8764c510-…-0000c160` |
+| `PIPE.rvt` (Revit **2020**, unrelated) | `8764c510-…-0000c160` |
+
+So `here != expectProject` is false between any two projects from one template, which is most
+projects. **Nothing is fixed by tightening a comparison whose two sides are equal and both wrong.**
+
+### Decision
+
+**The question is inverted.** Not *"did the user move?"* but *"which model was I told to work on?"*
+
+`revit_change` sends `document` (the pinned title) and `documentPath` (the pinned path) with every
+write. `RevitFragment.Run` resolves the **path first** — unique among open models — and the title
+second. What is in front of Revit stops mattering.
+
+This needs **no key at all**, which is the point: the identity that failed is not on the path any more.
+
+**It is what the owner asked for, and he said why better than this row can:** *"if I open project 1
+and I tell it to pin the model, you have to work only in project 1 and refer to project 2, and I move
+to project 3 — Heron needs to work on project 1… that is agentic work."*
+
+**The add-in already did half of it.** `Run` has always accepted a `document` and found it among the
+open ones. This path simply never sent one.
+
+### A title that matches twice is a refusal
+
+The lookup let the **last** matching document round the loop win, silently. On a path about to commit
+a transaction that is the worst answer available: indistinguishable from a correct one, and dependent
+on the order Revit hands its documents back. Two models called `Project1` is the exact case
+`DocumentPin` was written around, so it is not hypothetical. It is now `ambiguous_document`.
+
+`no_such_document` and `ambiguous_document` both joined the failure table. **`no_such_document`
+predates all of this and was never in it** — the same gap `wrong_document` had, unnoticed until its
+sibling was added beside it. Both return above the transaction group, so both are REFUSED rather than
+an unknown outcome telling the user to go and check their model.
+
+### What stays
+
+**`expectProject` is not removed.** It is no longer the mechanism, and it still catches the family
+case — a family has no Project Information, so its key is `None`, which IS distinguishable — and any
+two models whose keys genuinely differ. A guard that is not load-bearing is cheap.
+
+### What this does NOT do, and it is the honest half
+
+**It has not met Revit.** It was written while the owner was working in Revit 2020 and was deliberately
+not deployed. **E15, E16 and E17** in [NEEDS-CHECKING](NEEDS-CHECKING.md) are what it owes: the E11
+arrangement again (the change must land in Project1), a pinned model CLOSED mid-chat, and two models
+sharing a name.
+
+**It does not make the demonstration a proof.** Reading Project2 by name and writing ten levels into
+Project1 by name — with a family in front the whole time, verified by reading back, Project2
+untouched — shows the mechanism carries. It was driven over the bridge directly, not through
+`revit_change`, so the line this row actually changes is still unrun.

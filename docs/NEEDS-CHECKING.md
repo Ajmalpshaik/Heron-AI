@@ -669,11 +669,131 @@ Each of these is a rail. A rail that has never been tested is decoration.
 | **E8** | On a **workshared** model with a duct owned by another user, preview | Reported as skipped, and the move does not fail because of it |
 | **E9** | Open a dialog in Revit, then ask to move | *"Revit is busy"* — a clean refusal, not a hang. Recovers by itself |
 | **E10** | Put two ducts in a **Revit group**, then ask to move that category up 200 mm | They are reported as **did NOT move at all**, by count, with the words *"almost certainly inside a group"* — and the ungrouped ones still move. **This is the case Revit will not tell you about**: `MoveElements` returns normally and moves nothing for a group member, no exception and no warning, so counting "it did not throw" as "it moved" reports a clean success for elements that have not shifted a millimetre. Proved against a real model in the owner's earlier work; Heron now compares positions either side instead of trusting the call. A group member is **not** pinned, so `E7`'s skip filter does not catch it |
-| **E11** | With **Project1 unsaved and never saved**, run a read tool (`revit_select_by_category`), then `revit_change` on that same model | It **runs**. Until 2026-09-15 it refused every write with *"This chat has been working on Project1, but Project1 is in front in Revit now"* — the same name on both sides of the *but*, because the pin held `project:<uid>` from the read tool and read `title:Project1` back off the fragment reply, which was the one operation sending no key. `revit_use_this_model` could not clear it: it repins from `count_elements`, which sends the key again. **An unsaved model is the exposed case** — with no `documentPath` there was nothing to stand in for the missing key. Both halves are fixed (`RevitFragment.Report` now sends `documentPath` and `projectKey`; `DocumentPin.check` compares the strongest field BOTH replies carry) and **neither half has met a Revit**. `tests/test_document_pin.py` reproduces the refusal against the old code and is a text check, not a proof |
-| **E12** | Run `revit_change` in Project1, click into a **second open project**, ask for the same change again | Refuses **before anything is written** — names the model it would have run in, says **NOTHING was written**, and the undo history of **both** models is unchanged. This is the rail that did not exist: the change was applied to the model in front and the refusal that followed said *"Nothing has been sent to Revit"* about work already committed | **This is the case E12 recorded on 2026-09-15 as *"found ... not yet closed"*, and it is what this change closes** - the refusal now happens in the add-in above the transaction group, not on the server after `Assimilate()`.
-| **E13** | The same, but click into a **family editor** rather than a second project | Still refuses, in a **different sentence** — a family has no Project Information, so Heron cannot show the target is the pinned model and will not commit into one it cannot name. The cost is deliberate: a chat pinned to a project cannot write into a family without `use this model` first |
-| **E14** | In a **fresh chat**, make `revit_change` the **first** thing asked | It **runs**. An empty key means *do not check* — a first request has nothing to compare against, and refusing it would make the pin unobtainable. If this refuses, the guard is inverted and every chat is bricked |
-| **E15** | `revit_select_by_category`, then `revit_change`, **same model, no switching** | The change **runs**. Both tools must produce the **same** key for one model — while the fragment reply carried only the title, these two disagreed and the second refused a model it was already working in, naming it on both sides of *"but"* |
+| **E11** | With **Project1 unsaved and never saved**, run a read tool (`revit_select_by_category`), then `revit_change` on that same model | It **runs**. Until 2026-09-15 it refused every write with *"This chat has been working on Project1, but Project1 is in front in Revit now"* — the same name on both sides of the *but*, because the pin held `project:<uid>` from the read tool and read `title:Project1` back off the fragment reply, which was the one operation sending no key. `revit_use_this_model` could not clear it: it repins from `count_elements`, which sends the key again. **An unsaved model is the exposed case** — with no `documentPath` there was nothing to stand in for the missing key. Both halves are fixed (`RevitFragment.Report` now sends `documentPath` and `projectKey`; `DocumentPin.check` compares the strongest field BOTH replies carry) and **neither half has met a Revit**. `tests/test_document_pin.py` reproduces the refusal against the old code and is a text check, not a proof **RUN 2026-09-15 - PASSED, by the same run as E15.** Project1 and Project2 were both blank and never saved, so `revit_select_by_category` then `revit_change` in Project2 IS this row's arrangement: `Selected 2 ducts in Project2` then `CREATE_LEVEL ran in Project2.` One run, two rows, said so rather than recorded twice |
+| **E12** | ~~Run `revit_change` in Project1, click into a **second open project**, ask for the same change again~~ **RUN 2026-09-15 - FAILED.** Pinned to Project1, switched to Project2, asked again: **`CREATE_LEVEL ran in Project2.`** It wrote a level into the model it was NOT pointed at. **Cause: `ProjectKey` is not unique.** It is `doc.ProjectInformation.UniqueId`, which comes from the TEMPLATE - Project1, Project2 and an unrelated `PIPE.rvt` open in Revit 2020 all report `8764c510-57b7-44c3-bddf-266d86c26380-0000c160`. `here != expectProject` is therefore false between any two projects from one template, which is most projects, and the guard passes the exact case it exists to stop. See the finding below |
+| **E13** | ~~The same, but click into a **family editor** rather than a second project~~ **RUN 2026-09-15 - PASSED.** Verbatim: *"This chat has been working on a project, and \"M_Rectangular Elbow - Radius.rfa\" has no Project Information - a family, or something Heron cannot identify as the model this chat was pointed at. NOTHING was written."* The family path works because a family key is `None`, which IS distinguishable - unlike two projects, which are not |
+| **E14** | ~~In a **fresh chat**, make `revit_change` the **first** thing asked~~ **RUN 2026-09-15 - PASSED.** Pin before: `title=None project_key=None`. Result: `CREATE_LEVEL ran in Project1.` Empty really does mean *do not check*, and no chat is bricked |
+| **E15** | ~~`revit_select_by_category`, then `revit_change`, **same model, no switching**~~ **RUN 2026-09-15 - PASSED, and it proves less than it looks.** `Selected 2 ducts in Project2` then `CREATE_LEVEL ran in Project2.` Both tools DO now produce the same key - but every project on this machine produces the same key, so this row cannot tell a working identity from a colliding one. It is only meaningful once E11 is fixed |
+
+### What has been observed so far, and it is NOT any of E11-E14
+
+**2026-09-15, Revit 2020 session 8084, model `PIPE` (3,287 elements, on the
+owner's Desktop), add-in deployed from `claude/friendly-hypatia-196de4`.** One
+model was open and it was the owner's own file, so no row above could be run:
+E11 needs a second project, E12 needs a family, and E13/E14 write for real.
+**No row above is ticked.**
+
+What WAS exercised is the **add-in half**, directly over the bridge, read-only.
+Four `run_fragment_read` calls of `count-elements` against the same model at the
+same moment, differing **only** in `expectProject` - which is what makes it a
+contrast rather than four separate observations:
+
+| `expectProject` | Result |
+|---|---|
+| omitted entirely | ran (the proving client's own path - it sends no key) |
+| `""` | ran, reached need-binding - `needs_unbound` on `elements`, a LATER stage |
+| the real key, `8764c510-...-0000c160` | ran, reached need-binding - the same later stage |
+| `00000000-dead-beef-...` | **REFUSED** - `wrong_document`: *"the one this would have run in is PIPE. NOTHING was read."* |
+
+So the guard is **deployed and live**; **empty really does mean do not check**,
+which is E13's mechanism exercised rather than reasoned about; and **a matching
+key really does pass** - worth its own row, because a guard that refused
+everything would also have refused the wrong key, and the two would be
+indistinguishable from the refusal alone. The sentence says *read* rather than
+*written* because it was on the read path.
+
+**And the half that makes the guard reachable a second time:** a SUCCESSFUL
+fragment run (`list-levels`) now answers with `documentPath` and `projectKey`,
+and that key is **byte-identical** to `count_elements`' on the same model. That
+is E14's root cause measured as fixed - the reply used to carry the title alone,
+so `DocumentPin` fell to its `title:` fallback, `project_key` stayed `None`, and
+`expectProject` went out EMPTY on every later call, switching the guard off for
+exactly the chat that needed it.
+
+Error replies report `projectKey = None`, correctly rather than as a gap: they
+return from `Json.Error` and never reach `Report`.
+
+### E11 FAILED, and the cause is that `ProjectKey` is not a key
+
+**Observed 2026-09-15, Revit 2024.3 session 2924, two blank projects and a
+family, add-in deployed from `claude/friendly-hypatia-196de4`.**
+
+The guard compares `RevitOperations.ProjectKey(doc)`, which is
+`doc.ProjectInformation.UniqueId`. **That value is inherited from the template**,
+so it does not identify a project at all:
+
+| Document | `projectKey` |
+|---|---|
+| Project1 (Revit 2024) | `8764c510-57b7-44c3-bddf-266d86c26380-0000c160` |
+| Project2 (Revit 2024) | `8764c510-57b7-44c3-bddf-266d86c26380-0000c160` |
+| `PIPE.rvt` (Revit **2020**, a different model in a different release) | `8764c510-57b7-44c3-bddf-266d86c26380-0000c160` |
+| the family | `None` |
+
+So `here != expectProject` is **false between any two projects made from the
+same template**, and the write goes through. E12 passes only because `None` is
+genuinely different; E14 passes for a reason that is indistinguishable from the
+bug.
+
+**This is not fixed by tightening the comparison.** There is nothing to tighten:
+both sides are equal and both are wrong.
+
+### The direction the owner asked for, and it is already half-built
+
+Asked on the day: *"if I open project 1 and I tell it to pin the model, you have
+to work only in project 1 and refer to project 2, and I move to project 3 -
+Heron needs to work on project 1... that is agentic work."*
+
+That inverts the question from *"did the user move?"* to *"which model was I told
+to work on?"*, and it does not depend on a key at all.
+
+**`RevitFragment.Run` already accepts it.** `RevitFragment.cs:105` reads a
+`"document"` argument, finds that document among the open ones by title, and
+refuses with `no_such_document` listing what is open. `revit_change` simply never
+sends one, so the add-in falls back to the active document.
+
+**Demonstrated the same day, end to end, with the FAMILY in front the whole
+time:** `list-levels` was run against Project2 by name to read the owner's level
+(`ajmal testing level @ 12500 mm`), then `create-levels` was run against Project1
+by name to add ten levels following it - `ajmal testing level - 01` at 15000 mm
+through `- 10` at 42000 mm, verified by reading back (`created 10 item(s)`,
+`nameRefused 0`, Project1 3 -> 13 levels, **Project2 untouched at 5**). Every
+reply reported `wasActiveDocument = False`.
+
+**The remaining question was ambiguity, not mechanism, and it now has a rule.**
+Two open models can share a TITLE, which is the case `DocumentPin` was built
+around.
+
+### Done in code the same day, and NOT yet run against Revit
+
+`revit_change` now sends `document` (the pinned title) and `documentPath` (the
+pinned path) with every write, so the add-in works on the model the chat was
+pointed at instead of falling back to the active one. `RevitFragment.Run`
+resolves the path FIRST - unique among open models - and the title second.
+
+**A title that matches TWICE is refused**, `ambiguous_document`, rather than
+letting the last document round the loop win. That silent tie-break was already
+there and is the worst answer available on a path about to commit: it cannot be
+told from a correct one, and which model it picks depends on the order Revit
+hands its documents back.
+
+`no_such_document` and `ambiguous_document` were both added to the failure
+table. `no_such_document` PREDATES all of this and was never in it - the same
+gap `wrong_document` had, sitting unnoticed until its sibling was added beside
+it. Both return above the transaction group, so both are REFUSED rather than
+an unknown outcome that tells the user to go and check the model.
+
+`expectProject` stays. It is no longer the mechanism, and it still catches the
+family case (E12) and any two models whose keys genuinely differ.
+
+**E16 to E18 below are what this owes.** Nothing in this section has met Revit:
+the owner was working in Revit 2020 when it was written, and it was not
+deployed.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **E16** | Repeat **E12** exactly - pin to Project1, click into Project2, ask for the same change | The change lands in **Project1**, the model that was named. Not a refusal any more: the write is AIMED, so moving the screen is no longer an error to report. Check Project1 gained it and **Project2 did not** |
+| **E17** | Pin to a project, **close it** in Revit, then ask for a change | `no_such_document`, naming what IS open, and nothing written. Heron must not open a project by itself, and must not fall back to whatever is in front |
+| **E18** | Open **two** models both called `Project1` (one per Revit session, or a detached copy), pin one, ask for a change | `ambiguous_document` - it refuses rather than picking one. **Save one of them and repeat:** the paths now differ, so it must resolve cleanly and write into the right one |
 
 ## Group F — Steps 1-5 are no longer proven on this build
 

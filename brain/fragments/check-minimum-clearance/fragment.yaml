@@ -47,6 +47,14 @@ purpose: >
   and a clearance sweep that also moved things would make the report unreadable
   by changing what it was reporting on.
 
+  **MILLIMETRES IN AND MILLIMETRES OUT.** `defaultClearance` and every number in
+  `rules` are millimetres (D-71); the gap comes back in millimetres too. Both
+  halves were wrong and in opposite directions. `rules` was used **raw against a
+  measurement in feet**, so `Walls=150` demanded 150 FEET and condemned every
+  pair a rule judged while the default-judged pairs stayed right - and the rule
+  column beside them read as the explanation rather than the fault. `gaps` then
+  came back in feet, so the one fragment answered in two units at once.
+
 contract:
   needs:
     - name: elements
@@ -70,7 +78,7 @@ contract:
     - name: tooClose
       role: result
       type: IList<string>
-    - name: gaps
+    - name: gapsMm
       role: result
       type: IDictionary<string, double>
     - name: judgedBy
@@ -93,10 +101,11 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `get_BoundingBox(null)`,
   `InsulationLiningBase.GetInsulationIds` and `Category.Name` are unchanged 2020
-  to 2027. Clearances are in Revit's internal feet, and D-20 keeps the
-  millimetre conversion at the edge - no units API is touched, which is what
-  keeps this clear of the 2021 move. A pair is keyed by the two ids rendered as
-  text rather than by any numeric id, so the 2024 64-bit change cannot reach it.
+  to 2027. Every comparison is done in Revit's internal feet; millimetres cross
+  in and out by 304.8 as plain arithmetic - no units API is touched, which is
+  what keeps this clear of the 2021 move and what D-20 is actually about. A pair
+  is keyed by the two ids rendered as text rather than by any numeric id, so the
+  2024 64-bit change cannot reach it.
 
 # ROUTING - repeated in CHECK_VERTICAL_CLEARANCE, CHECK_EQUIPMENT_CLEARANCE and
 # CHECK_SLEEVE_SIZE.

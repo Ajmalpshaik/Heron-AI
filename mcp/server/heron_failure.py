@@ -143,6 +143,21 @@ _KNOWN = {
     "wrong_document":    (REFUSED, FIX_FIRST,
                           "the model this chat was pointed at is not the one that would "
                           "have been changed - nothing was written"),
+    # THE TWO THE TARGET LOOKUP RAISES, and they belong here for exactly the
+    # reason `wrong_document` does: both return from the same place, above the
+    # transaction group, so both know for certain that nothing was written.
+    #
+    # `no_such_document` PREDATES all of this and was never in the table - the
+    # same gap, sitting unnoticed until its sibling was added beside it. A
+    # write aimed at a model the user has since closed is a clean refusal, and
+    # until now it was reported on the write path as an unknown outcome that
+    # told them to go and check the model.
+    "no_such_document":  (REFUSED, FIX_FIRST,
+                          "the model this was aimed at is not open - nothing was written, "
+                          "and Heron will not open a project by itself"),
+    "ambiguous_document": (REFUSED, FIX_FIRST,
+                          "two open models share that name, so naming one cannot say which "
+                          "was meant - nothing was written"),
 
     # --- it ran ------------------------------------------------------------
     "still_running":     (RUNNING, WAIT,
