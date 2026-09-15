@@ -1,0 +1,91 @@
+# Issue Agent - HERON-GIT-ISS-006
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent PUBLISH. Nothing is posted.
+#
+# NO CONFIRMATION IS DEMANDED, deliberately. docs/28 puts "explicit
+# confirmation, every time" on HERON-GIT-PR-005 and "per-item human review of
+# the actual payload" on HERON-GIT-COM-010, and says neither about this row.
+# Inventing one would be manufacturing a gate and calling it policy.
+
+agent: HERON-GIT-ISS-006
+version: 1.0.0
+
+input:
+  issue:
+    type: map
+    required: true
+    description: >
+      {title, body} and optionally `attachments`. Triage reads the
+      FAILURE CODES in the text and nothing else - D-21 makes Heron's
+      failures a bounded set of codes, so the classification is a table.
+      The sentences around them are prose, which is the host's.
+  secrets:
+    type: object
+    required: false
+    description: The credential store to check the title and body against.
+  contracts:
+    type: map
+    required: false
+    description: >
+      code -> agents. Derived from brain/agents when not given. An empty
+      table is refused rather than improvised around.
+
+output:
+  triaged:
+    type: boolean
+  routed:
+    type: list
+    description: Codes declared by exactly one agent, with that agent.
+  ambiguous:
+    type: list
+    description: >
+      Codes declared by several, with ALL of them and no tie-break - one
+      here would be a guess wearing a routing table's clothes. Across the
+      library 47 of 361 codes are shared, which is the vocabulary being
+      reused on purpose rather than a defect.
+  unknown_codes:
+    type: list
+    description: >
+      Code-shaped tokens nothing declares. Reported rather than dropped:
+      either a typo or a failure somebody removed, and both want a
+      maintainer's eye. A shouted word with no underscore is not a code.
+  codes_seen:
+    type: list
+  of:
+    type: integer
+    description: How many distinct codes the table held.
+  where:
+    type: string
+    description: >
+      On a refusal for a credential, which field carried one. The VALUE
+      never appears in any output of this agent.
+  found:
+    type: list
+  attachments:
+    type: list
+  why:
+    type: string
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That only the codes were read and never the
+      prose; which codes were ambiguous and what that means; which
+      tokens nothing declares; and that nothing was posted and no
+      confirmation was demanded, with the reason.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_FILE
+  - NOT_AN_ISSUE
+  - CARRIES_A_MODEL
+  - CARRIES_A_SECRET
+  - NO_CONTRACTS
+
+retry:
+  attempts: 0
+  on-failures: []
