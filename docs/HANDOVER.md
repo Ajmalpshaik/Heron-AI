@@ -1532,3 +1532,64 @@ check used — CRLF on disk against LF in HEAD — is **permanently true on this
 after anything, so it proved nothing. **Verify what git would actually store**
 (`git hash-object --path <path> <file>` against `git rev-parse HEAD:<path>`), never `cmp` against
 `git show`.
+
+## The test that wrote into the library, and the two failures found on the way out
+
+### The fix
+
+`tests/test_scope_store.py` proved that a malformed fragment is skipped rather than indexed, and it
+proved it by writing `zz-broken-temp/` **straight into `brain/fragments/`** — library source — and
+deleting it afterwards. An interrupted run left it there. An earlier fix had moved the `makedirs`
+inside the `try` with `exist_ok` so the NEXT run could clear it, which made the mess **survivable
+rather than stopped**.
+
+It now builds a temp library and points `heron_fragment.FRAGMENTS_DIR` at it for the duration,
+restored in the `finally`. `rebuild()` calls `load_all()` with no root and `load_all` resolves
+`root or FRAGMENTS_DIR` at **call** time, so one module global redirects it. Same proof, and it
+cannot outlive the run. Commit `7b85557`.
+
+### What the fix exposed, which is worth more than the tidy-up
+
+The good fragment is **built, not copied**, and the reason is a defect the old test could not see.
+
+Copying was tried first. It does not work: a PROVEN fragment's proof is fingerprinted against its own
+bytes and path, so a copy out of `brain/fragments/` fails validation and the temp library indexes
+**nothing**. And the test still said `ok` — because `after == before` never asked whether either
+count was *real*. **A library indexing zero satisfied it: `0 == 0`.** A `before == 1` check now sits
+beside it, and it is what caught this.
+
+Proved both directions: with the malformed fragment the count stays 1; adding a **valid** second
+fragment moves it 1 → 2, so the comparison genuinely observes additions and is not vacuous.
+
+### THE SUITE IS NOT GREEN, AND A17 COULD NEVER HAVE TOLD YOU
+
+**Measured 2026-09-15, 19:29 to 19:43 — 99 suites, 3 failing:**
+
+| suite | why | whose |
+|---|---|---|
+| `test_bridge_roundtrip` | needs a built .NET test host — **expected**, recorded in §Tests above | the machine |
+| `test_builder` | *"one file is planned, and it is not a test"*, then `KeyError: 'brain/heron_duct_sizing_reviewer.py'` | **`45a6746`** |
+| `test_instructions` | *"a duplicate id is refused by name"* and *"both files are named, so neither is the silent loser"* — its own 16 evaluation assertions still pass | **`45a6746`** |
+
+`test_builder` and `test_instructions` are **real assertion failures needing no special machine**, and
+both files plus their `brain/` modules were last touched by `45a6746` (*"The seams first, then the
+departments they made cheap"*, #141). **They are NOT fixed, deliberately** — the owner's instruction
+was to note them, and quietly patching another session's failing test buries the problem rather than
+closing it. Filed as **`A18`** in [NEEDS-CHECKING.md](NEEDS-CHECKING.md).
+
+**How this went unseen is the part to keep.** `A17`'s command runs every suite and checks
+`git status`, and **throws every exit code away** (`python $f.FullName *> $null`, no `$LASTEXITCODE`
+test). It answers *does the suite dirty the tree* and **cannot see a failing test at all** — so the
+earlier "99 of 99 clean" in this file is true and says **nothing whatever** about pass or fail. Those
+are two different questions and one command cannot answer both. `tools/check-gaps.py` does report
+unfinished suites, but its exit code follows the UNFINISHED list, so it returns 1 on a healthy tree
+and a reader learns to ignore it.
+
+### One mistake of mine, recorded because it nearly cost the fix
+
+The A17 script opened with `git checkout -- .`. It was re-run while the test fix was still
+uncommitted, and **discarded it**. Nothing else was lost — every commit was intact — and the work was
+redone. The script now **refuses on a dirty tree** instead of forcing one: starting clean is a
+precondition to check, not a state to impose. Clearing up after it also left a stale `index.lock`
+(0 bytes, one minute old, no git process, this worktree only), removed after checking those four
+things rather than on sight.
