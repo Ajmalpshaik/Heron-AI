@@ -785,15 +785,15 @@ an unknown outcome that tells the user to go and check the model.
 `expectProject` stays. It is no longer the mechanism, and it still catches the
 family case (E12) and any two models whose keys genuinely differ.
 
-**E15 to E17 below are what this owes.** Nothing in this section has met Revit:
+**E16 to E18 below are what this owes.** Nothing in this section has met Revit:
 the owner was working in Revit 2020 when it was written, and it was not
 deployed.
 
 | ID | Do this | Pass looks like |
 |---|---|---|
-| **E15** | Repeat **E11** exactly - pin to Project1, click into Project2, ask for the same change | The change lands in **Project1**, the model that was named. Not a refusal any more: the write is AIMED, so moving the screen is no longer an error to report. Check Project1 gained it and **Project2 did not** |
-| **E16** | Pin to a project, **close it** in Revit, then ask for a change | `no_such_document`, naming what IS open, and nothing written. Heron must not open a project by itself, and must not fall back to whatever is in front |
-| **E17** | Open **two** models both called `Project1` (one per Revit session, or a detached copy), pin one, ask for a change | `ambiguous_document` - it refuses rather than picking one. **Save one of them and repeat:** the paths now differ, so it must resolve cleanly and write into the right one |
+| **E16** | Repeat **E12** exactly - pin to Project1, click into Project2, ask for the same change | The change lands in **Project1**, the model that was named. Not a refusal any more: the write is AIMED, so moving the screen is no longer an error to report. Check Project1 gained it and **Project2 did not** |
+| **E17** | Pin to a project, **close it** in Revit, then ask for a change | `no_such_document`, naming what IS open, and nothing written. Heron must not open a project by itself, and must not fall back to whatever is in front |
+| **E18** | Open **two** models both called `Project1` (one per Revit session, or a detached copy), pin one, ask for a change | `ambiguous_document` - it refuses rather than picking one. **Save one of them and repeat:** the paths now differ, so it must resolve cleanly and write into the right one |
 
 ## Group F — Steps 1-5 are no longer proven on this build
 

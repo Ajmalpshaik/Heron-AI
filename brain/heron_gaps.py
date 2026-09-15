@@ -108,6 +108,10 @@ CORRECT_REFUSALS = {
         "asked to change the model while writing was switched off",
     "no_such_document":
         "the model it was pointed at was not open",
+    "ambiguous_document":
+        "two open models share the name it was pointed at, so naming one could "
+        "not say which was meant - refusing is right, because the alternative "
+        "is picking whichever Revit happened to list last",
     "unknown_op":
         "asked for an operation Heron does not declare",
     # THE BRAIN'S OWN REFUSALS (D-62). Added 2026-09-09 after Codex pointed
