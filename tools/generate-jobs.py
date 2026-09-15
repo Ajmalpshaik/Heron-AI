@@ -196,6 +196,22 @@ RECEIVABLE = frozenset([
     # The only enum taken by name. Its three values have not moved 2020 to 2027;
     # `IFCVersion` stays refused because its members differ per release.
     "ViewDuplicateOption",
+    # A TABLE BY NAME, added 2026-09-15 - D-73. Semicolons between entries and
+    # an equals sign inside each, the same shape the overrides take:
+    # "Walls=150; Structural Framing=50". Two needs in the whole library, and
+    # BOTH FRAGMENTS HAD NEVER RUN A LINE - `check-minimum-clearance.rules` and
+    # `check-model-standards.namePatterns` were refused without the value for
+    # being unsupplied and refused with one for being untypeable, so the two
+    # refusals closed the loop on each other. FRAGMENT-ISSUES row 98.
+    #
+    # THE KEY IS THE MODEL'S OWN WORD and is kept exactly as typed - a category
+    # is "Structural Framing", capitals and space included. Normalising it the
+    # way an override's key is normalised would match nothing and report a
+    # clean sweep.
+    "IDictionary<string,double>", "Dictionary<string,double>",
+    "IDictionary<String,Double>",
+    "IDictionary<string,string>", "Dictionary<string,string>",
+    "IDictionary<String,String>",
     # Three numbers 0-255. There is no name to look up, and "red" would be this
     # file choosing a red for somebody else's drawing.
     "Color", "IList<Color>", "List<Color>",
@@ -263,10 +279,19 @@ NAMED_REFUSALS = [
      "a FACE - a particular solid, on a particular element, seen in a "
      "particular view. It is picked with a mouse and no text names one, so "
      "this is not a rule waiting to be written: it needs Revit's own picking"),
+    # STILL REFUSED, BUT NARROWER AS OF 2026-09-15. `<string, double>` and
+    # `<string, string>` are typeable now - D-73, and see RECEIVABLE - so this
+    # branch is what is LEFT: a dictionary keyed by something that is not a
+    # name, `IDictionary<ElementId, double>` above all, where the key is a
+    # thing in the model rather than a word. Those four needs are all
+    # `source: host` and arrive down the chain, so none of them is waiting on
+    # this row; it stays so a future request-sourced one is refused by name
+    # instead of falling to the catch-all.
     ("IDictionary",
      lambda t: t.startswith("IDictionary") or t.startswith("Dictionary"),
-     "pairs of values, and there is no way to type a pair in yet - one blank "
-     "holds one value. Two lists, or a fragment that takes them separately"),
+     "pairs of values keyed by something that is not a name. A table keyed BY "
+     "NAME is typeable - \"Walls=150; Structural Framing=50\" - but a key that "
+     "is an element or an id has no text that says which one"),
 ]
 
 

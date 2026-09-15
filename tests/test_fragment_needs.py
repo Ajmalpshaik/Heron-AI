@@ -74,6 +74,65 @@ KEYWORDS = {
 
 IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
+# A KEY A CONTRACT USES AND THE EXECUTOR NEVER READS IS A SILENT WRONG ANSWER.
+#
+# The shape checks above ask whether a need's NAME and TYPE survive the trip
+# into generated C#. They cannot see the other half: a need can be perfectly
+# shaped and still be found by the wrong route, because the key that says which
+# route was never read at the far end.
+#
+# `binds` was that, for five fragments and about two weeks. It says "fill me
+# from a provide called `elements`" - brain/heron_fragment.py has honoured it
+# since the key existed, composition and the job generator both read it, and
+# RevitFragment.cs looked every need up under its own name. What that DID is
+# the reason this check exists rather than a note somewhere: `targets` was not
+# found in the chain, fell through to the selection branch as the only unbound
+# list of elements, and bound WHATEVER HAPPENED TO BE SELECTED IN REVIT.
+# Measured 2026-09-15 - `elements from select-by-categories (2); targets from
+# the selection (1)` - a clean-looking run measuring two pipes against one
+# unrelated leftover. Nothing was red. The contract said the right thing, one
+# side read it, and the side that runs the model did not.
+#
+# So this is the general form: every key the library puts on a need has to be
+# ACCOUNTED FOR at the executor - read by it, or named below as knowingly not
+# implemented. A key nobody reads and nobody has written down is the case that
+# passes every gate and answers about the wrong elements.
+UNREAD_KEYS = {
+    "optional": (
+        "declared on 3 needs (copy-view-filters, create-line, create-sheet-list) "
+        "and read by NOTHING - not the executor, not heron_fragment.py. All three "
+        "are `source: request`, so BindNeeds reports them as values the caller "
+        "must supply and the fragment cannot run without one. Found 2026-09-15 "
+        "alongside `binds`, by the same sweep. Listed rather than implemented "
+        "because 'a need that may be absent' is a decision about refusals, and "
+        "this library refuses rather than quietly supplying an empty value on "
+        "purpose - see docs/FRAGMENT-ISSUES.md"),
+}
+
+
+def executor_reads_need_keys(library):
+    """
+    Which keys the library puts on a need, and whether RevitFragment.cs looks
+    at each one. Returns (unread, accounted) or None if the executor is gone.
+
+    A TEXT SEARCH, and weak on purpose in the same way executor_generates_scope
+    is: it is watching for a key nobody wired up at all, which is the failure
+    that actually happened, not for a subtle misuse of one that is wired up.
+    """
+    if not os.path.isfile(EXECUTOR):
+        return None
+    text = io.open(EXECUTOR, encoding="utf-8").read()
+    used = set()
+    for _folder, needs in library:
+        for need in needs:
+            used.update(k for k in need if isinstance(k, str))
+    unread, accounted = [], []
+    for key in sorted(used):
+        if '"%s"' % key in text:
+            continue
+        (accounted if key in UNREAD_KEYS else unread).append(key)
+    return unread, accounted
+
 # Letters, digits, and the punctuation a generic type name needs. Deliberately
 # the same set RevitFragment.IsTypeName accepts - if these two ever disagree,
 # the disagreement is a fragment that passes here and is refused at the machine.
@@ -230,6 +289,20 @@ def run():
                     "if it is not, 196 fragments just became green and unrunnable "
                     "again" % what)
 
+    keys = executor_reads_need_keys(readable)
+    if keys is not None:
+        unread, accounted = keys
+        for key in unread:
+            failures.append(
+                "contracts declare `%s` on a need and RevitFragment.cs never reads "
+                "it. That is not a missing feature - it is a need found by the "
+                "WRONG ROUTE while every gate stays green, which is what `binds` "
+                "did to five fragments. Read it at the executor, or add it to "
+                "UNREAD_KEYS with why it is not implemented" % key)
+        for key in accounted:
+            notes.append("`%s` is declared and not implemented: %s"
+                         % (key, UNREAD_KEYS[key]))
+
     print("Fragment needs - executor against contracts")
     print("  %d fragment(s), %d declared need(s)" % (len(readable), total_needs))
     print("    %d host-sourced, %d from the caller's request" % (host_needs, request_needs))
@@ -250,8 +323,13 @@ def run():
               "is a green library and a failure at the PC.")
         return 1
 
+    for line in notes:
+        print()
+        print("  NOTE  " + line)
+
     print()
-    print("  PASS  every declared need can be written into generated code, and the")
+    print("  PASS  every declared need can be written into generated code, its")
+    print("        contract keys are all accounted for at the executor, and the")
     print("        executor still builds its scope from the contract itself.")
     print()
     print("This says the two sides agree on the SHAPE of a need. It does not say")

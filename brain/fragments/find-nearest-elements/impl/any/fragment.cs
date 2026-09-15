@@ -1,5 +1,5 @@
 // NOT STANDALONE. Assumes `elements` (the sources), `targets` (what to search)
-// and `metric` are in scope, and leaves `nearest`, `distances`, `tied` and
+// and `metric` are in scope, and leaves `nearest`, `distancesMm`, `tied` and
 // `unmeasurable` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
@@ -28,8 +28,23 @@
 // closer than they are. Fine for RANKING, which is what this is for. Not a
 // certified clearance.
 
+// MILLIMETRES OUT, FEET INSIDE. Every comparison below is done in Revit's own
+// feet - that is what a bounding box is in, and converting before comparing
+// would buy nothing and risk the tie tolerance. The ONE number that leaves
+// this fragment is converted, once, where it is stored.
+//
+// A DISTANCE IN THE WRONG UNIT IS A WRONG ANSWER THAT LOOKS RIGHT. `distances`
+// used to be handed out in feet under a bare name, and its own contract cited
+// D-20 for it. D-20 says no units API - plain arithmetic - and says nothing
+// about what a RESULT is measured in; D-71 left that open in as many words.
+// MEASURE_DISTANCE, which answers the same question about two named elements,
+// has always multiplied by 304.8 and says so in its purpose. Two fragments
+// answering "how far apart" in units 304.8x apart is the failure this library
+// is built to refuse.
+const double MillimetresPerFoot = 304.8;
+
 var nearest = new Dictionary<ElementId, ElementId>();
-var distances = new Dictionary<ElementId, double>();
+var distancesMm = new Dictionary<ElementId, double>();
 var tied = new List<ElementId>();
 var unmeasurable = new List<ElementId>();
 
@@ -125,6 +140,6 @@ foreach (var element in elements)
     if (best == ElementId.InvalidElementId) { unmeasurable.Add(element.Id); continue; }
 
     nearest[element.Id] = best;
-    distances[element.Id] = bestDistance;
+    distancesMm[element.Id] = bestDistance * MillimetresPerFoot;
     if (equallyClose > 1) tied.Add(element.Id);
 }
