@@ -863,3 +863,81 @@ The other four have plausible answers that are still nobody's decision on record
 release. Until it is answered, `heron_paths.classify()` returns `UNKNOWN` for all five and `may()`
 reads UNKNOWN as **data**, so nothing removes or overwrites them. That is the safe failure, not a fix:
 it also means a backup does not cover them and a cleanup leaves rubbish behind.
+
+---
+
+### 🟠 F12. "Template" means two opposite things, and one of them is never allowed to leave
+
+**Found by:** building `HERON-WSP-TPL-006`, the Template Agent, 2026-09-15.
+**Status:** open. The agent takes the narrow reading and says so in its own answer.
+
+[docs/12 §97](12-security-and-permissions.md) is unusually firm, and the wording is the owner's own:
+
+> The rule Ajmal actually set draws the line at **the file, not the information**: a `.rvt`, an
+> `.rfa`, a family or project template is **never** uploaded.
+
+[docs/00 §1115](00-master-specification.md) lists, as possible marketplace packages:
+
+> Skills, Fragments, Agent packs, BIM standards, Revit tools, **Project templates**, Company extensions.
+
+and [docs/00d §325](00d-additional-requirements.md) lists **company templates** the same way. A
+marketplace package is, by definition, a file that leaves.
+
+**So the specification says a project template is shippable and that a project template is never
+uploaded.** Both lines are correct if the word carries two senses, and nothing written says it does:
+
+| the word | what it is | how big | may it leave? |
+|---|---|---|---|
+| a Heron workspace/project template | a list of folder names a new job starts from | hundreds of bytes | the marketplace lines say yes |
+| a Revit project or family template | `.rte`, `.rft` — the office's own starting file | hundreds of megabytes | docs/12 §97 says never |
+
+In a Revit practice the second is what the word means. Anyone reading "project templates" on a
+marketplace page reads it as the `.rte`.
+
+**What the agent does until this is answered.** `HERON-WSP-TPL-006` takes the narrow reading, and
+enforces it structurally rather than by remembering it: **a template names, it never carries.** A
+template entry is a folder name and a reason — never a file body, never a path to one. Two separate
+refusals, because they are two different mistakes:
+
+| | |
+|---|---|
+| `A_REVIT_FILE_IS_NAMED` | any of `.rvt` `.rfa` `.rte` `.rft`, **by name alone**, with nothing attached. A template that names the office `.rte` is one read away from carrying it |
+| `TEMPLATE_CARRIES_A_FILE` | an entry with `bytes`, `body`, `content`, `data`, `source`, `from`, `file`, `path` or `url` |
+
+and the module itself uses no `open(`, no `shutil`, no `.read()` and no `urlopen` — so there is
+nothing in a template that *could* be uploaded. The suite asserts all of that against the code.
+
+```bash
+python tests/test_templates.py           # 3. A template cannot carry
+```
+
+**Not fixed here.** Deciding it is one line in docs/00 — either *"project templates are name lists,
+not `.rte` files"* or *"the marketplace may carry an `.rte` under these conditions"*. The second is a
+change to the rule the owner set, so it is not one an agent may assume.
+
+---
+
+### 🟡 F13. A project folder and a workspace folder with the same name get different classes
+
+**Found by:** the same build. **Status:** open, and narrower than F11.
+
+`HERON-WSP-PTH-007`'s `classify()` tokenises a path and answers on the first **data** word it finds
+anywhere in it. That is right for what it was built for and it has this consequence:
+
+```
+classify("Cache")                    ->  derived
+classify("Projects/Tower A/Cache")   ->  data
+```
+
+The same leaf name, two classes, decided by what sits above it. A cleanup that clears **derived**
+removes one and spares the other; a tool holding only the leaf name gets the opposite answer from one
+holding the whole path — and `HERON-OPS-UPD-010` asks with a component **name**, not a path.
+
+**What the agent does.** `HERON-WSP-TPL-006` refuses `RESERVED_WORKSPACE_NAME` for any of the
+seventeen words the class table is made of, so a template cannot create a project folder whose fate
+depends on who is asking. The reserved list **is** `heron_paths.FOLDERS`, read from it, not a second
+copy.
+
+**Not fixed here.** The fix is either a path-aware `classify()` that only matches at the top level,
+or a documented statement that the leaf-name answer is the intended one. Both change what four
+agents do to a folder, so it is the owner's call — the same reason F11 is still open.

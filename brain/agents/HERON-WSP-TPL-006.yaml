@@ -1,0 +1,91 @@
+# Template Agent - HERON-WSP-TPL-006
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY. It creates nothing and copies nothing: the list comes back
+# and a caller makes the folders.
+
+agent: HERON-WSP-TPL-006
+version: 1.0.0
+
+input:
+  template:
+    type: map
+    required: true
+    description: >
+      {name, folders}. Each folder is a NAME - a string, or a map with a
+      `folder` key and a reason. It is never a file body and never a path
+      to one. A template NAMES, it never CARRIES, and that is what keeps
+      docs/12 s97 true by construction rather than by remembering it.
+  under:
+    type: string
+    required: false
+    description: >
+      Where the template lands. Must not classify PRODUCT or DERIVED - a
+      template makes the user's work, and those two are replaced whole by
+      an update or cleared by a cleanup.
+  existing:
+    type: list
+    required: false
+    description: >
+      Folder names already present, HANDED IN. An agent that looks and
+      then acts on what it saw is the shape of the mistake - the same
+      reasoning HERON-WSP-CRE-002 applies to the install tree.
+  is_file:
+    type: callable
+    required: false
+    description: >
+      Asked whether a FILE already holds a folder's name. A list is
+      accepted in its place.
+
+output:
+  created:
+    type: boolean
+    description: Always false. A caller makes the folders.
+  template:
+    type: string
+    description: The template's name, so the run can be named in a log.
+  under:
+    type: string
+    description: Where it would land, or null.
+  create:
+    type: list
+    description: Each folder to make, with its class under `under`.
+  exists:
+    type: list
+    description: >
+      Folders already there, left alone. A template applied twice must
+      not empty what the first one filled.
+  refused_names:
+    type: list
+    description: Each refused entry, with which refusal and why.
+  of:
+    type: integer
+    description: How many entries the template had, so a caller can check the split.
+  why:
+    type: string
+    description: The counts, and that nothing was created or copied.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was created or copied, that every
+      entry lands in exactly one list, that the no-carrying rule is the
+      whole guarantee rather than a skippable check, and that docs/00
+      s1115 and docs/12 s97 use the word "template" in ways nothing
+      written reconciles - PROPOSALS F12.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NOT_A_TEMPLATE
+  - WOULD_LAND_OUTSIDE_DATA
+  - A_REVIT_FILE_IS_NAMED
+  - TEMPLATE_CARRIES_A_FILE
+  - RESERVED_WORKSPACE_NAME
+  - A_FILE_HOLDS_THAT_NAME
+
+retry:
+  attempts: 0
+  on-failures: []
