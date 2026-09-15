@@ -84,8 +84,15 @@ when the thing you hit is on no list at all.
 > **UPDATED 2026-09-15.** The rows below were rewritten that day against derived numbers. Several had
 > been stale for a week — the agent row said 71 when it was 211, the test row said 41 suites when it
 > was 188. **Derive every number before trusting it**; each row names the command.
+>
+> **UPDATED 2026-09-16.** A working session, not a proving one: a copper refrigerant pipe type built
+> in `PIPE` for a real job, **13 new fragments because the job needed them**, and 14 signed. Read
+> [`work-notes/handover/mep-session-2026-09-16.md`](work-notes/handover/mep-session-2026-09-16.md)
+> before touching the MEP or family fragments — it names two things left undone in the model, four
+> traps that each cost an hour, and four defects now filed as
+> [`FRAGMENT-ISSUES.md`](FRAGMENT-ISSUES.md) rows 95–98, two of them still OPEN.
 
-**360 fragments. 298 `PROVEN`, 62 `DRAFT`, as of 2026-09-15** — and on 2026-09-14 **all 360 compiled on
+**373 fragments. 311 `PROVEN`, 62 `DRAFT`, as of 2026-09-16** — and on 2026-09-14 **all 360 compiled on
 all eight releases they claim, for the first time.** These two numbers moved twice while this block was
 being written: derive them with
 `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`. D-28's executor is built, fragments run against a real
@@ -1488,6 +1495,8 @@ still the line that matters most: move the ducts 200 mm, then measure one.*
 | **New checkers** | `tools/check-narrow-errors.py`, `tools/check-dependencies.py` |
 | **New suites** | `tests/test_review_findings.py` — one check per review finding — and `tests/test_dependencies.py` |
 | **CI exists now** | the `Gates` workflow. Five jobs, including the C# compile 2020–2027 |
+| **13 MEP and family fragments** | 2026-09-16. Routing preferences, pipe segments, pipe schedules, family lookup tables, material colour, and opening a family in Revit's own window. **Built to do a job, proved in the model the job was done in** |
+| **`--session <pid>`** | `fragment`, `prove` and `validate` no longer pick a Revit by lowest PID. With two live and none named they **refuse**. A proof had come back `positive ok` against the wrong model ([row 95](FRAGMENT-ISSUES.md)) |
 
 ## Mistakes worth not repeating
 

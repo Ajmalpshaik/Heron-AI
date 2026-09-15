@@ -1,0 +1,131 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 14
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-062
+semantic-identity: "put a loaded family in front in Revit, so it can be worked on"
+kind: action
+domain: revit.families
+capability: OPEN_FAMILY_FOR_EDITING
+version: 1
+source: OFFICIAL
+risk: EXECUTE
+
+purpose: >
+  Opens a loaded family in Revit's OWN WINDOW and makes it the document in
+  front, so anything that writes to the active family can then reach it.
+
+  **IT EXISTS BECAUSE EditFamily OPENS A FAMILY NOBODY CAN SEE.** A document
+  from EditFamily is real and editable, and it is invisible: it never becomes
+  the window in front, and it cannot be loaded back into the project without
+  an answer to Revit's overwrite question that a fragment is not allowed to
+  give. Edit such a document and close it and the work goes with it - measured
+  on 2026-09-16, six families imported and every import discarded.
+
+  **SO IT GOES THROUGH A FILE, DELIBERATELY.** The family is saved to a .rfa
+  and that file is opened in the UI. A document opened this way is a window a
+  person can see, work in, and LOAD INTO PROJECT from - which is the step the
+  API route could not reach. The file is the bridge, not a side effect.
+
+  **IT CHANGES NOTHING IN THE PROJECT.** No family is loaded, no element is
+  touched. It writes one .rfa and opens a window. What happens in that window
+  afterwards is somebody else's fragment, and loading it back is a person's
+  click.
+
+  **THE FAMILY IN FRONT AFTERWARDS IS NOT THE PROJECT'S COPY.** It is the file
+  just written, which starts identical to it. Until it is loaded back, the
+  project still holds the original - so a change made in that window has not
+  reached the model, and saying otherwise would be the same lie the API route
+  told.
+
+  **IT CANNOT RUN INSIDE A TRANSACTION.** Both EditFamily and
+  OpenAndActivateDocument refuse while the document is modifiable - "The
+  document is currently modifiable! Close the transaction before calling
+  EditFamily." That is why this is EXECUTE rather than MODIFY: it must be sent
+  without the executor opening one.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+    - name: familyName
+      type: string
+      source: request
+    # Folder to write the .rfa into before opening it. The file is the bridge
+    # into the UI, so it has to live somewhere a person can find again.
+    - name: saveFolder
+      type: string
+      source: request
+  provides:
+    - name: opened
+      role: result
+      type: bool
+    - name: savedTo
+      # The .rfa that was written and opened. A path, not a promise - set only
+      # after the save returned.
+      role: result
+      type: string
+    - name: activeAfter
+      # The document in front once this finished. Reported because the whole
+      # point is which window is in front, and assuming it is the right one is
+      # how the next fragment writes to a project.
+      role: result
+      type: string
+    - name: problem
+      # Revit's own words when anything refused, empty when nothing did.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-09-16'
+  by: Ajmal PS
+  model: PIPE (3,332 elements), Revit 2020, session 8084
+  positive_case: 'run as it would normally be run. returned activeAfter TRG_Cap_Copper, findings
+    3 item(s) [opened in Revit; in front now: TRG_Cap_Copper, ''TRG_Cap_Copper'' is now the
+    document in front, opened from C..., THE PROJECT HAS NOT CHANGED. This is a copy on disk
+    that sta...], folder C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/da8dd1fb-1d3e-4581-9a66-290b5cf512a8/scratchpad/rfa,
+    opened true, problem , savedTo C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/da8dd1fb-1d3e-4581-9a66-290b5cf512a8/scratchpad/rfa\TRG_Cap_Copper.rfa,
+    wanted TRG_Cap_Copper. inputs came familyName as given; saveFolder as given. on PIPE'
+  negative_case: 'run with familyName=ZZZNOTAFAMILY, saveFolder=C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/da8dd1fb-1d3e-4581-9a66-290b5cf512a8/scratchpad/rfa
+    instead - chosen because it should not contain what this fragment reports. returned activeAfter
+    , findings 2 item(s) [NOT opened; in front now: <unchanged>, No loaded family is called
+    ''ZZZNOTAFAMILY''.], folder C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/da8dd1fb-1d3e-4581-9a66-290b5cf512a8/scratchpad/rfa,
+    opened false, problem , savedTo , wanted ZZZNOTAFAMILY. inputs came familyName as given;
+    saveFolder as given. on TRG_Cap_Copper'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 91705aa131c3a37d
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Document.EditFamily`,
+  `Document.SaveAs(string, SaveAsOptions)`, `Document.Close`,
+  `UIDocument.Application` and `UIApplication.OpenAndActivateDocument(string)`
+  are present 2020 through 2027, confirmed by reflection on the 2020
+  assemblies on 2026-09-16. No unit is read or converted, so the 2021 units
+  move cannot reach it.
+
+# ROUTING - repeated in REPORT_FAMILY_TABLES_IN_PROJECT.
+#
+#   "open that family so we can fix it" -> here
+#   "what is in its lookup table"       -> REPORT_FAMILY_SIZE_TABLE, once it
+#                                          is in front
+#   "write the table back"              -> WRITE_FAMILY_SIZE_TABLE, same
+#   "read every family's table"         -> REPORT_FAMILY_TABLES_IN_PROJECT,
+#                                          which needs nothing opened
+
+utterances:
+  - open that family for editing
+  - put the family in front
+  - edit this family
+  - open the fitting family so I can change it

@@ -1,0 +1,42 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+#
+# The failure to fear is reporting a family "opened" while the project is
+# still the window in front - the next fragment would then write its table
+# into a project and report success.
+
+positive:
+  - given: a loaded, editable family and a writable folder
+    expect: >
+      opened true, savedTo naming a .rfa that EXISTS on disk, and activeAfter
+      equal to the family's name. LOOK AT REVIT - the family window being in
+      front is the whole point, and no count can stand in for it
+
+  - given: the same family opened a second time
+    expect: >
+      the .rfa overwritten rather than refused - SaveAsOptions sets
+      OverwriteExistingFile, so running twice is not a failure
+
+negative:
+  - given: familyName naming a family that is not loaded
+    expect: >
+      opened false, activeAfter unchanged, and NOTHING written to disk. The
+      value-driven negative
+
+  - given: an in-place family, which cannot be edited
+    expect: opened false with the reason said in words, never a silent skip
+
+  - given: a folder that cannot be written to
+    expect: >
+      opened false and Revit's own error. Never `opened true` with no file -
+      the window in front would then be whatever it was before, and the next
+      fragment would write into it
+
+  - given: it is run while a transaction is open
+    expect: >
+      refused with "The document is currently modifiable!". This is EXECUTE
+      for exactly that reason and must never be sent as a MODIFY
+
+second_route:
+  - look at Revit - is the family the window in front?
+  - open the saved .rfa in Explorer and confirm it exists and is recent
+  - run REPORT_OPEN_DOCUMENTS and read activeTitle back

@@ -1,0 +1,35 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a project with several pipe schedules, nameContains empty
+    expect: >
+      scheduleCount matching Manage > MEP Settings > Pipe Settings, and
+      scheduleList naming every one. Count the dialog - a list abbreviated to
+      three reads as "there are three"
+
+  - given: a schedule created for a segment that has since been deleted
+    expect: >
+      its name in `unused`, marked [UNUSED] in the list. This is the case the
+      fragment exists for - a schedule outlives the segment that forced it
+
+  - given: a schedule that two segments use
+    expect: >
+      both segment names printed against it. A COUNT is not enough: the
+      decision is "can I delete this", and only the names answer it
+
+negative:
+  - given: nameContains "ZZZNOTASCHEDULE"
+    expect: >
+      scheduleCount 0, scheduleList empty, `scanned` NON-ZERO and a finding
+      saying so. The VALUE-driven negative - an empty answer that still proves
+      it looked
+
+  - given: a needle that is the exact name of one schedule, where a longer one starts the same way
+    expect: >
+      only the exact one. "TRG Refrigerant" must not also return
+      "TRG Refrigerant EN 12735"
+
+second_route:
+  - open Manage > MEP Settings > Mechanical Settings > Pipe Settings and count the Schedule/Type entries
+  - open a segment in that dialog and read which schedule it belongs to
+  - delete a schedule reported UNUSED and confirm delete-elements reports alsoWent 0

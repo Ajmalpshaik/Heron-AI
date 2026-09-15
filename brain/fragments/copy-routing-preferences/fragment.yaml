@@ -1,0 +1,176 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 14
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-050
+semantic-identity: "give this pipe type the same fittings another one already uses"
+kind: action
+domain: revit.mep
+capability: COPY_ROUTING_PREFERENCES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Copies the fitting rules of one pipe or duct type onto another - the elbow,
+  tee, cross, transition, union, joint and cap it inserts, with the size
+  window each rule covers. The "make this type behave like that one" job,
+  which SET_ROUTING_PREFERENCE cannot do because it replaces ONE rule and a
+  group often holds several.
+
+  **A GROUP HOLDS MORE THAN ONE RULE, AND THAT IS THE REASON THIS EXISTS.** A
+  real copper type carries a full tee AND a reduced tee under Junctions, each
+  covering different sizes. Replacing rule 0 leaves the second rule untouched
+  and the type half-converted - which draws correctly until somebody reduces a
+  branch.
+
+  **SEGMENTS IS EXCLUDED UNLESS IT IS NAMED.** The segment carries the
+  MATERIAL and the size table, so copying it silently replaces what a type is
+  made of - and on a type somebody has just pointed at their own segment, that
+  undoes the work without a word. Fittings are what "same fittings" means;
+  material is a separate decision, and SET_ROUTING_PREFERENCE is where it is
+  made.
+
+  **EVERYTHING IS READ AND CHECKED BEFORE ANYTHING IS CLEARED.** A group is
+  rebuilt by removing every rule and adding the new ones, so a failure halfway
+  leaves it EMPTY - and an empty group inserts no fitting at all, with no
+  error and no warning. So every source rule is resolved first, and a group
+  whose parts cannot all be resolved is left exactly as it was.
+
+  **A RULE POINTING AT AN UNLOADED FAMILY IS SKIPPED AND NAMED.** The source
+  may carry a rule whose family is gone - a real case, seen on
+  TCM_PIP_T031_Copper_Tee_Gas's MechanicalJoints. Copying that id would write
+  a rule the target cannot use either, so it is reported rather than carried.
+
+  **THE SIZE WINDOW TRAVELS WITH THE RULE.** A rebuilt rule with no criterion
+  covers every size, and a size outside every rule's range gets NO fitting at
+  all. Each criterion is read off the source rule and put on the new one, and
+  the count is reported.
+
+  **READ BACK, NEVER TRUST THE CALL.** AddRule returns nothing and throws
+  nothing when a part is wrong for a group, so each group's rules are counted
+  again afterwards and compared with what was asked for.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so
+  copying every group is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The types to change. Editing a type changes every element of it.
+    - name: elements
+      type: IList<Element>
+    - name: sourceTypeName
+      type: string
+      source: request
+    # Which groups to copy, comma separated - "Elbows, Junctions". Empty means
+    # every FITTING group and never Segments. Naming Segments explicitly is
+    # the only way it is copied.
+    - name: groups
+      type: string
+      source: request
+  provides:
+    - name: rulesCopied
+      role: result
+      type: int
+    - name: groupsCopied
+      role: result
+      type: int
+    - name: typesTouched
+      # Types whose preferences were examined. Counted apart from the rules,
+      # because editing ONE type changes every element of it.
+      role: result
+      type: int
+    - name: summary
+      # What each group ended up with, on ONE line. A list is abbreviated to
+      # three entries before a reader sees it, and eight groups then read as
+      # three.
+      role: result
+      type: string
+    - name: skipped
+      # Source rules NOT copied, named with why - an unloaded family, a part
+      # the target cannot resolve. The evidence it looked, never a rule it
+      # wrote (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notRoutable
+      # Things handed in that are not a pipe or duct type. The evidence it
+      # looked (D-52).
+      role: accounting
+      type: IList<string>
+    - name: unverified
+      # Groups whose rule count did not read back as asked for. Never counted
+      # as copied.
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-09-16'
+  by: Ajmal PS
+  model: PIPE (3,332 elements), Revit 2020, session 8084
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-types, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned asked , everyGroup
+    8 entry(ies), findings 2 item(s) [8 rule(s) copied across 6 group(s) onto 1 type(s); 0
+    source ..., Editing a type changes EVERY element of that type. One Ctrl+...], groupsCopied
+    6, notRoutable 0 item(s), proceed true, rulesCopied 8, seenTypes HashSet`1, skipped 0
+    item(s), sourceManager RoutingPreferenceManager, sourceType PipeType, summary TRG_Pipe_Copper_Tee_Gas:
+    Elbows=1 rule(s), Junctions=2 rule(s), Crosses=2 rule(s), Transitions=1 rule(s), Unions=1
+    rule(s), MechanicalJoints=source has none, left alone, Caps=1 rule(s), summaryRows 1 item(s)
+    [TRG_Pipe_Copper_Tee_Gas: Elbows=1 rule(s), Junctions=2 rule(...], targets 1 item(s) [TRG_Pipe_Copper_Tee_Gas],
+    typesTouched 1, unverified 0 item(s), wantedGroups 7 item(s) [Elbows, Junctions, Crosses,
+    ...], wantedNames 7 item(s) [Elbows, Junctions, Crosses, ...]. inputs came elements from
+    set-selection (1); sourceTypeName as given; groups as given. on PIPE'
+  negative_case: run with categories=Pipes, familyNameContains=, typeNameContains=TRG_Pipe_Copper_Tee_Gas,
+    sourceTypeName=ZZZNOTATYPE, groups= instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running select-types, set-selection
+    with this phase's own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned asked , everyGroup 8 entry(ies), findings 2 item(s)
+    [0 rule(s) copied across 0 group(s) onto 0 type(s); 0 source ..., No pipe or duct type
+    is called 'ZZZNOTATYPE' to copy from.], groupsCopied 0, notRoutable 0 item(s), proceed
+    false, rulesCopied 0, seenTypes HashSet`1, skipped 0 item(s), sourceManager (null), sourceType
+    (null), summary , summaryRows 0 item(s), targets 0 item(s), typesTouched 0, unverified
+    0 item(s), wantedGroups 7 item(s) [Elbows, Junctions, Crosses, ...], wantedNames 7 item(s)
+    [Elbows, Junctions, Crosses, ...]. inputs came elements from set-selection (1); sourceTypeName
+    as given; groups as given. on PIPE
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 2564d536827700e4
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `RoutingPreferenceManager.GetRule`,
+  `GetNumberOfRules`, `RemoveRule`, `AddRule`, the
+  `RoutingPreferenceRule(ElementId, string)` constructor, `AddCriterion` and
+  `PrimarySizeCriterion(double, double)` were confirmed present on the 2020
+  assembly and in the 2027 metadata on 2026-09-15, and
+  `tools/api-surface/changes.json` records no change to the routing API across
+  the eight releases.
+
+  Sizes never leave Revit's internal feet - a criterion is read off one rule
+  and handed to another - so no units call is made and the 2021 units move is
+  never touched.
+
+# ROUTING - repeated in SET_ROUTING_PREFERENCE.
+#
+#   "give it the same fittings as that type" -> here
+#   "use the copper tee family"              -> here, from a type that has it
+#   "make this type copper"                  -> SET_ROUTING_PREFERENCE, which
+#                                               changes the SEGMENT
+#   "what fitting will this insert"          -> REPORT_ROUTING_PREFERENCES
+
+utterances:
+  - give this type the same fittings as that one
+  - copy the routing preferences from that type
+  - set the same families for the tees
+  - use the same elbows and tees as this type
+  - match the fittings of another pipe type

@@ -1,0 +1,55 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+#
+# The failure to fear is a group left EMPTY. It looks tidy in the dialog and
+# inserts no fitting at all, with no error - which shows up weeks later as a
+# run that will not close.
+
+positive:
+  - given: >
+      a target whose Junctions holds ONE generic tee, a source whose Junctions
+      holds a full tee AND a reduced tee, groups empty
+    expect: >
+      Junctions on the target ends with TWO rules, both named after the
+      source's families. ONE rule would mean the copy replaced instead of
+      rebuilding, which is the whole reason this exists
+
+  - given: a source rule covering 15 to 50 mm
+    expect: >
+      the copied rule still covering 15 to 50 mm. A rebuilt rule with no
+      criterion covers EVERY size, and nothing in Revit objects
+
+  - given: groups empty, on a target that has just been pointed at its own segment
+    expect: >
+      Segments UNTOUCHED - still the target's own segment, not the source's.
+      Copying it would silently change what the type is made of
+
+negative:
+  - given: groups "Segments" named explicitly
+    expect: >
+      Segments IS copied. The exclusion is a default, not a prohibition, and
+      the flag has to be shown to do something
+
+  - given: sourceTypeName naming a type that does not exist
+    expect: >
+      rulesCopied 0 and NOTHING cleared on the target. The VALUE-driven
+      negative. A target left with emptied groups would be far worse than one
+      left unchanged
+
+  - given: a source rule whose family is not loaded
+    expect: >
+      that rule in `skipped`, named, and the OTHER rules of the group still
+      copied. Carrying the id would write a rule the target cannot use either
+
+  - given: a source group holding no rules at all
+    expect: >
+      the target's group LEFT ALONE, not emptied. "The source has none" is
+      not an instruction to delete what the target has
+
+  - given: a wall, or anything that is not a pipe or duct type
+    expect: its name in `notRoutable`, rulesCopied 0
+
+second_route:
+  - open Edit Type > Routing Preferences on both types in Revit and compare them row by row
+  - draw a tee in a reduced size and check the reduced family is the one that appears
+  - run REPORT_ROUTING_PREFERENCES on both and compare the `summary` strings
+  - one Ctrl+Z puts the whole copy back in a single step (Golden Rule 16)

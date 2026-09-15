@@ -1,0 +1,54 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+#
+# The failure to fear is an import that lands in a table nobody asked for.
+# Revit names an imported table after the CSV FILE, so a file named anything
+# other than the table creates a SECOND table and leaves the first untouched -
+# and the answer reads "imported true" either way. Measured on 2026-09-16:
+# TRG_Union_Copper__Unione.csv reported 9 rows before and 9 after while the
+# table it was meant to correct never changed.
+
+positive:
+  - given: a family open for editing, and a CSV named exactly as its table
+    expect: >
+      imported true, rowsAfter equal to the row count of the CSV. Then open
+      Family Types > Manage Lookup Tables and count - the dialog is the check,
+      because the import reports the table it wrote, not the table meant
+
+  - given: a CSV holding the existing rows plus new sizes
+    expect: >
+      rowsAfter larger than rowsBefore. A CSV that carries only the NEW rows
+      leaves a table of only those rows - it replaces, it does not merge
+
+  - given: a family that has never had a lookup table
+    expect: >
+      tableCreated true and imported true. Gaining a table is a bigger change
+      than gaining a row, so it is never reported as an ordinary import
+
+negative:
+  - given: csvPath naming a file that does not exist
+    expect: >
+      imported false, rowsAfter 0, and problem carrying FileNotFound with the
+      path. The value-driven negative
+
+  - given: a PROJECT document in front instead of a family
+    expect: >
+      notAFamily true and a finding saying so - never "imported false" alone.
+      "The import failed" and "you are looking at the wrong document" are
+      different answers and only one is a fault in the CSV
+
+  - given: a CSV whose header Revit cannot parse
+    expect: >
+      imported false, and Revit's own error with the row, column and header
+      text that failed. A header is `Name##type##unit`; an import that quietly
+      does nothing looks exactly like one that worked
+
+  - given: a CSV whose FILENAME differs from tableName
+    expect: >
+      the mismatch reported. Revit takes the table's name from the file, so
+      this writes a NEW table and leaves the intended one untouched - the
+      rowsBefore and rowsAfter both describe a table nobody asked for
+
+second_route:
+  - Family Types > Manage Lookup Tables, and count the rows in the dialog
+  - Export the table back out and diff the CSV against the one imported
+  - load the family and draw a fitting at a newly added size in the project

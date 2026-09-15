@@ -1,0 +1,144 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 14
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-056
+semantic-identity: "what sizes this family's lookup table actually holds"
+kind: action
+domain: revit.families
+capability: REPORT_FAMILY_SIZE_TABLE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads the LOOKUP TABLE inside an open family - every row, every column - and
+  says which sizes it covers. The answer to "why does this fitting not appear
+  at my size".
+
+  **A SIZE MISSING FROM THE LOOKUP TABLE IS SILENT.** A parametric fitting
+  looks its dimensions up by the pipe size it is asked for. Ask for a size the
+  table has no row for and the family cannot resolve - so Revit inserts
+  nothing, or inserts it with the wrong geometry, and says nothing either way.
+  A new segment with new sizes is exactly how a table falls out of date, and
+  the table is where the search has to start.
+
+  **EVERY ROW COMES BACK AS ONE STRING.** A list is abbreviated to its first
+  three entries before a reader sees it, and a table of twenty rows then reads
+  as three. The whole table is the answer here - which sizes are present is a
+  question no summary can answer - so it crosses as text.
+
+  **IT NEEDS THE FAMILY OPEN FOR EDITING.** A size table belongs to the family
+  document, so this reads the one in front. Run it with a project in front and
+  it says so rather than reporting an empty table, because "no rows" and "you
+  are looking at the wrong document" are different answers and only one of
+  them is a fault in the family.
+
+  **VALUES COME BACK AS REVIT FORMATS THEM.** `AsValueString` is what the
+  family itself reads, units and all. Re-deriving a number here would invent a
+  second opinion about a value the family has already settled.
+
+  Changes nothing and opens no transaction.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Which table, when a family holds more than one. Empty reads the first.
+    - name: tableName
+      type: string
+      source: request
+    # A file path to write the table to as CSV. Empty writes nothing. It
+    # changes NOTHING in the model - and the exported file is the only place
+    # Revit states the header format an import must use.
+    - name: exportTo
+      type: string
+      source: request
+  provides:
+    - name: tableNames
+      # Every table in the family, on one line - a family may hold several and
+      # reading the wrong one answers a different question.
+      role: result
+      type: string
+    - name: columnHeaders
+      role: result
+      type: string
+    - name: rows
+      # The whole table as text, one row per entry, joined. See the purpose.
+      role: result
+      type: string
+    - name: rowCount
+      role: result
+      type: int
+    - name: columnCount
+      role: result
+      type: int
+    - name: exportedTo
+      # Where the CSV was written, empty when none was asked for. A path, not
+      # a promise - it is set only after the export returned.
+      role: accounting
+      type: string
+    - name: notAFamily
+      # That the document in front is a project, not a family being edited.
+      # The evidence it looked in the wrong place, never an empty table
+      # (D-52).
+      role: accounting
+      type: bool
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-09-16'
+  by: Ajmal PS
+  model: PIPE (3,332 elements), Revit 2020, session 8084
+  positive_case: 'run as it would normally be run. returned columnCount 4, columnHeaders col0
+    | ND | FOD | Hgt, exportedTo , findings 3 item(s) [family ''TRG_Cap_Copper''; 18 row(s)
+    read, Table ''Calotta rame'': 18 row(s), 4 column(s), Columns: col0 | ND | FOD | Hgt],
+    notAFamily false, rowCount 18, rows 6.35 | 6.350000 | 6.350000 | 8.521786  //  8 | 8.000000
+    | 8.000000 | 9.487919  //  10 | 10.000000 | 10.000000 | 10.658988  //  12.7 | 12.700000
+    | 12.700000 | 12.239932  //  0.5 | 15.000000 | 22.000000 | 17.500000  //  15.88 | 15.880000
+    | 15.880000 | 14.101933  //  18 | 18.000000 | 18.000000 | 15.343267  //  0.75 | 20.000000
+    | 28.000000 | 21.000000  //  22 | 22.000000 | 22.000000 | 17.500000  //  1 | 25.000000
+    | 35.000000 | 25.500000  //  28 | 28.000000 | 28.000000 | 21.000000  //  1.25 | 32.000000
+    | 42.000000 | 30.000000  //  35 | 35.000000 | 35.000000 | 25.500000  //  42 | 42.000000
+    | 42.000000 | 30.000000  //  2 | 50.000000 | 54.000000 | 36.000000  //  2.5 | 65.000000
+    | 76.100000 | 40.000000  //  3 | 80.000000 | 88.900000 | 45.000000  //  4 | 100.000000
+    | 108.000000 | 55.000000, tableNames Calotta rame. inputs came tableName as given; exportTo
+    as given. on TRG_Cap_Copper'
+  negative_case: run against 'PIPE' with tableName=Calotta rame, exportTo= instead - chosen
+    because it should not contain what this fragment reports. returned columnCount 0, columnHeaders
+    , exportedTo , findings 2 item(s) [NOT a family document; 0 row(s) read, The document
+    in front is a project, not a family being edite...], notAFamily true, rowCount 0, rows
+    , tableNames . inputs came tableName as given; exportTo as given. on PIPE
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 044d34f6ebcc170b
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release.
+  `FamilySizeTableManager.GetFamilySizeTableManager`, `GetAllSizeTableNames`,
+  `GetSizeTable`, and `FamilySizeTable.NumberOfRows`, `NumberOfColumns`,
+  `GetColumnHeader` and `AsValueString` were confirmed present on the 2020
+  assembly on 2026-09-15. No number is converted here at all - values cross as
+  Revit's own strings - so the 2021 units move cannot reach it.
+
+# ROUTING
+#
+#   "why does the fitting not appear at this size" -> here, first
+#   "what sizes does this family know"             -> here
+#   "what fitting will this type insert"           -> REPORT_ROUTING_PREFERENCES
+#   "what sizes does the segment have"             -> REPORT_PIPE_SEGMENTS
+
+utterances:
+  - what is in this family's lookup table
+  - which sizes does this family know
+  - why does this fitting not appear at my size
+  - read the size table
+  - show me the lookup table rows

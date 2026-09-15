@@ -1,0 +1,181 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 14
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-046
+semantic-identity: "point this pipe or duct type's routing rule at a different segment or fitting"
+kind: action
+domain: revit.mep
+capability: SET_ROUTING_PREFERENCE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Points one routing preference rule at a different part - the segment a pipe
+  type is made of, or the elbow, tee, cross, transition, union, joint or cap it
+  inserts. The write twin of REPORT_ROUTING_PREFERENCES, which could say what a
+  type would place but never change it.
+
+  **A PIPE TYPE'S MATERIAL IS NOT A PARAMETER ON THE TYPE**, and that is the
+  job this exists for. `Material` is absent from a PipeType - measured on
+  Project1, 2026-09-15 - because the material comes from the SEGMENT the
+  Segments rule points at. "Make this type copper" is therefore this fragment
+  with partName=the copper segment, and is reachable no other way.
+
+  **THERE IS NO SetRule ON ANY RELEASE, AND MEPPartId IS READ-ONLY.** Changing
+  which part a rule points at is RemoveRule then AddRule at the same index, so
+  the rule is REBUILT rather than edited - and whatever is not copied across is
+  silently gone.
+
+  **THE SIZE WINDOW IS WHAT GETS LOST, AND LOSING IT IS WORSE THAN IT SOUNDS.**
+  A rule carries its criteria separately from its part, so a rebuilt rule with
+  no criterion covers every size. Where the old rule covered 15 to 50 mm that
+  is not a smaller mistake than naming the wrong segment: a size outside every
+  rule's range gets NO fitting at all, with no error and no warning - which is
+  the exact gap REPORT_ROUTING_PREFERENCES was written to find. Every criterion
+  is read off the old rule before it is removed and put back on the new one,
+  and the count carried across is reported.
+
+  **READ BACK, NEVER TRUST THE CALL.** AddRule returns nothing and throws
+  nothing when the part is wrong for the group, so the part id is read off the
+  rule again afterwards and compared. That comparison is what separates a
+  change from a clean return - the argument MOVE_ELEMENTS makes about a group
+  member, applied to a rule.
+
+  **A PART NAMED BUT NOT FOUND RETURNS THE NEAR MISSES.** "Copper" and
+  "Copper - K" are different segments, and picking one for the caller is a
+  confident wrong answer wearing a right one's clothes. SELECT_BY_CATEGORY_NAME
+  refuses that guess for a category; this refuses it for a part.
+
+  **EDITING A TYPE CHANGES EVERY ELEMENT OF THAT TYPE**, not only the ones
+  handed in. Two pipes of one type are ONE type. That is Revit working
+  correctly and it still surprises people, so types touched are counted
+  separately from the elements given.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so
+  changing several types is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # The group's plain name - "Segments", "Elbows". Empty means Segments,
+    # which is the material question and the overwhelming majority of asks.
+    - name: group
+      type: string
+      source: request
+    # The part to point at, BY NAME. A caller says "Copper", not an element id.
+    - name: partName
+      type: string
+      source: request
+    # Which rule in the group, counting from 0. A group may hold several rules
+    # covering different size bands, and changing the wrong one is silent.
+    - name: ruleIndex
+      type: int
+      source: request
+  provides:
+    - name: rulesChanged
+      role: result
+      type: int
+    - name: typesTouched
+      # Types whose rule was examined. Counted apart from `rulesChanged`
+      # because editing ONE type changes every element of it, and because a
+      # type that was already correct is touched without being changed.
+      role: result
+      type: int
+    - name: alreadyCorrect
+      # Rules already pointing at the part asked for, so there was nothing to
+      # do. The evidence it looked, never a change it made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: nearMisses
+      # Part names that nearly matched when the one named was not found. What
+      # turns a dead end into one more sentence, and never a thing it changed.
+      role: accounting
+      type: IList<string>
+    - name: notRoutable
+      # Things handed in that are not a pipe or duct type, or have no routing
+      # preference manager. The evidence it looked (D-52).
+      role: accounting
+      type: IList<string>
+    - name: unverified
+      # Rules that could not be read back as changed. Never counted as
+      # changed - a thing that cannot be checked must not be reported as
+      # checked.
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-09-15'
+  by: Ajmal PS
+  model: Project1 (3,287 elements), Revit 2020, session 23804
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-types, set-selection with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyCorrect
+    0 item(s), findings 3 item(s) [1 rule(s) changed across 1 type(s) examined; 0 already
+    corre..., ''TRG_Pipe_Copper'' Segments rule 0: ''Copper - A'' -> ''Copper -..., Editing
+    a type changes EVERY element of that type, not only ...], groupsByName 8 entry(ies), nearMisses
+    0 item(s), notRoutable 0 item(s), proceed true, ruleIndex 0, rulesChanged 1, seenTypes
+    HashSet`1, typesToChange 1 item(s) [TRG_Pipe_Copper], typesTouched 1, unverified 0 item(s),
+    wantedGroup RoutingPreferenceRuleGroupType, wantedGroupName Segments, wantedName Copper
+    - B, wantedPart PipeSegment. inputs came elements from set-selection (1); group as given;
+    partName as given; ruleIndex as given. on Project1'
+  negative_case: run with categories=Pipes, familyNameContains=, typeNameContains=TRG, group=Segments,
+    partName=ZZZNOTASEGMENT, ruleIndex=0 instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running select-types, set-selection
+    with this phase's own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alreadyCorrect 0 item(s), findings 2 item(s) [0
+    rule(s) changed across 0 type(s) examined; 0 already corre..., No Segments part is called
+    'ZZZNOTASEGMENT' in this project....], groupsByName 8 entry(ies), nearMisses 0 item(s),
+    notRoutable 0 item(s), proceed false, ruleIndex 0, rulesChanged 0, seenTypes HashSet`1,
+    typesToChange 0 item(s), typesTouched 0, unverified 0 item(s), wantedGroup RoutingPreferenceRuleGroupType,
+    wantedGroupName Segments, wantedName ZZZNOTASEGMENT, wantedPart (null). inputs came elements
+    from set-selection (1); group as given; partName as given; ruleIndex as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 867eb91d6ac24368
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `RoutingPreferenceManager.GetRule`,
+  `GetNumberOfRules`, `RemoveRule` and `AddRule`, the
+  `RoutingPreferenceRule(ElementId, string)` constructor, `AddCriterion`,
+  `PrimarySizeCriterion(double, double)` and `Segment` were all confirmed
+  present by reflection on the 2020 assembly and in the 2027 metadata on
+  2026-09-15, and `tools/api-surface/changes.json` records no change to the
+  routing API across the eight releases.
+
+  Sizes stay in Revit's internal feet the whole way - a criterion is read off
+  the old rule and handed straight back - so no units call is made and the
+  2021 units move is never touched. `Segment` is a concrete class in
+  `Autodesk.Revit.DB`, which the executor imports, so no type is named that
+  compiles green and fails at the PC.
+
+# ROUTING - repeated in REPORT_ROUTING_PREFERENCES.
+#
+#   "make this pipe type copper"         -> here, group=Segments
+#   "which fitting will this type place" -> REPORT_ROUTING_PREFERENCES. That
+#                                           reads; this writes
+#   "change these pipes to another type" -> CHANGE_ELEMENT_TYPE. That swaps the
+#                                           TYPE on an element; this changes
+#                                           what the type is made of
+#   "rename this type"                   -> RENAME_ELEMENTS
+
+utterances:
+  - make this pipe type copper
+  - change the segment this type uses
+  - point this type at a different segment
+  - set the routing preference
+  - which elbow this type inserts, change it
+  - make this duct type use a different elbow

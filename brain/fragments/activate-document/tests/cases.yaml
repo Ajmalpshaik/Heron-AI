@@ -1,0 +1,37 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+#
+# The failure to fear is reporting a switch that did not happen. That is not
+# theoretical: it is how five size tables were written into one family on
+# 2026-09-16.
+
+positive:
+  - given: a family in front and the project's .rvt path
+    expect: >
+      activated true and activeAfter equal to the PROJECT's title. LOOK AT
+      REVIT - which window is in front is the whole answer, and no count
+      stands in for it
+
+  - given: the path of the document already in front
+    expect: >
+      wasAlready true, activated true, and NOTHING reopened. Reopening would
+      be a real action with real risk taken for nothing
+
+negative:
+  - given: a path with no file at it
+    expect: >
+      activated false, activeAfter unchanged, and the path said back. Checked
+      before the call, because Revit's failure for a missing file reads the
+      same as its failure for one it will not open
+
+  - given: it is run while a transaction is open
+    expect: refused. This is EXECUTE for that reason and must never be sent as MODIFY
+
+  - given: Revit refuses the activation
+    expect: >
+      activated false and activeAfter still read back from Revit, NOT echoed
+      from the argument. An echoed argument is what hides a switch that never
+      happened
+
+second_route:
+  - look at Revit and see which window is in front
+  - run REPORT_OPEN_DOCUMENTS and compare its activeTitle
