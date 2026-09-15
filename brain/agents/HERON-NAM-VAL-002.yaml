@@ -1,0 +1,83 @@
+# Naming Validation Agent - HERON-NAM-VAL-002
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. It reports and renames nothing - HERON-NAM-REN-003 renames, and
+# docs/06 s136 lets it do so only after identity exists.
+
+agent: HERON-NAM-VAL-002
+version: 1.0.0
+
+input:
+  kind:
+    type: string
+    required: true
+    description: >
+      Which kind of name this is - agent-id, fragment-id, capability,
+      fragment-folder, module, suite, generated-name. A seventh is not
+      invented: each rule is read from the file that owns it, and there
+      is no file behind a kind nobody declared.
+  name:
+    type: string
+    required: true
+    description: >
+      The name to check, exactly as it is on disk. One that needs
+      trimming first is already a different name.
+  of:
+    type: string
+    required: false
+    description: >
+      What the name must be DERIVED from - a fragment folder's
+      capability. docs/29 s130 says the folder is derived, never
+      invented, so it cannot be judged on its own.
+
+output:
+  ok:
+    type: boolean
+    description: Whether the name follows the convention that owns it.
+  kind:
+    type: string
+    description: The kind that was checked.
+  name:
+    type: string
+    description: The name, as given.
+  checked:
+    type: string
+    description: >
+      What was actually compared - "shape and the register", "shape and
+      the area list", "derivation from the capability", "observed, not
+      stated". A caller should not read "ok" without it.
+  area:
+    type: string
+    description: The fragment area, for a fragment id.
+  folder:
+    type: string
+    description: The folder a capability derives to.
+  observed:
+    type: list
+    description: >
+      For a module or a suite - how many files in that folder follow the
+      same rule, and how many there are. Nothing states this rule, so
+      the count IS the evidence.
+  why:
+    type: string
+    description: Which document or module the rule came from, in words.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NOT_A_KIND_OF_NAME
+  - NO_NAME
+  - WRONG_SHAPE
+  - NOT_IN_THE_REGISTER
+  - NOT_A_KNOWN_AREA
+  - NOTHING_TO_DERIVE_FROM
+  - FOLDER_IS_NOT_DERIVED
+  - UNLIKE_EVERY_OTHER
+  - UNSTATED_CONVENTION
+
+retry:
+  attempts: 0
+  on-failures: []

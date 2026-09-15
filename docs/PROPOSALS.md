@@ -1007,3 +1007,48 @@ names arrive at one file, so the finding cannot quietly stop being true:
 ```bash
 python tests/test_placement.py     # 3. A name is refused, never cleaned up - and here is the cost
 ```
+
+---
+
+### 🟡 F15. The Naming Agent's own name has no stated shape, and two documents disagree about its parts
+
+**Found by:** building `HERON-NAM-VAL-002`, the Naming Validation Agent, 2026-09-15.
+**Status:** open. The validator refuses that one kind of name rather than guessing it.
+
+The department's rule is stated twice, as a goal:
+
+> **"Naming must be predictable and searchable."** — [docs/06 §134](06-heron-platform.md), [docs/00 §517](00-master-specification.md)
+
+That is what naming is *for*. It is not a convention: it gives no separator, no case, no order and no
+allowed character set. The only two statements of what a generated name is **made of** disagree:
+
+| source | the parts |
+|---|---|
+| [docs/28](28-agent-registry.md), `HERON-NAM-GEN-001` | domain, capability, purpose, platform, **version** — five |
+| [docs/00c §368](00c-master-handover-baseline.md) | domain · capability · purpose · platform · version · **component type** — six |
+
+So `HERON-NAM-GEN-001` is asked to generate a name whose shape nobody has written down, and
+`HERON-NAM-VAL-002` is asked to check it against a convention that does not exist.
+
+**Everything else in the system is fine**, and that is what makes this narrow rather than alarming.
+Four kinds of name *are* stated, and the validator reads each from the file that owns it:
+
+| kind | where the rule lives |
+|---|---|
+| agent id | `docs/28`'s own rows, through `heron_fragment.registry_agents()` |
+| fragment id | `heron_fragment.ID_PATTERN` and `.AREAS` |
+| capability | `heron_fragment.CAPABILITY_PATTERN` |
+| the fragment folder | [docs/29 §130](29-metadata-standard.md) — the capability, lower case, hyphens, **"derived, never invented"** |
+
+Two more are **observed and stated nowhere**: every module in `brain/` is `heron_<name>.py` and every
+suite in `tests/` is `test_<name>.py`, with no exceptions and nothing enforcing it. The validator
+reports those as `UNLIKE_EVERY_OTHER` rather than `WRONG_SHAPE`, and puts the count in the answer,
+because *"unlike all 63 of its neighbours"* and *"against a written rule"* are different claims.
+
+**What it does about the seventh.** `generated-name` is refused as `UNSTATED_CONVENTION` — never
+guessed. A guess here would silently **become** the convention, because this validator would be the
+only thing enforcing one, and a convention arrived at that way is the hardest kind to change later.
+
+**Not fixed here.** Settling it is one line saying which list of parts is right and what the name looks
+like — a separator, a case, an order. That is a decision about what the product's filenames read like,
+which is the owner's.
