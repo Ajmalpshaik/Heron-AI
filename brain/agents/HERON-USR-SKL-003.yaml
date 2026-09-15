@@ -1,0 +1,81 @@
+# User Skill Manager - HERON-USR-SKL-003
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY. Nothing is moved: a plan comes back.
+
+agent: HERON-USR-SKL-003
+version: 1.0.0
+
+input:
+  skills:
+    type: list
+    required: true
+    description: Each {name, scope, author}. Handed in.
+  raising:
+    type: list
+    required: false
+    description: >
+      Each {skill, to, by, approved_by}. A raise is EXPLICIT or it has
+      not happened - nothing drifts upward for being useful.
+  reader:
+    type: string
+    required: false
+    description: >
+      Who is asking. A `user`-scope skill belonging to somebody else is
+      refused rather than returned: HERON-RAG-LIB-001 calls that scope
+      "shared with nobody", and there is no reading of nobody in which a
+      note makes it shareable.
+
+output:
+  raised:
+    type: boolean
+    description: Always false. Nothing is moved here.
+  mine:
+    type: list
+    description: The reader's own personal skills, and nobody else's.
+  raise_:
+    type: list
+    description: >
+      Each raise that may proceed - one rung, upward, not sideways, and
+      approved by somebody who did not write it.
+  refused_names:
+    type: list
+    description: Each skill or raise that may not proceed, with which rule.
+  ladder:
+    type: list
+    description: >
+      user, company, global - derived from HERON-RAG-LIB-001's own scope
+      meanings rather than listed here. `project` is not on it: its
+      meaning says "never shared sideways".
+  of:
+    type: integer
+    description: How many skills were handed in.
+  why:
+    type: string
+    description: The counts, and that nothing was moved.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was moved; that personal stayed
+      personal; that the author-may-not-approve rule is an EXTENSION of
+      Golden Rule 7 rather than a quotation, and stricter than docs/09
+      s94; and that whether a skill is good enough to raise is not
+      judged here.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_MANAGE
+  - NOT_A_SKILL
+  - NOT_YOURS
+  - NOT_A_RAISE
+  - SKIPS_A_STEP
+  - SIDEWAYS_IS_NOT_UP
+  - THE_AUTHOR_MAY_NOT_APPROVE
+
+retry:
+  attempts: 0
+  on-failures: []
