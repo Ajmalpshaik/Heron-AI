@@ -1,0 +1,73 @@
+# Skill Performance Agent - HERON-SKL-PRF-006
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. Nothing is stored and nothing is aggregated across versions.
+
+agent: HERON-SKL-PRF-006
+version: 1.0.0
+
+input:
+  runs:
+    type: list
+    required: true
+    description: >
+      Each {revit, outcome} and optionally `corrections` and `seconds`.
+      A run whose release is unknown is refused: it cannot be filed
+      under any version, which is the only thing this agent reports by.
+  declared:
+    type: list
+    required: false
+    description: >
+      The releases the skill claims to support. Any of them with no runs
+      is reported as UNTESTED - separately from the ones that failed,
+      because "we tried and it broke" and "nobody tried" are different
+      facts.
+
+output:
+  measured:
+    type: boolean
+    description: True when runs were read.
+  versions:
+    type: list
+    description: >
+      One entry per release with runs - runs, failed, succeeded,
+      corrected, the failure rate AND the counts that made it, and the
+      middle execution time. Never one figure across releases.
+  never_succeeded:
+    type: list
+    description: >
+      Releases where the skill has never once succeeded. A universal
+      rather than a cutoff, which is why it can be marked at all.
+  untested:
+    type: list
+    description: Declared releases with no runs. Untested, not passing.
+  declared:
+    type: list
+    description: The releases claimed, as given.
+  of:
+    type: integer
+    description: How many runs were read.
+  why:
+    type: string
+    description: The counts, and that nothing was aggregated across versions.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was aggregated across versions and
+      why; which declared releases have no runs; where the skill has
+      never succeeded; and that every rate came back with its counts.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_MEASURE
+  - NOT_A_RUN
+  - NOT_A_VERSION
+  - NOT_AN_OUTCOME
+
+retry:
+  attempts: 0
+  on-failures: []

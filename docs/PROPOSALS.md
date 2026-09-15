@@ -1335,3 +1335,43 @@ a proof incomplete, and that one makes it not a proof.
 superseded decision. This is the same failure in a **different document** — which means the pass those
 findings ask for is not only over the register. Anywhere a document says *"tracked as Q-n"* is worth
 checking against `DECISIONS.md`, because that phrase is exactly what stops a reader looking further.
+
+---
+
+### 🟡 F22. One permission ladder, four copies in `brain/` alone
+
+**Found by:** building `HERON-SKL-CMP-005`, which needed the ladder and refused to add a fifth.
+**Status:** open. Measured, not read.
+
+```bash
+grep -rln 'RISK_LADDER\|RISK_ORDER\|"ANALYZE"' brain/*.py
+```
+
+| file | agent | how it carries it |
+|---|---|---|
+| `heron_capability.py` | `HERON-KRN-CAP-008` | `RISK_ORDER = (…)` |
+| `heron_events.py` | `HERON-KRN-EVT-004` | `RISK_ORDER = (…)` |
+| `heron_hr.py` | `HERON-AHR-HR-002` | `RISK_LADDER = (…)` |
+| `heron_skill.py` | `HERON-SKL-VAL-004` | an **inline tuple** inside `validate()` |
+
+All four are `("READ", "ANALYZE", "SUGGEST", "EXECUTE", "MODIFY", "PUBLISH", "ADMIN")`, all equal by
+value, **none the same object**. Three more modules derive from it — `heron_shadow.py` maps tier to risk,
+`heron_trainer.py` maps risk to permission, `heron_validation.py` keeps `READ_ONLY_RISKS`.
+
+`mcp/server/heron_tools.py` holds a fifth as integers (`READ = 0` … `ADMIN = 6`). **That one is
+legitimate**: [D-48](DECISIONS.md) forbids `brain` importing from `mcp`, so the bridge needs its own —
+and `heron_tools.py`'s own comment already says a rule kept in two places by good intentions is a rule
+that will eventually be kept in one.
+
+**Why it matters more than it looks.** The ladder is ordered, and the order is the security property:
+`MODIFY < PUBLISH < ADMIN` is what makes "propagate the highest risk upward" mean anything. Four
+independent orderings are four chances for one to be edited — a level inserted, one renamed — and the
+copies would still each look right on their own.
+
+**Not fixed here**, and the reason is that the fix is a decision rather than an edit: `brain/` has no
+module that *owns* permission levels. [docs/12 §71](12-security-and-permissions.md) puts risk in the tool
+registry, which is `mcp`'s side of D-48. Somebody has to say which `brain` module is the home — or that
+it belongs in `platform/`, which both layers may import — and that is the owner's call.
+
+`HERON-SKL-CMP-005` imports `heron_capability.RISK_ORDER` and adds no copy. The suite asserts it is that
+module's object, by identity.
