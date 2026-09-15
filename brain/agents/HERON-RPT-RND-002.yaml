@@ -1,0 +1,96 @@
+# Report Rendering Agent - HERON-RPT-RND-002
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ and puts "NO MODEL CALL" in the row itself - see allowed-tools.
+
+agent: HERON-RPT-RND-002
+version: 1.0.0
+
+input:
+  kind:
+    type: string
+    required: true
+    description: >
+      page, pdf, schedule, csv or image - docs/28's own five. A sixth is
+      not invented: each is a template, and a template nobody wrote
+      cannot be deterministic.
+  rows:
+    type: list
+    required: true
+    description: >
+      The data, each row a map of column to value. Empty is refused: an
+      empty document reporting nothing found is a statement about the
+      DATA, and no rows is a statement about the CALL.
+  columns:
+    type: list
+    required: false
+    description: >
+      The columns and their order. With none, they are DERIVED as the
+      sorted union of every key seen - so the same rows in a different
+      order render the same document, because dict order is not a fact
+      about the data.
+  title:
+    type: string
+    required: false
+    description: A heading for the page. Never invented.
+
+output:
+  rendered:
+    type: boolean
+    description: True when content came back. Nothing was executed or written.
+  kind:
+    type: string
+    description: What was rendered.
+  content:
+    type: string
+    description: The document. For pdf and image this is the PAGE - see `needs`.
+  sha:
+    type: string
+    description: >
+      A sha256 of the content. Two renders of the same data give the
+      same one, which is what makes determinism a property a caller can
+      check rather than a promise - HERON-RPT-VAL-004 uses it.
+  columns:
+    type: list
+    description: The columns used, declared or derived.
+  rows:
+    type: integer
+    description: How many rows were rendered. Every row in comes out.
+  gaps:
+    type: list
+    description: >
+      Each cell that was empty because the column was not in that row.
+      Named as well as rendered, so "blank" and "we lost it" are
+      different answers - Golden Rule 14.
+  needs:
+    type: string
+    description: >
+      For pdf and image - what would convert the page. It is not run
+      here: a document that arrived by running a converter would not be
+      reproducible from the data alone.
+  why:
+    type: string
+    description: The counts, and that no clock, random or dict order was used.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was executed and no model called;
+      that NO FIGURE WAS REFORMATTED and why; what was empty and named;
+      and that whether the data is RIGHT belongs to HERON-RPT-VAL-004
+      and whether it may leave to HERON-RPT-RED-003.
+
+# EMPTY BECAUSE THE REGISTER SAYS SO: "No model call - data in, document
+# out, same input same output."
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOT_A_KIND
+  - NOTHING_TO_RENDER
+  - NOT_A_ROW
+
+retry:
+  attempts: 0
+  on-failures: []
