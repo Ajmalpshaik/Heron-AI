@@ -1,0 +1,73 @@
+# Workflow Optimizer Agent - HERON-KRN-WOP-016
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent SUGGEST. It changes nothing: what comes back is a sentence with the
+# counts in it, and a suggestion acted on automatically is not a suggestion.
+
+agent: HERON-KRN-WOP-016
+version: 1.0.0
+
+input:
+  runs:
+    type: list
+    required: true
+    description: >
+      Recorded runs, each {workflow, when, stages}, and each stage
+      {stage, outcome, changed}. Handed in - an empty list is refused
+      rather than reported as "no problems found", which would be a
+      statement about the records instead of about the work.
+  about:
+    type: string
+    required: false
+    description: >
+      What the question is about. An agent id is REFUSED: docs/28 gives
+      this agent the way work is done and gives HERON-AHR-OPT-009 the
+      agents doing it, and being helpful across that line would make two
+      agents responsible for one thing.
+
+output:
+  changed:
+    type: boolean
+    description: Always false. Nothing is merged, removed or rewritten.
+  suggestions:
+    type: list
+    description: >
+      Each observation, with the workflow, the stage or pair, how many
+      runs it was seen across, and a sentence. Exactly three kinds -
+      ALWAYS_FAILS_AT, ALWAYS_CONSECUTIVE, NEVER_CHANGED - because the
+      register named three.
+  workflows:
+    type: list
+    description: The workflows the runs covered.
+  runs:
+    type: integer
+    description: How many runs were read.
+  window:
+    type: map
+    description: >
+      First and last recorded run. Every "never" means "not in this
+      window", and the window is how a reader knows what that is worth.
+  why:
+    type: string
+    description: The counts, and that nothing was changed.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was changed; that ALWAYS is a
+      universal rather than a threshold, which is the only reason it can
+      be used; that unobserved is not never and what window these came
+      from; and that the agents are not this agent's.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_LEARN_FROM
+  - NOT_A_RUN
+  - NOT_ABOUT_A_WORKFLOW
+
+retry:
+  attempts: 0
+  on-failures: []
