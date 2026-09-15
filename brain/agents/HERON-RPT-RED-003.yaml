@@ -1,0 +1,89 @@
+# Report Redaction & Release Agent - HERON-RPT-RED-003
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent PUBLISH, the highest risk in its department. It sends nothing: this is
+# a verdict about whether a report may leave.
+
+agent: HERON-RPT-RED-003
+version: 1.0.0
+
+input:
+  report:
+    type: map
+    required: true
+    description: >
+      {content, attachments}. The content is not changed and the
+      attachments are not opened - a name ending .rvt, .rfa, .rte or
+      .rft is enough.
+  to:
+    type: string
+    required: true
+    description: >
+      Where it would go. REQUIRED: egress cannot be checked against
+      "somewhere", and a gate that passes an unaddressed report is not a
+      gate.
+  projects:
+    type: list
+    required: false
+    description: Which projects the report draws on.
+  policy:
+    type: map
+    required: false
+    description: >
+      Project to what it allows. DECLARED, never inferred - docs/12 s85
+      is about contracts that prohibit egress, and a contract is
+      something somebody signed. Absence is not permission.
+
+output:
+  released:
+    type: boolean
+    description: Always false. Nothing is sent; a caller sends.
+  may_release:
+    type: boolean
+    description: Present when nothing stopped it.
+  to:
+    type: string
+    description: The destination the verdict is about.
+  projects:
+    type: list
+    description: The projects the report draws on, as given.
+  travels:
+    type: list
+    description: >
+      D-26's right-hand column, so the answer says what IS fine rather
+      than only what is not.
+  files:
+    type: list
+    description: The Revit binaries found attached, when any were.
+  shapes:
+    type: list
+    description: >
+      The credential SHAPES found, never the values - article 17 says
+      never include one in a result, and that includes this one.
+  why:
+    type: string
+    description: The verdict, and that nothing was sent.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was sent or stripped; that project
+      names were NOT removed and that this is D-26's rule rather than an
+      oversight - PROPOSALS F20; what the four checks were; and that
+      whether the report SHOULD be sent is a person's.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOT_A_REPORT
+  - NO_DESTINATION
+  - CARRIES_A_MODEL_FILE
+  - CARRIES_A_SECRET
+  - MIXES_PROJECTS
+  - THE_PROJECT_FORBIDS_IT
+
+retry:
+  attempts: 0
+  on-failures: []

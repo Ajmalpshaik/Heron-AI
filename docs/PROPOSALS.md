@@ -1241,3 +1241,51 @@ sentence explaining it broken.
 host, so retiring or renaming it is a change to the host contract, and `docs/22 §3`'s note needs rewriting
 rather than deleting — the rule it protects is the reason the User & Personalization department exists at
 all. Both are the owner's, and they are one paragraph apart from being settled.
+
+---
+
+### 🟠 F20. "Strips project identifiers" is the framing D-26 narrowed away from
+
+**Found by:** building `HERON-RPT-RED-003`, the Report Redaction & Release Agent, 2026-09-15.
+**Status:** open. The agent implements D-26 and does **not** strip.
+
+[D-26](DECISIONS.md) opens with a warning to its own reader, which is the reason this is worth raising
+rather than quietly following:
+
+> **This decision was refined three times on the day it was written, each time in the same direction:
+> from *nothing may travel* toward *the file may not travel*. The rule below is the final one. It is
+> narrower than the first two, and commits from that day quote the earlier framings — so the movement is
+> recorded here rather than quietly overwritten, because a reader needs to know which version won.**
+
+And the rule that won:
+
+| Never leaves the machine | **Fine in the conversation** |
+|---|---|
+| The `.rvt` and `.rfa` files themselves | **Project names**, file names, content names |
+| Family and project templates | Element data — counts, sizes, parameters |
+| Any Revit binary | Engineering ideas, reasoning, and code |
+
+`docs/28`'s row for this agent reads:
+
+> The gate before a report can be shared or leave the machine. **Strips project identifiers**, enforces
+> scope, blocks confidential-project egress.
+
+**Project names are in D-26's right-hand column.** Stripping them implements the framing the decision
+moved away from — and doing it quietly is worse than doing it wrongly, because it leaves a report that
+*reads* as anonymised without anybody having decided it should be.
+
+**What survives, and all of it is a refusal rather than a strip:**
+
+| | |
+|---|---|
+| a **Revit binary** attached | `.rvt` `.rfa` `.rte` `.rft` — D-26's own left-hand column, the same rule `HERON-WSP-TPL-006` keeps on the other side of the machine |
+| a **credential** in the text | article 17. Refused whole, not redacted — a report that had a key in it is one somebody should look at, not one to clean and send. The shape is named and the value never is |
+| **more than one project** | D-26's third point: *"project-based knowledge must be kept segregated and separated"*. This is what "enforces scope" means once the stripping is gone, and it is the half of the row that survives whole |
+| a project that has **not declared** this may leave | absence is not permission. docs/12 §85 is about contracts that prohibit egress, and a contract is something somebody signed rather than something to assume from silence |
+
+**Not fixed here.** Rewriting the row is three words, but it is the third row this session found written
+against a superseded decision — with **F16** (the Keyword Agent's "synonyms" against D-34) and **F19**
+(three places still handing work to the persona D-27 abolished). Individually each is a clause; together
+they suggest `docs/28` was written before several of the decisions that now govern it, and a pass over
+the register against `DECISIONS.md` would find whatever else is in the same state. That pass is the
+owner's call, not three more clauses.
