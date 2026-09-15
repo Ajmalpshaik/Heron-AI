@@ -1488,3 +1488,47 @@ really would train a reader to ignore `git status`, and that is worth chasing. B
 the specific check used — CRLF on disk against LF in HEAD — is **always** true and proves nothing,
 so it cannot be the thing that showed the file as modified. Either something else did, or the file
 was never modified. **`A17` is what decides which, and it has not been run to completion.**
+
+## A17 RAN TO COMPLETION, LATER THE SAME DAY — and it passes
+
+**The section above says the run was killed unfinished. It was, and then it was run again properly.
+That paragraph stays as written; this supersedes it.**
+
+**On the owner's PC, 2026-09-15, 18:10:34 to 18:25:27, exit 0. All 99 tests, and the tree was clean
+after every one of them.** The run checked `git status --short` after each individual test rather
+than only at the end, so this is **99 observations, not one** — the changed-file set never once
+differed from the empty baseline. Final `git status --short` **empty**.
+
+The fragment the brief named is **byte-identical to before the suite**:
+
+| | sha256 | bytes | CRLF | `\r\r\n` |
+|---|---|---|---|---|
+| before the run | `b2599e4878a6f72d` | 4384 | 102 | 0 |
+| after 99 tests | `b2599e4878a6f72d` | 4384 | 102 | 0 |
+
+**So the reported phantom modification does not exist on current HEAD**, and the cause the brief
+named was already disproved on its own terms — `core.autocrlf=true` makes a CRLF-versus-LF
+difference invisible to git on this machine, so the check that raised the alarm **could never have
+detected a write in the first place**.
+
+**Nothing was fixed, because nothing was broken.** No test was changed. **No `.gitattributes` was
+added** — the brief was right to forbid it, and it would have hidden a real defect had one existed.
+
+### What this still does not say
+
+One run, in file-name order, on one machine. It **cannot** speak for a test that writes only under a
+different ordering, a different Revit, or a failing path. And two tests do touch the live library
+without dirtying it — `tests/test_scope_store.py:174` creates and removes
+`brain/fragments/zz-broken-temp/`, and `tests/test_embed.py:111` `utime`s a real fragment. **Neither
+is the reported fault.** The first is still worth a decision: *a test should not write into
+`brain/fragments/`, which is library source and not scratch* is the brief's own principle, and it is
+the one place it bends.
+
+### The lesson worth keeping
+
+**The brief's worry was sound and its evidence was not.** A phantom modification on a clean tree
+really would train a reader to ignore `git status`, and that was worth chasing. But the specific
+check used — CRLF on disk against LF in HEAD — is **permanently true on this machine**, before and
+after anything, so it proved nothing. **Verify what git would actually store**
+(`git hash-object --path <path> <file>` against `git rev-parse HEAD:<path>`), never `cmp` against
+`git show`.
