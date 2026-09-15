@@ -1,0 +1,102 @@
+# Revit Performance Agent - HERON-REVIT-PRF-017
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. It times nothing: the dispatcher put an `ms` on every job when
+# it ran it, and this reads that trail back through HERON-AHR-GAP-001's own
+# reader.
+
+agent: HERON-REVIT-PRF-017
+version: 1.0.0
+
+input:
+  entries:
+    type: list
+    required: false
+    description: >
+      Audit rows to read, oldest first. Omitted means read the trail
+      where it lives - HERON_AUDIT, or %APPDATA%\Heron\audit.
+  directory:
+    type: path
+    required: false
+    description: >
+      Where to read the trail from, when it is not the default. Used to
+      report on a trail copied off another machine.
+  declared_seconds:
+    type: integer
+    required: false
+    description: >
+      A limit to compare against, for `against`. It is always the
+      CALLER'S number - usually a contract's `timeout-seconds`, which
+      heron_architect writes while saying in its own answer that it is a
+      default and not a measurement. No limit is invented here.
+
+output:
+  measured:
+    type: boolean
+    description: True when the trail held at least one recorded duration.
+  of:
+    type: integer
+    description: How many audit rows were read.
+  operations:
+    type: list
+    description: >
+      Each operation with runs, timed, fastest, median and slowest in
+      milliseconds, plus how many of its runs carried no duration.
+  untimed:
+    type: list
+    description: >
+      Operations every one of whose runs was recorded without a
+      duration. Kept out of every number: a measurement nobody took is
+      not a fast one.
+  per_element:
+    type: list
+    description: >
+      Cost against size, only where a row carried both a duration and a
+      count - milliseconds per thousand elements. An operation whose
+      rows carry no count has a duration and nothing to divide it by.
+  earlier:
+    type: list
+    description: >
+      The first half of the trail, per operation, with the same numbers.
+  recent:
+    type: list
+    description: >
+      The second half, for comparison with `earlier`. No verdict is
+      drawn between them - calling a change a regression needs a
+      threshold, and every candidate is a number nobody chose.
+  known:
+    type: boolean
+    description: >
+      From `against`: whether the named operation was timed at all in
+      this trail. False is an answer, not an error.
+  exceeded:
+    type: boolean
+    description: >
+      From `against`: whether any recorded run went past the declared
+      limit. False means the limit has not been reached, which is not
+      the limit proved right.
+  why:
+    type: string
+    description: The counts, or what the comparison against a limit found.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was timed here; how many runs
+      carried no duration and were excluded; that no slower-or-faster
+      verdict is drawn; where cost per element could not be computed;
+      and that the bridge's own timeout lives in mcp/client, which D-48
+      forbids brain from importing, so it cannot be stated here.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_RECORDED
+  - NOTHING_TIMED
+  - NOT_A_TIMEOUT
+
+retry:
+  attempts: 0
+  on-failures: []
