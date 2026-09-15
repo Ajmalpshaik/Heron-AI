@@ -127,8 +127,14 @@ def main():
     # value: an operation that quietly becomes a write fails here rather than
     # in a model.
     writers = sorted(t for t in tools.TOOLS if tools.writes(t))
-    check(writers == ["revit_apply_move"],
-          "the only writing tool is revit_apply_move - found: %s" % (writers or "none"))
+    # revit_change was added 2026-09-15 at the owner's explicit instruction,
+    # and typing it here is the deliberate act this test exists to require. It
+    # is the first writer with NO preview in front of it: the owner's ribbon
+    # switch (write.enabled, read by HeronPermissions inside the add-in) is
+    # the only thing between it and the model. A THIRD writer still fails here.
+    check(writers == ["revit_apply_move", "revit_change"],
+          "the writing tools are exactly revit_apply_move and revit_change "
+          "- found: %s" % (writers or "none"))
 
     cs_writers = sorted(op for op, level in declared_cs.items() if level == "MODIFY")
     check(cs_writers == ["move_elements", "run_fragment_write"],
