@@ -1,0 +1,76 @@
+# Keyword Agent - HERON-NAM-KEY-005
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register leaves this
+# agent's risk blank. It holds knowledge, not language - see D-34 and
+# PROPOSALS F16 - and it infers nothing.
+
+agent: HERON-NAM-KEY-005
+version: 1.0.0
+
+input:
+  term:
+    type: string
+    required: true
+    description: >
+      The word somebody actually said. An empty one is refused rather
+      than matched against nothing: "no word was given" and "nobody has
+      recorded this word" are different answers and must not share one.
+  recorded:
+    type: list
+    required: false
+    description: >
+      What people have recorded, handed in. There is NO built-in table
+      and no default one - a built-in vocabulary is the synonym table
+      D-34 refuses, whatever it is called. Each entry carries term,
+      means, by and at.
+
+output:
+  found:
+    type: boolean
+    description: Whether a person has recorded this word.
+  term:
+    type: string
+    description: The word, as asked.
+  means:
+    type: list
+    description: >
+      What people said it maps to - every recording, not one merged
+      answer. Two people may have recorded different things and that
+      disagreement is the useful part.
+  held:
+    type: integer
+    description: How many valid records were handed in, so an empty answer can be read.
+  rejected:
+    type: list
+    description: >
+      Entries that were handed in and are not records, with why. Carried
+      rather than dropped - Golden Rule 14.
+  ask:
+    type: string
+    description: >
+      The question to put when nobody has recorded the word. D-33: Heron
+      never assumes an input, it asks, and it asks once.
+  why:
+    type: string
+    description: Who recorded what, and when.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was inferred and no list is shipped,
+      that whether a record is RIGHT is a person's to say, and what was
+      refused.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NO_TERM
+  - NOTHING_RECORDED
+  - NOT_A_RECORD
+  - AN_INFERENCE_IS_NOT_A_RECORD
+
+retry:
+  attempts: 0
+  on-failures: []

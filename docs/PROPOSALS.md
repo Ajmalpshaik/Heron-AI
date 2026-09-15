@@ -1052,3 +1052,67 @@ only thing enforcing one, and a convention arrived at that way is the hardest ki
 **Not fixed here.** Settling it is one line saying which list of parts is right and what the name looks
 like — a separator, a case, an order. That is a decision about what the product's filenames read like,
 which is the owner's.
+
+---
+
+### 🟠 F16. The register asks for a synonym table and D-34 forbids one
+
+**Found by:** building `HERON-NAM-KEY-005`, the Keyword Agent, 2026-09-15.
+**Status:** open, but **the agent is built** — D-34's own consequences settle it, and the resolution is
+worth confirming rather than assuming.
+
+[docs/28](28-agent-registry.md) gives the Keyword Agent:
+
+> Search terms and **synonyms** — "duct", "ductwork", "supply air"
+
+[D-34](DECISIONS.md) says:
+
+> **Heron builds nothing to understand language.** No phrase list, **no synonym table**, no parser for
+> dictated near-misses. That belongs to the host and duplicating it there would be worse than the host's
+> version and would need maintaining forever.
+
+Read the register row on its own and it describes exactly the thing the decision refuses.
+
+**D-34 answers it three lines further down**, in its own consequences:
+
+> A site word that maps to a Revit word is a different problem and is not solved by translation. When
+> somebody says something the model calls by another name, **that is knowledge** — it belongs in Heron's
+> own knowledge store where it can be **looked up and corrected**, not in a language setting.
+
+So the agent holds **knowledge, not language**, and the difference is four rules rather than a
+distinction of wording. Each is a refusal in the built agent:
+
+| | |
+|---|---|
+| it ships **no list** | the table starts empty and stays empty until somebody fills it. The suite proves this by *behaviour* — with nothing handed in, every word comes back unknown — not by searching the source for vocabulary |
+| every entry names a **person and a date** | "looked up and corrected" needs somebody to correct and a date to correct from |
+| an **inference is not a record** | an entry whose `by` reads derived, guessed, inferred, automatic, auto, model, suggested or expanded is refused, and a word recorded *only* that way stays **unknown** — the refusal is not a warning beside a usable answer |
+| an **unknown term is a question** | [D-33](DECISIONS.md): Heron never assumes an input — it asks, and it asks once. Nothing is expanded quietly, and there is no partial answer beside the question |
+
+**What is still open:** the register row's wording. It reads as the forbidden thing and points at no
+decision, so the next person to build from that row alone will build a synonym table. One clause in
+`docs/28` — *"recorded by a person, never inferred — see D-34"* — closes it.
+
+---
+
+### 🟡 F17. Three agents own metadata validity, in two departments
+
+**Found by:** the same build, while checking whether `HERON-NAM-MET-006` already existed.
+**Status:** open. **`MET-006` was deliberately not built** — see below.
+
+| agent | department | what docs/28 gives it |
+|---|---|---|
+| `HERON-STD-MET-014` | Standards & BIM QA | "Enforces the Heron metadata standard on everything Heron creates… also audits the registry against the code" — **built**, `tools/check-metadata.py` |
+| `HERON-FRG-VAL-001` | Fragment Lifecycle | "Logic, API, versions, dependencies, **metadata**, duplication, reusability" — **built**, and claimed by two files (that is F10) |
+| `HERON-NAM-MET-006` | Naming & Taxonomy | "Metadata completeness and schema validity" — **not built** |
+
+The third row's job is a plain subset of the first two. `MET-014` already checks that every artefact
+declares its agent, step, status, version and layer; `FRG-VAL-001` already checks a fragment's card
+against its schema. A third agent would be a third place for the same rule, and every other finding in
+this file is about what happens when one rule lives in two places.
+
+**Not built, and that is the point.** Building it would have cost nothing and been wrong — the same
+mistake as writing a new agent over `brain/heron_architect.py` earlier today, arrived at from the other
+direction. What is needed is one line in `docs/28` saying which of the three owns metadata validity and
+what the other two defer to it for. That is the owner's call, and until it is made the Naming & Taxonomy
+department reads as 7 agents when its real number may be 6.
