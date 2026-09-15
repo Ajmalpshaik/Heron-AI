@@ -24,6 +24,7 @@ resolver is handed the same facts the bridge would report; nothing here has
 asked a live model what is open.
 """
 
+import io
 import os
 import shutil
 import sys
@@ -39,6 +40,64 @@ def check(condition, what):
     print("  %-5s %s" % ("ok" if condition else "FAIL", what))
     if not condition:
         FAILURES.append(what)
+
+
+# Declared cases are required for a fragment to validate, since 2026-09-07. The
+# fixture carries them rather than being exempted: a fixture that skips a rule is
+# a fixture that has stopped testing it.
+CASES = (
+    u"positive:\n"
+    u"  - given: two ducts in the set\n"
+    u"    expect: both reported, named\n"
+    u"negative:\n"
+    u"  - given: a set containing none of what it reports\n"
+    u"    expect: zero reported, in words, and no error\n"
+)
+
+
+def write_valid_fragment(folder):
+    """A fragment that passes validation, written at `folder`.
+
+    Built, not copied - see the note at the call site. Kept minimal on purpose:
+    every key here is one heron_fragment.validate() actually requires, so if that
+    gate gains a rule this fixture fails and says so, rather than drifting.
+    """
+    import yaml
+
+    data = {
+        "heron-agent": "HERON-RAG-LIB-001",
+        "heron-step": 8,
+        "heron-status": "DRAFT",
+        "heron-since": "0.1.0",
+        "heron-layer": "brain",
+        "id": "FRG-ELE-001",
+        "semantic-identity": "a test fragment",
+        "kind": "filter",
+        "domain": "test",
+        "capability": "DO_A_TEST_THING",
+        "version": 1,
+        "source": "OFFICIAL",
+        "risk": "READ",
+        "purpose": "Exists to be indexed.",
+        "contract": {
+            "needs": [{"name": "doc", "type": "Document"}],
+            "provides": [{"name": "elements", "type": "IList<Element>",
+                          "role": "result"}],
+        },
+        "revit": ["2020", "2024"],
+        "runtime": ["net472", "net48"],
+        "utterances": ["do the test thing"],
+    }
+
+    os.makedirs(os.path.join(folder, "impl", "any"))
+    os.makedirs(os.path.join(folder, "tests"))
+    io.open(os.path.join(folder, "fragment.yaml"), "w", encoding="utf-8").write(
+        yaml.safe_dump(data, default_flow_style=False, sort_keys=False))
+    io.open(os.path.join(folder, "impl", "any", "fragment.cs"), "w",
+            encoding="utf-8").write(u"// code\n")
+    io.open(os.path.join(folder, "tests", "cases.yaml"), "w",
+            encoding="utf-8").write(CASES)
+    return folder
 
 
 def main():
@@ -170,22 +229,51 @@ def main():
 
         print()
         print("An invalid fragment is not indexed")
-        before, _ = S.rebuild()
-        broken_dir = os.path.join(ROOT, "brain", "fragments", "zz-broken-temp")
+        # THE LIBRARY IS NOT SCRATCH, AND THIS USED TO TREAT IT AS SCRATCH. The
+        # broken fragment was written straight into brain/fragments/ as
+        # zz-broken-temp/ and deleted afterwards - so a test wrote into library
+        # source, and an interrupted run left it sitting there. The earlier fix
+        # moved the makedirs inside the try with exist_ok so the NEXT run could
+        # clear it, which made the mess survivable rather than stopping it.
+        #
+        # A temp library holds exactly the same proof and cannot outlive the run.
+        # rebuild() calls heron_fragment.load_all() with no root, and load_all
+        # resolves `root or FRAGMENTS_DIR` at CALL time, so pointing that one
+        # module global at the copy redirects it - restored in the finally.
+        #
+        # The good fragment is BUILT rather than copied from the library. A copy
+        # was tried first and does not work: every PROVEN fragment's proof is
+        # fingerprinted against its own bytes and path, so copying one out of
+        # brain/fragments/ makes it fail validation and the temp library indexes
+        # NOTHING. Copying a DRAFT one instead would work today and rot quietly
+        # the day that fragment is promoted - a built one cannot be reached by
+        # the library changing under it.
+        work = tempfile.mkdtemp(prefix="heron-broken-")
+        was_fragments_dir = F.FRAGMENTS_DIR
         try:
-            # Created INSIDE the try, and exist_ok. This directory is written
-            # into the real fragment library, so an interrupted run leaves it
-            # there - and the next run has to be able to clear it rather than
-            # die on it. Built outside the try, the cleanup below never ran on
-            # that second failure, so one interrupt poisoned the test for good.
-            os.makedirs(os.path.join(broken_dir, "impl", "any"), exist_ok=True)
-            open(os.path.join(broken_dir, "fragment.yaml"), "w").write(
-                "id: FRG-ELE-999\nkind: nonsense\n")
+            write_valid_fragment(os.path.join(work, "do-a-test-thing"))
+            F.FRAGMENTS_DIR = work
+            before, _ = S.rebuild()
+
+            broken_dir = os.path.join(work, "zz-broken")
+            os.makedirs(os.path.join(broken_dir, "impl", "any"))
+            io.open(os.path.join(broken_dir, "fragment.yaml"), "w",
+                    encoding="utf-8").write(u"id: FRG-ELE-999\nkind: nonsense\n")
             after, _ = S.rebuild()
+
             check(after == before,
                   "a malformed fragment is skipped, not indexed as if it were fine")
+            # WITHOUT THIS THE CHECK ABOVE PASSES ON 0 == 0. It compared two
+            # counts and never asked whether either was a real one, so a library
+            # that indexed nothing at all satisfied it. That is not theoretical:
+            # the first version of this rewrite copied a PROVEN fragment, indexed
+            # 0, and the comparison above still said ok.
+            check(before == 1,
+                  "and it is compared against a real count rather than 0 (%d)"
+                  % before)
         finally:
-            shutil.rmtree(broken_dir, ignore_errors=True)
+            F.FRAGMENTS_DIR = was_fragments_dir
+            shutil.rmtree(work, ignore_errors=True)
 
         print()
         print("Unknown scopes are an error, never a guess")
