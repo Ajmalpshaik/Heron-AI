@@ -674,6 +674,44 @@ Each of these is a rail. A rail that has never been tested is decoration.
 | **E13** | In a **fresh chat**, make `revit_change` the **first** thing asked | It **runs**. An empty key means *do not check* — a first request has nothing to compare against, and refusing it would make the pin unobtainable. If this refuses, the guard is inverted and every chat is bricked |
 | **E14** | `revit_select_by_category`, then `revit_change`, **same model, no switching**. Do it once on a **saved** project and once on one that is **unsaved and never saved** | The change **runs**. Both tools must produce the **same** key for one model — while the fragment reply carried only the title, these two disagreed and the second refused a model it was already working in, naming it on both sides of *"but"*. The unsaved case is the one it was reported against and the most exposed: with no `documentPath` either, nothing could stand in for the missing key |
 
+### What has been observed so far, and it is NOT any of E11-E14
+
+**2026-09-15, Revit 2020 session 8084, model `PIPE` (3,287 elements, on the
+owner's Desktop), add-in deployed from `claude/friendly-hypatia-196de4`.** One
+model was open and it was the owner's own file, so no row above could be run:
+E11 needs a second project, E12 needs a family, and E13/E14 write for real.
+**No row above is ticked.**
+
+What WAS exercised is the **add-in half**, directly over the bridge, read-only.
+Four `run_fragment_read` calls of `count-elements` against the same model at the
+same moment, differing **only** in `expectProject` - which is what makes it a
+contrast rather than four separate observations:
+
+| `expectProject` | Result |
+|---|---|
+| omitted entirely | ran (the proving client's own path - it sends no key) |
+| `""` | ran, reached need-binding - `needs_unbound` on `elements`, a LATER stage |
+| the real key, `8764c510-...-0000c160` | ran, reached need-binding - the same later stage |
+| `00000000-dead-beef-...` | **REFUSED** - `wrong_document`: *"the one this would have run in is PIPE. NOTHING was read."* |
+
+So the guard is **deployed and live**; **empty really does mean do not check**,
+which is E13's mechanism exercised rather than reasoned about; and **a matching
+key really does pass** - worth its own row, because a guard that refused
+everything would also have refused the wrong key, and the two would be
+indistinguishable from the refusal alone. The sentence says *read* rather than
+*written* because it was on the read path.
+
+**And the half that makes the guard reachable a second time:** a SUCCESSFUL
+fragment run (`list-levels`) now answers with `documentPath` and `projectKey`,
+and that key is **byte-identical** to `count_elements`' on the same model. That
+is E14's root cause measured as fixed - the reply used to carry the title alone,
+so `DocumentPin` fell to its `title:` fallback, `project_key` stayed `None`, and
+`expectProject` went out EMPTY on every later call, switching the guard off for
+exactly the chat that needed it.
+
+Error replies report `projectKey = None`, correctly rather than as a gap: they
+return from `Json.Error` and never reach `Report`.
+
 ## Group F — Steps 1-5 are no longer proven on this build
 
 **This group got more important on 2026-08-28, and it is not a leftover any more.**
