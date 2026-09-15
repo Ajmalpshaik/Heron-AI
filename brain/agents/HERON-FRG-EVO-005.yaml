@@ -1,0 +1,99 @@
+# Fragment Evolution Agent - HERON-FRG-EVO-005
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent SUGGEST and says it ALWAYS PROPOSES. It decides none of the eight
+# verdicts and holds no rule of its own - every one names the agent or the
+# document that owns it.
+
+agent: HERON-FRG-EVO-005
+version: 1.0.0
+
+input:
+  fragment:
+    type: map
+    required: true
+    description: The fragment being considered.
+  because:
+    type: string
+    required: true
+    description: >
+      What happened that makes it worth evolving. Required: without it
+      every answer is "KEEP, probably", which is a menu rather than a
+      proposal (D-33).
+  findings:
+    type: map
+    required: false
+    description: >
+      verdict -> what supports it, from the agents that own each. SPLIT
+      needs one from HERON-FRG-SPL-003 and MERGE one from
+      HERON-FRG-MRG-004; without them those verdicts are ruled out
+      rather than offered, because a verdict nobody can act on is a menu
+      item. A key that is not one of docs/28's eight is refused.
+
+output:
+  considered:
+    type: boolean
+    description: True when the verdicts were sorted.
+  decided:
+    type: boolean
+    description: Always false. This agent decides none of the eight.
+  fragment:
+    type: string
+    description: Which fragment, by slug or id.
+  because:
+    type: string
+    description: The reason, read back as given.
+  status:
+    type: string
+    description: Its lifecycle status.
+  available:
+    type: list
+    description: >
+      Each verdict somebody could act on, with its owner, what they
+      decide it on, what supports it if anything does, and whether it is
+      on Golden Rule 4's ladder.
+  ruled_out:
+    type: list
+    description: >
+      Verdicts nobody could act on, each with the owner who did not
+      propose it and why. Ruled out, never hidden.
+  order:
+    type: list
+    description: >
+      The available ladder verdicts in Golden Rule 4's order of
+      preference - keep, extend, adapt, version-branch - mapped onto
+      docs/28's words. The mapping of "adapt" onto UPDATE is the one
+      place this agent reads between two documents, and it says so.
+  beside_the_ladder:
+    type: list
+    description: >
+      Available verdicts that are not degrees of changing a fragment -
+      SPLIT, MERGE, DEPRECATE, ARCHIVE - reported beside the ladder
+      rather than inside it.
+  may_be_applied:
+    type: boolean
+    description: False at PRODUCTION, which docs/09 s118 protects.
+  why:
+    type: string
+    description: The fragment, the reason, the counts and the order.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That this agent decides none of them; that the
+      order is Golden Rule 4's and only four of the eight are on it;
+      which were ruled out; and whether anything may be applied at all.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_EVOLVE
+  - NOT_A_FRAGMENT
+  - NO_REASON
+  - NOT_A_VERDICT
+
+retry:
+  attempts: 0
+  on-failures: []
