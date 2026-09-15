@@ -1,0 +1,82 @@
+# File Registry Agent - HERON-WSP-REG-012
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register's Risk
+# column for this row is EMPTY, which HERON-AHR-TRN-005 refuses to read as
+# READ - somebody has to fill it in before this agent can be trained.
+
+agent: HERON-WSP-REG-012
+version: 1.0.0
+
+input:
+  files:
+    type: list
+    required: true
+    description: What to report on. Paths, handed in.
+  read:
+    type: callable
+    required: false
+    description: >
+      Returns a file's text so its header can be read. Handed in because
+      this agent does not open files: scanning the disk and then
+      reporting on what was seen is how a registry and the filesystem
+      drift apart between one call and the next. With no reader every
+      file is unidentified, and the answer says that rather than
+      reporting an empty repository.
+
+output:
+  identified:
+    type: list
+    description: >
+      Files claiming an agent id, with every docs/29 field they carry and
+      every one they do not.
+  declared_none:
+    type: list
+    description: >
+      Files stating `Heron-Agent: none` - they implement no agent and say
+      so. A different answer from silence: one is a decision somebody
+      made, the other is a header nobody wrote.
+  unidentified:
+    type: list
+    description: >
+      Files carrying no Heron-Agent line at all. NOT guessed from where
+      the file sits - inferring an identity from a path is how a registry
+      invents a fact everything downstream then believes.
+  contested:
+    type: list
+    description: >
+      Agent ids claimed by more than one file, REPORTED and never
+      resolved. Which is real is a question about the repository, and
+      picking one would make the others invisible.
+  unreadable:
+    type: list
+    description: Files whose reader raised, named rather than dropped.
+  by_class:
+    type: map
+    description: Every path sorted by HERON-WSP-PTH-007's class.
+  agents:
+    type: list
+    description: The distinct agent ids claimed.
+  why:
+    type: string
+    description: The five counts in a sentence.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was stored (D-40), that an identity
+      here is a claim rather than a grant (Golden Rule 19), that an agent
+      id no file claims is not visible here at all - that needs
+      HERON-AHR-REG-008 - and the source-checkout caveat PTH-007 carries.
+
+allowed-tools: []
+
+timeout-seconds: 15
+
+failures:
+  - NOTHING_TO_REGISTER
+  - NOT_A_READER
+  - NOT_A_FILE_LIST
+
+retry:
+  attempts: 0
+  on-failures: []

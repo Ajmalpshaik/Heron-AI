@@ -775,3 +775,45 @@ trust level and gains a validator, whether it is joined by an approval record as
 fragment written in this repository is entitled to claim about itself are three decisions, not a patch.
 `HERON-INS-SUP-013` is built to take the answer — it compares a package's claim against a register from
 outside it and refuses `SELF_DECLARED_TRUST` — and needs that register to exist.
+
+### 🟡 F10. Two files claim one agent id, and nothing has ever reported it
+
+**Found 2026-09-15 by `HERON-WSP-REG-012` on its first run against the real repository** — not by a
+fixture, and not by reading. Both of these carry `Heron-Agent: HERON-FRG-VAL-001`:
+
+```bash
+grep -l 'HERON-FRG-VAL-001' brain/*.py
+head -3 brain/heron_fragment.py brain/heron_validate.py
+```
+
+| file | step | what it is |
+|---|---|---|
+| `brain/heron_fragment.py` | 7 | *"What a fragment IS on disk, and the validator that will not let it lie"* |
+| `brain/heron_validate.py` | 17 | *"The Fragment Validation Agent. It gathers evidence for a proof. It never signs one."* |
+
+**Nothing in the repository can see this.** [`tools/check-metadata.py`](../tools/check-metadata.py)
+checks that each claimed id EXISTS in the register, then collects them with `claimed.add(aid)` into a
+**set** — so two files claiming one id collapse to one entry and the count comes out right.
+`tools/agent-count.py` counts the agent as built either way. Both gates pass, and have all along.
+
+**Multi-file agents are legitimate here** — several agents span `brain/` and `mcp/`, or a module and
+its C# half, and the register row for `HERON-FRG-VAL-001` is broad enough to cover both halves:
+*"Logic, API, versions, dependencies, metadata, duplication, reusability"*. So this is **not
+automatically a defect**, which is exactly why it needs a person rather than a patch.
+
+**The question is which of three things it is**, and only the owner can say:
+
+1. **One agent, two files, correctly** — the format half and the evidence half. Then nothing changes
+   except that the gate should stop being blind to the pattern.
+2. **Two agents wearing one id** — the schema validator is arguably `HERON-FRG-FMT-*` work and not
+   validation at all. Then one of them needs its own registry row.
+3. **A rename that never finished** — the usual cause, and the one the gate's own comment warns about
+   two lines further down.
+
+**Not fixed here, deliberately.** Splitting an agent or renaming one is an ADMIN act needing a
+signature — `HERON-AHR-RET-010` refuses it without one — and picking a winner would make the other
+file invisible, which is the precise thing `HERON-WSP-REG-012` refuses to do.
+
+**Worth adding whichever way it goes:** a check that reports one id claimed by more than one file.
+Today that costs nothing to add and surfaces a real ambiguity; it stops costing nothing the first time
+a rename half-lands and two files disagree about what they are.
