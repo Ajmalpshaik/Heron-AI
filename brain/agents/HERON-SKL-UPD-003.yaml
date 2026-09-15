@@ -1,0 +1,86 @@
+# Skill Update Agent - HERON-SKL-UPD-003
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY. It writes over the card it revised; git is the history.
+
+agent: HERON-SKL-UPD-003
+version: 1.0.0
+
+input:
+  existing:
+    type: map
+    required: true
+    description: >
+      The skill as it stands, complete. A card missing any field in
+      heron_skill.REQUIRED is refused - the step and version are carried
+      forward from it, and carrying forward a field that is not there
+      writes a null into the new card.
+  changes:
+    type: map
+    required: true
+    description: >
+      The fields to set. The id may not be among them: a skill's id is
+      what every caller holds, and changing it is authoring a second
+      skill rather than revising this one.
+  into:
+    type: string
+    required: false
+    description: Where to write. Defaults to heron_skill.SKILLS_DIR.
+
+output:
+  revised:
+    type: boolean
+    description: True when the card was written.
+  path:
+    type: string
+    description: The file written - the same one, written over.
+  card:
+    type: map
+    description: What was written, at DRAFT.
+  changed:
+    type: list
+    description: Which fields actually moved. Never empty on success.
+  was:
+    type: string
+    description: The status before the revision.
+  status:
+    type: string
+    description: >
+      Always DRAFT. Not only when something broke - a revised skill is a
+      thing nobody has watched work, whatever its predecessor earned.
+  broke:
+    type: list
+    description: >
+      Each breaking change, with the field, the DIRECTION that breaks it
+      and who it breaks for. Non-empty only below PRODUCTION; at
+      PRODUCTION the same list comes back with the refusal.
+  why:
+    type: string
+    description: What moved, and where the skill landed.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That it went back to DRAFT regardless; which
+      changes break callers and why that was allowed here; that nothing
+      ran the revision; and that the old card is gone from disk, with no
+      second copy kept and no pretence that there is one.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NO_SUCH_SKILL
+  - NOTHING_TO_APPLY
+  - NOT_A_REVISION
+  - INCOMPLETE
+  - NOT_REVISABLE
+  - NOT_A_VERSION
+  - NOT_A_RISK
+  - NOTHING_CHANGED
+  - BREAKS_CALLERS
+
+retry:
+  attempts: 0
+  on-failures: []
