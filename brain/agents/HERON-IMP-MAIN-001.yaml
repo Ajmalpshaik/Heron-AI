@@ -1,0 +1,118 @@
+# Import Agent - HERON-IMP-MAIN-001
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY and puts "never modifies the source folder" in its own row in
+# bold. Every agent this one reaches is READ; the MODIFY ones are past the
+# point an unattended run gets to.
+
+agent: HERON-IMP-MAIN-001
+version: 1.0.0
+
+input:
+  folder:
+    type: path
+    required: true
+    description: >
+      The folder the user offered. Walked read-only and never modified -
+      docs/10 s5 constraint 1.
+  path:
+    type: path
+    required: false
+    description: >
+      Where docs/00 s28's numbered list is read from. Omitted means the
+      specification itself. The order is PARSED, never kept as a copy
+      here.
+  register:
+    type: path
+    required: false
+    description: Where the department's agent ids are read from.
+
+output:
+  ran:
+    type: boolean
+    description: True when the folder was walked and the plan read.
+  planned:
+    type: boolean
+    description: From `plan` - true when the sixteen steps were read.
+  root:
+    type: path
+    description: The absolute folder, recorded as provenance.
+  of:
+    type: integer
+    description: How many steps docs/00 s28 lists.
+  steps:
+    type: list
+    description: >
+      Each step with what it does, which agent owns it, whether that
+      mapping is named in the agent's own row or is a reading, and
+      whether the agent is built.
+  done:
+    type: list
+    description: >
+      The steps that ran with no model and no person - the walk, and
+      nothing more.
+  stopped_at:
+    type: integer
+    description: The step the unattended run stopped at.
+  waiting_for:
+    type: map
+    description: >
+      That step, and WHY it stopped - an answer a T2 step needs, or an
+      agent that is not built. Those are different reasons and the
+      answer says which.
+  questions:
+    type: list
+    description: >
+      The questions HERON-IMP-CLS-003 prepared, ready for the host - one
+      per KIND of file, not one per file.
+  unbuilt:
+    type: list
+    description: >
+      Agents the pipeline needs that no file claims. Read from the
+      register and the source headers, never asserted.
+  uncertain:
+    type: list
+    description: >
+      Steps mapped to an agent on a reading rather than on that agent's
+      own row, each with why. docs/00 s29 lists the agents in ID order
+      and nothing maps the two lists onto each other.
+  unknown_agents:
+    type: list
+    description: >
+      Agents this pipeline's step table names that the register does not
+      list - a row renamed or retired while the mapping stayed put. The
+      mapping is the one thing here that IS a copy, so it is checked
+      rather than trusted.
+  unmapped:
+    type: list
+    description: >
+      Steps in the specification that this agent's table does not cover
+      at all - empty today, and it would not be if a step were added.
+  modified_the_source:
+    type: boolean
+    description: Always false.
+  why:
+    type: string
+    description: How far it got, where it stopped and why.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That the order was read and not remembered;
+      which mappings are a reading; that stopping for an answer is not
+      the same as stopping for a missing agent, and which step is the
+      first with no agent at all; that steps 3, 6 and 10 are one
+      question with one owner; and that nothing was written.
+
+allowed-tools: []
+
+timeout-seconds: 600
+
+failures:
+  - NO_SPECIFICATION
+  - NOTHING_TO_WALK
+  - NOT_A_FOLDER
+
+retry:
+  attempts: 0
+  on-failures: []
