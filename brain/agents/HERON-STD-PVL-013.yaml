@@ -1,0 +1,83 @@
+# Profile Validation Agent - HERON-STD-PVL-013
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. It promotes nothing and calls no name wrong.
+
+agent: HERON-STD-PVL-013
+version: 1.0.0
+
+input:
+  profile:
+    type: map
+    required: true
+    description: >
+      HERON-STD-REF-010's answer - the patterns inferred from ONE
+      delivered model. A refusal from that agent carries no patterns and
+      is refused here.
+  names:
+    type: list
+    required: true
+    description: >
+      Each {name, kind} from a SECOND delivered model. One model cannot
+      corroborate itself (docs/10 s5a).
+
+output:
+  validated:
+    type: boolean
+    description: True when the profile and the second model were read.
+  kinds:
+    type: list
+    description: >
+      One row per kind, with the profile's shape and proportion, how
+      many of the second model take it, that model's OWN dominant shape,
+      and every unmatched shape with its count.
+  corroborated:
+    type: list
+    description: >
+      The kinds whose pattern is dominant in BOTH models - a convention.
+  coincidence:
+    type: list
+    description: >
+      The kinds whose pattern is present here and not dominant. One
+      project's coincidence until a third model says otherwise.
+  didNotTransfer:
+    type: list
+    description: >
+      The kinds where NOTHING matched. That is a finding about the
+      PROFILE, not a model full of failures - reading it the other way
+      is the "flagging correct work as wrong" this row exists to
+      prevent (PROPOSALS F30).
+  promoted:
+    type: boolean
+    description: >
+      Always false. Whether a corroborated pattern may climb off
+      DISCOVERED is docs/24's trust model and a human's yes.
+  stays_at:
+    type: string
+    description: DISCOVERED, through HERON-STD-REF-010's own constant.
+  why:
+    type: string
+    description: The four counts, and that nothing was promoted.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That convention and coincidence are COUNTED, not
+      decided; which kinds the profile did not transfer to and why that
+      is about the profile; the CANDIDATE job number derived from the
+      difference between the two shapes, named and never stripped; that
+      every unmatched name is an exception rather than a violation; and
+      that nothing was promoted.
+
+allowed-tools: []
+
+timeout-seconds: 120
+
+failures:
+  - NOT_A_PROFILE
+  - NOTHING_TO_VALIDATE
+  - NOT_A_NAME
+
+retry:
+  attempts: 0
+  on-failures: []
