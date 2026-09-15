@@ -591,6 +591,21 @@ namespace Heron.Revit.Addin
             var title = "";
             try { title = target.Title; } catch { }
 
+            // AND ITS IDENTITY, NOT ONLY ITS NAME. A title is what a person
+            // reads; it is not what tells two models apart, and this reply was
+            // the ONE operation sending the name alone. Every other op sends
+            // documentPath and projectKey, so the server's document pin held
+            // "project:<uid>" from a read tool and then read "title:Project1"
+            // back off every fragment run - two strings, one model - and
+            // refused the write naming the SAME model on both sides of its
+            // "but". Reported 2026-09-15 against an UNSAVED model, where the
+            // path was absent too and nothing could stand in for the key.
+            var path = "";
+            try { path = target.PathName; } catch { }
+
+            string projectKey = null;
+            try { projectKey = RevitOperations.ProjectKey(target); } catch { }
+
             var view = "";
             try { view = uidoc == null || uidoc.ActiveView == null ? "" : uidoc.ActiveView.Name; }
             catch { }
@@ -610,6 +625,8 @@ namespace Heron.Revit.Addin
             {
                 Json.Str("ran", name),
                 Json.Str("document", title),
+                Json.Str("documentPath", string.IsNullOrEmpty(path) ? null : path),
+                Json.Str("projectKey", projectKey),
                 Json.Str("activeView", view),
                 Json.Bool("wasActiveDocument", inFront),
             };
