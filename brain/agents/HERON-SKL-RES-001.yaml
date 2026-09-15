@@ -1,0 +1,94 @@
+# Skill Research Agent - HERON-SKL-RES-001
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. Nothing is written and nothing is decided.
+#
+# The register marks this row with an arrow: it is a proposal written out
+# from a name in the source specs, not a quotation. It is built to the
+# decisions that govern it - D-34 and D-01 for the language question, D-05
+# for the releases - rather than to the wording of the row.
+
+agent: HERON-SKL-RES-001
+version: 1.0.0
+
+input:
+  proposal:
+    type: map
+    required: true
+    description: >
+      The skill being considered, as a skill card would carry it:
+      {id, name, domain, needs, utterances, revit}. A proposal with no
+      `needs` is not compared by capability set, and the answer says so -
+      an empty set equals every other empty set, which is not a duplicate.
+  skills:
+    type: list
+    required: false
+    description: >
+      The existing library to compare against. An entry that is not a
+      skill card is refused rather than skipped: comparing against
+      rubbish returns "it does not exist", which is the wrong answer
+      arrived at confidently.
+  fragments:
+    type: list
+    required: false
+    description: >
+      The fragment library, each carrying {id, capability, revit}. Read
+      only to answer which capabilities already have a provider.
+
+output:
+  researched:
+    type: boolean
+    description: True when the three questions were put.
+  exists:
+    type: map
+    description: >
+      id_taken, same_job (the same capabilities in the same domain - a
+      skill IS what it needs), and same_utterances (exact text, never a
+      meaning). Whether one MEANS the same is not answered here.
+  needs:
+    type: map
+    description: >
+      served, partly_served and gaps. A capability provided on only some
+      of the releases the proposal declares is counted apart from
+      served, never as part of it.
+  standard:
+    type: map
+    description: >
+      Always answered:false. The question is named with the agents that
+      own it, none of which is built. HERON-STD-ISO-003's rule is
+      "cites, never invents" - with nothing to cite, the answer is that
+      there is nothing to cite.
+  shortlist:
+    type: list
+    description: >
+      The skills sharing at least one capability with the proposal, for
+      the host's one scoped call. A shortlist, never the library.
+  of:
+    type: integer
+    description: How many existing skills were read.
+  why:
+    type: string
+    description: The three answers in one line.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That meaning is the host's under D-34 and D-01;
+      how large the shortlist is and why; which capabilities are only
+      partly served; that the standards question is named and unanswered
+      rather than guessed; and whether the capability-set comparison ran
+      at all.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_RESEARCH
+  - NOT_A_PROPOSAL
+  - NOT_A_VERSION
+  - NOT_A_SKILL
+
+retry:
+  attempts: 0
+  on-failures: []
