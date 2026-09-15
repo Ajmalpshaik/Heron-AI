@@ -1960,3 +1960,33 @@ old sentence survives **only in a comment**, so the check could never have passe
 the durable claim instead - **writing is GATED, and Heron says so** - asserting both that the reply
 names the switch and that it names the refusal, so deleting the permission wording still fails it.
 A Heron that claimed it could write freely is the danger worth a test.
+
+
+### `test_agents.py`: 279 seconds to 5.5, and it was one missing argument
+
+The row above says it needs making faster and does not say why. It is one line, and the mechanism is
+worth keeping because nothing about it looked like a performance bug.
+
+`heron_agents.record()` line 174 reads `deals = contracts() if deals is None else deals`, and
+`contracts()` re-reads every contract from disk - **0.6 seconds a call**. `tests/test_agents.py`
+built two list comprehensions over all **250** agents calling `record(a, agents, claims, host)`
+**without `deals`**, plus one more per spanning agent. Five hundred calls, 0.6s each. **That is the
+279 seconds**, and the value it kept rebuilding was already sitting in `deals` at the top of
+`main()`, computed once at line 64.
+
+| | |
+|---|---|
+| before | **279.3s** of check-gaps' 300s bound - 7% margin |
+| after | **5.5s** |
+| assertions | **43, unchanged** - `deals` is the identical value `record()` built for itself |
+
+**What this cost before it was found.** It HUNG - exceeded the bound and was killed - on **two of
+three** runs, passing only on the one where nothing else was using the machine. Each hang cost five
+minutes and reported a failure that did not exist, and `A18`'s whole lesson is what a report that
+cries wolf does to the person reading it. The first of those hangs was recorded in this file as an
+undiagnosed defect in a suite that had nothing wrong with it.
+
+**The shape to remember:** a function that lazily rebuilds an expensive input when an argument is
+omitted is invisible at one call site and quadratic at two hundred and fifty. `records()` - plural -
+was never slow, because it builds `deals` once and passes it down. The singular call in a loop is
+the trap.

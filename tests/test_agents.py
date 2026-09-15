@@ -191,8 +191,15 @@ def main():
              if len([f for f in files if not f.startswith("tests/")]) > 1]
     check(multi, "%d agent(s) really are implemented by more than one file"
           % len(multi))
+    # PASS `deals`. record() does `deals = contracts() if deals is None`, and
+    # contracts() re-reads every contract from disk - 0.6s a call. Omitting it
+    # here and below meant 500 calls and 0.6s each: this suite took 279s of
+    # check-gaps' 300s bound, and HUNG on any machine that was busy. Twice in
+    # three runs it was reported as a failure that did not exist. Nothing about
+    # what is asserted changes - `deals` is the same value record() would have
+    # built for itself, already computed at the top of main().
     contested = [a for a in agents
-                 if (REG.record(a, agents, claims, host) or {})
+                 if (REG.record(a, agents, claims, host, deals) or {})
                  .get("header_disagreements")]
     check(contested == [],
           "and none of the 250 disagree about status or version today")
@@ -201,12 +208,12 @@ def main():
     # span brain and bridge, or revit and platform, and calling that
     # contested on four agents is how a real warning gets ignored.
     spanning = [a for a in agents
-                if len((REG.record(a, agents, claims, host) or {})
+                if len((REG.record(a, agents, claims, host, deals) or {})
                        .get("layers") or []) > 1]
     check(spanning, "%d agent(s) span more than one layer, and none is "
                     "reported as contested" % len(spanning))
     for agent_id in spanning:
-        record = REG.record(agent_id, agents, claims, host)
+        record = REG.record(agent_id, agents, claims, host, deals)
         check(not record["header_disagreements"],
               "%s spans %s and is not contested"
               % (agent_id, "/".join(record["layers"])))
