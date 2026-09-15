@@ -481,6 +481,49 @@ The working prototype of `HERON-DOC-API-001`.
 
 ---
 
+## `api-changes.py` — what each Revit release stopped shipping
+
+```bash
+python tools/api-changes.py                 all eight, in order
+python tools/api-changes.py 2025 2026       just that transition
+```
+
+Produces `tools/api-surface/changes.json`, which
+[`HERON-REVIT-ACI-034`](../brain/heron_apichanges.py) reads. It is the tool and not the agent, because
+it needs the network, a .NET SDK and 264 MB of reference assemblies, and an agent that only answers on a
+machine with all three answers nowhere useful. Same split as `HERON-DEV-NET-006` and `check-compile.py`.
+
+It dumps every public type and member each release ships — via a new `--dump` mode on
+[`api-surface/Program.cs`](api-surface/Program.cs) — and diffs adjacent releases. **Removals are kept in
+full; additions are counted.** A member that disappeared breaks code that calls it; a member that
+appeared breaks nothing, and listing 18,000 of them buries the ones that matter.
+
+| transition | removed | added |
+|---|---|---|
+| 2020 → 2021 | 627 | 2,816 |
+| 2021 → 2022 | 906 | 8,126 |
+| 2022 → 2023 | 828 | 1,402 |
+| 2023 → 2024 | 282 | 1,364 |
+| 2024 → 2025 | 665 | 1,751 |
+| 2025 → 2026 | **239** | 1,415 |
+| 2026 → 2027 | 647 | 1,780 |
+
+`ElementId.IntegerValue` is in that 239. It was written into this repository with a comment calling it
+*"the property every version has had"*, by someone who had checked five releases and extrapolated to
+eight. **That is D-05, and this is the tool that would have said so.**
+
+**The surfaces are gitignored and the digest is committed.** A release's full surface is ~3 MB and there
+are eight; what changed between them is a few hundred lines. The surfaces are the working, the digest is
+the result, and the result is what survives a fresh checkout with no network.
+
+**What it cannot see, and the register asks for it.** docs/28 wants *"silent behavioural changes"*.
+Reading two assemblies finds a member that is gone. It does not find one still there that returns a
+different unit, or now throws where it returned null, or whose meaning changed — and it does not find a
+**deprecation**, because `[Obsolete]` is an attribute and this reads names. A member marked in 2024 and
+deleted in 2026 appears at 2025 → 2026 and nowhere earlier, two years after the warning existed.
+
+---
+
 ## `generate-contract-reference.py` — what was built, and what it promised
 
 ```bash

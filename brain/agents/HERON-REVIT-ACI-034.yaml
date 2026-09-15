@@ -1,0 +1,92 @@
+# API Change Intelligence Agent - HERON-REVIT-ACI-034
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. Nothing is fixed: the answer names the fragments and the
+# members, and HERON-FRG-EVO-005 is Fragment Evolution.
+
+agent: HERON-REVIT-ACI-034
+version: 1.0.0
+
+input:
+  fragments:
+    type: list
+    required: true
+    description: >
+      Each {id, revit, code} - the releases it claims and its C#. A
+      fragment that does not claim the release being asked about is
+      skipped rather than cleared: it was never going to run there.
+  release:
+    type: string
+    required: true
+    description: >
+      The release being moved TO. What was removed is a property of the
+      release that dropped it, and "what breaks if I claim 2026" is
+      answered by what 2026 removed. One of the eight
+      HERON-FRG-VAL-001 owns; a ninth is never extrapolated (D-05).
+  found:
+    type: map
+    required: false
+    description: >
+      The evidence, when a caller already has it. Defaults to reading
+      tools/api-surface/changes.json.
+  path:
+    type: path
+    required: false
+    description: Where to read the evidence from. Defaults to the file above.
+
+output:
+  checked:
+    type: boolean
+    description: True when the evidence was read and the fragments compared.
+  release:
+    type: string
+    description: The release asked about, as given.
+  removed:
+    type: integer
+    description: >
+      How many public members that release stopped shipping, across the
+      whole API - not only the ones these fragments touch.
+  breaks:
+    type: list
+    description: >
+      Each fragment that claims the release and may call something it
+      removed, with the members named. POSSIBLY calls: a compiler
+      answers that and this process cannot compile C#.
+  clear:
+    type: list
+    description: >
+      The ids that claim the release and name nothing removed. Clear
+      here is not proof - it is the absence of a warning, and
+      tools/check-fragments-compile.py is the answer.
+  fixed:
+    type: boolean
+    description: Always false. Nothing is changed; the register gives this READ.
+  why:
+    type: string
+    description: What the release removed, how many claim it, how many may break.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. What a static read cannot see - a changed unit,
+      a new exception, a changed meaning, a deprecation, a changed
+      signature; that a member is POSSIBLY called rather than called and
+      why the error runs that way; that nothing was fixed and who fixes
+      it; and that the evidence is only as fresh as the last run of the
+      tool that made it.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NO_EVIDENCE
+  - NO_RELEASE
+  - UNKNOWN_RELEASE
+  - NO_EARLIER_RELEASE
+  - NOTHING_TO_CHECK
+  - NOT_A_FRAGMENT
+
+retry:
+  attempts: 0
+  on-failures: []

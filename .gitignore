@@ -168,6 +168,13 @@ temp/
 # Autodesk's, cached locally, never committed.
 tools/api-surface/.assemblies/
 
+# Each release's full public surface, dumped from those assemblies.
+# ~3 MB a release and regenerated in seconds once the assemblies are
+# cached. The DIGEST of what changed between them is committed -
+# tools/api-surface/changes.json - because that is the answer, and
+# regenerating it needs 264 MB of downloads and a .NET SDK.
+tools/api-surface/.surface/
+
 # Generated pages. Each is rebuilt from the repository in a second, and
 # tools/README says the reason none of them is committed - which was true of
 # the intent and not of the rules until 2026-09-08.
