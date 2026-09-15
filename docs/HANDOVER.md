@@ -81,7 +81,12 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
-**360 fragments. 197 `PROVEN`. 163 below — past half, as of 2026-09-11.** D-28's executor is built, fragments run against a real
+> **UPDATED 2026-09-15.** The rows below were rewritten that day against derived numbers. Several had
+> been stale for a week — the agent row said 71 when it was 211, the test row said 41 suites when it
+> was 188. **Derive every number before trusting it**; each row names the command.
+
+**360 fragments. 277 `PROVEN`, 83 `DRAFT`, as of 2026-09-15** — and on 2026-09-14 **all 360 compiled on
+all eight releases they claim, for the first time.** D-28's executor is built, fragments run against a real
 model, and since 2026-09-09 they can also CHANGE one. That is the thing every earlier handover was
 waiting for.
 **Proving is live and these two numbers move hourly — run
@@ -94,17 +99,19 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 |---|---|
 | Fragments | **360** — every fragment-shaped job in the earlier library, five cross-project transfers from PART 5, `CREATE_GLOBAL_PARAMETER` (2026-09-07), `FIND_DATES_IN_VIEWS`, built AND proved 2026-09-08, and **ten added 2026-09-08 for the review's N01–N09 plus the read they depend on** — see the entry below. All ten are `DRAFT` and NONE has met a model |
 | Proven | **197 of 360** as of 2026-09-11 (was 198; `export-views-to-fbx` was put BACK to `DRAFT` by the owner on 2026-09-11 — it is `risk: PUBLISH` and was proved through `validate`, which does not apply the risk gate `fragment` and `prove` both apply. Its proof block was kept; only the status claim was withdrawn. Before that 196; PR #108 promoted `import-parameter-values` and `export-views-to-fbx` — the first found by WRITING the CSV it reads rather than waiting for the model to hold one. Before that 188; PR #104 promoted eight found by SWEEPING fifty-one fragments in two bulk passes instead of probing one at a time — including `sum-by-group`, which with `group-and-count` completes the pair the `keep-chain` fix was built for. Before that 186; PR #99 promoted `flip-elements` and `dimension-wall-openings`, both blocked on Snowdon because its architecture is in a link and both proved on `Project1`'s hand-drawn walls and door — the third and fourth times a triage row named the model that would work. Before that 185; PR #96 promoted `set-mep-slope`, proved on `Project1` after Snowdon refused all 22 of its ducts — the second time a triage row named the model that would work and was right. Before that 180; PR #92 promoted five proved on `Snowdon-scratch` — four re-runs whose earlier records were same-day and therefore stale, plus `check-flow-direction`, which `Project1` could not feed because its ducts carry no system. Before that 178; PR #88 promoted the last two proved on `Project1`. Before that 175; PR #86 promoted three proved on the same model, one built by hand for the purpose — including `find-dead-ends`, which §3b had set aside three times on Snowdon and which needed only a duct run with a loose end. Before that, 167; PR #79 promoted eight — the first WRITE fragments this repository has promoted) — 142 at the start of the day's second proving track, **+18 from it**, and `set-view-section-box` back to `DRAFT` when its implementation changed after its proof was signed. Each carries a recorded proof with a negative case and a staleness fingerprint (D-30). Moving hourly — derive it, do not read it here |
-| Compile gate | green, Revit 2020–2027 |
+| Compile gate | green, Revit 2020–2027 — **and since 2026-09-14 all 360 fragments compile on all eight releases too**, which had never been run on any machine before that day |
+| Contracts | **124** in `brain/agents/`. `python tools/generate-contract-reference.py` builds a page of every one against the code that claims it, and it found **three refusals the code produces that no contract declared** on its first run. All three are fixed; every declared refusal is now reachable and every refusal declared |
+| Revit API | **The full public surface of all eight releases is now readable.** `python tools/api-changes.py` says what each release stopped shipping — 4,194 members across seven transitions. `ElementId.IntegerValue` is in the 239 that left at 2026, and this repository had written it down as *"the property every version has had"*. **Ask `HERON-REVIT-ACI-034` before writing a Revit member you have not compiled** |
 | Other gates | metadata, docs, gaps, agent-count, **structure** — all green. **`check-licence` added 2026-09-09 and it EXITS 1 on a finding**, unlike the other reports; 370 units, all clean today ([D-66](DECISIONS.md)). `check-revit-gate` and `check-reachable` are reports and exit 0, so their findings are questions and two of them are now worklists. The `structure` red at `83fd7e8` was `read-space-loads` naming a vendor namespace in `brain/`; **fixed 2026-09-08**, and note the checker greps the file text, so a COMMENT mentioning it fails too |
-| Tests | **41 suites when this was measured, on 2026-09-10, of which 36 passed in a plain Linux container — derive the count now with `ls tests/test_*.py | wc -l`, because it moves whenever anybody adds a file. Three failures are the MACHINE, with two causes not one** — `test_mcp_serves` and `test_served_claims` need the MCP SDK, `test_bridge_roundtrip` needs a built .NET test host. On a machine with both, those three should pass. **`test_graph` and `test_reachable` were the two that were NOT the machine, and both were fixed on 2026-09-12** — each carried a fixture describing a repository that had moved on, and neither test's claim changed (see the PART record below). **Do not fix a test by editing it until it passes**; `test_embed` and `test_retrieve` were re-based against the model backend in PART 5, not edited until green. **The count was also Linux-specific and nobody knew**: `test_context` failed on the owner's Windows checkout on one check, comparing a path against a hardcoded `/` — so Windows saw one fewer pass than every document here promised. Fixed 2026-09-12 at the comparison; **unproved on Windows**, which is what [NEEDS-CHECKING](NEEDS-CHECKING.md) **A14** is for. Derive the number, never read it here |
+| Tests | **188 suites as of 2026-09-15, and all 188 pass in a plain Linux container with nothing excused.** Derive it: `ls tests/test_*.py | wc -l`. **The three long-standing "machine" failures were never machine failures.** `test_mcp_serves`, `test_served_claims` and `test_bridge_roundtrip` were excused for weeks as needing Windows and Revit; they needed `pip install --user mcp` and one `dotnet build`, both already written down in `.claude/skills/heron-ship/SKILL.md`. Nobody had run them. **Do not fix a test by editing it until it passes** — `test_embed` and `test_retrieve` were re-based against the model backend, not edited until green. **And do not pin a derived count inside a test**: `test_csharp` pinned three measured integers on 2026-09-15 and went red the same hour when one C# file was added. Check the CLAIM, not the figure |
 | Register | **71 rows, 19 closed, 52 left** — PART 6 added Group J, the eight that would prove the executor's inputs. Group A is FINISHED. **Only `R1b` does not need Revit** |
 | Add-in | **THAT CLAIM WAS WRONG AND IS CORRECTED. Rebuilt and redeployed 2026-09-10, to Revit 2020, 2024 AND 2027**, verified at binary level. The binary Revit had loaded was dated 2026-09-08 23:06 while `RevitFragment.cs` was written 2026-09-09 23:14 - so D-67's caller-value widening and the rollback check had NEVER reached the machine ([FRAGMENT-ISSUES](FRAGMENT-ISSUES.md) rows 8 and 12). Deploy ONE release at a time. Rebuild it after ANY change under `revit/` — and check the framework first: `check-compile.py` builds 2020–2027 into one folder and the newest wins, so a run of it leaves .NET 10 binaries that Revit 2024 refuses with *"Revit cannot run the external application"*. `deploy-addin.ps1` now guards this rather than trusting the operator |
-| Agents | **71 of 250 have code**, 4 host-provided by D-01, 175 left — `python tools/agent-count.py`. The 71st is `HERON-RAG-CTX-007`, the Context Manager, on 2026-09-09. Phase 0/1's agent list is COMPLETE |
-| MCP tools | **14** — `heron_gaps`, `heron_compatibility` and `heron_diagnose` added 2026-09-07/08; **`heron_context` added 2026-09-09** (the Context Manager, [32 §4.1](32-master-architecture-reconciliation.md)). Derive it: `grep -c '^@server.tool()' mcp/server/heron_mcp_server.py` |
+| Agents | **211 of 250 have code** as of 2026-09-15, 4 host-provided by D-01, **35 left** — `python tools/agent-count.py`. **Sixteen departments are complete.** Phase 0/1's agent list is COMPLETE. The 35 remaining are not evenly free: **F23** holds four Documentation rows, **F27** five Development rows, **F31** five Standards rows and **F15/F17** two Naming rows — all waiting on one sentence from the owner. **Fifteen Revit Engineering rows are genuinely open**, and most are `MODIFY` write operations nobody can test off a machine |
+| MCP tools | **20** as of 2026-09-15. **`revit_links`** (2026-09-14) and **`revit_phases`** (2026-09-15) are the two a modeller will feel: elements inside a LINK are not in the host document, and a count is a fact about a model AND a phase AND a design option. Both are read-only. Derive the count: `grep -c '^@server.tool()' mcp/server/heron_mcp_server.py` |
 | Open questions | **52 answered, 4 open, nothing gating any phase.** `Q-51` — what guards retrieval-into-context on the day Heron indexes text it did not write — stays open **on purpose**, with [`tests/test_carried_sources.py`](../tests/test_carried_sources.py) watching for the day it becomes real. **`Q-54` and `Q-55` arrived on 2026-09-12 from a retired work note**, having been owed since 2026-09-10 while this line said one. **`Q-56` arrived on 2026-09-14** — the Agent Sandbox restrains an agent that cooperates and not one that does not, and the word sandbox implies otherwise. Derived by `python tools/check-docs.py`, never read from a sentence |
-| Tools | **22** in `tools/`, and **14** MCP tools. Derive both rather than trusting a line |
+| Tools | **36** in `tools/` and **20** MCP tools as of 2026-09-15 — `ls tools/*.py \| wc -l` and `grep -c '^@server.tool()' mcp/server/heron_mcp_server.py`. New since the last entry: `generate-contract-reference.py` (what was built, against what it promised) and `api-changes.py` (what each Revit release stopped shipping). New MCP tools include `revit_links` and `revit_phases` |
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. What is still refused, most-wanted first: `ElementId`, `Element` as a specific instance, `OverrideGraphicSettings`. Derive it with `python tools/generate-jobs.py` |
-| Branches | **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
+| Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the API surface). Before that: **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
 **QUEUED FOR THE PC, AND THE OWNER HAS SEEN THE LIST.** **Five items**, all of them needing Revit
 or `dotnet`, all of them CHECKED by a gate that runs without either: **62 link contracts**
@@ -128,6 +135,60 @@ conversation.
 proving pass "needs the PC". True and nowhere near sufficient: until 2026-09-06 **nothing could execute
 a fragment at all**, and the server said so in its own code. The PC was never the blocker. The executor
 was. It is built now, so the sentence is finally true.
+
+### What 2026-09-14/15 did — 196 agents to 211, and four things that were believed and are not true
+
+**Nineteen agents were built.** Import & Migration finished (14 of 14), Standards & BIM QA reached 9 of
+14, and Development reached 11 of 21. The four that matter most to a person using Heron:
+
+- **`REVIT-LNK-015` linked models** and **`REVIT-PHS-032` phases and design options.** Both answer the
+  same class of question: *"412 ducts"* is not a fact about a model. Elements inside a link are not in
+  the host document at all, and a count is a fact about a model AND a phase AND a design option. Both
+  read-only, both compile 2020–2027, **neither has ever run** — NEEDS-CHECKING group L.
+- **`REVIT-ACI-034` API change intelligence.** `python tools/api-changes.py` reads the full public
+  surface of all eight releases and says what each one removed. It earned its place immediately: asked
+  which members exist before `RevitPhases.cs` was written, it stopped two lines that would not have
+  compiled — there is no `DesignOptionSet` class, and `Phase.Name` is declared on `Element`.
+- **`DEV-DOC-017` the contract reference.** `python tools/generate-contract-reference.py` checks every
+  contract against the code that claims it. Three refusals were produced and undeclared; all three are
+  fixed.
+
+**Four things this repository believed that were not true:**
+
+1. **The three "Linux failures" were never Linux failures.** They needed `pip install --user mcp` and
+   one `dotnet build`. The suite reads 188 of 188 now.
+2. **The fragments had never been through a compiler.** They have now: 360 × 8, clean.
+3. **`ElementId.IntegerValue` is GONE in 2026 and 2027** — not deprecated. It compiled on 2020–2025 and
+   a comment here called it *"the property every version has had"*. That is [D-05](DECISIONS.md), and it
+   is why the compile runs all eight rather than one.
+4. **CI requires seven checks, not four.** The ship skill's "four that must pass" is the fast subset;
+   `.github/workflows/gates.yml` also runs `check-routing`, `check-intrusion` and `check-compile`.
+
+**Three mistakes made here, kept because the shape of each one generalises:**
+
+- **CI was broken for three commits and CI caught it, not the author.** Moving shared code into
+  `brain/heron_dotnet.py` hoisted an import reaching PyYAML; the compile job installs a .NET SDK and
+  nothing else. **Local runs were clean throughout.** Fixed with a lazy import and a test that runs the
+  module in a subprocess with `yaml` blocked on purpose.
+- **A security check reported five credentials in a change carrying one.** It compared
+  `redact(text) != text` — and `redact` returns a **tuple**, so the compare was never equal.
+  **It fails in the direction that looks like vigilance** (PROPOSALS F32).
+- **A checker reported 135 undeclared refusals, then 12 fragments broken at Revit 2023 — all wrong.**
+  Every correction was a case the code had already solved: a capability name is not a refusal, a comment
+  is not a call, a string is not a call, a dead `#if` branch is not a call, a suite is not the agent.
+  **A page of findings that are all wrong is worse than no page** — it teaches the reader to skip the
+  table, which is where the real ones are (PROPOSALS F33).
+
+**The rule that came out of all three: verify a finding against the source before believing your own
+tool.** Every one of those checkers now re-checks its findings on every run.
+
+**What is waiting on the owner grew from F24 to F34.** Ten new entries in
+[PROPOSALS.md](PROPOSALS.md), none acted on. The ones that block building:
+**F23** (four Documentation rows with no distinct source), **F27** (five Development rows already built
+by files claiming no agent, and the two rows already claimed in that department disagree with each
+other), **F31** (five Standards rows differing only by subject), **F15/F17** (two Naming rows).
+**One sentence closes F27 and F31 together:** does a Development agent act on the artefact Heron builds,
+or on Heron itself?
 
 ### What 2026-09-06 did, in order — the four parts are BELOW THIS, and not in this order
 
