@@ -402,6 +402,25 @@ class DocumentPin(object):
         """
         return self._title
 
+    @property
+    def document_path(self):
+        """The pinned document's file path, or None for an unsaved model.
+
+        Public for the same reason `title` is, and for one more: a write is now
+        AIMED at the pinned document rather than at whatever is in front, and a
+        path is the one identity that tells two open models apart when they
+        share a name. `title` alone cannot - this class exists because two
+        sessions really did have a model called Project1 open in each.
+
+        NOT `project_key`, deliberately, and that is the lesson of E11. The
+        project key is `ProjectInformation.UniqueId`, which is inherited from
+        the TEMPLATE: two blank projects and an unrelated model in another
+        Revit release were all measured reporting the same one
+        (NEEDS-CHECKING, Group E). It names a knowledge store well and it
+        cannot pick a document out of a list at all.
+        """
+        return self._seen.get("documentPath")
+
     def repin(self, reply):
         """Move the pin, deliberately, because the user said so."""
         self._seen = self.identity_of(reply)

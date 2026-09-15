@@ -825,6 +825,44 @@ def revit_change(capability: str, values: str = "") -> str:
     # and is not this fix.
     args["expectProject"] = pinned.project_key or ""
 
+    # AIM THE WRITE AT THE MODEL THIS CHAT WAS POINTED AT, rather than at
+    # whatever happens to be in front of Revit.
+    #
+    # WHY THIS AND NOT THE GUARD BELOW. `expectProject` asks "did the user
+    # move?" and answers it by comparing project keys - and E11 was run in
+    # front of Revit on 2026-09-15 and FAILED. `ProjectKey` is
+    # `ProjectInformation.UniqueId`, which is inherited from the TEMPLATE: two
+    # blank projects and an unrelated PIPE.rvt open in a different Revit
+    # release all reported `8764c510-...-0000c160`. The comparison found them
+    # equal, the guard passed, and `CREATE_LEVEL ran in Project2` - a write
+    # into the model the chat was NOT pointed at, which is the one thing the
+    # guard exists to stop. Nothing is fixed by tightening a comparison whose
+    # two sides are equal and both wrong.
+    #
+    # So the question is inverted. Not "did the user move?" but "which model
+    # was I told to work on?" - which needs no key, and does not care what is
+    # on screen. It is also what the owner asked for in as many words: pin
+    # project 1, refer to project 2, and be sat in a third while it works.
+    #
+    # THE ADD-IN ALREADY DOES THIS. `RevitFragment.Run` has always accepted a
+    # `document` and found it among the open ones, refusing with
+    # `no_such_document` and listing them when it cannot. This path simply
+    # never sent one. Demonstrated end to end the same day with a FAMILY in
+    # front throughout: ten levels written into Project1 by name, verified by
+    # reading back, Project2 untouched.
+    #
+    # BOTH IDENTITIES TRAVEL, strongest first. A path tells two open models
+    # apart when they share a name, which is the case this class was built
+    # around; an unsaved model has none and falls back to the title, and the
+    # add-in refuses an AMBIGUOUS title rather than picking one.
+    #
+    # Nothing is sent before a pin exists - the first request has no model to
+    # aim at and is what obtains the pin.
+    if pinned.title:
+        args["document"] = pinned.title
+        if pinned.document_path:
+            args["documentPath"] = pinned.document_path
+
     supplied = _values_array(values)
     if supplied:
         args["values"] = supplied

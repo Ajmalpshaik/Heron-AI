@@ -104,8 +104,21 @@ namespace Heron.Revit.Addin
             // because that window was open but not ACTIVE.
             var wanted = Json.ReadString(request, "document");
 
+            // AND ITS PATH, WHICH IS THE HALF THAT TELLS TWO OPEN MODELS APART
+            // WHEN THEY SHARE A NAME. A title is a display name: two Revit
+            // sessions really did have a document called Project1 open in each,
+            // which is the case DocumentPin was written around. A saved model's
+            // path is unique, so it is tried FIRST and the title is the
+            // fallback an unsaved model deserves.
+            //
+            // Absent on every caller that does not send one - the proving
+            // client, and any chat that has not pinned a model yet - so this
+            // changes nothing for them.
+            var wantedPath = Json.ReadString(request, "documentPath");
+
             Document target = null;
             var openTitles = new List<string>();
+            var titleMatches = 0;
 
             foreach (Document candidate in app.Application.Documents)
             {
@@ -122,17 +135,56 @@ namespace Heron.Revit.Addin
 
                 openTitles.Add(candidate.Title);
 
+                // THE PATH DECIDES WHEN THERE IS ONE, and it decides alone: a
+                // saved model's path is unique among what is open, so a match
+                // here needs no tie-break and cannot be ambiguous.
+                if (!string.IsNullOrEmpty(wantedPath))
+                {
+                    var here = "";
+                    try { here = candidate.PathName; } catch { }
+                    if (!string.IsNullOrEmpty(here)
+                        && string.Equals(here, wantedPath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        target = candidate;
+                    }
+                    continue;
+                }
+
                 if (!string.IsNullOrEmpty(wanted)
                     && string.Equals(candidate.Title, wanted, StringComparison.OrdinalIgnoreCase))
                 {
                     target = candidate;
+                    titleMatches++;
                 }
             }
 
-            if (!string.IsNullOrEmpty(wanted) && target == null)
+            // TWO OPEN MODELS WITH THE SAME NAME IS A REFUSAL, NOT A TIE-BREAK.
+            //
+            // The loop above used to let the LAST match win, silently. That is
+            // the worst available answer on a path that is about to commit a
+            // transaction: it is indistinguishable from a correct one, and
+            // which document it picks depends on the order Revit happens to
+            // hand its documents back. Two models called Project1 is the exact
+            // case DocumentPin was written around, so it is not hypothetical.
+            if (titleMatches > 1)
             {
+                return Json.Error("ambiguous_document",
+                    titleMatches + " open models are called \"" + wanted + "\", so naming one "
+                    + "cannot say which was meant and NOTHING has been run. Close the one you "
+                    + "do not want, or save them so they can be told apart by their file paths.");
+            }
+
+            if (target == null
+                && (!string.IsNullOrEmpty(wanted) || !string.IsNullOrEmpty(wantedPath)))
+            {
+                // Say which one was looked for. When a path was sent, the path
+                // is what failed to match - naming the title instead would send
+                // a reader looking at a model that IS open under that name.
+                var looked = string.IsNullOrEmpty(wantedPath)
+                    ? "No open model called \"" + wanted + "\""
+                    : "No open model saved at \"" + wantedPath + "\"";
                 return Json.Error("no_such_document",
-                    "No open model called \"" + wanted + "\". Open: "
+                    looked + ". Open: "
                     + (openTitles.Count == 0 ? "(none)" : string.Join(", ", openTitles))
                     + ". A model that is not open cannot be read, and Heron will not open one - "
                     + "opening a project is a decision with a lock and a load time behind it.");
