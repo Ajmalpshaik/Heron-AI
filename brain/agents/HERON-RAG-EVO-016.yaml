@@ -1,0 +1,82 @@
+# Knowledge Evolution Agent - HERON-RAG-EVO-016
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY - the only one in its department that may change where
+# knowledge lives. It moves nothing: a plan comes back and HERON-WSP-MIG-008
+# is the agent that carries one out.
+
+agent: HERON-RAG-EVO-016
+version: 1.0.0
+
+input:
+  claims:
+    type: list
+    required: true
+    description: >
+      What is in the store, each {id, scope, project}. Handed in. Two
+      claims under one id is refused: a move would be ambiguous and a
+      count would be wrong.
+  moves:
+    type: list
+    required: false
+    description: >
+      What somebody ASKED for, each {id, to}. With none, only the strain
+      comes back - this agent does not decide that an organisation has
+      stopped fitting, because that needs a threshold and every
+      threshold is invented.
+  backup:
+    type: string
+    required: false
+    description: >
+      Where the store is backed up. Required before any move: docs/07 s8
+      asks a migration to be idempotent, versioned, and reversible or
+      backed up, and a restructure that cannot be undone is not a
+      restructure but a rewrite.
+
+output:
+  moved:
+    type: boolean
+    description: Always false. Nothing is moved here.
+  move:
+    type: list
+    description: Each planned move, with where from, where to, and why it is allowed.
+  strain:
+    type: map
+    description: >
+      Counts per scope and per project. No verdict, no threshold, and no
+      key that appears only when something is wrong.
+  backup:
+    type: string
+    description: The backup the plan is conditional on.
+  of:
+    type: integer
+    description: How many claims were read.
+  why:
+    type: string
+    description: The counts, and that nothing was moved.
+  unjudged:
+    type: list
+    description: >
+      Always the same four, whatever the answer, so no key is an alarm.
+      That nothing was moved; that nothing was called a problem and why
+      no threshold was applied; that a move is not a removal; and that
+      whether the new organisation is BETTER is not judged here - the
+      moves were asked for, and what was checked is that they are
+      possible and reversible, not that they are wise.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_RESTRUCTURE
+  - NOT_A_CLAIM
+  - NOT_A_MOVE
+  - WOULD_LEAVE_ITS_PROJECT
+  - WOULD_REMOVE_KNOWLEDGE
+  - NO_BACKUP
+
+retry:
+  attempts: 0
+  on-failures: []
