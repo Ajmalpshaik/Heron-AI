@@ -1462,9 +1462,14 @@ but it never reached `DONE`. **So "no test writes to that file" is UNPROVEN and 
 as proven.** It is filed as **`A17`** in [NEEDS-CHECKING.md](NEEDS-CHECKING.md) with the command and
 what a pass looks like. To resume:
 
-    git checkout -- .
-    for t in tests/test_*.py; do python "$t" >/dev/null 2>&1 </dev/null; done
-    git status --short
+    git checkout -- .; foreach ($f in Get-ChildItem tests\test_*.py) { python $f.FullName *> $null }; git status --short
+
+**That is PowerShell, and it has to be.** This section first carried the bash form
+(`for t in tests/test_*.py; do ...; done`). PowerShell 5.1 rejects it at parse time — `&&` is not a
+valid statement separator there, `<` is reserved, and `/dev/null` is not a path — so **nothing runs
+at all, including the `git checkout -- .` at the front.** It produces a wall of red `ParserError`
+and changes nothing, which is safe but reads like a disaster. The repository already had this
+lesson: **`A14` states its loop in Windows form for the same reason.**
 
 Pass is `git status --short` **empty**. A **fail is worth more than a pass** — it names the test, and
 that test is then the real defect the brief was reaching for.
