@@ -1,0 +1,76 @@
+# Folder Repair Agent - HERON-WSP-REP-004
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY and four words that shape the whole design: dry-run by default.
+
+agent: HERON-WSP-REP-004
+version: 1.0.0
+
+input:
+  findings:
+    type: list
+    required: true
+    description: >
+      What HERON-WSP-VAL-003 reported misplaced - each saying where the
+      file IS (`path`) and where it BELONGS. Where it belongs is taken as
+      given: this agent does not re-derive the layout rules, because two
+      opinions about where brain/ starts is worse than one.
+  apply:
+    type: boolean
+    required: false
+    description: >
+      Defaults to False, and NOTHING can change what the default is - no
+      setting, no environment variable, no config field. A default
+      something else can flip is not a default, it is a value with an
+      extra step, and the extra step is always taken on the machine where
+      it matters. Even True moves nothing: it records that somebody meant
+      it.
+  exists:
+    type: callable
+    required: false
+    description: >
+      Asked whether a destination is already taken. Handed in, because
+      this agent does not touch the disk - and a caller answering from a
+      stale listing gets a plan to overwrite a file it was never told
+      about.
+
+output:
+  applied:
+    type: boolean
+    description: Always false. This agent returns moves; a caller makes them.
+  moves:
+    type: list
+    description: >
+      Each proposed move, with the class it stays in. Placement and
+      nothing else.
+  refused_moves:
+    type: list
+    description: >
+      Moves that will not be proposed, each saying why - a class boundary
+      crossed, or a destination already holding something.
+  why:
+    type: string
+    description: The counts, and that nothing was moved.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was moved whatever `apply` said, that
+      the layout rules are VAL-003's, that the destination check was
+      asked rather than looked up, and that pointed at a source checkout
+      the class check answers a different question from the one it looks
+      like it is answering.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NOTHING_MISPLACED
+  - NOT_A_FINDING
+  - WOULD_CROSS_A_CLASS_BOUNDARY
+  - DESTINATION_TAKEN
+
+retry:
+  attempts: 0
+  on-failures: []
