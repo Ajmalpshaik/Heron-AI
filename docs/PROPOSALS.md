@@ -818,6 +818,35 @@ file invisible, which is the precise thing `HERON-WSP-REG-012` refuses to do.
 Today that costs nothing to add and surfaces a real ambiguity; it stops costing nothing the first time
 a rename half-lands and two files disagree about what they are.
 
+#### CORRECTION, the same day: that check was written, measured, and NOT kept
+
+The line above was the obvious next move and it is wrong. Before adding it, the repository was measured:
+
+```bash
+python - <<'EOF'
+# every id claimed by more than one file OUTSIDE tests/
+EOF
+```
+
+**Fourteen ids are claimed by more than one non-test file, and most of them are correct.**
+
+| a sample | why it is fine |
+|---|---|
+| `HERON-REVIT-CMP-021` — three C# files | one feature spread over the files that make it |
+| `HERON-SES-DIS-001` — the Python client and `BridgeIdentity.cs` | the two halves of discovery, in two languages |
+| `HERON-WSP-PTH-007` — `heron_paths.py` and `HeronPaths.cs` | *where* things live and *which class* they are |
+| `HERON-RAG-RNK-006`, `CTX-007`, `LIB-001` — each also on `heron_retrieve.py` | that module is **the orchestrator**: its own docstring says *"the whole lookup, in the order docs/05 §4 sets out"*, so it is the place those steps happen in order |
+
+So a shared id is **the norm here, not a defect**, and the proposed check would have reported fourteen
+things of which most need no action — noise, not a guard. It was not added.
+
+**What that leaves.** The original observation stands for `FRG-VAL-001` specifically: two files, both
+validators, and nothing says which is the agent. What does not stand is the general rule. **Nothing in
+a header can distinguish a deliberate split from a stale one** — the shape is identical — so the
+question for the owner is not *"why are there duplicates"* but *"should a header say which file is the
+agent and which files merely implement part of it"*. That is one field, or a convention, and it is a
+different decision from the one this row first asked for.
+
 ### 🟠 F11. docs/06 §2 draws nineteen folders and classifies fourteen
 
 **Found 2026-09-15 by `HERON-WSP-CRE-002`**, which reads the tree out of that section rather than
