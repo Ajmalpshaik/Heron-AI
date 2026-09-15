@@ -1,0 +1,57 @@
+# Learning Analysis Agent - HERON-LRN-ANA-002
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. It extracts nothing and promotes nothing.
+
+agent: HERON-LRN-ANA-002
+version: 1.0.0
+
+input:
+  observations:
+    type: list
+    required: true
+    description: >
+      What HERON-LRN-OBS-001 saw, each carrying a `pattern` and where it
+      was seen - `project`, `by`, `workflow`. A claim of novelty in
+      `note`, `claim` or `why` is read and discarded.
+
+output:
+  analysed:
+    type: boolean
+    description: True when observations were read.
+  patterns:
+    type: list
+    description: >
+      Each pattern with its verdict - corroborated,
+      frequent_but_uncorroborated, or a_one_off - its count, what it was
+      seen across, and any novelty claimed and ignored. Most useful
+      first.
+  counts:
+    type: map
+    description: How many of each verdict.
+  of:
+    type: integer
+    description: How many observations were read.
+  why:
+    type: string
+    description: The counts by verdict.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That frequency and corroboration are reported
+      together and never apart; whether novelty was claimed and that it
+      changed nothing; that there is no "enough" number anywhere; and
+      that nothing was extracted or promoted.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_ANALYSE
+  - NOT_AN_OBSERVATION
+
+retry:
+  attempts: 0
+  on-failures: []
