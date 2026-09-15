@@ -138,6 +138,60 @@ proving pass "needs the PC". True and nowhere near sufficient: until 2026-09-06 
 a fragment at all**, and the server said so in its own code. The PC was never the blocker. The executor
 was. It is built now, so the sentence is finally true.
 
+### A SECOND CODEX REVIEW — 16 more findings, ONE fixed, FIFTEEN NOT LOOKED AT. Start here.
+
+A second review ran on 2026-09-15 against the whole 100-commit PR and returned **16 findings, 11 of
+them P1**. Codex then **hit its usage limit**, so no third review is coming and these will not be
+re-reported by anything.
+
+**One was fixed** because three agents depended on it. **Fifteen were not looked at.** They were
+recorded and the PR merged, because the alternative was a PR that never closes while the same class of
+finding keeps arriving — but that was a decision about scheduling, not a judgement that they are wrong.
+
+**Round one was nine findings and every single one was real**, two worse than reported. Assume the same
+here. **Reproduce each before changing anything** — and note that reproducing `heron_revision.revise()`
+WRITES to `brain/skills/` when `into` is None, which is how a stray `count-things.yaml` appeared during
+round one.
+
+#### Fixed
+
+**`brain/heron_security.py` — the fingerprint collided.** `_stable` str()'d every scalar and joined
+collections with commas, so nothing recorded a value's TYPE and nothing escaped a comma inside one:
+
+    {"apply": True}  ==  {"apply": "True"}
+    {"x": ["a,b"]}   ==  {"x": ["a", "b"]}
+    {"a": 1}         ==  {"a": "1"}
+
+Every collision is a `MODIFY` change that could be altered after review without going stale. By the
+time it was found, **`HERON-DEV-QA-016` and `HERON-FRG-UPD-006` had both bound this function**, so all
+three shared the hole. Now canonical JSON with sorted keys.
+
+#### NOT looked at — eleven P1 and four P2
+
+| file:line | the claim, in the reviewer's words |
+|---|---|
+| `brain/heron_qa.py:174` | **P1.** A result omitting `of` skips the freshness check, so an old or fabricated `{check, passed: true}` satisfies the final gate for an unrelated change. **Note:** this is the concession that agent DOCUMENTS deliberately — most checks here record nothing to compare against. The reviewer is right that it is a hole; closing it needs the checks to start recording fingerprints first, so it is a sequencing decision, not a one-line fix |
+| `brain/heron_contribution.py:139` | **P1.** `attachments: "Tower.rvt"` is concatenated with the item name and iterated as characters, so no `.rvt` is found and `submit()` returns `may_submit: True` for a contribution carrying a model. **This is the same bug as the `heron_release` one fixed in round one, in a second file** — normalise before concatenating |
+| `brain/heron_knowledge.py:160` | **P1.** The literal scope name `project` is compared against the active project key, so a claim from the CURRENT project is always held as `ANOTHER_PROJECTS_KNOWLEDGE` unless the project is itself called "project" |
+| `brain/heron_userskills.py:147` | **P1.** With no `reader`, `who` is empty and nothing refuses, so `mine` returns **every supplied user's private skills** |
+| `brain/heron_pullrequest.py:207` | **P1.** A confirmation is validated against the mutable branch name, so the same `{by, at, head}` authorises a second call after new commits, a changed base, or a replaced title |
+| `brain/heron_workspace.py:140` | **P1.** Only `/` is compared, so on Windows `Brain\Skills` and `Brain\Skills\x.yaml` read as unrelated and two modifying agents are approved together. **Windows is where Revit runs** — same shape as the `heron_authoring` separator bug fixed in round one |
+| `brain/heron_migration.py:149` | **P1.** Two migrations with the same `from` version: the second silently replaces the first, and the chain still reports complete |
+| `brain/heron_repair.py:128` | **P1.** Two findings mapping to the same absent destination both pass `taken()`, so the plan overwrites a file despite the no-overwrite guarantee |
+| `brain/heron_report.py:140` | **P1.** A titled report re-renders without its title, so `validate()` reports `CONTENT_DOES_NOT_MATCH_THE_DATA` for **every** legitimately titled report |
+| `brain/heron_index.py:160` | **P1.** Any non-empty `by` satisfies the acceptance gate — `ci`, `bot`, an agent id — despite the function requiring a human. The promotion and contribution gates already have the person check to bind |
+| `brain/heron_regression.py:156` | **P1.** The missing-result check ranges only over releases claimed BEFORE the change, so a fragment can add Revit 2026, supply only old results, and still return `safe: True` |
+| `brain/heron_compatibility.py:135` | **P1.** A declared release plus a runtime absent from the build matrix returns the declared releases as supported — `declared=['2025'], runtime='net6.0'` gives `revit: ['2025']` with no disagreement, while the same answer says no release uses that runtime |
+| `brain/heron_duplicates.py:156` | **P2.** A capability match alone classifies an import as `already`, though `heron_capability.resolve()` deliberately keeps several providers and picks by release |
+| `brain/heron_render.py:172` | **P2.** A cell containing `|` or a newline corrupts the Markdown table, and PDF/image conversion preserves the corruption |
+| `brain/heron_prebuild.py:246` | **P2.** It hard-codes that the standards question is unanswered because no owner is built — **but `STD-PRJ-009`, `STD-CMP-002` and `STD-ISO-003` were built in this PR.** A stale hard-coded answer routing the host away from working functionality |
+
+**Two of these are round-one bugs in a second file** (`heron_contribution` repeats the string-attachment
+bug, `heron_workspace` repeats the Windows-separator bug). When one of these is fixed, **grep for the
+same shape everywhere else** rather than fixing the one line reported.
+
+The full review stays readable on the PR: <https://github.com/Ajmalpshaik/Heron-AI/pull/142>.
+
 ### THE CODEX REVIEW ON PR #142 — all nine reproduced and fixed
 
 A Codex bot review landed on PR #142 on 2026-09-15 with **nine findings, five P1**. **Every one was

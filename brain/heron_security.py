@@ -92,6 +92,7 @@ reassuring ones.
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import sys
 
@@ -143,13 +144,29 @@ def fingerprint(change):
 
 
 def _stable(thing):
-    """A change written out the same way every time."""
-    if isinstance(thing, dict):
-        return "{%s}" % ",".join("%s:%s" % (key, _stable(thing[key]))
-                                 for key in sorted(thing))
-    if isinstance(thing, (list, tuple)):
-        return "[%s]" % ",".join(_stable(one) for one in thing)
-    return str(thing)
+    """
+    A change written out the same way every time, and DIFFERENTLY when it
+    is a different change.
+
+    THE FIRST VERSION COLLIDED, and every collision was a MODIFY change
+    that could be altered after review without going stale:
+
+        {"apply": True}   and  {"apply": "True"}   -> the same sha
+        {"x": ["a,b"]}    and  {"x": ["a", "b"]}   -> the same sha
+        {"a": 1}          and  {"a": "1"}          -> the same sha
+
+    It built a string by `str()`-ing every scalar and joining collections
+    with commas, so nothing recorded a value's TYPE and nothing escaped a
+    comma inside one. Found by a review on 2026-09-15 - and by then
+    HERON-DEV-QA-016 and HERON-FRG-UPD-006 had both bound this function,
+    so all three agents shared the hole.
+
+    json.dumps with sorted keys is canonical, escapes its own
+    delimiters, and keeps true apart from "true". `default=repr` covers
+    the types it does not know rather than raising mid-fingerprint.
+    """
+    return json.dumps(thing, sort_keys=True, default=repr,
+                      separators=(",", ":"), ensure_ascii=True)
 
 
 def review(change, reviewed=None, secrets=None):

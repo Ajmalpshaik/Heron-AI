@@ -154,6 +154,22 @@ def main():
           "a field reordered is the same review")
     check(SEC.fingerprint({"a": "1"}) != SEC.fingerprint({"a": "1 "}),
           "one trailing space is a different one")
+    # IT MUST NOT COLLIDE, and the first version did. It str()'d every
+    # scalar and joined collections with commas, so nothing recorded a
+    # TYPE and nothing escaped a comma inside a value - and every
+    # collision below was a MODIFY change that could be altered after
+    # review without going stale. By the time a review found it,
+    # HERON-DEV-QA-016 and HERON-FRG-UPD-006 had both bound this
+    # function, so all three agents shared the hole.
+    for one, two, why in (
+            ({"apply": True}, {"apply": "True"},
+             "a boolean and the word"),
+            ({"x": ["a,b"]}, {"x": ["a", "b"]},
+             "one value with a comma and two values"),
+            ({"a": 1}, {"a": "1"}, "a number and the digit"),
+            ({"a": []}, {"a": ""}, "an empty list and an empty string")):
+        check(SEC.fingerprint(one) != SEC.fingerprint(two),
+              "%s do not share a fingerprint" % why)
     later = dict(CHANGE, name="move_elements ")
     stale = SEC.review(later, {"by": "Reviewer", "of": sha})
     check(stale.get("refused") == "STALE_REVIEW",
