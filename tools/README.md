@@ -112,8 +112,21 @@ inputs on purpose before the tool was believed:
 | stale exemption | `HOST_PROVIDED` names an agent the registry no longer has |
 | delegated *and* built | a file claims an agent the host provides — the decision was reversed, or the exemption is stale |
 | ghost claim | a file claims an agent id that is not in the registry |
+| **was built, now is not** | an agent id claimed in the **last commit** is claimed by nothing in the working tree |
 
 The fourth is the one nothing else asks, and it is the one that would have caught the error above.
+
+**The sixth compares against git rather than against the register, because the register could not see
+what happened on 2026-09-15.** A new agent was written straight over `brain/heron_architect.py` — 272
+lines holding `HERON-AHR-ARC-003`, with its 201-line suite at `tests/test_architect.py`. Nothing
+complained. The register reconciled perfectly either way: the id that vanished and the id that arrived
+**cancelled out in the total**, so the only symptom was a number that did not move, and an overwritten
+file is unrecoverable outside git. The check now names the id and the files that held it.
+
+It looks one way only. An id this tree has and the last commit did not is *building*, and is not
+reported. And no git is not a finding — an installed Heron is not a checkout, so the tool says plainly
+that it had no second opinion rather than treating that as a pass. `tests/test_agent_count.py` runs the
+comparison with one id taken out and watches it fire, because a guard nobody has seen fire is a comment.
 
 ---
 
