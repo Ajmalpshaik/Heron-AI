@@ -1,0 +1,92 @@
+# C# Agent - HERON-DEV-CSH-005
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register's row is
+# "C# language and idiom". It holds no general opinion about C#: it applies
+# this repository's own rule - D-52, the plausible zero - in the language
+# tools/check-narrow-errors.py does not cover.
+
+agent: HERON-DEV-CSH-005
+version: 1.0.0
+
+input:
+  code:
+    type: string
+    required: true
+    description: >
+      C# source, as text. Comments and string literals are removed
+      before anything is looked for, so a `catch` written inside a
+      comment explaining one is not counted as one.
+  where:
+    type: string
+    required: false
+    description: >
+      What to call this code in the answer - usually its path. Used in
+      the refusal for a block that never closes, so a person knows which
+      file to open.
+
+output:
+  reviewed:
+    type: boolean
+    description: True when the code was read.
+  where:
+    type: string
+    description: What the caller called this code, as given.
+  handlers:
+    type: integer
+    description: How many catch clauses the code has.
+  broad:
+    type: integer
+    description: >
+      How many catch everything - a bare catch, Exception or
+      SystemException. This is reported, never counted as a fault: 48 of
+      this repository's 74 are broad and a rule against them would be an
+      agent correcting working code.
+  narrow:
+    type: integer
+    description: How many name a specific exception type.
+  plausible_zero:
+    type: list
+    description: >
+      Each broad handler whose body leaves a fault and the normal case
+      indistinguishable, with its line, which of the three shapes it is,
+      and what that does to the caller. NAMED, never condemned - whether
+      a swallow is correct depends on what can be thrown there, and only
+      a person reading the call knows.
+  shapes:
+    type: map
+    description: >
+      How many of each shape: SWALLOWS_SILENTLY, DROPS_THE_ITEM,
+      RETURNS_AN_EMPTY_ANSWER.
+  fixed:
+    type: boolean
+    description: Always false. Nothing is changed.
+  judged_wrong:
+    type: boolean
+    description: >
+      Always false. The answer names lines; it does not rule on them.
+  why:
+    type: string
+    description: The counts, and that nothing is called wrong.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That none of the named handlers is condemned and
+      why some are right; that a broad catch is NOT asserted to be bad
+      style, with the measurement that would contradict it; D-52 and the
+      Python-only tool that already enforces it; that whether the code
+      compiles or is correct is answered elsewhere; and that nothing was
+      fixed.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_READ
+  - NOT_CODE
+  - UNREADABLE
+
+retry:
+  attempts: 0
+  on-failures: []

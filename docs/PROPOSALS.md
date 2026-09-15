@@ -1926,3 +1926,63 @@ is now what `tests/test_contract_reference.py` does for every finding, every run
 The three contracts are fixed, the suite is fixed, and the check runs on demand. Recorded because the
 *shape* of the mistake generalises: a check that reports a real problem and forty false ones gets
 switched off, and the real problem goes with it.
+
+---
+
+## F34 — D-52 is enforced in Python and unchecked in C#
+
+**Found while building [`HERON-DEV-CSH-005`](../brain/heron_csharp.py)**, which had to establish what
+this repository's C# idiom *actually is* before it could hold an opinion about anything.
+
+### The measurement that killed the obvious rule first
+
+Across the 23 C# files in `revit/`, `platform/` and `mcp/` there are **74 catch clauses**:
+
+| | |
+|---|---|
+| `catch` with no type at all | **30** |
+| `catch (Exception)` | **18** |
+| a narrow type | 26 |
+
+So a *"narrow exception types only"* rule — the first thing a C# agent wants to say — is **false about
+two thirds of the code that already ships**. It is not asserted, and the agent says so in its answer.
+A rule contradicted by the working code is an agent correcting that code on an authority it does not
+have.
+
+### What is true, and nothing checks it
+
+[D-52](DECISIONS.md) is **the plausible zero**: an answer that is wrong in a way nobody doubts.
+[`tools/check-narrow-errors.py`](../tools/check-narrow-errors.py) enforces it, and enforces it well — its
+own docstring records reviews finding the same defect in four files on four consecutive days, which is
+why it became a tool. But it reads **Python only**, and **`sqlite3` handlers only**, because that is
+where it kept happening.
+
+Of the 48 broad C# handlers, **27 leave a fault and the normal case indistinguishable**:
+
+| shape | count | what the caller gets |
+|---|---|---|
+| `catch { }` — empty block | **14** | the fault leaves no trace at all |
+| `catch { continue; }` | **10** | the item drops out of the loop and the count comes back smaller ([Golden Rule 14](../CLAUDE.md)) |
+| `catch { return null; }` / `false` / `new T()` | **3** | a fault comes back as *"nothing found"* — D-52 in as many words |
+
+### Not one of them is claimed to be a bug
+
+Several are certainly right. Iterating every value of a large enumeration and skipping the ones that do
+not resolve is a normal thing to do, and `RevitFragment.cs` does it on purpose. Whether a swallow is
+correct depends on what can actually be thrown at that call, and **only a person reading it knows**. So
+the agent names the line and the shape and stops there; `judged_wrong` is false and always false.
+
+### What is proposed
+
+Three options, and they are the owner's:
+
+1. **Nothing.** The agent exists, it can be run over any file, and a reviewer can ask it. That is what
+   was done.
+2. **Extend `check-narrow-errors.py` to C#**, so the 27 are triaged once and the rule holds in both
+   languages. The risk is a gate that fails on 27 pre-existing handlers on its first run, and a gate
+   that has to be suppressed to be introduced teaches people to suppress it.
+3. **Triage the 27 by hand**, leaving a one-line comment beside each saying what it expects to catch —
+   which is what `RevitLinks.cs` already does for its four narrow ones, citing Golden Rule 14.
+
+**Not acted on.** Option 2 changes a gate everyone has to pass, and option 3 edits 27 handlers across
+files this agent did not write.
