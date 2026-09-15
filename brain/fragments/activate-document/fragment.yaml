@@ -1,0 +1,116 @@
+heron-agent: HERON-REVIT-DOC-004
+heron-step: 14
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-030
+semantic-identity: "make a document on disk the window in front, project or family alike"
+kind: action
+domain: revit.documents
+capability: ACTIVATE_DOCUMENT
+version: 1
+source: OFFICIAL
+risk: EXECUTE
+
+purpose: >
+  Makes the document at a given path the window in front in Revit - a project
+  or a family, already open or not.
+
+  **IT EXISTS BECAUSE THERE WAS NO WAY BACK OUT OF A FAMILY.**
+  SWITCH_ACTIVE_PROJECT moves between open PROJECTS and refuses from inside a
+  family document: "Changing the active view is not applicable to inactive
+  documents." So opening a family left every following fragment stuck in it -
+  and a fragment that looks for loaded families found none, because a family
+  document contains none. Measured 2026-09-16: five families were "opened",
+  all five failed, and five size tables were written into the one family that
+  happened to be in front.
+
+  **THE PATH IS THE HANDLE, NOT THE TITLE.** `OpenAndActivateDocument` takes a
+  file path and works whether or not the document is already open, which is
+  what makes it usable as a way back: the project is always on disk, and its
+  path is a fact the caller already has.
+
+  **IT REPORTS WHAT IS IN FRONT AFTERWARDS, ALWAYS.** The whole purpose is
+  which window is active, and the failure that matters is believing it moved
+  when it did not - that is precisely how five tables landed in the wrong
+  family. `activeAfter` is read back from Revit, never assumed from the
+  argument.
+
+  **IT CANNOT RUN INSIDE A TRANSACTION**, which is why it is EXECUTE.
+  Activating a document while the current one is modifiable is refused.
+
+  It changes no element in any document.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+    # Full path to the .rvt or .rfa to bring to the front.
+    - name: documentPath
+      type: string
+      source: request
+  provides:
+    - name: activated
+      role: result
+      type: bool
+    - name: activeAfter
+      # Read back from Revit once it finished, never assumed from the path.
+      # Believing a switch happened when it did not is the failure this exists
+      # to prevent.
+      role: result
+      type: string
+    - name: wasAlready
+      # It was already the document in front, so nothing moved. The evidence
+      # it looked, never a change it made (D-52).
+      role: accounting
+      type: bool
+    - name: problem
+      # Revit's own words when it refused, empty when it did not.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-09-16'
+  by: Ajmal PS
+  model: PIPE (3,332 elements), Revit 2020, session 8084
+  positive_case: 'run as it would normally be run. returned activated true, activeAfter PIPE,
+    findings 2 item(s) [already in front; in front now: PIPE, ''PIPE'' was already the document
+    in front - nothing was chang...], path C:/Users/AjmalAlavudheen/Desktop/PIPE.rvt, problem
+    , wasAlready true. inputs came documentPath as given. on PIPE'
+  negative_case: 'run with documentPath=C:/nope/missing.rvt instead - chosen because it should
+    not contain what this fragment reports. returned activated false, activeAfter , findings
+    2 item(s) [NOT activated; in front now: <unchanged>, There is no file at "C:/nope/missing.rvt".],
+    path C:/nope/missing.rvt, problem , wasAlready false. inputs came documentPath as given.
+    on PIPE'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 1bd0f9d1ce575d92
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `UIDocument.Application` and
+  `UIApplication.OpenAndActivateDocument(string)` are present 2020 through
+  2027, confirmed by reflection on the 2020 assemblies on 2026-09-16. No unit
+  is read, so the 2021 units move cannot reach it.
+
+# ROUTING - repeated in OPEN_FAMILY_FOR_EDITING.
+#
+#   "go back to the project"      -> here, with the project's path
+#   "open that family for editing" -> OPEN_FAMILY_FOR_EDITING, which needs the
+#                                     PROJECT in front to find the family
+#   "which document is in front"   -> REPORT_OPEN_DOCUMENTS
+
+utterances:
+  - make that document the active one
+  - go back to the project
+  - bring this file to the front
+  - activate the project window

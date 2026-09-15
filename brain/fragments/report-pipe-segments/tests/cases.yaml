@@ -1,0 +1,44 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a project holding several pipe segments, nameContains empty
+    expect: >
+      segmentCount equal to the number in Manage > MEP Settings > Pipe
+      Settings > Segments and Sizes, and segmentList naming EVERY one of them.
+      Count the dialog - this fragment exists because a truncated list of
+      three read as "there are three"
+
+  - given: nameContains "copper" on a project with copper and steel segments
+    expect: >
+      only the copper ones, and `scanned` still reporting the full number
+      examined. The narrowing must be visible as narrowing, not as a smaller
+      project
+
+  - given: a segment whose MATERIAL is copper but whose NAME is not
+    expect: >
+      still reported for needle "copper". The needle looks at both, because
+      the material is as likely to carry the word as the name
+
+negative:
+  - given: nameContains "ZZZNOTASEGMENT"
+    expect: >
+      segmentCount 0, segmentList empty, and `scanned` NON-ZERO with a finding
+      saying so. This is the VALUE-driven negative: an empty answer that still
+      proves it looked, which is the difference between "none match" and
+      "nobody asked"
+
+  - given: a segment carrying no sizes
+    expect: >
+      its name in `noSizes` and in the list marked NO SIZES. It exists and
+      nothing can be drawn with it, which otherwise looks like a fault
+      somewhere else
+
+  - given: a segment whose sizes are all usedInSizeLists = false
+    expect: >
+      a finding saying none is in the size list. The segment looks complete
+      and offers nothing in the dropdown
+
+second_route:
+  - open Manage > MEP Settings > Mechanical Settings > Pipe Settings > Segments and Sizes and count the rows
+  - pick a segment in that dialog and compare its size table to the OD range reported here
+  - a refrigerant segment should read OD 6.35 upward; a water one 15 upward - that contrast is the whole point

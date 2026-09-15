@@ -1,0 +1,39 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a fitting family open for editing, nameContains empty
+    expect: >
+      parameterCount matching the Family Types dialog, and parameterList
+      naming EVERY one. Count the dialog - a list abbreviated to three reads
+      as a three-parameter family
+
+  - given: a family carrying a Material parameter
+    expect: >
+      it named in `materialParameters` with its current value. That is the
+      answer to "where does this family get its material", and it must be
+      findable without reading forty rows
+
+  - given: a parameter driven by a formula
+    expect: >
+      the formula printed beside the value. Without it, a later write that
+      Revit refuses reads as a broken write rather than a fact about the
+      parameter
+
+negative:
+  - given: a PROJECT document in front instead of a family
+    expect: >
+      notAFamily true and a finding saying so - never parameterCount 0 alone.
+      "No parameters" and "wrong document" are different answers
+
+  - given: a family with NO material parameter
+    expect: >
+      materialParameters empty AND a finding saying so in words. An empty
+      string alone would read as "not looked at"; the finding is what makes it
+      an answer (D-52)
+
+  - given: nameContains "ZZZNOTAPARAMETER"
+    expect: parameterCount 0 with `scanned` NON-ZERO - the value-driven negative
+
+second_route:
+  - open Family Types in Revit and compare the parameter list row by row
+  - select the geometry and check whether its Material is <By Category> or tied to a parameter

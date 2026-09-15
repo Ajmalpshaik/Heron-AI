@@ -1,0 +1,119 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 14
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-061
+semantic-identity: "give an existing material its shading colour, and say what it was"
+kind: action
+domain: revit.elements
+capability: SET_MATERIAL_COLOUR
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets the SHADING COLOUR of a material that already exists, and reports the
+  colour it had before. The "this pipe draws grey and that one draws copper"
+  job, which CREATE_MATERIAL could only solve by making a second material
+  nobody asked for.
+
+  **A MATERIAL WITH NO COLOUR IS NOT AN ERROR ANYWHERE.** Revit gives a new
+  material a default grey and draws it without complaint, so a run of pipe
+  that should read as copper reads as nothing in particular and the model
+  looks finished. Nothing reports it, which is why somebody has to ask.
+
+  **IT REPORTS THE OLD COLOUR, BECAUSE THAT IS THE EVIDENCE.** "Set to
+  184,115,51" is true of a material that was already that colour and of one
+  that was grey, and those are different facts. The before and after are both
+  reported so the difference is visible rather than assumed.
+
+  **SHADING COLOUR IS NOT THE APPEARANCE ASSET.** This sets what a shaded or
+  consistent-colours view draws - the Graphics tab. The Appearance tab, which
+  a rendering uses, is a separate asset this does not touch, and saying so is
+  what stops a render being blamed on this.
+
+  **A NAME THAT MATCHES NOTHING RETURNS THE NEAR MISSES** rather than creating
+  anything. Making a material here would leave a second one beside the one
+  that was meant, and nothing pointing at it.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: materialName
+      type: string
+      source: request
+    - name: colour
+      type: Color
+      source: request
+  provides:
+    - name: changed
+      role: result
+      type: int
+    - name: wasColour
+      # The colour it had before, as text. The evidence that something moved -
+      # "set to X" alone is true whether or not anything changed.
+      role: result
+      type: string
+    - name: nowColour
+      role: result
+      type: string
+    - name: alreadyThat
+      # It was already the colour asked for, so nothing was done. The evidence
+      # it looked, never a change it made (D-52).
+      role: accounting
+      type: bool
+    - name: nearMisses
+      # Material names that nearly matched when the one named was not found.
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-09-16'
+  by: Ajmal PS
+  model: PIPE (3,332 elements), Revit 2020, session 8084
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyThat false, changed 1, findings
+    3 item(s) [1 material(s) recoloured; was 128,0,0, now 200,120,60, ''Copper'': 128,0,0
+    -> 200,120,60, This is the SHADING colour, which a shaded or consistent-col...], nearMisses
+    0 item(s), nowColour 200,120,60, wanted Copper, wasColour 128,0,0. inputs came materialName
+    as given; colour as given. on PIPE'
+  negative_case: run with materialName=ZZZNOTAMATERIAL, colour=200,120,60 instead - chosen
+    because it should not contain what this fragment reports - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned alreadyThat false,
+    changed 0, findings 2 item(s) [0 material(s) recoloured; was <not read>, now <not read>,
+    No material is called 'ZZZNOTAMATERIAL'. Nothing came close ...], nearMisses 0 item(s),
+    nowColour , wanted ZZZNOTAMATERIAL, wasColour . inputs came materialName as given; colour
+    as given. on PIPE
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 7e11fbefd70acbe2
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Material`, `Material.Color` and
+  `Color.Red/Green/Blue` are unchanged 2020 through 2027. A colour is three
+  bytes and names no unit, so the 2021 units move cannot reach it.
+
+# ROUTING - repeated in CREATE_MATERIAL.
+#
+#   "this pipe has no colour"        -> here, on the material the segment uses
+#   "make a new material"            -> CREATE_MATERIAL
+#   "what material is this element"  -> READ_ELEMENT_MATERIAL
+#   "swap one material for another"  -> REPLACE_MATERIAL
+
+utterances:
+  - set the material colour
+  - this material has no colour
+  - make the copper material look copper
+  - change the shading colour of a material

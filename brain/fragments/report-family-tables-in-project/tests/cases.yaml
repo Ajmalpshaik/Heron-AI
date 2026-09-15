@@ -1,0 +1,41 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a project holding several parametric fitting families, nameContains narrowing to them
+    expect: >
+      familiesRead equal to the number matched, and summary naming each with
+      its table and row count. Then OPEN ONE BY HAND and compare - a count
+      that matches the Manage Lookup Tables dialog is the only check that
+      separates this from a fragment reporting a cached guess
+
+  - given: exportFolder set
+    expect: >
+      one CSV per table in that folder, each readable and carrying the
+      Name##type##unit header Revit writes
+
+  - given: the same run repeated
+    expect: >
+      no family left open in Revit afterwards. A family left in front makes
+      the NEXT fragment answer about the wrong document, which reads as that
+      fragment being broken
+
+negative:
+  - given: nameContains "ZZZNOTAFAMILY"
+    expect: >
+      familiesRead 0 with `scanned` NON-ZERO. The value-driven negative - an
+      empty answer that still proves it looked
+
+  - given: a family with NO lookup table
+    expect: >
+      its name in `noTable`, NOT in `refused`. A family with no table takes
+      its dimensions from its own parameters; that is a real answer and a
+      different one from "would not open"
+
+  - given: an in-place family, which cannot be edited
+    expect: >
+      its name in `refused` with the reason. Never silently skipped -
+      a skip is indistinguishable from a family with no table
+
+second_route:
+  - open one family by hand and compare its Manage Lookup Tables against the row count reported
+  - open an exported CSV and check the header format matches what WRITE_FAMILY_SIZE_TABLE expects

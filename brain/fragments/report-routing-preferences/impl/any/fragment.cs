@@ -1,5 +1,6 @@
 // NOT STANDALONE. Assumes `doc` and `elements` are in scope; leaves `findings`,
-// `typesReported`, `emptyGroups`, `missingFamilies` and `notRoutable` behind.
+// `summary`, `typesReported`, `emptyGroups`, `missingFamilies` and
+// `notRoutable` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -23,6 +24,13 @@
 // never a units API - that is the call that breaks at Revit 2021.
 
 var findings = new List<string>();
+// EVERY RULE ON ONE LINE, AS A STRING. `findings` is a list, and a list is
+// abbreviated to its first three entries before a reader sees it - so a type
+// with eight rule groups showed three and read as though it had three. A
+// string is not abbreviated. This is the line somebody actually reads when
+// deciding whether one type's fittings can be copied onto another.
+var summary = "";
+var summaryRows = new List<string>();
 var typesReported = 0;
 var emptyGroups = new List<string>();
 var missingFamilies = new List<string>();
@@ -75,6 +83,7 @@ foreach (var type in typesToReport)
 
     typesReported++;
     findings.Add(string.Format("TYPE '{0}':", type.Name));
+    var groupParts = new List<string>();
 
     foreach (var group in groups)
     {
@@ -140,7 +149,10 @@ foreach (var type in typesToReport)
             catch (Exception) { }
 
             findings.Add(string.Format("        {0,-28} {1}", window, partName));
+            groupParts.Add(string.Format("{0}={1}", group, partName));
         }
+
+        if (ruleCount == 0) groupParts.Add(string.Format("{0}=NONE", group));
 
         if (sawSize)
         {
@@ -148,6 +160,10 @@ foreach (var type in typesToReport)
                 + "Revit inserts NOTHING, with no warning", lowestMm, highestMm));
         }
     }
+
+    // One line per type. See the note beside `summary`.
+    summaryRows.Add(string.Format("{0}: {1}", type.Name,
+        string.Join(", ", groupParts.ToArray())));
 }
 
 if (emptyGroups.Count > 0)
@@ -162,6 +178,8 @@ if (missingFamilies.Count > 0)
     findings.Add(string.Format("{0} rule(s) point at a family NOT LOADED in this project. The rules "
         + "are fine - load the families", missingFamilies.Count));
 }
+
+summary = string.Join("  ||  ", summaryRows.ToArray());
 
 findings.Insert(0, string.Format("{0} pipe/duct type(s) reported; {1} empty group(s), {2} rule(s) "
     + "with a missing family, {3} thing(s) handed in that have no routing preferences",
