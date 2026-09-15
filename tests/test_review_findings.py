@@ -1318,6 +1318,45 @@ def main():
           "the refresh reported success")
     print()
 
+    print("71. A FRAGMENT CANNOT WRITE BEFORE THE PIN IS CHECKED")
+    frag = open(os.path.join(ROOT, "revit", "Heron.Revit.Addin",
+                             "RevitFragment.cs"), encoding="utf-8").read()
+    failure_source = open(os.path.join(ROOT, "mcp", "server", "heron_failure.py"),
+                          encoding="utf-8").read()
+    check(frag.index("expectProject") < frag.index("new TransactionGroup"),
+          "the add-in compares the expected project key BEFORE it opens the "
+          "transaction group - revit_change had NO such check and the server "
+          "compared its pin against the REPLY, which on this path is built "
+          "after group.Assimilate() has COMMITTED, so switching model "
+          "mid-chat applied the change to the model in front and then "
+          "answered 'Nothing has been sent to Revit' about work already in "
+          "the undo stack")
+    check('args["expectProject"] = pinned.project_key or ""' in server_source,
+          "and the server sends the key with the request. Empty means 'do "
+          "not check': a first request has nothing to compare against, and "
+          "refusing it would make the pin unobtainable")
+    check('Json.Str("projectKey", projectKey)' in frag
+          and '"documentPath"' in frag,
+          "and the fragment's reply carries the same identity every other "
+          "operation sends. It reported the TITLE alone, so key_of() fell to "
+          "its 'title:' fallback and pinned.project_key stayed None - which "
+          "sent expectProject out EMPTY on the next call and switched the "
+          "guard above off for exactly the chat that needed it")
+    check("if (string.IsNullOrEmpty(here))" in frag,
+          "and a target with no project key is a FAILED check rather than a "
+          "skipped one. A family document has no Project Information, a "
+          "family editor becomes the active document the moment it opens, "
+          "and a target that cannot be shown to be the pinned one is refused "
+          "rather than left to fall through a string comparison a later edit "
+          "could tidy away")
+    check('"wrong_document":' in failure_source,
+          "and the failure table knows the code. Without the row, "
+          "analyse(writes=True) fell through to its fail-closed rule, called "
+          "a refusal that returned above the transaction an UNKNOWN outcome, "
+          "and told the user to go and check the model - frightening, and "
+          "false about the one failure that is certain nothing happened")
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:

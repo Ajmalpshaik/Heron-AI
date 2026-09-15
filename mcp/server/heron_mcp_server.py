@@ -800,6 +800,31 @@ def revit_change(capability: str, values: str = "") -> str:
         "apply": "true",
     }
 
+    # THE PIN TRAVELS WITH THE REQUEST, because checking it on the reply is
+    # checking it too late - and on THIS path "too late" means committed.
+    # The fragment runs inside a TransactionGroup and group.Assimilate() has
+    # already kept the work by the time a reply exists, so the pinned.check()
+    # below used to refuse a change that was already in the model, in a
+    # sentence saying nothing had been sent to Revit. The same defect as the
+    # selection tool's, on the one tool where the cost is the model. Found by
+    # a review 2026-09-15. The add-in refuses on this key before it opens the
+    # transaction group.
+    #
+    # Empty when this chat has not pinned a project yet, which the add-in
+    # reads as "do not check": a first request has nothing to compare
+    # against, and refusing it would make the pin unobtainable.
+    #
+    # WHERE THIS STILL GOES OUT EMPTY WITH A PIN SET, stated rather than
+    # discovered later: `project_key` is deliberately narrower than `key` and
+    # returns only a "project:" pin. A chat whose pin is path- or title-based
+    # - a FAMILY document, which has no Project Information, or a reply from
+    # an add-in too old to send one - has no key the add-in could compare, so
+    # the gate stays off and pinned.check() below is the only cover. Closing
+    # that would mean the add-in comparing a compound identity rather than a
+    # project key, which is a change to the contract select_by_category shares
+    # and is not this fix.
+    args["expectProject"] = pinned.project_key or ""
+
     supplied = _values_array(values)
     if supplied:
         args["values"] = supplied
@@ -819,6 +844,12 @@ def revit_change(capability: str, values: str = "") -> str:
 
     # GOLDEN RULE 20. An answer about a model the user is not looking at is
     # how the wrong building gets changed.
+    #
+    # THIS RUNS AFTER THE ADD-IN'S OWN CHECK AND IS NOT THE GUARD - the guard
+    # is `expectProject` above, which refuses before the transaction group is
+    # opened. It is kept for the two cases it is still the only cover for: an
+    # older add-in that does not read expectProject, and the FIRST call of a
+    # chat, where there was no key to send and this is what pins one.
     wrong_model = pinned.check(reply)
     if wrong_model is not None:
         return wrong_model
