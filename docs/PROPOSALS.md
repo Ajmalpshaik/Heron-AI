@@ -1192,3 +1192,52 @@ read-only or already approved has described itself and changed nothing.
 **What is still open:** the register's wording. One clause — *"presents them for a person to declare;
 never writes into the table — Golden Rule 19"* — closes it, and without it the next person to build
 from that row alone will write the append.
+
+---
+
+### 🟠 F19. D-27 abolished persona, and three places still hand work to it
+
+**Found by:** building `HERON-USR-PRO-001`, the User Profile Agent, 2026-09-15.
+**Status:** open. The agent implements what survives D-27 and does **not** implement the dead clause.
+
+[D-27](DECISIONS.md) is explicit, and it says what it supersedes:
+
+> **Supersedes** the *"infer a default, display it, let the user pin it"* recommendation in
+> [01 §4](01-vision-and-principles.md) and **the two-persona table in [22 §2](22-users-modes-and-extensibility.md)**.
+>
+> **Heron has one voice: plain, non-developer language, always.** Persona is not inferred, not displayed
+> and not pinned — **it does not exist as a setting.**
+
+[docs/22 §2](22-users-modes-and-extensibility.md)'s own `[DECIDED 2026-08-28 — D-27]` block puts it more
+bluntly, and it is worth quoting separately because it lives in the other file:
+
+> **There is no persona.** The warning above was right and it argues further than it went: if silent
+> switching reads as unreliability, the fix is not to display the guess — it is not to guess. Heron has
+> **one voice**, and what varies is the **shape of the answer**, read off the **shape of the request**.
+
+Three places still describe the thing it removed:
+
+| where | what it still says |
+|---|---|
+| `docs/28`, `HERON-USR-PRO-001` | *"**Persona** reads this to choose how to speak"* |
+| `docs/28`, `HERON-ORC-PER-003` | *"Communication / Persona Agent — detects role and technical level; **chooses wording**"* |
+| [`docs/22 §3`](22-users-modes-and-extensibility.md) NOTE | *"**Persona** may be inferred — it only changes wording. **Mode** must be granted."* |
+
+The third is the one that matters, because it is doing real work in a sentence about security. Its point
+is sound and its example is gone: it contrasts a *grantable* mode with an *inferable* persona in order to
+say why conflating them **"would let a user talk their way into `ADMIN`"**. With persona abolished there
+is nothing inferable left to contrast with — which makes the rule **stronger**, not weaker, and leaves the
+sentence explaining it broken.
+
+**What the agent does.** It holds what survives and implements none of the dead clause:
+
+| | |
+|---|---|
+| **a fact is declared** | somebody said it about themselves. A `by` reading inferred, derived, guessed, detected, assumed, estimated, observed, automatic, auto or model is refused — deciding from a conversation that a user is a beginner is a judgement they did not make and cannot see (D-33) |
+| **a mode is granted** | it carries who granted it and when, and a grant whose `by` is not a person is refused. **No mode held is not User Mode** — a permission boundary that defaults to something is not a boundary |
+| **nothing about how to speak** | there is no tone, level or phrasing field in anything it returns, whatever it is asked |
+
+**Not fixed here.** `HERON-ORC-PER-003` is one of the four agents [D-01](DECISIONS.md) delegates to the
+host, so retiring or renaming it is a change to the host contract, and `docs/22 §3`'s note needs rewriting
+rather than deleting — the rule it protects is the reason the User & Personalization department exists at
+all. Both are the owner's, and they are one paragraph apart from being settled.
