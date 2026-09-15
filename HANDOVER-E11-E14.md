@@ -1,110 +1,98 @@
-# Handover — everything is deployed, E11–E14 are the only thing left
+# Handover — E11-E14 were run, E11 failed, the fix is written and NOT deployed
 
-**Written 2026-09-15, just before Ajmal restarts Claude Code so the heron MCP connector
-reloads. Nothing here is a plan; it is all done except the last section.**
+**Updated 2026-09-15, late. Branch `claude/friendly-hypatia-196de4`, pushed.**
 
-## Read this first
+## Do this first
 
-Branch **`claude/friendly-hypatia-196de4`**, pushed. It is `main` + three commits:
-
-| | |
-|---|---|
-| `98f4a21` | PR #147's document-pin fix (was `cc3c6df`) |
-| `776714e` | `binds:` at the executor, millimetres out, D-73's table-by-name |
-| `272dfca` | PR #148's wrong-model guard (was `03d557f`) |
-
-**PR #147 and PR #148 are both still open and both still conflict with each other** — they
-independently add the same `documentPath`/`projectKey` lines to `RevitFragment.Report`. This
-branch is the resolved combination of the two plus the fragment work. Merging either PR on its
-own will conflict with this branch; that is Ajmal's call, not a session's.
-
-## What is ALREADY deployed, verified by byte-search of the shipped DLLs
-
-Revit **2020, 2024 and 2027** (the only three installed), built and deployed one version at a
-time from this branch. Each DLL was searched for the actual strings, not assumed:
-
-- `"NOTHING was written"` — PR #148's guard ✔
-- `"has no Project Information"` — the family-document refusal ✔
-- `"filled from"` — the `binds:` refusal ✔
-- `"documentPath"` / `"expectProject"` ✔
-- `"stopped before the transaction opened"` — **absent**, correctly: that was a DUPLICATE guard
-  this session wrote before PR #148 arrived, and it has been removed in favour of theirs
-
-## Why PR #148's version replaced the one written here
-
-This session independently implemented the same guard (commit `93f48e7`, now dropped, kept at
-tag `wip-before-148`). PR #148's is better and was taken instead:
-
-- it adds **`wrong_document` to `heron_failure.py`**, which the local one missed entirely.
-  Without that row, `analyse(writes=True)` falls through to its fail-closed rule, calls a refusal
-  that returns *above* the transaction an UNKNOWN outcome, and tells the user to go and check the
-  model — frightening, and false about the one failure that is certain nothing happened
-- its refusal says *"the one this would have run in"* rather than *"in front of Revit now"*,
-  because this path can be given a document BY NAME
-
-## Gates, all run on this branch
-
-| | |
-|---|---|
-| `check-gaps` | **216 suites ok, 0 failures.** The earlier brief said it "wrote zero bytes / is unrun" — that was wrong. It is a full suite runner and simply takes a long time. Its exit 1 follows the UNFINISHED list, not a failure |
-| `check-compile` | ok, all four projects, 2020 → 2027 |
-| `check-docs`, `check-metadata`, `check-structure` | pass (4 broken links remain, all pre-existing in `PROPOSALS.md` and D-72) |
-| `test_agents.py` | **now returns in seconds.** It was the one UNFINISHED item; it is fixed by #146, which this branch was missing until it was rebased onto main |
-
-## THE ONLY THING LEFT: E11–E14 in front of Revit
-
-**Nothing below has been run. Do not tick a row in `docs/NEEDS-CHECKING.md` that was not observed.**
-
-### Why the session had to be restarted
-
-`.mcp.json` launches `python mcp/server/heron_mcp_server.py` by RELATIVE path, and Python reads
-the file once at process start. Five `heron_mcp_server` processes were alive, all started
-**before** this code existed, so none of them would send `expectProject` — and an absent key means
-*"do not check"*, so the add-in gate sits switched off and `revit_change` runs. That failure looks
-nothing like a bug; it looks like the test passing. **Confirm the connector is fresh before
-trusting any E-row.**
-
-### Setup
-
-Revit **2024**, Ribbon → Heron AI → Heron to connect, then `python mcp\client\heron_bridge_client.py ping`.
-Open **two projects and one family**. Why each is needed:
-
-- **two projects** — E11 is "click into a different model and ask again". It needs a second model
-  to click into. Two BLANK projects are ideal: their undo stacks start empty, so "both undo stacks
-  unchanged" is unambiguous rather than a judgement about a busy model
-- **one family** — E12 is the family case. A family has no Project Information and therefore no
-  project key, and a family editor becomes the active document the moment it opens. That is the
-  ordinary way a write lands somewhere nobody pointed at, and the guard must refuse it in its own
-  sentence rather than let a null fall through a string comparison
-
-**E13 and E14 WRITE FOR REAL.** `revit_change` applies and keeps the work. Ajmal had not chosen
-the models when this was written — ask before writing into anything of his.
-
-### The rows
-
-| | |
-|---|---|
-| **E11** | `revit_change` in one project, click into the second, ask again. PASS: refuses **before** anything is written, names the model it would have run in, says NOTHING was written, and **both undo stacks are unchanged** |
-| **E12** | Same, but click into the **family**. PASS: still refuses, in a **different** sentence |
-| **E13** | **The one that matters most.** Fresh chat, `revit_change` FIRST. PASS: it **RUNS**. If it refuses, the guard is inverted and every chat is bricked — stop, report, and do not leave it deployed |
-| **E14** | `revit_select_by_category` then `revit_change`, same model, no switching. PASS: it **RUNS** — both tools must produce the same key. Do it on a saved project AND on an unsaved one |
-
-Rollback if anything fails: `git revert 272dfca`, rebuild and redeploy the same three versions,
-restart Revit.
-
-## Also unfinished, and separate from the above
-
-`find-nearest-elements` and `check-minimum-clearance` are **still unproven**. The job file is
-written and dry-runs clean:
+**The add-in on disk is OLDER than this branch.** The last deploy (22:56) predates the
+targeting fix. `check-compile.py` has since run across 2020-2027 into the SHARED build
+folder, so what is sitting in `bin` is **.NET 10 for Revit 2027** and Revit 2024 would
+refuse it. Do not deploy what is there.
 
 ```
-python tools/batch-prove.py tools/jobs/binds-2026-09-15.yaml --dry-run
-python tools/batch-prove.py tools/jobs/binds-2026-09-15.yaml
+dotnet build revit\Heron.Revit.Addin\Heron.Revit.Addin.csproj -c Debug -p:RevitVersion=2020
+powershell -File tools\deploy-addin.ps1 -RevitVersion 2020
+dotnet build revit\Heron.Revit.Addin\Heron.Revit.Addin.csproj -c Debug -p:RevitVersion=2024
+powershell -File tools\deploy-addin.ps1 -RevitVersion 2024
+dotnet build revit\Heron.Revit.Addin\Heron.Revit.Addin.csproj -c Debug -p:RevitVersion=2027
+powershell -File tools\deploy-addin.ps1 -RevitVersion 2027
 ```
 
-Arrangement measured in Project1 on Revit 2020 (that model was unsaved and is probably gone —
-**re-measure before trusting these**): `FloorPlan: 1 - Mech` held 21 elements across twelve MEP
-categories, `1 - Plumbing` held exactly 1, `2 - Mech` held 1.
+Build a version and deploy THAT version before building the next. Revit must be closed.
+Only 2020, 2024 and 2027 are installed on this PC.
 
-**D-73 is marked Proposed.** Ajmal asked for "what is best" rather than picking, so the row
-records what was done and why, for him to accept or send back.
+## What was run in front of Revit, and what it found
+
+Revit 2024.3 session 2924, two blank projects and `M_Rectangular Elbow - Radius.rfa`.
+
+| Row | Result |
+|---|---|
+| **E13** fresh chat, `revit_change` first | **PASSED** — pin was `None`, `CREATE_LEVEL ran in Project1` |
+| **E14** same model, no switching | **PASSED** — but see below; it proves less than it looks |
+| **E12** switch to a family | **PASSED** — *"has no Project Information … NOTHING was written"* |
+| **E11** switch to a second project | **FAILED** — `CREATE_LEVEL ran in Project2` |
+
+**E11 is the one the whole change existed for.** `ProjectKey` is
+`ProjectInformation.UniqueId`, which is inherited from the TEMPLATE:
+
+| Document | key |
+|---|---|
+| Project1 (2024) | `8764c510-…-0000c160` |
+| Project2 (2024) | `8764c510-…-0000c160` |
+| `PIPE.rvt` (2020, unrelated) | `8764c510-…-0000c160` |
+| the family | `None` |
+
+So the guard compared two equal strings and let the write through. **E12 passes only
+because `None` is genuinely different. E14 passes for a reason indistinguishable from the
+bug** — every project on this machine returns the same key, so that row cannot tell a
+working identity from a colliding one.
+
+CI was green the whole time: 5/5 checks, 188 tests, compiled 2020-2027. That gap is what
+D-30 exists for.
+
+## What was done about it — D-74, written and unrun
+
+The question is inverted: not *"did the user move?"* but *"which model was I told to work
+on?"*, which needs no key.
+
+- `revit_change` sends `document` (pinned title) and `documentPath` (pinned path).
+- `RevitFragment.Run` resolves the **path first** (unique among open models), title second.
+- A title matching **twice** is `ambiguous_document`. The lookup used to let the last
+  document round the loop win silently.
+- `no_such_document` and `ambiguous_document` joined the failure table.
+  **`no_such_document` predates all of this and was never in it** — the same gap
+  `wrong_document` had.
+- `expectProject` **stays**. No longer the mechanism; still catches the family case.
+
+**It is what the owner asked for**, in his words: *"pin project 1, refer to project 2, and
+I move to project 3 — Heron needs to work on project 1… that is agentic work."*
+
+**Demonstrated over the bridge with the FAMILY in front the whole time:** read
+`ajmal testing level @ 12500 mm` out of Project2 by name, wrote ten levels into Project1 by
+name (`ajmal testing level - 01` @ 15000 mm … `- 10` @ 42000 mm), verified by reading back —
+Project1 3 → 13 levels, **Project2 untouched at 5**, every reply `wasActiveDocument=False`.
+
+**That is not a proof of this change.** It was driven over the bridge directly, not through
+`revit_change`, so the line D-74 actually changes has never run.
+
+## What it owes — E15, E16, E17 in NEEDS-CHECKING Group E
+
+| | |
+|---|---|
+| **E15** | E11's arrangement again. The change must **land in Project1**, not be refused — the write is aimed now, so moving the screen is no longer an error. Check Project2 did NOT gain it |
+| **E16** | Pin a project, **close it**, ask for a change → `no_such_document`, naming what is open, nothing written |
+| **E17** | Two models both called `Project1`, pin one, ask → `ambiguous_document`. **Then save one and repeat** — the paths differ, so it must resolve cleanly |
+
+## Also still open
+
+- **`write.enabled` is TRUE.** `revit_health` warns about it. Switch Changes off in the
+  ribbon unless deliberately testing.
+- **Stray test levels.** Project1: `HERON_E13` + ten `ajmal testing level - NN`.
+  Project2: `HERON_E11`, `HERON_E14`. Both blank projects.
+- **PRs #147 and #148 are both open and conflict with each other** — both add the same
+  identity lines to `RevitFragment.Report`. This branch has them resolved together, plus the
+  fragment work. Merging either alone will conflict. The owner's call.
+- **D-73 and D-74 are both marked Proposed** and await the owner reading them back.
+- **`find-nearest-elements` and `check-minimum-clearance` are still unproven.**
+  `tools/jobs/binds-2026-09-15.yaml` dry-runs clean. Its arrangement was measured in a
+  Project1 on Revit 2020 that is almost certainly gone — **re-measure before trusting it**.
