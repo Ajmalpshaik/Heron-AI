@@ -125,10 +125,20 @@ def main():
         check("needs an answer" in waiting["why"],
               "and the reason is an ANSWER, not a missing agent: %r"
               % waiting["why"][:40])
-        step_four = [card for card in PIPE.plan()["steps"]
-                     if card["step"] == 4][0]
-        check(step_four["built"] is False,
-              "while step 4's agent really is unbuilt - a different stop")
+        # DERIVED, NOT WRITTEN DOWN. This asserted step 4 until
+        # HERON-IMP-FEX-004 was built, and then failed against a repository
+        # that had got better. The claim is that stopping for an ANSWER and
+        # stopping for a MISSING AGENT are different, and it holds whichever
+        # step each happens to be.
+        mapped = PIPE.plan()
+        missing = [card for card in mapped["steps"] if not card["built"]]
+        if missing:
+            check(missing[0]["step"] != answer["stopped_at"],
+                  "while the first UNBUILT step is %d - a different stop "
+                  "from the one it made" % missing[0]["step"])
+        else:
+            check(True, "every agent is now built, so the only stop left "
+                        "is for an answer - said, not counted as a pass")
         check(answer["questions"] and
               all("group" in ask for ask in answer["questions"]),
               "%d question(s) are ready for the host"
@@ -140,8 +150,13 @@ def main():
 
         print("\n4. `unbuilt` is read, and the table is checked for drift")
         answer_plan = PIPE.plan()
-        check("HERON-IMP-FEX-004" in answer["unbuilt"],
-              "FEX-004 is reported unbuilt: %s" % ", ".join(answer["unbuilt"]))
+        # WHICH agents are unbuilt changes every time one is built, so the
+        # claim is that the list AGREES WITH THE FILES - not that it holds
+        # a particular id. It named FEX-004 until FEX-004 was written.
+        claimed = PIPE.built()[1]
+        check(all(agent not in claimed for agent in answer["unbuilt"]),
+              "nothing in `unbuilt` is claimed by a file: %s"
+              % (", ".join(answer["unbuilt"]) or "(none left)"))
         empty = os.path.join(yard, "empty-register.md")
         with io.open(empty, "w", encoding="utf-8") as handle:
             handle.write("no agent ids here\n")

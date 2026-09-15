@@ -1,0 +1,91 @@
+# Fragment Extraction Agent - HERON-IMP-FEX-004
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ and makes it T3. It picks nothing and names nothing: finding
+# the functions is parsing, deciding one is reusable is a judgement.
+
+agent: HERON-IMP-FEX-004
+version: 1.0.0
+
+input:
+  folder:
+    type: path
+    required: true
+    description: >
+      The folder being imported. Walked through HERON-IMP-FIL-002 - this
+      agent reads what that one found.
+  walked:
+    type: map
+    required: false
+    description: >
+      That agent's answer, when a caller already has one. Passing it
+      saves a second walk of the same folder.
+
+output:
+  harvested:
+    type: boolean
+    description: True when the folder was walked and its Python parsed.
+  root:
+    type: path
+    description: The folder the units' paths are relative to.
+  of:
+    type: integer
+    description: How many implementation units were found.
+  units:
+    type: list
+    description: >
+      Each function with its file, line, length, parameters, docstring,
+      source, and its computed `needs` and `provides`. Sorted by how
+      often it is called, commonest first.
+  reusedAlready:
+    type: list
+    description: >
+      The units called from more than one place in the folder. THE ONE
+      SIGNAL HERE THAT IS ARITHMETIC - somebody has already reused them.
+      A unit nothing calls is reported as that, never as a poor
+      candidate.
+  unparsed:
+    type: list
+    description: >
+      Files whose units could not be read, each saying why - a syntax
+      error with its line, or a language Heron has no parser for on this
+      side. Named, never skipped, and never guessed at with a brace
+      scan.
+  named:
+    type: boolean
+    description: >
+      Always false. No id and no capability - HERON-IMP-REN-010 already
+      argued that out.
+  asks:
+    type: list
+    description: >
+      One question carrying every unit and its evidence: which are worth
+      keeping, and what does each one DO. That is language, and docs/28
+      makes this row T3 for it.
+  why:
+    type: string
+    description: The counts, and that nothing was named or picked.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That `reusable` was not decided; which units are
+      already called twice and why that is the only arithmetic evidence
+      here; that needs and provides are COMPUTED rather than read out of
+      prose, which is what makes composition checkable (D-29); what
+      could not be parsed; that nothing was named; and that a Python
+      function IS NOT A FRAGMENT YET - Heron's are C# for Roslyn (D-28),
+      and migrating one is HERON-IMP-MIG-009's row.
+
+allowed-tools: []
+
+timeout-seconds: 600
+
+failures:
+  - NOTHING_TO_HARVEST
+  - NOTHING_TO_WALK
+  - NOT_A_FOLDER
+
+retry:
+  attempts: 0
+  on-failures: []
