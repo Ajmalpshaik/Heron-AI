@@ -134,6 +134,15 @@ _KNOWN = {
                           "another model is in front; the approved one is still open"),
     "document_closed":   (REFUSED, STOP,
                           "the approved model was closed - Heron will not move to another one"),
+    # The add-in's own Golden Rule 20 guard, and it is REFUSED rather than
+    # UNKNOWN on purpose: it returns before the transaction group is opened,
+    # so nothing was written. Without this row the fail-closed rule below
+    # classified it as an unknown outcome on the write path and told the user
+    # to go and check the model - frightening, and false. This is the one
+    # failure that knows for certain that nothing happened.
+    "wrong_document":    (REFUSED, FIX_FIRST,
+                          "the model this chat was pointed at is not the one that would "
+                          "have been changed - nothing was written"),
 
     # --- it ran ------------------------------------------------------------
     "still_running":     (RUNNING, WAIT,

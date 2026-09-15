@@ -160,6 +160,94 @@ namespace Heron.Revit.Addin
                 try { uidoc = new UIDocument(target); } catch { uidoc = null; }
             }
 
+            // WHICH MODEL THE CHAT THINKS IT IS IN, CHECKED BEFORE ANYTHING
+            // RUNS. Golden Rule 20, enforced on the only side that can still
+            // stop.
+            //
+            // The server compared its pin against the REPLY, and on this path
+            // the reply is built after group.Assimilate() has COMMITTED. So a
+            // user who switched model between two messages had the change
+            // applied to the model in front and was then told "Nothing has
+            // been sent to Revit" - a sentence that was false about work
+            // already sitting in their undo stack. A refusal that arrives
+            // after the act is a description, not a guard. It is the same
+            // defect fixed for SelectByCategory on 2026-09-11; this path never
+            // had the guard at all. Found by a review 2026-09-15.
+            //
+            // HERE, AND NOT LOWER. Above the contract binding and the compile
+            // because those read the model and cost seconds, and above the
+            // TransactionGroup because below it there is nothing left to
+            // refuse - only something to undo.
+            //
+            // ON THE READ PATH TOO, because it is one method and a read of the
+            // wrong model is the answer SelectByCategory was fixed for. The
+            // proving client sends no key and is pointed at a model
+            // deliberately, so nothing there changes.
+            //
+            // `expectProject` is the caller's pinned project key, or empty
+            // when the chat has not pinned one yet. Empty means "do not
+            // check": a first request has nothing to compare against, and
+            // refusing it would make the pin unobtainable.
+            var expectProject = Json.ReadString(request, "expectProject");
+            if (!string.IsNullOrEmpty(expectProject))
+            {
+                var title = "";
+                try { title = target.Title; } catch { }
+                if (string.IsNullOrEmpty(title)) title = "(unnamed)";
+
+                // Said once so the two refusals below cannot drift apart, and
+                // said in the past tense it has earned: this returns above the
+                // TransactionGroup, so it is a fact rather than a hope.
+                var nothing = writing ? "NOTHING was written." : "NOTHING was read.";
+
+                var here = RevitOperations.ProjectKey(target);
+
+                // NULL IS A FAILED CHECK, NOT A SKIPPED ONE.
+                //
+                // A family document has no Project Information and therefore
+                // no project key. `here != expectProject` would already refuse
+                // it, and it is still spelt out: the two cases deserve
+                // different sentences, and a refusal that depends on null
+                // falling through a string comparison reads like an accident
+                // that a later edit could "tidy" into letting null pass.
+                //
+                // WHY IT REFUSES, ON A WRITE. The chat pinned a project. A
+                // family editor BECOMES the active document the moment it is
+                // opened, so this is the ordinary way a write lands somewhere
+                // nobody pointed at. An unidentifiable target cannot be shown
+                // to be the pinned one, and "cannot prove it is the right
+                // model" is the same answer as "is the wrong model" when the
+                // next thing this method does is commit a transaction.
+                //
+                // It costs a chat pinned to a project the ability to write
+                // into a family without repinning. That is the price, it is
+                // paid in a visible refusal that says what to do, and it buys
+                // the guarantee that every write this path commits went into a
+                // document the user named.
+                if (string.IsNullOrEmpty(here))
+                {
+                    return Json.Error("wrong_document",
+                        "This chat has been working on a project, and \"" + title
+                        + "\" has no Project Information - a family, or something Heron "
+                        + "cannot identify as the model this chat was pointed at. " + nothing
+                        + " Open the project you meant, or say 'use this model' to move "
+                        + "this chat onto this one deliberately.");
+                }
+
+                if (here != expectProject)
+                {
+                    // NOT "the one in front of Revit now", which is what the
+                    // selection guard says. This path can be given a document
+                    // BY NAME, so the model it chose need not be the one on
+                    // screen, and naming the wrong one is how a correct
+                    // refusal gets read as a bug.
+                    return Json.Error("wrong_document",
+                        "This chat has been working on another model, and the one this "
+                        + "would have run in is \"" + title + "\". " + nothing
+                        + " Say so explicitly if you meant to change model.");
+                }
+            }
+
             var globals = new HeronFragmentGlobals
             {
                 doc = target,
@@ -591,6 +679,15 @@ namespace Heron.Revit.Addin
             var title = "";
             try { title = target.Title; } catch { }
 
+            // Read with the same caution as the title above, and for the same
+            // reason: this runs AFTER the fragment, and a fragment is other
+            // people's code that may have closed the document it was given.
+            var path = "";
+            try { path = target.PathName; } catch { }
+
+            string projectKey = null;
+            try { projectKey = RevitOperations.ProjectKey(target); } catch { }
+
             var view = "";
             try { view = uidoc == null || uidoc.ActiveView == null ? "" : uidoc.ActiveView.Name; }
             catch { }
@@ -610,6 +707,25 @@ namespace Heron.Revit.Addin
             {
                 Json.Str("ran", name),
                 Json.Str("document", title),
+
+                // THE SAME IDENTITY EVERY OTHER OPERATION SENDS, and the half
+                // of the guard above that makes it reachable a second time.
+                //
+                // This path reported the title and nothing else, so
+                // DocumentPin.key_of fell to its "title:" fallback and
+                // pinned.project_key - which reads only a "project:" key -
+                // stayed None. Two consequences, both found 2026-09-15:
+                //
+                //   * expectProject went out EMPTY on every later call, so the
+                //     add-in gate above never ran for a chat whose pin came
+                //     from a fragment
+                //   * one model pinned "project:..." by another tool and
+                //     "title:..." by this one looked like two documents, and
+                //     the server refused a model it was already working in
+                //
+                // Null on a family document, deliberately - see ProjectKey.
+                Json.Str("documentPath", string.IsNullOrEmpty(path) ? null : path),
+                Json.Str("projectKey", projectKey),
                 Json.Str("activeView", view),
                 Json.Bool("wasActiveDocument", inFront),
             };
