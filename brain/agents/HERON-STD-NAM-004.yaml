@@ -1,0 +1,81 @@
+# Naming Standard Agent - HERON-STD-NAM-004
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ANALYZE. It calls no name wrong: consistency is counted here,
+# correctness is quoted from a document somebody loaded.
+
+agent: HERON-STD-NAM-004
+version: 1.0.0
+
+input:
+  names:
+    type: list
+    required: true
+    description: >
+      Each {name, kind} - element, view, sheet or file. A bare string is
+      read as an element. A BLANK name is refused rather than shaped: an
+      empty name is a finding about the model, not something to group.
+  clauses:
+    type: list
+    required: false
+    description: >
+      The clause or clauses stating the rule, from HERON-STD-CMP-002 or
+      HERON-STD-ISO-003, in their own words. Without them nothing is
+      asked and nothing is judged - the counts still come back, because
+      "here is what your naming actually looks like" is worth having on
+      its own.
+
+output:
+  looked:
+    type: boolean
+    description: True when the names were read and shaped.
+  of:
+    type: integer
+    description: How many names were read.
+  kinds:
+    type: list
+    description: >
+      One row per kind, with every SHAPE its names take, how many carry
+      each, three examples, which separators appear, the commonest
+      shape, and the shapes carried by exactly one name.
+  asks:
+    type: list
+    description: >
+      One question per KIND - not per name - carrying the shapes and the
+      clauses. Empty when no clause was handed in. docs/19 s96: batch
+      work should not ask a frontier model the same thing four thousand
+      times.
+  clauses:
+    type: list
+    description: The clauses that were attached, echoed.
+  judged:
+    type: boolean
+    description: Always false. No name is called wrong here.
+  why:
+    type: string
+    description: >
+      The counts, how many shapes only one name carries, and whether a
+      clause was attached.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That no name was called wrong and why shape is
+      not correctness; that a shape carried by one name is a COUNT and
+      not a fault, because calling it one needs a threshold nobody
+      chose; which separators appeared, since on a real job the
+      separator IS the convention; that case is not a shape and telling
+      SUP from sup is a rule the standard has to state; and how many
+      questions were asked for how many names.
+
+allowed-tools: []
+
+timeout-seconds: 120
+
+failures:
+  - NOTHING_TO_CHECK
+  - NOT_A_NAME
+
+retry:
+  attempts: 0
+  on-failures: []
