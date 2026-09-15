@@ -1812,3 +1812,60 @@ One of two, and both are the owner's:
 
 **Not acted on.** Option 1 is the same question F27 asks about the Development department — whether a
 row must map to its own file — and answering it once should settle both.
+
+---
+
+## F32 — `redact()` returns two values and reads like it returns one
+
+**Found while building `HERON-DEV-SEC-009`** (Security Review Agent), which has to answer *"is there
+anything credential-shaped in this change"* before handing the evidence to a reviewer.
+
+### What happened
+
+The first version of that agent asked the redactor directly:
+
+    hidden = keeper.redact(text)
+    if hidden != text:        # ...then this field held a secret
+
+That reasoning is sound and the code is wrong. `HERON-KRN-SEC-012.redact` returns **`(clean, found)`** —
+a tuple — because a redaction nothing reports is a leak nobody can investigate, which is the right
+design. But a tuple is never equal to a string, so the compare was true for **every non-empty field**.
+The demo reported *five* credentials in a change carrying one: `allowed-tools`, `by`, `name`, `risk`,
+`token`.
+
+### Why it is worth writing down
+
+It fails in the direction that looks like it is working. A security check that says *"5 credential-shaped
+fields"* looks vigilant. Nobody chases a false positive as hard as a false negative, and the same
+mistake made one line later — `hidden, found = ...` with the halves swapped — gives a check that finds
+nothing and reports clean.
+
+The verb is the problem. `redact(text)` reads as *"give me the redacted text"*, and every caller who
+reaches for it is reaching for one value. The second return is the one that matters and it is invisible
+at the call site.
+
+### What was done here
+
+`HERON-DEV-SEC-009` does not call `redact` at all. It binds **`Secrets.refuse_secret_input`**, which is
+the method already built to answer this exact question, and which settles two further things the loop
+got wrong on its own:
+
+- **It judges the value, not the key name.** Its own comment says so — *"calling the field `token` is not
+  what makes it dangerous"*. A field called `name` holding `"Ajmal"` is not a credential; a field called
+  `blurb` holding a forge token is.
+- **It walks nested maps and lists.** `{"auth": {"header": "Bearer ..."}}` is how a credential actually
+  arrives — nobody puts one in a bare top-level field called `secret` — and a top-level loop walks
+  straight past it.
+
+### What is proposed
+
+Nothing in `heron_secrets.py` is changed by this. Two options, and both are the owner's:
+
+1. **Leave it, and let the composition rule carry the weight.** Golden Rule 3 already says reuse before
+   creating, and a caller that reaches for `refuse_secret_input` instead of `redact` never meets the
+   trap. This is what was done here.
+2. **Rename it `redact_and_report()` or return a small record** with named halves, so the second value is
+   visible at the call site rather than in the docstring.
+
+**Not acted on.** Option 2 touches `HERON-KRN-SEC-012` and everything already calling it, and the agent
+that found the problem is not the agent that should change a kernel interface.
