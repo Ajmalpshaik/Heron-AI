@@ -123,9 +123,38 @@ def names_the_standard(title, standard):
     """
     if not title or not standard:
         return False
-    flat, tight = _folded(title)
-    wanted, wanted_tight = _folded(standard)
-    return wanted in flat or wanted_tight in tight
+
+    # IT HAS TO BEGIN WITH THE DESIGNATION, NOT MERELY CONTAIN IT. A
+    # substring test passed "Acme guide to ISO 19650 compliance" and
+    # "Deviations from ISO 19650" - which are the two commonest titles a
+    # COMPANY document about the standard actually has, and both were
+    # then presented as the standard speaking. That is the docstring
+    # above being contradicted one level up: a title that mentions
+    # ISO 19650 is a title about it, not a title FROM it.
+    #
+    # A leading adoption prefix is allowed and is recognised
+    # mechanically rather than from a list: "BS EN ISO 19650-2:2018" is
+    # the British adoption and is the standard, and everything before
+    # the designation there is upper case. "Acme guide to" is not, and
+    # neither is "Deviations from". No vocabulary is invented, and a
+    # prefix nobody anticipated still works as long as it is written the
+    # way standards bodies write theirs.
+    #
+    # Found by a review on 2026-09-15.
+    raw = _SPACE.sub(" ", str(title)).strip()
+    kept = []
+    for word in raw.split(" "):
+        if word and word == word.upper() and not any(
+                letter.islower() for letter in word):
+            kept.append(word)
+            continue
+        break
+    for start in range(len(kept) + 1):
+        flat, tight = _folded(" ".join(raw.split(" ")[start:]))
+        wanted, wanted_tight = _folded(standard)
+        if flat.startswith(wanted) or tight.startswith(wanted_tight):
+            return True
+    return False
 
 
 def cite(question, standard=None, scopes=None, project=None,

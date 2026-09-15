@@ -75,6 +75,7 @@ import yaml  # noqa: E402
 
 import heron_fragment as FRAG  # noqa: E402
 import heron_skill as SKILL  # noqa: E402
+import heron_secrets as SECRETS  # noqa: E402
 import heron_capability as CAP  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -225,6 +226,45 @@ def author(draft, skills=(), fragments=(), into=None):
     where = into or SKILL.SKILLS_DIR
     who = str(draft.get("id")).strip()
     path = os.path.join(where, "%s.yaml" % who)
+
+    # AN ID IS A NAME, NOT A PATH. `id: "../agents/ESCAPED"` joined
+    # cleanly and wrote an agent-shaped YAML beside the skill library;
+    # an absolute id could land under any directory that exists. Nothing
+    # restricted the syntax - not here and not in HERON-SKL-VAL-004 - and
+    # the drafts this agent writes are MODEL-GENERATED, which is exactly
+    # the input a path has to be checked against rather than trusted.
+    #
+    # The comparison is HERON-KRN-SEC-012's `_inside`, bound rather than
+    # rewritten: it was written for this class of question and it already
+    # handles the three things a startswith() gets wrong - case, shape
+    # and the boundary between "Heron-AI" and "Heron-AI-notes".
+    #
+    # Found by a review on 2026-09-15.
+    # A SEPARATOR MAKES IT NOT A NAME, wherever it points. `sub/dir/X`
+    # stays inside the library and still is not an id - it asks for a
+    # folder nobody made, and the write dies with FileNotFoundError
+    # halfway through authoring. The boundary check below stays as the
+    # backstop for `..` and for an absolute path.
+    # BOTH SEPARATORS, ON EITHER PLATFORM. `..\windows` is one filename
+    # on Linux and an escape on Windows - and Revit is Windows-only, so
+    # the machine that matters is the one where it escapes. Checking only
+    # os.sep means this passes here and fails where it counts.
+    if (who != os.path.basename(who) or os.path.isabs(who) or not who
+            or "/" in who or "\\" in who or who in (".", "..")):
+        return {"authored": False, "refused": "ID_IS_NOT_A_NAME",
+                "why": "'%s' is not a skill id. An id names one skill and "
+                       "is one word - it is not a path, and one carrying a "
+                       "separator either writes a file somewhere nobody is "
+                       "looking for it or asks for a folder that does not "
+                       "exist." % who}
+
+    if not SECRETS._inside(path, where):
+        return {"authored": False, "refused": "ID_IS_NOT_A_NAME",
+                "why": "'%s' resolves to %s, which is outside %s. A skill "
+                       "id names a skill; it is not a path, and one "
+                       "carrying a separator or climbing with `..` writes "
+                       "a file somewhere nobody is looking for it."
+                       % (who, os.path.abspath(path), os.path.abspath(where))}
     taken = sorted(one for one in
                    (str(getattr(entry, "data", entry).get("id") or "").strip()
                     for entry in skills) if one == who)

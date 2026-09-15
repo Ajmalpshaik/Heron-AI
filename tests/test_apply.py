@@ -46,6 +46,7 @@ import heron_apply as UPD                                      # noqa: E402
 import heron_evolve as EVO                                     # noqa: E402
 import heron_fragment as FRAG                                  # noqa: E402
 import heron_promotion as PRO                                  # noqa: E402
+import heron_security as SEC                                   # noqa: E402
 import heron_contract as CON                                   # noqa: E402
 
 FAILURES = []
@@ -62,9 +63,16 @@ def plan(status="PROVEN", **findings):
     return answer
 
 
+# WHAT THE REVIEWER READ. An approval for a verdict that moves the code
+# has to name the code, so the fixture signs this and the tests below
+# apply exactly it.
+REVIEWED = "x"
+
+
 def approval(**changes):
     one = {"by": "Ajmal", "at": "2026-09-15 12:00",
-           "fragment": "count-elements", "verdict": "UPDATE"}
+           "fragment": "count-elements", "verdict": "UPDATE",
+           "of": UPD.fingerprint(REVIEWED)}
     one.update(changes)
     return one
 
@@ -172,14 +180,49 @@ def main():
         check(answer.get("refused") == "NOT_APPROVED",
               "an approval for %s is refused" % what)
     check("covers everything" in UPD.apply_verdict(
-        live, "UPDATE", implementation="x",
+        live, "UPDATE", implementation=REVIEWED,
         approval=approval(verdict="EXTEND"))["why"],
           "because one naming neither covers everything")
-    right = UPD.apply_verdict(live, "UPDATE", implementation="x",
+    right = UPD.apply_verdict(live, "UPDATE", implementation=REVIEWED,
                               approval=approval())
     check(right["applied"] and right["status"] == "DRAFT",
           "the right approval goes through, and PRODUCTION still lands "
           "at DRAFT - the code moved either way")
+
+    # AN APPROVAL MUST NAME THE CODE, NOT JUST THE VERDICT. Until
+    # 2026-09-15 it was checked against the fragment id and the verdict
+    # only, so the SAME approval accepted the implementation a person
+    # read and any other implementation put in afterwards - and returned
+    # applied: True. The person reviewed one thing and something else
+    # shipped. Found by a review, not by this suite.
+    check(UPD.fingerprint is SEC.fingerprint,
+          "UPD.fingerprint IS HERON-DEV-SEC-009's - two ways of "
+          "fingerprinting one change is how two agents come to disagree "
+          "about whether an approval is stale")
+    unsigned = dict(approval())
+    unsigned.pop("of")
+    blind = UPD.apply_verdict(live, "UPDATE", implementation=REVIEWED,
+                              approval=unsigned)
+    reached.add(blind.get("refused"))
+    check(blind.get("refused") == "NOT_APPROVED",
+          "an approval carrying no fingerprint of the implementation is "
+          "refused for a verdict that MOVES the code")
+    check("covers any implementation" in blind["why"]
+          and blind.get("isNow"),
+          "  saying so, and handing back the fingerprint to record")
+    swapped = UPD.apply_verdict(live, "UPDATE",
+                                implementation="// SOMETHING ELSE ENTIRELY",
+                                approval=approval())
+    reached.add(swapped.get("refused"))
+    check(swapped.get("refused") == "STALE_APPROVAL",
+          "and code substituted after the approval is STALE_APPROVAL, not "
+          "applied")
+    check(swapped["approvedOf"] != swapped["isNow"],
+          "  with both fingerprints shown, which are different")
+    check(UPD.apply_verdict(plan(status="DRAFT"), "UPDATE",
+                            implementation="anything")["applied"],
+          "below PRODUCTION none of this is demanded - docs/28 asks for "
+          "approval there and nowhere else")
 
     print("\n6. below PRODUCTION no approval is demanded")
     check(UPD.apply_verdict(plan(status="DRAFT"), "DEPRECATE")["applied"],
@@ -196,8 +239,8 @@ def main():
     imports = sorted(line.split()[1] for line in logic.split("\n")
                      if line.startswith("import "))
     check(imports == ["heron_evolve", "heron_fragment", "heron_promotion",
-                      "os", "sys"],
-          "the import list is os, sys and three agents: %s"
+                      "heron_security", "os", "sys"],
+          "the import list is os, sys and four agents: %s"
           % ", ".join(imports))
     for writing in ("open(", "write(", "makedirs", "subprocess"):
         check(writing not in logic, "the agent never uses %s" % writing)

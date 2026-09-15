@@ -65,10 +65,17 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import heron_evolve as EVO  # noqa: E402
 import heron_fragment as FRAG  # noqa: E402
 import heron_promotion as PRO  # noqa: E402
+import heron_security as SEC  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 NOT_A_PERSON = PRO.NOT_A_PERSON
+
+# HERON-DEV-SEC-009's, bound rather than rewritten. An approval that does
+# not name the CODE it approves covers any code - the same argument this
+# file already makes about an approval that does not name both the
+# fragment and the verdict.
+fingerprint = SEC.fingerprint
 GUARDED = EVO.GUARDED
 
 # Where a fragment lands when its implementation moves. docs/09's ladder,
@@ -185,6 +192,40 @@ def apply_verdict(proposal, verdict, approval=None, implementation=None):
             return {"applied": False, "refused": "APPROVED_BY_A_MACHINE",
                     "why": "'%s' approved it, which is not a person. "
                            "Golden Rule 7." % approval.get("by")}
+        # AN APPROVAL HAS TO NAME THE CODE, NOT JUST THE VERDICT. Until
+        # 2026-09-15 a PRODUCTION approval was checked against the
+        # fragment id and the verdict only, so the SAME approval accepted
+        # the implementation a person read and any other implementation
+        # substituted afterwards - and returned applied: True. The person
+        # reviewed one thing and something else shipped.
+        #
+        # This is the argument four lines below, applied to the third
+        # thing an approval is about: "an approval that does not name
+        # both covers everything". Found by a review.
+        if chosen in MOVES_THE_CODE:
+            against = str(approval.get("of") or "").strip()
+            now = fingerprint(str(implementation or ""))
+            if not against:
+                return {"applied": False, "refused": "NOT_APPROVED",
+                        "isNow": now[:16],
+                        "why": "the approval names '%s' and the verdict %s "
+                               "but not the CODE. %s moves the code, so an "
+                               "approval carrying no fingerprint of the "
+                               "implementation covers any implementation - "
+                               "including one substituted after it was "
+                               "read. Record `of` as the fingerprint of "
+                               "what was reviewed; it is %s... for this one."
+                               % (approval.get("fragment"), chosen, chosen,
+                                  now[:16])}
+            if against != now:
+                return {"applied": False, "refused": "STALE_APPROVAL",
+                        "approvedOf": against[:16], "isNow": now[:16],
+                        "why": "the approval was of %s... and the "
+                               "implementation is now %s... A review of a "
+                               "previous version of the code is exactly the "
+                               "review nobody meant to give (D-35)."
+                               % (against[:16], now[:16])}
+
         named = str(approval["fragment"]).strip()
         said = str(approval["verdict"]).strip().upper()
         if named != who or said != chosen:

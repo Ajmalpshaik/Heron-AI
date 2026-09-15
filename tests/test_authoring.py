@@ -153,6 +153,30 @@ def main():
               "and the written card carries the author's two words, "
               "unchanged")
 
+        # AN ID IS A NAME, NOT A PATH. `id: "../agents/ESCAPED"` joined
+        # cleanly and wrote an agent-shaped YAML beside the skill library
+        # until 2026-09-15, and nothing here or in HERON-SKL-VAL-004
+        # restricted the syntax. The drafts this agent writes are
+        # MODEL-GENERATED, which is exactly the input a path has to be
+        # checked rather than trusted. Found by a review.
+        for who, what in (("../agents/ESCAPED", "climbs out with .."),
+                          (os.path.join(where, "ABSOLUTE"), "is absolute"),
+                          ("sub/dir/NESTED", "carries a separator"),
+                          ("..\\windows", "carries a WINDOWS separator - "
+                           "one filename here, an escape on the machine "
+                           "Revit runs on"),
+                          ("..", "is a directory, not a name")):
+            escaped = CRE.author(draft(id=who), fragments=FRAGMENTS,
+                                 into=where)
+            reached.add(escaped.get("refused"))
+            check(escaped.get("refused") == "ID_IS_NOT_A_NAME",
+                  "an id that %s is refused" % what)
+        written = sorted(one for _r, _d, files in os.walk(where)
+                         for one in files)
+        check(all(os.sep not in one and "/" not in one for one in written),
+              "and nothing landed outside the folder: %s"
+              % ", ".join(written))
+
         print("\n5. nothing is overwritten")
         before = io.open(good["path"], encoding="utf-8").read()
         again = CRE.author(draft(name="a different name"),
@@ -231,7 +255,7 @@ def main():
         contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                          "HERON-SKL-CRE-002.yaml"))
         named = contract.get("failures") or []
-        check(len(named) == 9, "the contract declares 9 failures")
+        check(len(named) == 10, "the contract declares 10 failures")
         for failure in named:
             check(failure in logic, "the code names %s" % failure)
         unreached = sorted(set(named) - reached)

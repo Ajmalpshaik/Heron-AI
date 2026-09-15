@@ -199,9 +199,36 @@ def decide(candidates, remembered=None, closing=None):
                 continue
             expiry = {"rule": "ttl", "ttl": ttl}
         elif scope == ARCHIVES_ON_CLOSE:
+            # A PROJECT MEMORY MUST NAME ITS PROJECT. Without one the
+            # archive rule reads "archived when the project closes" with
+            # project: null - so nothing can archive it when that project
+            # closes, and nothing keys it to the job it came from. A
+            # riser size agreed on one tower then applies to the next
+            # one, which is Golden Rule 5 exactly: no cross-scope
+            # pooling. The same argument as NO_TTL above - a temporary
+            # memory with no expiry is permanent memory under another
+            # name, and a project memory with no project is global
+            # memory under another name.
+            #
+            # Found by a review on 2026-09-15.
+            project = str(candidate.get("project") or "").strip()
+            if not project:
+                refused.append({"about": about or None,
+                                "refused": "NO_PROJECT",
+                                "why": "memory scoped to a project has to "
+                                       "name the project (docs/10 s276). "
+                                       "This arrived without one, so "
+                                       "nothing could archive it when that "
+                                       "project closes and nothing keys it "
+                                       "to the job it came from - a fact "
+                                       "agreed on one tower would apply to "
+                                       "the next. Golden Rule 5: no "
+                                       "cross-scope pooling. A project "
+                                       "memory with no project is global "
+                                       "memory under another name."})
+                continue
             expiry = {"rule": "archived when the project closes",
-                      "project": str(candidate.get("project") or "").strip()
-                      or None}
+                      "project": project}
 
         evidence = {"seen": seen, "window": candidate.get("window")}
         decision = {"about": about or None, "what": what, "scope": scope,

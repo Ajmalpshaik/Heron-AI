@@ -138,17 +138,15 @@ proving pass "needs the PC". True and nowhere near sufficient: until 2026-09-06 
 a fragment at all**, and the server said so in its own code. The PC was never the blocker. The executor
 was. It is built now, so the sentence is finally true.
 
-### THE CODEX REVIEW ON PR #142 — four fixed, FIVE NOT YET VERIFIED. Start here.
+### THE CODEX REVIEW ON PR #142 — all nine reproduced and fixed
 
-A Codex bot review landed on PR #142 on 2026-09-15 with **nine findings, five P1**. Four were verified
-and fixed before the merge. **Five were not looked at**, and they are the first thing a fresh session
-should do. Every one is on `main` now.
+A Codex bot review landed on PR #142 on 2026-09-15 with **nine findings, five P1**. **Every one was
+reproduced first and then fixed** before the merge — none was taken on trust, and none turned out to be
+wrong. Two were worse than the review said.
 
-**Do not take any of these on trust** — the same review's earlier rounds have been right and wrong, and
-four of this repository's own checkers reported findings that turned out to be the code already doing
-the right thing. **Reproduce each one before changing anything.**
+Kept here because the *shapes* recur, and because every one of them passed 188 green suites.
 
-#### Fixed, with a regression check each
+#### The five P1s
 
 | file | what was wrong |
 |---|---|
@@ -157,17 +155,24 @@ the right thing. **Reproduce each one before changing anything.**
 | `brain/heron_release.py` | **`attachments: "Tower.rvt"` iterated eleven characters**, so `_binaries` found no `.rvt` and the guard that exists to stop a Revit model leaving the office **failed open** |
 | `brain/heron_modelqa.py` | **`value or ""` counted a zero offset and an unchecked Yes/No as EMPTY.** Those are among the commonest real values a Revit parameter holds, so every fill rate it ever produced was understated |
 
-#### NOT verified — do these first
-
-| file:line | the claim, in the reviewer's words |
+| file | what was wrong, and what it now does |
 |---|---|
-| `brain/heron_revision.py:202` | **P1.** Only the ORIGINAL card is checked for required fields, so a revision like `{"purpose": ""}` is accepted and written even for a `PRODUCTION` skill — overwriting valid YAML with a card `heron_skill.validate()` will reject, removing the skill from use. Validate the revised card in full before writing |
-| `brain/heron_apply.py:190` | **P1.** For a `PRODUCTION` fragment the approval is checked against the fragment ID and verdict only — **not against the implementation**. The same approval accepts the code a person reviewed AND different code substituted afterwards, returning `applied: True`. Bind a fingerprint of the implementation into the approval and recompute it (`HERON-DEV-SEC-009` already does exactly this, and can be bound rather than rewritten) |
-| `brain/heron_memory.py:204` | **P1.** A candidate with `scope="project"` and no `project` is accepted, with an archive rule whose project is `None`. Nothing can segregate it or archive it when that project closes, so a project-specific fact can survive unbound and be reused on another job. That is Golden Rule 5 — no cross-scope pooling |
-| `brain/heron_authoring.py:227` | **P2.** An id containing `..` or an absolute path escapes the skills directory — `id="../agents/HERON-X"` writes an agent-shaped YAML beside it. Neither this nor `heron_skill.validate()` restricts id syntax. Verify the resolved path stays under `where` before writing |
-| `brain/heron_iso.py:128` | **P2.** A title CONTAINING the standard's name is treated as the standard itself, so *"Acme guide to ISO 19650 compliance"* and *"Deviations from ISO 19650"* are presented as the standard speaking. **This reverses the module's own stated rule** that relevance is not authorship, which makes it worth checking carefully either way |
+| `brain/heron_apply.py` | **A `PRODUCTION` approval was not bound to the code it approved.** It checked the fragment id and the verdict only, so the SAME approval accepted the implementation a person read **and any other implementation put in afterwards** — returning `applied: True`. Reproduced exactly that way. `HERON-DEV-SEC-009`'s `fingerprint` is now bound by identity: an approval for a verdict that moves code must carry `of`, and code swapped afterwards is `STALE_APPROVAL`. This is the file's own argument — *"an approval that does not name both covers everything"* — applied to the third thing an approval is about |
+| `brain/heron_revision.py` | **Only the card coming IN was checked, never the one going OUT.** `{"purpose": ""}` and `{"id": ""}` were accepted on a `PRODUCTION` skill and written, and neither field is part of `breaks()`, so the production guard had no reason to stop it — replacing valid YAML with a card `HERON-SKL-VAL-004` rejects, which takes the skill out of use. Now `REVISION_INCOMPLETE`, deliberately a separate name from `INCOMPLETE`: *"the card you gave me is broken"* and *"the change you asked for would break it"* send the reader to different files |
+| `brain/heron_memory.py` | **A project-scoped memory was accepted with no project**, carrying `expiry.project: null`. Nothing could archive it when that project closed and nothing keyed it to the job it came from — a riser size agreed on one tower would apply to the next. Golden Rule 5. Now `NO_PROJECT`, on the same argument as the `NO_TTL` refusal three lines above it: a project memory with no project is global memory under another name |
 
-**The review is on the PR and stays readable after the merge**: <https://github.com/Ajmalpshaik/Heron-AI/pull/142>.
+#### The four P2s
+
+| file | what was wrong, and what it now does |
+|---|---|
+| `brain/heron_modelqa.py` | **`value or ""` counted a zero offset and an unchecked Yes/No as EMPTY.** Truthiness, on two of the commonest real values a Revit parameter holds — so every fill rate it ever produced understated the model |
+| `brain/heron_authoring.py` | **A skill id escaped its directory.** `id: "../agents/ESCAPED"` joined cleanly and wrote an agent-shaped YAML beside the library; an absolute id landed anywhere. These drafts are **model-generated**, which is exactly the input a path must be checked against. Now `ID_IS_NOT_A_NAME`, with `HERON-KRN-SEC-012`'s `_inside` bound as the backstop. **Both separators are rejected**: `..\windows` is one filename on Linux and an escape on Windows, and Windows is where Revit runs |
+| `brain/heron_iso.py` | **A title CONTAINING the standard's name was treated as the standard itself** — so *"Acme guide to ISO 19650 compliance"* and *"Deviations from ISO 19650"*, the two commonest titles a company document about a standard actually has, were presented as the standard speaking. That contradicts the function's own docstring one level up. It must now BEGIN with the designation, allowing an adoption prefix recognised **mechanically, not from a list**: `BS EN ISO 19650-2:2018` is upper case before the designation and is the standard; *"Acme guide to"* is not |
+| `mcp/server/heron_mcp_server.py` + `tools/api-changes.py` | The two in the table above |
+
+**Two were worse than the review said.** The `api-changes` one: the agent read a missing transition as *"that release removed nothing"* and reported every fragment **clear** — D-52's plausible zero inside the agent built to prevent it. The `heron_authoring` one: the reviewer named `..` and absolute paths; a Windows separator and a bare `..` also got through.
+
+**None of this was caught by 188 green suites.** Each fix carries a regression check now. The review stays readable on the PR: <https://github.com/Ajmalpshaik/Heron-AI/pull/142>.
 
 ### What 2026-09-14/15 did — 196 agents to 211, and four things that were believed and are not true
 

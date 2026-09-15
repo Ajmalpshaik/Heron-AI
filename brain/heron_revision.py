@@ -201,6 +201,32 @@ def revise(existing, changes, into=None):
         if not field.startswith("heron-"):
             after[field] = value
 
+    # AND THE REVISED CARD HAS TO BE A CARD TOO. The check above is on
+    # the card coming IN; nothing checked the one going OUT, so
+    # {"purpose": ""} or {"id": ""} was accepted on a PRODUCTION skill
+    # and written - and neither field is part of breaks(), so the
+    # production guard had no reason to stop it. The result is valid YAML
+    # replaced by a card HERON-SKL-VAL-004 rejects, which takes the skill
+    # out of use entirely.
+    #
+    # A separate refusal from INCOMPLETE on purpose: "the card you handed
+    # me was broken" and "the change you asked for would break it" are
+    # different problems with different fixes, and one name for both
+    # sends the reader to the wrong file.
+    #
+    # Found by a review on 2026-09-15.
+    emptied = [field for field in SKILL.REQUIRED
+               if field in changes and after.get(field) in (None, "", [], {})]
+    if emptied:
+        return {"revised": False, "refused": "REVISION_INCOMPLETE",
+                "why": "the revision empties %s, and %s required. The card "
+                       "that would be written is one HERON-SKL-VAL-004 "
+                       "rejects, so '%s' would stop being usable at all - "
+                       "which is not what revising a skill is for."
+                       % (", ".join(emptied),
+                          "that is" if len(emptied) == 1 else "those are",
+                          who)}
+
     strangers = sorted(set(one for one in _set(after, "revit")
                            if one not in VERSIONS))
     if strangers:
