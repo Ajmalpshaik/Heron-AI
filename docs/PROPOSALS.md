@@ -1712,3 +1712,51 @@ One of two, and both are the owner's:
 
 **Not acted on.** Option 1 adds a write path before the existing one has been proven, and option 2
 changes what the register promises.
+
+---
+
+## F30 — a reference model's profile carries the client's own job number
+
+Found while building [`HERON-STD-REF-010`](../brain/heron_exemplar.py), the Reference Model Profiler —
+by a test that failed, and the test was right.
+
+[docs/10 §5a](10-memory-and-knowledge.md) gives the worked example:
+
+> *"Tower A uses `MEP-DUCT-SUPPLY-L03`; this model has 47 ducts that do not match that pattern."*
+
+That example has no project code in it. **Real delivered models usually do.** On a real job every name
+starts with the job number — `QA-2026-ASHGHAL-MEP-DUCT-SUPPLY-L01` — and the profiler records the shape
+as delivered:
+
+| name | shape |
+|---|---|
+| `QA-2026-ASHGHAL-MEP-DUCT-SUPPLY-L01` | `A-9-A-A-A-A-A9` |
+| `MEP-DUCT-SUPPLY-L07` (a different project) | `A-A-A-A9` |
+
+So the profile learned from Tower A **cannot match anything in Tower B**, and checking a second model
+against it would flag every single element. The capability that exists to save somebody writing the
+standard out produces one that fits exactly one building.
+
+### Why the agent does not just strip it
+
+Because stripping means **guessing which segment is the project**. `QA-2026-ASHGHAL` is three segments
+here and one on the next job; a discipline code like `MEP` sits in the same position on some standards.
+Removing a segment that turns out to be a real part of the convention would teach the opposite of the
+truth — and docs/10 §5a's whole argument is that the delivered model *is* the truth.
+
+The agent reports the shape as delivered and says this out loud in its own answer rather than leaving it
+to be discovered against a second model.
+
+### What is proposed
+
+One of three, and all of them are the owner's:
+
+1. **Ask which segment is the project, once, when the reference is offered** — D-33 exactly. One
+   question, answered by somebody who knows the job, and the profile is then portable.
+2. **Profile TWO delivered models at once** and treat the segments that DIFFER between them as the
+   project code. That is derivation rather than a guess, and it also satisfies docs/10 §5a's own
+   corroboration guard in the same step — but it needs two references before anything can be learned.
+3. **Accept it and say so**: a profile is per project, and a second project needs its own reference.
+   Cheapest, and it loses most of what the capability was for.
+
+**Not acted on.** Option 2 is the most interesting and it changes what the agent takes as input.

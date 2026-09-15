@@ -1,0 +1,89 @@
+# Reference Model Profiler - HERON-STD-REF-010
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ and makes it T3. It proposes and adopts nothing, and the model
+# it learns from is discarded - checked, not promised.
+
+agent: HERON-STD-REF-010
+version: 1.0.0
+
+input:
+  names:
+    type: list
+    required: true
+    description: >
+      Each {name, kind} out of a delivered model - elements, views,
+      sheets, levels, grids. A bare string is read as an element. These
+      belong to a CLIENT and none of them survives into the answer.
+  categories:
+    type: list
+    required: false
+    description: >
+      Which categories the model used. docs/10 s5a wants these AND the
+      ones deliberately not used, and only what is handed in can be
+      reported.
+
+output:
+  profiled:
+    type: boolean
+    description: True when the names were read.
+  of:
+    type: integer
+    description: How many names went in.
+  patterns:
+    type: list
+    description: >
+      One per kind, each with the DOMINANT shape and its known
+      EXCEPTIONS. Both carry the count AND the proportion, which is what
+      docs/10 s5a asks for - "done 400 times it is a convention, done
+      once it is not" - and no line is drawn between them.
+  categories:
+    type: list
+    description: The categories that were handed in, sorted.
+  enters_at:
+    type: string
+    description: >
+      DISCOVERED, from HERON-IMP-APR-014's constant. docs/10 s5a: a
+      pattern from one project stays there until another project agrees.
+  adopted:
+    type: boolean
+    description: >
+      Always false. It PROPOSES; becoming the company standard needs an
+      explicit yes (Golden Rule 6).
+  kept_nothing:
+    type: boolean
+    description: >
+      True when no name from the model survived into the profile.
+      RE-READ, not promised: every string in the finished answer is
+      searched for every name that went in.
+  survived:
+    type: list
+    description: >
+      Any name that did survive. Empty is the only acceptable answer,
+      and it is reported rather than assumed.
+  why:
+    type: string
+    description: The counts, the discard result, and that nothing is adopted.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That whether any of it is RIGHT was not judged -
+      a delivered model contains mistakes and Heron must not learn one
+      as a rule; that both numbers travel and no threshold was invented;
+      what was recorded as an EXCEPTION rather than a violation; that it
+      proposes; that nothing was compared with an existing standard,
+      because a disagreement is a CONFLICT and not an overwrite; and
+      that the discard was checked.
+
+allowed-tools: []
+
+timeout-seconds: 120
+
+failures:
+  - NOTHING_TO_PROFILE
+  - NOT_A_NAME
+
+retry:
+  attempts: 0
+  on-failures: []
