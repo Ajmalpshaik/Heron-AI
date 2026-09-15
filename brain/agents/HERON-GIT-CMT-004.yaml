@@ -24,7 +24,7 @@ input:
       no convention (PROPOSALS F23) and one enforced here would become
       it. An absent message is not a shape question.
   secrets:
-    type: object
+    type: callable
     required: false
     description: >
       The credential store to check the message against. Defaults to a
@@ -40,13 +40,16 @@ input:
 output:
   prepared:
     type: boolean
+    description: True when the paths and message may be committed.
   may_commit:
     type: boolean
+    description: Always true when prepared - the verdict, stated plainly.
   paths:
     type: list
     description: The paths, normalised the way git prints them.
   message:
     type: string
+    description: The message, as given. No shape was applied to it.
   generated:
     type: list
     description: >
@@ -59,8 +62,10 @@ output:
       value never appears in any output of this agent.
   of:
     type: integer
+    description: How many paths were read.
   why:
     type: string
+    description: The counts, and that nothing was staged.
   unjudged:
     type: list
     description: >

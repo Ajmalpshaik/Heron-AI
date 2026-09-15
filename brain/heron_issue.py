@@ -33,9 +33,10 @@ answer says so rather than guessing from the wording.
 
 A CODE IS NOT AN ADDRESS, AND THE NUMBERS SAY SO
 --------------------------------------------------
-Measured on 2026-09-15: 81 contracts declare 361 distinct codes, and 47
+Measured on 2026-09-15: 83 contracts declare 374 distinct codes, and 48
 of them are declared by MORE THAN ONE agent. `REGISTER_UNREADABLE` is
-declared by ten.
+declared by ten. Those numbers move every time an agent is built, which
+is why the answer counts rather than quoting them.
 
 That is not a defect. `NOT_A_VERSION` meaning the same thing in seven
 agents is the vocabulary being reused on purpose, which is what makes it
@@ -222,12 +223,14 @@ def triage(issue, secrets=None, contracts=None):
                     "one is prose - the host's under D-01, not this "
                     "agent's to guess at."),
             "%s" % ("%d CODE(S) ARE CLAIMED BY SEVERAL AGENTS AND CAME "
-                    "BACK WITH ALL OF THEM: %s. Measured across the whole "
-                    "library, 47 of 361 codes are - which is the "
-                    "vocabulary being reused on purpose, not a defect, and "
-                    "it means routing by code is not addressing."
+                    "BACK WITH ALL OF THEM: %s. Across the whole library "
+                    "%d of %d codes are shared - which is the vocabulary "
+                    "being reused on purpose, not a defect, and it means "
+                    "routing by code is not addressing."
                     % (len(ambiguous),
-                       ", ".join(one["code"] for one in ambiguous))
+                       ", ".join(one["code"] for one in ambiguous),
+                       len([one for one in book if len(book[one]) > 1]),
+                       len(book))
                     if ambiguous else
                     "every code found is declared by exactly one agent, so "
                     "every route here is unambiguous."),

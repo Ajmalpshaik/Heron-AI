@@ -26,7 +26,7 @@ input:
       person - the machine-word list is HERON-LRN-PRO-004's, imported.
       Absent, the pull request is refused, not opened with a warning.
   secrets:
-    type: object
+    type: callable
     required: false
     description: >
       The credential store to check the title and body against. Defaults
@@ -41,12 +41,16 @@ output:
     description: Always true when prepared - the verdict, stated plainly.
   head:
     type: string
+    description: The branch being merged.
   base:
     type: string
+    description: The branch it is merged into.
   title:
     type: string
+    description: The title, as given.
   body:
     type: string
+    description: The body, as given. Nothing was stripped from it - a body carrying a credential is refused whole instead.
   draft:
     type: boolean
     description: Defaults to true.
@@ -55,6 +59,7 @@ output:
     description: The person who confirmed, by name.
   confirmed_at:
     type: string
+    description: When the confirmation was given, as stated.
   where:
     type: string
     description: >
@@ -68,6 +73,7 @@ output:
     description: On a refusal for a model, which names were Revit files.
   why:
     type: string
+    description: The branches, who confirmed, and that nothing was opened.
   unjudged:
     type: list
     description: >

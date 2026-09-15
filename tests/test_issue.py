@@ -85,9 +85,10 @@ def main():
     # something about the library rather than about the agent - and the
     # first attempt named one that turned out to have two owners.
     only_one = sorted(code for code in book if len(book[code]) == 1)
-    check(len(only_one) == len(book) - 47,
+    many = sorted(code for code in book if len(book[code]) > 1)
+    check(len(only_one) + len(many) == len(book),
           "%d code(s) have exactly one owner and %d have several"
-          % (len(only_one), len(book) - len(only_one)))
+          % (len(only_one), len(many)))
     lone = only_one[0]
     solo = ISS.triage(issue(body="it said %s" % lone))
     check([one["agent"] for one in solo["routed"]] == book[lone],
@@ -96,9 +97,13 @@ def main():
     check(solo["ambiguous"] == [], "with nothing ambiguous about it")
 
     print("\n2. a shared code comes back with all of them")
-    shared = sorted(code for code in book if len(book[code]) > 1)
-    check(len(shared) == 47,
-          "%d code(s) are declared by more than one agent" % len(shared))
+    # DERIVED. A number typed here goes stale the next time an agent is
+    # built - which is exactly what happened to the first version of
+    # this line, two agents later.
+    shared = many
+    check(shared and len(shared) < len(book),
+          "%d of %d code(s) are declared by more than one agent"
+          % (len(shared), len(book)))
     worst = max(book, key=lambda code: len(book[code]))
     answer = ISS.triage(issue(body="it said %s" % worst))
     check(answer["routed"] == [] and len(answer["ambiguous"]) == 1,

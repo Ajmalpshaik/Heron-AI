@@ -46,15 +46,19 @@ input:
 output:
   cut:
     type: boolean
+    description: True when the release may be tagged. Nothing is tagged here.
   may_publish:
     type: boolean
+    description: Always true when cut - the verdict, stated plainly.
   version:
     type: string
+    description: The version, without a leading v.
   tag:
     type: string
     description: The version with a leading v.
   artefact:
     type: string
+    description: The file a person would download.
   built_from:
     type: string
     description: The commit, never a branch.
@@ -74,10 +78,13 @@ output:
     description: Whether HERON-GIT-VER-008's answer was handed in.
   confirmed_by:
     type: string
+    description: The person who confirmed, by name.
   confirmed_at:
     type: string
+    description: When they confirmed, as stated.
   why:
     type: string
+    description: The version, the commit, the gate count and who confirmed.
   unjudged:
     type: list
     description: >

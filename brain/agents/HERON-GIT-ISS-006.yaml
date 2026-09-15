@@ -22,7 +22,7 @@ input:
       failures a bounded set of codes, so the classification is a table.
       The sentences around them are prose, which is the host's.
   secrets:
-    type: object
+    type: callable
     required: false
     description: The credential store to check the title and body against.
   contracts:
@@ -35,6 +35,7 @@ input:
 output:
   triaged:
     type: boolean
+    description: True when the issue was read. It is true even when nothing could be routed.
   routed:
     type: list
     description: Codes declared by exactly one agent, with that agent.
@@ -53,6 +54,7 @@ output:
       maintainer's eye. A shouted word with no underscore is not a code.
   codes_seen:
     type: list
+    description: Every code-shaped token found in the text, in the order it appeared.
   of:
     type: integer
     description: How many distinct codes the table held.
@@ -63,10 +65,13 @@ output:
       never appears in any output of this agent.
   found:
     type: list
+    description: On a refusal for a credential, what KIND. Never the value.
   attachments:
     type: list
+    description: On a refusal for a model, which names were Revit files.
   why:
     type: string
+    description: "The counts: how many codes, routed, ambiguous and undeclared."
   unjudged:
     type: list
     description: >

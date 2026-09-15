@@ -9,7 +9,7 @@
 """
 Skill research - three questions, three different kinds of answer.
 
-    python tests/test_skillresearch.py
+    python tests/test_prebuild.py
 
 WHAT IT PROVES
   1. A SKILL IS WHAT IT NEEDS. The same capabilities in the same domain
@@ -44,7 +44,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
-import heron_skillresearch as RES                              # noqa: E402
+import heron_prebuild as RES                              # noqa: E402
 import heron_fragment as FRAG                                  # noqa: E402
 import heron_contract as CON                                   # noqa: E402
 
@@ -59,7 +59,7 @@ def check(condition, what):
 
 def main():
     reached = set()
-    whole = io.open(os.path.join(ROOT, "brain", "heron_skillresearch.py"),
+    whole = io.open(os.path.join(ROOT, "brain", "heron_prebuild.py"),
                     encoding="utf-8").read()
     code = whole.split("\nfrom __future__", 1)[1]
     logic = code.split("\ndef main(")[0]

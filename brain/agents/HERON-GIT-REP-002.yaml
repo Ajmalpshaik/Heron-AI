@@ -31,12 +31,14 @@ input:
       destination nobody chose. With none given, no comparison is made
       and the answer says so.
   secrets:
-    type: object
+    type: callable
     required: false
+    description: The credential store to check each url against. Defaults to a fresh heron_secrets.Secrets().
 
 output:
   inspected:
     type: boolean
+    description: True when the remotes were read. Nothing is changed.
   remotes:
     type: list
     description: Each remote with its url and whether it was declared.
@@ -71,8 +73,10 @@ output:
       a password nobody can pattern-match.
   of:
     type: integer
+    description: How many remotes were read.
   why:
     type: string
+    description: The count, and whether anything was declared to compare against.
   unjudged:
     type: list
     description: >

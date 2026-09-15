@@ -10,7 +10,14 @@
 Skill research - what is already there, what would have to be built, and
 which question nothing here can answer.
 
-    python brain/heron_skillresearch.py
+    python brain/heron_prebuild.py
+
+WHY THE FILE IS NOT CALLED heron_skillresearch
+-----------------------------------------------
+It was, for one commit. `heron_skill` is HERON-SKL-VAL-004 and no module
+name in brain/ may be a prefix of another - tests/test_references.py
+enforces it, because HERON-NAM-REF-007 finds a name by searching for it
+and a name that is a prefix of another finds both.
 
 WHAT IT IS FOR (docs/28, HERON-SKL-RES-001)
 --------------------------------------------

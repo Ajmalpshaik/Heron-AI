@@ -34,16 +34,20 @@ input:
       project does not control, and which one is the first thing a
       reviewer needs to know.
   secrets:
-    type: object
+    type: callable
     required: false
+    description: The credential store to check each payload against. Defaults to a fresh heron_secrets.Secrets().
 
 output:
   prepared:
     type: boolean
+    description: True when every item is reviewed and clean.
   may_submit:
     type: boolean
+    description: Always true when prepared - the verdict, stated plainly.
   to:
     type: string
+    description: The repository being submitted to, as given.
   items:
     type: list
     description: >
@@ -51,6 +55,7 @@ output:
       it, when, and how many bytes they were looking at.
   of:
     type: integer
+    description: How many items were prepared.
   item:
     type: string
     description: On any refusal, which item it was about.
@@ -67,6 +72,7 @@ output:
       in any output of this agent.
   why:
     type: string
+    description: The count, the destination, and that nothing was submitted.
   unjudged:
     type: list
     description: >
