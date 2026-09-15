@@ -1,0 +1,107 @@
+# Release Agent - HERON-GIT-REL-007
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent PUBLISH. It publishes nothing: allowed-tools is empty and there is no
+# network. A verdict comes back.
+
+agent: HERON-GIT-REL-007
+version: 1.0.0
+
+input:
+  release:
+    type: map
+    required: true
+    description: >
+      {version, artefact, signature, built_from} and `gates`, a map of
+      gate name to true. `built_from` must be a COMMIT: docs/07 s64 says
+      what a person downloads is a versioned release artefact, "not
+      whatever the default branch happens to say today".
+  confirmation:
+    type: map
+    required: false
+    description: >
+      {by, at, version}. It names the version so it cannot cover the
+      next release. A release is the thing a stranger runs on their own
+      machine, so a machine may not confirm one.
+  last:
+    type: string
+    required: false
+    description: The previous release, so this one can be shown ahead of it.
+  bump:
+    type: map
+    required: false
+    description: >
+      HERON-GIT-VER-008's answer. Given, the tag must equal its `to`.
+      Left out, only the shape and the ordering are checked - and the
+      answer says the bump was not verified rather than implying it was.
+  workflow:
+    type: string
+    required: false
+    description: >
+      Where to read the required gates from. Defaults to
+      .github/workflows/gates.yml - the file CI actually runs, so a
+      fifth gate added there becomes required here with no edit.
+
+output:
+  cut:
+    type: boolean
+  may_publish:
+    type: boolean
+  version:
+    type: string
+  tag:
+    type: string
+    description: The version with a leading v.
+  artefact:
+    type: string
+  built_from:
+    type: string
+    description: The commit, never a branch.
+  signed:
+    type: boolean
+    description: Always true when cut. An unsigned artefact is refused.
+  gates:
+    type: list
+    description: The gates that were required, as read from the workflow.
+  red:
+    type: list
+    description: >
+      On a refusal, which gates were not green. "Not reported" counts as
+      red - a gate nobody ran is not a gate that passed.
+  checked_bump:
+    type: boolean
+    description: Whether HERON-GIT-VER-008's answer was handed in.
+  confirmed_by:
+    type: string
+  confirmed_at:
+    type: string
+  why:
+    type: string
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was tagged or published; that the
+      gate list was read rather than typed; whether the bump was
+      verified; and that green gates are not an install.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_CUT
+  - NOT_A_RELEASE
+  - NOT_A_VERSION
+  - NOT_AHEAD
+  - WRONG_VERSION
+  - NOT_SIGNED
+  - NOT_A_COMMIT
+  - NO_GATE_LIST
+  - A_GATE_IS_RED
+  - NOT_CONFIRMED
+  - CONFIRMED_BY_A_MACHINE
+
+retry:
+  attempts: 0
+  on-failures: []
