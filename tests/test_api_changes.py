@@ -167,6 +167,34 @@ def main():
     check(missing.get("clear") is None and missing.get("breaks") is None,
           "and it carries neither a clear list nor a breaks list")
 
+    # THE SAME MISTAKE ONE LEVEL IN, and this one shipped. A digest built
+    # by the documented targeted run - `api-changes.py 2025 2026` - holds
+    # ONE transition. Asking it about 2027 returned an empty removal list,
+    # which read as "2027 removed nothing" and reported every fragment
+    # CLEAR. That is D-52's plausible zero inside the agent built to
+    # prevent it, and a review found it, not this suite.
+    partial = {"releases": ["2025", "2026"],
+               "transitions": [one for one in found["transitions"]
+                               if one["to"] == "2026"]}
+    check(ACI.removed_in(partial, "2026") is not None,
+          "removed_in returns a LIST for a release the digest covers")
+    check(ACI.removed_in(partial, "2027") is None,
+          "and None - not [] - for one it does not. The two are different "
+          "answers and returning [] for both is what made it clear "
+          "everything")
+    thin = ACI.check([{"id": "FRG-X", "revit": ["2027"], "code": REAL_SHAPE}],
+                     release="2027", found=partial)
+    check(thin.get("refused") == "NO_EVIDENCE_FOR_RELEASE",
+          "a release the digest does not cover is REFUSED")
+    check(thin.get("clear") is None and thin.get("breaks") is None,
+          "  and nothing is reported clear on the strength of it")
+    check("nobody looked" in thin["why"] and "2025" not in thin["why"][:40],
+          "  saying `nobody looked at 2027`, and naming what it does cover")
+    still = ACI.check([{"id": "FRG-X", "revit": ["2026"], "code": REAL_SHAPE}],
+                      release="2026", found=partial)
+    check(still["checked"] and still["breaks"],
+          "  while the one transition it DOES hold still answers normally")
+
     print("\n5. a version guard is read, and what is left over-reports")
     # THIS LIBRARY SURVIVES A REMOVED MEMBER WITH `#if REVIT2020 ||
     # REVIT2021`, so a reader that ignores guards reports every fragment
@@ -241,6 +269,7 @@ def main():
           "result above is about the library, not about the checker")
 
     print("\n6. every failure the contract declares is named and reached")
+    reached.add(thin.get("refused"))
     for these, release, path, name in (
             ([], "2026", os.path.join(ROOT, "nope.json"), "NO_EVIDENCE"),
             ([], None, None, "NO_RELEASE"),
@@ -257,7 +286,7 @@ def main():
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-REVIT-ACI-034.yaml"))
     named_failures = contract.get("failures") or []
-    check(len(named_failures) == 6, "the contract declares 6 failures")
+    check(len(named_failures) == 7, "the contract declares 7 failures")
     for failure in named_failures:
         check(failure in logic, "the code names %s" % failure)
     unreached = sorted(set(named_failures) - reached)

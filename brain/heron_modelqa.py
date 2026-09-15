@@ -101,6 +101,26 @@ EMPTY = "empty"
 ABSENT = "absent"
 
 
+def _filled(value):
+    """
+    Has somebody put a value in this parameter?
+
+    ZERO IS A VALUE AND SO IS `No`. This read `value or ""` until
+    2026-09-15, which is truthiness - so a zero offset, a zero flow and
+    an unchecked Yes/No all counted as EMPTY. Those are among the
+    commonest real values a Revit parameter holds, and the fill rate
+    they produced understated every model it was ever pointed at.
+
+    An unset parameter is None, or a string with nothing in it. Nothing
+    else is. Found by a review.
+    """
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    return True
+
+
 def parameters(elements, wanted=None):
     """
     Fill rates, three states kept apart.
@@ -124,7 +144,7 @@ def parameters(elements, wanted=None):
             one = one or {}
             if name not in one:
                 counts[ABSENT] += 1
-            elif str(one[name] or "").strip():
+            elif _filled(one[name]):
                 counts[POPULATED] += 1
             else:
                 counts[EMPTY] += 1

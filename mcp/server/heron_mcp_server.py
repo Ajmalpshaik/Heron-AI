@@ -1537,21 +1537,6 @@ def heron_diagnose() -> str:
     return diagnosis.describe(diagnosis.diagnose())
 
 
-if __name__ == "__main__":
-    if os.name != "nt":
-        # The bridge is a Windows named pipe, and Revit is Windows-only.
-        sys.stderr.write("Heron's bridge uses Windows named pipes. Revit is Windows-only.\n")
-        sys.exit(2)
-    # Load the trained encoder on a background thread BEFORE serving anything.
-    # It is about a second in a fresh process and was measured still importing
-    # forty seconds later when it first ran inside a request handler, on the
-    # event loop - the host waited and no reply ever came. Until it finishes,
-    # every answer uses the lexical backend and says so. See heron_embed.warm().
-    brain.warm()
-
-    server.run()
-
-
 @server.tool()
 def revit_phases() -> str:
     """
@@ -1640,3 +1625,16 @@ def revit_phases() -> str:
                      % "{:,}".format(no_phase))
 
     return "\n".join(lines)
+if __name__ == "__main__":
+    if os.name != "nt":
+        # The bridge is a Windows named pipe, and Revit is Windows-only.
+        sys.stderr.write("Heron's bridge uses Windows named pipes. Revit is Windows-only.\n")
+        sys.exit(2)
+    # Load the trained encoder on a background thread BEFORE serving anything.
+    # It is about a second in a fresh process and was measured still importing
+    # forty seconds later when it first ran inside a request handler, on the
+    # event loop - the host waited and no reply ever came. Until it finishes,
+    # every answer uses the lexical backend and says so. See heron_embed.warm().
+    brain.warm()
+
+    server.run()

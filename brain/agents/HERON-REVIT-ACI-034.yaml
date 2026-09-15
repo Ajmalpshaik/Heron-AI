@@ -81,6 +81,11 @@ timeout-seconds: 60
 
 failures:
   - NO_EVIDENCE
+  # The digest exists but holds no transition INTO the release asked
+  # about - which a targeted `api-changes.py 2025 2026` used to produce.
+  # NOT the same as "that release removed nothing": reading the two the
+  # same way reported every fragment clear.
+  - NO_EVIDENCE_FOR_RELEASE
   - NO_RELEASE
   - UNKNOWN_RELEASE
   - NO_EARLIER_RELEASE

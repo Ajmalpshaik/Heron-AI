@@ -91,6 +91,31 @@ def main():
     check(all(one["doc"] for one in rows),
           "each carrying its own docstring")
 
+    # EVERY TOOL MUST BE DEFINED BEFORE THE BLOCK THAT BLOCKS. The
+    # configured entry point runs this file directly, so `server.run()`
+    # inside `if __name__ == "__main__":` never returns - a @server.tool()
+    # written BELOW it never executes its decorator, and the tool is
+    # simply absent from tools/list while the registry still declares it.
+    # Nothing failed, nothing logged, the tool was just not there.
+    #
+    # It happened on 2026-09-15: `revit_phases` was appended to the end of
+    # the file and sat 16 lines past the main block. Found by a review,
+    # not by anything here - which is why this check exists now.
+    import ast
+    tree = ast.parse(io.open(tool.SERVER, encoding="utf-8").read())
+    blocks = [node.lineno for node in tree.body
+              if isinstance(node, ast.If)
+              and "__main__" in ast.dump(node.test)]
+    check(len(blocks) == 1,
+          "the server has exactly one `if __name__ == \"__main__\"` block, "
+          "at line %s" % (blocks or "nowhere"))
+    late = [one["name"] for one in rows if one["line"] > blocks[0]]
+    check(not late,
+          "and every one of the %d tool(s) is defined ABOVE it - a tool "
+          "below never registers, because server.run() does not return%s"
+          % (len(rows),
+             "" if not late else ": %s" % ", ".join(late)))
+
     print("\n2. explained is a word boundary, not a substring")
     check(tool.explains("the depth to walk to", "depth"),
           "a docstring naming the parameter explains it")

@@ -140,8 +140,35 @@ def main(argv):
         return 2
 
     found = changes(years)
+
+    # A TARGETED RUN REFRESHES, IT DOES NOT REPLACE. `api-changes.py 2025
+    # 2026` is documented at the top of this file, and until 2026-09-15 it
+    # wrote a digest holding that one transition over the committed one
+    # holding all seven. HERON-REVIT-ACI-034 then had no transition into
+    # 2027 - and read the absence as "2027 removed nothing", reporting
+    # every fragment clear.
+    #
+    # Both halves are fixed: that agent now refuses a release it has no
+    # evidence for, and this keeps the transitions it did not recompute.
+    # Found by a review, not by either file's own suite.
+    keep = []
+    refreshed = set((one["from"], one["to"]) for one in found)
+    if os.path.isfile(OUT):
+        try:
+            existing = json.loads(io.open(OUT, encoding="utf-8").read())
+        except ValueError:
+            existing = {}
+        for one in existing.get("transitions") or []:
+            if (one.get("from"), one.get("to")) not in refreshed:
+                keep.append(one)
+
+    found = sorted(found + keep, key=lambda one: str(one.get("to")))
+    covered = sorted(set([one["from"] for one in found]
+                         + [one["to"] for one in found]))
+
     payload = {
-        "releases": years,
+        "releases": covered,
+        "refreshed": sorted(years),
         "transitions": found,
         "reads": "the public types and members each release's reference "
                  "assemblies ship, by NAME. A removal breaks code that "
@@ -166,9 +193,11 @@ def main(argv):
         json.dumps(payload, indent=1, sort_keys=True) + "\n")
 
     for one in found:
-        sys.stdout.write("%s -> %s   %5d removed   %5d added   of %d\n"
+        sys.stdout.write("%s -> %s   %5d removed   %5d added   of %d%s\n"
                          % (one["from"], one["to"], one["removedCount"],
-                            one["addedCount"], one["of"]))
+                            one["addedCount"], one["of"],
+                            "" if (one["from"], one["to"]) in refreshed
+                            else "   (kept, not recomputed)"))
     sys.stdout.write("wrote %s (%d KB)\n"
                      % (os.path.relpath(OUT, ROOT),
                         os.path.getsize(OUT) // 1024))

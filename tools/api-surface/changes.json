@@ -4,9 +4,14 @@
   "a member still there that now throws where it returned null",
   "a member still there whose meaning changed",
   "a deprecation - [Obsolete] is an attribute and this reads names, so a member marked in 2024 and deleted in 2026 appears here only at 2025 -> 2026",
-  "a changed SIGNATURE - matching is by name, so an overload removed and a parameter added both read as no change"
+  "a changed SIGNATURE - matching is by name, so an overload removed and a parameter added both read as no change",
+  "a member that moved up or down a hierarchy - the surfaces are declared-only, so Element.Name is listed on Element and not on the types inheriting it, and a member pushed to a base class reads as removed from the derived type"
  ],
  "reads": "the public types and members each release's reference assemblies ship, by NAME. A removal breaks code that calls it. Additions are counted rather than listed - they break nothing.",
+ "refreshed": [
+  "2025",
+  "2026"
+ ],
  "releases": [
   "2020",
   "2021",

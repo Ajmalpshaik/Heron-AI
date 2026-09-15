@@ -96,7 +96,21 @@ TRAVELS = ("project names", "file names", "content names",
 
 
 def _binaries(names):
-    """Which attached names are Revit files."""
+    """
+    Which attached names are Revit files.
+
+    A BARE STRING IS ONE FILENAME. `attachments: "Tower.rvt"` is the
+    natural way to write a single attachment, and iterating it gives
+    eleven characters, none of which ends in `.rvt` - so the guard
+    returned nothing and the model went out. The whole point of this
+    function is that a Revit model NEVER LEAVES, and it failed open.
+
+    Found by a review on 2026-09-15. Failing open is the direction that
+    matters here: a name wrongly flagged costs somebody a sentence, and
+    a model wrongly cleared is a client's building leaving the office.
+    """
+    if isinstance(names, str):
+        names = [names]
     out = []
     for name in (names or []):
         low = str(name).strip().lower()

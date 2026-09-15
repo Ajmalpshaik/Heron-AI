@@ -314,16 +314,26 @@ def evidence(path=None):
 
 def removed_in(found, release):
     """
-    Every member that release stopped shipping.
+    Every member that release stopped shipping, or None if nobody looked.
 
     Keyed by the release that DROPPED it, not the one that had it. A
     fragment author asks "what breaks if I claim 2026", and the answer
     is what 2026 removed.
+
+    NONE AND [] ARE DIFFERENT ANSWERS and this returned [] for both
+    until 2026-09-15. A digest built by the documented targeted run -
+    `python tools/api-changes.py 2025 2026` - holds one transition, and
+    asking it about 2027 got an empty list, which `check` read as
+    "nothing was removed" and reported every fragment CLEAR.
+
+    That is D-52's plausible zero appearing inside the agent whose whole
+    purpose is to prevent it, and it was found by a review rather than
+    by this module's own suite.
     """
     for one in (found or {}).get("transitions") or []:
         if str(one.get("to")) == str(release):
             return list(one.get("removed") or [])
-    return []
+    return None
 
 
 def check(fragments=None, release=None, found=None, path=None):
@@ -352,12 +362,24 @@ def check(fragments=None, release=None, found=None, path=None):
                        "extrapolated." % (release, ", ".join(RELEASES))}
 
     gone = removed_in(found, release)
-    if not gone and release == RELEASES[0]:
+    if gone is None and release == RELEASES[0]:
         return {"checked": False, "refused": "NO_EARLIER_RELEASE",
                 "why": "%s is the earliest release supported, so there is no "
                        "transition into it and nothing to have been removed. "
                        "That is not the same as nothing being removed."
                        % release}
+    if gone is None:
+        return {"checked": False, "refused": "NO_EVIDENCE_FOR_RELEASE",
+                "why": "the evidence holds no transition into %s. It covers "
+                       "%s. That is NOT `%s removed nothing` - it is `nobody "
+                       "looked at %s`, and reading the two the same way "
+                       "reports every fragment clear. Run `%s` to cover every "
+                       "release."
+                       % (release,
+                          ", ".join(str(one.get("to")) for one
+                                    in (found.get("transitions") or []))
+                          or "no transition at all",
+                          release, release, MAKE_IT)}
 
     fragments = list(fragments or [])
     if not fragments:
