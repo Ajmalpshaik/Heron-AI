@@ -1,0 +1,88 @@
+# Commit Agent - HERON-GIT-CMT-004
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY and T2. The one scoped call that makes it T2 is writing the
+# message, which is prose and therefore the host's under D-01 - this agent
+# makes none.
+
+agent: HERON-GIT-CMT-004
+version: 1.0.0
+
+input:
+  paths:
+    type: list
+    required: true
+    description: >
+      The repository-relative paths to stage. A path outside the
+      repository is refused - a commit can only carry what is inside it.
+  message:
+    type: string
+    required: true
+    description: >
+      The commit message. No SHAPE is enforced: this project has adopted
+      no convention (PROPOSALS F23) and one enforced here would become
+      it. An absent message is not a shape question.
+  secrets:
+    type: object
+    required: false
+    description: >
+      The credential store to check the message against. Defaults to a
+      fresh heron_secrets.Secrets().
+  ignore:
+    type: string
+    required: false
+    description: >
+      Where to read the generated-page list from. Defaults to the
+      repository's .gitignore, so a fifth page added there is refused
+      with no edit to the agent.
+
+output:
+  prepared:
+    type: boolean
+  may_commit:
+    type: boolean
+  paths:
+    type: list
+    description: The paths, normalised the way git prints them.
+  message:
+    type: string
+  generated:
+    type: list
+    description: >
+      The generated pages as read out of .gitignore's own block, so a
+      reader can see what the answer was checked against.
+  found:
+    type: list
+    description: >
+      On a refusal for a credential, what KIND was in the message. The
+      value never appears in any output of this agent.
+  of:
+    type: integer
+  why:
+    type: string
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That the wording is not judged and why; that
+      nothing measured whether these paths belong in one commit; what
+      the generated list was and where it came from; and that only the
+      file NAMES were checked - nothing here opened one.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_STAGE
+  - NOT_A_PATH
+  - OUTSIDE_THE_REPOSITORY
+  - CARRIES_A_MODEL
+  - NO_IGNORE_LIST
+  - CARRIES_A_GENERATED_PAGE
+  - NO_MESSAGE
+  - CARRIES_A_SECRET
+
+retry:
+  attempts: 0
+  on-failures: []
