@@ -1,0 +1,90 @@
+# Import Architecture Matching Agent - HERON-IMP-ARC-011
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY. Nothing is moved: the answer says where each item belongs,
+# and the folder itself is HERON-WSP-PLC-005's decision, called rather than
+# taken again.
+
+agent: HERON-IMP-ARC-011
+version: 1.0.0
+
+input:
+  items:
+    type: list
+    required: true
+    description: >
+      Each a map declaring a kind and a name - what HERON-WSP-PLC-005
+      reads. An item carrying one of HERON-IMP-CLS-003's five
+      CLASSIFICATIONS instead of a kind is intercepted here rather than
+      passed on, because it is an earlier step's vocabulary and not a
+      mistyped kind.
+  project:
+    type: string
+    required: false
+    description: Which project, for the one kind that is per-project.
+  asked:
+    type: string
+    required: false
+    description: >
+      The one scoped answer HERON-WSP-PLC-005 may be given for a kind
+      outside its eight. Passed through untouched; that agent checks it.
+
+output:
+  matched:
+    type: boolean
+    description: True when the items were read.
+  of:
+    type: integer
+    description: How many items were handed in.
+  placed:
+    type: list
+    description: >
+      HERON-WSP-PLC-005's answer for each item it could file, unaltered.
+      Note that agent declares `placed` ALWAYS FALSE inside its own
+      answer - the folder comes back and the caller writes the file - so
+      success there is the absence of `refused`, never that flag.
+  not_yet:
+    type: list
+    description: >
+      Items carrying a classification rather than a kind, each naming
+      WHICH AGENT has to run first - HERON-IMP-FEX-004 or
+      HERON-IMP-SEX-005 for code, HERON-RAG-DIS-002 for documentation.
+  no_home:
+    type: list
+    description: >
+      Items whose classification nothing in Heron places - config,
+      metadata, asset. docs/06 s2 draws nineteen folders and classifies
+      fourteen, and the class is what decides whether an update may
+      replace a folder, a cleanup delete it, or a backup cover it
+      (PROPOSALS F28).
+  refused_by_placement:
+    type: list
+    description: >
+      HERON-WSP-PLC-005's refusals, carried back whole rather than
+      restated - a name that is not a place, a kind outside its eight.
+  moved:
+    type: boolean
+    description: Always false. HERON-IMP-MIG-009 moves.
+  why:
+    type: string
+    description: The four counts, and that nothing was moved.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That no folder was decided here; that the two
+      vocabularies share no word and no mapping was invented; what has
+      nowhere to go and why that is refused rather than picked; that
+      `placed` being false is not a refusal; and that nothing was moved.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_MATCH
+  - NOT_AN_ITEM
+
+retry:
+  attempts: 0
+  on-failures: []

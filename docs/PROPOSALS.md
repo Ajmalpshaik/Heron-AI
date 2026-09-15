@@ -1613,3 +1613,59 @@ files that already work, and `agent-count.py` stops reporting as unbuilt five th
 
 **Not acted on.** Claiming an id on a guess is the failure this project's whole metadata standard exists
 to prevent, and two already-claimed rows in the same department point opposite ways.
+
+---
+
+## F28 — the import classifies into five words the workspace has never heard of
+
+Found while building [`HERON-IMP-ARC-011`](../brain/heron_belongs.py), whose register row is *"places
+content where the architecture says it belongs"*.
+
+Two agents in the same pipeline use two vocabularies, and **they share no word at all**:
+
+| agent | sorts into |
+|---|---|
+| `HERON-IMP-CLS-003`, step 10 *classify content* | code · documentation · config · metadata · asset |
+| `HERON-WSP-PLC-005`, step 12 *move into architecture* | knowledge · skill · fragment · memory · project · company · log · backup |
+
+Not one word in common. The overlap is checked in `tests/test_belongs.py` against both agents' real
+lists rather than asserted in prose.
+
+### Two of the five have an answer; three do not
+
+`code` and `documentation` are fine — they are not meant to be filed as they stand. Code becomes a
+fragment (`IMP-FEX-004`) or a skill (`IMP-SEX-005`), both of which *are* kinds; documentation is
+ingested into a **scope** (`RAG-DIS-002`), which is not a data folder at all. The agent says so and
+names who runs first.
+
+**`config`, `metadata` and `asset` have nowhere to go**, and the reason is one this repository already
+found. [`HERON-WSP-CRE-002`](../brain/heron_folders.py) reported that [docs/06 §2](06-heron-platform.md)
+draws **nineteen folders and classifies fourteen** — RAG, Community, **Configuration**, Tests and
+Documentation appear in the tree and in no class.
+
+So `config` has a folder with no class, and `asset` has neither.
+
+That is not cosmetic. The class is the only thing that decides whether a product update may replace a
+folder wholesale ([docs/07 §7](07-installation-and-update.md) rule 6), whether a cleanup may delete it,
+and whether a backup covers it. **File an imported `.ini` into an unclassified folder and nobody can say
+whether the next update deletes it.**
+
+### What was built instead
+
+`HERON-IMP-ARC-011` refuses rather than picks. Items carrying one of the five never reach
+`HERON-WSP-PLC-005` — that agent would refuse them as though somebody had guessed at a ninth folder,
+when what really happened is that an earlier step in the same pipeline produced a vocabulary nothing
+downstream reads.
+
+### What is proposed
+
+One of two, and both are the owner's:
+
+1. **Classify the five leftover folders** in docs/06 §2, which closes `config` and settles the four
+   other unclassified folders at the same time. `asset` still needs a home named.
+2. **Say that an import produces only fragments, skills and documents**, and that `config`, `metadata`
+   and `asset` are recorded in the manifest and **not imported** — which is a defensible answer and
+   should be written down rather than left to each agent to discover.
+
+**Not acted on.** Either choice changes what an import *is*, and both need a folder classified or a
+category dropped.
