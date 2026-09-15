@@ -1,0 +1,83 @@
+# Import Metadata Extraction Agent - HERON-IMP-MEX-006
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ and makes it T2. Nothing is written. Three of its four fields
+# are read out of the file; the fourth - author - is never inferred.
+
+agent: HERON-IMP-MEX-006
+version: 1.0.0
+
+input:
+  items:
+    type: list
+    required: true
+    description: >
+      Each {at} - where the file is, relative to the folder being
+      imported. A bare path string is accepted as shorthand.
+  root:
+    type: path
+    required: false
+    description: >
+      The folder those paths are relative to. Omitted means they are
+      already usable as given.
+
+output:
+  read:
+    type: boolean
+    description: True when the items were read.
+  of:
+    type: integer
+    description: How many items were handed in.
+  found:
+    type: list
+    description: >
+      Each file with its imports as written, the PackageReferences it
+      declares, the imports nothing in the set declares, the Revit
+      releases it names, its version, its author when it states one, and
+      its provenance - source path and original filename (docs/10 s5
+      constraint 4).
+  declared:
+    type: list
+    description: >
+      Every PackageReference across the whole set. A project declares
+      for its sources, so this is the unit `undeclared` is computed
+      against - matching a .cs file's imports against its own
+      declarations would call every import undeclared.
+  asks:
+    type: list
+    description: >
+      One question per file that states no author, with the reason in
+      the question. AUTHOR IS NEVER INFERRED: a folder name is where
+      code was kept, a repository owner is whoever cloned it, and git
+      blame on imported code is whoever ran the formatter. This is the
+      field where a guess is a false claim about a person.
+  unreadable:
+    type: list
+    description: >
+      Files named that could not be opened, said rather than skipped.
+  why:
+    type: string
+    description: The counts, and how many named a Revit release.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That no author was inferred and why; that what
+      is a dependency and what is the framework was not decided; that
+      whether a dependency is ALLOWED is HERON-INS-SUP-013's and
+      HERON-INS-DEP-005's; that a release outside D-05's list is
+      reported rather than dropped; that naming no release is not the
+      same as running on all of them; and that only the head of each
+      file was read, which is a limit rather than an absence.
+
+allowed-tools: []
+
+timeout-seconds: 300
+
+failures:
+  - NOTHING_TO_READ
+  - NOT_AN_ITEM
+
+retry:
+  attempts: 0
+  on-failures: []
