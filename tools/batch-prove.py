@@ -353,6 +353,22 @@ def judge(record, frag, expect=None):
 
     verdict, reason = positive_worked(positive, frag, expect)
 
+    # A FLAG IS THE EVIDENCE WHEN IT FLIPS, and this runner has to agree with
+    # `heron_validate` about that or a job reads PASS here and is then refused
+    # at `accept`, or the other way round. Both ask the same function.
+    #
+    # `_as_count` reads a boolean as zero ON PURPOSE - see _flag_flipped - so a
+    # fragment whose only declared result is a bool arrives here as POSITIVE
+    # EMPTY however well it was arranged. `apply-view-filter` is that fragment:
+    # `applied true` on a view that took the filter against `applied false` on
+    # one that refused it, which is D-30's comparison exactly.
+    if verdict is not None:
+        flipped = HV._flag_flipped(positive, negative, frag)
+        if flipped:
+            verdict = None
+            reason = ("%s is true in the positive and false in the negative"
+                      % flipped)
+
     if not negative or not negative.get("ok"):
         why = HV.phase_failure(negative)
         if negative and negative.get("error") == "no_reply":

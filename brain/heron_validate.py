@@ -881,6 +881,61 @@ def _result_appeared(positive, negative, frag):
     return False
 
 
+def _flag_flipped(positive, negative, frag):
+    """Is a declared result a FLAG that is TRUE in the positive and FALSE in
+    the negative? Returns the name, or None.
+
+    A boolean is not a quantity and `_as_count` deliberately reads one as zero.
+    That rule is right and stays: `report-global-parameters` answers
+    `allowed: true` in BOTH legs, because the document permits globals either
+    way, and counting that as content would make an empty answer impossible for
+    it to demonstrate.
+
+    WHAT IT ALSO DID WAS MAKE A FRAGMENT WHOSE ONLY DECLARED RESULT IS A
+    BOOLEAN UNPROVABLE BY ANY ARRANGEMENT. `apply-view-filter` declares
+    `applied: bool` and nothing else. On 2026-09-15 it produced exactly the
+    contrast D-30 asks for - `applied true` on `Model Linking`, which took the
+    filter, against `applied false` on `Project View`, which refused it in
+    Revit's own words - and was judged POSITIVE EMPTY. No view, no filter and
+    no override could have changed that, because the judge was not reading the
+    value at all.
+
+    SO ASK THE COMPARISON RATHER THAN THE COUNT. That is stronger than counting
+    one leg, not weaker, and it is the same move `_result_appeared` makes for a
+    result that is a thing rather than a number:
+
+      * a flag TRUE in both phases - the case the zero rule exists for - cannot
+        pass this;
+      * a fragment that succeeds while doing nothing reports the same flag both
+        times and cannot pass it either;
+      * only a declared result that is TRUE where the work was possible and
+        FALSE where it was not gets through.
+
+    Returns the NAME rather than a bare true, because the verdict line is worth
+    saying out loud: which flag flipped is the whole evidence.
+    """
+    if not negative or not negative.get("ok"):
+        return None
+
+    roles, names = contract_of(frag)
+    before = positive.get("provides") or {}
+    after = negative.get("provides") or {}
+
+    def flag(value):
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str) and value.strip().lower() in ("true", "false"):
+            return value.strip().lower() == "true"
+        return None
+
+    for key in sorted(before):
+        if key not in names or roles.get(key) == "accounting" or key in NOTE_KEYS:
+            continue
+        if flag(before.get(key)) is True and flag(after.get(key)) is False:
+            return key
+    return None
+
+
 def positive_worked(phase, frag, expect=None):
     """Did the POSITIVE move a declared result off zero? (reason, detail).
 
@@ -1247,6 +1302,14 @@ def _evidence_refusal(slug, frag, proof):
     if positive is None:
         return "the run record has no positive phase in it"
     reason, detail = positive_worked(positive, frag)
+    flipped = _flag_flipped(positive, phases.get("negative"), frag)
+    if reason and flipped:
+        # A FLAG IS THE EVIDENCE WHEN IT FLIPS - see _flag_flipped. Checked
+        # before the UNREADABLE rescue below because a boolean reaches this
+        # function as EMPTY rather than as unreadable: `_as_count` reads it as
+        # zero on purpose, so the refusal it produces is POSITIVE EMPTY and no
+        # arrangement could have answered it.
+        reason = None
     if reason == "POSITIVE UNREADABLE" and _result_appeared(positive,
                                                             phases.get("negative"),
                                                             frag):

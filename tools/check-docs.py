@@ -9,9 +9,24 @@
 import glob, io, os, re, sys
 
 root = '.'
+
+# A WORKTREE IS A SECOND COPY OF THIS REPOSITORY, NOT SECOND DOCUMENTATION.
+# `.claude/worktrees/<name>/` holds a full checkout that another session is
+# working in, at whatever commit it started from - so every count in its README
+# is reported as DRIFT the moment the count here moves, and this gate goes red
+# for a reason that is not a fault. Measured 2026-09-15: seven DRIFT lines, all
+# of them the same four files seen twice.
+#
+# CI never saw it, because a worktree is not committed - which makes it worse,
+# not better: a gate that is red locally and green in CI is the kind people
+# learn to skip past, and this one exists to be read.
+
 md = []
 for dp, dn, fn in os.walk(root):
+    here = dp.replace(os.sep, '/').rstrip('/') + '/'
     if '.git' in dp:
+        continue
+    if '/.claude/worktrees/' in here or here.startswith('.claude/worktrees/'):
         continue
     for f in fn:
         if f.endswith('.md'):

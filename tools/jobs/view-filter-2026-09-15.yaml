@@ -1,0 +1,43 @@
+# `apply-view-filter`, which D-72 half-unblocked without anybody noticing.
+#
+#     python tools/batch-prove.py tools/jobs/view-filter-2026-09-15.yaml --dry-run
+#
+# It was never on the "blocked" list under its own name, but one of its four
+# caller values is an `OverrideGraphicSettings` - so it was unreachable for the
+# same reason the three `*-graphics` fragments were, and became reachable in the
+# same commit.
+
+model: Snowdon-scratch_ajmal.al (9,638 elements, 13 view filters), Revit 2024, session 28236
+
+jobs:
+  # BOTH HALVES ARE REAL VIEWS AND THE MODEL PICKED THEM.
+  #
+  # POSITIVE - `Model Linking` is one of the six views this project keeps
+  # WITHOUT a view template, found with `find-views-without-template`. A
+  # template controlling the filter list is the ordinary reason a filter is
+  # "accepted" and is then not on the view, and the fragment reads the view
+  # back rather than trusting the call.
+  #
+  # `ABL - General Lighting` is one of the nine filters `report-view-filters`
+  # calls UNUSED, and that choice is not cosmetic. `Domestic` is already on
+  # this view, and applying it answers *"was already there and was updated"* -
+  # true, honest, and indistinguishable from a fragment that did nothing.
+  # An unused filter answers *"is now on 'Model Linking'"*, which only a real
+  # change can produce.
+  #
+  # NEGATIVE - `Project View` REFUSES it, in Revit's own words. Not an empty
+  # selection and not a filter that does not exist: a real view that will not
+  # take a filter, which is the case a person actually hits.
+  - fragment: apply-view-filter
+    write: true
+    expect: applied
+    set:
+      view: "Model Linking"
+      filter: "ABL - General Lighting"
+      overrides: "halftone=true; projection-line-colour=255,0,0"
+      visible: "true"
+    negative-set:
+      view: "Project View"
+      filter: "ABL - General Lighting"
+      overrides: "halftone=true; projection-line-colour=255,0,0"
+      visible: "true"

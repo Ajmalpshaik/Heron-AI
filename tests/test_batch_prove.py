@@ -137,6 +137,56 @@ def test_unreadable_is_not_evidence_of_work():
           "nothing readable is UNREADABLE, and still not a pass (%s)" % verdict)
 
 
+def test_a_flag_that_flips_is_evidence_and_one_that_does_not_is_not():
+    print("A boolean result counts only when the two legs disagree")
+
+    # apply-view-filter, exactly as declared: ONE result, and it is a bool.
+    # `_as_count` reads a boolean as zero on purpose, so before 2026-09-15 this
+    # fragment was POSITIVE EMPTY however well it was arranged - no view, no
+    # filter and no override could have answered it, because the judge was not
+    # reading the value at all.
+    frag = FakeFragment("apply-view-filter", [
+        {"name": "applied", "type": "bool"},
+        {"name": "findings", "type": "IList<string>"},
+    ])
+
+    # The real run, 2026-09-15 on Snowdon-scratch: `Model Linking` took the
+    # filter, `Project View` refused it in Revit's own words.
+    verdict, why = BP.judge(record(
+        positive={"applied": "true",
+                  "findings": "1 item(s) ['ABL - General Lighting' is now on 'Model Linking']"},
+        negative={"applied": "false",
+                  "findings": "1 item(s) ['ABL - General Lighting' could not be applied]"}), frag)
+    check(verdict == BP.PASS,
+          "true against false is the comparison D-30 asks for (%s)" % verdict)
+    check("applied" in (why or ""),
+          "and the verdict NAMES the flag that flipped: %r" % why)
+
+    # THE HALF THAT MATTERS MORE. report-global-parameters answers
+    # `allowed: true` in BOTH legs, because the document permits globals either
+    # way. Counting that as content would make an empty answer impossible for
+    # it to demonstrate, which is the whole reason a boolean reads as zero.
+    same = {"allowed": "true", "globalCount": "0"}
+    steady = FakeFragment("report-global-parameters", [
+        {"name": "allowed", "type": "bool"},
+        {"name": "globalCount", "type": "int"},
+    ])
+    verdict, why = BP.judge(record(positive=same, negative=same), steady)
+    check(verdict == BP.POSITIVE_EMPTY,
+          "a flag true in both legs stays EMPTY - it is not evidence (%s)" % verdict)
+
+    # And a flag the contract calls bookkeeping is not evidence either, however
+    # it moves. D-52: the evidence it LOOKED is never a thing it FOUND.
+    booked = FakeFragment("sample", [
+        {"name": "ran", "type": "bool", "role": "accounting"},
+        {"name": "found", "type": "int"},
+    ])
+    verdict, why = BP.judge(record(positive={"ran": "true", "found": "0"},
+                                   negative={"ran": "false", "found": "0"}), booked)
+    check(verdict == BP.POSITIVE_EMPTY,
+          "an accounting flag flipping proves nothing (%s)" % verdict)
+
+
 def test_a_work_counter_is_not_a_finding():
     print("A count of what was looked at is not a count of what was found")
 
@@ -470,6 +520,7 @@ def test_a_value_with_a_space_is_quoted_when_printed():
 
 def main():
     for test in (test_unreadable_is_not_evidence_of_work,
+                 test_a_flag_that_flips_is_evidence_and_one_that_does_not_is_not,
                  test_a_work_counter_is_not_a_finding,
                  test_a_working_positive_passes_and_a_full_one_is_named,
                  test_expect_beats_the_patterns,

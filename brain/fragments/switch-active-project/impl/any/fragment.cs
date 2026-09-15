@@ -13,6 +13,26 @@
 //
 // A TITLE IS NOT AN IDENTIFIER. Two open projects can be called "Project1", so
 // the path is matched first and two matches is a refusal rather than a guess.
+//
+// REVIT WILL NOT DO THIS AT ALL, AND THAT WAS MEASURED FOUR WAYS ON 2026-09-15
+// WITH TWO PROJECTS GENUINELY OPEN - `test projject` in front and
+// `Snowdon-scratch_ajmal.al` behind. Every attempt answered with the same
+// sentence, which is Revit's own:
+//
+//     "Changing the active view is not applicable to inactive documents."
+//
+//   1. RequestViewChange on the HOST's UIDocument            refused
+//   2. RequestViewChange on a UIDocument built for the TARGET refused
+//   3. the ActiveView SETTER on that same target UIDocument   refused
+//   4. naming a view already OPEN in the target               refused
+//
+// The header below still describes how this fragment is built, and it is built
+// correctly - the path matching, the ambiguity refusal, the already-there case
+// and the honesty about a request not being a confirmation all work and were
+// checked. What cannot be done is the operation itself. THE CAPABILITY IS NOT
+// OFFERED BY THE API, so this cannot be proved by any arrangement and the
+// remaining route is Revit's own window list, which is a person's click.
+// FRAGMENT-ISSUES rows 90 and 94.
 
 var candidates = new List<string>();
 var findings = new List<string>();
