@@ -542,4 +542,32 @@ else:
     if _r.returncode != 0:
         failed = True
 
+# ---------- 9. the signature gate, riding in for the same reason as 8 ----------
+#
+# check-signatures.py has existed since 2026-09-13 and NOTHING RAN IT. It was
+# written because thirteen fragments the owner had already signed were sitting
+# at DRAFT, so the next proving round offered them to him to prove AGAIN - the
+# complaint that started that session. A gate nobody runs is the same as no
+# gate, and it stayed unrun for the reason section 8 already records: the
+# repository's gh token carries `repo` but not `workflow`, so a session cannot
+# add a step to .github/workflows/gates.yml at all. A commit that adds that
+# step properly exists on `ci/run-check-signatures` and CANNOT BE PUSHED.
+#
+# So it rides here, where "The gates that must pass" already runs this file.
+# It is NOT a documentation check and does not pretend to be. If the workflow
+# is ever edited by hand, give it its own step and delete this section.
+out("\n=== 9. SIGNATURES NOT LEFT UNUSED ===\n")
+_sig = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                    'check-signatures.py')
+if not os.path.exists(_sig):
+    out("  check-signatures.py is gone - nothing to check\n")
+else:
+    import subprocess
+    _r = subprocess.run([sys.executable, _sig],
+                        capture_output=True, text=True)
+    for _line in (_r.stdout or '').rstrip('\n').split('\n'):
+        out("  %s\n" % _line)
+    if _r.returncode != 0:
+        failed = True
+
 sys.exit(1 if failed else 0)
