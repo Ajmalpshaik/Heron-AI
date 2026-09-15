@@ -43,6 +43,14 @@ are reported as UNTESTED - separately from the ones that failed, because
 "we tried and it broke" and "nobody tried" are different facts and only
 one of them is evidence.
 
+HERON-FRG-PRF-002 IMPORTS THIS MEASUREMENT
+--------------------------------------------
+Its register row is nearly this one word for word, one layer down -
+fragments rather than skills - and the arithmetic is identical. So the
+answers here are worded for either subject rather than for skills alone,
+because a second implementation would be a second chance for one of them
+to start averaging.
+
 "POOR PERFORMERS" WITHOUT A THRESHOLD
 ---------------------------------------
 Deciding what counts as poor needs a number and every number is
@@ -157,7 +165,7 @@ def measure(runs, declared=None):
                   if untested else ""),
         "unjudged": [
             "NOTHING WAS AGGREGATED ACROSS VERSIONS, AND THAT IS THE ROW'S "
-            "OWN QUALIFIER. A skill that works in one release and fails in "
+            "OWN QUALIFIER. Anything that works in one release and fails in "
             "another has a good overall figure and a broken release, and "
             "aggregating is what hides it.",
             "%s" % ("%d DECLARED RELEASE(S) HAVE NO RUNS AT ALL: %s. Those "
@@ -166,7 +174,7 @@ def measure(runs, declared=None):
                     "them is evidence."
                     % (len(untested), ", ".join(untested)) if untested else
                     "every declared release has at least one run."),
-            "%s" % ("THE SKILL HAS NEVER SUCCEEDED ON %s. That is a "
+            "%s" % ("IT HAS NEVER SUCCEEDED ON %s. That is a "
                     "universal rather than a cutoff, which is why it can be "
                     "marked at all - deciding what counts as POOR needs a "
                     "number and every number is invented."
