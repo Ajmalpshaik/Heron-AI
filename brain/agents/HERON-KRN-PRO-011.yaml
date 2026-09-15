@@ -43,6 +43,10 @@ failures:
   - INCLUDE_CYCLE
   - ARTICLE_NOT_FOUND
   - CONSTITUTION_UNREADABLE
+  # One instruction key declared by two files. One would silently
+  # replace the other, taking its articles and its evaluation cases
+  # with it.
+  - INSTRUCTION_DUPLICATED
 
 retry:
   attempts: 0

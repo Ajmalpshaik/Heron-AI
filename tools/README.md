@@ -481,6 +481,67 @@ The working prototype of `HERON-DOC-API-001`.
 
 ---
 
+## `generate-contract-reference.py` — what was built, and what it promised
+
+```bash
+python tools/generate-contract-reference.py
+HERON_CONTRACT_REFERENCE_OUT=somewhere.html python tools/generate-contract-reference.py
+```
+
+Every agent contract in [`brain/agents/`](../brain/agents) — its inputs and outputs with their types
+and descriptions, the refusals it declares, the tools it allows — beside the metadata header of every
+file that claims that agent: which file, which layer, what status, and which suite proves it.
+
+**Not a sixth agent map.** The four generators above document what Heron *offers*, and each reads a
+register: docs/28, the MCP signatures, the fragment library, the skill library. This one is in the
+**Development** department and documents what was *built*, from the source nothing else reads — the
+contracts. docs/28 is the plan, a contract is the promise, a header is the claim. This page is the
+third, and the only one that can be checked against the other two.
+
+**The conclusion it carries: a promise the code does not keep.** Each contract declares the refusals a
+caller may have to handle. Every agent's own suite checks its own module names its own declared
+failures — and that had never been run across all of them at once. It fails two ways:
+
+- **declared, never produced** — a caller writes a branch for something that never happens;
+- **produced, never declared** — a caller handling every declared failure still meets an unhandled
+  one, which is the direction that breaks at run time.
+
+**Four were undeclared on its first run** across 121 contracts, and every declared refusal was
+reachable.
+
+**A refusal is recognised by position, not by shape.** The first version read every `SCREAMING_SNAKE`
+string in a file and reported **135** undeclared refusals — capability names, stated shapes, module
+constants, and examples an agent quotes to say it does *not* do that. A page of findings that are all
+wrong is worse than no page: it teaches the reader to skip the table, which is where the real ones are.
+So a refusal is read where this repository puts one — the value under a `refused` key, or the word
+before the colon in a `raise` — and both come off the parse tree, so a name quoted in a docstring
+explaining why a refusal is *not* raised is not counted as raising it. A single word counts:
+`INCOMPLETE`, `MODIFIED` and `PINNED` are three real refusals, and requiring a second word accused four
+agents of breaking a promise they keep.
+
+**The two directions use different evidence, deliberately.** To say a promise is broken you must be sure
+the module cannot produce that refusal *at all* — so the agents it calls count too, because
+`HERON-IMP-FEX-004` declares `NOT_A_FOLDER`, never writes it, and hands back `HERON-IMP-FIL-002`'s
+answer unaltered. That is composition, not a broken promise. To say a refusal is undeclared you must be
+sure it *is* one, so only the positional forms count. Wider to excuse, narrower to accuse.
+
+**A suite is not the agent.** `tests/` files carry the same `Heron-Agent` header — that is how a suite
+says what it proves — so they are shown, and never read for what the agent does. Counting one reported
+`HERON-IMP-CLS-003` as producing `NOT_A_FOLDER`, a name that appears only in its suite's fixtures.
+
+Everything else wrong with a contract — a missing description, a type that is not one of the eight, a
+version that is not semver — is **asked of**
+[`heron_contract.validate`](../brain/heron_contract.py) rather than judged again here.
+
+A tool-layer agent and a C# one carry no contract, and that is the established shape of this repository
+rather than a gap — 45 of them appear as **built without a contract**, not as unfinished.
+
+It concludes, so it has a test ([`tests/test_contract_reference.py`](../tests/test_contract_reference.py)).
+
+The working prototype of `HERON-DEV-DOC-017`.
+
+---
+
 ## `generate-agent-map.py` — the visual map
 
 ```bash
