@@ -76,6 +76,13 @@ namespace Heron.Revit.Addin
                 case "list_links":
                     return RevitLinks.List(app);
 
+                // Phases and design options. HERON-REVIT-PHS-032, and its
+                // own file for the same reason: both of them change what
+                // "all ducts" means, and every number it gives is COUNTED
+                // rather than reasoned about. Read-only.
+                case "list_phases":
+                    return RevitPhases.List(app);
+
                 case "run_fragment_read":
                     return RevitFragment.Run(app, request);
 

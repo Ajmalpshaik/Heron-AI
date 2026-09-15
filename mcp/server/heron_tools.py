@@ -60,6 +60,7 @@ TOOLS = {
     # open. Nothing is loaded, unloaded or reloaded - the register's row is
     # "never modifies a link's source".
     "revit_links":              (READ,    "list_links"),
+    "revit_phases":             (READ,    "list_phases"),
     "revit_preview_move":       (ANALYZE, "preview_move"),
     "revit_apply_move":         (MODIFY,  "move_elements"),
 

@@ -1550,3 +1550,93 @@ if __name__ == "__main__":
     brain.warm()
 
     server.run()
+
+
+@server.tool()
+def revit_phases() -> str:
+    """
+    List the phases and design options in the open Revit model, with how many
+    elements sit in each.
+
+    Use whenever a count looks wrong and links have already been ruled out,
+    and whenever the user mentions a phase, existing versus new work,
+    demolition, a design option, or an alternative layout. On a real job
+    "412 ducts" is a fact about a model AND a phase AND a design option: the
+    Existing phase holds the survey, New Construction holds the work, and an
+    option set called something like "Riser Layout" can hold two complete
+    alternative arrangements of the same shafts.
+
+    Every number it gives was counted by asking each element what it carries,
+    not worked out from how a filter is believed to behave. Compare them with
+    a count you were given elsewhere and you can see for yourself what that
+    count included.
+
+    It reads only. No view's phase is changed and no design option is made
+    active — both of those change what everybody else on the job sees.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    reply = session.request("list_phases")
+    session.close()
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return wrong_model
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+    phases = reply.get("phases") or []
+    options = reply.get("designOptions") or []
+    placed = reply.get("placedElements", 0)
+
+    if len(phases) <= 1 and not options:
+        return ("%s has one phase and no design options, so a count of this "
+                "model is a count of the whole model. %s placed elements."
+                % (where, "{:,}".format(placed)))
+
+    lines = ["%s: %d phase(s), %d design option(s), %s placed elements."
+             % (where, len(phases), len(options), "{:,}".format(placed)), ""]
+
+    for phase in phases:
+        gone = phase.get("demolished", 0)
+        lines.append("  phase   %-26s %s built%s"
+                     % (phase.get("name"),
+                        "{:,}".format(phase.get("created", 0)),
+                        "" if not gone else ", %s demolished" % "{:,}".format(gone)))
+
+    if options:
+        lines.append("")
+        for option in options:
+            lines.append("  option  %-26s %s elements   [%s%s]"
+                         % (option.get("name"),
+                            "{:,}".format(option.get("elements", 0)),
+                            option.get("set") or "no set named",
+                            ", primary" if option.get("primary") else ""))
+        lines.append("")
+        lines.append("%s elements are in the main model, carrying no option at all."
+                     % "{:,}".format(reply.get("inMainModel", 0)))
+
+    view, phase, filtered = (reply.get("activeView"), reply.get("viewPhase"),
+                             reply.get("viewPhaseFilter"))
+    if view:
+        lines.append("")
+        lines.append("The active view %r is on phase %s with phase filter %s — which is "
+                     "what a number read off that view has been through."
+                     % (view, phase or "not set", filtered or "none"))
+
+    no_phase = reply.get("withNoPhase", 0)
+    if no_phase:
+        lines.append("%s elements name no phase at all. Levels, grids and views are not "
+                     "built in one; that is normal and is not a count of nothing."
+                     % "{:,}".format(no_phase))
+
+    return "\n".join(lines)

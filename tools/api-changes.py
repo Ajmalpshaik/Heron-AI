@@ -156,6 +156,10 @@ def main(argv):
             "here only at 2025 -> 2026",
             "a changed SIGNATURE - matching is by name, so an overload "
             "removed and a parameter added both read as no change",
+            "a member that moved up or down a hierarchy - the surfaces "
+            "are declared-only, so Element.Name is listed on Element and "
+            "not on the types inheriting it, and a member pushed to a "
+            "base class reads as removed from the derived type",
         ],
     }
     io.open(OUT, "w", encoding="utf-8").write(

@@ -22,24 +22,37 @@ this repository does not follow is worse than no rule - it is an agent
 correcting working code on an authority it does not have.
 
 So the first thing built was a MEASUREMENT of what this repository's C#
-actually does, and it immediately killed the obvious rule. Across the 23
-C# files in revit/, platform/ and mcp/ there are 74 catch clauses:
+actually does, and it immediately killed the obvious rule. Measured by
+this module on 2026-09-15, across 24 C# files in revit/, platform/ and
+mcp/, there were 82 catch clauses:
 
     30   catch  with no type at all
     18   catch (Exception)
-    26   a narrow type
+    34   a narrow type
 
-A "narrow exception types only" rule would be false about two thirds of
-the code that already ships. It is not asserted here.
+A "narrow exception types only" rule would be false about the larger
+half of the code that already ships. It is not asserted here.
 
-THOSE NUMBERS ARE THIS AGENT'S OWN, AND THE FIRST SET WAS WRONG
-----------------------------------------------------------------
-A scratch expression written to survey the code first reported 83, 39
-and 18. It counted `catch` written inside comments, and it counted the
-word where no block followed. The figures above come from running this
-module over the files, which is the only measurement that can be
-repeated - and the suite repeats it rather than trusting the numbers
-typed here.
+THE FIGURES ARE DATED AND THE CLAIM IS WHAT IS CHECKED
+--------------------------------------------------------
+Every one of those numbers moves the next time somebody writes a C#
+file, so the suite does NOT pin them - pinning a count means the next
+author's first experience of this agent is a red suite over a number
+that was only ever an illustration. What the suite checks is the CLAIM:
+that broad still outnumbers narrow, so the rule this module refuses to
+assert is still one its own repository would fail.
+
+That was learned the same day: adding RevitPhases.cs moved 74 to 82 and
+26 to 34 within the hour, and the first version of the suite went red on
+all three figures.
+
+AND THE FIRST SET WAS WRONG FOR A DIFFERENT REASON
+----------------------------------------------------
+A scratch expression written to survey the code before this module
+existed reported 83, 39 and 18. It counted `catch` written inside
+comments, and counted the word where no block followed. That is not
+drift, it is a worse instrument, and it is why the figures above come
+from running this module rather than from reading the code by eye.
 
 WHAT IS ASSERTED IS THIS REPOSITORY'S OWN RULE, IN ITS OTHER LANGUAGE
 ----------------------------------------------------------------------
@@ -242,9 +255,9 @@ def _unjudged(found, broad, named):
         "knows that. %d handler(s) are NAMED, none is condemned."
         % len(named),
         "WHETHER A BROAD CATCH IS BAD STYLE. It is not asserted here, "
-        "because it is not true of this repository: of the 74 catch "
-        "clauses in revit/, platform/ and mcp/, 30 have no type at all "
-        "and 18 catch Exception. A rule contradicted by two thirds "
+        "because it is not true of this repository: broad catches "
+        "outnumber narrow ones in revit/, platform/ and mcp/, and 30 "
+        "have no type at all. A rule contradicted by the larger half "
         "of the shipping code is an agent correcting working code on an "
         "authority it does not have. %d of the %d here are broad and "
         "that alone is not a finding." % (len(broad), len(found)),

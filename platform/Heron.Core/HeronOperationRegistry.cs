@@ -67,6 +67,7 @@ namespace Heron.Core
                 // reloading somebody's link to answer a question would be
                 // exactly that.
                 { "list_links",         HeronRisk.Read },
+                { "list_phases",        HeronRisk.Read },
 
                 // GIVING THE SESSION BACK. Read, because it cannot touch a
                 // model - it hands back a claim, and only the chat that holds

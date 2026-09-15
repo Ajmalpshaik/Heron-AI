@@ -291,6 +291,13 @@ CANNOT_SEE = (
     "at 2025 -> 2026, two years after the warning existed",
     "a changed SIGNATURE - matching is by name, so an overload removed "
     "reads as no change. tools/check-compile.py is what catches that",
+    "a member that MOVED UP OR DOWN A HIERARCHY. The surfaces are read "
+    "declared-only, so Element.Name is listed on Element and not on the "
+    "forty types that inherit it. A member pushed to a base class "
+    "between releases therefore reads as removed from the derived type "
+    "and added to the base, when nothing a caller writes has changed. "
+    "Found by asking this evidence whether Phase.Name exists, being told "
+    "no, and checking",
 )
 
 
