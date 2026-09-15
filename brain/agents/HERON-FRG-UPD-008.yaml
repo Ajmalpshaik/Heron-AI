@@ -47,8 +47,10 @@ output:
     description: True when the verdict was carried out on the card.
   fragment:
     type: string
+    description: Which fragment, by slug or id.
   verdict:
     type: string
+    description: Which of the eight was applied, as chosen.
   was:
     type: string
     description: The status before.
@@ -81,6 +83,7 @@ output:
     description: On a refusal, what Evolution did list.
   why:
     type: string
+    description: What was applied, where it landed, and what went with it.
   unjudged:
     type: list
     description: >
