@@ -1923,3 +1923,40 @@ would be found. **A theory that did not survive checking, recorded so it is not 
 `tools/api-surface/.assemblies/` really is 264 MB of Revit DLLs and `agent-count.py` really does not
 skip that folder, but it filters by extension before opening anything, so the DLLs are never read
 and that is **not** the cause of the hang.
+
+
+### The two above were BOTH fixed, and one of my own notes above is WRONG
+
+**`test_agents.py` does not hang.** The row above says HUNG and it stays as written, because being
+wrong about it in the same hour is the finding. On a quiet machine it **passes in 279.3 seconds**
+against check-gaps' 300-second bound - **twenty seconds of margin, 7%**. The first run died because
+a build and a second sweep were loading the machine at the same time. So it is not broken and it is
+not healthy either: **a suite that passes with 7% margin will fail at random forever**, and every
+time it does, somebody will chase a defect that is not there. It needs making faster, not fixing.
+Nothing here diagnoses why 225 lines that import four modules take four and a half minutes.
+
+**`test_authoring.py` was the SAME BUG A THIRD TIME.** `brain/heron_authoring.py:109` -
+`os.path.relpath(path, ROOT)`, unguarded, inside `_where()`, which exists to word a refusal. A draft
+written to a temp folder put the path on `C:` with the repository on `D:`, and the crash replaced
+the message it was building. The module **already imported `heron_fragment as FRAG`** and simply did
+not use it here.
+
+**And a fourth copy was found before it could bite.** `brain/heron_tag.py:95` held a **byte-identical
+copy** of that helper - same docstring, same missing guard - reached through a caller-supplied
+`workflow` path. Both are guarded now. Four instances of one defect in one day is no longer a bug,
+it is a pattern: **`os.path.relpath` against `ROOT` is unsafe anywhere the path can come from a
+caller, a test, or another drive**, and `heron_fragment.repo_relative` is the repository's one
+answer. The remaining call sites were checked and left alone deliberately - they take module-level
+constants (`WORKFLOW`, `TEMPLATE`, `AGENTS`, `PROPS`, `EVIDENCE`) that are under `ROOT` by
+construction, and filing them would put false positives in the register.
+
+**`test_mcp_stdio.py` was a stale claim, and the test said so itself.** Its own comment set the
+standard - *"re-base it on what is true, with the reason written down, never edit it until green"* -
+and then **the very assertion that comment was defending went stale in the same way.** It asserted
+the reply still contains *"no way to reach Revit"*, calling it *"the limit that has NOT moved"*.
+It moved: **#144, "Changes ON now changes something"**. `_cannot_run()` now says a writing fragment
+reaches Revit through `revit_change`, which KEEPS what it did, while the ribbon switch is on. The
+old sentence survives **only in a comment**, so the check could never have passed again. Re-based on
+the durable claim instead - **writing is GATED, and Heron says so** - asserting both that the reply
+names the switch and that it names the refusal, so deleting the permission wording still fails it.
+A Heron that claimed it could write freely is the danger worth a test.

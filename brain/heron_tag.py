@@ -64,6 +64,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import heron_promotion as PRO  # noqa: E402
 import heron_versioning as VER  # noqa: E402
+# For repo_relative() and nothing else - see _where below.
+import heron_fragment as FRAG  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -93,8 +95,16 @@ A_CONFIRMATION_CARRIES = (
 
 
 def _where(path):
-    """A path a person can read - relative inside the repo, whole outside."""
-    near = os.path.relpath(path, ROOT)
+    """A path a person can read - relative inside the repo, whole outside.
+
+    This was a byte-identical copy of heron_authoring._where, including its
+    bug: os.path.relpath RAISES on Windows across drives, and both are called
+    while WORDING A REFUSAL, so the crash replaced the message. `workflow` here
+    is caller-supplied, so a path on another drive reaches it. Fixed in both
+    places on 2026-09-15 after the same defect was found three times in one
+    day; heron_fragment.repo_relative is the repository's one answer to it.
+    """
+    near = FRAG.repo_relative(path)
     return path if near.startswith("..") else near
 
 

@@ -623,6 +623,32 @@ hard way:
 
 ---
 
+## `check-signatures.py` — is anybody's signature sitting unused
+
+```bash
+python tools/check-signatures.py           # findings only
+python tools/check-signatures.py --all     # including what is fine
+```
+
+A signature is the scarcest input this library has: **only a person may sign a proof**, and `accept`
+deliberately does not promote. That gap is what this catches — a fragment the owner has already
+signed, still sitting at DRAFT, so the next proving round offers it to be proved AGAIN. Thirteen had
+piled up by 2026-09-13, which is the complaint that caused the tool to be written.
+
+Exit 1 when a signature is being wasted, 0 otherwise. A **STALE** signature — signed, then the code
+changed under it — is reported and is *not* a failure: that is [D-30](../docs/DECISIONS.md) working,
+and the fragment must be proved again.
+
+**It runs in CI, but not as its own step.** It lives inside [`check-docs.py`](check-docs.py) **§9**,
+for exactly the reason §8 records below: this repository's `gh` token carries `repo` but not
+`workflow`, so no session can push a step into `gates.yml` — **a gate nobody can install is not a
+gate**. A commit that adds the step properly sits on the branch `ci/run-check-signatures` and cannot
+be pushed. If that workflow is ever edited by hand, move it beside the others and delete §9.
+
+**It existed for two days with nothing running it, and had no entry on this page.** The tool written
+because a gate was missing was itself the one tool nobody had written down — found 2026-09-15 by
+counting the `check-*` files against the sections here: seventeen exist, sixteen were documented.
+
 ## `check-gaps.py` — what is unfinished, and what is only waiting
 
 ```bash
@@ -1381,6 +1407,8 @@ generators are diffed. The reason is worth stating: this repository's `gh` token
 `workflow`, so no session can push a change to that workflow file — **a gate nobody can install is not a
 gate**. `check-docs.py` already runs inside *The gates that must pass*, so this rides in with it. Moving
 it beside the other generators would be tidier and would catch exactly the same thing.
+
+**§9 now rides in the same way, for the same reason** — `check-signatures.py`, added 2026-09-15. Two riders is the point at which this stops being a neat trick and starts being a queue: if the workflow file ever becomes editable, both should move out and this note should go with them.
 
 **Proved by breaking it**: deleting the `D-70` row makes `check-docs.py` exit 1 naming `D-70`, and
 restoring it returns to 0.
