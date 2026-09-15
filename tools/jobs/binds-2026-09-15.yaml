@@ -1,0 +1,94 @@
+# The two fragments that could not run until `binds:` was honoured at the
+# executor, on the arrangement measured in Project1 the same day.
+#
+#     python tools/batch-prove.py tools/jobs/binds-2026-09-15.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/binds-2026-09-15.yaml
+#
+# WHY `keep-chain` IS ON, and why it is the whole arrangement. Both fragments
+# need TWO sets of elements - the things to measure FROM and the things to
+# measure TO - and only one of them can be called `elements`, so `targets`
+# declares `binds: elements`. That is a CHAIN name, and the selection cannot
+# carry it: the skill's note is exact here - a selection survives a chain reset
+# and a value does not, so without the flag the setup's `elements` is thrown
+# away before the fragment sees it.
+#
+# WITHOUT THE EXECUTOR FIX, THIS FILE WOULD HAVE LIED. `targets` was not found
+# in the chain, fell through to the selection branch as the only unbound list of
+# elements, and bound whatever was left selected in Revit - measured at
+# `elements from select-by-categories (2); targets from the selection (1)`, both
+# phases reporting ok. Read the binding note on every reply (rule 5): both names
+# must say `from select-by-categories`, and `targets` must add `as 'elements'`.
+
+model: Project1, Revit 2020
+
+defaults:
+  write: false
+
+  # ONE STEP, not the usual select-then-set-selection pair. `set-selection`
+  # exists to put the elements into Revit's own selection, and that is exactly
+  # what must NOT happen here: the selection is the wrong route for these two,
+  # and leaving it out means a stale one cannot dress up as a pass.
+  setup:
+    - select-by-categories
+  keep-chain: true
+
+  set:
+    # PROVE ON A SMALL SELECTION. Measured 2026-09-15 across all three floor
+    # plans in this model: "1 - Mech" holds 21 of these, "1 - Plumbing" holds 1
+    # and "2 - Mech" holds 1.
+    categories: "OST_DuctCurves,OST_PipeCurves,OST_DuctFitting,OST_PipeFitting,OST_DuctTerminal,OST_MechanicalEquipment,OST_PlumbingFixtures,OST_Sprinklers,OST_Walls,OST_FlexDuctCurves,OST_CableTray,OST_Conduit"
+    inViewOnly: "FloorPlan: 1 - Mech"
+
+  negative-set:
+    # A REAL SELECTION THAT LEGITIMATELY ANSWERS NOTHING, which is what rule 3
+    # asks for - not a cleared one. "1 - Plumbing" holds exactly ONE element, and
+    # one element has no OTHER element to be nearest to or too close to. Both
+    # fragments skip a self-pair by id, so the answer must be empty while the
+    # fragment still did its work and said so in its accounting.
+    categories: "OST_DuctCurves,OST_PipeCurves,OST_DuctFitting,OST_PipeFitting,OST_DuctTerminal,OST_MechanicalEquipment,OST_PlumbingFixtures,OST_Sprinklers,OST_Walls,OST_FlexDuctCurves,OST_CableTray,OST_Conduit"
+    inViewOnly: "FloorPlan: 1 - Plumbing"
+
+jobs:
+  - fragment: find-nearest-elements
+    set:
+      metric: gap
+    negative-set:
+      metric: gap
+    expect: nearest
+    note: >
+      `gap` rather than `centre` because it is the honest one on long elements -
+      a pipe's centre can be far away while the pipe runs right past you. The
+      answer to read afterwards is `distancesMm`: it left here in internal FEET
+      under a bare name until today, while MEASURE_DISTANCE answered the same
+      question in millimetres, and the two were 304.8x apart.
+
+  - fragment: check-minimum-clearance
+    set:
+      defaultClearance: 99999
+      includeInsulation: true
+      # THE POINT OF THIS LINE. `rules` could not be typed at all until D-73 -
+      # the fragment had never executed a line - and its values were then used
+      # RAW against a gap in feet, so "Walls=150" demanded 150 FEET. Both halves
+      # are exercised here: the table has to parse, and the pairs judged by the
+      # Walls rule have to be judged on 150 mm rather than on 150 feet.
+      rules: "Walls=150; Pipe Fittings=50"
+    negative-set:
+      # THE THRESHOLD IS THE CONTRAST, and it is a stronger negative than a thin
+      # selection: the same work is done - the same pairs examined, reported in
+      # `pairsChecked` - and the answer empties because the INPUT changed. A
+      # fragment falling back to something it was not given cannot do that.
+      #
+      # SO THE VIEW IS PUT BACK to the positive's. The defaults' negative-set
+      # moves it to "1 - Plumbing" for find-nearest-elements, which needs a thin
+      # selection; inheriting that here would change the selection AND the
+      # threshold at once and prove neither. Caught on the dry run.
+      inViewOnly: "FloorPlan: 1 - Mech"
+      defaultClearance: 0
+      includeInsulation: true
+      rules: ""
+    expect: tooClose
+    note: >
+      A clearance nothing can meet for the positive, and one nothing can breach
+      for the negative. `gapsMm` is the number to read: it came back in feet
+      while `defaultClearance` went in as millimetres, so one fragment answered
+      in two units at once.
