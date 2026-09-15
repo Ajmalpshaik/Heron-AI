@@ -1396,3 +1396,90 @@ here can be ignored without consequence** — the TO DO table above is the real 
 **The one I would actually start with is number 1**, and only because the owner's answer arrived. If one
 real numbered document turns up first, **that beats all six** — it is the only thing that tests whether
 any of this survives contact with a real specification.
+
+---
+
+# Sitting of 2026-09-15 — the phantom modification, and why it was not one
+
+**Branch:** `claude/quirky-engelbart-19a941` (worktree). **Tree left clean apart from this file and
+the `A17` row added to [NEEDS-CHECKING.md](NEEDS-CHECKING.md).** No test was changed, because nothing
+was shown to need changing.
+
+## What was asked
+
+A brief reported that running the whole Python suite left
+`brain/fragments/filter-elements-by-type/fragment.yaml` modified in git, byte-identical apart from
+line endings — HEAD LF, working copy CRLF — and asked for the test that does it to be found and fixed
+at source. It explicitly forbade closing it with a `.gitattributes` rule, on the grounds that the
+file is not the problem, the test writing to it is. **That instruction was right and was followed;
+no `.gitattributes` was added.**
+
+## What was found — the reported cause is disproved
+
+**A pure LF-versus-CRLF difference cannot make a file show as modified on this machine.**
+`core.autocrlf=true` is set in the **system** gitconfig (`Git/etc/gitconfig`, the Git-for-Windows
+installer default — not something this repository chose), and **no `.gitattributes` is tracked
+anywhere in the repo**. Git therefore normalises CRLF to LF on the way in, and the two spellings are
+the same object to it.
+
+Measured on an **untouched tree, with no test run**:
+
+| | bytes | CR | LF | CRLF | `\r\r\n` |
+|---|---|---|---|---|---|
+| HEAD blob | 4282 | 0 | 102 | 0 | 0 |
+| working copy on disk | 4384 | 102 | 102 | 102 | 0 |
+
+…and `git status` **clean**. So the state the brief describes as *"the file afterwards"* is the
+**permanent resting state of every checkout on this machine** — equally true before the suite and
+after it, and on a fresh clone. `cmp` reporting DIFFERENT while `diff <(tr -d '\r' ...)` reports
+nothing is **evidence of Windows, not evidence that a test wrote to the file.** The brief's own
+verification step cannot distinguish a dirtied file from a clean one, which is why it looked like a
+finding.
+
+What *would* genuinely dirty it was established by pushing each variant through git's own clean
+filter (`git hash-object --path`):
+
+    lf     -> 0462ad5d...  == HEAD blob   clean
+    crlf   -> 0462ad5d...  == HEAD blob   clean
+    mixed  -> 0462ad5d...  == HEAD blob   clean
+    crcrlf -> 0a877af4...  != HEAD blob   DIRTY
+
+Only **double-CR** (`\r\r\n`) survives normalisation as a difference, and that needs a
+**CR-preserving read paired with a translating write**. A static sweep finds no such pair on this
+path: there are **no `newline=''` reads anywhere in the repository**; the only two `newline=''`
+*writes* (`tools/resign-machine-proofs.py:100`, `tools/generate-decision-summary.py:159`) are the
+safe non-translating kind; and the **only** writer of a real `fragment.yaml` in the entire codebase
+is `heron_validate.accept` / `restamp`, which reads and writes both in text mode and so round-trips
+CRLF unchanged. `tools/batch-prove.py` never writes one at all, and every `fragment.yaml` write in
+`tests/test_validate_agent.py` goes into a `tempfile.mkdtemp()` workspace.
+
+## What is NOT settled — read this before quoting the above
+
+The run that would actually answer *"does any test write to that file"* — **every test alone,
+fingerprinting the fragment after each** — **was killed at roughly 10 minutes of 99 tests** when the
+sitting ended. It had reported **no change to any byte up to that point, and the tree was clean**,
+but it never reached `DONE`. **So "no test writes to that file" is UNPROVEN and must not be repeated
+as proven.** It is filed as **`A17`** in [NEEDS-CHECKING.md](NEEDS-CHECKING.md) with the command and
+what a pass looks like. To resume:
+
+    git checkout -- .
+    for t in tests/test_*.py; do python "$t" >/dev/null 2>&1 </dev/null; done
+    git status --short
+
+Pass is `git status --short` **empty**. A **fail is worth more than a pass** — it names the test, and
+that test is then the real defect the brief was reaching for.
+
+## Two things found on the way, neither of them the reported fault
+
+| | where | what |
+|---|---|---|
+| **1** | [`tests/test_scope_store.py:174`](../tests/test_scope_store.py) | Genuinely **writes into the live fragment library** — it creates `brain/fragments/zz-broken-temp/` with a deliberately malformed `fragment.yaml`, to prove a malformed fragment is skipped rather than indexed. It is a **new folder**, removed in a `finally`, and it never touches an existing fragment, so it is **not** the cause of anything reported here. But *"a test should not write into `brain/fragments/`, which is library source and not scratch"* is the brief's own principle, and this is the one place it bends. The author already met the interrupt case — there is a comment explaining why the folder is created **inside** the `try` with `exist_ok`, because an interrupted run once poisoned the test for good. **Worth a decision, not an emergency** |
+| **2** | [`tests/test_embed.py:111`](../tests/test_embed.py) | Calls `os.utime()` on the **real** `brain/fragments/set-selection/fragment.yaml` to prove that touching a file without changing it embeds nothing — which is the right thing to prove, and the content is never altered. Its side effect is that it **invalidates git's stat cache** for a library file and forces a re-hash on the next `git status`. Harmless, but it is the most likely reason a `git status` oddity was noticed around this area at all |
+
+## The honest summary
+
+**The brief's worry was sound and its evidence was not.** A phantom modification on a clean tree
+really would train a reader to ignore `git status`, and that is worth chasing. But on this machine
+the specific check used — CRLF on disk against LF in HEAD — is **always** true and proves nothing,
+so it cannot be the thing that showed the file as modified. Either something else did, or the file
+was never modified. **`A17` is what decides which, and it has not been run to completion.**
