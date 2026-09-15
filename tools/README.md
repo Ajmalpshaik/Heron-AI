@@ -534,7 +534,17 @@ version that is not semver — is **asked of**
 [`heron_contract.validate`](../brain/heron_contract.py) rather than judged again here.
 
 A tool-layer agent and a C# one carry no contract, and that is the established shape of this repository
-rather than a gap — 45 of them appear as **built without a contract**, not as unfinished.
+rather than a gap — 86 of them appear as **built without a contract**, not as unfinished. An agent
+claimed by *nothing but its own suite* is shown too, flagged: `HERON-RAG-RIX-011` and
+`HERON-RAG-DUP-012` are built and proved, and no file that implements them says so.
+
+**Its count must equal [`agent-count.py`](agent-count.py)'s, and the suite checks that every run**, because
+two bugs in reading a header got past everything else. A header line may claim **several** agents, comma
+separated — 31 files do — and reading one whole turned the list into a single agent that exists nowhere
+while every real one in it looked unclaimed. And a **C# header starts with `//`, not `#`**: the first
+expression required a `#`, so it matched no `.cs` file at all and the whole `revit/` layer was invisible,
+26 agents of it. Neither raised an error. The page simply described a smaller repository than the one it
+was standing in.
 
 It concludes, so it has a test ([`tests/test_contract_reference.py`](../tests/test_contract_reference.py)).
 

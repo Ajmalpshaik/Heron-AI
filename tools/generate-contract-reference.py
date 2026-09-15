@@ -91,7 +91,15 @@ OUT = os.environ.get("HERON_CONTRACT_REFERENCE_OUT",
 # the register, and a register listing an agent is not a file being it.
 LAYERS = ("brain", "revit", "mcp", "platform", "tools", "tests")
 
-HEADER = re.compile(r"^#{1,2}\s*(?://\s*)?Heron-(\w+):\s*(.+?)\s*$", re.M)
+# ANCHORED TO A COMMENT MARKER, EITHER LANGUAGE. The first version
+# began `^#{1,2}` with the `//` optional after it, so it matched a
+# Python header and NEVER MATCHED A C# ONE - and the entire revit/
+# layer was invisible to this page, 26 agents of it. The page said
+# 45 agents were built without a contract when the real number is
+# 57. tools/agent-count.py anchors the same way and has all along;
+# this is that expression, not a second one.
+HEADER = re.compile(r"^\s*(?://|#)\s*Heron-(\w+)\s*:\s*(.+?)\s*$",
+                    re.M)
 
 # A refusal name, once it has been found where a refusal lives. NO
 # UNDERSCORE IS REQUIRED, and the first version of this required one. A
@@ -126,16 +134,28 @@ def claims():
                 except (IOError, UnicodeDecodeError):
                     continue
                 fields = dict(HEADER.findall(head))
-                agent = fields.get("Agent")
-                if not agent or agent == "none":
-                    continue
-                found.setdefault(agent, []).append({
-                    "file": os.path.relpath(path, ROOT).replace("\\", "/"),
-                    "layer": fields.get("Layer", ""),
-                    "step": fields.get("Step", ""),
-                    "status": fields.get("Status", ""),
-                    "since": fields.get("Since", ""),
-                })
+                # ONE HEADER LINE MAY CLAIM SEVERAL AGENTS, comma
+                # separated. 31 files in this repository do -
+                # RevitOperations.cs carries three, a session file carries
+                # four - and reading the line whole made
+                # "HERON-REVIT-DOC-004, HERON-REVIT-SEL-008,
+                # HERON-REVIT-CAT-009" a single agent that exists nowhere,
+                # while all three real ones looked unclaimed. tools/
+                # agent-count.py, which owns the count, has split on the
+                # comma all along; this did not, and every one of those
+                # 31 files was misread.
+                for agent in [one.strip()
+                              for one in (fields.get("Agent") or "").split(",")
+                              if one.strip()]:
+                    if agent == "none":
+                        continue
+                    found.setdefault(agent, []).append({
+                        "file": os.path.relpath(path, ROOT).replace("\\", "/"),
+                        "layer": fields.get("Layer", ""),
+                        "step": fields.get("Step", ""),
+                        "status": fields.get("Status", ""),
+                        "since": fields.get("Since", ""),
+                    })
     return found
 
 
@@ -373,15 +393,17 @@ def collect():
         if agent in seen:
             continue
         files = [one for one in every if one["layer"] != "test"]
-        if not files:
-            # A suite with no module and no contract is a suite whose
-            # agent is not built. agent-count.py owns that count; this
-            # page is about contracts and would only disagree with it.
-            continue
-        without.append({"agent": agent, "files": files,
-                        "layer": files[0]["layer"],
-                        "suites": [one["file"] for one in every
-                                   if one["layer"] == "test"]})
+        suites = [one["file"] for one in every if one["layer"] == "test"]
+        # AN AGENT CLAIMED ONLY BY ITS SUITE IS SHOWN, NOT DROPPED. Two
+        # are: HERON-RAG-RIX-011 and HERON-RAG-DUP-012 live inside the RAG
+        # library and only tests/test_maintenance.py names them. They are
+        # built and they are proved; nothing that implements them says so,
+        # and a reader looking for where one lives has nowhere to go.
+        # Skipping them made this page disagree with agent-count.py by
+        # exactly two and say nothing about why. Golden Rule 14.
+        without.append({"agent": agent, "files": files, "suites": suites,
+                        "layer": files[0]["layer"] if files else "test",
+                        "only_a_suite": not files})
     return rows, without, notes
 
 
@@ -561,18 +583,25 @@ function card(r) {
 }
 
 function bare(r) {
-  return '<div class="a" data-flag="none" data-text="' +
+  return '<div class="a' + (r.only_a_suite ? ' flag' : '') +
+    '" data-flag="' + (r.only_a_suite ? 'flag' : 'none') + '" data-text="' +
     esc((r.agent + ' ' + r.layer + ' ' +
          r.files.map(function (f) { return f.file; }).join(' ')
         ).toLowerCase()) + '">' +
     '<h2>' + esc(r.agent) + '</h2>' +
     '<div class="where">' +
-      r.files.map(function (f) { return esc(f.file); }).join('<br>') +
+      (r.files.map(function (f) { return esc(f.file); }).join('<br>') ||
+       'no implementing file') +
       (r.suites.length ? '<br>' + r.suites.map(esc).join('<br>') : '') +
     '</div><div class="tags"><span class="tag read">' + esc(r.layer) +
-    '</span><span class="tag">no contract</span></div>' +
-    '<div class="f">A ' + esc(r.layer) + '-layer agent carries no contract ' +
-    'YAML. That is the shape of this repository, not a gap.</div></div>';
+    '</span><span class="tag">no contract</span>' +
+    (r.only_a_suite ? '<span class="tag bad">only a suite</span>' : '') +
+    '</div><div class="f">' + (r.only_a_suite
+      ? '<b>No file that implements this agent claims it.</b> It is built ' +
+        'and it is proved, but only its suite carries the header, so a ' +
+        'reader looking for where it lives has nowhere to go.'
+      : 'A ' + esc(r.layer) + '-layer agent carries no contract YAML. That ' +
+        'is the shape of this repository, not a gap.') + '</div></div>';
 }
 
 var ALL = D.rows.map(card).concat(D.without.map(bare)).join('');
@@ -604,6 +633,7 @@ def main():
     problems = sum(len(one["problems"]) for one in rows)
     declared = sum(len(one["failures"]) for one in rows)
     fields = sum(len(one["input"]) + len(one["output"]) for one in rows)
+    orphans = [one for one in without if one["only_a_suite"]]
 
     payload = {
         "rows": rows, "without": without, "notes": notes,
@@ -613,10 +643,13 @@ def main():
             "claims an agent, at %s. %d agent(s) are built without a "
             "contract, which is the shape of this repository rather than a "
             "gap. %d refusal(s) the code produces are undeclared; %d "
-            "declared refusal(s) the code cannot produce."
+            "declared refusal(s) the code cannot produce.%s"
             % (len(rows), fields, declared,
                datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-               len(without), undeclared, unreachable)),
+               len(without), undeclared, unreachable,
+               "" if not orphans else
+               "  %d agent(s) are claimed by nothing but their own suite."
+               % len(orphans))),
         "footer": (
             "Generated by tools/generate-contract-reference.py. docs/28 is "
             "the plan, a contract is the promise, and a file header is the "
@@ -643,6 +676,9 @@ def main():
       % (len(rows), fields, declared))
     w("%d agent(s) built without a contract (tool and C# layers)\n"
       % len(without))
+    for one in orphans:
+        w("  ONLY A SUITE: %s is claimed by %s and by no file that "
+          "implements it\n" % (one["agent"], ", ".join(one["suites"])))
     for one in rows:
         for name in one["undeclared"]:
             w("  UNDECLARED: %s produces %s and its contract does not say "

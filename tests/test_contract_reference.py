@@ -151,9 +151,48 @@ def one():
             break
     else:
         check(True, "no contract row reads a tests/ file for what it does")
-    check(all(one["layer"] != "test" for one in without),
-          "and no test file is reported as an agent built without a "
-          "contract")
+    orphans = [one for one in without if one["only_a_suite"]]
+    check(all(one["layer"] != "test" for one in without if
+              not one["only_a_suite"]),
+          "and no test file is reported as an agent's own implementation")
+    check(all(one["suites"] and not one["files"] for one in orphans),
+          "an agent claimed by NOTHING BUT its suite is shown rather than "
+          "dropped (Golden Rule 14): %s"
+          % (", ".join(one["agent"] for one in orphans) or "none"))
+
+    # THE STRONGEST CHECK ON THIS PAGE, and it is here because two bugs
+    # got past everything else. tools/agent-count.py owns the count of
+    # what is built, and this page reads the same headers from the same
+    # roots, so the two sets must be IDENTICAL - not close.
+    #
+    #   ONE HEADER MAY CLAIM SEVERAL AGENTS. 31 files do. Reading the
+    #   line whole made a comma-joined string into one agent that exists
+    #   nowhere, and left every real one in it looking unclaimed.
+    #
+    #   A C# HEADER STARTS WITH `//` AND NOT `#`. The first expression
+    #   here required a `#`, so it never matched a single .cs file and
+    #   the whole revit/ layer was invisible - 26 agents.
+    #
+    # Neither showed up as an error. The page just quietly described a
+    # smaller repository than the one it was standing in.
+    import importlib.util
+    count_spec = importlib.util.spec_from_file_location(
+        "heron_agent_count", os.path.join(ROOT, "tools", "agent-count.py"))
+    counter = importlib.util.module_from_spec(count_spec)
+    count_spec.loader.exec_module(counter)
+    theirs = set(counter.built())
+    check(set(GEN.claims()) == theirs,
+          "this page sees exactly the %d agent(s) agent-count.py sees - "
+          "not one more, not one fewer" % len(theirs))
+    check(len(rows) + len(without) == len(theirs),
+          "  and every one of them is ON the page: %d with a contract plus "
+          "%d without is %d" % (len(rows), len(without), len(theirs)))
+    csharp = [one for one in without if one["layer"] == "revit"]
+    check(csharp, "C# agents are among them - %d of them, which the first "
+          "expression here saw none of" % len(csharp))
+    check(not any("," in agent for agent in GEN.claims()),
+          "and no agent id contains a comma, which is what a header "
+          "claiming several looks like when it is read whole")
     with_suite = [row for row in rows if row["suites"]]
     check(len(with_suite) == len(rows),
           "every contract still SHOWS its suite - which file proves an "
