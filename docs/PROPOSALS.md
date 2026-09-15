@@ -1222,6 +1222,7 @@ Three places still describe the thing it removed:
 | `docs/28`, `HERON-USR-PRO-001` | *"**Persona** reads this to choose how to speak"* |
 | `docs/28`, `HERON-ORC-PER-003` | *"Communication / Persona Agent — detects role and technical level; **chooses wording**"* |
 | [`docs/22 §3`](22-users-modes-and-extensibility.md) NOTE | *"**Persona** may be inferred — it only changes wording. **Mode** must be granted."* |
+| `docs/28`, `HERON-RPT-CMP-001` | *"Decides what goes in and at what depth **for this reader** — a modeller wants the 47 failures, a BIM manager wants the trend. **Judgement, so a model call**"* |
 
 The third is the one that matters, because it is doing real work in a sentence about security. Its point
 is sound and its example is gone: it contrasts a *grantable* mode with an *inferable* persona in order to
@@ -1236,6 +1237,12 @@ sentence explaining it broken.
 | **a fact is declared** | somebody said it about themselves. A `by` reading inferred, derived, guessed, detected, assumed, estimated, observed, automatic, auto or model is refused — deciding from a conversation that a user is a beginner is a judgement they did not make and cannot see (D-33) |
 | **a mode is granted** | it carries who granted it and when, and a grant whose `by` is not a person is refused. **No mode held is not User Mode** — a permission boundary that defaults to something is not a boundary |
 | **nothing about how to speak** | there is no tone, level or phrasing field in anything it returns, whatever it is asked |
+
+**A fourth was found later the same day**, building `HERON-RPT-CMP-001`: its row chooses *what goes
+in* by reader, and calls that a judgement needing a model call. D-27 replaced exactly that judgement with
+a five-row table keyed on the **request**, and gave the reason in its own consequences — *"nothing has to
+detect who is talking. A whole class of 'why did it answer differently today' stops being possible rather
+than being made visible."* The agent implements the table and calls no model.
 
 **Not fixed here.** `HERON-ORC-PER-003` is one of the four agents [D-01](DECISIONS.md) delegates to the
 host, so retiring or renaming it is a change to the host contract, and `docs/22 §3`'s note needs rewriting
