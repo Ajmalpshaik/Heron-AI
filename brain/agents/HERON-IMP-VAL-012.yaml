@@ -1,0 +1,76 @@
+# Import Validation Agent - HERON-IMP-VAL-012
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ and says it verifies BEFORE the result is saved. Nothing here
+# opens a file, writes one or creates a folder - which is what makes
+# "before" true rather than merely intended.
+
+agent: HERON-IMP-VAL-012
+version: 1.0.0
+
+input:
+  items:
+    type: list
+    required: true
+    description: >
+      Each {name, kind, card}. The kind decides who validates it: a
+      fragment goes to HERON-FRG-VAL-001 and a skill to
+      HERON-SKL-VAL-004. An item with no card is refused - there is
+      nothing to verify, and saying so is the only honest answer.
+
+output:
+  verified:
+    type: boolean
+    description: True when the items were read.
+  saved:
+    type: boolean
+    description: Always false. Nothing is written.
+  ready:
+    type: list
+    description: >
+      Items whose card carries every field its kind requires, each
+      naming the agent that checked it. Complete, which is not correct -
+      nothing here compiled or ran anything.
+  problems:
+    type: list
+    description: >
+      Items with problems, in the OWNER's own words rather than
+      reworded. No third validator is written here: a third would be a
+      third thing that can be right on its own while disagreeing with
+      the other two (PROPOSALS F17).
+  no_validator:
+    type: list
+    description: >
+      Items of a kind nothing here validates. NEVER in `ready`: not
+      every migrated thing is a fragment or a skill, and there is
+      nothing wrong with that - but "verified" meaning "nobody looked"
+      is the silent pass HERON-IMP-DUP-007 refuses one step earlier.
+  of:
+    type: integer
+    description: How many items were read.
+  item:
+    type: string
+    description: On a refusal about one item, which.
+  why:
+    type: string
+    description: The three counts, and that nothing was saved.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was saved or opened and why that
+      matters; which items nothing validates; that complete is not
+      correct; and that no third validator was written.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_VERIFY
+  - NOT_AN_ITEM
+  - NO_CARD
+
+retry:
+  attempts: 0
+  on-failures: []
