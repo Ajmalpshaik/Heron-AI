@@ -1,5 +1,5 @@
 // NOT STANDALONE. Assumes `elements`, `targets`, `defaultClearance`, `rules`,
-// `includeInsulation` and `doc` are in scope, and leaves `tooClose`, `gaps`,
+// `includeInsulation` and `doc` are in scope, and leaves `tooClose`, `gapsMm`,
 // `judgedBy` and `pairsChecked` behind.
 //
 // READ ONLY. Opens no transaction, moves nothing.
@@ -28,8 +28,38 @@
 const double MillimetresPerFoot = 304.8;
 defaultClearance = defaultClearance / MillimetresPerFoot;
 
+// AND `rules` IS THE SECOND LENGTH IN THIS FILE, which the D-71 sweep walked
+// straight past. FRAGMENT-ISSUES row 51 records that sweep: it looked for a
+// `double` request input with no conversion and found two. `rules` is an
+// `IDictionary<string, double>`, so it was never a `double` and was never
+// looked at - and every number in it is a clearance in exactly the same
+// millimetres `defaultClearance` is in.
+//
+// UNCONVERTED IT IS THE WORST KIND OF WRONG: `rules="Walls=150"` asked for
+// 150 mm and demanded 150 FEET, so every pair judged by a rule - and ONLY the
+// pairs judged by a rule, while the default-judged ones stayed correct -
+// reported as too close. A clearance report where some rows are 304.8x out
+// reads as a model full of clashes, and the rule column beside it looks like
+// the explanation rather than the fault.
+//
+// Copied into a new dictionary rather than written back: `rules` is the
+// caller's, a fragment re-run on the same values must not halve them twice,
+// and the read-back still shows what was typed.
+var clearances = new Dictionary<string, double>();
+if (rules != null)
+{
+    foreach (var rule in rules)
+        clearances[rule.Key] = rule.Value / MillimetresPerFoot;
+}
+
 var tooClose = new List<string>();
-var gaps = new Dictionary<string, double>();
+
+// MILLIMETRES OUT, the same 304.8 the other way. The caller types this
+// fragment's thresholds in millimetres; handing the measured gap back in feet
+// made ONE fragment answer in two units, and `gaps: 0.29` against a
+// `defaultClearance: 150` is unreadable. Comparisons stay in feet - that is
+// what a bounding box is in - and only the number that leaves is converted.
+var gapsMm = new Dictionary<string, double>();
 var judgedBy = new Dictionary<string, string>();
 int pairsChecked = 0;
 
@@ -113,9 +143,9 @@ foreach (var element in elements)
 
         double required = defaultClearance;
         string rule = "default";
-        if (rules != null && categoryName.Length > 0 && rules.ContainsKey(categoryName))
+        if (categoryName.Length > 0 && clearances.ContainsKey(categoryName))
         {
-            required = rules[categoryName];
+            required = clearances[categoryName];
             rule = categoryName;
         }
 
@@ -123,7 +153,7 @@ foreach (var element in elements)
 
         string key = element.Id.ToString() + " -> " + target.Id.ToString();
         tooClose.Add(key);
-        gaps[key] = gap;
+        gapsMm[key] = gap * MillimetresPerFoot;
         judgedBy[key] = rule;
     }
 }

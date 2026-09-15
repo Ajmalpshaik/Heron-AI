@@ -1130,7 +1130,11 @@ namespace Heron.Revit.Addin
                 if (!Fields(need, out nm, out ty, out src)) continue;
                 if (bound.Contains(nm)) continue;
                 if (src == "request") continue;
-                if (carried != null && carried.ContainsKey(nm)) continue;
+                // Under the name the CHAIN would carry it by, which is not
+                // always the need's own - see Binds. Asking for `targets` here
+                // is what made a need the chain could fill look like one only
+                // the selection could, and sent it to the selection branch.
+                if (carried != null && carried.ContainsKey(Binds(need, nm))) continue;
                 if (IsElementList(ty)) selectable++;
             }
 
@@ -1208,12 +1212,23 @@ namespace Heron.Revit.Addin
                 object value = null;
                 string origin = null;
 
+                // The name the CHAIN carries this by, which is not always the
+                // need's own - see Binds. Everything else below stays the
+                // need's own name: the variable, the globals key, the prologue.
+                var wanted = Binds(need, name);
+
                 // 1. THE CHAIN. What the previous fragment THIS CHAT ran
-                //    left behind, under this name, in THIS document.
-                if (carried != null && carried.ContainsKey(name))
+                //    left behind, under that name, in THIS document.
+                if (carried != null && carried.ContainsKey(wanted))
                 {
-                    value = carried[name];
+                    value = carried[wanted];
                     origin = "from " + (chain.By ?? "the previous fragment");
+                    // NAME THE ALIAS IN THE READ-BACK. A proof is judged on
+                    // this line (fragment-proving rule 5), and "targets from
+                    // select-by-categories" hides the one thing a reader of a
+                    // two-set fragment needs to check - that both roles were
+                    // filled from the same set on purpose.
+                    if (wanted != name) origin += " as '" + wanted + "'";
                 }
 
                 // 2. THE SELECTION, and only when it is unambiguous.
@@ -1225,7 +1240,14 @@ namespace Heron.Revit.Addin
 
                 if (value == null)
                 {
-                    unmet.Add(name + " (" + type + ")");
+                    // SAY WHICH NAME WAS LOOKED FOR when it is not the need's
+                    // own. "targets was never supplied" sends a reader hunting
+                    // for a fragment that provides `targets`, and none does -
+                    // what is missing is `elements`, and a `binds` line with a
+                    // typo in it looks identical until the message says so.
+                    unmet.Add(wanted == name
+                        ? name + " (" + type + ")"
+                        : name + " (" + type + ", filled from '" + wanted + "')");
                     continue;
                 }
 
@@ -1747,6 +1769,111 @@ namespace Heron.Revit.Addin
                 return null;
             }
             return settings;
+        }
+
+        /// <summary>
+        /// A TABLE OF VALUES BY NAME, written the way the overrides above are.
+        ///
+        ///     "Walls=150; Structural Framing=50"    a clearance per category
+        ///     "view=*-Mech*; sheet=A-*"             a name pattern per kind
+        ///
+        /// SEMICOLONS BETWEEN ENTRIES, an equals sign inside each - the same
+        /// shape as `OneOverride` and for the same reason: one separator has to
+        /// survive a value that already contains commas.
+        ///
+        /// TWO NEEDS IN THE WHOLE LIBRARY, AND BOTH WERE UNRUNNABLE.
+        /// `check-minimum-clearance.rules` is `IDictionary&lt;string, double&gt;`
+        /// and `check-model-standards.namePatterns` is
+        /// `IDictionary&lt;string, string&gt;`; `FromRequest` refused `IDictionary`
+        /// by name and neither could be omitted, so between the two refusals
+        /// neither fragment had ever executed a line. Measured 2026-09-15 on
+        /// Project1 both ways - `[needs_request_values]` without the value and
+        /// `[bad_request_value]` with one. FRAGMENT-ISSUES row 98.
+        ///
+        /// THE KEY IS KEPT EXACTLY AS TYPED, which is the one place this must
+        /// NOT copy `OneOverride`. That method lower-cases its keys and turns
+        /// spaces into hyphens, because its keys are nine words it defines
+        /// itself. These keys are the MODEL'S words - `target.Category.Name`
+        /// returns "Structural Framing", capital S, capital F, with the space -
+        /// and a normalised key would match nothing and report a clean sweep.
+        ///
+        /// A NUMBER IS LEFT IN THE UNIT IT WAS TYPED IN. D-71 puts length
+        /// conversion in the FRAGMENT, not at this boundary, precisely because
+        /// this method cannot know whether a number is a length, an airflow or
+        /// a count - and here it does not even know what the KEY means. So 150
+        /// arrives as 150 and `check-minimum-clearance` divides by 304.8 itself,
+        /// the same line its `defaultClearance` goes through.
+        ///
+        /// AN EMPTY TABLE IS ALLOWED AND MEANS "NO ENTRIES". Both fragments
+        /// document that reading - `defaultClearance` catches whatever the table
+        /// does not name, and a section with no pattern reports NOT CHECKED
+        /// rather than a pass. Refusing it would make the ordinary case - one
+        /// blanket clearance, no per-category exceptions - the one that cannot
+        /// be asked for.
+        ///
+        /// A REPEATED KEY IS REFUSED rather than last-one-wins. Typing `Walls`
+        /// twice means one of the two numbers is silently thrown away, and
+        /// which one depends on an ordering nobody can see.
+        /// </summary>
+        private static object NamedValues(string text, bool asNumbers, string need,
+                                          out string problem)
+        {
+            problem = null;
+
+            var numbers = new Dictionary<string, double>();
+            var words = new Dictionary<string, string>();
+            var shown = asNumbers ? "\"Walls=150; Structural Framing=50\""
+                                  : "\"view=*-Mech*; sheet=A-*\"";
+
+            foreach (var piece in (text ?? "").Split(';'))
+            {
+                var trimmed = piece.Trim();
+                if (trimmed.Length == 0) continue;
+
+                var split = trimmed.IndexOf('=');
+                if (split <= 0)
+                {
+                    problem = "\"" + trimmed + "\" is not an entry for '" + need + "'. Each one "
+                            + "is a name, an equals sign and a value, and several are separated "
+                            + "with semicolons - " + shown + ".";
+                    return null;
+                }
+
+                // Everything after the FIRST equals sign is the value, so a
+                // pattern may contain one.
+                var key = trimmed.Substring(0, split).Trim();
+                var value = trimmed.Substring(split + 1).Trim();
+
+                if (key.Length == 0)
+                {
+                    problem = "\"" + trimmed + "\" has a value with nothing named in front of "
+                            + "it. Each entry is a name, an equals sign and a value - " + shown
+                            + ".";
+                    return null;
+                }
+
+                if (numbers.ContainsKey(key) || words.ContainsKey(key))
+                {
+                    problem = "'" + key + "' is named twice in '" + need + "'. One of the two "
+                            + "values would be thrown away and which one depends on an order "
+                            + "nobody can see, so say it once.";
+                    return null;
+                }
+
+                if (!asNumbers) { words[key] = value; continue; }
+
+                double number;
+                if (!double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture,
+                                     out number))
+                {
+                    problem = "\"" + value + "\" is not a number, and '" + key + "' in '" + need
+                            + "' is one. Type digits only - 150 or 150.5, not 150mm.";
+                    return null;
+                }
+                numbers[key] = number;
+            }
+
+            return asNumbers ? (object)numbers : (object)words;
         }
 
         /// <summary>
@@ -2629,6 +2756,17 @@ namespace Heron.Revit.Addin
                 || wanted == "ICollection<IList<XYZ>>" || wanted == "IEnumerable<IList<XYZ>>")
                 return PointPairs(text, out problem);
 
+            // A TABLE BY NAME - the two request-sourced dictionaries in the
+            // library, and the reason both fragments that own one had never run
+            // a line. See NamedValues for the shape and for why the key is kept
+            // exactly as typed while an override's key is not.
+            if (wanted == "IDictionary<string,double>" || wanted == "Dictionary<string,double>"
+                || wanted == "IDictionary<String,Double>")
+                return NamedValues(text, true, need, out problem);
+            if (wanted == "IDictionary<string,string>" || wanted == "Dictionary<string,string>"
+                || wanted == "IDictionary<String,String>")
+                return NamedValues(text, false, need, out problem);
+
             // THE NARROWED ONES. Each row is a deliberate act of declaring a
             // type receivable, and the list is short because it is exactly the
             // set some contract actually asks for - not everything that could
@@ -3090,6 +3228,52 @@ namespace Heron.Revit.Addin
             if (need.TryGetValue("source", out declared) && !string.IsNullOrEmpty(declared))
                 source = declared;
             return true;
+        }
+
+        /// <summary>
+        /// The PROVIDED name that fills this need, which is not always its own.
+        ///
+        /// Most needs are filled by a provide of the same name: an action needs
+        /// `elements` and a filter provides `elements`. Two fragments want
+        /// something that could not say - FIND_NEAREST_ELEMENTS needs TWO sets
+        /// of elements, the things to measure FROM and the things to measure
+        /// TO, and only one of them can be called `elements`. So a need may
+        /// declare `binds: elements`, meaning "fill me from a provide called
+        /// elements", and keep a name that says what the set is FOR.
+        ///
+        /// THE CONTRACT ALREADY SAID THIS AND THIS FILE WAS NOT LISTENING.
+        /// `need_binds` in brain/heron_fragment.py has read `binds` since the
+        /// key existed - composition, the graph and the job generator all
+        /// honour it - and the executor looked the need up under its own name.
+        /// Five fragments declare it and none of them could run.
+        ///
+        /// WHAT THAT ACTUALLY DID IS WORSE THAN A REFUSAL, and it is why this
+        /// is a fault rather than a gap. `targets` went unfound in the chain,
+        /// fell through to the selection branch as the only unbound list of
+        /// elements, and bound WHATEVER WAS SELECTED IN REVIT. Measured
+        /// 2026-09-15 against Project1: `elements from select-by-categories
+        /// (2); targets from the selection (1)` - the fragment measured two
+        /// pipes against one unrelated leftover element and reported a clean
+        /// run. A refusal is visible; that is not.
+        ///
+        /// IT RENAMES, IT DOES NOT CONVERT. The declared type still has to
+        /// match what the chain carries; `Shape` is unchanged and a value of
+        /// the wrong type is refused exactly as before.
+        ///
+        /// ONLY THE CHAIN LOOKUP USES THIS. A request-sourced need is named by
+        /// the caller at the keyboard - `--set metric=gap` - so it is found
+        /// under its OWN name, and heron_fragment.py refuses a contract that
+        /// puts `binds` on one. The prologue, the globals key and the variable
+        /// the fragment reads are all the need's own name too: `binds` says
+        /// where the value comes from, never what it is called once it is here.
+        /// </summary>
+        private static string Binds(Dictionary<string, string> need, string name)
+        {
+            string bound;
+            if (need != null && need.TryGetValue("binds", out bound)
+                && !string.IsNullOrEmpty(bound))
+                return bound;
+            return name;
         }
 
         /// <summary>An IList/ICollection/IEnumerable of Element, not of ElementId.</summary>

@@ -53,6 +53,14 @@ purpose: >
   situation, and picking one on id order would make the answer depend on the
   order Revit happens to hand them back.
 
+  **MILLIMETRES OUT, BY MULTIPLYING BY 304.8**, the same as MEASURE_DISTANCE -
+  which is the fragment a modeller reaches for next, with the pair this one
+  found. `distances` used to leave here in Revit's internal FEET under a bare
+  name, so the two answered "how far apart" 304.8x apart from each other. The
+  comparisons are still done in feet, because that is what a bounding box is
+  in; only the number that leaves is converted, and its name now carries the
+  unit the way every other converted length in this library does.
+
 contract:
   needs:
     - name: elements
@@ -67,7 +75,7 @@ contract:
     - name: nearest
       role: result
       type: IDictionary<ElementId, ElementId>
-    - name: distances
+    - name: distancesMm
       role: result
       type: IDictionary<ElementId, double>
     - name: tied
@@ -88,10 +96,10 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. `get_BoundingBox(null)` and `XYZ` are
-  unchanged 2020 to 2027, and distances are handed on in Revit's internal feet
-  without touching a units API - D-20 keeps the millimetre conversion at the
-  edge. Nothing reads an ElementId as a number, so the 2024 64-bit change does
-  not reach it.
+  unchanged 2020 to 2027. Feet become millimetres by multiplying by 304.8 as
+  plain arithmetic - no units API, which is what changed shape at 2021, and
+  which is what D-20 is actually about. Nothing reads an ElementId as a number,
+  so the 2024 64-bit change does not reach it.
 
 utterances:
   - which FCU is nearest to this terminal
