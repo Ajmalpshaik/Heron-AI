@@ -1,0 +1,96 @@
+# Fragment Matcher Agent - HERON-RAG-FMT-004
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. It runs nothing: HERON-RAG-RET-003 retrieves the candidates and
+# this one decides whether any of them does the job.
+
+agent: HERON-RAG-FMT-004
+version: 1.0.0
+
+input:
+  request:
+    type: map
+    required: true
+    description: >
+      {capability, has, wants}. The host turns a sentence into a
+      capability (D-01); this agent does not, because that would be
+      language understanding and D-34 refuses it. `has` is what the
+      caller can supply, `wants` what it asked for.
+  fragments:
+    type: list
+    required: true
+    description: >
+      The candidate cards, handed in - a list or the map
+      heron_fragment.load_all returns. This agent does not go looking.
+  revit:
+    type: string
+    required: true
+    description: >
+      The running release. REQUIRED: without it the version wall cannot
+      be applied, and docs/05 s8 makes that a wall rather than a
+      weighting. Guessing a release is what D-05 forbids.
+
+output:
+  ran:
+    type: boolean
+    description: Always false. Nothing is executed here.
+  capability:
+    type: string
+    description: What was asked for, as matched.
+  revit:
+    type: string
+    description: The release the wall was applied at.
+  matched:
+    type: list
+    description: >
+      Fragments whose capability, every `source: request` need and every
+      wanted output line up - with their status, source and risk
+      reported rather than ranked.
+  partial:
+    type: list
+    description: >
+      Near matches, with what is missing named. A fragment short of one
+      need will run, half-work and look exactly like a success, so no
+      caller can reach one by reading `matched`.
+  excluded:
+    type: list
+    description: >
+      Candidates the version wall removed, with what each declares. They
+      are not ranked lower - ranking a wrong-version fragment fifth
+      still returns it on a quiet day when nothing else matches.
+  brief:
+    type: map
+    description: >
+      Present only when nothing matched: the capability, the release, the
+      nearest fragment and what it was short of, and how many were
+      excluded for their version. That is what HERON-RAG-RSH-017 needs to
+      research it and what a person needs to write a new one - an empty
+      list carries none of it.
+  of:
+    type: integer
+    description: How many candidates were considered.
+  why:
+    type: string
+    description: The counts, and whether anything matched.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was run or looked up; that a near
+      match is in `partial` and nowhere else; that the version was a wall
+      applied before the capability; and that status and source are
+      reported rather than preferred.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOT_A_REQUEST
+  - NO_REVIT_VERSION
+  - NOTHING_TO_MATCH
+  - NOT_A_FRAGMENT
+
+retry:
+  attempts: 0
+  on-failures: []
