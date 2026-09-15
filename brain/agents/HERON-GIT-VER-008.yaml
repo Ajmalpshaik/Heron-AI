@@ -1,0 +1,107 @@
+# Version Agent - HERON-GIT-VER-008
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register leaves this
+# agent's Risk cell EMPTY - one of six, already with the owner. Nothing here
+# reaches a network or a repository, so it reads whatever the cell says.
+
+agent: HERON-GIT-VER-008
+version: 1.0.0
+
+input:
+  component:
+    type: string
+    required: true
+    description: >
+      One of the four docs/17 s8 makes a promise about. A component with
+      no stated promise has no version rule, and inventing one here
+      would be writing the promise rather than keeping it.
+  at:
+    type: string
+    required: true
+    description: The current version, MAJOR.MINOR.PATCH.
+  breaking:
+    type: list
+    required: false
+    description: >
+      What broke, one line each. This agent does NOT decide what broke -
+      it reads what was found. HERON-SKL-UPD-003 finds it for a skill,
+      the contract checker for a contract. A third what-breaks-which-way
+      table here would be a third chance to get the direction backwards.
+  added:
+    type: list
+    required: false
+    description: What was added, one line each.
+  fixed:
+    type: list
+    required: false
+    description: What was fixed, one line each.
+  evidence:
+    type: string
+    required: false
+    description: >
+      The half of the promise no number carries - where a Revit removal
+      was announced, or which migration carries the library across.
+      Asked for rather than assumed (D-33), and a breaking change that
+      owes one and has none is refused.
+
+output:
+  versioned:
+    type: boolean
+    description: True when a promise was applied.
+  to:
+    type: string
+    description: >
+      The version the change requires - or NULL for a component docs/17
+      states no version rule for. No number is invented to fill it.
+  step:
+    type: string
+    description: major, minor, patch - or null with `to`.
+  wanted:
+    type: string
+    description: >
+      The step the promise asks for, which is not always the step taken.
+  kept:
+    type: boolean
+    description: >
+      False when the number cannot carry the promise. At 0.y.z a major
+      bump is not available to spend: going to 1.0.0 for one breaking
+      change would declare the whole API stable. Semantic versioning's
+      own 0.y.z rule applies and the MINOR moves - and a reader seeing
+      0.2.0 has no way to know a contract broke, which is why this flag
+      exists rather than a correct-looking number alone.
+  promise:
+    type: string
+    description: What docs/17 s8 promises for this component, verbatim.
+  owed:
+    type: string
+    description: Which obligation this component carries beyond the number.
+  evidence:
+    type: string
+    description: What was handed in to satisfy it, as given.
+  why:
+    type: string
+    description: The move, the counts, and whether the promise is kept.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. Whether the number keeps the promise and why
+      not; that the second half was handed in rather than assumed; that
+      nothing here decided what broke; and that nothing was tagged or
+      pushed.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOT_A_COMPONENT
+  - NOT_A_VERSION
+  - NOT_A_CHANGE
+  - NOTHING_TO_VERSION
+  - NOT_ANNOUNCED
+  - NO_MIGRATION
+
+retry:
+  attempts: 0
+  on-failures: []

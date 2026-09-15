@@ -1,0 +1,97 @@
+# Skill Creation Agent - HERON-SKL-CRE-002
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY - it is the one agent in this department that writes a file.
+
+agent: HERON-SKL-CRE-002
+version: 1.0.0
+
+input:
+  draft:
+    type: map
+    required: true
+    description: >
+      The card the author supplies - every field in heron_skill.REQUIRED
+      that is not metadata, read from there rather than listed here. Its
+      utterances must be real ones: fewer than two is refused and asked
+      for, never generated.
+  skills:
+    type: list
+    required: false
+    description: The existing library, so an id in use is refused.
+  fragments:
+    type: list
+    required: false
+    description: >
+      Each {id, capability, risk}. Read for two reasons - to catch a
+      `needs` entry that is a fragment id rather than a capability, and
+      to find the risk the work actually costs.
+  into:
+    type: string
+    required: false
+    description: >
+      Where to write. Defaults to heron_skill.SKILLS_DIR. An existing
+      file at the path is refused, never overwritten.
+
+output:
+  authored:
+    type: boolean
+    description: True when the card was written.
+  path:
+    type: string
+    description: The file written.
+  card:
+    type: map
+    description: >
+      What was written, including the four metadata fields this agent
+      sets. It passes HERON-SKL-VAL-004's validator clean.
+  status:
+    type: string
+    description: Always DRAFT. The author gets no say in it.
+  declared:
+    type: string
+    description: The risk the card declares.
+  needs_at_least:
+    type: string
+    description: >
+      The highest risk among the fragments that would serve it. Lower
+      than this on the card is refused, not raised quietly.
+  cautious:
+    type: boolean
+    description: >
+      True when the card declares MORE than it needs. Allowed and
+      reported - refusing it would teach people to declare the minimum.
+  why:
+    type: string
+    description: What was written, at what status, with how many utterances.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That not one utterance was invented; that it
+      entered at DRAFT and the author got no say; that nothing here ran
+      the skill; whether the risk was declared cautiously; and that the
+      step and version came out of this agent's own header.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  # An id carrying a path separator, climbing with `..`, or
+  # absolute. A skill id names a skill; it is not a path, and the
+  # drafts this agent writes are model-generated.
+  - ID_IS_NOT_A_NAME
+  - NOTHING_TO_AUTHOR
+  - NOT_A_DRAFT
+  - INCOMPLETE
+  - TOO_FEW_UTTERANCES
+  - NAMES_A_FRAGMENT
+  - NOT_A_VERSION
+  - NOT_A_RISK
+  - RISK_IS_UNDERSTATED
+  - ALREADY_EXISTS
+
+retry:
+  attempts: 0
+  on-failures: []

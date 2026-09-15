@@ -1,0 +1,79 @@
+# Folder Creation Agent - HERON-WSP-CRE-002
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY. It creates nothing: the list comes back and a caller makes
+# the folders.
+
+agent: HERON-WSP-CRE-002
+version: 1.0.0
+
+input:
+  existing:
+    type: list
+    required: false
+    description: >
+      Folder names already present, HANDED IN. An agent that looks and
+      then acts on what it saw is the shape of the mistake - the same
+      reasoning HERON-INS-BRN-007 applies to knowledge stores.
+  is_file:
+    type: callable
+    required: false
+    description: >
+      Asked whether a FILE already holds a folder's name. A list is
+      accepted in its place. Making a folder over a file either fails or
+      destroys it depending on the platform.
+  root:
+    type: string
+    required: false
+    description: >
+      Where docs/06-heron-platform.md is. The structure is READ from that
+      document, never retyped here - a second copy of a nineteen-line
+      list is a second copy to drift.
+
+output:
+  created:
+    type: boolean
+    description: Always false. A caller makes the folders.
+  create:
+    type: list
+    description: Each folder to make, with its class.
+  exists:
+    type: list
+    description: >
+      Folders already there, left alone. Re-creating one is not the
+      danger; emptying it is, and this does neither.
+  refused_names:
+    type: list
+    description: Names a FILE already holds.
+  unclassified:
+    type: list
+    description: >
+      Folders docs/06 s2 DRAWS and does not classify - RAG, Community,
+      Configuration, Tests, Documentation. Read as DATA here, because
+      nothing can show they are not the user's. PROPOSALS F11.
+  of:
+    type: integer
+    description: How many folders the tree has, so a caller can check the split.
+  why:
+    type: string
+    description: The four counts, and that nothing was created.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was created and `existing` was handed
+      in, that every folder lands in exactly one list, what the missing
+      classes would cost, and that the structure was read rather than
+      retyped.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NO_STRUCTURE
+  - A_FILE_HOLDS_THAT_NAME
+
+retry:
+  attempts: 0
+  on-failures: []

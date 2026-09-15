@@ -1,0 +1,89 @@
+# Import Indexing Agent - HERON-IMP-IDX-013
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY, and what it modifies is index rows - no fragment, no file
+# and no status. It builds no index of its own: HERON-RAG-IDX-010's and
+# HERON-RAG-EMB-008's are called, bound by identity.
+
+agent: HERON-IMP-IDX-013
+version: 1.0.0
+
+input:
+  store:
+    type: callable
+    required: true
+    description: >
+      The open scope the import is entering. Opened by whoever runs the
+      pipeline, not here - this agent writes into it and opens nothing.
+  accepted:
+    type: map
+    required: true
+    description: >
+      The result a human said yes to - {accepted, by, items}, each item
+      carrying HERON-IMP-APR-014's name, kind and from, plus the library
+      `id` that HERON-IMP-REN-010 asked for. PRESENTED IS NOT ACCEPTED:
+      that agent prepares a manifest and accepts nothing, so its answer
+      handed straight through is refused.
+
+output:
+  indexed:
+    type: boolean
+    description: True when the accepted result was read and the indexes run.
+  by:
+    type: string
+    description: >
+      Who accepted it. An acceptance nobody signed is refused - Golden
+      Rule 7, no agent approves itself.
+  of:
+    type: integer
+    description: How many accepted items were read.
+  ran:
+    type: map
+    description: >
+      Each index that was run, with what it wrote and what it left
+      unchanged. The keyword index rebuilds the whole library every run;
+      the vector index is content-hashed and re-embeds only what changed.
+  found:
+    type: list
+    description: >
+      The accepted fragments the library holds, which are the ones the
+      index could reach.
+  not_in_the_library:
+    type: list
+    description: >
+      Accepted fragments with no row in the library. Both indexers read
+      the library, so an item that is not saved cannot be indexed -
+      docs/10 s5 orders index before save, and that is PROPOSALS F26.
+  no_index:
+    type: list
+    description: >
+      Accepted items of a kind nothing here indexes, named rather than
+      counted as done (Golden Rule 14). A skill is one: neither
+      heron_search nor heron_embed knows the word.
+  why:
+    type: string
+    description: The counts, who accepted, and what each index wrote.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That no index was built here; that indexing is
+      the step where the import becomes FINDABLE, because DISCOVERED is
+      in heron_retrieve's OFFERABLE list; what the library does not
+      hold; what nothing indexes; that no status was written; and that
+      when to run is HERON-OPS-SCH-001's, because docs/11 s157 says
+      re-indexing must not compete with a user who is modelling.
+
+allowed-tools: []
+
+timeout-seconds: 600
+
+failures:
+  - NOTHING_TO_INDEX
+  - NOT_ACCEPTED
+  - NOT_AN_ITEM
+  - NO_LIBRARY
+
+retry:
+  attempts: 0
+  on-failures: []

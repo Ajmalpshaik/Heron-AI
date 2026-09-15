@@ -68,6 +68,14 @@ knowledge store.
   `revit/` or `tools/`. **It greps file text, so a comment counts.**
   [`heron-guard`](../heron-guard/SKILL.md) now refuses that one at edit time; this still catches
   everything else and anything that reached disk another way.
+
+  **The way this actually fires is a FIXTURE or a COMMENT, four times in one session on 2026-09-15.**
+  Writing a `brain/` agent about imported pyRevit code, or about what a clash check would need, the
+  natural thing to type is the real namespace — in a demo folder's fake `script.py`, in a test's
+  "a .txt that holds code", in a docstring explaining what cannot be done here. Every one was caught and
+  every one was the gate being right: the fixture only ever needed *code*, not *Revit* code, and the
+  prose can say "the Revit API's own solid-intersection filter" without naming it. Reach for a different
+  vendor prefix in fixtures, and describe the API rather than spelling it.
 - **`check-metadata`** — every source file's header.
 - **`check-package`** — the delivery questions, and it is the only thing in the repository that reads
   `Heron.addin`. An entry class that no longer exists, an assembly the project does not build, or a
@@ -99,6 +107,25 @@ that the failures **do not share a reason**, because a lump total is how a real 
 | `test_bridge_roundtrip.py` | a **built .NET test host** | `dotnet build tests/Heron.Bridge.TestHost` |
 
 `test_mcp_serves.py` exits **3**, not 1, so `check-gaps.py` reports it as waiting rather than failing.
+
+**Install them rather than excusing them.** On 2026-09-15 a session treated all three as unavoidable
+on Linux for weeks. They are not: the three commands above take a few minutes on a fresh container and
+**all 163 suites then pass**. None of them ever needed Windows or Revit. If a run reports these three
+and nothing else, the honest next step is to install and re-run, not to write "the known three".
+
+Two wrinkles worth not re-discovering:
+
+* `pip install --user mcp` alone leaves the SDK importable but **panicking** on some images —
+  `pyo3_runtime.PanicException` out of the distro's `cryptography`. `pip install --user --upgrade
+  cryptography` fixes it.
+* The .NET SDK is an apt package (`dotnet-sdk-8.0`), but 2025–2027 need the **WindowsDesktop targets**
+  that only `dotnet-sdk-10.0` carries — `tools/check-compile.py` says so itself when it skips them, and
+  a skip is not a pass. Run `apt-get update` first; a stale index 404s on the .deb.
+
+**This is about your machine, not about CI.** `.github/workflows/gates.yml` leaves both out on
+purpose — they drag in native dependencies that break for reasons unrelated to this repository — and
+its `fixed` check **fails the build if a listed suite passes there**. So install locally, run the full
+163, and leave that list alone unless the runner itself changes.
 
 **Nothing else should fail on any machine.** `test_graph.py` and `test_reachable.py` were on this list
 until 2026-09-12, when both were fixed rather than excused — each had a fixture describing a repository

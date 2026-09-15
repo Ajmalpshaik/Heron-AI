@@ -775,3 +775,1214 @@ trust level and gains a validator, whether it is joined by an approval record as
 fragment written in this repository is entitled to claim about itself are three decisions, not a patch.
 `HERON-INS-SUP-013` is built to take the answer — it compares a package's claim against a register from
 outside it and refuses `SELF_DECLARED_TRUST` — and needs that register to exist.
+
+### 🟡 F10. Two files claim one agent id, and nothing has ever reported it
+
+**Found 2026-09-15 by `HERON-WSP-REG-012` on its first run against the real repository** — not by a
+fixture, and not by reading. Both of these carry `Heron-Agent: HERON-FRG-VAL-001`:
+
+```bash
+grep -l 'HERON-FRG-VAL-001' brain/*.py
+head -3 brain/heron_fragment.py brain/heron_validate.py
+```
+
+| file | step | what it is |
+|---|---|---|
+| `brain/heron_fragment.py` | 7 | *"What a fragment IS on disk, and the validator that will not let it lie"* |
+| `brain/heron_validate.py` | 17 | *"The Fragment Validation Agent. It gathers evidence for a proof. It never signs one."* |
+
+**Nothing in the repository can see this.** [`tools/check-metadata.py`](../tools/check-metadata.py)
+checks that each claimed id EXISTS in the register, then collects them with `claimed.add(aid)` into a
+**set** — so two files claiming one id collapse to one entry and the count comes out right.
+`tools/agent-count.py` counts the agent as built either way. Both gates pass, and have all along.
+
+**Multi-file agents are legitimate here** — several agents span `brain/` and `mcp/`, or a module and
+its C# half, and the register row for `HERON-FRG-VAL-001` is broad enough to cover both halves:
+*"Logic, API, versions, dependencies, metadata, duplication, reusability"*. So this is **not
+automatically a defect**, which is exactly why it needs a person rather than a patch.
+
+**The question is which of three things it is**, and only the owner can say:
+
+1. **One agent, two files, correctly** — the format half and the evidence half. Then nothing changes
+   except that the gate should stop being blind to the pattern.
+2. **Two agents wearing one id** — the schema validator is arguably `HERON-FRG-FMT-*` work and not
+   validation at all. Then one of them needs its own registry row.
+3. **A rename that never finished** — the usual cause, and the one the gate's own comment warns about
+   two lines further down.
+
+**Not fixed here, deliberately.** Splitting an agent or renaming one is an ADMIN act needing a
+signature — `HERON-AHR-RET-010` refuses it without one — and picking a winner would make the other
+file invisible, which is the precise thing `HERON-WSP-REG-012` refuses to do.
+
+**Worth adding whichever way it goes:** a check that reports one id claimed by more than one file.
+Today that costs nothing to add and surfaces a real ambiguity; it stops costing nothing the first time
+a rename half-lands and two files disagree about what they are.
+
+#### CORRECTION, the same day: that check was written, measured, and NOT kept
+
+The line above was the obvious next move and it is wrong. Before adding it, the repository was measured:
+
+```bash
+python - <<'EOF'
+# every id claimed by more than one file OUTSIDE tests/
+EOF
+```
+
+**Fourteen ids are claimed by more than one non-test file, and most of them are correct.**
+
+| a sample | why it is fine |
+|---|---|
+| `HERON-REVIT-CMP-021` — three C# files | one feature spread over the files that make it |
+| `HERON-SES-DIS-001` — the Python client and `BridgeIdentity.cs` | the two halves of discovery, in two languages |
+| `HERON-WSP-PTH-007` — `heron_paths.py` and `HeronPaths.cs` | *where* things live and *which class* they are |
+| `HERON-RAG-RNK-006`, `CTX-007`, `LIB-001` — each also on `heron_retrieve.py` | that module is **the orchestrator**: its own docstring says *"the whole lookup, in the order docs/05 §4 sets out"*, so it is the place those steps happen in order |
+
+So a shared id is **the norm here, not a defect**, and the proposed check would have reported fourteen
+things of which most need no action — noise, not a guard. It was not added.
+
+**What that leaves.** The original observation stands for `FRG-VAL-001` specifically: two files, both
+validators, and nothing says which is the agent. What does not stand is the general rule. **Nothing in
+a header can distinguish a deliberate split from a stale one** — the shape is identical — so the
+question for the owner is not *"why are there duplicates"* but *"should a header say which file is the
+agent and which files merely implement part of it"*. That is one field, or a convention, and it is a
+different decision from the one this row first asked for.
+
+### 🟠 F11. docs/06 §2 draws nineteen folders and classifies fourteen
+
+**Found 2026-09-15 by `HERON-WSP-CRE-002`**, which reads the tree out of that section rather than
+carrying a copy — so the first thing it did was ask each folder what class it was in.
+
+[docs/06 §2](06-heron-platform.md) draws the workspace as nineteen folders, then immediately puts
+folders into **Product / Data / Derived**. The table covers fourteen. These five are drawn and
+classified by nothing:
+
+```
+RAG   Community   Configuration   Tests   Documentation
+```
+
+Derive it:
+
+```bash
+python brain/heron_folders.py            # the five are listed under "NO CLASS"
+```
+
+**The class is not a label — it is the only thing that answers three questions**, and every one of
+them is now asked by an agent in this repository:
+
+| question | who asks | what the wrong answer does |
+|---|---|---|
+| may a product update replace it wholesale? | `HERON-OPS-UPD-010` rule 6 | a practice's work is gone |
+| may a cleanup delete it outright? | `HERON-WSP-CLN-009` | same, more quietly |
+| does a backup cover it? | `HERON-WSP-BAK-010` | it is not there when needed |
+
+**`Configuration` is the one to settle first.** [docs/21 §9](21-resilience-and-operations.md) makes
+configuration a **security boundary** — it holds the security policy, the update policy and the
+company standards, and `HERON-INS-CFG-006` already splits it into machine-specific and portable
+halves. If the folder reads as **product**, an update replaces a practice's security policy with the
+shipped defaults, and nothing in the specification currently says it must not.
+
+The other four have plausible answers that are still nobody's decision on record:
+
+- **`RAG`** — [docs/07 §8](07-installation-and-update.md) says *"the vector index is the easy case — it is derived"*, which points at **derived**. But the folder may hold more than the index.
+- **`Community`** — [docs/00d §37](00d-additional-requirements.md) says imported community components are untrusted by default. `Packages` is product; is `Community` product too, or data because the user installed it?
+- **`Tests`**, **`Documentation`** — most likely **product**, and cheap to say so.
+
+**Not fixed here.** Adding a row to the class table changes what four agents do to a folder, and
+`HERON-WSP-PTH-007` is deliberately not extrapolated — the same reason D-05 refuses to guess a Revit
+release. Until it is answered, `heron_paths.classify()` returns `UNKNOWN` for all five and `may()`
+reads UNKNOWN as **data**, so nothing removes or overwrites them. That is the safe failure, not a fix:
+it also means a backup does not cover them and a cleanup leaves rubbish behind.
+
+---
+
+### 🟠 F12. "Template" means two opposite things, and one of them is never allowed to leave
+
+**Found by:** building `HERON-WSP-TPL-006`, the Template Agent, 2026-09-15.
+**Status:** open. The agent takes the narrow reading and says so in its own answer.
+
+[docs/12 §97](12-security-and-permissions.md) is unusually firm, and the wording is the owner's own:
+
+> The rule Ajmal actually set draws the line at **the file, not the information**: a `.rvt`, an
+> `.rfa`, a family or project template is **never** uploaded.
+
+[docs/00 §1115](00-master-specification.md) lists, as possible marketplace packages:
+
+> Skills, Fragments, Agent packs, BIM standards, Revit tools, **Project templates**, Company extensions.
+
+and [docs/00d §325](00d-additional-requirements.md) lists **company templates** the same way. A
+marketplace package is, by definition, a file that leaves.
+
+**So the specification says a project template is shippable and that a project template is never
+uploaded.** Both lines are correct if the word carries two senses, and nothing written says it does:
+
+| the word | what it is | how big | may it leave? |
+|---|---|---|---|
+| a Heron workspace/project template | a list of folder names a new job starts from | hundreds of bytes | the marketplace lines say yes |
+| a Revit project or family template | `.rte`, `.rft` — the office's own starting file | hundreds of megabytes | docs/12 §97 says never |
+
+In a Revit practice the second is what the word means. Anyone reading "project templates" on a
+marketplace page reads it as the `.rte`.
+
+**What the agent does until this is answered.** `HERON-WSP-TPL-006` takes the narrow reading, and
+enforces it structurally rather than by remembering it: **a template names, it never carries.** A
+template entry is a folder name and a reason — never a file body, never a path to one. Two separate
+refusals, because they are two different mistakes:
+
+| | |
+|---|---|
+| `A_REVIT_FILE_IS_NAMED` | any of `.rvt` `.rfa` `.rte` `.rft`, **by name alone**, with nothing attached. A template that names the office `.rte` is one read away from carrying it |
+| `TEMPLATE_CARRIES_A_FILE` | an entry with `bytes`, `body`, `content`, `data`, `source`, `from`, `file`, `path` or `url` |
+
+and the module itself uses no `open(`, no `shutil`, no `.read()` and no `urlopen` — so there is
+nothing in a template that *could* be uploaded. The suite asserts all of that against the code.
+
+```bash
+python tests/test_templates.py           # 3. A template cannot carry
+```
+
+**Not fixed here.** Deciding it is one line in docs/00 — either *"project templates are name lists,
+not `.rte` files"* or *"the marketplace may carry an `.rte` under these conditions"*. The second is a
+change to the rule the owner set, so it is not one an agent may assume.
+
+---
+
+### 🟡 F13. A project folder and a workspace folder with the same name get different classes
+
+**Found by:** the same build. **Status:** open, and narrower than F11.
+
+`HERON-WSP-PTH-007`'s `classify()` tokenises a path and answers on the first **data** word it finds
+anywhere in it. That is right for what it was built for and it has this consequence:
+
+```
+classify("Cache")                    ->  derived
+classify("Projects/Tower A/Cache")   ->  data
+```
+
+The same leaf name, two classes, decided by what sits above it. A cleanup that clears **derived**
+removes one and spares the other; a tool holding only the leaf name gets the opposite answer from one
+holding the whole path — and `HERON-OPS-UPD-010` asks with a component **name**, not a path.
+
+**What the agent does.** `HERON-WSP-TPL-006` refuses `RESERVED_WORKSPACE_NAME` for any of the
+seventeen words the class table is made of, so a template cannot create a project folder whose fate
+depends on who is asking. The reserved list **is** `heron_paths.FOLDERS`, read from it, not a second
+copy.
+
+**Not fixed here.** The fix is either a path-aware `classify()` that only matches at the top level,
+or a documented statement that the leaf-name answer is the intended one. Both change what four
+agents do to a folder, so it is the owner's call — the same reason F11 is still open.
+
+---
+
+### 🔴 F14. Three different projects write to one knowledge file, and the code says why that is a breach
+
+**Found by:** building `HERON-WSP-PLC-005`, the File Placement Agent, 2026-09-15.
+**Status:** open. **Measured, not read** — the numbers below come from running the code.
+
+`brain/heron_scope.py`'s `scope_path()` turns a project key into a filename through `_safe_key()`,
+which replaces every character outside `[A-Za-z0-9._-]` with a hyphen:
+
+```bash
+cd brain && HERON_KNOWLEDGE=/tmp/hk python -c "
+import heron_scope as S
+for k in ['Tower B', 'Tower/B', 'Tower-B']:
+    print('%-10r -> %s' % (k, S.scope_path('project', k)))"
+```
+
+```
+'Tower B'  -> /tmp/hk/projects/Tower-B.db
+'Tower/B'  -> /tmp/hk/projects/Tower-B.db
+'Tower-B'  -> /tmp/hk/projects/Tower-B.db
+```
+
+**Three projects, one file.** Two lines above the function that does it, `scope_path()`'s own
+docstring says what that costs:
+
+> Heron does not guess which project this is: guessing wrong writes one client's knowledge into
+> another's file, which is a **contractual breach rather than a bug** (docs/10 §2).
+
+It refuses to guess when the key is **missing** and then quietly collapses two keys that are
+**present and different**. The second is the same harm as the first, arrived at more quietly.
+
+**What keeps it from biting today, and what does not.** The key is *meant* to be the document's
+Project Information `UniqueId` — hex and hyphens, which never collides. Nothing enforces that.
+`scope_path()` accepts any string, and three shipped command lines document handing it a typed name:
+
+| | |
+|---|---|
+| `brain/heron_conflict.py:12` | `--scopes company,project --project "Tower B"` — the agent's own usage line |
+| `brain/heron_ingest.py:1593` | `project = _flag(argv, "--project")` |
+| `brain/heron_research.py:741` | `project = _flag(argv, "--project")` |
+
+So the safe case is the intended one and the unsafe case is the documented one.
+
+**Not fixed here**, and the reason is not caution. Any fix moves where existing knowledge lives:
+
+- **reject a key that is not a UniqueId** — correct, and it breaks the three command lines above and
+  every store already named after a typed name;
+- **hash the key instead of reducing it** — removes the collision and makes every existing
+  `projects/*.db` unreachable, so it needs a migration under [docs/07 §8](07-installation-and-update.md)
+  (idempotent, versioned, reversible-or-backed-up) — which `HERON-WSP-MIG-008` can now plan;
+- **keep the reduction and record the original key inside the store** — smallest change, detects a
+  collision after it has happened rather than preventing it.
+
+Picking among those is the owner's call, and it is the same shape as D-05: do not extrapolate.
+
+**What the new agent does about it.** `HERON-WSP-PLC-005` takes the opposite rule and states it:
+**a name that would have to be rewritten to be usable is refused, never cleaned up.** A project
+called `Tower/B` is a refusal (`NAME_IS_NOT_A_PLACE`); `Tower B` is placed at `Projects/Tower B/…`
+*as given*, space and all. The suite proves the rule by running `heron_scope` and watching the three
+names arrive at one file, so the finding cannot quietly stop being true:
+
+```bash
+python tests/test_placement.py     # 3. A name is refused, never cleaned up - and here is the cost
+```
+
+---
+
+### 🟡 F15. The Naming Agent's own name has no stated shape, and two documents disagree about its parts
+
+**Found by:** building `HERON-NAM-VAL-002`, the Naming Validation Agent, 2026-09-15.
+**Status:** open. The validator refuses that one kind of name rather than guessing it.
+
+The department's rule is stated twice, as a goal:
+
+> **"Naming must be predictable and searchable."** — [docs/06 §134](06-heron-platform.md), [docs/00 §517](00-master-specification.md)
+
+That is what naming is *for*. It is not a convention: it gives no separator, no case, no order and no
+allowed character set. The only two statements of what a generated name is **made of** disagree:
+
+| source | the parts |
+|---|---|
+| [docs/28](28-agent-registry.md), `HERON-NAM-GEN-001` | domain, capability, purpose, platform, **version** — five |
+| [docs/00c §368](00c-master-handover-baseline.md) | domain · capability · purpose · platform · version · **component type** — six |
+
+So `HERON-NAM-GEN-001` is asked to generate a name whose shape nobody has written down, and
+`HERON-NAM-VAL-002` is asked to check it against a convention that does not exist.
+
+**Everything else in the system is fine**, and that is what makes this narrow rather than alarming.
+Four kinds of name *are* stated, and the validator reads each from the file that owns it:
+
+| kind | where the rule lives |
+|---|---|
+| agent id | `docs/28`'s own rows, through `heron_fragment.registry_agents()` |
+| fragment id | `heron_fragment.ID_PATTERN` and `.AREAS` |
+| capability | `heron_fragment.CAPABILITY_PATTERN` |
+| the fragment folder | [docs/29 §130](29-metadata-standard.md) — the capability, lower case, hyphens, **"derived, never invented"** |
+
+Two more are **observed and stated nowhere**: every module in `brain/` is `heron_<name>.py` and every
+suite in `tests/` is `test_<name>.py`, with no exceptions and nothing enforcing it. The validator
+reports those as `UNLIKE_EVERY_OTHER` rather than `WRONG_SHAPE`, and puts the count in the answer,
+because *"unlike all 63 of its neighbours"* and *"against a written rule"* are different claims.
+
+**What it does about the seventh.** `generated-name` is refused as `UNSTATED_CONVENTION` — never
+guessed. A guess here would silently **become** the convention, because this validator would be the
+only thing enforcing one, and a convention arrived at that way is the hardest kind to change later.
+
+**Not fixed here.** Settling it is one line saying which list of parts is right and what the name looks
+like — a separator, a case, an order. That is a decision about what the product's filenames read like,
+which is the owner's.
+
+---
+
+### 🟠 F16. The register asks for a synonym table and D-34 forbids one
+
+**Found by:** building `HERON-NAM-KEY-005`, the Keyword Agent, 2026-09-15.
+**Status:** open, but **the agent is built** — D-34's own consequences settle it, and the resolution is
+worth confirming rather than assuming.
+
+[docs/28](28-agent-registry.md) gives the Keyword Agent:
+
+> Search terms and **synonyms** — "duct", "ductwork", "supply air"
+
+[D-34](DECISIONS.md) says:
+
+> **Heron builds nothing to understand language.** No phrase list, **no synonym table**, no parser for
+> dictated near-misses. That belongs to the host and duplicating it there would be worse than the host's
+> version and would need maintaining forever.
+
+Read the register row on its own and it describes exactly the thing the decision refuses.
+
+**D-34 answers it three lines further down**, in its own consequences:
+
+> A site word that maps to a Revit word is a different problem and is not solved by translation. When
+> somebody says something the model calls by another name, **that is knowledge** — it belongs in Heron's
+> own knowledge store where it can be **looked up and corrected**, not in a language setting.
+
+So the agent holds **knowledge, not language**, and the difference is four rules rather than a
+distinction of wording. Each is a refusal in the built agent:
+
+| | |
+|---|---|
+| it ships **no list** | the table starts empty and stays empty until somebody fills it. The suite proves this by *behaviour* — with nothing handed in, every word comes back unknown — not by searching the source for vocabulary |
+| every entry names a **person and a date** | "looked up and corrected" needs somebody to correct and a date to correct from |
+| an **inference is not a record** | an entry whose `by` reads derived, guessed, inferred, automatic, auto, model, suggested or expanded is refused, and a word recorded *only* that way stays **unknown** — the refusal is not a warning beside a usable answer |
+| an **unknown term is a question** | [D-33](DECISIONS.md): Heron never assumes an input — it asks, and it asks once. Nothing is expanded quietly, and there is no partial answer beside the question |
+
+**What is still open:** the register row's wording. It reads as the forbidden thing and points at no
+decision, so the next person to build from that row alone will build a synonym table. One clause in
+`docs/28` — *"recorded by a person, never inferred — see D-34"* — closes it.
+
+---
+
+### 🟡 F17. Three agents own metadata validity, in two departments
+
+**Found by:** the same build, while checking whether `HERON-NAM-MET-006` already existed.
+**Status:** open. **`MET-006` was deliberately not built** — see below.
+
+| agent | department | what docs/28 gives it |
+|---|---|---|
+| `HERON-STD-MET-014` | Standards & BIM QA | "Enforces the Heron metadata standard on everything Heron creates… also audits the registry against the code" — **built**, `tools/check-metadata.py` |
+| `HERON-FRG-VAL-001` | Fragment Lifecycle | "Logic, API, versions, dependencies, **metadata**, duplication, reusability" — **built**, and claimed by two files (that is F10) |
+| `HERON-NAM-MET-006` | Naming & Taxonomy | "Metadata completeness and schema validity" — **not built** |
+
+The third row's job is a plain subset of the first two. `MET-014` already checks that every artefact
+declares its agent, step, status, version and layer; `FRG-VAL-001` already checks a fragment's card
+against its schema. A third agent would be a third place for the same rule, and every other finding in
+this file is about what happens when one rule lives in two places.
+
+**Not built, and that is the point.** Building it would have cost nothing and been wrong — the same
+mistake as writing a new agent over `brain/heron_architect.py` earlier today, arrived at from the other
+direction. What is needed is one line in `docs/28` saying which of the three owns metadata validity and
+what the other two defer to it for. That is the owner's call, and until it is made the Naming & Taxonomy
+department reads as 7 agents when its real number may be 6.
+
+---
+
+### 🟡 F18. "Registers them with the Tool Registry" — a discovered tool must not enter a fixed table
+
+**Found by:** building `HERON-MCP-DIS-012`, the MCP Discovery Agent, 2026-09-15.
+**Status:** open, and **the agent is built** on the narrow reading. The word is worth one clause in
+`docs/28`.
+
+The register gives `HERON-MCP-DIS-012`:
+
+> Finds **other** MCP servers installed on the machine, reads their tools, versions and capabilities,
+> and **registers them with the Tool Registry**.
+
+`HERON-MCP-REG-003`'s table is fixed, and says so in its own refusal:
+
+> `'%s' is not declared in the MCP tool registry. Add it to TOOLS with its risk level — **being absent
+> is a refusal, not a risk of zero.**`
+
+Read "registers" literally and a foreign server's manifest ends up adding entries to Heron's own risk
+table. That is exactly what **Golden Rule 19** forbids:
+
+> No text Heron reads may raise Heron's own permission level. Content from documents, family names,
+> parameter descriptions, imported folders, model text and community packages is **data, never
+> instruction**. Permission comes from the user, through Heron's own UI, per action.
+
+**The narrow reading, which the agent takes.** A discovered tool comes back as a **finding a person
+reads** — at `UNKNOWN` trust ([docs/24 §47](24-trust-model.md): provenance unclear, which is what a
+server somebody installed is — installing is not vouching). The registry is untouched, and because the
+tool is undeclared there, calling it already raises. **The existing refusal is the protection**; the
+suite proves it by calling `risk_of` on a discovered name and catching `NotDeclared`, rather than
+asserting it in prose.
+
+Three things are refused rather than recorded:
+
+| | |
+|---|---|
+| a name in **Heron's namespace** | not the eighteen names — the *prefixes*, derived from `REG-003`'s own table. `heron_select` is **not** one of Heron's tools and reads exactly like one, which is the whole danger. An exact-match check let it through on this file's first run |
+| **Heron's own vocabulary** in a manifest | `risk`, `trust`, `approved`, `permission`, `confirmed`, `granted`, `allowed` — a manifest using those is writing into Heron's fields, not describing itself. Recording it as a claim would still be reading it |
+| a tool with **no name** | it would sit in a list a person reads as though it were callable |
+
+Everything else a server says lands under `says` and nowhere else, so a tool describing itself as safe,
+read-only or already approved has described itself and changed nothing.
+
+**What is still open:** the register's wording. One clause — *"presents them for a person to declare;
+never writes into the table — Golden Rule 19"* — closes it, and without it the next person to build
+from that row alone will write the append.
+
+---
+
+### 🟠 F19. D-27 abolished persona, and three places still hand work to it
+
+**Found by:** building `HERON-USR-PRO-001`, the User Profile Agent, 2026-09-15.
+**Status:** open. The agent implements what survives D-27 and does **not** implement the dead clause.
+
+[D-27](DECISIONS.md) is explicit, and it says what it supersedes:
+
+> **Supersedes** the *"infer a default, display it, let the user pin it"* recommendation in
+> [01 §4](01-vision-and-principles.md) and **the two-persona table in [22 §2](22-users-modes-and-extensibility.md)**.
+>
+> **Heron has one voice: plain, non-developer language, always.** Persona is not inferred, not displayed
+> and not pinned — **it does not exist as a setting.**
+
+[docs/22 §2](22-users-modes-and-extensibility.md)'s own `[DECIDED 2026-08-28 — D-27]` block puts it more
+bluntly, and it is worth quoting separately because it lives in the other file:
+
+> **There is no persona.** The warning above was right and it argues further than it went: if silent
+> switching reads as unreliability, the fix is not to display the guess — it is not to guess. Heron has
+> **one voice**, and what varies is the **shape of the answer**, read off the **shape of the request**.
+
+Three places still describe the thing it removed:
+
+| where | what it still says |
+|---|---|
+| `docs/28`, `HERON-USR-PRO-001` | *"**Persona** reads this to choose how to speak"* |
+| `docs/28`, `HERON-ORC-PER-003` | *"Communication / Persona Agent — detects role and technical level; **chooses wording**"* |
+| [`docs/22 §3`](22-users-modes-and-extensibility.md) NOTE | *"**Persona** may be inferred — it only changes wording. **Mode** must be granted."* |
+| `docs/28`, `HERON-RPT-CMP-001` | *"Decides what goes in and at what depth **for this reader** — a modeller wants the 47 failures, a BIM manager wants the trend. **Judgement, so a model call**"* |
+
+The third is the one that matters, because it is doing real work in a sentence about security. Its point
+is sound and its example is gone: it contrasts a *grantable* mode with an *inferable* persona in order to
+say why conflating them **"would let a user talk their way into `ADMIN`"**. With persona abolished there
+is nothing inferable left to contrast with — which makes the rule **stronger**, not weaker, and leaves the
+sentence explaining it broken.
+
+**What the agent does.** It holds what survives and implements none of the dead clause:
+
+| | |
+|---|---|
+| **a fact is declared** | somebody said it about themselves. A `by` reading inferred, derived, guessed, detected, assumed, estimated, observed, automatic, auto or model is refused — deciding from a conversation that a user is a beginner is a judgement they did not make and cannot see (D-33) |
+| **a mode is granted** | it carries who granted it and when, and a grant whose `by` is not a person is refused. **No mode held is not User Mode** — a permission boundary that defaults to something is not a boundary |
+| **nothing about how to speak** | there is no tone, level or phrasing field in anything it returns, whatever it is asked |
+
+**A fourth was found later the same day**, building `HERON-RPT-CMP-001`: its row chooses *what goes
+in* by reader, and calls that a judgement needing a model call. D-27 replaced exactly that judgement with
+a five-row table keyed on the **request**, and gave the reason in its own consequences — *"nothing has to
+detect who is talking. A whole class of 'why did it answer differently today' stops being possible rather
+than being made visible."* The agent implements the table and calls no model.
+
+**Not fixed here.** `HERON-ORC-PER-003` is one of the four agents [D-01](DECISIONS.md) delegates to the
+host, so retiring or renaming it is a change to the host contract, and `docs/22 §3`'s note needs rewriting
+rather than deleting — the rule it protects is the reason the User & Personalization department exists at
+all. Both are the owner's, and they are one paragraph apart from being settled.
+
+---
+
+### 🟠 F20. "Strips project identifiers" is the framing D-26 narrowed away from
+
+**Found by:** building `HERON-RPT-RED-003`, the Report Redaction & Release Agent, 2026-09-15.
+**Status:** open. The agent implements D-26 and does **not** strip.
+
+[D-26](DECISIONS.md) opens with a warning to its own reader, which is the reason this is worth raising
+rather than quietly following:
+
+> **This decision was refined three times on the day it was written, each time in the same direction:
+> from *nothing may travel* toward *the file may not travel*. The rule below is the final one. It is
+> narrower than the first two, and commits from that day quote the earlier framings — so the movement is
+> recorded here rather than quietly overwritten, because a reader needs to know which version won.**
+
+And the rule that won:
+
+| Never leaves the machine | **Fine in the conversation** |
+|---|---|
+| The `.rvt` and `.rfa` files themselves | **Project names**, file names, content names |
+| Family and project templates | Element data — counts, sizes, parameters |
+| Any Revit binary | Engineering ideas, reasoning, and code |
+
+`docs/28`'s row for this agent reads:
+
+> The gate before a report can be shared or leave the machine. **Strips project identifiers**, enforces
+> scope, blocks confidential-project egress.
+
+**Project names are in D-26's right-hand column.** Stripping them implements the framing the decision
+moved away from — and doing it quietly is worse than doing it wrongly, because it leaves a report that
+*reads* as anonymised without anybody having decided it should be.
+
+**What survives, and all of it is a refusal rather than a strip:**
+
+| | |
+|---|---|
+| a **Revit binary** attached | `.rvt` `.rfa` `.rte` `.rft` — D-26's own left-hand column, the same rule `HERON-WSP-TPL-006` keeps on the other side of the machine |
+| a **credential** in the text | article 17. Refused whole, not redacted — a report that had a key in it is one somebody should look at, not one to clean and send. The shape is named and the value never is |
+| **more than one project** | D-26's third point: *"project-based knowledge must be kept segregated and separated"*. This is what "enforces scope" means once the stripping is gone, and it is the half of the row that survives whole |
+| a project that has **not declared** this may leave | absence is not permission. docs/12 §85 is about contracts that prohibit egress, and a contract is something somebody signed rather than something to assume from silence |
+
+**Not fixed here.** Rewriting the row is three words, but it is the third row this session found written
+against a superseded decision — with **F16** (the Keyword Agent's "synonyms" against D-34) and **F19**
+(three places still handing work to the persona D-27 abolished). Individually each is a clause; together
+they suggest `docs/28` was written before several of the decisions that now govern it, and a pass over
+the register against `DECISIONS.md` would find whatever else is in the same state. That pass is the
+owner's call, not three more clauses.
+
+---
+
+### 🟡 F21. `docs/09 §94` still carries the promotion gate D-30 replaced, and still calls it open
+
+**Found by:** building `HERON-LRN-PRO-004`, the Learning Promotion Agent, 2026-09-15.
+**Status:** open. The agent follows D-30.
+
+[docs/09 §94](09-skills-and-fragments.md) proposes the lifecycle gates, and two of its lines are stale:
+
+> | VALIDATED → PROVEN | **N successful real executions**, zero unexplained failures, no user corrections *(N to be set — suggest 10)* |
+>
+> Tracked as **[Q-9]** for the value of N and who may approve.
+
+**Q-9 is answered.** [D-30](DECISIONS.md) answers it by rejecting the count outright, and does so with a
+defect from the real library:
+
+> One fragment's record reads: the level chain never tried `RBS_START_LEVEL_PARAM`, so setting a level
+> filter matched **zero** ducts **and reported success**.
+>
+> **A fragment that succeeds while doing nothing passes ten runs. It passes a thousand.** A count measures
+> that nothing threw, which is not the property anybody cares about.
+
+D-30's gate is **one recorded proof against a real model** — dated, naming the model, carrying a positive
+case, a **negative** case (*"this is the one that catches succeeded and did nothing, and a proof without
+it is not a proof"*), and a second route where one exists — recorded by whoever ran it, *"under their
+name and the date, not a tick"*. It also answers the second half of Q-9: who may approve.
+
+So `docs/09 §94` asks for a number D-30 deleted, and points at a question D-30 closed.
+
+**What the agent does.** It follows D-30: a candidate arriving with a thousand successful runs and no
+proof is refused, and **the count is echoed back** so nobody mistakes the refusal for not having noticed.
+A proof with no negative case is refused **before** anything else the proof is missing — the others make
+a proof incomplete, and that one makes it not a proof.
+
+**Why this one is worth its own row.** F16, F18, F19 and F20 are all `docs/28` rows written against a
+superseded decision. This is the same failure in a **different document** — which means the pass those
+findings ask for is not only over the register. Anywhere a document says *"tracked as Q-n"* is worth
+checking against `DECISIONS.md`, because that phrase is exactly what stops a reader looking further.
+
+---
+
+### 🟡 F22. One permission ladder, four copies in `brain/` alone
+
+**Found by:** building `HERON-SKL-CMP-005`, which needed the ladder and refused to add a fifth.
+**Status:** open. Measured, not read.
+
+```bash
+grep -rln 'RISK_LADDER\|RISK_ORDER\|"ANALYZE"' brain/*.py
+```
+
+| file | agent | how it carries it |
+|---|---|---|
+| `heron_capability.py` | `HERON-KRN-CAP-008` | `RISK_ORDER = (…)` |
+| `heron_events.py` | `HERON-KRN-EVT-004` | `RISK_ORDER = (…)` |
+| `heron_hr.py` | `HERON-AHR-HR-002` | `RISK_LADDER = (…)` |
+| `heron_skill.py` | `HERON-SKL-VAL-004` | an **inline tuple** inside `validate()` |
+
+All four are `("READ", "ANALYZE", "SUGGEST", "EXECUTE", "MODIFY", "PUBLISH", "ADMIN")`, all equal by
+value, **none the same object**. Three more modules derive from it — `heron_shadow.py` maps tier to risk,
+`heron_trainer.py` maps risk to permission, `heron_validation.py` keeps `READ_ONLY_RISKS`.
+
+`mcp/server/heron_tools.py` holds a fifth as integers (`READ = 0` … `ADMIN = 6`). **That one is
+legitimate**: [D-48](DECISIONS.md) forbids `brain` importing from `mcp`, so the bridge needs its own —
+and `heron_tools.py`'s own comment already says a rule kept in two places by good intentions is a rule
+that will eventually be kept in one.
+
+**Why it matters more than it looks.** The ladder is ordered, and the order is the security property:
+`MODIFY < PUBLISH < ADMIN` is what makes "propagate the highest risk upward" mean anything. Four
+independent orderings are four chances for one to be edited — a level inserted, one renamed — and the
+copies would still each look right on their own.
+
+**Not fixed here**, and the reason is that the fix is a decision rather than an edit: `brain/` has no
+module that *owns* permission levels. [docs/12 §71](12-security-and-permissions.md) puts risk in the tool
+registry, which is `mcp`'s side of D-48. Somebody has to say which `brain` module is the home — or that
+it belongs in `platform/`, which both layers may import — and that is the owner's call.
+
+`HERON-SKL-CMP-005` imports `heron_capability.RISK_ORDER` and adds no copy. The suite asserts it is that
+module's object, by identity.
+
+---
+
+## F23 — four of the five remaining Documentation agents have no distinct source, or no distinct job
+
+Found while building [`HERON-DOC-SKL-003`](../tools/generate-skill-catalog.py) and
+[`HERON-DOC-API-001`](../tools/generate-api-docs.py), which both had one. The other four do not, and
+they fail in two different ways.
+
+### Two have no input yet
+
+| agent | docs/28 says | what exists |
+|---|---|---|
+| `HERON-DOC-CHG-008` | Added / Improved / Fixed / Deprecated **per version** | **one version** |
+| `HERON-DOC-REL-005` | Structured notes **per release** | **no releases** |
+
+```bash
+git grep -h '^# Heron-Since:' | sed 's/.*: *//' | sort -u   # 0.1.0, and nothing else
+git tag | wc -l                                              # 0
+```
+
+683 files carry `Heron-Since: 0.1.0` and there are no tags. A change log with one section listing 683
+files is true and useless, and a release-notes agent has nothing to write notes about.
+
+**There is a second problem that outlives the first.** `Fixed` and `Improved` cannot be told apart from
+a diff. The only mechanical way is a word list over commit subjects — "fix", "bug", "correct" — which is
+a synonym table wearing a different hat, and [D-34](DECISIONS.md) says Heron builds none. Whoever builds
+`CHG-008` after the first tag still needs an answer to that, and the honest options are a commit
+convention the repository adopts deliberately, or the host classifying under [D-01](DECISIONS.md).
+
+### Two would be a second place for one rule
+
+| agent | docs/28 says | who already does it |
+|---|---|---|
+| `HERON-DOC-RDM-007` | Keeps the README current | `tools/check-docs.py` |
+| `HERON-DOC-ARC-006` | Keeps architecture docs in step with the registries | `tools/check-docs.py` |
+
+`check-docs.py` is `HERON-DOC-VAL-009`, and it already reads `README.md` by name, recomputes every count
+claim in every `.md` against its derived source, enforces the same claim wherever it is made, and checks
+every internal link. Its own comments record three occasions when `README.md` was wrong and section 7 is
+why it is not now.
+
+A second agent keeping the README current would be a second thing that can be right on its own while
+disagreeing with the first — the same objection that stopped `HERON-NAM-MET-006` being built (**F17**).
+
+### What is proposed
+
+1. Build `CHG-008` and `REL-005` **when the first tag is cut**, not before — and decide the
+   `Fixed` / `Improved` question first, as a convention or as the host's.
+2. Fold any check `ARC-006` or `RDM-007` would add **into `check-docs.py`**, rather than beside it.
+3. Either way, the four rows in [docs/28](28-agent-registry.md) should say so, so the next person does
+   not read four unbuilt agents as four missing ones.
+
+**Not acted on.** Retiring or re-scoping a register row is the owner's call, and so is adopting a commit
+convention.
+
+---
+
+## F24 — `docs/09 §151` asks for a percentage that the agent it asks has refused to produce
+
+Found while building [`HERON-FRG-CRE-007`](../brain/heron_generate.py), whose register row is *"Only
+after Fragment Matcher reports nothing reusable"*. [docs/09 §151](09-skills-and-fragments.md) makes that
+mechanical, and names a number:
+
+> Before the Code Generation Agent runs, the Fragment Matcher must have searched and reported. **If a
+> proven fragment covers ≥80% of the request**, generation is not permitted to start from scratch — it
+> must start from that fragment.
+
+**There is no 80%.** `HERON-RAG-FMT-004` is the Fragment Matcher, and
+[`brain/heron_matcher.py`](../brain/heron_matcher.py) returns `matched`, `partial`, `excluded` and
+`brief` — no score anywhere, and not by oversight. Its own rule is *"a near match is not a match"*: a
+fragment short of one declared need will run, half-work and look exactly like a success, so it goes in
+`partial` where **no caller can reach it by reading `matched`**. Putting `0.9` beside it is the precise
+thing that agent was built to refuse.
+
+### What was built instead
+
+The gate is enforced in the Matcher's own vocabulary, which is **stricter** than the percentage rather
+than looser:
+
+| the Matcher says | `HERON-FRG-CRE-007` does |
+|---|---|
+| `matched` is non-empty | refuse — Golden Rule 3, reuse proven knowledge before creating new |
+| `partial` is non-empty | refuse — this IS the "≥80%" case, and the answer names what to start from |
+| both empty | author, at `DRAFT` |
+
+A percentage would let `79%` through. `partial` does not.
+
+### What is proposed
+
+One of two, and both are the owner's:
+
+1. **Restate §151 in the Matcher's vocabulary** — "if the Matcher reports anything in `matched` or
+   `partial`, generation may not start from scratch" — and note that this is stricter than the original
+   80%.
+2. **Make the Matcher score**, and accept that a number beside a near match is the thing
+   `HERON-RAG-FMT-004` refuses to write. Its module says why at length.
+
+**Not acted on.** §151 is a `[NOTE]` proposing enforcement, and changing what it proposes is not a
+build decision. The agent is built to option 1 today and says so in its own answer.
+
+---
+
+## F25 — should the import walk skip `.git`, `node_modules` and build folders?
+
+Found while building [`HERON-IMP-FIL-002`](../brain/heron_walk.py), whose register row is *"Walks the
+folder, identifies file types"*.
+
+[docs/10 §5](10-memory-and-knowledge.md) names the folders this feature exists for — `AJ-Tools`,
+`PyRevit-Tools`, `AEB-Tools`. Every one of those is a working folder, and a working folder is rarely
+only source:
+
+| what is really in there | what a complete walk reports |
+|---|---|
+| `.git/` | thousands of entries, nearly all with no extension — they land in `unnamed` |
+| `__pycache__/`, `bin/`, `obj/` | `.pyc`, `.dll`, `.pdb` — outputs, not knowledge |
+| `node_modules/` | tens of thousands of `.js` |
+
+**The walk skips none of them today, and that is deliberate.** A skip list is a guess about somebody
+else's folder. `.git` is a safe guess; `bin` is not — plenty of people keep hand-written tooling in a
+folder called `bin`, and a silent skip would drop exactly the fragments the import exists to find.
+Golden Rule 14 says never silently discard, and a filter nobody asked for is a silent discard with a
+sensible-sounding name.
+
+### What it costs to leave it
+
+The manifest [`HERON-IMP-APR-014`](../brain/heron_import.py) presents is the thing a human reads
+before anything is committed. *"Found 47 candidate fragments"* is reviewable. *"Found 61,400 files,
+54,000 of them with no extension"* is not — the review that constraint 2 depends on stops being
+possible. So this is not cosmetic.
+
+### What is proposed
+
+One of two, and both are the owner's:
+
+1. **A skip list the user sees and can turn off**, shipped with `.git`, `__pycache__`, `node_modules`,
+   `bin` and `obj` in it, and reported in the answer — *"skipped 54,013 entries in 4 folders"* — so a
+   skip is never silent and the reviewer can ask for the full walk.
+2. **Read the folder's own `.gitignore`**, the way [`HERON-GIT-CMT-004`](../brain/heron_commit.py)
+   reads Heron's. It is the author's own statement about what is not source, so it is not a guess —
+   but it covers `bin` and `obj` and does **not** cover `.git`, so it is half an answer at best.
+
+**Not acted on.** Neither is derivable from anything written down, and the first one is a list of
+names somebody has to choose.
+
+---
+
+## F26 — the import pipeline is ordered *index → save*, and both indexes read the library
+
+Found while building [`HERON-IMP-IDX-013`](../brain/heron_index.py), whose register row is *"Indexes
+the accepted result"*.
+
+[docs/00 §28](00-master-specification.md) numbers the pipeline, and [docs/10 §5](10-memory-and-knowledge.md)
+repeats it as a chain. Both end the same way:
+
+> … 13. Update metadata. **14. Validate. 15. Index. 16. Save.**
+
+Heron already has the two indexes that step 15 means, and **both of them read the library**:
+
+| index | agent | what it reads |
+|---|---|---|
+| keyword | `HERON-RAG-IDX-010` — [`heron_search.index`](../brain/heron_search.py) | `store.fragments()` and `heron_fragment.load_all()` |
+| vector | `HERON-RAG-EMB-008` — [`heron_embed.index`](../brain/heron_embed.py) | the same two |
+
+Neither takes a list of items. An accepted fragment that is still only a manifest row has no store row
+and no file on disk, so **step 15 cannot see it until step 16 has run.** The order as written does not
+execute.
+
+### What was built instead
+
+`HERON-IMP-IDX-013` does not resolve it. It calls the two indexes and then reports every accepted
+fragment the library does not hold, by id, in `not_in_the_library` — so the pipeline owner sees exactly
+which items the index could not reach, instead of a success count that quietly covers them.
+
+### What is proposed
+
+One of two, and both are the owner's:
+
+1. **Read the order as written, and read "save" as something later than writing to the library** —
+   committing the import session, or releasing the manifest. Then the item really is in the library
+   before step 15, the numbering is right, and the word `Save` needs one sentence in docs/10 §5 saying
+   what it saves.
+2. **Swap steps 15 and 16** in both documents, so the chain reads *validate → save → index*. That is
+   what the code does today and what `HERON-IMP-MAIN-001` will have to do whatever these documents say.
+
+**Not acted on.** Both specifications say the same thing in the same order, which makes it a deliberate
+sentence rather than a typo, and changing what a specification means is not a build decision.
+
+---
+
+## F27 — five Development rows are already built, and whose work they measure decides by which file
+
+Found while building [`HERON-DEV-NET-006`](../brain/heron_dotnet.py), which turned out to be the
+read-only half of a tool carrying `Heron-Agent: none`. It is not the only one.
+
+Five more Development rows have an existing, working, unclaimed file that matches them — and for four
+of them there are **two** candidates, which one is right depending on a question nobody has answered:
+**does a Development agent act on the artefact Heron is building, or on Heron itself?**
+
+| row | on the artefact | on Heron |
+|---|---|---|
+| `DEV-BLD-010` *compiles across all target frameworks* | `tools/check-fragments-compile.py` — every fragment's C#, every release it claims | `tools/check-compile.py` — the four projects, 2020 to 2027 |
+| `DEV-UNT-011` *runs unit tests* | — | the `tests/test_*.py` sweep, which no file owns |
+| `DEV-INT-012` *integration tests against a mocked Revit boundary* | — | `tests/Heron.Bridge.TestHost` + `test_bridge_roundtrip.py` |
+| `DEV-RGR-014` *golden-file comparison across supported versions* | `tests/golden/cases.py`, `tests/test_golden.py` | — |
+| `DEV-PRF-015` *execution time and resource cost* | — | `tools/measure-brain.py`, which measures exactly those two words |
+
+### The precedent points one way and the files point the other
+
+The **one** Development row already claimed by a tool is `DEV-RVT-013`, on
+[`tools/batch-prove.py`](../tools/batch-prove.py) — and that tool proves **fragments**. Under that
+reading the department is the build pipeline for the artefact, `DEV-PRF-015` measures a fragment's cost,
+and `measure-brain.py` measures the *builder* rather than the thing built.
+
+Under the other reading, the repository is the artefact — which is how `DEV-REL-018` is already claimed
+by `tools/check-package.py`, and that packages **Heron**, not a fragment.
+
+**So the two rows already claimed disagree with each other.** That is not something a build decision can
+settle.
+
+### What was done instead
+
+Nothing was relabelled. `tools/measure-brain.py` gained the half it was missing — docs/28 asks
+`DEV-PRF-015` for *"execution time and resource cost"* and it measured only time — and its header still
+reads `none`, with the reasoning in its docstring.
+
+Its old justification for `none` was **stale** and has been corrected: it argued against claiming
+`HERON-OPS-OBS-011` on a row that [D-58](DECISIONS.md) rewrote on 2026-09-09. That agent is built in
+`brain/heron_observability.py`, and the corrected row **names `measure-brain.py`** as what measures the
+latency half.
+
+### What is proposed
+
+**Say which reading governs**, in one sentence in docs/28 §9's heading. Then five rows close by claiming
+files that already work, and `agent-count.py` stops reporting as unbuilt five things that are built.
+
+**Not acted on.** Claiming an id on a guess is the failure this project's whole metadata standard exists
+to prevent, and two already-claimed rows in the same department point opposite ways.
+
+---
+
+## F28 — the import classifies into five words the workspace has never heard of
+
+Found while building [`HERON-IMP-ARC-011`](../brain/heron_belongs.py), whose register row is *"places
+content where the architecture says it belongs"*.
+
+Two agents in the same pipeline use two vocabularies, and **they share no word at all**:
+
+| agent | sorts into |
+|---|---|
+| `HERON-IMP-CLS-003`, step 10 *classify content* | code · documentation · config · metadata · asset |
+| `HERON-WSP-PLC-005`, step 12 *move into architecture* | knowledge · skill · fragment · memory · project · company · log · backup |
+
+Not one word in common. The overlap is checked in `tests/test_belongs.py` against both agents' real
+lists rather than asserted in prose.
+
+### Two of the five have an answer; three do not
+
+`code` and `documentation` are fine — they are not meant to be filed as they stand. Code becomes a
+fragment (`IMP-FEX-004`) or a skill (`IMP-SEX-005`), both of which *are* kinds; documentation is
+ingested into a **scope** (`RAG-DIS-002`), which is not a data folder at all. The agent says so and
+names who runs first.
+
+**`config`, `metadata` and `asset` have nowhere to go**, and the reason is one this repository already
+found. [`HERON-WSP-CRE-002`](../brain/heron_folders.py) reported that [docs/06 §2](06-heron-platform.md)
+draws **nineteen folders and classifies fourteen** — RAG, Community, **Configuration**, Tests and
+Documentation appear in the tree and in no class.
+
+So `config` has a folder with no class, and `asset` has neither.
+
+That is not cosmetic. The class is the only thing that decides whether a product update may replace a
+folder wholesale ([docs/07 §7](07-installation-and-update.md) rule 6), whether a cleanup may delete it,
+and whether a backup covers it. **File an imported `.ini` into an unclassified folder and nobody can say
+whether the next update deletes it.**
+
+### What was built instead
+
+`HERON-IMP-ARC-011` refuses rather than picks. Items carrying one of the five never reach
+`HERON-WSP-PLC-005` — that agent would refuse them as though somebody had guessed at a ninth folder,
+when what really happened is that an earlier step in the same pipeline produced a vocabulary nothing
+downstream reads.
+
+### What is proposed
+
+One of two, and both are the owner's:
+
+1. **Classify the five leftover folders** in docs/06 §2, which closes `config` and settles the four
+   other unclassified folders at the same time. `asset` still needs a home named.
+2. **Say that an import produces only fragments, skills and documents**, and that `config`, `metadata`
+   and `asset` are recorded in the manifest and **not imported** — which is a defensible answer and
+   should be written down rather than left to each agent to discover.
+
+**Not acted on.** Either choice changes what an import *is*, and both need a folder classified or a
+category dropped.
+
+---
+
+## F29 — the panic button cannot press itself, and Revit is the reason
+
+Found while building [`HERON-REVIT-RBK-036`](../brain/heron_rollback.py), whose register row is *"the
+panic button. Reverses **everything** Heron did this session, newest first, using the audit log's
+transaction groups."*
+
+**Revit exposes no API to undo a NAMED transaction group.** This was measured, not assumed:
+`PostableCommand.Undo` was compiled against the reference assemblies for **2020, 2024 and 2027** and
+exists on all three — so Heron *can* post an undo. What it cannot do is choose which one. An undo takes
+the **top of the stack**.
+
+Two things follow, and neither is a defect in this repository:
+
+**1. A rollback is N undos, and N is not knowable from the trail.** The undo stack belongs to the
+*document*, shared with the person modelling in it. If they moved a wall after Heron's last change, that
+wall sits on top of Heron's entry — and nothing Heron writes records what a person did between two Heron
+operations. The agent therefore reports **how many undo entries Heron made**, in order, and says plainly
+that anything done in between goes first and is not counted. A number that quietly ignored the user's own
+edits would be the most dangerous number in this project.
+
+**2. The executor half does not exist.** Posting the undos has to happen inside Revit, in an API context.
+`brain/heron_rollback.py` is the planner: it groups by document (an undo stack belongs to one), orders
+newest first, and reverses nothing.
+
+### What is proposed
+
+One of two, and both are the owner's:
+
+1. **Build the executor as a `MODIFY` bridge operation** that posts N undos into one document and
+   reports what it posted. It is small — the planner already says exactly what to post — but it is a
+   write path, and [`HeronPermissions`](../platform/Heron.Core/HeronPermissions.cs) keeps writing off
+   until NEEDS-CHECKING group D has passed. It should not be the *second* write path built before the
+   first has ever run in Revit.
+2. **Say that the panic button is a plan a person carries out** — Heron prints "press Ctrl+Z twice in
+   Tower B MEP" — and change the row's word from *reverses* to *tells you how to reverse*. That is
+   honest, needs no new write path, and is arguably safer: the person looking at the model is better
+   placed than Heron to see what else is on the stack.
+
+**Not acted on.** Option 1 adds a write path before the existing one has been proven, and option 2
+changes what the register promises.
+
+---
+
+## F30 — a reference model's profile carries the client's own job number
+
+Found while building [`HERON-STD-REF-010`](../brain/heron_exemplar.py), the Reference Model Profiler —
+by a test that failed, and the test was right.
+
+[docs/10 §5a](10-memory-and-knowledge.md) gives the worked example:
+
+> *"Tower A uses `MEP-DUCT-SUPPLY-L03`; this model has 47 ducts that do not match that pattern."*
+
+That example has no project code in it. **Real delivered models usually do.** On a real job every name
+starts with the job number — `QA-2026-ASHGHAL-MEP-DUCT-SUPPLY-L01` — and the profiler records the shape
+as delivered:
+
+| name | shape |
+|---|---|
+| `QA-2026-ASHGHAL-MEP-DUCT-SUPPLY-L01` | `A-9-A-A-A-A-A9` |
+| `MEP-DUCT-SUPPLY-L07` (a different project) | `A-A-A-A9` |
+
+So the profile learned from Tower A **cannot match anything in Tower B**, and checking a second model
+against it would flag every single element. The capability that exists to save somebody writing the
+standard out produces one that fits exactly one building.
+
+### Why the agent does not just strip it
+
+Because stripping means **guessing which segment is the project**. `QA-2026-ASHGHAL` is three segments
+here and one on the next job; a discipline code like `MEP` sits in the same position on some standards.
+Removing a segment that turns out to be a real part of the convention would teach the opposite of the
+truth — and docs/10 §5a's whole argument is that the delivered model *is* the truth.
+
+The agent reports the shape as delivered and says this out loud in its own answer rather than leaving it
+to be discovered against a second model.
+
+### What is proposed
+
+One of three, and all of them are the owner's:
+
+1. **Ask which segment is the project, once, when the reference is offered** — D-33 exactly. One
+   question, answered by somebody who knows the job, and the profile is then portable.
+2. **Profile TWO delivered models at once** and treat the segments that DIFFER between them as the
+   project code. That is derivation rather than a guess, and it also satisfies docs/10 §5a's own
+   corroboration guard in the same step — but it needs two references before anything can be learned.
+3. **Accept it and say so**: a profile is per project, and a second project needs its own reference.
+   Cheapest, and it loses most of what the capability was for.
+
+**Not acted on.** Option 2 is the most interesting and it changes what the agent takes as input.
+
+---
+
+## F31 — five Standards rows differ only by their subject
+
+Raised on the authority of [`HERON-AHR-WFP-015`](../brain/heron_workforce.py), the row whose job is to
+say **no**: *"before anything is hired — does a capability already cover this, can an existing agent be
+extended, is this a fragment rather than an agent? This is the guard against agent explosion."*
+
+Five rows are left in Standards & BIM QA, and after building four of that department they look like one
+agent with a different noun in front:
+
+| row | what it would do | what is already built |
+|---|---|---|
+| `STD-BIM-001` *applies a stated BIM standard to a model* | cite clauses, check a model | `STD-CMP-002` cites; `QA-BIM-011` checks |
+| `STD-MOD-005` *connections, elevations, practice* | cite clauses about modelling | `STD-CMP-002`, with `subject = modelling` |
+| `STD-QAQ-006` *the organisation's QA process requirements* | cite clauses about process | `STD-CMP-002`, with `subject = QA process` |
+| `STD-LOD-007` *level of development expected at this stage* | cite clauses about LOD | `STD-CMP-002`, plus a **stage** |
+| `STD-DOC-008` *sheet, titleblock and annotation requirements* | cite clauses about documentation | `STD-CMP-002`; sheets and titleblocks are names, which `QA-BIM-011` already routes |
+
+`HERON-STD-CMP-002` opens one scope, retrieves clauses, quotes them, keeps the four nothings apart and
+hands the host the question. **Every one of these five is that, with a different search term.** Writing
+five files that differ by one string is the agent explosion WFP-015 exists to prevent.
+
+### What would genuinely distinguish each one
+
+Worth stating, because two of them nearly have something:
+
+- **`LOD-007` has a second input.** *"Expected at this STAGE"* — the answer depends on where the project
+  is, which is a filter no other standards agent takes. That is a real difference of shape, not of
+  subject.
+- **`BIM-001` and `MOD-005` want to check a MODEL**, not just cite. The checkable half is
+  `QA-BIM-011`'s and the rest — connections, elevations, geometric practice — needs geometry inside
+  Revit, which nothing on this side can reach.
+- **`QAQ-006` could ask whether the process was FOLLOWED**, and the audit trail is evidence. But its row
+  says *requirements*, not compliance, so building that would be inventing a different job.
+- **`DOC-008` is almost entirely already done.** Sheets, titleblocks and view names are names, and
+  `QA-BIM-011` routes all of them to `STD-NAM-004`.
+
+### What is proposed
+
+One of two, and both are the owner's:
+
+1. **Extend `HERON-STD-CMP-002` with a `subject`**, and record all five rows against that one file. Then
+   `agent-count.py` shows five more built, one file is maintained, and `LOD-007` gets its stage
+   parameter as the one genuine addition. This is what WFP-015's ladder — *keep, extend, adapt,
+   version-branch* — points at.
+2. **Build five files that differ by a search term**, because the register says five rows and a row is a
+   row.
+
+**Not acted on.** Option 1 is the same question F27 asks about the Development department — whether a
+row must map to its own file — and answering it once should settle both.
+
+---
+
+## F32 — `redact()` returns two values and reads like it returns one
+
+**Found while building `HERON-DEV-SEC-009`** (Security Review Agent), which has to answer *"is there
+anything credential-shaped in this change"* before handing the evidence to a reviewer.
+
+### What happened
+
+The first version of that agent asked the redactor directly:
+
+    hidden = keeper.redact(text)
+    if hidden != text:        # ...then this field held a secret
+
+That reasoning is sound and the code is wrong. `HERON-KRN-SEC-012.redact` returns **`(clean, found)`** —
+a tuple — because a redaction nothing reports is a leak nobody can investigate, which is the right
+design. But a tuple is never equal to a string, so the compare was true for **every non-empty field**.
+The demo reported *five* credentials in a change carrying one: `allowed-tools`, `by`, `name`, `risk`,
+`token`.
+
+### Why it is worth writing down
+
+It fails in the direction that looks like it is working. A security check that says *"5 credential-shaped
+fields"* looks vigilant. Nobody chases a false positive as hard as a false negative, and the same
+mistake made one line later — `hidden, found = ...` with the halves swapped — gives a check that finds
+nothing and reports clean.
+
+The verb is the problem. `redact(text)` reads as *"give me the redacted text"*, and every caller who
+reaches for it is reaching for one value. The second return is the one that matters and it is invisible
+at the call site.
+
+### What was done here
+
+`HERON-DEV-SEC-009` does not call `redact` at all. It binds **`Secrets.refuse_secret_input`**, which is
+the method already built to answer this exact question, and which settles two further things the loop
+got wrong on its own:
+
+- **It judges the value, not the key name.** Its own comment says so — *"calling the field `token` is not
+  what makes it dangerous"*. A field called `name` holding `"Ajmal"` is not a credential; a field called
+  `blurb` holding a forge token is.
+- **It walks nested maps and lists.** `{"auth": {"header": "Bearer ..."}}` is how a credential actually
+  arrives — nobody puts one in a bare top-level field called `secret` — and a top-level loop walks
+  straight past it.
+
+### What is proposed
+
+Nothing in `heron_secrets.py` is changed by this. Two options, and both are the owner's:
+
+1. **Leave it, and let the composition rule carry the weight.** Golden Rule 3 already says reuse before
+   creating, and a caller that reaches for `refuse_secret_input` instead of `redact` never meets the
+   trap. This is what was done here.
+2. **Rename it `redact_and_report()` or return a small record** with named halves, so the second value is
+   visible at the call site rather than in the docstring.
+
+**Not acted on.** Option 2 touches `HERON-KRN-SEC-012` and everything already calling it, and the agent
+that found the problem is not the agent that should change a kernel interface.
+
+---
+
+## F33 — three contracts promised less than their code does, and nothing could see it
+
+**Found by [`HERON-DEV-DOC-017`](../tools/generate-contract-reference.py) on its first run**, across 121
+contracts. Not a proposal so much as a record of what the check found and why it could not have been
+found before.
+
+### The gap it closes
+
+Every agent's suite checks that its own module names its own declared failures. That check is real and
+it has caught things. But it is **one agent at a time**, and it only runs in one direction: *is every
+promise kept?* Nobody had asked the other question — *is everything the code refuses actually promised?*
+— and that is the direction that breaks at run time. A caller that handles every declared failure and
+still meets an undeclared one has done everything the contract asked.
+
+Three were undeclared:
+
+| agent | refusal | how it comes back |
+|---|---|---|
+| `HERON-AHR-CRT-006` | `NEEDS_A_REGISTER_ROW` | the pipeline stops; a row in docs/28 is a person's decision |
+| `HERON-AHR-REG-008` | `CONTRACT_DUPLICATED` | raised — two files declaring one agent's interface |
+| `HERON-KRN-PRO-011` | `INSTRUCTION_DUPLICATED` | raised — one instruction key declared by two files |
+
+All three are now declared. **Every declared refusal in the repository is reachable**, and every refusal
+is declared.
+
+### It also found a gap in a suite, by fixing a contract
+
+Declaring `NEEDS_A_REGISTER_ROW` turned `tests/test_creator.py` red: its "every declared failure is
+reached" check said the new one was not. It was — by a case two lines above it. The suite collected
+`answer["refused"]` and `HERON-AHR-CRT-006` halts by calling `stop()`, which puts the reason in the step
+record and leaves `stopped_at` and `waiting_on` at the top. **A stop is a refusal in a different shape**,
+and the suite now reads both.
+
+### What the count went through, because it matters more than the count
+
+| reading | undeclared | why |
+|---|---|---|
+| every `SCREAMING_SNAKE` string | **135** | capability names, stated shapes, module constants, and examples an agent quotes to say it does *not* do that |
+| ...ignoring docstrings | 135 | no better — the noise was never in docstrings |
+| by position, underscore required | 5, plus **37 false "broken promise"** | `INCOMPLETE`, `MODIFIED`, `PINNED` are single-word refusals |
+| ...following delegation to excuse | 5 | a pass-through is composition, not a broken promise |
+| ...not reading a suite as its agent | 4 | `NOT_A_FOLDER` was in `tests/test_classify.py`'s fixtures |
+| ...not reading an appended card | **3** | `WRONG_REVIT_VERSION` excludes one fragment; the call succeeds |
+
+**A page of findings that are all wrong is worse than no page.** It teaches the reader to skip the table,
+which is where the real ones are. Four of those six steps were the agent being wrong about somebody
+else, and each was caught by checking the finding against the source before believing the page — which
+is now what `tests/test_contract_reference.py` does for every finding, every run.
+
+### Nothing is proposed
+
+The three contracts are fixed, the suite is fixed, and the check runs on demand. Recorded because the
+*shape* of the mistake generalises: a check that reports a real problem and forty false ones gets
+switched off, and the real problem goes with it.
+
+---
+
+## F34 — D-52 is enforced in Python and unchecked in C#
+
+**Found while building [`HERON-DEV-CSH-005`](../brain/heron_csharp.py)**, which had to establish what
+this repository's C# idiom *actually is* before it could hold an opinion about anything.
+
+### The measurement that killed the obvious rule first
+
+Across the 23 C# files in `revit/`, `platform/` and `mcp/` there are **74 catch clauses**:
+
+| | |
+|---|---|
+| `catch` with no type at all | **30** |
+| `catch (Exception)` | **18** |
+| a narrow type | 26 |
+
+So a *"narrow exception types only"* rule — the first thing a C# agent wants to say — is **false about
+two thirds of the code that already ships**. It is not asserted, and the agent says so in its answer.
+A rule contradicted by the working code is an agent correcting that code on an authority it does not
+have.
+
+### What is true, and nothing checks it
+
+[D-52](DECISIONS.md) is **the plausible zero**: an answer that is wrong in a way nobody doubts.
+[`tools/check-narrow-errors.py`](../tools/check-narrow-errors.py) enforces it, and enforces it well — its
+own docstring records reviews finding the same defect in four files on four consecutive days, which is
+why it became a tool. But it reads **Python only**, and **`sqlite3` handlers only**, because that is
+where it kept happening.
+
+Of the 48 broad C# handlers, **27 leave a fault and the normal case indistinguishable**:
+
+| shape | count | what the caller gets |
+|---|---|---|
+| `catch { }` — empty block | **14** | the fault leaves no trace at all |
+| `catch { continue; }` | **10** | the item drops out of the loop and the count comes back smaller ([Golden Rule 14](../CLAUDE.md)) |
+| `catch { return null; }` / `false` / `new T()` | **3** | a fault comes back as *"nothing found"* — D-52 in as many words |
+
+### Not one of them is claimed to be a bug
+
+Several are certainly right. Iterating every value of a large enumeration and skipping the ones that do
+not resolve is a normal thing to do, and `RevitFragment.cs` does it on purpose. Whether a swallow is
+correct depends on what can actually be thrown at that call, and **only a person reading it knows**. So
+the agent names the line and the shape and stops there; `judged_wrong` is false and always false.
+
+### What is proposed
+
+Three options, and they are the owner's:
+
+1. **Nothing.** The agent exists, it can be run over any file, and a reviewer can ask it. That is what
+   was done.
+2. **Extend `check-narrow-errors.py` to C#**, so the 27 are triaged once and the rule holds in both
+   languages. The risk is a gate that fails on 27 pre-existing handlers on its first run, and a gate
+   that has to be suppressed to be introduced teaches people to suppress it.
+3. **Triage the 27 by hand**, leaving a one-line comment beside each saying what it expects to catch —
+   which is what `RevitLinks.cs` already does for its four narrow ones, citing Golden Rule 14.
+
+**Not acted on.** Option 2 changes a gate everyone has to pass, and option 3 edits 27 handlers across
+files this agent did not write.

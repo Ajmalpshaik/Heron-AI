@@ -1,0 +1,104 @@
+# Taxonomy Agent - HERON-NAM-TAX-004
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register leaves this
+# agent's risk blank. It changes nothing: the scheme is fixed on purpose in
+# heron_fragment, whose own comment says adding an area is a deliberate edit
+# there.
+
+agent: HERON-NAM-TAX-004
+version: 1.0.0
+
+input:
+  identifiers:
+    type: list
+    required: true
+    description: >
+      The ids to measure the scheme against, handed in. An empty list is
+      refused rather than reported as an unused scheme - that would be a
+      statement about the call, not about the scheme.
+  scheme:
+    type: map
+    required: false
+    description: >
+      Area to what it covers. Defaults to HERON-FRG-VAL-001's own
+      heron_fragment.AREAS, read from it rather than copied, so there is
+      no second list to drift.
+  propose:
+    type: map
+    required: false
+    description: >
+      {do, area} - add, rename, split, merge or remove. It is never
+      applied. The answer comes back as a written case with the counts
+      filled in, so the deliberate edit stays deliberate and whoever
+      makes it has the numbers rather than an impression.
+
+output:
+  changed:
+    type: boolean
+    description: Always false. Nothing about the scheme is changed here.
+  areas:
+    type: list
+    description: Each area with what it holds, its share, and what it covers.
+  of:
+    type: integer
+    description: How many ids were placed.
+  largest:
+    type: string
+    description: The area holding most.
+  smallest:
+    type: string
+    description: The area holding fewest.
+  largest_over_smallest:
+    type: number
+    description: A ratio, not a verdict.
+  largest_over_middle:
+    type: number
+    description: The same against the middle area, which one outlier cannot move.
+  splits_to_fall:
+    type: integer
+    description: >
+      How many EVEN splits the largest area would need to stop being the
+      largest. Threshold-free and whole - a fact about the numbers rather
+      than an opinion about them.
+  empty:
+    type: list
+    description: >
+      Areas holding nothing. An unused area is not a wrong one - it may
+      be waiting for work nobody has done - so it is reported, not judged.
+  unshaped:
+    type: list
+    description: Ids that are not shaped like one, carried rather than dropped.
+  undeclared:
+    type: map
+    description: >
+      Present when ids name an area the scheme does not have. That
+      refuses the whole report: an unlisted area is an error rather than
+      a guess.
+  case:
+    type: string
+    description: The written argument for a proposal, with the counts filled in.
+  why:
+    type: string
+    description: The counts, and that no threshold is applied.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was changed and nothing recommended,
+      that no threshold was applied AND no hint given, which areas hold
+      nothing, and which ids were counted nowhere.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_CLASSIFY
+  - NOT_A_SCHEME
+  - NOT_A_PROPOSAL
+  - AREA_NOT_DECLARED
+  - THE_SCHEME_IS_NOT_CHANGED_HERE
+
+retry:
+  attempts: 0
+  on-failures: []

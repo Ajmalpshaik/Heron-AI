@@ -1,0 +1,108 @@
+# ISO Standards Agent - HERON-STD-ISO-003
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ANALYZE and the rule "cites, never invents". docs/05 s150 says to
+# enforce that STRUCTURALLY, and it is: the only text this agent can return
+# is text it copied out of an indexed chunk.
+
+agent: HERON-STD-ISO-003
+version: 1.0.0
+
+input:
+  question:
+    type: string
+    required: true
+    description: What is being asked of the standard.
+  standard:
+    type: string
+    required: true
+    description: >
+      WHICH standard. Required, never guessed - "the standard" names
+      none, and picking one would be choosing whose rules somebody is
+      about to follow (D-33).
+  scopes:
+    type: list
+    required: false
+    description: >
+      Which knowledge scopes to ask, each on its own. Passed to
+      HERON-RAG-RNK-006's librarian, which never merges them.
+  project:
+    type: string
+    required: false
+    description: >
+      The project key, when the project scope is among them. Without
+      one that scope is skipped rather than guessed at.
+  project_name:
+    type: string
+    required: false
+    description: What to call the project in a label, for a person to read.
+  limit:
+    type: integer
+    required: false
+    description: How many clauses per scope.
+
+output:
+  claimed:
+    type: boolean
+    description: >
+      True ONLY when a clause came from a document whose own title says
+      it is that standard. No source, no claim.
+  standard:
+    type: string
+    description: The standard that was asked for, echoed.
+  of:
+    type: integer
+    description: How many clauses of that standard came back.
+  clauses:
+    type: list
+    description: >
+      Each clause of the standard, in its own words, with document,
+      locator, heading path and a path a person can open - and marked
+      `redistributable: false`, because a bought standard may be read
+      here and not published.
+  elsewhere:
+    type: list
+    description: >
+      Documents that matched the question and are NOT the standard, each
+      saying so. Relevance is not authorship: a company method statement
+      talks about the same things and must not answer as the standard.
+  scopes:
+    type: list
+    description: >
+      One row per scope asked, with its route or why it was skipped.
+      Asked separately and never merged (Golden Rule 5).
+  sources:
+    type: list
+    description: The distinct documents the clauses came from.
+  asks:
+    type: list
+    description: >
+      The question with its clauses for the host - or, with nothing
+      indexed, the statement that there is no answer to give and why.
+  why:
+    type: string
+    description: >
+      The counts, or that Heron has no copy of the standard and which
+      scopes were asked.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. docs/05 s150's rule in its own words, and that
+      every word returned was copied rather than written; what matched
+      without being the standard; what was marked unpublishable and why;
+      that WHICH clause answers is the host's; that each scope was asked
+      on its own; and that nothing here knows whether the indexed copy
+      is the current edition.
+
+allowed-tools: []
+
+timeout-seconds: 120
+
+failures:
+  - NOTHING_ASKED
+  - NO_STANDARD_NAMED
+
+retry:
+  attempts: 0
+  on-failures: []

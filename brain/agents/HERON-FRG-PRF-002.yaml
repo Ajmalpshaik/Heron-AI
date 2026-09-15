@@ -1,0 +1,117 @@
+# Fragment Performance Agent - HERON-FRG-PRF-002
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. Nothing is stored and nothing is aggregated across versions.
+#
+# THE COUNTING IS HERON-SKL-PRF-006's, IMPORTED. That row is nearly this one
+# word for word, one layer down, and the arithmetic is identical. A refusal
+# from it is passed through in its own words with `refused_by` set, rather
+# than re-worded here.
+
+agent: HERON-FRG-PRF-002
+version: 1.0.0
+
+input:
+  fragment:
+    type: map
+    required: true
+    description: >
+      The fragment, as a Fragment object or its card. A card declaring
+      no `revit` is refused: per-release is the whole row, and something
+      that has not said which releases it is for cannot have one
+      reported as UNTESTED.
+  runs:
+    type: list
+    required: true
+    description: >
+      Each {revit, outcome} and optionally `corrections` and `seconds`.
+      Read by HERON-SKL-PRF-006, which owns what a run is.
+  matrix:
+    type: map
+    required: false
+    description: >
+      release -> state, from HERON-FRG-MTX-009. Given, a run on a
+      release the fragment does not build for is reported. Left out, the
+      answer says that check did not happen rather than implying it
+      passed.
+
+output:
+  measured:
+    type: boolean
+    description: True when the runs were counted.
+  fragment:
+    type: string
+    description: Which fragment, by slug or id.
+  versions:
+    type: list
+    description: One entry per release with runs. Never one figure across releases.
+  untested:
+    type: list
+    description: Declared releases with no runs. Untested, not passing.
+  never_succeeded:
+    type: list
+    description: Releases where it has never once succeeded. A universal.
+  declared:
+    type: list
+    description: The releases the fragment's own card claims.
+  of:
+    type: integer
+    description: How many runs were read.
+  proof_on:
+    type: string
+    description: >
+      The release the fragment's proof stands on, read by
+      HERON-FRG-MTX-009 rather than re-parsed here.
+  no_proof_because:
+    type: string
+    description: >
+      Why no single release could be named - no proof, none named, or
+      more than one, which is ambiguous rather than good news.
+  contradicted:
+    type: map
+    description: >
+      Set when the proof's release also carries failures. Two records of
+      the same code on the same release disagree; nothing here picks
+      between them, because a proof is evidence a person recorded and a
+      failure is evidence a machine recorded.
+  unwatched_since_proof:
+    type: map
+    description: >
+      Set when the proof stands on a release with no runs at all. One
+      recorded event is what D-30 asks for; it is not evidence that it
+      still works.
+  ran_where_it_does_not_build:
+    type: list
+    description: >
+      Releases carrying runs that the matrix does not call COMPILES or
+      PROVEN. Reported, never resolved.
+  ready_to_prove:
+    type: list
+    description: Declared releases that build and have no runs yet.
+  refused_by:
+    type: string
+    description: >
+      On a refusal raised by the agent that owns the counting, which
+      agent that was.
+  why:
+    type: string
+    description: The counts, and where the proof stands.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. HERON-SKL-PRF-006's four, plus whether the proof
+      and the runs contradict each other, whether a matrix was handed
+      in, and that the counting was imported rather than copied.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOT_A_FRAGMENT
+  - NO_DECLARED_VERSIONS
+
+retry:
+  attempts: 0
+  on-failures: []

@@ -1,0 +1,89 @@
+# Company Standard Agent - HERON-STD-CMP-002
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ANALYZE. Nothing is written. It answers from ONE scope and refuses
+# any other store it is handed.
+
+agent: HERON-STD-CMP-002
+version: 1.0.0
+
+input:
+  question:
+    type: string
+    required: true
+    description: >
+      What is being asked of the company standard, in the words it was
+      asked in. A standard answers a question; it is not a thing to be
+      listed.
+  store:
+    type: callable
+    required: false
+    description: >
+      An already-open COMPANY scope. Omitted means open one. A store of
+      any other scope is REFUSED - a company-standard agent answering
+      out of the project store would make an override invisible at the
+      one moment it matters (docs/20 s2).
+
+output:
+  answered:
+    type: boolean
+    description: >
+      True only when clauses came back. False is a real answer here, not
+      an error - and `route` says which of the four nothings it is.
+  route:
+    type: string
+    description: >
+      HERON-RAG-RNK-006's own route, unaltered - documents, empty,
+      unindexed or nothing. Three of the four are fixable in a minute
+      and one sentence for all four would hide which.
+  of:
+    type: integer
+    description: How many clauses came back.
+  clauses:
+    type: list
+    description: >
+      Each clause IN THE WORDS IT WAS WRITTEN IN, with its document, its
+      locator, its heading path and the path a person can open. Nothing
+      is summarised and no number is converted - reporting 40mm as 4cm
+      would be correcting somebody's standard on the way past.
+  unreadable:
+    type: list
+    description: >
+      Chunks the shortlist named whose words could not be read. Named,
+      never offered as an empty clause somebody might quote.
+  sources:
+    type: list
+    description: The distinct documents the clauses came from.
+  asks:
+    type: list
+    description: >
+      The question, with every clause attached, for the host. WHICH
+      clause answers it is language, and docs/28 makes this row T2 for
+      exactly that.
+  why:
+    type: string
+    description: The counts and the retrieval's own note.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was invented and which of the four
+      nothings this was; that no clause was summarised or converted;
+      that no other scope was read, so nothing here knows whether the
+      PROJECT disagrees - HERON-RAG-CNF-015 surfaces that and
+      HERON-STD-PRJ-009 rules on it; and that whether the standard is
+      right, current or complete was not judged - a superseded revision
+      still in the store answers as confidently as the current one.
+
+allowed-tools: []
+
+timeout-seconds: 120
+
+failures:
+  - NOTHING_ASKED
+  - NO_STORE
+  - WRONG_SCOPE
+
+retry:
+  attempts: 0
+  on-failures: []

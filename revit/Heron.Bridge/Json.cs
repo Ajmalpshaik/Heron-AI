@@ -53,6 +53,55 @@ namespace Heron.Bridge
             return "\"" + Escape(name) + "\": " + (value ? "true" : "false");
         }
 
+        /// <summary>
+        /// One nested object built from the same field writers: {f1, f2}.
+        ///
+        /// Added for HERON-REVIT-LNK-015, which is the first operation whose
+        /// answer is a LIST OF THINGS rather than a list of values. Before it,
+        /// every answer was flat and several ids were sent as one
+        /// comma-joined string - fine for ids, useless for records, because
+        /// splitting "name,status,path,name,status,path" back into rows on
+        /// the far side is a format nobody declared.
+        /// </summary>
+        public static string Obj(params string[] fields)
+        {
+            if (fields == null || fields.Length == 0) return "{}";
+
+            var sb = new StringBuilder("{");
+            var first = true;
+            foreach (var field in fields)
+            {
+                if (string.IsNullOrEmpty(field)) continue;
+                if (!first) sb.Append(", ");
+                sb.Append(field);
+                first = false;
+            }
+            return sb.Append('}').ToString();
+        }
+
+        /// <summary>
+        /// A "name": [ ... ] pair. The items are written already - each is
+        /// whatever Obj, Str or Num produced - so nothing is escaped twice.
+        /// An empty list is written as [], never as null: nothing found and
+        /// nothing asked are different answers.
+        /// </summary>
+        public static string Arr(string name, IList<string> items)
+        {
+            var sb = new StringBuilder("\"").Append(Escape(name)).Append("\": [");
+            if (items != null)
+            {
+                var first = true;
+                foreach (var item in items)
+                {
+                    if (string.IsNullOrEmpty(item)) continue;
+                    if (!first) sb.Append(", ");
+                    sb.Append(item);
+                    first = false;
+                }
+            }
+            return sb.Append(']').ToString();
+        }
+
         /// <summary>A success response carrying zero or more fields.</summary>
         public static string Ok(params string[] fields)
         {

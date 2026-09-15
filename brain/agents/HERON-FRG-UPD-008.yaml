@@ -1,0 +1,110 @@
+# Fragment Update Agent - HERON-FRG-UPD-008
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY and says "never to PRODUCTION without approval". Nothing is
+# written to disk here: the card comes back changed and somebody else saves it.
+
+agent: HERON-FRG-UPD-008
+version: 1.0.0
+
+input:
+  proposal:
+    type: map
+    required: true
+    description: >
+      HERON-FRG-EVO-005's answer, carrying `available`, `ruled_out`,
+      `status` and the fragment's `card`. A verdict that agent ruled out
+      is refused here - applying what Evolution decided is not the same
+      as applying whatever is handed over, and the ruled-out list is
+      where the reasons live.
+  verdict:
+    type: string
+    required: true
+    description: >
+      Which of the eight. SPLIT, MERGE and BRANCH are handed on by name
+      rather than applied: the first two create or destroy a fragment
+      and their agents are SUGGEST, and a branch is a repository act.
+  approval:
+    type: map
+    required: false
+    description: >
+      {by, at, fragment, verdict}. Required only at PRODUCTION, which is
+      where docs/28 and docs/09 s118 ask for it - demanding one below
+      would be inventing a gate. It must name a person, THIS fragment
+      and THIS verdict; one naming neither covers everything.
+  implementation:
+    type: string
+    required: false
+    description: >
+      The new implementation. Required for UPDATE and EXTEND, which move
+      the code - applying one without it would change the status and
+      nothing else, which says a fragment was revised when it was not.
+
+output:
+  applied:
+    type: boolean
+    description: True when the verdict was carried out on the card.
+  fragment:
+    type: string
+    description: Which fragment, by slug or id.
+  verdict:
+    type: string
+    description: Which of the eight was applied, as chosen.
+  was:
+    type: string
+    description: The status before.
+  status:
+    type: string
+    description: >
+      The status after. UPDATE and EXTEND land at DRAFT because they
+      move the code and D-30's proof describes the bytes it was taken
+      against.
+  card:
+    type: map
+    description: >
+      The changed card. Absent on KEEP, which changes nothing - an
+      applying agent that wrote something there would be the quietest
+      bug in the library.
+  changed:
+    type: list
+    description: Which fields moved. Empty on KEEP.
+  proof_kept:
+    type: boolean
+    description: >
+      False when the code moved. The status is not lowered as a
+      punishment; it is lowered because the evidence no longer describes
+      the thing.
+  owner:
+    type: string
+    description: On a handed-on verdict, whose it is.
+  available:
+    type: list
+    description: On a refusal, what Evolution did list.
+  why:
+    type: string
+    description: What was applied, where it landed, and what went with it.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was written to disk; whether the
+      proof survived and why; that the verdict was not weighed against
+      the others; and whether an approval was required at all.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_APPLY
+  - NOT_A_PROPOSAL
+  - NOT_A_VERDICT
+  - NOT_AVAILABLE
+  - NOT_MINE_TO_APPLY
+  - NOTHING_TO_CHANGE
+  - NOT_APPROVED
+  - APPROVED_BY_A_MACHINE
+
+retry:
+  attempts: 0
+  on-failures: []

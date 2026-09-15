@@ -1,0 +1,101 @@
+# Community Contribution Agent - HERON-GIT-COM-010
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent PUBLISH and puts "per-item human review of the actual payload" in
+# bold. Nothing is submitted: allowed-tools is empty and there is no network.
+
+agent: HERON-GIT-COM-010
+version: 1.0.0
+
+input:
+  items:
+    type: list
+    required: true
+    description: >
+      Each {name, payload} and optionally `attachments`. The payload is
+      the thing itself, in full - a summary is what a review of a
+      summary reviews. Two items under one name is refused: a review
+      naming it would review neither.
+  reviews:
+    type: list
+    required: false
+    description: >
+      Each {by, at, item, saw}. ONE PER ITEM. `saw` is the sha of the
+      payload the reviewer read, and it is recomputed here from the item
+      as it stands - a review of an earlier draft is STALE rather than
+      close enough. `by` must be a person: docs/28 asks for HUMAN review
+      in as many words.
+  to:
+    type: string
+    required: true
+    description: >
+      The repository being submitted to. Required because it is one this
+      project does not control, and which one is the first thing a
+      reviewer needs to know.
+  secrets:
+    type: callable
+    required: false
+    description: The credential store to check each payload against. Defaults to a fresh heron_secrets.Secrets().
+
+output:
+  prepared:
+    type: boolean
+    description: True when every item is reviewed and clean.
+  may_submit:
+    type: boolean
+    description: Always true when prepared - the verdict, stated plainly.
+  to:
+    type: string
+    description: The repository being submitted to, as given.
+  items:
+    type: list
+    description: >
+      Each prepared item with the sha that was recomputed, who reviewed
+      it, when, and how many bytes they were looking at.
+  of:
+    type: integer
+    description: How many items were prepared.
+  item:
+    type: string
+    description: On any refusal, which item it was about.
+  reviewed:
+    type: string
+    description: On a stale review, the sha the reviewer saw.
+  is_now:
+    type: string
+    description: On a stale review, the sha the payload has now.
+  found:
+    type: list
+    description: >
+      On a refusal for a credential, what KIND. The value never appears
+      in any output of this agent.
+  why:
+    type: string
+    description: The count, the destination, and that nothing was submitted.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was submitted; that each review was
+      checked against a RECOMPUTED sha rather than the one it carried;
+      that agreement was not measured, only that somebody saw this exact
+      thing; and that what the destination does with it is not this
+      project's to control, which is why the checking happens here.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_SUBMIT
+  - NOT_A_SUBMISSION
+  - NOT_AN_ITEM
+  - CARRIES_A_MODEL
+  - CARRIES_A_SECRET
+  - NOT_REVIEWED
+  - REVIEWED_BY_A_MACHINE
+  - REVIEW_IS_STALE
+
+retry:
+  attempts: 0
+  on-failures: []

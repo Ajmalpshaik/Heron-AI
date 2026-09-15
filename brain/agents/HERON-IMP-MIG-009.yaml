@@ -1,0 +1,111 @@
+# Import Migration Agent - HERON-IMP-MIG-009
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY and makes it T3. It translates nothing: Python to C# is
+# language, and D-28 is why it has to be C# at all.
+
+agent: HERON-IMP-MIG-009
+version: 1.0.0
+
+input:
+  unit:
+    type: map
+    required: true
+    description: >
+      One harvested unit from HERON-IMP-FEX-004 - its name, its code,
+      its computed needs and provides, and where it came from.
+  places:
+    type: list
+    required: false
+    description: >
+      Where HERON-IMP-ARC-011 said it belongs, carried through rather
+      than decided again.
+  releases:
+    type: list
+    required: false
+    description: >
+      Which Revit releases the result will claim. The CALLER'S, and one
+      outside D-05's list is refused - a migration claiming all eight
+      because the Python ran on the machine it was written on is the
+      version boundary going uncovered, which is D-28's own warning.
+  proposed:
+    type: string
+    required: false
+    description: >
+      For `check` - the translated fragment, as code or as a card
+      carrying `code`.
+
+output:
+  briefed:
+    type: boolean
+    description: True when the unit was read and the brief built.
+  from:
+    type: map
+    description: >
+      The original: its name, file, language, code and computed
+      contract.
+  into:
+    type: string
+    description: Always C#. D-28 named the runtime and embedded no Python.
+  must:
+    type: list
+    description: >
+      What the translated result has to satisfy - the language and why,
+      the card fields HERON-FRG-VAL-001 requires, the releases D-05
+      allows, and that it must leave what it promises at the declared
+      type.
+  gates:
+    type: list
+    description: >
+      The gates it must then pass, named rather than run here - the
+      fragment compile harness, and a D-30 proof against a real model.
+  translated:
+    type: boolean
+    description: Always false.
+  checked:
+    type: boolean
+    description: From `check` - true when a proposal was examined.
+  problems:
+    type: list
+    description: >
+      What can be seen WITHOUT a compiler: card fields missing, releases
+      Heron does not know.
+  namesKept:
+    type: list
+    description: >
+      Names the original provided that appear in the proposal. A LOOK,
+      not a finding - a translation may rename anything it likes.
+  namesGone:
+    type: list
+    description: The ones that do not appear.
+  compiled:
+    type: boolean
+    description: Always false. This is not a compiler.
+  why:
+    type: string
+    description: What the unit is, or what the check found.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That the translation itself was not done and
+      why; D-28's reason for C#; that whether the result DOES what the
+      original did is only answered by a proof against a real model;
+      which names did not survive and that renaming is allowed; and that
+      parsing as Python is EVIDENCE, not proof - it catches the
+      migration that renamed a file and changed nothing.
+
+allowed-tools: []
+
+timeout-seconds: 300
+
+failures:
+  - NOTHING_TO_MIGRATE
+  - NOT_A_UNIT
+  - UNKNOWN_RELEASE
+  - NOTHING_TO_CHECK
+  - STILL_PYTHON
+
+retry:
+  attempts: 0
+  on-failures: []

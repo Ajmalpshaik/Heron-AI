@@ -1,0 +1,63 @@
+# Learning Observation Agent - HERON-LRN-OBS-001
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. It concludes nothing: HERON-LRN-ANA-002 decides whether an
+# observation is a pattern.
+
+agent: HERON-LRN-OBS-001
+version: 1.0.0
+
+input:
+  runs:
+    type: list
+    required: true
+    description: >
+      Completed runs, each {workflow, when, outcome, at, corrections}.
+      `corrections` is what somebody changed afterwards - a run that
+      reported success and was then edited by hand is the observation
+      every outcome count loses.
+
+output:
+  observed:
+    type: boolean
+    description: True when runs were read. Nothing is stored.
+  observations:
+    type: list
+    description: >
+      Each run with its SIGNAL - failed, corrected or clean - FAILURES
+      FIRST. docs/28 puts "failure is the higher-value signal" in the row.
+  counts:
+    type: map
+    description: >
+      How many of each signal. Counts, never a rate: D-39 refuses an
+      agreement rate for the same reason, and a caller wanting one can
+      divide with the numerator and denominator in front of them.
+  window:
+    type: map
+    description: First and last run seen. What was not recorded is not what did not happen.
+  of:
+    type: integer
+    description: How many runs were handed in.
+  why:
+    type: string
+    description: The counts, failures first, and that no rate was returned.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was concluded; that a corrected
+      success is a failure signal and how many there were; that no rate
+      was returned and why - D-39; and what window these came from.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_OBSERVE
+  - NOT_A_RUN
+  - NOT_AN_OUTCOME
+
+retry:
+  attempts: 0
+  on-failures: []

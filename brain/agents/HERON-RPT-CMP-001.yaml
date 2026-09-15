@@ -1,0 +1,82 @@
+# Report Composition Agent - HERON-RPT-CMP-001
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent T2 and says "judgement, so a model call". It makes none, and the
+# reason is D-27 rather than thrift - see allowed-tools and PROPOSALS F19.
+
+agent: HERON-RPT-CMP-001
+version: 1.0.0
+
+input:
+  shape:
+    type: string
+    required: true
+    description: >
+      Which of D-27's five the request is - count, breakdown, narrowed,
+      finished, comparison. DECLARED: D-01 gives the host the job of
+      turning a sentence into an intent, and guessing it here would be
+      language understanding (D-34) in a second place.
+  data:
+    type: map
+    required: true
+    description: >
+      What the answer is made of. A number or a countable for a count, a
+      map of group to value for a breakdown, a list of items WITH IDS
+      for a narrowed set, {done, verified, undecided} for a close, and
+      two or more numbers for a comparison.
+  overrides:
+    type: list
+    required: false
+    description: >
+      The user's own lines, each {shape, instead, at}. D-27 calls its
+      table defaults rather than law and asks for a DATED line: "a format
+      correction has to cost one line to record, or it will not get
+      recorded". One without a date is refused.
+
+output:
+  composed:
+    type: boolean
+    description: True when an answer was composed. Nothing was rendered.
+  shape:
+    type: string
+    description: The request's shape, as declared.
+  answer:
+    type: string
+    description: D-27's answer for that shape, in its own words.
+  how:
+    type: string
+    description: D-27's qualifier - "not by quantity", "with their ids", and so on.
+  includes:
+    type: list
+    description: Each part of the answer, with what goes in it.
+  override:
+    type: map
+    description: The user's line that was applied, or null.
+  why:
+    type: string
+    description: The shape, the answer, and any override with its date.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That the shape came from the REQUEST and not the
+      reader - PROPOSALS F19; that no model was called and the reason is
+      D-27; whether an override applied; and that nothing was rendered.
+
+# EMPTY, AND AGAINST ITS OWN REGISTER ROW. D-27 replaced the judgement
+# that row assumes with a table, so there is nothing to ask.
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOT_A_SHAPE
+  - NOTHING_TO_COMPOSE
+  - NOT_AN_OVERRIDE
+  - NO_IDS
+  - AN_INCOMPLETE_CLOSE
+  - NOTHING_TO_COMPARE
+
+retry:
+  attempts: 0
+  on-failures: []

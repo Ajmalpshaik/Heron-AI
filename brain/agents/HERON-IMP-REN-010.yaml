@@ -1,0 +1,74 @@
+# Import Rename Agent - HERON-IMP-REN-010
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY. Nothing is moved or renamed on disk: the answer says where
+# each artefact belongs.
+
+agent: HERON-IMP-REN-010
+version: 1.0.0
+
+input:
+  items:
+    type: list
+    required: true
+    description: >
+      Each {name, kind} and whatever migration has given it so far - a
+      `capability` and an `id` for a fragment, an `id` for a skill. What
+      is missing is ASKED for rather than derived: a capability names
+      what the code does and an id picks an area and a number, and both
+      are choices.
+
+output:
+  filed:
+    type: boolean
+    description: True when the items were read.
+  moved:
+    type: boolean
+    description: Always false. Nothing is moved or renamed on disk.
+  placed:
+    type: list
+    description: >
+      Each artefact with where it belongs and what that was derived
+      from. A fragment's folder IS its capability in lower case - given
+      the capability there is exactly one right answer and nobody
+      chooses it. A skill is <id>.yaml.
+  asks:
+    type: list
+    description: >
+      Items needing an answer first, each with the field and its stated
+      SHAPE, so the answer can be right first time. Deriving a
+      capability or an id from a file name would mean choosing, which is
+      the wall HERON-NAM-GEN-001 was left unbuilt at (PROPOSALS F15).
+  problems:
+    type: list
+    description: >
+      Items whose supplied names the convention refuses, in
+      HERON-FRG-VAL-001's own words. This agent compiles no pattern of
+      its own - the id shape, the area list and the capability shape are
+      all that agent's.
+  of:
+    type: integer
+    description: How many items were read.
+  why:
+    type: string
+    description: The three counts, and that nothing was moved.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was moved and who does move it;
+      which items need an answer and why it cannot be derived; that the
+      convention was called rather than copied; and that a name is not
+      an identity - no id was changed here.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_FILE
+  - NOT_AN_ITEM
+
+retry:
+  attempts: 0
+  on-failures: []

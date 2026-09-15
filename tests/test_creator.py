@@ -84,6 +84,16 @@ def main():
         answer = CRT.run(**kw)
         if answer.get("refused"):
             reached.add(answer["refused"])
+        # A STOP IS A REFUSAL IN A DIFFERENT SHAPE. `stop` halts the
+        # pipeline and puts the reason in the step record rather than at
+        # the top, where `stopped_at` and `waiting_on` say who is owed an
+        # answer. Reading only the top level meant NEEDS_A_REGISTER_ROW
+        # was reached by the case two lines below and counted as
+        # unreached, which is the check reporting a gap in itself.
+        if answer.get("stopped_at") and answer.get("pipeline"):
+            last = answer["pipeline"][-1]
+            if isinstance(last, dict) and last.get("refused"):
+                reached.add(last["refused"])
         return answer
 
     print("1. PROPOSED is the only status it ever assigns")

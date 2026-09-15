@@ -40,6 +40,10 @@ timeout-seconds: 20
 failures:
   - NO_SUCH_AGENT
   - REGISTER_UNREADABLE
+  # Two contract files declaring one agent. One would silently
+  # replace the other as that agent's interface, and sort order is
+  # not a way to settle which of two files is it.
+  - CONTRACT_DUPLICATED
 
 retry:
   attempts: 0

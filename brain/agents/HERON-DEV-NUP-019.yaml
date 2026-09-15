@@ -1,0 +1,103 @@
+# .NET Update Agent - HERON-DEV-NUP-019
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY and says the regression matrix must pass before a change is
+# accepted. It writes nothing: what comes back is the edit list.
+
+agent: HERON-DEV-NUP-019
+version: 1.0.0
+
+input:
+  release:
+    type: string
+    required: true
+    description: >
+      The Revit release to add, as four digits. One Heron already knows
+      is REFUSED - retargeting a supported release would rewrite a table
+      that is correct.
+  runtime:
+    type: string
+    required: true
+    description: >
+      Which .NET runtime that release uses. REQUIRED, never derived:
+      Directory.Build.props refuses to guess it in its own error text,
+      because Autodesk has moved the runtime twice in eight releases
+      (D-05, D-33).
+  root:
+    type: path
+    required: false
+    description: Where to search, when it is not the repository itself.
+
+output:
+  planned:
+    type: boolean
+    description: True when the release and runtime were read.
+  release:
+    type: string
+    description: The release, echoed.
+  runtime:
+    type: string
+    description: The runtime, echoed.
+  of:
+    type: integer
+    description: How many declarations have to change.
+  edits:
+    type: list
+    description: >
+      Each file and symbol, what to add, and whether it is CERTAIN. A
+      declaration holding every known release is certain; one holding a
+      SUBSET was chosen for a reason not in the data; one holding a
+      single release is a SETTING and not a list, so "add 2028" to it
+      would be a false instruction.
+  uncertain:
+    type: list
+    description: >
+      The declarations needing a human eye, each carrying what the given
+      runtime IMPLIES - windows-suffixed or not, and which .NET major -
+      so whoever applies it has the facts rather than a guess.
+  files:
+    type: list
+    description: Every file touched, sorted.
+  gates:
+    type: list
+    description: >
+      The regression matrix, named rather than run - the project compile
+      and the fragment compile. brain may not import tools/, and neither
+      is cheap.
+  applied:
+    type: boolean
+    description: Always false. Nothing is written.
+  accepted:
+    type: boolean
+    description: >
+      Always false until somebody has run the matrix and said so. The
+      register puts that in this row.
+  why:
+    type: string
+    description: The counts, certain and uncertain, and that nothing was written.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That the runtime was not derived and why; that
+      nothing was written; how many places MIRROR the props file and
+      what missing one costs; which declarations need a human eye; that
+      declarations were PARSED rather than grepped, so a year in a
+      docstring does not appear; that nothing is accepted until the
+      matrix has run; and that packages were not bumped, because the
+      Revit API ones follow the release by construction.
+
+allowed-tools: []
+
+timeout-seconds: 120
+
+failures:
+  - NO_RELEASE
+  - NOT_A_RELEASE
+  - ALREADY_KNOWN
+  - NO_RUNTIME
+  - NOT_A_RUNTIME
+
+retry:
+  attempts: 0
+  on-failures: []

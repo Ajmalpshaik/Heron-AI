@@ -1,0 +1,79 @@
+# BIM QA Agent - HERON-QA-BIM-011
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ANALYZE. It reads nothing out of Revit - it is handed facts - and it
+# calls nothing wrong.
+
+agent: HERON-QA-BIM-011
+version: 1.0.0
+
+input:
+  model:
+    type: map
+    required: true
+    description: >
+      The model's facts, read out of Revit by somebody else - `names`
+      (each {name, kind}), `categories`, `elements` (each the parameters
+      one element carries) and optionally `wanted` (the parameters to
+      count, rather than whatever happens to appear).
+  profile:
+    type: map
+    required: false
+    description: >
+      HERON-STD-REF-010's profile, to check names and categories
+      against. Without one the counts stand on their own and nothing is
+      compared.
+  clauses:
+    type: list
+    required: false
+    description: >
+      The clauses stating the naming rule, passed through to
+      HERON-STD-NAM-004 so its question carries them.
+
+output:
+  checked:
+    type: boolean
+    description: True when the model's facts were read.
+  aspects:
+    type: list
+    description: >
+      One row per aspect docs/28 names, each CHECKED (with which agent
+      did it), SKIPPED for want of input, or CANNOT BE CHECKED HERE with
+      the reason.
+  coverage:
+    type: map
+    description: >
+      How many of the eight were reached, and which fell into each of
+      the three states. A QA report that quietly omits what it could not
+      reach reads as a clean model.
+  judged:
+    type: boolean
+    description: Always false. Nothing here is called wrong.
+  why:
+    type: string
+    description: The three counts.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was called wrong and who owns the
+      standard; that five of the eight are naming with a different noun
+      and are routed rather than repeated; which aspect cannot be
+      checked here at all; what was skipped and why; that `empty` and
+      `absent` are DIFFERENT parameter states and a single `missing`
+      count cannot tell a modeller which afternoon they are in for; and
+      that a category the profile uses and this model does not is
+      reported, not judged - deliberate is exactly what a count cannot
+      see.
+
+allowed-tools: []
+
+timeout-seconds: 300
+
+failures:
+  - NOT_A_MODEL
+  - NOTHING_TO_CHECK
+
+retry:
+  attempts: 0
+  on-failures: []

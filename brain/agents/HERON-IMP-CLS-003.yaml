@@ -1,0 +1,94 @@
+# Import Content Classification Agent - HERON-IMP-CLS-003
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ and makes it T2. It classifies nothing itself: it gathers the
+# evidence, groups the work so the question is affordable, and hands the
+# host one question per KIND of file.
+
+agent: HERON-IMP-CLS-003
+version: 1.0.0
+
+input:
+  walked:
+    type: map
+    required: true
+    description: >
+      HERON-IMP-FIL-002's answer - {walked, root, files, ...}. That agent
+      reports the EXTENSION and names no category, because if a suffix
+      could sort files into five categories this row would not be T2.
+  root:
+    type: path
+    required: false
+    description: >
+      Where the walked paths are relative to. Omitted means the walk's
+      own `root`.
+  answers:
+    type: map
+    required: false
+    description: >
+      For `accept` - each group mapped to one of the five categories.
+      A category invented in the reply is refused; a group with no
+      answer stays unclassified and is named.
+
+output:
+  briefed:
+    type: boolean
+    description: True when the walk was read and the groups built.
+  of:
+    type: integer
+    description: How many files the walk carried forward.
+  groups:
+    type: list
+    description: >
+      Each KIND of file - one extension, one shape (text or binary), one
+      content form (JSON, markup or plain) - with how many files, how
+      many bytes, up to five example paths, and the evidence gathered.
+  asks:
+    type: list
+    description: >
+      One question per group, carrying the evidence and the five
+      categories. ONE PER KIND, NOT PER FILE: docs/19 s96 says batch
+      classification should not run on a frontier model, and an
+      AJ-Tools clone is tens of thousands of files.
+  unreadable:
+    type: list
+    description: >
+      Files the walk listed that could not be opened here, named rather
+      than dropped (Golden Rule 14).
+  classified:
+    type: list
+    description: >
+      From `accept` - each group with the category the host gave it,
+      checked against docs/28's five.
+  unclassified:
+    type: list
+    description: >
+      From `accept` - groups nobody answered. An unclassified group is
+      not an empty one.
+  why:
+    type: string
+    description: The file count, the group count, and how many questions.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was classified here and why the
+      evidence is not a category; that the unit of work is the group and
+      what that costs in precision; what could not be read; that the
+      five categories are docs/28's own words; and, on accept, that the
+      answer was checked for BEING a category rather than for being
+      right.
+
+allowed-tools: []
+
+timeout-seconds: 300
+
+failures:
+  - NOTHING_TO_CLASSIFY
+  - NOT_A_WALK
+  - NOT_AN_ANSWER
+  - NOT_A_CATEGORY
+
+retry:
+  attempts: 0
+  on-failures: []

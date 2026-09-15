@@ -1,0 +1,85 @@
+# Duplicate Detection Agent - HERON-IMP-DUP-007
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ, and says it runs BEFORE anything is created. Nothing is created
+# here and nothing is read from disk.
+
+agent: HERON-IMP-DUP-007
+version: 1.0.0
+
+input:
+  items:
+    type: list
+    required: true
+    description: >
+      What the import proposes to bring in. Each carries a name and,
+      once migration has given it one, a capability or a contract. Two
+      items under one name is refused - each would be compared and
+      neither reported clearly.
+  fragments:
+    type: list
+    required: false
+    description: The fragment library to compare against.
+  skills:
+    type: list
+    required: false
+    description: >
+      The skill library. With neither given the check is refused: handed
+      an empty library every item is new, and an answer that cannot be
+      wrong is not evidence.
+
+output:
+  looked:
+    type: boolean
+    description: True when the items were compared.
+  of:
+    type: integer
+    description: How many items were read.
+  against:
+    type: integer
+    description: How many known things they were compared against.
+  already:
+    type: list
+    description: >
+      Items something already matches, each with every match and HOW -
+      by capability (decisive, one provider per capability across the
+      library), by signature (HERON-FRG-MRG-004's test, imported, whose
+      own finding is that a matching signature is a question) or by name
+      (weakest on its own).
+  unchecked:
+    type: list
+    description: >
+      Items with no capability and no contract, where only a name could
+      be compared. NEVER in `new`: an agent that answers "no duplicate"
+      when it had nothing to compare is a silent pass, and "nothing
+      comparable" and "nothing like it" are different answers.
+  new:
+    type: list
+    description: >
+      Items that were really compared and matched nothing, each with
+      what it was compared by.
+  why:
+    type: string
+    description: The four counts.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. Which items could not be compared and why that
+      is not "new"; that what something READS like is not compared and
+      never will be (D-34); that a match's strength differs by how it
+      matched; and that nothing was created.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_CHECK
+  - NO_LIBRARY
+  - NOT_AN_ITEM
+  - DUPLICATE_NAME
+
+retry:
+  attempts: 0
+  on-failures: []

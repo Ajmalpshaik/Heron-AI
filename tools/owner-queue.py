@@ -129,7 +129,14 @@ def needs_checking():
         if g:
             group = g.group(1)
             continue
-        m = re.match(r"^\|\s*(~~)?\*\*([AR]\d+[a-z]?)\*\*", line)
+        # [A-Z], not [AR]. It was [AR] until 2026-09-15 and the queue was
+        # showing 10 of 61 open rows: groups B, C, D, E, F, G, H, J and K
+        # matched nothing and were dropped before `classify` ever saw them,
+        # so they never even reached UNCLASSIFIED. That is the failure
+        # NEEDS-CHECKING.md records against itself - "a count that quietly
+        # omits a whole group is worse than no count" - committed by the
+        # one tool whose whole job is not to do it.
+        m = re.match(r"^\|\s*(~~)?\*\*([A-Z]\d+[a-z]?)\*\*", line)
         if not m:
             continue
         if m.group(1):                      # struck through = closed
@@ -138,6 +145,16 @@ def needs_checking():
         what = cells[2] if len(cells) > 2 else ""
         what = re.sub(r"[`*~]", "", what)
         out.append((m.group(2), what[:110], classify(group + " " + line), "NEEDS-CHECKING.md"))
+
+    # PROVE THE PATTERN SAW WHAT IS THERE. Counted independently of the
+    # walk above, so a narrower pattern is reported rather than obeyed -
+    # the lesson this file's own header records three times over.
+    shaped = len(re.findall(r"(?m)^\|\s*\*\*[A-Z]\d+[a-z]?\*\*", src))
+    if len(out) != shaped:
+        out.append(("!!", "%d open rows are ID-shaped in NEEDS-CHECKING.md and "
+                          "this tool matched %d. The pattern cannot see them "
+                          "all - fix it before trusting the list below."
+                          % (shaped, len(out)), "other", "NEEDS-CHECKING.md"))
     return out
 
 

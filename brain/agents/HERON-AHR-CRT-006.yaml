@@ -102,6 +102,10 @@ failures:
   - MAY_ONLY_ASSIGN_PROPOSED
   - NOT_A_PIPELINE_INPUT
   - REGISTER_UNREADABLE
+  # The job description is ready and its id is None. An id is a row
+  # in docs/28, and that row is the hiring decision - this agent
+  # prepares it and does not make it.
+  - NEEDS_A_REGISTER_ROW
 
 retry:
   attempts: 0

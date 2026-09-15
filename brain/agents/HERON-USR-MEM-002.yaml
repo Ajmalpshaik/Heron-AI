@@ -1,0 +1,81 @@
+# User Memory Agent - HERON-USR-MEM-002
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY. It writes nothing: a decision comes back and a caller carries
+# it out.
+
+agent: HERON-USR-MEM-002
+version: 1.0.0
+
+input:
+  candidates:
+    type: list
+    required: true
+    description: >
+      Each {about, what, scope, seen, window, ttl, project}. `seen`
+      absent is NOT `seen: 1` - treating it as one would invent the
+      evidence this agent refuses to invent.
+  remembered:
+    type: list
+    required: false
+    description: >
+      What is already held, each {about, what, since, source}. Handed
+      in, so supersession is decided against something real rather than
+      against a lookup this agent made itself.
+  closing:
+    type: string
+    required: false
+    description: A project closing, for callers applying the archive rule.
+
+output:
+  stored:
+    type: boolean
+    description: Always false. Nothing is written here.
+  store:
+    type: list
+    description: >
+      Each candidate that may be remembered, with its expiry rule and the
+      evidence behind it.
+  supersede:
+    type: list
+    description: >
+      Each candidate that replaces something held, carrying `replaces`
+      with the OLD value, when it was set and who set it. docs/10 s276:
+      new knowledge replaces old AND RECORDS the replacement - it does
+      not sit beside it.
+  refused_names:
+    type: list
+    description: >
+      Each candidate that may not be remembered. A NEVER_STORED refusal
+      names the SHAPES found and never the text: article 17 says never
+      include a secret in a result, and that includes this one.
+  of:
+    type: integer
+    description: How many candidates were handed in.
+  why:
+    type: string
+    description: The counts, and that nothing was written.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was written and what is held was
+      handed in; that every candidate lands in exactly one list; that
+      nothing was refused for being seen too few times and why no cutoff
+      is applied; and that whether any of it is WORTH remembering is
+      still somebody's call.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_DECIDE
+  - NOT_A_CANDIDATE
+  - NEVER_STORED
+  - NOT_A_SCOPE
+  - NO_TTL
+
+retry:
+  attempts: 0
+  on-failures: []

@@ -1,0 +1,93 @@
+# Fix Agent - HERON-ORC-FIX-005
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY. Nothing is sent: a repaired request comes back.
+
+agent: HERON-ORC-FIX-005
+version: 1.0.0
+
+input:
+  failure:
+    type: map
+    required: true
+    description: >
+      HERON-ORC-FAIL-004's answer, carrying {code, next_step, reason}.
+      Only `fix_first` is a repair. The other five are refused by name
+      with what that step means, and `stop` loudest - its own words are
+      "do not retry, and do not work around it", which is exactly what
+      an agent called the Fix Agent is for.
+  supply:
+    type: map
+    required: false
+    description: >
+      {field: value}, the answer to what the failure said was missing.
+      Absent, the agent asks - using the analysis's OWN wording rather
+      than a new question. Most fix_first codes are not a machine's to
+      fix at all: Heron cannot open a model, close somebody's dialog or
+      overrule an Emergency Stop.
+  request:
+    type: map
+    required: false
+    description: >
+      The request that failed. Required to repair one - a repaired
+      request built from scratch here would be this agent writing the
+      request rather than fixing it. A supplied field the request does
+      not take is refused as an improvisation.
+
+output:
+  repaired:
+    type: boolean
+    description: True when a request came back changed.
+  code:
+    type: string
+    description: Which failure, from HERON-ORC-FAIL-004's table.
+  route:
+    type: string
+    description: Which of the six next steps it chose.
+  request:
+    type: map
+    description: The repaired request. Nothing was sent.
+  changed:
+    type: list
+    description: Which fields moved. Never empty on success.
+  was:
+    type: map
+    description: The request as it stood, so the change can be read.
+  asked:
+    type: string
+    description: >
+      When nothing was supplied, the question - in the analysis's own
+      words, because it already wrote them.
+  fields:
+    type: list
+    description: On an improvisation, which supplied fields the request does not take.
+  takes:
+    type: list
+    description: And which it does.
+  why:
+    type: string
+    description: The code, its reason, and what was repaired or why not.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was sent; that whether the repair
+      works is the next answer and not this one; that the value was
+      supplied rather than derived; and that five of the six routes are
+      refused here by name.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_REPAIR
+  - NOT_AN_ANALYSIS
+  - MUST_NOT_WORK_AROUND
+  - NOT_A_REPAIR
+  - NEEDS_AN_ANSWER
+  - NOT_IN_THE_REQUEST
+
+retry:
+  attempts: 0
+  on-failures: []

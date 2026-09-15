@@ -60,6 +60,15 @@ namespace Heron.Core
                 { "info",               HeronRisk.Read },
                 { "count_elements",     HeronRisk.Read },
 
+                // HERON-REVIT-LNK-015. Read: it lists the links the model
+                // already has and reads only the linked documents Revit has
+                // already loaded. Nothing is loaded, unloaded or reloaded -
+                // the register's row is "never modifies a link's source", and
+                // reloading somebody's link to answer a question would be
+                // exactly that.
+                { "list_links",         HeronRisk.Read },
+                { "list_phases",        HeronRisk.Read },
+
                 // GIVING THE SESSION BACK. Read, because it cannot touch a
                 // model - it hands back a claim, and only the chat that holds
                 // it may. It is the OPPOSITE of a takeover: a second chat can

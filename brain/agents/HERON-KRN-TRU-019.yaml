@@ -1,0 +1,73 @@
+# Content Trust Agent - HERON-KRN-TRU-019
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent T2 - one scoped model call - AND IT MAKES NONE. See allowed-tools
+# below: this is the agent that reads text nobody trusts, and asking a model
+# whether that text is an instruction is handing the instruction to the thing
+# it was written for.
+
+agent: HERON-KRN-TRU-019
+version: 1.0.0
+
+input:
+  fields:
+    type: list
+    required: true
+    description: >
+      Each {where, kind, text} - somewhere Heron read, what that place is
+      supposed to hold, and what it held. Handed in: this agent does not
+      go looking, because what Heron read is the caller's to say.
+
+output:
+  acted:
+    type: boolean
+    description: >
+      Always false. Nothing is redacted, stripped, blocked or quarantined,
+      and every field comes back whole - Golden Rule 14.
+  read:
+    type: list
+    description: Every field that was scanned, with its length.
+  surfaced:
+    type: list
+    description: >
+      Each field carrying a signal, WITH ITS TEXT IN FULL and the signals
+      it carries. A finding is not an accusation: it is the shape of an
+      instruction in a place that should hold something else.
+  middles:
+    type: map
+    description: >
+      The middle length seen for each kind. Nothing is flagged on length -
+      that would need a threshold, and every threshold is invented.
+  refused_names:
+    type: list
+    description: Fields that could not be scanned, with why.
+  of:
+    type: integer
+    description: How many fields were handed in, so a caller can check the split.
+  why:
+    type: string
+    description: >
+      The counts, and that nothing was changed, blocked or asked of a
+      model.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty, and the same four whatever is found. That nothing
+      was acted on and nothing asked of a model and why; that a finding is
+      not an accusation; that every signal is shape rather than meaning;
+      and that nothing was flagged on length.
+
+# EMPTY ON PURPOSE, AND THIS IS THE ONE PLACE IT MATTERS MOST.
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_SCAN
+  - NOT_A_FIELD
+  - NOT_A_KIND_OF_PLACE
+
+retry:
+  attempts: 0
+  on-failures: []

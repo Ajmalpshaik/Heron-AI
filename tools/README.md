@@ -112,8 +112,21 @@ inputs on purpose before the tool was believed:
 | stale exemption | `HOST_PROVIDED` names an agent the registry no longer has |
 | delegated *and* built | a file claims an agent the host provides — the decision was reversed, or the exemption is stale |
 | ghost claim | a file claims an agent id that is not in the registry |
+| **was built, now is not** | an agent id claimed in the **last commit** is claimed by nothing in the working tree |
 
 The fourth is the one nothing else asks, and it is the one that would have caught the error above.
+
+**The sixth compares against git rather than against the register, because the register could not see
+what happened on 2026-09-15.** A new agent was written straight over `brain/heron_architect.py` — 272
+lines holding `HERON-AHR-ARC-003`, with its 201-line suite at `tests/test_architect.py`. Nothing
+complained. The register reconciled perfectly either way: the id that vanished and the id that arrived
+**cancelled out in the total**, so the only symptom was a number that did not move, and an overwritten
+file is unrecoverable outside git. The check now names the id and the files that held it.
+
+It looks one way only. An id this tree has and the last commit did not is *building*, and is not
+reported. And no git is not a finding — an installed Heron is not a checkout, so the tool says plainly
+that it had no second opinion rather than treating that as a pass. `tests/test_agent_count.py` runs the
+comparison with one id taken out and watches it fire, because a guard nobody has seen fire is a comment.
 
 ---
 
@@ -401,6 +414,184 @@ negative case can actually be run — and got that wrong on its first run, repor
 across a library holding **18**. A generator that only draws needs no test; one that concludes does.
 
 The working prototype of `HERON-DOC-FRG-004`.
+
+---
+
+## `generate-skill-catalog.py` — what a person can ask for
+
+```bash
+python tools/generate-skill-catalog.py
+HERON_SKILL_CATALOG_OUT=somewhere.html python tools/generate-skill-catalog.py
+```
+
+Every skill on one searchable page: the words somebody actually says to reach it, its domain, its risk,
+what must be true before it runs, and what it stands on. The parallel to the fragment catalogue one
+layer up.
+
+**A skill is only as proven as the weakest fragment under it**, and that is the one thing a list of
+names cannot show. Every skill in the library sits at `DRAFT`. Six of them rest entirely on `PROVEN`
+fragments and are waiting for nothing but somebody to look; four rest on something weaker and cannot
+move until those do. In a list of names they are identical. So each skill carries an **effective
+status** — the lowest rung on [docs/09](../docs/09-skills-and-fragments.md)'s ladder among the fragments
+serving it — beside the status its own card declares. A card can say anything; the chain underneath is
+the fact.
+
+**Reachability is reported per Revit release, never overall.** A skill declaring 2020–2027 whose
+fragments cover 2024 and 2025 works on two releases and claims eight; one overall figure is exactly
+what hides that. Same rule as `HERON-SKL-PRF-006`, same reason.
+
+**It concludes twice, so it has a test** ([`tests/test_skill_catalog.py`](../tests/test_skill_catalog.py)):
+the effective status and the per-release reachability are both judgements that can be wrong while the
+page still renders perfectly.
+
+The working prototype of `HERON-DOC-SKL-003`.
+
+---
+
+## `generate-api-docs.py` — every MCP tool, from its own signature
+
+```bash
+python tools/generate-api-docs.py
+HERON_API_DOCS_OUT=somewhere.html python tools/generate-api-docs.py
+```
+
+Every tool Heron serves over MCP: what you send, what type, whether it has a default, what it returns,
+its declared risk, the bridge operation it calls, and whether it can change the model.
+
+**A Heron tool's schema is not a JSON file anywhere** — it is the decorated function's signature, which
+the MCP SDK turns into one at run time. So that is what this reads, and it **parses rather than
+imports**: importing `heron_mcp_server` needs the MCP SDK installed and defines eighteen tools as a side
+effect of asking what they are. A documentation tool that only works where the server already runs is
+useless exactly where documentation is wanted — a reviewer's laptop, CI, a checkout with no
+dependencies. `ast` needs nothing.
+
+**The conclusion it carries: a parameter nothing explains.** A docstring can describe a tool beautifully
+and never mention its arguments; a caller then reads `depth: int = 0` off the schema and guesses. Every
+parameter is checked against its own tool's docstring on a word boundary — `full` is not explained by
+"fully" — and the unexplained ones are named. **Two were unexplained on its first run** against eighteen
+tools that all have docstrings: `revit_preview_move`'s `category` and `heron_research`'s `request`. Both
+are now documented, and the run is clean.
+
+Risk and bridge operation are **asked of** [`heron_tools.py`](../mcp/server/heron_tools.py) rather than
+copied, and a tool it cannot classify is reported rather than dropped — in both directions.
+
+It concludes, so it has a test ([`tests/test_api_docs.py`](../tests/test_api_docs.py)).
+
+The working prototype of `HERON-DOC-API-001`.
+
+---
+
+## `api-changes.py` — what each Revit release stopped shipping
+
+```bash
+python tools/api-changes.py                 all eight, in order
+python tools/api-changes.py 2025 2026       just that transition
+```
+
+Produces `tools/api-surface/changes.json`, which
+[`HERON-REVIT-ACI-034`](../brain/heron_apichanges.py) reads. It is the tool and not the agent, because
+it needs the network, a .NET SDK and 264 MB of reference assemblies, and an agent that only answers on a
+machine with all three answers nowhere useful. Same split as `HERON-DEV-NET-006` and `check-compile.py`.
+
+It dumps every public type and member each release ships — via a new `--dump` mode on
+[`api-surface/Program.cs`](api-surface/Program.cs) — and diffs adjacent releases. **Removals are kept in
+full; additions are counted.** A member that disappeared breaks code that calls it; a member that
+appeared breaks nothing, and listing 18,000 of them buries the ones that matter.
+
+| transition | removed | added |
+|---|---|---|
+| 2020 → 2021 | 627 | 2,816 |
+| 2021 → 2022 | 906 | 8,126 |
+| 2022 → 2023 | 828 | 1,402 |
+| 2023 → 2024 | 282 | 1,364 |
+| 2024 → 2025 | 665 | 1,751 |
+| 2025 → 2026 | **239** | 1,415 |
+| 2026 → 2027 | 647 | 1,780 |
+
+`ElementId.IntegerValue` is in that 239. It was written into this repository with a comment calling it
+*"the property every version has had"*, by someone who had checked five releases and extrapolated to
+eight. **That is D-05, and this is the tool that would have said so.**
+
+**The surfaces are gitignored and the digest is committed.** A release's full surface is ~3 MB and there
+are eight; what changed between them is a few hundred lines. The surfaces are the working, the digest is
+the result, and the result is what survives a fresh checkout with no network.
+
+**What it cannot see, and the register asks for it.** docs/28 wants *"silent behavioural changes"*.
+Reading two assemblies finds a member that is gone. It does not find one still there that returns a
+different unit, or now throws where it returned null, or whose meaning changed — and it does not find a
+**deprecation**, because `[Obsolete]` is an attribute and this reads names. A member marked in 2024 and
+deleted in 2026 appears at 2025 → 2026 and nowhere earlier, two years after the warning existed.
+
+---
+
+## `generate-contract-reference.py` — what was built, and what it promised
+
+```bash
+python tools/generate-contract-reference.py
+HERON_CONTRACT_REFERENCE_OUT=somewhere.html python tools/generate-contract-reference.py
+```
+
+Every agent contract in [`brain/agents/`](../brain/agents) — its inputs and outputs with their types
+and descriptions, the refusals it declares, the tools it allows — beside the metadata header of every
+file that claims that agent: which file, which layer, what status, and which suite proves it.
+
+**Not a sixth agent map.** The four generators above document what Heron *offers*, and each reads a
+register: docs/28, the MCP signatures, the fragment library, the skill library. This one is in the
+**Development** department and documents what was *built*, from the source nothing else reads — the
+contracts. docs/28 is the plan, a contract is the promise, a header is the claim. This page is the
+third, and the only one that can be checked against the other two.
+
+**The conclusion it carries: a promise the code does not keep.** Each contract declares the refusals a
+caller may have to handle. Every agent's own suite checks its own module names its own declared
+failures — and that had never been run across all of them at once. It fails two ways:
+
+- **declared, never produced** — a caller writes a branch for something that never happens;
+- **produced, never declared** — a caller handling every declared failure still meets an unhandled
+  one, which is the direction that breaks at run time.
+
+**Four were undeclared on its first run** across 121 contracts, and every declared refusal was
+reachable.
+
+**A refusal is recognised by position, not by shape.** The first version read every `SCREAMING_SNAKE`
+string in a file and reported **135** undeclared refusals — capability names, stated shapes, module
+constants, and examples an agent quotes to say it does *not* do that. A page of findings that are all
+wrong is worse than no page: it teaches the reader to skip the table, which is where the real ones are.
+So a refusal is read where this repository puts one — the value under a `refused` key, or the word
+before the colon in a `raise` — and both come off the parse tree, so a name quoted in a docstring
+explaining why a refusal is *not* raised is not counted as raising it. A single word counts:
+`INCOMPLETE`, `MODIFIED` and `PINNED` are three real refusals, and requiring a second word accused four
+agents of breaking a promise they keep.
+
+**The two directions use different evidence, deliberately.** To say a promise is broken you must be sure
+the module cannot produce that refusal *at all* — so the agents it calls count too, because
+`HERON-IMP-FEX-004` declares `NOT_A_FOLDER`, never writes it, and hands back `HERON-IMP-FIL-002`'s
+answer unaltered. That is composition, not a broken promise. To say a refusal is undeclared you must be
+sure it *is* one, so only the positional forms count. Wider to excuse, narrower to accuse.
+
+**A suite is not the agent.** `tests/` files carry the same `Heron-Agent` header — that is how a suite
+says what it proves — so they are shown, and never read for what the agent does. Counting one reported
+`HERON-IMP-CLS-003` as producing `NOT_A_FOLDER`, a name that appears only in its suite's fixtures.
+
+Everything else wrong with a contract — a missing description, a type that is not one of the eight, a
+version that is not semver — is **asked of**
+[`heron_contract.validate`](../brain/heron_contract.py) rather than judged again here.
+
+A tool-layer agent and a C# one carry no contract, and that is the established shape of this repository
+rather than a gap — 86 of them appear as **built without a contract**, not as unfinished. An agent
+claimed by *nothing but its own suite* is shown too, flagged: `HERON-RAG-RIX-011` and
+`HERON-RAG-DUP-012` are built and proved, and no file that implements them says so.
+
+**Its count must equal [`agent-count.py`](agent-count.py)'s, and the suite checks that every run**, because
+two bugs in reading a header got past everything else. A header line may claim **several** agents, comma
+separated — 31 files do — and reading one whole turned the list into a single agent that exists nowhere
+while every real one in it looked unclaimed. And a **C# header starts with `//`, not `#`**: the first
+expression required a `#`, so it matched no `.cs` file at all and the whole `revit/` layer was invisible,
+26 agents of it. Neither raised an error. The page simply described a smaller repository than the one it
+was standing in.
+
+It concludes, so it has a test ([`tests/test_contract_reference.py`](../tests/test_contract_reference.py)).
+
+The working prototype of `HERON-DEV-DOC-017`.
 
 ---
 

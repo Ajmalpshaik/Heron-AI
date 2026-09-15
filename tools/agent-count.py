@@ -34,6 +34,7 @@ Exit 1 = the registry disagrees with itself or with the code.
 import io
 import os
 import re
+import subprocess
 import sys
 import importlib.util
 import collections
@@ -144,6 +145,64 @@ def built():
                             continue
                         for aid in [a.strip() for a in m.group(1).split(",") if a.strip()]:
                             claims[aid].append(path.replace(os.sep, "/"))
+    return claims
+
+
+HEADER = re.compile(r"^\s*(?://|#)\s*Heron-Agent\s*:\s*(.+?)\s*$")
+
+
+def _ids(line):
+    """The agent ids one header line claims. A line may carry several."""
+    m = HEADER.match(line)
+    if not m or m.group(1).strip().lower() == "none":
+        return []
+    return [a.strip() for a in m.group(1).split(",") if a.strip()]
+
+
+def _scanned(path):
+    """Would built() have read this file? Same rules, one place."""
+    path = path.replace("/", os.sep)
+    if not path.endswith(SOURCE_EXT) or os.path.basename(path) == SELF:
+        return False
+    if path.startswith(SKIP_PREFIXES):
+        return False
+    if path.split(os.sep)[0] not in SOURCE_ROOTS:
+        return False
+    return not (set(path.split(os.sep)) & SKIP_NAMES)
+
+
+def claimed_at_head():
+    """Agent ids a header claimed in the last commit, or None if unknown.
+
+    Not every copy of this repository is a git checkout - an installed
+    Heron is not - so a missing git is not a finding. It is the absence
+    of a second opinion, and it is reported as that.
+    """
+    try:
+        done = subprocess.Popen(
+            ["git", "grep", "-n", "-I", "-E",
+             r"^[[:space:]]*(//|#)[[:space:]]*Heron-Agent[[:space:]]*:",
+             "HEAD", "--", "*.py", "*.cs", "*.ps1"],
+            cwd=os.getcwd(), stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        out, _err = done.communicate()
+    except (OSError, ValueError):
+        return None
+    if done.returncode not in (0, 1):
+        return None
+
+    claims = collections.defaultdict(list)
+    for line in out.decode("utf-8", "replace").splitlines():
+        # HEAD:path:lineno:text - the path may not contain a colon, and the
+        # text may, so split only the three fields in front of it.
+        parts = line.split(":", 3)
+        if len(parts) != 4:
+            continue
+        _head, path, lineno, text = parts
+        if not lineno.isdigit() or int(lineno) > 41 or not _scanned(path):
+            continue
+        for aid in _ids(text):
+            claims[aid].append(path)
     return claims
 
 
@@ -275,6 +334,25 @@ def main():
     for aid in sorted(set(claims) - set(agents)):
         problems.append("%s claims '%s', which is not in the registry"
                         % (", ".join(claims[aid]), aid))
+
+    # 4. AN AGENT THAT WAS BUILT IS NO LONGER BUILT. Written 2026-09-15,
+    #    the day a new agent was written straight over brain/heron_architect.py
+    #    - 272 lines of HERON-AHR-ARC-003 and its 201-line suite - and the
+    #    only thing that showed it was this tool's total not moving. That is
+    #    too quiet for what it is: an overwritten file is unrecoverable
+    #    outside git, and the register reconciled perfectly either way
+    #    because the id that vanished and the id that arrived cancelled out.
+    was = claimed_at_head()
+    if was is None:
+        w("\n(No git here, so nothing was compared against the last commit. "
+          "An installed Heron is not a checkout - this is the absence of a "
+          "second opinion, not a finding.)\n")
+    else:
+        for aid in sorted(set(was) - set(claims)):
+            problems.append(
+                "'%s' was claimed by %s in the last commit and is claimed by "
+                "nothing now. Either it was deleted on purpose, or a file was "
+                "written over" % (aid, ", ".join(sorted(set(was[aid])))))
 
     w("\n")
     if problems:

@@ -1,0 +1,100 @@
+# Repository Agent - HERON-GIT-REP-002
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent PUBLISH. Nothing is changed and nothing is pushed.
+#
+# Of the row's three words - structure, remotes, settings - only REMOTES is
+# this agent's. Structure is already owned by tools/check-structure.py, and a
+# second implementation would be a second thing that can be right on its own
+# while disagreeing with the first (PROPOSALS F17). Settings live behind the
+# GitHub API, which D-01 leaves with the host.
+
+agent: HERON-GIT-REP-002
+version: 1.0.0
+
+input:
+  remotes:
+    type: list
+    required: true
+    description: >
+      Each {name, url}. Both are needed: the name is what a person types
+      and the url is where it actually goes, and they are not the same
+      fact.
+  declared:
+    type: list
+    required: false
+    description: >
+      The destinations this project has chosen, each {name, url}. Any
+      configured remote pointing somewhere else is refused - a push goes
+      to whatever the remote points at, so a remote nobody declared is a
+      destination nobody chose. With none given, no comparison is made
+      and the answer says so.
+  secrets:
+    type: callable
+    required: false
+    description: The credential store to check each url against. Defaults to a fresh heron_secrets.Secrets().
+
+output:
+  inspected:
+    type: boolean
+    description: True when the remotes were read. Nothing is changed.
+  remotes:
+    type: list
+    description: Each remote with its url and whether it was declared.
+  missing:
+    type: list
+    description: >
+      Declared destinations with no configured remote. Reported, not
+      refused - a missing remote breaks nothing that is not already
+      broken.
+  structure:
+    type: map
+    description: >
+      Always checked:false, with the agents that own it. Named rather
+      than re-derived.
+  settings:
+    type: map
+    description: Always read:false, with what reading them would need.
+  remote:
+    type: string
+    description: On a refusal for a credential, which remote.
+  found:
+    type: list
+    description: >
+      What kind of credential. Neither the value NOR THE URL appears in
+      the answer - in this case the url is the credential.
+  by:
+    type: string
+    description: >
+      How it was caught - the pattern list, or its SHAPE. Anything
+      between :// and @ with a colon in it is a credential by
+      construction, whoever issued it, and the pattern list alone misses
+      a password nobody can pattern-match.
+  of:
+    type: integer
+    description: How many remotes were read.
+  why:
+    type: string
+    description: The count, and whether anything was declared to compare against.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. Whether anything was declared to compare
+      against; that the structure is named rather than re-derived and
+      why; that settings were not read; and that a url was read as text
+      with nothing resolved.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_CHECK
+  - NOT_A_REMOTE
+  - CARRIES_A_SECRET
+  - UNDECLARED_REMOTE
+
+retry:
+  attempts: 0
+  on-failures: []

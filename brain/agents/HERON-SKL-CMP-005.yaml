@@ -1,0 +1,76 @@
+# Skill Composition Agent - HERON-SKL-CMP-005
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. It builds nothing.
+
+agent: HERON-SKL-CMP-005
+version: 1.0.0
+
+input:
+  skills:
+    type: list
+    required: true
+    description: >
+      Each {name, risk, uses}. Two skills under one name is refused -
+      `uses` would be ambiguous and the graph would not be a graph.
+
+output:
+  composed:
+    type: boolean
+    description: Always false. A verdict comes back.
+  effective:
+    type: map
+    description: >
+      Each skill's risk once everything it uses is taken into account -
+      the highest of its own and everything below it.
+  declared:
+    type: map
+    description: What each skill's own card says.
+  cautious:
+    type: list
+    description: >
+      Skills declaring MORE than they compose. Allowed and reported: an
+      author being cautious about their own skill is not an error, and
+      refusing it would teach people to declare the minimum.
+  loop:
+    type: list
+    description: >
+      The cycle IN ORDER when there is one, starting and ending at the
+      same skill. "There is a cycle" is true and useless; the path is
+      what somebody fixes.
+  understated:
+    type: list
+    description: >
+      Skills declaring LESS than they compose, with what and through
+      which. Refused rather than raised quietly - the card is the one
+      place a person looks before running it.
+  of:
+    type: integer
+    description: How many skills were handed in.
+  why:
+    type: string
+    description: The counts, and that nothing was built.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was built; that the graph was
+      checked from EVERY skill and not only from the roots; who declared
+      more than they compose; and that the risk ladder was imported
+      rather than copied - PROPOSALS F22.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_COMPOSE
+  - NOT_A_SKILL
+  - NOT_A_RISK
+  - UNKNOWN_SKILL
+  - A_CYCLE
+  - RISK_IS_UNDERSTATED
+
+retry:
+  attempts: 0
+  on-failures: []

@@ -79,8 +79,79 @@ class Program
         return found;
     }
 
+    /// <summary>
+    /// Every public type and member one release ships, one per line.
+    ///
+    /// The existing mode asks "does everything Heron calls exist here" -
+    /// a question about Heron. This asks what the RELEASE contains, which
+    /// is a question about Revit, and it is the only way to see a member
+    /// disappear that Heron does not happen to call today. A fragment
+    /// somewhere does.
+    ///
+    /// Public only. A protected or internal member changing breaks
+    /// nothing a fragment can reach, and including them would bury the
+    /// changes that matter under ones nobody can act on.
+    /// </summary>
+    static int Dump(string dir, string outPath)
+    {
+        var paths = Directory.GetFiles(dir, "*.dll").ToList();
+        paths.AddRange(Directory.GetFiles(
+            Path.GetDirectoryName(typeof(object).Assembly.Location), "*.dll"));
+        using var mlc = new MetadataLoadContext(
+            new PathAssemblyResolver(paths), "System.Private.CoreLib");
+
+        var lines = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var path in Directory.GetFiles(dir, "*.dll"))
+        {
+            Assembly asm;
+            try { asm = mlc.LoadFromAssemblyPath(Path.GetFullPath(path)); }
+            catch { continue; }
+
+            Type[] types;
+            // A release whose reference assembly cannot fully resolve is
+            // still worth reading for the types that did load. Dropping
+            // the lot would report the whole release as deleted.
+            try { types = asm.GetTypes(); }
+            catch (ReflectionTypeLoadException ex)
+            { types = ex.Types.Where(t => t != null).ToArray(); }
+
+            foreach (var type in types)
+            {
+                if (type == null || !type.IsPublic && !type.IsNestedPublic)
+                    continue;
+                lines.Add(type.FullName);
+                const BindingFlags F = BindingFlags.Public |
+                                       BindingFlags.Instance |
+                                       BindingFlags.Static |
+                                       BindingFlags.DeclaredOnly;
+                MemberInfo[] members;
+                try { members = type.GetMembers(F); }
+                catch { continue; }
+                foreach (var member in members)
+                {
+                    // The NAME, not the signature. An overload added is
+                    // not a member removed, and listing every signature
+                    // turns one rename into forty lines of noise.
+                    lines.Add(type.FullName + "." + member.Name);
+                }
+            }
+        }
+
+        File.WriteAllLines(outPath, lines);
+        Console.WriteLine("{0}: {1} public type(s) and member(s) -> {2}",
+                          Path.GetFileName(dir.TrimEnd('/')), lines.Count,
+                          outPath);
+        return 0;
+    }
+
     static int Main(string[] args)
     {
+        // --dump <assembly dir> <out file>. A separate mode rather than a
+        // separate program: the metadata loading, the resolver and the
+        // core-library trick are the awkward part and there is no reason
+        // for two copies of them.
+        if (args.Length == 3 && args[0] == "--dump") return Dump(args[1], args[2]);
+
         var addin = args[0];
         var refs = ReadRevitRefs(addin);
         Console.WriteLine("Heron references {0} distinct Revit types/members.", refs.Count);

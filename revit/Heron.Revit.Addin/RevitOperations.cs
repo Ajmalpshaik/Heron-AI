@@ -69,6 +69,20 @@ namespace Heron.Revit.Addin
                 // Its own file, for the same reason RevitWrite has one - the
                 // code that runs OTHER PEOPLE'S code is worth reading in one
                 // piece.
+                // Linked models. HERON-REVIT-LNK-015, and its own file for
+                // the same reason RevitFragment has one: everything about
+                // links is in one place a reviewer can read end to end.
+                // Read-only - it opens no transaction and loads no link.
+                case "list_links":
+                    return RevitLinks.List(app);
+
+                // Phases and design options. HERON-REVIT-PHS-032, and its
+                // own file for the same reason: both of them change what
+                // "all ducts" means, and every number it gives is COUNTED
+                // rather than reasoned about. Read-only.
+                case "list_phases":
+                    return RevitPhases.List(app);
+
                 case "run_fragment_read":
                     return RevitFragment.Run(app, request);
 
@@ -338,7 +352,7 @@ namespace Heron.Revit.Addin
         /// ActiveUIDocument is null on the start screen, which is an ordinary
         /// state and not an error.
         /// </summary>
-        private static Document ActiveDocument(UIApplication app)
+        internal static Document ActiveDocument(UIApplication app)
         {
             if (app == null) return null;
             var uiDoc = app.ActiveUIDocument;

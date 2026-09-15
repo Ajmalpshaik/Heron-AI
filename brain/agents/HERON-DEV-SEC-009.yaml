@@ -1,0 +1,110 @@
+# Security Review Agent - HERON-DEV-SEC-009
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register's row is
+# "required for anything at MODIFY or above", and that requirement is what
+# this agent makes real. It does NOT decide whether a change is safe - that
+# is the review, and a review is a person reading a diff.
+
+agent: HERON-DEV-SEC-009
+version: 1.0.0
+
+input:
+  change:
+    type: map
+    required: true
+    description: >
+      The thing being reviewed. It declares a `risk` - one of
+      HERON-KRN-CAP-005's seven rungs - and an author in `by` or
+      `author`. The risk is what decides whether a review is required at
+      all, so a change without one is refused rather than assumed safe.
+  reviewed:
+    type: map
+    required: false
+    description: >
+      The review, when there is one - {by, of}. `by` is who read it, and
+      `of` is the fingerprint of what they read. Absent at MODIFY or
+      above is NOT_REVIEWED, which is a refusal and not a warning
+      (D-35).
+  secrets:
+    type: callable
+    required: false
+    description: >
+      The credential store the change is checked against. Defaults to a
+      fresh heron_secrets.Secrets(). It is asked which fields hold a
+      value shaped like a credential; it is never asked what the value
+      is.
+
+output:
+  required:
+    type: boolean
+    description: >
+      Whether a security review is required for this change. False is
+      NOT a pass - it means the risk is below MODIFY and nothing was
+      reviewed, and the `why` says so in those words.
+  reviewed:
+    type: boolean
+    description: >
+      True when a review was required, given, signed by somebody other
+      than the author, and still of the change as it stands. None when
+      no review was required.
+  safe:
+    type: boolean
+    description: >
+      Always null. Whether the change is safe is the reviewer's answer,
+      not this agent's, and returning a verdict here would be an agent
+      approving work (Golden Rule 7).
+  by:
+    type: string
+    description: Who reviewed it, as they signed.
+  evidence:
+    type: map
+    description: >
+      What the reviewer is given, and it is gathered whether or not a
+      review is required - a change below the line that turns out to
+      carry a credential is still worth seeing. The declared risk and
+      its rung out of seven, the tools the change may use as declared,
+      the author, the fingerprint, and every field whose VALUE is shaped
+      like a credential with the shape that matched. No credential value
+      appears in it.
+  missing:
+    type: list
+    description: Which of a review's required fields were absent.
+  reviewedOf:
+    type: string
+    description: The first 16 characters of the fingerprint the review carried.
+  isNow:
+    type: string
+    description: The first 16 characters of the fingerprint recomputed now.
+  why:
+    type: string
+    description: Where the risk sits, what was required, and what happened.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That whether the change is SAFE was not decided
+      here; that the ladder is HERON-KRN-CAP-005's, bound rather than
+      copied, with MODIFY's position looked up; which fields hold a
+      credential-shaped value, or that none of the six known shapes
+      appeared - which is not the same as there being no credential;
+      that below MODIFY is not a pass, or that the fingerprint was
+      recomputed rather than trusted; and that what a named tool can
+      actually reach is the tool registry's answer in mcp/, which D-48
+      puts out of reach.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_REVIEW
+  - NOT_A_CHANGE
+  - UNKNOWN_RISK
+  - NOT_REVIEWED
+  - NOT_A_REVIEW
+  - REVIEWED_BY_THE_AUTHOR
+  - STALE_REVIEW
+
+retry:
+  attempts: 0
+  on-failures: []

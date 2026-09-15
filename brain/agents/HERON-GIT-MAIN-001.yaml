@@ -1,0 +1,82 @@
+# GitHub Agent - HERON-GIT-MAIN-001
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent PUBLISH and says it "owns repository interaction". It does not post:
+# allowed-tools is empty here as it is in every other contract in this
+# department, and this agent READS them all rather than asserting it.
+
+agent: HERON-GIT-MAIN-001
+version: 1.0.0
+
+input:
+  intent:
+    type: string
+    required: true
+    description: >
+      What somebody wants to do. One of the listed intents - an intent
+      nobody listed would be planned by guessing which agents sound
+      relevant, which is reading the words rather than the register.
+  where:
+    type: string
+    required: false
+    description: >
+      Where to read the department's contracts from. Defaults to
+      brain/agents.
+
+output:
+  planned:
+    type: boolean
+    description: True when an order came back. Nothing runs.
+  intent:
+    type: string
+    description: The intent, as matched against the listed ones.
+  steps:
+    type: list
+    description: >
+      The agents in the order the register's own dependencies put them,
+      each with why it is where it is, what its contract allows, and its
+      gate if docs/28 gives it one.
+  gated:
+    type: list
+    description: >
+      The steps needing a person. Exactly the two rows docs/28 marks -
+      HERON-GIT-PR-005 and HERON-GIT-COM-010 - and no gate is invented
+      for the rows that do not carry one.
+  reaches_outside:
+    type: list
+    description: >
+      Agents whose contract declares a tool. Empty today, and read
+      rather than assumed - if one ever declares one, this says so
+      instead of saying none.
+  unreadable:
+    type: list
+    description: >
+      Contracts that could not be read. Reported, because "nothing here
+      posts" cannot be claimed about a contract nobody read.
+  of:
+    type: integer
+    description: How many contracts in this department were read.
+  why:
+    type: string
+    description: The step count, and what the contracts actually allow.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. What the contracts actually allow and that it
+      was read; which steps need a person and that docs/28 said so;
+      that this is an order rather than a decision; and what lies
+      outside this department.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_PLAN
+  - NOT_AN_INTENT
+  - NO_CONTRACTS
+
+retry:
+  attempts: 0
+  on-failures: []

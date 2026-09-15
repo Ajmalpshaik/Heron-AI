@@ -1,0 +1,94 @@
+# Fragment Split Agent - HERON-FRG-SPL-003
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent SUGGEST. It writes nothing and splits nothing - docs/09 s118: all
+# three of split, merge and evolution PROPOSE.
+
+agent: HERON-FRG-SPL-003
+version: 1.0.0
+
+input:
+  fragment:
+    type: map
+    required: true
+    description: The fragment being considered for decomposition.
+  parts:
+    type: list
+    required: true
+    description: >
+      Each {name, does}. Fewer than two is refused: a split into one
+      part is a rename, and HERON-NAM-REN-003 does those. Accepting one
+      here would be a way to move a fragment with nothing checking the
+      move.
+  consumers:
+    type: list
+    required: false
+    description: >
+      Each {part, name, kind} and, when kind is "imminent", `because`.
+      docs/09 s120 counts "actual or clearly imminent" and nothing else.
+      An imminent consumer with no reason is refused - a consumer that
+      exists is a fact, one that is coming is a claim, and an unevidenced
+      claim turns "two consumers" into one consumer and an intention.
+
+output:
+  split:
+    type: boolean
+    description: Always false. Nothing is ever split here.
+  proposed:
+    type: boolean
+    description: True when the decomposition clears docs/09 s120's bar.
+  fragment:
+    type: string
+    description: Which fragment, by slug or id.
+  status:
+    type: string
+    description: Its lifecycle status, as its card states it.
+  parts:
+    type: list
+    description: >
+      Each proposed part with its distinct consumers, split into actual
+      and imminent - counted together because docs/09 counts them
+      together, reported apart because they are not the same evidence.
+  consumers:
+    type: list
+    description: Every distinct consumer named, across all parts.
+  of:
+    type: integer
+    description: How many parts were proposed.
+  may_be_applied:
+    type: boolean
+    description: >
+      False when the fragment is at PRODUCTION - docs/09 s118 says
+      nothing may be applied autonomously there. Nothing is applied here
+      either way; this says whether anybody else could.
+  need:
+    type: integer
+    description: On a refusal, the bar - two, because docs/09 s120 says two.
+  why:
+    type: string
+    description: The counts, or which part is short of consumers.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was split; that over-decomposition
+      is a warning rather than a rule and was not turned into a line
+      count; which consumers rest on a claim about the future; and that
+      nothing read the implementation.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_TO_SPLIT
+  - NOT_A_FRAGMENT
+  - ONE_PART
+  - NOT_A_PART
+  - NOT_A_CONSUMER
+  - NOT_IMMINENT
+  - TOO_FEW_CONSUMERS
+
+retry:
+  attempts: 0
+  on-failures: []

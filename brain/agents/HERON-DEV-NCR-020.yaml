@@ -1,0 +1,111 @@
+# .NET Project Creation Agent - HERON-DEV-NCR-020
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY. It writes nothing: the file's TEXT and where it would go
+# come back, and creating it is the caller's act.
+
+agent: HERON-DEV-NCR-020
+version: 1.0.0
+
+input:
+  name:
+    type: string
+    required: true
+    description: >
+      The component's name, as this project spells one - Heron.Something
+      in PascalCase. Anything else is refused rather than corrected.
+  layer:
+    type: string
+    required: true
+    description: >
+      Which of Heron's layers it belongs to. One outside D-48's table is
+      refused; a ninth is not invented here.
+  references:
+    type: list
+    required: false
+    description: >
+      The layers it would reference. Checked against D-48's ALLOWED
+      before anything is authored, and each one must RESOLVE to a
+      .csproj that exists.
+  why:
+    type: string
+    required: false
+    description: One line for the comment at the top of the file.
+  root:
+    type: path
+    required: false
+    description: Where to look, when it is not the repository itself.
+
+output:
+  authored:
+    type: boolean
+    description: True when the project file's text was produced.
+  name:
+    type: string
+    description: The component name, echoed.
+  layer:
+    type: string
+    description: Its layer.
+  path:
+    type: path
+    description: Where the file would go, derived from the layer.
+  text:
+    type: string
+    description: >
+      The whole .csproj, following an existing project's shape - its SDK
+      attribute and its properties, read from disk rather than invented.
+  targetFramework:
+    type: string
+    description: >
+      Always `$(HeronTfm)`, never a literal. Directory.Build.props maps
+      the release to a runtime, and a project naming one directly would
+      be a ninth place a release lives.
+  mayReference:
+    type: list
+    description: What D-48 allows this layer, read out of the gate.
+  references:
+    type: list
+    description: What it would reference.
+  referencePaths:
+    type: map
+    description: >
+      Each reference resolved to a real .csproj. FOUND, never spelled
+      from the layer name - brain/ is Python and has no assembly, so
+      `mcp may reference brain` is true of the imports and impossible in
+      a .csproj.
+  written:
+    type: boolean
+    description: Always false.
+  why:
+    type: string
+    description: Where it would go, what it targets, what it references.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That the target framework is never a literal;
+      that the layer table was READ out of check-structure.py rather
+      than copied; that the shape came from a project that exists; that
+      every reference was checked before anything was authored and
+      resolves to a real file; that nothing was written; and that
+      whether the component should exist at all is HERON-AHR-WFP-015's
+      question - the guard against exactly the growth a
+      project-creation agent makes easy.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NO_NAME
+  - NOT_A_NAME
+  - NO_LAYER_TABLE
+  - NOT_A_LAYER
+  - LAYER_FORBIDS
+  - NO_PROJECT_IN_LAYER
+  - WHICH_PROJECT
+  - NO_TEMPLATE
+
+retry:
+  attempts: 0
+  on-failures: []

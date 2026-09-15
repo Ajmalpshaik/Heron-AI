@@ -1,0 +1,80 @@
+# Branch Agent - HERON-GIT-BRN-003
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY. Nothing here creates a branch.
+
+agent: HERON-GIT-BRN-003
+version: 1.0.0
+
+input:
+  branch:
+    type: map
+    required: true
+    description: >
+      {name}, and when it is version-specific also {for_release,
+      because, tried}. An ordinary branch gets no opinion: no document
+      states a shape for a branch name, and a shape guessed here would
+      become the convention the moment it were enforced.
+
+output:
+  proposed:
+    type: boolean
+    description: True when the branch was read. Nothing is created.
+  allowed:
+    type: boolean
+    description: Whether anything here objects. An ordinary branch is always allowed - no document states a shape for a branch name.
+  kind:
+    type: string
+    description: ordinary, or version.
+  name:
+    type: string
+    description: The branch name, as given.
+  for_release:
+    type: string
+    description: The Revit release a version branch is for.
+  because:
+    type: string
+    description: >
+      The necessity, read back rather than judged. docs/00 s209 allows a
+      version-specific branch ONLY when necessary, which means it is
+      stated rather than asserted by the act of branching.
+  tried:
+    type: map
+    description: >
+      What happened at each of keep, extend and adapt - Golden Rule 4's
+      order, which puts version-branch last of four. Each is asked about
+      once (D-33). "It would not work, because..." is an answer; silence
+      is not.
+  cost:
+    type: map
+    description: >
+      cherry_picks_per_fix and the branches they go into. Counted from
+      the supported release list rather than repeating docs/16 s64's
+      "seven others", so it stays true when the list changes.
+  why:
+    type: string
+    description: The verdict, and for a version branch the cherry-pick cost.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. For an ordinary branch: that no naming rule was
+      applied because none is written down. For a version branch: the
+      cost and docs/16's second half about divergence; that the reason
+      was required and read back, not judged; that the three answers
+      were not checked; and that nothing was created.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_PROPOSE
+  - NOT_A_BRANCH
+  - NOT_A_VERSION
+  - NOT_SHOWN_NECESSARY
+  - EARLIER_OPTION_UNTRIED
+
+retry:
+  attempts: 0
+  on-failures: []

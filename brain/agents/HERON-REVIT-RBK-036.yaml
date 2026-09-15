@@ -1,0 +1,90 @@
+# Session Rollback Agent - HERON-REVIT-RBK-036
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY and calls it the panic button. THIS FILE IS THE PLANNER: it
+# reverses nothing and posts nothing. Posting the undos has to happen inside
+# Revit in an API context, and that half does not exist yet (PROPOSALS F29).
+
+agent: HERON-REVIT-RBK-036
+version: 1.0.0
+
+input:
+  entries:
+    type: list
+    required: false
+    description: >
+      Audit rows, oldest first. Omitted means read the trail where it
+      lives, through HERON-AHR-GAP-001's own reader.
+  directory:
+    type: path
+    required: false
+    description: Where to read the trail from, when it is not the default.
+  session:
+    type: string
+    required: false
+    description: >
+      One workflow id, to plan the rollback of a single request rather
+      than everything. A session id nobody used is REFUSED, because an
+      empty answer would read as "nothing to undo".
+
+output:
+  planned:
+    type: boolean
+    description: True when the trail was read and the plan built.
+  of:
+    type: integer
+    description: How many audit rows were read.
+  documents:
+    type: list
+    description: >
+      One group per document, each with its undo entries NEWEST FIRST
+      and how many posts that is. Grouped because an undo stack belongs
+      to a document - one ordered list across documents would be a plan
+      nobody can carry out.
+  undos:
+    type: integer
+    description: >
+      How many undo entries HERON made. NOT how many undos a rollback
+      takes: the stack is shared with the person modelling, and nothing
+      Heron records sees their own edits.
+  unreversible:
+    type: list
+    description: >
+      Entries that cannot be reversed - a recorded undo entry beside a
+      failure, or a write with no document. Named rather than dropped;
+      guessing either way could leave a model half-changed.
+  failed:
+    type: list
+    description: >
+      Writes that failed and rolled themselves back at the time (Golden
+      Rule 16, one TransactionGroup). Nothing to reverse, which is not
+      the same as nothing having been attempted.
+  reversed:
+    type: boolean
+    description: Always false. Nothing is reversed and nothing is posted.
+  why:
+    type: string
+    description: The counts, and that nothing was reversed.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That `PostableCommand.Undo` takes the TOP of the
+      stack and Revit exposes no named variant - measured by compiling
+      it on 2020, 2024 and 2027 - so the real number of undos is not
+      knowable here; that the plan is per document; what cannot be
+      reversed and what rolled itself back; that whether the document is
+      still open is checked in Revit or not at all; and that nothing was
+      posted.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOTHING_RECORDED
+  - NO_SUCH_SESSION
+
+retry:
+  attempts: 0
+  on-failures: []

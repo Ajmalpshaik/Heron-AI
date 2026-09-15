@@ -1,0 +1,84 @@
+# Knowledge Validation Agent - HERON-RAG-VAL-013
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. It uses nothing: it says which retrieved claims MAY be used.
+
+agent: HERON-RAG-VAL-013
+version: 1.0.0
+
+input:
+  claims:
+    type: list
+    required: true
+    description: >
+      Retrieved knowledge, each {text, source, scope, revit, trust}.
+      Handed in - retrieval finds the candidates and this agent does not
+      go looking.
+  revit:
+    type: string
+    required: true
+    description: >
+      The running release. REQUIRED: without it the version wall cannot
+      be applied, and knowledge recorded about 2021 and applied in 2025
+      does not announce itself.
+  project:
+    type: string
+    required: false
+    description: >
+      Which project this run is for. A project-scoped claim with no
+      project named is HELD, not used: docs/10 s2 calls one client's
+      knowledge in another's file a contractual breach.
+
+output:
+  used:
+    type: boolean
+    description: Always false. This agent says what MAY be used.
+  usable:
+    type: list
+    description: >
+      Claims that passed all four rules, each with why. Passing is not a
+      statement that the claim is TRUE.
+  held:
+    type: list
+    description: >
+      Claims that did not, returned WHOLE with the rule that stopped
+      each. Nothing is stripped or rewritten - what a failed claim says
+      is the useful part of it, and Golden Rule 14 refuses a silent
+      discard.
+  revit:
+    type: string
+    description: The release the wall was applied at.
+  project:
+    type: string
+    description: The project the boundary was applied at, or null.
+  of:
+    type: integer
+    description: How many claims were handed in, so a caller can check the split.
+  why:
+    type: string
+    description: The counts, and that nothing was used, changed or stripped.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was used or cleaned; that every
+      claim lands in exactly one list; that whether a claim is TRUE is
+      not checked and cannot be; and that the four rules belong to four
+      other agents - HERON-KRN-TRU-019 being CALLED rather than copied.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_VALIDATE
+  - NO_REVIT_VERSION
+  - NOT_A_CLAIM
+  - NO_SOURCE
+  - WRONG_REVIT_VERSION
+  - ANOTHER_PROJECTS_KNOWLEDGE
+  - CARRIES_AN_INSTRUCTION
+
+retry:
+  attempts: 0
+  on-failures: []

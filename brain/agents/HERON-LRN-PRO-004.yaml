@@ -1,0 +1,82 @@
+# Learning Promotion Agent - HERON-LRN-PRO-004
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent SUGGEST. Nothing is promoted: a verdict comes back.
+
+agent: HERON-LRN-PRO-004
+version: 1.0.0
+
+input:
+  candidate:
+    type: map
+    required: true
+    description: >
+      {id, status, successful_runs}. The run count is READ AND COUNTED
+      FOR NOTHING - D-30 rejected it as a gate - and echoed back so
+      nobody mistakes the refusal for not having noticed.
+  to:
+    type: string
+    required: true
+    description: >
+      The next state. One step only: each state has its own gate, and
+      skipping one is skipping the gate rather than passing it faster.
+  proof:
+    type: map
+    required: false
+    description: >
+      D-30's recorded proof - {positive, negative, at, model, by,
+      second_route}. Required at PROVEN and PRODUCTION and nowhere else.
+      A proof with no NEGATIVE case is refused before anything else it
+      is missing: the others make a proof incomplete, and that one makes
+      it not a proof.
+
+output:
+  promoted:
+    type: boolean
+    description: Always false. A caller records the move.
+  may_promote:
+    type: boolean
+    description: Present when the gate is satisfied.
+  from:
+    type: string
+    description: Where it is now.
+  to:
+    type: string
+    description: Where it would go.
+  gate:
+    type: string
+    description: Which gate applied - D-30's proof, or none below PROVEN.
+  proof:
+    type: map
+    description: The proof as recorded, when one was needed and given.
+  successful_runs:
+    type: integer
+    description: Echoed on a refusal, so the count is visibly not the gate.
+  why:
+    type: string
+    description: The verdict, and that nothing was promoted.
+  unjudged:
+    type: list
+    description: >
+      Always the same four. That nothing was promoted; what the run count
+      counted for; whether a second route was given; and that docs/09
+      s94's table still asks for N successful executions and still says
+      "tracked as Q-9", which D-30 answered - PROPOSALS F21.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOT_A_CANDIDATE
+  - NOT_A_STATUS
+  - NOT_A_PROMOTION
+  - SKIPS_A_STATE
+  - NO_PROOF
+  - NO_NEGATIVE_CASE
+  - AN_INCOMPLETE_PROOF
+
+retry:
+  attempts: 0
+  on-failures: []

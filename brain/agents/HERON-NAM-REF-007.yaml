@@ -1,0 +1,88 @@
+# Reference Update Agent - HERON-NAM-REF-007
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY and says "no broken references". It writes nothing: a list of
+# exact edits comes back and a caller makes them.
+
+agent: HERON-NAM-REF-007
+version: 1.0.0
+
+input:
+  rename:
+    type: map
+    required: true
+    description: >
+      {from, to} - the old name to find and the new one to write. The
+      rename this update follows, from HERON-NAM-REN-003.
+  found:
+    type: list
+    required: false
+    description: >
+      Each occurrence as {where, text}. Handed in - this agent opens
+      nothing, and a site whose line no longer contains the name is a
+      search result that has gone stale.
+  searched:
+    type: list
+    required: false
+    description: >
+      Which of the five places were ACTUALLY looked in - imports,
+      references, metadata, registry, docs. Fewer than five and the
+      answer is refused: a search that covered some of them and found
+      nothing reads exactly like one that covered all of them.
+
+output:
+  updated:
+    type: boolean
+    description: Always false. A caller makes the edits.
+  from:
+    type: string
+    description: The old name.
+  to:
+    type: string
+    description: The new name.
+  edit:
+    type: list
+    description: >
+      Each rewrite, with where, how many whole-word occurrences, their
+      positions, and the rewritten line.
+  refused_names:
+    type: list
+    description: >
+      Each occurrence that may not be rewritten, with which refusal.
+      An ambiguous one is refused rather than skipped - skipping leaves
+      the question for whoever reads the diff.
+  searched:
+    type: list
+    description: The five places, present only when all five were claimed.
+  missed:
+    type: list
+    description: The places nobody looked in, when any were missed.
+  of:
+    type: integer
+    description: How many occurrences were handed in, so a caller can check the split.
+  why:
+    type: string
+    description: The counts, that all five were searched, and that nothing was written.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was written or opened, that every
+      occurrence lands in exactly one list, that all five places were
+      CLAIMED searched and that whether any was searched WELL is not
+      knowable from here, and that every edit is on a word boundary.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOT_A_RENAME
+  - NOT_A_PLACE
+  - NOT_SEARCHED_EVERYWHERE
+  - NOT_A_SITE
+  - AMBIGUOUS_MATCH
+
+retry:
+  attempts: 0
+  on-failures: []

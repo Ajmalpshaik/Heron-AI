@@ -1,0 +1,68 @@
+# User Profile Agent - HERON-USR-PRO-001
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. It stores nothing: what is worth remembering, what expires and
+# what must never be stored belong to HERON-USR-MEM-002.
+
+agent: HERON-USR-PRO-001
+version: 1.0.0
+
+input:
+  profile:
+    type: map
+    required: true
+    description: >
+      The durable facts, each {value, by} - the value and who said it
+      about themselves - plus an optional `mode` grant {mode, by, at}.
+      Handed in. A fact nobody declared is absent, not defaulted.
+
+output:
+  stored:
+    type: boolean
+    description: Always false. Nothing is written here.
+  facts:
+    type: map
+    description: >
+      Each declared fact with its value and who said it. Nothing about
+      how to speak: D-27 abolished persona, Heron has one voice, and the
+      shape of an answer follows the shape of the REQUEST.
+  mode:
+    type: map
+    description: >
+      The granted mode, with who granted it and when, or null. Null is
+      NOT User Mode - docs/22 s3 makes a mode a permission boundary, and
+      a boundary that defaults to something is not one.
+  unstated:
+    type: list
+    description: >
+      Facts nobody has stated. Absent, never filled in: filling one would
+      be the inference this agent exists to refuse.
+  of:
+    type: integer
+    description: How many durable facts docs/28 names.
+  why:
+    type: string
+    description: The counts, and that nothing was written or inferred.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing about how to speak is here and why -
+      PROPOSALS F19; that every fact was declared and how many were not
+      stated; how the mode was granted, or that none is held and that is
+      not User Mode; and that whether any of it is TRUE is not checked.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NOT_A_PROFILE
+  - NOT_A_FACT
+  - AN_INFERENCE_IS_NOT_A_FACT
+  - MODE_MUST_BE_GRANTED
+  - NOT_A_MODE
+
+retry:
+  attempts: 0
+  on-failures: []

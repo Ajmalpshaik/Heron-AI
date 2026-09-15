@@ -1,0 +1,79 @@
+# Workspace Architect Agent - HERON-WSP-ARC-001
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent ADMIN, the highest in it. ADMIN does not mean it may act: it orders
+# plans and refuses runs, and runs nothing itself.
+
+agent: HERON-WSP-ARC-001
+version: 1.0.0
+
+input:
+  intents:
+    type: list
+    required: true
+    description: >
+      Each plan reduced to {agent, does, path} by the CALLER. This agent
+      does not parse eight different answer shapes - a second copy of
+      eight shapes is eight things to drift - and it cannot check that
+      the reduction was faithful. It says so rather than implying it did.
+  confirmed:
+    type: list
+    required: false
+    description: >
+      The exact paths a person confirmed for this run. docs/06 s142 asks
+      for an explicit per-run confirmation before cleanup or repair
+      touches the data class; naming the paths is a stricter reading
+      than the words require, taken because "yes" to a run is not "yes"
+      to a file.
+
+output:
+  approved:
+    type: boolean
+    description: Always false. Nothing runs here, whatever the risk says.
+  order:
+    type: list
+    description: >
+      The intents in run order - read what exists, copy it, build,
+      change, tidy. The order is a declared table so it can be read and
+      argued with.
+  of:
+    type: integer
+    description: How many intents were ordered.
+  gated:
+    type: list
+    description: >
+      The intents docs/06 s142 gates - cleanup or repair, changing
+      something in the data class. Present only when all of them were
+      confirmed.
+  conflict:
+    type: list
+    description: The two intents that want opposite things, when one pair does.
+  needs:
+    type: list
+    description: The gated intents nobody confirmed, when any are unconfirmed.
+  why:
+    type: string
+    description: The count and the order, or which two plans collide and where.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing ran and ADMIN does not mean it may,
+      that the reduction to intents cannot be checked here, how docs/06
+      s142's gate was read, and that a conflict is FOUND rather than
+      resolved - which of two plans gives way is a person's decision.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOT_A_PLAN
+  - WOULD_APPROVE_ITSELF
+  - RESTORE_IS_NOT_A_STEP
+  - PLANS_CONFLICT
+  - NO_CONFIRMATION
+
+retry:
+  attempts: 0
+  on-failures: []

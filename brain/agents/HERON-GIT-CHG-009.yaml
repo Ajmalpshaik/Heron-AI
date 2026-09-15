@@ -1,0 +1,82 @@
+# Change Detection Agent - HERON-GIT-CHG-009
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. Nothing is written and no command is run.
+
+agent: HERON-GIT-CHG-009
+version: 1.0.0
+
+input:
+  paths:
+    type: list
+    required: true
+    description: >
+      The repository-relative paths a change touched, in the shape git
+      prints them. An absolute path, or one climbing out of the
+      repository, is refused: answering "nothing downstream" for a file
+      this project does not contain would be a statement about the path
+      rather than about the change.
+  fragments:
+    type: list
+    required: false
+    description: >
+      The fragment library. Read from disk when not given. A fragment is
+      matched by its FOLDER, because that is what a path carries.
+  skills:
+    type: list
+    required: false
+    description: The skill library. Read from disk when not given.
+
+output:
+  looked:
+    type: boolean
+    description: True when the paths were read.
+  fragments:
+    type: list
+    description: Each fragment touched, its capability and which paths.
+  capabilities:
+    type: list
+    description: The capabilities those fragments carry.
+  skills_changed:
+    type: list
+    description: Skills whose own card somebody edited.
+  skills_reached:
+    type: list
+    description: >
+      Skills nobody edited that route through a moved capability - the
+      step the diff does not show and nobody does by hand. Each says
+      which capability carried the change and whether anything else
+      provides it. A skill already in `skills_changed` is not repeated
+      here.
+  unattributed:
+    type: list
+    description: >
+      Paths nothing here could attribute, each with why. Listed rather
+      than dropped (GR 14): "nothing downstream" must not be the answer
+      to a change nothing here understood.
+  of:
+    type: integer
+    description: How many paths were read.
+  why:
+    type: string
+    description: The five counts in one line.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. Which skills were reached without being edited;
+      which paths could not be attributed; that nothing here ran a test
+      so reaching is not breaking; and that nothing here read git.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_CHECK
+  - NOT_A_PATH
+  - OUTSIDE_THE_REPOSITORY
+
+retry:
+  attempts: 0
+  on-failures: []

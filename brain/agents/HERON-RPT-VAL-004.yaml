@@ -1,0 +1,80 @@
+# Report Validation Agent - HERON-RPT-VAL-004
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent READ. It changes nothing: correcting a report or its data is somebody
+# else's, and HERON-RPT-RED-003 decides whether it may leave at all.
+
+agent: HERON-RPT-VAL-004
+version: 1.0.0
+
+input:
+  report:
+    type: map
+    required: true
+    description: >
+      The answer HERON-RPT-RND-002 returns, or at least a map carrying
+      `content`. A report with a `sha` and a `kind` is re-rendered and
+      compared; one without is still checked for figures with no source,
+      and that is the report most likely to hold a number somebody was
+      sure about.
+  rows:
+    type: list
+    required: true
+    description: >
+      The data the report claims to be about, handed in. Empty is
+      refused: a report validated against nothing would pass, which is
+      worse than not checking it.
+  query:
+    type: map
+    required: false
+    description: >
+      What was asked, with `found` if the query counted. The register's
+      own example lives here - a report claiming 47 failures when there
+      are 52.
+
+output:
+  checked:
+    type: boolean
+    description: True when the report was examined.
+  sound:
+    type: boolean
+    description: Whether every check passed. Not a statement that the DATA is right.
+  findings:
+    type: list
+    description: >
+      Each problem, with which check found it -
+      SHA_DOES_NOT_DESCRIBE_THE_CONTENT, CONTENT_DOES_NOT_MATCH_THE_DATA,
+      COUNT_DOES_NOT_MATCH, GAPS_NOT_DECLARED, A_FIGURE_WITH_NO_SOURCE.
+  rows:
+    type: integer
+    description: How many rows of data were compared against.
+  figures:
+    type: integer
+    description: How many number-looking tokens the document holds.
+  remade:
+    type: string
+    description: The sha of re-rendering the data, or null if it could not be.
+  why:
+    type: string
+    description: The counts, and which checks found something.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That whether the DATA is right is not checked and
+      cannot be; whether the document was re-rendered and what was
+      compared; how many figures were traced; and that nothing was
+      changed.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOT_A_REPORT
+  - NOTHING_TO_CHECK
+  - NOT_A_ROW
+
+retry:
+  attempts: 0
+  on-failures: []

@@ -717,6 +717,53 @@ button releasing it, and two Revits not interfering.
 | **H9** | `revit_health` from a chat holding **nothing**, with a free Revit open. Then ask from a *second* chat | The second chat is **granted**. A health check must NOT have claimed the free Revit — that bug existed for one commit: it called `count_elements` on every session, which is not lease-exempt |
 | **H10** | First chat mid-request, second chat connects and is refused. Watch the FIRST chat | It loses that one reply and recovers on the next. Known limitation, [docs/25](25-multi-session-and-binding.md): the pipe is displaced at connect, before the lease can speak. If a **write** was in flight it must report the outcome as *unknown*, never as failed |
 
+## Group L — linked models (needs Revit and a model that links something)
+
+`HERON-REVIT-LNK-015` — [`revit/Heron.Revit.Addin/RevitLinks.cs`](../revit/Heron.Revit.Addin/RevitLinks.cs).
+Compiles on 2020–2027, 0 warnings, 2026-09-15. **Never run.** Read-only, so nothing here can damage a
+model — but every claim below is a claim about an API surface, not about behaviour.
+
+Use a real job file: one with an architectural or structural link, and ideally one broken link.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **L1** | Open a model with links and ask Heron *"what links does this model have?"* | Every link in Manage Links is listed, with the same names. A link Revit shows and Heron does not is the finding |
+| **L2** | Compare `hostElements` against `count_elements` for the same model | **The same number.** If they differ, one of the two collectors is not doing what its comment says |
+| **L3** | Unload one link in Manage Links, ask again | That link reads `unloaded` and its element count reads **not known**, never `0`. Revit's own Manage Links still shows it as unloaded afterwards — Heron must not have reloaded it |
+| **L4** | Rename or move a linked file on disk, reopen the host, ask again | The link reads `not found`. This is the status a real job hits most often |
+| **L5** | A model with one link placed twice | `linkTypes` is 1 and `placements` is 2. They are different facts and the answer must not merge them |
+| **L6** | A nested link (a link inside a link) | It is listed and marked `[nested]`. A nested link is not attached to this model, so *"reload it"* is answered somewhere else |
+| **L7** | Check the path shown | It matches what Manage Links shows — including the `RSN://` or BIM 360 form for a server model, not a raw internal path |
+
+---
+
+## Group M — phases and design options (needs Revit and a real job file)
+
+`HERON-REVIT-PHS-032` — [`revit/Heron.Revit.Addin/RevitPhases.cs`](../revit/Heron.Revit.Addin/RevitPhases.cs).
+Compiles on 2020–2027, 0 warnings, 2026-09-15. **Never run.** Read-only — nothing here sets a view's
+phase or activates an option, because both change what everybody else on the job sees in that view.
+
+Use a real job file: one with Existing and New Construction at least, and ideally one design option set.
+A single-phase model with no options proves nothing, and the tool says so rather than pretending.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **M1** | Open a phased model and ask Heron *"what phases does this model have?"* | Every phase in Manage → Phasing is listed, in the same order. Order matters: Existing comes before New Construction and a list that reorders them is the finding |
+| **M2** | Add the `created` counts across all phases, plus `withNoPhase` | It should equal `placedElements`. If it does not, an element is being counted in two phases or in none, and the breakdown cannot be trusted |
+| **M3** | Compare `placedElements` against `count_elements` for the same model | **The same number.** Both claim to collect placed elements and exclude types |
+| **M4** | A model with a design option set holding two options | Both options are listed, each naming its set, and exactly one is marked `primary` |
+| **M5** | Add the `elements` across all options, plus `inMainModel` | It should equal `placedElements`. This is the check that says whether the breakdown is a partition or an overlap — **and the answer deliberately asserts nothing about how a collector treats a non-primary option**, so M5 is what settles it |
+| **M6** | Note the active view, then check `viewPhase` and `viewPhaseFilter` | They match what the view's Properties palette shows. A number read off a plan has been through both |
+| **M7** | Switch the active view to one on a different phase and ask again | `viewPhase` changes and the phase COUNTS do not — the counts are of the model, not of the view. If the counts move, the collector is view-scoped and the whole answer means something else |
+| **M8** | A model with demolished elements | `demolished` is non-zero on the phase they were demolished in, not on the one they were built in |
+
+**Why this group exists at all:** the same reason as Group L. A count given without its phase and its
+design option is a number a person will act on. On a real job the Existing phase holds the survey, New
+Construction holds the work, and an option set can hold two complete alternative arrangements of the
+same shafts — and *"all ducts"* means something different in each.
+
+---
+
 ## Group G — hard to force, do last
 
 Not blocking. Listed so they are not mistaken for tested.
@@ -728,6 +775,7 @@ Not blocking. Listed so they are not mistaken for tested.
 | **G3** | After all of the above passes | Set `write.enabled` back to **false** until you actually want Heron writing |
 | **G4** | After a move, open the newest file in `%APPDATA%\Heron\audit` | The entry carries **every moved element's UniqueId**, the document identity and the undo entry name, all under one Workflow ID. A count alone cannot answer *"which ducts?"* |
 | **G5** | `python tests/test_golden.py` after re-proving anything | The re-proved case stops reading **STALE**. Seven Phase 0 proofs are stale right now — they were taken against a build that no longer exists |
+| **G6** | `python tests\test_walk.py` from an account that is **not** an administrator, on a folder holding a subfolder you have no permission to open | Section 9 stops saying *UNTESTED* and names the folder in `unreadable`. `os.walk` throws such a folder away in silence by default; [`HERON-IMP-FIL-002`](../brain/heron_walk.py) supplies `onerror` so it does not, and that branch has never actually run — a mode-0 folder does not stop root here, and does not stop an administrator on Windows either |
 
 ---
 
