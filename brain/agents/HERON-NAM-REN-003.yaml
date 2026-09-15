@@ -1,0 +1,91 @@
+# Auto Rename Agent - HERON-NAM-REN-003
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY and says "only after identity exists, never before". It renames
+# nothing: a plan comes back and a caller carries it out.
+
+agent: HERON-NAM-REN-003
+version: 1.0.0
+
+input:
+  renames:
+    type: list
+    required: true
+    description: >
+      Each {from, to, kind}, with an optional `identity` for a thing that
+      carries one outside its header - a fragment's id lives in its
+      fragment.yaml - and an optional `of` for a name that must be
+      derived. `to` is a NAME: one carrying a separator is a move, which
+      belongs to HERON-WSP-PLC-005 and HERON-WSP-REP-004.
+  read:
+    type: callable
+    required: false
+    description: >
+      Returns a file's text, so its identity can be read before anything
+      is renamed. Handed in - this agent opens nothing, because looking
+      and then acting on what was seen is the shape of the mistake.
+  referenced_by:
+    type: map
+    required: false
+    description: >
+      What names each file today. A callable is accepted in its place.
+      Handed in for the same reason, and this agent cannot tell whether
+      the list is complete - HERON-NAM-REF-007 is the one that will.
+  also_updating:
+    type: list
+    required: false
+    description: >
+      References that are part of THIS change. A reference outside the
+      list blocks the rename, because renaming first and fixing
+      references afterwards is the same plan with a window in the middle
+      where nothing builds.
+
+output:
+  renamed:
+    type: boolean
+    description: Always false. A caller carries out the plan.
+  rename:
+    type: list
+    description: >
+      Each rename that may proceed, with the identity that survives it
+      and what HERON-NAM-VAL-002 actually compared.
+  refused_names:
+    type: list
+    description: Each refused rename, with which refusal and why.
+  colliding:
+    type: map
+    description: >
+      Present when two renames want one name. Each is fine alone; together
+      one of them is gone, which only the whole batch can see.
+  of:
+    type: integer
+    description: How many renames were given, so a caller can check the split.
+  why:
+    type: string
+    description: The counts, and that nothing was renamed.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That nothing was renamed or opened, that every
+      entry lands in exactly one list, that IDENTITY WAS CHECKED FIRST
+      and why that order is docs/06 s136's rather than a preference, and
+      that what points at the old name is the caller's to find.
+
+allowed-tools: []
+
+timeout-seconds: 30
+
+failures:
+  - NOTHING_TO_RENAME
+  - NOT_A_READER
+  - NOT_A_RENAME
+  - A_RENAME_IS_NOT_A_MOVE
+  - NO_IDENTITY_YET
+  - THE_NEW_NAME_IS_WRONG
+  - REFERENCES_NOT_UPDATED
+  - TWO_RENAMES_COLLIDE
+
+retry:
+  attempts: 0
+  on-failures: []
