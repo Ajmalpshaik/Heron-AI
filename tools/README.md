@@ -417,6 +417,37 @@ The working prototype of `HERON-DOC-FRG-004`.
 
 ---
 
+## `generate-skill-catalog.py` — what a person can ask for
+
+```bash
+python tools/generate-skill-catalog.py
+HERON_SKILL_CATALOG_OUT=somewhere.html python tools/generate-skill-catalog.py
+```
+
+Every skill on one searchable page: the words somebody actually says to reach it, its domain, its risk,
+what must be true before it runs, and what it stands on. The parallel to the fragment catalogue one
+layer up.
+
+**A skill is only as proven as the weakest fragment under it**, and that is the one thing a list of
+names cannot show. Every skill in the library sits at `DRAFT`. Six of them rest entirely on `PROVEN`
+fragments and are waiting for nothing but somebody to look; four rest on something weaker and cannot
+move until those do. In a list of names they are identical. So each skill carries an **effective
+status** — the lowest rung on [docs/09](../docs/09-skills-and-fragments.md)'s ladder among the fragments
+serving it — beside the status its own card declares. A card can say anything; the chain underneath is
+the fact.
+
+**Reachability is reported per Revit release, never overall.** A skill declaring 2020–2027 whose
+fragments cover 2024 and 2025 works on two releases and claims eight; one overall figure is exactly
+what hides that. Same rule as `HERON-SKL-PRF-006`, same reason.
+
+**It concludes twice, so it has a test** ([`tests/test_skill_catalog.py`](../tests/test_skill_catalog.py)):
+the effective status and the per-release reachability are both judgements that can be wrong while the
+page still renders perfectly.
+
+The working prototype of `HERON-DOC-SKL-003`.
+
+---
+
 ## `generate-agent-map.py` — the visual map
 
 ```bash
