@@ -1430,3 +1430,48 @@ disagreeing with the first — the same objection that stopped `HERON-NAM-MET-00
 
 **Not acted on.** Retiring or re-scoping a register row is the owner's call, and so is adopting a commit
 convention.
+
+---
+
+## F24 — `docs/09 §151` asks for a percentage that the agent it asks has refused to produce
+
+Found while building [`HERON-FRG-CRE-007`](../brain/heron_generate.py), whose register row is *"Only
+after Fragment Matcher reports nothing reusable"*. [docs/09 §151](09-skills-and-fragments.md) makes that
+mechanical, and names a number:
+
+> Before the Code Generation Agent runs, the Fragment Matcher must have searched and reported. **If a
+> proven fragment covers ≥80% of the request**, generation is not permitted to start from scratch — it
+> must start from that fragment.
+
+**There is no 80%.** `HERON-RAG-FMT-004` is the Fragment Matcher, and
+[`brain/heron_matcher.py`](../brain/heron_matcher.py) returns `matched`, `partial`, `excluded` and
+`brief` — no score anywhere, and not by oversight. Its own rule is *"a near match is not a match"*: a
+fragment short of one declared need will run, half-work and look exactly like a success, so it goes in
+`partial` where **no caller can reach it by reading `matched`**. Putting `0.9` beside it is the precise
+thing that agent was built to refuse.
+
+### What was built instead
+
+The gate is enforced in the Matcher's own vocabulary, which is **stricter** than the percentage rather
+than looser:
+
+| the Matcher says | `HERON-FRG-CRE-007` does |
+|---|---|
+| `matched` is non-empty | refuse — Golden Rule 3, reuse proven knowledge before creating new |
+| `partial` is non-empty | refuse — this IS the "≥80%" case, and the answer names what to start from |
+| both empty | author, at `DRAFT` |
+
+A percentage would let `79%` through. `partial` does not.
+
+### What is proposed
+
+One of two, and both are the owner's:
+
+1. **Restate §151 in the Matcher's vocabulary** — "if the Matcher reports anything in `matched` or
+   `partial`, generation may not start from scratch" — and note that this is stricter than the original
+   80%.
+2. **Make the Matcher score**, and accept that a number beside a near match is the thing
+   `HERON-RAG-FMT-004` refuses to write. Its module says why at length.
+
+**Not acted on.** §151 is a `[NOTE]` proposing enforcement, and changing what it proposes is not a
+build decision. The agent is built to option 1 today and says so in its own answer.

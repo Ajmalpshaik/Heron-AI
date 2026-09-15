@@ -1,0 +1,103 @@
+# Fragment Creation Agent - HERON-FRG-CRE-007
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent MODIFY. Nothing is written to disk: the card and the folder it
+# belongs in come back.
+
+agent: HERON-FRG-CRE-007
+version: 1.0.0
+
+input:
+  draft:
+    type: map
+    required: true
+    description: >
+      The card the author supplies - every field in
+      heron_fragment.REQUIRED that is not metadata, read from there
+      rather than listed here. May carry `library`, the existing
+      fragments, so an id or a capability already in use is refused.
+  report:
+    type: map
+    required: true
+    description: >
+      HERON-RAG-FMT-004's answer. docs/09 s151 requires the Fragment
+      Matcher to have searched and reported BEFORE generation runs.
+      Anything in `matched` or `partial` refuses the generation - that
+      is docs/09's ">=80% of the request" enforced in the Matcher's own
+      vocabulary, because the percentage it asks for has no producer
+      (PROPOSALS F24).
+  cases:
+    type: map
+    required: true
+    description: >
+      {positive, negative}. At least one NEGATIVE case: a positive case
+      alone shows the fragment does something, and only a negative one
+      shows it is not doing it to everything.
+  into:
+    type: string
+    required: false
+    description: >
+      Where the fragment would live. Defaults to brain/fragments, and
+      the folder name comes from heron_fragment.folder_for so the
+      capability decides the path and nobody types one.
+
+output:
+  authored:
+    type: boolean
+    description: True when the card was built.
+  fragment:
+    type: string
+    description: The new fragment's id.
+  capability:
+    type: string
+    description: What it provides.
+  status:
+    type: string
+    description: Always DRAFT. The author gets no say in it.
+  card:
+    type: map
+    description: The full card, including the five metadata fields set here.
+  folder:
+    type: string
+    description: Where it belongs, derived from the capability.
+  cases:
+    type: map
+    description: How many positive and negative cases came with it.
+  found:
+    type: list
+    description: On a refusal, what the Matcher found.
+  where:
+    type: string
+    description: Which of the Matcher's lists it was in.
+  by:
+    type: string
+    description: On a capability collision, which fragment already claims it.
+  why:
+    type: string
+    description: What was authored, or what stops it.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That the Matcher gate ran and in whose
+      vocabulary; that nothing was compiled or run; that the cases were
+      counted rather than read; and that nothing was written to disk.
+
+allowed-tools: []
+
+timeout-seconds: 120
+
+failures:
+  - NOTHING_TO_AUTHOR
+  - NO_MATCHER_REPORT
+  - REUSE_EXISTS
+  - START_FROM_IT
+  - NOT_A_DRAFT
+  - INCOMPLETE
+  - NO_CASES
+  - CAPABILITY_TAKEN
+  - ALREADY_EXISTS
+
+retry:
+  attempts: 0
+  on-failures: []
