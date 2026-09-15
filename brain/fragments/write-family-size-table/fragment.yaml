@@ -1,0 +1,145 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 14
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-057
+semantic-identity: "replace this family's lookup table with one from a CSV"
+kind: action
+domain: revit.families
+capability: WRITE_FAMILY_SIZE_TABLE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Imports a CSV over a family's lookup table - adding the sizes it was missing,
+  or correcting the dimensions it had. The write twin of
+  REPORT_FAMILY_SIZE_TABLE, which could read a table and say which sizes were
+  absent but never put one right.
+
+  **A SIZE MISSING FROM THE TABLE IS WHY A FITTING DOES NOT APPEAR**, and it
+  says nothing when it fails. Give a segment new sizes and the family's table
+  is left behind: half the run gets elbows and half gets a bare corner, with
+  no error anywhere. This is how the table catches up.
+
+  **IT REPLACES, IT DOES NOT MERGE.** Revit's import overwrites the whole
+  table of that name - a CSV holding five rows leaves a table of five rows,
+  not twenty-four. So the CSV must carry EVERY row that is to survive, and the
+  honest way to build one is to export the existing table first and edit that.
+  Reporting `rowsBefore` beside `rowsAfter` is what makes an accidental
+  replacement visible instead of silent.
+
+  **THE HEADER FORMAT IS REVIT'S, NOT A CONVENTION.** Each column reads
+  `Name##type##unit` - "DN##length##millimeters" - and the first column is the
+  key and is unnamed. A header Revit cannot parse is refused with the column
+  and the text that failed, which is reported rather than swallowed: an import
+  that quietly does nothing looks exactly like one that worked.
+
+  **IT NEEDS THE FAMILY OPEN FOR EDITING.** A lookup table belongs to the
+  family document. Run it with a project in front and it says so.
+
+  **A FAMILY WITH NO TABLE MANAGER GETS ONE.** Importing into a family that
+  never had a lookup table is a legitimate first import, so the manager is
+  created rather than refused - and the answer says that is what happened,
+  because gaining a table is a bigger change than gaining a row.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The CSV to import. Its first column is the unnamed key; the rest read
+    # `Name##type##unit`. Export the existing table first and edit that.
+    - name: csvPath
+      type: string
+      source: request
+    # Which table the CSV replaces. Empty takes the name from the CSV file's
+    # own filename, which is what Revit does.
+    - name: tableName
+      type: string
+      source: request
+  provides:
+    - name: imported
+      role: result
+      type: bool
+    - name: rowsBefore
+      # How many rows the table held before. Reported beside `rowsAfter`
+      # because the import REPLACES, and a table that shrank is the failure
+      # worth seeing.
+      role: result
+      type: int
+    - name: rowsAfter
+      role: result
+      type: int
+    - name: tableCreated
+      # That the family had no lookup table at all and gained one. A bigger
+      # change than gaining a row, so it is never silent.
+      role: result
+      type: bool
+    - name: problem
+      # Revit's own words when the import refused, with the row, column and
+      # header text that failed - empty when it did not. A string, because a
+      # list entry is abbreviated before a reader sees it.
+      role: accounting
+      type: string
+    - name: notAFamily
+      # That the document in front is a project, not a family being edited.
+      # The evidence it looked in the wrong place (D-52).
+      role: accounting
+      type: bool
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-09-16'
+  by: Ajmal PS
+  model: TRG_Cap_Copper (1,519 elements), Revit 2020, session 8084
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned findings 2 item(s) [imported; 18
+    row(s) before, 18 after, 'Calotta rame' imported from C:/Users/AJMALA~1/AppData/Local...],
+    imported true, notAFamily false, problem , rowsAfter 18, rowsBefore 18, tableCreated false,
+    wantedCsv C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/da8dd1fb-1d3e-4581-9a66-290b5cf512a8/scratchpad/ready/TRG_Cap_Copper/Calotta
+    rame.csv. inputs came csvPath as given; tableName as given. on TRG_Cap_Copper
+  negative_case: 'run with csvPath=C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/da8dd1fb-1d3e-4581-9a66-290b5cf512a8/scratchpad/ready/TRG_Cap_Copper/NOSUCHFILE.csv,
+    tableName=NOSUCHFILE instead - chosen because it should not contain what this fragment
+    reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned findings 2 item(s) [NOTHING was imported; 0 row(s) before, 0 after,
+    The import was REFUSED and the table is unchanged: FileNotFo...], imported false, notAFamily
+    false, problem FileNotFound; row -1, column -1, header text '''', file ''C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/da8dd1fb-1d3e-4581-9a66-290b5cf512a8/scratchpad/ready/TRG_Cap_Copper/NOSUCHFILE.csv'',
+    rowsAfter 0, rowsBefore 0, tableCreated false, wantedCsv C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai/da8dd1fb-1d3e-4581-9a66-290b5cf512a8/scratchpad/ready/TRG_Cap_Copper/NOSUCHFILE.csv.
+    inputs came csvPath as given; tableName as given. on TRG_Cap_Copper'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 4b4eb64b1885b254
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release.
+  `FamilySizeTableManager.GetFamilySizeTableManager`,
+  `CreateFamilySizeTableManager`, `ImportSizeTable`, `GetAllSizeTableNames`,
+  `GetSizeTable` and the `FamilySizeTableErrorInfo` properties
+  `FamilySizeTableErrorType`, `InvalidRowIndex`, `InvalidColumnIndex` and
+  `InvalidHeaderText` were confirmed present on the 2020 assembly on
+  2026-09-15. Units are named inside the CSV header, so nothing is converted
+  here and the 2021 units move cannot reach it.
+
+# ROUTING - repeated in REPORT_FAMILY_SIZE_TABLE.
+#
+#   "add these sizes to the lookup table"  -> here
+#   "the fitting will not appear at my size" -> REPORT_FAMILY_SIZE_TABLE first,
+#                                              to see which rows are absent
+#   "what sizes does the segment have"     -> REPORT_PIPE_SEGMENTS
+
+utterances:
+  - import this lookup table
+  - add these sizes to the family table
+  - replace the size table from a csv
+  - fix the lookup table
+  - write the size table back

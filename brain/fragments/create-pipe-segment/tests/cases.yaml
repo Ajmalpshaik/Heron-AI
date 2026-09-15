@@ -1,0 +1,65 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+#
+# The failure to fear here is NOT a segment that fails to appear. It is one
+# that appears, looks complete, and carries a wall thickness nobody chose.
+
+positive:
+  - given: >
+      segmentName a new name, materialName Copper, copyFrom "Copper - A",
+      nominalEqualsOd true, addSizes empty
+    expect: >
+      createdId set, sizesCopied equal to the source's size count, and
+      relabelled equal to the number whose nominal differed from OD. Then OPEN
+      MANAGE > MEP SETTINGS > PIPE SETTINGS and read the table: Nominal must
+      now equal OD on every row. A count alone cannot tell a relabelled table
+      from an unchanged one
+
+  - given: the same, nominalEqualsOd false
+    expect: >
+      relabelled = 0 and the nominals still reading 15, 18, 20 against ODs of
+      12.7, 15.88, 19.05. Proves the flag is doing the work and not the copy
+
+  - given: addSizes "22.22x1.14, 28.58x1.27"
+    expect: >
+      sizesAdded = 2, and both drawable in the pipe tool. Check the DROPDOWN,
+      not the table - a size can sit in the table and never be offered
+
+  - given: >
+      replaceSizes true with the EN 12735 metric set - 6x0.8 through 54x2.0 -
+      copied from an imperial segment
+    expect: >
+      sizesCopied = 0, sizesAdded = 11, and the table holding ONLY metric ODs.
+      No 6.35 and no 12.7 anywhere. A table carrying both 12 and 12.7 is the
+      failure this flag exists to prevent - somebody draws one of each in the
+      same run and the fitting never resolves
+
+negative:
+  - given: materialName ZZZNOTAMATERIAL
+    expect: >
+      createdId null and NOTHING created. The VALUE-driven negative, and the
+      important one: material cannot be set after creation, so a segment made
+      with the wrong one has to be deleted rather than fixed
+
+  - given: copyFrom naming a segment that does not exist
+    expect: >
+      createdId null, near misses listed. Never a segment with no sizes -
+      that would be the "succeeded and did nothing" outcome exactly
+
+  - given: a segmentName that already exists
+    expect: >
+      createdId null, the name in `alreadyThere`, and no second segment. Two
+      segments of one name is a dropdown nobody can use
+
+  - given: addSizes "22.22x11.5" - a wall thicker than half the OD
+    expect: >
+      the entry in `rejected` and NOT in the segment. Revit accepts a bore of
+      zero or less without a word, so this has to be caught here
+
+  - given: addSizes "hello"
+    expect: its text in `rejected`, named. Never skipped silently
+
+second_route:
+  - open Manage > MEP Settings > Mechanical Settings > Pipe Settings > Segments and Sizes and read the new table
+  - draw a pipe with the new segment and check the size dropdown offers what was created
+  - run REPORT_PIPE_SEGMENTS and compare nominal against OD on every row
+  - one Ctrl+Z removes the segment again in a single step (Golden Rule 16)

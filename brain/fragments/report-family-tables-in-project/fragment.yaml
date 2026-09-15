@@ -1,0 +1,143 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 14
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-059
+semantic-identity: "read the lookup tables of every loaded family without opening any of them by hand"
+kind: action
+domain: revit.families
+capability: REPORT_FAMILY_TABLES_IN_PROJECT
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Opens each loaded family from the PROJECT, reads its lookup tables, writes
+  them out as CSV, and closes it again - so a whole set of fittings can be
+  checked in one pass instead of one family at a time by hand.
+
+  **IT EXISTS BECAUSE A SIZE TABLE IS ONLY REACHABLE FROM INSIDE THE FAMILY.**
+  REPORT_FAMILY_SIZE_TABLE reads the family in front, which means opening each
+  one, looking, and closing it. A pipe type references eight fitting families,
+  and every one of them can carry the same stale table - so doing it by hand
+  is eight rounds of the same work and the easiest place to stop early.
+
+  **IT CHANGES NOTHING AND KEEPS NOTHING OPEN.** Each family document is
+  closed WITHOUT saving the moment its tables are read. A family left open is
+  not a neutral side effect: the next fragment would find it in front and
+  answer about the wrong document.
+
+  **A FAMILY THAT REFUSES TO OPEN IS NAMED, NOT SKIPPED.** In-place families
+  and some system families cannot be edited, and a silent skip is
+  indistinguishable from a family with no table. Both are real answers and
+  they are different ones.
+
+  **THE CSV IS THE POINT, NOT THE SUMMARY.** Tables are wide - a reducing tee
+  is two keys and three dimensions - and no line of text holds one. The
+  summary says which family has which table and how many rows; the files hold
+  what is actually in them.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: app
+      type: Application
+    # Narrows to families whose NAME contains this. Empty reads every loaded
+    # family, which on a real project is a long job.
+    - name: nameContains
+      type: string
+      source: request
+    # Folder to write one CSV per table into, named <family>__<table>.csv.
+    # Empty reads without writing anything.
+    - name: exportFolder
+      type: string
+      source: request
+  provides:
+    - name: familiesRead
+      role: result
+      type: int
+    - name: tablesFound
+      role: result
+      type: int
+    - name: summary
+      # One line per family - its tables and their row counts. A string,
+      # because a list is abbreviated to three entries before a reader sees
+      # it and eight families would read as three.
+      role: result
+      type: string
+    - name: noTable
+      # Families carrying no lookup table at all. A real answer: such a family
+      # takes its dimensions from its own parameters, so a size that will not
+      # appear is not a table problem there.
+      role: result
+      type: IList<string>
+    - name: leftOpen
+      # Families that were ALREADY open when this ran, and so were left open.
+      # A document this fragment did not open holds somebody's unsaved work,
+      # and closing it discards that work silently - measured 2026-09-16, six
+      # corrected families closed and every correction lost.
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Families Revit would not open for editing, named with why. The
+      # evidence it looked, never a table it read (D-52).
+      role: accounting
+      type: IList<string>
+    - name: scanned
+      # How many families were examined before narrowing. Work DONE, never a
+      # thing found (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-09-16'
+  by: Ajmal PS
+  model: PIPE (3,332 elements), Revit 2020, session 8084
+  positive_case: 'run as it would normally be run. returned families 126 item(s) [Rectangular
+    Mullion, Circular Mullion, System Panel, ...], familiesRead 1, findings 1 item(s) [1 family(ies)
+    read of 126 scanned; 1 table(s) found, 0 famil...], folder , leftOpen 0 item(s), needle
+    TRG_Cap, noTable 0 item(s), refused 0 item(s), scanned 126, summary TRG_Cap_Copper: Calotta
+    rame(18 rows), summaryRows 1 item(s) [TRG_Cap_Copper: Calotta rame(18 rows)], tablesFound
+    1, wasOpenBefore HashSet`1. inputs came nameContains as given; exportFolder as given.
+    on PIPE'
+  negative_case: run with nameContains=ZZZNOTAFAMILY, exportFolder= instead - chosen because
+    it should not contain what this fragment reports. returned families 126 item(s) [Rectangular
+    Mullion, Circular Mullion, System Panel, ...], familiesRead 0, findings 1 item(s) [0 family(ies)
+    read of 126 scanned; 0 table(s) found, 0 famil...], folder , leftOpen 0 item(s), needle
+    ZZZNOTAFAMILY, noTable 0 item(s), refused 0 item(s), scanned 126, summary , summaryRows
+    0 item(s), tablesFound 0, wasOpenBefore HashSet`1. inputs came nameContains as given;
+    exportFolder as given. on PIPE
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: cf7c7be255dd4de5
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Document.EditFamily`,
+  `Document.Close`, `FamilySizeTableManager.GetFamilySizeTableManager`,
+  `GetAllSizeTableNames`, `ExportSizeTable` and `FamilySizeTable.NumberOfRows`
+  are present 2020 through 2027, confirmed by reflection on the 2020 assembly
+  on 2026-09-15. No number is read or converted here - the CSV carries its own
+  units in its header - so the 2021 units move cannot reach it.
+
+# ROUTING - repeated in REPORT_FAMILY_SIZE_TABLE.
+#
+#   "check every fitting family's sizes" -> here, from the project
+#   "read THIS family's table"           -> REPORT_FAMILY_SIZE_TABLE, with the
+#                                           family open in front
+#   "write a table back"                 -> WRITE_FAMILY_SIZE_TABLE
+
+utterances:
+  - check the lookup tables of all the families
+  - export every family size table
+  - which families have stale size tables
+  - read all the fitting tables

@@ -1,0 +1,33 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a parametric fitting family open for editing, with a lookup table
+    expect: >
+      rowCount matching the row count in Family Types > Manage Lookup Tables,
+      and `rows` carrying EVERY row. Count the dialog - a list abbreviated to
+      three reads as a three-row table
+
+  - given: a family holding more than one table, tableName empty
+    expect: >
+      the FIRST table read, and `tableNames` naming all of them so the reader
+      can see there were others
+
+negative:
+  - given: a PROJECT document in front instead of a family
+    expect: >
+      notAFamily true and a finding saying so - never rowCount 0 on its own.
+      "No rows" and "you are looking at the wrong document" are different
+      answers and only one is a fault in the family
+
+  - given: a family with no lookup table at all
+    expect: >
+      a finding saying so. Such a family takes its dimensions from its own
+      parameters, so a size that will not appear is NOT a table problem - and
+      saying "0 rows" would send somebody to fix the wrong thing
+
+  - given: tableName naming a table the family does not have
+    expect: the tables it DOES have, listed. Never a silent fall back to the first
+
+second_route:
+  - open the family and read Family Types > Manage Lookup Tables > Export, then open the CSV
+  - compare the size column against the segment's sizes from REPORT_PIPE_SEGMENTS

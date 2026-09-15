@@ -1,0 +1,150 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 14
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-058
+semantic-identity: "what parameters this open family has, and what the current type sets them to"
+kind: action
+domain: revit.families
+capability: REPORT_FAMILY_PARAMETERS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists the parameters of the family open for editing - name, storage type,
+  whether it is an instance or a type parameter, any formula, and what the
+  current type sets it to. The question asked before changing anything inside
+  a family.
+
+  **IT IS THE ANSWER TO "WHERE DOES THIS FAMILY GET ITS MATERIAL".** A fitting
+  family usually carries a MATERIAL PARAMETER, and its geometry is tied to
+  that rather than to a material directly - so the project can drive it per
+  type. Painting a material onto the geometry instead hard-codes it, and the
+  family can then never be anything else. Which of the two a family does is
+  not visible from outside it, and getting it wrong is not a small mistake, so
+  it is read before it is changed.
+
+  **A FORMULA MEANS THE VALUE IS NOT YOURS TO SET.** A parameter driven by a
+  formula refuses a written value, and the refusal reads like a failure of the
+  write rather than a fact about the parameter. So the formula is reported
+  beside the value.
+
+  **EVERY PARAMETER COMES BACK AS ONE STRING.** A list is abbreviated to its
+  first three entries before a reader sees it, and a family with forty
+  parameters then reads as though it had three.
+
+  **IT NEEDS THE FAMILY OPEN FOR EDITING.** Parameters belong to the family
+  document. Run it with a project in front and it says so rather than
+  reporting nothing, because "no parameters" and "you are looking at the wrong
+  document" are different answers.
+
+  Changes nothing and opens no transaction.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Narrows to parameters whose NAME contains this. Empty reports them all.
+    - name: nameContains
+      type: string
+      source: request
+  provides:
+    - name: parameterCount
+      role: result
+      type: int
+    - name: parameterList
+      # Every matching parameter on ONE line - name, storage type, instance or
+      # type, value, formula. A string, for the reason in the purpose.
+      role: result
+      type: string
+    - name: materialParameters
+      # The parameters that hold a MATERIAL, named. The ones that decide what
+      # the family is made of, which is the usual reason for asking.
+      role: result
+      type: string
+    - name: currentTypeName
+      # Which family type the reported values belong to. Values without a type
+      # beside them are values from nowhere in particular.
+      role: result
+      type: string
+    - name: scanned
+      # How many parameters were examined before narrowing. Work DONE, never a
+      # thing found (D-52).
+      role: accounting
+      type: int
+    - name: notAFamily
+      # That the document in front is a project, not a family being edited.
+      role: accounting
+      type: bool
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-09-16'
+  by: Ajmal PS
+  model: TRG_Cap_Copper (1,519 elements), Revit 2020, session 8084
+  positive_case: 'run as it would normally be run. returned currentTypeName Standard, findings
+    2 item(s) [family ''TRG_Cap_Copper''; 23 parameter(s) reported of 23, val..., 1 material
+    parameter(s): Material [type] = TCM_MAT_Copper], materialParameters Material [type] =
+    TCM_MAT_Copper, materialRows 1 item(s) [Material [type] = TCM_MAT_Copper], needle , notAFamily
+    false, parameterCount 23, parameterList ClassificationCode [String/instance] = [Uniclass
+    2015] Pr_65_52_63 : Pipes and fittings (formula: "[Uniclass 2015] Pr_65_52_63 : Pipes
+    and fittings")  ||  Default Elevation [Double/type] = 0.0  ||  Loss Method [Integer/type]
+    = <blank>  ||  K Coefficient Table [String/type] = <blank>  ||  K Coefficient [Double/type]
+    = <blank>  ||  Material [ElementId/type] = TCM_MAT_Copper  ||  Use Annotation Scale [Integer/type]
+    = <blank>  ||  Nominal radius [Double/instance] = 7.5 mm  ||  Nominal diameter [Double/instance]
+    = 15.0 mm (formula: Nominal radius * 2)  ||  Height [Double/instance] = 17.5 mm (formula:
+    size_lookup(Sheet, "Hgt", 0.28 * Nominal diameter + 45.4 mm, Nominal diameter))  ||  External
+    diameter fitting [Double/instance] = 22.0 mm (formula: size_lookup(Sheet, "FOD", Nominal
+    diameter + 10.4 mm, Nominal diameter))  ||  Keynote [String/type] = <blank>  ||  Model
+    [String/type] = <blank>  ||  Manufacturer [String/type] = <blank>  ||  Type Comments [String/type]
+    = PFT  ||  Type Image [ElementId/type] = <none>  ||  URL [String/type] = <blank>  ||  Description
+    [String/type] = Cap in copper  ||  Assembly Code [String/type] = <blank>  ||  Cost [Double/type]
+    = <blank>  ||  Sheet [String/type] = Calotta rame  ||  External Radius Fitting [Double/instance]
+    = 11.0 mm (formula: External diameter fitting / 2)  ||  IsCustom [Integer/type] = <blank>,
+    rows 23 item(s) [ClassificationCode [String/instance] = [Uniclass 2015] Pr_65..., Default
+    Elevation [Double/type] = 0.0, Loss Method [Integer/type] = <blank>, ...], scanned 23.
+    inputs came nameContains as given. on TRG_Cap_Copper'
+  negative_case: run with nameContains=ZZZNOTAPARAMETER instead - chosen because it should
+    not contain what this fragment reports. returned currentTypeName Standard, findings 2
+    item(s) [family 'TRG_Cap_Copper'; 0 parameter(s) reported of 23, valu..., NO material
+    parameter was found. This family does not take i...], materialParameters , materialRows
+    0 item(s), needle ZZZNOTAPARAMETER, notAFamily false, parameterCount 0, parameterList
+    , rows 0 item(s), scanned 23. inputs came nameContains as given. on TRG_Cap_Copper
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: b72f94d245ec65e0
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Document.FamilyManager`,
+  `FamilyManager.GetParameters`, `CurrentType`, `FamilyParameter.Definition`,
+  `StorageType`, `IsInstance`, `Formula` and the `FamilyType.AsString`,
+  `AsValueString`, `AsElementId` readers were confirmed present on the 2020
+  assembly on 2026-09-15.
+
+  `FamilyParameter.DisplayUnitType` is DELIBERATELY NOT READ. It is the
+  property that became ForgeTypeId at 2021, and touching it is what makes one
+  implementation impossible. Values cross as Revit's own strings instead, so
+  no unit is named here at all.
+
+# ROUTING - repeated in REPORT_FAMILY_SIZE_TABLE.
+#
+#   "where does this family get its material" -> here
+#   "what parameters does this family have"   -> here
+#   "what sizes does the lookup table hold"   -> REPORT_FAMILY_SIZE_TABLE
+#   "what material is this element"           -> READ_ELEMENT_MATERIAL, in a project
+
+utterances:
+  - what parameters does this family have
+  - where does this family get its material
+  - list the family parameters
+  - does this family have a material parameter
+  - what does the current type set

@@ -1,0 +1,68 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+#
+# The failure this fragment is most likely to hide is NOT pointing at the wrong
+# part - that is visible the moment a pipe is drawn. It is a rule rebuilt
+# without its size window, which looks perfect in the type dialog and then
+# silently inserts nothing at a size it used to cover.
+
+positive:
+  - given: >
+      a pipe type whose Segments rule points at one segment, partName the name
+      of a different segment that exists, ruleIndex 0
+    expect: >
+      rulesChanged = 1, and OPEN ROUTING PREFERENCES IN REVIT. A count of 1 is
+      what the broken version returns too - the only thing that separates them
+      is the size window still reading what it read before, and the segment
+      column reading the new name
+
+  - given: the same call run a second time, nothing else changed
+    expect: >
+      rulesChanged = 0 and the rule named in `alreadyCorrect`. Already being
+      in the state asked for is not a failure and must never be counted as a
+      change (D-52)
+
+  - given: a rule carrying a 15 to 50 mm size window
+    expect: >
+      the finding says "1 size window(s) carried across", and the rule in Revit
+      still covers 15 to 50 mm. A rebuilt rule with no criterion covers EVERY
+      size, which is the quiet failure this case exists for
+
+negative:
+  - given: partName set to a name no segment has - ZZZNOTASEGMENT
+    expect: >
+      rulesChanged = 0, nothing touched, and the reason said out loud. This is
+      the VALUE-driven negative and the stronger form: it tests the input
+      rather than the arrangement
+
+  - given: partName set to a partial name several segments share
+    expect: >
+      rulesChanged = 0 and every close name in `nearMisses`. Picking one would
+      be a confident wrong answer - "Copper" and "Copper - K" are different
+      segments and only the caller knows which was meant
+
+  - given: a pipe type whose chosen group holds NO rule at all
+    expect: >
+      rulesChanged = 0 and a finding saying so. Inventing a rule would mean
+      inventing a size window, which is the exact failure in the header
+
+  - given: ruleIndex 5 on a group holding 1 rule
+    expect: >
+      rulesChanged = 0 and a finding naming how many rules there actually are.
+      Never rule 0 instead - silently changing a different rule from the one
+      asked for is the worst outcome available here
+
+  - given: a wall, or anything that is not a pipe or duct type
+    expect: >
+      its name in `notRoutable`, rulesChanged = 0. Never counted as touched
+
+  - given: a part that is real but wrong for the group - a segment named for Elbows
+    expect: >
+      the rule named in `unverified`, NOT in rulesChanged. AddRule returns
+      without complaint and does nothing here, so a version that trusted the
+      call would report a change that did not happen
+
+second_route:
+  - open the type's Routing Preferences dialog in Revit and read the segment and the size window
+  - draw a pipe of that type and check the material it reports
+  - one Ctrl+Z puts the whole change back in a single step (Golden Rule 16)
+  - run REPORT_ROUTING_PREFERENCES on the same type and compare what it says to what was asked for

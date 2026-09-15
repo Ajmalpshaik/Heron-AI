@@ -1,0 +1,33 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a material at the default grey, a copper colour asked for
+    expect: >
+      changed 1, wasColour the grey and nowColour the copper. LOOK AT THE
+      MODEL in a shaded view - a count of 1 is what the broken version returns
+      too, and the pipe changing colour is the only thing that separates them
+
+  - given: the same call run a second time
+    expect: >
+      changed 0 and alreadyThat true. Already being the colour asked for is
+      not a failure and must never be counted as a change (D-52)
+
+negative:
+  - given: materialName that matches nothing
+    expect: >
+      changed 0, near misses listed, and NO material created. Creating one
+      here would leave a second material beside the one that was meant, with
+      nothing pointing at it - the value-driven negative
+
+  - given: no colour given
+    expect: changed 0 and a finding saying so. Never a black material
+
+  - given: a material whose colour cannot be set
+    expect: >
+      changed 0 and Revit's own refusal reported. `nowColour` still read back,
+      so a property that accepted the assignment and stored something else is
+      visible rather than assumed
+
+second_route:
+  - open the material in Manage > Materials and read the Graphics tab shading colour
+  - set a view to Shaded and look at an element using it

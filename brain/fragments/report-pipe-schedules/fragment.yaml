@@ -1,0 +1,127 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 14
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-049
+semantic-identity: "which pipe schedules this project has, and which segments are using each"
+kind: action
+domain: revit.mep
+capability: REPORT_PIPE_SCHEDULES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists every pipe schedule in the project and names the segments using each
+  one. The question "is this schedule still needed" - asked before anybody
+  removes one.
+
+  **IT EXISTS BECAUSE CREATE_PIPE_SEGMENT MAKES SCHEDULES.** Revit keys a
+  segment by its material AND its schedule together and refuses a pair already
+  in use, so a second copper segment forces a NEW schedule into the project.
+  That schedule outlives the segment: delete the segment and the schedule
+  stays, in Revit's own settings, belonging to nothing. Making a thing nothing
+  can list or remove is a gap, and this closes it.
+
+  **NOTHING ELSE IN THE LIBRARY CAN REACH ONE.** A PipeScheduleType is an
+  ElementType with NO CATEGORY, so SELECT_BY_CATEGORY_NAME and SELECT_TYPES
+  both refuse it - correctly, since they are told to name a category and there
+  is none. It never appears in a view either, so it cannot be clicked. Naming
+  it here is the only route to one.
+
+  **WHICH SEGMENTS USE IT IS THE WHOLE POINT.** A schedule still in use cannot
+  be removed without taking a segment with it, and Revit does not warn first.
+  Reporting the users by name turns "can I delete this" from a guess into a
+  reading.
+
+  **AN UNUSED SCHEDULE IS A REAL ANSWER, NOT AN EMPTY ONE.** `unused` is the
+  finding somebody is asking for, so it is a result rather than a count of
+  nothing found (D-52).
+
+  Changes nothing and opens no transaction.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Narrows to schedules whose name contains this. An EXACT name beats a
+    # prefix, so naming one schedule cannot also return a longer one.
+    - name: nameContains
+      type: string
+      source: request
+  provides:
+    # The schedules themselves, so the answer can be ACTED on - nothing else
+    # can select one. See the purpose.
+    - name: elements
+      role: result
+      type: IList<Element>
+    - name: scheduleCount
+      role: result
+      type: int
+    - name: scheduleList
+      # Every matching schedule and its users, on ONE line. A string rather
+      # than a list, because a list is abbreviated to three entries before a
+      # reader sees it.
+      role: result
+      type: string
+    - name: unused
+      # Schedules no segment uses - the ones that can be removed. A finding in
+      # its own right, never a count of nothing.
+      role: result
+      type: IList<string>
+    - name: scanned
+      # How many schedules were examined before narrowing. Work DONE, never a
+      # thing found (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-09-16'
+  by: Ajmal PS
+  model: PIPE (3,332 elements), Revit 2020, session 8084
+  positive_case: 'run as it would normally be run. returned elements 1 item(s) [TRG Refrigerant],
+    exactName false, findings 2 item(s) [1 pipe schedule(s) reported of 17 scanned; 0 used
+    by nothing, ''TRG Refrigerant'' is used by 1 segment(s): TRG_Copper_Refrig...], needle
+    TRG, rows 1 item(s) [TRG Refrigerant [used by TRG_Copper_Refrigerant]], scanned 17, scheduleCount
+    1, scheduleList TRG Refrigerant [used by TRG_Copper_Refrigerant], schedules 17 item(s)
+    [Schedule 40, Schedule 80, 22, ...], unused 0 item(s), usersBySchedule 17 entry(ies).
+    inputs came nameContains as given. on PIPE'
+  negative_case: run with nameContains=ZZZNOTASCHEDULE instead - chosen because it should
+    not contain what this fragment reports. returned elements 0 item(s), exactName false,
+    findings 2 item(s) [0 pipe schedule(s) reported of 17 scanned; 0 used by nothing, Nothing
+    matched 'ZZZNOTASCHEDULE'. The 17 schedule(s) in thi...], needle ZZZNOTASCHEDULE, rows
+    0 item(s), scanned 17, scheduleCount 0, scheduleList , schedules 17 item(s) [Schedule
+    40, Schedule 80, 22, ...], unused 0 item(s), usersBySchedule 17 entry(ies). inputs came
+    nameContains as given. on PIPE
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: c069fee9ec6f58d2
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `PipeScheduleType`, `PipeSegment` and
+  `PipeSegment.ScheduleTypeId` are present 2020 through 2027, confirmed by
+  reflection on the 2020 assembly on 2026-09-15. No unit is read or converted
+  here at all, so the 2021 units move cannot reach it.
+
+# ROUTING - repeated in REPORT_PIPE_SEGMENTS and CREATE_PIPE_SEGMENT.
+#
+#   "what pipe schedules are there"   -> here
+#   "can I delete this schedule"      -> here; it names the segments using it
+#   "what pipe segments do we have"   -> REPORT_PIPE_SEGMENTS
+#   "make a new segment"              -> CREATE_PIPE_SEGMENT, which may add one
+
+utterances:
+  - what pipe schedules do we have
+  - list the pipe schedules
+  - is this schedule still used
+  - which segments use this schedule
+  - can I delete this pipe schedule

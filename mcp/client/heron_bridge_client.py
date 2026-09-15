@@ -557,6 +557,60 @@ def report_mismatched(mismatched):
           "until the two agree.")
 
 
+def only_session(live, session):
+    """
+    Narrow the connected Revits to the ONE that was asked for.
+
+    WHY REFUSING BEATS PICKING. With two Revits connected, `prove` and
+    `validate` took live[0] - the LOWEST PROCESS ID - and said nothing about
+    it. On 2026-09-15 session 2924 beat 8084 for no reason anybody chose, and
+    a proof written for a pipe model came back having read a family file. It
+    reported "positive ok" on a phase that measured `scanned 0`, because a
+    positive that finds nothing still runs without erroring.
+
+    `fragment` was worse in a quieter way: it looped over EVERY session, so
+    one apply reached two models.
+
+    So a second session is a QUESTION, not a tie to break - the same rule the
+    rest of Heron already keeps for a category, a view and a part name.
+
+    Returns (chosen, refusal). `refusal` is None when it is safe to carry on.
+    """
+    if session is not None:
+        picked = [b for b in live if str(b.pid) == str(session)]
+        if not picked:
+            return None, ("No connected Revit with session %s. Connected: %s"
+                          % (session, ", ".join("%s (Revit %s)" % (b.pid, b.revit_version)
+                                                for b in live)))
+        return picked, None
+
+    if len(live) <= 1:
+        return live, None
+
+    lines = ["More than one Revit is connected, and picking one for you is how a run",
+             "reads the wrong model and still reports ok. Say which:", ""]
+    for b in live:
+        lines.append("  --session %-8s Revit %s" % (b.pid, b.revit_version))
+    return None, chr(10).join(lines)
+
+
+def pull_session(rest):
+    """Take `--session <pid>` out of the argument list, wherever it sits."""
+    if rest is None:
+        return rest, None
+    out, session, skip = [], None, False
+    for i, token in enumerate(rest):
+        if skip:
+            skip = False
+            continue
+        if token == "--session" and i + 1 < len(rest):
+            session = rest[i + 1]
+            skip = True
+            continue
+        out.append(token)
+    return out, session
+
+
 def cmd_list():
     live, starting, stale, mismatched = discover()
     if not live and starting:
@@ -908,7 +962,7 @@ def caller_values(pairs):
     return values
 
 
-def cmd_fragment(name, values=None, writing=False, apply_it=False):
+def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None):
     """
     Run one fragment's C# against the open model - D-28's executor, reached.
 
@@ -957,6 +1011,13 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False):
         print("No Revit is connected. Press Heron on the ribbon to connect first.")
         report_mismatched(mismatched)
         return 1
+
+    # ONE SESSION, CHOSEN. This used to loop over every connected Revit, so a
+    # single --apply reached two models and only the last line was read.
+    live, refusal = only_session(live, session)
+    if refusal is not None:
+        print(refusal)
+        return 2
 
     failures = 0
     for bridge in live:
@@ -1030,7 +1091,7 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False):
     return 1 if failures else 0
 
 
-def cmd_prove(names, in_document=None, values=None):
+def cmd_prove(names, in_document=None, values=None, session=None):
     """
     Run several fragments against the open model in ONE process.
 
@@ -1081,6 +1142,15 @@ def cmd_prove(names, in_document=None, values=None):
         print("No Revit is connected. Press Heron on the ribbon to connect first.")
         report_mismatched(mismatched)
         return 1
+
+    chosen, refusal = only_session(live, session)
+    if refusal is not None:
+        # Close the bridges we opened before walking away from them.
+        for b in live:
+            b.close()
+        print(refusal)
+        return 2
+    live = chosen
 
     bridge = live[0]
     for other in live[1:]:
@@ -1183,7 +1253,7 @@ def cmd_prove(names, in_document=None, values=None):
     return 1 if failures else 0
 
 
-def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
+def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=None, out=None,
                  values=None, negative_values=None, writing=False, setup=None,
                  keep_chain=False, allow_publish=False):
     """
@@ -1290,6 +1360,15 @@ def cmd_validate(name, in_document=None, cross=None, negative_in=None, out=None,
         print("No Revit is connected. Press Heron on the ribbon to connect first.")
         report_mismatched(mismatched)
         return 1
+
+    chosen, refusal = only_session(live, session)
+    if refusal is not None:
+        # Close the bridges we opened before walking away from them.
+        for b in live:
+            b.close()
+        print(refusal)
+        return 2
+    live = chosen
 
     bridge = live[0]
     for other in live[1:]:
@@ -1809,6 +1888,7 @@ def main(argv):
             return 2
         # prove --in "Project1" list-levels ...  reads a model that is open
         # but not necessarily the one in front.
+        rest, session = pull_session(rest)
         in_document = None
         if len(rest) >= 2 and rest[0] == "--in":
             in_document = rest[1]
@@ -1820,7 +1900,7 @@ def main(argv):
         values = caller_values(pairs)
         if values is None:
             return 2
-        return cmd_prove(rest, in_document, values)
+        return cmd_prove(rest, in_document, values, session=session)
     if argv[1] == "fragment":
         rest, pairs, _ = pull_values(argv[2:])
         # --write runs it inside a transaction so a MODIFY fragment can run.
@@ -1834,16 +1914,21 @@ def main(argv):
             print("Which fragment? e.g. list-levels")
             print("  --view \"Level 1\"        a view the fragment asks the caller for")
             print("  --set name=value        any other value it asks for")
+            print("  --session <pid>         which Revit, when more than one is connected")
             print("  --write                 run a MODIFY fragment, in a transaction")
             print("  --write --apply         ...and KEEP what it did (one Ctrl+Z undoes it)")
             return 2
         if apply_it and not writing:
             print("--apply only means something with --write. A read leaves nothing to keep.")
             return 2
+        rest, session = pull_session(rest)
+        if not rest:
+            print("Which fragment? e.g. list-levels")
+            return 2
         values = caller_values(pairs)
         if values is None:
             return 2
-        return cmd_fragment(rest[0], values, writing, apply_it)
+        return cmd_fragment(rest[0], values, writing, apply_it, session=session)
     if argv[1] == "validate":
         rest, pairs, negatives = pull_values(argv[2:])
         if rest is None:
@@ -1865,6 +1950,7 @@ def main(argv):
         # --setup names a fragment to run BEFORE each phase, repeatable and in
         # order. It re-makes the arrangement - typically select-by-category-name
         # then set-selection - because a rolled-back write clears the selection.
+        rest, session = pull_session(rest)
         setup = []
         cleaned, skip = [], False
         for index, token in enumerate(rest):
@@ -1919,7 +2005,7 @@ def main(argv):
         negative_values = caller_values(negatives)
         if negative_values is None:
             return 2
-        return cmd_validate(rest[0], values=values,
+        return cmd_validate(rest[0], session=session, values=values,
                             negative_values=negative_values, writing=writing,
                             setup=setup, keep_chain=keep_chain,
                             allow_publish=allow_publish, **options)

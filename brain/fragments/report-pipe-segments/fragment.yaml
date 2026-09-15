@@ -1,0 +1,147 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 14
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-047
+semantic-identity: "which pipe segments this project has, of what material, and in which sizes"
+kind: action
+domain: revit.mep
+capability: REPORT_PIPE_SEGMENTS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists every pipe segment in the project - its name, its material, how many
+  sizes it carries and the outside-diameter range those sizes cover. The
+  question "what am I allowed to build a pipe type out of", answered before
+  anybody points a routing rule at one.
+
+  **A SEGMENT IS WHERE A PIPE'S MATERIAL ACTUALLY LIVES.** A PipeType has no
+  Material parameter - measured on Project1, 2026-09-15. It has a routing rule
+  pointing at a segment, and the segment carries the material and the size
+  table. So "which copper can I use" is this fragment, and SET_ROUTING_PREFERENCE
+  is what then uses the answer.
+
+  **THE SIZE RANGE IS THE POINT, NOT THE COUNT.** Refrigerant line sets are
+  sized by imperial outside diameter - 6.35, 9.52, 12.7 mm - and water tube by
+  metric DN - 15, 22, 28. Both are "copper" and a name cannot tell them apart.
+  Reporting the OD range is what shows, at a glance, that a segment holds the
+  wrong sizes for the job - which is a mistake that survives all the way to a
+  material order.
+
+  **THE NAMES COME BACK AS ONE STRING, DELIBERATELY.** A list is abbreviated to
+  its first three entries by the time it reaches a reader, and a project with
+  five copper segments then shows three - which reads as "there are three".
+  One string is not abbreviated, so the answer is complete or it is obviously
+  cut. Found by hitting it: five copper segments displayed as "Copper - A,
+  Copper - B, Copper - C, ..." and the other two could not be discovered
+  without guessing names one at a time.
+
+  Changes nothing and opens no transaction.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Narrows to segments whose NAME or MATERIAL contains this. Empty means
+    # every segment, which is the usual ask.
+    - name: nameContains
+      type: string
+      source: request
+  provides:
+    # The matching segments themselves, so the answer can be ACTED on. A pipe
+    # segment is a settings object and never appears in a view, so it cannot
+    # be clicked - naming it here is the only way set-selection, and then
+    # anything that changes or removes one, can reach it.
+    - name: elements
+      role: result
+      type: IList<Element>
+    - name: segmentCount
+      role: result
+      type: int
+    - name: segmentList
+      # Every matching segment on ONE line. A string rather than a list, for
+      # the reason in the purpose - this is the answer people actually read.
+      role: result
+      type: string
+    - name: sizeTable
+      # Every size of the ONE segment the needle narrowed to - OD and wall,
+      # in millimetres - and empty when it matched more or none. Every size of
+      # every segment on one line is unreadable, and the range already answers
+      # "is this the right family of sizes"; this is for the moment somebody
+      # is actually choosing between two.
+      role: result
+      type: string
+    - name: scanned
+      # How many segments were examined before narrowing. A count of work
+      # DONE, never a thing it found (D-52).
+      role: accounting
+      type: int
+    - name: noSizes
+      # Segments carrying no size at all. They exist, cannot be drawn with,
+      # and look identical to a working one in a dropdown.
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-09-16'
+  by: Ajmal PS
+  model: PIPE (3,332 elements), Revit 2020, session 8084
+  positive_case: 'run as it would normally be run. returned elements 6 item(s) [Copper - A,
+    Copper - B, Copper - C, ...], exactName false, findings 7 item(s) [6 pipe segment(s) reported
+    of 19 scanned; 0 carry no sizes, ''Copper - A'' (Copper): 17 size(s), OD 6.35 to 203.2
+    mm, 17 i..., ''Copper - B'' (Copper): 17 size(s), OD 6.35 to 203.2 mm, 17 i..., ...],
+    needle Copper, noSizes 0 item(s), rows 6 item(s) [Copper - A [Copper] 17 size(s) OD 6.35-203.2mm,
+    Copper - B [Copper] 17 size(s) OD 6.35-203.2mm, Copper - C [Copper] 5 size(s) OD 9.52-25.4mm,
+    ...], scanned 19, segmentCount 6, segmentList Copper - A [Copper] 17 size(s) OD 6.35-203.2mm  ||  Copper
+    - B [Copper] 17 size(s) OD 6.35-203.2mm  ||  Copper - C [Copper] 5 size(s) OD 9.52-25.4mm  ||  Copper
+    - D [Copper] 9 size(s) OD 31.75-152.4mm  ||  TCM_MAT_Copper - 01 [TCM_MAT_Copper] 8 size(s)
+    OD 22-108mm  ||  TRG_Copper_Refrigerant [Copper] 10 size(s) OD 6.35-42mm, segments 19
+    item(s) [Steel, Carbon - Schedule 40, Steel, Carbon - Schedule 80, Iron, Ductile - 22,
+    ...], sizeTable , tables 6 item(s) [Copper - A: nom6/OD6.35/w0.91, nom8/OD7.94/w0.91,
+    nom10/OD9...., Copper - B: nom6/OD6.35/w0.71, nom8/OD7.94/w0.71, nom10/OD9...., Copper
+    - C: nom10/OD9.52/w0.71, nom15/OD12.7/w0.71, nom18/OD..., ...]. inputs came nameContains
+    as given. on PIPE'
+  negative_case: run with nameContains=ZZZNOTASEGMENT instead - chosen because it should not
+    contain what this fragment reports. returned elements 0 item(s), exactName false, findings
+    2 item(s) [0 pipe segment(s) reported of 19 scanned; 0 carry no sizes, Nothing matched
+    'ZZZNOTASEGMENT'. The 19 segment(s) in this ...], needle ZZZNOTASEGMENT, noSizes 0 item(s),
+    rows 0 item(s), scanned 19, segmentCount 0, segmentList , segments 19 item(s) [Steel,
+    Carbon - Schedule 40, Steel, Carbon - Schedule 80, Iron, Ductile - 22, ...], sizeTable
+    , tables 0 item(s). inputs came nameContains as given. on PIPE
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 4e250fb862d454b6
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `PipeSegment`, `Segment.GetSizes`,
+  `MEPSize.OuterDiameter`, `MEPSize.NominalDiameter` and `Segment.MaterialId`
+  are present 2020 through 2027, confirmed by reflection on the 2020 assembly
+  and in the 2027 metadata on 2026-09-15.
+
+  Diameters are internal feet multiplied by 304.8 as plain arithmetic - no
+  units API, which is the call that changed shape at 2021.
+
+# ROUTING - repeated in SET_ROUTING_PREFERENCE.
+#
+#   "what pipe segments do we have"   -> here
+#   "which copper can I use"          -> here
+#   "make this type copper"           -> SET_ROUTING_PREFERENCE, which needs
+#                                        the name this one reports
+#   "what fitting will this insert"   -> REPORT_ROUTING_PREFERENCES
+
+utterances:
+  - what pipe segments do we have
+  - list the pipe segments
+  - which copper can I use
+  - show me the segments and their sizes
+  - what material can this pipe type be

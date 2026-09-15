@@ -1,0 +1,228 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 14
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-048
+semantic-identity: "make a new pipe segment, copying an existing size table and relabelling it"
+kind: action
+domain: revit.mep
+capability: CREATE_PIPE_SEGMENT
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes a new pipe segment - the thing that carries a pipe's MATERIAL and its
+  SIZE TABLE - by copying the sizes of one that already exists, optionally
+  relabelling every nominal size to its outside diameter, and optionally
+  adding sizes the source did not have.
+
+  **IT COPIES RATHER THAN INVENTS, AND THAT IS THE WHOLE DESIGN.** A wall
+  thickness on a refrigerant line is a pressure rating. Typing one from memory
+  into a size table is how a 40-bar line gets modelled as something thinner
+  than it is, and nothing in Revit ever objects. The sizes here come off a
+  segment a human already trusts, in Revit's own internal feet, never
+  converted and never rounded on the way.
+
+  **NOMINAL = OD IS A DECISION, NOT A DEFAULT.** Water tube is called by DN -
+  a 15 mm tap connection on 12.7 mm pipe is correct and long-standing.
+  Refrigerant tube is called by its OUTSIDE diameter - nobody orders "10 mm
+  nominal", they order 3/8". A stock copper catalog carries imperial ODs under
+  metric DN labels, so a half-inch refrigerant line tags as 15 mm. Passing
+  nominalEqualsOd makes the label match the pipe; leaving it false keeps DN,
+  and the answer says which was used because reading it off the result is the
+  only way to be sure.
+
+  **MATERIAL AND SCHEDULE ARE READ-ONLY ONCE CREATED.** `PipeSegment.Create`
+  is the only place either can be set - there is no property to fix afterwards.
+  A wrong material means deleting the segment and making it again, so the
+  material is resolved BEFORE anything is created and a name that matches
+  nothing stops the whole thing rather than creating a segment nobody wanted.
+
+  **A SIZE NOT IN THE SIZE LISTS NEVER REACHES THE DROPDOWN.** The segment
+  exists, the size table is full, and the pipe tool offers nothing. Every size
+  is created usedInSizeLists AND usedInSizing, and the count of each is
+  reported, because "created 17 sizes" and "17 sizes you can draw with" are
+  different sentences.
+
+  **REPLACE EXISTS BECAUSE A METRIC CATALOG SHARES NO SIZE WITH AN IMPERIAL
+  ONE.** EN 12735 refrigerant tube is 6, 8, 10, 12, 15, 18, 22, 28 mm OD;
+  the stock copper catalog is 6.35, 9.52, 12.7, 15.88 - imperial, under metric
+  labels. Adding the metric sizes to that table makes a segment offering both,
+  which is honestly neither and lets somebody draw a 12 and a 12.7 in the same
+  run. With replaceSizes the table is built from addSizes alone - and the
+  source is still needed, because a segment must belong to a pipe SCHEDULE and
+  the source's is the only one that cannot be wrong for a project already
+  using it.
+
+  **THE NEW SEGMENT IS EMPTY OF OPINIONS ABOUT WHICH TYPE USES IT.** Making a
+  segment changes no pipe type. SET_ROUTING_PREFERENCE is the separate,
+  deliberate act of pointing a type at it.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: segmentName
+      type: string
+      source: request
+    # The material the new segment carries, BY NAME. Read-only after creation.
+    - name: materialName
+      type: string
+      source: request
+    # The segment whose size table is copied. Sizes are never invented.
+    - name: copyFrom
+      type: string
+      source: request
+    # TRUE relabels every nominal to its outside diameter - the refrigerant
+    # convention. FALSE keeps the source's nominal, which is right for water.
+    - name: nominalEqualsOd
+      type: bool
+      source: request
+    # TRUE discards the source's sizes and builds the table from addSizes
+    # alone. A metric catalog shares no size with an imperial one, and a
+    # segment offering both is honestly neither.
+    - name: replaceSizes
+      type: bool
+      source: request
+    # The pipe schedule the new segment belongs to. Revit keys a segment by
+    # material AND schedule together and refuses a pair already in use, so a
+    # SECOND copper segment needs its own. A name that does not exist is
+    # created. Empty reuses the source's, which only works when the material
+    # differs.
+    - name: scheduleName
+      type: string
+      source: request
+    # Roughness in millimetres. EMPTY COPIES THE SOURCE'S, which is the safe
+    # default: Revit's own default is ZERO, and zero roughness is frictionless
+    # pipe that nothing warns about.
+    - name: roughness
+      type: string
+      source: request
+    # Extra sizes the source lacked, as "OD x wall" in millimetres, comma
+    # separated - e.g. "22.22x1.14, 28.58x1.27". Empty adds none.
+    - name: addSizes
+      type: string
+      source: request
+  provides:
+    - name: createdId
+      role: result
+      type: ElementId
+    - name: sizesCopied
+      role: result
+      type: int
+    - name: sizesAdded
+      role: result
+      type: int
+    - name: relabelled
+      # How many nominals were changed to the OD. Reported separately from the
+      # copy count because a catalog where nominal already equalled OD would
+      # relabel nothing, and that is a different fact from copying nothing.
+      role: result
+      type: int
+    - name: alreadyThere
+      # A segment of that name already exists, so nothing was created. The
+      # evidence it looked, never a thing it made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: nearMisses
+      # Material or source names that nearly matched when one was not found.
+      role: accounting
+      type: IList<string>
+    - name: roughnessSet
+      # The roughness the new segment ended up with, and where it came from.
+      # Revit's default is ZERO - frictionless pipe - so this is never left to
+      # be assumed.
+      role: result
+      type: string
+    - name: scheduleCreated
+      # The pipe schedule this had to make, empty when an existing one was
+      # used. A new schedule appears in Revit's own settings and outlives the
+      # segment, so it must never be a silent side effect.
+      role: accounting
+      type: string
+    - name: problem
+      # Revit's own words when Create refused, empty when it did not. A
+      # segment is identified by its material AND its schedule together, and
+      # only the message says which was the clash - so it is a string, which
+      # is not abbreviated on the way to a reader.
+      role: accounting
+      type: string
+    - name: rejected
+      # addSizes entries that could not be read as OD x wall, named with what
+      # was wrong. Never silently skipped - a dropped size is a size nobody
+      # can draw.
+      role: accounting
+      type: IList<string>
+    - name: findings
+      type: IList<string>
+
+proof:
+  date: '2026-09-16'
+  by: Ajmal PS
+  model: PIPE (3,332 elements), Revit 2020, session 8084
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyThere 0 item(s), createdId
+    1 item(s) [id 936916], findings 3 item(s) [segment created; 17 size(s) in the new segment,
+    all of them ..., ''HERON PROOF SEG Z3'' created from ''Copper - A'': 17 size(s) c...,
+    A new pipe schedule ''HERON PROOF SCHED Z3'' was created for i...], materialId 1 item(s)
+    [id 560185], nearMisses 0 item(s), nominalEqualsOd true, problem , proceed true, rejected
+    0 item(s), relabelled 17, replaceSizes false, roughnessSet 0.00254 (copied from ''Copper
+    - A''), scheduleCreated HERON PROOF SCHED Z3, scheduleId 1 item(s) [id 936915], segments
+    19 item(s) [Steel, Carbon - Schedule 40, Steel, Carbon - Schedule 80, Iron, Ductile -
+    22, ...], sizes 17 item(s) [Autodesk.Revit.DB.MEPSize, Autodesk.Revit.DB.MEPSize, Autodesk.Revit.DB.MEPSize,
+    ...], sizesAdded 0, sizesCopied 17, source PipeSegment, wantedMaterial Copper, wantedName
+    HERON PROOF SEG Z3, wantedSource Copper - A. inputs came segmentName as given; materialName
+    as given; copyFrom as given; nominalEqualsOd as given; replaceSizes as given; scheduleName
+    as given; roughness as given; addSizes as given. on PIPE'
+  negative_case: run with segmentName=HERON PROOF SEG Z4, materialName=ZZZNOTAMATERIAL, copyFrom=Copper
+    - A, scheduleName=HERON PROOF SCHED Z4, nominalEqualsOd=true, replaceSizes=false, roughness=,
+    addSizes= instead - chosen because it should not contain what this fragment reports -
+    run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
+    returned alreadyThere 0 item(s), createdId (null), findings 2 item(s) [NOTHING was created;
+    0 size(s) in the new segment, all of th..., No material is called 'ZZZNOTAMATERIAL'. It
+    cannot be set af...], materialId (null), nearMisses 0 item(s), nominalEqualsOd true, problem
+    , proceed false, rejected 0 item(s), relabelled 0, replaceSizes false, roughnessSet ,
+    scheduleCreated , scheduleId (null), segments 19 item(s) [Steel, Carbon - Schedule 40,
+    Steel, Carbon - Schedule 80, Iron, Ductile - 22, ...], sizes 0 item(s), sizesAdded 0,
+    sizesCopied 0, source PipeSegment, wantedMaterial ZZZNOTAMATERIAL, wantedName HERON PROOF
+    SEG Z4, wantedSource Copper - A. inputs came segmentName as given; materialName as given;
+    copyFrom as given; nominalEqualsOd as given; replaceSizes as given; scheduleName as given;
+    roughness as given; addSizes as given. on PIPE
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 1c9980dc16ea1ef3
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `PipeSegment.Create(Document,
+  ElementId, ElementId, ICollection<MEPSize>)`, the `MEPSize(double, double,
+  double, bool, bool)` constructor, `Segment.GetSizes`, `Segment.MaterialId`
+  and `PipeSegment.ScheduleTypeId` were confirmed by reflection on the 2020
+  assembly and in the 2027 metadata on 2026-09-15.
+
+  Copied sizes are never converted - they are read in internal feet and handed
+  straight back in internal feet. Only `addSizes`, which arrives from a person
+  in millimetres, is divided by 304.8, as plain arithmetic rather than a units
+  call. That is what keeps this clear of the 2021 units move.
+
+# ROUTING - repeated in SET_ROUTING_PREFERENCE and REPORT_PIPE_SEGMENTS.
+#
+#   "make a refrigerant copper segment"  -> here
+#   "the nominal should say the OD"      -> here, nominalEqualsOd=true
+#   "what segments do we have"           -> REPORT_PIPE_SEGMENTS
+#   "use that segment on this type"      -> SET_ROUTING_PREFERENCE
+
+utterances:
+  - make a new pipe segment
+  - create a copper segment for refrigerant
+  - copy this segment and rename the sizes
+  - the nominal size should be the OD
+  - add a segment with these sizes
