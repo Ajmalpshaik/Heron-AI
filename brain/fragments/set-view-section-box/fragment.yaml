@@ -158,10 +158,17 @@ compatibility-note: >
 #                                        is shared and named; a section box
 #                                        belongs to this 3D view alone
 #   "crop the view to follow the room shape" -> SET_VIEW_CROP_TO_SHAPE
+# "zoom to these" WAS CLAIMED HERE AND BELONGS TO ZOOM_TO_ELEMENTS - "take me
+# to these on screen". A SECTION BOX IS NOT A ZOOM: one navigates, the other
+# changes what the view shows everybody. Both claiming it made the phrase
+# `__ambiguous__`, a deliberate miss, so a navigation request fell through to
+# ranking with a MODIFY in the running. FRAGMENT-ISSUES row 116.
+#
+# "zoom the 3d view to these" stays: it names the 3D view and the section box
+# IS how that is done, so it is this fragment's sentence and not a borrowed one.
 utterances:
   - put a section box around this
   - box these up so I can see them
   - section box around the clash
   - crop the 3d view to these
   - zoom the 3d view to these
-  - zoom to these

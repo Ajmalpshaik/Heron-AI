@@ -129,7 +129,15 @@ compatibility-note: >
 #                                          call, and the reverse silently
 #                                          replaces forty borders
 
+# CLAIMED ON 2026-09-17 SO THE IDENTITY ROUTE ANSWERS THESE, and it is
+# not a rank being bought. An undeclared sentence never reaches
+# short_circuit at all: it falls through to the fused ranking, and
+# tools/check-risk-crossings.py measured where that lands. Each line
+# below was answered by a MODIFY before it was claimed here.
+#   -> CREATE_SHEET (MODIFY). This fragment's own identity already says
+# "and which have none", so the sentence was always its own.
 utterances:
+  - which sheets are missing a titleblock
   - what title block is on this sheet
   - which title blocks are used across these sheets
   - are any sheets missing a title block

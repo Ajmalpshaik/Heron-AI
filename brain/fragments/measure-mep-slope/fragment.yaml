@@ -116,7 +116,17 @@ compatibility-note: >
 #                                       to change the model
 #   "the drain is running flat"      -> SET_MEP_SLOPE
 
+# CLAIMED ON 2026-09-17 SO THE IDENTITY ROUTE ANSWERS THESE, and it is
+# not a rank being bought. An undeclared sentence never reaches
+# short_circuit at all: it falls through to the fused ranking, and
+# tools/check-risk-crossings.py measured where that lands. Each line
+# below was answered by a MODIFY before it was claimed here.
+#   both sentences -> SET_MEP_SLOPE (MODIFY), which RE-SLOPES the pipe
+# this fragment exists to measure. Asking what the fall is would have
+# changed it.
 utterances:
+  - what is the slope of this pipe
+  - is this pipe sloped correctly
   - what slope is on these pipes
   - which pipes are too flat
   - check the fall on the drainage

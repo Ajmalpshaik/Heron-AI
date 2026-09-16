@@ -74,6 +74,27 @@ namespace Heron.Revit.Addin
         /// </summary>
         private readonly HeronActivityBanner _banner;
 
+        /// <summary>
+        /// The name of the model Revit last had in front, for the banner
+        /// to announce BEFORE the work starts.
+        ///
+        /// It has to be cached, and the reason is the same constraint
+        /// this whole class exists for: Begin runs on a listener thread,
+        /// where the Revit API may not be touched, so the document cannot
+        /// be asked for at the moment it is needed. What is cached is a
+        /// STRING and never a Document - a held Document goes stale the
+        /// moment the model closes and is the thing the conventions
+        /// forbid outright; a name is inert and the worst it can be is
+        /// out of date.
+        ///
+        /// Two things keep it honest. Revit pushes every document switch
+        /// in through NoteActiveModel as it happens, and every finished
+        /// job overwrites it with the model the work actually reported.
+        /// It is read and written from several threads, so it moves with
+        /// Volatile rather than a plain assignment.
+        /// </summary>
+        private string _activeModel;
+
         private ExternalEvent _event;
 
         public RevitDispatcher(Action<string> log, string session, HeronActivityBanner banner)
@@ -108,6 +129,49 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// Revit's own thread, from the view-activated handler: the model
+        /// in front has changed.
+        ///
+        /// This is what makes the name right on the FIRST job of a chat,
+        /// rather than only from the second onwards - without it the
+        /// cache is empty until some job has already been announced
+        /// unnamed, and the first job is the one a person is most likely
+        /// to be watching.
+        ///
+        /// Null is accepted and stored: closing the last model leaves
+        /// Revit on its start screen, and an empty name is the truth
+        /// there. Naming a model that is no longer open would be worse
+        /// than naming none.
+        /// </summary>
+        public void NoteActiveModel(string title)
+        {
+            Volatile.Write(ref _activeModel, string.IsNullOrEmpty(title) ? null : title);
+        }
+
+        /// <summary>
+        /// Revit's own thread, from the document-closing handler: this
+        /// model is going away.
+        ///
+        /// Closing the LAST model activates no other view, so nothing
+        /// else would ever clear the name - and the banner would go on
+        /// announcing a document nobody has open, while the operation
+        /// underneath answered that there is no model at all. Two halves
+        /// of one card contradicting each other is worse than a card
+        /// naming nothing.
+        ///
+        /// Cleared only when the model closing IS the one being named.
+        /// Closing a background model while working in another must
+        /// leave the foreground name alone, and comparing the names is
+        /// the only way to tell those two apart from here.
+        /// </summary>
+        public void ForgetActiveModel(string title)
+        {
+            if (string.IsNullOrEmpty(title)) return;
+
+            Interlocked.CompareExchange(ref _activeModel, null, title);
+        }
+
+        /// <summary>
         /// Called on a bridge listener thread. Hands the work to Revit and
         /// waits for it, without ever touching the Revit API here.
         /// </summary>
@@ -139,8 +203,15 @@ namespace Heron.Revit.Addin
             // The read/change word comes from the tool registry, looked up by
             // operation name (Golden Rule 19). Nothing in the request decides
             // it, so a write can never wear the reading colour.
+            // The name is the last one Revit reported, not one asked for
+            // here - there is no asking from this thread. Execute
+            // replaces it with the model the work truly ran against, so a
+            // switch made in the gap between these two lines and Revit
+            // picking the job up is corrected when the banner settles
+            // rather than left standing.
             var op = Json.ReadString(request, "op");
-            _banner.Begin(DescribeJob(op, request), HeronOperationRegistry.Writes(op));
+            var model = Volatile.Read(ref _activeModel);
+            _banner.Begin(DescribeJob(op, request), HeronOperationRegistry.Writes(op), model);
 
             lock (_queueLock) { _queue.Enqueue(job); }
 
@@ -152,7 +223,7 @@ namespace Heron.Revit.Addin
             {
                 job.Abandon();
                 if (job.TakeBannerEnd())
-                    _banner.End(false, "Revit would not take the request", -1);
+                    _banner.End(false, "Revit would not take the request", -1, model);
                 return Json.Error("raise_failed", ex.Message);
             }
 
@@ -168,7 +239,7 @@ namespace Heron.Revit.Addin
                 // the reason Revit did not take it is that something is open
                 // ON SCREEN, which is where the person is already looking.
                 if (job.TakeBannerEnd())
-                    _banner.End(false, "Revit was busy - nothing was sent", -1);
+                    _banner.End(false, "Revit was busy - nothing was sent", -1, model);
 
                 return Json.Error("revit_busy",
                     "Revit is busy and did not take the request. A dialog may be open, " +
@@ -216,6 +287,7 @@ namespace Heron.Revit.Addin
                 job.MarkStarted();
                 var clock = Stopwatch.StartNew();
                 string response = null;
+                string document = null;
                 try
                 {
                     var op = Json.ReadString(job.Request, "op") ?? "(none)";
@@ -233,6 +305,20 @@ namespace Heron.Revit.Addin
                     }
                     clock.Stop();
 
+                    // WHICH MODEL THE WORK ACTUALLY RAN AGAINST, read out
+                    // of its own answer. This is the only authoritative
+                    // name anywhere on the path: it is the one place with
+                    // both a valid API context and a finished job, and it
+                    // costs nothing - the audit line below has been
+                    // reading exactly this all along.
+                    //
+                    // Kept for the next Begin as well as spent on this
+                    // End, so a chat that never switches view still has a
+                    // fresh name to announce.
+                    document = Json.ReadString(response, "document");
+                    if (!string.IsNullOrEmpty(document))
+                        Volatile.Write(ref _activeModel, document);
+
                     // THE HONEST END OF THE WORK, and the reason End is not
                     // called back in Dispatch: this is the moment Revit is
                     // free again. A caller that already gave up ("still
@@ -240,7 +326,7 @@ namespace Heron.Revit.Addin
                     // and the screen must follow the model, not the client.
                     var failure = Json.ReadString(response, "error");
                     if (job.TakeBannerEnd())
-                        _banner.End(failure == null, Explain(failure), clock.ElapsedMilliseconds);
+                        _banner.End(failure == null, Explain(failure), clock.ElapsedMilliseconds, document);
 
                     // One line per request, whatever happened. A trail that
                     // only records successes answers the wrong question later.
@@ -266,7 +352,7 @@ namespace Heron.Revit.Addin
                         new[]
                         {
                             new KeyValuePair<string, string>("session", _session),
-                            new KeyValuePair<string, string>("document", Json.ReadString(response, "document")),
+                            new KeyValuePair<string, string>("document", document),
                             new KeyValuePair<string, string>("error", Json.ReadString(response, "error")),
                             new KeyValuePair<string, string>("fragment",
                                 op == "run_fragment_read" || op == "run_fragment_write"
@@ -300,8 +386,13 @@ namespace Heron.Revit.Addin
                             "and nothing further was done to the model.");
                     }
 
+                    // No model named here on purpose. Reaching this means
+                    // the answer never arrived, so there is nothing to
+                    // read a name out of - and the banner falls back to
+                    // the one it announced, which is the last thing about
+                    // this job that was ever true.
                     if (job.TakeBannerEnd())
-                        _banner.End(false, "The job ended without an answer", clock.ElapsedMilliseconds);
+                        _banner.End(false, "The job ended without an answer", clock.ElapsedMilliseconds, document);
 
                     job.Finish(response);
                 }

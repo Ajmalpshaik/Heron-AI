@@ -2431,3 +2431,113 @@ worse than none** - it would have been quoted later to dismiss a real question.
 
 **Two parked CI branches still need one command in an interactive terminal:**
 `gh auth refresh -h github.com -s workflow`.
+---
+
+# Sitting of 2026-09-16 into 2026-09-17 - a rename that Revit refuses, and fourteen questions that answered with a write
+
+**Started as "rename the Existing phase to Design".** Ended with a chain that can hand elements
+between fragments safely, pipes and fittings Heron can actually select, and nine findings - most of
+them about Heron rather than about Revit. Rows **107 to 117** in
+[FRAGMENT-ISSUES](FRAGMENT-ISSUES.md).
+
+*The banner work of the same night is deliberately not described here. It is being taken further and
+a description written now would be stale before it was read.*
+
+## Revit will not rename a phase, and that took building the thing to find out
+
+A `RENAME_PHASE` fragment was written, compiled on 2020-2027, and run against real models on **both**
+Revit 2020 and Revit 2024. Each refused identically: `Element.Name` throws *"This element does not
+support assignment of a user-specified name"*, and `BuiltInParameter.PHASE_NAME` behind it reports
+`IsReadOnly`. **Two doors, two releases, one answer - so it is the object, not the release.**
+
+**Nothing short of running it could have found that.** `check-fragments-compile` passes on all eight
+releases and `check-api-surface` passes on all eight, and both are *correct*: the member genuinely
+exists. A member that exists and throws is exactly what `api-surface/changes.json` lists under
+`cannotSee`.
+
+**The fragment was removed.** What replaced it is a routing note in `REPORT_PHASES`, beside the one
+that already said Revit exposes no CREATE call for a phase. The same fact, from the other end, and
+nobody had read across. Row 107.
+
+## `revit_change` had never once reported what a write did
+
+It read `reply.get("answer")` - **a key nothing emits, on either side of the bridge**. The add-in
+leaves `provides`, `bound`, `verdict`, `applied`, `rolledBack`; grep for `"answer"` across `mcp/`
+returns one hit, the read itself. So the value was always `None` and **every write through that tool
+reported only that it had run**.
+
+Measured: `RENAME_PHASE` answered *"ran in PIPE"* while the fragment had produced `renamed: false`
+and Revit's own refusal. Only reading the model back showed the difference.
+
+**The comment directly above the bug was right** - *"on 2026-09-09 a rollback did not hold while this
+side claimed it had"*. The lesson had been learned and written down; the key name was wrong. Row 111.
+
+`tests/test_change_reporting.py` was confirmed to **fail on the old key** before being kept.
+
+## Fourteen ordinary questions answered with a write, and the cause was not the ranking
+
+Found by hand, then swept: **45 things a modeller says, 17 reached a capability above READ, 14 beat a
+READ that was right there.** *"How many pipes are there"* resolved to `CAP_OPEN_PIPE_ENDS`. *"Count
+the air terminals"* to `CONNECT_AIR_TERMINALS`. *"Which parameters are empty"* to
+`REMOVE_PARAMETER_VALUE`.
+
+**`check-routing.py` reported one, and was right about everything it was allowed to ask** - it tests
+each fragment's OWN declared utterances, and none of those 45 sentences is declared by anybody.
+
+**The cause was that they never reached the ranking's safety net.** `find()` tries `short_circuit`
+first: an exactly declared sentence resolves by IDENTITY and no ranking runs. Two ways to miss it,
+and the library had both - **ambiguity** (`__ambiguous__` is a deliberate miss; only **7 phrases of
+2,442**, two of them dangerous) and **nobody declaring the sentence at all**.
+
+**So the fix is declaring, not demoting.** A nudge could never have done it: the quality nudge is
+deliberately smaller than one fusion rank (0.00026) and these writes won by **2.4 to 2.6**. Measured
+both ways, **14 to 7**. Rows 113 and 116.
+
+`tools/check-risk-crossings.py` makes the sweep repeatable, and **its question list is meant to
+grow** whenever a session produces a new one.
+
+## A fragment can now consume what another left
+
+[docs/36](36-remembering-between-steps.md) built. The chain reset stays exactly as it was; the caller
+**opts in** by naming what it expects, and the executor checks before binding anything.
+
+**Three quarters of it already existed** - `Chain` recorded the document, the producing fragment and
+the time. What was missing was *what the producer ran with* and a caller-declared expectation.
+
+Proved on `4355-BHVD-3D-50C10-BL001A`: **271 elements handed over**, and then, with the **same
+carried values and nothing else changed**, a wrong declaration refused (`chain_inputs_differ`) and a
+right one bound 143. All four refusals fired live. Row 115.
+
+**It did real work the same hour** - `read-element-parameters` then `group-and-count`, the exact
+hand-over `fragment-proving` records as failing.
+
+## And it caught me giving the owner a confident wrong answer
+
+Asked to isolate the pipes except the condensate drain, I said twice there was none. **Both checks
+were real and both answered the wrong question**: the named systems `PCD 3`, `CDP 1` are genuinely
+empty, and pipe TYPE names carry no service. The service lives on the element's **System Type** -
+**105 Refrigerant Condensate, 103 Refrigerant Supply, 63 Condensate Drain** out of 271.
+
+He was looking at them on screen. Row 114, and the rule: **"zero on the named system" is not "zero of
+that system type"** - 688 MEP elements in that model sit on no named system and every one still
+carries a type.
+
+## What is still owed
+
+| | |
+|---|---|
+| **Seven crossings** | duct size, pipe diameter, an element's workset, what is missing its Mark, views on a sheet, insulation thickness, selecting pipes in a view. Each needs an owner chosen per sentence; none was obvious enough to claim at speed |
+| **Five ambiguous phrases** | all read-vs-read, so none is dangerous. Each needs a judgement about which fragment owns the sentence |
+| **Row 117** | a write that renamed nothing said *"the model was CHANGED"*. `WithVerdict` writes that from `applied` - the request - not from work having happened. Visible only because row 111 shipped the same day |
+| **`set-wall-constraints`** | still the one STALE signature. Predates this sitting and was not touched |
+
+## Two things about the machine, not the code
+
+**The Revit ribbon button and the Claude app restart different halves.** The ribbon reconnects the
+bridge; only restarting the app reloads `mcp/` Python. Three stale `heron_mcp_server` processes ran
+for hours with fixed code sitting unused on disk, which reads exactly like the fix not working.
+
+**`.agents/skills/` came back and the `.gitignore` tripwire caught it**, exactly as its comment says
+it would. Five of its six files were byte-identical to `.claude/skills/`; the sixth differed only in
+paths pointing at `.Codex/`. It was deleted, and `test_change_gate.py` went green the moment it was -
+that untracked folder was the only red suite on the board.

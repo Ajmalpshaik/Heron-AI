@@ -470,11 +470,36 @@ def lookup(request, revit=None):
         capability = (_capability_of(store, answer.fragment_id)
                       if answer.fragment_id else None)
 
+        # THE DECLARED RISK OF EACH CANDIDATE, READ FROM THE STORE RATHER
+        # THAN FROM DISK - the store is what retrieval actually ranked, so a
+        # fragment edited but not re-indexed is compared as the search saw it.
+        # Same accessor shape as tools/check-routing.py's `risk_of`, built once
+        # here instead of scanned per candidate.
+        #
+        # WHY RISK TRAVELS WITH THE ANSWER AT ALL. Without it the caller cannot
+        # tell a question answered by a READ from one answered by something
+        # that CHANGES THE MODEL, and on 2026-09-16 both happened: "can I edit
+        # these" resolved to UPDATE_SAVED_SET, and "isolate all the pipes but
+        # leave out the condensate drain" resolved to SET_MEP_SLOPE - a write
+        # that re-slopes pipework - 2.4 ranks clear. FRAGMENT-ISSUES row 109.
+        #
+        # IT DOES NOT CHANGE THE ORDER. Ranking on risk would be a rule about
+        # which route to prefer, and this module's own docstring says no such
+        # rule survives contact with the next example. This only lets the
+        # crossing be SEEN.
+        risks = {}
+        try:
+            for row in store.fragments():
+                risks[row["id"]] = row.get("risk")
+        except Exception:
+            risks = {}
+
         candidates = []
         for c in (answer.candidates or []):
             candidates.append({"capability": c["capability"],
                                "provider": c["id"],
                                "status": c["status"],
+                               "risk": risks.get(c["id"]),
                                "why": c["why"]})
 
         _rows, excluded = RETRIEVE.eligible(store, revit)
@@ -497,6 +522,7 @@ def lookup(request, revit=None):
             "route": answer.route,
             "capability": capability,
             "provider": answer.fragment_id,
+            "risk": risks.get(answer.fragment_id),
             "note": answer.note,
             "autorun": bool(getattr(answer, "autorun", False)),
             "candidates": candidates,

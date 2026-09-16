@@ -237,6 +237,60 @@ namespace Heron.Revit.Addin
                 { "ducts", BuiltInCategory.OST_DuctCurves },
                 { "ductwork", BuiltInCategory.OST_DuctCurves },
                 { "duct curves", BuiltInCategory.OST_DuctCurves },
+
+                // PIPES, ADDED 2026-09-16 UNDER THE RULE ABOVE - tried against
+                // a real model first, not added because it looked obvious.
+                // `select-by-category-name` was run against
+                // 4355-BHVD-3D-50C10-BL001A (26,589 elements, Revit 2020) in
+                // view {3D - ajmal.al} and returned 120 elements with
+                // `resolvedTo: Pipes` and 0 near misses.
+                //
+                // IT WAS THE INCONSISTENCY THAT MADE THIS URGENT rather than
+                // the missing feature: the FRAGMENTS resolve categories a
+                // different way and always could, so a modeller was told
+                // "Heron does not know the category 'pipes'" by a system that
+                // had just counted 120 of them in the model in front of them.
+                // FRAGMENT-ISSUES row 110.
+                //
+                // OST_PipeCurves is the PIPE, not its fittings or accessories
+                // - the same distinction OST_DuctCurves draws above, and the
+                // reason a count here will not match a Pipe Fittings schedule.
+                { "pipe", BuiltInCategory.OST_PipeCurves },
+                { "pipes", BuiltInCategory.OST_PipeCurves },
+                { "pipework", BuiltInCategory.OST_PipeCurves },
+                { "pipe curves", BuiltInCategory.OST_PipeCurves },
+
+                // THE REST OF A RUN. A modeller asking for "the pipes" and
+                // getting only OST_PipeCurves gets the straights and none of
+                // the bends, valves or flexes - which is why selecting several
+                // at once exists at all. Added 2026-09-16 with the comma
+                // support above, for "pipes, pipe fittings".
+                //
+                // EACH IS VERIFIED BY RESOLUTION RATHER THAN BY COUNT. A model
+                // with no pipe accessories is not evidence the row is wrong,
+                // so what is checked is that the word resolves to the category
+                // asked for - the same thing `resolvedTo: Pipes` established
+                // for the rows above.
+                { "pipe fitting", BuiltInCategory.OST_PipeFitting },
+                { "pipe fittings", BuiltInCategory.OST_PipeFitting },
+                { "fittings", BuiltInCategory.OST_PipeFitting },
+                { "pipe accessory", BuiltInCategory.OST_PipeAccessory },
+                { "pipe accessories", BuiltInCategory.OST_PipeAccessory },
+                { "valves", BuiltInCategory.OST_PipeAccessory },
+                { "flex pipe", BuiltInCategory.OST_FlexPipeCurves },
+                { "flex pipes", BuiltInCategory.OST_FlexPipeCurves },
+                { "pipe insulation", BuiltInCategory.OST_PipeInsulations },
+
+                { "duct fitting", BuiltInCategory.OST_DuctFitting },
+                { "duct fittings", BuiltInCategory.OST_DuctFitting },
+                { "duct accessory", BuiltInCategory.OST_DuctAccessory },
+                { "duct accessories", BuiltInCategory.OST_DuctAccessory },
+                { "dampers", BuiltInCategory.OST_DuctAccessory },
+                { "flex duct", BuiltInCategory.OST_FlexDuctCurves },
+                { "flex ducts", BuiltInCategory.OST_FlexDuctCurves },
+                { "duct insulation", BuiltInCategory.OST_DuctInsulations },
+                { "air terminals", BuiltInCategory.OST_DuctTerminal },
+                { "air terminal", BuiltInCategory.OST_DuctTerminal },
             };
 
         /// <summary>
@@ -269,9 +323,51 @@ namespace Heron.Revit.Addin
         private static string SelectByCategory(UIApplication app, string category,
                                                string expectProject)
         {
-            BuiltInCategory builtIn;
-            var unknown = ResolveCategory(category, out builtIn);
-            if (unknown != null) return unknown;
+            // SEVERAL CATEGORIES, COMMA SEPARATED - "pipes, pipe fittings".
+            //
+            // WHY THIS IS HERE AND NOT IN A FRAGMENT. `select-by-categories`
+            // already takes a list and works, but it is a FRAGMENT: it leaves
+            // its elements in the chain, and `set-selection` - the only thing
+            // that can put them where Revit's own selection can be seen -
+            // needs them FROM that chain, which is reset between calls. So the
+            // one job a modeller actually asks for, "show me the pipes and the
+            // fittings", could not be done at all. Measured 2026-09-16.
+            // docs/36 is the general fix; this is the narrow one that does not
+            // wait for it.
+            //
+            // ONE UNKNOWN NAME REFUSES THE WHOLE REQUEST. Selecting three of
+            // four categories and reporting a total is the failure this repo
+            // exists to avoid: the number looks right, the selection is short,
+            // and nothing says so. The refusal names the word that failed.
+            var wanted = new List<BuiltInCategory>();
+            var names = new List<string>();
+
+            foreach (var part in category.Split(','))
+            {
+                var name = part.Trim();
+                if (name.Length == 0) continue;
+
+                BuiltInCategory one;
+                var refusal = ResolveCategory(name, out one);
+                if (refusal != null) return refusal;
+
+                // A NAME REPEATED, OR TWO WORDS FOR ONE CATEGORY ("pipe" and
+                // "pipes"), MUST NOT SELECT IT TWICE. The ids would be
+                // duplicated in the count and Revit would be handed the same
+                // element more than once.
+                if (!wanted.Contains(one))
+                {
+                    wanted.Add(one);
+                    names.Add(name);
+                }
+            }
+
+            if (wanted.Count == 0)
+            {
+                return Json.Error("no_category",
+                    "No category was given. Try 'ducts', or several at once "
+                    + "like 'pipes, pipe fittings'.");
+            }
 
             var uiDoc = app == null ? null : app.ActiveUIDocument;
             var doc = uiDoc == null ? null : uiDoc.Document;
@@ -294,16 +390,32 @@ namespace Heron.Revit.Addin
                 }
             }
 
-            var found = new FilteredElementCollector(doc)
-                .OfCategory(builtIn)
-                .WhereElementIsNotElementType()
-                .ToElementIds();
+            // ONE COLLECTOR PER CATEGORY, UNIONED. An element cannot be in two
+            // Revit categories, so the union needs no de-duplication - but the
+            // PER-CATEGORY counts are kept and reported, because "selected 231"
+            // across three categories hides the one that returned nothing, and
+            // that is usually the interesting one.
+            var found = new List<ElementId>();
+            var breakdown = new List<string>();
+
+            for (int i = 0; i < wanted.Count; i++)
+            {
+                var these = new FilteredElementCollector(doc)
+                    .OfCategory(wanted[i])
+                    .WhereElementIsNotElementType()
+                    .ToElementIds();
+
+                found.AddRange(these);
+                breakdown.Add(names[i] + " " + these.Count);
+            }
 
             uiDoc.Selection.SetElementIds(found);
 
             return Json.Ok(
                 Json.Num("selected", found.Count),
                 Json.Str("category", category.Trim()),
+                Json.Str("breakdown", string.Join(", ", breakdown.ToArray())),
+                Json.Num("categories", wanted.Count),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", ProjectKey(doc)),
                 Json.Str("scope", "the whole model, not just the active view"));

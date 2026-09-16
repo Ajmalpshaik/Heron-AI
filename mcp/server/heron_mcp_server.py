@@ -241,15 +241,27 @@ def revit_health() -> str:
 @server.tool()
 def revit_select_by_category(category: str = "ducts") -> str:
     """
-    Select every element of one category in the open Revit model, so the user
-    can see them highlighted on screen.
+    Select every element of one or more categories in the open Revit model,
+    so the user can see them highlighted on screen.
 
     Use when the user asks to select, highlight or find elements of a kind -
     "select all ducts". Selecting changes only what is highlighted, never the
     model itself, so it is safe and needs no confirmation.
 
-    Heron currently understands ducts. Other categories arrive as each one is
-    tried against a real model.
+    SEVERAL AT ONCE, COMMA SEPARATED: "pipes, pipe fittings". That is what a
+    modeller usually means - a pipe run is its fittings too - and selecting
+    them together is what makes the selection usable by an isolate
+    afterwards. One name it does not know refuses the WHOLE request and says
+    which word failed, because a selection three categories short still looks
+    like a selection.
+
+    The answer breaks the total down per category, since "selected 231"
+    across three of them hides the one that returned nothing - usually the
+    interesting one.
+
+    Heron currently understands ducts and pipes. Other categories arrive as
+    each one is tried against a real model - pipes were added on 2026-09-16
+    after being counted in one.
     """
     try:
         session = binding.resolve()
@@ -315,8 +327,18 @@ def revit_select_by_category(category: str = "ducts") -> str:
     if selected == 0:
         return "No %s in %s. Nothing was selected." % (reply.get("category"), where)
 
-    return ("Selected %s %s in %s.\n(%s)"
-            % ("{:,}".format(selected), reply.get("category"), where, reply.get("scope")))
+    lines = ["Selected %s %s in %s." % ("{:,}".format(selected),
+                                        reply.get("category"), where)]
+
+    # THE PER-CATEGORY SPLIT, WHEN MORE THAN ONE WAS ASKED FOR. A total
+    # across three categories hides the one that came back empty, and that is
+    # the one worth seeing - "pipes 143, pipe fittings 0" is a different
+    # model from "pipes 143, pipe fittings 88".
+    if (reply.get("categories") or 1) > 1 and reply.get("breakdown"):
+        lines.append("  %s" % reply.get("breakdown"))
+
+    lines.append("(%s)" % reply.get("scope"))
+    return "\n".join(lines)
 
 
 @server.tool()
@@ -738,7 +760,8 @@ def _values_array(values):
 
 
 @server.tool()
-def revit_change(capability: str, values: str = "") -> str:
+def revit_change(capability: str, values: str = "",
+                 expect_from: str = "") -> str:
     """
     Change the open Revit model, and KEEP the change.
 
@@ -748,6 +771,18 @@ def revit_change(capability: str, values: str = "") -> str:
     into one.
 
     `values` is one "name=value" per line, e.g. newTypeName=TRG_PIP_Copper_CDP
+
+    `expect_from` CONSUMES WHAT AN EARLIER FRAGMENT LEFT, safely. Name the
+    fragment whose result this one should act on - "select-by-categories" - and
+    Heron checks the carried values were left by THAT fragment before it binds
+    anything, refusing if something else left them. Add "where k=v" to check
+    what it ran with too:
+
+        expect_from="select-by-categories where categories=Pipes"
+
+    Leave it empty and each call is its own batch, which is the default and the
+    safe one: without it a later call could act on elements collected by
+    something nobody remembers running.
 
     It is REFUSED unless the owner has switched Changes ON in Revit's ribbon.
     That switch is read inside the add-in, never here - a client deciding its
@@ -790,7 +825,10 @@ def revit_change(capability: str, values: str = "") -> str:
         "source": source,
         "needs": needs,
         # Each call is its own batch. What an earlier fragment left behind
-        # belongs to the run that produced it, not to this one.
+        # belongs to the run that produced it, not to this one - UNLESS the
+        # caller says which fragment it means to consume, in which case the
+        # add-in checks that before binding anything and refuses if something
+        # else left it. See `expect_from` and docs/36.
         "chain": "reset",
         # THE FLAG THAT KEEPS IT, and the whole reason this tool exists.
         # Without it the executor still runs the change for real inside a
@@ -870,6 +908,14 @@ def revit_change(capability: str, values: str = "") -> str:
     # idempotent=False for the reason revit_apply_move sets it: if the answer
     # is lost after the request left this machine, whether Revit ran it cannot
     # be known from here, and asking again would do it a second time.
+    # THE EXPECTATION REPLACES THE RESET RATHER THAN JOINING IT. Sending both
+    # would clear the values the expectation is about and then fail saying
+    # nothing was carried - which reads as the producing fragment having done
+    # nothing. The add-in refuses that pairing by name; this never sends it.
+    if expect_from and expect_from.strip():
+        args.pop("chain", None)
+        args["expectChain"] = expect_from.strip()
+
     reply = session.request("run_fragment_write", op_args=args,
                             idempotent=False, response_timeout=180.0)
     session.close()
@@ -894,14 +940,46 @@ def revit_change(capability: str, values: str = "") -> str:
 
     lines = ["%s ran in %s." % (capability, reply.get("document"))]
 
+    # WHERE THE INPUTS CAME FROM. The same line a proof is judged on
+    # (fragment-proving rule 5) - a fragment that ran on the selection and one
+    # that ran on the previous fragment's output produce the same shape of
+    # result, and reading the second as the first is how somebody concludes a
+    # filter is broken when it was never consulted.
+    bound = reply.get("bound")
+    if bound:
+        lines.append("  inputs: %s" % bound)
+
+    # WHAT IT ACTUALLY DID, AND IT USED TO BE PRINTED NOWHERE.
+    #
+    # Until 2026-09-16 this read `reply.get("answer")` - a key NOTHING emits,
+    # on either side. `RevitFragment.Report` leaves `provides`, `bound` and
+    # `ran`; `WithVerdict` adds `applied`, `rolledBack` and `verdict`. So the
+    # value was always None and every write reported only that it had run.
+    # `RENAME_PHASE` said "ran in PIPE" while the fragment had produced
+    # `renamed: false` and a refusal carrying Revit's own words, and only
+    # reading the model back afterwards showed the difference.
+    # FRAGMENT-ISSUES row 111.
+    #
+    # A REFUSAL IS THE CASE THIS EXISTS FOR. A fragment that declined says so
+    # in its results and nowhere else, and "it ran" is the one sentence that
+    # makes a refusal look like a success.
+    provides = reply.get("provides")
+    if isinstance(provides, dict) and provides:
+        lines.append("")
+        width = max(len(str(name)) for name in provides)
+        for name in sorted(provides):
+            lines.append("  %-*s  %s" % (width, name, provides[name]))
+
     # THE VERDICT IS THE ADD-IN'S TO WRITE, NOT THIS TOOL'S. It is the only
     # side that saw whether the transaction group actually held, and on
     # 2026-09-09 a rollback did not hold while this side claimed it had.
-    # Repeating the claim from here would put that failure back.
-    answer = reply.get("answer")
-    if answer:
+    # Repeating the claim from here would put that failure back - which is
+    # also why the fix above reads the add-in's `verdict` rather than
+    # composing a sentence here from `applied`.
+    verdict = reply.get("verdict")
+    if verdict:
         lines.append("")
-        lines.append(str(answer))
+        lines.append(str(verdict))
 
     if status and status not in ("PROVEN", "PRODUCTION"):
         lines.append("")
@@ -1231,6 +1309,44 @@ def heron_lookup(request: str) -> str:
              "  provided by  %s" % found["provider"],
              "",
              "  %s" % found["note"]]
+
+    # A QUESTION ANSWERED BY SOMETHING THAT WRITES.
+    #
+    # THE ONE CONTEST THAT IS NOT A JUDGEMENT CALL. tools/check-routing.py
+    # already separates it for the same reason and says why: the failure is not
+    # "the user gets the wrong table", it is "the user asked a question and the
+    # model changed". That tool can only test sentences a fragment DECLARES,
+    # and both cases found on 2026-09-16 were sentences nobody declares:
+    #
+    #   "can I edit these"            -> UPDATE_SAVED_SET   (MODIFY), 2.6 clear
+    #   "isolate all the pipes ..."   -> SET_MEP_SLOPE      (MODIFY), 2.4 clear
+    #
+    # NEITHER ROUTE IS THE CULPRIT, WHICH IS WHY THIS WARNS RATHER THAN
+    # RE-RANKS. On the isolate sentence the keyword route was wrong and the
+    # meaning route had ISOLATE_ELEMENTS first; on "can I edit these" the
+    # keyword route was right and the meaning route put the READ eleventh. A
+    # rule preferring either one would have fixed one case and caused the
+    # other - which is heron_retrieve's own argument for fusing rather than
+    # picking a winner, met again from a different direction.
+    #
+    # SO THE ORDER IS LEFT ALONE AND THE CROSSING IS MADE VISIBLE. FRAGMENT-
+    # ISSUES row 109.
+    top_risk = (found.get("risk") or "").upper()
+    if top_risk and top_risk != "READ":
+        reads = [c for c in found["candidates"]
+                 if (c.get("risk") or "").upper() == "READ"
+                 and c["capability"] != found["capability"]]
+        if reads:
+            lines.append("")
+            lines.append("  CHECK THIS IS A CHANGE YOU MEANT TO MAKE.")
+            lines.append("  '%s' is %s - it CHANGES THE MODEL - and a read came "
+                         "close:" % (found["capability"], top_risk))
+            for c in reads[:3]:
+                lines.append("      %s (READ)" % c["capability"])
+            lines.append("  A request phrased as a question should not resolve "
+                         "to a write. If that")
+            lines.append("  is what happened here, name the read capability "
+                         "instead of accepting this.")
 
     if len(found["candidates"]) > 1:
         lines.append("")

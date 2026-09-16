@@ -1,0 +1,75 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Puts the activity banner on a screen WITHOUT Revit, and measures it.
+
+    The same source-linking approach Heron.StackGuard.TestHost already
+    follows, for the same reason. HeronActivityBanner.cs touches no Autodesk
+    type at all - it is pure WPF and two user32 calls - so it is linked here
+    BY SOURCE rather than through a project reference. Referencing
+    Heron.Revit.Addin would drag in RevitAPI.dll and make the one piece of
+    add-in UI that can be tested anywhere untestable on any machine without
+    Revit.
+
+    That property is not an accident and it is worth defending: it turns an
+    edit-and-see loop from "restart Revit" into about four seconds. Anything
+    that puts an Autodesk reference into that file takes this whole project
+    with it.
+
+    TWO MODES, chosen by the first argument.
+
+      shots   renders every state the banner has - reading, changing,
+              finished, stopped, a long project name, and the case where no
+              model name is known - to one PNG each, and prints the window
+              handle beside each so six pictures can be shown to be six
+              states of ONE window rather than six windows.
+
+      freeze  the one that matters. Builds a stand-in main window on the main
+              thread so the banner takes it as its OWNER exactly as it takes
+              Revit's, blocks that thread for three seconds the way Execute
+              blocks Revit's, and interrogates the banner FROM A THIRD THREAD
+              while it is blocked. Prints whether the sweep moved and whether
+              the elapsed time ticked.
+
+    The freeze mode exists because the answer used to be no. On 2026-09-17,
+    with the banner still living on Revit's thread, a DispatcherTimer on it
+    fired zero times across that block and the sweep did not advance one
+    pixel - so the card was a still picture for precisely the stretch it
+    exists to cover, and nothing had caught it. See the 2026-09-17 note in
+    docs/handover-archive.
+
+    Building it also serves as the version gate. TargetFramework follows
+    HeronTfm, so building it for each release is what proves the banner still
+    compiles for every runtime Revit uses - net472 through net10.0-windows.
+    A change that draws beautifully on .NET 10 and cannot build for Revit
+    2020 is caught here and nowhere else.
+
+        Run it with `dotnet run`, pointed at this folder, passing
+        -p:RevitVersion=2024 and then the mode. (XML comments cannot carry a
+        double hyphen, so the flags are spelled out rather than shown.)
+  -->
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.Banner.TestHost</RootNamespace>
+    <AssemblyName>Heron.Banner.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <UseWPF Condition="'$(HeronTfm)' != 'net472' AND '$(HeronTfm)' != 'net48'">true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronActivityBanner.cs"
+             Link="HeronActivityBanner.cs" />
+  </ItemGroup>
+
+  <!-- .NET Framework does not get WPF from UseWPF; it is referenced. The
+       add-in's own project file does the same, for the same releases. -->
+  <ItemGroup Condition="'$(HeronTfm)' == 'net472' OR '$(HeronTfm)' == 'net48'">
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="System.Xaml" />
+  </ItemGroup>
+
+</Project>

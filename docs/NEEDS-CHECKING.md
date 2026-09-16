@@ -399,6 +399,52 @@ the same Revit, same moment. **Nothing reached Revit and no banner was raised**,
 nothing here — but the proof harness could not name a model that the bridge could. Unexplained,
 and it blocks fragment proofs from the command line.
 
+#### It was rebuilt on 2026-09-17, and four of those answers no longer apply
+
+Everything above was measured against a banner that lived on **Revit's own thread**. It does not
+any more, and two of its claims were quietly wrong the whole time.
+
+**The sweep never animated during a job, and could not have.** Revit draws on the thread it works
+on, so while a job runs nothing on that thread can be painted. Measured with it blocked for
+3000 ms: a `DispatcherTimer` on it fired **0 times** and the sweep did not advance one pixel -
+**357.6 px before, 357.6 px after**. Every "it does not strobe" and "one steady card" result above
+is still true; what was never true is that anything on the card was *moving* while Revit was
+frozen. *Nothing has ever been frozen* above is the note that should have caught this, and did
+not - because nothing slow enough was ever run.
+
+**So the banner now runs its own STA background thread with its own dispatcher.** Same test, with
+the **owner** thread blocked and the banner interrogated from a third thread: sweep moved **5 of 5**
+samples, elapsed time ticked **5 of 5**, 1.1 s to 3.2 s. It is a background thread, so it can never
+hold Revit's process open.
+
+Three things were added on top: the card **names the model** on a line of its own, it shows a
+**live elapsed time** that counts while Revit is frozen, and it was given a proper visual pass -
+gradient sweep, entrance animation, colour transitions, a breathing lamp. Colour changes
+deliberately **snap** between blue and amber rather than animating, because read-versus-change is a
+safety signal and must never pass through a state where the two look alike.
+
+Committed as `37cb6e2`. All of it was proved by driving the **real file** in a WPF harness, which is
+possible only because it still has no Revit dependency - keep it that way.
+
+**SEEN IN REVIT 2024 on 2026-09-17**, by the owner, during unrelated work. That closes the thing
+that mattered most: **Revit accepted a second UI thread**, the add-in loaded, and the card drew over
+a live Revit window rather than a harness stand-in. It was not inspected beyond "it came and it
+looks good".
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **B14** | Read from two different models, switching between them | **PASS 2026-09-17** for the model name; the no-model half is harness-only. Two models open in Revit 2024 session 64384. This chat was pinned to `test projject`; the owner switched Revit to `Snowdon-scratch_ajmal.al` and Heron **refused** rather than answering about a model it was not pointed at (Golden Rule 20 working). After `use this model`, the card named **`Snowdon-scratch_ajmal.al`** on every read - captured from Revit's own window, not judged by eye. So the name follows the model in front, not the one opened first. **THE SECOND HALF IS NOT PROVED IN REVIT**: `Heron.Banner.TestHost shots` renders `5-no-name-known.png` with the middle line **absent** - not blank, not stale - and the two remaining lines re-centred, so the BANNER handles it. Whether the ADD-IN reports no-model when every document is closed was not tested; it needs the owner to close all models |
+| **B15** | Run something slow enough to freeze Revit - a fragment that has to compile, or a large model | **PASS 2026-09-17, on the harness, corroborated in Revit.** `Heron.Banner.TestHost freeze`, built for 2024: banner on **thread 6**, host on thread 1, host BLOCKED 3000 ms. Across six samples taken during the block the card read **1.0, 1.5, 1.9, 2.3, 2.8, 3.2 s** - climbing, monotonic, never backwards - with **sweep changed 5 of 5** and **time changed 5 of 5**. Banner thread did not outlive its owner. Exit 0. **IN REVIT**, a batch against `Snowdon-scratch_ajmal.al` caught the card mid-job reading *"Running a job: list-levels - 2.9 s"*, so the clock runs there too. The 3000 ms hard freeze itself is the harness's, not Revit's - it reproduces the topology (owner window on a blocked thread) and that is what the claim is about |
+| **B16** | Five reads back to back | **PASS 2026-09-17**, `Snowdon-scratch_ajmal.al`, Revit 2024, session 64384. Six `list-levels` reads with no gap between them, screen sampled at ~22 fps: **881 frames, card present in 71, in ONE unbroken run of 71**. One steady card across all six, and down afterwards - 810 frames with no card. Mid-batch it read *"Running a job: list-levels - 2.9 s"*, so it changed what it said without going away. **A SEPARATE RUN LOOKED LIKE A FAILURE AND WAS NOT**: five reads issued as separate calls seconds apart gave five runs of 26, 25, 25, 24 and 32 frames - the card correctly coming down between genuinely idle gaps. The B16 question needs the jobs truly back to back, or it measures the gaps instead. D-56 has not returned |
+| **B17** | Revit on a **150%** display | Still the other half of `B12`. **HALF ANSWERED 2026-09-17, and the half that was answered is the harder one.** Revit was on a NON-PRIMARY monitor at negative coordinates - window 1936x1048 at **-1928,-8** - and the card centred at x=965 against a window centre of 968, **3 px out**, over Revit's own window and not the primary screen. That is the multi-monitor half. **THE SCALING HALF IS STILL UNRUN**: `GetDpiForMonitor` reports **96x96 (100%) on BOTH monitors**, so the code path still has not executed. Checked rather than assumed |
+
+**Pin `HERON_CLIENT_ID`** before any of these from a command line - see the trap above, it makes a
+working banner look broken.
+
+If it misbehaves badly, `ui.activityBanner = false` in `%APPDATA%\Heron\config\heron.config` plus a
+Revit restart switches it off without touching the add-in. That switch was proved on 2026-09-07
+(`B13`) and nothing since has moved it.
+
 ### The write path was broken and is now fixed — found and closed 2026-09-07
 
 **`revit_apply_move` cannot succeed, on any model, with any settings.** This is not a tuning problem
