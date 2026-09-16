@@ -1612,8 +1612,19 @@ latency half.
 **Say which reading governs**, in one sentence in docs/28 §9's heading. Then five rows close by claiming
 files that already work, and `agent-count.py` stops reporting as unbuilt five things that are built.
 
-**Not acted on.** Claiming an id on a guess is the failure this project's whole metadata standard exists
-to prevent, and two already-claimed rows in the same department point opposite ways.
+### SETTLED 2026-09-16 — [D-75](DECISIONS.md): a Development agent acts on HERON ITSELF
+
+The sentence is in docs/28 §9's heading and the department's subject is Heron's own code.
+
+**It closed one row, not five, and the table above is what says so.** The proposal counted candidates
+without reading which column they were in. Taking them column by column: `DEV-BLD-010` closes on
+`tools/check-compile.py`; `DEV-UNT-011` has no file to claim because the suite sweep is inline bash in
+`gates.yml`; `DEV-INT-012`'s only candidates are layer `test`; `DEV-RGR-014`'s only candidates are on
+the fragment side, which the decision rules **out**; and `DEV-PRF-015` has two candidates that are both
+on Heron, so the decision does not separate them. D-75 carries the row-by-row detail.
+
+**A count of candidates is not a count of answers** — which is the same shape as this section's other
+two findings, one layer up again.
 
 ### It happened, on 2026-09-16, and the check written to prevent it is what let it through
 

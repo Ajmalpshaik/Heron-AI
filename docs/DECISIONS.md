@@ -143,6 +143,7 @@ an edit.
 | [D-72](#d-72--four-values-a-caller-could-not-type-are-now-built-from-what-they-type-and-a-face-still-is-not) | Four values a caller could not type are now built from what they type, and a face still is not | • status not stated |
 | [D-73](#d-73--a-table-by-name-is-two-separators-and-the-key-is-the-models-word-not-ours) | A table by name is two separators, and the key is the model's word, not ours | 🕐 Proposed - **owner has not read this back** |
 | [D-74](#d-74--a-write-is-aimed-at-the-model-it-was-told-about-not-guarded-against-the-one-in-front) | A write is AIMED at the model it was told about, not guarded against the one in front | 🕐 Proposed - **owner has not read this back** |
+| [D-75](#d-75--a-development-agent-acts-on-heron-itself-not-on-the-artefact-heron-builds) | A Development agent acts on Heron itself, not on the artefact Heron builds | ✅ Accepted · 2026-09-16 |
 
 ## Format
 
@@ -4368,7 +4369,7 @@ coordinate, and it applies to points only.
 
 ## D-72 — Four values a caller could not type are now built from what they type, and a face still is not
 
-**2026-09-14.** Supersedes the last paragraph of [D-67](#d-67--a-point-is-three-numbers-in-millimetres)'s
+**2026-09-14.** Supersedes the last paragraph of [D-67](#d-67--a-point-crosses-as-three-millimetre-numbers)'s
 *"Two separators, and why not one"*, which said `IList<IList<XYZ>>` **stays refused** pending a second
 fragment wanting a third separator. No second fragment arrived. The owner asked for `create-line` by
 name instead, which is the same signal a second fragment would have been: somebody wants the thing.
@@ -4624,3 +4625,46 @@ sharing a name.
 Project1 by name — with a family in front the whole time, verified by reading back, Project2
 untouched — shows the mechanism carries. It was driven over the bridge directly, not through
 `revit_change`, so the line this row actually changes is still unrun.
+
+---
+
+## D-75 — A Development agent acts on Heron itself, not on the artefact Heron builds
+
+Decided by the owner on 2026-09-16, settling [F27](PROPOSALS.md), which had been open since the
+Performance Agent was claimed on a guess and withdrawn the same day.
+
+**The question.** Five Development rows each had a working, unclaimed file that matched them — and for
+several there were two candidates, one acting on a fragment and one acting on Heron's own code. Nobody
+had said which reading governs, so no row could close without guessing.
+
+**The answer.** The department is Heron's own build pipeline. Its subject is the four C# projects, the
+Python brain, the test suites, the bridge and the package. It is not the fragment library.
+
+### What it closes
+
+`HERON-DEV-BLD-010` — *compiles across all target frameworks* — is
+[`tools/check-compile.py`](../tools/check-compile.py), which builds every project against every Revit
+version the machine can reach. The other candidate, `check-fragments-compile.py`, acts on fragments and
+is out of scope by this decision.
+
+### What it does NOT close, which is four of the five
+
+This decision was expected to close five rows. It closes one. F27's own table is what says so, read
+column by column instead of in summary:
+
+| row | why it is still open |
+|---|---|
+| `DEV-UNT-011` *runs unit tests* | The `tests/test_*.py` sweep is the right subject, and **no file performs it** — it is inline bash in `.github/workflows/gates.yml`, which cannot carry a `Heron-Agent:` header. A file has to be written before there is anything to claim |
+| `DEV-INT-012` *integration tests against a mocked Revit boundary* | [`tests/test_bridge_roundtrip.py`](../tests/test_bridge_roundtrip.py) and `tests/Heron.Bridge.TestHost` fit the row exactly and are both **layer `test`**. Claiming one makes a third agent claimed by nothing but a suite, which `test_contract_reference.py` shows rather than drops on purpose. Allowed, awkward, and the owner's call |
+| `DEV-RGR-014` *golden-file comparison across supported versions* | Its only candidates — `tests/golden/cases.py`, `tests/test_golden.py` — are on the **fragment** side, so this decision rules them out rather than in. The row has no Heron-side file at all |
+| `DEV-PRF-015` *execution time and resource cost* | **Two candidates, both on Heron**: [`tools/measure-brain.py`](../tools/measure-brain.py) and `brain/heron_devperf.py`. This decision does not separate them. The row's own words point at `measure-brain.py`, which measures both of them; `heron_devperf.py` measures time only |
+
+### The one row this decision sits awkwardly against
+
+`DEV-RVT-013` is already claimed by [`tools/batch-prove.py`](../tools/batch-prove.py), and that tool
+proves **fragments** — the side this decision excludes. Its register row reads *"runs tests inside real
+Revit"*, and fragments are the only thing Heron can run inside Revit, so the claim may be the deliberate
+exception rather than a contradiction.
+
+**Nothing was un-claimed on that reading.** Withdrawing a merged claim on an inference is the same move
+that produced F27 in the first place. The tension is recorded here and left for the owner.
