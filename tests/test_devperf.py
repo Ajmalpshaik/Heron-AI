@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Heron-Agent:  HERON-DEV-PRF-015
+# Heron-Agent:  none
 # Heron-Step:   15
 # Heron-Status: DRAFT
 # Heron-Since:  0.1.0
@@ -38,8 +38,10 @@ WHAT IT PROVES
      A18's whole lesson is what a report that cries wolf does to the person
      reading it. Exit 0 even when everything is at risk.
 
-  7. EVERY FAILURE STATE THE CONTRACT DECLARES IS EXERCISED - a failure
-     nothing has ever triggered is a failure nobody has seen happen.
+  7. EVERY FAILURE STATE THE MODULE DECLARES IS EXERCISED - a failure
+     nothing has ever triggered is a failure nobody has seen happen. The
+     declaration used to be read from the contract; there is no contract now,
+     so it is read from the module and checked against the module's own source.
 
   8. `--suites` STOPS AT THE NEXT FLAG. Added after running the agent for
      real: `--suites a.py --out x.json` swallowed `--out` and its path as
@@ -156,15 +158,19 @@ def test_never_fails_the_build():
 
 def test_every_declared_failure_is_exercised():
     """7. NO_SUITES_FOUND, BASELINE_UNREADABLE, BOUND_NOT_FOUND."""
-    contract = os.path.join(ROOT, "brain", "agents", "HERON-DEV-PRF-015.yaml")
-    declared = []
-    for line in io.open(contract, encoding="utf-8"):
-        stripped = line.strip()
-        if stripped.startswith("- ") and stripped[2:].isupper():
-            declared.append(stripped[2:])
+    declared = list(PERF.FAILURES)
     check(sorted(declared) == ["BASELINE_UNREADABLE", "BOUND_NOT_FOUND",
                                "NO_SUITES_FOUND"],
-          "the contract's failures moved: %r" % (declared,))
+          "the declared failures moved: %r" % (declared,))
+
+    # And every one is genuinely PRODUCED, not merely listed. This is what
+    # reading the contract used to buy: rename a produce site and the list
+    # goes on naming the old one, with nothing anywhere to notice.
+    module = io.open(os.path.join(ROOT, "brain", "heron_devperf.py"),
+                     encoding="utf-8").read()
+    for name in declared:
+        check(module.count(name) >= 2,
+              "%s is declared and never produced" % name)
 
     # NO_SUITES_FOUND - an empty sweep must never read as success. A tool
     # that finds nothing and says "all clear" is the same defect as a grep
