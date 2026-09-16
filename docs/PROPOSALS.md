@@ -2460,3 +2460,52 @@ act from delegating one, and doing both at once is how a register loses track of
 **The cost is recorded in D-80 rather than buried**: Heron can no longer plan, specify or generate code
 without a chat open — no schedule, no add-in colleague, no confidential scope. The owner considered
 each and accepted all three.
+
+---
+
+## F40 — Workforce Planning scores a proposal against the register's BUILD NOTES, not only its job
+
+**Found by breaking it, on 2026-09-17**, while recording [D-80](DECISIONS.md). CI went red on
+`test_hr.py`, and the cause was one word in a sentence about bookkeeping.
+
+`HERON-AHR-WFP-015` is the guard against agent explosion. `assess()` scores a proposed agent against
+each register row:
+
+    overlap(purpose, "%s %s" % (row["name"], does))
+
+`does` is **the whole `Does` column**, and this repository has spent the day appending build notes to
+that column — *"Built 2026-09-16 - tools/check-compile.py..."*, *"FOLDED into check-docs.py"*,
+*"Provided by the host"*. Those notes are bookkeeping, not the job.
+
+### What happened
+
+D-80 added one sentence to nine rows, ending *"`agent-count.py` **counts** it under HOST, never under
+LEFT"*. `HERON-ORC-SUM-006`'s job description already contains the word **ducts**, in an example of a
+reply it might write.
+
+So the proposal `Duct Counter` / *"counts ducts in a view"* — a fixture that exists precisely because
+it is a **fragment** and must be turned down — scored **0.67** against the User Result Agent and came
+back `ALREADY_AN_AGENT`.
+
+**Two words. One of them was in a sentence about a column in a report.**
+
+### Why it matters more than the typo
+
+The word was changed and the suite is green again. **The fragility is not.** Every build note appended
+to a row from here on is scored as though it described the job, and this register now carries dozens of
+them. The guard gets noisier with every agent that is built, which is exactly backwards.
+
+**And it fails in the dangerous direction.** A false `ALREADY_AN_AGENT` does not create a duplicate
+agent — it REFUSES A REAL ONE, with a confident sentence naming an agent that does nothing of the sort.
+A guard that cries wolf is [A18](NEEDS-CHECKING.md)'s lesson, and this one now has a growing supply of
+wolves.
+
+### What is proposed
+
+**Score against the job, not the bookkeeping.** The build notes in this register are consistently
+introduced by a bolded marker — `**Built`, `**FOLDED`, `**DEFERRED`, `**Claimed`, `**Provided by the
+host** — so the job is the text before the first one. That is a small change in one place, and
+`tests/test_workforce.py` can assert it with the very fixture that failed here.
+
+**Not acted on.** It changes what a guard sees, and the guard's whole value is that its findings are
+real. That deserves its own decision rather than riding in on a delegation.
