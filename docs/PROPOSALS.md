@@ -755,7 +755,7 @@ grep -n 'EXPERIMENTAL\|VERIFIED\|OFFICIAL' brain/heron_fragment.py   # what read
 The third command prints nothing. **`heron_fragment.py` requires the field and never validates its
 value.** The `SOURCES` tuple it does check — `("fragment", "ambient", "request")` — belongs to
 `contract.needs[].source`, a different field with the same name one level down. The one trust word the
-loader does contain, `PROVEN`, is there as a [docs/24](24-agent-lifecycle.md) lifecycle *status*, which
+loader does contain, `PROVEN`, is there as a [docs/24](24-trust-model.md) lifecycle *status*, which
 is a different ladder that happens to share a rung.
 
 **So a fragment's trust level is a word the file writes about itself that nothing checks** — which is
@@ -1425,6 +1425,21 @@ disagreeing with the first — the same objection that stopped `HERON-NAM-MET-00
 1. Build `CHG-008` and `REL-005` **when the first tag is cut**, not before — and decide the
    `Fixed` / `Improved` question first, as a convention or as the host's.
 2. Fold any check `ARC-006` or `RDM-007` would add **into `check-docs.py`**, rather than beside it.
+
+### SETTLED 2026-09-16 — [D-77](DECISIONS.md): both, as proposed
+
+`CHG-008` and `REL-005` are deferred with the tag named as what unblocks them, so they stop reading as
+work somebody is neglecting. `ARC-006` and `RDM-007` are folded into `check-docs.py`, which now claims
+three rows.
+
+**The fold was checked rather than asserted**, because closing two rows by writing no code is the exact
+shape of a claim this repository keeps finding it believed. `tests/test_docs_guard.py` plants an error in
+each place those rows name and requires the guard to find it.
+
+**That checking found a real defect.** `check-docs.py` had been FINDING dead links since 2026-08-31 and
+exiting 0 on them. Wiring section 1 to the exit code turned up three — including a `D-30` anchor linked
+correctly ten times and wrongly once, which an anchor check written hours earlier had missed because it
+kept one occurrence per id. D-77 records all three.
 3. Either way, the four rows in [docs/28](28-agent-registry.md) should say so, so the next person does
    not read four unbuilt agents as four missing ones.
 
@@ -2011,7 +2026,7 @@ Of the 48 broad C# handlers, **27 leave a fault and the normal case indistinguis
 | shape | count | what the caller gets |
 |---|---|---|
 | `catch { }` — empty block | **14** | the fault leaves no trace at all |
-| `catch { continue; }` | **10** | the item drops out of the loop and the count comes back smaller ([Golden Rule 14](../CLAUDE.md)) |
+| `catch { continue; }` | **10** | the item drops out of the loop and the count comes back smaller ([Golden Rule 14](14-golden-rules.md)) |
 | `catch { return null; }` / `false` / `new T()` | **3** | a fault comes back as *"nothing found"* — D-52 in as many words |
 
 ### Not one of them is claimed to be a bug

@@ -145,6 +145,7 @@ an edit.
 | [D-74](#d-74--a-write-is-aimed-at-the-model-it-was-told-about-not-guarded-against-the-one-in-front) | A write is AIMED at the model it was told about, not guarded against the one in front | 🕐 Proposed - **owner has not read this back** |
 | [D-75](#d-75--a-development-agent-acts-on-heron-itself-not-on-the-artefact-heron-builds) | A Development agent acts on Heron itself, not on the artefact Heron builds | ✅ Accepted · 2026-09-16 |
 | [D-76](#d-76--five-standards-rows-are-one-agent-with-a-subject-not-five-files) | Five Standards rows are one agent with a subject, not five files | ✅ Accepted · 2026-09-16 |
+| [D-77](#d-77--two-documentation-rows-wait-for-a-tag-and-two-fold-into-the-guard) | Two Documentation rows wait for a tag, and two fold into the guard | ✅ Accepted · 2026-09-16 |
 
 ## Format
 
@@ -4449,7 +4450,7 @@ else.
 
 **It does not prove anything.** Four types becoming typeable makes six fragments *arrangeable*. Every
 one still owes a run against a model with both halves, and a signature that is a person's
-([D-30](#d-30--a-proof-needs-a-positive-and-a-negative-and-a-person-signs-it)).
+([D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)).
 
 **It does not touch `place-family-on-face`.** That one is named above and stays where it is.
 
@@ -4727,3 +4728,62 @@ register is a limitation the caller never sees.
 **It has not been run against a real company standard.** The suite builds its own small document. What
 these six rows do when pointed at a genuine multi-hundred-page BIM standard — whether the subject terms
 actually separate the clauses — is unmeasured, and the terms are the obvious thing to tune first.
+
+---
+
+## D-77 — Two Documentation rows wait for a tag, and two fold into the guard
+
+Decided by the owner on 2026-09-16, settling [F23](PROPOSALS.md). Four of the five remaining
+Documentation rows had no distinct source or no distinct job, and they failed in two different ways.
+
+### Deferred: `DOC-CHG-008` and `DOC-REL-005`
+
+Neither has an input yet. 683 files carry `Heron-Since: 0.1.0`, `git tag` returns nothing, and a change
+log with one section listing 683 files is true and useless.
+
+**Unblocked by the first tag** — not by anybody's effort, which is why leaving them in the LEFT column
+without this note made them look like work somebody was neglecting.
+
+`CHG-008` carries a second problem that outlives the first: **`Fixed` and `Improved` cannot be told
+apart from a diff.** The only mechanical route is a word list over commit subjects, which is the synonym
+table [D-34](DECISIONS.md) refuses to build. Whoever picks this up after the first tag needs a commit
+convention adopted deliberately, or the host classifying under [D-01](DECISIONS.md). **Deciding that is
+not part of this decision.**
+
+### Folded: `DOC-ARC-006` and `DOC-RDM-007`
+
+Both fold into [`tools/check-docs.py`](../tools/check-docs.py), which already sweeps all 140 markdown
+files, recomputes every count claim against its derived source, enforces the same claim wherever it is
+made, and resolves every internal link. A second agent keeping the README current would be a second
+thing able to be right on its own while disagreeing with the first — the objection that also stopped
+`NAM-MET-006` ([F17](PROPOSALS.md)).
+
+**It is the GUARDING half only.** Nothing generates a README or an architecture document, and after this
+decision nothing is scheduled to. The register says which half each row got.
+
+### A row closed by writing no code is a claim, so it was checked
+
+`tests/test_docs_guard.py` copies the tree, **plants an error in each place those two rows name**, and
+requires the guard to find it: a false count in `README.md`, a dead anchor in
+[`docs/06`](06-heron-platform.md). It also asserts the guard passes on a clean copy first — otherwise a
+checker that always failed would "catch" a plant by accident — and that it writes nothing, which is what
+makes *guarding half only* a fact rather than a promise.
+
+### What checking it turned up, which was not nothing
+
+**`check-docs.py` had been finding dead links since 2026-08-31 and exiting 0 on them.** Section 1 printed
+them into a green run. Wiring it to the exit code found **three**:
+
+| link | what was wrong |
+|---|---|
+| `#d-30--a-proof-needs-a-positive-and-a-negative-and-a-person-signs-it` | D-30's heading was reworded and this one inline link never followed |
+| `24-agent-lifecycle.md` | the file is `24-trust-model.md` |
+| `../CLAUDE.md` | not a file in this repository; the rule is in `14-golden-rules.md` |
+
+The D-30 one is the interesting one. **D-30 is linked eleven times and ten are correct.** A check written
+earlier the same day kept one occurrence per id, so the eleventh overwrote the broken tenth and it
+reported all anchors clean. `check-docs.py` found it because it checks every occurrence.
+
+That is the fifth time in one session that *prove the pattern can see what you know is there* was broken
+by the check written to enforce it — and the third where the flaw was keeping one of something there
+were many of.
