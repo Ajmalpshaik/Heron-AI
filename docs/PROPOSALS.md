@@ -1625,6 +1625,22 @@ The build was not careless about it. Every candidate agent was first checked aga
 
 This repository's rule is **prove the pattern can see what you know is there**, and it was broken by the check written to enforce it. Search an agent id **without its `HERON-` prefix** — `grep -n 'DEV-PRF-015' docs/*.md` — or the register's own spelling will hide the row.
 
+### And then the withdrawal itself was half done
+
+Blanking the two `Heron-Agent:` headers did not withdraw the claim.
+**`brain/agents/HERON-DEV-PRF-015.yaml` was still sitting there, and a contract in that folder IS the
+claim** - each of the other 125 stands for a counted agent. So the repository held 126 contracts for
+215 agents, and one of them named no suite at all.
+
+Nothing in the withdrawal noticed. `tests/test_contract_reference.py` did, on the next CI run, in the
+arithmetic it asserts for precisely this reason: *126 with a contract plus 90 without is 215* - which
+is 216. The contract is gone now, and the three failure names it declared live in
+`brain/heron_devperf.py` beside the code that produces them, checked against that code's own source
+instead of typed into the test.
+
+**Undoing a claim touches every place that makes it.** Here that was three: two headers, and a file
+whose existence was the third.
+
 ---
 
 ## F28 — the import classifies into five words the workspace has never heard of

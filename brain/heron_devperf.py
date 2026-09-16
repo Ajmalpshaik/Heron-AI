@@ -16,8 +16,11 @@ Performance Agent - how close a suite is to its bound, not how long it took.
 
 Always exits 0. It reports; it does not gate - see WHY IT NEVER FAILS below.
 
-Its contract is brain/agents/HERON-DEV-PRF-015.yaml, and the contract is the
-promise; this file is only how the promise is kept today.
+It has NO contract file, and that absence is the withdrawal. A contract in
+brain/agents/ is itself the claim on an id, so blanking these headers while
+leaving the contract in place withdrew nothing - which is exactly what the
+first attempt did, and what tests/test_contract_reference.py caught: 126
+contracts standing for 215 agents, and one of them with no suite to its name.
 
 WHY THE HEADER SAYS `none`, AND IT IS A DECISION RATHER THAN AN OMISSION
 ------------------------------------------------------------------------
@@ -115,6 +118,14 @@ AT_RISK_FRACTION = 0.25
 # A tool that reported that as an improvement would be worse than no tool.
 NOISE_SECONDS = 0.75
 NOISE_FRACTION = 0.20
+
+# THE FAILURES THIS AGENT CAN REPORT, DECLARED ONCE. A built agent declares
+# these in its contract and the test reads them from there; this one has no
+# contract until F27 is settled, and a test that types them itself stops
+# noticing when a produce site is renamed. So they are declared here, beside
+# the code that produces them, and the test asserts each is genuinely produced
+# rather than only listed.
+FAILURES = ("BASELINE_UNREADABLE", "BOUND_NOT_FOUND", "NO_SUITES_FOUND")
 
 
 def bound_seconds(path=None):
