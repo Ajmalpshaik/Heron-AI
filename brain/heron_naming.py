@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Heron-Agent:  HERON-NAM-VAL-002
+# Heron-Agent:  HERON-NAM-VAL-002, HERON-NAM-GEN-001
 # Heron-Step:   15
 # Heron-Status: DRAFT
 # Heron-Since:  0.1.0
@@ -53,20 +53,35 @@ that breaks it is reported as breaking what everything else does, not as
 breaking a rule somebody wrote. Those are different claims and reporting
 the weaker one as the stronger is how a convention gets invented.
 
-AND THE ONE NAME IT CANNOT CHECK, WHICH IS THE DEPARTMENT'S OWN
------------------------------------------------------------------
-HERON-NAM-GEN-001 "generates a predictable name from domain, capability,
-purpose, platform, version" - five parts. docs/00c s368 says the same
-sentence with SIX: "domain, capability, purpose, platform, version,
-component type". And neither says what the name LOOKS like: no
-separator, no case, no order, no allowed characters. "Naming must be
-predictable and searchable" (docs/06 s134) is a goal, not a convention.
+THE DEPARTMENT'S OWN NAME, STATED AT LAST (F15, D-79)
+-------------------------------------------------------
+Until 2026-09-16 this was the one kind it could not check. docs/28 said
+five parts, docs/00c s368 said six, and NEITHER said what the name looks
+like - no separator, no case, no order, no character set. It was refused
+as UNSTATED_CONVENTION rather than guessed, because a guess would have
+BECOME the convention by being the only thing enforcing one.
 
-So this agent can check every name the system actually uses and cannot
-check the one the Naming Agent is meant to produce. Recorded as
-PROPOSALS F15. `generated-name` is refused as UNSTATED_CONVENTION rather
-than guessed, because a guess here would become the convention by being
-the only thing that enforces one.
+The owner settled it. Six parts, the version last:
+
+    <domain>-<capability>-<purpose>-<platform>-<component>-v<n>
+    mep-duct-insulation-check-revit-fitting-v1
+
+THE RULE IS READ FROM docs/29, NOT KEPT HERE A SECOND TIME. That file
+owns every other name shape in this system and now owns this one; the
+regex below is the machine-readable half and the test asserts the two
+agree, so the document cannot quietly drift away from the code.
+
+AND THE HALF IT STILL CANNOT DO, SAID IN THE ANSWER
+-----------------------------------------------------
+A part may itself be hyphenated - `duct-insulation` is one part - so a
+finished name CANNOT BE SPLIT BACK into its six. Seven segments, six
+parts, and nothing in the string says where the capability ended.
+
+So `check` reports that it checked the SHAPE, never that it checked the
+parts, and `generate` is the half that knows them because it is handed
+them. Single-token parts would make the name decomposable and would cost
+searchability - `ductinsulation` - which is the one thing docs/06 s134
+actually asks for. Readability won and the limit is declared.
 """
 
 from __future__ import annotations
@@ -91,6 +106,91 @@ SUITE_SHAPE = re.compile(r"^test_[a-z][a-z0-9_]*\.py$")
 
 KINDS = ("agent-id", "fragment-id", "capability", "fragment-folder",
          "module", "suite", "generated-name")
+
+# THE GENERATED NAME - docs/29 "Naming - the generated name", D-79.
+#
+# Lower case, hyphen separated, version last. The regex is deliberately
+# NOT six groups: a part may itself be hyphenated, so the segments cannot
+# be mapped back onto the parts and a regex pretending otherwise would be
+# a lie with a capture group in it.
+GENERATED_SHAPE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*-v[0-9]+$")
+
+# The parts, in order, for generate() and for the test that asserts this
+# tuple and docs/29's table are the same list.
+GENERATED_PARTS = ("domain", "capability", "purpose", "platform",
+                   "component", "version")
+
+# Six parts need six separators' worth of segments at minimum. A name
+# with fewer cannot be carrying all six, whatever it looks like.
+GENERATED_MINIMUM = len(GENERATED_PARTS)
+
+
+def _slug(value):
+    """One part, lower case and hyphenated. Empty if nothing survives."""
+    text = re.sub(r"[^a-z0-9]+", "-", str(value or "").strip().lower())
+    return text.strip("-")
+
+
+def generate(domain, capability, purpose, platform, component, version=1):
+    """
+    HERON-NAM-GEN-001. {ok, name, parts} - or a refusal.
+
+    Every part is required. A MISSING one is refused rather than skipped,
+    because a name silently five parts long would still LOOK like a valid
+    generated name - it would pass the shape check, and nothing anywhere
+    would say which part had gone.
+    """
+    given = (domain, capability, purpose, platform, component)
+    parts = [_slug(one) for one in given]
+
+    empty = [GENERATED_PARTS[i] for i, one in enumerate(parts) if not one]
+    if empty:
+        return {"ok": False, "refused": "MISSING_PART",
+                "why": "%s had nothing usable in it. Every one of the six "
+                       "is required - a name quietly built from five would "
+                       "still pass the shape check, and nothing would say "
+                       "which part had gone. docs/29, D-79."
+                       % (", ".join(empty))}
+
+    try:
+        number = int(str(version).lower().lstrip("v"))
+    except (TypeError, ValueError):
+        number = -1
+    if number < 1:
+        return {"ok": False, "refused": "BAD_VERSION",
+                "why": "%r is not a version. It is `v` and a whole number "
+                       "from 1, and it is always the last part so that "
+                       "every version of one thing sorts together."
+                       % (version,)}
+
+    name = "-".join(parts + ["v%d" % number])
+    # GENERATED, THEN CHECKED BY THE SAME RULE THE VALIDATOR USES. If
+    # these two could ever disagree, the department would be generating
+    # names its own validator rejects.
+    verdict = check("generated-name", name)
+    if not verdict.get("ok"):
+        return {"ok": False, "refused": "GENERATED_A_BAD_NAME",
+                "why": "built %r and this agent's own validator refused "
+                       "it: %s. That is a defect here, not bad input."
+                       % (name, verdict.get("why"))}
+
+    return {
+        "ok": True,
+        "name": name,
+        "parts": dict(zip(GENERATED_PARTS, parts + ["v%d" % number])),
+        "why": "six parts, version last, checked against the same rule "
+               "HERON-NAM-VAL-002 applies. docs/29, D-79.",
+        "unjudged": [
+            "WHETHER THE PARTS ARE THE RIGHT WORDS. This agent is handed "
+            "them and joins them; that they describe the thing is "
+            "language, and nothing here read the thing.",
+            "THE NAME CANNOT BE SPLIT BACK. A part may be hyphenated, so "
+            "%d segments carry %d parts and the boundaries are gone. The "
+            "parts are returned HERE because they were the input - "
+            "reading them off the finished name is not possible."
+            % (name.count("-") + 1, len(GENERATED_PARTS)),
+        ],
+    }
 
 
 def folder_for(capability):
@@ -134,17 +234,36 @@ def check(kind, name, of=None):
                           "the name %r has space around it" % name)}
 
     if kind == "generated-name":
-        return {"ok": False, "kind": kind, "name": text,
-                "refused": "UNSTATED_CONVENTION",
-                "why": "nothing states what a generated name looks like. "
-                       "docs/28 says HERON-NAM-GEN-001 builds one from "
-                       "domain, capability, purpose, platform and version - "
-                       "five parts - and docs/00c s368 says the same "
-                       "sentence with six, adding component type. Neither "
-                       "gives a separator, a case, an order or an allowed "
-                       "character set. Guessing one here would MAKE it the "
-                       "convention, because this would be the only thing "
-                       "enforcing one. PROPOSALS F15."}
+        segments = text.split("-")
+        if not GENERATED_SHAPE.match(text):
+            return {"ok": False, "kind": kind, "name": text,
+                    "refused": "WRONG_SHAPE",
+                    "why": "a generated name is lower case letters, digits "
+                           "and single hyphens, and ends with the version - "
+                           "`v` and digits. %r does not. docs/29 \"Naming - "
+                           "the generated name\", D-79." % text}
+        if len(segments) < GENERATED_MINIMUM:
+            return {"ok": False, "kind": kind, "name": text,
+                    "refused": "WRONG_SHAPE",
+                    "why": "%r has %d segment(s) and six parts need at "
+                           "least %d: %s. A part may be hyphenated, so more "
+                           "than six is normal and fewer is impossible."
+                           % (text, len(segments), GENERATED_MINIMUM,
+                              ", ".join(GENERATED_PARTS))}
+        return {
+            "ok": True, "kind": kind, "name": text,
+            "why": "the SHAPE is right - lower case, single hyphens, "
+                   "version last, %d segments for six parts. docs/29, D-79."
+                   % len(segments),
+            "unjudged": [
+                "WHICH SEGMENT IS WHICH PART. A part may itself be "
+                "hyphenated, so %d segments cannot be mapped back onto six "
+                "parts and nothing here tried. This checked the shape; it "
+                "did not check the parts, and saying otherwise would be "
+                "the stronger claim reported as the weaker one."
+                % len(segments),
+            ],
+        }
 
     if kind == "agent-id":
         if not AGENT_SHAPE.match(text):
@@ -281,7 +400,7 @@ def main(argv):
             ("fragment-folder", "docs/29 s130 - derived from the capability"),
             ("module", "observed in brain/, stated nowhere"),
             ("suite", "observed in tests/, stated nowhere"),
-            ("generated-name", "NOWHERE - PROPOSALS F15")):
+            ("generated-name", "docs/29 - the generated name, D-79")):
         print("  %-16s %s" % (kind, source))
 
     print("\nchecked")
@@ -298,10 +417,22 @@ def main(argv):
              "FILTER_ELEMENTS_BY_CATEGORY"),
             ("module", "heron_naming.py", None),
             ("module", "naming.py", None),
-            ("generated-name", "mep-duct-sizing-revit-2026-v1", None)):
+            ("generated-name", "mep-duct-insulation-check-revit-fitting-v1",
+             None),
+            ("generated-name", "MEP-Duct-Sizing-v1", None),
+            ("generated-name", "mep-duct-v1", None)):
         answer = check(kind, name, of=of)
         mark = "ok     " if answer.get("ok") else answer["refused"]
-        print("  %-22s %-30s %s" % (mark, name, answer["why"][:44]))
+        print("  %-22s %-42s %s" % (mark, name, answer["why"][:40]))
+
+    print("\ngenerated")
+    for parts in ((u"MEP", u"Duct Insulation", u"check", u"Revit",
+                   u"fitting", 1),
+                  (u"mep", u"", u"check", u"revit", u"fitting", 1),
+                  (u"mep", u"duct", u"check", u"revit", u"fitting", u"latest")):
+        made = generate(*parts)
+        print("  %-22s %s" % (made.get("refused", "ok"),
+                              made.get("name") or made["why"][:52]))
     return 0
 
 
