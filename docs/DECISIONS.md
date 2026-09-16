@@ -144,6 +144,7 @@ an edit.
 | [D-73](#d-73--a-table-by-name-is-two-separators-and-the-key-is-the-models-word-not-ours) | A table by name is two separators, and the key is the model's word, not ours | 🕐 Proposed - **owner has not read this back** |
 | [D-74](#d-74--a-write-is-aimed-at-the-model-it-was-told-about-not-guarded-against-the-one-in-front) | A write is AIMED at the model it was told about, not guarded against the one in front | 🕐 Proposed - **owner has not read this back** |
 | [D-75](#d-75--a-development-agent-acts-on-heron-itself-not-on-the-artefact-heron-builds) | A Development agent acts on Heron itself, not on the artefact Heron builds | ✅ Accepted · 2026-09-16 |
+| [D-76](#d-76--five-standards-rows-are-one-agent-with-a-subject-not-five-files) | Five Standards rows are one agent with a subject, not five files | ✅ Accepted · 2026-09-16 |
 
 ## Format
 
@@ -4668,3 +4669,61 @@ exception rather than a contradiction.
 
 **Nothing was un-claimed on that reading.** Withdrawing a merged claim on an inference is the same move
 that produced F27 in the first place. The tension is recorded here and left for the owner.
+
+---
+
+## D-76 — Five Standards rows are one agent with a subject, not five files
+
+Decided by the owner on 2026-09-16, settling [F31](PROPOSALS.md), which was raised on the authority of
+[`HERON-AHR-WFP-015`](../brain/heron_workforce.py) — the row whose whole job is to say *no* before
+anything is hired.
+
+**The question.** `STD-BIM-001`, `STD-MOD-005`, `STD-QAQ-006`, `STD-LOD-007` and `STD-DOC-008` all read
+as *cite the clauses about X*. `HERON-STD-CMP-002` already does exactly that. Five files differing by
+one search term is the agent explosion WFP-015 exists to prevent; five rows left open is a register
+lying about what is built.
+
+**The answer.** Extend `HERON-STD-CMP-002` with a `subject`, and record all five rows against that one
+file. This is WFP-015's own ladder — *keep, extend, adapt, version-branch* — taken at its second rung.
+
+### What was built
+
+[`brain/heron_company.py`](../brain/heron_company.py) takes `subject` and `stage`. Its header claims six
+ids, which `agent-count.py` and `check-metadata.py` have both always supported —
+[`heron_retrieve.py`](../brain/heron_retrieve.py) has claimed three since long before this.
+
+**Standards & BIM QA is now 14 of 14.**
+
+| subject | row | what it is |
+|---|---|---|
+| *omitted* | `STD-CMP-002` | the company standard, **unchanged character for character** |
+| `bim` | `STD-BIM-001` | the citing half; the model half is `QA-BIM-011`'s |
+| `modelling` | `STD-MOD-005` | the citing half; connections and elevations are geometry |
+| `qa` | `STD-QAQ-006` | what the process requires, not whether it was followed |
+| `lod` | `STD-LOD-007` | **plus a `stage`**, the one real difference of shape |
+| `documentation` | `STD-DOC-008` | the clauses; the NAMES are already `STD-NAM-004`'s |
+
+### The three things that make it an extension rather than an edit
+
+**`subject=None` is asserted identical.** `tests/test_company.py` checks that no subject searches the
+question and nothing else, character for character. If that ever fails, this stopped being an extension.
+
+**An unknown subject is REFUSED, and so is a stage on a row that takes none.** Both are new declared
+failures on the contract, and both are reached by the suite rather than merely listed. A subject quietly
+dropped would answer the COMPANY question and hand back something indistinguishable from an answer to
+the asked one — the same defect as a flag swallowed into a list of file names and reported as data.
+
+**The header and the `SUBJECTS` table are checked against each other**, not both against a list typed in
+the test. A claim that agrees only with itself is what let a withdrawn agent keep its contract nine
+hours earlier the same day; see [F27](PROPOSALS.md).
+
+### What this does NOT do, and it is the honest half
+
+**Three of the five are partial, and each says so in its own answer.** `bim` and `modelling` cite but
+cannot open a model or reach geometry; `documentation` is mostly names that `QA-BIM-011` already routes
+to `STD-NAM-004`. The caveat travels in the result as `short`, because a limitation recorded only in a
+register is a limitation the caller never sees.
+
+**It has not been run against a real company standard.** The suite builds its own small document. What
+these six rows do when pointed at a genuine multi-hundred-page BIM standard — whether the subject terms
+actually separate the clauses — is unmeasured, and the terms are the obvious thing to tune first.

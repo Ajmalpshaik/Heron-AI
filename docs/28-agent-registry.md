@@ -212,16 +212,24 @@ at all. This department closes that.
 
 ## 8. Standards & BIM QA — 14
 
+**Six of these rows are one file with a noun in front.** `CMP-002`, `BIM-001`, `MOD-005`,
+`QAQ-006`, `LOD-007` and `DOC-008` are all *cite the clauses about X*, so they are answered by
+[`brain/heron_company.py`](../brain/heron_company.py) with a `subject`, not by five near-identical
+files. Decided 2026-09-16, [D-76](DECISIONS.md), settling [F31](PROPOSALS.md) on
+[`HERON-AHR-WFP-015`](../brain/heron_workforce.py)'s ladder - keep, extend, adapt, version-branch.
+`LOD-007` takes a **stage** as well, the one genuine difference of shape among them. Three of the
+six are only PARTLY this file and each says so in its own answer, not only here.
+
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
-| `HERON-STD-BIM-001` | BIM Standard Agent | Applies a stated BIM standard to a model | T2 | ANALYZE | — |
-| `HERON-STD-CMP-002` | Company Standard Agent | The organisation's own approved standard | T2 | ANALYZE | — |
+| `HERON-STD-BIM-001` | BIM Standard Agent | Applies a stated BIM standard to a model. **Claimed 2026-09-16 under [D-76](DECISIONS.md)** - [`brain/heron_company.py`](../brain/heron_company.py) with `subject="bim"`. **The citing half only** - this row says *to a model* and nothing here opens one; checking the model is `HERON-QA-BIM-011`'s, and the answer says so itself rather than leaving a reader to assume | T2 | ANALYZE | — |
+| `HERON-STD-CMP-002` | Company Standard Agent | The organisation's own approved standard. **Built** - [`brain/heron_company.py`](../brain/heron_company.py). It opens ONE scope, cites clauses in the words they were written in, and keeps HERON-RAG-RNK-006's four nothings apart rather than flattening them into one sentence. **Since [D-76](DECISIONS.md) it also answers the five rows below**, by `subject`; `subject=None` is this row and is unchanged character for character | T2 | ANALYZE | — |
 | `HERON-STD-ISO-003` | ISO Standards Agent | ISO 19650 and related. **Cites, never invents** | T2 | ANALYZE | — |
 | `HERON-STD-NAM-004` | Naming Standard Agent | Naming rules for elements, views, sheets, files | T2 | ANALYZE | — |
-| `HERON-STD-MOD-005` | Modeling Standard Agent | How things should be modelled — connections, elevations, practice | T2 | ANALYZE | — |
-| `HERON-STD-QAQ-006` | QA/QC Standard Agent | The organisation's QA process requirements | T2 | ANALYZE | — |
-| `HERON-STD-LOD-007` | LOD Agent | Level of development / detail expected at this stage | T2 | ANALYZE | — |
-| `HERON-STD-DOC-008` | Documentation Standard Agent | Sheet, titleblock and annotation requirements | T2 | ANALYZE | — |
+| `HERON-STD-MOD-005` | Modeling Standard Agent | How things should be modelled — connections, elevations, practice. **Claimed 2026-09-16 under [D-76](DECISIONS.md)** - [`brain/heron_company.py`](../brain/heron_company.py) with `subject="modelling"`. **The citing half only** - connections and elevations are geometry inside Revit, which nothing on this side of the bridge can reach, and the answer says that in the answer | T2 | ANALYZE | — |
+| `HERON-STD-QAQ-006` | QA/QC Standard Agent | The organisation's QA process requirements. **Claimed 2026-09-16 under [D-76](DECISIONS.md)** - [`brain/heron_company.py`](../brain/heron_company.py) with `subject="qa"`. It answers what the process REQUIRES; whether it was followed is a different job and the audit trail's, and building that would have been inventing a row nobody wrote | T2 | ANALYZE | — |
+| `HERON-STD-LOD-007` | LOD Agent | Level of development / detail expected at this stage. **Claimed 2026-09-16 under [D-76](DECISIONS.md)** - [`brain/heron_company.py`](../brain/heron_company.py) with `subject="lod"`, **plus a `stage`** - the one genuine difference of shape among these six rather than of subject, so it is the only one given a parameter of its own. A stage handed to any other subject is REFUSED, never accepted and dropped | T2 | ANALYZE | — |
+| `HERON-STD-DOC-008` | Documentation Standard Agent | Sheet, titleblock and annotation requirements. **Claimed 2026-09-16 under [D-76](DECISIONS.md)** - [`brain/heron_company.py`](../brain/heron_company.py) with `subject="documentation"`. **Mostly already done elsewhere** - sheet, titleblock and view NAMES are routed by `HERON-QA-BIM-011` to `HERON-STD-NAM-004`; what is left here is the clauses, and the answer says which half it gave | T2 | ANALYZE | — |
 | `HERON-STD-PRJ-009` | Project Standard Agent | This project's own rules — **outranks the company default**, and says so | T2 | ANALYZE | — |
 | `HERON-STD-REF-010` | **Reference Model Profiler** | Infers a standard from a correctly delivered model. Extracts the profile, **discards the model** ↗ | T3 | READ | — |
 | `HERON-STD-MET-014` | **Metadata & Policy Checker Agent** | Enforces the Heron metadata standard ([29](29-metadata-standard.md)) on everything Heron creates — every artefact declares its agent, step, status, version and layer. Also audits **the registry against the code**: an agent claimed by no file, or a file claiming no agent ↗ | T1 | READ | 1 |
