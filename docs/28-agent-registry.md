@@ -32,11 +32,11 @@ Roughly two thirds never call a model at all.
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
-| `HERON-ORC-MAIN-001` | Orchestrator | Understands the request, selects capability and agents, builds and runs the workflow, returns the result | T2 | — | 3 |
-| `HERON-ORC-INT-002` | Intent Agent | Classifies what the user is asking for — command, question, debugging, development | T2 | READ | 4 |
-| `HERON-ORC-PER-003` | Communication / Persona Agent | Detects role and technical level; chooses wording. BIM language out, not API calls | T2 | READ | 4 |
+| `HERON-ORC-MAIN-001` | Orchestrator | Understands the request, selects capability and agents, builds and runs the workflow, returns the result. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | — | 3 |
+| `HERON-ORC-INT-002` | Intent Agent | Classifies what the user is asking for — command, question, debugging, development. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | READ | 4 |
+| `HERON-ORC-PER-003` | Communication / Persona Agent | Detects role and technical level; chooses wording. BIM language out, not API calls. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | READ | 4 |
 | `HERON-ORC-FAIL-004` | Failure Analysis Agent | Determines *why* something failed and routes it. Never blind-retries. **T1, not T2** — Heron's failures are its own bounded set of codes, so the classification is a table, and the one answer that must never be wrong is one a model should not be asked for ([D-21](DECISIONS.md)) | T1 | READ | 6 |
-| `HERON-ORC-SUM-006` | **User Result Agent** | Compresses the whole internal chain — 12 agents, 37 tool calls, 4 retrievals, 3 tests — into what the user actually needs to read. *"Done. Selected all ducts, moved them 200 mm up, verified in Revit."* This is what makes simple-outside / complex-inside real ↗ | T2 | READ | 4 |
+| `HERON-ORC-SUM-006` | **User Result Agent** | Compresses the whole internal chain — 12 agents, 37 tool calls, 4 retrievals, 3 tests — into what the user actually needs to read. *"Done. Selected all ducts, moved them 200 mm up, verified in Revit."* This is what makes simple-outside / complex-inside real ↗. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | READ | 4 |
 | `HERON-ORC-FIX-005` | Fix Agent | Applies a targeted repair chosen by failure analysis | T3 | MODIFY | — |
 
 ## 2. Revit Engineering — 36
@@ -248,15 +248,15 @@ fragment-side one.
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
-| `HERON-DEV-REQ-001` | Requirement Agent | Turns a request into a buildable specification | T2 | — | — |
-| `HERON-DEV-PLN-002` | Planning Agent | Sequences the work | T2 | — | — |
-| `HERON-DEV-ARC-003` | Architecture Agent | Decides structure and placement within Heron's architecture | T3 | — | — |
-| `HERON-DEV-GEN-004` | Code Generation Agent | Writes code — **only after Fragment Matcher has reported** | T3 | — | — |
+| `HERON-DEV-REQ-001` | Requirement Agent | Turns a request into a buildable specification. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | — | — |
+| `HERON-DEV-PLN-002` | Planning Agent | Sequences the work. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT — **and this is the same sentence `ORC-MAIN-001` was already delegated for**, so the two rows may be one | T2 | — | — |
+| `HERON-DEV-ARC-003` | Architecture Agent | Decides structure and placement within Heron's architecture. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT — the mechanical half is [`HERON-IMP-ARC-011`](../brain/heron_belongs.py), which is built | T3 | — | — |
+| `HERON-DEV-GEN-004` | Code Generation Agent | Writes code — **only after Fragment Matcher has reported**. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT — the precondition stays mechanical and checkable | T3 | — | — |
 | `HERON-DEV-CSH-005` | C# Agent | C# language and idiom | T2 | — | — |
 | `HERON-DEV-NET-006` | **.NET Compatibility Check Agent** | *Read-only.* Which target framework does this need, is it available, is the package set compatible, will it build on all supported versions ↗ | T1 | READ | — |
 | `HERON-DEV-NUP-019` | **.NET Update Agent** | *Changes projects.* Retargets a framework, bumps packages, migrates project files. Regression matrix must pass before it is accepted ↗ | T1 | MODIFY | — |
 | `HERON-DEV-NCR-020` | **.NET Project Creation Agent** | *Creates new.* Authors project files, target frameworks, references, build configuration for a new component ↗ | T1 | MODIFY | — |
-| `HERON-DEV-RAP-007` | Revit API Domain Agent | Revit API knowledge for generation *(merge candidate with 005/006)* | T2 | — | — |
+| `HERON-DEV-RAP-007` | Revit API Domain Agent | Revit API knowledge for generation *(merge candidate with 005/006)*. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT — and the checkable half is already [`heron_dotnet.py`](../brain/heron_dotnet.py) and [`heron_csharp.py`](../brain/heron_csharp.py), both built | T2 | — | — |
 | `HERON-DEV-REV-008` | Code Review Agent | Architecture, API usage, error handling, transaction safety, duplication | T2 | — | — |
 | `HERON-DEV-SEC-009` | Security Review Agent | Required for anything at MODIFY or above | T2 | — | — |
 | `HERON-DEV-BLD-010` | Build Agent | Compiles across all target frameworks. **Claimed 2026-09-16 under [D-75](DECISIONS.md)** - [`tools/check-compile.py`](../tools/check-compile.py), which builds every project against every Revit version the machine can reach, 2020 to 2027, and found a real 2020-only error the first time it ran. The file predates the claim by weeks; what changed is that D-75 says which reading of this department governs, so the row and the file can finally be said to be the same thing. Its read-only half is imported from [`HERON-DEV-NET-006`](../brain/heron_dotnet.py) rather than kept a second time | T1 | — | — |

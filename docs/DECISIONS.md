@@ -148,6 +148,7 @@ an edit.
 | [D-77](#d-77--two-documentation-rows-wait-for-a-tag-and-two-fold-into-the-guard) | Two Documentation rows wait for a tag, and two fold into the guard | ✅ Accepted · 2026-09-16 |
 | [D-78](#d-78--the-metadata-checker-owns-metadata-validity-and-the-third-row-folds-into-it) | The metadata checker owns metadata validity, and the third row folds into it | ✅ Accepted · 2026-09-16 |
 | [D-79](#d-79--a-generated-name-is-six-parts-lower-case-hyphenated-with-the-version-last) | A generated name is six parts, lower case, hyphenated, with the version last | ✅ Accepted · 2026-09-16 |
+| [D-80](#d-80--five-development-rows-are-the-hosts-because-the-host-is-the-model) | Five Development rows are the host's, because the host is the model | ✅ Accepted · 2026-09-17 |
 
 ## Format
 
@@ -4908,3 +4909,72 @@ on; nothing on disk was renamed, and renaming is `HERON-NAM-REN-003`'s and only 
 **It has not generated a name anybody needed yet.** The shape is proved against the documented example
 and five malformed ones. What it does when a real request arrives — whether the six parts are the right
 six for the thing being named — is language, and unmeasured.
+
+---
+
+## D-80 — Five Development rows are the host's, because the host is the model
+
+Decided by the owner on 2026-09-17, settling [F39](PROPOSALS.md) — **which he raised himself**, in one
+sentence, after being told those rows needed a local model installed first:
+
+> *"you are its self the ai and thru ai we are acessing the heron so this ai can do this work am i
+> right"*
+
+He was right, and the evidence was already in the repository.
+
+### The decision
+
+`DEV-REQ-001`, `DEV-PLN-002`, `DEV-ARC-003`, `DEV-GEN-004` and `DEV-RAP-007` are **provided by the
+host**, under [D-01](#d-01--execution-host-claude-code-plugin)'s *"Claude Code is the conversation layer
+and the agent host"*. They join the four `ORC` rows already delegated on that basis, in
+`HOST_PROVIDED` in [`tools/check-metadata.py`](../tools/check-metadata.py) — one place, imported by
+`agent-count.py` rather than copied.
+
+**Development goes from 9 left to 4. The register goes from 21 left to 16.**
+
+### Why it holds, and it is not convenience
+
+**No built T2 has ever made a model call.** 55 of 63 T2 agents and 18 of 20 T3 were built before any
+adapter existed. They do the mechanical half and hand the language half up, which
+[`heron_company.py`](../brain/heron_company.py) states in its own result: *"That is language, and
+docs/28 makes this row T2 for it. The clauses go to the host with the question attached; nothing here
+picked one."*
+
+So a tier in this register says **where the judgement happens**, not who holds an API key. Every one of
+these five is judgement with no mechanical half left over — and the host has been doing all five all
+along, including for every line of code in this repository.
+
+### What was ALSO done, and was not asked for
+
+**The four rows delegated before this said so nowhere in the register.** `HOST_PROVIDED` knew; docs/28
+did not, so a reader saw four ordinary unbuilt rows. Marking only the new five would have made that
+worse rather than better, so **all nine now carry the same sentence**. Nothing else about the four
+changed.
+
+### The two that may be merges rather than delegations
+
+F39 flagged these and the decision does not settle them:
+
+| row | what else is already built |
+|---|---|
+| `DEV-RAP-007` | its own row says *merge candidate with 005/006*, and **both are built** — `heron_dotnet.py`, `heron_csharp.py` |
+| `DEV-ARC-003` | [`HERON-IMP-ARC-011`](../brain/heron_belongs.py) already *places content where the architecture says it belongs* |
+
+`DEV-PLN-002` carries the same doubt from the other side: **`ORC-MAIN-001` was already delegated for
+"the host plans and sequences the work"** — the same sentence. These three may be duplicate rows rather
+than three delegations, and the register now says so on each.
+
+**Left open on purpose.** Merging a row is a different act from delegating one, and doing both in a
+single decision is how a register loses track of which happened.
+
+### What it costs, recorded because it is real
+
+**A host-provided agent cannot run without a host.** Heron cannot now plan, specify or generate code:
+
+- on a schedule with nobody in a chat
+- for a colleague using the Revit add-in with no Claude Code session
+- on a scope marked confidential, because the host is a cloud model
+
+The owner considered each and accepted all three: he works through Claude Code, on his own machine.
+**If that ever changes, this is the decision to revisit**, and
+[`brain/heron_provider.py`](../brain/heron_provider.py) is the layer that would serve it.
