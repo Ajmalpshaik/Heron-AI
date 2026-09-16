@@ -154,8 +154,20 @@ one release at a time** — the output folder is shared.
 thread, which was the real risk. It was not inspected further; `B14`–`B17` in `NEEDS-CHECKING` are
 what is left.
 
-## One thing left undone
+## The harness kept its place
 
-The harness that proved all of this lives in a session temp folder and will be deleted. It builds
-the real file for every Revit runtime and renders every state to PNG without Revit running, and it
-would earn its place for any future UI change. Nobody has decided whether it belongs in `tools/`.
+It proved the thread split and caught the lamp defect in the same afternoon, and it existed only in
+a temp folder. It is now **`tests/Heron.Banner.TestHost`** (`9304966`), beside the two test hosts
+that already link add-in source rather than reference the project.
+
+`shots` renders every state to a PNG. `freeze` is the one that matters and it **exits non-zero on
+failure**, so it can be run rather than read. Building it is also the version gate - the target
+framework follows `HeronTfm`, so it compiles the banner for every runtime Revit uses. Verified
+across all eight releases, and both modes were run on **net48**, Revit 2024's own runtime, which
+the throwaway version never exercised because it was .NET 10 only.
+
+One line is deliberately not written: it is **not** in `PROJECTS` in
+[`brain/heron_dotnet.py`](../../brain/heron_dotnet.py). That would put it in CI across all eight
+releases, which is where it belongs - but CI compiles on Linux with `EnableWindowsTargeting`, and a
+WinExe WPF project has never been built that way here. Add the line once someone has watched one
+green run; do not add it blind on a branch with an open PR.
