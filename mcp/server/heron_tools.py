@@ -69,6 +69,12 @@ TOOLS = {
     # risk, because the risk is looked up by name and one name must mean one
     # thing.
     "revit_parameters":         (READ,    "read_parameters"),
+
+    # Groups and assemblies (HERON-REVIT-GRP-033). READ, same reasoning as
+    # the two above. It is the PRE-FLIGHT for the write tools: an element in
+    # a group carries an edit into every placement of that group's type, and
+    # Revit raises nothing when a move of one shifts nothing.
+    "revit_groups":             (READ,    "list_groups"),
     "revit_preview_move":       (ANALYZE, "preview_move"),
     "revit_apply_move":         (MODIFY,  "move_elements"),
 

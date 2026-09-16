@@ -78,6 +78,12 @@ namespace Heron.Core
                 // up by name, so one name must mean one thing.
                 { "read_parameters",    HeronRisk.Read },
 
+                // HERON-REVIT-GRP-033. Read, and the same note applies as
+                // above: the register's row is MODIFY because that column
+                // is the highest level the ROW can require. This one lists
+                // what is grouped. Ungrouping would be a separate entry.
+                { "list_groups",        HeronRisk.Read },
+
                 // GIVING THE SESSION BACK. Read, because it cannot touch a
                 // model - it hands back a claim, and only the chat that holds
                 // it may. It is the OPPOSITE of a takeover: a second chat can

@@ -104,6 +104,17 @@ namespace Heron.Revit.Addin
                                                 Json.ReadString(request, "parameter"),
                                                 Json.ReadString(request, "expectProject"));
 
+                // Groups and assemblies. HERON-REVIT-GRP-033, and it is the
+                // pre-flight for the write path already in this file: a move
+                // of a group member returns CLEANLY and shifts nothing, so
+                // RevitWrite compares positions either side and then says
+                // "almost certainly inside a group". This is how that stops
+                // being a guess, and stops being afterwards. Read-only.
+                case "list_groups":
+                    return RevitGroups.List(app,
+                                            Json.ReadString(request, "category"),
+                                            Json.ReadString(request, "expectProject"));
+
                 case "run_fragment_read":
                     return RevitFragment.Run(app, request);
 

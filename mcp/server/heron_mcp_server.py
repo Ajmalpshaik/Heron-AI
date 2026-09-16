@@ -2163,6 +2163,194 @@ def _clip(text, width):
     return text if len(text) <= width else text[:width - 1] + "\u2026"
 
 
+@server.tool()
+def revit_groups(category: str = "") -> str:
+    """
+    List the groups and assemblies in the open Revit model, or - with a
+    category - show which of those elements sit inside one and how many other
+    placements an edit would reach.
+
+    ASK THIS BEFORE ANY CHANGE to elements that might be grouped. Editing one
+    member of a group edits it in every place that group is put, which is the
+    point of groups and a nasty surprise when you did not know the element was
+    in one. Revit raises NO error for this: a move of a group member returns
+    cleanly and shifts nothing at all.
+
+    Use when the user asks about groups, assemblies, why an edit did not take,
+    why something changed in more than one place, or before approving a change
+    to a category on a model that uses groups. Leave `category` empty for the
+    inventory of what groups exist; name one for the pre-flight.
+
+    A GROUP MEMBER IS NOT PINNED, so `pinned` is reported separately - two
+    different reasons an edit will not land, fixed two different ways.
+
+    It reads only. Nothing is grouped, ungrouped or edited.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    reply = session.request("list_groups",
+                            op_args={"category": category or "",
+                                     "expectProject": pinned.project_key or ""})
+    session.close()
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return wrong_model
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+
+    if reply.get("category"):
+        return _groups_in_category(reply, where)
+    return _groups_inventory(reply, where)
+
+
+def _groups_inventory(reply, where):
+    """What groups and assemblies this model has."""
+    rows = reply.get("groupTypes") or []
+    assemblies = reply.get("assemblies") or []
+    total = reply.get("groupTypeCount", 0)
+
+    if not total and not assemblies:
+        return ("%s has no groups and no assemblies. That is a statement about "
+                "this model, not an empty answer \u2014 and it means an edit to "
+                "any element here reaches exactly one place." % where)
+
+    lines = ["%s: %d group type(s), %d assembly(ies)."
+             % (where, total, reply.get("assemblyCount", 0)),
+             "",
+             "  %-38s %-16s %10s %9s" % ("GROUP TYPE", "KIND", "PLACEMENTS", "MEMBERS")]
+
+    for row in rows:
+        members = row.get("members")
+        lines.append("  %-38s %-16s %10s %9s"
+                     % (_clip(row.get("name"), 38),
+                        _clip(row.get("kind") or "?", 16),
+                        "{:,}".format(row.get("placements", 0)),
+                        "-" if members is None else "{:,}".format(members)))
+
+    left = reply.get("notListed", 0)
+    if left:
+        lines.append("  ... and %s more." % "{:,}".format(left))
+
+    if assemblies:
+        lines.append("")
+        lines.append("  ASSEMBLIES")
+        for one in assemblies[:20]:
+            lines.append("  %-38s %s member(s)"
+                         % (_clip(one.get("name"), 38),
+                            "{:,}".format(one.get("members", 0))))
+        # Off the TOTAL, not off this already-capped list - the add-in
+        # caps `assemblies` at 500 and this loop caps it again at 20.
+        more = reply.get("assemblyCount", len(assemblies)) - min(len(assemblies), 20)
+        if more > 0:
+            lines.append("  ... and %s more." % "{:,}".format(more))
+
+    lines.append("")
+    lines.append("PLACEMENTS is the number that matters: edit one member of a "
+                 "group placed 12 times and you have edited 12 places.")
+
+    unplaced = reply.get("unplacedGroupTypes", 0)
+    if unplaced:
+        lines.append("%d group definition(s) have nothing placed. Not a fault \u2014 "
+                     "that is what a purge would remove." % unplaced)
+
+    if assemblies:
+        lines.append("Assemblies are listed and not explained: whether an edit "
+                     "inside one travels to another of the same type has not "
+                     "been checked against a real model.")
+
+    return "\n".join(lines)
+
+
+def _groups_in_category(reply, where):
+    """Which of these elements an edit would multiply."""
+    kind = reply.get("category")
+    examined = reply.get("examined", 0)
+    grouped = reply.get("inAGroup", 0)
+    assembled = reply.get("inAnAssembly", 0)
+    worst = reply.get("mostPlacements", 0)
+
+    if not examined:
+        return ("%s has no %s at all, so there is nothing to check for groups. "
+                "That is a statement about this model rather than an empty "
+                "answer." % (where, kind))
+
+    if not grouped and not assembled:
+        return ("%s: none of the %s %s are in a group or an assembly. An edit "
+                "to any of them reaches exactly one place, which is what you "
+                "expected \u2014 and it is worth having been told rather than "
+                "assumed."
+                % (where, "{:,}".format(examined), kind))
+
+    lines = ["%s: %s of %s %s are inside a group."
+             % (where, "{:,}".format(grouped), "{:,}".format(examined), kind)]
+
+    if worst > 1:
+        lines.append("")
+        lines.append("!! THE WORST CASE IS %s PLACEMENTS. Editing that element "
+                     "changes %s places in this model, and Revit will not warn "
+                     "you \u2014 a move of a group member returns cleanly and "
+                     "shifts nothing at all."
+                     % ("{:,}".format(worst), "{:,}".format(worst)))
+
+    lines.append("")
+    lines.append("  %-30s %-20s %10s %7s"
+                 % ("ELEMENT", "GROUP", "PLACEMENTS", "PINNED"))
+
+    for row in (reply.get("elements") or [])[:30]:
+        chain = row.get("chain") or []
+        first = chain[0] if chain else {}
+        name = first.get("groupType") or first.get("group") or row.get("assembly") or "-"
+        lines.append("  %-30s %-20s %10s %7s%s"
+                     % (_clip(row.get("element"), 30),
+                        _clip(name, 20),
+                        "{:,}".format(row.get("placementsOfItsGroup", 0)),
+                        "yes" if row.get("pinned") else "no",
+                        "   NESTED" if row.get("nested") else ""))
+
+    # THE REMAINDER COMES OFF `matched`, NOT off grouped + assembled. An
+    # element can be in a group AND an assembly, so adding the two counts
+    # it twice - and there are two caps besides: the add-in stops at 500
+    # rows and this list stops at 30. The add-in reports `matched` as the
+    # number of rows it would have produced, which is the only figure both
+    # caps can be subtracted from honestly.
+    shown = min(len(reply.get("elements") or []), 30)
+    left = reply.get("matched", shown) - shown
+    if left > 0:
+        lines.append("  ... and %s more." % "{:,}".format(left))
+
+    lines.append("")
+    if reply.get("inNoGroup"):
+        lines.append("%s are in no group at all \u2014 an edit reaches those once."
+                     % "{:,}".format(reply["inNoGroup"]))
+
+    if reply.get("pinned"):
+        lines.append("%s are PINNED, which is a different problem: a group "
+                     "member is not pinned, so unpinning will not free one and "
+                     "ungrouping will not free the other."
+                     % "{:,}".format(reply["pinned"]))
+
+    if reply.get("nested"):
+        lines.append("%s sit in NESTED groups. Each level's own placement count "
+                     "is reported and they are NOT multiplied \u2014 whether a "
+                     "nested group's count already includes the copies inside "
+                     "its parent has not been checked against a real model, and "
+                     "a wrong multiplier here would read exactly like a right "
+                     "one." % "{:,}".format(reply["nested"]))
+
+    return "\n".join(lines)
+
+
 if __name__ == "__main__":
     if os.name != "nt":
         # The bridge is a Windows named pipe, and Revit is Windows-only.
