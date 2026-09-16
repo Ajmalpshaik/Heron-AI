@@ -197,6 +197,29 @@ def main():
         reached.add(answer.get("refused"))
         check(answer.get("refused") == name, "%s is reached" % name)
 
+    print()
+    print("R. THE SECOND CODEX REVIEW - which standards owners exist is "
+          "derived")
+    answer = RES.research({"id": "a-new-skill", "domain": "revit.reporting",
+                           "needs": [], "utterances": ["count the ducts"]},
+                          skills=[], fragments=[])
+    standard = answer["standard"]
+    built = set(standard.get("built") or [])
+    check(built == set(RES._built_owners()) and built,
+          "which owners are built is DERIVED from the source headers - "
+          "the answer hard-coded 'none of them is built' and three of "
+          "the four were, routing the host away from working agents")
+    check(all(one["built"] == (one["agent"] in built)
+              for one in standard["owners"]),
+          "  and every owner row says whether it is built")
+    check("none of the %d agents that would is built"
+          % len(RES.STANDARD_OWNERS) not in standard["why"],
+          "  so the stale sentence is gone")
+    check(standard["answered"] is False,
+          "  and the question is still unanswered - this agent asks none "
+          "of them, which is a different answer from there being none to "
+          "ask")
+
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-SKL-RES-001.yaml"))
     named = contract.get("failures") or []

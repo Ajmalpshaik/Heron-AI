@@ -89,6 +89,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import heron_embed as EMBED  # noqa: E402
 import heron_import as IMPORT  # noqa: E402
+import heron_promotion as PRO  # noqa: E402
 import heron_retrieve as RETRIEVE  # noqa: E402
 import heron_search as SEARCH  # noqa: E402
 
@@ -160,6 +161,18 @@ def index_accepted(store, accepted):
                        "made is not an acceptance - Golden Rule 7, no agent "
                        "approves itself, and `by` is where a human's name "
                        "goes."}
+    # AND IT IS A PERSON'S NAME, not any non-empty string. `ci`, `bot` and
+    # an agent id all read as signed while nobody has looked at the import
+    # at all. HERON-FRG-PRO-00X's own test, bound rather than a second
+    # list of the words a machine signs with.
+    if not PRO._person(by):
+        return {"indexed": False, "refused": "ACCEPTED_BY_A_MACHINE",
+                "by": by,
+                "why": "'%s' accepted it, which is not a person. Golden "
+                       "Rule 7: no agent approves itself, and an import "
+                       "signed by the pipeline that fetched it is that "
+                       "rule with the sign painted over. The promotion and "
+                       "contribution gates apply the same test." % by}
 
     items = accepted.get("items")
     if not isinstance(items, list) or not items:

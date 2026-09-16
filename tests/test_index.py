@@ -218,10 +218,21 @@ def main():
         reached.add(said.get("refused"))
         check(said.get("refused") == "NO_LIBRARY", "NO_LIBRARY is reached")
 
+        print("\nR. THE SECOND CODEX REVIEW - `by` must be a person")
+        for machine in ("ci", "bot", "pipeline", "script"):
+            said = IDX.index_accepted(store,
+                                      accepted([item()], by=machine))
+            reached.add(said.get("refused"))
+            check(said.get("refused") == "ACCEPTED_BY_A_MACHINE",
+                  "'%s' accepting an import is refused - the gate asked "
+                  "only that `by` was non-empty, so an agent id or a CI "
+                  "job read as signed while nobody had looked" % machine)
+
         contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                          "HERON-IMP-IDX-013.yaml"))
         named = contract.get("failures") or []
-        check(len(named) == 4, "the contract declares 4 failures")
+        check(len(named) == len(set(named)),
+              "the contract declares each failure once")
         for failure in named:
             check(failure in logic, "the code names %s" % failure)
         unreached = sorted(set(named) - reached)

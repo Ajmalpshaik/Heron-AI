@@ -185,6 +185,51 @@ def main():
           "and rows carrying no columns at all")
     check(ask("page", ["not a row"]).get("refused") == "NOT_A_ROW",
           "a row that is not a map is refused")
+    print()
+    print("R. THE SECOND CODEX REVIEW - a cell that carries the table's "
+          "own punctuation")
+    answer = ask("page", [{"element": "Duct|Main", "fails": 1},
+                          {"element": "two\nlines", "fails": 2}])
+    body = [line for line in answer["content"].splitlines()
+            if line.startswith("| Duct")][0]
+
+    def bare(line):
+        """Pipes that still divide cells - an escaped one does not."""
+        count, skip = 0, False
+        for place, letter in enumerate(line):
+            if skip:
+                skip = False
+                continue
+            if letter == "\\":
+                skip = True
+            elif letter == "|":
+                count += 1
+        return count
+
+    check(bare(body) == 3,
+          "a cell holding a pipe does not add a column - it ended the "
+          "cell early, and `pdf` and `image` are made from this same "
+          "content so the corruption travelled")
+    check(len([line for line in answer["content"].splitlines()
+               if line.startswith("|")]) == 4,
+          "  and a cell holding a line break does not add a ROW")
+    check(len(answer["escaped"]) == 2,
+          "  every cell whose punctuation was encoded is named in "
+          "`escaped` - a value changed to fit the format is not the "
+          "value, Golden Rule 14")
+    plain = ask("schedule", [{"element": "two\nlines", "fails": 2}])
+    check(len(plain["content"].strip().splitlines()) == 3,
+          "the fixed-width schedule keeps one row on one line too")
+    quoted = ask("csv", [{"element": "Duct|Main", "fails": 1}])
+    check(not quoted["escaped"],
+          "and csv reports nothing escaped - it already quoted correctly, "
+          "so nothing there was changed to fit the format")
+    titled = ask("page", rows, title="A Heading")
+    check(titled["title"] == "A Heading",
+          "the answer carries the title back, so a report can re-render "
+          "what it actually made - without it HERON-RPT-VAL-004 "
+          "re-rendered untitled and found every titled report wrong")
+
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-RPT-RND-002.yaml"))
     check(contract.get("allowed-tools") == [],
@@ -198,7 +243,7 @@ def main():
     check(not unreached,
           "and every one was reached above%s"
           % ("" if not unreached else ": %s" % ", ".join(unreached)))
-    check(len(page["unjudged"]) == 4, "four things are left unjudged")
+    check(len(page["unjudged"]) == 5, "five things are left unjudged")
 
     print()
     if FAILURES:

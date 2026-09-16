@@ -81,6 +81,7 @@ timeout-seconds: 600
 failures:
   - NOTHING_TO_INDEX
   - NOT_ACCEPTED
+  - ACCEPTED_BY_A_MACHINE
   - NOT_AN_ITEM
   - NO_LIBRARY
 

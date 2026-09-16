@@ -85,6 +85,14 @@ def _flat(value):
     return " ".join(str(value or "").strip().lower().split())
 
 
+def _releases(card):
+    """The releases a card declares, as plain strings."""
+    if not isinstance(card, dict):
+        return []
+    return sorted(set(str(one).strip() for one in (card.get("revit") or [])
+                      if str(one).strip()))
+
+
 def _card(thing):
     return getattr(thing, "data", thing)
 
@@ -119,14 +127,15 @@ def look(items, fragments=(), skills=()):
             continue
         capability = str(card.get("capability") or "").strip()
         if capability:
-            by_capability.setdefault(capability, []).append(who)
+            by_capability.setdefault(capability, []).append(
+                (who, _releases(card)))
         shape, _ = signature(entry)
         if shape:
             by_signature.setdefault(shape, []).append(who)
         by_name.setdefault(_flat(card.get("name") or who), []).append(who)
 
     seen = []
-    already, unchecked, fresh = [], [], []
+    already, unchecked, fresh, complements = [], [], [], []
     for item in items:
         item = _card(item)
         if not isinstance(item, dict):
@@ -148,16 +157,47 @@ def look(items, fragments=(), skills=()):
 
         hits, could = [], []
         capability = str(item.get("capability") or "").strip()
+        mine = _releases(item)
         if capability:
             could.append("capability")
-            for who in by_capability.get(capability, []):
+            for who, theirs in by_capability.get(capability, []):
+                # A CAPABILITY DOES NOT HAVE EXACTLY ONE PROVIDER, WHICH
+                # IS WHAT THIS USED TO SAY. heron_capability.resolve()
+                # keeps every provider of a name and picks among them BY
+                # RELEASE - that is the whole reason it takes a `revit`
+                # argument. So a provider that cannot serve the releases
+                # this import declares does not make it a duplicate; it
+                # makes it the other half of the matrix, and reporting it
+                # as already here is how the gap on 2027 stays open.
+                shared = sorted(set(mine) & set(theirs))
+                decisive = bool(shared) or not mine or not theirs
                 hits.append({"by": "capability", "is": who,
                              "on": capability,
-                             "why": "'%s' already provides %s, and a "
-                                    "capability has exactly one provider "
-                                    "across the whole library - so this is "
-                                    "decisive rather than suggestive."
-                                    % (who, capability)})
+                             "releases": theirs, "shared": shared,
+                             "decisive": decisive,
+                             "why": ("'%s' already provides %s on %s, which "
+                                     "this import also declares - two "
+                                     "providers of one capability on one "
+                                     "release is a duplicate rather than a "
+                                     "matrix."
+                                     % (who, capability, ", ".join(shared))
+                                     if shared else
+                                     "'%s' provides %s and neither side "
+                                     "says on which releases, so an "
+                                     "overlap cannot be ruled out. Read as "
+                                     "decisive: a duplicate reported "
+                                     "wrongly costs a conversation, and "
+                                     "one missed ships two providers."
+                                     % (who, capability)
+                                     if decisive else
+                                     "'%s' provides %s on %s and this "
+                                     "import declares %s - no release in "
+                                     "common. resolve() picks a provider "
+                                     "BY RELEASE, so this fills a gap "
+                                     "rather than repeating one."
+                                     % (who, capability,
+                                        ", ".join(theirs) or "nothing",
+                                        ", ".join(mine) or "nothing"))})
         shape, _ = signature(item)
         if shape:
             could.append("signature")
@@ -179,8 +219,20 @@ def look(items, fragments=(), skills=()):
                                 "things the same is ordinary." % who})
 
         row = {"item": name, "compared_by": could, "matches": hits}
-        if hits:
+        deciding = [one for one in hits
+                    if one["by"] != "capability" or one.get("decisive")]
+        if deciding:
             already.append(row)
+        elif hits:
+            # EVERY MATCH WAS A CAPABILITY ON RELEASES NOBODY SHARES.
+            row["why"] = ("'%s' matches on capability alone, and on no "
+                          "release in common with any provider of it. "
+                          "resolve() chooses among providers BY RELEASE, "
+                          "so this is the other half of a matrix rather "
+                          "than a repeat - and calling it already here is "
+                          "how the unserved release stays unserved."
+                          % name)
+            complements.append(row)
         elif could == ["name"]:
             # NOTHING COMPARABLE IS NOT NOTHING LIKE IT.
             row["why"] = ("'%s' has no capability and no contract yet, so "
@@ -196,10 +248,11 @@ def look(items, fragments=(), skills=()):
     return {
         "looked": True, "of": len(items), "against": len(known),
         "already": already, "unchecked": unchecked, "new": fresh,
+        "complements": complements,
         "why": "%d item(s) against %d known: %d already here, %d could not "
-               "be compared, %d new."
+               "be compared, %d complete a release matrix, %d new."
                % (len(items), len(known), len(already), len(unchecked),
-                  len(fresh)),
+                  len(complements), len(fresh)),
         "unjudged": [
             "%s" % ("%d ITEM(S) COULD NOT BE COMPARED AND ARE NOT IN "
                     "`new`: %s. They have no capability and no contract "
@@ -216,10 +269,22 @@ def look(items, fragments=(), skills=()):
             "count-elements' is not a finding this agent can make. It is "
             "the host's under D-01.",
             "WHETHER A MATCH IS A PROBLEM. A matching capability is "
-            "decisive, a matching signature is a question - "
-            "HERON-FRG-MRG-004's own finding is that the plumbing can "
-            "match while the job differs - and a matching name on its own "
-            "is neither.",
+            "decisive ON A SHARED RELEASE - heron_capability.resolve() "
+            "keeps several providers of one capability and picks among "
+            "them by release, so a provider that cannot serve what this "
+            "import declares is not a duplicate of it. A matching "
+            "signature is a question - HERON-FRG-MRG-004's own finding is "
+            "that the plumbing can match while the job differs - and a "
+            "matching name on its own is neither.",
+            "%s" % ("%d ITEM(S) MATCH ON CAPABILITY AND SHARE NO RELEASE: "
+                    "%s. Reported apart from `already`, because a library "
+                    "with one provider per release is the matrix working "
+                    "rather than a duplicate nobody caught."
+                    % (len(complements),
+                       ", ".join(one["item"] for one in complements))
+                    if complements else
+                    "no item matched a capability on releases nobody "
+                    "shares."),
             "NOTHING WAS CREATED, WHICH IS THE POINT OF RUNNING BEFORE "
             "ANYTHING IS. HERON-IMP-APR-014 presents what survives this, "
             "and everything enters at DISCOVERED.",

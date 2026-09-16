@@ -173,25 +173,55 @@ Every collision is a `MODIFY` change that could be altered after review without 
 time it was found, **`HERON-DEV-QA-016` and `HERON-FRG-UPD-006` had both bound this function**, so all
 three shared the hole. Now canonical JSON with sorted keys.
 
-#### NOT looked at — eleven P1 and four P2
+#### ALL FIFTEEN LOOKED AT, REPRODUCED AND FIXED — 2026-09-16
+
+**Every one was reproduced before anything was changed, and every one was real** — the same
+result as round one, where nine of nine held. The table below is kept as the reviewer wrote it,
+with what was done to each. Each fix carries a regression check in its own suite, under a
+heading that names the review, so a later reader finds the argument and not just the assertion.
+
+**Two of the fifteen were the SAME BUG IN A SECOND FILE**, exactly as the note below predicted,
+and both were fixed at the root rather than at the line reported:
+
+- `heron_contribution` repeated round one's string-attachment bug. `_binaries` already
+  normalised a bare string — but `heron_contribution` and `heron_import` both concatenated
+  `[name] + list(attachments)` **first**, splitting `"Tower.rvt"` into eleven characters before
+  the normalisation ever got its turn. `heron_release._names()` is the one place that now
+  answers "these names, as a list", and both callers use it.
+- `heron_workspace` repeated the Windows-separator bug. `_normal()` is the one place that
+  makes a path comparable, and the three comparisons in that file all go through it.
+
+**Three fixes were shaped by a constraint the module already had**, found by its own suite
+rather than reasoned about:
+
+- `heron_render` may import only `hashlib`, `os` and `sys`, so the cell escaping is hand-rolled
+  rather than a regex.
+- `heron_prebuild` may not call `open(` — it reads nothing. Which standards owners exist is
+  answered with `importlib.util.find_spec`, so the *mapping* is written down and whether a
+  module *exists* is looked up.
+- `heron_userskills` and `heron_qa` each had a test asserting the reported behaviour was
+  deliberate. One was wrong and was changed (returning every author's private skills is the
+  widest possible guess, not a neutral one); the other is genuinely a sequencing decision and
+  is **half-closed on purpose** — see `heron_qa` below and PROPOSALS F35.
 
 | file:line | the claim, in the reviewer's words |
 |---|---|
-| `brain/heron_qa.py:174` | **P1.** A result omitting `of` skips the freshness check, so an old or fabricated `{check, passed: true}` satisfies the final gate for an unrelated change. **Note:** this is the concession that agent DOCUMENTS deliberately — most checks here record nothing to compare against. The reviewer is right that it is a hole; closing it needs the checks to start recording fingerprints first, so it is a sequencing decision, not a one-line fix |
-| `brain/heron_contribution.py:139` | **P1.** `attachments: "Tower.rvt"` is concatenated with the item name and iterated as characters, so no `.rvt` is found and `submit()` returns `may_submit: True` for a contribution carrying a model. **This is the same bug as the `heron_release` one fixed in round one, in a second file** — normalise before concatenating |
-| `brain/heron_knowledge.py:160` | **P1.** The literal scope name `project` is compared against the active project key, so a claim from the CURRENT project is always held as `ANOTHER_PROJECTS_KNOWLEDGE` unless the project is itself called "project" |
-| `brain/heron_userskills.py:147` | **P1.** With no `reader`, `who` is empty and nothing refuses, so `mine` returns **every supplied user's private skills** |
-| `brain/heron_pullrequest.py:207` | **P1.** A confirmation is validated against the mutable branch name, so the same `{by, at, head}` authorises a second call after new commits, a changed base, or a replaced title |
-| `brain/heron_workspace.py:140` | **P1.** Only `/` is compared, so on Windows `Brain\Skills` and `Brain\Skills\x.yaml` read as unrelated and two modifying agents are approved together. **Windows is where Revit runs** — same shape as the `heron_authoring` separator bug fixed in round one |
-| `brain/heron_migration.py:149` | **P1.** Two migrations with the same `from` version: the second silently replaces the first, and the chain still reports complete |
-| `brain/heron_repair.py:128` | **P1.** Two findings mapping to the same absent destination both pass `taken()`, so the plan overwrites a file despite the no-overwrite guarantee |
-| `brain/heron_report.py:140` | **P1.** A titled report re-renders without its title, so `validate()` reports `CONTENT_DOES_NOT_MATCH_THE_DATA` for **every** legitimately titled report |
-| `brain/heron_index.py:160` | **P1.** Any non-empty `by` satisfies the acceptance gate — `ci`, `bot`, an agent id — despite the function requiring a human. The promotion and contribution gates already have the person check to bind |
-| `brain/heron_regression.py:156` | **P1.** The missing-result check ranges only over releases claimed BEFORE the change, so a fragment can add Revit 2026, supply only old results, and still return `safe: True` |
-| `brain/heron_compatibility.py:135` | **P1.** A declared release plus a runtime absent from the build matrix returns the declared releases as supported — `declared=['2025'], runtime='net6.0'` gives `revit: ['2025']` with no disagreement, while the same answer says no release uses that runtime |
-| `brain/heron_duplicates.py:156` | **P2.** A capability match alone classifies an import as `already`, though `heron_capability.resolve()` deliberately keeps several providers and picks by release |
-| `brain/heron_render.py:172` | **P2.** A cell containing `|` or a newline corrupts the Markdown table, and PDF/image conversion preserves the corruption |
-| `brain/heron_prebuild.py:246` | **P2.** It hard-codes that the standards question is unanswered because no owner is built — **but `STD-PRJ-009`, `STD-CMP-002` and `STD-ISO-003` were built in this PR.** A stale hard-coded answer routing the host away from working functionality |
+
+| `brain/heron_qa.py:174` | **P1.** A result omitting `of` skips the freshness check, so an old or fabricated `{check, passed: true}` satisfies the final gate for an unrelated change. **Note:** this is the concession that agent DOCUMENTS deliberately — most checks here record nothing to compare against. The reviewer is right that it is a hole; closing it needs the checks to start recording fingerprints first, so it is a sequencing decision, not a one-line fix → **HALF-CLOSED, ON PURPOSE.** The MIXTURE is now refused — `RESULT_IS_UNFINGERPRINTED`: once one check in a run recorded a fingerprint, a result without one is a check that did not record rather than one that cannot, and that is where an old or fabricated result would sit. The all-unfingerprinted case still passes, because the note is right that closing it needs the checks to record first — but it is no longer only prose: `unfingerprinted` names every such check in the answer, so a caller can refuse on it. **The remaining half is PROPOSALS F35.** |
+| `brain/heron_contribution.py:139` | **P1.** `attachments: "Tower.rvt"` is concatenated with the item name and iterated as characters, so no `.rvt` is found and `submit()` returns `may_submit: True` for a contribution carrying a model. **This is the same bug as the `heron_release` one fixed in round one, in a second file** — normalise before concatenating → **FIXED at the root.** `heron_release._names()` normalises a bare string, and `heron_contribution` and `heron_import` both call it instead of `list()`. |
+| `brain/heron_knowledge.py:160` | **P1.** The literal scope name `project` is compared against the active project key, so a claim from the CURRENT project is always held as `ANOTHER_PROJECTS_KNOWLEDGE` unless the project is itself called "project" → **FIXED.** `scope: project` is the ladder RUNG and names no project; which project a claim belongs to is its own `project` field. A rung-scoped claim naming none is held under `NO_PROJECT_NAMED` — it cannot be SHOWN to be this one — rather than reported as belonging to a project called 'project'. The wall holds in both directions; seven arrangements are checked. |
+| `brain/heron_userskills.py:147` | **P1.** With no `reader`, `who` is empty and nothing refuses, so `mine` returns **every supplied user's private skills** → **FIXED, and a test that asserted the old behaviour was changed.** An unnamed reader is `NOBODY_IS_ASKING`, not a matching one. The suite said *"guessing would be the wrong answer either way"* — returning every author's private skills is the widest possible guess, not a neutral one. |
+| `brain/heron_pullrequest.py:207` | **P1.** A confirmation is validated against the mutable branch name, so the same `{by, at, head}` authorises a second call after new commits, a changed base, or a replaced title → **FIXED.** The confirmation carries `of`, HERON-DEV-SEC-009's fingerprint of title, body, head, base, draft and attachments. A changed title, base, body or attachment is `CONFIRMATION_IS_STALE`. This is round one's `heron_apply` fix — *an approval that does not name what it approved covers everything* — applied to the second place a name stood in for the content. |
+| `brain/heron_workspace.py:140` | **P1.** Only `/` is compared, so on Windows `Brain\Skills` and `Brain\Skills\x.yaml` read as unrelated and two modifying agents are approved together. **Windows is where Revit runs** — same shape as the `heron_authoring` separator bug fixed in round one → **FIXED at the root.** `_normal()` reads both separators, and all three comparisons in the file use it. Mixed spellings of one path match each other. |
+| `brain/heron_migration.py:149` | **P1.** Two migrations with the same `from` version: the second silently replaces the first, and the chain still reports complete → **FIXED.** Two migrations out of one version is `CHAIN_FORKS`, refused whole. Taking whichever arrived last ran one transformation, skipped the other, and reported the chain complete. |
+| `brain/heron_repair.py:128` | **P1.** Two findings mapping to the same absent destination both pass `taken()`, so the plan overwrites a file despite the no-overwrite guarantee → **FIXED.** Destinations claimed by this same plan are tracked. `exists` answers about the disk as it stands and cannot know about a move this run already proposed, so the no-overwrite guarantee held against the disk and not against the plan's own second half. |
+| `brain/heron_report.py:140` | **P1.** A titled report re-renders without its title, so `validate()` reports `CONTENT_DOES_NOT_MATCH_THE_DATA` for **every** legitimately titled report → **FIXED, and the root was in `heron_render`.** `render()` never returned the title, so a report could not carry its heading forward and `validate()` re-rendered untitled. Both were fixed; an edited report is still caught. |
+| `brain/heron_index.py:160` | **P1.** Any non-empty `by` satisfies the acceptance gate — `ci`, `bot`, an agent id — despite the function requiring a human. The promotion and contribution gates already have the person check to bind → **FIXED.** `PRO._person` is bound, so `ci`, `bot`, `pipeline` and `script` are `ACCEPTED_BY_A_MACHINE`. The promotion and contribution gates already had the test; this is the same one, not a second copy. |
+| `brain/heron_regression.py:156` | **P1.** The missing-result check ranges only over releases claimed BEFORE the change, so a fragment can add Revit 2026, supply only old results, and still return `safe: True` → **FIXED.** The missing-result check ranges over the union of before and after, so a release this change ADDS needs a result too. A new release that fails is `A_NEW_RELEASE_FAILED`, named apart from a regression — nothing regressed, because there was no previous behaviour there. |
+| `brain/heron_compatibility.py:135` | **P1.** A declared release plus a runtime absent from the build matrix returns the declared releases as supported — `declared=['2025'], runtime='net6.0'` gives `revit: ['2025']` with no disagreement, while the same answer says no release uses that runtime → **FIXED.** A declaration against a runtime nobody here builds for supports no release KNOWN, and the conflict is reported as a disagreement. Both cannot be true at once, and `revit: ['2025']` beside an `unbuilt` note said they were. |
+| `brain/heron_duplicates.py:156` | **P2.** A capability match alone classifies an import as `already`, though `heron_capability.resolve()` deliberately keeps several providers and picks by release → **FIXED.** A capability match is decisive only on a SHARED release, because `resolve()` keeps several providers and picks among them by release. No overlap goes to a new `complements` list. With neither side declaring releases an overlap cannot be ruled out, so it still reads as decisive. |
+| `brain/heron_render.py:172` | **P2.** A cell containing `|` or a newline corrupts the Markdown table, and PDF/image conversion preserves the corruption → **FIXED.** A pipe is escaped and a line break becomes `<br>` (a space in the fixed-width schedule), so one value can no longer add a column or a row. Every touched cell is named in `escaped` — a value changed to fit the format is not the value. `csv` already quoted correctly and is untouched. |
+| `brain/heron_prebuild.py:246` | **P2.** It hard-codes that the standards question is unanswered because no owner is built — **but `STD-PRJ-009`, `STD-CMP-002` and `STD-ISO-003` were built in this PR.** A stale hard-coded answer routing the host away from working functionality → **FIXED.** Which owners are built is looked up, not asserted. The answer now says the question is unanswered because **this agent asks none of them** — a different statement from there being none to ask — and names the three that are built. |
 
 **Two of these are round-one bugs in a second file** (`heron_contribution` repeats the string-attachment
 bug, `heron_workspace` repeats the Windows-separator bug). When one of these is fixed, **grep for the

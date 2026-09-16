@@ -204,10 +204,33 @@ def main():
                      ({"source": "s"}, "one that says nothing"),
                      ({"text": "   ", "source": "s"}, "and one that is blank")):
         check(ask([bad], revit="2024").get("refused") == "NOT_A_CLAIM", why)
+    print()
+    print("R. THE SECOND CODEX REVIEW - 'project' is a rung, not a "
+          "project name")
+    answer = ask([claim("the riser is 200mm", scope="project",
+                        project="Tower-A")],
+                 revit="2024", project="Tower-A")
+    check(len(answer["usable"]) == 1 and not answer["held"],
+          "THIS project's own claim is usable - the ladder rung "
+          "'project' used to be compared against the project KEY, so a "
+          "claim written the documented way was always held as another "
+          "project's unless the project was itself called 'project'")
+    answer = ask([claim("the riser is 200mm", scope="project",
+                        project="Tower-B")],
+                 revit="2024", project="Tower-A")
+    check(answer["held"][0]["refused"] == "ANOTHER_PROJECTS_KNOWLEDGE",
+          "  and another project's is still held - the wall did not move")
+    answer = ask([claim("the riser is 200mm", scope="project")],
+                 revit="2024", project="Tower-A")
+    check(answer["held"][0]["refused"] == "NO_PROJECT_NAMED",
+          "  a rung-scoped claim naming NO project is held under a "
+          "refusal that says so, not assumed to be the one in front of us")
+
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-RAG-VAL-013.yaml"))
     named = contract.get("failures") or []
-    check(len(named) == 7, "the contract declares 7 failures")
+    check(len(named) == len(set(named)),
+          "the contract declares each failure once")
     for failure in named:
         check(failure in logic, "the code names %s" % failure)
     unreached = sorted(set(named) - reached)

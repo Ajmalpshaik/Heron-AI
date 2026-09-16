@@ -128,7 +128,7 @@ def plan(at=None, to=None, migrations=None, backup=None):
 
     # THE CHAIN. Indexed by the version each migration starts FROM, so a
     # gap is a missing key rather than something to step over.
-    steps, thin = {}, []
+    steps, thin, forked = {}, [], []
     for index, migration in enumerate(migrations or []):
         if not isinstance(migration, dict):
             thin.append((index + 1, ["it is not a record at all"]))
@@ -146,7 +146,37 @@ def plan(at=None, to=None, migrations=None, backup=None):
                                      % (migration.get("from"),
                                         migration.get("to"))]))
             continue
+        if starts in steps:
+            # TWO MIGRATIONS OUT OF ONE VERSION. The later one used to
+            # replace the earlier in this dict and the chain still
+            # reported complete, so the run silently dropped a
+            # transformation and nothing said which. Which of the two is
+            # current is a question about the data, not one this agent
+            # may answer by taking whichever arrived last.
+            forked.append({"from": starts, "to": ends,
+                           "migrations": [steps[starts].get("name")
+                                          or "migration %d" % (index,),
+                                          migration.get("name")
+                                          or "migration %d" % (index + 1,)]})
+            continue
         steps[starts] = migration
+
+    if forked:
+        return {"migrated": False, "refused": "CHAIN_FORKS",
+                "forks": forked, "at": here, "to": target,
+                "why": "%s. A version with two migrations out of it is not "
+                       "a chain, and taking whichever arrived last would "
+                       "run one transformation, skip the other, and report "
+                       "the chain complete - silent, and by then the data "
+                       "has been through neither or only half."
+                       % "; ".join("%d migrations start at schema %d (%s)"
+                                   % (len(one["migrations"]), one["from"],
+                                      ", ".join(str(name) for name
+                                                in one["migrations"]))
+                                   for one in forked),
+                "proposal": "keep one migration per version and delete or "
+                            "renumber the other. Which is current is a "
+                            "question about the data."}
 
     if thin:
         return {"migrated": False, "refused": "MIGRATION_NOT_DECLARED",

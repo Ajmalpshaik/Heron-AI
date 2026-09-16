@@ -172,6 +172,26 @@ def main():
         reached.add(answer.get("refused"))
         check(answer.get("refused") == name, "%r is %s" % (declared, name))
 
+    print()
+    print("R. THE SECOND CODEX REVIEW - a declaration against a runtime "
+          "nobody builds for")
+    answer = CMP.look(declared=["2025"], runtime="net6.0")
+    check(answer["revit"] == [],
+          "declaring 2025 while targeting a runtime no release here uses "
+          "supports NO release known - it used to come back supported "
+          "and undisputed while `unbuilt` in the same answer said no "
+          "release uses that runtime, and both cannot be true")
+    check(answer.get("disagree") and answer["disagree"]["only_declared"]
+          == ["2025"],
+          "  and the conflict is named, neither side resolved")
+    check(bool(answer.get("unbuilt")),
+          "  with the unbuilt runtime still reported")
+    answer = CMP.look(declared=[], runtime="net6.0")
+    check(answer.get("unknown") is True,
+          "an import declaring nothing AND naming an unbuilt runtime is "
+          "still UNKNOWN, which is an empty list rather than eight "
+          "releases")
+
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-IMP-CMP-008.yaml"))
     named = contract.get("failures") or []

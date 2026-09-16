@@ -143,7 +143,7 @@ def gate(change, results=None, approved_by=None, reviewed=None,
     now = fingerprint(change)
     author = str(change.get("by") or change.get("author") or "").strip()
 
-    seen, missing, failed, stale = {}, [], [], []
+    seen, missing, failed, stale, unsigned = {}, [], [], [], []
     for one in list(results or []):
         one = getattr(one, "data", one)
         if not isinstance(one, dict):
@@ -169,7 +169,9 @@ def gate(change, results=None, approved_by=None, reviewed=None,
         # A CHECK THAT PASSED ON AN EARLIER VERSION IS A CHECK OF
         # SOMETHING ELSE. Recomputed, never taken on trust.
         was = str(one.get("of") or "").strip()
-        if was and was != now:
+        if not was:
+            unsigned.append(name)
+        elif was != now:
             stale.append({"check": name, "ranAgainst": was[:16],
                           "isNow": now[:16]})
 
@@ -183,6 +185,7 @@ def gate(change, results=None, approved_by=None, reviewed=None,
         "missing": missing,
         "failed": failed,
         "stale": stale,
+        "unfingerprinted": unsigned,
         "security": security,
         "fingerprint": now,
         "author": author or None,
@@ -210,6 +213,24 @@ def gate(change, results=None, approved_by=None, reviewed=None,
                         "change is a check of something else."
                         % (", ".join(one["check"] for one in stale),
                            stale[0]["ranAgainst"], now[:16]))
+    # A RESULT NOTHING CAN TIE TO THIS CHANGE, SITTING BESIDE ONES THAT
+    # CAN. Most checks record nothing to compare against, and that
+    # concession stands - see `unjudged`. What does not stand is a
+    # MIXTURE: once one check in this run recorded a fingerprint, a result
+    # without one is a check that did not record rather than a check that
+    # cannot, and an old or fabricated {check, passed: true} is
+    # indistinguishable from a fresh one in exactly that company.
+    if unsigned and len(unsigned) != len(must):
+        return dict(ready, passed=False, refused="RESULT_IS_UNFINGERPRINTED",
+                    why="%s recorded no fingerprint while %s did. A result "
+                        "nothing can tie to this change is not a result "
+                        "ABOUT this change, and one sitting beside results "
+                        "that name what they ran against is a check that "
+                        "did not record rather than one that cannot."
+                        % (", ".join(unsigned),
+                           ", ".join(name for name in must
+                                     if name not in unsigned)))
+
     if security.get("refused"):
         return dict(ready, passed=False, refused="NOT_SECURITY_REVIEWED",
                     why="HERON-DEV-SEC-009 refused: %s. %s"
@@ -237,10 +258,10 @@ def gate(change, results=None, approved_by=None, reviewed=None,
             % (len(must), "" if len(must) == 1 else "s",
                "given" if security.get("reviewed") else "not required here",
                who),
-        unjudged=_unjudged(must, security, who))
+        unjudged=_unjudged(must, security, who, unsigned))
 
 
-def _unjudged(must, security, who):
+def _unjudged(must, security, who, unsigned=()):
     return [
         "NOTHING WAS RUN HERE. The results were read, not produced. An "
         "agent that runs a check and then decides whether it passed is "
@@ -261,10 +282,17 @@ def _unjudged(must, security, who):
         "a machine can see is wrong with it. %s is approving it, and that "
         "is a person's judgement about work they did not write." % who,
         "A PASSING CHECK IS AS OLD AS ITS FINGERPRINT. Each result was "
-        "recomputed against the change as it stands; a result carrying no "
-        "fingerprint at all was accepted, because refusing one would make "
-        "this unusable against any check that does not record what it ran "
-        "against - and that is most of them today.",
+        "recomputed against the change as it stands. %s"
+        % ("EVERY result here recorded one." if not unsigned else
+           "%d recorded NONE and %s named in `unfingerprinted`: %s. They "
+           "were accepted because refusing them would make this unusable "
+           "against any check that does not record what it ran against, "
+           "and that is most of them today - but nothing here can tell "
+           "such a result from one run against an older change. A result "
+           "with no fingerprint ALONGSIDE one that has is a different "
+           "matter and is refused."
+           % (len(unsigned), "is" if len(unsigned) == 1 else "are",
+              ", ".join(unsigned))),
     ]
 
 

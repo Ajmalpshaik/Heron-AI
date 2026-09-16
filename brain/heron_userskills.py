@@ -142,8 +142,25 @@ def manage(skills, raising=None, reader=None):
         held[name] = {"name": name, "scope": scope, "author": author}
         if scope != SCOPE.USER:
             continue
+        # NOBODY ASKING IS NOT EVERYBODY ASKING. With no `reader` the test
+        # below was skipped entirely, so a call that said nothing about
+        # who was asking came back holding EVERY author's personal skills
+        # - the one answer the scope HERON-RAG-LIB-001 calls "shared with
+        # nobody" exists to prevent. An unnamed reader is refused rather
+        # than treated as a matching one.
+        if not who:
+            refused.append({"skill": name, "refused": "NOBODY_IS_ASKING",
+                            "why": "'%s' is %s's, in the scope "
+                                   "HERON-RAG-LIB-001 calls 'shared with "
+                                   "nobody', and this call names no "
+                                   "reader. Nothing here can show the "
+                                   "asker is %s, and an unnamed reader "
+                                   "matching everybody is the widest "
+                                   "possible reading of 'nobody'."
+                                   % (name, author, author)})
+            continue
         # SEPARATE MEANS SEPARATE.
-        if who and author.lower() != who:
+        if author.lower() != who:
             refused.append({"skill": name, "refused": "NOT_YOURS",
                             "why": "'%s' is %s's, in the scope "
                                    "HERON-RAG-LIB-001 calls 'shared with "

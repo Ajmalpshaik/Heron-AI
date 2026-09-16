@@ -165,9 +165,11 @@ def main():
           "a result carrying NO fingerprint is accepted - most checks do "
           "not record what they ran against, and refusing them would make "
           "this unusable")
-    check(any("no fingerprint at all was accepted" in line
-              for line in answer["unjudged"]),
+    check(any("recorded NONE" in line for line in answer["unjudged"]),
           "  and that concession is stated rather than hidden")
+    check(sorted(answer["unfingerprinted"]) == sorted(must),
+          "  with every unfingerprinted check named in the answer itself, "
+          "not only in prose")
 
     print("\n4. the security review is its owner's answer")
     check(QA.fingerprint is SEC.fingerprint,
@@ -232,10 +234,34 @@ def main():
         reached.add(answer.get("refused"))
         check(answer.get("refused") == name, "%s is reached" % name)
 
+    print()
+    print("R. THE SECOND CODEX REVIEW - a result nothing can tie to this "
+          "change")
+    signed = [{"check": name, "passed": True, "of": QA.fingerprint(CHANGE)}
+              for name in must]
+    mixed = list(signed[:-1]) + [{"check": must[-1], "passed": True}]
+    answer = QA.gate(CHANGE, mixed, approved_by="R", reviewed=review)
+    reached.add(answer.get("refused"))
+    check(answer.get("refused") == "RESULT_IS_UNFINGERPRINTED",
+          "a result with NO fingerprint beside one that HAS is refused - "
+          "once a check in this run recorded what it ran against, one "
+          "that did not is a check that did not record rather than one "
+          "that cannot")
+    check(answer["unfingerprinted"] == [must[-1]],
+          "  and `unfingerprinted` names it, so the hole is structural "
+          "rather than only described in prose")
+    answer = QA.gate(CHANGE, no_sha, approved_by="R", reviewed=review)
+    check(answer["passed"] is True and
+          sorted(answer["unfingerprinted"]) == sorted(must),
+          "a run where NO result carries one still passes - the "
+          "concession stands - but every check is named in "
+          "`unfingerprinted` rather than silently counted as fresh")
+
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-DEV-QA-016.yaml"))
     named = contract.get("failures") or []
-    check(len(named) == 10, "the contract declares 10 failures")
+    check(len(named) == len(set(named)),
+          "the contract declares each failure once")
     for failure in named:
         check(failure in logic, "the code names %s" % failure)
     unreached = sorted(set(named) - reached)

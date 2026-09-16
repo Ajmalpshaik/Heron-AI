@@ -217,6 +217,25 @@ def main():
                      ([intent("CRE-002", "create", "  ")], "an intent "
                                                            "naming no path")):
         check(ask(bad).get("refused") == "NOT_A_PLAN", why)
+    print()
+    print("R. THE SECOND CODEX REVIEW - WINDOWS IS WHERE REVIT RUNS")
+    check(ARC._under("Brain\\Skills\\x.yaml", "Brain\\Skills"),
+          "a Windows separator is read as a path separator - comparing "
+          "only '/' made these two read as unrelated, so the conflict "
+          "below never fired and two modifying agents were approved over "
+          "one folder")
+    check(ARC._under("Brain\\Skills\\x.yaml", "Brain/Skills"),
+          "  and the two spellings of one path match each other")
+    check(not ARC._under("Brain\\Other", "Brain\\Skills"),
+          "  while two different folders still do not")
+    answer = ask([{"agent": "HERON-WSP-CLN-009", "does": "remove",
+                   "path": "Brain\\Skills"},
+                  {"agent": "HERON-WSP-TPL-006", "does": "write",
+                   "path": "Brain\\Skills\\x.yaml"}])
+    check(answer.get("refused") == "PLANS_CONFLICT",
+          "  so two agents over one Windows path is seen as the clash it "
+          "is")
+
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-WSP-ARC-001.yaml"))
     named = contract.get("failures") or []

@@ -121,8 +121,11 @@ def main():
     hit = same_capability["already"][0]["matches"][0]
     check(hit["by"] == "capability" and hit["is"] == "count-them",
           "a capability match names the fragment that has it")
-    check("decisive rather than suggestive" in hit["why"],
-          "and says it is decisive - one provider per capability")
+    check(hit["decisive"] is True,
+          "and says it is decisive - with no release declared on either "
+          "side an overlap cannot be ruled out, and a duplicate reported "
+          "wrongly costs a conversation while one missed ships two "
+          "providers"),
     same_shape = DUP.look(
         [{"name": "TagSheet.py", "capability": "TAG_SHEET",
           "contract": {"needs": DOC, "provides": INT}}], fragments=LIBRARY)
@@ -181,6 +184,30 @@ def main():
         reached.add(answer.get("refused"))
         check(answer.get("refused") == name, "%s is reached" % name)
 
+    print()
+    print("R. THE SECOND CODEX REVIEW - a capability match needs a shared "
+          "release")
+    holder = [{"id": "already-here", "name": "a different name",
+               "capability": "COUNT_THINGS", "revit": ["2020", "2021"]}]
+    answer = DUP.look([{"name": "a new one", "capability": "COUNT_THINGS",
+                        "revit": ["2027"]}], fragments=holder)
+    check(not answer["already"] and len(answer["complements"]) == 1,
+          "a capability match on NO shared release is not `already` - "
+          "heron_capability.resolve() keeps several providers of one "
+          "capability and picks among them BY RELEASE, so a provider "
+          "that cannot serve 2027 does not make a 2027 fragment a "
+          "duplicate")
+    answer = DUP.look([{"name": "a new one", "capability": "COUNT_THINGS",
+                        "revit": ["2020"]}], fragments=holder)
+    check(len(answer["already"]) == 1,
+          "  and a match ON a shared release still is one")
+    answer = DUP.look([{"name": "a new one", "capability": "COUNT_THINGS"}],
+                      fragments=holder)
+    check(len(answer["already"]) == 1,
+          "  with neither side naming releases an overlap cannot be ruled "
+          "out, so it reads as decisive - a duplicate reported wrongly "
+          "costs a conversation and one missed ships two providers")
+
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-IMP-DUP-007.yaml"))
     named = contract.get("failures") or []
@@ -191,7 +218,7 @@ def main():
     check(not unreached,
           "and every one was reached above%s"
           % ("" if not unreached else ": %s" % ", ".join(unreached)))
-    check(len(fresh["unjudged"]) == 4, "four things are left unjudged")
+    check(len(fresh["unjudged"]) == 5, "five things are left unjudged")
 
     print()
     if FAILURES:

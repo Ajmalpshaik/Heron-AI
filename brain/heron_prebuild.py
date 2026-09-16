@@ -69,6 +69,7 @@ rest, because the register does not.
 
 from __future__ import annotations
 
+import importlib.util
 import os
 import sys
 
@@ -92,6 +93,47 @@ STANDARD_OWNERS = (
     ("HERON-STD-BIM-001", "a stated BIM standard"),
     ("HERON-STD-ISO-003", "ISO 19650 and related - cites, never invents"),
 )
+
+
+# WHICH OF THEM EXIST, DERIVED RATHER THAN ASSERTED. This used to be
+# hard-coded as "none is built", and by 2026-09-15 three of the four
+# were - a stale sentence routing the host away from working agents. The
+# rule is agent-count.py's: an agent is built when a source file claims
+# it in a `Heron-Agent:` header. Read here rather than imported, because
+# importing a standards owner to find out whether it exists is a heavier
+# thing than reading ten lines.
+# Each owner and the module that implements it. The MAPPING is written
+# here; whether the module EXISTS is not - that is looked up, so the
+# answer follows the repository rather than a sentence somebody typed.
+# Nothing is opened and nothing is imported: locating a module is enough
+# to answer "is it built", and this agent reads no files at all.
+OWNER_MODULES = {
+    "HERON-STD-PRJ-009": "heron_project",
+    "HERON-STD-CMP-002": "heron_company",
+    "HERON-STD-BIM-001": "heron_bim",
+    "HERON-STD-ISO-003": "heron_iso",
+}
+
+_BUILT = None
+
+
+def _built_owners():
+    """Which STANDARD_OWNERS exist as a module. Looked up once."""
+    global _BUILT
+    if _BUILT is not None:
+        return _BUILT
+    found = set()
+    for who, _what in STANDARD_OWNERS:
+        module = OWNER_MODULES.get(who)
+        if not module:
+            continue
+        try:
+            if importlib.util.find_spec(module) is not None:
+                found.add(who)
+        except (ImportError, ValueError):
+            continue
+    _BUILT = found
+    return _BUILT
 
 
 def _card(thing):
@@ -240,13 +282,22 @@ def research(proposal, skills=(), fragments=()):
                             ": %s" % ", ".join(gaps) if gaps else "")},
         "standard": {
             "answered": False, "by": None,
-            "owners": [{"agent": who, "holds": what}
+            "owners": [{"agent": who, "holds": what,
+                        "built": who in _built_owners()}
                        for who, what in STANDARD_OWNERS],
-            "why": "nothing here holds a standard, and none of the %d "
-                   "agents that would is built. HERON-STD-ISO-003's rule "
-                   "is 'cites, never invents' - with nothing to cite, the "
-                   "answer is that there is nothing to cite."
-                   % len(STANDARD_OWNERS)},
+            "built": sorted(_built_owners()),
+            "why": "nothing here holds a standard, and this agent asks "
+                   "none of the %d that would. %s HERON-STD-ISO-003's "
+                   "rule is 'cites, never invents' - nothing was cited "
+                   "here because nothing was asked, which is a different "
+                   "answer from there being nothing to ask."
+                   % (len(STANDARD_OWNERS),
+                      "None of them is built yet."
+                      if not _built_owners() else
+                      "%d of them %s built and can be asked directly: %s."
+                      % (len(_built_owners()),
+                         "is" if len(_built_owners()) == 1 else "are",
+                         ", ".join(sorted(_built_owners()))))},
         "shortlist": shortlist, "of": len(skills),
         "why": "%s: %d existing skill(s) share a capability, %d capabilit%s "
                "unprovided, and the standards question is unanswered."
@@ -278,9 +329,16 @@ def research(proposal, skills=(), fragments=()):
                     "every provided capability is provided on every release "
                     "the proposal declares."),
             "WHAT THE STANDARD SAYS. The question is named and unanswered, "
-            "never guessed. Only one precedence is reported because the "
-            "register states only one: HERON-STD-PRJ-009 outranks the "
-            "company default.",
+            "never guessed - and unanswered HERE because this agent asks "
+            "no standards owner, not because none exists. %s Only one "
+            "precedence is reported because the register states only one: "
+            "HERON-STD-PRJ-009 outranks the company default."
+            % ("None of the %d owners is built yet."
+               % len(STANDARD_OWNERS) if not _built_owners() else
+               "%d of the %d are built (%s), so a caller that needs the "
+               "standard has somewhere to go."
+               % (len(_built_owners()), len(STANDARD_OWNERS),
+                  ", ".join(sorted(_built_owners())))),
             "%s" % ("NOTHING WAS COMPARED BY CAPABILITY SET - the proposal "
                     "declares no needs, and an empty set equals every other "
                     "empty set. That is not a duplicate, so it was not "

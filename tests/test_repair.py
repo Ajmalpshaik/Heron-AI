@@ -176,6 +176,22 @@ def main():
               "%r is not a finding" % (bad,))
     check("only where it is" in ask([{"path": "a"}])["why"],
           "and it says which half was missing")
+    print()
+    print("R. THE SECOND CODEX REVIEW - two findings, one absent "
+          "destination")
+    answer = ask([{"path": "Core/a.dll", "belongs": "Core/z.dll"},
+                  {"path": "Core/b.dll", "belongs": "Core/z.dll"}],
+                 exists=[])
+    check(len(answer["moves"]) == 1 and len(answer["refused_moves"]) == 1,
+          "the second move onto an ABSENT destination this same plan "
+          "already claims is refused - `exists` answers about the disk "
+          "as it stands and cannot know about a move this run proposed, "
+          "so the plan overwrote its own first half")
+    check(answer["refused_moves"][0]["refused"] == "DESTINATION_TAKEN",
+          "  under the refusal the guarantee is named for")
+    check(answer["refused_moves"][0]["claimed_by"] == "Core/a.dll",
+          "  and it says which move claimed it")
+
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-WSP-REP-004.yaml"))
     named = contract.get("failures") or []
