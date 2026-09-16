@@ -459,17 +459,25 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 
 ## 17. Documentation — 9
 
+**Four of these were settled without writing an agent.** [F23](PROPOSALS.md) found that two had no
+input yet and two would be a second place for one rule; [D-77](DECISIONS.md) deferred the first pair
+and folded the second into [`tools/check-docs.py`](../tools/check-docs.py). The fold is the
+**guarding** half only - nothing generates a README or an architecture doc, and nothing is scheduled
+to. `tests/test_docs_guard.py` plants an error in each place those rows name and requires the guard
+to find it, because a row closed by writing no code is exactly the kind of claim this repository
+keeps discovering it believed.
+
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
 | `HERON-DOC-API-001` | API Documentation Agent | Generated from tool schemas. **Built 2026-09-15** — `tools/generate-api-docs.py`. A Heron tool's schema is the decorated function's signature, so it **parses rather than imports** and works on a checkout with no MCP SDK. It names every **parameter no docstring explains**: two were, out of eighteen tools that all have docstrings | T1 | — | — |
 | `HERON-DOC-AGT-002` | Agent Documentation Agent | Generated from the agent registry | T1 | — | — |
 | `HERON-DOC-SKL-003` | Skill Documentation Agent | Generated from skill metadata. **Built 2026-09-15** — `tools/generate-skill-catalog.py`, the parallel to the fragment catalogue one layer up. Every skill with the words somebody actually says to reach it, and an **effective status**: the lowest rung on [09](09-skills-and-fragments.md)'s ladder among the fragments serving it. A card can say anything; the chain underneath is the fact. Reachability is per Revit release, never overall | T1 | — | — |
 | `HERON-DOC-FRG-004` | Fragment Documentation Agent | Generated from fragment metadata. **Built 2026-09-08** — `tools/generate-fragment-catalog.py`, the parallel to the agent map one layer up. Every fragment on one searchable page, including whether its declared negative case can actually be run. It reported 0 stranded cases on its first run against a library holding 18, which is why a generator acquired a test | T1 | — | — |
-| `HERON-DOC-REL-005` | Release Notes Agent | Structured notes per release | T2 | — | — |
-| `HERON-DOC-ARC-006` | Architecture Documentation Agent | Keeps architecture docs in step with the registries | T2 | — | — |
-| `HERON-DOC-RDM-007` | README Agent | Keeps the README current | T2 | — | — |
-| `HERON-DOC-VAL-009` | **Documentation Validation Agent** | Do the documents match reality. Recomputes every stated count from its source, checks every internal link resolves, flags any figure asserted rather than derived ↗ | T1 | READ | — |
-| `HERON-DOC-CHG-008` | Change Log Agent | Added / Improved / Fixed / Deprecated per version | T1 | — | — |
+| `HERON-DOC-REL-005` | Release Notes Agent | Structured notes per release. **DEFERRED 2026-09-16 by [D-77](DECISIONS.md)** - there are **no releases**: `git tag` returns nothing. A release-notes agent with no release has nothing to write notes about, and building it now would mean building it against an imagined shape. **Unblocked by the first tag** | T2 | — | — |
+| `HERON-DOC-ARC-006` | Architecture Documentation Agent | Keeps architecture docs in step with the registries. **FOLDED 2026-09-16 into [`tools/check-docs.py`](../tools/check-docs.py) by [D-77](DECISIONS.md)** - that tool already sweeps all 140 markdown files, recomputes every count claim against its derived source and resolves every internal link. **The guarding half only**: it checks the architecture docs are true, and writes none of them. Proved by planting a dead anchor in [`docs/06`](06-heron-platform.md) and requiring it to be caught | T2 | — | — |
+| `HERON-DOC-RDM-007` | README Agent | Keeps the README current. **FOLDED 2026-09-16 into [`tools/check-docs.py`](../tools/check-docs.py) by [D-77](DECISIONS.md)** - that tool reads `README.md` by name in four sections and enforces its counts against their derived source; its own comments record three occasions when the README was wrong and this is why it is not now. **The guarding half only**: nothing writes the README. Proved by planting a false count in it and requiring the guard to fail | T2 | — | — |
+| `HERON-DOC-VAL-009` | **Documentation Validation Agent** | Do the documents match reality. Recomputes every stated count from its source, checks every internal link resolves, flags any figure asserted rather than derived ↗. **Since [D-77](DECISIONS.md) it also carries `ARC-006` and `RDM-007`.** A dead link had been FOUND and not failed on since 2026-08-31; wiring section 1 to the exit code that day turned up three, one of them a `D-30` anchor linked correctly ten times and wrongly once | T1 | READ | — |
+| `HERON-DOC-CHG-008` | Change Log Agent | Added / Improved / Fixed / Deprecated per version. **DEFERRED 2026-09-16 by [D-77](DECISIONS.md)** - 683 files carry `Heron-Since: 0.1.0` and there is **one version**, so a change log would be a single section listing all of them: true and useless. **A second problem outlives the first**: `Fixed` and `Improved` cannot be told apart from a diff, and the only mechanical route is a word list over commit subjects, which is the synonym table [D-34](DECISIONS.md) refuses. Whoever builds this after the first tag needs a commit convention or the host under [D-01](DECISIONS.md) | T1 | — | — |
 
 ---
 
