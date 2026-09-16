@@ -1,0 +1,125 @@
+# Revit API Agent - HERON-REVIT-API-020
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register gives this
+# agent T2 and READ. The one scoped call is the HOST's under D-01 - this
+# agent frames the question and checks the answer, and knows no Revit API of
+# its own.
+
+agent: HERON-REVIT-API-020
+version: 1.0.0
+
+input:
+  operation:
+    type: map
+    required: true
+    description: >
+      The novel operation somebody wants to write, as
+      {does, writes, documents, members}. `does` is the sentence a
+      modeller would say. `writes` is whether it changes the model -
+      declared, because the transaction rule turns on it and guessing
+      from a verb is how a read opens an empty transaction. `documents`
+      is how many models it touches. `members` are the Revit API members
+      it already intends to call, if any.
+  releases:
+    type: list
+    required: true
+    description: >
+      The releases it must work on. Each one of the eight
+      HERON-FRG-VAL-001 owns; a ninth is never extrapolated (D-05). What
+      is removed is a property of the release that DROPPED it, so every
+      release asked about needs its own evidence.
+  proposal:
+    type: map
+    required: false
+    description: >
+      An answer to check, rather than a question to frame. When the host
+      has made its one scoped call and come back with {members,
+      transaction, why}, this is where it goes - and it is CHECKED, not
+      recorded. Without it the answer is the question and the evidence
+      to answer it with.
+  found:
+    type: map
+    required: false
+    description: >
+      The API evidence, when a caller already has it. Defaults to
+      reading what HERON-REVIT-ACI-034 reads.
+  path:
+    type: path
+    required: false
+    description: Where to read the evidence from. Defaults to the file above.
+
+output:
+  looked:
+    type: boolean
+    description: True when the evidence was read and the operation compared.
+  asked:
+    type: string
+    description: >
+      The question for the host, present only when no `proposal` came in.
+      D-01 leaves the model call with the host; this is the wording of
+      the call, with the constraints it has to satisfy attached.
+  evidence:
+    type: map
+    description: >
+      What the host is given to answer with, per release: how many
+      members that release stopped shipping, and which of the operation's
+      own named members are among them.
+  gone:
+    type: list
+    description: >
+      Members named by the operation or the proposal that a requested
+      release does not have, with the release that dropped each. This is
+      the ElementId.IntegerValue case, caught before anybody compiles.
+  transaction:
+    type: map
+    description: >
+      What the operation needs - {needs, shape, why}. A read takes none;
+      a write is exactly one undo step in one document. Derived from
+      `writes` and `documents`, never from the wording of `does`.
+  accepted:
+    type: boolean
+    description: >
+      Present only when a `proposal` was checked. True when it names
+      nothing a requested release removed and its transaction matches
+      what the operation needs.
+  fixed:
+    type: boolean
+    description: Always false. Nothing is changed; the register gives this READ.
+  why:
+    type: string
+    description: What was asked or checked, against which releases.
+  unjudged:
+    type: list
+    description: >
+      Always non-empty. That no Revit was called and nothing was
+      compiled; that a member absent from the removed list is UNWARNED
+      rather than proven present, because the evidence records what each
+      release dropped and not the whole surface; that a changed unit, a
+      changed meaning and a new exception are all invisible to it; and
+      that whether the operation is the RIGHT one is nobody's answer here.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NOT_AN_OPERATION
+  - NO_RELEASE
+  - UNKNOWN_RELEASE
+  # The digest exists but holds no transition INTO a release asked about.
+  # HERON-REVIT-ACI-034's distinction, imported rather than restated: a
+  # release nobody looked at and a release that removed nothing are not
+  # the same answer, and reading them the same way reported every
+  # fragment clear.
+  - NO_EVIDENCE
+  - NO_EVIDENCE_FOR_RELEASE
+  - NO_EARLIER_RELEASE
+  - MEMBER_IS_GONE
+  - TRANSACTION_IS_WRONG
+  - WOULD_CROSS_TWO_DOCUMENTS
+  - NOT_A_PROPOSAL
+
+retry:
+  attempts: 0
+  on-failures: []
