@@ -69,6 +69,21 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 
 
+# WHAT ACTUALLY CHANGES A MODEL, taken from docs/12 s2 rather than from "not
+# READ". The ladder is READ, ANALYZE, SUGGEST, EXECUTE, MODIFY, PUBLISH, ADMIN
+# and docs/12 gives ANALYZE side effects "none" - it computes over what was
+# read. Flagging it would have reported `describe-blank-parameters` answering
+# "which parameters are empty" as a danger, when that fragment IS the right
+# answer to that question.
+#
+# EXECUTE IS THE HONEST MIDDLE and is counted separately. `isolate-elements`
+# and `zoom-to-elements` change what a VIEW shows - real, visible, and undone
+# by Reset Temporary Hide/Isolate. That is not the failure this tool exists to
+# catch, which is a question answered by a change to the MODEL.
+CHANGES_THE_MODEL = ("MODIFY", "PUBLISH", "ADMIN")
+CHANGES_A_VIEW = ("EXECUTE",)
+
+
 # Ordinary things a modeller asks. Questions FIRST, then the imperatives that
 # are allowed to reach a write, kept in one list so the tool sorts them by what
 # the search does rather than by what somebody assumed.
@@ -151,18 +166,22 @@ def main():
             continue
 
         risk = (found.get("risk") or "").upper()
-        if not risk or risk == "READ":
+        if risk not in CHANGES_THE_MODEL and risk not in CHANGES_A_VIEW:
             continue
 
         # THE DISCRIMINATOR, AND THE WHOLE JUDGEMENT THIS TOOL MAKES: was a
         # READ right there and beaten? If nothing read-only was close, the
         # request probably WAS asking for the change.
         reads = [c["capability"] for c in found.get("candidates") or []
-                 if (c.get("risk") or "").upper() == "READ"
+                 if (c.get("risk") or "").upper() not in CHANGES_THE_MODEL
+                 and (c.get("risk") or "").upper() not in CHANGES_A_VIEW
                  and c["capability"] != capability]
 
         row = (question, capability, risk, reads[0] if reads else None)
-        (crossings if reads else allowed).append(row)
+        if reads and risk in CHANGES_THE_MODEL:
+            crossings.append(row)
+        else:
+            allowed.append(row)
 
     print("Revit %s   questions asked: %d" % (args.revit, len(QUESTIONS)))
     print("")
@@ -182,7 +201,7 @@ def main():
         print("  warning is the floor, not the fix.")
 
     print("")
-    print("REACHED A WRITE WITH NO READ CLOSE (%d) - probably asked for, read them:"
+    print("REACHED A VIEW CHANGE, OR A WRITE WITH NOTHING SAFE CLOSE (%d) - read them:"
           % len(allowed))
     for question, capability, risk, _ in allowed:
         print("  %-42s -> %-26s %s" % (question[:42], capability, risk))

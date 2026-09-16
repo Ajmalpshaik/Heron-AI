@@ -107,9 +107,18 @@ compatibility-note: >
 #                                     element's owner
 #   "put these on the MEP workset" -> SET_ELEMENT_WORKSET
 
+# "can I edit these" WAS CLAIMED HERE AND BELONGS TO REPORT_ELEMENT_OWNERSHIP,
+# whose semantic identity is "whether these elements CAN BE EDITED". Two
+# fragments claiming one sentence makes it `__ambiguous__` in the identity
+# table, which is a deliberate MISS - and the request then falls through to
+# ranking, where on 2026-09-16 it was answered by UPDATE_SAVED_SET, a MODIFY.
+# A question about ownership resolved to a write. FRAGMENT-ISSUES row 116.
+#
+# This is the sanctioned resolution rather than a weakened utterance: the other
+# fragment is the better answer to that sentence, so the claim here was wrong.
+# The four below are this fragment's own and are untouched.
 utterances:
   - who owns this
   - is this owned by someone else
-  - can I edit these
   - why can I not change this
   - is anyone else working on these
