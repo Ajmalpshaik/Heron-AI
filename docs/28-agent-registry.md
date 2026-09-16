@@ -232,7 +232,7 @@ six are only PARTLY this file and each says so in its own answer, not only here.
 | `HERON-STD-DOC-008` | Documentation Standard Agent | Sheet, titleblock and annotation requirements. **Claimed 2026-09-16 under [D-76](DECISIONS.md)** - [`brain/heron_company.py`](../brain/heron_company.py) with `subject="documentation"`. **Mostly already done elsewhere** - sheet, titleblock and view NAMES are routed by `HERON-QA-BIM-011` to `HERON-STD-NAM-004`; what is left here is the clauses, and the answer says which half it gave | T2 | ANALYZE | — |
 | `HERON-STD-PRJ-009` | Project Standard Agent | This project's own rules — **outranks the company default**, and says so | T2 | ANALYZE | — |
 | `HERON-STD-REF-010` | **Reference Model Profiler** | Infers a standard from a correctly delivered model. Extracts the profile, **discards the model** ↗ | T3 | READ | — |
-| `HERON-STD-MET-014` | **Metadata & Policy Checker Agent** | Enforces the Heron metadata standard ([29](29-metadata-standard.md)) on everything Heron creates — every artefact declares its agent, step, status, version and layer. Also audits **the registry against the code**: an agent claimed by no file, or a file claiming no agent ↗ | T1 | READ | 1 |
+| `HERON-STD-MET-014` | **Metadata & Policy Checker Agent** | Enforces the Heron metadata standard ([29](29-metadata-standard.md)) on everything Heron creates — every artefact declares its agent, step, status, version and layer. Also audits **the registry against the code**: an agent claimed by no file, or a file claiming no agent ↗. **Since [D-78](DECISIONS.md) it also carries `NAM-MET-006`.** Its boundary with `FRG-VAL-001` was already drawn in its own source and is not changed here: a fragment's card is validated by `brain/heron_fragment.py` and this tool does not read it, because one fact in two places is how the two drift apart | T1 | READ | 1 |
 | `HERON-STD-PVL-013` | **Profile Validation Agent** | Checks a standard **inferred** from a reference model before it can be trusted. Tests it against a second delivered model, separates convention from coincidence, and surfaces the exceptions rather than flagging correct work as wrong ↗ | T2 | READ | — |
 | `HERON-QA-BIM-011` | **BIM QA Agent** | Checks the *model*: naming, parameters, categories, families, levels, worksets, views, MEP connectivity ↗ | T2 | ANALYZE | — |
 | `HERON-QA-CLS-012` | **Clash / Coordination Agent** | Clash analysis, clearance, system coordination, linked-model coordination reports ↗ | T2 | ANALYZE | — |
@@ -397,6 +397,17 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 
 ## 13. Naming & Taxonomy — 7
 
+**`MET-006` folded into [`tools/check-metadata.py`](../tools/check-metadata.py) on 2026-09-16**
+([D-78](DECISIONS.md), settling [F17](PROPOSALS.md)): three agents owned metadata validity across
+two departments, and the third was a plain subset of the first. `tests/test_metadata_guard.py`
+plants a missing field, an invalid layer and a claim on a row that does not exist, and requires the
+guard to catch all three.
+
+**One row is left in this department and it is blocked, not neglected.** `NAM-GEN-001` waits on
+[F15](PROPOSALS.md): two documents disagree about what a generated name is made of, and
+`NAM-VAL-002` refuses that one kind as `UNSTATED_CONVENTION` rather than guess - because a guess
+would silently BECOME the convention.
+
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
 | `HERON-NAM-GEN-001` | Naming Agent | Generates a predictable name from domain, capability, purpose, platform, version | T2 | — | — |
@@ -404,7 +415,7 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 | `HERON-NAM-REN-003` | Auto Rename Agent | Renames — **only after identity exists**, never before | T1 | MODIFY | — |
 | `HERON-NAM-TAX-004` | Taxonomy Agent | Maintains the classification scheme | T2 | — | — |
 | `HERON-NAM-KEY-005` | Keyword Agent | Search terms and synonyms — "duct", "ductwork", "supply air" | T1 | — | — |
-| `HERON-NAM-MET-006` | Metadata Agent | Metadata completeness and schema validity | T1 | — | — |
+| `HERON-NAM-MET-006` | Metadata Agent | Metadata completeness and schema validity. **FOLDED 2026-09-16 into [`tools/check-metadata.py`](../tools/check-metadata.py) by [D-78](DECISIONS.md)** - both of the row's words are that tool's already: completeness is the five headers every artefact must declare, schema validity is the layer and the agent id being real ones. A third agent would be a third place for one rule, which is what every other finding in [F17](PROPOSALS.md)'s file is about. **The guarding half only** - nothing generates metadata | T1 | — | — |
 | `HERON-NAM-REF-007` | Reference Update Agent | After any rename or move: imports, references, metadata, registry, docs. **No broken references** | T1 | MODIFY | — |
 
 ## 14. GitHub — 10

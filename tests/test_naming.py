@@ -37,6 +37,7 @@ WHAT IT PROVES
 
 import io
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -178,10 +179,24 @@ def main():
     baseline = io.open(os.path.join(ROOT, "docs",
                                     "00c-master-handover-baseline.md"),
                        encoding="utf-8").read()
-    five = [line for line in register.splitlines() if "NAM-GEN-001" in line]
-    check(len(five) == 1 and "domain, capability, purpose, platform, version"
-          in five[0],
-          "docs/28 names five parts")
+    # THE ROW, not any line mentioning the id. This used to match either,
+    # and on 2026-09-16 a note added under the department heading - saying
+    # that NAM-GEN-001 is blocked on F15 rather than neglected - made it
+    # two lines and failed the check. Prose ABOUT a row is not the row, and
+    # it must neither break this nor be able to satisfy it.
+    five = [line for line in register.splitlines()
+            if line.startswith("| `HERON-NAM-GEN-001`")]
+    # THE PARTS ARE SPLIT AND COMPARED AS A LIST, not looked for as a
+    # substring. `in` could not tell five parts from six: the five-part
+    # phrase is a PREFIX of the six-part one, so the exact change F15 is
+    # about - somebody adding `component type` to this row - would have
+    # left this check green while the sentence it prints went false.
+    named = re.search(r"from ([a-z, ]+?)\s*\|", five[0]) if five else None
+    parts = [one.strip() for one in named.group(1).split(",")] if named else []
+    check(len(five) == 1 and parts == ["domain", "capability", "purpose",
+                                       "platform", "version"],
+          "docs/28's NAM-GEN-001 row names exactly five parts: %s"
+          % (", ".join(parts) or "none found"))
     check("component type" in baseline and "component type" not in five[0],
           "and docs/00c adds a sixth, component type, which docs/28 omits")
     check("predictable and searchable" in io.open(
