@@ -94,7 +94,7 @@ compatibility-note: >
   opposite direction: there a release TOOK a capability away, here an older
   release never had one.
 
-# ROUTING - repeated in CREATE_WORKSET, LIST_WORKSETS and RENAME_ELEMENTS.
+# ROUTING - repeated in CREATE_WORKSET, LIST_WORKSETS, RENAME_ELEMENTS and RENAME_PHASE.
 #
 #   "rename this workset"                -> here
 #   "the workset names are wrong"        -> here
@@ -102,6 +102,9 @@ compatibility-note: >
 #                                           releases that cannot
 #   "make a workset for the ducts"       -> CREATE_WORKSET
 #   "what worksets are in this model"    -> LIST_WORKSETS - a READ
+#   "rename this phase"                  -> RENAME_PHASE - the other named
+#                                           thing no selection can hand over,
+#                                           in a different table again
 #   "rename these elements"              -> RENAME_ELEMENTS - a workset is NOT
 #                                           an element and lives in a different
 #                                           table entirely

@@ -1,0 +1,77 @@
+positive:
+  - given: a model with "Existing" renamed to "Design"
+    expect: >
+      renamed true, previousName "Existing", and the new name CHECKED by
+      re-reading doc.Phases in a SEPARATE call - REPORT_PHASES, not this
+      fragment's own return value
+
+  - given: the rename run a second time on the phase it has already renamed
+    expect: >
+      refused with "already its name", renamed false, previousName empty. This
+      is the D-53 tracking pair worth having - the SAME input twice, and the
+      second answer differs from the first because the model moved
+
+  - given: a phase renamed while a view is set to it and a schedule reports it
+    expect: >
+      both still point at the phase afterwards, showing the NEW name. They hold
+      it by ElementId, so this is the case that proves a rename does not orphan
+      anything - and it is the fear that stops people renaming phases at all
+
+negative:
+  - given: a phase name that does not exist
+    expect: refused with every real phase listed, so the next attempt is exact
+
+  - given: a new name already used by another phase
+    expect: >
+      refused BEFORE the write is attempted, renamed false. Revit throws on a
+      duplicate and a throw partway through is a worse place to find out
+
+  - given: an empty new name
+    expect: refused - a phase cannot be renamed to nothing
+
+  - given: a name given in the wrong case, e.g. "existing" for "Existing"
+    expect: >
+      UNSETTLED, AND THE PROOF MUST SETTLE IT RATHER THAN ASSUME IT. Two
+      questions, not one. First - does this fragment find the phase? It should,
+      by the single case-insensitive candidate. Second - will Revit accept
+      "design" as a new name while "Design" exists? The implementation does NOT
+      guess: it refuses only an EXACT duplicate and hands the rest to Revit, so
+      whatever Revit says here is the answer to record. Do NOT copy
+      RENAME_WORKSET's answer across - that was measured on worksets, which are
+      a different table
+
+  - given: ANY rename at all, run for the very first time
+    expect: >
+      THE FIRST THING THIS PROOF MUST SETTLE IS WHETHER REVIT PERMITS THE WRITE
+      AT ALL, and it is not a formality. REPORT_PHASES records that Revit
+      exposes NO create call for a phase on any release - checked at both ends -
+      so a phase is a more locked-down object than it looks. `Element.Name` is
+      declared get/set and COMPILES on 2020 through 2027, but a compile proves
+      the member exists, not that the setter is allowed: Revit raises
+      InvalidOperationException where a name is read-only for that element type,
+      and no surface check can see that (tools/api-surface/changes.json lists
+      "a member still there that now throws" under cannotSee). The
+      implementation does not assume - it catches and reports Revit's own words.
+      So a refusal here is the fragment working, and it is an ANSWER worth
+      recording rather than a failed run. Settle this before any other case.
+
+  - given: a workshared model whose Project Standards worksets are not editable
+    expect: >
+      refused with Revit's OWN message, not a paraphrase. It is a different
+      problem from a bad name and must not read like one
+
+second_route:
+  - >
+    Manage tab, Phases, Project Phases - the table shows every name, and it is
+    readable without Revit having to be asked through Heron at all
+
+rollback:
+  - >
+    THIS FRAGMENT IS A RENAME, WHICH IS THE SHAPE THAT HAS DEFEATED ROLLBACK
+    FOUR TIMES - see docs/FRAGMENT-ISSUES.md row 19, still OPEN, where
+    RENAME_ELEMENTS reported ROLLED BACK and eight views stayed renamed.
+    So a validate run that reports ROLLED BACK PROVES NOTHING HERE on its own.
+    Re-read the phase names from a SEPARATE process after the rollback and
+    record what they actually say. An element count cannot see this: renaming
+    changes no count, which is exactly why the earlier failures went unnoticed
+    (row 55).

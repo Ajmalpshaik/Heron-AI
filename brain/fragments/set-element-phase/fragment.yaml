@@ -107,11 +107,22 @@ compatibility-note: >
   No ElementId is built from an int, so 2024's 64-bit ids do not reach this
   code.
 
-# ROUTING - repeated in READ_ELEMENT_PHASE and SET_ELEMENT_WORKSET.
+# ROUTING - repeated in READ_ELEMENT_PHASE, SET_ELEMENT_WORKSET and RENAME_PHASE.
 #
 #   "set the phase"              -> here
 #   "move these to New Construction" -> here
 #   "mark these as demolished"   -> here, with the demolished field asked for
+#   "change the phase NAME"      -> RENAME_PHASE, and the word "name" is the
+#                                     whole of the difference. "change the
+#                                     phase on these" MOVES ELEMENTS between
+#                                     phases; "change the phase name" edits a
+#                                     LABEL and moves nothing. Measured
+#                                     2026-09-16, retrieval gave this fragment
+#                                     the renaming sentence and put RENAME_PHASE
+#                                     third - the same shape as the workset
+#                                     mix-up below, and the same consequence: a
+#                                     write to the wrong property that looks
+#                                     like it worked
 #   "which phase is this on"     -> READ_ELEMENT_PHASE - a QUESTION
 #   "put these on the MEP workset" -> SET_ELEMENT_WORKSET. A WORKSET is who
 #                                     owns the work; a PHASE is when it exists.

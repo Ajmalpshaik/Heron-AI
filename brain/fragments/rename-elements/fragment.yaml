@@ -104,7 +104,7 @@ compatibility-note: >
   every release 2020 to 2027 and nothing here touches a unit or builds an
   ElementId from an integer.
 
-# ROUTING - repeated in WRITE_ELEMENT_PARAMETERS and RENUMBER_SEQUENTIAL.
+# ROUTING - repeated in WRITE_ELEMENT_PARAMETERS, RENUMBER_SEQUENTIAL and RENAME_PHASE.
 #
 #   "rename these"                     -> here
 #   "change SUP to SUPPLY"             -> here
@@ -123,6 +123,11 @@ compatibility-note: >
 #                                       itself, one level above the type name
 #                                       this fragment edits
 
+#   "rename this phase"                  -> RENAME_PHASE. A phase IS an
+#                                        element, and this fragment still
+#                                        cannot reach one: it renames what a
+#                                        SELECTION hands it, and no selection
+#                                        yields a phase
 #   "rename this workset"                -> RENAME_WORKSET - a workset is NOT
 #                                        an element. It lives in the workset
 #                                        table, which nothing here reaches
