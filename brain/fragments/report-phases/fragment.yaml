@@ -119,7 +119,7 @@ compatibility-note: >
 #                                        same answer - so it is the OBJECT and
 #                                        not the release. The fragment was
 #                                        removed; the evidence is
-#                                        FRAGMENT-ISSUES row 104. Rename it
+#                                        FRAGMENT-ISSUES row 107. Rename it
 #                                        under Manage, Phases
 #
 #   "change the phase name"              -> here first, then Manage, Phases. It
