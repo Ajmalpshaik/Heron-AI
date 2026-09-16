@@ -1621,7 +1621,7 @@ to prevent, and two already-claimed rows in the same department point opposite w
 
 The build was not careless about it. Every candidate agent was first checked against this file and [OPEN-QUESTIONS](OPEN-QUESTIONS.md) for a recorded blocker, and `PRF-015` came back clean. **The grep searched for `HERON-DEV-PRF-015`. This section writes it `DEV-PRF-015`, with no prefix**, so the pattern could not see the one row that was about it.
 
-**The same grep wrongly cleared nine others** — `DEV-BLD-010`, `DEV-INT-012`, `DEV-RGR-014`, `DEV-UNT-011` (all four in the table above) and `STD-BIM-001`, `STD-DOC-008`, `STD-LOD-007`, `STD-MOD-005`, `STD-QAQ-006` (all five in [F29](#)'s). Ten of fifteen agents reported as having no recorded blocker, every one of them written about here.
+**The same grep wrongly cleared nine others** — `DEV-BLD-010`, `DEV-INT-012`, `DEV-RGR-014`, `DEV-UNT-011` (all four in the table above) and `STD-BIM-001`, `STD-DOC-008`, `STD-LOD-007`, `STD-MOD-005`, `STD-QAQ-006` (all five in [F31](#)'s — **and this sentence said F29 when it was first written, which is the same defect one layer up: a reference nobody followed**). Ten of fifteen agents reported as having no recorded blocker, every one of them written about here.
 
 This repository's rule is **prove the pattern can see what you know is there**, and it was broken by the check written to enforce it. Search an agent id **without its `HERON-` prefix** — `grep -n 'DEV-PRF-015' docs/*.md` — or the register's own spelling will hide the row.
 
