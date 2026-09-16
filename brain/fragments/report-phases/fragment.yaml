@@ -94,21 +94,41 @@ compatibility-note: >
   is also what preserves the order, since converting it to a set would lose the
   one thing the fragment exists to report.
 
-# ROUTING - repeated in REPORT_DESIGN_OPTIONS and RENAME_PHASE.
+# ROUTING - repeated in REPORT_DESIGN_OPTIONS.
 #
 #   "what phases are in this model"      -> here
 #   "which design option am I working in" -> REPORT_DESIGN_OPTIONS - phases
 #                                        and options BOTH change what "all the
 #                                        ducts" means, and they are different
 #                                        settings with different fixes
-#   "rename this phase"                  -> RENAME_PHASE - a WRITE. This
-#                                        fragment is the discovery step it
-#                                        needs first, because a rename wants
-#                                        the EXACT existing name
 #   "create a new phase"                 -> NOTHING HERE CAN. Revit exposes no
 #                                        create call for a phase on any release
 #                                        - checked at both ends. Add it under
 #                                        Manage, Phases
+#   "rename this phase"                  -> NOTHING HERE CAN EITHER, and it was
+#                                        MEASURED rather than assumed. A
+#                                        RENAME_PHASE fragment was written,
+#                                        compiled on 2020-2027 and run against
+#                                        a real model on BOTH Revit 2020 and
+#                                        Revit 2024 on 2026-09-16. Each refused
+#                                        identically: Element.Name throws "This
+#                                        element does not support assignment of
+#                                        a user-specified name", and the
+#                                        PHASE_NAME parameter behind it reports
+#                                        IsReadOnly. Two doors, two releases,
+#                                        same answer - so it is the OBJECT and
+#                                        not the release. The fragment was
+#                                        removed; the evidence is
+#                                        FRAGMENT-ISSUES row 104. Rename it
+#                                        under Manage, Phases
+#
+#   "change the phase name"              -> here first, then Manage, Phases. It
+#                                        must NOT reach SET_ELEMENT_PHASE,
+#                                        which MOVES ELEMENTS between phases -
+#                                        a write to the wrong property that
+#                                        looks like it worked. Retrieval put
+#                                        that fragment first for this exact
+#                                        sentence on 2026-09-16
 utterances:
   - what phases are in this project
   - list the phases
