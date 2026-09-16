@@ -403,14 +403,16 @@ two departments, and the third was a plain subset of the first. `tests/test_meta
 plants a missing field, an invalid layer and a claim on a row that does not exist, and requires the
 guard to catch all three.
 
-**One row is left in this department and it is blocked, not neglected.** `NAM-GEN-001` waits on
-[F15](PROPOSALS.md): two documents disagree about what a generated name is made of, and
-`NAM-VAL-002` refuses that one kind as `UNSTATED_CONVENTION` rather than guess - because a guess
-would silently BECOME the convention.
+**This department is complete.** `NAM-GEN-001` was the last row and was blocked rather than
+neglected: two documents disagreed about what a generated name is made of, and `NAM-VAL-002`
+refused that one kind as `UNSTATED_CONVENTION` rather than guess, because a guess would silently
+have BECOME the convention. The owner settled it on 2026-09-16 - [D-79](DECISIONS.md) - and the
+shape now lives in [docs/29](29-metadata-standard.md), which already owned every other name in
+this system.
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
-| `HERON-NAM-GEN-001` | Naming Agent | Generates a predictable name from domain, capability, purpose, platform, version | T2 | — | — |
+| `HERON-NAM-GEN-001` | Naming Agent | Generates a predictable name from domain, capability, purpose, platform, component type, version. **Built 2026-09-16** - [`brain/heron_naming.py`](../brain/heron_naming.py), beside the validator that checks its output with the same rule. The shape is [D-79](DECISIONS.md), settling [F15](PROPOSALS.md): six parts, version last, `mep-duct-insulation-check-revit-fitting-v1`. **The sixth part came from [docs/00c](00c-master-handover-baseline.md) s368 and this row is what was corrected**, because a part may be hyphenated the finished name cannot be split back, so `GEN-001` returns the parts it was handed and `VAL-002` says it checked the shape rather than the parts | T2 | — | — |
 | `HERON-NAM-VAL-002` | Naming Validation Agent | Checks a name against the convention | T1 | READ | — |
 | `HERON-NAM-REN-003` | Auto Rename Agent | Renames — **only after identity exists**, never before | T1 | MODIFY | — |
 | `HERON-NAM-TAX-004` | Taxonomy Agent | Maintains the classification scheme | T2 | — | — |

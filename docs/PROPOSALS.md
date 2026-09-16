@@ -1082,6 +1082,24 @@ only thing enforcing one, and a convention arrived at that way is the hardest ki
 like — a separator, a case, an order. That is a decision about what the product's filenames read like,
 which is the owner's.
 
+### SETTLED 2026-09-16 — [D-79](DECISIONS.md): six parts, version last
+
+    <domain>-<capability>-<purpose>-<platform>-<component>-v<n>
+    mep-duct-insulation-check-revit-fitting-v1
+
+**docs/00c won.** It is the owner's own handover document and its sixth part is real, so the register's
+row was corrected rather than the baseline. The version moved to the END, which 00c's listing does not
+do — recorded in D-79 as a change to the order rather than folded in quietly.
+
+The rules live in [docs/29](29-metadata-standard.md), which already owned every other name shape here.
+`HERON-NAM-GEN-001` is built in `brain/heron_naming.py` beside the validator, and generates through the
+validator's own rule so the department cannot produce a name its own checker rejects. **Naming &
+Taxonomy is 7 of 7.**
+
+**The half that is still impossible is declared rather than hidden.** A part may be hyphenated, so a
+finished name cannot be split back into six parts — `check()` says it checked the SHAPE, in the answer,
+and never claims to have checked the parts.
+
 ---
 
 ### 🟠 F16. The register asks for a synonym table and D-34 forbids one

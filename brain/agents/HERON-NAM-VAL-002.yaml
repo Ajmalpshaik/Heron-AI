@@ -76,7 +76,6 @@ failures:
   - NOTHING_TO_DERIVE_FROM
   - FOLDER_IS_NOT_DERIVED
   - UNLIKE_EVERY_OTHER
-  - UNSTATED_CONVENTION
 
 retry:
   attempts: 0
