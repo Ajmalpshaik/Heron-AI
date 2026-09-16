@@ -70,6 +70,14 @@ namespace Heron.Core
                 { "list_phases",        HeronRisk.Read },
                 { "list_systems",       HeronRisk.Read },
 
+                // HERON-REVIT-PAR-011. Read, although the register's row for
+                // that agent is MODIFY - the column is "the HIGHEST level it
+                // can require", and this operation reads. Writing a parameter
+                // will be a SEPARATE entry at its own risk when it exists,
+                // rather than this one quietly widening: the risk is looked
+                // up by name, so one name must mean one thing.
+                { "read_parameters",    HeronRisk.Read },
+
                 // GIVING THE SESSION BACK. Read, because it cannot touch a
                 // model - it hands back a claim, and only the chat that holds
                 // it may. It is the OPPOSITE of a takeover: a second chat can

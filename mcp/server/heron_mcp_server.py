@@ -1967,6 +1967,202 @@ def revit_systems() -> str:
     return "\n".join(lines)
 
 
+@server.tool()
+def revit_parameters(category: str = "ducts", parameter: str = "") -> str:
+    """
+    Read the parameters of every element of one category in the open Revit
+    model - either which parameters are filled in across the whole category,
+    or what one named parameter says element by element.
+
+    Use when the user asks whether something is filled in, complete, missing,
+    empty or blank; before a schedule, an IFC export, a COBie drop or a QA
+    hand-over; or whenever they name a parameter and want to know what it
+    says. Leave `parameter` empty for the coverage answer - "which of these
+    are filled in" - and name one for the values.
+
+    IT READS THE TYPE AS WELL AS THE INSTANCE. Fire Rating, Assembly Code and
+    most classification data sit on the TYPE, and a check that reads only
+    instances reports a confident, formatted zero on data that is actually
+    there. Every row says which one answered.
+
+    A VALUE COMES BACK IN THE PROJECT'S UNITS, formatted the way Revit itself
+    would print it in a schedule. Revit holds lengths internally in decimal
+    feet whatever the project is set to, so a raw number never appears on its
+    own - where one is given it is labelled unconverted.
+
+    It reads only. No parameter is written, and nothing is created or deleted.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    # THE PIN TRAVELS WITH THE REQUEST, for the reason revit_select_by_category
+    # gives at length: a guard checked on the reply is checked too late. This
+    # one writes nothing, so a late check would cost no model - but it would
+    # still hand back a completeness report for the wrong building, and a
+    # report from the wrong model reads exactly like one from the right model.
+    reply = session.request("read_parameters",
+                            op_args={"category": category,
+                                     "parameter": parameter or "",
+                                     "expectProject": pinned.project_key or ""})
+    session.close()
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return wrong_model
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+    kind = reply.get("category")
+
+    if reply.get("parameter"):
+        return _parameter_values(reply, where, kind)
+    return _parameter_coverage(reply, where, kind)
+
+
+def _parameter_coverage(reply, where, kind):
+    """Which parameters these elements carry, and how many are filled in."""
+    rows = reply.get("parameters") or []
+    elements = reply.get("elements", 0)
+
+    if not elements:
+        return ("%s has no %s at all, so there are no parameters to report. "
+                "That is a statement about this model rather than an empty "
+                "answer." % (where, kind))
+
+    lines = ["%s: %s %s, %d distinct parameter(s)."
+             % (where, "{:,}".format(elements), kind,
+                reply.get("distinctParameters", 0)),
+             "",
+             "  %-34s %-9s %8s %8s %8s %8s"
+             % ("PARAMETER", "WHERE", "ON", "FILLED", "NOT SET", "BLANK")]
+
+    for row in rows:
+        lines.append("  %-34s %-9s %8s %8s %8s %8s%s"
+                     % (_clip(row.get("name"), 34),
+                        row.get("where"),
+                        "{:,}".format(row.get("onElements", 0)),
+                        "{:,}".format(row.get("withAValue", 0)),
+                        "{:,}".format(row.get("noValue", 0)),
+                        "{:,}".format(row.get("blank", 0)),
+                        "" if row.get("sameNameOnOneElement", 1) <= 1
+                        else "   <- NAME USED TWICE"))
+
+    left = reply.get("notListed", 0)
+    if left:
+        # WHICH KIND WENT. The add-in lists type rows first precisely so a
+        # truncation cannot remove a whole kind, and saying which was cut
+        # is what lets a reader tell a long answer from a misleading one.
+        kinds = []
+        if reply.get("notListedType"):
+            kinds.append("%s on the type" % "{:,}".format(reply["notListedType"]))
+        if reply.get("notListedInstance"):
+            kinds.append("%s on the instance"
+                         % "{:,}".format(reply["notListedInstance"]))
+        lines.append("  ... and %s more parameter(s)%s."
+                     % ("{:,}".format(left),
+                        "" if not kinds else " — " + ", ".join(kinds)))
+
+    lines.append("")
+    lines.append("WHERE says instance or type. A `type` row counts TYPES, not "
+                 "elements - 4 against 900 doors means four door types.")
+    lines.append("NOT SET and BLANK both print blank in a schedule and are not "
+                 "the same fault: NOT SET is data nobody entered, BLANK is "
+                 "usually a space somebody typed.")
+
+    clashes = [row.get("name") for row in rows
+               if row.get("sameNameOnOneElement", 1) > 1]
+    if clashes:
+        lines.append("")
+        lines.append("%d parameter name(s) answer to TWO different parameters on a "
+                     "single element here — %s. Asking by those names would hit "
+                     "whichever Revit returned first, so they are not safe to ask "
+                     "by on this model."
+                     % (len(clashes), ", ".join(sorted(set(clashes))[:5])))
+
+    return "\n".join(lines)
+
+
+def _parameter_values(reply, where, kind):
+    """What one named parameter says, element by element."""
+    name = reply.get("parameter")
+    examined = reply.get("examined", 0)
+    matched = reply.get("matched", 0)
+    absent = reply.get("withoutTheParameter", 0)
+
+    if not examined:
+        return ("%s has no %s at all, so there is nothing to read \"%s\" from."
+                % (where, kind, name))
+
+    if not matched:
+        return ("%s: none of the %s %s carry a parameter called \"%s\" — not on "
+                "the instance and not on the type. That usually means a "
+                "different family, or a project parameter that was never bound "
+                "to this category, rather than data nobody filled in."
+                % (where, "{:,}".format(examined), kind, name))
+
+    lines = ["%s: \"%s\" on %s of %s %s."
+             % (where, name, "{:,}".format(matched),
+                "{:,}".format(examined), kind),
+             "",
+             "  %s filled in, %s not set, %s blank."
+             % ("{:,}".format(reply.get("withAValue", 0)),
+                "{:,}".format(reply.get("noValue", 0)),
+                "{:,}".format(reply.get("blank", 0)))]
+
+    if absent:
+        lines.append("  %s do not carry it at all." % "{:,}".format(absent))
+
+    lines.append("")
+    rows = reply.get("elements") or []
+    for row in rows[:30]:
+        shown = row.get("matches") or [{}]
+        value = shown[0].get("value")
+        lines.append("  %-28s %-8s %-22s %s"
+                     % (_clip(row.get("element"), 28),
+                        row.get("where"),
+                        _clip(row.get("level") or "no level", 22),
+                        value if value else "(%s)" % row.get("state")))
+
+    # THE REMAINDER IS WORKED OUT HERE AND NOT READ OUT OF THE REPLY.
+    # There are TWO caps and they are different sizes: the add-in stops
+    # at 500 rows and `notListed` describes only that, while this list
+    # stops at 30. Printing the add-in's figure after this cap told a
+    # reader "and 100 more" on an answer where 570 were unshown - a count
+    # that is wrong in the direction that makes somebody stop looking.
+    left = matched - min(len(rows), 30)
+    if left > 0:
+        lines.append("  ... and %s more." % "{:,}".format(left))
+
+    ambiguous = reply.get("ambiguousElements", 0)
+    if ambiguous:
+        lines.append("")
+        lines.append("%s element(s) carry MORE THAN ONE parameter called \"%s\" — a "
+                     "built-in and a shared one, say. Writing by this name would "
+                     "hit whichever Revit returned first, so it is not safe to "
+                     "write by here." % ("{:,}".format(ambiguous), name))
+
+    lines.append("")
+    lines.append("Values are in the project's units, formatted the way Revit "
+                 "prints them. WHERE says whether the instance or the type "
+                 "answered.")
+
+    return "\n".join(lines)
+
+
+def _clip(text, width):
+    """A column that stays a column, however long a parameter name is."""
+    text = "" if text is None else str(text)
+    return text if len(text) <= width else text[:width - 1] + "\u2026"
+
+
 if __name__ == "__main__":
     if os.name != "nt":
         # The bridge is a Windows named pipe, and Revit is Windows-only.

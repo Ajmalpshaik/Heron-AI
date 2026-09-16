@@ -62,6 +62,13 @@ TOOLS = {
     "revit_links":              (READ,    "list_links"),
     "revit_phases":             (READ,    "list_phases"),
     "revit_systems":            (READ,    "list_systems"),
+
+    # Parameters (HERON-REVIT-PAR-011). READ, although that agent's register
+    # row is MODIFY: the column is the highest level the ROW can require, and
+    # this operation reads. A parameter WRITE will be its own entry at its own
+    # risk, because the risk is looked up by name and one name must mean one
+    # thing.
+    "revit_parameters":         (READ,    "read_parameters"),
     "revit_preview_move":       (ANALYZE, "preview_move"),
     "revit_apply_move":         (MODIFY,  "move_elements"),
 

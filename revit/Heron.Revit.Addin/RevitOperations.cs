@@ -92,6 +92,18 @@ namespace Heron.Revit.Addin
                 case "list_systems":
                     return RevitSystems.List(app);
 
+                // Instance, type and shared parameters. HERON-REVIT-PAR-011,
+                // its own file for the same reason as the three above: the
+                // two ways a parameter answer goes silently wrong - reading
+                // only the instance when the data sits on the type, and
+                // handing back a bare decimal-feet number - are both decided
+                // in one place a reviewer can read end to end. Read-only.
+                case "read_parameters":
+                    return RevitParameters.Read(app,
+                                                Json.ReadString(request, "category"),
+                                                Json.ReadString(request, "parameter"),
+                                                Json.ReadString(request, "expectProject"));
+
                 case "run_fragment_read":
                     return RevitFragment.Run(app, request);
 

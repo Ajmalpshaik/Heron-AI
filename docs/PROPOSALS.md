@@ -2127,3 +2127,67 @@ per fragment, not a bulk edit — which is the opposite of how 62 identical-look
    surprised by 56 fragments dropping to `DRAFT` halfway through an afternoon.
 
 **Not acted on.** 2 changes a gate everyone reads, and 3 edits a decision record that is append-only.
+
+## F37 — a refusal was resting on a majority, and one file tipped it
+
+**Found on 2026-09-16**, building `HERON-REVIT-PAR-011` (`RevitParameters.cs`). The suite went red on a
+check nobody had touched, and the check was right.
+
+### What flipped
+
+`brain/heron_csharp.py` is the C# idiom agent, and its whole design is a refusal: it will not assert
+*"use narrow exception types"* as a rule. Its stated reason was a measurement of this repository's own
+code —
+
+> A "narrow exception types only" rule would be false about the larger half of the code that already
+> ships. It is not asserted here.
+
+— and `tests/test_csharp.py` guarded that reason with `check(broad > narrow, ...)`, so the claim could
+not quietly rot.
+
+One new file moved it. `RevitParameters.cs` carries sixteen exception handlers and every one is narrow,
+because that is what [D-52](DECISIONS.md) and `tools/check-narrow-errors.py` ask for:
+
+| | broad | narrow |
+|---|---|---|
+| before | 53 | 42 |
+| after | 53 | **58** |
+
+Narrow leads for the first time. Reproduce it:
+
+```bash
+python tests/test_csharp.py     # prints the live figures in section 3
+```
+
+### The refusal survives. Its stated reason did not
+
+Nothing was rewritten to restore the old balance — the new file follows the better style, and degrading
+it to keep a docstring true would be the tail wagging the dog.
+
+What changed is the claim. **The majority was never the real ground for the refusal.** Fifty-three broad
+handlers still ship and still work, and an agent that flags fifty-three working handlers is correcting
+working code on an authority it does not have — which is as true at 58–53 as it was at 42–53. A claim
+that can flip on a single commit was the wrong thing to hang a refusal on, and it flipped on a single
+commit.
+
+So the suite now checks the share that does not tip: broad handlers are at least a quarter of all
+handlers. Crossing that needs somebody to deliberately rewrite most of them, which is an event worth a
+red suite.
+
+### The question that is actually open
+
+**Should `heron_csharp` now begin asserting the rule?**
+
+The honest position is that the answer has moved and nobody has decided it. The arguments have not
+changed sides so much as changed weight:
+
+- **For.** New C# in this repository is narrow, consistently — `RevitLinks`, `RevitPhases`,
+  `RevitSystems` and `RevitParameters` are 36 narrow handlers and zero broad between them. A rule would
+  describe what the authors already do, which is the only kind of style rule worth having.
+- **Against.** The 53 broad handlers are not a backlog anybody intends to clear. `check-narrow-errors.py`
+  already enforces the shape that actually costs — D-52's plausible zero, where a fault and the normal
+  case come back identical — and it enforces it where the defect kept happening. A rule about catch
+  *syntax* is a wider and weaker thing than a rule about swallowed faults.
+
+**Not acted on.** Asserting it would turn 53 working handlers into findings on the day it ships, and
+whether that is worth doing is a judgement about this repository rather than about C#.

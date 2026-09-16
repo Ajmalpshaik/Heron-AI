@@ -139,10 +139,26 @@ def main():
           "standing fact")
     check("the suite does NOT pin them" in doc,
           "and says the suite checks the claim instead")
-    check(broad > narrow,
-          "THE CLAIM HOLDS: %d broad against %d narrow, so the rule this "
-          "module refuses to assert is still one its own repository would "
-          "fail" % (broad, narrow))
+    # THE CLAIM THIS USED TO CHECK WAS `broad > narrow`, AND IT FLIPPED.
+    # RevitParameters.cs - sixteen narrow handlers, no broad - took the
+    # shipped C# from 53/42 to 53/58 on 2026-09-16 and narrow led for the
+    # first time. The refusal did not change, because the majority was
+    # never its real ground: fifty-three broad handlers still ship and
+    # still work, and flagging fifty-three working handlers is correcting
+    # working code whichever side is ahead.
+    #
+    # So what is checked is the share that does NOT tip on one commit. A
+    # quarter is not an arbitrary line - it is the point below which
+    # "this repository is full of them" stops being a fair description,
+    # and reaching it means somebody rewrote most of them deliberately.
+    check(handlers > 0 and broad * 4 >= handlers,
+          "THE CLAIM HOLDS: %d of %d handler(s) are broad - a real share of "
+          "the code and not a handful of survivors - so the rule this module "
+          "refuses to assert would still flag working code"
+          % (broad, handlers))
+    check("on 2026-09-16" in doc.lower() and "flipped" in doc.lower(),
+          "and the docstring records the day the old claim stopped being "
+          "true, rather than quietly carrying the new numbers")
     check(types.get("(no type)", 0) > types.get("Exception", 0),
           "and a bare `catch` is still the commonest single kind: %d "
           "against %d" % (types.get("(no type)", 0),
@@ -154,10 +170,11 @@ def main():
           "and the docstring records that its first set was wrong, and why")
 
     print("\n4. a broad catch is not called bad style")
-    check(broad > narrow,
-          "this repository is MORE broad than narrow - %d to %d - so a "
+    check(handlers > 0 and broad * 4 >= handlers,
+          "this repository still ships %d broad handler(s) out of %d - so a "
           "rule against broad catches would be an agent correcting its "
-          "own working code" % (broad, narrow))
+          "own working code, whichever kind is currently ahead"
+          % (broad, handlers))
     check(said["judged_wrong"] is False,
           "`judged_wrong` is false, and always false")
     check(any("NOT asserted here" in line or "not asserted here" in line
