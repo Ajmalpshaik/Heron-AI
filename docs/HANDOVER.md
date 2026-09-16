@@ -2184,3 +2184,74 @@ release at a time; the output folder is shared, and what is in it last wins.
 - **The remaining 29 open defects were read, not fixed.** Row 8 is still the biggest single unblock:
   a bare `ElementId` result cannot be read as a quantity, and **15 DRAFT fragments have no other
   countable result at all.**
+
+
+## The deploy happened, ninety minutes after the section above said it had not
+
+**2026-09-16 18:04-18:06, on the owner's PC.** He closed Revit and ran all three. Verified by
+reading the deployed binaries rather than by trusting the build exiting 0:
+
+| Revit | framework in the deployed DLL | deployed | size |
+|---|---|---|---|
+| 2020 | `.NETFramework,Version=v4.7.2` | 18:06 | 156,672 |
+| 2024 | `.NETFramework,Version=v4.8` | 18:04 | 156,672 |
+| 2027 | `.NETCoreApp,Version=v10.0` | 18:04 | 157,184 |
+
+**Each release got its OWN framework**, which is the thing the shared `bin` folder makes easy to get
+wrong and impossible to see: a 2027 build sitting in a 2024 folder loads nothing and Revit does not
+say why. `Heron.Core.dll` and `Heron.Bridge.dll` carry the same timestamp in all three folders, 2027
+has its `.deps.json`, and the add-in grew from ~128 KB to ~156 KB - a real rebuild, not a re-copy.
+
+**So `E16`-`E18` are unblocked, and the two rows that end *"needs a deploy"* have their precondition
+met** - [row 10](FRAGMENT-ISSUES.md) and [row 13](FRAGMENT-ISSUES.md). **Neither is proved by this.**
+A deployed fix is a fix that can now be run; D-30 wants it run.
+
+**The table above this one went stale in ninety minutes**, which is the whole subject of this sitting
+arriving on schedule. It is left standing and corrected here rather than edited, because the interval
+is the finding: **the fastest-moving fact in this repository is the state of the machine in front of
+him, and it is the one every register records as prose.**
+
+### The command in that table was wrong, and the shell said so
+
+It was given with `&&` between the build and the deploy. **Windows PowerShell 5.1 has no `&&`** -
+*"The token '&&' is not a valid statement separator in this version."* Nothing ran; it did not parse.
+The separator is `;`, and *only if the last one worked* is `if ($?) { ... }`:
+
+```powershell
+dotnet build revit\Heron.Revit.Addin\Heron.Revit.Addin.csproj -c Debug -p:RevitVersion=2024; if ($?) { powershell -File tools\deploy-addin.ps1 -RevitVersion 2024 }
+```
+
+**`deploy-addin.ps1` refuses while Revit is running** (`Get-RevitBlockReason`), so the build half can
+be done with Revit open and only the copy needs it closed.
+
+
+## Then he asked whether the OTHER pages had been done, and three indexes had drifted the same way
+
+Not the registers - **the pages that say what exists.** Each was a typed list of files, and each had
+been appended to by sessions that added the file and not the row.
+
+| page | said | was |
+|---|---|---|
+| [`work-notes/README.md`](work-notes/README.md) §*What is here now* | **11** notes | **15** on disk. Missing: `mep-session-2026-09-16`, `proving-session-2026-09-15`, `agent-build-order-2026-09-13`, `next-steps-2026-09-12` |
+| [`tools/README.md`](../tools/README.md) | every tool | **three** were absent - `open-defects.py`, `new-agent.py`, `resign-machine-proofs.py` |
+| [`FOR-THE-OWNER.md`](FOR-THE-OWNER.md) §2 | *"The five buckets"* | **six**, and `owner-queue.py` defines six |
+
+**`FOR-THE-OWNER.md` is the sharpest of the three.** Its §6 is titled *why this page holds no list*,
+and it carried a count that had drifted - not of items, which that section forbids, but of the buckets
+the items fall into. **The rule was obeyed one level up from where it was needed.**
+
+All three now carry the command that derives them, and **all three commands were run before being
+written down.** Two were wrong the first time and the repository's own rule caught both:
+
+- the work-notes check missed `FRAGMENT-REVIEW-PLAN-CHATGPT-2026-09-07.md` and
+  `PROMPT-fragment-validation-agent.md`, because `[a-z0-9/.-]+` **cannot see a capital letter**.
+- the tools check reported **twenty false extras**, because `grep -oE '[a-z-]+\.py'` splits
+  `heron_architect.py` at the underscore and hands back `architect.py`, a file that does not exist.
+
+**Prove the pattern can see what you know is there.** Written in this repository since the beginning,
+broken twice in one hour by the person writing the commands to enforce it, and caught both times by
+running them instead of reading them.
+
+`tools/open-defects.py`, `new-agent.py` and `resign-machine-proofs.py` are now documented. The first
+is new; **the other two had been undocumented since they were written** - the quiet version of the
+defect `check-signatures.py`'s own commit message names: *a gate nobody runs is the same as no gate.*

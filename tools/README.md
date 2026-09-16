@@ -1412,3 +1412,80 @@ it beside the other generators would be tidier and would catch exactly the same 
 
 **Proved by breaking it**: deleting the `D-70` row makes `check-docs.py` exit 1 naming `D-70`, and
 restoring it returns to 0.
+
+
+---
+
+## Three tools that were in this folder and not on this page
+
+**Found 2026-09-16 by diffing the folder against the page**, which nobody had done. The check is one
+line and it is worth keeping:
+
+```bash
+# every tool on disk that this page never names
+for f in tools/*.py; do
+  n=$(basename "$f")
+  grep -q "$n" tools/README.md || echo "UNDOCUMENTED: $n"
+done
+```
+
+**It checks one direction on purpose.** The first version of this command diffed both ways and
+reported twenty false extras - `grep -oE '[a-z-]+\.py'` splits `heron_architect.py` at the
+underscore and hands back `architect.py`, a file that does not exist. The direction that matters
+is *on disk and unnamed here*; a name on this page with no file behind it is what `check-docs.py`
+already catches. **Prove the pattern can see what you know is there** - this repository's own
+rule, and the first version of this very command broke it.
+
+**A tool nobody can find is a tool nobody runs**, and this repository has already paid for that once:
+`check-signatures.py` existed for two days with nothing calling it, and its own commit message named
+the defect - *"a gate nobody runs is the same as no gate."* Being undocumented is the quieter version
+of the same thing.
+
+## `open-defects.py` - how many of Heron's own defects are still open
+
+```bash
+python tools/open-defects.py            # the open ones, by id
+python tools/open-defects.py --all      # every row, with its state
+```
+
+Reads section 5 of [`docs/FRAGMENT-ISSUES.md`](../docs/FRAGMENT-ISSUES.md) and prints the **ids** of
+every row whose Status begins with *open*. Always exits 0 - it reports, it does not gate.
+
+It exists because that section was headed *"six still open"* from the day it was written until
+2026-09-16, and by then ninety-four rows had been appended and twenty-nine were open. **No append was
+careless**: each session wrote an honest row and left the heading to somebody else. That is the
+prose-total drift [`NEEDS-CHECKING.md`](../docs/NEEDS-CHECKING.md) records against itself seven times.
+
+**It prints the ids rather than the total on purpose**, and says in its own output what it cannot see:
+a row whose Status still reads OPEN after a LATER row closed it. Four were that shape on 2026-09-16
+(rows 37, 44, 96, 97) and no pattern finds them - the closure is written in a different row, in prose.
+**This narrows the pile you have to read. It does not replace reading it.**
+
+## `new-agent.py` - scaffold the next agent from its row in the register
+
+```bash
+python tools/new-agent.py HERON-OPS-QUE-002
+python tools/new-agent.py HERON-OPS-QUE-002 --part mcp --step 16
+```
+
+Writes three files and nothing else: the contract in `brain/agents/<ID>.yaml`, the module with its
+five-field metadata header already correct, and the test - **which fails until it is written.**
+
+146 agents can be built on a machine with no Revit
+([`agent-build-order-2026-09-13`](../docs/work-notes/plans/agent-build-order-2026-09-13.md)). By hand
+that is 146 chances to mistype a layer or invent a field.
+
+## `resign-machine-proofs.py` - replace a MACHINE's name in a proof with a person's
+
+```bash
+python tools/resign-machine-proofs.py --list
+python tools/resign-machine-proofs.py --by "Ajmal PS"
+```
+
+Sixteen fragments carried a proof signed `"Claude Opus 5, at Ajmal PS's PC"` with no date. **[D-30](../docs/DECISIONS.md)
+says the machine gathers evidence and a PERSON signs**, so that is not a signature - it is the thing
+the rule exists to forbid, written into the field meant to prevent it.
+
+`heron_validate.py accept` cannot fix them: it reads a draft from `brain/proof-drafts/` and none of the
+sixteen has one. **It changes the one field that is wrong and leaves every other line exactly as
+recorded, and it DOES NOT judge the evidence** - that was checked separately.
