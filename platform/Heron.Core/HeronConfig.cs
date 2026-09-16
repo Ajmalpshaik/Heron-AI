@@ -129,10 +129,13 @@ namespace Heron.Core
             foreach (var kv in _values)
                 sb.AppendLine(kv.Key + " = " + kv.Value);
 
-            var tmp = FilePath + ".tmp";
-            File.WriteAllText(tmp, sb.ToString(), new UTF8Encoding(false));
-            if (File.Exists(FilePath)) File.Delete(FilePath);
-            File.Move(tmp, FilePath);
+            // Atomic. This was write-tmp, DELETE, move until 2026-09-16, which
+            // left a window with no config file at all - and Load() above
+            // answers a missing file with Defaults and swallows IOException,
+            // so the next Save() wrote those defaults back. A crash in that
+            // window erased the user's settings without a message rather than
+            // corrupting them. See HeronAtomicWrite.
+            HeronAtomicWrite.WriteAllText(FilePath, sb.ToString());
         }
 
         public string Get(string key)

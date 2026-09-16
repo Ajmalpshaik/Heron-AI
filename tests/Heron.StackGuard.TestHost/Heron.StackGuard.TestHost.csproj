@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proves the stack guard WITHOUT Revit.
+
+    The same mocked-Revit-boundary approach docs/13 section 3 describes and
+    Heron.Bridge.TestHost already follows. HeronStackGuard.cs touches no
+    Autodesk type at all - it is pure Roslyn - so it is linked here BY SOURCE
+    rather than through a project reference. Referencing Heron.Revit.Addin
+    would drag in RevitAPI.dll and make the one testable piece untestable on
+    any machine without Revit, which is the whole failure this pattern exists
+    to avoid.
+
+    Linking the source has a second property worth stating: there is exactly
+    ONE copy of the rewriter. A second implementation written to test the
+    first is how `binds:` came to be honoured by the Python half and ignored
+    by the C# executor (FRAGMENT-ISSUES row 96) - two halves that agreed on
+    paper and not in a running model.
+
+        Run it with `dotnet run`, pointed at this folder, passing
+        -p:RevitVersion=2024. (XML comments cannot carry a double
+        hyphen, so the flag is spelled out rather than shown.)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.StackGuard.TestHost</RootNamespace>
+    <AssemblyName>Heron.StackGuard.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronStackGuard.cs"
+             Link="HeronStackGuard.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+  </ItemGroup>
+
+</Project>

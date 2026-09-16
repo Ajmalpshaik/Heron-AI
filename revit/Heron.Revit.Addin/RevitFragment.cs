@@ -670,7 +670,19 @@ namespace Heron.Revit.Addin
                     "Could not set up the script host: " + Innermost(failure).Message);
             }
 
-            var candidate = CSharpScript.Create<object>(source, options, typeof(HeronFragmentGlobals));
+            // THE CACHE STAYS KEYED ON THE ORIGINAL SOURCE, above and below.
+            // The guard is a pure function of it, so keying on the rewritten
+            // text would be the same lookup with extra work - and the key has
+            // to be the text that arrived, because that is what changes when
+            // somebody edits a fragment.cs.
+            //
+            // Guarded because RunScript's catch cannot catch a stack overflow:
+            // the runtime fails fast and takes Revit with it. See
+            // HeronStackGuard, which falls back to `source` untouched if it
+            // cannot do its job.
+            var guarded = HeronStackGuard.Apply(source);
+
+            var candidate = CSharpScript.Create<object>(guarded, options, typeof(HeronFragmentGlobals));
 
             var diagnostics = candidate.Compile();
 

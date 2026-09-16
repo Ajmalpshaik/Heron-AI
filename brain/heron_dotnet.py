@@ -87,6 +87,7 @@ PROJECTS = [
     "revit/Heron.Bridge/Heron.Bridge.csproj",
     "revit/Heron.Revit.Addin/Heron.Revit.Addin.csproj",
     "tests/Heron.Bridge.TestHost/Heron.Bridge.TestHost.csproj",
+    "tests/Heron.StackGuard.TestHost/Heron.StackGuard.TestHost.csproj",
 ]
 
 # The range Directory.Build.props knows how to target. Kept as an explicit list

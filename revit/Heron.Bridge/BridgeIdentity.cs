@@ -151,11 +151,13 @@ namespace Heron.Bridge
                 StartedAtUtc.ToString("o", CultureInfo.InvariantCulture));
             json.Append("}\n");
 
-            // Write-then-move so a client never reads a half-written file.
-            var tmp = DiscoveryFilePath + ".tmp";
-            File.WriteAllText(tmp, json.ToString(), new UTF8Encoding(false));
-            if (File.Exists(DiscoveryFilePath)) File.Delete(DiscoveryFilePath);
-            File.Move(tmp, DiscoveryFilePath);
+            // Atomic, so a client never reads a half-written file - and never
+            // reads NO file either. Until 2026-09-16 this deleted before it
+            // moved, and that second case was not covered by the sentence this
+            // comment used to carry: a client arriving in the gap finds no
+            // discovery file and concludes no bridge is running, which is a
+            // wrong answer rather than a missing one. See HeronAtomicWrite.
+            HeronAtomicWrite.WriteAllText(DiscoveryFilePath, json.ToString());
         }
 
         /// <summary>
