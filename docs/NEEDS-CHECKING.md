@@ -399,6 +399,52 @@ the same Revit, same moment. **Nothing reached Revit and no banner was raised**,
 nothing here — but the proof harness could not name a model that the bridge could. Unexplained,
 and it blocks fragment proofs from the command line.
 
+#### It was rebuilt on 2026-09-17, and four of those answers no longer apply
+
+Everything above was measured against a banner that lived on **Revit's own thread**. It does not
+any more, and two of its claims were quietly wrong the whole time.
+
+**The sweep never animated during a job, and could not have.** Revit draws on the thread it works
+on, so while a job runs nothing on that thread can be painted. Measured with it blocked for
+3000 ms: a `DispatcherTimer` on it fired **0 times** and the sweep did not advance one pixel -
+**357.6 px before, 357.6 px after**. Every "it does not strobe" and "one steady card" result above
+is still true; what was never true is that anything on the card was *moving* while Revit was
+frozen. *Nothing has ever been frozen* above is the note that should have caught this, and did
+not - because nothing slow enough was ever run.
+
+**So the banner now runs its own STA background thread with its own dispatcher.** Same test, with
+the **owner** thread blocked and the banner interrogated from a third thread: sweep moved **5 of 5**
+samples, elapsed time ticked **5 of 5**, 1.1 s to 3.2 s. It is a background thread, so it can never
+hold Revit's process open.
+
+Three things were added on top: the card **names the model** on a line of its own, it shows a
+**live elapsed time** that counts while Revit is frozen, and it was given a proper visual pass -
+gradient sweep, entrance animation, colour transitions, a breathing lamp. Colour changes
+deliberately **snap** between blue and amber rather than animating, because read-versus-change is a
+safety signal and must never pass through a state where the two look alike.
+
+Committed as `37cb6e2`. All of it was proved by driving the **real file** in a WPF harness, which is
+possible only because it still has no Revit dependency - keep it that way.
+
+**SEEN IN REVIT 2024 on 2026-09-17**, by the owner, during unrelated work. That closes the thing
+that mattered most: **Revit accepted a second UI thread**, the add-in loaded, and the card drew over
+a live Revit window rather than a harness stand-in. It was not inspected beyond "it came and it
+looks good".
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **B14** | Read from two different models, switching between them | The card names the model **actually in front**, not the one opened first. Then close every model and ask for something: the middle line must **disappear**, not name a model that is gone |
+| **B15** | Run something slow enough to freeze Revit - a fragment that has to compile, or a large model | The elapsed number **visibly climbs** and the sweep **moves** while Revit is unresponsive. Either one frozen means the thread split is not working. The number must never go **backwards** when the job ends |
+| **B16** | Five reads back to back | One steady card, and it **comes down** at the end. `B11` proved this on 2026-09-07 but on the single-thread version - the lamp and the animations are new. A card left up over an idle Revit is D-56 returning |
+| **B17** | Revit on a **150%** display | Still the other half of `B12`, still never run. Centred over **Revit's own window**, right size, nothing clipped |
+
+**Pin `HERON_CLIENT_ID`** before any of these from a command line - see the trap above, it makes a
+working banner look broken.
+
+If it misbehaves badly, `ui.activityBanner = false` in `%APPDATA%\Heron\config\heron.config` plus a
+Revit restart switches it off without touching the add-in. That switch was proved on 2026-09-07
+(`B13`) and nothing since has moved it.
+
 ### The write path was broken and is now fixed — found and closed 2026-09-07
 
 **`revit_apply_move` cannot succeed, on any model, with any settings.** This is not a tuning problem
