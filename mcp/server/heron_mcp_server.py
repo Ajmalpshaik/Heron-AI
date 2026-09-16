@@ -760,7 +760,8 @@ def _values_array(values):
 
 
 @server.tool()
-def revit_change(capability: str, values: str = "") -> str:
+def revit_change(capability: str, values: str = "",
+                 expect_from: str = "") -> str:
     """
     Change the open Revit model, and KEEP the change.
 
@@ -770,6 +771,18 @@ def revit_change(capability: str, values: str = "") -> str:
     into one.
 
     `values` is one "name=value" per line, e.g. newTypeName=TRG_PIP_Copper_CDP
+
+    `expect_from` CONSUMES WHAT AN EARLIER FRAGMENT LEFT, safely. Name the
+    fragment whose result this one should act on - "select-by-categories" - and
+    Heron checks the carried values were left by THAT fragment before it binds
+    anything, refusing if something else left them. Add "where k=v" to check
+    what it ran with too:
+
+        expect_from="select-by-categories where categories=Pipes"
+
+    Leave it empty and each call is its own batch, which is the default and the
+    safe one: without it a later call could act on elements collected by
+    something nobody remembers running.
 
     It is REFUSED unless the owner has switched Changes ON in Revit's ribbon.
     That switch is read inside the add-in, never here - a client deciding its
@@ -812,7 +825,10 @@ def revit_change(capability: str, values: str = "") -> str:
         "source": source,
         "needs": needs,
         # Each call is its own batch. What an earlier fragment left behind
-        # belongs to the run that produced it, not to this one.
+        # belongs to the run that produced it, not to this one - UNLESS the
+        # caller says which fragment it means to consume, in which case the
+        # add-in checks that before binding anything and refuses if something
+        # else left it. See `expect_from` and docs/36.
         "chain": "reset",
         # THE FLAG THAT KEEPS IT, and the whole reason this tool exists.
         # Without it the executor still runs the change for real inside a
@@ -892,6 +908,14 @@ def revit_change(capability: str, values: str = "") -> str:
     # idempotent=False for the reason revit_apply_move sets it: if the answer
     # is lost after the request left this machine, whether Revit ran it cannot
     # be known from here, and asking again would do it a second time.
+    # THE EXPECTATION REPLACES THE RESET RATHER THAN JOINING IT. Sending both
+    # would clear the values the expectation is about and then fail saying
+    # nothing was carried - which reads as the producing fragment having done
+    # nothing. The add-in refuses that pairing by name; this never sends it.
+    if expect_from and expect_from.strip():
+        args.pop("chain", None)
+        args["expectChain"] = expect_from.strip()
+
     reply = session.request("run_fragment_write", op_args=args,
                             idempotent=False, response_timeout=180.0)
     session.close()

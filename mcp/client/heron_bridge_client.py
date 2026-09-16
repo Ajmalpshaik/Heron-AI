@@ -962,7 +962,8 @@ def caller_values(pairs):
     return values
 
 
-def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None):
+def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
+                 expect=None):
     """
     Run one fragment's C# against the open model - D-28's executor, reached.
 
@@ -1021,8 +1022,21 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None)
 
     failures = 0
     for bridge in live:
-        args = {"name": name, "source": source, "needs": needs,
-                "chain": "reset"}
+        # RESET UNLESS THE CALLER SAID WHAT IT EXPECTS.
+        #
+        # Reset is right by default and the add-in's own comment says why:
+        # otherwise a fragment run an hour later binds "elements collected by
+        # something nobody remembers running". `--expect-from` is how a caller
+        # says it DOES remember - it names the producer, the add-in checks the
+        # carried values were left by that fragment before binding anything,
+        # and refuses if they were not. Sending both would clear the values the
+        # expectation is about, which the add-in refuses by name rather than
+        # reporting as an empty chain. docs/36.
+        args = {"name": name, "source": source, "needs": needs}
+        if expect:
+            args["expectChain"] = expect
+        else:
+            args["chain"] = "reset"
         if values:
             args["values"] = values
         # A STRING, because Heron's own JSON reader reads strings and nothing
@@ -1908,7 +1922,15 @@ def main(argv):
         # its own --apply means nothing, because a read has nothing to keep.
         writing = rest is not None and "--write" in rest
         apply_it = rest is not None and "--apply" in rest
+        expect = None
         if rest is not None:
+            for i, token in enumerate(rest):
+                if token == "--expect-from" and i + 1 < len(rest):
+                    expect = rest[i + 1]
+                    break
+            if expect is not None:
+                at = rest.index("--expect-from")
+                rest = rest[:at] + rest[at + 2:]
             rest = [r for r in rest if r not in ("--write", "--apply")]
         if rest is None or not rest:
             print("Which fragment? e.g. list-levels")
@@ -1917,6 +1939,12 @@ def main(argv):
             print("  --session <pid>         which Revit, when more than one is connected")
             print("  --write                 run a MODIFY fragment, in a transaction")
             print("  --write --apply         ...and KEEP what it did (one Ctrl+Z undoes it)")
+            print("  --expect-from <fragment>  consume what THAT fragment left, instead")
+            print("                          of resetting. Refused if something else")
+            print("                          left it. Add \"where k=v\" to check its")
+            print("                          inputs too:")
+            print("                            --expect-from \"select-by-categories")
+            print("                             where categories=Pipes\"")
             return 2
         if apply_it and not writing:
             print("--apply only means something with --write. A read leaves nothing to keep.")
@@ -1928,7 +1956,8 @@ def main(argv):
         values = caller_values(pairs)
         if values is None:
             return 2
-        return cmd_fragment(rest[0], values, writing, apply_it, session=session)
+        return cmd_fragment(rest[0], values, writing, apply_it, session=session,
+                            expect=expect)
     if argv[1] == "validate":
         rest, pairs, negatives = pull_values(argv[2:])
         if rest is None:

@@ -369,8 +369,37 @@ namespace Heron.Revit.Addin
             // report them as coming "from the previous fragment", and be right
             // about the words and wrong about the run. The client says "reset"
             // on the first fragment of a batch and nothing on the rest.
-            if (string.Equals(Json.ReadString(request, "chain"), "reset",
-                              StringComparison.Ordinal))
+            var resetting = string.Equals(Json.ReadString(request, "chain"), "reset",
+                                          StringComparison.Ordinal);
+
+            // WHAT THE CALLER BELIEVES IT IS ABOUT TO CONSUME.
+            //
+            // Empty is the default and means today's behaviour exactly: the
+            // chain is whatever survived, taken on trust, and the client
+            // normally resets it. Non-empty turns the trust into a CHECK -
+            // "these elements must be the ones select-by-categories left, and
+            // it must have run with categories=Pipes" - and a mismatch refuses
+            // rather than binding something plausible. docs/36.
+            var expect = Json.ReadString(request, "expectChain");
+            if (expect != null) expect = expect.Trim();
+
+            // A CONTRADICTION THAT WOULD OTHERWISE LOOK LIKE AN EMPTY CHAIN.
+            // Resetting clears the very values the expectation is about, so
+            // the check could only ever fail, and it would fail saying
+            // "nothing is carried" - which reads as the PRODUCER having done
+            // nothing. Naming the real fault here saves that hunt.
+            if (resetting && !string.IsNullOrEmpty(expect))
+            {
+                return Json.Error("chain_contradiction",
+                    "This request both RESETS the chain and expects to consume "
+                    + "'" + expect + "' from it. Resetting clears exactly what "
+                    + "the expectation is about, so it could only fail - and it "
+                    + "would fail saying nothing was carried, which reads as the "
+                    + "earlier fragment having done nothing. Send one or the "
+                    + "other.");
+            }
+
+            if (resetting)
             {
                 Forget(client);
             }
@@ -380,13 +409,20 @@ namespace Heron.Revit.Addin
                 "doc", "uidoc", "app"
             };
 
+            // WHAT THIS RUN WAS ASKED FOR, rendered once and carried on the
+            // chain so the NEXT fragment can check it got the right list
+            // rather than merely a list. Sorted, because a dictionary's order
+            // is not a fact about the request and two identical runs must
+            // render identically.
+            var ranWith = DescribeSupplied(supplied);
+
             var prologue = "";
 
             if (needs != null)
             {
                 string binding;
                 var refusal = BindNeeds(needs, globals, target, uidoc, bound, client,
-                                        supplied, out prologue, out binding);
+                                        supplied, expect, out prologue, out binding);
                 if (refusal != null) return refusal;
                 Note = binding;
             }
@@ -489,7 +525,7 @@ namespace Heron.Revit.Addin
 
             if (threw != null) return threw;
 
-            Remember(name, state, target, bound, client, globals.__heron);
+            Remember(name, state, target, bound, client, globals.__heron, ranWith);
             var answer = Report(name, state, target, uidoc, app.ActiveUIDocument, bound,
                                 globals.__heron);
 
@@ -540,6 +576,11 @@ namespace Heron.Revit.Addin
             var steps = Json.ReadObjectArray(request, "setup");
             if (steps == null || steps.Count == 0) return null;
 
+            // A SETUP STEP RUNS ON THE CALLER'S OWN VALUES, the same ones the
+            // fragment under test was given, so what it left is described the
+            // same way. Rendered once rather than per step.
+            var ranWith = DescribeSupplied(supplied);
+
             for (var index = 0; index < steps.Count; index++)
             {
                 var step = steps[index];
@@ -574,8 +615,15 @@ namespace Heron.Revit.Addin
                 if (stepNeeds != null)
                 {
                     string stepBinding;
+                    // NO EXPECTATION INSIDE A FRAGMENT. The caller's
+                    // expectation is about what THIS fragment consumes on the
+                    // way in; a step consumes what the step before it left,
+                    // whose `By` is this fragment rather than the producer the
+                    // caller named. Re-checking it here would refuse every
+                    // multi-step fragment on its second step.
                     var refusal = BindNeeds(stepNeeds, globals, target, uidoc, stepBound,
-                                            client, supplied, out stepPrologue, out stepBinding);
+                                            client, supplied, null,
+                                            out stepPrologue, out stepBinding);
                     if (refusal != null)
                     {
                         SafeRollBack(group);
@@ -621,7 +669,8 @@ namespace Heron.Revit.Addin
                     // WHAT IT LEFT, for the step after it and for the fragment
                     // under test. Without this the chain ends at the first
                     // setup step and the arrangement cannot be built up.
-                    Remember(stepName, stepState, target, stepBound, client, globals.__heron);
+                    Remember(stepName, stepState, target, stepBound, client, globals.__heron,
+                             ranWith);
                 }
             }
 
@@ -1044,6 +1093,15 @@ namespace Heron.Revit.Addin
 
             public string Document;         // whose elements these are
             public string By;               // the fragment that left them
+
+            // WHAT THE PRODUCER RAN WITH, and the reason it is here rather
+            // than only `By`. Two runs of `select-by-category-name` leave
+            // `elements` under the same name and by the same fragment; only
+            // the inputs tell "the pipes in this view" from "the walls in
+            // another". A consumer checking the fragment name alone would
+            // accept either. docs/36.
+            public string Inputs;
+
             public DateTime TouchedUtc;
         }
 
@@ -1073,6 +1131,91 @@ namespace Heron.Revit.Addin
         /// caller still runs fragments; it just cannot chain them, and the
         /// refusal it gets names what was missing like any other.
         /// </summary>
+        /// <summary>
+        /// Why the carried values are NOT the ones the caller asked for, or
+        /// null when they are.
+        ///
+        /// THE SHAPE OF AN EXPECTATION is the producer's name, optionally with
+        /// the inputs the caller cares about:
+        ///
+        ///     select-by-categories
+        ///     select-by-categories where categories=Pipes, Pipe Fittings
+        ///
+        /// ONLY THE NAMED INPUTS ARE COMPARED, and the rest are ignored on
+        /// purpose. Demanding every value match would make a caller restate
+        /// the producer's whole request to consume one list, and it would
+        /// refuse a correct hand-over the moment an unrelated default moved.
+        /// The caller declares what it cares about; docs/36 s8.
+        ///
+        /// EVERY REFUSAL NAMES BOTH SIDES. "the chain does not match" sends a
+        /// reader to look at the wrong fragment; "you expected X and
+        /// select-by-level left Y" is the answer itself.
+        /// </summary>
+        private static string ChainDisagrees(Chain chain,
+                                             Dictionary<string, object> carried,
+                                             string expect,
+                                             Document target)
+        {
+            string wantedBy = expect;
+            string wantedInputs = null;
+
+            var split = expect.IndexOf(" where ", StringComparison.OrdinalIgnoreCase);
+            if (split >= 0)
+            {
+                wantedBy = expect.Substring(0, split).Trim();
+                wantedInputs = expect.Substring(split + 7).Trim();
+            }
+
+            // NOTHING CARRIED AT ALL. Said apart from a mismatch because they
+            // are different faults: one is "the producer did not run", the
+            // other is "a different producer ran".
+            if (chain == null || carried == null || carried.Count == 0)
+            {
+                return Json.Error("chain_empty",
+                    "This request expects values left by '" + wantedBy + "', and "
+                    + "nothing is carried for this chat on '" + target.Title + "'. "
+                    + "Either that fragment has not run yet, it ran against another "
+                    + "model, or the chain was reset between them. NOTHING WAS BOUND "
+                    + "and no fragment ran.");
+            }
+
+            if (!string.Equals(chain.By, wantedBy, StringComparison.OrdinalIgnoreCase))
+            {
+                return Json.Error("chain_mismatch",
+                    "This request expects values left by '" + wantedBy + "', but what "
+                    + "is carried was left by '" + (chain.By ?? "(unknown)") + "'"
+                    + (string.IsNullOrEmpty(chain.Inputs)
+                        ? "" : " running with " + chain.Inputs)
+                    + ". Binding them anyway is how a job acts on elements nobody "
+                    + "remembers collecting. NOTHING WAS BOUND and no fragment ran.");
+            }
+
+            if (!string.IsNullOrEmpty(wantedInputs))
+            {
+                var actual = chain.Inputs ?? "";
+
+                foreach (var piece in wantedInputs.Split(';'))
+                {
+                    var want = piece.Trim();
+                    if (want.Length == 0) continue;
+
+                    if (actual.IndexOf(want, StringComparison.OrdinalIgnoreCase) < 0)
+                    {
+                        return Json.Error("chain_inputs_differ",
+                            "This request expects '" + wantedBy + "' to have run with "
+                            + "'" + want + "', and what is carried was produced by it "
+                            + "running with " + (actual.Length == 0
+                                ? "no caller values at all" : "'" + actual + "'")
+                            + ". The right fragment left these, with different inputs - "
+                            + "so they are a different set of elements. NOTHING WAS "
+                            + "BOUND and no fragment ran.");
+                    }
+                }
+            }
+
+            return null;
+        }
+
         private static Chain ChainFor(string client, bool create)
         {
             if (string.IsNullOrEmpty(client)) return null;
@@ -1148,6 +1291,7 @@ namespace Heron.Revit.Addin
                                         HashSet<string> bound,
                                         string client,
                                         Dictionary<string, string> supplied,
+                                        string expect,
                                         out string prologue,
                                         out string binding)
         {
@@ -1158,6 +1302,19 @@ namespace Heron.Revit.Addin
             var chain = ChainFor(client, false);
             var carried = chain != null && chain.Document == target.Title
                 ? chain.Values : null;
+
+            // THE EXPECTATION, CHECKED ONCE AND BEFORE ANYTHING BINDS.
+            //
+            // Once, because a per-need check would say the same thing as many
+            // times as the fragment has needs. Before, because the point is to
+            // refuse INSTEAD of binding - a check after the fact is the
+            // binding note, which this repository already has and which is
+            // read by a person afterwards (fragment-proving rule 5). docs/36.
+            if (!string.IsNullOrEmpty(expect))
+            {
+                var wrong = ChainDisagrees(chain, carried, expect, target);
+                if (wrong != null) return wrong;
+            }
 
             var lines = new StringBuilder();
             var how = new List<string>();
@@ -1379,10 +1536,40 @@ namespace Heron.Revit.Addin
         /// previous step's and re-storing it would make a value look one
         /// fragment fresher than it is.
         /// </summary>
+        /// <summary>
+        /// The caller's own values for one run, as one comparable line.
+        ///
+        /// ONLY WHAT THE CALLER TYPED. The document, the selection and the
+        /// chain are not in here: they are context, they change under a
+        /// conversation, and a consumer comparing them would refuse a correct
+        /// hand-over every time the active view moved.
+        ///
+        /// Sorted by name. A dictionary's order is not a fact about the
+        /// request, and two identical requests have to render identically or
+        /// the comparison is a coin toss.
+        /// </summary>
+        private static string DescribeSupplied(Dictionary<string, string> supplied)
+        {
+            if (supplied == null || supplied.Count == 0) return "";
+
+            var names = new List<string>(supplied.Keys);
+            names.Sort(StringComparer.Ordinal);
+
+            var parts = new List<string>();
+            foreach (var name in names)
+            {
+                var value = supplied[name];
+                parts.Add(name + "=" + (value == null ? "" : value));
+            }
+
+            return string.Join("; ", parts.ToArray());
+        }
+
         private static void Remember(string name, ScriptState<object> state,
                                      Document target, HashSet<string> bound,
                                      string client,
-                                     IDictionary<string, object> handedIn)
+                                     IDictionary<string, object> handedIn,
+                                     string ranWith)
         {
             // A caller that did not say who it is gets no chain - see ChainFor.
             var chain = ChainFor(client, true);
@@ -1392,6 +1579,7 @@ namespace Heron.Revit.Addin
 
             chain.Document = target.Title;
             chain.By = name;
+            chain.Inputs = ranWith;
 
             foreach (var variable in state.Variables)
             {
