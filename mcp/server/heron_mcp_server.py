@@ -241,12 +241,23 @@ def revit_health() -> str:
 @server.tool()
 def revit_select_by_category(category: str = "ducts") -> str:
     """
-    Select every element of one category in the open Revit model, so the user
-    can see them highlighted on screen.
+    Select every element of one or more categories in the open Revit model,
+    so the user can see them highlighted on screen.
 
     Use when the user asks to select, highlight or find elements of a kind -
     "select all ducts". Selecting changes only what is highlighted, never the
     model itself, so it is safe and needs no confirmation.
+
+    SEVERAL AT ONCE, COMMA SEPARATED: "pipes, pipe fittings". That is what a
+    modeller usually means - a pipe run is its fittings too - and selecting
+    them together is what makes the selection usable by an isolate
+    afterwards. One name it does not know refuses the WHOLE request and says
+    which word failed, because a selection three categories short still looks
+    like a selection.
+
+    The answer breaks the total down per category, since "selected 231"
+    across three of them hides the one that returned nothing - usually the
+    interesting one.
 
     Heron currently understands ducts and pipes. Other categories arrive as
     each one is tried against a real model - pipes were added on 2026-09-16
@@ -316,8 +327,18 @@ def revit_select_by_category(category: str = "ducts") -> str:
     if selected == 0:
         return "No %s in %s. Nothing was selected." % (reply.get("category"), where)
 
-    return ("Selected %s %s in %s.\n(%s)"
-            % ("{:,}".format(selected), reply.get("category"), where, reply.get("scope")))
+    lines = ["Selected %s %s in %s." % ("{:,}".format(selected),
+                                        reply.get("category"), where)]
+
+    # THE PER-CATEGORY SPLIT, WHEN MORE THAN ONE WAS ASKED FOR. A total
+    # across three categories hides the one that came back empty, and that is
+    # the one worth seeing - "pipes 143, pipe fittings 0" is a different
+    # model from "pipes 143, pipe fittings 88".
+    if (reply.get("categories") or 1) > 1 and reply.get("breakdown"):
+        lines.append("  %s" % reply.get("breakdown"))
+
+    lines.append("(%s)" % reply.get("scope"))
+    return "\n".join(lines)
 
 
 @server.tool()
