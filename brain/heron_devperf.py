@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Heron-Agent:  HERON-DEV-PRF-015
+# Heron-Agent:  none
 # Heron-Step:   15
 # Heron-Status: DRAFT
 # Heron-Since:  0.1.0
@@ -18,6 +18,37 @@ Always exits 0. It reports; it does not gate - see WHY IT NEVER FAILS below.
 
 Its contract is brain/agents/HERON-DEV-PRF-015.yaml, and the contract is the
 promise; this file is only how the promise is kept today.
+
+WHY THE HEADER SAYS `none`, AND IT IS A DECISION RATHER THAN AN OMISSION
+------------------------------------------------------------------------
+This file was written on 2026-09-16 claiming HERON-DEV-PRF-015, and the claim
+was withdrawn the same day on reading PROPOSALS F27, which names that exact row
+and says what to do about it: **do not claim it on a guess.**
+
+F27's question is not about this file. It is that nobody has said whether a
+Development agent acts on THE ARTEFACT HERON IS BUILDING or on HERON ITSELF -
+and the two Development rows already claimed point opposite ways. `DEV-RVT-013`
+is `tools/batch-prove.py`, which proves FRAGMENTS; `DEV-REL-018` is
+`tools/check-package.py`, which packages HERON. Under the first reading
+`DEV-PRF-015` measures a fragment's cost; under the second it measures this
+repository's own suites, which is what this file does.
+
+So there are now THREE candidates for one row - `tools/measure-brain.py`
+(the brain's stages), this file (the test suites), and whatever would measure a
+fragment - and the register has one id.
+
+**The tool is not in doubt; the label is.** Everything below works and is
+tested. What is withheld is the claim, exactly as `tools/measure-brain.py`
+withholds it for the same row and the same reason.
+
+HOW THE CLAIM CAME TO BE MADE, because the mistake is more useful than the fix.
+Before building, every candidate agent was checked against PROPOSALS and
+OPEN-QUESTIONS for a recorded blocker, and PRF-015 came back clean. The grep
+searched for `HERON-DEV-PRF-015`. **F27 writes it `DEV-PRF-015`, with no
+prefix** - so the pattern could not see the one row that was about it. The same
+grep wrongly cleared nine other agents. That is this repository's own rule,
+broken by the check written to enforce it: **prove the pattern can see what you
+know is there.**
 
 WHY IT EXISTS
 -------------

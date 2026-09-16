@@ -1581,6 +1581,7 @@ of them there are **two** candidates, which one is right depending on a question
 | `DEV-INT-012` *integration tests against a mocked Revit boundary* | — | `tests/Heron.Bridge.TestHost` + `test_bridge_roundtrip.py` |
 | `DEV-RGR-014` *golden-file comparison across supported versions* | `tests/golden/cases.py`, `tests/test_golden.py` | — |
 | `DEV-PRF-015` *execution time and resource cost* | — | `tools/measure-brain.py`, which measures exactly those two words |
+| `DEV-PRF-015` **again — a THIRD candidate, 2026-09-16** | — | `brain/heron_devperf.py`, which times the test SUITES against check-gaps' bound. Built claiming this row and **un-claimed the same day on reading this section**; its header is `none` and the reasoning is in its docstring |
 
 ### The precedent points one way and the files point the other
 
@@ -1613,6 +1614,16 @@ files that already work, and `agent-count.py` stops reporting as unbuilt five th
 
 **Not acted on.** Claiming an id on a guess is the failure this project's whole metadata standard exists
 to prevent, and two already-claimed rows in the same department point opposite ways.
+
+### It happened, on 2026-09-16, and the check written to prevent it is what let it through
+
+`brain/heron_devperf.py` was built claiming `DEV-PRF-015`, merged as **#159**, and un-claimed hours later on reading this section. **The row now has three candidates and one id.**
+
+The build was not careless about it. Every candidate agent was first checked against this file and [OPEN-QUESTIONS](OPEN-QUESTIONS.md) for a recorded blocker, and `PRF-015` came back clean. **The grep searched for `HERON-DEV-PRF-015`. This section writes it `DEV-PRF-015`, with no prefix**, so the pattern could not see the one row that was about it.
+
+**The same grep wrongly cleared nine others** — `DEV-BLD-010`, `DEV-INT-012`, `DEV-RGR-014`, `DEV-UNT-011` (all four in the table above) and `STD-BIM-001`, `STD-DOC-008`, `STD-LOD-007`, `STD-MOD-005`, `STD-QAQ-006` (all five in [F29](#)'s). Ten of fifteen agents reported as having no recorded blocker, every one of them written about here.
+
+This repository's rule is **prove the pattern can see what you know is there**, and it was broken by the check written to enforce it. Search an agent id **without its `HERON-` prefix** — `grep -n 'DEV-PRF-015' docs/*.md` — or the register's own spelling will hide the row.
 
 ---
 
