@@ -18,6 +18,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using System.Windows.Documents;
 
 namespace Heron.Revit.Addin
 {
@@ -34,12 +35,29 @@ namespace Heron.Revit.Addin
     /// ribbon button's connected picture, which says a pipe is open and says
     /// NOTHING about whether anything is happening right now.
     ///
-    /// THE ONE CONSTRAINT THAT DECIDES THE WHOLE DESIGN. Nothing can be drawn
-    /// while Revit's thread is busy. So the banner MUST be raised BEFORE the
-    /// work starts, from the listener thread, marshalled onto Revit's own
-    /// dispatcher - never on a timer that "shows it if the job is slow",
-    /// because that timer can only fire on the very thread the job has
-    /// already taken. Everything else here follows from that.
+    /// THE ONE CONSTRAINT THAT DECIDES THE WHOLE DESIGN. Revit draws on the
+    /// same thread it works on, so for as long as a job runs Revit can paint
+    /// nothing at all. A banner living on that thread is therefore a STILL
+    /// PICTURE for precisely the stretch it exists to cover.
+    ///
+    /// That was measured rather than assumed. With the thread blocked for
+    /// 3000 ms the way Execute blocks it, a DispatcherTimer on that thread
+    /// fired ZERO times and the sweep did not advance by one pixel - 357.6 px
+    /// before, 357.6 px after. The same test with the thread free: nine ticks
+    /// a second and a moving sweep.
+    ///
+    /// SO THE BANNER DOES NOT LIVE ON REVIT'S THREAD. It runs its own STA
+    /// thread with its own dispatcher, started in the constructor, and that
+    /// dispatcher goes on pumping while Revit's is blocked. This is what lets
+    /// the sweep actually sweep and the elapsed time actually count - during
+    /// the freeze, which is the only time either is worth anything.
+    ///
+    /// Begin and End are still called from where they always were. They now
+    /// post ACROSS to this thread rather than onto Revit's, and because both
+    /// post, they arrive in the order they were called.
+    ///
+    /// THE THREAD IS A BACKGROUND THREAD, deliberately: it must never be the
+    /// reason Revit's process refuses to exit.
     ///
     /// IT SAYS WHETHER HERON IS READING OR CHANGING, and that is the half the
     /// earlier project never had. "Something is happening" is worth little to
@@ -49,6 +67,14 @@ namespace Heron.Revit.Addin
     /// is (Golden Rule 19), so no text arriving on the pipe can make a write
     /// wear the reading colour.
     ///
+    /// IT NAMES THE MODEL, and without that the title is only half an
+    /// answer. "Heron AI is changing your model" is reassuring exactly until
+    /// you remember two Revits are open, and then it is the opposite - the
+    /// one question it raises is the one it does not answer. The name comes
+    /// in as a plain string from the caller; this file learns nothing about
+    /// documents and keeps its one useful property, that it can be compiled
+    /// and driven with no Revit anywhere near it.
+    ///
     /// IT ALSO SAYS HOW IT ENDED. A refusal - Revit busy, writing switched
     /// off, nothing selected - used to be invisible from Revit: the chat got
     /// a sentence and the screen showed nothing at all. The outcome line
@@ -56,14 +82,18 @@ namespace Heron.Revit.Addin
     /// looking.
     ///
     /// THE COUNT IS KEPT OFF THE DISPATCHER, and that is not a detail. Begin
-    /// is always called from a listener thread, so it is POSTED and waits its
-    /// turn; End is called from Revit's own thread inside Execute, so it runs
-    /// INLINE, immediately. While Revit is inside Execute it cannot pump, so a
-    /// Begin posted during that window sits behind the very work it announces
-    /// - and the End of that same job overtakes it. Counting inside the posted
-    /// action therefore let a job be ended before it was begun: the stranded
-    /// Begin then raised a banner nothing was left to lower, and it stayed up
-    /// over an idle Revit until Revit was restarted - D-56, seen 2026-09-08.
+    /// arrives from a listener thread and End from Revit's own, so two
+    /// different threads move it and neither can be trusted to have seen the
+    /// other's work. When End still ran INLINE on Revit's thread while Begin
+    /// was posted, an End could overtake the Begin of its own job: the
+    /// stranded Begin then raised a banner nothing was left to lower, and it
+    /// stayed up over an idle Revit until Revit was restarted - D-56, seen
+    /// 2026-09-08.
+    ///
+    /// Both now post to the banner's own thread, which removes that
+    /// particular overtaking. The rule stays anyway, because it never
+    /// depended on the overtaking: a count that is only correct while the
+    /// threading happens to cooperate is not a count.
     ///
     /// So the count is the truth and the drawing merely follows it. Begin and
     /// End move the count with Interlocked ON THE CALLER'S THREAD, before the
@@ -82,8 +112,18 @@ namespace Heron.Revit.Addin
     /// </summary>
     internal sealed class HeronActivityBanner
     {
+        // BACK TO 460, where this started. It went to 560 while the name
+        // and the outcome shared the second line and would not both fit;
+        // giving the name a line of its own is what made the width
+        // unnecessary again. Widening and heightening for the same reason
+        // would have paid twice for one problem.
         private const double BannerWidth = 460;
-        private const double BannerHeight = 78;
+
+        // 98 rather than 78, for the third line. That is 20 px more over a
+        // ribbon the card is click-through above anyway, and it buys each
+        // of the three a full width of its own: the model no longer
+        // competes with the job for room, so neither has to trim.
+        private const double BannerHeight = 98;
         private const double TopMargin = 12;
         private const double SweepWidth = 130;
 
@@ -100,6 +140,17 @@ namespace Heron.Revit.Addin
 
         private static readonly TimeSpan SweepDuration = TimeSpan.FromSeconds(1.1);
 
+        /// <summary>
+        /// How often the elapsed time is redrawn while a job runs.
+        ///
+        /// Ten times a second, because the number is not there to be read
+        /// precisely - it is there to be seen MOVING. The question a frozen
+        /// Revit raises is "has this died?", and a counter that changes once
+        /// a second answers it about as well as one that never changes at
+        /// all.
+        /// </summary>
+        private static readonly TimeSpan ElapsedTick = TimeSpan.FromMilliseconds(100);
+
         private static readonly Color CardColour = Color.FromRgb(0x23, 0x26, 0x29);
         private static readonly Color TextPrimary = Color.FromRgb(0xF2, 0xF5, 0xF7);
         private static readonly Color TextSecondary = Color.FromRgb(0x9A, 0xA5, 0xAD);
@@ -109,10 +160,9 @@ namespace Heron.Revit.Addin
         private static readonly Color FailedColour = Color.FromRgb(0xE5, 0x53, 0x4B);
 
         /// <summary>
-        /// Revit's own UI dispatcher, captured on Revit's thread during
-        /// OnStartup. Application.Current is null inside Revit, so there is no
-        /// other way to reach it from the listener threads that call Begin and
-        /// End.
+        /// The banner's OWN dispatcher, on a thread of its own - not Revit's.
+        /// Null when the banner is switched off, or when the thread could not
+        /// be started, and OnUi treats both the same way: no banner.
         /// </summary>
         private readonly Dispatcher _ui;
         private readonly Action<string> _log;
@@ -120,6 +170,7 @@ namespace Heron.Revit.Addin
 
         private Window _window;
         private TextBlock _title;
+        private TextBlock _model;
         private TextBlock _detail;
         private TextBlock _chipText;
         private Border _chip;
@@ -128,6 +179,34 @@ namespace Heron.Revit.Addin
         private Border _track;
         private DoubleAnimation _travel;
         private DispatcherTimer _hideTimer;
+        private DispatcherTimer _elapsedTimer;
+        private TranslateTransform _cardTransform;
+        private Border _card;
+        private SolidColorBrush _titleBrush;
+        private SolidColorBrush _chipBrush;
+        private SolidColorBrush _lampBrush;
+        private LinearGradientBrush _sweepBrush;
+        private SolidColorBrush _trackBrush;
+        private DoubleAnimation _lampPulse;
+
+        /// <summary>Is the lamp already breathing? See StartLampPulse.</summary>
+        private bool _lampPulsing;
+
+
+        /// <summary>
+        /// When the banner went up, as a Stopwatch stamp. Set when the count
+        /// goes from none to one, NOT on every Begin: a batch of fragments is
+        /// one banner, so it should show one running total rather than
+        /// restarting at zero twenty times.
+        /// </summary>
+        private long _startedTicks;
+
+        /// <summary>
+        /// What the live lines say, kept so a tick can redraw them with a new
+        /// time without needing the job handed to it again.
+        /// </summary>
+        private string _liveJob;
+        private string _liveModel;
 
         /// <summary>
         /// How many jobs are in flight. Written from listener threads AND from
@@ -151,15 +230,65 @@ namespace Heron.Revit.Addin
         private IntPtr _host;
 
         /// <summary>
-        /// MUST be constructed on Revit's own thread - it captures that
-        /// thread's dispatcher, and a banner built anywhere else would post
-        /// its work to a thread that never draws anything.
+        /// Starts the banner's own UI thread, and is the only place that
+        /// does. It no longer matters which thread constructs this - the
+        /// banner brings its own.
         /// </summary>
         public HeronActivityBanner(bool enabled, Action<string> log)
         {
-            _ui = Dispatcher.CurrentDispatcher;
             _log = log ?? delegate { };
             _enabled = enabled;
+
+            // Nothing is started for a banner that is switched off. A thread
+            // nobody will ever post to is pure cost.
+            if (_enabled) _ui = StartUiThread();
+        }
+
+        /// <summary>
+        /// The thread the banner lives on.
+        ///
+        /// STA because every WPF window requires it. BACKGROUND because this
+        /// must never be the thread that keeps Revit's process alive after
+        /// Revit has gone.
+        ///
+        /// The wait is BOUNDED and it is on the CALLER'S thread, which is
+        /// Revit's during OnStartup. A banner whose thread will not start is
+        /// allowed to cost Revit a moment; it is not allowed to cost Revit
+        /// the load. Failing returns null, and every path through OnUi
+        /// already treats a null dispatcher as "no banner".
+        /// </summary>
+        private Dispatcher StartUiThread()
+        {
+            try
+            {
+                var ready = new ManualResetEventSlim(false);
+                Dispatcher started = null;
+
+                var thread = new Thread(delegate ()
+                {
+                    started = Dispatcher.CurrentDispatcher;
+                    ready.Set();
+                    Dispatcher.Run();
+                });
+
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.IsBackground = true;
+                thread.Name = "Heron activity banner";
+                thread.Start();
+
+                if (!ready.Wait(TimeSpan.FromSeconds(5)))
+                {
+                    _log("Activity banner thread did not start - no banner this session.");
+                    return null;
+                }
+
+                return started;
+            }
+            catch (Exception ex)
+            {
+                _log("Activity banner thread could not be created: " + ex.Message);
+                return null;
+            }
         }
 
         /// <summary>
@@ -171,15 +300,27 @@ namespace Heron.Revit.Addin
         /// From the tool registry, looked up by operation name. Decides the
         /// colour and the word, and nothing on the wire can influence it.
         /// </param>
-        public void Begin(string job, bool changesModel)
+        /// <param name="model">
+        /// Which model is about to be worked on, or null when nothing is
+        /// known. This is the LAST ONE SEEN rather than the one the job will
+        /// actually touch - it cannot be otherwise, because the document can
+        /// only be read on Revit's thread and this is called before Revit has
+        /// the job. End corrects it from the answer the work itself gave.
+        /// </param>
+        public void Begin(string job, bool changesModel, string model)
         {
             if (!_enabled) return;
 
             // COUNTED HERE, on the caller's thread, before the hop - see the
             // class comment. Counting inside the posted action is what let an
             // End overtake its own Begin.
-            Interlocked.Increment(ref _active);
-            Volatile.Write(ref _raised, new Raised(job, changesModel));
+            //
+            // The clock starts on the transition from none to one, so a run
+            // of fragments shows one total climbing rather than twenty
+            // restarts.
+            if (Interlocked.Increment(ref _active) == 1)
+                Volatile.Write(ref _startedTicks, Stopwatch.GetTimestamp());
+            Volatile.Write(ref _raised, new Raised(job, changesModel, model));
 
             OnUi(Render);
         }
@@ -192,18 +333,27 @@ namespace Heron.Revit.Addin
         /// <param name="ok">Did it do what was asked?</param>
         /// <param name="outcome">Plain-English result, already translated.</param>
         /// <param name="milliseconds">
-        /// How long it took, or a negative number when it never ran. Shown
-        /// because the freeze is the complaint: "12 s" turns a hang into a
-        /// duration.
+        /// How long the operation itself took, or a negative number when it
+        /// never ran. It is the NEVER-RAN signal that matters here: a refusal
+        /// shows no duration at all, because there was none. When it did run,
+        /// the figure on the card comes from the banner's own clock instead -
+        /// see ShowOutcome for why the two must not be mixed.
         /// </param>
-        public void End(bool ok, string outcome, long milliseconds)
+        /// <param name="model">
+        /// Which model was ACTUALLY worked on, read out of the answer the
+        /// operation returned. This is the authoritative one: it is what the
+        /// job did, not what was in front beforehand. Null when the operation
+        /// names no document - a refusal that never reached one, for
+        /// instance - and the announced name then stands.
+        /// </param>
+        public void End(bool ok, string outcome, long milliseconds, string model)
         {
             if (!_enabled) return;
 
             // The outcome is published BEFORE the count drops, so a render
             // caused by that drop cannot find the count settled and the answer
             // still missing.
-            Volatile.Write(ref _ended, new Ended(ok, outcome, milliseconds));
+            Volatile.Write(ref _ended, new Ended(ok, outcome, milliseconds, model));
             Release();
 
             OnUi(Render);
@@ -244,7 +394,7 @@ namespace Heron.Revit.Addin
                 if (!Show()) return;
 
                 _holding = false;
-                Paint(job.ChangesModel, job.Job);
+                Paint(job.ChangesModel, job.Job, job.Model);
                 return;
             }
 
@@ -253,34 +403,59 @@ namespace Heron.Revit.Addin
             // leaves the hold running instead of restarting it.
             if (_holding || _window == null) return;
 
+            // The answer's own model where it has one, and the announced
+            // one where it does not. That is not a second guess: an
+            // operation naming no document is one that never reached a
+            // document, so the name already on screen is still the only
+            // one in play. What it must never do is blank out at the end
+            // and leave the outcome floating over no model at all.
             var end = Volatile.Read(ref _ended);
+            var raised = Volatile.Read(ref _raised);
+            var model = end != null && !string.IsNullOrEmpty(end.Model)
+                ? end.Model
+                : (raised == null ? null : raised.Model);
+
             _holding = true;
             ShowOutcome(end == null || end.Ok,
                         end == null ? null : end.Outcome,
-                        end == null ? -1 : end.Milliseconds);
+                        end == null ? -1 : end.Milliseconds,
+                        model);
             StartHideTimer(OutcomeHold);
         }
 
-        /// <summary>Revit is closing. Take the window down with it.</summary>
+        /// <summary>
+        /// Revit is closing. Take the window down, then the thread.
+        ///
+        /// Both happen inside ONE posted action, in order, because the
+        /// shutdown ends the message loop - anything queued behind it never
+        /// runs at all. Posting the two separately would be a race between
+        /// destroying the window and destroying the thread that owns it.
+        /// </summary>
         public void Shutdown()
         {
             OnUi(delegate
             {
                 StopHideTimer();
+                StopElapsed();
                 Interlocked.Exchange(ref _active, 0);
                 Destroy();
+
+                // Last. Nothing posted after this will ever run.
+                Dispatcher.CurrentDispatcher.InvokeShutdown();
             });
         }
 
         // ----- the UI thread hop -------------------------------------------
 
         /// <summary>
-        /// Runs on Revit's thread, and never throws back at the caller.
+        /// Runs on the banner's own thread, and never throws back at the
+        /// caller.
         ///
-        /// BeginInvoke rather than Invoke, always: Invoke from a listener
-        /// thread would block that thread until Revit is idle, which is
-        /// exactly when Revit is running the job the caller is waiting for.
-        /// A banner is not worth a deadlock.
+        /// BeginInvoke rather than Invoke, always. The caller is either a
+        /// listener thread or Revit's, and neither should wait on drawing:
+        /// Revit's thread in particular calls End on its way out of a job,
+        /// and making it wait there would put painting back on the critical
+        /// path the whole design exists to keep clear.
         /// </summary>
         private void OnUi(Action action)
         {
@@ -316,53 +491,155 @@ namespace Heron.Revit.Addin
 
         // ----- what it says ------------------------------------------------
 
-        private void Paint(bool changesModel, string job)
+        private void AnimateColor(SolidColorBrush brush, Color to)
+        {
+            if (brush.Color == to) return;
+            
+            // Safety signal (Rule 12): do not let an animation blur Reading and Changing together.
+            if (to == ReadingColour || to == ChangingColour)
+            {
+                brush.BeginAnimation(SolidColorBrush.ColorProperty, null);
+                brush.Color = to;
+            }
+            else
+            {
+                var anim = new ColorAnimation(to, new Duration(TimeSpan.FromMilliseconds(250)));
+                brush.BeginAnimation(SolidColorBrush.ColorProperty, anim);
+            }
+        }
+
+        private void AnimateSweepColor(Color to)
+        {
+            var transparentTo = Color.FromArgb(0, to.R, to.G, to.B);
+            
+            _sweepBrush.GradientStops[0].BeginAnimation(GradientStop.ColorProperty, null);
+            _sweepBrush.GradientStops[0].Color = transparentTo;
+            
+            _sweepBrush.GradientStops[1].BeginAnimation(GradientStop.ColorProperty, null);
+            _sweepBrush.GradientStops[1].Color = to;
+            
+            _sweepBrush.GradientStops[2].BeginAnimation(GradientStop.ColorProperty, null);
+            _sweepBrush.GradientStops[2].Color = to;
+            
+            _sweepBrush.GradientStops[3].BeginAnimation(GradientStop.ColorProperty, null);
+            _sweepBrush.GradientStops[3].Color = transparentTo;
+            
+            AnimateColor(_trackBrush, Shade(to));
+        }
+
+        private void Paint(bool changesModel, string job, string model)
         {
             var accent = changesModel ? ChangingColour : ReadingColour;
 
             _title.Text = changesModel
                 ? "Heron AI is changing your model"
                 : "Heron AI is reading your model";
-            _title.Foreground = new SolidColorBrush(TextPrimary);
+            AnimateColor(_titleBrush, TextPrimary);
 
-            _detail.Text = string.IsNullOrEmpty(job) ? "Working" : job;
-            _detail.Foreground = new SolidColorBrush(TextSecondary);
+            _liveModel = model;
+            _liveJob = string.IsNullOrEmpty(job) ? "Working" : job;
+            ShowLive();
+            StartElapsed();
 
             _chipText.Text = changesModel ? "CHANGING" : "READING";
-            _chipText.Foreground = new SolidColorBrush(accent);
-            _chip.BorderBrush = new SolidColorBrush(accent);
-
-            _lamp.Fill = new SolidColorBrush(accent);
-            _sweep.Background = new SolidColorBrush(accent);
-            _track.Background = new SolidColorBrush(Shade(accent));
+            AnimateColor(_chipBrush, accent);
+            AnimateColor(_lampBrush, accent);
+            AnimateSweepColor(accent);
+            
             _track.Visibility = Visibility.Visible;
 
             StartAnimation();
+            StartLampPulse();
         }
 
-        private void ShowOutcome(bool ok, string outcome, long milliseconds)
+        /// <summary>
+        /// Starts the lamp breathing, and only ONCE.
+        ///
+        /// Paint runs on every render and a render happens at every Begin, so
+        /// a run of fragments reached this once per job. Restarting a
+        /// repeating animation returns it to its first frame, so the lamp was
+        /// dragged back to 0.4 at every job instead of breathing. Measured
+        /// across eight jobs back to back it never once got past 0.62, where
+        /// a single job left alone sweeps the full 0.40 to 1.00.
+        ///
+        /// The flag is cleared by StopLampPulse, which is the only thing that
+        /// genuinely stops the animation - so the next job after an outcome
+        /// starts a fresh pulse, and nothing else does.
+        /// </summary>
+        private void StartLampPulse()
         {
+            if (_lampPulsing || _lamp == null || _lampPulse == null) return;
+
+            _lamp.BeginAnimation(UIElement.OpacityProperty, _lampPulse);
+            _lampPulsing = true;
+        }
+
+        /// <summary>
+        /// Stops it and leaves the lamp solid - an outcome is not breathing.
+        /// </summary>
+        private void StopLampPulse()
+        {
+            if (_lamp != null)
+            {
+                _lamp.BeginAnimation(UIElement.OpacityProperty, null);
+                _lamp.Opacity = 1.0;
+            }
+
+            _lampPulsing = false;
+        }
+
+        private void ShowOutcome(bool ok, string outcome, long milliseconds, string model)
+        {
+            StopElapsed();
+
             var accent = ok ? DoneColour : FailedColour;
 
             _title.Text = ok ? "Heron AI has finished" : "Heron AI stopped";
-            _detail.Text = string.IsNullOrEmpty(outcome)
+
+            var rest = string.IsNullOrEmpty(outcome)
                 ? (ok ? "Done" : "Did not finish")
                 : outcome;
 
             if (milliseconds >= 0)
             {
-                _detail.Text += "  -  " + Elapsed(milliseconds);
+                rest += "  -  " + Elapsed(ElapsedMilliseconds());
             }
 
-            _chipText.Text = ok ? "DONE" : "STOPPED";
-            _chipText.Foreground = new SolidColorBrush(accent);
-            _chip.BorderBrush = new SolidColorBrush(accent);
-            _lamp.Fill = new SolidColorBrush(accent);
+            SetDetail(model, rest);
 
-            // The sweep is a claim that something is still happening. Nothing
-            // is, so it goes rather than freezing mid-travel.
+            _chipText.Text = ok ? "DONE" : "STOPPED";
+            AnimateColor(_chipBrush, accent);
+            AnimateColor(_lampBrush, accent);
+
+            StopLampPulse();
+
             StopAnimation();
             _track.Visibility = Visibility.Collapsed;
+        }
+
+        /// <summary>
+        /// The lower two lines: WHICH MODEL, then what is being done to it.
+        ///
+        /// A line each, because they answer different questions and a reader
+        /// scanning a frozen Revit should not have to parse one line to find
+        /// the model in it. Sharing a line also made them compete: the
+        /// longer the project name, the less of the outcome survived, and
+        /// "Writing is switched off" trimming to "Writing is switched..."
+        /// is the one word that mattered going missing.
+        ///
+        /// WHEN THERE IS NO NAME THE LINE GOES, rather than sitting blank.
+        /// An empty row in the middle of a card reads as something that
+        /// failed to load. The words are centred as a stack, so what is
+        /// left re-centres itself and the card never jumps.
+        /// </summary>
+        private void SetDetail(string model, string rest)
+        {
+            var named = !string.IsNullOrEmpty(model);
+            _model.Text = named ? model : string.Empty;
+            _model.Visibility = named ? Visibility.Visible : Visibility.Collapsed;
+
+            _detail.Text = string.IsNullOrEmpty(rest) ? string.Empty : rest;
+            _detail.Foreground = new SolidColorBrush(TextSecondary);
         }
 
         /// <summary>
@@ -397,22 +674,49 @@ namespace Heron.Revit.Addin
 
             if (!_window.IsVisible)
             {
-                // Before Show, so it never appears in the old place first.
-                // On the very first raise there is no HWND yet and this reads
-                // no DPI scale - SourceInitialized fires inside Show and
-                // corrects it before anything is drawn.
                 PositionOver(_host);
+                _cardTransform.Y = -15;
+                _card.Opacity = 0;
                 _window.Show();
             }
+
+            var slide = new DoubleAnimation(0, new Duration(TimeSpan.FromMilliseconds(200))) 
+            { 
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } 
+            };
+            var fade = new DoubleAnimation(1, new Duration(TimeSpan.FromMilliseconds(150)));
+            _cardTransform.BeginAnimation(TranslateTransform.YProperty, slide);
+            _card.BeginAnimation(UIElement.OpacityProperty, fade);
+
             return true;
         }
 
         private void Build()
         {
+            _titleBrush = new SolidColorBrush(TextPrimary);
+            _chipBrush = new SolidColorBrush(ReadingColour);
+            _lampBrush = new SolidColorBrush(ReadingColour);
+            _sweepBrush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 0) };
+            _sweepBrush.GradientStops.Add(new GradientStop(Color.FromArgb(0, ReadingColour.R, ReadingColour.G, ReadingColour.B), 0.0));
+            _sweepBrush.GradientStops.Add(new GradientStop(ReadingColour, 0.2));
+            _sweepBrush.GradientStops.Add(new GradientStop(ReadingColour, 0.8));
+            _sweepBrush.GradientStops.Add(new GradientStop(Color.FromArgb(0, ReadingColour.R, ReadingColour.G, ReadingColour.B), 1.0));
+            _trackBrush = new SolidColorBrush(Shade(ReadingColour));
+
             _title = Line(15, FontWeights.SemiBold, TextPrimary);
+            _title.Foreground = _titleBrush;
+
+            // Between the two in size as well as in position: louder than
+            // the job because it answers the more urgent question, quieter
+            // than the title because the title is what the eye lands on.
+            _model = Line(12.5, FontWeights.SemiBold, TextPrimary);
+            _model.Margin = new Thickness(0, 4, 0, 0);
+            _model.TextTrimming = TextTrimming.CharacterEllipsis;
+
             _detail = Line(11, FontWeights.Normal, TextSecondary);
             _detail.Margin = new Thickness(0, 3, 0, 0);
             _detail.TextTrimming = TextTrimming.CharacterEllipsis;
+            Typography.SetNumeralAlignment(_detail, FontNumeralAlignment.Tabular);
 
             _lamp = new Ellipse
             {
@@ -420,8 +724,15 @@ namespace Heron.Revit.Addin
                 Height = 10,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
-                Fill = new SolidColorBrush(ReadingColour),
+                Fill = _lampBrush,
             };
+            _lampPulse = new DoubleAnimation(0.4, 1.0, new Duration(TimeSpan.FromMilliseconds(600)))
+            {
+                AutoReverse = true,
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+            };
+            _lampPulse.Freeze();
 
             var mark = new Border
             {
@@ -441,14 +752,16 @@ namespace Heron.Revit.Addin
                 Margin = new Thickness(13, 0, 12, 0),
             };
             words.Children.Add(_title);
+            words.Children.Add(_model);
             words.Children.Add(_detail);
 
             _chipText = Line(10, FontWeights.Bold, ReadingColour);
+            _chipText.Foreground = _chipBrush;
             _chip = new Border
             {
                 CornerRadius = new CornerRadius(3),
                 BorderThickness = new Thickness(1),
-                BorderBrush = new SolidColorBrush(ReadingColour),
+                BorderBrush = _chipBrush,
                 Padding = new Thickness(7, 3, 7, 3),
                 VerticalAlignment = VerticalAlignment.Center,
                 Child = _chipText,
@@ -472,7 +785,7 @@ namespace Heron.Revit.Addin
             {
                 Width = SweepWidth,
                 Height = 3,
-                Background = new SolidColorBrush(ReadingColour),
+                Background = _sweepBrush,
                 HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Top,
             };
@@ -480,7 +793,7 @@ namespace Heron.Revit.Addin
             lane.Children.Add(_sweep);
             _track = new Border
             {
-                Background = new SolidColorBrush(Shade(ReadingColour)),
+                Background = _trackBrush,
                 CornerRadius = new CornerRadius(0, 0, 10, 10),
                 ClipToBounds = true,
                 Child = lane,
@@ -506,11 +819,14 @@ namespace Heron.Revit.Addin
                 To = BannerWidth,
                 Duration = new Duration(SweepDuration),
                 RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
             };
             _travel.Freeze();
 
-            var card = new Border
+            _cardTransform = new TranslateTransform();
+            _card = new Border
             {
+                RenderTransform = _cardTransform,
                 Background = new SolidColorBrush(CardColour),
                 BorderBrush = new SolidColorBrush(Color.FromArgb(0x38, 0xFF, 0xFF, 0xFF)),
                 BorderThickness = new Thickness(1),
@@ -530,7 +846,7 @@ namespace Heron.Revit.Addin
             {
                 Width = BannerWidth,
                 Height = BannerHeight,
-                Content = card,
+                Content = _card,
                 WindowStyle = WindowStyle.None,
                 ResizeMode = ResizeMode.NoResize,
                 ShowInTaskbar = false,
@@ -682,19 +998,99 @@ namespace Heron.Revit.Addin
         {
             StopHideTimer();
 
-            // A job that started while the outcome was on screen owns the
-            // banner now - hiding it here would take away a live one.
             if (Volatile.Read(ref _active) > 0) return;
 
-            try { if (_window != null) _window.Hide(); }
-            catch (Exception ex) { _log("Activity banner would not hide: " + ex.Message); }
+            if (_window != null && _window.IsVisible)
+            {
+                var slide = new DoubleAnimation(-15, new Duration(TimeSpan.FromMilliseconds(150))) 
+                { 
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn } 
+                };
+                var fade = new DoubleAnimation(0, new Duration(TimeSpan.FromMilliseconds(150)));
+                
+                fade.Completed += (s, e) => 
+                {
+                    if (Volatile.Read(ref _active) > 0) return;
+                    try { if (_window != null) _window.Hide(); }
+                    catch (Exception ex) { _log("Activity banner would not hide: " + ex.Message); }
+                    StopAnimation();
+                    StopElapsed();
+                };
 
-            StopAnimation();
+                _cardTransform.BeginAnimation(TranslateTransform.YProperty, slide);
+                _card.BeginAnimation(UIElement.OpacityProperty, fade);
+            }
+            else
+            {
+                StopAnimation();
+                StopElapsed();
+            }
         }
 
         private void StopHideTimer()
         {
             if (_hideTimer != null) _hideTimer.Stop();
+        }
+
+        /// <summary>
+        /// The live line, with the time so far on the end of it.
+        ///
+        /// Same shape as the finished card deliberately - "17 pipes - 340 ms"
+        /// there, "Counting pipes - 340 ms" here - so the number does not
+        /// appear to move when the job ends.
+        /// </summary>
+        private void ShowLive()
+        {
+            SetDetail(_liveModel, _liveJob + "  -  " + Elapsed(ElapsedMilliseconds()));
+        }
+
+        /// <summary>
+        /// How long the banner has been up. Stopwatch stamps rather than
+        /// DateTime, because this is a duration and the wall clock can move
+        /// under it.
+        /// </summary>
+        private long ElapsedMilliseconds()
+        {
+            var started = Volatile.Read(ref _startedTicks);
+            if (started == 0) return 0;
+
+            var delta = Stopwatch.GetTimestamp() - started;
+            if (delta <= 0) return 0;
+
+            return delta * 1000L / Stopwatch.Frequency;
+        }
+
+        private void StartElapsed()
+        {
+            if (_elapsedTimer == null)
+            {
+                _elapsedTimer = new DispatcherTimer(DispatcherPriority.Render, _ui);
+                _elapsedTimer.Tick += OnElapsedTick;
+            }
+
+            _elapsedTimer.Interval = ElapsedTick;
+            _elapsedTimer.Start();
+        }
+
+        /// <summary>
+        /// The count is the truth here too. A tick that arrives after the job
+        /// ended must not paint a running time over a finished outcome - the
+        /// same class of mistake as D-56, in a different place.
+        /// </summary>
+        private void OnElapsedTick(object sender, EventArgs args)
+        {
+            if (_detail == null || Volatile.Read(ref _active) <= 0)
+            {
+                StopElapsed();
+                return;
+            }
+
+            ShowLive();
+        }
+
+        private void StopElapsed()
+        {
+            if (_elapsedTimer != null) _elapsedTimer.Stop();
         }
 
         private void StartAnimation()
@@ -717,6 +1113,7 @@ namespace Heron.Revit.Addin
         private void Destroy()
         {
             StopAnimation();
+            StopElapsed();
             var window = _window;
             _window = null;
             if (window != null) window.Close();
@@ -730,6 +1127,7 @@ namespace Heron.Revit.Addin
 
             _window = null;
             _title = null;
+            _model = null;
             _detail = null;
             _chip = null;
             _chipText = null;
@@ -737,6 +1135,9 @@ namespace Heron.Revit.Addin
             _sweep = null;
             _track = null;
             _travel = null;
+            _lampPulsing = false;
+            _liveJob = null;
+            _liveModel = null;
         }
 
         // ----- what to draw --------------------------------------------------
@@ -747,29 +1148,33 @@ namespace Heron.Revit.Addin
         /// </summary>
         private sealed class Raised
         {
-            public Raised(string job, bool changesModel)
+            public Raised(string job, bool changesModel, string model)
             {
                 Job = job;
                 ChangesModel = changesModel;
+                Model = model;
             }
 
             public string Job { get; private set; }
             public bool ChangesModel { get; private set; }
+            public string Model { get; private set; }
         }
 
         /// <summary>How the last job ended.</summary>
         private sealed class Ended
         {
-            public Ended(bool ok, string outcome, long milliseconds)
+            public Ended(bool ok, string outcome, long milliseconds, string model)
             {
                 Ok = ok;
                 Outcome = outcome;
                 Milliseconds = milliseconds;
+                Model = model;
             }
 
             public bool Ok { get; private set; }
             public string Outcome { get; private set; }
             public long Milliseconds { get; private set; }
+            public string Model { get; private set; }
         }
 
         // ----- Win32 --------------------------------------------------------

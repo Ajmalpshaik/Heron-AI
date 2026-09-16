@@ -11,7 +11,9 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Windows.Media.Imaging;
+using Autodesk.Revit.DB.Events;
 using Autodesk.Revit.UI;
+using Autodesk.Revit.UI.Events;
 using Heron.Bridge;
 using Heron.Core;
 
@@ -124,6 +126,18 @@ namespace Heron.Revit.Addin
                 Dispatcher.Register();
                 Bridge.RequestHandler = Dispatcher.Dispatch;
 
+                // WHICH MODEL THE BANNER NAMES, kept current by Revit
+                // itself. The banner is raised from a listener thread,
+                // where the Revit API may not be touched, so the name it
+                // announces can only be one Revit pushed out earlier -
+                // and these two events are every moment it changes.
+                //
+                // Subscribed AFTER the dispatcher exists, because the
+                // handlers hand what they read straight to it. Revit can
+                // activate a view before OnStartup returns.
+                application.ViewActivated += OnViewActivated;
+                application.ControlledApplication.DocumentClosing += OnDocumentClosing;
+
                 BuildRibbon(application);
 
                 Log(string.Format(
@@ -160,6 +174,12 @@ namespace Heron.Revit.Addin
         {
             try
             {
+                // Off the events before the dispatcher goes, so a view
+                // activating mid-shutdown cannot reach a handler whose
+                // dispatcher has already been dropped.
+                application.ViewActivated -= OnViewActivated;
+                application.ControlledApplication.DocumentClosing -= OnDocumentClosing;
+
                 Dispatcher = null;
 
                 // Before the bridge, so a request arriving mid-shutdown cannot
@@ -374,6 +394,60 @@ namespace Heron.Revit.Addin
             if (small != null) button.Image = small;
 
             button.ItemText = enabled ? "Changes ON" : "Changes off";
+        }
+
+        /// <summary>
+        /// Revit's own thread: the model in front has changed.
+        ///
+        /// ViewActivated rather than DocumentOpened, because the question
+        /// the banner answers is which model is IN FRONT, not which ones
+        /// are loaded. Opening a second model and switching between them
+        /// fires this each time; opening alone would leave the name on
+        /// whichever was loaded last rather than the one being looked at.
+        ///
+        /// What is taken from the document is its NAME and nothing else.
+        /// Holding the Document itself is what the conventions forbid,
+        /// and for good reason - it would outlive the model it points at.
+        /// A string cannot.
+        /// </summary>
+        private static void OnViewActivated(object sender, ViewActivatedEventArgs e)
+        {
+            try
+            {
+                var dispatcher = Dispatcher;
+                if (dispatcher == null) return;
+
+                var document = e == null ? null : e.Document;
+                dispatcher.NoteActiveModel(document == null ? null : document.Title);
+            }
+            catch (Exception ex)
+            {
+                // A name the banner cannot show is worth nothing and must
+                // cost nothing. This runs on Revit's own thread, where an
+                // escaping exception is Revit's problem, not just Heron's.
+                Log("Could not note which model is in front: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Revit's own thread: a model is closing. See
+        /// RevitDispatcher.ForgetActiveModel for why closing the last one
+        /// would otherwise leave its name on screen for ever.
+        /// </summary>
+        private static void OnDocumentClosing(object sender, DocumentClosingEventArgs e)
+        {
+            try
+            {
+                var dispatcher = Dispatcher;
+                if (dispatcher == null) return;
+
+                var document = e == null ? null : e.Document;
+                if (document != null) dispatcher.ForgetActiveModel(document.Title);
+            }
+            catch (Exception ex)
+            {
+                Log("Could not clear the model name: " + ex.Message);
+            }
         }
 
         internal static void Log(string message)
