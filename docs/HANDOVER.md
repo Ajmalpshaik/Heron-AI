@@ -2355,3 +2355,79 @@ is why it is a row rather than a commit.
 **Worked in a separate worktree throughout.** The main tree was on another session's
 `rename-phase-fragment` with two commits on it, and moving somebody else's checkout to save creating
 a folder is not a trade worth making.
+
+
+## J9 ran the same evening, and it PASSED
+
+**Revit 2024, session 33812, started 20:13:52 against an add-in deployed 19:54:19.** That comparison
+was made FIRST and it is the only reason the result means anything: a Revit started before the deploy
+would have loaded the old add-in, died, and the guard would have been blamed for it.
+
+A fragment recursing with no floor came back as an ordinary finding:
+
+```
+zz-j9-stack-guard-probe  [fragment_threw]
+    'zz-j9-stack-guard-probe' threw while running: Insufficient stack to
+    continue executing the program safely.
+```
+
+**Revit lived** - same PID, `ping` 1 ms, and a real read of 3,565 elements afterwards. The probe
+fragment was deleted and the library is back to 372.
+
+**The model was NOT blank.** `test projject.rvt`, 3,565 elements, open throughout - not the
+arrangement the row asked for. It makes the result stronger and it is said out loud because a FAIL
+would have taken that session with it.
+
+**Still uncovered, deliberately:** an expression-bodied recursive lambda. Running one is expected to
+end Revit, so it was not run unasked.
+
+## Row 106 measured, and the measurement CHANGED the row
+
+`check-minimum-clearance` was recorded as comparing every element against every element. Timed on the
+same model:
+
+| | |
+|---|---|
+| `pairsChecked` reported | **9,506** |
+| the same figure derived independently | **9,506**, to the unit - the counter is honest |
+| placed elements handed in | **3,565** |
+| elements the loop actually paired | **98** - the ones with a bounding box |
+| naive pairs it skipped | **12,699,719** of 12,709,225 |
+
+**THE LOOP ALREADY PRUNES, and the row did not know that.** The n-squared is over GEOMETRY, not over
+everything handed in. The concern is real and narrower than it was written.
+
+**And this model cannot settle it.** Its largest physical category is **28 Walls**; the biggest
+categories are settings - 180 Electrical Load Classification Parameter Elements, 125 Space Type
+Settings, 91 Legend Components. **No ducts and no pipes at all** (the 17 `Pipe Segments` are segment
+definitions). The 9,506-pair run took **1.52 s** and the 756-pair run **2.21 s** - the bigger one was
+FASTER, so both are process start-up and one bridge round trip with the loop invisible inside them.
+
+**So the row stays OPEN with what would close it: a real MEP model**, where nearly every element has
+geometry and that pruning stops helping. `Snowdon Towers Sample HVAC.rvt` ships with Revit 2024 and is
+already named in this library's own proofs. **Opening it was offered and declined on the day**, so the
+measurement is still owed. **A fast number from a model that cannot show the effect would have been
+worse than none** - it would have been quoted later to dismiss a real question.
+
+## Three things that cost a round trip each, all of them already written down
+
+- **A reply truncates a list to three.** The first sizing probe answered `12 item(s) [a, b, c, ...]`.
+  **When the CONTENTS are the answer, return a string.**
+- **`check-minimum-clearance` cannot be arranged from a selection** - *"one selection cannot say which
+  is which"*, because `targets` binds from the CHAIN. **`python tools/generate-jobs.py` says exactly
+  this about exactly this fragment**, and reading it first would have saved the attempt.
+- **The lease refuses a second chat, and retrying renews it.** Two refusals arrived before the other
+  session was stopped. The countdown moving 4 -> 3 minutes is the signal it is expiring rather than
+  being renewed; the fast route is the Heron ribbon button off and on.
+
+## Where the day ended
+
+| | | derive it |
+|---|---|---|
+| Fragments | **310 `PROVEN` / 62 `DRAFT`**, 372 total | `grep -h "^heron-status:" brain/fragments/*/fragment.yaml \| sort \| uniq -c` |
+| Waiting on the owner | **140** | `python tools/owner-queue.py` |
+| Heron's own open defects | **30** | `python tools/open-defects.py` |
+| Deployed | **2020, 2024, 2027** - each verified to carry its own framework and both fixes | |
+
+**Two parked CI branches still need one command in an interactive terminal:**
+`gh auth refresh -h github.com -s workflow`.
