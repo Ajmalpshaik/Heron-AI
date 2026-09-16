@@ -2255,3 +2255,103 @@ running them instead of reading them.
 `tools/open-defects.py`, `new-agent.py` and `resign-machine-proofs.py` are now documented. The first
 is new; **the other two had been undocumented since they were written** - the quiet version of the
 defect `check-signatures.py`'s own commit message names: *a gate nobody runs is the same as no gate.*
+
+
+---
+
+# Sitting of 2026-09-16, third - what reading somebody else's code found in ours
+
+**Asked to look at an unrelated open-source WPF app** (a 2D drawing tool with a Roslyn scripting host
+and an MCP bridge - the same three problems Heron has) **and say what was worth taking.**
+
+**Almost nothing was worth taking, and that is the result rather than a disappointment.** Its geometry
+library is 2D and Revit's is 3D and authoritative; its pipe-with-an-ACL transport is what
+`BridgeServer` already does; its compile cache is what `RevitFragment` already does, keyed the same
+way. **What it was worth was as a mirror.** Three things wrong with Heron came out of reading it, and
+none of them would have been found by reading Heron.
+
+## The one that could have killed Revit
+
+`RunScript`'s comment says *"a fragment that throws is a finding, not a crash."* True of every
+exception but one. **`StackOverflowException` cannot be caught** - the runtime fails fast, no handler
+runs, and the process it ends is Revit with the user's unsaved model in it.
+
+**Zero of the 372 fragments recurse today**, so this was a door standing open rather than a fire. But
+a fragment's `.cs` is live - read off disk and sent on every call - so the door is one edit wide.
+
+### The idea was taken. The code was NOT, and that is the whole lesson
+
+The usual form of this rewriter guards named members and **deliberately skips lambdas**, for a stated
+and perfectly good reason: recursion flowing only through anonymous functions is not a real shape in
+ordinary C#.
+
+**Measured here: 0 of 372 fragments declare a method or a local function.** A fragment is a script -
+top-level statements and `Func<>` lambdas. So the received rule, applied unexamined, **would have
+shipped a guard that compiles, passes review, and protects nothing at all.** Guarding block-bodied
+lambdas instead covers **91**.
+
+That is [the standing rule](../HERON_CONSTITUTION.md) earning its keep in the most literal way
+available: *study the thinking, never copy the code.* Copying would have produced a green gate over an
+open hole - which is the failure this whole repository is organised against.
+
+**What is still unguarded, deliberately:** an expression-bodied lambda. Rewriting one can turn `Func`
+into `Expression` and silently pick a different overload. **A guard that occasionally misses is worth
+more than one that changes what working code means.**
+
+### It is proved over the library, and that proves less than it sounds
+
+`tests/Heron.StackGuard.TestHost` runs the rewriter over **all 372 fragments**: 836 checks, line
+counts unchanged (so error line numbers still point at `fragment.cs`), no new diagnostic introduced,
+and all 91 lambda-carrying fragments guarded. It links `HeronStackGuard.cs` **by source** rather than
+referencing the add-in, because that file touches no Autodesk type - the same mocked-boundary trick
+`Heron.Bridge.TestHost` uses, and it keeps **one** copy of the rewriter. Two halves written to check
+each other is how [row 96](FRAGMENT-ISSUES.md) happened.
+
+**None of that says the catch works.** No test here can tell you what the CLR does when the stack
+actually runs out. That is **[J9](NEEDS-CHECKING.md)**, and it needs Revit.
+
+## The one that quietly loses your settings
+
+`HeronConfig.Save` and `BridgeIdentity` both wrote a sibling `.tmp` and then
+
+```csharp
+if (File.Exists(target)) File.Delete(target);
+File.Move(tmp, target);
+```
+
+which reads as careful and is **worse than a plain overwrite**. A plain write leaves a truncated file;
+this leaves **no file**, through a window made wider by the extra syscall inside it.
+
+**In `HeronConfig` it does not corrupt the settings, it erases them, with no message.** `Load` answers
+a missing file with `Defaults` and swallows `IOException` without a word, and the next `Save` writes
+those defaults back. Every step is individually reasonable. The file whose own header reads *"Owned by
+you. Never overwritten by an update"* is the one that disappears.
+
+Fixed with `HeronAtomicWrite`: `File.Replace` when the target exists, a plain rename when it does not.
+**`File.Replace` and not `File.Move(tmp, target, overwrite: true)`** - the overwrite argument arrived
+in .NET Core 3.0 and `Heron.Core` is built for net472 and net48 as well.
+
+## The one that is recorded and NOT fixed
+
+Five fragments narrow through Revit's own spatial index. **Four do not** -
+`check-minimum-clearance`, `check-vertical-clearance`, `check-insulation-clearance` and
+`find-nearest-elements` nest two loops with no pruning. [Row 106](FRAGMENT-ISSUES.md).
+
+**No claim is made that it is slow, because nothing has timed it.** `check-minimum-clearance` already
+reports `pairsChecked`, so one run answers it. And the fix is not a swap - a spatial filter finds what
+*intersects*, clearance is about what does *not touch yet*, so the outline has to be grown first. It
+also edits fragment files, so **four fingerprints change and four proofs need re-signing.** That bill
+is why it is a row rather than a commit.
+
+## What this cost, and what it did not
+
+| | |
+|---|---|
+| Proofs gone stale | **none.** Both fixes are add-in C#; the fingerprint hashes the fragment file on disk, and no fragment file was touched |
+| Gates | `check-compile` (5 projects x 8 releases), `check-docs`, `check-metadata`, `check-structure`, `check-package` - all **exit 0** |
+| New project | `tests/Heron.StackGuard.TestHost`, **added to `heron_dotnet.PROJECTS`** - it compiled nowhere until it was, which is the "a gate nobody runs" shape caught before it could set |
+| Still owed | **[J9](NEEDS-CHECKING.md)**, and it needs the add-in deployed |
+
+**Worked in a separate worktree throughout.** The main tree was on another session's
+`rename-phase-fragment` with two commits on it, and moving somebody else's checkout to save creating
+a folder is not a trade worth making.
