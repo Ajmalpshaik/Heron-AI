@@ -143,6 +143,12 @@ an edit.
 | [D-72](#d-72--four-values-a-caller-could-not-type-are-now-built-from-what-they-type-and-a-face-still-is-not) | Four values a caller could not type are now built from what they type, and a face still is not | • status not stated |
 | [D-73](#d-73--a-table-by-name-is-two-separators-and-the-key-is-the-models-word-not-ours) | A table by name is two separators, and the key is the model's word, not ours | 🕐 Proposed - **owner has not read this back** |
 | [D-74](#d-74--a-write-is-aimed-at-the-model-it-was-told-about-not-guarded-against-the-one-in-front) | A write is AIMED at the model it was told about, not guarded against the one in front | 🕐 Proposed - **owner has not read this back** |
+| [D-75](#d-75--a-development-agent-acts-on-heron-itself-not-on-the-artefact-heron-builds) | A Development agent acts on Heron itself, not on the artefact Heron builds | ✅ Accepted · 2026-09-16 |
+| [D-76](#d-76--five-standards-rows-are-one-agent-with-a-subject-not-five-files) | Five Standards rows are one agent with a subject, not five files | ✅ Accepted · 2026-09-16 |
+| [D-77](#d-77--two-documentation-rows-wait-for-a-tag-and-two-fold-into-the-guard) | Two Documentation rows wait for a tag, and two fold into the guard | ✅ Accepted · 2026-09-16 |
+| [D-78](#d-78--the-metadata-checker-owns-metadata-validity-and-the-third-row-folds-into-it) | The metadata checker owns metadata validity, and the third row folds into it | ✅ Accepted · 2026-09-16 |
+| [D-79](#d-79--a-generated-name-is-six-parts-lower-case-hyphenated-with-the-version-last) | A generated name is six parts, lower case, hyphenated, with the version last | ✅ Accepted · 2026-09-16 |
+| [D-80](#d-80--five-development-rows-are-the-hosts-because-the-host-is-the-model) | Five Development rows are the host's, because the host is the model | ✅ Accepted · 2026-09-17 |
 
 ## Format
 
@@ -4368,7 +4374,7 @@ coordinate, and it applies to points only.
 
 ## D-72 — Four values a caller could not type are now built from what they type, and a face still is not
 
-**2026-09-14.** Supersedes the last paragraph of [D-67](#d-67--a-point-is-three-numbers-in-millimetres)'s
+**2026-09-14.** Supersedes the last paragraph of [D-67](#d-67--a-point-crosses-as-three-millimetre-numbers)'s
 *"Two separators, and why not one"*, which said `IList<IList<XYZ>>` **stays refused** pending a second
 fragment wanting a third separator. No second fragment arrived. The owner asked for `create-line` by
 name instead, which is the same signal a second fragment would have been: somebody wants the thing.
@@ -4447,7 +4453,7 @@ else.
 
 **It does not prove anything.** Four types becoming typeable makes six fragments *arrangeable*. Every
 one still owes a run against a model with both halves, and a signature that is a person's
-([D-30](#d-30--a-proof-needs-a-positive-and-a-negative-and-a-person-signs-it)).
+([D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs)).
 
 **It does not touch `place-family-on-face`.** That one is named above and stays where it is.
 
@@ -4624,3 +4630,351 @@ sharing a name.
 Project1 by name — with a family in front the whole time, verified by reading back, Project2
 untouched — shows the mechanism carries. It was driven over the bridge directly, not through
 `revit_change`, so the line this row actually changes is still unrun.
+
+---
+
+## D-75 — A Development agent acts on Heron itself, not on the artefact Heron builds
+
+Decided by the owner on 2026-09-16, settling [F27](PROPOSALS.md), which had been open since the
+Performance Agent was claimed on a guess and withdrawn the same day.
+
+**The question.** Five Development rows each had a working, unclaimed file that matched them — and for
+several there were two candidates, one acting on a fragment and one acting on Heron's own code. Nobody
+had said which reading governs, so no row could close without guessing.
+
+**The answer.** The department is Heron's own build pipeline. Its subject is the four C# projects, the
+Python brain, the test suites, the bridge and the package. It is not the fragment library.
+
+### What it closes
+
+`HERON-DEV-BLD-010` — *compiles across all target frameworks* — is
+[`tools/check-compile.py`](../tools/check-compile.py), which builds every project against every Revit
+version the machine can reach. The other candidate, `check-fragments-compile.py`, acts on fragments and
+is out of scope by this decision.
+
+### What it does NOT close, which is four of the five
+
+This decision was expected to close five rows. It closes one. F27's own table is what says so, read
+column by column instead of in summary:
+
+| row | why it is still open |
+|---|---|
+| `DEV-UNT-011` *runs unit tests* | The `tests/test_*.py` sweep is the right subject, and **no file performs it** — it is inline bash in `.github/workflows/gates.yml`, which cannot carry a `Heron-Agent:` header. A file has to be written before there is anything to claim |
+| `DEV-INT-012` *integration tests against a mocked Revit boundary* | [`tests/test_bridge_roundtrip.py`](../tests/test_bridge_roundtrip.py) and `tests/Heron.Bridge.TestHost` fit the row exactly and are both **layer `test`**. Claiming one makes a third agent claimed by nothing but a suite, which `test_contract_reference.py` shows rather than drops on purpose. Allowed, awkward, and the owner's call |
+| `DEV-RGR-014` *golden-file comparison across supported versions* | Its only candidates — `tests/golden/cases.py`, `tests/test_golden.py` — are on the **fragment** side, so this decision rules them out rather than in. The row has no Heron-side file at all |
+| `DEV-PRF-015` *execution time and resource cost* | **Two candidates, both on Heron**: [`tools/measure-brain.py`](../tools/measure-brain.py) and `brain/heron_devperf.py`. This decision does not separate them. The row's own words point at `measure-brain.py`, which measures both of them; `heron_devperf.py` measures time only |
+
+### The one row this decision sits awkwardly against
+
+`DEV-RVT-013` is already claimed by [`tools/batch-prove.py`](../tools/batch-prove.py), and that tool
+proves **fragments** — the side this decision excludes. Its register row reads *"runs tests inside real
+Revit"*, and fragments are the only thing Heron can run inside Revit, so the claim may be the deliberate
+exception rather than a contradiction.
+
+**Nothing was un-claimed on that reading.** Withdrawing a merged claim on an inference is the same move
+that produced F27 in the first place. The tension is recorded here and left for the owner.
+
+---
+
+## D-76 — Five Standards rows are one agent with a subject, not five files
+
+Decided by the owner on 2026-09-16, settling [F31](PROPOSALS.md), which was raised on the authority of
+[`HERON-AHR-WFP-015`](../brain/heron_workforce.py) — the row whose whole job is to say *no* before
+anything is hired.
+
+**The question.** `STD-BIM-001`, `STD-MOD-005`, `STD-QAQ-006`, `STD-LOD-007` and `STD-DOC-008` all read
+as *cite the clauses about X*. `HERON-STD-CMP-002` already does exactly that. Five files differing by
+one search term is the agent explosion WFP-015 exists to prevent; five rows left open is a register
+lying about what is built.
+
+**The answer.** Extend `HERON-STD-CMP-002` with a `subject`, and record all five rows against that one
+file. This is WFP-015's own ladder — *keep, extend, adapt, version-branch* — taken at its second rung.
+
+### What was built
+
+[`brain/heron_company.py`](../brain/heron_company.py) takes `subject` and `stage`. Its header claims six
+ids, which `agent-count.py` and `check-metadata.py` have both always supported —
+[`heron_retrieve.py`](../brain/heron_retrieve.py) has claimed three since long before this.
+
+**Standards & BIM QA is now 14 of 14.**
+
+| subject | row | what it is |
+|---|---|---|
+| *omitted* | `STD-CMP-002` | the company standard, **unchanged character for character** |
+| `bim` | `STD-BIM-001` | the citing half; the model half is `QA-BIM-011`'s |
+| `modelling` | `STD-MOD-005` | the citing half; connections and elevations are geometry |
+| `qa` | `STD-QAQ-006` | what the process requires, not whether it was followed |
+| `lod` | `STD-LOD-007` | **plus a `stage`**, the one real difference of shape |
+| `documentation` | `STD-DOC-008` | the clauses; the NAMES are already `STD-NAM-004`'s |
+
+### The three things that make it an extension rather than an edit
+
+**`subject=None` is asserted identical.** `tests/test_company.py` checks that no subject searches the
+question and nothing else, character for character. If that ever fails, this stopped being an extension.
+
+**An unknown subject is REFUSED, and so is a stage on a row that takes none.** Both are new declared
+failures on the contract, and both are reached by the suite rather than merely listed. A subject quietly
+dropped would answer the COMPANY question and hand back something indistinguishable from an answer to
+the asked one — the same defect as a flag swallowed into a list of file names and reported as data.
+
+**The header and the `SUBJECTS` table are checked against each other**, not both against a list typed in
+the test. A claim that agrees only with itself is what let a withdrawn agent keep its contract nine
+hours earlier the same day; see [F27](PROPOSALS.md).
+
+### What this does NOT do, and it is the honest half
+
+**Three of the five are partial, and each says so in its own answer.** `bim` and `modelling` cite but
+cannot open a model or reach geometry; `documentation` is mostly names that `QA-BIM-011` already routes
+to `STD-NAM-004`. The caveat travels in the result as `short`, because a limitation recorded only in a
+register is a limitation the caller never sees.
+
+**It has not been run against a real company standard.** The suite builds its own small document. What
+these six rows do when pointed at a genuine multi-hundred-page BIM standard — whether the subject terms
+actually separate the clauses — is unmeasured, and the terms are the obvious thing to tune first.
+
+---
+
+## D-77 — Two Documentation rows wait for a tag, and two fold into the guard
+
+Decided by the owner on 2026-09-16, settling [F23](PROPOSALS.md). Four of the five remaining
+Documentation rows had no distinct source or no distinct job, and they failed in two different ways.
+
+### Deferred: `DOC-CHG-008` and `DOC-REL-005`
+
+Neither has an input yet. 683 files carry `Heron-Since: 0.1.0`, `git tag` returns nothing, and a change
+log with one section listing 683 files is true and useless.
+
+**Unblocked by the first tag** — not by anybody's effort, which is why leaving them in the LEFT column
+without this note made them look like work somebody was neglecting.
+
+`CHG-008` carries a second problem that outlives the first: **`Fixed` and `Improved` cannot be told
+apart from a diff.** The only mechanical route is a word list over commit subjects, which is the synonym
+table [D-34](DECISIONS.md) refuses to build. Whoever picks this up after the first tag needs a commit
+convention adopted deliberately, or the host classifying under [D-01](DECISIONS.md). **Deciding that is
+not part of this decision.**
+
+### Folded: `DOC-ARC-006` and `DOC-RDM-007`
+
+Both fold into [`tools/check-docs.py`](../tools/check-docs.py), which already sweeps all 140 markdown
+files, recomputes every count claim against its derived source, enforces the same claim wherever it is
+made, and resolves every internal link. A second agent keeping the README current would be a second
+thing able to be right on its own while disagreeing with the first — the objection that also stopped
+`NAM-MET-006` ([F17](PROPOSALS.md)).
+
+**It is the GUARDING half only.** Nothing generates a README or an architecture document, and after this
+decision nothing is scheduled to. The register says which half each row got.
+
+### A row closed by writing no code is a claim, so it was checked
+
+`tests/test_docs_guard.py` copies the tree, **plants an error in each place those two rows name**, and
+requires the guard to find it: a false count in `README.md`, a dead anchor in
+[`docs/06`](06-heron-platform.md). It also asserts the guard passes on a clean copy first — otherwise a
+checker that always failed would "catch" a plant by accident — and that it writes nothing, which is what
+makes *guarding half only* a fact rather than a promise.
+
+### What checking it turned up, which was not nothing
+
+**`check-docs.py` had been finding dead links since 2026-08-31 and exiting 0 on them.** Section 1 printed
+them into a green run. Wiring it to the exit code found **three**:
+
+| link | what was wrong |
+|---|---|
+| `#d-30--a-proof-needs-a-positive-and-a-negative-and-a-person-signs-it` | D-30's heading was reworded and this one inline link never followed |
+| `24-agent-lifecycle.md` | the file is `24-trust-model.md` |
+| `../CLAUDE.md` | not a file in this repository; the rule is in `14-golden-rules.md` |
+
+The D-30 one is the interesting one. **D-30 is linked eleven times and ten are correct.** A check written
+earlier the same day kept one occurrence per id, so the eleventh overwrote the broken tenth and it
+reported all anchors clean. `check-docs.py` found it because it checks every occurrence.
+
+That is the fifth time in one session that *prove the pattern can see what you know is there* was broken
+by the check written to enforce it — and the third where the flaw was keeping one of something there
+were many of.
+
+---
+
+## D-78 — The metadata checker owns metadata validity, and the third row folds into it
+
+Decided by the owner on 2026-09-16, settling [F17](PROPOSALS.md): three agents owned metadata validity
+across two departments, and one of them had deliberately never been built.
+
+### The code had already answered half of it
+
+Two of the three do not overlap, and the boundary is stated in
+[`check-metadata.py`](../tools/check-metadata.py)'s own source rather than in any register:
+
+> *"ONE place per fact: `brain/heron_fragment.py` validates these files, and this checker does not read
+> them."*
+
+| agent | owns | built as |
+|---|---|---|
+| `HERON-STD-MET-014` | Heron's own source metadata, and the registry against the code, both directions | `tools/check-metadata.py` |
+| `HERON-FRG-VAL-001` | a fragment's **card** against its own schema — explicitly not read by the above | `brain/heron_fragment.py` |
+| `HERON-NAM-MET-006` | *"metadata completeness and schema validity"* — a plain subset of the first | **was not built** |
+
+**So the decision is only about the third.** It folds into `check-metadata.py`, which now claims both
+rows — the same move [D-77](#d-77--two-documentation-rows-wait-for-a-tag-and-two-fold-into-the-guard)
+made for two Documentation rows earlier the same day, and for the same reason: a second thing keeping
+one rule can be right on its own while disagreeing with the first.
+
+**Naming & Taxonomy is 6 of 7, and the seventh is blocked rather than neglected.** `NAM-GEN-001` waits
+on [F15](PROPOSALS.md).
+
+### Checked, not asserted
+
+`tests/test_metadata_guard.py` copies the tree and plants one error for each word of the folded row:
+
+| plant | which word |
+|---|---|
+| a file missing `Heron-Layer` | **completeness** |
+| `Heron-Layer: banana` | **schema validity** |
+| a claim on `HERON-NOT-REAL-001` | the registry against the code |
+
+All three are caught and named. The suite also runs a **correctly-headed probe file** first, so each
+finding differs from a passing run by one line and nothing else.
+
+**The control earned its place.** The first version of this suite built a MINIMAL tree instead of
+copying one, and its control failed twice on files it had not copied — `Directory.Build.props`, then the
+bridge client's version — each fix revealing the next. A planted error found in a tree that is already
+failing is not a finding, it is a coincidence.
+
+### What this does NOT do
+
+**Nothing generates metadata**, and after this nothing is scheduled to. Like D-77's fold, this is the
+guarding half, and the register says so on the row.
+
+**It does not touch `FRG-VAL-001`.** That agent is claimed by two files, which is [F10](PROPOSALS.md)
+and still open.
+
+---
+
+## D-79 — A generated name is six parts, lower case, hyphenated, with the version last
+
+Decided by the owner on 2026-09-16, closing [F15](PROPOSALS.md) — the oldest of the five decisions that
+were blocking the register, and the only one that needed a design rather than a ruling.
+
+    <domain>-<capability>-<purpose>-<platform>-<component>-v<n>
+
+    mep-duct-insulation-check-revit-fitting-v1
+
+**Six parts, not five.** `docs/28`'s row said five and
+[docs/00c](00c-master-handover-baseline.md) s368 said six, adding *component type*. 00c is the owner's
+own handover document, so **the register was corrected rather than the baseline**.
+
+**The version moved to the end**, which 00c's own listing does not do — it puts version fifth and
+component type sixth. A version suffix belongs last so every version of one thing sorts together and a
+bump never disturbs the stem. That is a change to the order and is recorded as one rather than folded in
+quietly.
+
+The rules — lower case, single hyphens, a hyphenated part allowed, version last, at least six segments
+— live in [docs/29](29-metadata-standard.md), which already owned every other name shape in this system.
+
+### Why it was worth waiting for
+
+`HERON-NAM-VAL-002` had been refusing this one kind as `UNSTATED_CONVENTION` since it was built. That
+was the right call and the reason is worth keeping: **it would have been the only thing enforcing a
+convention, so whatever it accepted would have BECOME the convention.** A guess arrived at that way is
+the hardest kind to change, because by the time anybody disagrees there are names on disk.
+
+### What was built
+
+[`brain/heron_naming.py`](../brain/heron_naming.py) now carries both rows. `generate()` is
+`HERON-NAM-GEN-001` — the last row in Naming & Taxonomy, which is now **7 of 7**.
+
+**The generator checks its own output with the validator's rule**, so the department cannot produce a
+name its own checker rejects. `tests/test_naming.py` asserts that on the documented example.
+
+**A missing part is refused, never skipped.** A name quietly built from five parts would still pass the
+shape check — it would look like a perfectly good generated name — and nothing anywhere would say which
+part had gone.
+
+### The half it cannot do, and says so
+
+**A finished name cannot be split back into its six parts.** A part may itself be hyphenated, so
+`mep-duct-insulation-check-revit-fitting-v1` is seven segments carrying six parts and nothing in the
+string marks where the capability ended.
+
+So `check()` reports that it checked the **shape**, in the answer, never that it checked the parts; and
+`generate()` returns the parts because they were its input, not because it read them back.
+
+**Single-token parts were considered and rejected.** They would make a name decomposable at the cost of
+the one thing [docs/06 s134](06-heron-platform.md) actually asks for: *"naming must be predictable and
+searchable"*. `ductinsulation` is not searchable. Readability won and the limit is declared.
+
+### What this does NOT do
+
+**No existing name changes.** This states the convention for names the Naming Agent GENERATES from now
+on; nothing on disk was renamed, and renaming is `HERON-NAM-REN-003`'s and only after identity exists.
+
+**It has not generated a name anybody needed yet.** The shape is proved against the documented example
+and five malformed ones. What it does when a real request arrives — whether the six parts are the right
+six for the thing being named — is language, and unmeasured.
+
+---
+
+## D-80 — Five Development rows are the host's, because the host is the model
+
+Decided by the owner on 2026-09-17, settling [F39](PROPOSALS.md) — **which he raised himself**, in one
+sentence, after being told those rows needed a local model installed first:
+
+> *"you are its self the ai and thru ai we are acessing the heron so this ai can do this work am i
+> right"*
+
+He was right, and the evidence was already in the repository.
+
+### The decision
+
+`DEV-REQ-001`, `DEV-PLN-002`, `DEV-ARC-003`, `DEV-GEN-004` and `DEV-RAP-007` are **provided by the
+host**, under [D-01](#d-01--execution-host-claude-code-plugin)'s *"Claude Code is the conversation layer
+and the agent host"*. They join the four `ORC` rows already delegated on that basis, in
+`HOST_PROVIDED` in [`tools/check-metadata.py`](../tools/check-metadata.py) — one place, imported by
+`agent-count.py` rather than copied.
+
+**Development goes from 9 left to 4. The register goes from 21 left to 16.**
+
+### Why it holds, and it is not convenience
+
+**No built T2 has ever made a model call.** 55 of 63 T2 agents and 18 of 20 T3 were built before any
+adapter existed. They do the mechanical half and hand the language half up, which
+[`heron_company.py`](../brain/heron_company.py) states in its own result: *"That is language, and
+docs/28 makes this row T2 for it. The clauses go to the host with the question attached; nothing here
+picked one."*
+
+So a tier in this register says **where the judgement happens**, not who holds an API key. Every one of
+these five is judgement with no mechanical half left over — and the host has been doing all five all
+along, including for every line of code in this repository.
+
+### What was ALSO done, and was not asked for
+
+**The four rows delegated before this said so nowhere in the register.** `HOST_PROVIDED` knew; docs/28
+did not, so a reader saw four ordinary unbuilt rows. Marking only the new five would have made that
+worse rather than better, so **all nine now carry the same sentence**. Nothing else about the four
+changed.
+
+### The two that may be merges rather than delegations
+
+F39 flagged these and the decision does not settle them:
+
+| row | what else is already built |
+|---|---|
+| `DEV-RAP-007` | its own row says *merge candidate with 005/006*, and **both are built** — `heron_dotnet.py`, `heron_csharp.py` |
+| `DEV-ARC-003` | [`HERON-IMP-ARC-011`](../brain/heron_belongs.py) already *places content where the architecture says it belongs* |
+
+`DEV-PLN-002` carries the same doubt from the other side: **`ORC-MAIN-001` was already delegated for
+"the host plans and sequences the work"** — the same sentence. These three may be duplicate rows rather
+than three delegations, and the register now says so on each.
+
+**Left open on purpose.** Merging a row is a different act from delegating one, and doing both in a
+single decision is how a register loses track of which happened.
+
+### What it costs, recorded because it is real
+
+**A host-provided agent cannot run without a host.** Heron cannot now plan, specify or generate code:
+
+- on a schedule with nobody in a chat
+- for a colleague using the Revit add-in with no Claude Code session
+- on a scope marked confidential, because the host is a cloud model
+
+The owner considered each and accepted all three: he works through Claude Code, on his own machine.
+**If that ever changes, this is the decision to revisit**, and
+[`brain/heron_provider.py`](../brain/heron_provider.py) is the layer that would serve it.

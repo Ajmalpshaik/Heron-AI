@@ -37,6 +37,7 @@ WHAT IT PROVES
 
 import io
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -80,10 +81,15 @@ def main():
     # and not a rule. What it must not hold is a second pattern - so count
     # the patterns instead of searching for words.
     compiled = code.count("re.compile(")
-    check(compiled == 3,
-          "it compiles exactly 3 patterns of its own (%d), and all three "
+    check(compiled == 4,
+          "it compiles exactly 4 patterns of its own (%d), and all four "
           "are for rules heron_fragment does not own" % compiled)
-    for mine in ("AGENT_SHAPE", "MODULE_SHAPE", "SUITE_SHAPE"):
+    # GENERATED_SHAPE joined them on 2026-09-16 (D-79). It belongs here
+    # for the same reason as the other three: heron_fragment owns fragment
+    # names, and the generated name is not one - docs/29 owns it, and this
+    # is that document's machine-readable half.
+    for mine in ("AGENT_SHAPE", "MODULE_SHAPE", "SUITE_SHAPE",
+                 "GENERATED_SHAPE"):
         check(("%s = re.compile" % mine) in code,
               "  %s - %s" % (mine, "the register's house style"
                              if mine == "AGENT_SHAPE" else "observed, "
@@ -167,23 +173,83 @@ def main():
           "the refusal says so itself: it is the weaker claim, reported as "
           "the weaker one")
 
-    print("\n5. The one name it cannot check is refused, not guessed")
-    guessed = ask("generated-name", "mep-duct-sizing-revit-2026-v1")
-    check(guessed.get("refused") == "UNSTATED_CONVENTION",
-          "a generated name is refused")
-    check("F15" in guessed["why"], "and points at PROPOSALS F15")
+    print("\n5. The name it could not check is now stated, and checked")
+    # UNTIL 2026-09-16 THIS ASSERTED A REFUSAL. D-79 settled the shape, so
+    # the claim flipped: what was proof that the convention was MISSING is
+    # now proof that it is there and enforced.
+    good = ask("generated-name", "mep-duct-insulation-check-revit-fitting-v1")
+    check(good.get("ok") is True, "the settled shape is accepted")
+    check(any("did not check the parts" in one
+              for one in good.get("unjudged", [])),
+          "and the answer says it checked the SHAPE, not the parts - the "
+          "weaker claim, reported as the weaker one")
+    for wrong, why in (("MEP-Duct-Sizing-v1", "upper case"),
+                       ("mep-duct-v1", "only three segments"),
+                       ("mep--duct-check-revit-fitting-v1", "a double hyphen"),
+                       ("mep-duct-insulation-check-revit-fitting", "no version"),
+                       ("-mep-duct-check-revit-fitting-v1", "a leading hyphen")):
+        check(ask("generated-name", wrong).get("refused") == "WRONG_SHAPE",
+              "%r is refused - %s" % (wrong, why))
+
+    # THE GENERATOR AND THE VALIDATOR AGREE, which is the only way the
+    # department is not producing names its own checker rejects.
+    made = NAM.generate("MEP", "Duct Insulation", "check", "Revit",
+                        "fitting", 1)
+    check(made.get("name") == "mep-duct-insulation-check-revit-fitting-v1",
+          "generate() builds the documented example: %r" % made.get("name"))
+    check(ask("generated-name", made["name"]).get("ok") is True,
+          "and its own validator accepts what it built")
+    check(NAM.generate("mep", "", "check", "revit", "fitting",
+                       1).get("refused") == "MISSING_PART",
+          "a missing part is refused, never skipped - a five-part name "
+          "would pass the shape check with nothing saying which part went")
+    check(NAM.generate("mep", "duct", "check", "revit", "fitting",
+                       "latest").get("refused") == "BAD_VERSION",
+          "and a version that is not a number is refused")
+
+    # THE DOCUMENT AND THE CODE ARE THE SAME LIST, checked against each
+    # other rather than both against a list typed in here.
+    standard = io.open(os.path.join(ROOT, "docs", "29-metadata-standard.md"),
+                       encoding="utf-8").read()
+    section = standard.split(u"### Naming \u2014 the generated name", 1)
+    check(len(section) == 2, "docs/29 carries the generated-name section")
+    body = section[1].split("### Reports")[0] if len(section) == 2 else ""
+    check(all(("| " + one + " |") in body for one in NAM.GENERATED_PARTS
+              if one != "component"),
+          "and its table names every part heron_naming declares")
+    check("component type" in body,
+          "including component type, spelled as docs/00c spells it")
     # THE DISAGREEMENT, read out of both documents rather than described.
     register = io.open(os.path.join(ROOT, "docs", "28-agent-registry.md"),
                        encoding="utf-8").read()
     baseline = io.open(os.path.join(ROOT, "docs",
                                     "00c-master-handover-baseline.md"),
                        encoding="utf-8").read()
-    five = [line for line in register.splitlines() if "NAM-GEN-001" in line]
-    check(len(five) == 1 and "domain, capability, purpose, platform, version"
-          in five[0],
-          "docs/28 names five parts")
-    check("component type" in baseline and "component type" not in five[0],
-          "and docs/00c adds a sixth, component type, which docs/28 omits")
+    # THE ROW, not any line mentioning the id. This used to match either,
+    # and on 2026-09-16 a note added under the department heading - saying
+    # that NAM-GEN-001 is blocked on F15 rather than neglected - made it
+    # two lines and failed the check. Prose ABOUT a row is not the row, and
+    # it must neither break this nor be able to satisfy it.
+    five = [line for line in register.splitlines()
+            if line.startswith("| `HERON-NAM-GEN-001`")]
+    # THE PARTS ARE SPLIT AND COMPARED AS A LIST, not looked for as a
+    # substring. `in` could not tell five parts from six: the five-part
+    # phrase is a PREFIX of the six-part one, so the exact change F15 is
+    # about - somebody adding `component type` to this row - would have
+    # left this check green while the sentence it prints went false.
+    # The parts stop at the first `.` or `|`, because the row carries prose
+    # after them now that it is built. Before D-79 it stopped only at the
+    # pipe, and adding that prose would have found no parts at all.
+    named = re.search(r"from ([a-z, ]+?)\s*[.|]", five[0]) if five else None
+    parts = [one.strip() for one in named.group(1).split(",")] if named else []
+    check(len(five) == 1 and parts == ["domain", "capability", "purpose",
+                                       "platform", "component type",
+                                       "version"],
+          "docs/28's NAM-GEN-001 row names exactly six parts: %s"
+          % (", ".join(parts) or "none found"))
+    check("component type" in baseline and "component type" in five[0],
+          "and the sixth is docs/00c's own - D-79 corrected the register "
+          "rather than the owner's baseline")
     check("predictable and searchable" in io.open(
         os.path.join(ROOT, "docs", "06-heron-platform.md"),
         encoding="utf-8").read(),
@@ -229,7 +295,11 @@ def main():
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-NAM-VAL-002.yaml"))
     named = contract.get("failures") or []
-    check(len(named) == 9, "the contract declares 9 failures")
+    # EIGHT SINCE D-79. UNSTATED_CONVENTION was declared for exactly one
+    # thing - the generated name nobody had specified - and the owner
+    # specified it. A failure kept in a contract after its only producer
+    # is gone is a promise nothing can keep.
+    check(len(named) == 8, "the contract declares 8 failures")
     for failure in named:
         check(failure in code, "the code names %s" % failure)
     unreached = sorted(set(named) - reached)

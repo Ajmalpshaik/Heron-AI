@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Heron-Agent:  HERON-DOC-VAL-009
+# Heron-Agent:  HERON-DOC-VAL-009, HERON-DOC-RDM-007, HERON-DOC-ARC-006
 # Heron-Step:   1
 # Heron-Status: DRAFT
 # Heron-Since:  0.1.0
@@ -122,6 +122,21 @@ for p in md:
 joined = "\n".join(allsrc.values())
 
 failed = False
+
+# SECTION 1 NOW FAILS, AND DID NOT UNTIL 2026-09-16 (D-77). It had been
+# FINDING dead links since 2026-08-31 and exiting 0 on them, which is the
+# same defect its own comment above describes one layer up: the check was
+# fixed to SEE them and never wired to the exit code, so it printed them
+# into a green run nobody had to read.
+#
+# Three were sitting there when this line was added - a D-30 anchor whose
+# heading had been reworded, a docs/24 filename that no longer exists, and
+# a `../CLAUDE.md` that is not in this repository. Ten OTHER links to D-30
+# were correct, which is why a checker keeping one occurrence per id saw
+# nothing: the broken one was tenth of eleven and the eleventh overwrote
+# it. Every occurrence is checked here, which is how these were found.
+if bad:
+    failed = True
 
 
 def defined(pattern, path):

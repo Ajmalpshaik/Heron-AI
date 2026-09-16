@@ -152,6 +152,60 @@ the `.cs` next to `heron-status: DRAFT` in the YAML guarantees that a promotion 
 other. [`tools/check-metadata.py`](../tools/check-metadata.py) skips `brain/fragments/` for that reason
 and says so where it does it.
 
+### Naming — the generated name
+
+Settled by the owner on 2026-09-16, [D-79](DECISIONS.md), closing [F15](PROPOSALS.md). Before that date
+two documents disagreed about the parts and **no document gave a shape at all**, so
+[`HERON-NAM-VAL-002`](../brain/heron_naming.py) refused this one kind rather than guess — a guess would
+have BECOME the convention by being the only thing enforcing one.
+
+    <domain>-<capability>-<purpose>-<platform>-<component>-v<n>
+
+    mep-duct-insulation-check-revit-fitting-v1
+
+| part | in the example | what it is |
+|---|---|---|
+| domain | `mep` | the discipline the thing belongs to |
+| capability | `duct-insulation` | what it is about — the searchable word |
+| purpose | `check` | what it does |
+| platform | `revit` | what it runs against |
+| component type | `fitting` | the kind of thing, [docs/00c](00c-master-handover-baseline.md) s368's sixth part |
+| version | `v1` | `v` and digits, **always last** |
+
+**Six parts, and the sixth is the owner's own.** `docs/28`'s row named five and
+[docs/00c](00c-master-handover-baseline.md) s368 named six; the baseline is the owner's own handover
+document and the sixth is real, so six it is. `docs/28`'s row was corrected rather than 00c.
+
+**The version moved to the end**, which 00c's listing does not do — it lists version fifth and component
+type sixth. A version suffix belongs last so that every version of one thing sorts together and a bump
+never disturbs the stem. That is a change to the ORDER and is recorded as one.
+
+### What the rules are, exactly
+
+* **lower case only**, `a` to `z`, `0` to `9`, and the hyphen. Nothing else
+* parts are joined by a single `-`; **no `--`**, and no hyphen at either end
+* a part that is several words is **itself hyphenated**: `duct-insulation`
+* the last part is the version, `v` followed by at least one digit
+* **at least six** hyphen-separated segments, because six parts each need one
+
+### The part that cannot be checked, said out loud
+
+Because a part may contain hyphens, **a finished name cannot be split back into its six parts.**
+`mep-duct-insulation-check-revit-fitting-v1` has seven segments and six parts, and nothing in the
+string says where `capability` ended.
+
+So the two agents do different things and the answer says which:
+
+| agent | what it can do |
+|---|---|
+| [`HERON-NAM-GEN-001`](../brain/heron_naming.py) | **generates**, because it is handed the six parts |
+| [`HERON-NAM-VAL-002`](../brain/heron_naming.py) | **checks the shape** — and reports that it checked the shape, never that it checked the parts |
+
+**Single-token parts were considered and rejected.** They would make a name decomposable
+(`mep-ductinsulation-check-revit-fitting-v1`) at the cost of the one thing
+[docs/06 s134](06-heron-platform.md) actually asks for: *"naming must be predictable and searchable"*.
+`ductinsulation` is not searchable. Readability won, and the limitation is declared rather than hidden.
+
 ### Reports and generated documents
 
 ```html

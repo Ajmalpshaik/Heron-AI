@@ -6,7 +6,7 @@
 # any other store it is handed.
 
 agent: HERON-STD-CMP-002
-version: 1.0.0
+version: 1.1.0
 
 input:
   question:
@@ -24,6 +24,26 @@ input:
       any other scope is REFUSED - a company-standard agent answering
       out of the project store would make an override invisible at the
       one moment it matters (docs/20 s2).
+  subject:
+    type: string
+    required: false
+    description: >
+      Which of the six Standards rows this call answers as - bim,
+      modelling, qa, lod, documentation, or omitted for the company
+      standard itself. It steers retrieval with that row's terms and is
+      reported back. An unknown subject is REFUSED: one quietly dropped
+      would answer the COMPANY question and look exactly like an answer
+      to the asked one. See F31 and D-76.
+  stage:
+    type: string
+    required: false
+    description: >
+      The project stage, and ONLY subject=lod takes one - docs/28 gives
+      HERON-STD-LOD-007 "expected at this stage", the single genuine
+      difference of shape among these rows. A stage handed to any other
+      subject is REFUSED rather than ignored, because accepting it and
+      dropping it would report a filtered answer that was never
+      filtered.
 
 output:
   answered:
@@ -64,6 +84,35 @@ output:
   why:
     type: string
     description: The counts and the retrieval's own note.
+  subject:
+    type: string
+    description: >
+      Which row this answer was given as. Always present, including on a
+      refusal, so no caller has to infer which standard was read.
+  agent:
+    type: string
+    description: >
+      That row's agent id. One file answers six rows and this is how an
+      answer says which one it is - the id is never inferred from the
+      file name.
+  asAsked:
+    type: string
+    description: What docs/28 asks of that row, in the register's words.
+  queried:
+    type: string
+    description: >
+      The text actually searched - the question, steered by the
+      subject's terms and the stage. With no subject it is the question
+      character for character, which is what keeps HERON-STD-CMP-002 the
+      agent it was before F31.
+  short:
+    type: string
+    description: >
+      What this file does NOT do for that row, or null. Three of the six
+      are only partly here: bim and modelling need a model and geometry
+      (HERON-QA-BIM-011's), and documentation is mostly names, which
+      that agent already routes to HERON-STD-NAM-004. Said in the answer
+      rather than only in a comment nobody reads at the call site.
   unjudged:
     type: list
     description: >
@@ -83,6 +132,8 @@ failures:
   - NOTHING_ASKED
   - NO_STORE
   - WRONG_SCOPE
+  - UNKNOWN_SUBJECT
+  - STAGE_NOT_TAKEN
 
 retry:
   attempts: 0

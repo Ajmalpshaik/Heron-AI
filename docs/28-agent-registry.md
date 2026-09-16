@@ -32,11 +32,11 @@ Roughly two thirds never call a model at all.
 
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
-| `HERON-ORC-MAIN-001` | Orchestrator | Understands the request, selects capability and agents, builds and runs the workflow, returns the result | T2 | — | 3 |
-| `HERON-ORC-INT-002` | Intent Agent | Classifies what the user is asking for — command, question, debugging, development | T2 | READ | 4 |
-| `HERON-ORC-PER-003` | Communication / Persona Agent | Detects role and technical level; chooses wording. BIM language out, not API calls | T2 | READ | 4 |
+| `HERON-ORC-MAIN-001` | Orchestrator | Understands the request, selects capability and agents, builds and runs the workflow, returns the result. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | — | 3 |
+| `HERON-ORC-INT-002` | Intent Agent | Classifies what the user is asking for — command, question, debugging, development. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | READ | 4 |
+| `HERON-ORC-PER-003` | Communication / Persona Agent | Detects role and technical level; chooses wording. BIM language out, not API calls. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | READ | 4 |
 | `HERON-ORC-FAIL-004` | Failure Analysis Agent | Determines *why* something failed and routes it. Never blind-retries. **T1, not T2** — Heron's failures are its own bounded set of codes, so the classification is a table, and the one answer that must never be wrong is one a model should not be asked for ([D-21](DECISIONS.md)) | T1 | READ | 6 |
-| `HERON-ORC-SUM-006` | **User Result Agent** | Compresses the whole internal chain — 12 agents, 37 tool calls, 4 retrievals, 3 tests — into what the user actually needs to read. *"Done. Selected all ducts, moved them 200 mm up, verified in Revit."* This is what makes simple-outside / complex-inside real ↗ | T2 | READ | 4 |
+| `HERON-ORC-SUM-006` | **User Result Agent** | Compresses the whole internal chain — 12 agents, 37 tool calls, 4 retrievals, 3 tests — into what the user actually needs to read. *"Done. Selected all ducts, moved them 200 mm up, verified in Revit."* This is what makes simple-outside / complex-inside real ↗. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | READ | 4 |
 | `HERON-ORC-FIX-005` | Fix Agent | Applies a targeted repair chosen by failure analysis | T3 | MODIFY | — |
 
 ## 2. Revit Engineering — 36
@@ -212,39 +212,54 @@ at all. This department closes that.
 
 ## 8. Standards & BIM QA — 14
 
+**Six of these rows are one file with a noun in front.** `CMP-002`, `BIM-001`, `MOD-005`,
+`QAQ-006`, `LOD-007` and `DOC-008` are all *cite the clauses about X*, so they are answered by
+[`brain/heron_company.py`](../brain/heron_company.py) with a `subject`, not by five near-identical
+files. Decided 2026-09-16, [D-76](DECISIONS.md), settling [F31](PROPOSALS.md) on
+[`HERON-AHR-WFP-015`](../brain/heron_workforce.py)'s ladder - keep, extend, adapt, version-branch.
+`LOD-007` takes a **stage** as well, the one genuine difference of shape among them. Three of the
+six are only PARTLY this file and each says so in its own answer, not only here.
+
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
-| `HERON-STD-BIM-001` | BIM Standard Agent | Applies a stated BIM standard to a model | T2 | ANALYZE | — |
-| `HERON-STD-CMP-002` | Company Standard Agent | The organisation's own approved standard | T2 | ANALYZE | — |
+| `HERON-STD-BIM-001` | BIM Standard Agent | Applies a stated BIM standard to a model. **Claimed 2026-09-16 under [D-76](DECISIONS.md)** - [`brain/heron_company.py`](../brain/heron_company.py) with `subject="bim"`. **The citing half only** - this row says *to a model* and nothing here opens one; checking the model is `HERON-QA-BIM-011`'s, and the answer says so itself rather than leaving a reader to assume | T2 | ANALYZE | — |
+| `HERON-STD-CMP-002` | Company Standard Agent | The organisation's own approved standard. **Built** - [`brain/heron_company.py`](../brain/heron_company.py). It opens ONE scope, cites clauses in the words they were written in, and keeps HERON-RAG-RNK-006's four nothings apart rather than flattening them into one sentence. **Since [D-76](DECISIONS.md) it also answers the five rows below**, by `subject`; `subject=None` is this row and is unchanged character for character | T2 | ANALYZE | — |
 | `HERON-STD-ISO-003` | ISO Standards Agent | ISO 19650 and related. **Cites, never invents** | T2 | ANALYZE | — |
 | `HERON-STD-NAM-004` | Naming Standard Agent | Naming rules for elements, views, sheets, files | T2 | ANALYZE | — |
-| `HERON-STD-MOD-005` | Modeling Standard Agent | How things should be modelled — connections, elevations, practice | T2 | ANALYZE | — |
-| `HERON-STD-QAQ-006` | QA/QC Standard Agent | The organisation's QA process requirements | T2 | ANALYZE | — |
-| `HERON-STD-LOD-007` | LOD Agent | Level of development / detail expected at this stage | T2 | ANALYZE | — |
-| `HERON-STD-DOC-008` | Documentation Standard Agent | Sheet, titleblock and annotation requirements | T2 | ANALYZE | — |
+| `HERON-STD-MOD-005` | Modeling Standard Agent | How things should be modelled — connections, elevations, practice. **Claimed 2026-09-16 under [D-76](DECISIONS.md)** - [`brain/heron_company.py`](../brain/heron_company.py) with `subject="modelling"`. **The citing half only** - connections and elevations are geometry inside Revit, which nothing on this side of the bridge can reach, and the answer says that in the answer | T2 | ANALYZE | — |
+| `HERON-STD-QAQ-006` | QA/QC Standard Agent | The organisation's QA process requirements. **Claimed 2026-09-16 under [D-76](DECISIONS.md)** - [`brain/heron_company.py`](../brain/heron_company.py) with `subject="qa"`. It answers what the process REQUIRES; whether it was followed is a different job and the audit trail's, and building that would have been inventing a row nobody wrote | T2 | ANALYZE | — |
+| `HERON-STD-LOD-007` | LOD Agent | Level of development / detail expected at this stage. **Claimed 2026-09-16 under [D-76](DECISIONS.md)** - [`brain/heron_company.py`](../brain/heron_company.py) with `subject="lod"`, **plus a `stage`** - the one genuine difference of shape among these six rather than of subject, so it is the only one given a parameter of its own. A stage handed to any other subject is REFUSED, never accepted and dropped | T2 | ANALYZE | — |
+| `HERON-STD-DOC-008` | Documentation Standard Agent | Sheet, titleblock and annotation requirements. **Claimed 2026-09-16 under [D-76](DECISIONS.md)** - [`brain/heron_company.py`](../brain/heron_company.py) with `subject="documentation"`. **Mostly already done elsewhere** - sheet, titleblock and view NAMES are routed by `HERON-QA-BIM-011` to `HERON-STD-NAM-004`; what is left here is the clauses, and the answer says which half it gave | T2 | ANALYZE | — |
 | `HERON-STD-PRJ-009` | Project Standard Agent | This project's own rules — **outranks the company default**, and says so | T2 | ANALYZE | — |
 | `HERON-STD-REF-010` | **Reference Model Profiler** | Infers a standard from a correctly delivered model. Extracts the profile, **discards the model** ↗ | T3 | READ | — |
-| `HERON-STD-MET-014` | **Metadata & Policy Checker Agent** | Enforces the Heron metadata standard ([29](29-metadata-standard.md)) on everything Heron creates — every artefact declares its agent, step, status, version and layer. Also audits **the registry against the code**: an agent claimed by no file, or a file claiming no agent ↗ | T1 | READ | 1 |
+| `HERON-STD-MET-014` | **Metadata & Policy Checker Agent** | Enforces the Heron metadata standard ([29](29-metadata-standard.md)) on everything Heron creates — every artefact declares its agent, step, status, version and layer. Also audits **the registry against the code**: an agent claimed by no file, or a file claiming no agent ↗. **Since [D-78](DECISIONS.md) it also carries `NAM-MET-006`.** Its boundary with `FRG-VAL-001` was already drawn in its own source and is not changed here: a fragment's card is validated by `brain/heron_fragment.py` and this tool does not read it, because one fact in two places is how the two drift apart | T1 | READ | 1 |
 | `HERON-STD-PVL-013` | **Profile Validation Agent** | Checks a standard **inferred** from a reference model before it can be trusted. Tests it against a second delivered model, separates convention from coincidence, and surfaces the exceptions rather than flagging correct work as wrong ↗ | T2 | READ | — |
 | `HERON-QA-BIM-011` | **BIM QA Agent** | Checks the *model*: naming, parameters, categories, families, levels, worksets, views, MEP connectivity ↗ | T2 | ANALYZE | — |
 | `HERON-QA-CLS-012` | **Clash / Coordination Agent** | Clash analysis, clearance, system coordination, linked-model coordination reports ↗ | T2 | ANALYZE | — |
 
 ## 9. Development — 21
 
+**A Development agent acts on HERON ITSELF** - its projects, its brain, its tests, its bridge,
+its package - and never on the artefact Heron builds. Decided 2026-09-16, [D-75](DECISIONS.md),
+which settles [F27](PROPOSALS.md). So the fragment-side tools are NOT this department's, however
+closely a row reads like them: `tools/check-fragments-compile.py` and `tests/golden/` belong to
+the fragment pipeline. A row with no Heron-side file stays open rather than taking the nearest
+fragment-side one.
+
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
-| `HERON-DEV-REQ-001` | Requirement Agent | Turns a request into a buildable specification | T2 | — | — |
-| `HERON-DEV-PLN-002` | Planning Agent | Sequences the work | T2 | — | — |
-| `HERON-DEV-ARC-003` | Architecture Agent | Decides structure and placement within Heron's architecture | T3 | — | — |
-| `HERON-DEV-GEN-004` | Code Generation Agent | Writes code — **only after Fragment Matcher has reported** | T3 | — | — |
+| `HERON-DEV-REQ-001` | Requirement Agent | Turns a request into a buildable specification. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT | T2 | — | — |
+| `HERON-DEV-PLN-002` | Planning Agent | Sequences the work. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT — **and this is the same sentence `ORC-MAIN-001` was already delegated for**, so the two rows may be one | T2 | — | — |
+| `HERON-DEV-ARC-003` | Architecture Agent | Decides structure and placement within Heron's architecture. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT — the mechanical half is [`HERON-IMP-ARC-011`](../brain/heron_belongs.py), which is built | T3 | — | — |
+| `HERON-DEV-GEN-004` | Code Generation Agent | Writes code — **only after Fragment Matcher has reported**. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT — the precondition stays mechanical and checkable | T3 | — | — |
 | `HERON-DEV-CSH-005` | C# Agent | C# language and idiom | T2 | — | — |
 | `HERON-DEV-NET-006` | **.NET Compatibility Check Agent** | *Read-only.* Which target framework does this need, is it available, is the package set compatible, will it build on all supported versions ↗ | T1 | READ | — |
 | `HERON-DEV-NUP-019` | **.NET Update Agent** | *Changes projects.* Retargets a framework, bumps packages, migrates project files. Regression matrix must pass before it is accepted ↗ | T1 | MODIFY | — |
 | `HERON-DEV-NCR-020` | **.NET Project Creation Agent** | *Creates new.* Authors project files, target frameworks, references, build configuration for a new component ↗ | T1 | MODIFY | — |
-| `HERON-DEV-RAP-007` | Revit API Domain Agent | Revit API knowledge for generation *(merge candidate with 005/006)* | T2 | — | — |
+| `HERON-DEV-RAP-007` | Revit API Domain Agent | Revit API knowledge for generation *(merge candidate with 005/006)*. **Provided by the host** ([D-01](DECISIONS.md), [D-80](DECISIONS.md)) — Claude Code is the agent host, so this is language work it already does. Not unbuilt; the register shows it under HOST, never under LEFT — and the checkable half is already [`heron_dotnet.py`](../brain/heron_dotnet.py) and [`heron_csharp.py`](../brain/heron_csharp.py), both built | T2 | — | — |
 | `HERON-DEV-REV-008` | Code Review Agent | Architecture, API usage, error handling, transaction safety, duplication | T2 | — | — |
 | `HERON-DEV-SEC-009` | Security Review Agent | Required for anything at MODIFY or above | T2 | — | — |
-| `HERON-DEV-BLD-010` | Build Agent | Compiles across all target frameworks | T1 | — | — |
+| `HERON-DEV-BLD-010` | Build Agent | Compiles across all target frameworks. **Claimed 2026-09-16 under [D-75](DECISIONS.md)** - [`tools/check-compile.py`](../tools/check-compile.py), which builds every project against every Revit version the machine can reach, 2020 to 2027, and found a real 2020-only error the first time it ran. The file predates the claim by weeks; what changed is that D-75 says which reading of this department governs, so the row and the file can finally be said to be the same thing. Its read-only half is imported from [`HERON-DEV-NET-006`](../brain/heron_dotnet.py) rather than kept a second time | T1 | — | — |
 | `HERON-DEV-UNT-011` | Unit Test Agent | Runs unit tests | T1 | — | — |
 | `HERON-DEV-INT-012` | Integration Test Agent | Runs integration tests against a mocked Revit boundary | T1 | — | — |
 | `HERON-DEV-RVT-013` | Revit Test Agent | Runs tests **inside real Revit**. Code QA ≠ Revit QA. **Running half built 2026-09-09** - `tools/batch-prove.py`, which proves many fragments in one pass and judges BOTH halves of each: the negative came back empty *and* the positive moved a declared result off zero. It refuses a fragment already at PROVEN, because one batch spent a whole pass re-proving fifteen of them. The arranging is the hard half and stays a brief rather than code - `.claude/skills/fragment-proving/SKILL.md` - but its DERIVABLE part is `tools/generate-jobs.py`, which writes the job file's fragment list, write path, setup chain and exact input names out of the library, and leaves the category and the view blank because guessing those produced eleven confident meaningless results in one batch. Judging is `HERON-FRG-VAL-001`'s, imported rather than copied | T1 | READ | — |
@@ -382,14 +397,27 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 
 ## 13. Naming & Taxonomy — 7
 
+**`MET-006` folded into [`tools/check-metadata.py`](../tools/check-metadata.py) on 2026-09-16**
+([D-78](DECISIONS.md), settling [F17](PROPOSALS.md)): three agents owned metadata validity across
+two departments, and the third was a plain subset of the first. `tests/test_metadata_guard.py`
+plants a missing field, an invalid layer and a claim on a row that does not exist, and requires the
+guard to catch all three.
+
+**This department is complete.** `NAM-GEN-001` was the last row and was blocked rather than
+neglected: two documents disagreed about what a generated name is made of, and `NAM-VAL-002`
+refused that one kind as `UNSTATED_CONVENTION` rather than guess, because a guess would silently
+have BECOME the convention. The owner settled it on 2026-09-16 - [D-79](DECISIONS.md) - and the
+shape now lives in [docs/29](29-metadata-standard.md), which already owned every other name in
+this system.
+
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
-| `HERON-NAM-GEN-001` | Naming Agent | Generates a predictable name from domain, capability, purpose, platform, version | T2 | — | — |
+| `HERON-NAM-GEN-001` | Naming Agent | Generates a predictable name from domain, capability, purpose, platform, component type, version. **Built 2026-09-16** - [`brain/heron_naming.py`](../brain/heron_naming.py), beside the validator that checks its output with the same rule. The shape is [D-79](DECISIONS.md), settling [F15](PROPOSALS.md): six parts, version last, `mep-duct-insulation-check-revit-fitting-v1`. **The sixth part came from [docs/00c](00c-master-handover-baseline.md) s368 and this row is what was corrected**, because a part may be hyphenated the finished name cannot be split back, so `GEN-001` returns the parts it was handed and `VAL-002` says it checked the shape rather than the parts | T2 | — | — |
 | `HERON-NAM-VAL-002` | Naming Validation Agent | Checks a name against the convention | T1 | READ | — |
 | `HERON-NAM-REN-003` | Auto Rename Agent | Renames — **only after identity exists**, never before | T1 | MODIFY | — |
 | `HERON-NAM-TAX-004` | Taxonomy Agent | Maintains the classification scheme | T2 | — | — |
 | `HERON-NAM-KEY-005` | Keyword Agent | Search terms and synonyms — "duct", "ductwork", "supply air" | T1 | — | — |
-| `HERON-NAM-MET-006` | Metadata Agent | Metadata completeness and schema validity | T1 | — | — |
+| `HERON-NAM-MET-006` | Metadata Agent | Metadata completeness and schema validity. **FOLDED 2026-09-16 into [`tools/check-metadata.py`](../tools/check-metadata.py) by [D-78](DECISIONS.md)** - both of the row's words are that tool's already: completeness is the five headers every artefact must declare, schema validity is the layer and the agent id being real ones. A third agent would be a third place for one rule, which is what every other finding in [F17](PROPOSALS.md)'s file is about. **The guarding half only** - nothing generates metadata | T1 | — | — |
 | `HERON-NAM-REF-007` | Reference Update Agent | After any rename or move: imports, references, metadata, registry, docs. **No broken references** | T1 | MODIFY | — |
 
 ## 14. GitHub — 10
@@ -444,17 +472,25 @@ passes a human gate. Heron proposes continuously; it promotes only with approval
 
 ## 17. Documentation — 9
 
+**Four of these were settled without writing an agent.** [F23](PROPOSALS.md) found that two had no
+input yet and two would be a second place for one rule; [D-77](DECISIONS.md) deferred the first pair
+and folded the second into [`tools/check-docs.py`](../tools/check-docs.py). The fold is the
+**guarding** half only - nothing generates a README or an architecture doc, and nothing is scheduled
+to. `tests/test_docs_guard.py` plants an error in each place those rows name and requires the guard
+to find it, because a row closed by writing no code is exactly the kind of claim this repository
+keeps discovering it believed.
+
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
 | `HERON-DOC-API-001` | API Documentation Agent | Generated from tool schemas. **Built 2026-09-15** — `tools/generate-api-docs.py`. A Heron tool's schema is the decorated function's signature, so it **parses rather than imports** and works on a checkout with no MCP SDK. It names every **parameter no docstring explains**: two were, out of eighteen tools that all have docstrings | T1 | — | — |
 | `HERON-DOC-AGT-002` | Agent Documentation Agent | Generated from the agent registry | T1 | — | — |
 | `HERON-DOC-SKL-003` | Skill Documentation Agent | Generated from skill metadata. **Built 2026-09-15** — `tools/generate-skill-catalog.py`, the parallel to the fragment catalogue one layer up. Every skill with the words somebody actually says to reach it, and an **effective status**: the lowest rung on [09](09-skills-and-fragments.md)'s ladder among the fragments serving it. A card can say anything; the chain underneath is the fact. Reachability is per Revit release, never overall | T1 | — | — |
 | `HERON-DOC-FRG-004` | Fragment Documentation Agent | Generated from fragment metadata. **Built 2026-09-08** — `tools/generate-fragment-catalog.py`, the parallel to the agent map one layer up. Every fragment on one searchable page, including whether its declared negative case can actually be run. It reported 0 stranded cases on its first run against a library holding 18, which is why a generator acquired a test | T1 | — | — |
-| `HERON-DOC-REL-005` | Release Notes Agent | Structured notes per release | T2 | — | — |
-| `HERON-DOC-ARC-006` | Architecture Documentation Agent | Keeps architecture docs in step with the registries | T2 | — | — |
-| `HERON-DOC-RDM-007` | README Agent | Keeps the README current | T2 | — | — |
-| `HERON-DOC-VAL-009` | **Documentation Validation Agent** | Do the documents match reality. Recomputes every stated count from its source, checks every internal link resolves, flags any figure asserted rather than derived ↗ | T1 | READ | — |
-| `HERON-DOC-CHG-008` | Change Log Agent | Added / Improved / Fixed / Deprecated per version | T1 | — | — |
+| `HERON-DOC-REL-005` | Release Notes Agent | Structured notes per release. **DEFERRED 2026-09-16 by [D-77](DECISIONS.md)** - there are **no releases**: `git tag` returns nothing. A release-notes agent with no release has nothing to write notes about, and building it now would mean building it against an imagined shape. **Unblocked by the first tag** | T2 | — | — |
+| `HERON-DOC-ARC-006` | Architecture Documentation Agent | Keeps architecture docs in step with the registries. **FOLDED 2026-09-16 into [`tools/check-docs.py`](../tools/check-docs.py) by [D-77](DECISIONS.md)** - that tool already sweeps all 140 markdown files, recomputes every count claim against its derived source and resolves every internal link. **The guarding half only**: it checks the architecture docs are true, and writes none of them. Proved by planting a dead anchor in [`docs/06`](06-heron-platform.md) and requiring it to be caught | T2 | — | — |
+| `HERON-DOC-RDM-007` | README Agent | Keeps the README current. **FOLDED 2026-09-16 into [`tools/check-docs.py`](../tools/check-docs.py) by [D-77](DECISIONS.md)** - that tool reads `README.md` by name in four sections and enforces its counts against their derived source; its own comments record three occasions when the README was wrong and this is why it is not now. **The guarding half only**: nothing writes the README. Proved by planting a false count in it and requiring the guard to fail | T2 | — | — |
+| `HERON-DOC-VAL-009` | **Documentation Validation Agent** | Do the documents match reality. Recomputes every stated count from its source, checks every internal link resolves, flags any figure asserted rather than derived ↗. **Since [D-77](DECISIONS.md) it also carries `ARC-006` and `RDM-007`.** A dead link had been FOUND and not failed on since 2026-08-31; wiring section 1 to the exit code that day turned up three, one of them a `D-30` anchor linked correctly ten times and wrongly once | T1 | READ | — |
+| `HERON-DOC-CHG-008` | Change Log Agent | Added / Improved / Fixed / Deprecated per version. **DEFERRED 2026-09-16 by [D-77](DECISIONS.md)** - 683 files carry `Heron-Since: 0.1.0` and there is **one version**, so a change log would be a single section listing all of them: true and useless. **A second problem outlives the first**: `Fixed` and `Improved` cannot be told apart from a diff, and the only mechanical route is a word list over commit subjects, which is the synonym table [D-34](DECISIONS.md) refuses. Whoever builds this after the first tag needs a commit convention or the host under [D-01](DECISIONS.md) | T1 | — | — |
 
 ---
 

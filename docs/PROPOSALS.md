@@ -755,7 +755,7 @@ grep -n 'EXPERIMENTAL\|VERIFIED\|OFFICIAL' brain/heron_fragment.py   # what read
 The third command prints nothing. **`heron_fragment.py` requires the field and never validates its
 value.** The `SOURCES` tuple it does check — `("fragment", "ambient", "request")` — belongs to
 `contract.needs[].source`, a different field with the same name one level down. The one trust word the
-loader does contain, `PROVEN`, is there as a [docs/24](24-agent-lifecycle.md) lifecycle *status*, which
+loader does contain, `PROVEN`, is there as a [docs/24](24-trust-model.md) lifecycle *status*, which
 is a different ladder that happens to share a rung.
 
 **So a fragment's trust level is a word the file writes about itself that nothing checks** — which is
@@ -1082,6 +1082,24 @@ only thing enforcing one, and a convention arrived at that way is the hardest ki
 like — a separator, a case, an order. That is a decision about what the product's filenames read like,
 which is the owner's.
 
+### SETTLED 2026-09-16 — [D-79](DECISIONS.md): six parts, version last
+
+    <domain>-<capability>-<purpose>-<platform>-<component>-v<n>
+    mep-duct-insulation-check-revit-fitting-v1
+
+**docs/00c won.** It is the owner's own handover document and its sixth part is real, so the register's
+row was corrected rather than the baseline. The version moved to the END, which 00c's listing does not
+do — recorded in D-79 as a change to the order rather than folded in quietly.
+
+The rules live in [docs/29](29-metadata-standard.md), which already owned every other name shape here.
+`HERON-NAM-GEN-001` is built in `brain/heron_naming.py` beside the validator, and generates through the
+validator's own rule so the department cannot produce a name its own checker rejects. **Naming &
+Taxonomy is 7 of 7.**
+
+**The half that is still impossible is declared rather than hidden.** A part may be hyphenated, so a
+finished name cannot be split back into six parts — `check()` says it checked the SHAPE, in the answer,
+and never claims to have checked the parts.
+
 ---
 
 ### 🟠 F16. The register asks for a synonym table and D-34 forbids one
@@ -1145,6 +1163,16 @@ mistake as writing a new agent over `brain/heron_architect.py` earlier today, ar
 direction. What is needed is one line in `docs/28` saying which of the three owns metadata validity and
 what the other two defer to it for. That is the owner's call, and until it is made the Naming & Taxonomy
 department reads as 7 agents when its real number may be 6.
+
+**SETTLED 2026-09-16 — [D-78](DECISIONS.md).** `HERON-STD-MET-014` owns it and `MET-006` folds into
+`tools/check-metadata.py`. Two thirds of the question turned out to be answered already, in that tool's
+own source rather than in any register: *"ONE place per fact: `brain/heron_fragment.py` validates these
+files, and this checker does not read them."* So `FRG-VAL-001`'s half was never an overlap, and only the
+unbuilt third row needed deciding.
+
+`tests/test_metadata_guard.py` plants one error for each word of the folded row — a missing field, an
+invalid layer, a claim on an id that does not exist — and requires all three to be caught. **Naming &
+Taxonomy is 6 of 7**, and the seventh is `NAM-GEN-001`, blocked on **F15** above.
 
 ---
 
@@ -1425,6 +1453,21 @@ disagreeing with the first — the same objection that stopped `HERON-NAM-MET-00
 1. Build `CHG-008` and `REL-005` **when the first tag is cut**, not before — and decide the
    `Fixed` / `Improved` question first, as a convention or as the host's.
 2. Fold any check `ARC-006` or `RDM-007` would add **into `check-docs.py`**, rather than beside it.
+
+### SETTLED 2026-09-16 — [D-77](DECISIONS.md): both, as proposed
+
+`CHG-008` and `REL-005` are deferred with the tag named as what unblocks them, so they stop reading as
+work somebody is neglecting. `ARC-006` and `RDM-007` are folded into `check-docs.py`, which now claims
+three rows.
+
+**The fold was checked rather than asserted**, because closing two rows by writing no code is the exact
+shape of a claim this repository keeps finding it believed. `tests/test_docs_guard.py` plants an error in
+each place those rows name and requires the guard to find it.
+
+**That checking found a real defect.** `check-docs.py` had been FINDING dead links since 2026-08-31 and
+exiting 0 on them. Wiring section 1 to the exit code turned up three — including a `D-30` anchor linked
+correctly ten times and wrongly once, which an anchor check written hours earlier had missed because it
+kept one occurrence per id. D-77 records all three.
 3. Either way, the four rows in [docs/28](28-agent-registry.md) should say so, so the next person does
    not read four unbuilt agents as four missing ones.
 
@@ -1581,6 +1624,7 @@ of them there are **two** candidates, which one is right depending on a question
 | `DEV-INT-012` *integration tests against a mocked Revit boundary* | — | `tests/Heron.Bridge.TestHost` + `test_bridge_roundtrip.py` |
 | `DEV-RGR-014` *golden-file comparison across supported versions* | `tests/golden/cases.py`, `tests/test_golden.py` | — |
 | `DEV-PRF-015` *execution time and resource cost* | — | `tools/measure-brain.py`, which measures exactly those two words |
+| `DEV-PRF-015` **again — a THIRD candidate, 2026-09-16** | — | `brain/heron_devperf.py`, which times the test SUITES against check-gaps' bound. Built claiming this row and **un-claimed the same day on reading this section**; its header is `none` and the reasoning is in its docstring |
 
 ### The precedent points one way and the files point the other
 
@@ -1611,8 +1655,45 @@ latency half.
 **Say which reading governs**, in one sentence in docs/28 §9's heading. Then five rows close by claiming
 files that already work, and `agent-count.py` stops reporting as unbuilt five things that are built.
 
-**Not acted on.** Claiming an id on a guess is the failure this project's whole metadata standard exists
-to prevent, and two already-claimed rows in the same department point opposite ways.
+### SETTLED 2026-09-16 — [D-75](DECISIONS.md): a Development agent acts on HERON ITSELF
+
+The sentence is in docs/28 §9's heading and the department's subject is Heron's own code.
+
+**It closed one row, not five, and the table above is what says so.** The proposal counted candidates
+without reading which column they were in. Taking them column by column: `DEV-BLD-010` closes on
+`tools/check-compile.py`; `DEV-UNT-011` has no file to claim because the suite sweep is inline bash in
+`gates.yml`; `DEV-INT-012`'s only candidates are layer `test`; `DEV-RGR-014`'s only candidates are on
+the fragment side, which the decision rules **out**; and `DEV-PRF-015` has two candidates that are both
+on Heron, so the decision does not separate them. D-75 carries the row-by-row detail.
+
+**A count of candidates is not a count of answers** — which is the same shape as this section's other
+two findings, one layer up again.
+
+### It happened, on 2026-09-16, and the check written to prevent it is what let it through
+
+`brain/heron_devperf.py` was built claiming `DEV-PRF-015`, merged as **#159**, and un-claimed hours later on reading this section. **The row now has three candidates and one id.**
+
+The build was not careless about it. Every candidate agent was first checked against this file and [OPEN-QUESTIONS](OPEN-QUESTIONS.md) for a recorded blocker, and `PRF-015` came back clean. **The grep searched for `HERON-DEV-PRF-015`. This section writes it `DEV-PRF-015`, with no prefix**, so the pattern could not see the one row that was about it.
+
+**The same grep wrongly cleared nine others** — `DEV-BLD-010`, `DEV-INT-012`, `DEV-RGR-014`, `DEV-UNT-011` (all four in the table above) and `STD-BIM-001`, `STD-DOC-008`, `STD-LOD-007`, `STD-MOD-005`, `STD-QAQ-006` (all five in [F31](#)'s — **and this sentence said F29 when it was first written, which is the same defect one layer up: a reference nobody followed**). Ten of fifteen agents reported as having no recorded blocker, every one of them written about here.
+
+This repository's rule is **prove the pattern can see what you know is there**, and it was broken by the check written to enforce it. Search an agent id **without its `HERON-` prefix** — `grep -n 'DEV-PRF-015' docs/*.md` — or the register's own spelling will hide the row.
+
+### And then the withdrawal itself was half done
+
+Blanking the two `Heron-Agent:` headers did not withdraw the claim.
+**`brain/agents/HERON-DEV-PRF-015.yaml` was still sitting there, and a contract in that folder IS the
+claim** - each of the other 125 stands for a counted agent. So the repository held 126 contracts for
+215 agents, and one of them named no suite at all.
+
+Nothing in the withdrawal noticed. `tests/test_contract_reference.py` did, on the next CI run, in the
+arithmetic it asserts for precisely this reason: *126 with a contract plus 90 without is 215* - which
+is 216. The contract is gone now, and the three failure names it declared live in
+`brain/heron_devperf.py` beside the code that produces them, checked against that code's own source
+instead of typed into the test.
+
+**Undoing a claim touches every place that makes it.** Here that was three: two headers, and a file
+whose existence was the third.
 
 ---
 
@@ -1810,8 +1891,19 @@ One of two, and both are the owner's:
 2. **Build five files that differ by a search term**, because the register says five rows and a row is a
    row.
 
-**Not acted on.** Option 1 is the same question F27 asks about the Development department — whether a
-row must map to its own file — and answering it once should settle both.
+### SETTLED 2026-09-16 — [D-76](DECISIONS.md): option 1, and Standards is now 14 of 14
+
+`brain/heron_company.py` takes a `subject`, its header claims six ids, and the five rows are recorded
+against it. `LOD-007` got its `stage` as the one genuine addition. **221 built, 25 left.**
+
+Three of the five are PARTIAL and each says so in its own answer rather than only in a register: `bim`
+and `modelling` cite but cannot reach a model or its geometry, and `documentation` is mostly names that
+`QA-BIM-011` already routes to `STD-NAM-004`.
+
+**It did NOT settle both departments, which this section expected it to.** [F27](#f27--five-development-rows-are-already-built-and-whose-work-they-measure-decides-by-which-file)
+turned out to be a different question — not *may one file carry several rows* but *what is this
+department's subject* — and [D-75](DECISIONS.md) answered that one separately. Two proposals can look
+like one question and be two.
 
 ---
 
@@ -1962,7 +2054,7 @@ Of the 48 broad C# handlers, **27 leave a fault and the normal case indistinguis
 | shape | count | what the caller gets |
 |---|---|---|
 | `catch { }` — empty block | **14** | the fault leaves no trace at all |
-| `catch { continue; }` | **10** | the item drops out of the loop and the count comes back smaller ([Golden Rule 14](../CLAUDE.md)) |
+| `catch { continue; }` | **10** | the item drops out of the loop and the count comes back smaller ([Golden Rule 14](14-golden-rules.md)) |
 | `catch { return null; }` / `false` / `new T()` | **3** | a fault comes back as *"nothing found"* — D-52 in as many words |
 
 ### Not one of them is claimed to be a bug
@@ -2251,3 +2343,169 @@ millimetres or 200 feet. The same standard applies here.
 
 **Not acted on beyond the README.** 2 is an owner's decision by D-07's own terms, 3 needs somebody to
 look rather than to reason, and 4 is a gate everybody runs.
+
+---
+
+## F39 — five Development rows may be the host's, and the tier model already says so everywhere else
+
+**Raised by the owner on 2026-09-17**, in one sentence, after being told those five rows needed a local
+model installed before they could be built:
+
+> *"you are its self the ai and thru ai we are acessing the heron so this ai can do this work am i
+> right"*
+
+He is right, and the evidence was already in the repository. This section records it so the decision is
+made deliberately rather than by whoever writes the next agent.
+
+### The tier model says T2 means a model call. Not one built T2 makes one
+
+| tier | built | total |
+|---|---|---|
+| T1 — no model call | 152 | 167 |
+| T2 — one scoped call | **55** | 63 |
+| T3 — agentic loop | **18** | 20 |
+
+**No adapter existed until 2026-09-17**, so not one of those 73 agents has ever made a model call. They
+are not broken and they are not lying. They do the mechanical half and hand the language half UP, and
+[`brain/heron_company.py`](../brain/heron_company.py) says so in its own result:
+
+> *"WHICH CLAUSE ANSWERS THE QUESTION. That is language, and docs/28 makes this row T2 for it. The
+> clauses go to the host with the question attached; nothing here picked one."*
+
+**That is what a T2 is in this repository**: gather, then ask the host. The tier is a statement about
+where the judgement happens, not about who holds an API key.
+
+### And D-01 already put the host in that seat
+
+[D-01](DECISIONS.md) — accepted, read back 2026-09-06:
+
+> **"Claude Code is the conversation layer and the agent host."** ... *"The entire agent framework,
+> conversation layer, persona handling and tool orchestration come for free."*
+
+Four rows are already delegated on exactly that basis, and `check-metadata.py` names them and their
+reasons:
+
+| row | why it is not built here |
+|---|---|
+| `HERON-ORC-MAIN-001` | *the host plans and sequences the work* |
+| `HERON-ORC-INT-002` | *the host classifies what is being asked* |
+| `HERON-ORC-PER-003` | *the host chooses the wording and the level* |
+| `HERON-ORC-SUM-006` | *the host writes the reply the user reads* |
+
+**All four are T2.** They are excluded from "left" because the host is the model.
+
+### The five rows, one at a time, because they are not one case
+
+| row | tier | what the evidence says |
+|---|---|---|
+| `DEV-PLN-002` *sequences the work* | T2 | **`ORC-MAIN-001` is already host, and its stated reason is "the host plans and sequences the work".** The same sentence. This is the clearest of the five and may be a duplicate row rather than a delegation |
+| `DEV-REQ-001` *turns a request into a buildable specification* | T2 | `ORC-MAIN-001` is host for *"understands the request"*. Turning a request into a specification is that act, named again |
+| `DEV-GEN-004` *writes code, only after Fragment Matcher has reported* | T3 | The precondition is mechanical and already checkable. The writing is the host's, and was the host's for every line built in this repository so far |
+| `DEV-RAP-007` *Revit API knowledge for generation* | T2 | **Its own row says "merge candidate with 005/006", and both are built**: [`heron_csharp.py`](../brain/heron_csharp.py) and [`heron_dotnet.py`](../brain/heron_dotnet.py). This is a merge question, not a build one |
+| `DEV-ARC-003` *decides structure and placement within Heron's architecture* | T3 | [`HERON-IMP-ARC-011`](../brain/heron_belongs.py) is built and *"places content where the architecture says it belongs"*. Overlapping, and [F28](#f28--the-import-classifies-into-five-words-the-workspace-has-never-heard-of) already records that department's vocabulary problem |
+
+**Three look like delegation and two look like merges.** Calling all five "host" would be the same
+sweeping move that [F27](#f27--five-development-rows-are-already-built-and-whose-work-they-measure-decides-by-which-file) got wrong by counting candidates instead of reading them.
+
+### What it would change
+
+`agent-count.py` already has a HOST column and already excludes those rows from LEFT. Adding ids to
+`HOST_PROVIDED` in `check-metadata.py` is the whole mechanism; it is audited both directions and refuses
+an id that is not in the registry.
+
+**Development would go from 12 of 21 to close to complete**, without installing anything.
+
+### What it would cost, which is the half worth arguing about
+
+**A host-provided agent cannot run without a host.** Delegating these five means Heron cannot plan, write
+a specification or generate code:
+
+- on a schedule, with nobody in a chat
+- in a batch large enough that a conversation is impractical
+- for somebody using the Revit add-in with no Claude Code session open
+
+If Heron is only ever driven through Claude Code, that costs nothing and D-01 already accepted it. If it
+is ever meant to run on its own, this is the decision that says it cannot.
+
+### What this does NOT touch
+
+**The provider adapter is still needed, for the work a conversation genuinely cannot do.**
+[`brain/heron_provider.py`](../brain/heron_provider.py) exists for two jobs and neither is on the list
+above:
+
+- **bulk.** `heron_router.INTENTS` marks `CLASSIFY`, `EXTRACT` and `SCORE` as `bulk: True`. Classifying
+  five thousand elements one at a time is not a conversation
+- **confidential.** The host is a cloud model. `heron_router` refuses cloud adapters for confidential
+  scopes and refuses everything when no local one is registered — so that rule can only ever be kept by
+  a local adapter, never by the host
+
+### What is proposed
+
+**Say which of the five are the host's**, in `HOST_PROVIDED` with a reason each, the way the existing
+four are written. And say separately whether `RAP-007` and `ARC-003` are merges rather than
+delegations, because those are a different question with a different answer.
+
+### SETTLED 2026-09-17 — [D-80](DECISIONS.md): all five are the host's
+
+`HOST_PROVIDED` now holds nine. **Development goes from 9 left to 4; the register from 21 to 16.**
+
+**The four delegated before this said so nowhere in docs/28** — `HOST_PROVIDED` knew and the register
+did not. All nine now carry the same sentence, because marking only the new five would have left a
+reader seeing four ordinary unbuilt rows.
+
+**The merge question above is deliberately NOT settled.** `RAP-007`, `ARC-003` and `PLN-002` may be
+duplicate rows rather than delegations, and the register says so on each. Merging a row is a different
+act from delegating one, and doing both at once is how a register loses track of which happened.
+
+**The cost is recorded in D-80 rather than buried**: Heron can no longer plan, specify or generate code
+without a chat open — no schedule, no add-in colleague, no confidential scope. The owner considered
+each and accepted all three.
+
+---
+
+## F40 — Workforce Planning scores a proposal against the register's BUILD NOTES, not only its job
+
+**Found by breaking it, on 2026-09-17**, while recording [D-80](DECISIONS.md). CI went red on
+`test_hr.py`, and the cause was one word in a sentence about bookkeeping.
+
+`HERON-AHR-WFP-015` is the guard against agent explosion. `assess()` scores a proposed agent against
+each register row:
+
+    overlap(purpose, "%s %s" % (row["name"], does))
+
+`does` is **the whole `Does` column**, and this repository has spent the day appending build notes to
+that column — *"Built 2026-09-16 - tools/check-compile.py..."*, *"FOLDED into check-docs.py"*,
+*"Provided by the host"*. Those notes are bookkeeping, not the job.
+
+### What happened
+
+D-80 added one sentence to nine rows, ending *"`agent-count.py` **counts** it under HOST, never under
+LEFT"*. `HERON-ORC-SUM-006`'s job description already contains the word **ducts**, in an example of a
+reply it might write.
+
+So the proposal `Duct Counter` / *"counts ducts in a view"* — a fixture that exists precisely because
+it is a **fragment** and must be turned down — scored **0.67** against the User Result Agent and came
+back `ALREADY_AN_AGENT`.
+
+**Two words. One of them was in a sentence about a column in a report.**
+
+### Why it matters more than the typo
+
+The word was changed and the suite is green again. **The fragility is not.** Every build note appended
+to a row from here on is scored as though it described the job, and this register now carries dozens of
+them. The guard gets noisier with every agent that is built, which is exactly backwards.
+
+**And it fails in the dangerous direction.** A false `ALREADY_AN_AGENT` does not create a duplicate
+agent — it REFUSES A REAL ONE, with a confident sentence naming an agent that does nothing of the sort.
+A guard that cries wolf is [A18](NEEDS-CHECKING.md)'s lesson, and this one now has a growing supply of
+wolves.
+
+### What is proposed
+
+**Score against the job, not the bookkeeping.** The build notes in this register are consistently
+introduced by a bolded marker — `**Built`, `**FOLDED`, `**DEFERRED`, `**Claimed`, `**Provided by the
+host** — so the job is the text before the first one. That is a small change in one place, and
+`tests/test_workforce.py` can assert it with the very fixture that failed here.
+
+**Not acted on.** It changes what a guard sees, and the guard's whole value is that its findings are
+real. That deserves its own decision rather than riding in on a delegation.

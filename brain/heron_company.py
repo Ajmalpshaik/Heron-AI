@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Heron-Agent:  HERON-STD-CMP-002
+# Heron-Agent:  HERON-STD-CMP-002, HERON-STD-BIM-001, HERON-STD-MOD-005, HERON-STD-QAQ-006, HERON-STD-LOD-007, HERON-STD-DOC-008
 # Heron-Step:   11
 # Heron-Status: DRAFT
 # Heron-Since:  0.1.0
@@ -59,6 +59,45 @@ Each comes back with its own route and that agent's own note, word for
 word. A single "no company standard found" would be one sentence for
 four different problems, three of which somebody can fix in a minute.
 
+SIX ROWS, ONE FILE, AND A NOUN IN FRONT (F31, D-76)
+-----------------------------------------------------
+Five more Standards rows are this agent with a different search term.
+HERON-AHR-WFP-015 - the row whose whole job is to say no before anything
+is hired - asks "can an existing agent be extended?", and for these five
+the answer is yes:
+
+    subject=None             HERON-STD-CMP-002  the company standard
+    subject="bim"            HERON-STD-BIM-001  a stated BIM standard
+    subject="modelling"      HERON-STD-MOD-005  connections, elevations
+    subject="qa"             HERON-STD-QAQ-006  the QA process
+    subject="lod"            HERON-STD-LOD-007  LOD, and it takes a STAGE
+    subject="documentation"  HERON-STD-DOC-008  sheets, titleblocks
+
+The subject steers retrieval and is reported back, so an answer always
+says which row it was answering as and what was actually searched. An
+unknown subject is REFUSED rather than ignored: a subject silently
+dropped would answer the company question and look exactly like it had
+answered the asked one.
+
+`subject=None` is the behaviour this file had before F31, unchanged.
+
+WHAT THE EXTRA ROWS DO NOT GET, WHICH IS THE HONEST HALF
+----------------------------------------------------------
+Three of the five are only PARTLY this file, and each says so in its own
+answer rather than only in this comment:
+
+    BIM-001    docs/28 says "applies a standard TO A MODEL". This cites;
+               it does not open a model. The checkable half is
+               HERON-QA-BIM-011's
+    MOD-005    connections and elevations are geometry, and nothing on
+               this side of the bridge can reach it
+    DOC-008    sheets, titleblocks and view names are NAMES, and
+               HERON-QA-BIM-011 already routes those to HERON-STD-NAM-004
+
+LOD-007 is the one with a genuine difference of shape rather than of
+subject - "expected at this STAGE" is a second input no other standards
+row takes - and it is the only one given a parameter of its own.
+
 WHAT IT DOES NOT DO
 ---------------------
 It does not decide which clause answers the question - that is language,
@@ -93,18 +132,165 @@ find_documents = RETRIEVE.find_documents
 # four nothings, and each keeps its own name.
 FOUND = "documents"
 
+# THE SIX ROWS THIS FILE ANSWERS, AND THE TERMS THAT TELL THEM APART.
+# Recorded here rather than in five near-identical files, which is what
+# HERON-AHR-WFP-015 exists to prevent - see F31 and D-76. `company` has
+# no terms on purpose: subject=None must query exactly what it queried
+# before F31, or extending this agent would have changed it.
+SUBJECTS = {
+    "company": {
+        "subject": "company",
+        "agent": "HERON-STD-CMP-002",
+        "terms": (),
+        "takesStage": False,
+        "row": "the organisation's own approved standard",
+        "short": None,
+    },
+    "bim": {
+        "subject": "bim",
+        "agent": "HERON-STD-BIM-001",
+        "terms": ("BIM", "standard"),
+        "takesStage": False,
+        "row": "applies a stated BIM standard to a model",
+        "short": "THIS CITED; IT DID NOT CHECK A MODEL. docs/28 gives this "
+                 "row a model to apply the standard to, and nothing here "
+                 "opened one. The checkable half is HERON-QA-BIM-011's.",
+    },
+    "modelling": {
+        "subject": "modelling",
+        "agent": "HERON-STD-MOD-005",
+        "terms": ("modelling", "connection", "elevation", "practice"),
+        "takesStage": False,
+        "row": "how things should be modelled - connections, elevations",
+        "short": "THIS CITED; IT DID NOT LOOK AT GEOMETRY. Connections and "
+                 "elevations are geometry inside Revit, which nothing on "
+                 "this side of the bridge can reach.",
+    },
+    "qa": {
+        "subject": "qa",
+        "agent": "HERON-STD-QAQ-006",
+        "terms": ("QA", "QC", "quality", "process", "review", "checking"),
+        "takesStage": False,
+        "row": "the organisation's QA process requirements",
+        "short": "THIS ANSWERED WHAT THE PROCESS REQUIRES, NOT WHETHER IT "
+                 "WAS FOLLOWED. The row says requirements; compliance "
+                 "would be a different job, and the audit trail's.",
+    },
+    "lod": {
+        "subject": "lod",
+        "agent": "HERON-STD-LOD-007",
+        "terms": ("LOD", "level of development", "level of detail"),
+        "takesStage": True,
+        "row": "level of development expected at this stage",
+        "short": None,
+    },
+    "documentation": {
+        "subject": "documentation",
+        "agent": "HERON-STD-DOC-008",
+        "terms": ("sheet", "titleblock", "annotation", "documentation"),
+        "takesStage": False,
+        "row": "sheet, titleblock and annotation requirements",
+        "short": "SHEET, TITLEBLOCK AND VIEW NAMES ARE NAMES, and "
+                 "HERON-QA-BIM-011 already routes those to "
+                 "HERON-STD-NAM-004. What is left here is the clauses.",
+    },
+}
 
-def ask(question, store=None):
+
+def resolve(subject, stage=None):
+    """(the subject's entry, None) - or (None, a refusal to hand back).
+
+    AN UNKNOWN SUBJECT IS REFUSED, NEVER SHRUGGED OFF. A subject quietly
+    dropped answers the COMPANY question and hands back something that
+    looks exactly like an answer to the asked one - the same defect as a
+    flag swallowed into a list of file names and reported as data.
+    """
+    key = subject if subject is None else str(subject).strip().lower()
+    if key in (None, ""):
+        key = "company"
+    if key not in SUBJECTS:
+        return None, {
+            "answered": False,
+            "refused": "UNKNOWN_SUBJECT",
+            "why": "%r is not a subject this agent answers as. The six are "
+                   "%s. Answering the company question under another row's "
+                   "name would be a false sentence about which standard "
+                   "was read." % (subject, ", ".join(sorted(SUBJECTS))),
+        }
+    picked = SUBJECTS[key]
+    if stage and not picked["takesStage"]:
+        return None, {
+            "answered": False,
+            "refused": "STAGE_NOT_TAKEN",
+            "why": "subject %r takes no stage, and %r was handed in. Only "
+                   "%s does - docs/28 gives it 'expected at this stage', "
+                   "and that second input is the one genuine difference "
+                   "among these rows. Accepting a stage here and ignoring "
+                   "it would report a filtered answer that was never "
+                   "filtered." % (picked["subject"], stage,
+                                  SUBJECTS["lod"]["agent"]),
+        }
+    return picked, None
+
+
+def _queried(question, picked, stage):
+    """What is actually searched: the question, steered by the subject.
+
+    With no subject this is the question and nothing else, character for
+    character, which is what keeps HERON-STD-CMP-002 the agent it was.
+    """
+    words = [question] + list(picked["terms"])
+    if picked["takesStage"] and stage:
+        words.append(str(stage))
+    return " ".join(w for w in words if w)
+
+
+def ask(question, store=None, subject=None, stage=None):
     """
     {answered, clauses, ask} - or a refusal. Nothing is summarised and
     no clause is converted.
-    """
-    question = str(question or "").strip()
-    if not question:
-        return {"answered": False, "refused": "NOTHING_ASKED",
-                "why": "no question was handed in. A standard answers a "
-                       "question; it is not a thing to be listed."}
 
+    `subject` picks which of the six rows this call answers as and steers
+    retrieval with that row's terms. None is HERON-STD-CMP-002 and
+    behaves exactly as this file did before F31. Every answer carries the
+    row it answered as and the text actually searched, so a caller is
+    never left guessing which standard it just read.
+    """
+    picked, refusal = resolve(subject, stage)
+    if refusal is not None:
+        return refusal
+
+    question = str(question or "").strip()
+    badge = {
+        "subject": picked["subject"],
+        "agent": picked["agent"],
+        "asAsked": picked["row"],
+        "stage": stage if picked["takesStage"] else None,
+        "queried": _queried(question, picked, stage),
+        "short": picked["short"],
+    }
+
+    if not question:
+        return dict(badge, answered=False, refused="NOTHING_ASKED",
+                    why="no question was handed in. A standard answers a "
+                        "question; it is not a thing to be listed.")
+
+    answer = _cite(question, badge["queried"], store)
+    # THE BADGE IS APPLIED LAST AND OVERWRITES NOTHING IT SHOULD NOT.
+    # _cite knows only about citing; which row asked is this layer's, and
+    # keeping the two apart is why subject=None is provably unchanged.
+    answer.update(badge)
+    return answer
+
+
+def _cite(question, queried, store):
+    """The citing itself, with the subject already resolved.
+
+    `question` is what the caller asked and what every message quotes;
+    `queried` is what was actually searched, which the subject may have
+    steered. Reporting the first and searching the second is why both
+    are carried rather than one overwritten by the other.
+    """
     opened = False
     if store is None:
         try:
@@ -125,7 +311,7 @@ def ask(question, store=None):
                        % (getattr(store, "scope", None), SCOPE_NAME)}
 
     try:
-        answer = find_documents(store, question)
+        answer = find_documents(store, queried)
         # THE CLAUSE TEXT IS FETCHED WHILE THE STORE IS STILL OPEN, and it
         # is not in the candidate. HERON-RAG-RNK-006 returns the title, the
         # locator and the path - what a person needs to GO AND OPEN it -
@@ -254,7 +440,28 @@ def main(argv):
     print("lookup: %s.%s" % (find_documents.__module__,
                              find_documents.__name__))
 
-    question = " ".join(argv) or "how thick should duct insulation be"
+    # THE FLAGS STOP THE QUESTION, AND AN UNKNOWN ONE IS REFUSED. A
+    # `--subject` swallowed into the question would search for the word
+    # "--subject" and report the miss as an honest empty answer.
+    subject = stage = None
+    words, i = [], 0
+    while i < len(argv):
+        if argv[i] == "--subject" and i + 1 < len(argv):
+            subject, i = argv[i + 1], i + 2
+            continue
+        if argv[i] == "--stage" and i + 1 < len(argv):
+            stage, i = argv[i + 1], i + 2
+            continue
+        words.append(argv[i])
+        i += 1
+
+    picked, refusal = resolve(subject, stage)
+    if refusal is not None:
+        print("\n%s  %s" % (refusal["refused"], refusal["why"]))
+        return 2
+    print("row:    %s, %s" % (picked["agent"], picked["row"]))
+
+    question = " ".join(words) or "how thick should duct insulation be"
 
     made = None
     if not os.environ.get("HERON_KNOWLEDGE"):
@@ -284,7 +491,11 @@ def main(argv):
         store.close()
 
     try:
-        answer = ask(question)
+        answer = ask(question, subject=subject, stage=stage)
+        if answer.get("queried") != question:
+            print("\nsearched: %s" % answer["queried"])
+        if answer.get("short"):
+            print("\nnot this agent's: %s" % answer["short"])
         print("\n%s" % answer.get("why", answer.get("refused")))
 
         for clause in answer.get("clauses", []):
@@ -303,6 +514,15 @@ def main(argv):
 
         bad = ask(question, store=NotCompany())
         print("  %-18s %s" % (bad["refused"], bad["why"][:44]))
+        for kwargs in ({"subject": "acoustics"},
+                       {"subject": "qa", "stage": "RIBA 4"}):
+            bad = ask(question, **kwargs)
+            print("  %-18s %s" % (bad["refused"], bad["why"][:44]))
+
+        print("\nsix rows, one file")
+        for key in sorted(SUBJECTS):
+            one = SUBJECTS[key]
+            print("  %-14s %s  %s" % (key, one["agent"], one["row"][:38]))
 
         print("\nwhat this agent does not judge")
         for line in answer.get("unjudged", []):
