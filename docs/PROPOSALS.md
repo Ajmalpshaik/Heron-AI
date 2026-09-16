@@ -1146,6 +1146,16 @@ direction. What is needed is one line in `docs/28` saying which of the three own
 what the other two defer to it for. That is the owner's call, and until it is made the Naming & Taxonomy
 department reads as 7 agents when its real number may be 6.
 
+**SETTLED 2026-09-16 — [D-78](DECISIONS.md).** `HERON-STD-MET-014` owns it and `MET-006` folds into
+`tools/check-metadata.py`. Two thirds of the question turned out to be answered already, in that tool's
+own source rather than in any register: *"ONE place per fact: `brain/heron_fragment.py` validates these
+files, and this checker does not read them."* So `FRG-VAL-001`'s half was never an overlap, and only the
+unbuilt third row needed deciding.
+
+`tests/test_metadata_guard.py` plants one error for each word of the folded row — a missing field, an
+invalid layer, a claim on an id that does not exist — and requires all three to be caught. **Naming &
+Taxonomy is 6 of 7**, and the seventh is `NAM-GEN-001`, blocked on **F15** above.
+
 ---
 
 ### 🟡 F18. "Registers them with the Tool Registry" — a discovered tool must not enter a fixed table
