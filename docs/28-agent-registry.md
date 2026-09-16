@@ -231,6 +231,13 @@ at all. This department closes that.
 
 ## 9. Development — 21
 
+**A Development agent acts on HERON ITSELF** - its projects, its brain, its tests, its bridge,
+its package - and never on the artefact Heron builds. Decided 2026-09-16, [D-75](DECISIONS.md),
+which settles [F27](PROPOSALS.md). So the fragment-side tools are NOT this department's, however
+closely a row reads like them: `tools/check-fragments-compile.py` and `tests/golden/` belong to
+the fragment pipeline. A row with no Heron-side file stays open rather than taking the nearest
+fragment-side one.
+
 | ID | Agent | Does | Tier | Risk | Step |
 |---|---|---|---|---|---|
 | `HERON-DEV-REQ-001` | Requirement Agent | Turns a request into a buildable specification | T2 | — | — |
@@ -244,7 +251,7 @@ at all. This department closes that.
 | `HERON-DEV-RAP-007` | Revit API Domain Agent | Revit API knowledge for generation *(merge candidate with 005/006)* | T2 | — | — |
 | `HERON-DEV-REV-008` | Code Review Agent | Architecture, API usage, error handling, transaction safety, duplication | T2 | — | — |
 | `HERON-DEV-SEC-009` | Security Review Agent | Required for anything at MODIFY or above | T2 | — | — |
-| `HERON-DEV-BLD-010` | Build Agent | Compiles across all target frameworks | T1 | — | — |
+| `HERON-DEV-BLD-010` | Build Agent | Compiles across all target frameworks. **Claimed 2026-09-16 under [D-75](DECISIONS.md)** - [`tools/check-compile.py`](../tools/check-compile.py), which builds every project against every Revit version the machine can reach, 2020 to 2027, and found a real 2020-only error the first time it ran. The file predates the claim by weeks; what changed is that D-75 says which reading of this department governs, so the row and the file can finally be said to be the same thing. Its read-only half is imported from [`HERON-DEV-NET-006`](../brain/heron_dotnet.py) rather than kept a second time | T1 | — | — |
 | `HERON-DEV-UNT-011` | Unit Test Agent | Runs unit tests | T1 | — | — |
 | `HERON-DEV-INT-012` | Integration Test Agent | Runs integration tests against a mocked Revit boundary | T1 | — | — |
 | `HERON-DEV-RVT-013` | Revit Test Agent | Runs tests **inside real Revit**. Code QA ≠ Revit QA. **Running half built 2026-09-09** - `tools/batch-prove.py`, which proves many fragments in one pass and judges BOTH halves of each: the negative came back empty *and* the positive moved a declared result off zero. It refuses a fragment already at PROVEN, because one batch spent a whole pass re-proving fifteen of them. The arranging is the hard half and stays a brief rather than code - `.claude/skills/fragment-proving/SKILL.md` - but its DERIVABLE part is `tools/generate-jobs.py`, which writes the job file's fragment list, write path, setup chain and exact input names out of the library, and leaves the category and the view blank because guessing those produced eleven confident meaningless results in one batch. Judging is `HERON-FRG-VAL-001`'s, imported rather than copied | T1 | READ | — |
