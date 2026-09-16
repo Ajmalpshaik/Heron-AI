@@ -2445,4 +2445,18 @@ above:
 four are written. And say separately whether `RAP-007` and `ARC-003` are merges rather than
 delegations, because those are a different question with a different answer.
 
-**Not acted on.** Which work Heron may not do without a chat open is a product decision, and the owner's.
+### SETTLED 2026-09-17 — [D-80](DECISIONS.md): all five are the host's
+
+`HOST_PROVIDED` now holds nine. **Development goes from 9 left to 4; the register from 21 to 16.**
+
+**The four delegated before this said so nowhere in docs/28** — `HOST_PROVIDED` knew and the register
+did not. All nine now carry the same sentence, because marking only the new five would have left a
+reader seeing four ordinary unbuilt rows.
+
+**The merge question above is deliberately NOT settled.** `RAP-007`, `ARC-003` and `PLN-002` may be
+duplicate rows rather than delegations, and the register says so on each. Merging a row is a different
+act from delegating one, and doing both at once is how a register loses track of which happened.
+
+**The cost is recorded in D-80 rather than buried**: Heron can no longer plan, specify or generate code
+without a chat open — no schedule, no add-in colleague, no confidential scope. The owner considered
+each and accepted all three.

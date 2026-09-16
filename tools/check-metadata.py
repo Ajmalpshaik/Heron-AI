@@ -65,11 +65,28 @@ CURRENT_STEP = 6
 # They are listed rather than deleted so the audit stays honest in both
 # directions: an agent with no file is either delegated ON PURPOSE and named
 # here, or it is work still to do. Silence would make those two look alike.
+# DELEGATED TO THE HOST UNDER D-01, "Claude Code is the conversation layer
+# AND THE AGENT HOST". These are not unbuilt; they are language work the host
+# does, and counting them as missing would report a gap that is filled.
+#
+# The last five were added on 2026-09-17 by D-80, settling F39. The owner
+# raised it himself: the host IS the model, so a row whose whole job is
+# language does not need one of Heron's own.
 HOST_PROVIDED = {
     "HERON-ORC-MAIN-001": "the host plans and sequences the work",
     "HERON-ORC-INT-002":  "the host classifies what is being asked",
     "HERON-ORC-PER-003":  "the host chooses the wording and the level",
     "HERON-ORC-SUM-006":  "the host writes the reply the user reads",
+    "HERON-DEV-REQ-001":  "the host turns a request into a specification",
+    "HERON-DEV-PLN-002":  "the host sequences the work - the same sentence "
+                          "ORC-MAIN-001 is already delegated for",
+    "HERON-DEV-ARC-003":  "the host decides structure; heron_belongs.py "
+                          "(IMP-ARC-011) does the mechanical half",
+    "HERON-DEV-GEN-004":  "the host writes the code, as it wrote every line "
+                          "in this repository",
+    "HERON-DEV-RAP-007":  "the host holds the Revit API knowledge; "
+                          "heron_dotnet.py and heron_csharp.py hold the "
+                          "checkable half",
 }
 
 
