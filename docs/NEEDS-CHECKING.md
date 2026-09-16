@@ -889,6 +889,43 @@ same shafts — and *"all ducts"* means something different in each.
 
 ---
 
+## Group N — duct and pipe systems, and what is connected to nothing (needs Revit and a real MEP model)
+
+`HERON-REVIT-SYS-030` — [`revit/Heron.Revit.Addin/RevitSystems.cs`](../revit/Heron.Revit.Addin/RevitSystems.cs).
+Compiles on 2020–2027, 0 errors, 2026-09-16. **Never run.** Read-only — nothing is connected, renamed
+or put on a system, and no transaction is opened.
+
+Use a real MEP job, not a sample: one with duct AND pipe systems, and ideally one you already know has
+a loose element in it. **A clean model proves the least here** — the whole row is about what is missing
+from a total, and a model with nothing missing cannot show that.
+
+**The distinction the whole group turns on:** an OPEN CONNECTOR is normal — the end of every run is one,
+and a stub waiting for next week's coordination is one on purpose. An element CONNECTED TO NOTHING in
+any direction is not, and it is on no system by definition.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **N1** | Open an MEP model and ask Heron *"what systems does this model have?"* | Every system in the System Browser is listed, with the same names, and marked `duct` or `pipe` to match. A system Revit shows and Heron does not is the finding |
+| **N2** | Compare each system's `elements` against what the System Browser shows for it | The same number. This is the one that says whether `MEPSystem.Elements` means what the browser means |
+| **N3** | Add `elements` across every system and compare with `mepElementsExamined` | They will NOT match and that is expected — an element can be on no system, and fittings may report differently. **What matters is the direction:** examined should be the larger. If it is smaller, elements are being counted on two systems |
+| **N4** | Draw one duct on its own, joined to nothing, and ask again | It appears in `connectedToNothing`, with its category and its level. **This is the row the agent exists for** |
+| **N5** | Take a properly connected run and check it does NOT appear in `connectedToNothing` | Only its end connectors are open, so it counts in `withAnOpenConnector` and not in the loose list. A run that appears in both is a false positive and makes the whole answer noise |
+| **N6** | A model with no MEP at all — an architectural or structural file | It says so in words rather than returning an empty list. An empty answer and *"this file has no MEP in it"* must not read the same |
+| **N7** | Check `reportedNoConnectors` against what you expect | Some MEP families genuinely have none. A large number here means the connector question is being asked of things that cannot answer it, and `mepElementsExamined` is then the wrong denominator for N3 |
+| **N8** | A duct connected only to itself, or a fitting whose connectors reference its own owner | It is still reported as connected to nothing — `IsJoined` skips references back to the same owner. If it comes back joined, the self-reference check is not doing its job |
+| **N9** | Compare `onNoSystem` with `connectedToNothingCount` | `onNoSystem` should be the LARGER of the two, and the gap is the interesting number: an element joined to its neighbour but sitting on no system is a half-built run. If they are equal on a real job, either every loose element is also the only unsystemed one — possible — or `MEPSystem.Elements` is not returning what the System Browser shows, which N2 is what settles |
+
+**Why this group exists at all:** a duct that LOOKS joined on screen and is not carries no flow, appears
+on no system, and is missing from every number downstream — the schedule prints, the sizing calculates,
+the System Browser shows a tidy tree, and none of them mentions it. On a federated Qatar job that is the
+difference between a riser that balances and one that is found on site.
+
+**What it deliberately does not do:** judge. It reports counts and one list, and asserts nothing about
+what Revit considers a valid system. The compiler agreed about every name it calls and can say nothing
+about what any of them returns.
+
+---
+
 ## Group G — hard to force, do last
 
 Not blocking. Listed so they are not mistaken for tested.

@@ -61,6 +61,7 @@ TOOLS = {
     # "never modifies a link's source".
     "revit_links":              (READ,    "list_links"),
     "revit_phases":             (READ,    "list_phases"),
+    "revit_systems":            (READ,    "list_systems"),
     "revit_preview_move":       (ANALYZE, "preview_move"),
     "revit_apply_move":         (MODIFY,  "move_elements"),
 

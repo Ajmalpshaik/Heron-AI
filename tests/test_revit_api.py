@@ -141,6 +141,27 @@ def main():
     check(answer.get("refused") == "MEMBER_IS_GONE",
           "real C# has a `using` at the top and writes `id.IntegerValue`, "
           "so a fully-qualified comparison would clear everything")
+    check(answer["gone"][0]["match"] == "same-name",
+          "  and it is reported as a LAST-SEGMENT match, because `id` is a "
+          "variable and no comparison of class names could connect it")
+    answer = ask(MOVE, releases=["2026"],
+                 proposal={"members": ["ElementId.IntegerValue"],
+                           "transaction": "transaction"})
+    check(answer["gone"][0]["match"] == "exact",
+          "while the member written with its class is an EXACT match - the "
+          "removed name ends with those same segments")
+    # FOUND BY USING IT. Asked about an MEP operation on 2026-09-16 it
+    # flagged MEPSystem.Name, because a release dropped RibbonItemData.Name
+    # - a different class ending in the same word. Common segments collide,
+    # and a list that is right and unreadable is not much better than wrong.
+    answer = ask(COUNT, releases=["2026"],
+                 proposal={"members": ["SomeClassNobodyRemoved.IntegerValue"],
+                           "transaction": "none"})
+    check(answer["gone"][0]["match"] == "same-name"
+          and "Check this one by eye" in answer["gone"][0]["why"],
+          "a common last segment on an unrelated class is still refused - "
+          "failing safe - but it says it is a same-name match and asks for "
+          "an eye, rather than reading like a removal")
 
     print("\n4. the transaction shape is derived, not read out of the wording")
     check(API.transaction_for(COUNT)["shape"] == "none",
@@ -201,7 +222,7 @@ def main():
     print("\n7. nothing is changed, and unjudged says what it cannot see")
     answer = ask(MOVE, releases=["2024"])
     check(answer["fixed"] is False, "fixed is always false - this is READ")
-    check(len(answer["unjudged"]) == 5, "five things are left unjudged")
+    check(len(answer["unjudged"]) == 6, "six things are left unjudged")
     check(any("UNWARNED, NOT PROVEN PRESENT" in line
               for line in answer["unjudged"]),
           "including that a member it did not warn about is unwarned - "

@@ -83,6 +83,15 @@ namespace Heron.Revit.Addin
                 case "list_phases":
                     return RevitPhases.List(app);
 
+                // Duct and pipe systems, and the elements on none of them.
+                // HERON-REVIT-SYS-030, its own file for the same reason
+                // again: an element connected to nothing is missing from
+                // every total downstream and nothing else says so. It
+                // COUNTS rather than judging - the end of a run is an open
+                // connector and is supposed to be. Read-only.
+                case "list_systems":
+                    return RevitSystems.List(app);
+
                 case "run_fragment_read":
                     return RevitFragment.Run(app, request);
 

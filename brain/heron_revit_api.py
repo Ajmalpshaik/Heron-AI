@@ -304,15 +304,50 @@ def look(operation, releases=None, proposal=None, found=None, path=None):
     # release dropped, by its own name and by its last segment - real C#
     # has a `using` at the top and writes `id.IntegerValue`, so a
     # fully-qualified comparison finds nothing and clears everything.
+    #
+    # BOTH KINDS OF MATCH ARE REFUSED AND THEY ARE NOT THE SAME EVIDENCE,
+    # which is a finding from the first real use of this agent. Asked about
+    # an MEP operation, it flagged `MEPSystem.Name` because a release
+    # dropped `RibbonItemData.Name` - a different class that happens to end
+    # in the same word. `Name`, `IsConnected` and `Id` are common enough
+    # that a tail match on them is usually a collision.
+    #
+    # It still REFUSES on a tail match, because the case this agent exists
+    # for is exactly that shape: somebody writes `id.IntegerValue` and
+    # the removed member is the same property under its full vendor
+    # namespace, where `id` is a VARIABLE and no comparison of class
+    # names could ever connect the two. Failing safe is the whole point.
+    # (The namespace is not spelled here - the adapter boundary keeps
+    # that prefix inside revit/, and check-structure greps file text.)
+    #
+    # What changes is that the answer SAYS WHICH IT IS, so a reader can
+    # tell a real removal from a common word, instead of being handed a
+    # list that is right and unreadable.
     gone = []
     for member in sorted(set(named)):
         tail = member.rsplit(".", 1)[-1]
+        # `.ElementId.IntegerValue` - the member as written, anchored, so a
+        # removed name ending in those exact segments is the same member
+        # under a longer namespace rather than a word that matches.
+        suffix = "." + member
         for release in sorted(per_release):
             for dropped in per_release[release]:
-                if dropped == member or dropped.rsplit(".", 1)[-1] == tail:
-                    gone.append({"member": member, "release": release,
-                                 "removed": dropped})
-                    break
+                exact = dropped == member or dropped.endswith(suffix)
+                if not exact and dropped.rsplit(".", 1)[-1] != tail:
+                    continue
+                gone.append({
+                    "member": member, "release": release,
+                    "removed": dropped,
+                    "match": "exact" if exact else "same-name",
+                    "why": "the removed member IS this one, under its full "
+                           "namespace" if exact else
+                           "only the last segment matches - '%s' was "
+                           "removed from a DIFFERENT class. Refused anyway, "
+                           "because a member written against a variable "
+                           "('id.IntegerValue') can never be matched by "
+                           "class and that is the case this agent exists "
+                           "for. Check this one by eye." % dropped})
+                break
 
     summary = dict(
         (release, {"removed": len(per_release[release]),
@@ -330,13 +365,21 @@ def look(operation, releases=None, proposal=None, found=None, path=None):
     if gone:
         return dict(answer, refused="MEMBER_IS_GONE",
                     accepted=False if checking else None,
-                    why="%s. This is the ElementId.IntegerValue case, and "
-                        "it is refused rather than reported: there is no "
-                        "compiler here to catch it and the answer reads "
-                        "exactly as confident as a correct one."
-                        % "; ".join("'%s' is not in %s"
-                                    % (one["member"], one["release"])
-                                    for one in gone))
+                    why="%s. Refused rather than reported: there is no "
+                        "compiler here to catch it and a wrong answer "
+                        "about the API reads exactly as confident as a "
+                        "correct one.%s"
+                        % ("; ".join("'%s' is not in %s (%s)"
+                                     % (one["member"], one["release"],
+                                        one["match"])
+                                     for one in gone),
+                           "" if all(one["match"] == "exact" for one in gone)
+                           else " NOTE: a `same-name` match means only the "
+                                "LAST SEGMENT matched something removed "
+                                "from another class - common words like "
+                                "`Name` and `Id` collide that way. Those "
+                                "are worth checking by eye before "
+                                "believing."))
 
     if checking:
         shape = str(proposal.get("transaction") or "").strip().lower()
@@ -407,6 +450,18 @@ def _unjudged(wanted, per_release, named, gone, checking):
         "CHANGED SIGNATURE ARE ALL INVISIBLE. A member still there that "
         "returns millimetres where it returned feet is the shape that "
         "costs a model, and no comparison of names finds it.",
+        "%s" % ("EVERY MATCH ABOVE WAS EXACT - the removed member is this "
+                "one under its full namespace." if not gone or
+                all(one["match"] == "exact" for one in gone) else
+                "%d MATCH(ES) ARE `same-name` AND NEED AN EYE: only the "
+                "last segment matched, against a removal from a DIFFERENT "
+                "class. This agent refuses them anyway, because a member "
+                "written against a variable can never be matched by class "
+                "and that is the case it exists for - but `Name`, `Id` and "
+                "`IsConnected` collide that way often enough that the "
+                "distinction is reported rather than hidden."
+                % len([one for one in gone
+                       if one["match"] != "exact"])),
         "WHETHER THE TRANSACTION SHAPE IS RIGHT WAS DERIVED FROM WHAT "
         "THE CALLER DECLARED, not from the wording. `writes` is asked "
         "for rather than read out of the verb in `does`, because a read "
