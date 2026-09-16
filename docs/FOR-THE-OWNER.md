@@ -27,7 +27,18 @@ waiting on a person is not a build failure.
 
 ---
 
-## 2. The five buckets, and what each one means
+## 2. The buckets, and what each one means
+
+> **This heading said *"The five buckets"* until 2026-09-16 and the table under it had SIX rows,
+> matching the six `tools/owner-queue.py` defines.** A typed number, on the page whose
+> [§6](#6-why-this-page-holds-no-list) is titled *why this page holds no list*. It is not a list
+> of items, which is what that section forbids - it is a count of the buckets those items fall
+> into, and it went stale the same way. **The number is gone; the rows are the answer.** Derive
+> them from the tool rather than from here:
+>
+> ```bash
+> grep -oE '^    \("[A-Z][^"]+"' tools/owner-queue.py
+> ```
 
 The tool sorts by **what you must have in front of you**, because that is what decides whether a thing
 can be done this morning or not at all.
