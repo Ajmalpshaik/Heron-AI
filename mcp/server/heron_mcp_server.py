@@ -248,8 +248,9 @@ def revit_select_by_category(category: str = "ducts") -> str:
     "select all ducts". Selecting changes only what is highlighted, never the
     model itself, so it is safe and needs no confirmation.
 
-    Heron currently understands ducts. Other categories arrive as each one is
-    tried against a real model.
+    Heron currently understands ducts and pipes. Other categories arrive as
+    each one is tried against a real model - pipes were added on 2026-09-16
+    after being counted in one.
     """
     try:
         session = binding.resolve()

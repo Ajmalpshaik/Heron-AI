@@ -237,6 +237,28 @@ namespace Heron.Revit.Addin
                 { "ducts", BuiltInCategory.OST_DuctCurves },
                 { "ductwork", BuiltInCategory.OST_DuctCurves },
                 { "duct curves", BuiltInCategory.OST_DuctCurves },
+
+                // PIPES, ADDED 2026-09-16 UNDER THE RULE ABOVE - tried against
+                // a real model first, not added because it looked obvious.
+                // `select-by-category-name` was run against
+                // 4355-BHVD-3D-50C10-BL001A (26,589 elements, Revit 2020) in
+                // view {3D - ajmal.al} and returned 120 elements with
+                // `resolvedTo: Pipes` and 0 near misses.
+                //
+                // IT WAS THE INCONSISTENCY THAT MADE THIS URGENT rather than
+                // the missing feature: the FRAGMENTS resolve categories a
+                // different way and always could, so a modeller was told
+                // "Heron does not know the category 'pipes'" by a system that
+                // had just counted 120 of them in the model in front of them.
+                // FRAGMENT-ISSUES row 110.
+                //
+                // OST_PipeCurves is the PIPE, not its fittings or accessories
+                // - the same distinction OST_DuctCurves draws above, and the
+                // reason a count here will not match a Pipe Fittings schedule.
+                { "pipe", BuiltInCategory.OST_PipeCurves },
+                { "pipes", BuiltInCategory.OST_PipeCurves },
+                { "pipework", BuiltInCategory.OST_PipeCurves },
+                { "pipe curves", BuiltInCategory.OST_PipeCurves },
             };
 
         /// <summary>
