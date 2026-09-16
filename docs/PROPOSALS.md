@@ -2343,3 +2343,106 @@ millimetres or 200 feet. The same standard applies here.
 
 **Not acted on beyond the README.** 2 is an owner's decision by D-07's own terms, 3 needs somebody to
 look rather than to reason, and 4 is a gate everybody runs.
+
+---
+
+## F39 — five Development rows may be the host's, and the tier model already says so everywhere else
+
+**Raised by the owner on 2026-09-17**, in one sentence, after being told those five rows needed a local
+model installed before they could be built:
+
+> *"you are its self the ai and thru ai we are acessing the heron so this ai can do this work am i
+> right"*
+
+He is right, and the evidence was already in the repository. This section records it so the decision is
+made deliberately rather than by whoever writes the next agent.
+
+### The tier model says T2 means a model call. Not one built T2 makes one
+
+| tier | built | total |
+|---|---|---|
+| T1 — no model call | 152 | 167 |
+| T2 — one scoped call | **55** | 63 |
+| T3 — agentic loop | **18** | 20 |
+
+**No adapter existed until 2026-09-17**, so not one of those 73 agents has ever made a model call. They
+are not broken and they are not lying. They do the mechanical half and hand the language half UP, and
+[`brain/heron_company.py`](../brain/heron_company.py) says so in its own result:
+
+> *"WHICH CLAUSE ANSWERS THE QUESTION. That is language, and docs/28 makes this row T2 for it. The
+> clauses go to the host with the question attached; nothing here picked one."*
+
+**That is what a T2 is in this repository**: gather, then ask the host. The tier is a statement about
+where the judgement happens, not about who holds an API key.
+
+### And D-01 already put the host in that seat
+
+[D-01](DECISIONS.md) — accepted, read back 2026-09-06:
+
+> **"Claude Code is the conversation layer and the agent host."** ... *"The entire agent framework,
+> conversation layer, persona handling and tool orchestration come for free."*
+
+Four rows are already delegated on exactly that basis, and `check-metadata.py` names them and their
+reasons:
+
+| row | why it is not built here |
+|---|---|
+| `HERON-ORC-MAIN-001` | *the host plans and sequences the work* |
+| `HERON-ORC-INT-002` | *the host classifies what is being asked* |
+| `HERON-ORC-PER-003` | *the host chooses the wording and the level* |
+| `HERON-ORC-SUM-006` | *the host writes the reply the user reads* |
+
+**All four are T2.** They are excluded from "left" because the host is the model.
+
+### The five rows, one at a time, because they are not one case
+
+| row | tier | what the evidence says |
+|---|---|---|
+| `DEV-PLN-002` *sequences the work* | T2 | **`ORC-MAIN-001` is already host, and its stated reason is "the host plans and sequences the work".** The same sentence. This is the clearest of the five and may be a duplicate row rather than a delegation |
+| `DEV-REQ-001` *turns a request into a buildable specification* | T2 | `ORC-MAIN-001` is host for *"understands the request"*. Turning a request into a specification is that act, named again |
+| `DEV-GEN-004` *writes code, only after Fragment Matcher has reported* | T3 | The precondition is mechanical and already checkable. The writing is the host's, and was the host's for every line built in this repository so far |
+| `DEV-RAP-007` *Revit API knowledge for generation* | T2 | **Its own row says "merge candidate with 005/006", and both are built**: [`heron_csharp.py`](../brain/heron_csharp.py) and [`heron_dotnet.py`](../brain/heron_dotnet.py). This is a merge question, not a build one |
+| `DEV-ARC-003` *decides structure and placement within Heron's architecture* | T3 | [`HERON-IMP-ARC-011`](../brain/heron_belongs.py) is built and *"places content where the architecture says it belongs"*. Overlapping, and [F28](#f28--the-import-classifies-into-five-words-the-workspace-has-never-heard-of) already records that department's vocabulary problem |
+
+**Three look like delegation and two look like merges.** Calling all five "host" would be the same
+sweeping move that [F27](#f27--five-development-rows-are-already-built-and-whose-work-they-measure-decides-by-which-file) got wrong by counting candidates instead of reading them.
+
+### What it would change
+
+`agent-count.py` already has a HOST column and already excludes those rows from LEFT. Adding ids to
+`HOST_PROVIDED` in `check-metadata.py` is the whole mechanism; it is audited both directions and refuses
+an id that is not in the registry.
+
+**Development would go from 12 of 21 to close to complete**, without installing anything.
+
+### What it would cost, which is the half worth arguing about
+
+**A host-provided agent cannot run without a host.** Delegating these five means Heron cannot plan, write
+a specification or generate code:
+
+- on a schedule, with nobody in a chat
+- in a batch large enough that a conversation is impractical
+- for somebody using the Revit add-in with no Claude Code session open
+
+If Heron is only ever driven through Claude Code, that costs nothing and D-01 already accepted it. If it
+is ever meant to run on its own, this is the decision that says it cannot.
+
+### What this does NOT touch
+
+**The provider adapter is still needed, for the work a conversation genuinely cannot do.**
+[`brain/heron_provider.py`](../brain/heron_provider.py) exists for two jobs and neither is on the list
+above:
+
+- **bulk.** `heron_router.INTENTS` marks `CLASSIFY`, `EXTRACT` and `SCORE` as `bulk: True`. Classifying
+  five thousand elements one at a time is not a conversation
+- **confidential.** The host is a cloud model. `heron_router` refuses cloud adapters for confidential
+  scopes and refuses everything when no local one is registered — so that rule can only ever be kept by
+  a local adapter, never by the host
+
+### What is proposed
+
+**Say which of the five are the host's**, in `HOST_PROVIDED` with a reason each, the way the existing
+four are written. And say separately whether `RAP-007` and `ARC-003` are merges rather than
+delegations, because those are a different question with a different answer.
+
+**Not acted on.** Which work Heron may not do without a chat open is a product decision, and the owner's.
