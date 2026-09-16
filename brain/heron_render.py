@@ -85,6 +85,51 @@ def _cell(value):
     return str(value)
 
 
+# A pipe ends a Markdown cell and a newline ends the ROW, so one value
+# could add a column or a whole row to the table - and `pdf` and `image`
+# are made from this same content, so the corruption travels.
+def _lines(cell):
+    """One cell with every line ending written the same way."""
+    return cell.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def _markdown(cell):
+    """
+    One cell, carried intact through a Markdown table row.
+
+    The VALUE is not reformatted - no rounding, no separators, no units.
+    What changes is only the encoding of the two characters the table
+    itself uses as structure: the pipe is escaped the way Markdown
+    escapes it, and a line break becomes `<br>`, which is what a Markdown
+    table has in place of a multi-line cell. Any run of backslashes in
+    front of a pipe is doubled first, so a value ending in one cannot
+    escape the escape.
+    """
+    out, run = [], 0
+    for letter in _lines(cell):
+        if letter == "\\":
+            run += 1
+            out.append(letter)
+        elif letter == "|":
+            out.append("\\" * run)      # double the run already written
+            out.append("\\|")
+            run = 0
+        else:
+            run = 0
+            out.append("<br>" if letter == "\n" else letter)
+    return "".join(out)
+
+
+def _plain(cell):
+    """One cell for the fixed-width schedule, on a single line."""
+    return _lines(cell).replace("\n", " ")
+
+
+def _structural(cell):
+    """Does this value carry a character the table uses as structure?"""
+    return "|" in cell or "\n" in cell or "\r" in cell
+
+
 def _csv(text):
     """One field, quoted only when it must be."""
     if any(mark in text for mark in (",", '"', "\n", "\r")):
@@ -134,6 +179,7 @@ def render(kind, rows, columns=None, title=None):
                        "put in a document."}
 
     gaps = []
+    escaped = []
     table = []
     for index, row in enumerate(seen):
         cells = []
@@ -144,7 +190,21 @@ def render(kind, rows, columns=None, title=None):
                                     "cell AND named here, so 'blank' and "
                                     "'we lost it' are different answers - "
                                     "Golden Rule 14."})
-            cells.append(_cell(row.get(column)))
+            value = _cell(row.get(column))
+            if kind != "csv" and _structural(value):
+                # THE VALUE SURVIVES AND THE FACT IS NAMED. Silently
+                # letting it through built a table with the wrong shape;
+                # silently rewriting it would be a report whose figures
+                # cannot be checked against the query that made them.
+                escaped.append({"row": index, "column": column,
+                                "why": "carries a character this format "
+                                       "uses as structure (a pipe or a "
+                                       "line break). Encoded so the table "
+                                       "keeps its shape AND named here, "
+                                       "because a value changed to fit "
+                                       "the format is not the value - "
+                                       "Golden Rule 14."})
+            cells.append(value)
         table.append(cells)
 
     heading = str(title or "").strip()
@@ -153,6 +213,7 @@ def render(kind, rows, columns=None, title=None):
         lines += [",".join(_csv(cell) for cell in cells) for cells in table]
         content = "\n".join(lines) + "\n"
     elif kind == "schedule":
+        table = [[_plain(cell) for cell in cells] for cells in table]
         width = [max(len(columns[i]),
                      *(len(cells[i]) for cells in table))
                  for i in range(len(columns))]
@@ -165,16 +226,24 @@ def render(kind, rows, columns=None, title=None):
         content = "\n".join(lines) + "\n"
     else:
         # page, and the content a pdf or an image would be made from.
-        lines = ["# %s" % heading] if heading else []
-        lines.append("| %s |" % " | ".join(columns))
+        lines = ["# %s" % _markdown(heading)] if heading else []
+        lines.append("| %s |" % " | ".join(_markdown(each)
+                                           for each in columns))
         lines.append("|%s|" % "|".join("---" for _ in columns))
         for cells in table:
-            lines.append("| %s |" % " | ".join(cells))
+            lines.append("| %s |" % " | ".join(_markdown(cell)
+                                               for cell in cells))
         content = "\n".join(lines) + "\n"
 
     answer = {
         "rendered": True, "kind": kind, "content": content,
+        # THE TITLE IS PART OF WHAT THIS DATA MAKES. Without it in the
+        # answer a report could not carry its own heading forward, so
+        # HERON-RPT-VAL-004 re-rendered untitled and found every
+        # legitimately titled report did not match its data.
+        "title": heading or None,
         "columns": columns, "rows": len(table), "gaps": gaps,
+        "escaped": escaped,
         "sha": hashlib.sha256(content.encode("utf-8")).hexdigest(),
         "why": "%d row(s) and %d column(s) as %s. %s"
                % (len(table), len(columns), kind,
@@ -192,6 +261,15 @@ def render(kind, rows, columns=None, title=None):
                     "the row, and each is named in `gaps`. Blank and lost "
                     "are different answers." % len(gaps) if gaps else
                     "every row carried every column."),
+            "%s" % ("%d cell(s) CARRIED A PIPE OR A LINE BREAK and are "
+                    "named in `escaped`. The character this format uses "
+                    "as structure was encoded - a pipe as `\\|`, a line "
+                    "break as `<br>` or a space - so the table keeps its "
+                    "shape. Nothing else about the value changed, and a "
+                    "reader comparing it against the query is told which "
+                    "cells were touched." % len(escaped) if escaped else
+                    "no cell carried a character this format uses as "
+                    "structure."),
             "WHETHER THE DATA IS RIGHT IS NOT JUDGED HERE. This turns rows "
             "into a document; whether the rows answer the question is "
             "HERON-RPT-VAL-004's, and whether the document may leave the "

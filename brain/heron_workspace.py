@@ -131,10 +131,24 @@ CHANGES = ("create", "write", "move", "remove", "replace")
 GATED = ("HERON-WSP-CLN-009", "HERON-WSP-REP-004")
 
 
+def _normal(path):
+    """
+    One path, comparable.
+
+    BOTH SEPARATORS, because WINDOWS IS WHERE REVIT RUNS. Comparing only
+    `/` made `Brain\\Skills` and `Brain\\Skills\\x.yaml` read as unrelated
+    paths, so the conflict below never fired and two modifying agents
+    were approved over one folder. This is the heron_authoring separator
+    bug in a second file, and the direction it fails matters: there it
+    let a path escape, here it let a clash through.
+    """
+    return str(path or "").strip().replace("\\", "/").strip("/").lower()
+
+
 def _under(one, other):
     """Is `one` the same path as `other`, or inside it?"""
-    a = str(one or "").strip().strip("/").lower()
-    b = str(other or "").strip().strip("/").lower()
+    a = _normal(one)
+    b = _normal(other)
     if not a or not b:
         return False
     return a == b or a.startswith(b + "/") or b.startswith(a + "/")
@@ -214,16 +228,15 @@ def review(intents, confirmed=None):
                            "seen together."
                            % (first["agent"], first["does"], first["path"],
                               second["agent"], second["does"], second["path"],
-                              "the same path" if first["path"].strip("/") ==
-                              second["path"].strip("/") else
+                              "the same path" if _normal(first["path"]) ==
+                              _normal(second["path"]) else
                               "one is inside the other, which is the case "
                               "nobody else is looking for"),
                     "conflict": [first, second]}
 
     # docs/06 s142: cleanup and repair never touch the data class without
     # explicit per-run confirmation.
-    said_yes = set(str(each).strip().strip("/").lower()
-                   for each in (confirmed or []))
+    said_yes = set(_normal(each) for each in (confirmed or []))
     gated, missing = [], []
     for one in reduced:
         if one["agent"] not in GATED:
@@ -231,7 +244,7 @@ def review(intents, confirmed=None):
         if one["class"] != PATHS.DATA or one["does"] not in CHANGES:
             continue
         gated.append(one)
-        if one["path"].strip("/").lower() not in said_yes:
+        if _normal(one["path"]) not in said_yes:
             missing.append(one)
 
     if missing:

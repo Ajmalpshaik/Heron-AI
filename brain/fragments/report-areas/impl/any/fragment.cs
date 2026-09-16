@@ -1,6 +1,6 @@
-// NOT STANDALONE. Assumes `doc`, `schemeNameContains` and `listEachArea` are in
-// scope; leaves `findings`, `schemeTotalsM2`, `placedCount`, `unplaced` and
-// `unbounded` behind.
+// NOT STANDALONE. Assumes `doc`, `schemeNameContains`, `listEachArea` and
+// `includeLinks` are in scope; leaves `findings`, `schemeTotalsM2`,
+// `placedCount`, `unplaced`, `unbounded` and `linksSearched` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -21,6 +21,29 @@
 // AREA IS INTERNAL SQUARE FEET, MULTIPLIED BY 0.09290304 FOR SQUARE METRES.
 // Plain arithmetic at the edge, never a units API - that is the call that breaks
 // at Revit 2021.
+//
+// LINKS ARE READ ONLY WHEN ASKED FOR - D-59, and this fragment is the case that
+// makes the decision matter. In a federated job the AREAS ARE IN THE
+// ARCHITECTURAL MODEL, which for an MEP coordinator is a link, so "report the
+// areas" against the host alone comes back confidently EMPTY on a job where
+// every area exists. Absent means host only, which is what this measured before.
+//
+// LOADED IS ESTABLISHED BY ASKING FOR THE DOCUMENT, never by the recorded
+// status. GetLinkDocument() returns null exactly when there is no geometry to
+// read - after a workset-level unload, or when the file has moved - and a status
+// saying "loaded" over a document that is not there would put a zero in a total.
+// LIST_LINKED_MODELS' rule, applied rather than restated.
+//
+// `linksSearched` COUNTS DOCUMENTS, NOT PLACEMENTS. A wing linked in twice is
+// one model placed twice; counting instances reports a job with four links as
+// having nine, and would read each of its areas twice into the totals.
+//
+// THE SCHEME KEY IS QUALIFIED BY MODEL, and this is the trap. The block above
+// exists because two SCHEMES measure one floor twice and adding them is double
+// the building. Two MODELS each holding a scheme called "Gross Building" is the
+// same fault one level up: merged under one key, a link's floor plate would be
+// added to the host's and the total would belong to no building at all. So when
+// links are read the key carries the model name, and the schemes stay apart.
 
 var findings = new List<string>();
 var schemeTotalsM2 = new List<string>();
@@ -28,12 +51,59 @@ var placedCount = 0;
 var unplaced = new List<string>();
 var unbounded = new List<string>();
 
-var areas = new List<Area>();
-foreach (var element in new FilteredElementCollector(doc)
-    .OfCategory(BuiltInCategory.OST_Areas).WhereElementIsNotElementType())
+var linksSearched = 0;
+
+// The host first, always. `sources` is the documents actually read, each with
+// the name a finding will carry.
+var sources = new List<KeyValuePair<string, Document>>();
+sources.Add(new KeyValuePair<string, Document>(doc.Title, doc));
+
+if (includeLinks)
 {
-    var area = element as Area;
-    if (area != null) areas.Add(area);
+    // DE-DUPLICATED BY LINK TYPE, WHICH IS THE FILE - not by Document
+    // identity. LIST_LINKED_MODELS groups by GetTypeId() for exactly this
+    // reason and has been proved against a real model doing so; whether two
+    // placements of one file hand back the same Document OBJECT is an API
+    // detail nothing here has put in front of Revit, and the type id needs no
+    // such assumption.
+    var seenTypes = new List<ElementId>();
+    foreach (var instance in new FilteredElementCollector(doc)
+        .OfClass(typeof(RevitLinkInstance)).Cast<RevitLinkInstance>())
+    {
+        if (instance == null) continue;
+
+        var typeId = instance.GetTypeId();
+        if (typeId == null || typeId == ElementId.InvalidElementId) continue;
+        if (seenTypes.Contains(typeId)) continue;   // placed twice, one model
+
+        Document linked = null;
+        try { linked = instance.GetLinkDocument(); }
+        catch (Exception) { linked = null; }
+        if (linked == null) continue;               // nothing readable in it
+
+        seenTypes.Add(typeId);
+        sources.Add(new KeyValuePair<string, Document>(linked.Title, linked));
+        linksSearched++;
+    }
+}
+
+// EACH AREA CARRIES THE MODEL IT CAME FROM, rather than a lookup keyed by
+// its id. ELEMENT IDS ARE UNIQUE WITHIN A DOCUMENT AND NOT ACROSS THEM, and
+// they are handed out low and sequential - so a host Area and a linked Area
+// sharing an id is ordinary, not a corner case. A dictionary keyed by id
+// would hold ONE entry for the two of them and report one of the areas under
+// the other's model name. That is this fragment's own fault in a new place:
+// a number that looks like a floor area, attributed to the wrong building.
+var areas = new List<KeyValuePair<string, Area>>();
+foreach (var source in sources)
+{
+    foreach (var element in new FilteredElementCollector(source.Value)
+        .OfCategory(BuiltInCategory.OST_Areas).WhereElementIsNotElementType())
+    {
+        var area = element as Area;
+        if (area == null) continue;
+        areas.Add(new KeyValuePair<string, Area>(source.Key, area));
+    }
 }
 
 if (areas.Count == 0)
@@ -46,8 +116,9 @@ else
     // Group by scheme. The scheme is the only level at which a total means
     // anything, so it is the only level one is produced at.
     var byScheme = new Dictionary<string, List<Area>>();
-    foreach (var area in areas)
+    foreach (var entry in areas)
     {
+        var area = entry.Value;
         var schemeName = "<no scheme>";
         try
         {
@@ -55,6 +126,13 @@ else
             if (scheme != null) schemeName = scheme.Name;
         }
         catch (Exception) { }
+
+        // Only when links were read - the host-only key is what every existing
+        // proof measured and it is left exactly as it was.
+        if (linksSearched > 0)
+        {
+            schemeName = string.Format("{0} :: {1}", entry.Key, schemeName);
+        }
 
         if (!string.IsNullOrEmpty(schemeNameContains)
             && schemeName.IndexOf(schemeNameContains, StringComparison.OrdinalIgnoreCase) < 0)
@@ -153,6 +231,29 @@ else
     findings.Add("NO TOTAL ACROSS SCHEMES IS GIVEN, on purpose - schemes measure the same floor more "
         + "than once, so adding them together is roughly double the building and belongs to no "
         + "scheme at all");
+}
+
+// D-59: THE ANSWER SAYS WHAT IT READ. The three cases read differently on
+// purpose - asked-and-found, asked-and-none-loaded, and not asked - because a
+// federated job where the links are all unloaded returns the host's number and
+// nothing else would say so.
+if (!includeLinks)
+{
+    findings.Insert(0, "Read THIS MODEL ONLY. Areas in a linked model were not counted - "
+        + "in a federated job the areas are usually in the architectural link, so ask for "
+        + "links if that is the number you want");
+}
+else if (linksSearched == 0)
+{
+    findings.Insert(0, "Links were ASKED FOR AND NONE ARE LOADED, so this is the host model's "
+        + "own number. That is not the same as there being no links - reload them in Manage "
+        + "Links and ask again");
+}
+else
+{
+    findings.Insert(0, string.Format("Read this model AND {0} linked model(s). Each scheme is "
+        + "reported under the model it belongs to - two models with a scheme of the same name "
+        + "are two schemes, and adding them would be two buildings", linksSearched));
 }
 
 findings.Insert(0, string.Format("{0} placed area(s) reported; {1} unplaced, {2} unbounded",

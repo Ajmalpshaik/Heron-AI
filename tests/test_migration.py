@@ -210,6 +210,22 @@ def main():
     check(any("DECLARED, NOT DEMONSTRATED" in note
               for note in ask()["unjudged"]),
           "and that idempotent is a claim it did not test")
+    print()
+    print("R. THE SECOND CODEX REVIEW - two migrations out of one version")
+    declares = {"idempotent": True, "reversible": True, "version": 2}
+    answer = ask(at=1, to=2, backup="Backup/x",
+                 migrations=[dict(declares, **{"from": 1, "to": 2,
+                                               "name": "first"}),
+                             dict(declares, **{"from": 1, "to": 2,
+                                               "name": "second"})])
+    check(answer.get("refused") == "CHAIN_FORKS",
+          "two migrations starting at one schema version is refused - the "
+          "later one used to replace the earlier in the chain dict and "
+          "the run still reported complete, so a transformation was "
+          "dropped and nothing said which")
+    check(answer["forks"][0]["from"] == 1,
+          "  and the fork names the version both start at")
+
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-WSP-MIG-008.yaml"))
     named = contract.get("failures") or []

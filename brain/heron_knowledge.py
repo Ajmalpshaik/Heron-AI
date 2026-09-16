@@ -82,6 +82,11 @@ A_CLAIM_CARRIES = (
 # carrying another project's work. Read from HERON-RAG-LIB-001's own list.
 NOT_A_PROJECT = ("global", "company", "user", "temporary", "experimental")
 
+# The ladder rung that MEANS "one project only" without saying which one.
+# It is a scope name, not a project name, and the two were compared
+# against each other - see `validate` step 3.
+THE_PROJECT_RUNG = "project"
+
 
 def validate(claims, revit=None, project=None):
     """
@@ -123,9 +128,10 @@ def validate(claims, revit=None, project=None):
         text = claim.get("text")
         source = str(claim.get("source") or "").strip()
         scope = str(claim.get("scope") or "").strip().lower()
+        named = str(claim.get("project") or "").strip()
         about = [str(each).strip() for each in (claim.get("revit") or [])]
         entry = {"text": text, "source": source or None, "scope": scope
-                 or None, "revit": about,
+                 or None, "project": named or None, "revit": about,
                  "trust": str(claim.get("trust") or "").strip() or "UNSTATED"}
 
         if text is None or not str(text).strip():
@@ -155,7 +161,35 @@ def validate(claims, revit=None, project=None):
             continue
 
         # 3. Another project's knowledge.
-        if scope and scope not in NOT_A_PROJECT:
+        #
+        # `scope` is either the ladder RUNG - 'project', the word
+        # HERON-RAG-LIB-001 uses for "one project only" - or the project
+        # KEY itself. The rung names no project, so a claim written the
+        # documented way was compared against the active key, never
+        # matched, and came back held as ANOTHER project's, reporting
+        # that it "belongs to project 'project'". A claim from the
+        # CURRENT project could not be used at all unless the project was
+        # itself called 'project'. Which project a rung-scoped claim
+        # belongs to is its own `project` field, and a claim that names
+        # none is still held - it cannot be SHOWN to be this one - but
+        # under a refusal that says that rather than a nonsense one.
+        if scope == THE_PROJECT_RUNG and not named:
+            held.append(dict(entry, refused="NO_PROJECT_NAMED",
+                             why="this claim is scoped '%s', which is the "
+                                 "rung HERON-RAG-LIB-001 calls 'one "
+                                 "project only' and names no project. "
+                                 "Nothing here can show it belongs to "
+                                 "'%s', and docs/10 s2 makes reading one "
+                                 "client's knowledge into another's file "
+                                 "a contractual breach rather than a bug - "
+                                 "so an unnamed project is held, not "
+                                 "assumed to be the one in front of us."
+                                 % (THE_PROJECT_RUNG, here or "any project")))
+            continue
+
+        belongs = named or (scope if scope and scope not in NOT_A_PROJECT
+                            and scope != THE_PROJECT_RUNG else "")
+        if belongs:
             if not here:
                 held.append(dict(entry, refused="ANOTHER_PROJECTS_KNOWLEDGE",
                                  why="this claim belongs to project '%s' and "
@@ -164,14 +198,14 @@ def validate(claims, revit=None, project=None):
                                      "another's file is a contractual "
                                      "breach rather than a bug, and reading "
                                      "it across is the same breach in the "
-                                     "other direction." % scope))
+                                     "other direction." % belongs))
                 continue
-            if scope != here.lower():
+            if belongs.lower() != here.lower():
                 held.append(dict(entry, refused="ANOTHER_PROJECTS_KNOWLEDGE",
                                  why="this claim belongs to project '%s' and "
                                      "this is '%s'. PROPOSALS F14 is about "
                                      "how quietly two project names can "
-                                     "become one." % (scope, here)))
+                                     "become one." % (belongs, here)))
                 continue
 
         # 4. Golden Rule 19, through the agent that owns it rather than a
@@ -200,6 +234,8 @@ def validate(claims, revit=None, project=None):
                                       % (source,
                                          "recorded about %s" % ", ".join(about)
                                          if about else "not tied to a release",
+                                         "in project '%s'" % belongs
+                                         if belongs else
                                          "in scope '%s'" % scope if scope
                                          else "not tied to a project")))
 

@@ -95,6 +95,25 @@ TRAVELS = ("project names", "file names", "content names",
            "engineering ideas, reasoning, and code")
 
 
+def _names(value):
+    """
+    Attached names as a LIST, whatever shape they arrived in.
+
+    `_binaries` normalises a bare string itself, but a caller that
+    concatenates first - `[name] + list(attachments)` - splits it into
+    characters before this function ever sees it, so the normalisation
+    never gets its turn. Two callers did exactly that. Anything that
+    needs to build a list of names calls this instead of `list()`.
+    """
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return [one for one in value]
+    return [value]
+
+
 def _binaries(names):
     """
     Which attached names are Revit files.

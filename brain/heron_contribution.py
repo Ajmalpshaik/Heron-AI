@@ -136,7 +136,7 @@ def submit(items, reviews=(), to=None, secrets=None):
     for name in sorted(seen):
         item = seen[name]
         binaries = RELEASE._binaries(
-            [name] + list(item.get("attachments") or []))
+            [name] + RELEASE._names(item.get("attachments")))
         if binaries:
             return {"prepared": False, "refused": "CARRIES_A_MODEL",
                     "item": name,

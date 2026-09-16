@@ -61,6 +61,20 @@ TOOLS = {
     # "never modifies a link's source".
     "revit_links":              (READ,    "list_links"),
     "revit_phases":             (READ,    "list_phases"),
+    "revit_systems":            (READ,    "list_systems"),
+
+    # Parameters (HERON-REVIT-PAR-011). READ, although that agent's register
+    # row is MODIFY: the column is the highest level the ROW can require, and
+    # this operation reads. A parameter WRITE will be its own entry at its own
+    # risk, because the risk is looked up by name and one name must mean one
+    # thing.
+    "revit_parameters":         (READ,    "read_parameters"),
+
+    # Groups and assemblies (HERON-REVIT-GRP-033). READ, same reasoning as
+    # the two above. It is the PRE-FLIGHT for the write tools: an element in
+    # a group carries an edit into every placement of that group's type, and
+    # Revit raises nothing when a move of one shifts nothing.
+    "revit_groups":             (READ,    "list_groups"),
     "revit_preview_move":       (ANALYZE, "preview_move"),
     "revit_apply_move":         (MODIFY,  "move_elements"),
 

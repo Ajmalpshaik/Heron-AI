@@ -185,10 +185,12 @@ def main():
           "while somebody else's COMPANY skill is neither refused nor mine "
           "- it is simply not personal")
     unnamed = ask([MINE, THEIRS])
-    check(len(unnamed["mine"]) == 2,
-          "with no reader named, nothing is filtered - the caller has not "
-          "said who is asking, and guessing would be the wrong answer "
-          "either way")
+    check(not unnamed["mine"],
+          "with no reader named, NO personal skill comes back - this used "
+          "to return every author's, on the reasoning that guessing was "
+          "wrong either way. Returning them all is the widest possible "
+          "guess, and the scope HERON-RAG-LIB-001 calls 'shared with "
+          "nobody' is the one thing it may not mean")
 
     print("\n6. Every failure is named and reached")
     check(ask(None).get("refused") == "NOTHING_TO_MANAGE",
@@ -202,17 +204,42 @@ def main():
                       "and one whose scope is not one")):
         check(ask([bad]).get("refused_names")[0]["refused"] == "NOT_A_SKILL",
               why)
-    check(ask([MINE], raising=["not a map"])["refused_names"][0]["refused"]
-          == "NOT_A_RAISE", "a raise that is not a map")
-    check(ask([MINE], raising=[raise_("company", skill="nope")]
-              )["refused_names"][0]["refused"] == "NOT_A_RAISE",
+    def refusals(answer):
+        """Every refusal in the answer, not whichever landed first."""
+        return [one["refused"] for one in (answer["refused_names"] or [])]
+
+    check("NOT_A_RAISE" in refusals(ask([MINE], raising=["not a map"])),
+          "a raise that is not a map")
+    check("NOT_A_RAISE" in refusals(
+        ask([MINE], raising=[raise_("company", skill="nope")])),
           "and one naming a skill nobody handed in")
     for moving in ("open(", "shutil", "os.rename", "write(", "os.remove"):
         check(moving not in logic, "the agent never uses %s" % moving)
+    print()
+    print("R. THE SECOND CODEX REVIEW - nobody asking is not everybody "
+          "asking")
+    both = [{"name": "mine", "scope": "user", "author": "Ajmal"},
+            {"name": "theirs", "scope": "user", "author": "Someone Else"}]
+    answer = SKL.manage(both)
+    for row in (answer.get("refused_names") or []):
+        reached.add(row.get("refused"))
+    check(not answer.get("mine"),
+          "with NO reader named, no personal skill comes back - the test "
+          "for 'is this yours' was skipped when `reader` was empty, so a "
+          "call that said nothing about who was asking got every "
+          "author's private skills")
+    check(all(row.get("refused") == "NOBODY_IS_ASKING"
+              for row in (answer.get("refused_names") or [])),
+          "  and each is refused NOBODY_IS_ASKING rather than returned")
+    answer = SKL.manage(both, reader="Ajmal")
+    check([one["name"] for one in answer["mine"]] == ["mine"],
+          "  a named reader still gets their own, and only their own")
+
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-USR-SKL-003.yaml"))
     named = contract.get("failures") or []
-    check(len(named) == 7, "the contract declares 7 failures")
+    check(len(named) == len(set(named)),
+          "the contract declares each failure once")
     for failure in named:
         check(failure in logic, "the code names %s" % failure)
     unreached = sorted(set(named) - reached)

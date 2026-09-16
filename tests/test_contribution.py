@@ -194,6 +194,19 @@ def main():
         reached.add(answer.get("refused"))
         check(answer.get("refused") == name, "%s is reached" % name)
 
+    print()
+    print("R. THE SECOND CODEX REVIEW - `attachments` as a bare string")
+    answer = COM.submit([{"name": "a note", "payload": "some text",
+                          "why": "because", "attachments": "Tower.rvt"}],
+                        to="some/repo", reviews=[])
+    check(answer.get("refused") == "CARRIES_A_MODEL",
+          "one attachment written as a STRING is still found - it was "
+          "concatenated and iterated as eleven characters, none of them "
+          "ending in .rvt, so the guard that exists to stop a Revit "
+          "model leaving the office failed open")
+    check(answer.get("attachments") == ["Tower.rvt"],
+          "  and the model is named whole, not as letters")
+
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-GIT-COM-010.yaml"))
     named = contract.get("failures") or []

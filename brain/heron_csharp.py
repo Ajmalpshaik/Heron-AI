@@ -38,13 +38,36 @@ THE FIGURES ARE DATED AND THE CLAIM IS WHAT IS CHECKED
 Every one of those numbers moves the next time somebody writes a C#
 file, so the suite does NOT pin them - pinning a count means the next
 author's first experience of this agent is a red suite over a number
-that was only ever an illustration. What the suite checks is the CLAIM:
-that broad still outnumbers narrow, so the rule this module refuses to
-assert is still one its own repository would fail.
+that was only ever an illustration.
 
 That was learned the same day: adding RevitPhases.cs moved 74 to 82 and
 26 to 34 within the hour, and the first version of the suite went red on
 all three figures.
+
+AND THE CLAIM ITSELF HAD TO BE REPLACED, ON 2026-09-16
+--------------------------------------------------------
+The claim the suite checked used to be "broad still outnumbers narrow,
+so the rule this module refuses to assert is one its own repository
+would fail". On 2026-09-16 that stopped being true. One new file -
+RevitParameters.cs, sixteen narrow handlers and not one broad - took the
+shipped C# from 53 broad against 42 narrow to 53 against 58, and narrow
+led for the first time.
+
+The refusal did not change, because the majority was never the real
+reason for it. FIFTY-THREE BROAD HANDLERS STILL SHIP AND STILL WORK, and
+an agent that flags fifty-three working handlers is correcting working
+code on an authority it does not have - which is as true at 58-53 as it
+was at 42-53. A claim that can flip on one commit was the wrong claim to
+hang a refusal on, and it flipped on one commit.
+
+So what the suite checks now is the part that does not tip: that broad
+handlers remain a real share of the code rather than a handful of
+survivors. Crossing THAT would take somebody deliberately rewriting
+most of them, which is an event worth a red suite.
+
+Whether this module should now begin asserting the rule is a question
+for a person, and it is written up as F37 in docs/PROPOSALS.md rather
+than decided here.
 
 AND THE FIRST SET WAS WRONG FOR A DIFFERENT REASON
 ----------------------------------------------------

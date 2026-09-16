@@ -14,6 +14,29 @@ positive:
   - given: listEachArea true
     expect: one line per area with its number, level and m2
 
+  # D-59, added 2026-09-16 with the contract. NONE OF THESE HAS BEEN RUN.
+  - given: >
+      a federated job - the areas in a loaded ARCHITECTURAL LINK and none in
+      the host - with includeLinks true
+    expect: >
+      the link's areas reported and linksSearched 1. This is the case the
+      decision exists for: the same model with includeLinks absent comes back
+      saying the host has no areas at all, which is true and useless
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, NOT 2, and each area counted once. A wing linked in
+      twice is one model placed twice - count placements and a job with four
+      links reports nine, with every area in the totals twice
+
+  - given: >
+      a host and a link that BOTH have a scheme called "Gross Building", with
+      includeLinks true
+    expect: >
+      TWO rows, each under its own model name, and no merged total. This is the
+      fragment's own no-grand-total rule one level up: merged, a link's floor
+      plate is added to the host's and the number belongs to no building
+
 negative:
   - given: any model with two overlapping schemes
     expect: >
@@ -41,6 +64,20 @@ negative:
 
   - given: an area whose scheme cannot be read
     expect: grouped under "<no scheme>" rather than dropped
+
+  # D-59's own worked example of a case that must not read like another.
+  - given: includeLinks true on a model whose links are ALL UNLOADED
+    expect: >
+      linksSearched 0 AND A FINDING SAYING the links were asked for and none
+      are loaded. It must NOT read the same as host-only: one means "there was
+      nothing else to read", the other means "reload them in Manage Links and
+      ask again", and both otherwise return the host's number
+
+  - given: includeLinks absent, on a model that HAS loaded links
+    expect: >
+      the host's areas only, unchanged from before this input existed, and a
+      finding saying so. Absent means host only - that is what every recorded
+      proof of this fragment measured
 
 second_route:
   - >

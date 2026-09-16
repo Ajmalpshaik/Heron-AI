@@ -889,6 +889,127 @@ same shafts — and *"all ducts"* means something different in each.
 
 ---
 
+## Group N — duct and pipe systems, and what is connected to nothing (needs Revit and a real MEP model)
+
+`HERON-REVIT-SYS-030` — [`revit/Heron.Revit.Addin/RevitSystems.cs`](../revit/Heron.Revit.Addin/RevitSystems.cs).
+Compiles on 2020–2027, 0 errors, 2026-09-16. **Never run.** Read-only — nothing is connected, renamed
+or put on a system, and no transaction is opened.
+
+Use a real MEP job, not a sample: one with duct AND pipe systems, and ideally one you already know has
+a loose element in it. **A clean model proves the least here** — the whole row is about what is missing
+from a total, and a model with nothing missing cannot show that.
+
+**The distinction the whole group turns on:** an OPEN CONNECTOR is normal — the end of every run is one,
+and a stub waiting for next week's coordination is one on purpose. An element CONNECTED TO NOTHING in
+any direction is not, and it is on no system by definition.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **N1** | Open an MEP model and ask Heron *"what systems does this model have?"* | Every system in the System Browser is listed, with the same names, and marked `duct` or `pipe` to match. A system Revit shows and Heron does not is the finding |
+| **N2** | Compare each system's `elements` against what the System Browser shows for it | The same number. This is the one that says whether `MEPSystem.Elements` means what the browser means |
+| **N3** | Add `elements` across every system and compare with `mepElementsExamined` | They will NOT match and that is expected — an element can be on no system, and fittings may report differently. **What matters is the direction:** examined should be the larger. If it is smaller, elements are being counted on two systems |
+| **N4** | Draw one duct on its own, joined to nothing, and ask again | It appears in `connectedToNothing`, with its category and its level. **This is the row the agent exists for** |
+| **N5** | Take a properly connected run and check it does NOT appear in `connectedToNothing` | Only its end connectors are open, so it counts in `withAnOpenConnector` and not in the loose list. A run that appears in both is a false positive and makes the whole answer noise |
+| **N6** | A model with no MEP at all — an architectural or structural file | It says so in words rather than returning an empty list. An empty answer and *"this file has no MEP in it"* must not read the same |
+| **N7** | Check `reportedNoConnectors` against what you expect | Some MEP families genuinely have none. A large number here means the connector question is being asked of things that cannot answer it, and `mepElementsExamined` is then the wrong denominator for N3 |
+| **N8** | A duct connected only to itself, or a fitting whose connectors reference its own owner | It is still reported as connected to nothing — `IsJoined` skips references back to the same owner. If it comes back joined, the self-reference check is not doing its job |
+| **N9** | Compare `onNoSystem` with `connectedToNothingCount` | `onNoSystem` should be the LARGER of the two, and the gap is the interesting number: an element joined to its neighbour but sitting on no system is a half-built run. If they are equal on a real job, either every loose element is also the only unsystemed one — possible — or `MEPSystem.Elements` is not returning what the System Browser shows, which N2 is what settles |
+
+**Why this group exists at all:** a duct that LOOKS joined on screen and is not carries no flow, appears
+on no system, and is missing from every number downstream — the schedule prints, the sizing calculates,
+the System Browser shows a tidy tree, and none of them mentions it. On a federated Qatar job that is the
+difference between a riser that balances and one that is found on site.
+
+**What it deliberately does not do:** judge. It reports counts and one list, and asserts nothing about
+what Revit considers a valid system. The compiler agreed about every name it calls and can say nothing
+about what any of them returns.
+
+---
+
+## Group P — parameters, and the two ways the answer is confidently wrong (needs Revit and a real model)
+
+`HERON-REVIT-PAR-011` — [`revit/Heron.Revit.Addin/RevitParameters.cs`](../revit/Heron.Revit.Addin/RevitParameters.cs).
+Compiles on 2020–2027, 0 errors, 2026-09-16. **Never run.** Read-only — no parameter is written, and no
+transaction is opened.
+
+Use a real project, not a sample: one with shared parameters loaded, at least one project parameter
+bound to a category, and a schedule you already trust. **The schedule is the instrument** — almost every
+row below is settled by putting Heron's answer next to a schedule of the same thing.
+
+Two tools, one operation. `revit_parameters(category)` with no parameter named gives the COVERAGE answer
+— which parameters these elements carry and how many are filled in. Naming one gives the VALUES.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **P1** | Ask for the coverage of a category you know well — *"which parameters are filled in on the ducts?"* | Every parameter you can see in the Properties palette appears, plus the type ones. A parameter Revit shows and Heron does not is the finding |
+| **P2** | **The row this agent exists for.** Ask for a parameter that lives on the TYPE — Fire Rating on doors, Assembly Code on anything | It comes back with `where` reading **type**, and a count that matches the schedule. A confident *"0 of 340"* here means the type is not being read, and that is the plausible zero this whole file was written against |
+| **P3** | Take one length parameter — a duct width, a wall height — and compare `value` with the schedule | **The same string, units and all.** If it reads `0.656` where the schedule reads `200 mm`, `AsValueString` is not doing what this code assumes and every number it has ever given is in decimal feet |
+| **P4** | Check the project's units are NOT millimetres, then repeat P3 | The value follows the PROJECT, not a fixed unit. This is the row that catches a conversion baked in by accident |
+| **P5** | On a type row in the coverage answer, compare `onElements` with the number of TYPES in that category | They match. A type row reporting 900 against 900 doors means types are being counted once per element — the answer is not wrong, but it is not the number the column says |
+| **P6** | Make a schedule of one parameter, sort by it, and count the blanks. Compare with `noValue` + `blank` | The same total. **Then check the split:** `blank` should be the ones holding a space or an unset material, `noValue` the ones nobody ever touched. A schedule cannot tell them apart and this is the only place the difference shows |
+| **P7** | Put a single SPACE into a text parameter on one element and ask again | It moves from `noValue` to `blank` — not to filled in. Counting a typed space as data is how a completeness check passes when it should fail |
+| **P8** | Load a shared parameter with the SAME NAME as a built-in one and bind it to a category | `sameNameOnOneElement` reads 2 on that row, and asking for it by name reports `ambiguous`. If it silently answers with one of them, the clash detection is not working and writing by name later would hit the wrong parameter |
+| **P9** | A category with several thousand elements — the ducts on a real tower | It answers in a few seconds. Both shapes read each TYPE once; if it hangs, the per-type caching is not being hit and every element is re-reading its type |
+| **P10** | A category with more than 500 elements carrying a named parameter | `listed` reads 500, `notListed` carries the rest, and the reply says so. A truncated answer that does not admit it is worse than a slow one |
+| **P11** | Ask for a category that has no elements at all in this model | It says so in words. An empty answer and *"this model has none of those"* must not read the same |
+| **P12** | Ask for a parameter that exists nowhere — a typo | `withoutTheParameter` equals the element count, and the wording says it is probably an unbound project parameter or a different family, not missing data. **That distinction is the whole value of the answer** |
+| **P13** | Pin to one project, switch Revit to another, and ask again | Refused, and nothing is read. A completeness report from the wrong building reads exactly like one from the right building |
+| **P14** | Check a read-only parameter — Area, Volume, an elevation | `readOnly` is true. If it reads false, a later write agent would try it and fail at the transaction |
+| **P15** | Check a Yes/No parameter and a material parameter | The Yes/No prints as Revit prints it; the material prints the material's NAME, not a number. An ElementId pointing at nothing counts as `blank` |
+
+**Why this group exists at all:** *"is it filled in?"* is the question asked before every schedule, IFC
+export and hand-over, and today the only way to answer it is a throwaway schedule and a pair of eyes.
+The two ways a machine gets it wrong are both silent — reading only the instance when the data sits on
+the type, and printing decimal feet where the project says millimetres — and both produce an answer that
+is formatted, confident and believed.
+
+**What it deliberately does not do:** write, and report a parameter's data type. `Definition.ParameterType`
+is **not in 2023** and `Definition.GetDataType()` is not in 2020, so no single member answers across the
+eight releases and [D-05](DECISIONS.md) does not extrapolate one. `storageType` is the narrower fact
+reported instead.
+
+---
+
+## Group S — groups and assemblies, and the edit that lands in twelve places (needs Revit)
+
+`HERON-REVIT-GRP-033` — [`revit/Heron.Revit.Addin/RevitGroups.cs`](../revit/Heron.Revit.Addin/RevitGroups.cs).
+Compiles on 2020–2027, 0 errors, 2026-09-16. **Never run.** Read-only — nothing is grouped, ungrouped
+or edited, and no transaction is opened.
+
+Use a model that actually uses groups: one group type placed several times, ideally one nested group,
+and if you have one, an assembly. **A model with no groups proves almost nothing here.**
+
+**This group closes a guess that is already in shipped code.** `E10` above is proved: a move of a group
+member returns cleanly and shifts nothing, no exception and no warning, so `RevitWrite` compares
+positions either side and then reports *"almost certainly inside a group"*. That hedge is there because
+nothing could check beforehand. These rows are whether it can now.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **S1** | `revit_groups` with no category, on a model you know | Every group type in the Project Browser is listed, with the same names, and `placements` matches how many you can count. A group Revit shows and Heron does not is the finding |
+| **S2** | Compare `members` against what you see when you edit the group | The same number. It is counted off ONE instance — if it disagrees with the browser, either a member id is resolving to nothing or instances of one type do not hold the same content, and the second would be news |
+| **S3** | Check a group definition that is in the browser but placed nowhere | `placements` reads 0 and `members` is **absent, not zero**. There is no instance to count off, and a zero there would mean "empty group" rather than "unknown" |
+| **S4** | **The row this agent exists for.** Put two ducts in a group, place that group 12 times, then ask `revit_groups("ducts")` | `mostPlacements` reads 12 and the ducts are listed with their group type. **Then do E10's move and see the two answers agree** — this one before, RevitWrite's after |
+| **S5** | Ask for a category with no grouped elements in it | It says so in words: an edit reaches exactly one place. An empty list and *"nothing here is grouped"* must not read the same |
+| **S6** | Pin one duct, group another, and ask | They come back as **two different rows with different reasons** — `pinned` true on one, `inAGroup` true on the other. A group member is NOT pinned, and merging the two would send somebody to unpin something that needs ungrouping |
+| **S7** | Nest a group inside another group and put a duct in the inner one | `nested` is true and `chain` has two entries, innermost first, each with its own `placements`. **Then check the arithmetic by hand** — how many places does editing that duct really reach? This is the row that settles whether the counts multiply, which the code deliberately refuses to assume |
+| **S8** | A detail group and a model group in one model | `kind` tells them apart, using Revit's own category names. A detail group lives in one view and a model group does not |
+| **S9** | An assembly with elements in it | It appears under `assemblies` with a member count. **Then edit a member and check whether another assembly of the same type changed** — this is the question the code refuses to answer and this row is where it gets answered |
+| **S10** | A category of several thousand elements across a few group types | It answers in a few seconds. The placement count is cached per group type; if it hangs, the cache is not being hit |
+| **S11** | Pin to one project, switch Revit to another, ask again | Refused, nothing read. Approving an edit against the wrong model's placement count is how twelve of the wrong rooms change |
+
+**Why this group exists at all:** editing one element inside a group edits it everywhere that group is
+placed. That is what groups are *for* — and it is a bad surprise when nobody told you the element was in
+one. Revit raises no error, so the only defence today is knowing your own model.
+
+**What it deliberately does not do:** multiply the nested counts, or explain assemblies. Whether an inner
+group's placement count already includes the copies carried inside its parent is a question about Revit,
+not about this code, and `S7` is what settles it. Whether an edit inside one assembly travels to another
+of the same type is `S9`. Both would have been easy to guess at and a wrong number here reads exactly
+like a right one — [D-52](DECISIONS.md).
+
+---
+
 ## Group G — hard to force, do last
 
 Not blocking. Listed so they are not mistaken for tested.

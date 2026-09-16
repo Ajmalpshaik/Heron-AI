@@ -136,7 +136,7 @@ def present(manifest, secrets=None):
         seen.append(name)
 
         # A MODEL IS NOT KNOWLEDGE.
-        binaries = RELEASE._binaries([name] + list(item.get("files") or []))
+        binaries = RELEASE._binaries([name] + RELEASE._names(item.get("files")))
         if binaries:
             return {"presented": False, "refused": "CARRIES_A_MODEL",
                     "item": name,

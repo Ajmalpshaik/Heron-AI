@@ -68,6 +68,21 @@ namespace Heron.Core
                 // exactly that.
                 { "list_links",         HeronRisk.Read },
                 { "list_phases",        HeronRisk.Read },
+                { "list_systems",       HeronRisk.Read },
+
+                // HERON-REVIT-PAR-011. Read, although the register's row for
+                // that agent is MODIFY - the column is "the HIGHEST level it
+                // can require", and this operation reads. Writing a parameter
+                // will be a SEPARATE entry at its own risk when it exists,
+                // rather than this one quietly widening: the risk is looked
+                // up by name, so one name must mean one thing.
+                { "read_parameters",    HeronRisk.Read },
+
+                // HERON-REVIT-GRP-033. Read, and the same note applies as
+                // above: the register's row is MODIFY because that column
+                // is the highest level the ROW can require. This one lists
+                // what is grouped. Ungrouping would be a separate entry.
+                { "list_groups",        HeronRisk.Read },
 
                 // GIVING THE SESSION BACK. Read, because it cannot touch a
                 // model - it hands back a claim, and only the chat that holds

@@ -1986,3 +1986,268 @@ Three options, and they are the owner's:
 
 **Not acted on.** Option 2 changes a gate everyone has to pass, and option 3 edits 27 handlers across
 files this agent did not write.
+
+## F35 — half a hole is closed, and the other half needs the checks to change first
+
+**Found by the second Codex review on PR #142** (`brain/heron_qa.py:174`, P1), worked on 2026-09-16.
+
+### What the reviewer said
+
+> A result omitting `of` skips the freshness check, so an old or fabricated `{check, passed: true}`
+> satisfies the final gate for an unrelated change.
+
+**It is true, it was reproduced, and it is not one line to fix.**
+
+### What was closed
+
+A result with **no** fingerprint sitting beside one that **has** is now refused —
+`RESULT_IS_UNFINGERPRINTED`. The argument: once a single check in a run recorded what it ran
+against, a result that did not is a check that *did not record*, not one that *cannot*. That is
+precisely the company an old or fabricated result would be keeping, so it is the half worth
+closing on its own.
+
+The concession is also no longer only prose. `unfingerprinted` is a field in the answer naming
+every required check whose result could not be tied to the change, so a caller that wants to
+refuse on it can, without reading `unjudged`.
+
+### What is still open, and why it was not closed here
+
+**A run where NO result carries a fingerprint still passes.** The agent's own suite says so
+deliberately:
+
+> a result carrying NO fingerprint is accepted — most checks do not record what they ran
+> against, and refusing them would make this unusable
+
+That is a real constraint, not a lapse. `gate()` reads results a caller hands in; it runs
+nothing itself, so it cannot fingerprint on the checks' behalf. Requiring `of` on every result
+today refuses every run, which is why the handover called this a **sequencing decision**.
+
+**Nothing in `brain/` or `mcp/` calls `gate()` — only `tests/test_qa.py` does.** So the cost of
+making it strict is currently a test, not an outage. That is an argument for doing it, and it is
+also exactly why it should be a decision rather than a quiet change: the moment a real caller
+appears, strictness is either already there or it never arrives.
+
+### What is proposed
+
+Three, and they are the owner's:
+
+1. **Nothing more.** The mixed case is refused, the rest is named in `unfingerprinted`, and a
+   caller can decide. That is what was done.
+2. **Make the checks record.** Have whatever produces a check result — `tools/change-evidence.py`
+   is the obvious candidate — stamp `of` with `heron_security.fingerprint` of the change it ran
+   against. Then option 3 costs nothing.
+3. **Require `of` on every result now**, refusing a run where any required check cannot be tied
+   to the change. Correct, fails closed, and today it would refuse every caller that exists —
+   which is one test.
+
+**Not acted on.** 2 is the sequencing the handover named; 3 without 2 is a gate nobody can pass,
+and a gate that has to be suppressed to be introduced teaches people to suppress it (the same
+argument as F34 option 2).
+
+
+## F36 — D-59's 62 edits would un-prove 56 fragments, and four of them must not be made at all
+
+**Found on 2026-09-16**, doing the first implementation [D-59](DECISIONS.md) asked for, with a .NET SDK
+installed in the container ([§30](30-compiling-away-from-windows.md)) so the C# could actually be
+compiled rather than guessed.
+
+### D-59 says nothing is invalidated. That is true of behaviour and NOT of proofs
+
+> **It does not change what any fragment does today.** Absent input means host only, which is what all 62
+> already do and what every existing proof measured. Nothing is invalidated by this decision.
+
+The first half is right. The second is right about **what the code does** and wrong about **what the
+repository will say about it**, because a proof is not stamped against behaviour — it is stamped against
+the bytes:
+
+```
+Fragment.fingerprint()   sha256 over the implementation files
+proof_is_stale()         recorded != fingerprint()
+```
+
+Editing `impl/any/fragment.cs` changes the hash, so the fragment's recorded proof goes **stale** and its
+`PROVEN` claim stops holding. That is [D-30](DECISIONS.md) working exactly as intended — it is the same
+rule that put `set-view-section-box` back to `DRAFT` when its implementation changed after its proof was
+signed.
+
+**Derive the cost rather than reading it here:**
+
+```bash
+python tools/check-revit-gate.py --list links
+```
+
+On 2026-09-16 that was **65 fragments, and 56 of them are `PROVEN`.** Making the 62 edits in one pass
+would take the library from 310 proven to **254**, and not one of them could be re-proved in a container:
+re-proving needs Revit open with a federated model.
+
+### What follows from it
+
+**The link contracts are a PC job, not a container job** — not because the C# cannot be written here (it
+can now, and it compiles), but because the *proof* has to be re-taken in the same sitting or the number
+on the front of this repository falls by 56 with nothing to show for it. They should be done in a batch,
+with a federated model open, and re-proved as they go.
+
+**The nine `DRAFT` ones are free** and are where a first implementation belongs. `report-areas` was done
+that way on 2026-09-16: DRAFT, no proof block, nothing to invalidate.
+
+### And four of the nine must not be done at all
+
+D-59 excluded the 45 writers **on an API fact rather than a judgement** — a linked element belongs to
+another document and cannot be changed through this one. The same fact excludes a second group it did
+not name:
+
+| flagged, and `DRAFT` | why links do not apply |
+|---|---|
+| `select-by-electrical-circuit` | |
+| `select-by-host` | |
+| `select-touching` | `provides: elements` — and an `ElementId` from a linked document means nothing in the host's selection |
+| `select-openings` | |
+
+A `select-*` fragment hands back `IList<Element>` for `SET_SELECTION` to highlight and
+`ISOLATE_ELEMENTS` to leave on screen. Elements from a link cannot be selected that way, so a
+link-spanning `select-*` would return ids that the next fragment in the chain silently drops — a worse
+failure than the confident smaller number D-59 exists to prevent, because it looks like it worked.
+
+**Three more of the nine are questions about THIS model** and gain little: `find-unused-families`,
+`find-unused-materials` and `check-model-standards` ask what is unused or non-compliant *here*, and
+nobody purges a link.
+
+**So the gate's count is an over-count**, and it should be: it asks one question of every fragment and a
+question cannot know which answers are meaningful. But the worklist derived from it needs a judgement
+per fragment, not a bulk edit — which is the opposite of how 62 identical-looking rows read.
+
+### What is proposed
+
+1. **Nothing, beyond what was done.** `report-areas` carries the pattern, it compiles on all eight
+   releases, and the rest stay a worklist. That is what was done.
+2. **Teach the gate the two exclusions**, so `select-*` and the purge questions stop appearing in a list
+   headed *"handled incorrectly"*. The risk is a gate that hides a real case behind a rule somebody
+   wrote once.
+3. **Record the proof cost in D-59 itself**, so the next person reading *"nothing is invalidated"* is not
+   surprised by 56 fragments dropping to `DRAFT` halfway through an afternoon.
+
+**Not acted on.** 2 changes a gate everyone reads, and 3 edits a decision record that is append-only.
+
+## F37 — a refusal was resting on a majority, and one file tipped it
+
+**Found on 2026-09-16**, building `HERON-REVIT-PAR-011` (`RevitParameters.cs`). The suite went red on a
+check nobody had touched, and the check was right.
+
+### What flipped
+
+`brain/heron_csharp.py` is the C# idiom agent, and its whole design is a refusal: it will not assert
+*"use narrow exception types"* as a rule. Its stated reason was a measurement of this repository's own
+code —
+
+> A "narrow exception types only" rule would be false about the larger half of the code that already
+> ships. It is not asserted here.
+
+— and `tests/test_csharp.py` guarded that reason with `check(broad > narrow, ...)`, so the claim could
+not quietly rot.
+
+One new file moved it. `RevitParameters.cs` carries sixteen exception handlers and every one is narrow,
+because that is what [D-52](DECISIONS.md) and `tools/check-narrow-errors.py` ask for:
+
+| | broad | narrow |
+|---|---|---|
+| before | 53 | 42 |
+| after | 53 | **58** |
+
+Narrow leads for the first time. Reproduce it:
+
+```bash
+python tests/test_csharp.py     # prints the live figures in section 3
+```
+
+### The refusal survives. Its stated reason did not
+
+Nothing was rewritten to restore the old balance — the new file follows the better style, and degrading
+it to keep a docstring true would be the tail wagging the dog.
+
+What changed is the claim. **The majority was never the real ground for the refusal.** Fifty-three broad
+handlers still ship and still work, and an agent that flags fifty-three working handlers is correcting
+working code on an authority it does not have — which is as true at 58–53 as it was at 42–53. A claim
+that can flip on a single commit was the wrong thing to hang a refusal on, and it flipped on a single
+commit.
+
+So the suite now checks the share that does not tip: broad handlers are at least a quarter of all
+handlers. Crossing that needs somebody to deliberately rewrite most of them, which is an event worth a
+red suite.
+
+### The question that is actually open
+
+**Should `heron_csharp` now begin asserting the rule?**
+
+The honest position is that the answer has moved and nobody has decided it. The arguments have not
+changed sides so much as changed weight:
+
+- **For.** New C# in this repository is narrow, consistently — `RevitLinks`, `RevitPhases`,
+  `RevitSystems` and `RevitParameters` are 36 narrow handlers and zero broad between them. A rule would
+  describe what the authors already do, which is the only kind of style rule worth having.
+- **Against.** The 53 broad handlers are not a backlog anybody intends to clear. `check-narrow-errors.py`
+  already enforces the shape that actually costs — D-52's plausible zero, where a fault and the normal
+  case come back identical — and it enforces it where the defect kept happening. A rule about catch
+  *syntax* is a wider and weaker thing than a rule about swallowed faults.
+
+**Not acted on.** Asserting it would turn 53 working handlers into findings on the day it ships, and
+whether that is worth doing is a judgement about this repository rather than about C#.
+
+## F38 — the repository went public and two documents still say it did not
+
+**Found on 2026-09-16**, updating the README after a run of agent work. Not found by a gate — no gate
+checks a sentence about a fact outside the repository.
+
+### One file, two answers
+
+[`README.md`](../README.md) carried both of these:
+
+> *This repo is public only so the work is open.* — the banner, at the top
+
+> *It is still **private**.* — "A note on this repository", at the bottom
+
+A reader meets the banner first and the considered-sounding paragraph last. Confirmed against GitHub:
+the repository **is public**. The bottom paragraph is corrected.
+
+[D-07](DECISIONS.md) carries the same staleness:
+
+> publishing to public is irreversible in practice and **has not been done** — it needs an explicit
+> instruction from the owner, once the licence and the public/private file separation are in place
+
+That file is **append-only**, so nothing was edited there. This row is how it gets closed.
+
+### The part that is not a documentation bug
+
+D-07 set four conditions. Three are plainly met — Apache 2.0 ([D-08](DECISIONS.md)),
+[`DISCLAIMER.md`](../DISCLAIMER.md), [`SECURITY.md`](../SECURITY.md). The fourth is **the public-code /
+private-knowledge separation being verified**, which D-07 itself calls the one that matters most.
+
+**No record of that verification exists in this repository.** Derive it:
+
+```bash
+grep -rn "separation" docs/DECISIONS.md docs/17-open-source-and-distribution.md
+```
+
+There is a strong argument that it holds. Knowledge is written outside the repository by construction —
+[`brain/heron_scope.py`](../brain/heron_scope.py) refuses to open a store at all without `%APPDATA%` or
+`HERON_KNOWLEDGE`, and [D-26](DECISIONS.md) keeps Revit model files from leaving the machine. Neither
+is the same as somebody having looked at what is actually committed and said so.
+
+**An argument that separation holds and a check that it does are different things**, and this
+repository has spent a lot of words on exactly that distinction — a compiler proves the API surface
+agrees, a test proves the logic agrees with itself, and neither says whether a duct moved 200
+millimetres or 200 feet. The same standard applies here.
+
+### What is proposed
+
+1. **Nothing about the README.** It is corrected, and the correction says what changed and when.
+2. **Append a decision recording that the repository went public** — the date, and by whose
+   instruction. D-07's own wording makes that an owner's act; only the owner can write it.
+3. **Do the separation check and record it**, or record explicitly that it was judged unnecessary and
+   why. Either is a closed item. Neither is what exists now.
+4. **Consider a gate.** `check-docs.py` verifies that a `Golden Rule N` reference points at a rule that
+   exists; nothing verifies a sentence *about a state of the world*. This is the second time that gap
+   has produced a stale claim in the file a new reader opens first — the README's *"six more are
+   proposed"* line survived eight days past being false for the same reason.
+
+**Not acted on beyond the README.** 2 is an owner's decision by D-07's own terms, 3 needs somebody to
+look rather than to reason, and 4 is a gate everybody runs.

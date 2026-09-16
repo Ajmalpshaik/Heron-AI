@@ -215,10 +215,39 @@ def main():
         reached.add(answer.get("refused"))
         check(answer.get("refused") == name, "%s is reached" % name)
 
+    print()
+    print("R. THE SECOND CODEX REVIEW - a release this change ADDS needs "
+          "a result too")
+    def ran(before, after, results):
+        answer = REG.check(before, after, results, preserved="the same job")
+        reached.add(answer.get("refused"))
+        return answer
+
+    answer = ran({"revit": ["2024"]}, {"revit": ["2024", "2026"]},
+                 {"2024": "pass"})
+    check(answer.get("refused") == "NOT_TESTED",
+          "adding a release and reporting only the old one is NOT_TESTED "
+          "- the missing-result check ranged over the releases claimed "
+          "BEFORE the change, so the one release nothing had ever run on "
+          "was the only one it did not ask about")
+    check(answer.get("newly_claimed") == ["2026"],
+          "  and the newly claimed release is named as such")
+    answer = ran({"revit": ["2024"]}, {"revit": ["2024", "2026"]},
+                 {"2024": "pass", "2026": "fail"})
+    check(answer.get("refused") == "A_NEW_RELEASE_FAILED",
+          "a NEW release that fails is refused under its own name - "
+          "nothing regressed, because there was no previous behaviour "
+          "there to fall away from")
+    answer = ran({"revit": ["2024"]}, {"revit": ["2024", "2026"]},
+                 {"2024": "pass", "2026": "pass"})
+    check(answer.get("safe") is True,
+          "  and a change that reports both releases passing is safe")
+
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-FRG-REG-006.yaml"))
     named = contract.get("failures") or []
-    check(len(named) == 7, "the contract declares 7 failures")
+    check(len(named) == len(set(named)),
+          "the contract declares each failure once")
     for failure in named:
         check(failure in logic, "the code names %s" % failure)
     unreached = sorted(set(named) - reached)

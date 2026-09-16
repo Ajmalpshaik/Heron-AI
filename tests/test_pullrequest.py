@@ -61,8 +61,13 @@ def request(**changes):
 
 
 def yes(**changes):
+    # `of` binds the confirmation to WHAT was confirmed. A branch name is
+    # mutable - the same head carries new commits, a replaced title and a
+    # different base - so the head alone made every confirmation a
+    # standing one wearing a specific one's coat.
     card = {"by": "Ajmal", "at": "2026-09-15 09:12",
-            "head": "claude/two-agents"}
+            "head": "claude/two-agents",
+            "of": PR.fingerprint_of(request())}
     card.update(changes)
     return card
 
@@ -169,16 +174,21 @@ def main():
     check("the FILE, not at the information" in heavy["why"],
           "citing D-26 - the line is the file, and nothing asked what "
           "was inside it")
-    check(PR.open_request(request(attachments=["notes.txt", "shot.png"]),
-                          yes())["prepared"],
+    ordinary = request(attachments=["notes.txt", "shot.png"])
+    check(PR.open_request(ordinary,
+                          yes(of=PR.fingerprint_of(ordinary)))["prepared"],
           "while an ordinary attachment travels fine")
+    check(PR.open_request(ordinary, yes()).get("refused")
+          == "CONFIRMATION_IS_STALE",
+          "and a confirmation given BEFORE the attachment was added does "
+          "not cover it - the attachments are part of what was agreed to")
 
     print("\n6. nothing is opened")
     imports = sorted(line.split()[1] for line in logic.split("\n")
                      if line.startswith("import "))
     check(imports == ["heron_promotion", "heron_release", "heron_secrets",
-                      "os", "sys"],
-          "the whole import list is os, sys and the three agents it "
+                      "heron_security", "os", "sys"],
+          "the whole import list is os, sys and the four agents it "
           "borrows rules from: %s" % ", ".join(imports))
     for reaching in ("requests", "urllib", "socket", "subprocess", "http"):
         check(reaching not in logic, "nothing here reaches %s" % reaching)
@@ -198,10 +208,31 @@ def main():
         reached.add(answer.get("refused"))
         check(answer.get("refused") == name, "%s is reached" % name)
 
+    print()
+    print("R. THE SECOND CODEX REVIEW - a branch name is not what was "
+          "confirmed")
+    same = {"title": "t", "body": "b", "head": "feature", "base": "main"}
+    agreed = {"by": "Ajmal", "at": "2026-09-16", "head": "feature",
+              "of": PR.fingerprint_of(same)}
+    answer = PR.open_request(dict(same), dict(agreed))
+    check(answer.get("may_open") is True,
+          "the request that was actually confirmed opens")
+    for field, value in (("title", "a different title"),
+                         ("base", "release"),
+                         ("body", "a rewritten body")):
+        answer = PR.open_request(dict(same, **{field: value}), dict(agreed))
+        reached.add(answer.get("refused"))
+        check(answer.get("refused") == "CONFIRMATION_IS_STALE",
+              "the same confirmation does NOT cover a changed %s - a "
+              "branch name is mutable, so a confirmation naming only the "
+              "head is a standing one wearing a specific one's coat"
+              % field)
+
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-GIT-PR-005.yaml"))
     named = contract.get("failures") or []
-    check(len(named) == 8, "the contract declares 8 failures")
+    check(len(named) == len(set(named)),
+          "the contract declares each failure once")
     for failure in named:
         check(failure in logic, "the code names %s" % failure)
     unreached = sorted(set(named) - reached)

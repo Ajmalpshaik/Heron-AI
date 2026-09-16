@@ -153,21 +153,57 @@ def check(before, after, results, preserved=None):
 
     # STEP 2's OUTPUT, CHECKED BEFORE STEP 3 CAN USE IT. A release
     # nobody ran cannot be compared, and "not reported" is not "passed".
-    silent = sorted(one for one in claimed if one not in said)
+    #
+    # EVERY RELEASE THE CHANGE TOUCHES, not only the ones claimed BEFORE
+    # it. Ranging over `claimed` alone let a fragment ADD a release,
+    # supply results for the old ones only, and come back safe - so the
+    # release with no evidence at all was the newly claimed one, which is
+    # the one nothing has ever run. A release is either claimed before,
+    # claimed after, or both, and all three need a result.
+    wanted = sorted(set(claimed) | set(_releases(after)))
+    silent = sorted(one for one in wanted if one not in said)
     if silent:
+        added = sorted(set(silent) - set(claimed))
         return {"checked": False, "refused": "NOT_TESTED",
                 "releases": silent, "claimed": claimed,
-                "why": "%s %s claimed before the change and %s no result "
-                       "after it. A release nobody ran is not a release "
-                       "that passed - and step 3 cannot compare a "
-                       "behaviour nobody observed."
+                "newly_claimed": added,
+                "why": "%s %s no result. A release nobody ran is not a "
+                       "release that passed - and step 3 cannot compare a "
+                       "behaviour nobody observed.%s"
                        % (", ".join("'%s'" % one for one in silent),
-                          "was" if len(silent) == 1 else "were",
-                          "has" if len(silent) == 1 else "have")}
+                          "has" if len(silent) == 1 else "have",
+                          "" if not added else
+                          " %s newly claimed by this change, so there is "
+                          "no previous behaviour to fall back on either: "
+                          "nothing has ever run there."
+                          % (", ".join("'%s'" % one for one in added)
+                             + (" is" if len(added) == 1 else " are")))}
 
     # STEPS 3 AND 4. The card is the claim, so the previous behaviour is
     # what it said it did.
-    regressed = sorted(one for one in claimed if said.get(one) == FAILED)
+    failing = sorted(one for one in wanted if said.get(one) == FAILED)
+
+    # A RELEASE THIS CHANGE ADDS AND THAT FAILS DID NOT REGRESS - there
+    # is no previous behaviour for it to have fallen away from. It is
+    # still refused: a fragment may not start claiming a release it does
+    # not work on. Named apart so the answer does not tell a reader the
+    # release used to work.
+    arriving = sorted(one for one in failing if one not in claimed)
+    if arriving:
+        return {"checked": False, "refused": "A_NEW_RELEASE_FAILED",
+                "releases": arriving, "claimed": claimed,
+                "why": "%s %s newly claimed by this change and %s there. "
+                       "Nothing regressed - there is no previous "
+                       "behaviour on %s - but a fragment may not begin "
+                       "claiming a release it does not work on, which is "
+                       "the same promise Golden Rule 4 protects from the "
+                       "other side."
+                       % (", ".join("'%s'" % one for one in arriving),
+                          "is" if len(arriving) == 1 else "are",
+                          "fails" if len(arriving) == 1 else "fail",
+                          "it" if len(arriving) == 1 else "them")}
+
+    regressed = sorted(one for one in failing if one in claimed)
     if regressed:
         return {"checked": False, "refused": "A_RELEASE_REGRESSED",
                 "releases": regressed, "claimed": claimed,

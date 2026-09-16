@@ -55,7 +55,7 @@ It is **not** a chatbot, a coding assistant, or a plain MCP server.
 **Phase 1 is BUILT AND UNPROVEN, and Phase 2 is built and barely proven — those are different words
 on purpose.** The C# —
 the write path, and the fragment bodies — compiles on all eight releases from 2020 to 2027 with zero
-warnings. The Python that reasons about it has a suite per subject — derive the count with `ls tests/test_*.py | wc -l` rather than reading one here, and the pass/fail set is **derived, not typed here** — `python tools/check-gaps.py` runs them and separates what genuinely failed from what is only waiting for a machine. **Two failures are real and pre-date this work**: `test_graph` and `test_reachable`. **Three more can say nothing without an optional dependency** — `test_bridge_roundtrip` wants a built .NET test host (`dotnet build tests/Heron.Bridge.TestHost`), and `test_mcp_serves` and `test_served_claims` want the MCP SDK (`pip install --user mcp`). A compiler proves the
+warnings. The Python that reasons about it has a suite per subject — derive the count with `ls tests/test_*.py | wc -l` rather than reading one here, and the pass/fail set is **derived, not typed here** — `python tools/check-gaps.py` runs them and separates what genuinely failed from what is only waiting for a machine. **That list used to name five failures and now names two.** `test_graph`, `test_reachable` and `test_bridge_roundtrip` all pass — the last of those was excused for weeks as needing Windows and Revit and actually needed one `dotnet build`, which nobody had run. **The two that remain are `test_mcp_serves` and `test_served_claims`**, and both want the MCP SDK. **Do not reach for `pip install mcp` to clear them here**: on 2026-09-16 it pulled a `cryptography` whose native bindings raise on import, turning a clean skip into a crash and making both suites *worse*. A test that cannot run says so and exits distinctly; that is the behaviour to keep. A compiler proves the
 API surface agrees; a test proves the logic agrees with itself; neither says whether a duct moves 200
 millimetres or 200 feet.
 
@@ -95,6 +95,8 @@ machine.
 | ⛔ **Phase 1 ends here, unproven** | `write.enabled` defaults to **`false`** and stays there until a real Revit has been through the register. Heron can no longer be read-only by construction, so it is read-only by default instead — a real weakening, made deliberately and written down rather than smoothed over |
 | Steps 7–14 — Phase 2 | ✅ **Built in full, and almost none of it proven.** The fragment store, one knowledge store per scope, exact-word search, local offline embeddings, the two fused behind a hard Revit-version filter, the capability registry, the dependency graph, and ten skills that name capabilities rather than fragments. **All ten skills are `DRAFT`. 62 of the 372 fragments are `DRAFT` and 310 are `PROVEN` as of 2026-09-16** — derive both with the `grep` above rather than reading them here — a fragment re-authored from an earlier library arrives here unproven whatever it was there ([D-44](docs/DECISIONS.md)), and that rule is enforced in code rather than remembered |
 | The brain, reachable | ✅ Three read-only MCP tools resolve a request through a **capability**, never a fragment id. **Resolving is not running** — and nothing could run a fragment at all until D-28's executor landed on 2026-09-06. It runs one **READ-ONLY**: it opens no transaction, so Revit itself refuses any model change. Running a fragment that WRITES **is a separate operation, and it now exists** — `run_fragment_write`, `MODIFY` in the registry, wrapping the run in a `TransactionGroup` that is assimilated only on `apply=true` and rolled back otherwise, so a preview is the run itself undone ([D-55](docs/DECISIONS.md)). **158 `MODIFY` fragments are `PROVEN`**, so that path has met a real model. `write.enabled` still defaults to `false` |
+
+| Reading a model, beyond counting it | ✅ **Built 2026-09-14 to 2026-09-16. None of it has ever run.** Five read-only tools that answer the same shape of question — **a number about a model is only a number about the part of it you asked for.** `revit_links` (elements inside a LINK are not in the host document), `revit_phases` (a count is a fact about a model AND a phase AND a design option), `revit_systems` (an MEP element **connected to nothing** is on no system and missing from every total downstream), `revit_parameters` (a check that reads only the INSTANCE reports a confident zero on data sitting on the TYPE) and `revit_groups` (an element inside a GROUP carries your edit into every placement of it, and Revit raises no error). **Each is built READ-FIRST** — the register marks those rows `MODIFY`, which that column defines as the highest permission the row *can* require, and reading requires none of it. They compile on all eight releases; Groups L, M, N, P and S in [`NEEDS-CHECKING.md`](docs/NEEDS-CHECKING.md) are what would prove them |
 
 **What is proven and what is only built are different things.**
 [HANDOVER.md](docs/HANDOVER.md) §3 keeps that distinction honest, item by item.
@@ -298,11 +300,25 @@ per row in [33](docs/33-external-repository-research.md), not assumed.
 
 ## A note on this repository
 
-It is still **private**. Three of the four conditions for making it public are now met — the licence
-is chosen (Apache 2.0, [D-08](docs/DECISIONS.md)), and [DISCLAIMER.md](DISCLAIMER.md) and
-[SECURITY.md](SECURITY.md) are written. **The one that remains is the public-code / private-knowledge
-separation being verified**, and it is the one that matters most: publishing is irreversible in
-practice, and client project data must never be able to reach it.
+**It is public.** This paragraph said *"it is still private"* while the banner at the top of this same
+file said the repository was public — a reader met both claims in one document, and the wrong one was
+at the bottom where it looked like the considered answer. Corrected 2026-09-16.
+
+[D-07](docs/DECISIONS.md) still reads *"has not been done"* for the same reason. That file is
+**append-only**, so it is not edited here; the mismatch is logged as **F38** in
+[PROPOSALS.md](docs/PROPOSALS.md) for the owner to close.
+
+**What has not changed is the condition that matters most.** Of the four conditions D-07 set, three are
+plainly met — the licence is chosen (Apache 2.0, [D-08](docs/DECISIONS.md)), and
+[DISCLAIMER.md](DISCLAIMER.md) and [SECURITY.md](SECURITY.md) are written. The fourth is **the
+public-code / private-knowledge separation being verified**, and *no record of that verification exists
+in this repository*. Publishing is irreversible in practice and client project data must never be able
+to reach it, so an unrecorded check is not a passed one.
+
+What is in place by construction: knowledge lives outside the repository entirely, under `%APPDATA%`
+or `HERON_KNOWLEDGE` ([`brain/heron_scope.py`](brain/heron_scope.py)), and [D-26](docs/DECISIONS.md)
+keeps Revit model files from leaving the machine at all. **That is an argument, not a verification** —
+F38 is where somebody writes down having actually looked.
 See [17 — Open Source & Distribution](docs/17-open-source-and-distribution.md).
 
 ---

@@ -56,6 +56,16 @@ contract:
     - name: listEachArea
       type: bool
       source: request
+    - name: includeLinks
+      # D-59. THE MODELLER DECIDES, JOB BY JOB, and absent means host only -
+      # which is what this fragment did before and what its proof measured.
+      #
+      # Areas are the case that makes this matter. In a federated job the
+      # AREAS ARE IN THE ARCHITECTURAL MODEL, which for an MEP coordinator is
+      # a link - so "report the areas" answered against the host alone comes
+      # back confidently empty on a model where every area exists.
+      type: bool
+      source: request
   provides:
     - name: findings
       type: IList<string>
@@ -80,6 +90,20 @@ contract:
       # the reason the pair is separated at all.
       role: result
       type: IList<string>
+    - name: linksSearched
+      # D-59's second field, and the one that does the work. A boolean echo of
+      # `includeLinks` would repeat what was ASKED FOR, not what happened.
+      #
+      # It counts DOCUMENTS, not instances: a wing linked in twice is one
+      # model placed twice, and counting placements reports a job with four
+      # links as having nine. That is LIST_LINKED_MODELS' own rule, applied
+      # here rather than restated.
+      #
+      # `includeLinks` set and this at 0 means "you asked for links and none
+      # are loaded", which is a DIFFERENT answer from host-only and must not
+      # read the same.
+      role: accounting
+      type: int
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -136,8 +136,13 @@ def validate(report, rows, query=None):
     # 1. IT IS WHAT THE DATA MAKES - free, because RND-002 is deterministic.
     remade = None
     if report.get("sha") and report.get("kind"):
+        # THE TITLE TOO. A heading is part of what RND-002 makes, and
+        # re-rendering without it made every legitimately titled report
+        # come back CONTENT_DOES_NOT_MATCH_THE_DATA - the finding fired
+        # on the presence of a title rather than on anything wrong.
         remade = RENDER.render(report["kind"], rows,
-                               columns=report.get("columns"))
+                               columns=report.get("columns"),
+                               title=report.get("title"))
         if remade.get("refused"):
             findings.append({
                 "finding": "CONTENT_DOES_NOT_MATCH_THE_DATA",

@@ -1869,6 +1869,488 @@ def revit_phases() -> str:
                      % "{:,}".format(no_phase))
 
     return "\n".join(lines)
+
+
+@server.tool()
+def revit_systems() -> str:
+    """
+    List the duct and pipe systems in the open Revit model, and the MEP
+    elements that are connected to nothing.
+
+    Use whenever the user mentions a system, a riser, flow, sizing, a system
+    browser, or says that something "is not on a system" or that a schedule or
+    a calculation is coming up short. Also use it before trusting any MEP
+    total: a duct that LOOKS joined on screen and is not connected carries no
+    flow, appears on no system, and is missing from every number downstream
+    without anything saying so.
+
+    AN OPEN CONNECTOR IS NOT A FAULT and this does not report it as one — the
+    end of every run is open, and a stub waiting for coordination is open on
+    purpose. What it singles out is the element with NO joined connector in
+    any direction, which is on no system by definition and is the group worth
+    a person's eye.
+
+    It reads only. Nothing is connected, renamed or put on a system.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    reply = session.request("list_systems")
+    session.close()
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return wrong_model
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+    systems = reply.get("systems") or []
+    loose = reply.get("connectedToNothing") or []
+    examined = reply.get("mepElementsExamined", 0)
+
+    if not systems and not examined:
+        return ("%s has no duct or pipe systems and no MEP elements at all. "
+                "That is a statement about this model, not an empty answer — "
+                "an architectural or structural file has neither." % where)
+
+    lines = ["%s: %d system(s), %s MEP element(s) examined."
+             % (where, len(systems), "{:,}".format(examined)), ""]
+
+    for system in systems:
+        lines.append("  %-4s  %-30s %s element(s)%s"
+                     % (system.get("kind") or "?",
+                        system.get("name"),
+                        "{:,}".format(system.get("elements", 0)),
+                        "" if not system.get("systemType")
+                        else "   [%s]" % system.get("systemType")))
+
+    off_system = reply.get("onNoSystem", 0)
+    if off_system:
+        lines.append("")
+        lines.append("%s MEP element(s) are on NO SYSTEM. That is the wider group — an "
+                     "element can be joined to its neighbour and still sit on no system, "
+                     "which is what a half-built run looks like."
+                     % "{:,}".format(off_system))
+
+    open_ended = reply.get("withAnOpenConnector", 0)
+    if open_ended:
+        lines.append("")
+        lines.append("%s element(s) have at least one open connector. That is NORMAL — "
+                     "the end of every run is one — and is a count rather than a list "
+                     "for that reason." % "{:,}".format(open_ended))
+
+    if loose:
+        lines.append("")
+        lines.append("%d element(s) are CONNECTED TO NOTHING. These are on no system, "
+                     "carry no flow, and are missing from every total downstream:"
+                     % len(loose))
+        for one in loose[:20]:
+            lines.append("    %-22s %-26s %s"
+                         % (one.get("category") or "?",
+                            one.get("name"),
+                            one.get("level") or "no level"))
+        if len(loose) > 20:
+            lines.append("    ... and %d more." % (len(loose) - 20))
+    else:
+        lines.append("")
+        lines.append("Every MEP element that reports a connector has at least one joined. "
+                     "Nothing is floating unattached.")
+
+    return "\n".join(lines)
+
+
+@server.tool()
+def revit_parameters(category: str = "ducts", parameter: str = "") -> str:
+    """
+    Read the parameters of every element of one category in the open Revit
+    model - either which parameters are filled in across the whole category,
+    or what one named parameter says element by element.
+
+    Use when the user asks whether something is filled in, complete, missing,
+    empty or blank; before a schedule, an IFC export, a COBie drop or a QA
+    hand-over; or whenever they name a parameter and want to know what it
+    says. Leave `parameter` empty for the coverage answer - "which of these
+    are filled in" - and name one for the values.
+
+    IT READS THE TYPE AS WELL AS THE INSTANCE. Fire Rating, Assembly Code and
+    most classification data sit on the TYPE, and a check that reads only
+    instances reports a confident, formatted zero on data that is actually
+    there. Every row says which one answered.
+
+    A VALUE COMES BACK IN THE PROJECT'S UNITS, formatted the way Revit itself
+    would print it in a schedule. Revit holds lengths internally in decimal
+    feet whatever the project is set to, so a raw number never appears on its
+    own - where one is given it is labelled unconverted.
+
+    It reads only. No parameter is written, and nothing is created or deleted.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    # THE PIN TRAVELS WITH THE REQUEST, for the reason revit_select_by_category
+    # gives at length: a guard checked on the reply is checked too late. This
+    # one writes nothing, so a late check would cost no model - but it would
+    # still hand back a completeness report for the wrong building, and a
+    # report from the wrong model reads exactly like one from the right model.
+    reply = session.request("read_parameters",
+                            op_args={"category": category,
+                                     "parameter": parameter or "",
+                                     "expectProject": pinned.project_key or ""})
+    session.close()
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return wrong_model
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+    kind = reply.get("category")
+
+    if reply.get("parameter"):
+        return _parameter_values(reply, where, kind)
+    return _parameter_coverage(reply, where, kind)
+
+
+def _parameter_coverage(reply, where, kind):
+    """Which parameters these elements carry, and how many are filled in."""
+    rows = reply.get("parameters") or []
+    elements = reply.get("elements", 0)
+
+    if not elements:
+        return ("%s has no %s at all, so there are no parameters to report. "
+                "That is a statement about this model rather than an empty "
+                "answer." % (where, kind))
+
+    lines = ["%s: %s %s, %d distinct parameter(s)."
+             % (where, "{:,}".format(elements), kind,
+                reply.get("distinctParameters", 0)),
+             "",
+             "  %-34s %-9s %8s %8s %8s %8s"
+             % ("PARAMETER", "WHERE", "ON", "FILLED", "NOT SET", "BLANK")]
+
+    for row in rows:
+        lines.append("  %-34s %-9s %8s %8s %8s %8s%s"
+                     % (_clip(row.get("name"), 34),
+                        row.get("where"),
+                        "{:,}".format(row.get("onElements", 0)),
+                        "{:,}".format(row.get("withAValue", 0)),
+                        "{:,}".format(row.get("noValue", 0)),
+                        "{:,}".format(row.get("blank", 0)),
+                        "" if row.get("sameNameOnOneElement", 1) <= 1
+                        else "   <- NAME USED TWICE"))
+
+    left = reply.get("notListed", 0)
+    if left:
+        # WHICH KIND WENT. The add-in lists type rows first precisely so a
+        # truncation cannot remove a whole kind, and saying which was cut
+        # is what lets a reader tell a long answer from a misleading one.
+        kinds = []
+        if reply.get("notListedType"):
+            kinds.append("%s on the type" % "{:,}".format(reply["notListedType"]))
+        if reply.get("notListedInstance"):
+            kinds.append("%s on the instance"
+                         % "{:,}".format(reply["notListedInstance"]))
+        lines.append("  ... and %s more parameter(s)%s."
+                     % ("{:,}".format(left),
+                        "" if not kinds else " — " + ", ".join(kinds)))
+
+    lines.append("")
+    lines.append("WHERE says instance or type. A `type` row counts TYPES, not "
+                 "elements - 4 against 900 doors means four door types.")
+    lines.append("NOT SET and BLANK both print blank in a schedule and are not "
+                 "the same fault: NOT SET is data nobody entered, BLANK is "
+                 "usually a space somebody typed.")
+
+    clashes = [row.get("name") for row in rows
+               if row.get("sameNameOnOneElement", 1) > 1]
+    if clashes:
+        lines.append("")
+        lines.append("%d parameter name(s) answer to TWO different parameters on a "
+                     "single element here — %s. Asking by those names would hit "
+                     "whichever Revit returned first, so they are not safe to ask "
+                     "by on this model."
+                     % (len(clashes), ", ".join(sorted(set(clashes))[:5])))
+
+    return "\n".join(lines)
+
+
+def _parameter_values(reply, where, kind):
+    """What one named parameter says, element by element."""
+    name = reply.get("parameter")
+    examined = reply.get("examined", 0)
+    matched = reply.get("matched", 0)
+    absent = reply.get("withoutTheParameter", 0)
+
+    if not examined:
+        return ("%s has no %s at all, so there is nothing to read \"%s\" from."
+                % (where, kind, name))
+
+    if not matched:
+        return ("%s: none of the %s %s carry a parameter called \"%s\" — not on "
+                "the instance and not on the type. That usually means a "
+                "different family, or a project parameter that was never bound "
+                "to this category, rather than data nobody filled in."
+                % (where, "{:,}".format(examined), kind, name))
+
+    lines = ["%s: \"%s\" on %s of %s %s."
+             % (where, name, "{:,}".format(matched),
+                "{:,}".format(examined), kind),
+             "",
+             "  %s filled in, %s not set, %s blank."
+             % ("{:,}".format(reply.get("withAValue", 0)),
+                "{:,}".format(reply.get("noValue", 0)),
+                "{:,}".format(reply.get("blank", 0)))]
+
+    if absent:
+        lines.append("  %s do not carry it at all." % "{:,}".format(absent))
+
+    lines.append("")
+    rows = reply.get("elements") or []
+    for row in rows[:30]:
+        shown = row.get("matches") or [{}]
+        value = shown[0].get("value")
+        lines.append("  %-28s %-8s %-22s %s"
+                     % (_clip(row.get("element"), 28),
+                        row.get("where"),
+                        _clip(row.get("level") or "no level", 22),
+                        value if value else "(%s)" % row.get("state")))
+
+    # THE REMAINDER IS WORKED OUT HERE AND NOT READ OUT OF THE REPLY.
+    # There are TWO caps and they are different sizes: the add-in stops
+    # at 500 rows and `notListed` describes only that, while this list
+    # stops at 30. Printing the add-in's figure after this cap told a
+    # reader "and 100 more" on an answer where 570 were unshown - a count
+    # that is wrong in the direction that makes somebody stop looking.
+    left = matched - min(len(rows), 30)
+    if left > 0:
+        lines.append("  ... and %s more." % "{:,}".format(left))
+
+    ambiguous = reply.get("ambiguousElements", 0)
+    if ambiguous:
+        lines.append("")
+        lines.append("%s element(s) carry MORE THAN ONE parameter called \"%s\" — a "
+                     "built-in and a shared one, say. Writing by this name would "
+                     "hit whichever Revit returned first, so it is not safe to "
+                     "write by here." % ("{:,}".format(ambiguous), name))
+
+    lines.append("")
+    lines.append("Values are in the project's units, formatted the way Revit "
+                 "prints them. WHERE says whether the instance or the type "
+                 "answered.")
+
+    return "\n".join(lines)
+
+
+def _clip(text, width):
+    """A column that stays a column, however long a parameter name is."""
+    text = "" if text is None else str(text)
+    return text if len(text) <= width else text[:width - 1] + "\u2026"
+
+
+@server.tool()
+def revit_groups(category: str = "") -> str:
+    """
+    List the groups and assemblies in the open Revit model, or - with a
+    category - show which of those elements sit inside one and how many other
+    placements an edit would reach.
+
+    ASK THIS BEFORE ANY CHANGE to elements that might be grouped. Editing one
+    member of a group edits it in every place that group is put, which is the
+    point of groups and a nasty surprise when you did not know the element was
+    in one. Revit raises NO error for this: a move of a group member returns
+    cleanly and shifts nothing at all.
+
+    Use when the user asks about groups, assemblies, why an edit did not take,
+    why something changed in more than one place, or before approving a change
+    to a category on a model that uses groups. Leave `category` empty for the
+    inventory of what groups exist; name one for the pre-flight.
+
+    A GROUP MEMBER IS NOT PINNED, so `pinned` is reported separately - two
+    different reasons an edit will not land, fixed two different ways.
+
+    It reads only. Nothing is grouped, ungrouped or edited.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    reply = session.request("list_groups",
+                            op_args={"category": category or "",
+                                     "expectProject": pinned.project_key or ""})
+    session.close()
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return wrong_model
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+
+    if reply.get("category"):
+        return _groups_in_category(reply, where)
+    return _groups_inventory(reply, where)
+
+
+def _groups_inventory(reply, where):
+    """What groups and assemblies this model has."""
+    rows = reply.get("groupTypes") or []
+    assemblies = reply.get("assemblies") or []
+    total = reply.get("groupTypeCount", 0)
+
+    if not total and not assemblies:
+        return ("%s has no groups and no assemblies. That is a statement about "
+                "this model, not an empty answer \u2014 and it means an edit to "
+                "any element here reaches exactly one place." % where)
+
+    lines = ["%s: %d group type(s), %d assembly(ies)."
+             % (where, total, reply.get("assemblyCount", 0)),
+             "",
+             "  %-38s %-16s %10s %9s" % ("GROUP TYPE", "KIND", "PLACEMENTS", "MEMBERS")]
+
+    for row in rows:
+        members = row.get("members")
+        lines.append("  %-38s %-16s %10s %9s"
+                     % (_clip(row.get("name"), 38),
+                        _clip(row.get("kind") or "?", 16),
+                        "{:,}".format(row.get("placements", 0)),
+                        "-" if members is None else "{:,}".format(members)))
+
+    left = reply.get("notListed", 0)
+    if left:
+        lines.append("  ... and %s more." % "{:,}".format(left))
+
+    if assemblies:
+        lines.append("")
+        lines.append("  ASSEMBLIES")
+        for one in assemblies[:20]:
+            lines.append("  %-38s %s member(s)"
+                         % (_clip(one.get("name"), 38),
+                            "{:,}".format(one.get("members", 0))))
+        # Off the TOTAL, not off this already-capped list - the add-in
+        # caps `assemblies` at 500 and this loop caps it again at 20.
+        more = reply.get("assemblyCount", len(assemblies)) - min(len(assemblies), 20)
+        if more > 0:
+            lines.append("  ... and %s more." % "{:,}".format(more))
+
+    lines.append("")
+    lines.append("PLACEMENTS is the number that matters: edit one member of a "
+                 "group placed 12 times and you have edited 12 places.")
+
+    unplaced = reply.get("unplacedGroupTypes", 0)
+    if unplaced:
+        lines.append("%d group definition(s) have nothing placed. Not a fault \u2014 "
+                     "that is what a purge would remove." % unplaced)
+
+    if assemblies:
+        lines.append("Assemblies are listed and not explained: whether an edit "
+                     "inside one travels to another of the same type has not "
+                     "been checked against a real model.")
+
+    return "\n".join(lines)
+
+
+def _groups_in_category(reply, where):
+    """Which of these elements an edit would multiply."""
+    kind = reply.get("category")
+    examined = reply.get("examined", 0)
+    grouped = reply.get("inAGroup", 0)
+    assembled = reply.get("inAnAssembly", 0)
+    worst = reply.get("mostPlacements", 0)
+
+    if not examined:
+        return ("%s has no %s at all, so there is nothing to check for groups. "
+                "That is a statement about this model rather than an empty "
+                "answer." % (where, kind))
+
+    if not grouped and not assembled:
+        return ("%s: none of the %s %s are in a group or an assembly. An edit "
+                "to any of them reaches exactly one place, which is what you "
+                "expected \u2014 and it is worth having been told rather than "
+                "assumed."
+                % (where, "{:,}".format(examined), kind))
+
+    lines = ["%s: %s of %s %s are inside a group."
+             % (where, "{:,}".format(grouped), "{:,}".format(examined), kind)]
+
+    if worst > 1:
+        lines.append("")
+        lines.append("!! THE WORST CASE IS %s PLACEMENTS. Editing that element "
+                     "changes %s places in this model, and Revit will not warn "
+                     "you \u2014 a move of a group member returns cleanly and "
+                     "shifts nothing at all."
+                     % ("{:,}".format(worst), "{:,}".format(worst)))
+
+    lines.append("")
+    lines.append("  %-30s %-20s %10s %7s"
+                 % ("ELEMENT", "GROUP", "PLACEMENTS", "PINNED"))
+
+    for row in (reply.get("elements") or [])[:30]:
+        chain = row.get("chain") or []
+        first = chain[0] if chain else {}
+        name = first.get("groupType") or first.get("group") or row.get("assembly") or "-"
+        lines.append("  %-30s %-20s %10s %7s%s"
+                     % (_clip(row.get("element"), 30),
+                        _clip(name, 20),
+                        "{:,}".format(row.get("placementsOfItsGroup", 0)),
+                        "yes" if row.get("pinned") else "no",
+                        "   NESTED" if row.get("nested") else ""))
+
+    # THE REMAINDER COMES OFF `matched`, NOT off grouped + assembled. An
+    # element can be in a group AND an assembly, so adding the two counts
+    # it twice - and there are two caps besides: the add-in stops at 500
+    # rows and this list stops at 30. The add-in reports `matched` as the
+    # number of rows it would have produced, which is the only figure both
+    # caps can be subtracted from honestly.
+    shown = min(len(reply.get("elements") or []), 30)
+    left = reply.get("matched", shown) - shown
+    if left > 0:
+        lines.append("  ... and %s more." % "{:,}".format(left))
+
+    lines.append("")
+    if reply.get("inNoGroup"):
+        lines.append("%s are in no group at all \u2014 an edit reaches those once."
+                     % "{:,}".format(reply["inNoGroup"]))
+
+    if reply.get("pinned"):
+        lines.append("%s are PINNED, which is a different problem: a group "
+                     "member is not pinned, so unpinning will not free one and "
+                     "ungrouping will not free the other."
+                     % "{:,}".format(reply["pinned"]))
+
+    if reply.get("nested"):
+        lines.append("%s sit in NESTED groups. Each level's own placement count "
+                     "is reported and they are NOT multiplied \u2014 whether a "
+                     "nested group's count already includes the copies inside "
+                     "its parent has not been checked against a real model, and "
+                     "a wrong multiplier here would read exactly like a right "
+                     "one." % "{:,}".format(reply["nested"]))
+
+    return "\n".join(lines)
+
+
 if __name__ == "__main__":
     if os.name != "nt":
         # The bridge is a Windows named pipe, and Revit is Windows-only.

@@ -43,8 +43,15 @@ from a sandboxed container, which is the wall the earlier attempts hit — and s
 package is not:
 
 ```bash
-apt-get install -y dotnet-sdk-10.0       # Debian/Ubuntu; other distributions have their own
+apt-get update && apt-get install -y dotnet-sdk-10.0   # Debian/Ubuntu
 ```
+
+**`apt-get update` first, and it is not decoration.** Measured 2026-09-16 on a fresh Ubuntu 24.04
+container: the install alone failed with **ten `404 Not Found`** fetches, one per package. The index
+shipped in the image named `10.0.104-0ubuntu1~24.04.1` and the pool had moved to `10.0.112`, so every
+file it asked for was gone. The error says *"maybe run apt-get update"* and it is right — with the
+refresh it installed first time. Nothing about the network policy was in the way, which is worth
+knowing because the 404s read exactly like a blocked CDN.
 
 **Install the .NET 10 SDK, not the .NET 8 one**, and it builds **every** runtime Heron targets —
 `net472`, `net48`, `net8.0-windows` and `net10.0-windows`, Revit 2020 through 2027 — on Linux, without

@@ -131,6 +131,39 @@ def look(declared=None, runtime=None):
             "unjudged": _unjudged(True, [], [], unbuilt, built_for),
         }
 
+    # A RUNTIME NOBODY HERE BUILDS FOR CONTRADICTS THE DECLARATION, and
+    # it used to be reported beside it without either noticing the other:
+    # declared 2025 plus net6.0 came back `revit: ['2025']`, supported and
+    # undisputed, while `unbuilt` in the same answer said no release in
+    # this project uses that runtime. Both cannot be true. The runtime is
+    # a fact about the code and the declaration is a claim its author
+    # made, so neither is resolved here - but the conflict is named, and
+    # the intersection of a claim with an empty fact is empty.
+    if unbuilt and said:
+        return {
+            "looked": True, "revit": [], "runtime": target,
+            "declared": said, "from_runtime": [], "unbuilt": unbuilt,
+            "disagree": {
+                "declared": said, "from_runtime": [],
+                "only_declared": said, "only_from_runtime": [],
+                "why": "the import declares %s and targets %r, which no "
+                       "Revit release in this project uses - the build "
+                       "targets %s. A declaration cannot be checked "
+                       "against a runtime nobody here builds for, so the "
+                       "answer is no release KNOWN to be supported rather "
+                       "than the %d the import claims. Both are reported "
+                       "and neither is resolved: deciding which is wrong "
+                       "needs the code."
+                       % (", ".join(said), target, ", ".join(built_for),
+                          len(said))},
+            "unknown": False,
+            "why": "0 release(s) supported: none. The declared %s and the "
+                   "runtime %r disagree, and the runtime is one nothing "
+                   "here builds for."
+                   % (", ".join(said), target),
+            "unjudged": _unjudged(False, said, [], unbuilt, built_for),
+        }
+
     both = sorted(set(said) & set(from_runtime)) if said and from_runtime \
         else sorted(set(said) or set(from_runtime))
     disagree = None

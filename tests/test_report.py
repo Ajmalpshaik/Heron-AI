@@ -187,6 +187,25 @@ def main():
           "and so is an empty list")
     check(ask(report, ["not a row"]).get("refused") == "NOT_A_ROW",
           "a row that is not a map is refused")
+    print()
+    print("R. THE SECOND CODEX REVIEW - a report is allowed a title")
+    made = RND.render("page", rows, title="Clashes by level")
+    answer = VAL.validate({"content": made["content"], "sha": made["sha"],
+                           "kind": "page", "columns": made["columns"],
+                           "title": made["title"]}, rows)
+    check(not [one for one in (answer.get("findings") or [])
+               if one["finding"] == "CONTENT_DOES_NOT_MATCH_THE_DATA"],
+          "a legitimately TITLED report matches its data - the re-render "
+          "dropped the title, so the finding fired on the presence of a "
+          "heading rather than on anything wrong")
+    edited = made["content"].replace("|", "| ", 1)
+    answer = VAL.validate({"content": edited, "sha": made["sha"],
+                           "kind": "page", "columns": made["columns"],
+                           "title": made["title"]}, rows)
+    check([one for one in (answer.get("findings") or [])
+           if one["finding"] == "CONTENT_DOES_NOT_MATCH_THE_DATA"],
+          "  and a report edited AFTER rendering is still caught")
+
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-RPT-VAL-004.yaml"))
     named = contract.get("failures") or []

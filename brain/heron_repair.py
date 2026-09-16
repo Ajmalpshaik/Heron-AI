@@ -97,7 +97,7 @@ def plan(findings, apply=False, exists=None):
     taken = exists if callable(exists) else (
         lambda path: path in set(exists or []))
 
-    moves, refused = [], []
+    moves, refused, claimed = [], [], {}
     for finding in findings:
         source, destination = _move(finding)
         if not source or not destination:
@@ -135,6 +135,28 @@ def plan(findings, apply=False, exists=None):
                        "evidence needed to answer it." % destination})
             continue
 
+        # AND TAKEN BY THIS PLAN COUNTS. `exists` answers about the disk
+        # as it stands, and it cannot know about a move this same run has
+        # already proposed - so two findings pointing at one ABSENT
+        # destination both passed, and running the plan overwrote the
+        # first move with the second. The no-overwrite guarantee held
+        # against the disk and not against the plan's own second half.
+        if destination in claimed:
+            refused.append({
+                "path": source, "to": destination,
+                "refused": "DESTINATION_TAKEN",
+                "claimed_by": claimed[destination],
+                "why": "%s is already where this same plan moves %s. "
+                       "Nothing holds it on disk yet, which is why "
+                       "`exists` cannot see it - the second move would "
+                       "land on the first. Two files that both believe "
+                       "they belong there is a question about which is "
+                       "current, and it is the same question whether the "
+                       "collision is with the disk or with this run."
+                       % (destination, claimed[destination])})
+            continue
+        claimed[destination] = source
+
         moves.append({"path": source, "to": destination,
                       "class": was["class"],
                       "why": "stays %s, so this is placement and nothing "
@@ -155,9 +177,12 @@ def plan(findings, apply=False, exists=None):
             "WHERE A FILE BELONGS IS HERON-WSP-VAL-003's ANSWER, taken as "
             "given. This agent does not re-derive the layout rules - two "
             "opinions about where brain/ starts is worse than one.",
-            "whether the destination is taken was ASKED, not looked up. A "
-            "caller that answers from a stale listing gets a plan to "
-            "overwrite a file this agent was never told about.",
+            "whether the destination is taken ON DISK was ASKED, not "
+            "looked up. A caller that answers from a stale listing gets a "
+            "plan to overwrite a file this agent was never told about. "
+            "Collisions WITHIN this plan are caught here, because `exists` "
+            "answers about the disk as it stands and cannot know about a "
+            "move this same run has already proposed.",
             "THIS IS FOR THE INSTALLED WORKSPACE, NOT THE SOURCE REPOSITORY, "
             "and the two share folder names. HERON-WSP-PTH-007 classifies "
             "by name against docs/06 s2, so the repository's own `brain/` - "

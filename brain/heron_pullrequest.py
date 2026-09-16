@@ -71,6 +71,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import heron_promotion as PRO  # noqa: E402
 import heron_release as RELEASE  # noqa: E402
+import heron_security as SEC  # noqa: E402
 import heron_secrets as SECRETS  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -100,7 +101,41 @@ A_CONFIRMATION_CARRIES = (
     ("head", "THE HEAD BEING CONFIRMED. Without it the confirmation "
              "covers this pull request and the next one and the one "
              "after that, which is what 'every time' rules out"),
+    ("of", "THE FINGERPRINT OF WHAT WAS CONFIRMED. A branch name is "
+           "mutable: the same name carries new commits, a replaced title "
+           "and a different base, so a confirmation naming only the head "
+           "authorises whatever that name comes to mean afterwards"),
 )
+
+# What a confirmation is a confirmation OF. The branch NAME is in here
+# because it is part of what somebody agreed to, and it is not enough on
+# its own - a name is a label on a moving thing.
+A_CONFIRMATION_IS_OF = ("title", "body", "head", "base", "draft",
+                        "attachments")
+
+
+def fingerprint_of(request):
+    """
+    What a person is confirming when they confirm this pull request.
+
+    HERON-DEV-SEC-009's canonical fingerprint, bound rather than a second
+    way of hashing one thing (D-30's own argument). Only the fields a
+    reviewer actually agreed to go in, so re-running with the same
+    request gives the same answer and changing any of them does not.
+    """
+    request = getattr(request, "data", request)
+    if not isinstance(request, dict):
+        return None
+    of = {}
+    for field in A_CONFIRMATION_IS_OF:
+        if field == "draft":
+            of[field] = bool(request.get("draft", True))
+        elif field == "attachments":
+            of[field] = sorted(str(one) for one
+                               in (request.get("attachments") or []))
+        else:
+            of[field] = str(request.get(field) or "").strip()
+    return SEC.fingerprint(of)
 
 
 def open_request(request, confirmation=None, secrets=None):
@@ -212,6 +247,27 @@ def open_request(request, confirmation=None, secrets=None):
                        "too, which is exactly what 'every time' rules out."
                        % (said, head)}
 
+    # AND THE NAME IS NOT THE THING. A branch is mutable: the same head
+    # carries new commits tomorrow, and the title and base can be
+    # replaced under a confirmation that named neither. This is the
+    # heron_apply fix - an approval that does not name what it approved
+    # covers everything - applied to the second place a name stood in for
+    # the content.
+    now = fingerprint_of(request)
+    was = str(confirmation["of"]).strip()
+    if was != now:
+        return {"prepared": False, "refused": "CONFIRMATION_IS_STALE",
+                "confirmed": was[:16], "is_now": now[:16],
+                "head": head,
+                "why": "the confirmation covers %s... and this pull "
+                       "request is %s... Somebody confirmed something on "
+                       "'%s', and it was not this - %s can all change "
+                       "while the branch name stays the same, so a "
+                       "confirmation naming only the head is a standing "
+                       "one wearing a specific one's coat."
+                       % (was[:12], now[:12], head,
+                          ", ".join(A_CONFIRMATION_IS_OF))}
+
     return {
         "prepared": True, "may_open": True,
         "head": head, "base": base,
@@ -227,10 +283,14 @@ def open_request(request, confirmation=None, secrets=None):
             "NOTHING WAS OPENED AND NO NETWORK WAS TOUCHED. A pull request "
             "and a verdict come back. D-01 leaves the network with the "
             "host, and HERON-GIT-MAIN-001 owns repository interaction.",
-            "THE CONFIRMATION NAMED THIS HEAD ('%s') AND WOULD NOT COVER "
-            "ANOTHER. Nothing here stores it, so there is nothing that "
-            "could be reused - it arrives with the request or the request "
-            "is refused." % head,
+            "THE CONFIRMATION NAMED THIS HEAD ('%s') AND THIS CONTENT "
+            "(%s...), AND WOULD NOT COVER ANOTHER. Nothing here stores "
+            "it, so there is nothing that could be reused - it arrives "
+            "with the request or the request is refused. The fingerprint "
+            "covers %s, so a new commit under the same branch name does "
+            "not ride in on it."
+            % (head, fingerprint_of(request)[:12],
+               ", ".join(A_CONFIRMATION_IS_OF)),
             "WHETHER THE CHANGE IS ANY GOOD, or whether %s understood what "
             "they were confirming. A person's name is what makes a later "
             "reader able to ASK them, which is the whole reason it is a "
