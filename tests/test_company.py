@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Heron-Agent:  HERON-STD-CMP-002
+# Heron-Agent:  HERON-STD-CMP-002, HERON-STD-BIM-001, HERON-STD-MOD-005, HERON-STD-QAQ-006, HERON-STD-LOD-007, HERON-STD-DOC-008
 # Heron-Step:   11
 # Heron-Status: DRAFT
 # Heron-Since:  0.1.0
@@ -30,6 +30,15 @@ WHAT IT PROVES
      by loading one and showing the answer does not change.
 
   7. EVERY FAILURE THE CONTRACT DECLARES IS NAMED AND REACHED.
+
+  8. SIX ROWS, ONE FILE, AND NONE OF THEM COSMETIC (F31, D-76). Each
+     subject searches something different, names its own agent id, and
+     an unknown one is REFUSED rather than dropped. subject=None is
+     proved character-for-character unchanged, because extending an
+     agent must not quietly become editing it - and the header and the
+     SUBJECTS table are checked against EACH OTHER, so the claim and
+     the code cannot drift apart the way a claim and a contract did on
+     2026-09-16.
 """
 
 import io
@@ -192,6 +201,85 @@ def main():
               "while the answer SAYS another scope may disagree")
         store.close()
 
+        print("\n8. six rows, one file, and none of them cosmetic")
+
+        # subject=None IS THE OLD AGENT, CHARACTER FOR CHARACTER. This is
+        # the whole safety of extending rather than rewriting: if this
+        # ever fails, F31 stopped being an extension and became an edit.
+        plain = CMP.ask(QUESTION)
+        check(plain["queried"] == QUESTION,
+              "no subject searches the question and nothing else")
+        check(plain["agent"] == "HERON-STD-CMP-002",
+              "and answers as the row this file already was")
+        check(plain["short"] is None,
+              "with nothing withheld from it")
+
+        # THE HEADER AND THE TABLE ARE CHECKED AGAINST EACH OTHER, not
+        # both against a list typed here. A claim that agrees only with
+        # itself is what let a withdrawn agent keep its contract.
+        head = io.open(os.path.join(ROOT, "brain", "heron_company.py"),
+                       encoding="utf-8").read().split("\n\n", 1)[0]
+        claimed = set()
+        for line in head.split("\n"):
+            if "Heron-Agent:" in line:
+                claimed |= set(
+                    a.strip() for a in
+                    line.split("Heron-Agent:", 1)[1].split(",") if a.strip())
+        tabled = set(one["agent"] for one in CMP.SUBJECTS.values())
+        check(claimed == tabled,
+              "the header claims exactly the %d rows SUBJECTS answers"
+              % len(tabled))
+        check(len(tabled) == 6, "which is six: %s" % ", ".join(sorted(tabled)))
+        known = CON.registry_ids()
+        check(all(one in known for one in tabled),
+              "and every one is a real row in docs/28")
+
+        # EACH SUBJECT SEARCHES SOMETHING DIFFERENT. If two produced the
+        # same query the extension would be decoration, and WFP-015's
+        # question - can an existing agent be extended - would have been
+        # answered yes on a technicality.
+        queries = {}
+        for key in sorted(CMP.SUBJECTS):
+            one = CMP.ask(QUESTION, subject=key)
+            queries[key] = one["queried"]
+            check(one["agent"] == CMP.SUBJECTS[key]["agent"],
+                  "subject %r answers as %s" % (key, one["agent"]))
+        check(len(set(queries.values())) == len(queries),
+              "all %d subjects search something different" % len(queries))
+        check(all(QUESTION in text for text in queries.values()),
+              "and every one of them still contains the question asked")
+
+        # LOD IS THE ONE WITH A SECOND INPUT, and the stage has to REACH
+        # the query - a parameter accepted and dropped is worse than one
+        # refused, because the answer looks filtered.
+        staged = CMP.ask(QUESTION, subject="lod", stage="RIBA 4")
+        check("RIBA 4" in staged["queried"],
+              "the stage reaches what is actually searched")
+        check(staged["stage"] == "RIBA 4", "and is reported back")
+        check(CMP.ask(QUESTION, subject="lod")["stage"] is None,
+              "while LOD without a stage says so rather than inventing one")
+
+        # THE THREE PARTIAL ROWS SAY WHAT THEY DID NOT DO, IN THE ANSWER.
+        for key in ("bim", "modelling", "documentation"):
+            check(bool(CMP.ask(QUESTION, subject=key)["short"]),
+                  "subject %r says in its answer what it did not do" % key)
+        for key in ("company", "lod"):
+            check(CMP.ask(QUESTION, subject=key)["short"] is None,
+                  "subject %r withholds nothing" % key)
+
+        # AND THE TWO NEW REFUSALS ARE REACHED, not merely declared.
+        unknown = CMP.ask(QUESTION, subject="acoustics")
+        reached.add(unknown.get("refused"))
+        check(unknown.get("refused") == "UNKNOWN_SUBJECT",
+              "a subject this agent does not answer as is refused")
+        check("acoustics" in unknown["why"],
+              "and the refusal names it rather than listing the six only")
+
+        misplaced = CMP.ask(QUESTION, subject="qa", stage="RIBA 4")
+        reached.add(misplaced.get("refused"))
+        check(misplaced.get("refused") == "STAGE_NOT_TAKEN",
+              "a stage on a row that takes none is refused, never ignored")
+
         print("\n7. every failure is named and reached")
         for these in ("", "   ", None):
             bad = CMP.ask(these)
@@ -205,7 +293,7 @@ def main():
         contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                          "HERON-STD-CMP-002.yaml"))
         named = contract.get("failures") or []
-        check(len(named) == 3, "the contract declares 3 failures")
+        check(len(named) == 5, "the contract declares 5 failures")
         for failure in named:
             check(failure in logic, "the code names %s" % failure)
         unreached = sorted(set(named) - reached)

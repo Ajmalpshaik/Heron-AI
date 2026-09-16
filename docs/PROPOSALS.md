@@ -1848,8 +1848,19 @@ One of two, and both are the owner's:
 2. **Build five files that differ by a search term**, because the register says five rows and a row is a
    row.
 
-**Not acted on.** Option 1 is the same question F27 asks about the Development department — whether a
-row must map to its own file — and answering it once should settle both.
+### SETTLED 2026-09-16 — [D-76](DECISIONS.md): option 1, and Standards is now 14 of 14
+
+`brain/heron_company.py` takes a `subject`, its header claims six ids, and the five rows are recorded
+against it. `LOD-007` got its `stage` as the one genuine addition. **221 built, 25 left.**
+
+Three of the five are PARTIAL and each says so in its own answer rather than only in a register: `bim`
+and `modelling` cite but cannot reach a model or its geometry, and `documentation` is mostly names that
+`QA-BIM-011` already routes to `STD-NAM-004`.
+
+**It did NOT settle both departments, which this section expected it to.** [F27](#f27--five-development-rows-are-already-built-and-whose-work-they-measure-decides-by-which-file)
+turned out to be a different question — not *may one file carry several rows* but *what is this
+department's subject* — and [D-75](DECISIONS.md) answered that one separately. Two proposals can look
+like one question and be two.
 
 ---
 
