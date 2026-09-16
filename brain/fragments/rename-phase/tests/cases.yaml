@@ -40,6 +40,14 @@ negative:
       RENAME_WORKSET's answer across - that was measured on worksets, which are
       a different table
 
+# SETTLED 2026-09-16 ON `PIPE`, REVIT 2020, AND THE ANSWER WAS NO.
+# Element.Name: "This element does not support assignment of a user-specified
+# name." PHASE_NAME parameter: IsReadOnly. Both doors refused in one run. So
+# the positive case below CANNOT come back non-empty on 2020, and that is a
+# limit in Revit rather than a wrong arrangement - see FRAGMENT-ISSUES row 104.
+# The cases are KEPT rather than deleted: they are what a run on 2021-2027
+# should ask, and whether the limit is the release or the object is still open.
+
   - given: ANY rename at all, run for the very first time
     expect: >
       THE FIRST THING THIS PROOF MUST SETTLE IS WHETHER REVIT PERMITS THE WRITE

@@ -1,0 +1,53 @@
+# RENAME_PHASE, against a scratch model.
+#
+#     python tools/batch-prove.py tools/jobs/rename-phase-2026-09-16.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/rename-phase-2026-09-16.yaml
+#
+# NO SETUP CHAIN, AND THAT IS THE WHOLE POINT OF THE FRAGMENT. It needs `doc`
+# (ambient) and two strings from the request - no selection, because no
+# selection in this library can hand over a phase. That is precisely why
+# RENAME_ELEMENTS cannot do this job.
+#
+# THIS IS A RENAME, WHICH IS THE SHAPE THAT HAS DEFEATED ROLLBACK FOUR TIMES.
+# docs/FRAGMENT-ISSUES.md row 19 is still OPEN: RENAME_ELEMENTS reported
+# ROLLED BACK and eight views stayed renamed, read back minutes later from a
+# separate process. So whatever this run reports about its transaction, the
+# phase names MUST be re-read afterwards through REPORT_PHASES before anyone
+# says the model was left alone. An element count cannot see a rename.
+
+model: PIPE, Revit 2020
+
+defaults:
+  # Nothing to arrange. `doc` is ambient and both other needs come from the
+  # request, so there is no chain to re-make between the phases.
+  setup: []
+
+jobs:
+  - fragment: rename-phase
+    # ASK FOR WHAT THE MODEL HAS. PIPE carries exactly two phases, "Existing"
+    # and "New Construction" - read off REPORT_PHASES before this was written,
+    # not assumed. Renaming "Existing" touches the phase holding 0 elements,
+    # so if the rollback does fail, what is left behind is the emptier of the
+    # two and the job is one click to undo by hand.
+    set:
+      phaseName: Existing
+      newName: HERON PROOF PHASE
+    # THE NEGATIVE IS A DIFFERENT REQUEST, NOT AN EMPTY ONE. A phase name the
+    # model has not got: the fragment should refuse, leave `renamed` false and
+    # `previousName` empty, and list the real phases back. `refused` is
+    # role: accounting precisely so it cannot make this leg look non-empty.
+    negative-set:
+      phaseName: ZZZNoSuchPhaseAnywhere
+      newName: HERON PROOF PHASE
+    # `renamed` is the result worth judging - it is the write being ACCEPTED.
+    # `previousName` moves with it but reads like an echo of `phaseName`, and
+    # a leg judged on an echo is the trap this field exists to avoid.
+    expect: renamed
+    note: >
+      THE FIRST THING THIS RUN SETTLES IS WHETHER REVIT PERMITS THE WRITE AT
+      ALL. REPORT_PHASES records that Revit exposes no CREATE call for a phase
+      on any release, so a phase is more locked down than it looks.
+      Element.Name is declared get/set and compiles on 2020-2027, but a compile
+      proves the member exists, not that the setter is allowed. The fragment
+      does not assume - it catches and reports Revit's own words - so a refusal
+      here is an ANSWER worth recording, not a failed run.

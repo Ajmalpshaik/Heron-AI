@@ -1,5 +1,13 @@
 // NOT STANDALONE. Assumes `doc`, `phaseName` and `newName` are in scope;
 // leaves `renamed`, `previousName` and `refused` behind.
+//
+// `refused` IS A STRING AND NOT A LIST, AND THE REASON IS THAT THE MESSAGE IS
+// THE ANSWER. The checks below are one if/else chain, so at most ONE reason is
+// ever produced - a list of at most one was the wrong shape for it. It also
+// reaches the reader intact: RevitFragment.Describe returns a string whole and
+// shortens every item INSIDE a list to 60 characters, which on 2026-09-16 cut
+// Revit's own refusal off at "- Thi..." and hid the one fact the run existed
+// to establish.
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
 // A PHASE IS AN ELEMENT AND RENAME_ELEMENTS STILL CANNOT REACH IT. That
@@ -20,7 +28,12 @@
 
 var renamed = false;
 string previousName = null;
-var refused = new List<string>();
+var refused = "";
+// Which door the rename actually went through, empty until one works.
+var route = "";
+// What Element.Name said when it refused, kept so a later failure can
+// report BOTH doors rather than only the one that spoke last.
+var nameRefusal = "";
 
 Phase target = null;
 // One list, read two ways: it names the phases back to the caller when the
@@ -58,33 +71,33 @@ for (int i = 0; i < phaseCount; i++)
 
 if (phaseCount == 0)
 {
-    refused.Add("this model reports no phases at all, which should not happen in Revit - "
+    refused = ("this model reports no phases at all, which should not happen in Revit - "
         + "nothing was changed");
 }
 else if (target == null)
 {
-    refused.Add(string.Format("no phase called '{0}'. This model has: {1}",
+    refused = (string.Format("no phase called '{0}'. This model has: {1}",
         phaseName, string.Join(", ", existingNames)));
 }
 else if (nearMatches.Count > 1 && !string.Equals(target.Name, phaseName, StringComparison.Ordinal))
 {
     // Reached only when the name was given in the wrong case AND more than one
     // phase answers to it. Renaming whichever came first would be a coin toss.
-    refused.Add(string.Format("'{0}' matches more than one phase apart from case ({1}) - "
+    refused = (string.Format("'{0}' matches more than one phase apart from case ({1}) - "
         + "name it exactly and nothing has to be guessed. Nothing was changed",
         phaseName, string.Join(", ", nearMatches)));
 }
 else if (string.IsNullOrWhiteSpace(newName))
 {
-    refused.Add("no new name given - a phase cannot be renamed to nothing");
+    refused = ("no new name given - a phase cannot be renamed to nothing");
 }
 else if (string.Equals(target.Name, newName, StringComparison.Ordinal))
 {
-    refused.Add(string.Format("'{0}' is already its name - nothing to do", newName));
+    refused = (string.Format("'{0}' is already its name - nothing to do", newName));
 }
 else if (existingNames.Contains(newName))
 {
-    refused.Add(string.Format("'{0}' is already the name of another phase. Revit refuses a "
+    refused = (string.Format("'{0}' is already the name of another phase. Revit refuses a "
         + "duplicate, and finding that out partway through is worse than being told now. "
         + "Nothing was changed", newName));
 }
@@ -92,19 +105,82 @@ else
 {
     var wasCalled = target.Name;
 
+    // TWO DOORS TO THE SAME STRING, AND THE OBVIOUS ONE IS LOCKED.
+    //
+    // `Element.Name` is the documented way to rename an element and it is
+    // READ-ONLY ON A PHASE. Measured 2026-09-16 on PIPE, Revit 2020, where it
+    // threw: "This element does not support assignment of a user-specified
+    // name." That is why this is not simply `target.Name = newName` - the
+    // fragment was written that way first and the model refused it.
+    //
+    // The phase's name also lives in the PHASE_NAME parameter, which is a
+    // different door to the same string. It is tried second rather than first
+    // so that any release where the plain setter DOES work takes the
+    // documented route, and `route` reports which one answered.
+    //
+    // AND IT READS BACK BEFORE IT COUNTS ANYTHING. `.Set()` returning true is
+    // not the value being kept: row 45 of docs/FRAGMENT-ISSUES.md is a
+    // parameter that reported writable, threw nothing, accepted `.Set()` and
+    // discarded the value every time. A write nobody read back is a claim.
     try
     {
         target.Name = newName;
-        renamed = true;
-        previousName = wasCalled;
+        route = "Element.Name";
     }
     catch (Exception ex)
     {
-        // Revit's own words. A workshared model whose Project Standards are not
-        // editable refuses here, and so does a name holding a character Revit
-        // will not take - two different problems that must not be flattened
-        // into one invented sentence.
-        refused.Add(string.Format("'{0}' could not be renamed to '{1}' - {2}",
-            wasCalled, newName, ex.Message));
+        nameRefusal = ex.Message;
+
+        var nameParameter = target.get_Parameter(BuiltInParameter.PHASE_NAME);
+
+        if (nameParameter == null)
+        {
+            refused = (string.Format("'{0}' could not be renamed to '{1}' - {2} "
+                + "The PHASE_NAME parameter is not on this phase either, so Heron has no "
+                + "second door. Rename it by hand: Manage, Phases", wasCalled, newName, ex.Message));
+        }
+        else if (nameParameter.IsReadOnly)
+        {
+            refused = (string.Format("'{0}' could not be renamed to '{1}' - {2} "
+                + "The PHASE_NAME parameter is read-only too. Rename it by hand: Manage, Phases",
+                wasCalled, newName, ex.Message));
+        }
+        else
+        {
+            try
+            {
+                nameParameter.Set(newName);
+                route = "PHASE_NAME parameter";
+            }
+            catch (Exception second)
+            {
+                refused = (string.Format("'{0}' could not be renamed to '{1}'. Element.Name said: "
+                    + "{2} The PHASE_NAME parameter said: {3}", wasCalled, newName,
+                    ex.Message, second.Message));
+            }
+        }
+    }
+
+    if (route.Length > 0)
+    {
+        // THE READ-BACK. Whatever door was used, the question is the same: does
+        // the phase now answer to the new name? Only that makes `renamed` true.
+        string nowCalled = null;
+        try { nowCalled = target.Name; } catch { }
+
+        if (string.Equals(nowCalled, newName, StringComparison.Ordinal))
+        {
+            renamed = true;
+            previousName = wasCalled;
+        }
+        else
+        {
+            refused = (string.Format("'{0}' was written to '{1}' through {2} and Revit kept '{3}'. "
+                + "The write was accepted and the value was not - nothing threw, so only reading "
+                + "it back could show this{4}", wasCalled, newName, route,
+                nowCalled == null ? "(unreadable)" : nowCalled,
+                nameRefusal.Length > 0 ? ". Element.Name had already refused: " + nameRefusal : ""));
+            route = "";
+        }
     }
 }
