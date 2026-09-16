@@ -53,8 +53,15 @@ contract:
   needs:
     - name: doc
       type: Document
-    # RESOLVED categories, never BuiltInCategory names in a string. Null or
-    # empty means every category.
+    # RESOLVED categories, never BuiltInCategory names in a string.
+    #
+    # AT LEAST ONE IS REQUIRED, AND THIS COMMENT USED TO SAY THE OPPOSITE.
+    # It read "Null or empty means every category" until 2026-09-16, when a
+    # caller believed it and got `bad_request_value: No categories were
+    # named` - a refusal from the BINDER (RevitFragment.cs), which rejects an
+    # empty IList<Category> before this fragment's own code runs. The binder
+    # is right to: guessing a category is how a job runs against the wrong
+    # thing. The comment was the false half. FRAGMENT-ISSUES row 112.
     - name: categories
       type: IList<Category>
       source: request

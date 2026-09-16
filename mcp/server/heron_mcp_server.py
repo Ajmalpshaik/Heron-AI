@@ -894,14 +894,46 @@ def revit_change(capability: str, values: str = "") -> str:
 
     lines = ["%s ran in %s." % (capability, reply.get("document"))]
 
+    # WHERE THE INPUTS CAME FROM. The same line a proof is judged on
+    # (fragment-proving rule 5) - a fragment that ran on the selection and one
+    # that ran on the previous fragment's output produce the same shape of
+    # result, and reading the second as the first is how somebody concludes a
+    # filter is broken when it was never consulted.
+    bound = reply.get("bound")
+    if bound:
+        lines.append("  inputs: %s" % bound)
+
+    # WHAT IT ACTUALLY DID, AND IT USED TO BE PRINTED NOWHERE.
+    #
+    # Until 2026-09-16 this read `reply.get("answer")` - a key NOTHING emits,
+    # on either side. `RevitFragment.Report` leaves `provides`, `bound` and
+    # `ran`; `WithVerdict` adds `applied`, `rolledBack` and `verdict`. So the
+    # value was always None and every write reported only that it had run.
+    # `RENAME_PHASE` said "ran in PIPE" while the fragment had produced
+    # `renamed: false` and a refusal carrying Revit's own words, and only
+    # reading the model back afterwards showed the difference.
+    # FRAGMENT-ISSUES row 111.
+    #
+    # A REFUSAL IS THE CASE THIS EXISTS FOR. A fragment that declined says so
+    # in its results and nowhere else, and "it ran" is the one sentence that
+    # makes a refusal look like a success.
+    provides = reply.get("provides")
+    if isinstance(provides, dict) and provides:
+        lines.append("")
+        width = max(len(str(name)) for name in provides)
+        for name in sorted(provides):
+            lines.append("  %-*s  %s" % (width, name, provides[name]))
+
     # THE VERDICT IS THE ADD-IN'S TO WRITE, NOT THIS TOOL'S. It is the only
     # side that saw whether the transaction group actually held, and on
     # 2026-09-09 a rollback did not hold while this side claimed it had.
-    # Repeating the claim from here would put that failure back.
-    answer = reply.get("answer")
-    if answer:
+    # Repeating the claim from here would put that failure back - which is
+    # also why the fix above reads the add-in's `verdict` rather than
+    # composing a sentence here from `applied`.
+    verdict = reply.get("verdict")
+    if verdict:
         lines.append("")
-        lines.append(str(answer))
+        lines.append(str(verdict))
 
     if status and status not in ("PROVEN", "PRODUCTION"):
         lines.append("")
@@ -1231,6 +1263,44 @@ def heron_lookup(request: str) -> str:
              "  provided by  %s" % found["provider"],
              "",
              "  %s" % found["note"]]
+
+    # A QUESTION ANSWERED BY SOMETHING THAT WRITES.
+    #
+    # THE ONE CONTEST THAT IS NOT A JUDGEMENT CALL. tools/check-routing.py
+    # already separates it for the same reason and says why: the failure is not
+    # "the user gets the wrong table", it is "the user asked a question and the
+    # model changed". That tool can only test sentences a fragment DECLARES,
+    # and both cases found on 2026-09-16 were sentences nobody declares:
+    #
+    #   "can I edit these"            -> UPDATE_SAVED_SET   (MODIFY), 2.6 clear
+    #   "isolate all the pipes ..."   -> SET_MEP_SLOPE      (MODIFY), 2.4 clear
+    #
+    # NEITHER ROUTE IS THE CULPRIT, WHICH IS WHY THIS WARNS RATHER THAN
+    # RE-RANKS. On the isolate sentence the keyword route was wrong and the
+    # meaning route had ISOLATE_ELEMENTS first; on "can I edit these" the
+    # keyword route was right and the meaning route put the READ eleventh. A
+    # rule preferring either one would have fixed one case and caused the
+    # other - which is heron_retrieve's own argument for fusing rather than
+    # picking a winner, met again from a different direction.
+    #
+    # SO THE ORDER IS LEFT ALONE AND THE CROSSING IS MADE VISIBLE. FRAGMENT-
+    # ISSUES row 109.
+    top_risk = (found.get("risk") or "").upper()
+    if top_risk and top_risk != "READ":
+        reads = [c for c in found["candidates"]
+                 if (c.get("risk") or "").upper() == "READ"
+                 and c["capability"] != found["capability"]]
+        if reads:
+            lines.append("")
+            lines.append("  CHECK THIS IS A CHANGE YOU MEANT TO MAKE.")
+            lines.append("  '%s' is %s - it CHANGES THE MODEL - and a read came "
+                         "close:" % (found["capability"], top_risk))
+            for c in reads[:3]:
+                lines.append("      %s (READ)" % c["capability"])
+            lines.append("  A request phrased as a question should not resolve "
+                         "to a write. If that")
+            lines.append("  is what happened here, name the read capability "
+                         "instead of accepting this.")
 
     if len(found["candidates"]) > 1:
         lines.append("")
