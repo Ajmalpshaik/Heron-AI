@@ -235,25 +235,28 @@ def main(argv):
     if len(argv) < 2 or argv[1].startswith("-"):
         print(__doc__.strip().splitlines()[0])
         print("usage: python tools/new-agent.py HERON-XXX-YYY-NNN "
-              "[--part %s] [--step N]" % "|".join(PARTS))
+              "[--part %s] [--step N] [--module NAME]" % "|".join(PARTS))
         return 2
 
     agent = argv[1].strip().upper()
     part = "brain"
     step = DEFAULT_STEP
+    override = None
     rest = argv[2:]
     if len(rest) % 2:
         # zip() silently dropped a trailing flag, so `--part` with no value
         # scaffolded three files into the DEFAULT part and said nothing. A
         # malformed command writes nothing and says so.
-        print("'%s' has no value. Every option takes one: --part %s, --step N"
-              % (rest[-1], "|".join(PARTS)))
+        print("'%s' has no value. Every option takes one: --part %s, "
+              "--step N, --module NAME" % (rest[-1], "|".join(PARTS)))
         return 2
     for flag, value in zip(rest[::2], rest[1::2]):
         if flag == "--part":
             part = value
         elif flag == "--step":
             step = value
+        elif flag == "--module":
+            override = value
         else:
             print("unknown option '%s'" % flag)
             return 2
@@ -280,7 +283,22 @@ def main(argv):
 
     row = agents[agent]
     name = row["name"]
-    module = module_name(name)
+    # TWO AGENTS CAN DERIVE ONE MODULE NAME, and the rule that strips
+    # "_agent" is what makes it likely: "Performance Agent" in
+    # Development and "Skill Performance Agent" in Skill Lifecycle both
+    # want heron_performance.py. Measured 2026-09-16: 3 of the 31
+    # unbuilt agents collide with a module that already exists.
+    #
+    # Before --module the refusal was a dead end - correct, and with no
+    # way forward but writing the three files by hand, which is exactly
+    # the drift this tool exists to prevent.
+    module = override or module_name(name)
+    if override is not None and not re.match(r"^[a-z][a-z0-9_]*$", override):
+        print("--module must be lower case letters, digits and "
+              "underscores, starting with a letter: got '%s'" % override)
+        print("Every module in brain/ is heron_<name>.py, and that is a")
+        print("convention this repository observes rather than states.")
+        return 2
     fields = dict(agent=agent, name=name, module=module, part=part,
                   step=step, layer=LAYER[part])
 
