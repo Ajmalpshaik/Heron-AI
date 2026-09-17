@@ -6,10 +6,12 @@ none needed.
 > **Archived session note.** Nothing here is specification. Where it disagrees with
 > [DECISIONS.md](../DECISIONS.md), the [Golden Rules](../14-golden-rules.md) or the
 > [Constitution](../../HERON_CONSTITUTION.md), **those win.** Written as a new file on purpose:
-> other sessions were running against the same tree, and a new file cannot conflict. The two
-> register findings in §3 are **not** applied to
-> [FRAGMENT-ISSUES.md](../FRAGMENT-ISSUES.md) here — they are handed over to be folded in one at
-> a time.
+> other sessions were running against the same tree, and a new file cannot conflict.
+>
+> **§3's two rows HAVE since been folded into
+> [FRAGMENT-ISSUES.md](../FRAGMENT-ISSUES.md)**, on the owner's instruction, later the same day —
+> `open-defects.py` went from **35 to 33**. This note is kept as the working that found them, not
+> as an outstanding task. The third shape it raises, rows 109/113/116, is **still** untouched.
 
 ---
 
@@ -202,7 +204,9 @@ edited here, which is also why the numbers in this note are commands rather than
 
 ## 6. What this sitting did not do
 
-* **Nothing was applied to the registers.** §3 is handover, not an edit. Other sessions were live
+* **Only the two rows in §3 were applied to the registers**, and only after the owner asked for it
+  — `FRAGMENT-ISSUES.md` rows 57 and 111, nothing else. `HANDOVER.md`, `DECISIONS.md`,
+  `PROPOSALS.md` and `NEEDS-CHECKING.md` were not touched at all, because other sessions were live
   in the same tree.
 * **`heron_authoring._where` and `heron_tag._where` are still two identical copies**, and
   `heron_fragment.repo_relative` is a third answer with slightly different wording — it returns
