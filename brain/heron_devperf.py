@@ -41,8 +41,22 @@ So there are now THREE candidates for one row - `tools/measure-brain.py`
 fragment - and the register has one id.
 
 **The tool is not in doubt; the label is.** Everything below works and is
-tested. What is withheld is the claim, exactly as `tools/measure-brain.py`
-withholds it for the same row and the same reason.
+tested. What is withheld is the claim.
+
+SETTLED 2026-09-17, AND NOT IN THIS FILE'S FAVOUR - WHICH IS THE RIGHT ANSWER
+------------------------------------------------------------------------------
+The owner ruled: **`tools/measure-brain.py` owns DEV-PRF-015.** The row reads
+"execution time AND RESOURCE COST", and that conjunction decides it - that file
+measures both, and this one measures time only. D-75 had already spotted as
+much and declined to rule on an inference, which is why the question waited for
+a person rather than being closed by whoever read it last.
+
+**This file keeps `Heron-Agent: none`, and it is not dead code.** It times the
+test SUITES against `check-gaps`' 300-second bound and reports the MARGIN
+rather than the duration - the thing that turned `test_agents.py` from a
+five-minute mystery into a one-argument fix. That job is real and nothing else
+does it. It simply is not this row, and an agent id is not a prize for being
+useful.
 
 HOW THE CLAIM CAME TO BE MADE, because the mistake is more useful than the fix.
 Before building, every candidate agent was checked against PROPOSALS and

@@ -111,9 +111,29 @@ def main():
                   and os.path.exists(os.path.join(
                       ROOT, "brain",
                       "heron_%s.py" % NA.module_name(row["name"])))), None)
-    check(exact is not None,
-          "there is an unbuilt row whose module already exists (%s)" % exact)
-    if exact:
+    # THE CASE CAN RUN OUT, AND RUNNING OUT IS NOT A FAILURE.
+    #
+    # The derivation above already avoids a typed id going stale. What it
+    # cannot avoid is the register ceasing to offer ANY row of this shape -
+    # and on 2026-09-17 that happened: `HERON-DEV-PRF-015` was the only
+    # unbuilt row whose derived module was already a file
+    # (`brain/heron_performance.py`), and the owner settled the row onto
+    # `tools/measure-brain.py`, so it left the unbuilt list and took the
+    # fixture with it.
+    #
+    # Failing here would report a repository in good order as broken, which
+    # is `test_dotnet.py`'s lesson from five days earlier: a suite that cannot
+    # tell "the tool is wrong" from "there is nothing here to try the tool on"
+    # sends somebody hunting a defect that does not exist. So the absence is
+    # NAMED and the section is skipped, and the day a colliding row appears
+    # again the check comes back by itself.
+    if exact is None:
+        print("  ..    SKIPPED - no unbuilt row derives a module that already")
+        print("        exists, so there is nothing to refuse. `new-agent.py`'s")
+        print("        refusal is unexercised here; section 4 still covers the")
+        print("        shadowing half. Not a failure: the register simply has")
+        print("        no row of this shape today.")
+    else:
         code, said = run([exact, "--part", "brain"])
         check(code == 1, "%s exits 1" % exact)
         check("already exists" in said, "and says so")
