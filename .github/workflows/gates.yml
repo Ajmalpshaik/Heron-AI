@@ -33,9 +33,11 @@ name: Gates
 #
 # TWO THINGS THAT HAVE ALREADY GONE WRONG HERE, both on 2026-09-17:
 #
-#   Adding four lines to this file turned test_tag.py red in a pull request
-#   that touched no Python at all. That test was right and the change was
-#   fine; nothing said the two were connected. Now this comment does.
+#   Adding gate steps here turned tests/test_tag.py red - a file the change
+#   had not touched, and had no reason to. The test was right and the change
+#   was fine. #173 ends with that test updated in the same commit, and that is
+#   the only reason it does. Nothing said the two were connected; now this
+#   comment does.
 #
 #   heron_tag was anchored on `run:` and so could only see a step written as a
 #   ONE-LINER. check-routing, check-intrusion and check-compile are `run: |`
