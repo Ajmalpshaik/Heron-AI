@@ -47,7 +47,19 @@ else
     {
         if (element == null) continue;
 
-        var box = element.get_BoundingBox(view);
+        // MODEL SPACE, AND THAT IS THE WHOLE POINT.
+        //
+        // get_BoundingBox(VIEW) returns a box whose Min/Max are expressed in
+        // that box's OWN Transform, which this fragment then read as if they
+        // were model coordinates - and combined across elements that need not
+        // share a transform at all. Passing null asks for the model box with an
+        // identity transform, which is the only space in which two elements'
+        // extents can honestly be merged.
+        //
+        // Found 2026-09-17 by the owner LOOKING AT THE SCREEN: the crop landed
+        // "only one side and very less", and the selected wall was outside it.
+        // Nothing in the reply could have said so - see the note at the bottom.
+        var box = element.get_BoundingBox(null);
         if (box == null)
         {
             noGeometry.Add(element.Id);
@@ -83,13 +95,89 @@ else
     {
         var margin = marginMm / MillimetresPerFoot;
 
-        var region = new BoundingBoxXYZ();
-        region.Min = new XYZ(minX - margin, minY - margin, minZ - margin);
-        region.Max = new XYZ(maxX + margin, maxY + margin, maxZ + margin);
+        // A CROP BOX IS READ IN ITS OWN TRANSFORM, NEVER IN MODEL COORDINATES.
+        //
+        // `new BoundingBoxXYZ()` carries an IDENTITY transform. Handing model
+        // X/Y/Z to a box like that and assigning it to view.CropBox puts the
+        // crop wherever the view's real transform happens to send those
+        // numbers - which on a plan view is somewhere else entirely. The view
+        // reports CropBoxActive true afterwards either way, so the fragment
+        // said `applied true, enclosed 7` while cropping the wrong place.
+        //
+        // The view's OWN box is taken here and only its Min/Max are moved, so
+        // whatever transform the view carries is preserved rather than
+        // replaced.
+        var region = view.CropBox;
+        var toCrop = region.Transform.Inverse;
+
+        // ALL EIGHT CORNERS, because the transform can rotate. Sending only the
+        // two opposite corners through it gives the box's diagonal in crop
+        // space rather than its extent, and a rotated view would crop to
+        // something smaller than what was asked for - narrowing on one side,
+        // which is exactly how this was spotted.
+        var corners = new List<XYZ>
+        {
+            new XYZ(minX, minY, minZ), new XYZ(maxX, minY, minZ),
+            new XYZ(minX, maxY, minZ), new XYZ(maxX, maxY, minZ),
+            new XYZ(minX, minY, maxZ), new XYZ(maxX, minY, maxZ),
+            new XYZ(minX, maxY, maxZ), new XYZ(maxX, maxY, maxZ)
+        };
+
+        var first = toCrop.OfPoint(corners[0]);
+        double cropMinX = first.X, cropMinY = first.Y;
+        double cropMaxX = first.X, cropMaxY = first.Y;
+
+        foreach (var corner in corners)
+        {
+            var local = toCrop.OfPoint(corner);
+            if (local.X < cropMinX) cropMinX = local.X;
+            if (local.Y < cropMinY) cropMinY = local.Y;
+            if (local.X > cropMaxX) cropMaxX = local.X;
+            if (local.Y > cropMaxY) cropMaxY = local.Y;
+        }
+
+        // Z IS LEFT EXACTLY AS THE VIEW HAD IT, and that is deliberate. On a
+        // plan view the crop box's Z is the view DEPTH - the front and back
+        // clipping planes - not the height of anything being enclosed. Writing
+        // the elements' own Z into it clips the view to the thickness of what
+        // was selected, which is a second way to make the very thing you asked
+        // to see disappear.
+        region.Min = new XYZ(cropMinX - margin, cropMinY - margin, region.Min.Z);
+        region.Max = new XYZ(cropMaxX + margin, cropMaxY + margin, region.Max.Z);
+
+        // A SHAPED CROP OUTRANKS THE BOX, AND SETTING THE BOX UNDER ONE DOES
+        // NOTHING AT ALL.
+        //
+        // If SET_VIEW_CROP_TO_SHAPE has given this view a non-rectangular crop,
+        // Revit follows the SHAPE and the rectangle written below is simply
+        // ignored - silently. The view keeps the old outline at the old size, so
+        // every margin asked for lands nowhere, while CropBoxActive still reads
+        // back true and this fragment still reports `applied true`.
+        //
+        // FOUND 2026-09-17, AND ONLY BY LOOKING. Six runs at 500 mm and 3000 mm
+        // all reported success on a view whose crop never moved off 8800 x 6800
+        // - the outline of the room a shaped crop had been set to earlier. The
+        // owner saw one wall at the left edge and 27 missing, and said so; no
+        // number in any reply could have.
+        //
+        // The shape is removed rather than refused, because the caller asking
+        // for a rectangle with a margin has said plainly which of the two they
+        // want.
+        var shapeManager = view.GetCropRegionShapeManager();
+        if (shapeManager != null && shapeManager.ShapeSet)
+        {
+            shapeManager.RemoveCropRegionShape();
+        }
 
         view.CropBox = region;
         view.CropBoxActive = true;
+        view.CropBoxVisible = true;
 
+        // NOT EVIDENCE THAT THE CROP IS IN THE RIGHT PLACE, and it never was.
+        // CropBoxActive reads back true whatever region was written, so this
+        // says the crop is ON and nothing more. `enclosed` counts what was
+        // MEASURED, not what ended up inside. Neither could see the defect
+        // above, and a person looking at the view found it in seconds.
         applied = view.CropBoxActive;
     }
 }

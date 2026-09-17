@@ -75,6 +75,53 @@ TOOLS = {
     # a group carries an edit into every placement of that group's type, and
     # Revit raises nothing when a move of one shifts nothing.
     "revit_groups":             (READ,    "list_groups"),
+
+    # Levels and grids (HERON-REVIT-LVL-027). READ, same reasoning as the two
+    # above. Renaming a level or moving its elevation drags every element
+    # hosted on it, so a write will be its own entry at its own risk.
+    "revit_levels":             (READ,    "list_levels"),
+
+    # Worksets and ownership (HERON-REVIT-WRK-014). READ: it lists what the
+    # worksets are and samples who owns what. Nothing is created, opened,
+    # closed, borrowed or relinquished.
+    "revit_worksets":           (READ,    "list_worksets"),
+
+    # Views and sheets (HERON-REVIT-VIE-013, HERON-REVIT-SHT-029). READ.
+    # SHT-029 OWNS sheets - both rows claimed them and the owner settled it on
+    # 2026-09-17. Applying a view template changes what everybody sees in that
+    # view; renumbering a sheet breaks every reference pointing at it across
+    # the whole set. Neither is done here.
+    "revit_views":              (READ,    "list_views"),
+    "revit_sheets":             (READ,    "list_sheets"),
+
+    # Rooms and spaces (HERON-REVIT-RM-028). READ. Placing a room, deleting an
+    # unplaced one or moving a boundary all change somebody's area schedule,
+    # which on most jobs is a contractual document.
+    "revit_rooms":              (READ,    "list_rooms"),
+
+    # Schedules (HERON-REVIT-SCH-026). READ - which schedules EXIST and what
+    # governs them. Their ROWS belong to the export agent at PUBLISH.
+    "revit_schedules":          (READ,    "list_schedules"),
+
+    # Families and types (HERON-REVIT-FAM-012). READ, and deliberately NOT a
+    # load: loading a family merges one document into another and its materials
+    # overwrite the project's, silently, with no count moving.
+    "revit_families":           (READ,    "list_families"),
+
+    # Export readiness (HERON-REVIT-EXP-018). READ although that agent's row is
+    # PUBLISH: the column is the highest level the ROW can require, and asking
+    # whether an export WOULD be sound requires none of it. Nothing is written,
+    # printed or sent. The export itself is a separate entry at PUBLISH.
+    "revit_export_check":       (READ,    "check_export"),
+
+    # What came in from outside (HERON-REVIT-IMP-019). READ. Importing is not
+    # an operation here: an import is copied INTO the model and its layers and
+    # text styles remain after the import itself is deleted.
+    "revit_imports":            (READ,    "list_imports"),
+
+    # Dimensions, tags, text (HERON-REVIT-DIM-031). READ. An overridden
+    # dimension is the thing it exists to find.
+    "revit_annotation":         (READ,    "list_annotation"),
     "revit_preview_move":       (ANALYZE, "preview_move"),
     "revit_apply_move":         (MODIFY,  "move_elements"),
 
