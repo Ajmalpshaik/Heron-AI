@@ -443,6 +443,45 @@ fragments also declare `elements` (they already hold the list — `created` *is*
 executor aliases `created` to `elements` when a consumer asks for one and only a creator ran.
 The first is honest and per-fragment; the second is one change and reaches all 51.
 
+### 1b. The alias was written, deployed — and is INERT on the write path
+
+`RevitFragment.BindNeeds` now falls back to `created` when a consumer asks for `elements`, nothing
+else filled it, and the contract set no `binds` of its own. It compiles, it is deployed to all
+three releases, and the string is in the shipped DLL. **It does not fire, and the reason is an
+ordering one that no alias can reach.**
+
+`RevitFragment.cs`, in the order the code runs:
+
+| line | what happens |
+|---|---|
+| **424** | the fragment under test **binds its needs** |
+| **435** | the fragment is **compiled**, prologue and all |
+| **492** | `RunSetupSteps` runs the **deferred write setup steps** |
+
+A MODIFY setup step on a write phase is **deferred** — the client sends it inside the request and
+the add-in runs it in the same `TransactionGroup`, so the fragment can see what it made. That part
+works. But the fragment has already bound and compiled **sixty-eight lines earlier**, so a value a
+deferred step leaves can only ever reach the *next setup step*, never the fragment itself.
+`RunSetupSteps` calls `Remember` faithfully; there is simply nobody left to read it.
+
+**This also explains reason 2 below exactly**, which had looked like two unrelated oddities:
+
+- `setup create-line` → **fragment** `select-by-category-name` found **2** — the fragment queries
+  the model, and by then the lines exist inside the group.
+- `setup create-line` → `setup select-by-category-name` → fragment found **0** —
+  `select-by-category-name` is READ, so it is **not** deferred: it runs as its own call *before the
+  write group is even opened*, and at that moment nothing has been created.
+
+So the real repair is **not** a name: it is moving the fragment's `BindNeeds` and `Compile` to
+after `RunSetupSteps` on the write path. That reorders the hot path of every write run and would
+put a compile failure after the setup has already run rather than before — which the current order
+is plainly written to avoid. **Not taken here.** It is a bigger change than the alias it replaces,
+and it needs its own sitting and its own re-proving of the write fragments.
+
+The alias stays because it is correct and costs nothing: it is the right behaviour the moment the
+ordering allows a creator's output to be seen, and it already works on any path where the producer
+runs as its own call.
+
 ### 2. A creation fragment's write does not survive to the NEXT setup step
 
 Measured on `Project1.rvt`, same run shape both times:
