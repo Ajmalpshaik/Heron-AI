@@ -115,6 +115,41 @@ namespace Heron.Revit.Addin
                                             Json.ReadString(request, "category"),
                                             Json.ReadString(request, "expectProject"));
 
+                // Levels and grids. HERON-REVIT-LVL-027, its own file for the
+                // same reason as the four above: everything else in the model
+                // hangs off these, and the three states that actually cost a
+                // day - two levels at one elevation, a level with nothing on
+                // it, names that sort out of order - are decided in one place
+                // a reviewer can read end to end. Read-only.
+                case "list_levels":
+                    return RevitLevels.List(app);
+
+                // Worksets, ownership and checkout. HERON-REVIT-WRK-014, and
+                // its own file because the row's last sentence - "ownership
+                // failure is a normal outcome" - decides the whole voice of
+                // the answer. Somebody else owning most of the model is the
+                // system working. Ownership is SAMPLED and the sample is
+                // stated, because asking the central model is one round trip
+                // per element on Revit's own thread. Read-only.
+                case "list_worksets":
+                    return RevitWorksets.List(app);
+
+                // Views, templates and what a view is showing THROUGH.
+                // HERON-REVIT-VIE-013. A count taken in a view has been
+                // through its template, discipline, detail level, filters and
+                // crop before anybody sees it - the other half of the
+                // argument list_phases makes. Read-only.
+                case "list_views":
+                    return RevitViews.List(app);
+
+                // Sheets, numbering, titleblocks and revisions.
+                // HERON-REVIT-SHT-029, which OWNS sheets - VIE-013's row
+                // claimed them too and the owner settled it on 2026-09-17.
+                // The sheets are the deliverable, and a numbered blank one is
+                // invisible in the Project Browser until it prints. Read-only.
+                case "list_sheets":
+                    return RevitSheets.List(app);
+
                 case "run_fragment_read":
                     return RevitFragment.Run(app, request);
 

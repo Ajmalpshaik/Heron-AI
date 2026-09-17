@@ -84,6 +84,31 @@ namespace Heron.Core
                 // what is grouped. Ungrouping would be a separate entry.
                 { "list_groups",        HeronRisk.Read },
 
+                // HERON-REVIT-LVL-027. Read, and the same note as the two
+                // above: the register's row is MODIFY because that column is
+                // the highest level the ROW can require. This one lists what
+                // the levels and grids are and what sits on them. Renaming a
+                // level, or moving its elevation - which drags every hosted
+                // element with it - would be a separate entry.
+                { "list_levels",        HeronRisk.Read },
+
+                // HERON-REVIT-WRK-014. Read. It lists the worksets and reads
+                // a bounded sample of ownership; it creates no workset, opens
+                // or closes none, borrows nothing and relinquishes nothing.
+                // Relinquishing somebody's borrowed element loses their
+                // unsynchronised work, so that will be its own entry at its
+                // own risk if it is ever written.
+                { "list_worksets",      HeronRisk.Read },
+
+                // HERON-REVIT-VIE-013 and HERON-REVIT-SHT-029. Read, same
+                // reasoning as the rest of this block. Applying a view
+                // template changes what everybody sees in that view, and
+                // renumbering a sheet breaks every drawing reference pointing
+                // at it across the whole set - so both writes, if they are
+                // ever built, are separate entries at their own risk.
+                { "list_views",         HeronRisk.Read },
+                { "list_sheets",        HeronRisk.Read },
+
                 // GIVING THE SESSION BACK. Read, because it cannot touch a
                 // model - it hands back a claim, and only the chat that holds
                 // it may. It is the OPPOSITE of a takeover: a second chat can

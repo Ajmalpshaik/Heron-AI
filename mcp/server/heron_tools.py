@@ -75,6 +75,24 @@ TOOLS = {
     # a group carries an edit into every placement of that group's type, and
     # Revit raises nothing when a move of one shifts nothing.
     "revit_groups":             (READ,    "list_groups"),
+
+    # Levels and grids (HERON-REVIT-LVL-027). READ, same reasoning as the two
+    # above. Renaming a level or moving its elevation drags every element
+    # hosted on it, so a write will be its own entry at its own risk.
+    "revit_levels":             (READ,    "list_levels"),
+
+    # Worksets and ownership (HERON-REVIT-WRK-014). READ: it lists what the
+    # worksets are and samples who owns what. Nothing is created, opened,
+    # closed, borrowed or relinquished.
+    "revit_worksets":           (READ,    "list_worksets"),
+
+    # Views and sheets (HERON-REVIT-VIE-013, HERON-REVIT-SHT-029). READ.
+    # SHT-029 OWNS sheets - both rows claimed them and the owner settled it on
+    # 2026-09-17. Applying a view template changes what everybody sees in that
+    # view; renumbering a sheet breaks every reference pointing at it across
+    # the whole set. Neither is done here.
+    "revit_views":              (READ,    "list_views"),
+    "revit_sheets":             (READ,    "list_sheets"),
     "revit_preview_move":       (ANALYZE, "preview_move"),
     "revit_apply_move":         (MODIFY,  "move_elements"),
 

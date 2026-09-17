@@ -1988,6 +1988,433 @@ def revit_phases() -> str:
 
 
 @server.tool()
+def revit_levels() -> str:
+    """
+    List the levels and grids in the open Revit model, and what sits on each
+    level.
+
+    Levels are the hosts almost everything else depends on: a duct is at a
+    level, a room is bounded between two, a view is cut at one. This reports
+    the three states that are hard to see in Revit's own interface and
+    expensive to miss — two levels at the SAME elevation, a level with
+    NOTHING on it, and names that sort out of order.
+
+    Every elevation is as Revit itself prints it, in the project's own units.
+    A raw number is never given: Revit stores lengths in decimal feet
+    whatever the project is set to, and an unlabelled 9.84 gets read as
+    millimetres by the next person who sees it.
+
+    It reads only. No level is renamed and no elevation is moved — moving one
+    drags every element hosted on it.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    reply = session.request("list_levels")
+    session.close()
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return wrong_model
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+    levels = reply.get("levels") or []
+    grids = reply.get("grids") or []
+
+    if not levels and not grids:
+        return ("%s has no levels and no grids. That is normal for a family or "
+                "a detail file and unusual for a project." % where)
+
+    lines = ["%s: %d level(s), %d grid(s)." % (where, len(levels), len(grids)), ""]
+
+    for level in levels:
+        flag = "   <-- shares this elevation" if level.get("sharesElevation") else ""
+        on = level.get("elements", 0)
+        lines.append("  %-28s %-14s %s%s"
+                     % (level.get("name"),
+                        level.get("elevation") or "elevation not given",
+                        ("nothing on it" if not on
+                         else "%s element(s)" % "{:,}".format(on)),
+                        flag))
+
+    if grids:
+        lines.append("")
+        shown = grids[:12]
+        for grid in shown:
+            lines.append("  grid    %-20s %s"
+                         % (grid.get("name"), grid.get("extent") or ""))
+        if len(grids) > len(shown):
+            lines.append("  ... and %d more grid(s)." % (len(grids) - len(shown)))
+
+    findings = []
+    if reply.get("levelsSharingAnElevation"):
+        findings.append(
+            "%d level(s) sit at the same elevation as another. Legal, sometimes "
+            "deliberate, and the usual reason something modelled on one cannot "
+            "be found on the other — the Project Browser sorts by NAME, so the "
+            "two are nowhere near each other in it."
+            % reply["levelsSharingAnElevation"])
+    if reply.get("levelsWithNothingOnThem"):
+        findings.append(
+            "%d level(s) have nothing on them — either set-out nobody cleared "
+            "up, or work that went onto a different level than intended."
+            % reply["levelsWithNothingOnThem"])
+    if reply.get("repeatedGridNames"):
+        findings.append(
+            "%d grid name(s) are used more than once. A dimension to \"grid B\" "
+            "stops being an instruction anybody can follow."
+            % reply["repeatedGridNames"])
+    if reply.get("namesSortOutOfOrder"):
+        findings.append(
+            "Level names do not sort in elevation order — \"Level 10\" sorts "
+            "before \"Level 2\" in every browser and schedule, because both sort "
+            "as text. An observation, not a fault.")
+
+    if findings:
+        lines.append("")
+        for finding in findings:
+            lines.append("  ! " + finding)
+
+    on_no_level = reply.get("onNoLevel", 0)
+    if on_no_level:
+        lines.append("")
+        lines.append("%s placed element(s) name no level at all. Grids, views and "
+                     "some annotation do not sit on one; that is normal."
+                     % "{:,}".format(on_no_level))
+
+    lines.append("")
+    lines.append("Elevations are as Revit prints them, in the project's own units. "
+                 "Nothing was changed.")
+    return "\n".join(lines)
+
+
+@server.tool()
+def revit_worksets() -> str:
+    """
+    List the worksets in the open Revit model, what is on each, and a sampled
+    reading of who owns what.
+
+    Somebody else owning most of the model is the system working, not a
+    problem — on a workshared job that is the normal state, and it is reported
+    in the same voice as anything else.
+
+    Ownership is a SAMPLE, never a survey, and the answer always says how big
+    the sample was. Asking the central model who owns an element costs one
+    round trip per element on Revit's own thread, so sweeping a real job would
+    freeze the model for whoever is working in it.
+
+    If the model is not workshared it says so, which is a different answer
+    from an empty list.
+
+    It reads only. No workset is created, opened or closed, nothing is
+    borrowed, and nothing is relinquished — relinquishing somebody's borrowed
+    element loses their unsynchronised work.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    reply = session.request("list_worksets")
+    session.close()
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return wrong_model
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+
+    if not reply.get("workshared"):
+        return ("%s is not workshared, so worksets, ownership and checkout do "
+                "not apply to it. That is a different answer from an empty "
+                "list. Families, detail files and single-person jobs are "
+                "normally like this." % where)
+
+    worksets = reply.get("worksets") or []
+    lines = ["%s: %d workset(s), %s placed element(s)."
+             % (where, len(worksets),
+                "{:,}".format(reply.get("placedElements", 0))), ""]
+
+    for workset in worksets:
+        lines.append("  %-32s %12s   %s"
+                     % (workset.get("name"),
+                        "{:,}".format(workset.get("elements", 0)),
+                        "open" if workset.get("open") else "CLOSED in this session"))
+
+    sampled = reply.get("ownershipSampled", 0)
+    of_total = reply.get("ownershipOf", 0)
+    lines.append("")
+    lines.append("Ownership, sampled over %s of %s element(s):"
+                 % ("{:,}".format(sampled), "{:,}".format(of_total)))
+    lines.append("  free                %s" % "{:,}".format(reply.get("freeInSample", 0)))
+    lines.append("  owned by you        %s" % "{:,}".format(reply.get("ownedByMeInSample", 0)))
+    lines.append("  owned by others     %s" % "{:,}".format(reply.get("ownedByOthersInSample", 0)))
+    not_known = reply.get("ownershipNotKnownInSample", 0)
+    if not_known:
+        lines.append("  not known           %s   (different from free, and only "
+                     "one of the two is safe to act on)" % "{:,}".format(not_known))
+
+    owners = reply.get("ownersInSample") or []
+    if owners:
+        lines.append("")
+        for owner in owners[:10]:
+            lines.append("  %-24s %s in sample"
+                         % (owner.get("name"), "{:,}".format(owner.get("inSample", 0))))
+        if len(owners) > 10:
+            lines.append("  ... and %d more." % (len(owners) - 10))
+
+    closed = reply.get("closedWorksets", 0)
+    if closed:
+        lines.append("")
+        lines.append("%d workset(s) are CLOSED in this session. Elements on a closed "
+                     "workset are not in the model you are looking at, so any count "
+                     "taken here has left them out." % closed)
+
+    lines.append("")
+    lines.append("Someone else owning part of the model is normal and is not a "
+                 "finding. Nothing was changed.")
+    return "\n".join(lines)
+
+
+@server.tool()
+def revit_views() -> str:
+    """
+    List the views in the open Revit model, what governs each of them, and
+    what the active view is showing through.
+
+    A count taken in a view is a count THROUGH that view - its template,
+    discipline, detail level, filters and crop each remove things before you
+    ever see them. So "412 ducts" is a fact about a view at least as much as
+    about a model.
+
+    It reports three states that are hard to see and expensive to miss: a view
+    with NO template (nothing controls what it shows, and it drifts from every
+    other view of the same thing), a view on NO sheet, and a template nothing
+    uses. None of the three is an error.
+
+    Sheets themselves belong to revit_sheets. This says only whether a view is
+    placed, which is a fact about the view.
+
+    It reads only. No template is applied and no visibility is changed.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    reply = session.request("list_views")
+    session.close()
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return wrong_model
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+    count = reply.get("viewCount", 0)
+    if not count:
+        return ("%s has no views at all, which is unusual for anything but a "
+                "container file." % where)
+
+    lines = ["%s: %s view(s), %d view template(s)."
+             % (where, "{:,}".format(count), reply.get("templateCount", 0)), ""]
+
+    for kind in sorted(reply.get("viewsByType") or [],
+                       key=lambda row: -row.get("views", 0)):
+        lines.append("  %-26s %s" % (kind.get("type"),
+                                     "{:,}".format(kind.get("views", 0))))
+
+    active = reply.get("activeView")
+    if active:
+        lines.append("")
+        lines.append("Active view %r (%s)" % (active, reply.get("activeViewType")))
+        lines.append("  template      %s" % (reply.get("activeViewTemplate") or "none"))
+        lines.append("  discipline    %s" % (reply.get("activeViewDiscipline") or "not given"))
+        lines.append("  detail level  %s" % (reply.get("activeViewDetailLevel") or "not given"))
+        lines.append("  filters       %d" % reply.get("activeViewFilters", 0))
+        lines.append("  crop          %s"
+                     % ("ON - things outside it are not counted"
+                        if reply.get("activeViewCropped") else "off"))
+        lines.append("")
+        lines.append("Any count you take in that view has been through all of the "
+                     "above before you see it.")
+
+    findings = []
+    if reply.get("viewsWithNoTemplate"):
+        findings.append(
+            "%s view(s) have NO view template, so nothing controls what they "
+            "show. They drift from every other view of the same thing - the "
+            "usual reason two plans of one floor disagree."
+            % "{:,}".format(reply["viewsWithNoTemplate"]))
+    if reply.get("viewsOnNoSheet"):
+        findings.append(
+            "%s view(s) are on no sheet. Not a fault - working views are "
+            "supposed to exist - but they cost file size and a browser nobody "
+            "can find anything in."
+            % "{:,}".format(reply["viewsOnNoSheet"]))
+    if reply.get("templatesNothingUses"):
+        findings.append(
+            "%d view template(s) are applied to nothing. Set up once, never "
+            "used, and quietly believed to be in force."
+            % reply["templatesNothingUses"])
+
+    if findings:
+        lines.append("")
+        for finding in findings:
+            lines.append("  ! " + finding)
+
+    lines.append("")
+    lines.append("A view counts as placed if it is on a sheet as a viewport OR as a "
+                 "schedule instance, so schedules are not reported as unplaced. "
+                 "Nothing was changed.")
+    return "\n".join(lines)
+
+
+@server.tool()
+def revit_sheets() -> str:
+    """
+    List the sheets in the open Revit model - numbering, titleblocks and
+    revisions.
+
+    The sheets are the deliverable. This reports the states that turn up at
+    issue, which is the worst moment to find them: a sheet with NOTHING on it
+    (invisible in the Project Browser, which shows an empty sheet and a full
+    one identically), a sheet with NO titleblock, more than one titleblock
+    family across the set, and placeholder sheets.
+
+    Placeholders are counted separately rather than left out - a reserved
+    number must never read as a sheet that is ready.
+
+    Sheet numbers are listed as they stand and never checked against a
+    standard: Revit already refuses a duplicate, and what your numbering ought
+    to look like is not something this can know.
+
+    It reads only. No sheet is renumbered - renumbering breaks every drawing
+    reference pointing at it, across the set and every consultant's copy.
+    """
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    reply = session.request("list_sheets")
+    session.close()
+
+    if reply is None:
+        return "Revit %s (session %s) did not answer." % (session.revit_version, session.pid)
+
+    if not reply.get("ok"):
+        return reply.get("message") or reply.get("error") or "The request was refused."
+
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return wrong_model
+
+    where = "%s (Revit %s, session %s)" % (reply.get("document"),
+                                           session.revit_version, session.pid)
+    sheets = reply.get("sheets") or []
+    if not sheets:
+        return ("%s has no sheets. Normal for a working model or a family, and "
+                "worth knowing before anybody asks for a drawing set from it."
+                % where)
+
+    lines = ["%s: %d sheet(s), %d revision(s), %d issued."
+             % (where, reply.get("sheetCount", 0),
+                reply.get("revisionCount", 0), reply.get("revisionsIssued", 0)), ""]
+
+    shown = sheets[:30]
+    for sheet in shown:
+        note = ""
+        if sheet.get("placeholder"):
+            note = "   placeholder"
+        elif not sheet.get("views"):
+            note = "   <-- NOTHING ON IT"
+        elif not sheet.get("titleblock"):
+            note = "   <-- no titleblock"
+        lines.append("  %-14s %-38s %2d view(s)%s"
+                     % (sheet.get("number"), (sheet.get("name") or "")[:38],
+                        sheet.get("views", 0), note))
+    if len(sheets) > len(shown):
+        lines.append("  ... and %d more sheet(s)." % (len(sheets) - len(shown)))
+
+    titleblocks = reply.get("titleblocks") or []
+    if titleblocks:
+        lines.append("")
+        for block in titleblocks:
+            lines.append("  titleblock  %-40s %d sheet(s)"
+                         % (block.get("name"), block.get("sheets", 0)))
+
+    findings = []
+    if reply.get("sheetsWithNothingOnThem"):
+        findings.append(
+            "%d sheet(s) have nothing placed on them. The Project Browser shows "
+            "a sheet with one view and a sheet with none identically, so this "
+            "does not show up until it is printed."
+            % reply["sheetsWithNothingOnThem"])
+    if reply.get("sheetsWithNoTitleblock"):
+        findings.append(
+            "%d sheet(s) have no titleblock. They print with no border, no "
+            "number, no revision and no signature block."
+            % reply["sheetsWithNoTitleblock"])
+    if reply.get("titleblockFamiliesInUse", 0) > 1:
+        findings.append(
+            "%d different titleblock families are in use across the set. Usually "
+            "a sheet started from the wrong template, and it is not noticed "
+            "until two borders appear on paper."
+            % reply["titleblockFamiliesInUse"])
+    if reply.get("placeholderSheets"):
+        findings.append(
+            "%d are PLACEHOLDER sheets - a number reserved for a drawing that "
+            "does not exist yet. Counted separately, never as ready."
+            % reply["placeholderSheets"])
+
+    if findings:
+        lines.append("")
+        for finding in findings:
+            lines.append("  ! " + finding)
+
+    revisions = reply.get("revisions") or []
+    if revisions:
+        lines.append("")
+        for revision in revisions[:12]:
+            lines.append("  rev %-8s %-44s %s"
+                         % (revision.get("number") or "?",
+                            (revision.get("description") or "")[:44],
+                            "issued" if revision.get("issued") else "not issued"))
+        if len(revisions) > 12:
+            lines.append("  ... and %d more revision(s)." % (len(revisions) - 12))
+        lines.append("")
+        lines.append("Revisions are reported, never interpreted - whether a sheet "
+                     "SHOULD carry one is a question about your issue process.")
+
+    lines.append("")
+    lines.append("Nothing was changed.")
+    return "\n".join(lines)
+
+
+@server.tool()
 def revit_systems() -> str:
     """
     List the duct and pipe systems in the open Revit model, and the MEP
