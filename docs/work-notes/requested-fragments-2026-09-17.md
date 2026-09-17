@@ -36,6 +36,7 @@ ls brain/fragments | wc -l
 | 2 | Structural, annotation, views | 17 | 13 | 4 |
 | 3 | Selection | 16 | 14 | 2 |
 | 4 | The twenty-group sweep - copy, move, rotate, modify, dimension, tag, colour, hide, show, search, list, analyze, export, get, set, filter, calculate, verify, align, rename, update, count, assign, detect, apply | ~230 | ~205 | 14 new, 2 already logged |
+| 5 | Datum 2D/3D toggle | 2 | 1 | 1 |
 
 ---
 
@@ -290,3 +291,41 @@ is a door. Nothing can be written here and the row exists so nobody plans it.
 
 `CHECK_CATEGORY_MISMATCH` is the honest answer to the underlying complaint - it finds
 things modelled in the wrong category so they can be rebuilt in the right one.
+
+---
+
+# List 5 - the datum 2D/3D toggle
+
+Asked as *"grid change 3d to 2d or 2d to 3d"* - the toggle on the end of a grid
+or level line that decides whether an extent change belongs to this view or to
+every view.
+
+**One direction is covered and it is the harder one.** `RESET_DATUM_EXTENTS`
+writes `DatumExtentType.Model`, which IS 2D to 3D: it throws away the per-view
+override somebody made by dragging an end and puts the datum back on its shared
+extent, both ends handled separately, grids and levels alike.
+
+## G-25 3D to 2D, and reading which one a datum is on
+
+**Nothing writes `DatumExtentType.ViewSpecific`.** Measured - `SetDatumExtentType`
+appears exactly once in the whole library, at
+`reset-datum-extents/impl/any/fragment.cs:60`, and the value is always `Model`.
+
+So a modeller can be given back the shared extent and can never be given a
+view-specific one. That is the normal drafting job: make this grid 2D in this
+view so it can be shortened here without touching the other twenty.
+
+**And the state cannot be read on its own.** `MAXIMIZE_DATUM_EXTENTS` calls
+`GetDatumExtentTypeInView` and reports `hiddenByViewExtent` - which datums have an
+end on a view-specific extent - but only as accounting while it stretches them.
+There is no read that answers *"is this grid 2D or 3D in this view"* without
+modifying the model to find out.
+
+The two belong in one fragment: the toggle needs to report what it found before
+it changes it, the same way `SET_VIEW_RANGE` and `SET_VIEW_SCALE` both read and
+set.
+
+**One warning to carry into it**, and `SET_DATUM_BUBBLES` already states it:
+bubbles are per view and extents are NOT - the model extent is shared. Confusing
+the two is how somebody fixes one plan and changes twenty. A fragment that sets
+extent type has to be explicit about which of those it is doing.
