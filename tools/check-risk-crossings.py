@@ -134,6 +134,27 @@ QUESTIONS = [
     "isolate all the pipes",
     "show me just the ducts",
     "hide everything except the walls",
+
+    # THE SENTENCE THIS FILE'S OWN HEADER IS ABOUT, AND IT WAS NEVER ASKED
+    # HERE. FRAGMENT-ISSUES row 109 measured it by hand on 2026-09-16 -
+    # SET_MEP_SLOPE, a MODIFY that re-slopes pipework, 2.4 ranks clear, with
+    # ISOLATE_ELEMENTS fourth. It is quoted at the top of this docstring as
+    # the reason the tool exists and then does not appear in the list below
+    # it, so every sweep since has measured 45 questions that do not include
+    # the one that started this. Added 2026-09-17; the docstring asks for
+    # exactly this ("add to this list whenever a real session produces one").
+    #
+    # IT MAY NOT REGISTER AS A CROSSING, AND THAT IS WORTH WATCHING RATHER
+    # THAN TUNING. The discriminator below is "was a READ beaten", and the
+    # right answer here is ISOLATE_ELEMENTS - an EXECUTE, a view change,
+    # which `reads` deliberately excludes along with the writes. So a sweep
+    # can report this sentence under "reached a write with nothing safe
+    # close" while row 109 calls it the clearest crossing found by hand.
+    # If that is what happens, the honest reading is that the DISCRIMINATOR
+    # is narrower than the defect, not that the sentence is fine - and the
+    # fix is a question for the owner, not a quiet widening of `reads`.
+    "isolate all the pipes in the current view but leave out the "
+    "condensate drain system",
 ]
 
 
