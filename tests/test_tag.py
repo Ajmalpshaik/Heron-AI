@@ -88,9 +88,17 @@ def main():
         encoding="utf-8").read().replace("*", "").split())
 
     print("\n1. the gate list is read out of the workflow")
+    # THIS LIST GREW FROM FOUR TO EIGHT on 2026-09-17, and the growth is the
+    # design working rather than an edit chasing it. `required_gates` READS the
+    # workflow precisely so "a fifth gate added to CI becomes required here with
+    # no edit" - its own docstring. Four checkers had sat in tools/ that CI ran
+    # nowhere; wiring them made them release-blocking in the same stroke, which
+    # is the promise that docstring makes. The list is still pinned here so that
+    # a gate LEAVING CI is a test failure rather than a quietly easier release.
     check(GATES == ["check-docs", "check-metadata", "check-structure",
-                    "check-package"],
-          "it is the four CI runs, in the order it runs them: %s"
+                    "check-signatures", "check-licence", "check-narrow-errors",
+                    "check-package", "check-fragments-compile"],
+          "it is the eight CI runs, in the order it runs them: %s"
           % ", ".join(GATES))
     for name in GATES:
         check("python tools/%s.py" % name in workflow,

@@ -62,6 +62,32 @@ jobs:
       - name: check-structure
         run: python tools/check-structure.py
 
+      # A signature is the scarcest input this library has - only a PERSON may
+      # sign a proof, and `accept` deliberately does not promote. That gap let
+      # thirteen signed fragments sit at DRAFT, so the next round offered them
+      # to be proved AGAIN. Found by the owner, not by a tool (2026-09-13).
+      - name: check-signatures
+        run: python tools/check-signatures.py
+
+      # TWO GATES THAT EXISTED AND RAN NOWHERE, wired 2026-09-15 after an audit
+      # that ran every check-* tool and recorded its exit code and cost rather
+      # than judging it from its docstring. Both need nothing but Python, both
+      # exit 0 on the tree today, and together they cost about four seconds.
+      #
+      # check-licence answers what licence is on the knowledge Heron SHIPS,
+      # before its users redistribute it - Q-53, answered as D-66. Nobody was
+      # looking for a reservation of rights in a fragment until it found one.
+      #
+      # check-narrow-errors keeps a broken database from being reported as an
+      # empty one (D-52): every sqlite3.OperationalError handler must narrow
+      # before it swallows, or a locked store answers "no results" when the
+      # truth is "no answer". That is the failure nobody files a bug about.
+      - name: check-licence
+        run: python tools/check-licence.py
+
+      - name: check-narrow-errors
+        run: python tools/check-narrow-errors.py
+
       # The delivery questions. It reads Heron.addin, which nothing else here
       # does - and a manifest fault costs a modeller their whole add-in while
       # every other gate on this page stays green.
@@ -104,6 +130,15 @@ jobs:
         with:
           python-version: '3.11'
 
+      # check-fragments-compile.py reads every fragment.yaml, so it needs PyYAML
+      # exactly as the gates job does - this job never installed it because until
+      # now nothing here read YAML. Without it the step dies on
+      # `ModuleNotFoundError: No module named 'yaml'` before compiling a single
+      # fragment, which reads on the board as a compile failure and is nothing of
+      # the kind. Found by CI on the very PR that added the step.
+      - name: Install PyYAML
+        run: python -m pip install --quiet pyyaml
+
       # The .NET 10 SDK, not the .NET 8 one. docs/30-compiling-away-from-windows.md
       # measured this: the 8 SDK omits the WindowsDesktop MSBuild targets, so the
       # add-in fails MSB4019 on Revit 2025-2027, while the 10 SDK ships them and
@@ -145,6 +180,19 @@ jobs:
             grep 'SKIPPED' "$RUNNER_TEMP/compile.log"
             exit 1
           fi
+
+      # THE FRAGMENT C# IS NOT THE ADD-IN'S C#, and nothing here compiled it.
+      # check-compile.py above builds the projects; this builds every fragment's
+      # code against every Revit release that fragment CLAIMS - a different
+      # question, and the one that catches a fragment promising a release whose
+      # API it cannot actually meet.
+      #
+      # It lives in THIS job rather than beside the Python gates because it
+      # shells out to `dotnet build` with no guard: the gates runner has no SDK
+      # and it would fail there for the wrong reason. This job already installs
+      # .NET 10. Measured 49s on the owner's PC, exit 0.
+      - name: Every fragment's C# compiles, against every release it claims
+        run: python tools/check-fragments-compile.py
 
   generated:
     name: The generated files are current
