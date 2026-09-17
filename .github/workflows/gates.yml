@@ -130,6 +130,15 @@ jobs:
         with:
           python-version: '3.11'
 
+      # check-fragments-compile.py reads every fragment.yaml, so it needs PyYAML
+      # exactly as the gates job does - this job never installed it because until
+      # now nothing here read YAML. Without it the step dies on
+      # `ModuleNotFoundError: No module named 'yaml'` before compiling a single
+      # fragment, which reads on the board as a compile failure and is nothing of
+      # the kind. Found by CI on the very PR that added the step.
+      - name: Install PyYAML
+        run: python -m pip install --quiet pyyaml
+
       # The .NET 10 SDK, not the .NET 8 one. docs/30-compiling-away-from-windows.md
       # measured this: the 8 SDK omits the WindowsDesktop MSBuild targets, so the
       # add-in fails MSB4019 on Revit 2025-2027, while the 10 SDK ships them and
