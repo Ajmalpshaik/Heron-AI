@@ -202,31 +202,56 @@ def check_agents():
     registry = read("docs", "28-agent-registry.md")
     known = set(re.findall(r"`(HERON-[A-Z]+-[A-Z]+-\d+)`", registry))
 
+    # THE SAME SIX ROOTS, THE SAME THREE EXTENSIONS AND THE SAME WALK AS
+    # tools/agent-count.py, deliberately, because for a long time it was none
+    # of those and nothing said so.
+    #
+    # This listed EIGHT named folders flat, with os.listdir, over `.py` and
+    # `.cs` only. `.ps1` is a source extension in this repository -
+    # check-metadata.py's own SOURCE_EXT says so - and two agents are declared
+    # in PowerShell: HERON-INS-ORC-001 in tools/setup.ps1 and
+    # HERON-REVIT-DEP-024 in tools/deploy-addin.ps1. Both were invisible here
+    # and visible to every other scanner, so this reported 225 where
+    # agent-count.py reported 227, for however long, while failing nothing.
+    #
+    # The flat listing was the same defect not yet firing: a module added under
+    # brain/agents/, a command under revit/Heron.Revit.Addin/Commands/, or any
+    # project not on that hardcoded list of eight would have been counted
+    # everywhere else and silently not counted here. Fixed together, 2026-09-17,
+    # because they are one mistake - a scan whose reach is narrower than the
+    # claim it is read as.
     claimed = {}
-    for folder in ("brain", "mcp/client", "mcp/server", "platform/Heron.Core",
-                   "revit/Heron.Bridge", "revit/Heron.Revit.Addin", "tests",
-                   "tools"):
-        full = os.path.join(ROOT, *folder.split("/"))
-        if not os.path.isdir(full):
+    for root in ("revit", "mcp", "brain", "platform", "tests", "tools"):
+        base = os.path.join(ROOT, root)
+        if not os.path.isdir(base):
             continue
-        for name in sorted(os.listdir(full)):
-            if not name.endswith((".py", ".cs")):
-                continue
-            if os.path.join(folder, name) == os.path.join("tools",
-                                                           "check-gaps.py"):
-                # Skip this file. It contains the pattern it is searching for,
-                # and on its first run it duly reported its own regex as two
-                # undeclared agents - a scanner that scans itself finds itself.
-                continue
-            text = read(*(folder.split("/") + [name]))
-            # Anchored to the start of a comment line, so a mention of the
-            # field inside code or prose is not read as a declaration.
-            for line in re.findall(r"^(?://|#)\s*Heron-Agent:\s*(.+)$",
-                                   text, re.M):
-                for agent in [a.strip() for a in line.split(",")]:
-                    if agent and agent != "none":
-                        claimed.setdefault(agent, []).append(
-                            "%s/%s" % (folder, name))
+        for here, dirs, files in os.walk(base):
+            dirs[:] = sorted(d for d in dirs
+                             if d not in ("__pycache__", "bin", "obj", ".vs"))
+            for name in sorted(files):
+                if not name.endswith((".py", ".cs", ".ps1")):
+                    continue
+                path = os.path.join(here, name)
+                rel = os.path.relpath(path, ROOT).replace(os.sep, "/")
+                if rel.startswith("brain/fragments/"):
+                    # A fragment carries its metadata in its own fragment.yaml,
+                    # for the same reason check-metadata.py skips it here: one
+                    # place per fact. Nothing under it declares an agent.
+                    continue
+                if rel == "tools/check-gaps.py":
+                    # Skip this file. It contains the pattern it is searching
+                    # for, and on its first run it duly reported its own regex
+                    # as two undeclared agents - a scanner that scans itself
+                    # finds itself.
+                    continue
+                text = io.open(path, encoding="utf-8", errors="replace").read()
+                # Anchored to the start of a comment line, so a mention of the
+                # field inside code or prose is not read as a declaration.
+                for line in re.findall(r"^\s*(?://|#)\s*Heron-Agent:\s*(.+)$",
+                                       text, re.M):
+                    for agent in [a.strip() for a in line.split(",")]:
+                        if agent and agent != "none":
+                            claimed.setdefault(agent, []).append(rel)
 
     unknown = sorted(a for a in claimed if a not in known)
     for agent in unknown:
