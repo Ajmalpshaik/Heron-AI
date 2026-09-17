@@ -93,6 +93,35 @@ TOOLS = {
     # the whole set. Neither is done here.
     "revit_views":              (READ,    "list_views"),
     "revit_sheets":             (READ,    "list_sheets"),
+
+    # Rooms and spaces (HERON-REVIT-RM-028). READ. Placing a room, deleting an
+    # unplaced one or moving a boundary all change somebody's area schedule,
+    # which on most jobs is a contractual document.
+    "revit_rooms":              (READ,    "list_rooms"),
+
+    # Schedules (HERON-REVIT-SCH-026). READ - which schedules EXIST and what
+    # governs them. Their ROWS belong to the export agent at PUBLISH.
+    "revit_schedules":          (READ,    "list_schedules"),
+
+    # Families and types (HERON-REVIT-FAM-012). READ, and deliberately NOT a
+    # load: loading a family merges one document into another and its materials
+    # overwrite the project's, silently, with no count moving.
+    "revit_families":           (READ,    "list_families"),
+
+    # Export readiness (HERON-REVIT-EXP-018). READ although that agent's row is
+    # PUBLISH: the column is the highest level the ROW can require, and asking
+    # whether an export WOULD be sound requires none of it. Nothing is written,
+    # printed or sent. The export itself is a separate entry at PUBLISH.
+    "revit_export_check":       (READ,    "check_export"),
+
+    # What came in from outside (HERON-REVIT-IMP-019). READ. Importing is not
+    # an operation here: an import is copied INTO the model and its layers and
+    # text styles remain after the import itself is deleted.
+    "revit_imports":            (READ,    "list_imports"),
+
+    # Dimensions, tags, text (HERON-REVIT-DIM-031). READ. An overridden
+    # dimension is the thing it exists to find.
+    "revit_annotation":         (READ,    "list_annotation"),
     "revit_preview_move":       (ANALYZE, "preview_move"),
     "revit_apply_move":         (MODIFY,  "move_elements"),
 
