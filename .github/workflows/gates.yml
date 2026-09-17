@@ -13,6 +13,47 @@ name: Gates
 # What it still does NOT do: run a fragment against a real model. No compiler
 # and no test here can tell you whether a duct moves 200 millimetres or 200
 # feet. That is what proving against a model is for.
+#
+# ----------------------------------------------------------------------------
+# THIS FILE IS READ BY CODE. ADDING A GATE HERE MAKES IT BLOCK A RELEASE.
+# ----------------------------------------------------------------------------
+#
+# Two modules parse this file and neither of them is a linter:
+#
+#   brain/heron_tag.py      required_gates()  - the gates a RELEASE must
+#                                               report green before it is cut
+#   brain/heron_qa.py       required()        - the checks a CHANGE must
+#                                               report before it is accepted
+#
+# Both look for the word python followed by a path under tools/ naming a
+# check-something script, ANYWHERE in this file. So a step
+# added here is release-blocking from that moment, with no edit anywhere else -
+# which is the design, and is why tests/test_tag.py pins the list: a gate
+# LEAVING CI must be a test failure rather than a quietly easier release.
+#
+# TWO THINGS THAT HAVE ALREADY GONE WRONG HERE, both on 2026-09-17:
+#
+#   Adding four lines to this file turned test_tag.py red in a pull request
+#   that touched no Python at all. That test was right and the change was
+#   fine; nothing said the two were connected. Now this comment does.
+#
+#   heron_tag was anchored on `run:` and so could only see a step written as a
+#   ONE-LINER. check-routing, check-intrusion and check-compile are `run: |`
+#   blocks, so for as long as they have been here a release could be cut with
+#   `check-compile` never reported - the add-in compiling at all was not a
+#   release gate, because of how somebody indented YAML. Fixed in heron_tag.
+#
+# The practical consequence: prose in THIS file that LOOKS like an invocation
+# counts, comments included. Spelling one out in a sentence invents a gate that
+# will then refuse every release until somebody reports a result for a step
+# nobody runs - which this very comment did, in its first draft, and the new
+# check in tests/test_tag.py is what caught it. Name a checker without the word
+# python in front of it, as this file does everywhere else, and nothing is
+# invented.
+#
+# That looseness is deliberate rather than tolerated. An invented gate refuses
+# a release; a MISSED one ships an unchecked artefact, and that is the failure
+# being fixed here.
 
 on:
   push:
