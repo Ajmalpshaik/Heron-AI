@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -62,6 +62,32 @@ contract:
       # could not check, never a confirmed alignment (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-17'
+  by: Ajmal PS
+  model: Snowdon-scratch (9,638 elements), Revit 2024, session 14912
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-numeric-parameter, set-selection, select-by-category-name with this phase's
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned alignX false, alignY false, alignZ true, aligned 175, blocked
+    16 item(s) [1384737, 1392865, 1394229, ...], positionOf Func`2, target XYZ, tolerance
+    0.00328083989501312, unverified 0 item(s). inputs came elements from select-by-category-name
+    (191); reference as given; alignX as given; alignY as given; alignZ as given. on Snowdon-scratch
+  negative_case: 'run with alignX=False, alignY=False, alignZ=True, categories=Ducts, categoryName=Spaces,
+    compareValue=9.0, compareValueMax=9.05, comparison=between, inViewOnly=FloorPlan: M1,
+    includeTypeParameters=False, parameterName=Length, reference=selected, tolerance=0 instead
+    - chosen because it should not contain what this fragment reports - the arrangement was
+    re-made first by running select-by-numeric-parameter, set-selection, select-by-category-name
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alignX false, alignY false, alignZ true, aligned
+    0, blocked 5 item(s) [1411634, 1411663, 1411726, ...], positionOf Func`2, target XYZ,
+    tolerance 0.00328083989501312, unverified 0 item(s). inputs came elements from select-by-category-name
+    (5); reference as given; alignX as given; alignY as given; alignZ as given. on Snowdon-scratch'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 2827809e9741ef9d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

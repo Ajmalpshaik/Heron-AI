@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -66,6 +66,30 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-17'
+  by: Ajmal PS
+  model: test projject (3,573 elements), Revit 2024, session 46936
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    create-line with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, created
+    3 item(s) [926668, 926669, 926670], findings 2 item(s) [Corner rounded with a 1000 mm
+    arc. Ids 926664 and 926666 wer..., Anything that referred to the two old ids - a saved
+    set, a t...], radiusMm 1000. inputs came elements from create-line as 'created' (2); radiusMm
+    as given; view as given. on test projject
+  negative_case: 'run with asDetail=False, pointPairs=0,0,0; 10000,0,0 | 0,5000,0; 10000,5000,0,
+    radiusMm=1000, view=FloorPlan: HERON ROOM TEST instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running create-line
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, created 0 item(s), findings
+    1 item(s) [The two lines are parallel in plan, so there is no corner to...], radiusMm
+    1000. inputs came elements from create-line as ''created'' (2); radiusMm as given; view
+    as given. on test projject'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: a298448615744d8c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
