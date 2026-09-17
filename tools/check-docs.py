@@ -536,13 +536,22 @@ else:
 # of decisions, and no gate able to notice.
 #
 # The check lives HERE rather than in .github/workflows/gates.yml, where the
-# other three generators are diffed, for a reason worth writing down: the
-# repository's gh token carries `repo` but not `workflow`, so a session cannot
-# push a change to that file at all. A gate nobody can install is not a gate.
-# check-docs.py already runs inside "The gates that must pass", so this rides
-# in with it. If the workflow is ever edited by hand, moving this beside the
-# other generators would be tidier and would change nothing about what it
-# catches.
+# other three generators are diffed. THE REASON IT GAVE HAS EXPIRED, and the
+# reason it stays has not.
+#
+# What it used to say: "the repository's gh token carries `repo` but not
+# `workflow`, so a session cannot push a change to that file at all." That was
+# true when it was written and is not true now - the token carries `workflow`,
+# and gates.yml has been edited by sessions several times since, PR #173 among
+# them. A reader believing the old sentence would route around a constraint
+# that is gone, which is the expensive direction.
+#
+# WHY IT STILL LIVES HERE. Nothing in gates.yml diffs the decision summary -
+# the `generated` job covers the agent registry and the two HTML generators,
+# not this - so deleting this section deletes the check. check-docs.py already
+# runs inside "The gates that must pass", and it also runs locally, where the
+# CI job does not. Giving it its own step would be tidier and would ADD
+# coverage rather than move it; taking it out of here would subtract.
 out("\n=== 8. THE GENERATED DECISION TABLE ===\n")
 _gen = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                     'generate-decision-summary.py')
@@ -563,14 +572,21 @@ else:
 # written because thirteen fragments the owner had already signed were sitting
 # at DRAFT, so the next proving round offered them to him to prove AGAIN - the
 # complaint that started that session. A gate nobody runs is the same as no
-# gate, and it stayed unrun for the reason section 8 already records: the
-# repository's gh token carries `repo` but not `workflow`, so a session cannot
-# add a step to .github/workflows/gates.yml at all. A commit that adds that
-# step properly exists on `ci/run-check-signatures` and CANNOT BE PUSHED.
+# gate, and it stayed unrun because a session was believed unable to push a
+# change to .github/workflows/gates.yml at all.
 #
-# So it rides here, where "The gates that must pass" already runs this file.
-# It is NOT a documentation check and does not pretend to be. If the workflow
-# is ever edited by hand, give it its own step and delete this section.
+# THAT HAS SINCE HAPPENED, and this section's own closing instruction used to
+# read "if the workflow is ever edited by hand, give it its own step and
+# delete this section". Half of it is done: gates.yml HAS a check-signatures
+# step, and `ci/run-check-signatures` - the branch this said could not be
+# pushed - is gone from origin, its work landed.
+#
+# THE OTHER HALF IS NOT DONE, DELIBERATELY. Deleting this would leave
+# check-signatures running in CI and nowhere else, and the pre-push routine
+# the heron-ship skill describes runs check-docs.py on a laptop, before a
+# pull request exists. A stale signature is worth catching there rather than
+# ten minutes later. It costs about a second and it is NOT a documentation
+# check and does not pretend to be.
 out("\n=== 9. SIGNATURES NOT LEFT UNUSED ===\n")
 _sig = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                     'check-signatures.py')

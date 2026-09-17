@@ -149,7 +149,35 @@ write. 109 found one sentence by hand; 113 measured 14 in 45; 116 found the caus
 *two-marks-one-fact* failure row 10's own status names against `E11`–`E15`. **Not claimed here**,
 because "superseded" is a judgement about someone else's row.
 
-## 4. What this sitting did not do
+## 4. A constraint that has expired, and two checks riding on it
+
+`tools/check-docs.py` carries two sections that are not documentation checks and say so: section 8
+runs `generate-decision-summary.py --check`, section 9 runs `check-signatures.py`. Both explain
+their placement with the same sentence:
+
+> the repository's gh token carries `repo` but not `workflow`, so a session cannot push a change to
+> that file at all
+
+**That is no longer true.** `gh auth status` reports scopes `gist, read:org, repo, workflow`;
+`gates.yml` now has a `check-signatures` step of its own; and `ci/run-check-signatures` — the branch
+section 9 said *"CANNOT BE PUSHED"* — is gone from `origin`, its work landed.
+
+Section 9 also closed with *"if the workflow is ever edited by hand, give it its own step and delete
+this section"*. The precondition is met, so a reader following it would delete the section — and
+that would be wrong in both cases:
+
+* **Section 8's subject has no CI step at all.** The `generated` job diffs the agent registry and
+  the two HTML generators, not the decision summary. Deleting section 8 deletes the check.
+* **Section 9 would survive in CI and nowhere else.** The pre-push routine `heron-ship` describes
+  runs `check-docs.py` on a laptop, before a pull request exists. A stale signature is worth
+  catching there rather than ten minutes later.
+
+Both comments are corrected in place — the expired reason named as expired, and the reason they
+stay written down instead. **No check was moved and none was deleted.** Giving section 8 its own CI
+step would *add* coverage rather than move it, and is worth doing; it is not done here because it
+is a workflow edit for a benefit nobody is currently missing.
+
+## 5. What this sitting did not do
 
 * **Nothing was applied to the registers.** §3 is handover, not an edit. Other sessions were live
   in the same tree.
@@ -162,7 +190,7 @@ because "superseded" is a judgement about someone else's row.
 * **No gate was widened and no known-failure list was edited.** The list in `gates.yml`'s `tests`
   job is exactly as it was.
 
-## 5. Re-derive every number above
+## 6. Re-derive every number above
 
 ```bash
 python tools/open-defects.py                       # the ids, not the count
