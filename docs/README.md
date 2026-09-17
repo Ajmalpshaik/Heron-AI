@@ -2,7 +2,7 @@
 
 > **Status:** **Phase 0 is complete** — Steps 1 to 5, proven in real Revit 2020 and 2024. **Step 6 (the
 > first write) and the whole of Phase 2 (Steps 7 to 14) are built, compile on all eight releases, and
-> have never loaded into Revit.** **All ten skills are `DRAFT`; 310 of the 372 fragments are `PROVEN`
+> have never loaded into Revit.** **All ten skills are `DRAFT`; 314 of the 372 fragments are `PROVEN`
 > as of 2026-09-16** — this line said *every fragment is `DRAFT`* long after that stopped being true, so
 > derive it: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 >
