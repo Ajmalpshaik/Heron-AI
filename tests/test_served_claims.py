@@ -69,7 +69,29 @@ def disk_count():
 def run():
     failures = []
 
-    import heron_mcp_server as server           # noqa: E402
+    # WITHOUT THE SDK THIS EXITS 3, NOT 1, and the distinction is the whole
+    # reason for the guard. heron_mcp_server needs the MCP SDK, which is an
+    # optional dependency; importing it without one raised, this file died
+    # with a traceback, and check-gaps.py counted it UNFINISHED - the bucket
+    # that means SOMEBODY COULD FIX THIS HERE. Nobody could: it is an
+    # install, not a defect. test_mcp_serves.py has exited 3 for the same
+    # absence since 2026-08-31; this file was the odd one out.
+    #
+    # BaseException, not ImportError, on purpose: `pip install --user mcp`
+    # leaves the SDK importable but PANICKING on some images -
+    # pyo3_runtime.PanicException out of the distro's cryptography - and a
+    # panic is not an ImportError. Either way nothing here can run.
+    try:
+        import heron_mcp_server as server       # noqa: E402
+    except BaseException as absent:             # noqa: BLE001
+        print("What the tools say about Heron")
+        print("  SKIPPED - the MCP server will not import here:")
+        print("    %s: %s" % (type(absent).__name__, absent))
+        print("\n  This proves NOTHING either way. Install the SDK and run it "
+              "again:")
+        print("    pip install --user mcp")
+        print("    pip install --user --upgrade cryptography   # if it panics")
+        return 3
 
     proven, total = disk_count()
 

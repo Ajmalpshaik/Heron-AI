@@ -2546,7 +2546,36 @@ name against every existing name in the target part, both directions, and refuse
 name and a suggestion — the same shape as its existing refusals. Three lines, and
 `tests/test_new_agent.py` can assert it against the real folder rather than a fixture.
 
-**Not acted on here.** It is a change to the tool that scaffolds every remaining agent, and it belongs
-in a change of its own rather than riding in on the one that found it. The name chosen instead —
-`heron_buildmatrix.py`, for what the file compares — is recorded in that module's own docstring so the
-next reader does not wonder why the file is not named after its agent.
+The name chosen instead — `heron_buildmatrix.py`, for what the file compares — is recorded in that
+module's own docstring so the next reader does not wonder why the file is not named after its agent.
+
+### DONE 2026-09-17 — the fourth refusal is in, and it was not a one-off
+
+Written as *"not acted on here"* and acted on in the next change, once the measurement below turned a
+prediction into a count.
+
+`prefix_collisions()` in [`tools/new-agent.py`](../tools/new-agent.py) compares the derived name against
+every module in the target part, **both directions**, and refuses beside the other three — naming what
+it would shadow, naming `tests/test_references.py` as the suite that asserts the rule, and pointing at
+`--module` rather than being a dead end. `--module` cannot walk around it either, which was the obvious
+hole.
+
+**It would have fired four more times.** Derived from the register, not guessed:
+
+| row | derived name | what it shadows |
+|---|---|---|
+| `DEV-ARC-003` | `heron_architecture` | `heron_architect` |
+| `DEV-RAP-007` | `heron_revit_api_domain` | `heron_revit_api` |
+| `DOC-REL-005` | `heron_release_notes` | `heron_release` |
+| `DEV-PRF-015` | `heron_performance` | exact collision — the check that already existed |
+
+All four are host-provided, deferred or the owner's call, so nobody would have scaffolded one today.
+That is luck rather than design, and it is why the count is worth recording: the rule this tool broke
+was one it could have checked in three lines from the day it was written.
+
+**And it had no suite at all.** [`tests/test_new_agent.py`](../tests/test_new_agent.py) now asserts all
+four refusals — deriving the ids for the last two from the register rather than typing them, so the
+cases do not go stale the day somebody builds one — and proves, by listing the tree before and after,
+that **every refusal returns before the first write**. That property is what makes it safe to run
+against the real repository, which it must be: the register and the module list are what it is
+asserting against.

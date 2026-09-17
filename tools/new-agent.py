@@ -37,6 +37,7 @@ IT REFUSES MORE THAN IT WRITES, and that is the point:
     an id that is not in docs/28-agent-registry.md .... it does not exist
     an agent something already claims ................. it is already built
     a file that is already there ...................... nothing is overwritten
+    a name that is a PREFIX of an existing module ..... it would shadow it
 
 The first is the rule the register depends on: an agent is in the register
 before it is in the code, never the other way round.
@@ -76,6 +77,41 @@ def register():
     finally:
         os.chdir(cwd)
     return agents, claims
+
+
+def prefix_collisions(part, module):
+    """
+    Existing modules in `part` that this name shadows, either way round.
+
+    THE RULE IS tests/test_references.py's, claim 5: no module name in
+    brain/ may be a prefix of another. It is not cosmetic - HERON-DOC-REF-006
+    renames and searches over module names, and the rule is what lets it tell
+    a whole name from the start of a longer one. A prefix pair makes every
+    rename of the shorter name ambiguous, silently, in the direction that
+    edits something nobody asked for.
+
+    Checked in whichever part is being written rather than in brain/ alone.
+    Measured 2026-09-17: no part has a prefix pair, so this refuses nothing
+    that exists and nothing that is legal today.
+
+    THE TEST FILE IS DELIBERATELY NOT CHECKED, though this tool writes one
+    too. tests/ already holds four legal prefix pairs - test_chain and
+    test_chain_expectation, test_contract and test_contract_reference,
+    test_fragment_needs and test_fragment_needs_reader, test_generate and
+    test_generate_jobs - because nothing renames suites by name the way
+    HERON-DOC-REF-006 renames modules. Checking there would refuse names
+    that are correct today, which is a worse failure than the one this
+    prevents.
+    """
+    mine = "heron_%s" % module
+    try:
+        names = sorted(name[:-3] for name in os.listdir(os.path.join(ROOT, part))
+                       if name.endswith(".py") and not name.startswith("__"))
+    except OSError:
+        return []
+    return [other for other in names
+            if other != mine
+            and (mine.startswith(other) or other.startswith(mine))]
 
 
 def module_name(agent_name):
@@ -299,6 +335,26 @@ def main(argv):
         print("Every module in brain/ is heron_<name>.py, and that is a")
         print("convention this repository observes rather than states.")
         return 2
+    # THE FOURTH REFUSAL, and it was learned the expensive way. This tool
+    # derived heron_regression_test.py for "Regression Test Agent" on
+    # 2026-09-17; heron_regression.py had been there for weeks, the file did
+    # not exist so the check above was happy, and the collision only surfaced
+    # in a full 198-suite sweep ten minutes later. PROPOSALS F41.
+    shadows = prefix_collisions(part, module)
+    if shadows:
+        print("  refused   heron_%s.py shadows %s"
+              % (module, ", ".join("%s.py" % one for one in shadows)))
+        print()
+        print("  No module name in %s/ may be a prefix of another, and this" % part)
+        print("  one is. tests/test_references.py asserts it, and the rule is")
+        print("  what lets HERON-DOC-REF-006 tell a whole module name from the")
+        print("  start of a longer one - without it, renaming the shorter name")
+        print("  quietly edits the longer one too.")
+        print()
+        print("  Nothing was written. Name the file for what it DOES and pass")
+        print("  it with --module, the way heron_buildmatrix.py was named.")
+        return 1
+
     fields = dict(agent=agent, name=name, module=module, part=part,
                   step=step, layer=LAYER[part])
 
