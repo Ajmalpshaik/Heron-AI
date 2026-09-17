@@ -97,6 +97,16 @@ def main():
           "and says the register is where an agent starts")
 
     print("\n2. an agent something already claims is refused")
+    # TYPED ON PURPOSE, AND THE ASYMMETRY IS THE POINT.
+    #
+    # A fixture that must be BUILT is stable, because the register only moves
+    # one way: rows get claimed, not un-claimed. A fixture that must be UNBUILT
+    # is the fragile kind - every row closed is one fewer - and this suite lost
+    # two of those in a single sitting on 2026-09-17/18: DEV-PRF-015 took
+    # section 3's, and DEV-INT-012 took section 4's an hour later. Both are
+    # derived now.
+    #
+    # So: NAME a built agent, DERIVE an unbuilt one.
     code, said = run(["HERON-DEV-QA-016"])
     check(code == 1, "an agent already built exits 1")
     check("already built" in said and "heron_qa.py" in said,
@@ -170,10 +180,28 @@ def main():
         check("--module" in said,
               "and points at the way forward rather than being a dead end")
 
-    code, said = run(["HERON-DEV-INT-012", "--part", "brain",
-                      "--module", "regression_test"])
-    check(code == 1 and "shadows" in said,
-          "an explicit --module cannot walk around it either")
+    # DERIVED, NOT TYPED - and this line is why section 3 four screens up says
+    # so in the first place.
+    #
+    # It read `HERON-DEV-INT-012` until 2026-09-18, when the owner settled that
+    # row onto tests/test_bridge_roundtrip.py. `new-agent.py` then refused it
+    # with "already built" instead of "shadows", which is the tool being
+    # CORRECT and the fixture being stale - and it is the SECOND row this suite
+    # lost in one day, after DEV-PRF-015 took section 3's.
+    #
+    # The point of the check is that `--module` cannot walk around the shadow
+    # rule. Any unbuilt row proves that; which one is an accident of the
+    # register on the day. So it asks the register rather than remembering an
+    # answer, exactly as the two checks above it already do.
+    unbuilt = next((aid for aid in sorted(agents) if aid not in claims), None)
+    check(unbuilt is not None,
+          "the register still holds an unbuilt row to try this with (%s)"
+          % unbuilt)
+    if unbuilt:
+        code, said = run([unbuilt, "--part", "brain",
+                          "--module", "regression_test"])
+        check(code == 1 and "shadows" in said,
+              "an explicit --module cannot walk around it either")
 
     print("\n5. nothing was written by any of them")
     after = snapshot()

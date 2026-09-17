@@ -1,10 +1,34 @@
 #!/usr/bin/env python3
-# Heron-Agent:  none
+# Heron-Agent:  HERON-DEV-INT-012
 # Heron-Step:   1
 # Heron-Status: DRAFT
 # Heron-Since:  0.1.0
 # Heron-Layer:  test
 # See docs/29-metadata-standard.md
+
+# THIS SUITE OWNS HERON-DEV-INT-012, DECIDED BY THE OWNER ON 2026-09-18,
+# in a sitting that ran from the 17th and crossed midnight while he answered.
+#
+# The row is "runs integration tests against a MOCKED REVIT BOUNDARY", and that
+# is exactly what this is: tests/Heron.Bridge.TestHost runs the bridge with no
+# Revit at all - pipe naming, discovery, framing, ping - because Heron.Bridge
+# deliberately carries no Revit reference. docs/13 section 3 describes the
+# approach; this has been it since the first commit.
+#
+# WHY IT WAITED, AND IT WAS NOT FOR WANT OF A FILE. D-75 put it plainly:
+# "its candidates fit the row exactly and are both layer `test`. Claiming one
+# makes a third agent claimed by nothing but a suite, which
+# test_contract_reference.py shows rather than drops on purpose. Allowed,
+# awkward, and the owner's call."
+#
+# So the awkwardness is real and is now ACCEPTED rather than removed. Writing a
+# third file in brain/ or tools/ to dodge it would have been the agent
+# explosion HERON-AHR-WFP-015 exists to refuse - a new file whose only job is
+# to be a tidier place for a claim.
+#
+# What that costs: test_contract_reference.py will report this agent among the
+# ones built without a contract, under layer `test`. That report is right to
+# say so and the number is not a defect.
 
 """
 Step 1 acceptance test - the pipe round trip, plus Step 6's lease.
