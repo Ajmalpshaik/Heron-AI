@@ -1,18 +1,20 @@
 # What actually blocks the 62 drafts
 
-**2026-09-17.** The model session, against a real Revit. **Three fragments passed.** The rest of
-this page is why the other 59 did not, which turned out to be FIVE *structural* reasons rather than
-fifty-nine separate arrangement mistakes.
+**2026-09-17.** The model session, against a real Revit. **Five fragments passed.** The rest of
+this page is why the other 57 did not, which turned out to be FIVE *structural* reasons rather than
+fifty-seven separate arrangement mistakes.
 
-**One of the five is now solved.** Blocker 3 — "an element-shaped need wants a one-element
+**TWO of the five are now solved.** Blocker 3 — "an element-shaped need wants a one-element
 selection and a job file cannot make one" — was the largest, and it turned out to need no new code
 at all. [The filter-to-one recipe](#solved--the-filter-to-one-recipe) is below, with the two
 fragments it proved.
 
-**Blocker 5 was found last and is the one worth reading first.** Building the test case on purpose
-— create an element, then prove the fragment against it — is the right answer to a clean model,
-and it is currently impossible: **none of the 51 proven creation fragments provides `elements`**,
-which is the name every consumer asks for.
+**Blocker 5 was found last, fixed last, and is the one worth reading first.** Building the test
+case on purpose — create an element, then prove the fragment against it — is the right answer to a
+clean model, and it could not be done at all: **none of the 51 proven creation fragments provides
+`elements`**, and the fragment bound its needs *before* the creating step ever ran. Two fixes, both
+in `RevitFragment.cs`, and `find-overlapping-lines` now passes on a case that did not exist in the
+model until the run drew it.
 
 > **Register rule.** This is a new file on purpose. HANDOVER, DECISIONS, PROPOSALS,
 > NEEDS-CHECKING and FRAGMENT-ISSUES all have other sessions writing to them today. The rows
@@ -84,8 +86,34 @@ Ajmal PS signed it on 2026-09-17. `check-signatures` then reported it **UNUSED**
 to `PROVEN` here, which is what cleared `check-docs`.
 
 **`match-element-type` — PASS** and **`align-elements` — PASS**, both via the filter-to-one recipe
-below, both previously unreachable. Their drafts are in `brain/proof-drafts/` and are **unsigned**:
-a pass means the evidence held, and the signature is still owed.
+below, both previously unreachable.
+
+**`find-overlapping-lines` — PASS**, on a case the run **built for itself**: two model lines drawn
+overlapping on purpose, `0→10000` against `2000→8000`, sharing exactly **6000 mm** — which is the
+number the fragment reported, and arithmetic anybody can check. The negative drew the same line and
+a copy 5000 mm sideways: two real lines, parallel, nothing to find. It had come back
+`POSITIVE EMPTY` twice before, because Snowdon Towers contains no lines at all.
+
+**`fillet-lines` — PASS**, and the reason it was run next is that it is the **same recipe, not a
+new trick**. On `test projject.rvt` (Revit 2024, session 46936, 3,573 elements), on lines the run
+drew for itself:
+
+| phase | drawn | result |
+|---|---|---|
+| positive | `0→10000`, then `10000,0 → 10000,10000` — a right angle | `created 3` — *"Corner rounded with a 1000 mm arc"* |
+| negative | the same line and a copy 5000 mm sideways | `created 0` — *"The two lines are parallel in plan, so there is no corner to round"* |
+
+**`created 3` is the right answer, not a lucky one.** The fragment cuts both lines back to their
+tangent points and draws an arc between them, so three elements come back and the two originals
+return with **new ids** — its own documentation says so, and the finding warns that anything
+referring to the old ids will need re-pointing. The negative gives a **reason** rather than a bare
+zero, which is the difference between "nothing to find" and "nobody was asked".
+
+The binding note on both phases read `elements from create-line as 'created' (2)`. The model was
+3,573 elements before and after.
+
+All four drafts are in `brain/proof-drafts/` and are **unsigned**: a pass means the evidence held,
+and the signature is still owed.
 
 ## Blocker 1 — Publish and Admin cannot run at all, by design
 
@@ -443,7 +471,28 @@ fragments also declare `elements` (they already hold the list — `created` *is*
 executor aliases `created` to `elements` when a consumer asks for one and only a creator ran.
 The first is honest and per-fragment; the second is one change and reaches all 51.
 
-### 1b. The alias was written, deployed — and is INERT on the write path
+### SOLVED — both halves fixed, and the case built on purpose now proves a fragment
+
+> **The two sections below record the hunt in the order it happened, and the second one's
+> conclusion — "not taken here" — was overtaken on the owner's instruction.** Both fixes are in.
+> `find-overlapping-lines` **PASSED** on a case that did not exist in the model until the run built
+> it:
+>
+> ```
+> bound: elements from create-line as 'created' (2); toleranceMm as given
+>   positive   overlapping 2, pairs 1
+>              "1544290 and 1544292 share 6000 mm of the same line"
+>   negative   overlapping 0, pairs 0, across 2 real lines
+> ```
+>
+> **The arithmetic is checkable by hand, which is why this arrangement was chosen.** The positive
+> drew `0→10000` and `2000→8000` on one axis: they share exactly **6000 mm**, and that is the
+> number the fragment reported. The negative drew the same line and a copy 5000 mm sideways —
+> parallel, never meeting, two REAL lines with genuinely nothing to find.
+>
+> Snowdon was 9,638 elements before and after, and its file is untouched on disk.
+
+### 1b. The alias was written, deployed — and was INERT on the write path (now fixed)
 
 `RevitFragment.BindNeeds` now falls back to `created` when a consumer asks for `elements`, nothing
 else filled it, and the contract set no `binds` of its own. It compiles, it is deployed to all
@@ -473,14 +522,44 @@ deferred step leaves can only ever reach the *next setup step*, never the fragme
   write group is even opened*, and at that moment nothing has been created.
 
 So the real repair is **not** a name: it is moving the fragment's `BindNeeds` and `Compile` to
-after `RunSetupSteps` on the write path. That reorders the hot path of every write run and would
-put a compile failure after the setup has already run rather than before — which the current order
-is plainly written to avoid. **Not taken here.** It is a bigger change than the alias it replaces,
-and it needs its own sitting and its own re-proving of the write fragments.
+after `RunSetupSteps` on the write path.
 
-The alias stays because it is correct and costs nothing: it is the right behaviour the moment the
-ordering allows a creator's output to be seen, and it already works on any path where the producer
-runs as its own call.
+**Done, on the owner's instruction, and narrowed so the risk is provable rather than argued.**
+
+```csharp
+var setupSteps = Json.ReadObjectArray(request, "setup");
+var bindAfterSetup = writing && setupSteps != null && setupSteps.Count > 0;
+```
+
+**Only a write run that actually carries setup steps takes the new order.** Every other run —
+which is nearly all of them — reaches the same `bindAndCompile()` at the same point as before.
+That is not "should behave the same": the code does not move for them. The runs whose ordering
+changes are exactly the runs that could not work at all before, so there is no behaviour to
+regress.
+
+**The one new hazard, and where it is paid.** Every refusal on this path used to be free, because
+nothing had run when it was made. A late bind or compile failure now lands *after* the setup has
+written, so it rolls the group back before returning:
+
+```csharp
+SafeRollBack(group);
+return late;
+```
+
+Without that, a refused preview would leave the setup's changes sitting in the model under a group
+nobody closes — a preview that altered something, which is the single outcome this path exists to
+make impossible.
+
+**One effect measured but not fully exercised, stated rather than glossed.** While the setup runs,
+`globals.__heron` no longer holds the fragment's own bound values, so `StillTheHosts` skips fewer
+variables and a setup step's output is remembered where it was previously passed over. That looks
+like an improvement — a step's output *should* be carried — but "looks like" is the honest word,
+and it reaches only runs that carry write setup.
+
+**Still owed:** the write fragments have not been re-proved behind this change. It touches only
+write-setup runs, but that is a gap rather than a closed question.
+
+Builds clean on 2020 (`net472`), 2024 (`net48`) and 2027 (`net10.0-windows`).
 
 ### 2. A creation fragment's write does not survive to the NEXT setup step
 
@@ -561,21 +640,28 @@ one **STALE** — `set-wall-constraints`, signed by Ajmal PS on 2026-09-13, code
 
 | | |
 |---|---|
-| **passed** | **3** — `create-hvac-zone` (signed, promoted to PROVEN), `match-element-type`, `align-elements` |
+| **passed** | **5** — `create-hvac-zone` (signed, promoted to PROVEN), `match-element-type`, `align-elements`, `find-overlapping-lines`, `fillet-lines` |
 | blocked by the Publish/Admin ceiling | **6** |
 | blocked by an orphan chain need | **6** |
 | ~~blocked by "one element, selected in Revit"~~ | ~~13~~ → **SOLVED**; 2 of the 13 proved, 2 still need TWO elements, the rest want model content this file lacks |
 | unjudgeable because `findings` is the only provide | **2** |
-| defects found | **3** — `set-mep-justification` (reported), the view resolver (**fixed**), `set-wall-constraints`' work counter (reported) |
+| defects found | **5** — `set-mep-justification` (reported), the view resolver (**fixed & proved**), `set-wall-constraints`' work counter (reported), the `created`/`elements` name gap (**fixed & proved**), bind-before-setup ordering (**fixed & proved**) |
 | positive empty for want of model content | **6** |
 
-**Left at DRAFT: 61**, and **PROVEN is 311** — derived, not counted by hand:
+**Left at DRAFT: 60**, and **PROVEN is 312** — derived, not counted by hand:
 `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 
-**Three passed but only ONE moved the DRAFT count**, and the gap is the point: `create-hvac-zone`
-was signed by a person and promoted, so it left DRAFT. `match-element-type` and `align-elements`
-passed and are **unsigned**, so they stay at DRAFT — correctly. A pass is evidence; only a
-signature is a proof.
+**Five passed but only TWO moved the DRAFT count**, and the gap is the point: `create-hvac-zone`
+and `find-overlapping-lines` were signed by a person and then promoted, so they left DRAFT.
+`match-element-type`, `align-elements` and `fillet-lines` passed and are **unsigned**, so they stay
+at DRAFT — correctly. A pass is evidence; only a signature is a proof.
+
+**Promoting is a second, separate act, and it caught the session out twice.** `accept` writes the
+proof and deliberately never writes `heron-status`, so a signed fragment sits in `check-signatures`'
+**UNUSED** bucket until somebody sets the status — and `check-docs` fails while it does. Both times
+the promotion also moved the totals stated in three READMEs (`310→311→312 PROVEN`,
+`62→61→60 DRAFT`, `136→137 READ PROVEN`, `158→159 MODIFY PROVEN`), and those sentences had to be
+corrected in the same change. Derive, never retype.
 
 **This paragraph said 59 until `check-docs` refused it.** The number was reasoned from "three
 passed" instead of derived, and the gate caught it in the same run — which is exactly the failure

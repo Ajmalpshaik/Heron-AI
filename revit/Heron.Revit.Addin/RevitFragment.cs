@@ -417,23 +417,64 @@ namespace Heron.Revit.Addin
             var ranWith = DescribeSupplied(supplied);
 
             var prologue = "";
+            Script<object> script = null;
 
-            if (needs != null)
-            {
-                string binding;
-                var refusal = BindNeeds(needs, globals, target, uidoc, bound, client,
-                                        supplied, expect, out prologue, out binding);
-                if (refusal != null) return refusal;
-                Note = binding;
-            }
-            else
-            {
-                Note = null;
-            }
+            // WHAT A WRITE SETUP STEP LEAVES CANNOT BE BOUND BEFORE IT RUNS.
+            //
+            // Binding and compiling belong HERE for almost every run: before
+            // the model is touched, so a request that cannot be satisfied is
+            // refused cheaply and no transaction is ever opened. That ordering
+            // is deliberate and it stays.
+            //
+            // It is wrong for exactly one shape of run - a write phase carrying
+            // setup steps that THEMSELVES write. Those are deferred into the
+            // fragment's own TransactionGroup (see RunSetupSteps) so that the
+            // fragment can see what they made. But binding sixty lines earlier
+            // decided the fragment's needs before any of it existed, so what a
+            // deferred step leaves could reach the NEXT STEP and never the
+            // fragment under test.
+            //
+            // MEASURED 2026-09-17 on Snowdon-scratch.rvt: create-line drew its
+            // two model lines, RunSetupSteps called Remember on them, and
+            // find-overlapping-lines was still refused with "'elements' was
+            // never supplied" - because it had been told so before the lines
+            // existed. That is the whole of "build the case on purpose",
+            // which fragment-proving rule 2 sends you to on a clean model.
+            //
+            // So when, and ONLY when, there are setup steps to run first, the
+            // binding waits for them. Every other run keeps the old order
+            // exactly - and that is what keeps this small enough to trust: a
+            // run with no write setup cannot behave differently, because
+            // nothing about it moved.
+            var setupSteps = Json.ReadObjectArray(request, "setup");
+            var bindAfterSetup = writing && setupSteps != null && setupSteps.Count > 0;
 
-            Script<object> script;
-            var compileError = Compile(prologue + source, PrologueLines(prologue), out script);
-            if (compileError != null) return compileError;
+            // The bind and the compile as ONE act, in one place, because a
+            // prologue that bound is useless without the script it was written
+            // for - and two copies of this would drift.
+            Func<string> bindAndCompile = () =>
+            {
+                if (needs != null)
+                {
+                    string binding;
+                    var refusal = BindNeeds(needs, globals, target, uidoc, bound, client,
+                                            supplied, expect, out prologue, out binding);
+                    if (refusal != null) return refusal;
+                    Note = binding;
+                }
+                else
+                {
+                    Note = null;
+                }
+
+                return Compile(prologue + source, PrologueLines(prologue), out script);
+            };
+
+            if (!bindAfterSetup)
+            {
+                var early = bindAndCompile();
+                if (early != null) return early;
+            }
 
             // APPLY IS THE DELIBERATE ACT. Absent means run it and roll back,
             // which is this path's preview: not a prediction of what would
@@ -492,6 +533,25 @@ namespace Heron.Revit.Addin
                     var setupError = RunSetupSteps(request, globals, target, uidoc,
                                                    client, supplied, group, label);
                     if (setupError != null) return setupError;
+
+                    // NOW the fragment can be given what the setup just made.
+                    // See bindAfterSetup above for why this waits.
+                    if (bindAfterSetup)
+                    {
+                        var late = bindAndCompile();
+                        if (late != null)
+                        {
+                            // THE SETUP HAS ALREADY WRITTEN. Refusing without
+                            // rolling back would leave its changes sitting in
+                            // the model under a group nobody closes - a preview
+                            // that altered something, which is the one outcome
+                            // this path must never produce. Every other refusal
+                            // on this page is free because nothing had run yet;
+                            // this one is not, so it pays for itself here.
+                            SafeRollBack(group);
+                            return late;
+                        }
+                    }
 
                     using (var transaction = new Transaction(target, label))
                     {
