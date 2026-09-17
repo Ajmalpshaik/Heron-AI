@@ -381,6 +381,27 @@ else:
          r'(\d+)\s+test\s+suites\b', 'test suites'),
         (os.path.join(root, 'tools'), '*.py',
          r"(\d+)\s+tools\s+mentions\b", 'tools'),
+        # A TOTAL CLAIMED WITHOUT THE WORD "TEST", which is how the row above
+        # missed two of them for five days. heron-ship said "all 163 suites
+        # then pass" and "run the full 163" while there were 199 - measured
+        # 2026-09-12, read 2026-09-17, and the rule it broke was four lines up
+        # its own page.
+        #
+        # ANCHORED ON "ALL"/"EVERY"/"THE FULL" RATHER THAN ON ANY NUMBER
+        # BEFORE "SUITES", and that is the whole design. The broad pattern was
+        # measured first: `(\d+)\s+suites` fires on 24 lines in this
+        # repository and is RIGHT ABOUT NONE OF THEM. Every one is a record, a
+        # quotation or a dated measurement - tests/README.md's "'41 suites'
+        # and what check-gaps ran are two different numbers by design",
+        # HANDOVER's "the test row said 41 suites when it", NEEDS-CHECKING's
+        # "run, 188 suites, exit 1". A release gate that fails on two dozen
+        # correct sentences stops every merge until somebody rewrites prose
+        # that was never wrong, and teaches its reader to skim on the way.
+        #
+        # "All N suites" cannot be a subset. That is the sentence that rots.
+        (os.path.join(root, 'tests'), 'test_*.py',
+         r'\b(?:all|every|the full|run the full)\s+(\d+)\s+(?:test\s+)?suites?\b',
+         'suites claimed as a TOTAL'),
     ]
     for folder, pattern, claim, label in countable:
         real = len(glob.glob(os.path.join(folder, pattern)))
@@ -391,6 +412,14 @@ else:
                 if HISTORY.search(line):
                     continue
                 for m in re.finditer(claim, line):
+                    # A QUOTED TOTAL IS A CITATION, NOT A CLAIM. This file and
+                    # the registers routinely report what a sentence USED to
+                    # say - `heron-ship said "all 163 suites"` is the record
+                    # of a fix, and failing on it would make describing a
+                    # drift impossible without repeating it. An odd number of
+                    # quotes before the match means it opens inside one.
+                    if line.count('"', 0, m.start()) % 2 == 1:
+                        continue
                     if int(m.group(1)) != real:
                         drift.append((p, i, '%s %s' % (m.group(1), label),
                                       '%d (ls %s)' % (real, pattern)))
