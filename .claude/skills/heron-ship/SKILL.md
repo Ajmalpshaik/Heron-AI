@@ -104,7 +104,7 @@ that the failures **do not share a reason**, because a lump total is how a real 
 |---|---|---|
 | `test_mcp_serves.py` | the **MCP SDK** | `pip install --user mcp` |
 | `test_served_claims.py` | the **MCP SDK** | same |
-| `test_bridge_roundtrip.py` | a **built .NET test host** | `dotnet build tests/Heron.Bridge.TestHost` |
+| `test_bridge_roundtrip.py` | a **built .NET test host** | run it once: its failure prints the exact `dotnet build` line, TFM included |
 | `test_dotnet.py` | **any `dotnet`** — four of its eight claims only | `apt-get install -y dotnet-sdk-8.0` |
 
 **All four exit 3, not 1**, so `check-gaps.py` reports them as waiting rather than failing.
@@ -205,7 +205,7 @@ UNPROVEN."* **Read the buckets, not the exit code, and do not report either valu
 > echo $?` reports **`tail`'s** exit code, which is always 0 — and on 2026-09-12 that turned this very
 > section into a claim that the gate passes. Two characters, in the optimistic direction.
 
-## 5. The six that need something this container has not got
+## 5. The six that need something — and only ONE of them needs the owner's PC
 
 Not failures. They need a tool, and the error says which.
 
@@ -215,10 +215,36 @@ Not failures. They need a tool, and the error says which.
 | `check-compile.py`, `check-fragments-compile.py`, `check-api-surface.py` | **`dotnet`** | `FileNotFoundError: 'dotnet'` |
 | `batch-prove.py` | **a real Revit**, and the owner | — |
 
-The first two run fine with a store: `export HERON_KNOWLEDGE=/tmp/heron-kb`. The middle three need the
-.NET SDK and are the owner's PC. **`check-compile` has a trap worth knowing: it builds 2020–2027 into
-one folder and the newest wins, so running it leaves .NET 10 binaries that Revit 2024 refuses.**
-`deploy-addin.ps1` guards this now rather than trusting whoever ran it.
+The first two run fine with a store: `export HERON_KNOWLEDGE=/tmp/heron-kb`.
+
+**This section said the middle three "are the owner's PC" until 2026-09-17, and that was WRONG — the
+same shape of mistake as §2's "the known three".** They need a .NET SDK, which is one apt package, and
+nothing about Windows or Revit. Measured on a plain Linux container that day:
+
+```bash
+apt-get update && apt-get install -y dotnet-sdk-10.0     # ~2 minutes
+```
+
+| | result |
+|---|---|
+| `check-compile.py` | **all 5 projects on all 8 releases, 2020–2027** |
+| `check-fragments-compile.py` | **all 372 fragments on every release each one claims** |
+| `check-api-surface.py` | **every Revit member Heron calls exists in every release** |
+| `tests/test_bridge_roundtrip.py` | **passes**, after the one build its own failure message prints |
+
+**Install `dotnet-sdk-10.0`, not 8.0.** 2025–2027 need the WindowsDesktop targets that only 10 carries,
+and it builds the older releases too — one package covers the whole span.
+
+**`check-api-surface.py` needed a one-line fix before it would run**, and the reason generalises:
+`tools/api-surface/ApiSurface.csproj` targets `net8.0`, so on a machine carrying only the .NET 10
+runtime it refused to start — *"You must install or update .NET to run this application … The following
+frameworks were found: 10.0.12"*. The machine best set up to build Heron was the one that could not run
+the tool that checks it. It now carries `<RollForward>LatestMajor</RollForward>`.
+
+**`check-compile` has a trap worth knowing: it builds 2020–2027 into one folder and the newest wins, so
+running it leaves .NET 10 binaries that Revit 2024 refuses.** `deploy-addin.ps1` guards this now rather
+than trusting whoever ran it. **That trap is why this matters on the owner's PC and not here** — a
+container with no Revit has nothing to break, so the compile gates are cheaper to run here than there.
 
 ## 6. Then the branch
 
