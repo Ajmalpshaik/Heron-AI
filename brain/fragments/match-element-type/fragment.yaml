@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -58,6 +58,32 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-17'
+  by: Ajmal PS
+  model: Snowdon-scratch (9,638 elements), Revit 2024, session 14912
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-numeric-parameter, set-selection, select-by-category-name with this phase's
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned changed 19, findings 2 item(s) [19 element(s) changed to 'Tees'.
+    172 already had it, and 0 a..., Only the TYPE changed. Mark, comments, offsets and every
+    oth...]. inputs came source as given; elements from select-by-category-name (191). on
+    Snowdon-scratch
+  negative_case: 'run with categories=Ducts, categoryName=Air Terminals, compareValue=9.0,
+    compareValueMax=9.05, comparison=between, inViewOnly=FloorPlan: M1, includeTypeParameters=False,
+    parameterName=Length, source=selected, tolerance=0 instead - chosen because it should
+    not contain what this fragment reports - the arrangement was re-made first by running
+    select-by-numeric-parameter, set-selection, select-by-category-name with this phase''s
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned changed 0, findings 11 item(s) [0 element(s) changed to ''Tees''.
+    0 already had it, and 10 are..., Refused: id 1449300 is a Air Terminals and the source
+    is a D..., Refused: id 1449341 is a Air Terminals and the source is a D..., ...]. inputs
+    came source as given; elements from select-by-category-name (10). on Snowdon-scratch'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 980e58c3b22886ef
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

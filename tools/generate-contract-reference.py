@@ -674,8 +674,24 @@ def main():
 
     w("%d contract(s), %d field(s), %d declared refusal(s)\n"
       % (len(rows), fields, declared))
-    w("%d agent(s) built without a contract (tool and C# layers)\n"
-      % len(without))
+    # NOT "(tool and C# layers)", which this line said until 2026-09-17 and
+    # which was wrong about 23 of its own findings: HERON-RAG-CTX-007,
+    # HERON-RAG-LIB-001, HERON-KRN-DEP-013 and the five Standards rows served
+    # by brain/heron_company.py are all layer BRAIN. The count was right; the
+    # sentence beside it told the reader nothing was missing, and for 23 of
+    # them that is not true - which is worse than no sentence at all, because
+    # a reader acts on the words rather than on the number.
+    #
+    # It now REPORTS the layers instead of asserting them, and it still does
+    # not say whether a brain-layer agent OUGHT to carry a contract. Nobody
+    # has decided that, and a generator must not decide it by implication.
+    layers = {}
+    for one in without:
+        key = one.get("layer") or "unknown"
+        layers[key] = layers.get(key, 0) + 1
+    w("%d agent(s) built without a contract (%s)\n"
+      % (len(without),
+         ", ".join("%s %d" % (k, layers[k]) for k in sorted(layers))))
     for one in orphans:
         w("  ONLY A SUITE: %s is claimed by %s and by no file that "
           "implements it\n" % (one["agent"], ", ".join(one["suites"])))

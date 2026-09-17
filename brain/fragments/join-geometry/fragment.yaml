@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -77,6 +77,33 @@ contract:
       type: IList<string>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-17'
+  by: Ajmal PS
+  model: test projject (3,586 elements), Revit 2024, session 46936
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-numeric-parameter, set-selection, select-by-category-name with this phase's
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned alreadyRight 0 item(s), changed 24, findings 1 item(s) [24 joined
+    with 'Generic - 200mm'. 0 were already joined and ...], join true, wouldNot 0 item(s).
+    inputs came elements from select-by-category-name (24); target as given; join as given.
+    on test projject
+  negative_case: "run with categories=Walls, categoryName=Spaces, compareValue=140, compareValueMax=160,\
+    \ comparison=between, inViewOnly=FloorPlan: HERON ROOM TEST, includeTypeParameters=False,\
+    \ join=True, parameterName=Area, target=selected, tolerance=0 instead - chosen because\
+    \ it should not contain what this fragment reports - the arrangement was re-made first\
+    \ by running select-by-numeric-parameter, set-selection, select-by-category-name with\
+    \ this phase's own values - run inside a transaction, and Revit reported the transaction\
+    \ group ROLLED BACK afterwards. returned alreadyRight 0 item(s), changed 0, findings 1\
+    \ item(s) [0 joined with 'Generic - 200mm'. 0 were already joined and w...], join true,\
+    \ wouldNot 2 item(s) [926566: The elements cannot be joined.\r\nParameter name: seco...,\
+    \ 926567: The elements cannot be joined.\r\nParameter name: seco...]. inputs came elements\
+    \ from select-by-category-name (2); target as given; join as given. on test projject"
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 46b1741d56e1306c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
