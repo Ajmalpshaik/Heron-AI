@@ -38,7 +38,7 @@ purpose: >
   of its own; it is a set of settings applied to views. Handing one in and
   getting an empty answer would read as "this view shows nothing".
 
-  UNPROVEN AGAINST A MODEL, and one part deserves naming: exactly which
+  ONE PART IS NOT COVERED BY THE PROOF: exactly which
   visibility mechanisms Revit's own view-scoped collector honours - temporary
   hide/isolate in particular - has not been watched here. What is claimed is
   that this is Revit's answer to the question, not a re-implementation of it.
