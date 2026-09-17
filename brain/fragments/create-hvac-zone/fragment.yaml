@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 15
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -75,6 +75,34 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-09-17'
+  by: Ajmal PS
+  model: Snowdon-scratch (9,638 elements), Revit 2024, session 14912
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned added 5, creationFactory
+    Document, movedFromAnotherZone 5 item(s) [Stair S1 (id 1411634) LEFT zone 'Default', Stair
+    S2 (id 1411663) LEFT zone 'Default', Elevator E1 (id 1411726) LEFT zone 'Default', ...],
+    newZoneMethod RuntimeMethodInfo, refused 2 item(s) [5 space(s) were TAKEN OUT of another
+    zone to be put in this ..., 5 space(s) added. The zone's AREA reads zero until Revit rec...],
+    zone Zone. inputs came zoneName as given; level as given; phase as given; elements from
+    the selection (5). on Snowdon-scratch
+  negative_case: 'run with categoryName=Ducts, inViewOnly=FloorPlan: M1, level=M1, phase=New
+    Construction, zoneName=HERON-PROVE-ZONE-NEG instead - chosen because it should not contain
+    what this fragment reports - the arrangement was re-made first by running select-by-category-name,
+    set-selection with this phase''s own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned added 0, creationFactory Document,
+    movedFromAnotherZone 0 item(s), newZoneMethod RuntimeMethodInfo, refused 23 item(s) [Tees
+    (id 1447716) is not a Space - a room is not a space, an..., Tees (id 1447725) is not a
+    Space - a room is not a space, an..., Tees (id 1447768) is not a Space - a room is not
+    a space, an..., ...], zone Zone. inputs came zoneName as given; level as given; phase
+    as given; elements from the selection (22). on Snowdon-scratch'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: d65854068983a6f3
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,8 +1,13 @@
 # What actually blocks the 62 drafts
 
-**2026-09-17.** The model session, against a real Revit. One fragment passed. The rest of this
-page is why the other 61 did not, which turned out to be four *structural* reasons rather than
-sixty-one separate arrangement mistakes.
+**2026-09-17.** The model session, against a real Revit. **Three fragments passed.** The rest of
+this page is why the other 59 did not, which turned out to be four *structural* reasons rather than
+fifty-nine separate arrangement mistakes.
+
+**One of the four is now solved.** Blocker 3 — "an element-shaped need wants a one-element
+selection and a job file cannot make one" — was the largest, and it turned out to need no new code
+at all. [The filter-to-one recipe](#solved--the-filter-to-one-recipe) is below, with the two
+fragments it proved.
 
 > **Register rule.** This is a new file on purpose. HANDOVER, DECISIONS, PROPOSALS,
 > NEEDS-CHECKING and FRAGMENT-ISSUES all have other sessions writing to them today. The rows
@@ -54,9 +59,19 @@ below is a **different selection that exists**.
 
 ## What passed
 
-**`create-hvac-zone` — PASS.** Positive: 5 Spaces in `FloorPlan: M1`, level `M1`, phase
-`New Construction` → `added 5`. Negative: the same call over the 22 Ducts → empty. A draft is
-waiting in `brain/proof-drafts/` for a person's signature; **a pass is not a proof.**
+**`create-hvac-zone` — PASS, and SIGNED.** Positive: 5 Spaces in `FloorPlan: M1`, level `M1`, phase
+`New Construction` → `added 5`, naming Stair S1, Stair S2 and Elevator E1 as leaving zone
+`Default`. Negative: the same call over the 22 Ducts → `added 0`, with 23 refusals reading *"is not
+a Space"*. Both phases reported the transaction group **ROLLED BACK** and the model's element count
+was unchanged at 9,638 afterwards.
+
+Ajmal PS signed it on 2026-09-17. `check-signatures` then reported it **UNUSED** — signed but still
+`DRAFT` — because `accept` writes the proof and deliberately never writes `heron-status`. Promoted
+to `PROVEN` here, which is what cleared `check-docs`.
+
+**`match-element-type` — PASS** and **`align-elements` — PASS**, both via the filter-to-one recipe
+below, both previously unreachable. Their drafts are in `brain/proof-drafts/` and are **unsigned**:
+a pass means the evidence held, and the signature is still owed.
 
 ## Blocker 1 — Publish and Admin cannot run at all, by design
 
@@ -101,9 +116,9 @@ These are orphan consumers. They cannot be arranged, because there is no produce
 of them — the same shape of gap that `describe-blank-parameters` records as its own reason for
 existing (*"the orphan check named it, which is what a dependency graph is for"*).
 
-## Blocker 3 — an element-shaped need wants a one-element SELECTION, and a job file cannot make one
+## Blocker 3 — an element-shaped need wants a one-element SELECTION — **SOLVED**
 
-This is the biggest group, and the refusals are correct and well worded:
+This was the biggest group. The refusals are correct and well worded:
 
 > `'target' asks for ONE PARTICULAR ELEMENT in the model, and a typed name cannot say which one.
 > [...] SELECT IT IN REVIT and pass "selected"`
@@ -115,13 +130,15 @@ This is the biggest group, and the refusals are correct and well worded:
 `RevitFragment.OneElement` is explicit that **`selected` means exactly one** — *"Not 'the first of
 them' [...] Zero and many are both refused."*
 
-So the chain has to leave Revit holding **exactly one** element. On this model it cannot:
+So the chain has to leave Revit holding **exactly one** element. Three obvious routes do not work:
 
-- `filter-elements-by-id` refuses a bare id, so ids observed in earlier run records cannot be fed
-  back in;
+- `filter-elements-by-id` refuses a bare id too, so ids observed in earlier run records cannot be
+  fed back in;
 - no category resolves to exactly one element in either measured view;
-- every one of the 1,053 ducts has `Mark` unset, so no parameter filter narrows to one — and
-  `Mark` must never be bulk-written to create one, being an identifier Revit warns on.
+- every one of the 1,053 ducts has `Mark` unset, so no *text* filter narrows to one — and `Mark`
+  must never be bulk-written to create one, being an identifier Revit warns on.
+
+A fourth route does. It is below.
 
 **Three were observed refusing**, verbatim, this sitting: `select-touching` and
 `trace-connectivity` on `target` / `start`, and `find-clashes` on `against`.
@@ -142,26 +159,66 @@ message says those are exactly what Heron *can* resolve, "by NAMING the thing it
 level, a sheet, a view, a type". This model has 11 named levels. Those three are blocked on model
 content or on arrangement, not on this, and should be tried first by whoever picks this up.
 
-**What would unblock it** is a way to hand the chain one element without a person clicking — a
-`take-first` / `filter-to-one` fragment, or a resolution rule for `elementIds`. That is a design
-decision, so it is written here rather than taken.
+### Solved — the filter-to-one recipe
 
-**There may already be a route, and it is worth ten minutes before anyone builds one.**
-`select-by-numeric-parameter` is PROVEN and takes **scalars only** — `parameterName`, `comparison`,
-`compareValue`, `compareValueMax`, `tolerance`, `includeTypeParameters`, `categories` — so a
-narrow enough band should isolate a single element without any id:
+**No new fragment was needed.** `select-by-numeric-parameter` is already PROVEN and takes
+**scalars only**, so a narrow enough band isolates one element with no id and nobody clicking:
 
 ```
 select-by-numeric-parameter   parameterName=Length comparison=between
-                              compareValue=9.00 compareValueMax=9.01 categories=Ducts
-  -> set-selection            (Revit now holds exactly one)
-  -> <fragment>               target=selected
+                              compareValue=9.00 compareValueMax=9.05 categories=Ducts
+  -> set-selection            Revit now holds EXACTLY ONE
+  -> select-by-category-name  leaves `elements`, the set to work across
+     keep-chain: true         or `elements` is thrown away before the run
+  -> <fragment>               source / target / reference / start = selected
 ```
 
-Its value is handed in **already in Revit's internal unit** and that is deliberate — a length is
-decimal feet, so 3000 mm is `3000/304.8`. This was set up and not completed: the lease was held by
-the other client id at the time (see below), so no band was ever measured. **The idea is untested
-and is recorded as a lead, not a result.**
+Only the **first** setup step resets the chain, so the three compose. `set-selection` writes
+Revit's *own* selection, which a chain reset cannot touch — that is why the single element survives
+to the fragment while `elements` needs `keep-chain`.
+
+**The band is in Revit's internal unit** — decimal feet for a length — which is
+`select-by-numeric-parameter` refusing to guess at a unit it cannot know. Measured on
+`Snowdon-scratch.rvt`: `Length 9.00–9.05 ft` catches **exactly one** duct, a `Tees` (id 1519117).
+`4.00–4.05`, `6.00–6.05`, `7.00–7.05` and `8.00–8.05` catch none; `5.00–5.05` catches two.
+**The band is the arrangement**, and it is model-specific — measure it before writing the job.
+
+**Two fragments proved with it**, both unreachable that morning:
+
+| fragment | positive | negative |
+|---|---|---|
+| `match-element-type` | `changed 19` — 19 of L2's 191 ducts retyped, 172 already matched | `changed 0`, 10 Air Terminals refused by name: *"is a Air Terminals and the source is a Duct"* |
+| `align-elements` | `aligned 175` of 191, 16 blocked | `aligned 0` — all 5 Spaces reported `blocked` |
+
+**The `align-elements` negative was wrong first time and the run said so.** Air terminals were
+assumed unmovable; they align in Z perfectly well, so `aligned 10` came back and the verdict was
+`NEG NOT EMPTY`. Spaces genuinely cannot. A negative is a claim about the model, and it needs
+measuring like any other.
+
+### What the recipe does NOT unlock
+
+Stated so nobody re-runs it hopefully:
+
+- **`measure-distance` and `measure-available-fall` need TWO elements** (`first`/`second`,
+  `upstream`/`downstream`), and `selected` means exactly one. **Still blocked** — they need a
+  second mechanism, not this one.
+- **`select-touching` is blocked by a NAME COLLISION.** `select-by-numeric-parameter` needs
+  `categories` to find the one element, and `select-touching` reads `categories` too — one `--set`
+  feeds both, so the fragment can never be pointed at a different category from the filter. It
+  also found nothing to overlap: cleanly joined ducts do not overlap, by design.
+- **`find-clashes`** asks for `against` as an id collection rather than an element, so `selected`
+  does not apply. Its own refusal already says the contract should ask for the element.
+- **`trace-connectivity` runs fine** — `reached 58` from the one duct — but `reached` includes the
+  start, so it can never be 0. That makes it a **D-53 tracking** proof, not a batch one.
+- **`join-geometry`, `select-by-host`, `select-group-members`, `read-ceiling-grid` and
+  `propose-mep-openings`** are blocked on *model content*, not on this. `Duct Insulations`,
+  `Model Groups` and `Duct Accessories` all return nothing in `FloorPlan: L2`; ducts host nothing;
+  ceilings and walls are in the links.
+
+**`elements` not bounding `trace-connectivity` is NOT a defect** — read in the source before saying
+so. It is the candidate pool for the *geometry fallback* only, where a connector is found sitting at
+the same point despite the API flag reporting nothing joined. That is what `joinedByGeometry`
+counts, and it was 0 in both runs, which is exactly why the pool made no difference.
 
 ## Blocker 4 — a fragment whose only output is `findings` can never be judged
 
@@ -330,13 +387,32 @@ one **STALE** — `set-wall-constraints`, signed by Ajmal PS on 2026-09-13, code
 
 | | |
 |---|---|
-| passed, draft awaiting a signature | **1** (`create-hvac-zone`) |
+| **passed** | **3** — `create-hvac-zone` (signed, promoted to PROVEN), `match-element-type`, `align-elements` |
 | blocked by the Publish/Admin ceiling | **6** |
 | blocked by an orphan chain need | **6** |
-| blocked by "one element, selected in Revit" | **13** — 3 observed refusing, 10 read from their contracts |
+| ~~blocked by "one element, selected in Revit"~~ | ~~13~~ → **SOLVED**; 2 of the 13 proved, 2 still need TWO elements, the rest want model content this file lacks |
 | unjudgeable because `findings` is the only provide | **2** |
 | defect found and reported | **1** (`set-mep-justification`) |
-| positive empty for want of model content | **4** |
+| positive empty for want of model content | **6** |
 
-**Left at DRAFT: 61.** The largest single thing standing between this list and a proving run is
-Blocker 3 — a supported way to put one element in the chain.
+**Left at DRAFT: 61**, and **PROVEN is 311** — derived, not counted by hand:
+`grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
+
+**Three passed but only ONE moved the DRAFT count**, and the gap is the point: `create-hvac-zone`
+was signed by a person and promoted, so it left DRAFT. `match-element-type` and `align-elements`
+passed and are **unsigned**, so they stay at DRAFT — correctly. A pass is evidence; only a
+signature is a proof.
+
+**This paragraph said 59 until `check-docs` refused it.** The number was reasoned from "three
+passed" instead of derived, and the gate caught it in the same run — which is exactly the failure
+[its own §7 exists for](../../tools/check-docs.py): *"A stated count is a claim; a derived count is
+a fact."* Promoting one fragment also moved `310 PROVEN` → `311` and `158 MODIFY PROVEN` → `159`
+in three READMEs, and those sentences were fixed in the same change.
+
+**What now stands between this list and a proving run is model content, not machinery.**
+Snowdon Towers is a clean, coordinated Autodesk sample with its architecture linked: nothing
+overlaps, nothing clashes, no areas are placed, there are no groups, no design options, no CAD
+imports, no electrical circuits, and no native walls, rooms, doors or ceilings. Defect-finders
+find nothing here **because there is nothing wrong** — which is rule 2 biting, not a fault in
+the fragments. A second, messier model would prove more of this list than any amount of further
+arrangement against this one.
