@@ -63,27 +63,26 @@ contract:
       type: bool
 
 proof:
-  date: '2026-09-13'
+  date: '2026-09-17'
   by: Ajmal PS
-  model: test projject (3,509 elements), Revit 2024, session 40932
+  model: test projject (3,565 elements), Revit 2024, session 64416
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-in-region, set-selection with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot
-    304.8, applied true, enclosed 3, marginMm 500, noGeometry 0 item(s), viewRefused false.
-    inputs came view as given; elements from the selection (3); marginMm as given. on test
-    projject
-  negative_case: run with minMm=-2000,23000,0, maxMm=14000,32000,4000, exact=false, categories=Ducts,
-    view=HERON DUCT SCHEDULE, marginMm=500 instead - chosen because it should not contain
-    what this fragment reports - the arrangement was re-made first by running select-in-region,
-    set-selection with this phase's own values - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, applied
-    false, enclosed 0, marginMm 500, noGeometry 0 item(s), viewRefused true. inputs came view
-    as given; elements from the selection (3); marginMm as given. on test projject
+    select-by-category-name with this phase's own values - run inside a transaction, and Revit
+    reported the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8,
+    applied true, enclosed 28, marginMm 3000, noGeometry 0 item(s), viewRefused false. inputs
+    came view as given; elements from select-by-category-name (28); marginMm as given. on
+    test projject
+  negative_case: run with categoryName=Walls, inViewOnly={3D}, marginMm=3000, view=HERON DUCT
+    SCHEDULE instead - chosen because it should not contain what this fragment reports - the
+    arrangement was re-made first by running select-by-category-name with this phase's own
+    values - run inside a transaction, and Revit reported the transaction group ROLLED BACK
+    afterwards. returned MillimetresPerFoot 304.8, applied false, enclosed 0, marginMm 3000,
+    noGeometry 0 item(s), viewRefused true. inputs came view as given; elements from select-by-category-name
+    (28); marginMm as given. on test projject
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: ae36c3214871d60d
-
+  fingerprint: 9491e815a1837c26
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
