@@ -35,6 +35,7 @@ ls brain/fragments | wc -l
 | 1 | Grids and levels | 3 | 3 | 0 |
 | 2 | Structural, annotation, views | 17 | 13 | 4 |
 | 3 | Selection | 16 | 14 | 2 |
+| 4 | The twenty-group sweep - copy, move, rotate, modify, dimension, tag, colour, hide, show, search, list, analyze, export, get, set, filter, calculate, verify, align, rename, update, count, assign, detect, apply | ~230 | ~205 | 14 new, 2 already logged |
 
 ---
 
@@ -161,3 +162,131 @@ reasoning applies to "the structure" and "the architecture", and the MEP groups 
 not preset either.
 
 ---
+
+---
+
+# List 4 - the twenty-group sweep
+
+Everything below was asked for in one list of roughly 230 jobs, grouped the way a
+modeller works rather than the way the library is filed. Tag, Hide, Show, Filter,
+Count, Calculate, Align, Rename, Apply and nearly all of Get, Set, Search, List,
+Analyze and Verify came back fully covered and get no rows, per the rule at the top.
+
+**Two of its gaps are already above**: elements without level (G-07, asked here three
+more times as *search*, *detect* and *verify*) and point-to-point dimension (G-08).
+
+## NOTHING THERE
+
+### G-11 Rotate about anything but the vertical axis
+
+`ROTATE_ELEMENTS` is *"turn these elements about a VERTICAL axis"* and that is the
+whole of it. Rotate on X and rotate on Y have no route.
+
+Not every "rotate" needs it: a beam's cross-section rotation is an instance
+parameter and `WRITE_ELEMENT_PARAMETERS` already sets it. What is missing is
+rotation about an arbitrary horizontal axis - tilting a panel, a sloped support.
+
+### G-12 Move to an absolute coordinate
+
+`MOVE_ELEMENTS` is *"shift these elements by one OFFSET"*. There is no "put it at
+X,Y,Z", so **set coordinates** and **set location** have no route either.
+
+A host could subtract current from target and pass the difference - but current
+position comes from `REPORT_LOCATION`, so it is two calls and arithmetic between
+them, which D-01 puts on the host rather than in the library. Worth deciding
+deliberately rather than by default.
+
+### G-13 Annotation cannot be put where somebody wants it
+
+**Move tag, move dimension, rotate tag, set tag location** - none of them.
+
+Every tag fragment here is RULE-based: `ARRANGE_TAGS` spreads them, `STACK_TAGS`
+columns them, `CENTER_ROOM_TAGS` centres them, `ARRANGE_TAGS_TO_VIEW_EDGES` parks
+them. All of them decide the position. Not one takes a position.
+
+That is a shape, not four fragments: **nothing in the library moves an annotation
+element to a point.**
+
+### G-14 Modify thickness
+
+A wall's or floor's thickness lives in its compound structure.
+`REPORT_COMPOUND_STRUCTURE` reads it, layer by layer. **Nothing writes it** -
+`WRITE_ELEMENT_PARAMETERS` cannot reach a layer.
+
+### G-15 Radial, diameter, angular and height dimensions
+
+Extends **G-02**, which recorded radial only. The sweep asked for four:
+**radius, diameter, angle, height**. None exists, and the same 2025 subclass split
+applies to the first three.
+
+### G-16 Colour fill scheme
+
+**Create color scheme** - Revit's room and area colour fill legend. Nothing touches
+`ColorFillScheme`.
+
+Everything else under Colour is covered and should not be confused with it:
+`OVERRIDE_GRAPHICS_IN_VIEW` colours chosen elements (and carries transparency),
+`SET_CATEGORY_GRAPHICS` colours categories, `COLOR_BY_PARAMETER` colours by any
+parameter - which is how "by level" and "by phase" are answered.
+
+### G-17 List categories
+
+Nothing lists the categories in the model. `SELECT_BY_CATEGORY_NAME` returns NEAR
+MISSES when a name does not match, which is the closest thing and is not a list.
+
+### G-18 Get centroid
+
+`REPORT_BOUNDING_BOX` gives the box each element occupies. The centre of mass is a
+different number and nothing reports it. `CENTER_ROOM_TAGS` computes a room centroid
+internally, for tag placement, and does not hand it back.
+
+### G-19 Calculate perimeter
+
+Area, volume and length are all covered - `REPORT_AREAS`, `MEASURE_ELEMENT_VOLUME`,
+`MEASURE_ELEMENT_LENGTHS`. Perimeter is not. It appears inside
+`REPORT_DUCT_WEIGHT` and `MEASURE_RUN_QUANTITIES` as sheet-metal arithmetic, never
+as a room or floor perimeter anybody can ask for.
+
+### G-20 Refresh view
+
+Nothing regenerates the document or refreshes the active view as a job of its own.
+`Regenerate` is called INSIDE several write fragments where their own work needs it,
+which is correct and is not the same thing.
+
+### G-21 Detect degenerate lines
+
+`FIND_OVERLAPPING_LINES` finds lines drawn on top of each other. A DEGENERATE line -
+zero length, or so short it is an accident - is a different defect and nothing looks
+for it.
+
+## THERE, BUT IN TWO STEPS
+
+### G-22 Copy or move to another level
+
+**Copy to upper level, copy to lower level, move to another level.** Both halves
+exist and neither does the whole job: `COPY_ELEMENTS` and `MOVE_ELEMENTS` shift by an
+offset without touching the level, `SET_ELEMENT_LEVEL` reassigns the level
+*"without moving them"*, `SET_WALL_CONSTRAINTS` does the same for walls.
+
+So it is offset-then-reassign, and getting the Z offset right means reading both
+levels' project elevations first. That is exactly the arithmetic `CREATE_LEVEL` warns
+about, and it is being left to whoever composes the two.
+
+### G-23 Export coordinates
+
+`ASSIGN_LOCATION_DATA` writes each element's position onto its own parameters, then
+`EXPORT_PARAMETERS_TO_CSV` gets them out. It works, and it **changes the model to
+answer a read-only question** - every element gets written to, on a job that was
+only ever asking where things are.
+
+`REPORT_LOCATION` already has the numbers and no fragment exports them.
+
+## NOT A GAP - REVIT WILL NOT ALLOW IT
+
+### G-24 Assign category
+
+**An element's category cannot be changed in Revit**, by the API or by hand. A door
+is a door. Nothing can be written here and the row exists so nobody plans it.
+
+`CHECK_CATEGORY_MISMATCH` is the honest answer to the underlying complaint - it finds
+things modelled in the wrong category so they can be rebuilt in the right one.
