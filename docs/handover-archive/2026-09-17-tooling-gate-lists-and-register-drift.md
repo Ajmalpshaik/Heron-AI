@@ -177,7 +177,30 @@ stay written down instead. **No check was moved and none was deleted.** Giving s
 step would *add* coverage rather than move it, and is worth doing; it is not done here because it
 is a workflow edit for a benefit nobody is currently missing.
 
-## 5. What this sitting did not do
+## 5. A stale count no gate can catch, and why the gate is right anyway
+
+`.claude/skills/heron-ship/SKILL.md` says **"all 163 suites then pass"** twice, measured
+2026-09-12. Derived today:
+
+```bash
+ls tests/test_*.py | wc -l      # 199
+```
+
+Thirty-six suites have been added since. **`check-docs` cannot see it**, and that is not a hole to
+plug: its pattern is `(\d+)\s+test\s+suites\b`, deliberately narrow, and `163 suites` does not match
+it.
+
+**Widening it to `(\d+)\s+suites\b` would be wrong.** Twenty places in the repository state a
+number of suites and most are legitimate subsets or historical records — `17 suites` in
+`tools/README.md`, `41 suites` in `tests/README.md`, `99 suites` in a `NEEDS-CHECKING` row about a
+day that has passed. A gate that fired on all of those would teach its reader to skim, which is the
+failure it exists to prevent. The narrow pattern catches the one sentence that claims the TOTAL,
+and it should stay narrow.
+
+**So this one is fixed by hand or not at all.** Left for whoever owns `.claude/skills/` — it was not
+edited here, which is also why the numbers in this note are commands rather than figures.
+
+## 6. What this sitting did not do
 
 * **Nothing was applied to the registers.** §3 is handover, not an edit. Other sessions were live
   in the same tree.
@@ -190,7 +213,7 @@ is a workflow edit for a benefit nobody is currently missing.
 * **No gate was widened and no known-failure list was edited.** The list in `gates.yml`'s `tests`
   job is exactly as it was.
 
-## 6. Re-derive every number above
+## 7. Re-derive every number above
 
 ```bash
 python tools/open-defects.py                       # the ids, not the count
