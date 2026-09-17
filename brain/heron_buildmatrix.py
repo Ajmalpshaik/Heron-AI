@@ -93,6 +93,30 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import heron_dotnet as NET                                     # noqa: E402
+# For repo_relative() and nothing else. Every path this module names in a
+# refusal can be handed in by the caller - `golden` and `props` are both
+# arguments - and `os.path.relpath` RAISES on Windows across drives rather
+# than returning something merely useless. It is called while WORDING A
+# REFUSAL, so the crash replaces the message: the reader is told nothing at
+# all where they were about to be told exactly what to do.
+#
+# THIS IS THE FOURTH TIME. heron_authoring, heron_tag and heron_context each
+# carry a comment about the same defect, and heron_tag's records that the
+# first two were byte-identical copies of one another, bug included - all
+# three fixed on 2026-09-15.
+#
+# THIS MODULE WAS WRITTEN TWO DAYS LATER AND ARRIVED WITH IT ANYWAY (PR #171,
+# 2026-09-17), which is the part worth keeping. The lesson had been learnt,
+# written down three times, and did not reach the next file: nothing in the
+# repository could refuse the spelling, because in most places it is correct.
+# The only reason this one was caught within hours is that
+# tests/test_buildmatrix.py hands in a temp path and somebody ran it on
+# Windows - on Linux /tmp and the checkout share a mount and it passes
+# whatever the code says, so CI was green. tools/check-gaps.py named it.
+#
+# heron_fragment owns the one answer; a fourth private copy would be the
+# actual mistake.
+import heron_fragment as FRAG                                  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -239,8 +263,7 @@ def regression(golden=None, update=False, releases=None, props=None):
                 "why": "%s names no release, so there is no matrix to "
                        "compare. An empty matrix agrees with every baseline "
                        "there is, which is the one answer that must never be "
-                       "reported as a pass." % os.path.relpath(props or PROPS,
-                                                               ROOT)}
+                       "reported as a pass." % FRAG.repo_relative(props or PROPS)}
 
     recorded, problem = _read(where)
     if problem == "NOT_A_GOLDEN":
@@ -256,7 +279,7 @@ def regression(golden=None, update=False, releases=None, props=None):
                 "why": "there is no baseline at %s to compare against. Record "
                        "the matrix as it stands with --update, having first "
                        "satisfied yourself that what it is now is what it "
-                       "should be." % os.path.relpath(where, ROOT)}
+                       "should be." % FRAG.repo_relative(where)}
 
     verdict = (compare(recorded, now) if recorded is not None
                else {"same": [], "changed": [], "added": sorted(now["releases"]),
@@ -315,7 +338,7 @@ def regression(golden=None, update=False, releases=None, props=None):
             "the build matrix no longer matches %s: %s. If that was "
             "deliberate, --update records it; if it was not, a release has "
             "moved under the add-in."
-            % (os.path.relpath(where, ROOT), "; ".join(parts)))
+            % (FRAG.repo_relative(where), "; ".join(parts)))
         return result
 
     result["why"] = ("%d release(s) match the recorded matrix in every field."
@@ -336,7 +359,7 @@ def main(argv):
         return 2
 
     w("\nTHE BUILD MATRIX   %d release(s) against %s\n"
-      % (out["of"], os.path.relpath(out["golden"], ROOT)))
+      % (out["of"], FRAG.repo_relative(out["golden"])))
     w("%s\n" % ("=" * 62))
     for release in sorted(out["matrix"]["releases"]):
         one = out["matrix"]["releases"][release]

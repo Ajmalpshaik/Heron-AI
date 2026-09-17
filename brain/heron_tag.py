@@ -75,7 +75,29 @@ NOT_A_PERSON = PRO.NOT_A_PERSON
 A_COMMIT = re.compile(r"^[0-9a-f]{7,40}$")
 
 WORKFLOW = os.path.join(ROOT, ".github", "workflows", "gates.yml")
-RUNS = re.compile(r"run:\s*python\s+tools/(check-[a-z-]+)\.py")
+
+# ANCHORED ON `python`, NOT ON `run:`, AND THE DIFFERENCE COST THREE GATES.
+#
+# Until 2026-09-17 this read `run:\s*python\s+tools/(check-[a-z-]+)\.py`, which
+# only sees a step written as a ONE-LINER. Three of the eleven checkers CI runs
+# are written as `run: |` blocks instead - check-routing and check-intrusion
+# because they need `mkdir -p "$HERON_KNOWLEDGE"` first, check-compile because
+# it captures a log and then refuses a SKIPPED release. So they were invisible
+# here, and a release could be cut with `check-compile` never reported at all.
+#
+# NOBODY DECIDED THAT. It was a property of how somebody indented YAML, against
+# a docstring promising the opposite - "a fifth gate added to CI becomes
+# required here with no edit". heron_qa.required(), reading the SAME file for
+# the change gate, saw all eleven, so the two gates this repository runs
+# disagreed about what CI does and nothing compared them. tests/test_tag.py
+# now does.
+#
+# THE LOOSER MATCH ERRS IN THE SAFE DIRECTION, which is why it is loose. Text
+# in this file that merely LOOKS like an invocation - a comment saying
+# `python tools/check-something.py` - becomes a required gate, and a required
+# gate nobody reports REFUSES the release. Missing one is the direction that
+# ships.
+RUNS = re.compile(r"python\s+tools/(check-[a-z-]+)\.py")
 
 A_RELEASE_CARRIES = (
     ("version", "the number a person will quote when something breaks"),
@@ -115,6 +137,9 @@ def required_gates(workflow=None):
     Read rather than typed so a fifth gate added to CI becomes required
     here with no edit. Returns [] when the file cannot be read, and the
     caller REFUSES on that rather than falling back to a guess.
+
+    "Actually runs" means every one of them, however its step is written -
+    see RUNS above for the three this missed for wanting a one-liner.
     """
     path = workflow or WORKFLOW
     try:

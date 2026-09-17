@@ -28,12 +28,41 @@ WHAT IT PROVES
 
   5. IT COMPILES NOTHING AND EDITS NOTHING BUT THE BASELINE.
 
-  6. THE LIVE MATRIX AGREES WITH HERON-DEV-NET-006's OWN TABLES. Two
+  6. A REFUSAL ABOUT A PATH OUTSIDE THE CHECKOUT STILL REACHES THE READER.
+     This one was a real crash, and it was invisible for months - see
+     below.
+
+  7. THE LIVE MATRIX AGREES WITH HERON-DEV-NET-006's OWN TABLES. Two
      derivations written separately from one props file; if they ever
      disagree, one of them is wrong and this says so before a build does.
 
-  7. EVERY FAILURE THE CONTRACT DECLARES IS NAMED AND REACHED, read from
+  8. EVERY FAILURE THE CONTRACT DECLARES IS NAMED AND REACHED, read from
      the contract rather than typed here (PROPOSALS F27).
+
+WHY 6 IS WRITTEN TWICE, AS BEHAVIOUR AND AS TEXT
+--------------------------------------------------
+Every path this module names in a refusal arrives as an ARGUMENT - `golden`
+and `props` both - and until 2026-09-17 it wrote them with
+`os.path.relpath(x, ROOT)`. On Windows that RAISES across drives, and it is
+called while wording the refusal, so the crash replaced the message.
+
+This suite reached it on the first line of section 2 from the hour it was
+written (PR #171, 2026-09-17), and the module was written in the same change
+- two days AFTER heron_authoring, heron_tag and heron_context were all three
+fixed for it. A lesson written down three times did not reach the next file.
+
+It was invisible rather than ignored: `tempfile.mkdtemp()` lands on C: while
+a checkout on D: is another drive, and on Linux it is the same filesystem, so
+the only machines running this passed whatever the code said. CI was green -
+`tools/check-gaps.py` is what named it, on Windows, as its ONE UNFINISHED
+item.
+
+So the behavioural check below cannot fail on Linux however broken the
+module is, and a check that cannot fail is not a check. The check on the
+module's own TEXT is the one that holds everywhere: it fails on the old
+spelling on any machine, which is the property that makes it a gate rather
+than a record. Same argument as tests/test_change_reporting.py, which tests
+a field name as text for the same reason.
 """
 
 import io
@@ -167,7 +196,35 @@ def main():
               "and it probes no SDK - what a MACHINE has changes between "
               "machines and must never reach a committed baseline")
 
-        print("\n6. it agrees with HERON-DEV-NET-006's own tables")
+        print("\n6. a refusal about a path outside the checkout still arrives")
+        # THE BEHAVIOUR. `where` is a system temp folder, which on Windows is
+        # on C: while a checkout may be on D:. Before the fix this raised
+        # ValueError out of os.path.relpath INSTEAD of refusing, so the reader
+        # got a traceback where the sentence telling them what to do should
+        # have been. It cannot fail on Linux - see the header.
+        away = os.path.join(where, "not-here", "matrix.json")
+        out = RGR.regression(golden=away, props=props)
+        reached.add(out.get("refused"))
+        check(out.get("refused") == "NO_GOLDEN",
+              "a baseline on another drive is REFUSED, not a crash")
+        check("matrix.json" in (out.get("why") or ""),
+              "and the refusal still names the file it could not find")
+
+        # THE TEXT, and this is the half that holds on every machine.
+        #
+        # COMMENTS ARE STRIPPED FIRST, and only here. The two checks above
+        # deliberately read the raw text - a module that so much as MENTIONS
+        # subprocess wants looking at - but this one must not, because the
+        # module is now required to carry a comment naming the very function
+        # it may no longer call. Reading the raw text would fail on the
+        # explanation of the fix, which is the gate arguing with itself.
+        code = "\n".join(line for line in logic.splitlines()
+                         if not line.lstrip().startswith("#"))
+        check("os.path.relpath" not in code,
+              "and no line of its code writes a path with os.path.relpath - "
+              "FRAG.repo_relative is the repository's one answer to it")
+
+        print("\n7. it agrees with HERON-DEV-NET-006's own tables")
         real = RGR.matrix()
         check(sorted(real["releases"]) == sorted(NET.RELEASES),
               "the props and RELEASES name the same releases")
@@ -179,7 +236,7 @@ def main():
             check(one["dotnetMajor"] == NET.MINIMUM_DOTNET_MAJOR.get(release),
                   "%s .NET major: both derivations agree" % release)
 
-        print("\n7. every failure the contract declares is reached")
+        print("\n8. every failure the contract declares is reached")
         io.open(golden, "w", encoding="utf-8").write("not json at all")
         out = run()
         check(out["refused"] == "NOT_A_GOLDEN",

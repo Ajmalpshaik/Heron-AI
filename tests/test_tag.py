@@ -13,9 +13,15 @@ Releases - the gate list is read, and a gate nobody ran is not green.
 
 WHAT IT PROVES
   1. THE GATE LIST IS READ OUT OF .github/workflows/gates.yml, and it is
-     the four that file actually runs - matched against the file, not
-     against a list that looks like it. A workflow that cannot be read
+     EVERY checker that file actually runs, however its step is written -
+     matched against the file, not against a list that looks like it. The
+     change gate reads the same file, and the two answers are compared
+     rather than both being trusted. A workflow that cannot be read
      REFUSES rather than falling back to a guess.
+
+     (This line said "the four" while the list was eight, which is the
+     drift the repository already knows by name: a prose total is a cache
+     with no invalidation. It names no number now.)
 
   2. "NOT REPORTED" COUNTS AS RED. A gate missing from the map, one set
      to false, and one set to a string are all red - a gate nobody ran
@@ -48,6 +54,9 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 import heron_tag as REL                                        # noqa: E402
 import heron_promotion as PRO                                  # noqa: E402
 import heron_contract as CON                                   # noqa: E402
+# The OTHER reader of .github/workflows/gates.yml. Imported here only so the
+# two can be compared - see check 1.
+import heron_qa as QA                                          # noqa: E402
 
 FAILURES = []
 
@@ -95,14 +104,39 @@ def main():
     # nowhere; wiring them made them release-blocking in the same stroke, which
     # is the promise that docstring makes. The list is still pinned here so that
     # a gate LEAVING CI is a test failure rather than a quietly easier release.
+    #
+    # THEN FROM EIGHT TO ELEVEN, LATER THE SAME DAY, AND THAT GROWTH IS A
+    # DEFECT BEING CLOSED RATHER THAN THE DESIGN WORKING. The other three had
+    # ALWAYS been run by CI. They were missing because `RUNS` was anchored on
+    # `run:` and their steps are `run: |` blocks - check-routing and
+    # check-intrusion need a `mkdir` first, check-compile captures a log and
+    # then refuses a SKIPPED release. So the release gate list was decided by
+    # YAML indentation, and `check-compile` - whether the add-in compiles at
+    # all - was not release-blocking. See heron_tag.RUNS.
     check(GATES == ["check-docs", "check-metadata", "check-structure",
                     "check-signatures", "check-licence", "check-narrow-errors",
-                    "check-package", "check-fragments-compile"],
-          "it is the eight CI runs, in the order it runs them: %s"
+                    "check-package", "check-routing", "check-intrusion",
+                    "check-compile", "check-fragments-compile"],
+          "it is the eleven CI runs, in the order it runs them: %s"
           % ", ".join(GATES))
     for name in GATES:
         check("python tools/%s.py" % name in workflow,
               "%s is in the workflow, as a line it actually runs" % name)
+
+    # AND THE TWO READERS OF THIS ONE FILE AGREE.
+    #
+    # heron_qa.required() reads the SAME gates.yml for the CHANGE gate and
+    # heron_tag.required_gates() reads it for the RELEASE gate, with a regex
+    # each. Nothing compared them, so from the day check-routing was wired
+    # they disagreed by three and both went on calling their answer "what CI
+    # runs". A change could be refused for a gate a release did not need.
+    #
+    # Compared rather than pinned, because pinning is what let it drift: two
+    # lists typed in two files agree until one is edited.
+    qa_gates = [os.path.basename(one)[:-len(".py")] for one in QA.required()
+                if os.path.basename(one).startswith("check-")]
+    check(qa_gates == GATES,
+          "the change gate and the release gate read gates.yml the same way")
     # A LIST GUESSED HERE would be a release cut against this file's
     # opinion rather than against what CI runs.
     check(REL.required_gates("/nowhere/gates.yml") == [],

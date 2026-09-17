@@ -30,6 +30,7 @@ this folder exists to remove.
 
 | Date | Sitting |
 |---|---|
+| 2026-09-17 | [The release gate list was decided by YAML indentation, and a lesson written down three times did not reach the next file](2026-09-17-tooling-gate-lists-and-register-drift.md) |
 | 2026-09-17 | [The agent count that disagreed with itself, and the fourteen that are not waiting on a writer](2026-09-17-agents-the-count-that-disagreed-with-itself.md) |
 | 2026-09-17 | [The banner names the model, and keeps moving while Revit cannot](2026-09-17-the-banner-names-the-model-and-keeps-moving-while-revit.md) |
 | 2026-09-12 | [HANDOVER — 2026-09-12 (the SECOND SITTING of the improvement-gate track): a Windows-only failure nobody knew about, the sources re-read, and the housekeeping ledger retired](2026-09-12-the-second-sitting-of-the-improvement-gate-track-a-windows-o.md) |
