@@ -2167,6 +2167,25 @@ def revit_worksets() -> str:
     # Most of a model genuinely sits on no workset - a view, a level, a family
     # symbol - so the number is large and normal. Large and normal and MISSING
     # is what makes a reader stop trusting the rows above it.
+    #
+    # THERE ARE TWO WAYS TO BE ABSENT AND THEY ARE NOT THE SAME THING, which
+    # the first version of this fix got wrong and only a real model showed.
+    #
+    # `onNoWorkset` is an element naming NO workset. On a real model that is
+    # usually ZERO - so this printed nothing, and looked like the fix had not
+    # worked at all.
+    #
+    # `onOtherWorksets` is the actual gap: elements on a VIEW, FAMILY or
+    # STANDARD workset. The list shows USER worksets, because those are the
+    # ones a modeller made - but every view, family symbol and settings element
+    # sits on one of the others. On Project1 work_ajmal.al that was 3,338 of
+    # 3,542, and the answer named 204 of them.
+    #
+    # Reported as ONE line rather than listed: a row per view is noise.
+    on_other = reply.get("onOtherWorksets", 0)
+    if on_other:
+        lines.append("  %-32s %12s   view / family / standard worksets"
+                     % ("(not listed above)", "{:,}".format(on_other)))
     on_none = reply.get("onNoWorkset", 0)
     if on_none:
         lines.append("  %-32s %12s   not on any workset"

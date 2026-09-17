@@ -94,7 +94,7 @@ namespace Heron.Revit.Addin
                 if (instance == null) continue;
 
                 var isLink = IsLinked(instance);
-                var name = SafeName(instance);
+                var name = FileNameOf(doc, instance);
                 var row = Json.Obj(
                     Json.Str("name", name),
                     Json.Bool("linked", isLink),
@@ -182,6 +182,45 @@ namespace Heron.Revit.Addin
         {
             try { return instance.IsLinked; }
             catch (Autodesk.Revit.Exceptions.ApplicationException) { return false; }
+        }
+
+        /// <summary>
+        /// The CAD file this instance came from, as a modeller would name it.
+        ///
+        /// ASKED OF THE TYPE, NOT THE INSTANCE, and that is the whole fix.
+        /// `ImportInstance.Name` describes where the thing SITS - against
+        /// Project1 work_ajmal.al on 2026-09-18 it read `location <Not
+        /// Shared>`, which is a correct answer to a question nobody asked. The
+        /// filename lives on the CADLinkType, which is also what Revit's own
+        /// Manage Links dialog shows.
+        ///
+        /// Found by running the agent rather than by reading it: the
+        /// linked-versus-imported verdict was right, and the label beside it
+        /// was useless. A right answer nobody can act on is half an answer.
+        ///
+        /// Falls back to the instance's own name rather than to nothing, so a
+        /// type that will not answer still leaves something to go on.
+        /// </summary>
+        private static string FileNameOf(Document doc, ImportInstance instance)
+        {
+            try
+            {
+                var id = instance.GetTypeId();
+                if (id != null && id != ElementId.InvalidElementId)
+                {
+                    var type = doc.GetElement(id);
+                    if (type != null)
+                    {
+                        var named = SafeName(type);
+                        if (named != "(unnamed)") return named;
+                    }
+                }
+            }
+            catch (Autodesk.Revit.Exceptions.ApplicationException)
+            {
+                // fall through to the instance
+            }
+            return SafeName(instance);
         }
 
         /// <summary>

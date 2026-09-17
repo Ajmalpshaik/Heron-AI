@@ -177,11 +177,13 @@ namespace Heron.Revit.Addin
 
             var rows = new List<string>();
             var closed = 0;
+            var shown = 0;
             foreach (var workset in worksets)
             {
                 int held;
                 var key = KeyOf(workset);
                 if (!onWorkset.TryGetValue(key, out held)) held = 0;
+                shown += held;
                 var open = IsOpen(workset);
                 if (!open) closed++;
 
@@ -190,6 +192,28 @@ namespace Heron.Revit.Addin
                     Json.Num("elements", held),
                     Json.Bool("open", open)));
             }
+
+            // THE ELEMENTS ON A WORKSET THIS DOES NOT LIST, AND THE REASON IT
+            // DOES NOT LIST THEM.
+            //
+            // Found by running it: against Project1 work_ajmal.al the answer
+            // read `Workset1 202` and `Shared Levels and Grids 2` against
+            // 3,542 placed elements. 204 named, 3,338 missing, and
+            // `onNoWorkset` was ZERO - so every element HAD a workset and the
+            // rows above simply were not where they lived.
+            //
+            // The collector asks for WorksetKind.UserWorkset, which is the
+            // right list to show: a modeller's worksets are the user ones.
+            // But Revit also keeps VIEW, FAMILY and STANDARD worksets, and
+            // every view, family symbol and settings element sits on one of
+            // those. On a real model they hold most of the document.
+            //
+            // So they are COUNTED AND NAMED as a single line rather than
+            // listed - one row per view would be noise - and the total now
+            // accounts for itself. A list whose parts do not add up to its
+            // own total teaches the reader to distrust the parts.
+            var onOtherWorksets = placed - onNoWorkset - shown;
+            if (onOtherWorksets < 0) onOtherWorksets = 0;
 
             var ownerRows = new List<string>();
             foreach (var pair in owners)
@@ -206,6 +230,7 @@ namespace Heron.Revit.Addin
                 Json.Num("closedWorksets", closed),
                 Json.Num("placedElements", placed),
                 Json.Num("onNoWorkset", onNoWorkset),
+                Json.Num("onOtherWorksets", onOtherWorksets),
                 Json.Bool("workshared", true),
                 Json.Num("ownershipSampled", sampleIds.Count),
                 Json.Num("ownershipOf", placed),
