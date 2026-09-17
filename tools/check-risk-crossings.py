@@ -62,11 +62,90 @@ what a user would really have got, not a simulation of one.
 """
 
 import argparse
+import hashlib
 import os
+import pathlib
+import sqlite3
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+sys.path.insert(0, os.path.join(ROOT, "brain"))
+
+
+# WHICH INDEX THIS RAN AGAINST - because two runs of this tool were not
+# comparable and nothing said so.
+#
+# Measured 2026-09-17: three sweeps minutes apart, same code, same machine,
+# returned 7, 9 and 8 crossings, and two of those had byte-identical inputs.
+# FRAGMENT-ISSUES row 116 carries the diagnosis. The short version is that the
+# count is not a property of the ranker:
+#
+#   * `how many pipes are there` is answered by the IDENTITY route, not by
+#     ranking - COUNT_ELEMENTS declares it, which is how row 116 fixed it. A
+#     run where that identity MISSES falls through to the ranked search, and
+#     the ranked search is what answers a question with a write.
+#   * `identities` and `fragment_text` are DELETEd and rebuilt wholesale by
+#     heron_search.index(), so what this tool measures depends on when that
+#     last ran and on which fragment tree ran it.
+#   * global.db is ONE file for every worktree on the machine. Another session
+#     re-indexing it moves this tool's answer with no commit in this repo.
+#
+# So a bare number from this tool is a sample. Printing the store's identity
+# next to the number is what makes two samples worth comparing - and if they
+# disagree while the fingerprint matches, the ranker really is the suspect.
+def _index_fingerprint():
+    """{path, md5, counts} for the store this sweep will actually read.
+
+    A failure to read it is REPORTED, never returned as a zero: a fingerprint
+    that silently reads as an empty store is the plausible-zero shape D-52
+    names, in the one place whose whole job is to make runs comparable.
+    """
+    import heron_scope as SCOPE
+
+    out = {}
+    try:
+        # One spelling. scope_path joins with os.sep while HERON_KNOWLEDGE
+        # arrives however the caller typed it, so the same file printed twice
+        # can read as two - which is the one thing this block exists to stop.
+        out["path"] = SCOPE.scope_path(SCOPE.GLOBAL).replace(os.sep, "/")
+    except ValueError as why:
+        return {"error": str(why)}
+
+    try:
+        with open(out["path"], "rb") as handle:
+            out["md5"] = hashlib.md5(handle.read()).hexdigest()
+    except (IOError, OSError) as why:
+        out["md5"] = "unreadable (%s)" % why
+        return out
+
+    counts = {}
+    try:
+        uri = pathlib.Path(out["path"]).as_uri() + "?mode=ro"
+        db = sqlite3.connect(uri, uri=True)
+        try:
+            for table in ("identities", "fragments", "vectors", "utterances"):
+                counts[table] = db.execute(
+                    "SELECT COUNT(*) FROM %s" % table).fetchone()[0]
+        finally:
+            db.close()
+    except Exception as why:                                   # noqa: BLE001
+        # Named, not swallowed. Whatever went wrong here, the reader must not
+        # be handed a row of zeroes that looks like a fresh store.
+        out["counts_error"] = "%s: %s" % (type(why).__name__, why)
+        return out
+
+    out["counts"] = counts
+    return out
+
+
+def _md5(path):
+    """The store's hash again, for the did-this-run-write-it check."""
+    try:
+        with open(path, "rb") as handle:
+            return hashlib.md5(handle.read()).hexdigest()
+    except (IOError, OSError):
+        return None
 
 
 # WHAT ACTUALLY CHANGES A MODEL, taken from docs/12 s2 rather than from "not
@@ -134,6 +213,27 @@ QUESTIONS = [
     "isolate all the pipes",
     "show me just the ducts",
     "hide everything except the walls",
+
+    # THE SENTENCE THIS FILE'S OWN HEADER IS ABOUT, AND IT WAS NEVER ASKED
+    # HERE. FRAGMENT-ISSUES row 109 measured it by hand on 2026-09-16 -
+    # SET_MEP_SLOPE, a MODIFY that re-slopes pipework, 2.4 ranks clear, with
+    # ISOLATE_ELEMENTS fourth. It is quoted at the top of this docstring as
+    # the reason the tool exists and then does not appear in the list below
+    # it, so every sweep since has measured 45 questions that do not include
+    # the one that started this. Added 2026-09-17; the docstring asks for
+    # exactly this ("add to this list whenever a real session produces one").
+    #
+    # IT MAY NOT REGISTER AS A CROSSING, AND THAT IS WORTH WATCHING RATHER
+    # THAN TUNING. The discriminator below is "was a READ beaten", and the
+    # right answer here is ISOLATE_ELEMENTS - an EXECUTE, a view change,
+    # which `reads` deliberately excludes along with the writes. So a sweep
+    # can report this sentence under "reached a write with nothing safe
+    # close" while row 109 calls it the clearest crossing found by hand.
+    # If that is what happens, the honest reading is that the DISCRIMINATOR
+    # is narrower than the defect, not that the sentence is fine - and the
+    # fix is a question for the owner, not a quiet widening of `reads`.
+    "isolate all the pipes in the current view but leave out the "
+    "condensate drain system",
 ]
 
 
@@ -150,6 +250,12 @@ def main():
         return 0
 
     import heron_brain as brain
+
+    # READ IT BEFORE ASKING ANYTHING. This tool is not read-only about the
+    # store - measured 2026-09-17, one sweep against a private copy changed
+    # that copy's md5 - so a fingerprint taken afterwards would describe a
+    # store this run had already moved.
+    index = _index_fingerprint()
 
     crossings, allowed, unresolved = [], [], []
 
@@ -185,6 +291,25 @@ def main():
 
     print("Revit %s   questions asked: %d" % (args.revit, len(QUESTIONS)))
     print("")
+    print("THE INDEX THIS RAN AGAINST - compare it before comparing counts:")
+    if index.get("error"):
+        print("  no store: %s" % index["error"])
+    else:
+        print("  store    %s" % index["path"])
+        print("  md5      %s" % index["md5"])
+        if index.get("counts_error"):
+            print("  counts   COULD NOT BE READ - %s" % index["counts_error"])
+            print("           Not reported as zero on purpose: a store that")
+            print("           cannot be read is not an empty one (D-52).")
+        else:
+            print("  rows     %s" % ", ".join(
+                "%s %d" % (name, index["counts"][name])
+                for name in sorted(index.get("counts") or {})))
+        print("  Two runs whose numbers differ while THIS block matches are a")
+        print("  question about the ranker. Two whose numbers differ and whose")
+        print("  block differs are a question about the index, and that is the")
+        print("  way round it has been every time so far - see row 116.")
+    print("")
     print("A QUESTION ANSWERED BY SOMETHING THAT WRITES, WITH A READ BEATEN (%d):"
           % len(crossings))
     if not crossings:
@@ -211,6 +336,24 @@ def main():
         print("NOT RESOLVED (%d):" % len(unresolved))
         for question, why in unresolved:
             print("  %-42s %s" % (question[:42], why))
+
+    # DID ASKING CHANGE THE THING ASKED? This tool's docstring said "it reads
+    # the store" until 2026-09-17, when a sweep against a private copy that
+    # nothing else on the machine could reach came back with a different md5.
+    # Saying so every run is cheaper than somebody re-discovering it: the next
+    # reader comparing two fingerprints needs to know that RUNNING THIS is one
+    # of the things that can move them.
+    if index.get("path") and index.get("md5"):
+        after = _md5(index["path"])
+        if after and after != index["md5"]:
+            print("")
+            print("THE STORE CHANGED WHILE THIS RAN:")
+            print("  before   %s" % index["md5"])
+            print("  after    %s" % after)
+            print("  Asking moved the index. That is this tool, another")
+            print("  session, or both - global.db is ONE file for every")
+            print("  worktree on the machine. It is why a count from here is a")
+            print("  sample rather than a measurement.")
 
     print("")
     print("Exit 0 whatever this finds. A crossing is a judgement a person")

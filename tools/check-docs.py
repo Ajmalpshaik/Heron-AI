@@ -381,6 +381,27 @@ else:
          r'(\d+)\s+test\s+suites\b', 'test suites'),
         (os.path.join(root, 'tools'), '*.py',
          r"(\d+)\s+tools\s+mentions\b", 'tools'),
+        # A TOTAL CLAIMED WITHOUT THE WORD "TEST", which is how the row above
+        # missed two of them for five days. heron-ship said "all 163 suites
+        # then pass" and "run the full 163" while there were 199 - measured
+        # 2026-09-12, read 2026-09-17, and the rule it broke was four lines up
+        # its own page.
+        #
+        # ANCHORED ON "ALL"/"EVERY"/"THE FULL" RATHER THAN ON ANY NUMBER
+        # BEFORE "SUITES", and that is the whole design. The broad pattern was
+        # measured first: `(\d+)\s+suites` fires on 24 lines in this
+        # repository and is RIGHT ABOUT NONE OF THEM. Every one is a record, a
+        # quotation or a dated measurement - tests/README.md's "'41 suites'
+        # and what check-gaps ran are two different numbers by design",
+        # HANDOVER's "the test row said 41 suites when it", NEEDS-CHECKING's
+        # "run, 188 suites, exit 1". A release gate that fails on two dozen
+        # correct sentences stops every merge until somebody rewrites prose
+        # that was never wrong, and teaches its reader to skim on the way.
+        #
+        # "All N suites" cannot be a subset. That is the sentence that rots.
+        (os.path.join(root, 'tests'), 'test_*.py',
+         r'\b(?:all|every|the full|run the full)\s+(\d+)\s+(?:test\s+)?suites?\b',
+         'suites claimed as a TOTAL'),
     ]
     for folder, pattern, claim, label in countable:
         real = len(glob.glob(os.path.join(folder, pattern)))
@@ -391,6 +412,14 @@ else:
                 if HISTORY.search(line):
                     continue
                 for m in re.finditer(claim, line):
+                    # A QUOTED TOTAL IS A CITATION, NOT A CLAIM. This file and
+                    # the registers routinely report what a sentence USED to
+                    # say - `heron-ship said "all 163 suites"` is the record
+                    # of a fix, and failing on it would make describing a
+                    # drift impossible without repeating it. An odd number of
+                    # quotes before the match means it opens inside one.
+                    if line.count('"', 0, m.start()) % 2 == 1:
+                        continue
                     if int(m.group(1)) != real:
                         drift.append((p, i, '%s %s' % (m.group(1), label),
                                       '%d (ls %s)' % (real, pattern)))
@@ -536,13 +565,22 @@ else:
 # of decisions, and no gate able to notice.
 #
 # The check lives HERE rather than in .github/workflows/gates.yml, where the
-# other three generators are diffed, for a reason worth writing down: the
-# repository's gh token carries `repo` but not `workflow`, so a session cannot
-# push a change to that file at all. A gate nobody can install is not a gate.
-# check-docs.py already runs inside "The gates that must pass", so this rides
-# in with it. If the workflow is ever edited by hand, moving this beside the
-# other generators would be tidier and would change nothing about what it
-# catches.
+# other three generators are diffed. THE REASON IT GAVE HAS EXPIRED, and the
+# reason it stays has not.
+#
+# What it used to say: "the repository's gh token carries `repo` but not
+# `workflow`, so a session cannot push a change to that file at all." That was
+# true when it was written and is not true now - the token carries `workflow`,
+# and gates.yml has been edited by sessions several times since, PR #173 among
+# them. A reader believing the old sentence would route around a constraint
+# that is gone, which is the expensive direction.
+#
+# WHY IT STILL LIVES HERE. Nothing in gates.yml diffs the decision summary -
+# the `generated` job covers the agent registry and the two HTML generators,
+# not this - so deleting this section deletes the check. check-docs.py already
+# runs inside "The gates that must pass", and it also runs locally, where the
+# CI job does not. Giving it its own step would be tidier and would ADD
+# coverage rather than move it; taking it out of here would subtract.
 out("\n=== 8. THE GENERATED DECISION TABLE ===\n")
 _gen = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                     'generate-decision-summary.py')
@@ -563,14 +601,21 @@ else:
 # written because thirteen fragments the owner had already signed were sitting
 # at DRAFT, so the next proving round offered them to him to prove AGAIN - the
 # complaint that started that session. A gate nobody runs is the same as no
-# gate, and it stayed unrun for the reason section 8 already records: the
-# repository's gh token carries `repo` but not `workflow`, so a session cannot
-# add a step to .github/workflows/gates.yml at all. A commit that adds that
-# step properly exists on `ci/run-check-signatures` and CANNOT BE PUSHED.
+# gate, and it stayed unrun because a session was believed unable to push a
+# change to .github/workflows/gates.yml at all.
 #
-# So it rides here, where "The gates that must pass" already runs this file.
-# It is NOT a documentation check and does not pretend to be. If the workflow
-# is ever edited by hand, give it its own step and delete this section.
+# THAT HAS SINCE HAPPENED, and this section's own closing instruction used to
+# read "if the workflow is ever edited by hand, give it its own step and
+# delete this section". Half of it is done: gates.yml HAS a check-signatures
+# step, and `ci/run-check-signatures` - the branch this said could not be
+# pushed - is gone from origin, its work landed.
+#
+# THE OTHER HALF IS NOT DONE, DELIBERATELY. Deleting this would leave
+# check-signatures running in CI and nowhere else, and the pre-push routine
+# the heron-ship skill describes runs check-docs.py on a laptop, before a
+# pull request exists. A stale signature is worth catching there rather than
+# ten minutes later. It costs about a second and it is NOT a documentation
+# check and does not pretend to be.
 out("\n=== 9. SIGNATURES NOT LEFT UNUSED ===\n")
 _sig = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                     'check-signatures.py')

@@ -115,6 +115,99 @@ namespace Heron.Revit.Addin
                                             Json.ReadString(request, "category"),
                                             Json.ReadString(request, "expectProject"));
 
+                // Levels and grids. HERON-REVIT-LVL-027, its own file for the
+                // same reason as the four above: everything else in the model
+                // hangs off these, and the three states that actually cost a
+                // day - two levels at one elevation, a level with nothing on
+                // it, names that sort out of order - are decided in one place
+                // a reviewer can read end to end. Read-only.
+                case "list_levels":
+                    return RevitLevels.List(app);
+
+                // Worksets, ownership and checkout. HERON-REVIT-WRK-014, and
+                // its own file because the row's last sentence - "ownership
+                // failure is a normal outcome" - decides the whole voice of
+                // the answer. Somebody else owning most of the model is the
+                // system working. Ownership is SAMPLED and the sample is
+                // stated, because asking the central model is one round trip
+                // per element on Revit's own thread. Read-only.
+                case "list_worksets":
+                    return RevitWorksets.List(app);
+
+                // Views, templates and what a view is showing THROUGH.
+                // HERON-REVIT-VIE-013. A count taken in a view has been
+                // through its template, discipline, detail level, filters and
+                // crop before anybody sees it - the other half of the
+                // argument list_phases makes. Read-only.
+                case "list_views":
+                    return RevitViews.List(app);
+
+                // Sheets, numbering, titleblocks and revisions.
+                // HERON-REVIT-SHT-029, which OWNS sheets - VIE-013's row
+                // claimed them too and the owner settled it on 2026-09-17.
+                // The sheets are the deliverable, and a numbered blank one is
+                // invisible in the Project Browser until it prints. Read-only.
+                case "list_sheets":
+                    return RevitSheets.List(app);
+
+                // Rooms, MEP spaces and areas. HERON-REVIT-RM-028. Rooms are
+                // the architect's and spaces are the engineer's, and they go
+                // out of step whenever a partition moves - so both are
+                // reported side by side. UNPLACED and NOT ENCLOSED are counted
+                // separately because they look identical in a schedule and are
+                // different jobs to fix. Read-only.
+                case "list_rooms":
+                    return RevitRooms.List(app);
+
+                // Schedules. HERON-REVIT-SCH-026 - "the way BIM people
+                // actually extract data", and the answer that leaves the
+                // office. A schedule is a FILTERED VIEW: its category, phase
+                // and filters each remove rows silently, so every row carries
+                // what the model holds in that category beside it. The two
+                // numbers together are the answer. Read-only; the ROWS are
+                // the export agent's job, at PUBLISH risk.
+                case "list_schedules":
+                    return RevitSchedules.List(app);
+
+                // Families, types and placement. HERON-REVIT-FAM-012, and the
+                // row's word "loading" is exactly what it will NOT do: a
+                // family carries its own materials and loading one overwrites
+                // the project's - six families once reset the pipe colour on a
+                // whole job silently, with no count moving. Types and
+                // instances are reported separately, because "how many of
+                // these are there" has two answers in Revit. Read-only.
+                case "list_families":
+                    return RevitFamilies.List(app);
+
+                // Export READINESS. HERON-REVIT-EXP-018, the one row here at
+                // PUBLISH risk - and nothing leaves the model. Once a file has
+                // left it has left: no undo, and somebody may already be
+                // building from it. So this answers "would an export of this be
+                // worth sending", which is the question nothing in Revit
+                // answers until the file is already written. The doing half
+                // needs a destination, an overwrite decision and a person who
+                // meant it, and those rails do not exist yet.
+                case "check_export":
+                    return RevitExport.Check(app);
+
+                // What has been brought in from outside. HERON-REVIT-IMP-019.
+                // LINKED and IMPORTED are counted separately because confusing
+                // them is the defect: an import is copied INTO the model and
+                // never leaves, bringing its layers, line patterns and text
+                // styles permanently - and deleting it does not remove them.
+                // The two look identical in the drawing area. Read-only.
+                case "list_imports":
+                    return RevitImports.List(app);
+
+                // Dimensions, tags, text and keynotes. HERON-REVIT-DIM-031.
+                // The thing it exists to find is an OVERRIDDEN dimension - one
+                // typed over with text, that says 2400 on a wall that is 2100,
+                // survives every model change, is checked by nobody because it
+                // looks correct, and gets built. Nothing in Revit lists them.
+                // Read-only.
+                case "list_annotation":
+                    return RevitAnnotation.List(app);
+
                 case "run_fragment_read":
                     return RevitFragment.Run(app, request);
 

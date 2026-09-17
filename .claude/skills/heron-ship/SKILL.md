@@ -17,12 +17,19 @@ than the change.**
 Adapted from `garrytan/gstack`'s `ship` ([33 §5.7](../../../docs/33-external-repository-research.md)),
 which does the same job for a web product: merge the base branch, run the tests, review the diff, bump
 the version. **Heron's version is different because Heron's failures are different** — six of its checks
-need a compiler or a knowledge store this container has not got, and three of its suites cannot run here
+need a compiler or a knowledge store this container has not got, and four of its suites cannot run here
 at all. Confusing any of those for a regression is the mistake this file prevents.
 
 Every number here was **measured on 2026-09-12**, not estimated. The previous set was measured on
 2026-09-09 and four of them had gone stale by the time anyone read them again — which is why the counts
 below are commands wherever a command can produce them.
+
+**And it happened a third time, to this file, while that sentence was sitting in it.** On 2026-09-17
+two of the counts below still read **163 suites** against a real 199, and one said **three** suites
+cannot run here where the table in §2 says four. A rule written down is not a rule kept: the drift
+this paragraph exists to warn about went on happening one line under the warning. Both totals are
+commands now, and the sentence to hold onto is the register's — **a prose total is a cache with no
+invalidation**.
 
 ---
 
@@ -121,9 +128,17 @@ is leaving unproven, and exits 3. **CI has an SDK and still proves all eight**, 
 list in `gates.yml` is unchanged and must stay that way.
 
 **Install them rather than excusing them.** On 2026-09-15 a session treated all three as unavoidable
-on Linux for weeks. They are not: the three commands above take a few minutes on a fresh container and
-**all 163 suites then pass**. None of them ever needed Windows or Revit. If a run reports these three
-and nothing else, the honest next step is to install and re-run, not to write "the known three".
+on Linux for weeks. They are not: the commands above take a few minutes on a fresh container and
+**every suite then passes**. None of them ever needed Windows or Revit. If a run reports only the four
+in that table, the honest next step is to install and re-run, not to write "the known three".
+
+> **This paragraph said "all 163 suites then pass" until 2026-09-17, when there were 199.** Measured
+> 2026-09-12 and left to rot for five days while thirty-six suites were added. The rule it broke is
+> four lines up this page — *derive the number, do not read a pass total here* — so the file was
+> telling its reader to do the one thing its own prose had stopped doing. **No total is typed here
+> now**, and `check-docs` cannot catch the next one: its pattern is `N test suites` and this said
+> `N suites`. Widening it would fire on twenty legitimate subset counts elsewhere, so it stays
+> narrow and this stays a sentence with no number in it.
 
 Two wrinkles worth not re-discovering:
 
@@ -136,8 +151,8 @@ Two wrinkles worth not re-discovering:
 
 **This is about your machine, not about CI.** `.github/workflows/gates.yml` leaves both out on
 purpose — they drag in native dependencies that break for reasons unrelated to this repository — and
-its `fixed` check **fails the build if a listed suite passes there**. So install locally, run the full
-163, and leave that list alone unless the runner itself changes.
+its `fixed` check **fails the build if a listed suite passes there**. So install locally, run every
+suite, and leave that list alone unless the runner itself changes.
 
 **Nothing else should fail on any machine.** `test_graph.py` and `test_reachable.py` were on this list
 until 2026-09-12, when both were fixed rather than excused — each had a fixture describing a repository

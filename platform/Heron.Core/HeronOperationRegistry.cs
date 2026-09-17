@@ -84,6 +84,67 @@ namespace Heron.Core
                 // what is grouped. Ungrouping would be a separate entry.
                 { "list_groups",        HeronRisk.Read },
 
+                // HERON-REVIT-LVL-027. Read, and the same note as the two
+                // above: the register's row is MODIFY because that column is
+                // the highest level the ROW can require. This one lists what
+                // the levels and grids are and what sits on them. Renaming a
+                // level, or moving its elevation - which drags every hosted
+                // element with it - would be a separate entry.
+                { "list_levels",        HeronRisk.Read },
+
+                // HERON-REVIT-WRK-014. Read. It lists the worksets and reads
+                // a bounded sample of ownership; it creates no workset, opens
+                // or closes none, borrows nothing and relinquishes nothing.
+                // Relinquishing somebody's borrowed element loses their
+                // unsynchronised work, so that will be its own entry at its
+                // own risk if it is ever written.
+                { "list_worksets",      HeronRisk.Read },
+
+                // HERON-REVIT-VIE-013 and HERON-REVIT-SHT-029. Read, same
+                // reasoning as the rest of this block. Applying a view
+                // template changes what everybody sees in that view, and
+                // renumbering a sheet breaks every drawing reference pointing
+                // at it across the whole set - so both writes, if they are
+                // ever built, are separate entries at their own risk.
+                { "list_views",         HeronRisk.Read },
+                { "list_sheets",        HeronRisk.Read },
+
+                // HERON-REVIT-RM-028. Read. Placing a room, deleting an
+                // unplaced one or moving a boundary all change somebody's area
+                // schedule, which on most jobs is a contractual document.
+                { "list_rooms",         HeronRisk.Read },
+
+                // HERON-REVIT-SCH-026. Read. It says which schedules exist and
+                // what governs them; it does not read their ROWS, which is the
+                // export agent's job at PUBLISH. Adding a field or changing a
+                // filter changes what everybody downstream is pricing from.
+                { "list_schedules",     HeronRisk.Read },
+
+                // HERON-REVIT-FAM-012. Read, and deliberately NOT a load.
+                // Loading a family merges one document into another: its
+                // materials overwrite the project's, silently, with no count
+                // moving. If a load is ever built it is a separate entry at a
+                // much higher risk than this one.
+                { "list_families",      HeronRisk.Read },
+
+                // HERON-REVIT-EXP-018. READ, although that agent's row is
+                // PUBLISH - the column is the highest level the ROW can
+                // require, and asking whether an export WOULD be sound
+                // requires none of it. Nothing is written, printed or sent.
+                // The export itself is a separate entry at PUBLISH for
+                // whoever builds the destination-and-overwrite rails.
+                { "check_export",       HeronRisk.Read },
+
+                // HERON-REVIT-IMP-019. Read. An import is irreversible in the
+                // way that matters - its layers and text styles stay after the
+                // import is deleted - so importing is not an operation here.
+                { "list_imports",       HeronRisk.Read },
+
+                // HERON-REVIT-DIM-031. Read. Creating a dimension, clearing an
+                // override or deleting a tag all change a drawing somebody may
+                // already have checked.
+                { "list_annotation",    HeronRisk.Read },
+
                 // GIVING THE SESSION BACK. Read, because it cannot touch a
                 // model - it hands back a claim, and only the chat that holds
                 // it may. It is the OPPOSITE of a takeover: a second chat can
