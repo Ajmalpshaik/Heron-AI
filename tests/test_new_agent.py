@@ -97,6 +97,16 @@ def main():
           "and says the register is where an agent starts")
 
     print("\n2. an agent something already claims is refused")
+    # TYPED ON PURPOSE, AND THE ASYMMETRY IS THE POINT.
+    #
+    # A fixture that must be BUILT is stable, because the register only moves
+    # one way: rows get claimed, not un-claimed. A fixture that must be UNBUILT
+    # is the fragile kind - every row closed is one fewer - and this suite lost
+    # two of those in a single sitting on 2026-09-17/18: DEV-PRF-015 took
+    # section 3's, and DEV-INT-012 took section 4's an hour later. Both are
+    # derived now.
+    #
+    # So: NAME a built agent, DERIVE an unbuilt one.
     code, said = run(["HERON-DEV-QA-016"])
     check(code == 1, "an agent already built exits 1")
     check("already built" in said and "heron_qa.py" in said,
