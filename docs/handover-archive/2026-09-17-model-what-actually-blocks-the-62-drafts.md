@@ -1,13 +1,18 @@
 # What actually blocks the 62 drafts
 
 **2026-09-17.** The model session, against a real Revit. **Three fragments passed.** The rest of
-this page is why the other 59 did not, which turned out to be four *structural* reasons rather than
+this page is why the other 59 did not, which turned out to be FIVE *structural* reasons rather than
 fifty-nine separate arrangement mistakes.
 
-**One of the four is now solved.** Blocker 3 — "an element-shaped need wants a one-element
+**One of the five is now solved.** Blocker 3 — "an element-shaped need wants a one-element
 selection and a job file cannot make one" — was the largest, and it turned out to need no new code
 at all. [The filter-to-one recipe](#solved--the-filter-to-one-recipe) is below, with the two
 fragments it proved.
+
+**Blocker 5 was found last and is the one worth reading first.** Building the test case on purpose
+— create an element, then prove the fragment against it — is the right answer to a clean model,
+and it is currently impossible: **none of the 51 proven creation fragments provides `elements`**,
+which is the name every consumer asks for.
 
 > **Register rule.** This is a new file on purpose. HANDOVER, DECISIONS, PROPOSALS,
 > NEEDS-CHECKING and FRAGMENT-ISSUES all have other sessions writing to them today. The rows
@@ -204,6 +209,21 @@ assumed unmovable; they align in Z perfectly well, so `aligned 10` came back and
 `NEG NOT EMPTY`. Spaces genuinely cannot. A negative is a claim about the model, and it needs
 measuring like any other.
 
+### The recipe needs VARIATION, and a uniform model defeats it
+
+Tried on `Project1.rvt`'s 10 walls, to reach `join-geometry` and `select-touching` — walls being
+what `JoinGeometry` is actually for, and the crossing ones genuinely overlap.
+
+It could not isolate one. All ten carry `Length`; **six of them sit inside 81.5–82.0 ft and four
+inside 100–110 ft**, bisected down to a half-foot. They are drawn to matching lengths, so no band
+narrows to a single element and `selected` refuses at "many" exactly as designed.
+
+**So the recipe's precondition is a numeric parameter whose values DIFFER.** Snowdon's ducts vary
+in length and it works there; a rectangle of equal walls has nothing to sort on. Worth knowing
+before reaching for it: check the spread first with one wide band, then bisect, and if the count
+never drops below two the model is telling you to pick a different parameter — or a different
+element.
+
 ### What the recipe does NOT unlock
 
 Stated so nobody re-runs it hopefully:
@@ -397,6 +417,55 @@ it. That is the work-counter shape `fragment-proving` warns about.
 *without the walls moving*, so `elevationChanged 0` is its **success**, not its emptiness. The
 contract needs a count of walls whose base or top level actually differed, which is a new value
 rather than a re-labelled one. Recorded for a session that can add it and prove it.
+
+## Blocker 5 — "build the case on purpose" is the right answer and it cannot be wired up
+
+The owner's instruction, and it is the correct one: *"if you want to test something, the creation
+fragment is there — create an element and test on that."* It is also what `fragment-proving`
+rule 2 says to do on a clean model: *"build it on purpose."*
+
+**It does not work today, for two separate reasons, both measured.**
+
+### 1. No creation fragment provides `elements`
+
+```
+proven creation fragments:           51
+of those that provide `elements`:    0   -- NONE --
+```
+
+They provide `created`, `createdId`, `placed`, `groupId`, `viewId`, `marker`. Every
+selection-consuming fragment needs **`elements`**. Binding is by name, so a creator can never feed
+a consumer — the same orphan-name shape as [Blocker 2](#blocker-2--five-chain-names-that-nothing-in-the-library-produces),
+but far wider, because it blocks the whole build-the-case strategy rather than six fragments.
+
+**The fix is a design decision, so it is written here rather than taken.** Either creation
+fragments also declare `elements` (they already hold the list — `created` *is* it), or the
+executor aliases `created` to `elements` when a consumer asks for one and only a creator ran.
+The first is honest and per-fragment; the second is one change and reaches all 51.
+
+### 2. A creation fragment's write does not survive to the NEXT setup step
+
+Measured on `Project1.rvt`, same run shape both times:
+
+| arrangement | what `select-by-category-name` saw |
+|---|---|
+| setup `create-line` → **fragment** `select-by-category-name` | `found 2`, `resolvedTo Lines`, `elements 2 item(s) [ModelLine, ModelLine]` |
+| setup `create-line` → setup `select-by-category-name` → fragment `find-overlapping-lines` | `elements from select-by-category-name (0)` |
+
+`create-line` itself is fine and does the work — run on its own it reports
+`created 2 item(s) [ModelLine, ModelLine]`, `refused 0`. But the lines are visible to the
+**fragment** that follows it and invisible to the next **setup step**, so a creator can only ever
+be the last thing before the fragment under test — which is exactly the position that reason 1
+already makes useless.
+
+**So the case for `find-overlapping-lines` was built successfully and still could not be handed
+to it.** Two model lines were drawn overlapping on purpose —
+`0,0,0; 10000,0,0 | 2000,0,0; 8000,0,0`, the second lying inside the first — with a genuine empty
+half arranged alongside it, two parallel lines 5 m apart. The fragment never saw either.
+
+**One smaller thing found on the way:** `create-line` declares `view` **optional** in its
+contract, and the executor refuses without it — *"'view (View)' is a value the CALLER supplies"*.
+One of the two is wrong.
 
 ## A cross-drive crash in `heron_buildmatrix`, found by the suites
 
