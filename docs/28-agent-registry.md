@@ -264,7 +264,7 @@ fragment-side one.
 | `HERON-DEV-INT-012` | Integration Test Agent | Runs integration tests against a mocked Revit boundary | T1 | — | — |
 | `HERON-DEV-RVT-013` | Revit Test Agent | Runs tests **inside real Revit**. Code QA ≠ Revit QA. **Running half built 2026-09-09** - `tools/batch-prove.py`, which proves many fragments in one pass and judges BOTH halves of each: the negative came back empty *and* the positive moved a declared result off zero. It refuses a fragment already at PROVEN, because one batch spent a whole pass re-proving fifteen of them. The arranging is the hard half and stays a brief rather than code - `.claude/skills/fragment-proving/SKILL.md` - but its DERIVABLE part is `tools/generate-jobs.py`, which writes the job file's fragment list, write path, setup chain and exact input names out of the library, and leaves the category and the view blank because guessing those produced eleven confident meaningless results in one batch. Judging is `HERON-FRG-VAL-001`'s, imported rather than copied | T1 | READ | — |
 | `HERON-DEV-RGR-014` | Regression Test Agent | Golden-file comparison across supported versions. **Built 2026-09-17** - [`brain/heron_buildmatrix.py`](../brain/heron_buildmatrix.py), against `brain/regression-matrix.json`. [D-75](DECISIONS.md) ruled the only candidates OUT (`tests/golden/` is the fragment side), leaving the row with no file at all, so the subject had to be named: **Heron's own build matrix** - what each release resolves to before anything is compiled, per target framework, .NET major, WindowsDesktop need and compile symbol. That is the *regression matrix* `DEV-NUP-019` in this same department already required to pass before a retarget is accepted. The baseline is committed and `--update` is deliberate: one regenerated per run compares the matrix against itself | T1 | — | — |
-| `HERON-DEV-PRF-015` | Performance Agent | Execution time and resource cost | T1 | — | — |
+| `HERON-DEV-PRF-015` | Performance Agent | Execution time and resource cost. **Claimed 2026-09-17** — [`tools/measure-brain.py`](../tools/measure-brain.py), by the owner's ruling. The row's *“and resource cost”* decides it: that file measures both, `brain/heron_devperf.py` measures time only. [D-75](DECISIONS.md) saw the same thing and declined to rule on an inference, so it waited for a person | T1 | — | — |
 | `HERON-DEV-EXP-021` | **Experiment Agent** | The scientist. Designs and runs a **comparison** where the right answer is not known yet — is v2 actually better than v1, does this approach beat that one, is the change worth keeping. Reports a verdict with evidence, not an opinion ↗ | T3 | READ | — |
 | `HERON-DEV-QA-016` | QA Agent | Final gate before approval. Never the implementer | T2 | — | — |
 | `HERON-DEV-DOC-017` | Documentation Agent | Generates docs from registries and metadata | T1 | — | — |
@@ -486,7 +486,7 @@ keeps discovering it believed.
 | `HERON-DOC-AGT-002` | Agent Documentation Agent | Generated from the agent registry | T1 | — | — |
 | `HERON-DOC-SKL-003` | Skill Documentation Agent | Generated from skill metadata. **Built 2026-09-15** — `tools/generate-skill-catalog.py`, the parallel to the fragment catalogue one layer up. Every skill with the words somebody actually says to reach it, and an **effective status**: the lowest rung on [09](09-skills-and-fragments.md)'s ladder among the fragments serving it. A card can say anything; the chain underneath is the fact. Reachability is per Revit release, never overall | T1 | — | — |
 | `HERON-DOC-FRG-004` | Fragment Documentation Agent | Generated from fragment metadata. **Built 2026-09-08** — `tools/generate-fragment-catalog.py`, the parallel to the agent map one layer up. Every fragment on one searchable page, including whether its declared negative case can actually be run. It reported 0 stranded cases on its first run against a library holding 18, which is why a generator acquired a test | T1 | — | — |
-| `HERON-DOC-REL-005` | Release Notes Agent | Structured notes per release. **DEFERRED 2026-09-16 by [D-77](DECISIONS.md)** - there are **no releases**. A release-notes agent with no release has nothing to write notes about, and building it now would mean building it against an imagined shape. **Unblocked by the first RELEASE tag** — and that word is load-bearing. This row read *"`git tag` returns nothing … unblocked by the first tag"* until 2026-09-17, when `git tag` returned **two**: `wip-before-148` and `wip-before-rebase-onto-149`, both working-tree safety markers from earlier sittings and neither a release. The reasoning was untouched and the row stays deferred; the **trigger** had quietly become true, so a reader checking it mechanically would have unblocked this on a WIP tag. A condition that fires on the wrong thing is the same class of defect as a count nobody derived | T2 | — | — |
+| `HERON-DOC-REL-005` | Release Notes Agent | Release Notes Agent — structured notes per release. **DEFERRED 2026-09-16 by [D-77](DECISIONS.md)**: there are no releases, so it would be built against an imagined shape. **Unblocked by the first RELEASE tag** — that word is load-bearing, because on 2026-09-17 `git tag` returned two working-tree safety markers and the trigger as written had already fired on them | T2 | — | — |
 | `HERON-DOC-ARC-006` | Architecture Documentation Agent | Keeps architecture docs in step with the registries. **FOLDED 2026-09-16 into [`tools/check-docs.py`](../tools/check-docs.py) by [D-77](DECISIONS.md)** - that tool already sweeps all 140 markdown files, recomputes every count claim against its derived source and resolves every internal link. **The guarding half only**: it checks the architecture docs are true, and writes none of them. Proved by planting a dead anchor in [`docs/06`](06-heron-platform.md) and requiring it to be caught | T2 | — | — |
 | `HERON-DOC-RDM-007` | README Agent | Keeps the README current. **FOLDED 2026-09-16 into [`tools/check-docs.py`](../tools/check-docs.py) by [D-77](DECISIONS.md)** - that tool reads `README.md` by name in four sections and enforces its counts against their derived source; its own comments record three occasions when the README was wrong and this is why it is not now. **The guarding half only**: nothing writes the README. Proved by planting a false count in it and requiring the guard to fail | T2 | — | — |
 | `HERON-DOC-VAL-009` | **Documentation Validation Agent** | Do the documents match reality. Recomputes every stated count from its source, checks every internal link resolves, flags any figure asserted rather than derived ↗. **Since [D-77](DECISIONS.md) it also carries `ARC-006` and `RDM-007`.** A dead link had been FOUND and not failed on since 2026-08-31; wiring section 1 to the exit code that day turned up three, one of them a `D-30` anchor linked correctly ten times and wrongly once | T1 | READ | — |
@@ -520,6 +520,35 @@ keeps discovering it believed.
 | Documentation | 9 | 6 | 3 | 0 |
 | **Reporting & Output** | **4** | 2 | 2 | 0 |
 | **Total** | **250** | **167** | **63** | **20** |
+
+> ### Nine of these need no building, and that is not the same as missing
+>
+> **The host provides nine of the 250**, and this table counts them like any other row because they
+> are part of the architecture — something *does* orchestrate, classify intent and write the reply.
+> It is simply not a file in this repository.
+>
+> | department | of which the host's |
+> |---|---|
+> | Orchestration & Communication | **4 of 6** — Orchestrator, Intent, Persona, User Result |
+> | Development | **5 of 21** — Requirement, Planning, Architecture, Code Generation, Revit API Domain |
+>
+> Every one is language and judgement work that Claude Code is already doing by the time it reads the
+> request. Building them inside Heron would mean writing a worse copy of the thing that is already
+> reading it. Decided as [D-01](DECISIONS.md) and settled again as [D-80](DECISIONS.md), which the
+> owner raised himself in one sentence: *"you are its self the ai and thru ai we are acessing the
+> heron so this ai can do this work am i right"*. He was.
+>
+> **They stay in the register rather than being deleted**, and the reason is recorded rather than
+> assumed: `tools/agent-count.py` keeps HOST as a third state precisely because *"collapsing HOST into
+> LEFT produces a to-do list with four items on it that will never be done — which is how this
+> repository's own build-state page came to recommend building the Orchestrator."* Removing the rows
+> is the same failure one step further on: the next reader finds nothing that orchestrates and builds
+> one. `agent-count.py` also refuses a host exemption naming an agent the registry does not carry, so
+> the two must agree.
+>
+> **Read the build state from `python tools/agent-count.py`**, never from this table. It reports BUILT,
+> HOST and LEFT in separate columns, and only LEFT is work.
+
 
 **[NOTE]** The distribution is the point. **167 of 250 agents never call a model** — they are ordinary
 classes with a method or two. Of the rest, 63 make one scoped call and 20 run a real agentic loop.

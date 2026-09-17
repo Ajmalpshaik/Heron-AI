@@ -1,4 +1,4 @@
-# Heron-Agent:  none
+# Heron-Agent:  HERON-DEV-PRF-015
 # Heron-Step:   17
 # Heron-Status: DRAFT
 # Heron-Since:  0.1.0
@@ -7,6 +7,21 @@
 
 """
 How long the brain takes, stage by stage. The half nothing was measuring.
+
+THIS FILE OWNS HERON-DEV-PRF-015, DECIDED BY THE OWNER ON 2026-09-17
+----------------------------------------------------------------------
+The row is "execution time AND RESOURCE COST", and that conjunction is the
+whole of the decision. This measures both; brain/heron_devperf.py measures
+time only. D-75 had already noticed as much - "the row's own words point at
+measure-brain.py" - but declined to rule, because picking on an inference is
+exactly the guess that produced PROPOSALS F27 in the first place.
+
+So the claim waited for a person, and a person made it. F27 stays as the
+record of why it could not be settled by reading.
+
+heron_devperf.py keeps `Heron-Agent: none`. It is not lesser and it is not
+dead code: it times the test SUITES against check-gaps' bound, which is a real
+job and the reason it was written. It simply is not this row.
 
     python tools/measure-brain.py
     python tools/measure-brain.py --revit 2024 --requests 40

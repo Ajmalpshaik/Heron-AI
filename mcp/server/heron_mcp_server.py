@@ -2157,6 +2157,21 @@ def revit_worksets() -> str:
                         "{:,}".format(workset.get("elements", 0)),
                         "open" if workset.get("open") else "CLOSED in this session"))
 
+    # THE LIST HAS TO ACCOUNT FOR THE TOTAL, or it teaches the reader to
+    # distrust it. Proved against Project1 work_ajmal.al on 2026-09-17, where
+    # this printed `Workset1 181` and `Shared Levels and Grids 2` against
+    # 3,513 placed elements - 183 named, 3,330 unexplained, and nothing in the
+    # answer said where they went. The add-in had computed `onNoWorkset` all
+    # along; this tool simply never read it.
+    #
+    # Most of a model genuinely sits on no workset - a view, a level, a family
+    # symbol - so the number is large and normal. Large and normal and MISSING
+    # is what makes a reader stop trusting the rows above it.
+    on_none = reply.get("onNoWorkset", 0)
+    if on_none:
+        lines.append("  %-32s %12s   not on any workset"
+                     % ("(none named)", "{:,}".format(on_none)))
+
     sampled = reply.get("ownershipSampled", 0)
     of_total = reply.get("ownershipOf", 0)
     lines.append("")

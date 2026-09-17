@@ -30,6 +30,7 @@ this folder exists to remove.
 
 | Date | Sitting |
 |---|---|
+| 2026-09-17 | [The ten agents against two models, in two Revits at once](2026-09-17-revit-the-ten-agents-against-two-models.md) |
 | 2026-09-17 | [The last ten Revit agents, and why every one of them reads](2026-09-17-revit-the-last-ten-agents-read-first.md) |
 | 2026-09-17 | [The release gate list was decided by YAML indentation, and a lesson written down three times did not reach the next file](2026-09-17-tooling-gate-lists-and-register-drift.md) |
 | 2026-09-17 | [The agent count that disagreed with itself, and the fourteen that are not waiting on a writer](2026-09-17-agents-the-count-that-disagreed-with-itself.md) |
