@@ -585,6 +585,55 @@ half arranged alongside it, two parallel lines 5 m apart. The fragment never saw
 contract, and the executor refuses without it — *"'view (View)' is a value the CALLER supplies"*.
 One of the two is wrong.
 
+## `set-view-crop-to-shape` — a defect, and a fix that was WRITTEN, TESTED AND BACKED OUT
+
+Attempted on **`test projject.rvt`** (Revit 2024, session 46936, 3,573 elements), in the view the
+owner had open so he could watch it happen.
+
+**The chain worked first time** — `read-room-geometry` is a proven producer of `boundary` and
+`set-view-crop-to-shape` consumes it under that exact name, no alias needed:
+
+```
+bound: view as given; boundary from read-room-geometry (4); joinTolerance as given
+```
+
+**And the fragment refused an ordinary floor plan:**
+
+> `'HERON ROOM TEST' (FloorPlan) cannot take a shaped crop at all`
+
+That reads as the *view type* being incapable. It is not. `CanHaveShape` is **false on any view
+whose crop is simply switched off**, which is the ordinary state of most views, and the fragment
+tests it at line 43 — before anything switches the crop on.
+
+**The file's header has always said it switches the crop on**, and that part is honest: lines
+139–142 set `VIEWER_CROP_REGION` and `VIEWER_CROP_REGION_VISIBLE`. But they run **after**
+`SetCropShape` has already succeeded, so they can never rescue the guard that refused the view.
+
+### The fix, and why it is not in the branch
+
+Setting `CropBoxActive`/`CropBoxVisible` before asking `CanHaveShape` **does** fix the floor plan.
+It also does something it must not. Measured as a controlled pair, same room, same tolerance, only
+the fragment source differing:
+
+| view | original code | with the fix |
+|---|---|---|
+| `HERON ROOM TEST` (FloorPlan) | `applied false` — *"cannot take a shaped crop at all"* — **wrong** | `applied true` ✅ |
+| `PLAIN SHEET` (DrawingSheet) | `applied false` — **correct, a sheet has no crop region** | `applied true` — **wrong** |
+
+**So the obvious fix trades a false refusal for a false success**, and a false success is the worse
+of the two: the sheet reports `applied true, refused 0` and nothing anybody can see has changed.
+Forcing `CropBoxActive` on a `ViewSheet` evidently flips `CanHaveShape` to true, and
+`SetCropShape` then reports success regardless.
+
+**Backed out rather than shipped.** A correct fix has to switch the crop on only for views that can
+genuinely carry one, and deciding that list is a judgement about the Revit API that wants its own
+sitting and its own evidence — not a guess bolted onto a proving run. The controlled table above
+is the useful part, and it is here so nobody has to rediscover it.
+
+**`set-view-crop-to-shape` is therefore NOT proved**, and the reason is a defect in the fragment
+rather than an arrangement mistake. The arrangement was right: a real room, a closed four-curve
+boundary, `worstGap 0`, and a real second view for the empty half.
+
 ## A cross-drive crash in `heron_buildmatrix`, found by the suites
 
 `tests/test_buildmatrix.py` fails on this machine, and it is **not on heron-ship §2's known list**.
@@ -645,7 +694,7 @@ one **STALE** — `set-wall-constraints`, signed by Ajmal PS on 2026-09-13, code
 | blocked by an orphan chain need | **6** |
 | ~~blocked by "one element, selected in Revit"~~ | ~~13~~ → **SOLVED**; 2 of the 13 proved, 2 still need TWO elements, the rest want model content this file lacks |
 | unjudgeable because `findings` is the only provide | **2** |
-| defects found | **5** — `set-mep-justification` (reported), the view resolver (**fixed & proved**), `set-wall-constraints`' work counter (reported), the `created`/`elements` name gap (**fixed & proved**), bind-before-setup ordering (**fixed & proved**) |
+| defects found | **6** — `set-mep-justification` (reported), the view resolver (**fixed & proved**), `set-wall-constraints`' work counter (reported), the `created`/`elements` name gap (**fixed & proved**), bind-before-setup ordering (**fixed & proved**), `set-view-crop-to-shape` refusing uncropped views (reported; a fix was written, measured and **backed out**) |
 | positive empty for want of model content | **6** |
 
 **Left at DRAFT: 60**, and **PROVEN is 312** — derived, not counted by hand:
