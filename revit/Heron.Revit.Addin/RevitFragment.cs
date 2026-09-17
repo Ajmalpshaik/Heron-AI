@@ -417,23 +417,64 @@ namespace Heron.Revit.Addin
             var ranWith = DescribeSupplied(supplied);
 
             var prologue = "";
+            Script<object> script = null;
 
-            if (needs != null)
-            {
-                string binding;
-                var refusal = BindNeeds(needs, globals, target, uidoc, bound, client,
-                                        supplied, expect, out prologue, out binding);
-                if (refusal != null) return refusal;
-                Note = binding;
-            }
-            else
-            {
-                Note = null;
-            }
+            // WHAT A WRITE SETUP STEP LEAVES CANNOT BE BOUND BEFORE IT RUNS.
+            //
+            // Binding and compiling belong HERE for almost every run: before
+            // the model is touched, so a request that cannot be satisfied is
+            // refused cheaply and no transaction is ever opened. That ordering
+            // is deliberate and it stays.
+            //
+            // It is wrong for exactly one shape of run - a write phase carrying
+            // setup steps that THEMSELVES write. Those are deferred into the
+            // fragment's own TransactionGroup (see RunSetupSteps) so that the
+            // fragment can see what they made. But binding sixty lines earlier
+            // decided the fragment's needs before any of it existed, so what a
+            // deferred step leaves could reach the NEXT STEP and never the
+            // fragment under test.
+            //
+            // MEASURED 2026-09-17 on Snowdon-scratch.rvt: create-line drew its
+            // two model lines, RunSetupSteps called Remember on them, and
+            // find-overlapping-lines was still refused with "'elements' was
+            // never supplied" - because it had been told so before the lines
+            // existed. That is the whole of "build the case on purpose",
+            // which fragment-proving rule 2 sends you to on a clean model.
+            //
+            // So when, and ONLY when, there are setup steps to run first, the
+            // binding waits for them. Every other run keeps the old order
+            // exactly - and that is what keeps this small enough to trust: a
+            // run with no write setup cannot behave differently, because
+            // nothing about it moved.
+            var setupSteps = Json.ReadObjectArray(request, "setup");
+            var bindAfterSetup = writing && setupSteps != null && setupSteps.Count > 0;
 
-            Script<object> script;
-            var compileError = Compile(prologue + source, PrologueLines(prologue), out script);
-            if (compileError != null) return compileError;
+            // The bind and the compile as ONE act, in one place, because a
+            // prologue that bound is useless without the script it was written
+            // for - and two copies of this would drift.
+            Func<string> bindAndCompile = () =>
+            {
+                if (needs != null)
+                {
+                    string binding;
+                    var refusal = BindNeeds(needs, globals, target, uidoc, bound, client,
+                                            supplied, expect, out prologue, out binding);
+                    if (refusal != null) return refusal;
+                    Note = binding;
+                }
+                else
+                {
+                    Note = null;
+                }
+
+                return Compile(prologue + source, PrologueLines(prologue), out script);
+            };
+
+            if (!bindAfterSetup)
+            {
+                var early = bindAndCompile();
+                if (early != null) return early;
+            }
 
             // APPLY IS THE DELIBERATE ACT. Absent means run it and roll back,
             // which is this path's preview: not a prediction of what would
@@ -492,6 +533,25 @@ namespace Heron.Revit.Addin
                     var setupError = RunSetupSteps(request, globals, target, uidoc,
                                                    client, supplied, group, label);
                     if (setupError != null) return setupError;
+
+                    // NOW the fragment can be given what the setup just made.
+                    // See bindAfterSetup above for why this waits.
+                    if (bindAfterSetup)
+                    {
+                        var late = bindAndCompile();
+                        if (late != null)
+                        {
+                            // THE SETUP HAS ALREADY WRITTEN. Refusing without
+                            // rolling back would leave its changes sitting in
+                            // the model under a group nobody closes - a preview
+                            // that altered something, which is the one outcome
+                            // this path must never produce. Every other refusal
+                            // on this page is free because nothing had run yet;
+                            // this one is not, so it pays for itself here.
+                            SafeRollBack(group);
+                            return late;
+                        }
+                    }
 
                     using (var transaction = new Transaction(target, label))
                     {
@@ -1457,6 +1517,43 @@ namespace Heron.Revit.Addin
                 {
                     value = selected;
                     origin = "from the selection";
+                }
+
+                // 3. WHAT A CREATOR JUST MADE.
+                //
+                // EVERY creation fragment leaves its new elements under
+                // `created`, and EVERY consumer asks for `elements`. Measured
+                // 2026-09-17: 51 proven creation fragments, and not one of
+                // them provides `elements`. So "build the case on purpose" -
+                // draw the overlapping lines, then look for overlaps - could
+                // not be wired up at all. One fragment labelled the box NEW
+                // and the next only ever looked for a box marked ITEMS.
+                //
+                // That is not six fragments blocked, it is the whole strategy
+                // for proving anything against a clean model, which is what
+                // fragment-proving rule 2 tells you to fall back on.
+                //
+                // NARROW ON PURPOSE, because a wrong bind here is a confident
+                // wrong answer - the thing this file exists to refuse:
+                //
+                //   * only the name `elements`, which is the one every
+                //     consumer uses; nothing else is guessed at
+                //   * only an element list, never an id list
+                //   * only when nothing else filled it - the chain under its
+                //     own name and the Revit selection both win
+                //   * NEVER when the contract set `binds` itself. An explicit
+                //     alias is the author's decision, and silently overriding
+                //     it would hide a typo in a `binds` line behind a bind
+                //     that happens to work.
+                //
+                // The read-back names it, so a proof judged on the binding
+                // note (rule 5) still shows where the elements came from.
+                else if (name == "elements" && wanted == name && IsElementList(type)
+                         && carried != null && carried.ContainsKey("created"))
+                {
+                    value = carried["created"];
+                    origin = "from " + (chain.By ?? "the previous fragment")
+                           + " as 'created'";
                 }
 
                 if (value == null)
@@ -2749,6 +2846,27 @@ namespace Heron.Revit.Addin
 
             if (wanted != null)
             {
+                // A VIEW HAS ITS OWN LOOKUP, AND THE GENERIC ONE CANNOT REACH
+                // HALF THE VIEWS IN ANY REAL MODEL. Every level normally carries
+                // a floor plan AND a ceiling plan under the SAME name, so
+                // OneOfClass finds two, cannot tell them apart, and dead-ends on
+                // "Rename one." - which is advice nobody should take about their
+                // own model to satisfy a tool.
+                //
+                // OneView already reads the "FloorPlan: L2" spelling and lists
+                // the choices when it still cannot decide. These four needs were
+                // simply never sent to it, because they are declared ElementId
+                // and the View branch is keyed on the declared type.
+                //
+                // MEASURED 2026-09-17 on Snowdon Towers Sample HVAC: all eleven
+                // plan names are duplicated, so `place-rooms` could not be run
+                // at all - every level it was pointed at refused.
+                if (wanted == typeof(View))
+                {
+                    var view = OneView(doc, text, out problem) as Element;
+                    return view == null ? null : view.Id;
+                }
+
                 var found = OneOfClass(doc, wanted, kind, text, out problem) as Element;
                 return found == null ? null : found.Id;
             }

@@ -1,6 +1,6 @@
 heron-agent: HERON-QA-BIM-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -68,6 +68,32 @@ contract:
       # (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-17'
+  by: Ajmal PS
+  model: Snowdon-scratch (9,638 elements), Revit 2024, session 46936
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    create-line with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned ends 2 entry(ies), findings 2 item(s)
+    [1 overlapping pair(s) across 2 line(s), 2 of them involved. ..., 1544298 and 1544300
+    share 6000 mm of the same line], flagged HashSet`1, groups 1 entry(ies), heights 2 entry(ies),
+    notStraight 0 item(s), overlapping 2 item(s) [1544298, 1544300], pairs 1, round 0.0820209973753281,
+    starts 2 entry(ies), tolerance 0.0820209973753281, toleranceMm 25. inputs came elements
+    from create-line as 'created' (2); toleranceMm as given. on Snowdon-scratch
+  negative_case: 'run with asDetail=False, pointPairs=0,0,0; 10000,0,0 | 0,5000,0; 10000,5000,0,
+    toleranceMm=25, view=FloorPlan: M1 instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running create-line with
+    this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned ends 2 entry(ies), findings 1 item(s) [0 overlapping
+    pair(s) across 2 line(s), 0 of them involved. ...], flagged HashSet`1, groups 2 entry(ies),
+    heights 2 entry(ies), notStraight 0 item(s), overlapping 0 item(s), pairs 0, round 0.0820209973753281,
+    starts 2 entry(ies), tolerance 0.0820209973753281, toleranceMm 25. inputs came elements
+    from create-line as ''created'' (2); toleranceMm as given. on Snowdon-scratch'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 7443bbf023e6128f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
