@@ -1,0 +1,125 @@
+# Regression Test Agent - HERON-DEV-RGR-014
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+#
+# The row is "golden-file comparison across supported versions", and D-75
+# rules OUT the only candidates that existed - tests/golden/cases.py and
+# tests/test_golden.py are the FRAGMENT side, and this department's subject
+# is Heron itself. So the subject here is Heron's own build matrix: what
+# each supported Revit release resolves to before anything is compiled.
+#
+# docs/28 names the caller in HERON-DEV-NUP-019's own row: the .NET Update
+# Agent retargets a framework and bumps packages, and "the regression
+# matrix must pass before it is accepted". This is that matrix.
+
+agent: HERON-DEV-RGR-014
+version: 1.0.0
+
+input:
+  golden:
+    type: path
+    required: false
+    description: >
+      The recorded matrix to compare against. Defaults to
+      brain/regression-matrix.json, which is committed - a baseline that
+      is regenerated on every run compares the matrix against itself and
+      can never disagree with anything.
+  update:
+    type: boolean
+    required: false
+    description: >
+      Write the current matrix over the golden. False by default, and the
+      whole point: a retarget that updates the baseline in the same breath
+      records the change instead of catching it, so saying so has to be a
+      deliberate act with the diff printed first.
+  releases:
+    type: list
+    required: false
+    description: >
+      Which Revit releases to compare. Defaults to every release
+      Directory.Build.props targets, read rather than listed.
+  props:
+    type: path
+    required: false
+    description: >
+      The build properties to read the matrix out of. Defaults to this
+      repository's. Present so the suite can point at a fixture whose
+      retarget it controls.
+
+output:
+  passed:
+    type: boolean
+    description: True when the live matrix matches the golden in every field.
+  of:
+    type: integer
+    description: How many releases were compared.
+  same:
+    type: list
+    description: Releases whose every recorded field still matches.
+  changed:
+    type: list
+    description: >
+      Each {release, field, was, now} - one entry per field that moved, not
+      one per release. A release reported only as "changed" sends somebody
+      back to a diff to find out what changed, which is the work this
+      exists to do for them.
+  added:
+    type: list
+    description: >
+      Releases the props target that the golden has never heard of. New
+      support is a change to the matrix like any other.
+  removed:
+    type: list
+    description: >
+      Releases in the golden that the props no longer target. Dropping a
+      release silently is the direction that costs a modeller an add-in.
+  matrix:
+    type: map
+    description: >
+      The live matrix as read: per release its target framework, .NET
+      major, whether it needs the WindowsDesktop targets, and its compile
+      symbols. Plus the projects and package references, which are per
+      repository rather than per release.
+  golden:
+    type: path
+    description: Which baseline it compared against.
+  wrote:
+    type: boolean
+    description: Whether the golden was rewritten on this run.
+  ranAnything:
+    type: boolean
+    description: >
+      Always false. It compiles nothing and starts no SDK - that is
+      HERON-DEV-BLD-010's, which needs a .NET SDK this comparison does not.
+  fixedAnything:
+    type: boolean
+    description: >
+      False unless `update` was asked for, in which case the golden and
+      only the golden was written. It never edits a project or the props.
+  why:
+    type: string
+    description: What moved, per release and per field, or that nothing did.
+  unjudged:
+    type: list
+    description: >
+      What matching the golden does NOT establish: that any release still
+      compiles, which needs the SDK and is HERON-DEV-BLD-010's answer; that
+      the add-in loads in that Revit, which needs the Revit; and that a
+      golden written in the same change as the retarget recorded the move
+      rather than catching it.
+
+allowed-tools: []
+
+timeout-seconds: 60
+
+failures:
+  - NO_GOLDEN
+  - NOT_A_GOLDEN
+  - NO_MATRIX
+  - DRIFTED
+  - CANNOT_WRITE
+
+retry:
+  attempts: 0
+  on-failures: []

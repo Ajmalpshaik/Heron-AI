@@ -35,6 +35,21 @@ WHAT IT PROVES
   7. NOTHING IS RESOLVED OR FETCHED - the packages come back as written.
 
   8. EVERY FAILURE THE CONTRACT DECLARES IS NAMED AND REACHED.
+
+WHAT IT NEEDS, WHICH USED TO BE UNSAID
+----------------------------------------
+Claims 4, 6, 7 and part of 8 read a SUCCESSFUL answer, and the agent
+refuses with NO_DOTNET when there is no .NET SDK on the machine - which
+is the agent being right. This file used to index that refusal anyway and
+die with `KeyError: 'buildable'`, reporting a machine without an SDK as a
+repository with a broken test.
+
+So on a machine with no SDK it now proves the refusal, leaves those four
+claims UNPROVEN rather than pretending, and **exits 3** - the
+repository's word for "could not run here", the code test_mcp_serves.py
+uses and check-gaps.py reads as WAITING rather than as a break.
+
+Claims 1, 2, 2a, 3 and 5 need no SDK and always run.
 """
 
 import io
@@ -70,6 +85,7 @@ def without_dotnet(run):
 
 def main():
     reached = set()
+    unproven = []
     whole = io.open(os.path.join(ROOT, "brain", "heron_dotnet.py"),
                     encoding="utf-8").read()
     logic = whole.split("\nfrom __future__", 1)[1].split("\ndef main(")[0]
@@ -84,8 +100,21 @@ def main():
     check(without_dotnet(lambda: NET.installed_sdks()) == [],
           "and the SDK probe comes back empty rather than raising")
     answer = NET.check()
-    check(answer.get("compiled") is False,
-          "and a successful answer says compiled: false")
+    # A MACHINE WITH NO SDK IS NOT A BROKEN REPOSITORY. The agent refuses,
+    # correctly; four of the claims below need an answer it cannot give.
+    no_sdk = answer.get("refused") == "NO_DOTNET"
+    if no_sdk:
+        reached.add("NO_DOTNET")
+        check("SDK" in (answer.get("why") or "")
+              and "docs/30" in answer["why"],
+              "there is no .NET SDK here, so the agent refuses - naming the "
+              "SDK and where to read about getting one, never a bare code")
+        check(answer.get("checked") is False,
+              "and a refusal says checked: false rather than carrying a "
+              "half answer somebody could read as one")
+    else:
+        check(answer.get("compiled") is False,
+              "and a successful answer says compiled: false")
 
     print("\n2. the gate uses this agent's facts")
     import importlib.util
@@ -174,11 +203,15 @@ def main():
     check(sorted(table) == sorted(NET.RELEASES),
           "Directory.Build.props and RELEASES name the same %d releases"
           % len(NET.RELEASES))
-    by_release = dict((card["release"], card)
-                      for card in answer["buildable"] + answer["blocked"])
-    for release in NET.RELEASES:
-        check(by_release[release]["tfm"] == table[release],
-              "%s -> %s, from the props" % (release, table[release]))
+    if no_sdk:
+        unproven.append("each release's tfm as the agent reports it")
+        print("  ....  and each release's card - NOT RUN, needs an SDK")
+    else:
+        by_release = dict((card["release"], card)
+                          for card in answer["buildable"] + answer["blocked"])
+        for release in NET.RELEASES:
+            check(by_release[release]["tfm"] == table[release],
+                  "%s -> %s, from the props" % (release, table[release]))
 
     print("\n5. an unlisted release is an error, never a guess")
     for these in (["2028"], ["2019"], ["2024", "2031"]):
@@ -191,18 +224,35 @@ def main():
     reached.add(empty.get("refused"))
     check(empty.get("refused") == "NOTHING_TO_CHECK",
           "an EMPTY list is refused, not read as all of them")
-    check(NET.check(None)["of"] == len(NET.RELEASES),
-          "while no list at all means all %d" % len(NET.RELEASES))
+    # The DISTINCTION holds on any machine - an empty list is refused as
+    # empty and None is not - because that test runs before the SDK probe.
+    # Only the COUNT needs an answer the probe has to succeed to give.
+    check(NET.check(None).get("refused") != "NOTHING_TO_CHECK",
+          "while no list at all is a different request, not an empty one")
+    if no_sdk:
+        unproven.append("that no list at all means all %d releases"
+                        % len(NET.RELEASES))
+        print("  ....  and that it means all %d - NOT RUN, needs an SDK"
+              % len(NET.RELEASES))
+    else:
+        check(NET.check(None)["of"] == len(NET.RELEASES),
+              "and that it means all %d" % len(NET.RELEASES))
 
     print("\n6. could not build here is not unsupported")
-    blocked = NET.check(table=table)["blocked"]
-    for card in blocked:
-        check(card["why"] and "unsupported" not in card["why"].lower(),
-              "%s says what is MISSING, not that it is unsupported"
-              % card["release"])
-    check(len(answer["buildable"]) + len(answer["blocked"]) == answer["of"],
-          "every release asked about is in exactly one of the two (%d)"
-          % answer["of"])
+    if no_sdk:
+        unproven.append("what a blocked release says, and the two-bucket "
+                        "arithmetic over them")
+        print("  ....  what a blocked release says - NOT RUN, needs an SDK")
+    else:
+        blocked = NET.check(table=table)["blocked"]
+        for card in blocked:
+            check(card["why"] and "unsupported" not in card["why"].lower(),
+                  "%s says what is MISSING, not that it is unsupported"
+                  % card["release"])
+        check(len(answer["buildable"]) + len(answer["blocked"])
+              == answer["of"],
+              "every release asked about is in exactly one of the two (%d)"
+              % answer["of"])
     # The one case that must not read as absence.
     check(NET.why_unbuildable("2027", NET.UNKNOWN_TOOLCHAIN) is None,
           "an unreadable SDK list does not block a release - ignorance is "
@@ -213,7 +263,11 @@ def main():
           "and a release that needs no desktop targets is never blocked")
 
     print("\n7. nothing is resolved or fetched")
-    names = dict((ref["package"], ref) for ref in answer["packages"])
+    # FROM THE PROBE, NOT FROM `answer`. The claim is about what
+    # packages() reports, and reading it here rather than out of a
+    # successful answer proves it on a machine with no SDK too.
+    refs = NET.packages()
+    names = dict((ref["package"], ref) for ref in refs)
     check("Nice3point.Revit.Api.RevitAPI" in names,
           "the Revit API package is reported: %s"
           % ", ".join(sorted(names)))
@@ -222,7 +276,7 @@ def main():
           "with its version expression AS WRITTEN, not resolved")
     check(names["Nice3point.Revit.Api.RevitAPI"]["follows_release"] is True,
           "and marked as following the release")
-    check(not [r for r in answer["packages"]
+    check(not [r for r in refs
                if r["package"] == "Microsoft.CodeAnalysis.CSharp.Scripting"
                and r["follows_release"]],
           "a fixed-version package is not marked as following it")
@@ -238,7 +292,11 @@ def main():
     check(not unreached,
           "and every one was reached above%s"
           % ("" if not unreached else ": %s" % ", ".join(unreached)))
-    check(len(answer["unjudged"]) == 5, "five things are left unjudged")
+    if no_sdk:
+        unproven.append("that the answer leaves five things unjudged")
+        print("  ....  the five unjudged things - NOT RUN, needs an SDK")
+    else:
+        check(len(answer["unjudged"]) == 5, "five things are left unjudged")
 
     print()
     if FAILURES:
@@ -246,6 +304,23 @@ def main():
         for line in FAILURES:
             print("  - %s" % line)
         return 1
+    if unproven:
+        # EXIT 3, NOT 1 AND NOT 0. There is no .NET SDK here, so some of
+        # this file's claims have no answer to read - which is a fact
+        # about the machine. 1 would report it as a regression; 0 would
+        # report claims nothing checked as proven.
+        for line in unproven:
+            print("  - %s" % line)
+        print("\n        Everything that does not need an SDK passed. "
+              "docs/30-compiling-away-from-windows.md\n"
+              "        takes about five minutes on any Linux container.")
+        # LAST LINE, AND IT IS READ BY A MACHINE. The suite sweep
+        # (HERON-DEV-UNT-011) carries the last line a suite printed as its
+        # reason, so a multi-line sign-off ends up reported as whatever
+        # fragment happened to come last. This one says the whole thing.
+        print("\nWAITING %d of this file's claims need a .NET SDK and were "
+              "NOT run - the rest passed." % len(unproven))
+        return 3
     print("PASS    it compiles nothing, and the gate uses its answers")
     return 0
 

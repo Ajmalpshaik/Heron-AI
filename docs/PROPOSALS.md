@@ -2509,3 +2509,73 @@ host** — so the job is the text before the first one. That is a small change i
 
 **Not acted on.** It changes what a guard sees, and the guard's whole value is that its findings are
 real. That deserves its own decision rather than riding in on a delegation.
+
+---
+
+## F41 — the scaffolder writes a module name the suite then rejects
+
+Found on 2026-09-17, building [`HERON-DEV-RGR-014`](../brain/heron_buildmatrix.py). It cost one full
+198-suite sweep to discover, which is the argument for fixing it.
+
+`tools/new-agent.py` derives the module name from the register row's name: *Regression Test Agent*
+became `brain/heron_regression_test.py`. That file is refused by
+[`tests/test_references.py`](../tests/test_references.py) claim 5 — **no module name in `brain/` may be
+a prefix of another** — because `heron_regression.py` (`HERON-FRG-REG-006`, the fragment one) has been
+there since long before.
+
+### Why the rule is not cosmetic
+
+`HERON-DOC-REF-006` renames and searches over module names, and the rule is what lets it tell a whole
+name from the start of a longer one. A prefix pair makes every rename of the shorter name ambiguous —
+silently, and in the direction that edits something nobody asked for.
+
+### Why the scaffolder cannot be left as it is
+
+It already **refuses three things on purpose**: an id not in the register, an agent something already
+claims, and a file that is already there. Its own docstring's argument for existing is that doing this
+by hand 146 times is 146 chances to get a detail wrong — and this is one of the details, checked
+nowhere until a suite that takes ten minutes runs.
+
+The failure is also quiet in the worst way: the scaffold succeeds, the agent gets written, the tests
+pass individually, and the collision only appears in a full sweep of everything else.
+
+### What is proposed
+
+**A fourth refusal, in the same place as the other three.** Before writing, compare the derived module
+name against every existing name in the target part, both directions, and refuse with the colliding
+name and a suggestion — the same shape as its existing refusals. Three lines, and
+`tests/test_new_agent.py` can assert it against the real folder rather than a fixture.
+
+The name chosen instead — `heron_buildmatrix.py`, for what the file compares — is recorded in that
+module's own docstring so the next reader does not wonder why the file is not named after its agent.
+
+### DONE 2026-09-17 — the fourth refusal is in, and it was not a one-off
+
+Written as *"not acted on here"* and acted on in the next change, once the measurement below turned a
+prediction into a count.
+
+`prefix_collisions()` in [`tools/new-agent.py`](../tools/new-agent.py) compares the derived name against
+every module in the target part, **both directions**, and refuses beside the other three — naming what
+it would shadow, naming `tests/test_references.py` as the suite that asserts the rule, and pointing at
+`--module` rather than being a dead end. `--module` cannot walk around it either, which was the obvious
+hole.
+
+**It would have fired four more times.** Derived from the register, not guessed:
+
+| row | derived name | what it shadows |
+|---|---|---|
+| `DEV-ARC-003` | `heron_architecture` | `heron_architect` |
+| `DEV-RAP-007` | `heron_revit_api_domain` | `heron_revit_api` |
+| `DOC-REL-005` | `heron_release_notes` | `heron_release` |
+| `DEV-PRF-015` | `heron_performance` | exact collision — the check that already existed |
+
+All four are host-provided, deferred or the owner's call, so nobody would have scaffolded one today.
+That is luck rather than design, and it is why the count is worth recording: the rule this tool broke
+was one it could have checked in three lines from the day it was written.
+
+**And it had no suite at all.** [`tests/test_new_agent.py`](../tests/test_new_agent.py) now asserts all
+four refusals — deriving the ids for the last two from the register rather than typing them, so the
+cases do not go stale the day somebody builds one — and proves, by listing the tree before and after,
+that **every refusal returns before the first write**. That property is what makes it safe to run
+against the real repository, which it must be: the register and the module list are what it is
+asserting against.

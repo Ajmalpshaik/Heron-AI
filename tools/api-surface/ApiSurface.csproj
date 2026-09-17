@@ -17,6 +17,18 @@
     <!-- The repo-wide x64/Platform settings are for Revit; this is a plain tool. -->
     <Platform>AnyCPU</Platform>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <!--
+      RUNS ON A NEWER RUNTIME THAN IT TARGETS, and this is not a nicety.
+      Without it a net8.0 app refuses to start unless the .NET 8 runtime is
+      installed specifically: "You must install or update .NET to run this
+      application ... The following frameworks were found: 10.0.12".
+
+      Measured 2026-09-17 on a container carrying dotnet-sdk-10.0 and
+      nothing else - which is the SDK Heron needs anyway, because Revit
+      2027 is net10.0-windows (docs/16). So the machine best set up to
+      build Heron was the one that could not run the tool that checks it.
+    -->
+    <RollForward>LatestMajor</RollForward>
   </PropertyGroup>
 
   <ItemGroup>

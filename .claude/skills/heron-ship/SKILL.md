@@ -98,15 +98,27 @@ for t in tests/test_*.py; do python "$t" >/dev/null 2>&1 || echo "FAIL $t"; done
 Derive the number — `ls tests/test_*.py | wc -l`. Do not read a pass total here either. What matters is
 that the failures **do not share a reason**, because a lump total is how a real regression hides.
 
-**Three cannot run at all without an optional dependency.** They prove nothing either way:
+**Four cannot run in full without an optional dependency.** They prove nothing either way:
 
 | | needs | |
 |---|---|---|
 | `test_mcp_serves.py` | the **MCP SDK** | `pip install --user mcp` |
 | `test_served_claims.py` | the **MCP SDK** | same |
-| `test_bridge_roundtrip.py` | a **built .NET test host** | `dotnet build tests/Heron.Bridge.TestHost` |
+| `test_bridge_roundtrip.py` | a **built .NET test host** | run it once: its failure prints the exact `dotnet build` line, TFM included |
+| `test_dotnet.py` | **any `dotnet`** — four of its eight claims only | `apt-get install -y dotnet-sdk-8.0` |
 
-`test_mcp_serves.py` exits **3**, not 1, so `check-gaps.py` reports it as waiting rather than failing.
+**All four exit 3, not 1**, so `check-gaps.py` reports them as waiting rather than failing.
+`test_served_claims.py` was the last one to join them, on 2026-09-17 — see §4.
+
+**The fourth was this list's own missing row, and it cost a session.** `test_dotnet.py` was on nobody's
+list and **crashed** with `KeyError: 'buildable'` on any machine with no SDK — because
+`HERON-DEV-NET-006` refuses with `NO_DOTNET`, correctly, and the suite indexed that refusal anyway. So
+the machine's missing SDK read as a broken repository, and `check-gaps.py` counted it UNFINISHED, which
+is the bucket that means *somebody could fix this here*. Nobody could.
+
+Fixed 2026-09-17 in the suite, never in the agent: it now proves the refusal, names the four claims it
+is leaving unproven, and exits 3. **CI has an SDK and still proves all eight**, so the known-failure
+list in `gates.yml` is unchanged and must stay that way.
 
 **Install them rather than excusing them.** On 2026-09-15 a session treated all three as unavoidable
 on Linux for weeks. They are not: the three commands above take a few minutes on a fresh container and
@@ -166,11 +178,25 @@ HERON_KNOWLEDGE=/tmp/heron-kb python tools/check-gaps.py
 **`check-gaps` exits 1 while anything is UNFINISHED, and 0 when everything outstanding is only
 WAITING.** Both are the tool working, and the distinction is the whole of it.
 
-**It exits 1 on a plain container, and the reason has changed.** This file used to give the reason as
-*"218 fragments have never met a Revit model"* — those fragments are all in the **WAITING** bucket now,
-and the single unfinished item is `test_served_claims.py FAILS`, which fails for want of the **MCP SDK**
-and exits **1 rather than 3**, so `check-gaps` cannot tell it from a real failure. Install the SDK and it
-exits 0.
+**It exits 0 on a plain container now, and getting there took two fixes rather than an excuse.** This
+file used to give the reason for a non-zero exit as *"218 fragments have never met a Revit model"*;
+those fragments moved to the **WAITING** bucket, and what was left was two suites landing in
+**UNFINISHED** — the bucket that means *somebody could fix this here* — for an absent optional
+dependency that nobody here could install into the repository.
+
+Both were the same defect, one layer apart, and both are fixed in the suites rather than in the agents
+they test:
+
+| | was | now |
+|---|---|---|
+| `test_dotnet.py` | **crashed**, `KeyError: 'buildable'`, having indexed `HERON-DEV-NET-006`'s correct `NO_DOTNET` refusal | proves the refusal, names the four claims it leaves unproven, exits 3 |
+| `test_served_claims.py` | exited **1**, so `check-gaps` could not tell it from a real failure | exits 3, and says what to install |
+
+**The second one needed `BaseException`, not `ImportError`, and that is not defensive coding.** Measured
+on 2026-09-17: `pip install --user mcp` on this image leaves the SDK importable but **panicking** —
+`pyo3_runtime.PanicException` out of the distro's `cryptography`, under a missing `_cffi_backend`. An
+`except ImportError` catches none of it and the suite dies with a traceback exactly as before.
+`pip install --user --upgrade cryptography cffi` clears it, and then both suites run in full and pass.
 
 Its own closing line is the sentence to keep: *"Waiting is not failing — but a waiting item is still
 UNPROVEN."* **Read the buckets, not the exit code, and do not report either value as a break.**
@@ -179,7 +205,7 @@ UNPROVEN."* **Read the buckets, not the exit code, and do not report either valu
 > echo $?` reports **`tail`'s** exit code, which is always 0 — and on 2026-09-12 that turned this very
 > section into a claim that the gate passes. Two characters, in the optimistic direction.
 
-## 5. The six that need something this container has not got
+## 5. The six that need something — and only ONE of them needs the owner's PC
 
 Not failures. They need a tool, and the error says which.
 
@@ -189,10 +215,36 @@ Not failures. They need a tool, and the error says which.
 | `check-compile.py`, `check-fragments-compile.py`, `check-api-surface.py` | **`dotnet`** | `FileNotFoundError: 'dotnet'` |
 | `batch-prove.py` | **a real Revit**, and the owner | — |
 
-The first two run fine with a store: `export HERON_KNOWLEDGE=/tmp/heron-kb`. The middle three need the
-.NET SDK and are the owner's PC. **`check-compile` has a trap worth knowing: it builds 2020–2027 into
-one folder and the newest wins, so running it leaves .NET 10 binaries that Revit 2024 refuses.**
-`deploy-addin.ps1` guards this now rather than trusting whoever ran it.
+The first two run fine with a store: `export HERON_KNOWLEDGE=/tmp/heron-kb`.
+
+**This section said the middle three "are the owner's PC" until 2026-09-17, and that was WRONG — the
+same shape of mistake as §2's "the known three".** They need a .NET SDK, which is one apt package, and
+nothing about Windows or Revit. Measured on a plain Linux container that day:
+
+```bash
+apt-get update && apt-get install -y dotnet-sdk-10.0     # ~2 minutes
+```
+
+| | result |
+|---|---|
+| `check-compile.py` | **all 5 projects on all 8 releases, 2020–2027** |
+| `check-fragments-compile.py` | **all 372 fragments on every release each one claims** |
+| `check-api-surface.py` | **every Revit member Heron calls exists in every release** |
+| `tests/test_bridge_roundtrip.py` | **passes**, after the one build its own failure message prints |
+
+**Install `dotnet-sdk-10.0`, not 8.0.** 2025–2027 need the WindowsDesktop targets that only 10 carries,
+and it builds the older releases too — one package covers the whole span.
+
+**`check-api-surface.py` needed a one-line fix before it would run**, and the reason generalises:
+`tools/api-surface/ApiSurface.csproj` targets `net8.0`, so on a machine carrying only the .NET 10
+runtime it refused to start — *"You must install or update .NET to run this application … The following
+frameworks were found: 10.0.12"*. The machine best set up to build Heron was the one that could not run
+the tool that checks it. It now carries `<RollForward>LatestMajor</RollForward>`.
+
+**`check-compile` has a trap worth knowing: it builds 2020–2027 into one folder and the newest wins, so
+running it leaves .NET 10 binaries that Revit 2024 refuses.** `deploy-addin.ps1` guards this now rather
+than trusting whoever ran it. **That trap is why this matters on the owner's PC and not here** — a
+container with no Revit has nothing to break, so the compile gates are cheaper to run here than there.
 
 ## 6. Then the branch
 
