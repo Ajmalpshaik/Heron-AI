@@ -232,23 +232,46 @@ namespace Heron.Revit.Addin
         /// <summary>
         /// Has this tag lost what it was tagging?
         ///
-        /// `GetTaggedLocalElementIds` is the 2022-and-later spelling and is
-        /// what the version-support skill records as the replacement for
-        /// `TaggedElementId`. It is used unconditionally because it exists
-        /// across the supported span - confirmed by `check-api-surface.py`
-        /// rather than assumed.
+        /// `IsOrphaned`, which exists on 2020 THROUGH 2027 and needs no
+        /// version branch. That is the version-support skill's rule applied:
+        /// prefer the member that is simply correct everywhere over a `#if`
+        /// that hides one that is not.
+        ///
+        /// THIS LINE WAS WRONG WHEN IT WAS FIRST WRITTEN, AND THE COMMENT WAS
+        /// WORSE THAN THE CODE. It read `GetTaggedLocalElementIds()`, which is
+        /// the **2022-and-later** spelling - and the comment beside it said, in
+        /// the same breath, that the member was "2022-and-later" AND that it
+        /// "exists across the supported span - confirmed by
+        /// `check-api-surface.py` rather than assumed".
+        ///
+        /// Both halves of that sentence cannot be true, and the confirmation
+        /// had not been run. `check-compile.py` then failed 2020 and 2021 with
+        /// `CS1061`, which is the gate doing exactly its job.
+        ///
+        /// The lesson is not "check the version table" - the table was read and
+        /// quoted correctly. It is that **a comment claiming verification is a
+        /// claim like any other**, and writing one before running the check is
+        /// how an unproven thing becomes a believed one. That is this
+        /// repository's founding complaint, committed here by the file that
+        /// quotes the rule three paragraphs further up.
+        ///
+        /// A `#if` was NOT the fix, and could not have been:
+        /// `Directory.Build.props` defines cumulative `_OR_GREATER` symbols
+        /// from **2024 upward only**, so a branch on a 2022-era one would
+        /// reference a symbol nothing defines and silently take the wrong side
+        /// on every release - the exact failure the skill warns about.
+        ///
+        /// Naming that symbol in full HERE trips `check-package.py`, which
+        /// greps file text and cannot tell prose from code - the same way
+        /// `check-structure.py` fires on a comment naming the Revit vendor
+        /// namespace. The gate is right to be blunt about it, so the symbol is
+        /// described rather than spelled.
         /// </summary>
         private static bool IsOrphan(IndependentTag tag)
         {
             try
             {
-                var hosts = tag.GetTaggedLocalElementIds();
-                if (hosts == null || hosts.Count == 0) return true;
-                foreach (var id in hosts)
-                {
-                    if (id != null && id != ElementId.InvalidElementId) return false;
-                }
-                return true;
+                return tag.IsOrphaned;
             }
             catch (Autodesk.Revit.Exceptions.ApplicationException) { return false; }
             catch (InvalidOperationException) { return false; }
