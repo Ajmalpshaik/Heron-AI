@@ -102,9 +102,15 @@ RELEASE_IN_PROSE = re.compile(r"\bRevit\s*(20\d\d)\b", re.I)
 UNSET = object()
 
 
-def runtimes():
+def runtimes(path=None):
     """
     Release -> .NET target, read from Directory.Build.props.
+
+    `path` reads a DIFFERENT props file, and exists so a caller can compare
+    this repository's matrix against a fixture one without a second copy of
+    the parser below. Golden Rule 4 - keep, extend, adapt - taken at the
+    second rung, for HERON-DEV-RGR-014. Every existing caller passes
+    nothing and gets exactly what it got before.
 
     Parsed rather than copied. The props file carries conditions of three
     shapes - an equality and two ranges - and each is turned into the releases
@@ -114,7 +120,7 @@ def runtimes():
     """
     table = {}
     try:
-        text = io.open(PROPS, encoding="utf-8").read()
+        text = io.open(path or PROPS, encoding="utf-8").read()
     except (IOError, OSError):
         return table
 

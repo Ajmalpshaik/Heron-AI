@@ -1,0 +1,102 @@
+{
+  "packages": [
+    {
+      "follows_release": false,
+      "package": "Microsoft.CodeAnalysis.CSharp.Scripting",
+      "version": "4.8.0"
+    },
+    {
+      "follows_release": true,
+      "package": "Nice3point.Revit.Api.RevitAPI",
+      "version": "$(RevitVersion).*"
+    },
+    {
+      "follows_release": true,
+      "package": "Nice3point.Revit.Api.RevitAPIUI",
+      "version": "$(RevitVersion).*"
+    }
+  ],
+  "projects": [
+    "platform/Heron.Core/Heron.Core.csproj",
+    "revit/Heron.Bridge/Heron.Bridge.csproj",
+    "revit/Heron.Revit.Addin/Heron.Revit.Addin.csproj",
+    "tests/Heron.Bridge.TestHost/Heron.Bridge.TestHost.csproj",
+    "tests/Heron.StackGuard.TestHost/Heron.StackGuard.TestHost.csproj"
+  ],
+  "releases": {
+    "2020": {
+      "dotnetMajor": null,
+      "needsWindowsDesktop": false,
+      "symbols": [
+        "REVIT2020"
+      ],
+      "tfm": "net472"
+    },
+    "2021": {
+      "dotnetMajor": null,
+      "needsWindowsDesktop": false,
+      "symbols": [
+        "REVIT2021"
+      ],
+      "tfm": "net48"
+    },
+    "2022": {
+      "dotnetMajor": null,
+      "needsWindowsDesktop": false,
+      "symbols": [
+        "REVIT2022"
+      ],
+      "tfm": "net48"
+    },
+    "2023": {
+      "dotnetMajor": null,
+      "needsWindowsDesktop": false,
+      "symbols": [
+        "REVIT2023"
+      ],
+      "tfm": "net48"
+    },
+    "2024": {
+      "dotnetMajor": null,
+      "needsWindowsDesktop": false,
+      "symbols": [
+        "REVIT2024",
+        "REVIT2024_OR_GREATER"
+      ],
+      "tfm": "net48"
+    },
+    "2025": {
+      "dotnetMajor": 8,
+      "needsWindowsDesktop": true,
+      "symbols": [
+        "REVIT2025",
+        "REVIT2024_OR_GREATER",
+        "REVIT2025_OR_GREATER"
+      ],
+      "tfm": "net8.0-windows"
+    },
+    "2026": {
+      "dotnetMajor": 8,
+      "needsWindowsDesktop": true,
+      "symbols": [
+        "REVIT2026",
+        "REVIT2024_OR_GREATER",
+        "REVIT2025_OR_GREATER",
+        "REVIT2026_OR_GREATER"
+      ],
+      "tfm": "net8.0-windows"
+    },
+    "2027": {
+      "dotnetMajor": 10,
+      "needsWindowsDesktop": true,
+      "symbols": [
+        "REVIT2027",
+        "REVIT2024_OR_GREATER",
+        "REVIT2025_OR_GREATER",
+        "REVIT2026_OR_GREATER",
+        "REVIT2027_OR_GREATER"
+      ],
+      "tfm": "net10.0-windows"
+    }
+  }
+}

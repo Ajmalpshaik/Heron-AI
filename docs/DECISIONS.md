@@ -4664,6 +4664,27 @@ column by column instead of in summary:
 | `DEV-RGR-014` *golden-file comparison across supported versions* | Its only candidates — `tests/golden/cases.py`, `tests/test_golden.py` — are on the **fragment** side, so this decision rules them out rather than in. The row has no Heron-side file at all |
 | `DEV-PRF-015` *execution time and resource cost* | **Two candidates, both on Heron**: [`tools/measure-brain.py`](../tools/measure-brain.py) and `brain/heron_devperf.py`. This decision does not separate them. The row's own words point at `measure-brain.py`, which measures both of them; `heron_devperf.py` measures time only |
 
+### Since — two of the four are closed, and the other two are still yours
+
+**2026-09-17.** The table above says why each of the four was still open. Two of the reasons were
+*"a file has to be written"*, which is work rather than a decision, and both files now exist:
+
+| row | what closed it |
+|---|---|
+| `DEV-UNT-011` | [`brain/heron_unit_test.py`](../brain/heron_unit_test.py) — the sweep, out of `gates.yml`'s inline bash and into a file that can carry the claim |
+| `DEV-RGR-014` | [`brain/heron_buildmatrix.py`](../brain/heron_buildmatrix.py) — the build matrix against `brain/regression-matrix.json`, which is the *regression matrix* `DEV-NUP-019`'s own row already required |
+
+**The other two are unchanged and are the owner's**, for the reasons this decision gives and not for
+want of anybody writing something:
+
+- `DEV-INT-012` — its candidates fit the row exactly and are layer `test`. *"Allowed, awkward, and the
+  owner's call"* is still the position. Writing a third file to dodge the awkwardness would be the
+  agent explosion [`HERON-AHR-WFP-015`](../brain/heron_workforce.py) exists to refuse.
+- `DEV-PRF-015` — two candidates, both on Heron, and this decision does not separate them. Picking one
+  is exactly the guess that produced [F27](PROPOSALS.md) in the first place.
+
+**Development goes from 4 left to 2.**
+
 ### The one row this decision sits awkwardly against
 
 `DEV-RVT-013` is already claimed by [`tools/batch-prove.py`](../tools/batch-prove.py), and that tool

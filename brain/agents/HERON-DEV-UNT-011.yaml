@@ -1,0 +1,121 @@
+# Unit Test Agent - HERON-DEV-UNT-011
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it). The register's row is
+# "runs unit tests", and D-75 settles whose tests: Heron's own, not the
+# fragment library's.
+#
+# This agent RUNS. HERON-DEV-QA-016 judges. That seam is deliberate - the
+# gate's own row says "never the implementer", so the thing that produces a
+# result and the thing that decides whether it is good enough are two agents.
+
+agent: HERON-DEV-UNT-011
+version: 1.0.0
+
+input:
+  suites:
+    type: list
+    required: false
+    description: >
+      Which suites to run, as file names or paths. Defaults to every
+      `tests/test_*.py` there is, discovered rather than listed - a typed
+      list goes stale the first time somebody adds a suite, and goes stale
+      silently, because a suite nobody named is a suite nobody ran.
+  timeout:
+    type: integer
+    required: false
+    description: >
+      Seconds one suite may take before it is killed and recorded as
+      TIMED_OUT. A suite that hangs must not hang the sweep.
+  root:
+    type: path
+    required: false
+    description: >
+      The repository to sweep. Defaults to this one. Present so the suite
+      for this agent can point it at a small fixture tree instead of
+      running all of Heron inside one of Heron's own tests.
+  python:
+    type: string
+    required: false
+    description: >
+      The interpreter to run each suite with. Defaults to the one running
+      this agent, so a sweep cannot silently test a different Python from
+      the one that asked for it.
+
+output:
+  passed:
+    type: boolean
+    description: >
+      True when no suite FAILED. A waiting suite does not make it false -
+      see `waiting`, and see check-gaps.py, which draws the same line.
+  of:
+    type: integer
+    description: How many suites were found and attempted.
+  ok:
+    type: list
+    description: Suites that exited 0, in the order they ran.
+  waiting:
+    type: list
+    description: >
+      Suites that exited 3 - the repository's word for "could not run
+      here", not for "failed". Each carries the reason it printed. A
+      waiting suite is UNPROVEN and is never counted as a pass.
+  failed:
+    type: list
+    description: >
+      Each {suite, code, why} for a suite that really failed. `why` is the
+      last line it printed, because a failure with no sentence attached is
+      a failure somebody has to re-run to understand.
+  timedOut:
+    type: list
+    description: Suites killed at the bound, with the bound that killed them.
+  sharedReason:
+    type: string
+    description: >
+      The one sentence every failure shares, when they share one, else
+      null. A lump total is how a real regression hides behind a machine
+      problem - three suites failing for one missing package is one
+      finding, and three suites failing for three reasons is three.
+  slowest:
+    type: list
+    description: >
+      The five longest suites with their seconds, so a sweep that is
+      getting slower says which suite is doing it.
+  seconds:
+    type: number
+    description: How long the whole sweep took.
+  ranAnything:
+    type: boolean
+    description: >
+      Always true, and the opposite of HERON-DEV-QA-016's. This agent's
+      whole job is to run them.
+  fixedAnything:
+    type: boolean
+    description: Always false. It runs suites; it never edits one.
+  why:
+    type: string
+    description: What was run, what happened, and what that does not settle.
+  unjudged:
+    type: list
+    description: >
+      What this sweep did NOT establish: that a green sweep is not a proof
+      against Revit (D-30); that a waiting suite is unproven rather than
+      passing; and that whether the change is acceptable is
+      HERON-DEV-QA-016's answer, which this one does not give.
+
+allowed-tools:
+  - run-python-suite
+
+timeout-seconds: 1800
+
+failures:
+  - NO_SUITES
+  - NOT_A_SUITE
+  - NOT_A_ROOT
+  - BAD_TIMEOUT
+  - SUITE_FAILED
+  - TIMED_OUT
+
+retry:
+  attempts: 0
+  on-failures: []

@@ -2509,3 +2509,44 @@ host** — so the job is the text before the first one. That is a small change i
 
 **Not acted on.** It changes what a guard sees, and the guard's whole value is that its findings are
 real. That deserves its own decision rather than riding in on a delegation.
+
+---
+
+## F41 — the scaffolder writes a module name the suite then rejects
+
+Found on 2026-09-17, building [`HERON-DEV-RGR-014`](../brain/heron_buildmatrix.py). It cost one full
+198-suite sweep to discover, which is the argument for fixing it.
+
+`tools/new-agent.py` derives the module name from the register row's name: *Regression Test Agent*
+became `brain/heron_regression_test.py`. That file is refused by
+[`tests/test_references.py`](../tests/test_references.py) claim 5 — **no module name in `brain/` may be
+a prefix of another** — because `heron_regression.py` (`HERON-FRG-REG-006`, the fragment one) has been
+there since long before.
+
+### Why the rule is not cosmetic
+
+`HERON-DOC-REF-006` renames and searches over module names, and the rule is what lets it tell a whole
+name from the start of a longer one. A prefix pair makes every rename of the shorter name ambiguous —
+silently, and in the direction that edits something nobody asked for.
+
+### Why the scaffolder cannot be left as it is
+
+It already **refuses three things on purpose**: an id not in the register, an agent something already
+claims, and a file that is already there. Its own docstring's argument for existing is that doing this
+by hand 146 times is 146 chances to get a detail wrong — and this is one of the details, checked
+nowhere until a suite that takes ten minutes runs.
+
+The failure is also quiet in the worst way: the scaffold succeeds, the agent gets written, the tests
+pass individually, and the collision only appears in a full sweep of everything else.
+
+### What is proposed
+
+**A fourth refusal, in the same place as the other three.** Before writing, compare the derived module
+name against every existing name in the target part, both directions, and refuse with the colliding
+name and a suggestion — the same shape as its existing refusals. Three lines, and
+`tests/test_new_agent.py` can assert it against the real folder rather than a fixture.
+
+**Not acted on here.** It is a change to the tool that scaffolds every remaining agent, and it belongs
+in a change of its own rather than riding in on the one that found it. The name chosen instead —
+`heron_buildmatrix.py`, for what the file compares — is recorded in that module's own docstring so the
+next reader does not wonder why the file is not named after its agent.
