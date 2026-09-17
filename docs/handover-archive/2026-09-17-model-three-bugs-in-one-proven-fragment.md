@@ -131,3 +131,56 @@ the view once.
 
 **For anything whose output is a picture, look at the picture.** The screenshot that broke this open
 took one tool call.
+
+## Re-proved — and the proof block still cannot see the thing that was wrong
+
+**Later the same day**, on `test projject.rvt` (Revit 2024, session 64416, 3,565 elements), against the
+add-in deployed at 22:34. `set-view-crop` passes both halves and is **signed and promoted again**:
+
+```
+positive   28 walls selected in {3D}   applied true    enclosed 28   viewRefused false
+negative   the same 28 against a SCHEDULE   applied false   enclosed 0   viewRefused true
+```
+
+**Read that positive line and notice that it is word for word what the broken version reported.**
+`applied true, enclosed 28, marginMm 3000` is exactly the sentence that survived three simultaneous
+bugs across six runs. A proof block carrying it is not evidence the fixes work, and signing one as
+though it were would be repeating the original mistake in a more official place.
+
+### The selection is made in `{3D}`, not in the view being cropped
+
+`inViewOnly` finds what is **visible**, so selecting in the view you are about to crop makes the next
+selection smaller, which crops tighter again. That feedback loop shrinks a proof one run at a time and
+it is invisible in every number the fragment returns. `{3D}` is not cropped, so the wall count is the
+model's rather than the crop's — 28 either way, and the same 28 in both legs.
+
+### What was measured instead, because it can come back false
+
+The view showed **24 of the 28 walls** before anything ran. Three crops were then applied for real —
+not rolled back — and the visible count re-read after each:
+
+| crop applied | walls visible in the plan |
+|---|---|
+| around all 28, margin **3000 mm** | **24** |
+| around all 28, margin **20000 mm** | **24** |
+| around **one** wall, margin **500 mm** | **2** |
+
+**The third row is the proof.** Tightening the crop around a single wall collapses the view from 24 to
+2 — the target and the one neighbour that overlaps it. The crop therefore lands where it is told, and
+the broken version could not have done this: it put the region in the view's own transform as though it
+were model coordinates, which is why the owner saw an empty view with one line down the edge.
+
+**The first two rows are the control**, and they matter as much. A 20000 mm margin changes nothing, so
+the four walls missing from the plan are **not** excluded by the crop. Had only the 3000 mm row been
+run, 24 would have looked like a failure and the fix would have been backed out.
+
+### One thing left open, and it is not this fragment
+
+**Four walls are in the model and never appear in that floor plan**, at any crop size. The crop is ruled
+out. The cause is not established here — level, view range, phase or discipline are all candidates, and
+`read-element-level` returns all 28 level names but the reply truncates lists to three, so the
+distribution could not be read from it.
+
+It is written down rather than guessed at because **`inViewOnly` is the selector half the proofs in this
+library lean on**. If it can under-report, that is worth somebody's morning. If it is ordinary Revit
+view behaviour, that is worth one sentence saying so.
