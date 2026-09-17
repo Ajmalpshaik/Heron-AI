@@ -11,6 +11,11 @@
 to do. Each was checked against `brain/fragments/` on the day. What follows is only
 the part that came back missing, or came back with something wrong with it.
 
+**ONLY WHAT IS MISSING IS WRITTEN DOWN.** The owner's instruction, 2026-09-17: a
+job that is already covered needs no row. So the absence of a row here is not
+evidence of anything - it means either covered, or never asked. The counts table
+below is the only record that a list was walked at all.
+
 **It is a work note and it is meant to be deleted.** Every row here ends either as a
 built fragment or as a row in [PROPOSALS.md](../PROPOSALS.md). Nothing here is a
 decision and nothing here overrides the specification.
@@ -156,31 +161,3 @@ reasoning applies to "the structure" and "the architecture", and the MEP groups 
 not preset either.
 
 ---
-
-## Checked and NOT a gap
-
-Recorded so the same ground is not walked twice.
-
-| Asked for | Answer |
-|---|---|
-| Create vertical grid / horizontal grid | `CREATE_GRID` - one fragment, both directions, by two points. Also `CREATE_GRIDS` from bay spacings |
-| Create level | `CREATE_LEVEL`, `CREATE_LEVELS`. Makes the datum only - no plan view, which is `CREATE_PLAN_VIEW` |
-| Create slab | `CREATE_FLOOR` |
-| Create basic wall | `CREATE_WALL` |
-| Create tag | `TAG_ELEMENTS`, `TAG_ELEMENTS_IN_VIEW` |
-| Create annotation text | `CREATE_TEXT_NOTE` |
-| Create schedule | `CREATE_SCHEDULE`, `CREATE_KEY_SCHEDULE` |
-| Create 3D view | `CREATE_3D_VIEW` |
-| Create section box | `SET_VIEW_SECTION_BOX` (the section VIEW is `CREATE_SECTION_VIEW`) |
-| Create view filter | `CREATE_VIEW_FILTER`, `CREATE_VIEW_FILTERS_BY_VALUE` |
-| Create shared parameter | `ADD_PROJECT_PARAMETER` - **DRAFT, not proven** |
-| Select by category | `SELECT_BY_CATEGORY_NAME`, `FILTER_ELEMENTS_BY_CATEGORY`, `SELECT_BY_CATEGORIES` |
-| Select by level | `SELECT_BY_LEVEL` |
-| Select by name | `SELECT_BY_FAMILY`, `SELECT_BY_PARAMETER_VALUE`, `SELECT_TYPES` |
-| Select by ID | `FILTER_ELEMENTS_BY_ID` |
-| Select by parameter / by parameter value | `SELECT_BY_PARAMETER_VALUE` (text), `SELECT_BY_NUMERIC_PARAMETER` (units) |
-| Select inside bounding box | `SELECT_IN_REGION` |
-| Select in active view / visible elements | `SELECT_VISIBLE_IN_VIEW` |
-| Select by family type | `FILTER_ELEMENTS_BY_TYPE`, `SELECT_TYPES` |
-| Select duplicates | `FIND_DUPLICATE_ELEMENTS`, `FIND_DUPLICATE_VALUES` |
-| Select by phase | `SELECT_BY_PHASE` |
