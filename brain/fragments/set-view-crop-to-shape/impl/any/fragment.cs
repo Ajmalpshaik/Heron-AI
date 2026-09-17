@@ -32,12 +32,46 @@ if (view.IsTemplate)
     refused.Add(string.Format("'{0}' is a view TEMPLATE - a crop shape is set on a real view",
         view.Name));
 }
+else if (view is ViewSheet)
+{
+    // A SHEET IS THE PAPER, NOT THE DRAWING, and it has no crop region at all.
+    // Cropping "the sheet" is not a thing anybody wants - what they want is the
+    // VIEW placed on it cropped, which then shows cropped on the sheet. So this
+    // is a request that cannot be honoured rather than one that failed, and
+    // saying which is the difference between sending somebody to look and
+    // sending them away satisfied.
+    //
+    // REFUSED EXPLICITLY, BEFORE THE CROP IS SWITCHED ON, and that order is the
+    // whole reason this guard exists. Forcing CropBoxActive onto a ViewSheet
+    // flips CanHaveShape to TRUE, and SetCropShape then reports success while
+    // nothing anybody can see has changed - measured on `test projject.rvt`,
+    // 2026-09-17, against 'PLAIN SHEET'. A false success is worse than the
+    // false refusal it replaced: a refusal makes somebody go and look.
+    refused.Add(string.Format("'{0}' is a SHEET - crop the VIEW placed on it, not the sheet",
+        view.Name));
+}
 else if (boundary == null || boundary.Count < 3)
 {
     refused.Add("a crop shape needs at least three curves forming a closed loop");
 }
 else
 {
+    // SWITCH THE CROP ON BEFORE ASKING WHETHER IT CAN BE SHAPED.
+    //
+    // CanHaveShape is FALSE on a view whose crop is merely switched off, which
+    // is the ordinary state of most views. Asking first and switching on
+    // afterwards refused every one of them with "cannot take a shaped crop at
+    // all" - which reads as the VIEW TYPE being incapable when it is nothing
+    // of the kind, and sends somebody hunting for a limitation that is not
+    // there. Found 2026-09-17 on an ordinary FloorPlan with a closed
+    // four-curve boundary and worstGap 0.
+    //
+    // The lines further down set the same two parameters, and they are not
+    // redundant with this: they run AFTER SetCropShape has succeeded, so they
+    // can never rescue a view the guard below has already turned away.
+    view.CropBoxActive = true;
+    view.CropBoxVisible = true;
+
     var manager = view.GetCropRegionShapeManager();
 
     if (manager == null || !manager.CanHaveShape)

@@ -1,7 +1,7 @@
 # What actually blocks the 62 drafts
 
-**2026-09-17.** The model session, against a real Revit. **Five fragments passed.** The rest of
-this page is why the other 57 did not, which turned out to be FIVE *structural* reasons rather than
+**2026-09-17.** The model session, against a real Revit. **Six fragments passed.** The rest of
+this page is why the other 56 did not, which turned out to be FIVE *structural* reasons rather than
 fifty-seven separate arrangement mistakes.
 
 **TWO of the five are now solved.** Blocker 3 — "an element-shaped need wants a one-element
@@ -585,7 +585,7 @@ half arranged alongside it, two parallel lines 5 m apart. The fragment never saw
 contract, and the executor refuses without it — *"'view (View)' is a value the CALLER supplies"*.
 One of the two is wrong.
 
-## `set-view-crop-to-shape` — a defect, and a fix that was WRITTEN, TESTED AND BACKED OUT
+## `set-view-crop-to-shape` — a defect found, over-fixed, backed out, then fixed properly
 
 Attempted on **`test projject.rvt`** (Revit 2024, session 46936, 3,573 elements), in the view the
 owner had open so he could watch it happen.
@@ -625,14 +625,40 @@ of the two: the sheet reports `applied true, refused 0` and nothing anybody can 
 Forcing `CropBoxActive` on a `ViewSheet` evidently flips `CanHaveShape` to true, and
 `SetCropShape` then reports success regardless.
 
-**Backed out rather than shipped.** A correct fix has to switch the crop on only for views that can
-genuinely carry one, and deciding that list is a judgement about the Revit API that wants its own
-sitting and its own evidence — not a guess bolted onto a proving run. The controlled table above
-is the useful part, and it is here so nobody has to rediscover it.
+**Backed out on the spot** rather than shipped, because a correct fix has to switch the crop on
+only for views that can genuinely carry one, and that looked like a judgement about the Revit API
+needing its own evidence.
 
-**`set-view-crop-to-shape` is therefore NOT proved**, and the reason is a defect in the fragment
-rather than an arrangement mistake. The arrangement was right: a real room, a closed four-curve
-boundary, `worstGap 0`, and a real second view for the empty half.
+### The owner asked the right question, and it dissolved the problem
+
+*"sheet view crop we can't set, am I right? or you are saying if we put the view in the sheet then
+adjusting?"*
+
+Both halves of that are correct, and together they say what the sheet result actually meant. **A
+sheet is the paper, not the drawing.** It has no crop region, and nobody ever wants one — what they
+want is the VIEW placed on it cropped, which then shows cropped on the sheet.
+
+So `PLAIN SHEET` was never a case to support. **It was a nonsense request**, and the only thing
+that matters is that the answer to it is honest. That makes the fix small and obvious:
+
+| | should it work? | before | after |
+|---|---|---|---|
+| crop a **plan** | **yes** | refused — the defect | `applied true` |
+| crop a **sheet** | **no** | refused | refused, and now says why |
+
+`else if (view is ViewSheet)` refuses **before** the crop is switched on, which is the whole point
+of where it sits: forcing `CropBoxActive` onto a sheet is what flipped `CanHaveShape` to true and
+produced the false success. The refusal teaches rather than just declines —
+*"'PLAIN SHEET' is a SHEET - crop the VIEW placed on it, not the sheet"*.
+
+**PASS.** `batch-prove`: *"applied is true in the positive and false in the negative"* — which is
+`_flag_flipped` doing exactly the job it was written for, on a fragment whose result is a yes or a
+no rather than a count.
+
+**The lesson worth keeping is not the API detail.** Backing the change out was right — a false
+success is worse than a false refusal — but the reason it *stayed* out for a while was that the
+sheet was being treated as a case to support. One question from the owner turned an open API
+question into a three-line guard.
 
 ## A cross-drive crash in `heron_buildmatrix`, found by the suites
 
@@ -689,12 +715,12 @@ one **STALE** — `set-wall-constraints`, signed by Ajmal PS on 2026-09-13, code
 
 | | |
 |---|---|
-| **passed** | **5** — `create-hvac-zone` (signed, promoted to PROVEN), `match-element-type`, `align-elements`, `find-overlapping-lines`, `fillet-lines` |
+| **passed** | **6** — `create-hvac-zone` and `find-overlapping-lines` (signed, promoted to PROVEN), `match-element-type`, `align-elements`, `fillet-lines`, `set-view-crop-to-shape` |
 | blocked by the Publish/Admin ceiling | **6** |
 | blocked by an orphan chain need | **6** |
 | ~~blocked by "one element, selected in Revit"~~ | ~~13~~ → **SOLVED**; 2 of the 13 proved, 2 still need TWO elements, the rest want model content this file lacks |
 | unjudgeable because `findings` is the only provide | **2** |
-| defects found | **6** — `set-mep-justification` (reported), the view resolver (**fixed & proved**), `set-wall-constraints`' work counter (reported), the `created`/`elements` name gap (**fixed & proved**), bind-before-setup ordering (**fixed & proved**), `set-view-crop-to-shape` refusing uncropped views (reported; a fix was written, measured and **backed out**) |
+| defects found | **6** — `set-mep-justification` (reported), the view resolver (**fixed & proved**), `set-wall-constraints`' work counter (reported), the `created`/`elements` name gap (**fixed & proved**), bind-before-setup ordering (**fixed & proved**), `set-view-crop-to-shape` refusing uncropped views (**fixed & proved**, with sheets guarded) |
 | positive empty for want of model content | **6** |
 
 **Left at DRAFT: 60**, and **PROVEN is 312** — derived, not counted by hand:
