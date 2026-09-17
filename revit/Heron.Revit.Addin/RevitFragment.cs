@@ -1459,6 +1459,43 @@ namespace Heron.Revit.Addin
                     origin = "from the selection";
                 }
 
+                // 3. WHAT A CREATOR JUST MADE.
+                //
+                // EVERY creation fragment leaves its new elements under
+                // `created`, and EVERY consumer asks for `elements`. Measured
+                // 2026-09-17: 51 proven creation fragments, and not one of
+                // them provides `elements`. So "build the case on purpose" -
+                // draw the overlapping lines, then look for overlaps - could
+                // not be wired up at all. One fragment labelled the box NEW
+                // and the next only ever looked for a box marked ITEMS.
+                //
+                // That is not six fragments blocked, it is the whole strategy
+                // for proving anything against a clean model, which is what
+                // fragment-proving rule 2 tells you to fall back on.
+                //
+                // NARROW ON PURPOSE, because a wrong bind here is a confident
+                // wrong answer - the thing this file exists to refuse:
+                //
+                //   * only the name `elements`, which is the one every
+                //     consumer uses; nothing else is guessed at
+                //   * only an element list, never an id list
+                //   * only when nothing else filled it - the chain under its
+                //     own name and the Revit selection both win
+                //   * NEVER when the contract set `binds` itself. An explicit
+                //     alias is the author's decision, and silently overriding
+                //     it would hide a typo in a `binds` line behind a bind
+                //     that happens to work.
+                //
+                // The read-back names it, so a proof judged on the binding
+                // note (rule 5) still shows where the elements came from.
+                else if (name == "elements" && wanted == name && IsElementList(type)
+                         && carried != null && carried.ContainsKey("created"))
+                {
+                    value = carried["created"];
+                    origin = "from " + (chain.By ?? "the previous fragment")
+                           + " as 'created'";
+                }
+
                 if (value == null)
                 {
                     // SAY WHICH NAME WAS LOOKED FOR when it is not the need's
