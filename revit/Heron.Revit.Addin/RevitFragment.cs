@@ -2749,6 +2749,27 @@ namespace Heron.Revit.Addin
 
             if (wanted != null)
             {
+                // A VIEW HAS ITS OWN LOOKUP, AND THE GENERIC ONE CANNOT REACH
+                // HALF THE VIEWS IN ANY REAL MODEL. Every level normally carries
+                // a floor plan AND a ceiling plan under the SAME name, so
+                // OneOfClass finds two, cannot tell them apart, and dead-ends on
+                // "Rename one." - which is advice nobody should take about their
+                // own model to satisfy a tool.
+                //
+                // OneView already reads the "FloorPlan: L2" spelling and lists
+                // the choices when it still cannot decide. These four needs were
+                // simply never sent to it, because they are declared ElementId
+                // and the View branch is keyed on the declared type.
+                //
+                // MEASURED 2026-09-17 on Snowdon Towers Sample HVAC: all eleven
+                // plan names are duplicated, so `place-rooms` could not be run
+                // at all - every level it was pointed at refused.
+                if (wanted == typeof(View))
+                {
+                    var view = OneView(doc, text, out problem) as Element;
+                    return view == null ? null : view.Id;
+                }
+
                 var found = OneOfClass(doc, wanted, kind, text, out problem) as Element;
                 return found == null ? null : found.Id;
             }

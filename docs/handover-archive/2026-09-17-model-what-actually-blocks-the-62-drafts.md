@@ -30,8 +30,17 @@ heron_version -> Heron 0.1.0, bridge protocol 2
 ```
 
 **Model: `D:\Ajmal\Heron-Proving\Snowdon-scratch.rvt`** — Snowdon Towers Sample HVAC, 9,638 placed
-elements, Revit 2024.3, session 14912. Named on every row below, because a proof that does not name
-its model is not a proof.
+elements, Revit 2024.3, sessions 14912 then 51080 after the mid-sitting rebuild. Named on every row
+below, because a proof that does not name its model is not a proof.
+
+**A second model, `Project1.rvt`** (3,420 elements, session 51080), was opened by the owner late in
+the sitting and carries **10 walls** he drew — which is what `set-wall-constraints` needs and
+Snowdon does not have natively. Every row below names which of the two it ran against.
+
+**Snowdon was byte-identical on disk afterwards** — 22,847,488 bytes, timestamp `14-09-2026
+12:42:21`, unchanged from before the sitting, with no lock file left behind. Every write here was
+rolled back and nothing was saved. Worth stating explicitly: a matching *element count* would not
+have proved that, because a count cannot see an edit — the file itself not moving can.
 
 ## The model, measured rather than assumed
 
@@ -332,6 +341,63 @@ been reproduced deliberately. But a second id producing a wrong answer instead o
 worth one session's attention, and it is the reason the one-id rule is worth more than a
 convention.
 
+## A second defect, found and FIXED: four view needs could not reach half the views
+
+`place-rooms` refused on every level it was pointed at. Two refusals, in order:
+
+> `No view called "FloorPlan: L2" in Snowdon-scratch.`
+
+> `2 views in Snowdon-scratch are called "L2", so the name does not say which one is meant.
+> Rename one.`
+
+**Both are dead ends, and the second is bad advice** — telling a modeller to rename views in their
+own model to satisfy a tool. It is also unavoidable: every Revit level normally carries a floor
+plan *and* a ceiling plan under one name, and **all eleven of Snowdon's plan names are duplicated.**
+
+`RevitFragment.cs` has **two** view resolvers. `OneView` already reads the `FloorPlan: L2`
+spelling, and when it still cannot decide it *lists the choices*. `OneOfClass` is the generic
+by-name lookup and knows nothing about view types. The dispatch sent a need **typed `View`** to
+`OneView` — but `planViewId`, `scopeViewId`, `targetViewId` and `templateId` are typed
+**`ElementId`**, so they took the other path and were stuck with the weaker resolver.
+
+Fixed by sending `View` to `OneView` from the ElementId path too. Rebuilt and redeployed to 2020,
+2024 and 2027.
+
+**Proved after the fix, on `Snowdon-scratch.rvt`:** `place-rooms` with
+`planViewId=FloorPlan: L2` now resolves and **`created 30` spaces**, `unbounded 7`. The same call
+refused outright before it.
+
+**`place-rooms` still has no D-30 negative on this model**: every level places something —
+`R2` created 13, `Parking` created 12. It needs a level with no enclosed region, or a tracking
+proof.
+
+## `set-wall-constraints` — a work counter declared as a result
+
+Attempted on **`Project1.rvt`** (Revit 2024, session 51080, 3,420 elements), on **10 walls** in
+`FloorPlan: 1 - Mech`. It is the library's one **STALE** signature, so re-proving it is correct.
+
+| phase | asked for | `rehosted` | `elevationChanged` |
+|---|---|---|---|
+| positive | base `Level 2`, top `Level 2` | **10** | 0 |
+| negative | base `Level 1`, top `Level 2` | **10** | 0 |
+
+The negative could not come back empty, and the source says why —
+`brain/fragments/set-wall-constraints/impl/any/fragment.cs` line 193:
+
+```csharp
+rehosted++;          // unconditional, once per wall that gets through
+```
+
+**`rehosted` counts walls PROCESSED, not walls changed**, and it is declared `role: result`. So it
+can never reach zero for any non-empty wall selection, and D-30's empty leg is unreachable through
+it. That is the work-counter shape `fragment-proving` warns about.
+
+**Not fixed, and the obvious fix is wrong.** Moving `rehosted` to `role: accounting` would leave
+`elevationChanged` as the only result — but this fragment exists to move walls between levels
+*without the walls moving*, so `elevationChanged 0` is its **success**, not its emptiness. The
+contract needs a count of walls whose base or top level actually differed, which is a new value
+rather than a re-labelled one. Recorded for a session that can add it and prove it.
+
 ## A cross-drive crash in `heron_buildmatrix`, found by the suites
 
 `tests/test_buildmatrix.py` fails on this machine, and it is **not on heron-ship §2's known list**.
@@ -392,7 +458,7 @@ one **STALE** — `set-wall-constraints`, signed by Ajmal PS on 2026-09-13, code
 | blocked by an orphan chain need | **6** |
 | ~~blocked by "one element, selected in Revit"~~ | ~~13~~ → **SOLVED**; 2 of the 13 proved, 2 still need TWO elements, the rest want model content this file lacks |
 | unjudgeable because `findings` is the only provide | **2** |
-| defect found and reported | **1** (`set-mep-justification`) |
+| defects found | **3** — `set-mep-justification` (reported), the view resolver (**fixed**), `set-wall-constraints`' work counter (reported) |
 | positive empty for want of model content | **6** |
 
 **Left at DRAFT: 61**, and **PROVEN is 311** — derived, not counted by hand:
