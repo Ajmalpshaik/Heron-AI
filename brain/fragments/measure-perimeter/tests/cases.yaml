@@ -1,0 +1,35 @@
+positive:
+  - given: >
+      three placed and enclosed rooms on a plan, on Revit 2024
+    expect: >
+      each room's perimeter matching REVIT'S OWN room schedule with a Perimeter
+      field added - not a hand-summed boundary. If they disagree, the boundary
+      location setting is not at the wall centre and this fragment has taken the
+      wrong route
+
+  - given: a rectangular floor slab
+    expect: >
+      the distance round its outside, checked against a dimension in Revit
+
+negative:
+  - given: a slab with a shaft cut through it
+    expect: >
+      the OUTSIDE perimeter only, and the finding naming how many holes were
+      skipped. Adding the hole would inflate a skirting take-off with edges
+      nobody trims
+
+  - given: a set of ducts
+    expect: >
+      all counted in `unmeasurable` - a duct has no horizontal footprint face and
+      no room perimeter, and inventing a number from its section would answer a
+      different question. MEASURE_ELEMENT_LENGTHS is what a duct wants
+
+  - given: an unplaced room
+    expect: >
+      counted in `unmeasurable`, not measured as zero. An unplaced room has no
+      boundary at all and a zero would read as a very small room
+
+second_route:
+  - >
+      a room schedule with the Perimeter field added, read straight off the sheet,
+      and the totals compared

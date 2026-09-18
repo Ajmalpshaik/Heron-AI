@@ -1,0 +1,93 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-103
+semantic-identity: "dimension the radius or the diameter of this arc"
+kind: action
+domain: revit.annotation
+capability: CREATE_RADIAL_DIMENSION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws a radial or a diameter dimension on an arc.
+
+  **IT IS REVIT 2025 AND LATER, AND THAT IS THE API'S LIMIT RATHER THAN A CHOICE
+  MADE HERE.** Measured 2026-09-18 against every reference assembly 2020 to 2027:
+  `RadialDimension.Create` first appears at 2025. Before that the only radial call
+  in the whole API is `NewRadialDimension`, which belongs to the FAMILY EDITOR and cannot be reached from a project document. So
+  on Revit 2020 to 2024 a radius simply cannot be dimensioned through the API, by
+  this library or any other.
+
+  **RADIUS AND DIAMETER ARE ONE CALL WITH A FLAG.** `isDiameter` is the whole
+  difference, which is why this is one fragment and not two.
+
+  **A DIAMETER DIMENSION IS STILL NOT AVAILABLE ANYWHERE ELSE.**
+  `DiameterDimension.Create` does not exist on any release - checked at all eight.
+  This flag is the only project route to one, and it too starts at 2025.
+
+  **THE REFERENCE MUST BE AN ARC, AND ITS ORIGIN MUST LIE WITHIN THE ARC.** Revit
+  says so itself and throws otherwise; the message is caught and repeated in
+  words rather than surfaced as an exception.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: arcReference
+      type: Reference
+      source: request
+    - name: isDiameter
+      type: bool
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: ElementId
+    - name: refused
+      # Why it declined, in the user's words - evidence it looked and said no.
+      # Never a thing it FOUND (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2025", "2026", "2027"]
+runtime: [net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  **THIS FRAGMENT DELIBERATELY CLAIMS ONLY THREE RELEASES**, and the list is
+  evidence rather than caution. `RadialDimension.Create(Document, View, Reference,
+  bool)` is absent from the 2020, 2021, 2022, 2023 and 2024 reference assemblies
+  and present in 2025, 2026 and 2027 - counted in all eight on 2026-09-18.
+
+  It arrives with the same 2025 change that split `LinearDimension`,
+  `RadialDimension` and `ArcLengthDimension` into their own classes, which
+  docs/16 already records. What that note did not say is that the split also
+  brought the first PROJECT-side creation route; before it, radial creation existed only on the family editor's own creation object.
+
+  `DiameterDimension.Create` exists on NO release. The `isDiameter` flag here is
+  the only way to make one in a project.
+
+# ROUTING - repeated in CREATE_LINEAR_DIMENSION and CREATE_ANGULAR_DIMENSION.
+#
+#   "dimension this radius"    -> here, Revit 2025+
+#   "dimension the diameter"   -> here, isDiameter true, Revit 2025+
+#   "dimension between these"  -> CREATE_LINEAR_DIMENSION - every release
+#   "dimension this angle"     -> CREATE_ANGULAR_DIMENSION - every release
+
+utterances:
+  - dimension the radius
+  - dimension the diameter of this
+  - put a radial dimension on this arc
+  - show the radius on the drawing

@@ -1,0 +1,90 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-063
+semantic-identity: "put a beam or a brace along each of these lines"
+kind: action
+domain: revit.elements
+capability: PLACE_LINE_BASED_FAMILY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places a line-based family along each curve given - a beam, a brace, anything
+  whose family is driven by a LINE rather than by a point.
+
+  **EVERY OTHER PLACEMENT IN THIS LIBRARY IS POINT-BASED, AND THAT IS THE WHOLE
+  REASON THIS EXISTS.** `PLACE_FAMILY_INSTANCES` takes `IList<XYZ>`, which is
+  right for diffusers, sprinklers and detectors and cannot express a beam at
+  all: a beam has a start and an end, and the family is driven by the line
+  between them. Measured 2026-09-18 against the whole library - not one fragment
+  called the curve overload, so braces and every curve-driven loadable family
+  were unreachable.
+
+  **THE STRUCTURAL TYPE IS ASKED FOR AND NEVER ASSUMED.** A beam and a brace are
+  the same call with a different `StructuralType`, and Revit's analytical
+  behaviour, the schedules and the load take-off all follow it. Guessing it is
+  how a brace lands in the model as a beam and nothing says so.
+
+  **THE SYMBOL IS ACTIVATED FIRST.** An unactivated type places nothing and
+  reports no error - the same trap `PLACE_FAMILY_INSTANCES` exists to close.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a run
+  of twelve beams is one undo entry rather than twelve.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: symbol
+      type: FamilySymbol
+      source: request
+    - name: curves
+      type: IList<Curve>
+      source: request
+    - name: level
+      type: Level
+      source: request
+    - name: structuralType
+      type: string
+      source: request
+  provides:
+    - name: placed
+      role: result
+      type: IList<ElementId>
+    - name: failed
+      # Curves nothing could be placed along. Never an instance it placed (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.Create.NewFamilyInstance(Curve, FamilySymbol, Level, StructuralType)`
+  is present 2020 through 2027 - read off the reference assemblies at both ends
+  on 2026-09-18. No ElementId is built from an int, so 2024's 64-bit ids do not
+  reach this code. Curves arrive in internal FEET, converted at the edge (D-20).
+
+# ROUTING - repeated in PLACE_FAMILY_INSTANCES and PLACE_STRUCTURAL_FAMILY.
+#
+#   "put a beam along here"        -> here
+#   "add the bracing"              -> here, structuralType Brace
+#   "place these diffusers"        -> PLACE_FAMILY_INSTANCES - POINT based
+#   "put a column at each of these"-> PLACE_STRUCTURAL_FAMILY - point, but
+#                                     structural, which the diffuser one is not
+#   "put a door in this wall"      -> PLACE_HOSTED_FAMILY - it needs a host
+
+utterances:
+  - place a beam along this line
+  - put beams on these grid lines
+  - add the bracing
+  - place a line based family
+  - put a beam from here to here

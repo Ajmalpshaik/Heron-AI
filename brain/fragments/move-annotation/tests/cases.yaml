@@ -1,0 +1,31 @@
+positive:
+  - given: >
+      one duct tag on a plan, and a point 2 m away that is clear of other
+      annotation, on Revit 2024
+    expect: >
+      the tag head AT that point, its leader stretched to follow, and STILL
+      POINTING AT THE SAME DUCT - that last half checked with
+      REPORT_TAGS_AND_TARGETS, because a move that re-anchored the leader would
+      look identical on screen
+
+  - given: a text note handed in
+    expect: moved by its location point, not refused
+
+negative:
+  - given: a dimension handed in
+    expect: >
+      whatever actually happens, recorded rather than assumed. A dimension is
+      positioned by its witness references and may well land in `notMovable` -
+      which is the honest answer and is worth knowing before somebody relies on
+      it
+
+  - given: an element with no tag head and no location point
+    expect: counted in `notMovable`, nothing thrown
+
+  - given: a tag already at the target point
+    expect: counted as moved, no error
+
+second_route:
+  - >
+      the same tag dragged by hand in Revit to the same point, and the two
+      compared - including what REPORT_TAGS_AND_TARGETS says each is pointing at

@@ -1,0 +1,33 @@
+positive:
+  - given: >
+      a floor plan with a view filter hiding all insulated ducts, bounded to the
+      Ducts category, on Revit 2024
+    expect: >
+      exactly the insulated ducts - counted by turning the filter off and
+      comparing the plan. `inModel` minus `showing` must equal what came back, and
+      that arithmetic is the thing to check rather than the list
+
+  - given: a plan whose crop excludes half the floor, bounded to Ducts
+    expect: the ducts outside the crop, and nothing inside it
+
+negative:
+  - given: a view with nothing hidden at all, bounded to one category
+    expect: >
+      an EMPTY set, with `inModel` equal to `showing`. Empty is the right answer
+      here and the two counts are what prove it looked rather than failed
+
+  - given: a view template handed in as the view
+    expect: >
+      refused by name. A template holds no elements, so every element in the
+      model would come back as hidden - a catastrophic-looking answer to a wrong
+      question
+
+  - given: the same request with no category list
+    expect: >
+      a huge set including views, sheets and materials, AND the finding saying so.
+      Correct and useless, and the warning is the fragment doing its job
+
+second_route:
+  - >
+      SELECT_VISIBLE_IN_VIEW run on the same view and category, and its count
+      subtracted from FILTER_ELEMENTS_BY_CATEGORY's by hand - the two must agree

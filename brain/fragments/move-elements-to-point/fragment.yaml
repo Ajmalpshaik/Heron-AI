@@ -1,0 +1,90 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-069
+semantic-identity: "put this element at exactly this coordinate"
+kind: action
+domain: revit.elements
+capability: MOVE_ELEMENTS_TO_POINT
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Moves each element so that its own location point lands ON the coordinate given.
+
+  **`MOVE_ELEMENTS` SHIFTS BY AN OFFSET AND CANNOT DO THIS.** Its
+  semantic-identity is *"shift these elements by one offset"*, which answers
+  *"move it 500 east"* and not *"put it at 12400, 8600, 3000"* - the setting-out
+  instruction a drawing actually carries. Composing the two needs the current
+  position, which comes from a different fragment, and then arithmetic between
+  two calls, which D-01 puts on the host. Doing that subtraction HERE, where the
+  element is already in hand, is one call instead of three and cannot go stale
+  between them.
+
+  **AN ELEMENT WITH NO LOCATION POINT IS REPORTED, NOT GUESSED AT.** A wall, a
+  duct and a line are positioned by a CURVE, not a point, and "put this wall at
+  that coordinate" has no single meaning - its start, its end or its middle are
+  three different answers. Those are counted rather than moved by a number
+  somebody invented.
+
+  **IT CHECKS THAT THE ELEMENT ACTUALLY ARRIVED.** A constraint can hold an
+  element still while the move reports no error, which is the same trap
+  `MOVE_ELEMENTS` documents and for the same reason.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: target
+      type: XYZ
+      source: request
+  provides:
+    - name: moved
+      role: result
+      type: IList<ElementId>
+    - name: notAtPoint
+      # Accepted the move and did not arrive - a constraint held them. Evidence
+      # it looked, never a thing it moved (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: noLocationPoint
+      # Positioned by a curve rather than a point, so "put it at this
+      # coordinate" has no single meaning. Given and unusable (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ElementTransformUtils.MoveElement(Document, ElementId, XYZ)` is present 2020
+  through 2027 - read off the reference assemblies at both ends on 2026-09-18.
+  The target arrives in internal FEET, converted at the edge (D-20): a second
+  conversion here would divide every coordinate by 304.8.
+
+# ROUTING - repeated in MOVE_ELEMENTS.
+#
+#   "put it at 12400, 8600"    -> here
+#   "move it 500 east"         -> MOVE_ELEMENTS - an OFFSET, and the right
+#                                 answer for almost every nudge
+#   "move these to level 3"    -> SET_ELEMENT_LEVEL reassigns without moving;
+#                                 moving as well is this plus that
+#   "where is it now"          -> REPORT_LOCATION
+
+utterances:
+  - move this to these coordinates
+  - put it at this exact point
+  - set the location of these
+  - move to 0,0,0
+  - place this at the survey point

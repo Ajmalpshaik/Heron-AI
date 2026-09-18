@@ -1,0 +1,101 @@
+heron-agent: HERON-REVIT-LVL-027
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-104
+semantic-identity: "make this grid 2d in this view, or put it back to 3d, and say which it was"
+kind: action
+domain: revit.datums
+capability: SET_DATUM_EXTENT_TYPE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Reads whether each grid or level end is on its shared 3D extent or on a
+  view-specific 2D one, and sets it either way.
+
+  **ONLY ONE DIRECTION EXISTED.** `RESET_DATUM_EXTENTS` writes
+  `DatumExtentType.Model`, which is 2D to 3D - it throws away the per-view
+  override somebody made by dragging an end. Measured 2026-09-18,
+  `SetDatumExtentType` appears exactly ONCE in the whole library, at
+  `reset-datum-extents/impl/any/fragment.cs:60`, and the value is always `Model`.
+  So a modeller could be handed back the shared extent and could never be given a
+  view-specific one - which is the ordinary drafting job of shortening one grid
+  in one view without touching the other twenty.
+
+  **AND THE STATE COULD NOT BE ASKED FOR.** `MAXIMIZE_DATUM_EXTENTS` calls
+  `GetDatumExtentTypeInView` and reports which ends are view-specific, but only as
+  accounting while it stretches things. Nothing answered *"is this grid 2D or 3D
+  in this view"* without modifying the model to find out. So this reads first and
+  reports what it found BEFORE changing it, the way `SET_VIEW_RANGE` and
+  `SET_VIEW_SCALE` both read and set.
+
+  **EXTENTS ARE SHARED AND BUBBLES ARE NOT, AND CONFUSING THEM CHANGES TWENTY
+  VIEWS.** `SET_DATUM_BUBBLES` states it plainly: bubbles are per end and per
+  view; the MODEL extent is shared across every view. Setting an end back to
+  `Model` here therefore reaches every view that shows it, not just this one.
+  That is the point of the call and it is said out loud rather than discovered.
+
+  **BOTH ENDS ARE HANDLED SEPARATELY**, because only one is usually dragged.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    - name: viewSpecific
+      type: bool
+      source: request
+  provides:
+    - name: changed
+      role: result
+      type: IList<ElementId>
+    - name: wasAlready
+      # Ends already on the extent type asked for, so there was nothing to do.
+      # Evidence it looked, never a change it made (D-52).
+      role: accounting
+      type: int
+    - name: notADatum
+      # Handed in but not a grid or a level. Given and unusable (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `DatumPlane.SetDatumExtentType(DatumEnds, View, DatumExtentType)` and
+  `DatumPlane.GetDatumExtentTypeInView(DatumEnds, View)` are present 2020 through
+  2027, and `DatumExtentType` has exactly two values - `Model` and `ViewSpecific`
+  - on every release. Read off the reference assemblies at both ends on
+  2026-09-18.
+
+# ROUTING - repeated in RESET_DATUM_EXTENTS, MAXIMIZE_DATUM_EXTENTS and
+# SET_DATUM_BUBBLES.
+#
+#   "make this grid 2d here"        -> here, viewSpecific true
+#   "is this grid 2d or 3d"         -> here - it reports before it changes
+#   "put the dragged ends back"     -> RESET_DATUM_EXTENTS - the same write, but
+#                                      that one is the tidy-up job and says so
+#   "the grids stop in different places" -> MAXIMIZE_DATUM_EXTENTS
+#   "the bubbles are on the wrong side"  -> SET_DATUM_BUBBLES - per VIEW, which
+#                                      the model extent is not
+
+utterances:
+  - make this grid 2d in this view
+  - change the grid from 3d to 2d
+  - set this level back to 3d
+  - is this grid 2d or 3d here
+  - make the grid view specific

@@ -1,0 +1,87 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-065
+semantic-identity: "put a door or a window into this wall"
+kind: action
+domain: revit.elements
+capability: PLACE_HOSTED_FAMILY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places a family INTO a host element - a door or a window in a wall, a light in
+  a ceiling, anything whose family is hosted rather than free-standing.
+
+  **NOTHING IN THIS LIBRARY COULD PUT A DOOR IN A WALL.** Measured 2026-09-18:
+  every `NewFamilyInstance` call in the 372 fragments passes a point, a face or a
+  view, and not one passes a HOST ELEMENT. So the most ordinary architectural act
+  there is had no route at all.
+
+  **A DOOR PLACED WITHOUT ITS HOST IS NOT A DOOR.** Revit will place some
+  families free-standing and they then cut nothing, schedule wrong, and do not
+  move when the wall moves. The host is required here rather than optional for
+  exactly that reason: the failure is silent and looks fine in plan.
+
+  **PLACE_FAMILY_ON_FACE IS THE OTHER HALF AND IS NOT THIS.** That one hosts to a
+  FACE picked off geometry, which is right for a face-based family on a soffit.
+  This one hosts to the ELEMENT, which is what a door and a window want.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: symbol
+      type: FamilySymbol
+      source: request
+    - name: points
+      type: IList<XYZ>
+      source: request
+    - name: host
+      type: Element
+      source: request
+    - name: level
+      type: Level
+      source: request
+  provides:
+    - name: placed
+      role: result
+      type: IList<ElementId>
+    - name: failed
+      # Points the host would not take one at. Never an instance it placed (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.Create.NewFamilyInstance(XYZ, FamilySymbol, Element, Level, StructuralType)`
+  is present 2020 through 2027 - read off the reference assemblies at both ends
+  on 2026-09-18. `StructuralType.NonStructural` is passed deliberately: a door is
+  not a structural member, and PLACE_STRUCTURAL_FAMILY is where that decision
+  belongs. Points arrive in internal FEET (D-20).
+
+# ROUTING - repeated in PLACE_FAMILY_INSTANCES and PLACE_FAMILY_ON_FACE.
+#
+#   "put a door in this wall"       -> here
+#   "add windows to this elevation" -> here
+#   "put this light on that soffit" -> PLACE_FAMILY_ON_FACE - a FACE, picked off
+#                                      geometry, which a face-based family wants
+#   "place these sprinklers"        -> PLACE_FAMILY_INSTANCES - free-standing
+
+utterances:
+  - put a door in this wall
+  - place windows in this wall
+  - add a door here
+  - place a hosted family
+  - put these openings into the wall

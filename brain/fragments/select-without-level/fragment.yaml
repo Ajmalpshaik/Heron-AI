@@ -1,0 +1,86 @@
+heron-agent: HERON-REVIT-SEL-008
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-032
+semantic-identity: "which of these has no level at all"
+kind: filter
+domain: revit.selection
+capability: SELECT_WITHOUT_LEVEL
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Hands back the elements whose level cannot be resolved - the ones a
+  floor-by-floor check, a level clean-up or a hand-over would silently miss.
+
+  **`SELECT_BY_LEVEL` COUNTS THESE AND THROWS THEM AWAY.** Its contract declares
+  `unresolvedLevel` as an `int`. So the model can say there are 412 elements with
+  no level and cannot hand one of them over - they are in scope during the run
+  and discarded at the end. Asked for four separate times across one morning's
+  lists, as *select*, *search*, *detect* and *verify*, which is four names for
+  this fragment.
+
+  **THE LEVEL LOOKUP IS THE SAME ONE, DELIBERATELY, INCLUDING ITS LAST ENTRY.**
+  There is no single "which level is this on" call: a wall keeps it on
+  `Wall.LevelId`, many elements on `Element.LevelId`, a family instance on its own
+  parameters, and an MEP curve ONLY on `RBS_START_LEVEL_PARAM`, where the others
+  are absent rather than empty. A lookup that stops before that last one returns
+  every duct in the model as unlevelled - a confident, enormous, wrong answer.
+
+  **A GREAT MANY ELEMENTS LEGITIMATELY HAVE NO LEVEL, AND THIS IS THE WARNING
+  THAT HAS TO TRAVEL WITH THE ANSWER.** Views, sheets, materials, view templates
+  and most annotation have none and never should. Run unbounded, this returns
+  thousands of them and is entirely correct, and it reads as a fault. So the
+  category list is not optional decoration - it is what makes the answer mean
+  anything - and the finding says so in every run.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: elements
+      role: result
+      type: IList<Element>
+    - name: examined
+      # How many were examined, so a small answer can be told from a small scan.
+      # Evidence it looked, never a thing it found (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Element.LevelId`, `Wall.LevelId` and `BuiltInParameter.RBS_START_LEVEL_PARAM`
+  are unchanged 2020 to 2027 - read off the reference assemblies at both ends.
+  No ElementId is built from an int, so 2024's 64-bit ids do not reach this code;
+  the comparison is against `ElementId.InvalidElementId`, which is version-safe.
+
+# ROUTING - repeated in SELECT_BY_LEVEL and READ_ELEMENT_LEVEL.
+#
+#   "what has no level"            -> here
+#   "find elements without a level"-> here
+#   "what is on Level 2"           -> SELECT_BY_LEVEL - the other side, and it
+#                                     counts these rather than returning them
+#   "what level is this on"        -> READ_ELEMENT_LEVEL - one element, both the
+#                                     level and the offset
+
+utterances:
+  - select elements without a level
+  - what has no level
+  - find the elements with no level set
+  - detect elements without level
+  - which of these are not on a level

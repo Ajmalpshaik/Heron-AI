@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-066
+semantic-identity: "put a roof over this outline"
+kind: action
+domain: revit.elements
+capability: CREATE_ROOF
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates a footprint roof from a closed boundary on one level.
+
+  **FLOOR AND CEILING WERE BOTH HERE AND ROOF WAS NOT.** `CREATE_FLOOR` makes the
+  slab and `CREATE_CEILING` makes the ceiling; the third member of that family
+  was missing, so a building could be given every storey and no lid.
+
+  **THE FOOTPRINT ROOF IS FLAT UNTIL SOMEBODY SLOPES IT.** This makes the roof
+  and does NOT set a slope on any edge. Revit hands back the boundary's model
+  curves so a slope can be defined per edge afterwards, and that is a separate
+  decision about the design - a default pitch invented here would become a pitch
+  quietly relied on.
+
+  **THE BASE HEIGHT IS THE LEVEL'S PROJECT ELEVATION.** Every XYZ the API takes
+  is project-internal, while `Elevation` is measured from whatever the level
+  type's Elevation Base says. On a model set out to a survey datum the two
+  differ, and the wrong one puts the roof metres out with no error at all - the
+  same trap `CREATE_FLOOR` documents.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: level
+      type: Level
+      source: request
+    - name: roofType
+      type: RoofType
+      source: request
+    - name: boundary
+      type: IList<XYZ>
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: ElementId
+    - name: edges
+      # The boundary's model curves, handed back so a slope can be set per edge
+      # afterwards. A thing it MADE, so a result (D-52).
+      role: result
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.Create.NewFootPrintRoof(CurveArray, Level, RoofType, out ModelCurveArray)`
+  is present 2020 through 2027 - read off the reference assemblies at both ends
+  on 2026-09-18, and unlike the floor call it did NOT change at 2022, so there is
+  one path rather than two. Lengths arrive in internal FEET (D-20).
+
+# ROUTING - repeated in CREATE_FLOOR and CREATE_CEILING.
+#
+#   "put a roof on it"        -> here
+#   "make the slab"           -> CREATE_FLOOR
+#   "put a ceiling in"        -> CREATE_CEILING
+#   "slope this roof"         -> NOT HERE. This makes it flat and hands back the
+#                                edges; setting a slope per edge is a separate
+#                                job nothing in the library covers yet
+
+utterances:
+  - put a roof over this
+  - create a roof
+  - make the roof on this level
+  - add a flat roof here

@@ -1,0 +1,33 @@
+positive:
+  - given: >
+      a floor plan on Revit 2025 or later, a curved wall or an arc detail line,
+      and a reference to that arc, with isDiameter false
+    expect: >
+      a radial dimension reading the real radius - checked against the radius the
+      arc was drawn at, not read off the report
+
+  - given: the same reference with isDiameter true
+    expect: >
+      a DIAMETER dimension reading twice the radius. This is the only route to a
+      diameter dimension in a project on any release, so it is worth confirming
+      rather than assuming the flag reaches Revit
+
+negative:
+  - given: a reference to a straight line rather than an arc
+    expect: >
+      refused in words naming the arc requirement, nothing created - not a raw
+      Revit exception
+
+  - given: a view template handed in as the view
+    expect: refused by name
+
+  - given: this fragment attempted on Revit 2024
+    expect: >
+      IT IS NOT DEPLOYED THERE AT ALL - the contract claims 2025, 2026 and 2027
+      only, and tools/check-fragments-compile.py enforces that. A run on 2024 is
+      a routing defect in whatever called it, not a failure here
+
+second_route:
+  - >
+      Revit's own Annotate then Radial dimension picked on the same arc, and the
+      two values compared - then repeated with Diameter for the flag

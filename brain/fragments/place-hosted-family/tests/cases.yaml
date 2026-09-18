@@ -1,0 +1,28 @@
+positive:
+  - given: >
+      a straight wall on Level 1, a loaded single door family type, and two
+      points on the wall's centre line, on Revit 2024
+    expect: >
+      two doors IN the wall - checked by moving the wall and watching them move
+      with it, and by the wall showing an opening in plan. A door that does not
+      move with its wall was placed free-standing and the whole fragment failed
+      quietly
+
+negative:
+  - given: no host
+    expect: >
+      refused by name, nothing placed, and the message saying why a hosted
+      family needs one. NOT a silent free-standing placement
+
+  - given: a point well outside the wall
+    expect: >
+      counted in `failed` rather than thrown away. Revit refuses per point and
+      the rest of the run survives
+
+  - given: a free-standing family type, not a hosted one
+    expect: counted in `failed`, with the run intact
+
+second_route:
+  - >
+      Revit's own Architecture then Door, clicked on the same wall, and the two
+      compared - specifically whether both move when the wall is moved

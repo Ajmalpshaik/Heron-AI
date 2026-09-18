@@ -1,0 +1,32 @@
+positive:
+  - given: >
+      three straight lines drawn between grid intersections on Level 2, a loaded
+      beam family type, and structuralType "beam", on Revit 2024
+    expect: >
+      three beams along those lines, checked IN A 3D VIEW and in the structural
+      framing schedule - not read off the count. Each one's Structural Usage must
+      read as a beam, which is the half a point-based placement cannot do
+
+  - given: the same lines with structuralType "brace"
+    expect: >
+      braces, not beams. Checked in the schedule: if they come back as beams the
+      enum is not reaching Revit and the whole fragment is pointless
+
+negative:
+  - given: an empty list of curves
+    expect: nothing placed, nothing thrown, and a finding saying there were no lines
+
+  - given: structuralType "diffuser"
+    expect: >
+      refused BY NAME, nothing placed, and the message pointing at
+      PLACE_STRUCTURAL_FAMILY. Not a silent fallback to UnknownFraming
+
+  - given: a family type that is point-based, not line-based
+    expect: >
+      counted in `failed` rather than throwing the whole run away. Revit refuses
+      the curve overload for a point-based family and that refusal is per curve
+
+second_route:
+  - >
+      Revit's own Structure then Beam along the same two points, and the two
+      compared in the structural framing schedule

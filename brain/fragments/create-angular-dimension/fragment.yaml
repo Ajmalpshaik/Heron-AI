@@ -1,0 +1,88 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-102
+semantic-identity: "dimension the angle between these two"
+kind: action
+domain: revit.annotation
+capability: CREATE_ANGULAR_DIMENSION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws an angular dimension between two references, along an arc.
+
+  **THE LIBRARY HAD NO ANGLE AT ALL.** Every dimension fragment here measures a
+  DISTANCE - duct spacing, grids, rooms, wall openings, family instances. A
+  splayed wall, a skewed grid and a bend in a run are all dimensioned by angle on
+  a real drawing and nothing could draw one.
+
+  **THE CALL IS `AngularDimension.Create`, NOT `NewAngularDimension`.** The
+  obvious-sounding one is on the FAMILY EDITOR's creation object and cannot be
+  reached from a project at all. This one is a static on the DB type and works in
+  a project on every release - which is the opposite of the radial case, where no
+  project route exists before 2025.
+
+  **THE ARC IS WHERE THE DIMENSION SITS, NOT WHAT IT MEASURES.** It is the witness
+  line's path, and its centre must be the apex of the angle. An arc struck
+  somewhere convenient gives a dimension that reads a different angle from the one
+  intended, with no error.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: arc
+      type: Arc
+      source: request
+    - name: references
+      type: IList<Reference>
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: ElementId
+    - name: refused
+      # Why it declined, in the user's words - evidence it looked and said no.
+      # Never a thing it FOUND (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `AngularDimension.Create(Document, View, Arc, IList<Reference>, DimensionType)`
+  is present 2020 through 2027 - read off the reference assemblies at both ends on
+  2026-09-18. `DimensionType` is passed as null, which Revit reads as the view's
+  default.
+
+  **`NewAngularDimension` is the wrong call and is not reachable here.** It belongs to the family editor. The distinction is the same
+  one CREATE_LINEAR_DIMENSION documents, and it is worth stating twice because
+  the family-editor name is the one that reads correct.
+
+# ROUTING - repeated in CREATE_LINEAR_DIMENSION.
+#
+#   "dimension this angle"       -> here
+#   "dimension between these"    -> CREATE_LINEAR_DIMENSION - a distance
+#   "dimension the radius"       -> CREATE_RADIAL_DIMENSION - Revit 2025 and
+#                                   later ONLY, which is not a choice this
+#                                   library made
+
+utterances:
+  - dimension the angle between these
+  - put an angular dimension here
+  - dimension this splay
+  - show the angle on the drawing
