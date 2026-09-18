@@ -1,0 +1,91 @@
+heron-agent: HERON-REVIT-WRK-014
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-032
+semantic-identity: "send my changes to the central model and take everybody else's"
+kind: action
+domain: revit.document
+capability: SYNC_WITH_CENTRAL
+version: 1
+source: OFFICIAL
+risk: PUBLISH
+
+purpose: >
+  Synchronises a workshared model with its central file, and says what it
+  relinquished.
+
+  **NOTHING IN HERON COULD SAVE OR SYNC ANYTHING.** Measured 2026-09-18 across
+  every fragment AND the whole add-in: `SynchronizeWithCentral` appears nowhere,
+  and `Document.Save` appears nowhere. The only `SaveAs` calls are for family
+  files and print settings. So Heron could read who owns what
+  (`READ_ELEMENT_OWNERSHIP`), report what may be edited
+  (`REPORT_ELEMENT_OWNERSHIP`), and then modify a workshared model and leave every
+  change sitting in somebody's local file waiting for a hand on the keyboard.
+
+  **IT IS `PUBLISH` RISK, WHICH IS THE POINT RATHER THAN A FORMALITY.** A sync
+  pushes work to everybody on the job. It cannot be undone, it can take minutes,
+  and it can surface another person's conflicting edits. Phase 0 and Phase 1
+  refuse `PUBLISH` unconditionally, so this is written and deliberately
+  unreachable until the register says otherwise - which is the right order.
+
+  **IT RELINQUISHES WHAT IT OWNS AND SAYS SO.** Syncing without relinquishing
+  leaves elements checked out under somebody's name after they have walked away,
+  and the next person gets a refusal they cannot explain. What was given up is
+  reported rather than assumed.
+
+  **A MODEL THAT IS NOT WORKSHARED IS REFUSED BY NAME.** There is no central file
+  to sync with and the call would throw; the refusal says which, because "sync
+  failed" on a single-user model reads as a broken tool.
+
+  OPENS NO TRANSACTION AND MUST NOT BE INSIDE ONE. Revit refuses a sync within a
+  transaction, which is the opposite of Golden Rule 16's usual shape and is worth
+  stating because every other write fragment here assumes one.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: comment
+      type: string
+      source: request
+    - name: relinquish
+      type: bool
+      source: request
+  provides:
+    - name: synchronised
+      role: result
+      type: bool
+    - name: refused
+      # Why it declined, in the user's words - evidence it looked and said no.
+      # Never a thing it DID (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.SynchronizeWithCentral(TransactWithCentralOptions, SynchronizeWithCentralOptions)`,
+  `Document.IsWorkshared` and `RelinquishOptions` are present 2020 through 2027 -
+  read off the reference assemblies at both ends on 2026-09-18.
+
+# ROUTING - repeated in READ_ELEMENT_OWNERSHIP and SAVE_DOCUMENT.
+#
+#   "sync to central"          -> here
+#   "save my work"             -> SAVE_DOCUMENT - a local save, which on a
+#                                 workshared model is NOT a sync and does not
+#                                 reach anybody else
+#   "who owns this"            -> READ_ELEMENT_OWNERSHIP - a READ
+#   "can I edit these"         -> REPORT_ELEMENT_OWNERSHIP
+
+utterances:
+  - sync with central
+  - synchronise the model
+  - push my changes to central
+  - sync and relinquish

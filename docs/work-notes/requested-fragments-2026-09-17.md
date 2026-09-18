@@ -28,6 +28,102 @@ ls brain/fragments | wc -l
 
 ---
 
+# 2026-09-18 - TWENTY-THREE OF THESE ARE NOW BUILT
+
+**Read this section before the rows below it.** The owner said *"build all
+fragments and fix the gap"* and twenty-three were written that day. Every one is
+`DRAFT` and none has met a model: what is established is that each compiles
+against the real Revit reference assemblies on every release it claims, which is
+the API surface agreeing and is not a proof (D-30).
+
+The rows below are kept rather than deleted, because each says WHY the gap was
+there and several of them turned out to be wrong in an interesting way. A row
+that is closed is marked at its head.
+
+## What the reference assemblies settled, which the rows below had wrong
+
+Installing the .NET SDK - one apt package, `dotnet-sdk-10.0`, about two minutes -
+made `tools/check-fragments-compile.py` runnable here and the real Revit
+reference assemblies readable. Three of the rows below changed as a result.
+
+**G-04 is no longer unverified, and it was right.** `Phase` carries NO members of
+any kind on any release 2020 to 2027 - no method, no static, nothing. Phase
+creation is a permanent API limitation, not an unbuilt fragment, and it belongs
+with G-24 rather than with the rest.
+
+**G-02 and G-15 were wrong about what kind of gap they were.** Radial, diameter,
+angular and arc-length dimensions are not four missing fragments. Every
+`New...Dimension` call whose name suggests it - `NewLinearDimension`,
+`NewRadialDimension`, `NewDiameterDimension`, `NewArcLengthDimension`,
+`NewAngularDimension` - belongs to the FAMILY EDITOR's creation object and cannot
+be reached from a project document at all. That cost a compile failure on the
+first write of `create-linear-dimension`. The project routes are four different
+stories:
+
+| | project route | from |
+|---|---|---|
+| Linear | `NewDimension` on the base item factory, via `doc.Create` | 2020 |
+| Angular | `AngularDimension.Create`, a static | 2020 |
+| Radial | `RadialDimension.Create` | **2025** |
+| Diameter | the same call's `isDiameter` flag | **2025** |
+| Arc length | `ArcLengthDimension.Create` | **2025** |
+
+So `create-radial-dimension` claims 2025, 2026 and 2027 only, and the compile
+gate enforces it. `DiameterDimension.Create` exists on no release at all.
+
+**The `propose`/`create` split for openings was real and only half built.**
+`create-opening` is the missing half, and the split is kept.
+
+## The twenty-three
+
+| Fragment | Closes |
+|---|---|
+| `place-line-based-family` | G-01 - beams, braces, every curve-driven family |
+| `place-structural-family` | G-06 - by adding a route, leaving the PROVEN fragment untouched |
+| `place-hosted-family` | doors and windows into a wall |
+| `create-roof` | the third member of floor and ceiling |
+| `create-opening` | `propose-mep-openings`' missing write |
+| `create-linear-dimension` | G-08 |
+| `create-angular-dimension` | part of G-15 |
+| `create-radial-dimension` | G-02 and the rest of G-15, **Revit 2025+ only** |
+| `rotate-elements-about-axis` | G-11 |
+| `move-elements-to-point` | G-12 |
+| `move-annotation` | G-13 - the whole shape, not one of its four names |
+| `set-compound-layer-width` | G-14 |
+| `list-categories` | G-17 |
+| `report-centroid` | G-18 |
+| `measure-perimeter` | G-19 |
+| `refresh-view` | G-20 |
+| `find-degenerate-lines` | G-21 |
+| `select-hidden-in-view` | G-05 |
+| `select-without-level` | G-07 - by adding a route, leaving the PROVEN fragment untouched |
+| `set-datum-extent-type` | G-25 - both the write and the read |
+| `create-family-document` | G-03 |
+| `save-document` | nothing in Heron could save |
+| `sync-with-central` | nothing in Heron could sync |
+
+Derive the count rather than trusting that table:
+
+```bash
+grep -l 'heron-since: 0.1.0' brain/fragments/*/fragment.yaml | xargs grep -l 'heron-status: DRAFT' | wc -l
+```
+
+## What is still open, and why
+
+**Permanently, by the API:** phase creation (G-04) and category reassignment
+(G-24). Neither is a fragment anybody can write.
+
+**Not built, and buildable:** a colour fill scheme (G-16) - `ColorFillScheme`
+carries `Duplicate(String)`, so one CAN be made from an existing scheme, which
+the row below did not know. Curtain grids and mullions (G-09). Stairs, railings,
+topography and rebar. `Railing.Create` exists and is the easiest of those.
+
+**Deliberately not built:** everything reachable by chaining existing fragments -
+G-10, G-22, G-23 - because the owner asked for the build list, not the
+inconvenience list.
+
+---
+
 ## Lists checked so far
 
 | # | Subject | Asked | Covered | Missing |

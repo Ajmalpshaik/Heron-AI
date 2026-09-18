@@ -1,0 +1,86 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-034
+semantic-identity: "start a brand new family from a template"
+kind: action
+domain: revit.document
+capability: CREATE_FAMILY_DOCUMENT
+version: 1
+source: OFFICIAL
+risk: ADMIN
+
+purpose: >
+  Creates a new, empty family document from a family template file and hands back
+  the open document.
+
+  **EVERY FAMILY FRAGMENT HERE ACTS ON A FAMILY THAT ALREADY EXISTS.**
+  `LOAD_FAMILY` loads one, `OPEN_FAMILY_FOR_EDITING` opens one,
+  `RENAME_FAMILY` renames one, `UPGRADE_FAMILY_FILES` upgrades a folder of them,
+  `EXPORT_FAMILIES` gets them out. Measured 2026-09-18, nothing created one, so
+  the first step of making a new component had no route.
+
+  **THE TEMPLATE DECIDES THE CATEGORY AND ALMOST EVERYTHING ELSE**, and it is
+  asked for rather than chosen. A metric generic model template and a face-based
+  one produce families that behave completely differently, and which is right is a
+  decision about the job (D-33). Nothing here guesses a template path: they live
+  in a per-installation, per-language folder, and a guessed one either fails or
+  quietly makes the wrong kind of family.
+
+  **IT MAKES AN EMPTY FAMILY AND NOTHING ELSE.** No geometry, no parameters, no
+  types, and it is not saved to disk. Those are separate jobs, and a fragment that
+  did all of them could not be re-used for any one.
+
+  **THE DOCUMENT IS LEFT OPEN AND IS THE CALLER'S RESPONSIBILITY.** An unclosed
+  family document holds memory and a file lock, and Revit will not close the
+  last one silently.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - a new document cannot be inside the
+  current one's transaction, and this opens none.
+
+contract:
+  needs:
+    - name: app
+      type: Application
+    - name: templatePath
+      type: string
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: Document
+    - name: refused
+      # Why it declined, in the user's words - evidence it looked and said no.
+      # Never a thing it MADE (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Application.NewFamilyDocument(string)` is present 2020 through 2027 - read off
+  the reference assemblies at both ends on 2026-09-18. The template path is a
+  file on disk and its location differs by Revit version, by language and by
+  installation, which is exactly why it is an input rather than a constant here.
+
+# ROUTING - repeated in LOAD_FAMILY and OPEN_FAMILY_FOR_EDITING.
+#
+#   "start a new family"           -> here
+#   "load this family in"          -> LOAD_FAMILY - it already exists as a file
+#   "open that family to edit it"  -> OPEN_FAMILY_FOR_EDITING - it is already
+#                                     loaded into the project
+#   "what parameters has it got"   -> REPORT_FAMILY_PARAMETERS
+#   "upgrade my family library"    -> UPGRADE_FAMILY_FILES
+
+utterances:
+  - create a new family
+  - start a family from a template
+  - make a new family document
+  - new family from this template

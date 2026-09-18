@@ -1,0 +1,74 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-106
+semantic-identity: "make the drawing on screen catch up with what was just changed"
+kind: action
+domain: revit.views
+capability: REFRESH_VIEW
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Regenerates the document and redraws the active view, so what is on screen
+  matches what is in the model.
+
+  **NOTHING DID THIS AS A JOB OF ITS OWN.** `Regenerate` is called INSIDE several
+  write fragments where their own next step needs it - after activating a family
+  symbol, before reading back a size - and that is correct and is not the same
+  thing. After a run of changes the view a modeller is looking at can still show
+  the old picture, and the tool reads as broken when it worked.
+
+  **REGENERATING AND REDRAWING ARE TWO DIFFERENT THINGS AND BOTH ARE NEEDED.**
+  `Document.Regenerate` recomputes the model; refreshing the active view is what
+  puts the result on screen. Doing only the first leaves the screen stale, which
+  is the exact complaint this exists to answer.
+
+  **IT NEEDS A UI DOCUMENT AND SAYS SO WHEN IT HAS NONE.** A run with no UI - a
+  batch, a headless job - can regenerate and has no screen to refresh. That is
+  reported rather than silently half-done.
+
+  **IT CHANGES NOTHING IN THE MODEL.** The risk is MODIFY rather than READ only
+  because `Regenerate` can surface a warning Revit had been holding.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+  provides:
+    - name: regenerated
+      role: result
+      type: bool
+    - name: redrawn
+      role: result
+      type: bool
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.Regenerate` and `UIDocument.RefreshActiveView` are present 2020
+  through 2027 - read off the reference assemblies at both ends on 2026-09-18.
+
+# ROUTING.
+#
+#   "the screen has not updated"    -> here
+#   "open that view"                -> OPEN_VIEW
+#   "take me to these elements"     -> ZOOM_TO_ELEMENTS
+#   "why can't I see this"          -> DIAGNOSE_VISIBILITY - a stale screen and a
+#                                      hidden element look identical and are not
+
+utterances:
+  - refresh the view
+  - the screen has not updated
+  - redraw the drawing
+  - regenerate the model

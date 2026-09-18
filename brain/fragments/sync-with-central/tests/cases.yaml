@@ -1,0 +1,36 @@
+positive:
+  - given: >
+      a workshared local model with one wall moved, a comment, relinquish true,
+      on Revit 2024, run OUTSIDE any transaction
+    expect: >
+      the change visible to a SECOND user who reloads latest - which is the only
+      real test, because a sync that reported success and reached nobody looks
+      identical from here. The relinquish checked by having that second user edit
+      the same wall without a refusal
+
+negative:
+  - given: a single-user model that is not workshared
+    expect: >
+      refused BY NAME saying there is no central model, and pointing at
+      SAVE_DOCUMENT. Not a raw Revit exception, which on this path reads as a
+      broken tool
+
+  - given: the same run with relinquish false
+    expect: >
+      synced, AND the finding warning in words that elements stay checked out.
+      The second user should then BE refused on that wall - which is the case
+      proving the flag reaches Revit
+
+  - given: a model open read-only
+    expect: refused by name
+
+  - given: this run attempted inside an open transaction
+    expect: >
+      refused by Revit. Worth arranging once, because every other write fragment
+      here assumes an open transaction and this one must not have it
+
+second_route:
+  - >
+      Collaborate then Synchronize and Modify Settings by hand, with the same
+      comment and relinquish options, and a second user reloading latest in both
+      cases
