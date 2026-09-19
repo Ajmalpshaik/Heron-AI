@@ -207,6 +207,76 @@ def main():
           "which is heron_validate's own function, not a copy")
 
     print()
+    print("3b. the run loop, on a FAKE runner - no Revit anywhere")
+    # `runner` is injected precisely so this can be proved here. The only line
+    # left unproved is the bridge call itself, which is the same call
+    # cmd_prove already makes.
+    sent = []
+
+    def fake(values):
+        sent.append(dict(values))
+        return {"ok": True, "provides": {"count": len(values["categoryName"])}}
+
+    rows, refused = T.run_rows(fake, "categoryName", ["a", "bb", "ccc"],
+                               {"held": "still"}, "count")
+    check([r["value"] for r in rows] == [1, 2, 3],
+          "every value is run and the declared result becomes the row")
+    check([r["input"] for r in rows]
+          == ["categoryName=a", "categoryName=bb", "categoryName=ccc"],
+          "and each row names the input that produced it")
+    check(all(s.get("held") == "still" for s in sent),
+          "the held values go with EVERY run - one input moves, not two")
+    check(refused == [], "nothing was refused")
+
+    def picky(values):
+        if values["categoryName"] == "bb":
+            return {"ok": False, "error": "bad_request_value",
+                    "message": "no category called bb"}
+        return {"ok": True, "provides": {"count": 1}}
+
+    rows, refused = T.run_rows(picky, "categoryName", ["a", "bb", "ccc"],
+                               None, "count")
+    check(len(rows) == 2 and len(refused) == 1,
+          "A REFUSED VALUE IS NOT A TRACKING ROW - it shows the fragment "
+          "never looked, not that it looked and found nothing")
+    check(refused[0][0] == "bb" and "bad_request_value" in refused[0][1],
+          "and the refusal is carried with its reason")
+    good, why = T.judge(rows)
+    check(not good and "only 2 row(s)" in why,
+          "so the set is then short, and says so rather than passing")
+
+    # A reply without a `provides` envelope is read directly - the executor
+    # has used both shapes and a row built from neither would be empty.
+    rows, _ = T.run_rows(lambda v: {"ok": True, "count": 4},
+                         "categoryName", ["a", "b", "c"], None, "count")
+    check([r["value"] for r in rows] == [4, 4, 4],
+          "a flat reply is read too")
+    good, why = T.judge(rows)
+    check(not good, "and three identical answers are still refused")
+
+    print()
+    print("3c. a write is not tracked down the read path")
+    ladder = {"READ": 0, "ANALYZE": 1, "SUGGEST": 2, "EXECUTE": 3, "MODIFY": 4}
+    check(T.write_path_refusal(FakeFrag("f", risk="READ"), 4, ladder) is None,
+          "a READ is sent")
+    check(T.write_path_refusal(FakeFrag("f", risk="SUGGEST"), 4, ladder) is None,
+          "and so is a SUGGEST - it is below the write threshold")
+    why = T.write_path_refusal(FakeFrag("f", risk="MODIFY"), 4, ladder)
+    check(why is not None and "WRITE path" in why,
+          "a MODIFY is refused - a write varied three ways changes the model "
+          "three times, and defect row 6 is what sending it down the read "
+          "path costs")
+    why = T.write_path_refusal(FakeFrag("f", risk="NONSENSE"), 4, ladder)
+    check(why is not None and "not a level HeronRisk names" in why,
+          "and a risk nobody can establish is refused rather than assumed safe")
+    # THE THRESHOLD IS READ FROM THE REGISTRY, NOT TYPED - Golden Rule 19.
+    GJ_ = T._sibling("generate-jobs.py")
+    name, ordinal, real = GJ_.write_threshold()
+    check(real.get(name) == ordinal,
+          "and the real threshold comes from HeronOperationRegistry.cs (%s)"
+          % name)
+
+    print()
     print("4. Group W's three fragments can each be ARRANGED")
     by_slug, unreadable = T.library()
     check(not unreadable, "the real library reads clean")

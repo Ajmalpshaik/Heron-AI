@@ -280,6 +280,67 @@ def judge(rows):
                   "input" % (len(rows), len(seen)))
 
 
+def run_rows(runner, need_name, values, held, field):
+    """(rows, refused). Run once per value and read the declared result.
+
+    `runner` IS INJECTED, AND THAT IS WHAT MAKES THIS TESTABLE AT ALL. It takes
+    the caller values for one run and returns the reply as a dict. The real one
+    talks to Revit; `tests/test_prove_tracking.py` passes a fake that returns
+    known replies, so the loop, the refusal handling and the row building are
+    proved on a machine with no Revit - and the only line left unproved is the
+    bridge call itself, which is the same call `cmd_prove` already makes.
+
+    A REFUSED VALUE IS NOT A TRACKING ROW. `prove-agent.py vary` says why in
+    one sentence and it is worth repeating: a refusal shows the fragment never
+    looked, not that it looked and found nothing. They are collected and
+    reported, and they do not count toward the three.
+    """
+    rows, refused = [], []
+    for value in values:
+        sending = dict(held or {})
+        sending[need_name] = value
+        reply = runner(sending)
+        if not isinstance(reply, dict) or not reply.get("ok"):
+            refused.append((value,
+                            (reply or {}).get("error") or "no reply",
+                            ((reply or {}).get("message") or "")[:100]))
+            continue
+        provided = reply.get("provides")
+        if not isinstance(provided, dict):
+            provided = reply
+        rows.append(("%s=%s" % (need_name, value), provided))
+    return track_rows(rows, field), refused
+
+
+def write_path_refusal(frag, threshold_ordinal, ladder):
+    """The refusal for a fragment this file will not send, or None.
+
+    TRACKING A WRITE IS A DIFFERENT AND MORE DANGEROUS THING, and it is not
+    what D-53 is for. The rows here vary an input and read an answer; a write
+    varied three ways changes the model three times, and the rollback question
+    that `validate` handles with a TransactionGroup has no equivalent here.
+
+    THE LINE IS READ FROM THE REGISTRY, NOT TYPED. Golden Rule 19 - the risk of
+    an operation is looked up by name and never supplied by a caller - so the
+    threshold comes from `generate-jobs.write_threshold()`, which reads
+    `HeronOperationRegistry.cs`. The day the write path moves, this moves with
+    it. And sending a write down the READ path is defect row 6, which cost half
+    a morning arriving silently.
+    """
+    risk = (frag.data.get("risk") or "").upper()
+    if risk not in ladder:
+        return ("`%s` declares `risk: %s`, which is not a level HeronRisk "
+                "names - and a fragment whose danger nobody can establish is "
+                "not run" % (frag.slug, frag.data.get("risk")))
+    if ladder[risk] >= threshold_ordinal:
+        return ("`%s` is `risk: %s`, which needs the WRITE path. This file "
+                "sends down the read path only: a write varied three ways "
+                "changes the model three times, and that is a different "
+                "question from D-53's. Prove it with `validate`, which holds "
+                "a TransactionGroup" % (frag.slug, risk))
+    return None
+
+
 def plan(frag, need_name, values, field, held=None):
     """What would be sent, as a person can check it before it is."""
     held = dict(held or {})
@@ -340,6 +401,11 @@ def main(argv=None):
 
     stop = bad + refusals(frag, args.vary, values, GJ.receivable, held,
                           GJ.ELEMENT_INSTANCE_REASON)
+
+    threshold_name, threshold_ordinal, ladder = GJ.write_threshold()
+    writing = write_path_refusal(frag, threshold_ordinal, ladder)
+    if writing:
+        stop.append(writing)
 
     results, roles = result_names(frag)
     field = args.expect
