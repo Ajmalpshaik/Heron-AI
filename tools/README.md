@@ -1548,6 +1548,14 @@ a modeller really says so a sweep comes back clean. The repair is declaring the 
 that should own it — and where no READ exists, the finding is a **capability gap**, which is a
 different and larger thing.
 
+**And it reads the SKILLS through the same rule**, adapted in four lines rather than copied — a
+skill declares a risk and a list of utterances just as a fragment does. That is exactly where
+[row 137](../docs/FRAGMENT-ISSUES.md) said the blind spot was: a crossing compares a sentence's
+reach against the **skill's own** declared risk, so a question inside a MODIFY skill never
+registers as one. This asks nothing about reach. **Five today**, and **some of them are probably
+right** — *"how many sprinklers do I need"* may genuinely belong to a layout skill, because
+answering it IS the layout. The tool says so in its own output rather than asking for a deletion.
+
 **It concludes, so it has a test** ([`tests/test_declared_questions.py`](../tests/test_declared_questions.py)),
 and every sentence in it is a real declared utterance rather than an invented one — an invented
 sentence would only prove the pattern matches itself.

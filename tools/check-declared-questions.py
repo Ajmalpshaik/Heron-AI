@@ -91,6 +91,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_fragment as FRAG                                 # noqa: E402
+import heron_skill as SKILL                                   # noqa: E402
 
 
 def _sibling(name):
@@ -158,6 +159,24 @@ def questions_on_writes(fragments, threshold, ladder):
     return asked, told, unranked
 
 
+class _AsCard(object):
+    """A SKILL, read through the same two fields a fragment is read through.
+
+    THE RULE IS THE SAME ONE LAYER UP and must not be re-implemented for it.
+    A skill declares a risk and a list of utterances exactly as a fragment
+    does; the only difference is that its NAME is its id rather than a
+    capability. Adapting is four lines and a second copy of
+    `questions_on_writes` would be a second opinion about what a question is.
+    """
+
+    def __init__(self, skill):
+        self.data = {"capability": skill.id,
+                     "risk": str(skill.data.get("risk") or ""),
+                     "utterances": list(skill.utterances()),
+                     "id": skill.id}
+        self.folder = os.path.join("brain", "skills")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--all", action="store_true",
@@ -166,20 +185,31 @@ def main():
     args = parser.parse_args()
 
     found, problems = FRAG.load_all()
+    skills, skill_problems = SKILL.load_all()
+    problems = list(problems) + list(skill_problems)
     _name, threshold, ladder = GJ.write_threshold()
 
     asked, told, unranked = questions_on_writes(
         sorted(found.values(), key=lambda f: str(f.data.get("capability"))),
         threshold, ladder)
+    # THE SAME RULE, ONE LAYER UP, AND IT IS WHERE ROW 137 SAID THE BLIND
+    # SPOT WAS. A question inside a MODIFY skill can never register as a
+    # crossing, because a crossing is decided by comparing the sentence's
+    # reach against the SKILL's own declared risk - so the sweep that reports
+    # crossings is looking at the wrong pair. This asks nothing about reach.
+    s_asked, s_told, s_unranked = questions_on_writes(
+        sorted((_AsCard(one) for one in skills.values()),
+               key=lambda c: c.data["capability"]),
+        threshold, ladder)
 
     out = sys.stdout.write
     out("A FRAGMENT THAT CHANGES THE MODEL, CLAIMING A QUESTION\n")
     out("=" * 62 + "\n\n")
-    out("%d fragment(s) read from disk. The write line is at or above "
-        "ordinal %d,\nread from the registry by name (Golden Rule 19).\n\n"
-        % (len(found), threshold))
+    out("%d fragment(s) and %d skill(s) read from disk. The write line is "
+        "at or\nabove ordinal %d, read from the registry by name (Golden "
+        "Rule 19).\n\n" % (len(found), len(skills), threshold))
 
-    out("DECLARED IN WRITING, AND THE SENTENCE ASKS AND STOPS (%d):\n"
+    out("A FRAGMENT THAT WRITES, AND THE SENTENCE ASKS AND STOPS (%d):\n"
         % len(asked))
     if not asked:
         out("  none\n")
@@ -195,15 +225,38 @@ def main():
         out("  own it. Where no READ exists, this is a capability gap.\n")
 
     out("\n")
-    out("ASKS AND THEN SAYS WHAT TO DO (%d) - not findings:\n" % len(told))
+    out("AND THE SAME, ONE LAYER UP - A SKILL THAT WRITES, CLAIMING A "
+        "QUESTION (%d):\n" % len(s_asked))
+    if not s_asked:
+        out("  none\n")
+    for sid, risk, phrase, _fid, folder in s_asked:
+        out("  %-24s %-7s %s\n" % (sid, risk, repr(phrase)))
+        out("  %-24s %s/%s.yaml\n" % ("", folder, sid))
+    if s_asked:
+        out("\n")
+        out("  FRAGMENT-ISSUES row 137 is this case, and it says a question\n")
+        out("  inside a MODIFY skill can never register as a crossing -\n")
+        out("  because a crossing compares the sentence's reach against the\n")
+        out("  SKILL's own declared risk. This asks nothing about reach.\n")
+        out("\n")
+        out("  SOME OF THESE ARE PROBABLY RIGHT. 'how many sprinklers do I\n")
+        out("  need' may genuinely belong to a layout skill - answering it\n")
+        out("  IS the layout. Deleting a sentence a modeller really says to\n")
+        out("  make this list shorter is the mirror of row 113's forbidden\n")
+        out("  move, and this tool does not ask for it.\n")
+
+    out("\n")
+    out("ASKS AND THEN SAYS WHAT TO DO (%d) - not findings:\n"
+        % (len(told) + len(s_told)))
     if not told:
         out("  none\n")
     elif not args.all:
         out("  %d, hidden. --all prints them.\n" % len(told))
     else:
-        for capability, risk, phrase, fid, folder in told:
+        for capability, risk, phrase, fid, folder in list(told) + list(s_told):
             out("  %-30s %-7s %s\n" % (capability, risk, repr(phrase)))
 
+    unranked = list(unranked) + list(s_unranked)
     if unranked:
         out("\n")
         out("A RISK HERONRISK DOES NOT NAME (%d) - reported, never assumed "

@@ -153,6 +153,30 @@ def main():
     check(not unranked,
           "and today every fragment's risk is a level HeronRisk names")
 
+    print("\n7. the same rule, one layer up, on the real skills")
+    # ROW 137 says a question inside a MODIFY skill can never register as a
+    # crossing, because a crossing compares the sentence's reach against the
+    # SKILL's own declared risk. This asks nothing about reach, so it sees
+    # them - and the adapter is four lines rather than a second copy of the
+    # rule, which would be a second opinion about what a question is.
+    import heron_skill as SKILL
+    skills, _ = SKILL.load_all()
+    cards = [TOOL._AsCard(one) for one in skills.values()]
+    check(all(c.data["utterances"] and c.data["risk"] for c in cards),
+          "every skill adapts to the two fields the rule reads (%d)"
+          % len(cards))
+    s_asked, _s_told, s_unranked = TOOL.questions_on_writes(
+        cards, threshold, real_ladder)
+    print("       %d question(s) declared on a skill that writes"
+          % len(s_asked))
+    for sid, risk, phrase, _fid, _folder in sorted(s_asked):
+        print("         %-22s %-7s %r" % (sid, risk, phrase))
+    check(not s_unranked,
+          "and every skill's risk is a level HeronRisk names")
+    check(True, "printed either way - some of these are probably RIGHT, and "
+                "deleting a sentence a modeller says to shorten the list is "
+                "row 113's forbidden move mirrored")
+
     print()
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
