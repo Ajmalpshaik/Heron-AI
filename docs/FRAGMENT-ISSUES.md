@@ -1776,7 +1776,14 @@ Ranked against §3h, this now sits above everything except making silence illega
 command answering *"describe this model"*; this is the same argument arriving from the proving side,
 and it is the cheaper half of it.
 
-### `batch-prove` REPORTS A VERDICT ON A RUN THAT NEVER HAPPENED — found 2026-09-09, OPEN
+### `batch-prove` REPORTS A VERDICT ON A RUN THAT NEVER HAPPENED — found 2026-09-09, FIXED - corrected 2026-09-19
+
+**FIXED, and this heading said OPEN until 2026-09-19.** [Row 87](#) records the fix and names the
+same defect - *"the runner asked only `if not os.path.isfile(record_path)`"*. Confirmed 2026-09-19 by
+reading `tools/batch-prove.py`, which now calls `os.remove(record_path)` **before** the run, so a
+missing file means nothing ran and `DID NOT RUN` is what comes back. The account below is KEPT: the
+session-id tell it names - `session 17356` against the live `session 32940` - is the only thing that
+gave it away, and it is how the next stale-record bug will be caught too.
 
 A batch of six MODIFY fragments came back **6 for 6 `POSITIVE EMPTY`**. Six independent content
 problems in one batch is not a pattern that happens, so the records were read rather than the summary,
@@ -1839,7 +1846,13 @@ here would be read as a finding later. What is certain is only what the record s
 
 Marked **NEEDS_REVIEW**, not OPEN: one unreproduced observation is not yet a defect.
 
-### `validate` DOES NOT APPLY THE RISK GATE — found 2026-09-11, OPEN
+### `validate` DOES NOT APPLY THE RISK GATE — found 2026-09-11, FIXED - corrected 2026-09-19
+
+**FIXED, and this heading said OPEN until 2026-09-19.** [Row 54](#) records the fix. Confirmed
+2026-09-19 by reading `mcp/client/heron_bridge_client.py`: `cmd_validate` calls `risk_refusal`, and
+the comment beside it names this passage. A PUBLISH fragment is refused unless `--allow-publish` is
+typed for that run. The account below is KEPT for the shape: two commands gave opposite answers about
+the same fragment risk, and that is what a gate wired into some paths and not others looks like.
 
 **The proving path is the one place `risk_refusal` is not called, and proving is where fragments run
 against a real model with `write.enabled` on.**
@@ -1911,7 +1924,14 @@ That leaves the second question open and it is worth a `D-` number if the answer
 > TransactionGroup. Nothing landed anywhere it should not have. **That is luck about where the paths
 > pointed, not the gate doing its job.**
 
-### `can_promote` WILL PROMOTE AN UNPROVEN FRAGMENT TO `PROVEN` — found 2026-09-10, OPEN
+### `can_promote` WILL PROMOTE AN UNPROVEN FRAGMENT TO `PROVEN` — found 2026-09-10, OPEN - RE-CONFIRMED 2026-09-19
+
+**STILL OPEN, and reproduced again 2026-09-19** on `add-project-parameter` (DRAFT, no proof):
+`proof_problems` returns `[]` and `can_promote(f, 'PROVEN')` returns
+`(True, 'well-formed, and PROVEN needs no proof')`. `brain/heron_fragment.py` still asks
+`frag.status in NEEDS_PROOF` - where it IS, not where it is GOING - and `NEEDS_PROOF` is
+`('PROVEN', 'PRODUCTION')`, so DRAFT never trips it. Nothing has been promoted this way, because
+promotion is a hand edit; the gate simply would not stop one.
 
 This is in the machinery the whole *"the machine never signs"* discipline stands on, so it is written
 out in full rather than summarised.
@@ -2020,7 +2040,14 @@ moved after the proof. Nothing in the repository currently rewrites `proof.model
 **Not fixed here.** The change is one line in the proving client — stamp the resolved document rather
 than the active one — plus a decision about the three already promoted. Both belong to the owner.
 
-### `switch-active-project` ASKS THE WRONG `UIDocument`, AND HAS NEVER SWITCHED — found 2026-09-10, OPEN
+### `switch-active-project` ASKS THE WRONG `UIDocument`, AND HAS NEVER SWITCHED — found 2026-09-10, FIXED, AND THE CAPABILITY RETIRED - corrected 2026-09-19
+
+**FIXED, and this heading said OPEN until 2026-09-19.** [Row 90](#) records both bugs fixed and the
+capability retired - Revit answers *"Changing the active view is not applicable to inactive
+documents"*, so no call switches projects and the fragment's premise is gone. Confirmed 2026-09-19 by
+reading `impl/any/fragment.cs`: the already-active check compares `PathName` instead of
+`ReferenceEquals`, and the header now lists all three routes tried and refused. The account below is
+KEPT: it is the measurement that retired the capability.
 
 §3b-i said this one *"needs a second project open"* to be tested properly. Two were open on 2026-09-10,
 and it does not work.
