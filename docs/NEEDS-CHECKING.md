@@ -948,7 +948,7 @@ Use a real job file: one with an architectural or structural link, and ideally o
 ## Group M — phases and design options (needs Revit and a real job file)
 
 `HERON-REVIT-PHS-032` — [`revit/Heron.Revit.Addin/RevitPhases.cs`](../revit/Heron.Revit.Addin/RevitPhases.cs).
-Compiles on 2020–2027, 0 warnings, 2026-09-15. **Never run.** Read-only — nothing here sets a view's
+Compiles on 2020–2027, 0 warnings, 2026-09-15. **Tracked against two models 2026-09-19 and signed** ([`brain/agent-proofs/HERON-REVIT-PHS-032.yaml`](../brain/agent-proofs/HERON-REVIT-PHS-032.yaml)) - so it is no longer NEVER RUN. That proof is D-53 tracking and it is NOT these rows: the cases below are still unchecked, and tracking says the answer follows the model, not that any one of them is right. Read-only — nothing here sets a view's
 phase or activates an option, because both change what everybody else on the job sees in that view.
 
 Use a real job file: one with Existing and New Construction at least, and ideally one design option set.
@@ -975,7 +975,7 @@ same shafts — and *"all ducts"* means something different in each.
 ## Group N — duct and pipe systems, and what is connected to nothing (needs Revit and a real MEP model)
 
 `HERON-REVIT-SYS-030` — [`revit/Heron.Revit.Addin/RevitSystems.cs`](../revit/Heron.Revit.Addin/RevitSystems.cs).
-Compiles on 2020–2027, 0 errors, 2026-09-16. **Never run.** Read-only — nothing is connected, renamed
+Compiles on 2020–2027, 0 errors, 2026-09-16. **Tracked against two models 2026-09-19 and signed** ([`brain/agent-proofs/HERON-REVIT-SYS-030.yaml`](../brain/agent-proofs/HERON-REVIT-SYS-030.yaml)) - so it is no longer NEVER RUN. That proof is D-53 tracking and it is NOT these rows: the cases below are still unchecked, and tracking says the answer follows the model, not that any one of them is right. Read-only — nothing is connected, renamed
 or put on a system, and no transaction is opened.
 
 Use a real MEP job, not a sample: one with duct AND pipe systems, and ideally one you already know has
@@ -1012,7 +1012,7 @@ about what any of them returns.
 ## Group P — parameters, and the two ways the answer is confidently wrong (needs Revit and a real model)
 
 `HERON-REVIT-PAR-011` — [`revit/Heron.Revit.Addin/RevitParameters.cs`](../revit/Heron.Revit.Addin/RevitParameters.cs).
-Compiles on 2020–2027, 0 errors, 2026-09-16. **Never run.** Read-only — no parameter is written, and no
+Compiles on 2020–2027, 0 errors, 2026-09-16. **Tracked against two models 2026-09-19** ([`brain/agent-proof-drafts/HERON-REVIT-PAR-011.yaml`](../brain/agent-proof-drafts/HERON-REVIT-PAR-011.yaml)) - so it is no longer NEVER RUN. It was signed that day and the signature was WITHDRAWN the same day - see [U5](#) - so it is a draft again. That proof is D-53 tracking and it is NOT these rows: the cases below are still unchecked, and tracking says the answer follows the model, not that any one of them is right. Read-only — no parameter is written, and no
 transaction is opened.
 
 Use a real project, not a sample: one with shared parameters loaded, at least one project parameter
@@ -1056,7 +1056,7 @@ reported instead.
 ## Group S — groups and assemblies, and the edit that lands in twelve places (needs Revit)
 
 `HERON-REVIT-GRP-033` — [`revit/Heron.Revit.Addin/RevitGroups.cs`](../revit/Heron.Revit.Addin/RevitGroups.cs).
-Compiles on 2020–2027, 0 errors, 2026-09-16. **Never run.** Read-only — nothing is grouped, ungrouped
+Compiles on 2020–2027, 0 errors, 2026-09-16. **Tracked against two models 2026-09-19 and signed** ([`brain/agent-proofs/HERON-REVIT-GRP-033.yaml`](../brain/agent-proofs/HERON-REVIT-GRP-033.yaml)) - so it is no longer NEVER RUN. That proof is D-53 tracking and it is NOT these rows: the cases below are still unchecked, and tracking says the answer follows the model, not that any one of them is right. Read-only — nothing is grouped, ungrouped
 or edited, and no transaction is opened.
 
 Use a model that actually uses groups: one group type placed several times, ideally one nested group,
@@ -1348,3 +1348,33 @@ same day** — proposals only, no code. If those land, this group shrinks.
 **The honest figure for "worth re-running" is 6, not 23 and not 41.** Thirteen are waiting on a
 model and four on a decision. Saying 23 without the split would send somebody to re-run thirteen
 fragments that cannot pass and to blame them when they do not.
+
+---
+
+## Group U — a review found six things in Group T's own work, and all six held
+
+Codex reviewed [PR #189](https://github.com/Ajmalpshaik/Heron-AI/pull/189) on 2026-09-19 and left six
+comments. **Every one was checked against the code and every one was right.** Four are fixed below;
+two are open and one of those is the reason two signatures were withdrawn the same day.
+
+Recorded here rather than only in the PR because a review comment disappears into a merged branch and
+a register does not.
+
+| ID | What it found | State |
+|---|---|---|
+| ~~**U1**~~ | `elements` sat in the unconditional envelope skip, so a **list** by that name was never traversed - and `read_parameters` and `list_groups` both return their per-element answer under exactly that name. Two models with equal totals and different contents compared as *nothing moved*. A skip inherited from the number-only behaviour, silently cancelling the list traversal added the same day | **FIXED.** `SCALAR_ONLY_SKIP` - skipped where it is the scalar total, compared where it is a list. Both cases tested, and the same-reply-twice guard re-checked |
+| ~~**U2**~~ | `track --arg` made the arguments part of the test and the draft recorded only `operation`, so `PAR-011` and `SEL-008` never said `category=Ducts` was supplied. Not reproducible, and a later run with a different category would be indistinguishable | **FIXED.** The draft carries an `arguments:` line |
+| ~~**U3**~~ | Four register sections still read **Never run** for agents that had been tracked and signed hours earlier | **FIXED.** `PHS-032`, `SYS-030`, `PAR-011`, `GRP-033` corrected - and corrected *without* closing their detailed cases, which tracking does not touch. `LNK-015` still reads Never run, correctly |
+| ~~**U4**~~ | Row 118 was claimed twice - by this branch and by [PR #191](https://github.com/Ajmalpshaik/Heron-AI/pull/191) the same day | **FIXED** in the merge. Theirs keeps 118-125, mine is **126** |
+| **U5** | **`PAR-011` and `SEL-008` DO have an empty case, and their signed proofs said no input could produce one.** `category=Pipes` returned `elements 0, distinctParameters 0` on session 20472 - measured in the very session that signed them. So D-53 tracking is not the right substitute: D-30's real negative leg is possible and owed | **OPEN, and both signatures were WITHDRAWN.** Back in `brain/agent-proof-drafts/`. `prove-agent.py` has no mode that runs a positive-and-negative pair for an agent - `track` compares two models and cannot express one - so this needs that mode built, or a hand-run proof |
+| **U6** | **Nine agent proofs were signed on TWO models. The repository's own gate refuses two for a fragment**, in these words: *"the tracking set has only 2 row(s). D-53 asks for the answer to follow the input across SEVERAL different inputs; two cannot show that"* ([`brain/heron_validate.py`](../brain/heron_validate.py)) | **OPEN, and NOT acted on unilaterally.** `prove-agent.py track` takes exactly two sessions by design, so the two tools implement one decision at two different bars. Seven signatures stand on the lower one. Whether they are withdrawn, or the agent tool is raised to three inputs, is the owner's call |
+
+**U6 is the one that matters most and it is not a bug in anybody's code.** It is one decision, D-53,
+implemented twice at different strengths, and nothing compares the two. The fragment path enforces
+three rows in code; the agent path never had a threshold at all because the tool's whole shape is
+two-models-at-once.
+
+**A third input need not be a third model.** For an argument-driven agent it can be a third
+**argument** - `category=Ducts`, `Duct Fittings`, `Pipes` - which is closer to what D-53 asks
+(*the answer follows the input*) than a third file would be. That is a change to `track`, not a
+request for another Revit.

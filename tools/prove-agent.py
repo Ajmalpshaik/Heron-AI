@@ -498,6 +498,13 @@ def cmd_track(args):
         "agent": args.agent,
         "name": agents[args.agent],
         "operation": args.operation,
+        # THE ARGUMENTS ARE PART OF THE TEST AND WERE MISSING FROM IT.
+        # `--arg category=Ducts` decides what the agent is even asked about,
+        # and a proof recording only the operation cannot be reproduced or
+        # judged: a later run against a different category would be
+        # indistinguishable from this one. Recorded as it was typed.
+        "arguments": ", ".join("%s=%s" % (k, v)
+                               for k, v in sorted(op_args.items())) or "(none)",
         "date": datetime.date.today().isoformat(),
         "by": "",
         "source": os.path.relpath(source, ROOT).replace(os.sep, "/"),
@@ -520,7 +527,16 @@ def cmd_track(args):
 
 # Keys that are the ENVELOPE rather than the answer. `document` is the model's
 # own name - the input - and counting it would make every run pass.
-ENVELOPE = ("ok", "document", "projectKey", "reads", "placedElements", "elements")
+ENVELOPE = ("ok", "document", "projectKey", "reads", "placedElements")
+
+# `elements` is skipped ONLY where it is the scalar total, never where it is the
+# answer itself. It sat in ENVELOPE unconditionally until 2026-09-19, which was
+# right while this function read numbers only and wrong the moment it started
+# descending into lists: `read_parameters` and `list_groups` BOTH return their
+# per-element answer under that exact name, so two models with equal totals and
+# completely different contents compared as "nothing moved". A skip inherited
+# from the old behaviour, quietly cancelling the new one.
+SCALAR_ONLY_SKIP = ("elements",)
 
 # How far into a list to look, and how many of its items. A reply that lists
 # 3,000 elements should not produce 3,000 rows of evidence; the first few
@@ -593,6 +609,9 @@ def compare(a, b):
             continue
         x, y = a.get(key), b.get(key)
         if isinstance(x, bool) or isinstance(y, bool):
+            continue
+        if key in SCALAR_ONLY_SKIP and not (isinstance(x, list)
+                                            and isinstance(y, list)):
             continue
 
         if isinstance(x, list) and isinstance(y, list):
