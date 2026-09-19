@@ -385,6 +385,27 @@ def main():
               "as NEITHER whole nor short - it counts as out of date")
     finally:
         shutil.rmtree(where)
+    # WHAT THE RETRIEVER SAID, CARRIED ONTO THE CARD (register row 155).
+    # A recording taken before prove-skill recorded it has FIVE fields and
+    # must still read - an old one reports no complaint, which is the
+    # absence of one and not a clean answer.
+    five = tool.said([["a", "X", "READ", "identity", "reach"]], ["X"])
+    check(five["unsettled"] == [] and five["reach_unsettled"] == [],
+          "a five-field recording reads, and claims no complaint")
+    six = tool.said([["a", "X", "READ", "hybrid", "reach", ["a coin toss"]],
+                     ["b", "Y", "MODIFY", "hybrid", "crossing", ["a coin toss"]],
+                     ["c", "Z", "READ", "identity", "reach", []]], ["X"])
+    check(six["unsettled"] == ["a", "b"],
+          "every sentence the retriever complained about is named")
+    check(six["reach_unsettled"] == ["a"],
+          "and the ones that REACHED are counted apart - a crossing is "
+          "already loud, a quiet reach is the one nobody looks at")
+    check(six["reach"] == 2,
+          "a complaint does not take a sentence out of `reach` - it DID "
+          "reach, and whether that spends it is a reader's call")
+    check(six["landed"][0]["told"] == ["a coin toss"],
+          "and the retriever's own words ride on the sentence they are about")
+
     check(tool.ROUTING.words_moved.__module__
           == tool.ROUTING.classify.__module__,
           "the rule lives beside classify(), in the module both tools read "

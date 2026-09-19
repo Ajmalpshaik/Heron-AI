@@ -1,0 +1,437 @@
+{
+  "index": {
+    "built_from": "/home/user/Heron-AI/brain/fragments",
+    "counts": {
+      "fragments": 395,
+      "identities": 2580,
+      "utterances": 0,
+      "vectors": 395
+    },
+    "md5": "e38e1298642793b25ae103e3327d101f",
+    "other_tree": false,
+    "path": "/root/heron-kb/global.db",
+    "running_in": "/home/user/Heron-AI/brain/fragments"
+  },
+  "revit": "2020",
+  "skills": {
+    "check-connectivity": [
+      [
+        "is the ductwork still connected",
+        "TRACE_CONNECTIVITY",
+        "READ",
+        "identity",
+        "reach",
+        []
+      ],
+      [
+        "check the connections",
+        "MIRROR_ELEMENTS",
+        "MODIFY",
+        "hybrid",
+        "crossing",
+        [
+          "a coin toss - no route preferred the winner",
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ],
+      [
+        "did anything come apart",
+        "SELECT_BY_CONNECTION_STATUS",
+        "READ",
+        "identity",
+        "reach",
+        []
+      ],
+      [
+        "check the system is complete",
+        "AUTO_SIZE_MEP",
+        "MODIFY",
+        "hybrid",
+        "crossing",
+        [
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ]
+    ],
+    "count-elements": [
+      [
+        "how many ducts are there",
+        "FILTER_ELEMENTS_BY_CATEGORY",
+        "READ",
+        "identity",
+        "reach",
+        []
+      ],
+      [
+        "count the air terminals",
+        "COUNT_ELEMENTS",
+        "READ",
+        "identity",
+        "reach",
+        []
+      ],
+      [
+        "how many sprinklers on level 2",
+        "COUNT_ELEMENTS",
+        "READ",
+        "identity",
+        "reach",
+        []
+      ],
+      [
+        "give me the number of fire dampers",
+        "COUNT_ELEMENTS",
+        "READ",
+        "identity",
+        "reach",
+        []
+      ]
+    ],
+    "find-blank-parameters": [
+      [
+        "which ducts have no system name",
+        "READ_MEP_SYSTEM",
+        "READ",
+        "hybrid",
+        "miss",
+        []
+      ],
+      [
+        "find the blank parameters",
+        "DESCRIBE_BLANK_PARAMETERS",
+        "ANALYZE",
+        "hybrid",
+        "reach",
+        [
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ],
+      [
+        "what is missing before I issue this",
+        "SELECT_VISIBLE_IN_VIEW",
+        "READ",
+        "hybrid",
+        "miss",
+        [
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ],
+      [
+        "check for empty values",
+        "GROUP_AND_COUNT",
+        "READ",
+        "hybrid",
+        "miss",
+        []
+      ]
+    ],
+    "mep-grayout": [
+      [
+        "do the grayout",
+        "HIGHLIGHT_VS_REST",
+        "MODIFY",
+        "identity",
+        "reach",
+        []
+      ],
+      [
+        "do the grayout for MEP",
+        "HIGHLIGHT_VS_REST",
+        "MODIFY",
+        "hybrid",
+        "reach",
+        [
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ],
+      [
+        "grey out the background",
+        "SET_CATEGORY_GRAPHICS",
+        "MODIFY",
+        "hybrid",
+        "reach",
+        [
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ],
+      [
+        "make the architecture light and the services strong",
+        "CHECK_EQUIPMENT_CLEARANCE",
+        "READ",
+        "hybrid",
+        "miss",
+        [
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ],
+      [
+        "grey the background and turn the rebar off",
+        "SET_CATEGORY_GRAPHICS",
+        "MODIFY",
+        "hybrid",
+        "reach",
+        [
+          "a coin toss - no route preferred the winner",
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ]
+    ],
+    "select-elements": [
+      [
+        "select all the ducts",
+        "SELECT_BY_CATEGORIES",
+        "READ",
+        "hybrid",
+        "reach",
+        [
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ],
+      [
+        "highlight them",
+        "HIGHLIGHT_VS_REST",
+        "MODIFY",
+        "hybrid",
+        "escalation",
+        [
+          "a coin toss - no route preferred the winner"
+        ]
+      ],
+      [
+        "show me the ones you found",
+        "SET_SELECTION",
+        "EXECUTE",
+        "identity",
+        "reach",
+        []
+      ],
+      [
+        "select the 300x300 dampers",
+        "SELECT_BY_CATEGORIES",
+        "READ",
+        "hybrid",
+        "reach",
+        [
+          "a coin toss - no route preferred the winner",
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ]
+    ],
+    "size-breakdown": [
+      [
+        "what sizes are the ducts",
+        "GROUP_AND_COUNT",
+        "READ",
+        "identity",
+        "reach",
+        []
+      ],
+      [
+        "give me a breakdown of the pipe sizes",
+        "REPORT_PIPE_SEGMENTS",
+        "READ",
+        "hybrid",
+        "miss",
+        [
+          "a coin toss - no route preferred the winner",
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ],
+      [
+        "duct schedule by size",
+        "GROUP_AND_COUNT",
+        "READ",
+        "identity",
+        "reach",
+        []
+      ],
+      [
+        "how many of each size",
+        "GROUP_AND_COUNT",
+        "READ",
+        "hybrid",
+        "reach",
+        []
+      ]
+    ],
+    "space-airflow": [
+      [
+        "work out the airflow for this room",
+        "PLACE_ROOMS",
+        "MODIFY",
+        "hybrid",
+        "miss",
+        [
+          "a coin toss - no route preferred the winner",
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ],
+      [
+        "calculate the air for these spaces",
+        "READ_SPACE_LOADS",
+        "READ",
+        "hybrid",
+        "reach",
+        [
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ],
+      [
+        "set the supply air flow",
+        "REPORT_SPACE_AIRFLOW",
+        "READ",
+        "hybrid",
+        "miss",
+        [
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ],
+      [
+        "how much air does this room need",
+        "FILTER_ELEMENTS_IN_ROOM",
+        "READ",
+        "hybrid",
+        "miss",
+        []
+      ]
+    ],
+    "sprinkler-layout": [
+      [
+        "how many sprinklers do I need",
+        "COUNT_ELEMENTS",
+        "READ",
+        "hybrid",
+        "miss",
+        []
+      ],
+      [
+        "how many sprinklers for this room",
+        "FILTER_ELEMENTS_IN_ROOM",
+        "READ",
+        "hybrid",
+        "miss",
+        [
+          "a coin toss - no route preferred the winner"
+        ]
+      ],
+      [
+        "check my sprinkler spacing",
+        "CREATE_DIMENSION",
+        "MODIFY",
+        "hybrid",
+        "miss",
+        []
+      ],
+      [
+        "lay out the heads",
+        "READ_ROOM_GEOMETRY",
+        "READ",
+        "hybrid",
+        "reach",
+        [
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ],
+      [
+        "there is a beam in the room",
+        "CHECK_OBSTRUCTIONS",
+        "READ",
+        "identity",
+        "reach",
+        []
+      ],
+      [
+        "pendent or upright here",
+        "CREATE_DUCT",
+        "MODIFY",
+        "hybrid",
+        "miss",
+        []
+      ]
+    ],
+    "terminal-layout": [
+      [
+        "how many diffusers for this room",
+        "COUNT_BY_SPATIAL_CONTAINER",
+        "READ",
+        "hybrid",
+        "miss",
+        [
+          "a coin toss - no route preferred the winner"
+        ]
+      ],
+      [
+        "lay out the air terminals",
+        "READ_ROOM_GEOMETRY",
+        "READ",
+        "hybrid",
+        "reach",
+        [
+          "a coin toss - no route preferred the winner",
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ],
+      [
+        "place the grilles",
+        "PLACE_FAMILY_INSTANCES",
+        "MODIFY",
+        "hybrid",
+        "reach",
+        [
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ],
+      [
+        "how many at 3 m coverage and where",
+        "REPORT_COVERAGE",
+        "READ",
+        "hybrid",
+        "reach",
+        [
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ]
+    ],
+    "trace-system": [
+      [
+        "what is this connected to",
+        "TRACE_CONNECTIVITY",
+        "READ",
+        "hybrid",
+        "reach",
+        [
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ],
+      [
+        "trace the system from here",
+        "READ_MEP_SYSTEM",
+        "READ",
+        "hybrid",
+        "miss",
+        [
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ],
+      [
+        "which unit feeds this",
+        "CHECK_EQUIPMENT_CLEARANCE",
+        "READ",
+        "hybrid",
+        "miss",
+        []
+      ],
+      [
+        "follow the pipe and tell me where it goes",
+        "REPORT_PIPE_SEGMENTS",
+        "READ",
+        "hybrid",
+        "miss",
+        [
+          "the words route ranked the library rather than selecting from it"
+        ]
+      ]
+    ]
+  },
+  "taken": "2026-09-19T23:09:15Z"
+}

@@ -231,11 +231,21 @@ def said(rows, declared):
     what a crossing is would be a second opinion.
     """
     out = {"total": len(rows), "reach": 0, "crossing": [], "elsewhere": [],
-           "landed": []}
+           "landed": [], "unsettled": [], "reach_unsettled": []}
     for row in rows:
-        phrase, capability, risk, route, where = (list(row) + [None] * 5)[:5]
+        # SIX FIELDS WHERE THERE ARE SIX. A recording taken before
+        # `prove-skill.py` recorded what the RETRIEVER said has five, and
+        # padding is what lets both read - an old recording reports no
+        # complaint, which is the absence of one and not a clean answer.
+        phrase, capability, risk, route, where, told = (
+            list(row) + [None] * 6)[:6]
         out["landed"].append({"phrase": phrase, "capability": capability,
-                              "risk": risk, "route": route, "where": where})
+                              "risk": risk, "route": route, "where": where,
+                              "told": list(told or ())})
+        if told:
+            out["unsettled"].append(phrase)
+            if where == "reach":
+                out["reach_unsettled"].append(phrase)
         if where == "reach":
             out["reach"] += 1
         elif where == "crossing":
@@ -381,6 +391,7 @@ footer{padding:16px 20px;border-top:1px solid var(--rule);color:var(--muted);
     <option value="crossing">a question answered by a write</option>
     <option value="short">not every word reaches</option>
     <option value="all">every word reaches</option>
+    <option value="shaky">reached, and the retriever complained</option>
     <option value="stale">the recording is out of date</option>
     <option value="none">not measured</option>
   </select>
@@ -426,8 +437,19 @@ function card(r){
         m.fresh.length} never measured, ${m.gone.length} no longer said</span>`
     : `<span class="t ${w.reach === w.total ? "proven" : "warn"}">words ${
         w.reach} of ${w.total} reach</span>`;
+  // A REACH THE RETRIEVER COMPLAINED ABOUT IS NOT A CLEAN REACH. The right
+  // capability, found by a coin toss, or by a words route that ranked the
+  // library rather than selecting from it - and the page reported it as a
+  // plain success (row 155). THE TWO COMPLAINTS ARE NOT THE SAME STRENGTH:
+  // a coin toss says NEITHER route preferred the winner; the words one says
+  // only that THAT route had no claim, and nearness may still have. So the
+  // card says the retriever complained, never that the answer is wrong.
+  const shaky = w ? (w.reach_unsettled || []) : [];
   const words = count + (cross.length
-    ? `<span class="t bad">${cross.length} answered by a write</span>` : "");
+    ? `<span class="t bad">${cross.length} answered by a write</span>` : "")
+    + (shaky.length
+    ? `<span class="t warn">${shaky.length} reached, retriever complained</span>`
+    : "");
   return `<div class="s">
     <h2>${esc(r.name)}</h2>
     <div class="cap">${esc(r.id)}${r.domain ? " &middot; " + esc(r.domain) : ""}</div>
@@ -445,7 +467,9 @@ function card(r){
       const mark = hit.where === "reach" ? "proven"
                  : hit.where === "crossing" ? "bad" : "warn";
       return `<li>${esc(u)} <span class="t ${mark}">${esc(hit.where)} &rarr; ${
-        esc(hit.capability)} ${esc(hit.risk)}</span></li>`;
+        esc(hit.capability)} ${esc(hit.risk)}</span>${
+        (hit.told || []).map(t =>
+          `<span class="t warn">${esc(t)}</span>`).join("")}</li>`;
     }).join("")}</ul>
     <details><summary>what it stands on</summary><dl>
       <dt>needs</dt><dd><ul>${r.under.map(u =>
@@ -477,6 +501,8 @@ function draw(){
     if (say === "none" && r.words) return false;
     if (say === "crossing" && !rc.length) return false;
     if (say === "stale" && !old) return false;
+    if (say === "shaky"
+        && !(r.words && (r.words.reach_unsettled || []).length)) return false;
     // OUT OF DATE IS NEITHER, so it answers no to both of the last two.
     if (say === "short" && !(r.words && !old && r.words.reach < r.words.total)) return false;
     if (say === "all" && !(r.words && !old && r.words.reach === r.words.total)) return false;
@@ -519,6 +545,12 @@ def main():
              if one not in stale
              and one["words"]["reach"] == one["words"]["total"]]
     writes = [one for one in measured if one["words"]["crossing_live"]]
+    # A REACH THE RETRIEVER COMPLAINED ABOUT. Counted beside `whole`
+    # rather than subtracted from it: the sentence DID reach a declared
+    # capability, and whether a complaint spends that is a reader's call,
+    # not a number this page may quietly revise (row 155).
+    shaky = [one for one in measured if one["words"]["reach_unsettled"]]
+    shaky_words = sum(len(one["words"]["reach_unsettled"]) for one in shaky)
 
     payload = {
         "rows": rows,
@@ -536,7 +568,15 @@ def main():
                 "CHANGES THE MODEL.%s Recorded %s against index %s - a "
                 "recording, not a run."
                 % (len(measured), len(rows), len(whole), len(writes),
-                   (" %d recording(s) are OUT OF DATE - the skill's words "
+                   ("%s%s"
+                    % ((" %d sentence(s) across %d skill(s) reached a "
+                        "declared capability AND THE RETRIEVER COMPLAINED - "
+                        "its own note says a coin toss, where neither route "
+                        "preferred the winner, or a words route that ranked "
+                        "the library rather than selecting from it."
+                        % (shaky_words, len(shaky))) if shaky else "",
+                       ""))
+                   + (" %d recording(s) are OUT OF DATE - the skill's words "
                     "changed since they were taken, so their counts are "
                     "about different sentences." % len(stale))
                    if stale else "",
@@ -582,6 +622,12 @@ def main():
             w("    %s answers %s with a write\n"
               % (one["id"], ", ".join(repr(each) for each in
                                       one["words"]["crossing_live"])))
+        for one in shaky:
+            w("    %s reached %d declared capability(ies) and the "
+              "retriever complained - %s\n"
+              % (one["id"], len(one["words"]["reach_unsettled"]),
+                 ", ".join(repr(each)
+                           for each in one["words"]["reach_unsettled"])))
         for one in stale:
             w("    %s OUT OF DATE - %d never measured, %d no longer said\n"
               % (one["id"], len(one["words_moved"]["fresh"]),
