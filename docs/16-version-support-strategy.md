@@ -36,6 +36,26 @@ needs two paths.
 (see [03 §7](03-heron-revit.md)). This confines the problem to a handful of internal call sites
 instead of spreading it through the codebase — which is exactly why that rule exists.
 
+### What the 2025 dimension split ALSO did, which was not written down until 2026-09-19
+
+The break table records that 2025 split one `Dimension` class into `LinearDimension`,
+`RadialDimension` and `ArcLengthDimension`, and that exact-type checks fail across it. True, and not
+the whole change: **2025 is also the first release where a radial or arc-length dimension can be
+created in a PROJECT at all.**
+
+Before it, every `New...Dimension` call in the API belongs to the family editor's creation object,
+which a project document cannot reach. `RadialDimension.Create` and `ArcLengthDimension.Create` arrive
+at 2025; `AngularDimension.Create` and the base factory's `NewDimension` have been there since 2020;
+and `DiameterDimension.Create` exists on no release at all — a diameter dimension is the radial call
+with `isDiameter: true`, so it starts at 2025 too.
+
+Measured against all eight reference assemblies on 2026-09-19, after
+`brain/fragments/create-linear-dimension/` failed to compile on the obvious-sounding name. The full
+table is in [`.claude/skills/revit-version-support/SKILL.md`](../.claude/skills/revit-version-support/SKILL.md).
+
+**This is why `create-radial-dimension` declares three releases rather than eight** — the narrowest
+`revit:` list in the library, and the compile gate enforces it.
+
 ### Break 2 — .NET Framework → .NET 8 at Revit 2025
 
 This is the real one. **One assembly cannot target both runtimes.** There is no clever way around it.

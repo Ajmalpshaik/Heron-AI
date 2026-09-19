@@ -92,7 +92,7 @@ when the thing you hit is on no list at all.
 > traps that each cost an hour, and four defects now filed as
 > [`FRAGMENT-ISSUES.md`](FRAGMENT-ISSUES.md) rows 95–98, two of them still OPEN.
 
-**372 fragments. 310 `PROVEN`, 62 `DRAFT`, as of 2026-09-16** — and on 2026-09-14 **all 360 compiled on
+**395 fragments. 316 `PROVEN`, 79 `DRAFT`, as of 2026-09-19** — and on 2026-09-14 **all 360 compiled on
 all eight releases they claim, for the first time.** These two numbers moved twice while this block was
 being written: derive them with
 `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`. D-28's executor is built, fragments run against a real
@@ -112,7 +112,7 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Contracts | **124** in `brain/agents/`. `python tools/generate-contract-reference.py` builds a page of every one against the code that claims it, and it found **three refusals the code produces that no contract declared** on its first run. All three are fixed; every declared refusal is now reachable and every refusal declared |
 | Revit API | **The full public surface of all eight releases is now readable.** `python tools/api-changes.py` says what each release stopped shipping — 4,194 members across seven transitions. `ElementId.IntegerValue` is in the 239 that left at 2026, and this repository had written it down as *"the property every version has had"*. **Ask `HERON-REVIT-ACI-034` before writing a Revit member you have not compiled** |
 | Other gates | metadata, docs, gaps, agent-count, **structure** — all green. **`check-licence` added 2026-09-09 and it EXITS 1 on a finding**, unlike the other reports; 370 units, all clean today ([D-66](DECISIONS.md)). `check-revit-gate` and `check-reachable` are reports and exit 0, so their findings are questions and two of them are now worklists. The `structure` red at `83fd7e8` was `read-space-loads` naming a vendor namespace in `brain/`; **fixed 2026-09-08**, and note the checker greps the file text, so a COMMENT mentioning it fails too |
-| Tests | **190 suites as of 2026-09-16, and 188 pass in a plain Linux container.** The two out are `test_mcp_serves` and `test_served_claims`, and CI expects exactly those — the suite job compares the failing SET against a known-failure list and goes red on **both** a new failure and a listed one that starts passing, so clearing them is a change to that list too. Derive it: `ls tests/test_*.py | wc -l`. **`test_bridge_roundtrip` was never a machine failure.** It was excused for weeks as needing Windows and Revit and needed one `dotnet build` of the test host, written down in `.claude/skills/heron-ship/SKILL.md` the whole time. Nobody had run it. **The other two are a different case and the difference matters**: `pip install mcp` pulls a `cryptography` whose native bindings raise on import, which turned a clean skip (exit 3, read as WAITING) into a crash (exit 1, read as FAILED) and made both suites worse. It was backed out. **An excuse that turns out to be false and a dependency that is genuinely hostile look identical from the outside** — the only way to tell is to try it and read what changed. **Do not fix a test by editing it until it passes** — `test_embed` and `test_retrieve` were re-based against the model backend, not edited until green. **And do not pin a derived count inside a test**: `test_csharp` pinned three measured integers on 2026-09-15 and went red the same hour when one C# file was added. Check the CLAIM, not the figure |
+| Tests | **199 suites as of 2026-09-19, and ALL 199 pass in a plain Linux container** - derive the total with `ls tests/test_*.py | wc -l`. **That took installing rather than excusing, and this row used to say the opposite.** Four were carried for weeks as needing a special machine and not one of them did: `test_dotnet` and the compile gates needed `apt-get update && apt-get install -y dotnet-sdk-10.0`; `test_bridge_roundtrip` needed one `dotnet build` of the test host, the exact line its own failure message prints; `test_mcp_serves` and `test_served_claims` needed `pip install --user mcp` **followed by `pip install --user --upgrade cryptography cffi`** - and the earlier attempt that was backed out had installed `mcp` alone, which does panic on import. The missing half was in `.claude/skills/heron-ship/SKILL.md` sections 2 and 4 the whole time. **An excuse that turns out to be false and a dependency that is genuinely hostile look identical from the outside** - the only way to tell is to try it and read what changed, and every one of these four was the first kind. **`.github/workflows/gates.yml` still leaves the MCP SDK out on purpose and its known-failure list is unchanged** - the job goes red on both a new failure AND a listed one that starts passing, so this is about your container, not CI. **Do not fix a test by editing it until it passes** - `test_embed` and `test_retrieve` were re-based against the model backend, not edited until green. **And do not pin a derived count inside a test**: `test_csharp` pinned three measured integers on 2026-09-15 and went red the same hour when one C# file was added. Check the CLAIM, not the figure. **`test_supply.py` is the one that earned its keep on 2026-09-19** - it caught an invented `source:` value that all four gates had passed through three commits |
 | Register | **71 rows, 19 closed, 52 left** — PART 6 added Group J, the eight that would prove the executor's inputs. Group A is FINISHED. **Only `R1b` does not need Revit** |
 | Add-in | **THAT CLAIM WAS WRONG AND IS CORRECTED. Rebuilt and redeployed 2026-09-10, to Revit 2020, 2024 AND 2027**, verified at binary level. The binary Revit had loaded was dated 2026-09-08 23:06 while `RevitFragment.cs` was written 2026-09-09 23:14 - so D-67's caller-value widening and the rollback check had NEVER reached the machine ([FRAGMENT-ISSUES](FRAGMENT-ISSUES.md) rows 8 and 12). Deploy ONE release at a time. Rebuild it after ANY change under `revit/` — and check the framework first: `check-compile.py` builds 2020–2027 into one folder and the newest wins, so a run of it leaves .NET 10 binaries that Revit 2024 refuses with *"Revit cannot run the external application"*. `deploy-addin.ps1` now guards this rather than trusting the operator |
 | Agents | **215 of 250 have code** as of 2026-09-16, 4 host-provided by D-01, **31 left** — `python tools/agent-count.py`. **Sixteen departments are complete.** Phase 0/1's agent list is COMPLETE. The 31 split cleanly and the split is the useful part: **16 wait on one sentence from the owner** — **F23** four Documentation rows, **F27** five Development rows, **F31** five Standards rows, **F15/F17** two Naming rows — and **10 Revit Engineering rows are open work**. **Four were built on 2026-09-16**: `HERON-REVIT-API-020` (reasons ABOUT the API rather than touching a model), `HERON-REVIT-SYS-030` (MEP systems), `HERON-REVIT-PAR-011` (parameters) and `HERON-REVIT-GRP-033` (groups and assemblies). **They are not blocked on a compiler** — [§30](30-compiling-away-from-windows.md) is a five-minute install and every one builds on 2020–2027 once it is done. They are blocked on a MODEL: each is `MODIFY` in the register, which that column defines as the HIGHEST permission it can require, so each is built READ-FIRST exactly as `RevitLinks` and `RevitPhases` were — and none of the five has ever run |
@@ -121,6 +121,60 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Tools | **36** in `tools/` and **20** MCP tools as of 2026-09-15 — `ls tools/*.py \| wc -l` and `grep -c '^@server.tool()' mcp/server/heron_mcp_server.py`. New since the last entry: `generate-contract-reference.py` (what was built, against what it promised) and `api-changes.py` (what each Revit release stopped shipping). New MCP tools include `revit_links` and `revit_phases` |
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
+
+### 2026-09-19 — TWENTY-THREE FRAGMENTS BUILT FOR RECORDED GAPS, AND FOUR API FACTS THAT CHANGED THE ANSWER
+
+**Merged as PR #184.** The owner read out five lists of Revit jobs - roughly 290 of them - and asked
+which Heron could do. Twenty-three came back with no route at all, were recorded in
+[`work-notes/requested-fragments-2026-09-17.md`](work-notes/requested-fragments-2026-09-17.md), and
+were then built. **372 → 395 fragments. All twenty-three are `DRAFT` and none has met a model.**
+
+**THE COMPILER WAS INSTALLED FIRST AND IT PAID FOR ITSELF IN THE FIRST HOUR.** The section below says
+the compile gates are five minutes away; they are, and writing twenty-three fragments without them
+would have been guesswork. It caught three defects before any reached the repository and settled four
+facts the gap note had wrong or unverified:
+
+| | |
+|---|---|
+| **Phase creation** | Recorded as *probably impossible, UNVERIFIED*. **Confirmed impossible.** `Phase` carries no members of any kind - no method, no static, nothing - on any release 2020 to 2027. It belongs with category reassignment as a permanent API limit, not on an unbuilt list |
+| **The dimension gaps** | Recorded as four missing fragments. **Wrong KIND of gap.** Every `New...Dimension` call whose name suggests it belongs to the FAMILY EDITOR's creation object and cannot be reached from a project at all - which cost a compile failure on the first write of `create-linear-dimension`. The project routes are four different stories: linear through the base item factory and angular as a static, both from 2020; radial and arc-length only from **2025**; diameter through the radial call's `isDiameter` flag, the only route to one on any release. `check-fragments-compile.py` enforces it - 394 fragments claim 2024, 395 claim 2025 |
+| **`propose-mep-openings`** | Says in its own purpose that cutting is *"a separate write that somebody approved"*. **That write did not exist anywhere.** `create-opening` is it |
+| **Save and sync** | **Nothing in Heron could do either.** `Document.Save` and `SynchronizeWithCentral` appeared nowhere in the fragments OR the add-in. Heron could read ownership on a workshared model, modify it, and leave every change in a local file waiting for a hand on the keyboard. `save-document` and `sync-with-central` are `PUBLISH` risk, which Phase 0/1 refuse unconditionally - written and deliberately unreachable, which is the right order |
+
+**TWO DEFECTS WERE FIXED BY ADDING A ROUTE RATHER THAN EDITING A PROVEN FRAGMENT**, and that is the
+pattern worth repeating. `place-family-instances` hardcodes `StructuralType.NonStructural`, correct for
+the air terminals and sprinklers its purpose names; the defect was that no OTHER route existed, so
+every structural column and footing went in non-structural. `place-structural-family` is that route and
+the proven fragment is untouched, so it needs no re-proof. Same shape for `select-by-level`, which
+counts unlevelled elements as an `int` and discards them - `select-without-level` returns the set.
+
+**WHAT THE GATES AND SUITES CAUGHT, IN THE ORDER THEY CAUGHT IT:**
+
+- `check-structure` refused a **comment** naming the vendor namespace - the fixture-and-comment case
+  [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) §1 warns about, firing exactly as documented.
+- The fragment validator refused `checked` as a provided name **before a compiler could**: it is a C#
+  keyword and the generated wrapper would not have built.
+- `test_supply.py` refused `source: PROPOSED` on three fragments - **a word that was invented**. The
+  supply trust ladder is UNKNOWN, EXPERIMENTAL, TESTED, VERIFIED, PROVEN, OFFICIAL, and `source` says
+  where a fragment CAME FROM, not how mature or dangerous it is. **The four gates were green through
+  three commits with that wrong value in place; only the suites caught it.** Run both.
+- `check-docs` caught the derived count sentences going stale twice in one session, which is the rule
+  working rather than a nuisance.
+
+**ALL 199 SUITES PASS HERE**, which took installing rather than excusing - see the corrected row in the
+table below. `check-gaps` exits 0 with **UNFINISHED empty**.
+
+**WHAT IS LEFT, AND IT CANNOT BE DONE IN A CONTAINER.** Twenty-three fragments are unproven and say so.
+A compile is not a proof: D-30 needs a named model, a positive case, a negative case and a fingerprint.
+Each of the twenty-three already carries its two cases in `tests/cases.yaml`, several with a trap
+written in that only a real model will settle - `move-annotation` on a dimension, `measure-perimeter`
+against Revit's own room schedule, `set-datum-extent-type`'s claim that a 3D extent reaches every view.
+See [NEEDS-CHECKING](NEEDS-CHECKING.md) **A19**.
+
+**NOT filed as FRAGMENT-ISSUES rows, deliberately.** That register's own header says every row is a
+fragment *"PUT IN FRONT OF A REAL MODEL"* that did not come away proved. These twenty-three have never
+been run, so a row there would misreport what is known about them - they are unproven, which is not the
+same as broken.
 
 ### THE COMPILER IS FIVE MINUTES AWAY, AND THAT CHANGES WHICH JOBS ARE "PC ONLY"
 
@@ -141,10 +195,10 @@ What it unlocked, measured the same hour:
 | | |
 |---|---|
 | `tools/check-compile.py` | **all four projects × 2020–2027**, clean |
-| `tools/check-fragments-compile.py` | **372 fragments**, every release each one claims |
+| `tools/check-fragments-compile.py` | **395 fragments**, every release each one claims. 394 claim 2024 and 395 claim 2025 - `create-radial-dimension` is 2025+ only, and the gate enforces that rather than trusting the contract |
 | `tests/test_dotnet.py` | was red here, **now green** |
 | `tests/test_bridge_roundtrip.py` | was red here, **now green** after one `dotnet build` of the test host |
-| `tests/test_mcp_serves.py`, `test_served_claims.py` | **still out**, and leave them. `pip install mcp` pulls a `cryptography` whose native bindings panic on import — the exact reason `.github/workflows/gates.yml` leaves the MCP SDK out. Installing it turned a clean skip into a crash and it was backed out |
+| `tests/test_mcp_serves.py`, `test_served_claims.py` | **THIS ROW SAID "still out, and leave them" AND THAT IS NO LONGER TRUE.** Measured 2026-09-19 in a plain container: `pip install --user mcp` followed by `pip install --user --upgrade cryptography cffi` clears both, exit 0. The earlier attempt backed out after installing `mcp` alone, which does panic on import - the missing half was the `cryptography` and `cffi` upgrade, which `.claude/skills/heron-ship/SKILL.md` has carried in sections 2 and 4 the whole time. **The excuse outlived the fix by days because nobody re-read the skill.** `gates.yml` still leaves the MCP SDK out on purpose and that is unchanged - this is about your container, not CI |
 
 **The container is ephemeral, so this is a step and not a state.** The next session starts without it.
 
