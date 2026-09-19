@@ -803,6 +803,44 @@ because the authority is C# and nothing in Python can call it; the test is what 
 
 ---
 
+## `prove-skill.py` — is a SKILL proved, and the half that needs a Revit written out
+
+```bash
+python tools/prove-skill.py                      # both halves, all ten skills
+python tools/prove-skill.py --plan-only          # the disk half, in seconds
+python tools/prove-skill.py --skill count-elements
+python tools/prove-skill.py --jobs tools/jobs/skills
+```
+
+The skill-level twin of `batch-prove.py`. A skill is proved when **both** halves hold: every utterance
+reaches a capability the skill declares, and those capabilities, run in order on a real model, do what
+the skill says — with a negative case ([D-30](../docs/DECISIONS.md)).
+[`check-skill-routing.py`](check-skill-routing.py) measures the first and says so in its own last line:
+*"Understanding is half a proof; the other half is a model."* This is the sentence after that one.
+
+**It never prints PROVEN, and `tests/test_skill_proving.py` pins that.** No model is opened here, so the
+furthest it reaches is `UNDERSTOOD` — half held, half owed. The verdict `CROSSING` outranks every other,
+because a question answered by a write is not in better shape for having a tidy plan.
+
+Between the two halves sits a third thing, read from disk and therefore stable between runs: whether
+every declared capability has a provider, whether that provider is **PROVEN** (a skill cannot be proved
+above what it rests on), whether the provider's risk **outranks the skill's own declared risk**
+([row 140](../docs/FRAGMENT-ISSUES.md)), and whether the capabilities can be ordered so each one binds.
+`--plan-only` is that half alone; the routing half asks the live store 43 times and takes about
+twenty-five minutes, which is why `--routing-to` / `--routing-from` exist — a recording is printed back
+with the index fingerprint it was taken against, and labelled a recording.
+
+`receivable()` and `classify()` are **imported** from `generate-jobs.py` and `check-skill-routing.py`
+rather than copied, for the reason `batch-prove.py` gives about `looks_empty`: two copies of a judgement
+do not stay in step.
+
+The emitted job file is `tools/jobs/example.yaml`'s shape, one per skill, with the steps in an order
+that composes and `keep-chain: true` exactly where a need can only come down the chain. **Read its
+header before running it** — it says how many of its own steps `batch-prove` will refuse as `ALREADY`,
+which for seven of the ten skills is all of them ([row 141](../docs/FRAGMENT-ISSUES.md)).
+
+---
+
 ## `measure-brain.py` — how long the brain takes, stage by stage
 
 ```bash

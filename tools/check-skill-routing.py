@@ -89,6 +89,15 @@ Exit 0 whatever it finds, exactly like both siblings. A crossing is a FINDING
 that a person judges; a tool that failed a build over one would teach people to
 weaken a skill's utterances to buy a number, which is the one response
 brain/retrieval-history.md rules out.
+
+THE CLASSIFIER IS SHARED, AND `prove-skill.py` IS WHAT IT IS SHARED WITH
+------------------------------------------------------------------------
+`classify()` below decides which of the five lists an answer belongs in, and it
+lives outside `main()` because `tools/prove-skill.py` - which asks this same
+seam the same sentences as one half of a skill's proof - imports it. Two copies
+of *what a crossing is* would start disagreeing about the same skill on the
+same day, and the whole argument of this file is that a disagreement between
+two declarations is the thing worth finding.
 """
 
 import argparse
@@ -296,6 +305,60 @@ def rung(level):
     return LADDER.index(level) if level in LADDER else -1
 
 
+def classify(skill_risk, resolved_risk, capability, needs):
+    """Which of the five lists this answer belongs in. ONE implementation.
+
+    Returns "crossing", "view", "escalation", "reach" or "miss".
+
+    EXTRACTED RATHER THAN COPIED, and the reason is this file's own subject.
+    `tools/prove-skill.py` asks the same question of the same seam and has to
+    get the same answer, and the only way two copies of a judgement stay in
+    step is by not being two copies - the argument `batch-prove.py` makes about
+    importing `looks_empty` from the drafter rather than re-writing it.
+
+    Every branch below kept its comment, because each one was a correction.
+    """
+    # A skill that asks a question, answered by something that changes
+    # the model. Reported whether or not the capability is in `needs`:
+    # a skill that DECLARED the write is worse, not better, and the
+    # lists below keep the two apart.
+    if skill_risk in ASKS_A_QUESTION and resolved_risk in CHANGES_THE_MODEL:
+        return "crossing"
+    if skill_risk in ASKS_A_QUESTION and resolved_risk in CHANGES_A_VIEW:
+        return "view"
+    if (resolved_risk in CHANGES_THE_MODEL or resolved_risk in CHANGES_A_VIEW) \
+            and rung(resolved_risk) > rung(skill_risk) >= 0:
+        # HIGHER ON THE LADDER THAN THE SKILL DECLARES, from a skill
+        # that was not asking a question. A DIFFERENT CLAIM from a
+        # crossing and kept apart from it on purpose: nobody asked
+        # anything, so "a question answered by a write" is the wrong
+        # sentence - but the request still reached further up the
+        # ladder than the skill that owns the words.
+        #
+        # THE RISK MUST ACTUALLY DO SOMETHING, and testing the rung
+        # alone was not enough. The first version of this rule was
+        # `rung(risk) > rung(srisk)`, and it reported
+        # `find the blank parameters` - READ, resolving to
+        # DESCRIBE_BLANK_PARAMETERS at ANALYZE - as an escalation.
+        # docs/12 s2 gives ANALYZE side effects **none**, and row 116
+        # names that capability as the RIGHT owner for that sentence,
+        # so the rule had flagged the one case the register calls
+        # correct. Same over-reporting the sibling tool records fixing
+        # ("it flagged anything that was not READ"), reproduced here
+        # by reading position on the ladder as if it meant harm.
+        #
+        # THIS LIST EXISTS BECAUSE THE FIRST RUN HID ONE. `highlight
+        # them` belongs to select-elements, declared EXECUTE, and
+        # resolves to HIGHLIGHT_VS_REST - a MODIFY that overrides
+        # graphics in the view. It was filed under "reached something
+        # the skill never asked for", in a list of 21, where a risk
+        # escalation reads exactly like a wrong-but-harmless answer.
+        return "escalation"
+    if capability in needs:
+        return "reach"
+    return "miss"
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--revit", default="2020")
@@ -397,46 +460,14 @@ def main():
             row = (sid, srisk, phrase, capability, risk, route, gap, needs)
 
             # THE CROSSING TEST, AND IT IS DECIDED BY TWO DECLARATIONS.
-            # A skill that asks a question, answered by something that changes
-            # the model. Reported whether or not the capability is in `needs`:
-            # a skill that DECLARED the write is worse, not better, and the
-            # lists below keep the two apart.
-            if srisk in ASKS_A_QUESTION and risk in CHANGES_THE_MODEL:
-                crossings.append(row)
-            elif srisk in ASKS_A_QUESTION and risk in CHANGES_A_VIEW:
-                view_changes.append(row)
-            elif (risk in CHANGES_THE_MODEL or risk in CHANGES_A_VIEW) \
-                    and rung(risk) > rung(srisk) >= 0:
-                # HIGHER ON THE LADDER THAN THE SKILL DECLARES, from a skill
-                # that was not asking a question. A DIFFERENT CLAIM from a
-                # crossing and kept apart from it on purpose: nobody asked
-                # anything, so "a question answered by a write" is the wrong
-                # sentence - but the request still reached further up the
-                # ladder than the skill that owns the words.
-                #
-                # THE RISK MUST ACTUALLY DO SOMETHING, and testing the rung
-                # alone was not enough. The first version of this rule was
-                # `rung(risk) > rung(srisk)`, and it reported
-                # `find the blank parameters` - READ, resolving to
-                # DESCRIBE_BLANK_PARAMETERS at ANALYZE - as an escalation.
-                # docs/12 s2 gives ANALYZE side effects **none**, and row 116
-                # names that capability as the RIGHT owner for that sentence,
-                # so the rule had flagged the one case the register calls
-                # correct. Same over-reporting the sibling tool records fixing
-                # ("it flagged anything that was not READ"), reproduced here
-                # by reading position on the ladder as if it meant harm.
-                #
-                # THIS LIST EXISTS BECAUSE THE FIRST RUN HID ONE. `highlight
-                # them` belongs to select-elements, declared EXECUTE, and
-                # resolves to HIGHLIGHT_VS_REST - a MODIFY that overrides
-                # graphics in the view. It was filed under "reached something
-                # the skill never asked for", in a list of 21, where a risk
-                # escalation reads exactly like a wrong-but-harmless answer.
-                escalations.append(row)
-            elif capability in needs:
-                reaches.append(row)
-            else:
-                misses.append(row)
+            # Both are written down - the skill's own risk and the resolved
+            # capability's - so `classify` makes no judgement about phrasing.
+            # It lives above this loop because `tools/prove-skill.py` asks the
+            # same question and must not answer it differently.
+            where = classify(srisk, risk, capability, needs)
+            {"crossing": crossings, "view": view_changes,
+             "escalation": escalations, "reach": reaches,
+             "miss": misses}[where].append(row)
 
     print("Revit %s   skills: %d   utterances asked: %d"
           % (args.revit, len(loaded), asked))
