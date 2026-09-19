@@ -49,6 +49,7 @@ scope store that is not derivable from the files on disk, which is exactly why
 it may never be the reason an answer is right.
 """
 
+import io
 import glob
 import os
 import re
@@ -406,6 +407,128 @@ def index(store, force=False):
 # ---------------------------------------------------------------------------
 # The three routes
 # ---------------------------------------------------------------------------
+
+_ON_DISK = {"signature": None, "by_id": {}}
+
+
+def _disk_signature(root=None):
+    """A cheap fingerprint of every fragment.yaml - 395 stat() calls, ~3 ms."""
+    root = root or FRAG.FRAGMENTS_DIR
+    marks = []
+    try:
+        for name in sorted(os.listdir(root)):
+            path = os.path.join(root, name, "fragment.yaml")
+            try:
+                marks.append((name, os.stat(path).st_mtime_ns))
+            except OSError:
+                continue
+    except OSError:
+        return None
+    return tuple(marks)
+
+
+def disk_status(fid, root=None):
+    """The `heron-status:` ON DISK for one fragment id, or None.
+
+    FRAGMENT-ISSUES ROW 127, AND THE POINT IS WHICH SOURCE IS AUTHORITATIVE.
+    `short_circuit` reads a fragment's status out of the `fragments` table -
+    the INDEX - and `heron_lookup` then says *"X is PROVEN, so it may run
+    without asking"*. On 2026-09-19 it said exactly that about a fragment that
+    had been demoted to DRAFT the same morning, and closed the same reply with
+    a 312/83 total derived live from disk. One reply, two sources, and the
+    stale one was carrying an AUTHORISATION.
+
+    THE INDEX IS NOT AT FAULT FOR BEING STALE - it is a cache, and
+    [row 116](../docs/FRAGMENT-ISSUES.md) and [row 136](../docs/FRAGMENT-ISSUES.md)
+    already record that one `global.db` serves every worktree and is rebuilt
+    wholesale by whoever asks last. What is at fault is reading a PERMISSION
+    from a cache when the file it caches is on the same disk.
+
+    SO WHY NOT `FRAG.load_all()`, WHICH IS ALREADY THE AUTHORITY? Measured:
+    **1.95 s**, because it parses every contract. A lookup cannot pay that. A
+    SHALLOW read of the two top-level lines this needs costs **9 ms** for all
+    395, and a stat walk to know whether even that is needed costs 3 ms - so
+    the map is built once and rebuilt only when a file actually changes. Same
+    answer as the authority gives, at a thousandth of the price.
+
+    Returns None when the id is unknown or nothing could be read, and every
+    caller treats that as "do not grant" - see `may_run_unasked`.
+    """
+    signature = _disk_signature(root)
+    if signature is None:
+        return None
+    if _ON_DISK["signature"] != signature:
+        found = {}
+        base = root or FRAG.FRAGMENTS_DIR
+        for name, _mark in signature:
+            path = os.path.join(base, name, "fragment.yaml")
+            this_id, this_status = None, None
+            try:
+                with io.open(path, encoding="utf-8") as handle:
+                    for line in handle:
+                        # TOP LEVEL ONLY. `id:` appears indented inside the
+                        # contract on some fragments, and taking the first
+                        # match anywhere would read a need's name as the
+                        # fragment's.
+                        if line.startswith("id:"):
+                            this_id = line.split(":", 1)[1].strip()
+                        elif line.startswith("heron-status:"):
+                            this_status = line.split(":", 1)[1].strip()
+                        elif line.startswith("contract:"):
+                            break
+            except (IOError, OSError):
+                continue
+            if this_id and this_status:
+                found[this_id] = this_status
+        _ON_DISK["signature"] = signature
+        _ON_DISK["by_id"] = found
+    return _ON_DISK["by_id"].get(fid)
+
+
+def may_run_unasked(fid, index_status, root=None):
+    """(autorun, note). Permission needs BOTH the index and the disk to agree.
+
+    IT CAN ONLY EVER WITHHOLD, AND IT WITHHOLDS ON ONE THING: the two sources
+    DISAGREEING. Where they agree, and where the disk says nothing at all, this
+    behaves exactly as before.
+
+    A STRONGER RULE WAS WRITTEN FIRST AND IS WRONG, which is worth more than
+    the rule that replaced it. It read *a status that cannot be checked is not
+    a permission* and withheld when no file was found - and that broke
+    `tests/test_search.py`, which indexes a synthetic `FRG-QA-900` with
+    `folder='x'` and no file anywhere. **Absence is a LEGITIMATE state**: a
+    store can be built from another root, or from rows that never had a file.
+    It is not evidence of staleness, and row 127's defect is not absence - it
+    is the index and the file both answering, differently. Punishing the first
+    to catch the second changes behaviour far beyond the defect, which is the
+    opposite of the smallest safe change.
+    """
+    on_disk = disk_status(fid, root)
+
+    if index_status in RUNNABLE_UNASKED and (on_disk is None
+                                             or on_disk == index_status):
+        return True, "%s is %s, so it may run without asking" % (fid,
+                                                                 index_status)
+
+    # ONLY WHERE IT WOULD OTHERWISE HAVE GRANTED. If the index is the STRICTER
+    # of the two - it says DRAFT while the file says PROVEN - nothing is being
+    # authorised on a stale row and there is nothing to withhold, so the
+    # ordinary sentence stands. Reporting that disagreement too would replace a
+    # correct message with a louder one and catch nothing: row 127's hazard is
+    # a PERMISSION granted from a cache, in one direction.
+    if (index_status in RUNNABLE_UNASKED and on_disk is not None
+            and on_disk != index_status):
+        return False, ("%s matched exactly, and the index says %s while the "
+                       "fragment's own file says %s. The FILE is the authority "
+                       "and the index is a cache, so it is offered, not run - "
+                       "re-index to clear this (FRAGMENT-ISSUES row 127)"
+                       % (fid, index_status, on_disk))
+
+    # THE INDEX'S WORD, which is what drove the refusal - saying "is PROVEN -
+    # nobody has watched it work" would contradict itself in one sentence.
+    return False, ("%s matched exactly but is %s - nobody has watched it work, "
+                   "so it is offered, not run" % (fid, index_status))
+
 
 def short_circuit(store, text):
     """Route 1. The request IS a fragment's canonical phrasing.
@@ -826,12 +949,10 @@ def ask(store, text, limit=5):
 
     fid, status = short_circuit(store, text)
     if fid:
-        return Answer("identity", fid,
-                      autorun=status in RUNNABLE_UNASKED,
-                      note=("%s is %s, so it may run without asking" % (fid, status))
-                      if status in RUNNABLE_UNASKED else
-                      ("%s matched exactly but is %s - nobody has watched it work, "
-                       "so it is offered, not run" % (fid, status)))
+        # ROW 127. The index is a cache; the fragment's own file is the
+        # authority, and a PERMISSION may not be read from the cache alone.
+        allowed, told = may_run_unasked(fid, status)
+        return Answer("identity", fid, autorun=allowed, note=told)
 
     fid, hits = recall(store, text)
     if fid:
