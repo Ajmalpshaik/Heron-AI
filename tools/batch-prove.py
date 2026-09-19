@@ -227,6 +227,20 @@ def read_jobs(path):
             "set": _merge(defaults.get("set"), row.get("set")),
             "negative-set": _merge(defaults.get("negative-set"),
                                    row.get("negative-set")),
+            # THE SETUP CHAIN'S OWN VALUES, AND THEY ARE OPTIONAL ON PURPOSE.
+            # FRAGMENT-ISSUES row 142: `set` went to every setup step AND to
+            # the fragment as one flat dict, so a chain selecting on
+            # `categories` and a fragment asking about `categories` collapsed
+            # into one value - silently, and the job still ran, reporting a
+            # number about the wrong population. 88 fragment/chain pairs in
+            # this library share a caller-supplied name.
+            #
+            # LEAVE IT OUT AND NOTHING CHANGES. The client falls back to `set`
+            # when this is empty, so every job file written before today sends
+            # exactly what it sent before.
+            "setup-set": _merge(defaults.get("setup-set"), row.get("setup-set")),
+            "negative-setup-set": _merge(defaults.get("negative-setup-set"),
+                                         row.get("negative-setup-set")),
             "write": bool(row.get("write", defaults.get("write", False))),
             "cross": row.get("cross", defaults.get("cross")),
             "in": row.get("in", defaults.get("in")),
@@ -442,6 +456,11 @@ def validate_command(job, record_path, session=None):
         argv += ["--set", "%s=%s" % (key, job["set"][key])]
     for key in sorted(job["negative-set"]):
         argv += ["--negative-set", "%s=%s" % (key, job["negative-set"][key])]
+    for key in sorted(job["setup-set"]):
+        argv += ["--setup-set", "%s=%s" % (key, job["setup-set"][key])]
+    for key in sorted(job["negative-setup-set"]):
+        argv += ["--negative-setup-set",
+                 "%s=%s" % (key, job["negative-setup-set"][key])]
     argv.append(job["fragment"])
     return argv
 

@@ -890,21 +890,44 @@ def pull_values(rest):
     answer must be empty, and for a fragment that reads a view the arrangement
     IS a different view - there is nothing to clear at the keyboard.
     """
-    kept, pairs, negatives, index = [], [], [], 0
+    kept, pairs, negatives = [], [], []
+    setups, negative_setups = [], []
+    index = 0
+
+    # WHICH LIST EACH FLAG FILLS, spelled out rather than worked out from the
+    # spelling. `--setup-set` and `--negative-set` both end in "set" and both
+    # contain "negative" checks that used to be done with startswith/endswith,
+    # and adding a third pair made those two rules disagree with each other.
+    BUCKET = {
+        "--set": ("pairs", False),
+        "--view": ("pairs", True),
+        "--negative-set": ("negatives", False),
+        "--negative-view": ("negatives", True),
+        # THE SETUP CHAIN'S OWN VALUES. FRAGMENT-ISSUES row 142: a chain and
+        # the fragment under test could not be given different values for a
+        # name they SHARE, and `categories` is shared by 88 fragment/chain
+        # pairs in this library. Optional, and when it is absent every setup
+        # step still gets exactly what it got before.
+        "--setup-set": ("setups", False),
+        "--negative-setup-set": ("negative_setups", False),
+    }
+    lists = {"pairs": pairs, "negatives": negatives,
+             "setups": setups, "negative_setups": negative_setups}
+
     while index < len(rest):
         token = rest[index]
-        if token in ("--set", "--view", "--negative-set", "--negative-view"):
+        if token in BUCKET:
             if index + 1 >= len(rest):
                 print("%s needs a value after it" % token)
-                return None, None, None
+                return None, None, None, None, None
             value = rest[index + 1]
-            written = value if token.endswith("set") else "view=" + value
-            (negatives if token.startswith("--negative") else pairs).append(written)
+            which, is_view = BUCKET[token]
+            lists[which].append("view=" + value if is_view else value)
             index += 2
             continue
         kept.append(token)
         index += 1
-    return kept, pairs, negatives
+    return kept, pairs, negatives, setups, negative_setups
 
 
 def risk_refusal(root, name):
@@ -1268,7 +1291,8 @@ def cmd_prove(names, in_document=None, values=None, session=None):
 
 
 def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=None, out=None,
-                 values=None, negative_values=None, writing=False, setup=None,
+                 values=None, negative_values=None, setup_values=None,
+                 negative_setup_values=None, writing=False, setup=None,
                  keep_chain=False, allow_publish=False):
     """
     Run ONE fragment through the phases a proof needs, and record what came back.
@@ -1512,7 +1536,15 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
             # missing selection rather than a discarded one.
             step_args = {"name": step, "source": step_source,
                          "needs": step_needs}
-            chosen_setup = values if using is None else using
+            # THE SETUP CHAIN'S VALUES, WHICH ARE THE FRAGMENT'S UNLESS SAID
+            # OTHERWISE. Row 142: one flat dict went to every step and to the
+            # fragment, so a chain selecting on `categories` and a fragment
+            # asking about `categories` collapsed into one value - silently,
+            # and the job still ran. Absent, this is exactly what it was.
+            if using is None:
+                chosen_setup = setup_values or values
+            else:
+                chosen_setup = negative_setup_values or using
             if chosen_setup:
                 step_args["values"] = chosen_setup
             if position == 0:
@@ -1897,7 +1929,7 @@ def main(argv):
     if argv[1] == "release":
         return cmd_release()
     if argv[1] == "prove":
-        rest, pairs, _ = pull_values(argv[2:])
+        rest, pairs, _, _, _ = pull_values(argv[2:])
         if rest is None:
             return 2
         # prove --in "Project1" list-levels ...  reads a model that is open
@@ -1916,7 +1948,7 @@ def main(argv):
             return 2
         return cmd_prove(rest, in_document, values, session=session)
     if argv[1] == "fragment":
-        rest, pairs, _ = pull_values(argv[2:])
+        rest, pairs, _, _, _ = pull_values(argv[2:])
         # --write runs it inside a transaction so a MODIFY fragment can run.
         # --apply is the separate, deliberate act of KEEPING what it did; on
         # its own --apply means nothing, because a read has nothing to keep.
@@ -1959,7 +1991,7 @@ def main(argv):
         return cmd_fragment(rest[0], values, writing, apply_it, session=session,
                             expect=expect)
     if argv[1] == "validate":
-        rest, pairs, negatives = pull_values(argv[2:])
+        rest, pairs, negatives, setup_pairs, negative_setup_pairs = pull_values(argv[2:])
         if rest is None:
             return 2
         # --write proves a MODIFY fragment. `apply` is never sent from here, so
@@ -2034,8 +2066,19 @@ def main(argv):
         negative_values = caller_values(negatives)
         if negative_values is None:
             return 2
+        # ROW 142. Absent, these are empty and every setup step gets exactly
+        # what the fragment gets - which is what happened before this existed.
+        setup_values = caller_values(setup_pairs)
+        if setup_values is None:
+            return 2
+        negative_setup_values = caller_values(negative_setup_pairs)
+        if negative_setup_values is None:
+            return 2
         return cmd_validate(rest[0], session=session, values=values,
-                            negative_values=negative_values, writing=writing,
+                            negative_values=negative_values,
+                            setup_values=setup_values,
+                            negative_setup_values=negative_setup_values,
+                            writing=writing,
                             setup=setup, keep_chain=keep_chain,
                             allow_publish=allow_publish, **options)
 
