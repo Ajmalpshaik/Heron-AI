@@ -1570,6 +1570,24 @@ deliberately not started here: PR #198 was already large and carrying the
 row 136 root-cause fix, and a feature this size belongs on its own branch
 rather than delaying seventeen repairs. Recorded so the next session does not
 have to re-derive which three fragments matter or why.
+
+> **STARTED 2026-09-19, AND THE HALF THAT NEEDS NO REVIT IS BUILT AND TESTED.**
+> `tools/prove-tracking.py` does every check that can be made before a model is
+> opened, and `--dry-run` answers completely. **All three fragments above are
+> arrangeable**, proved in `tests/test_prove_tracking.py`: `trace-connectivity`
+> varying `tolerance` with `start=selected` held still, `report-findings`
+> varying `whatWasChecked` with `checkedCount` held, and
+> `describe-blank-parameters` varying `parameterName`.
+>
+> **ONE CORRECTION TO THE READING ABOVE.** `describe-blank-parameters` is
+> described here as having nothing for the rule to look at because it declares
+> no `role: result`. `heron_fragment.provide_role` reads an **absent** `role:`
+> as `result` - the stricter reading, and deliberately so - therefore its
+> `findings` IS a declared result and a tracking row can carry it.
+>
+> **What is not built is the runs**, which need a live session to develop
+> against. The tool exits 3 and names that rather than sending something
+> half-built at a model. [FRAGMENT-ISSUES row 151](FRAGMENT-ISSUES.md).
 ---
 
 ## Group X — the SKILLS, and the one thing only the PC can answer — 2026-09-19
