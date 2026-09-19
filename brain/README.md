@@ -65,8 +65,10 @@ python tools/check-gaps.py                                  # unfinished, versus
 
 ## What is still to come
 
-**Proof, mostly.** **167 fragments are `PROVEN`; the other 193 and all ten skills are `DRAFT`** — derive
-both with `python brain/heron_fragment.py` rather than reading them here. Phase 2's
+**Proof, mostly.** **316 fragments are `PROVEN`; the other 79 and all ten skills are `DRAFT`** — derive
+both with `python brain/heron_fragment.py` rather than reading them here. **This line said 167 and 193
+until 2026-09-19**, which was wrong by 149 in one direction and 114 in the other and had been for weeks:
+the sentence telling its reader to derive the numbers was itself the reason nobody did. Phase 2's
 definition of done is *"ten real skills **work**"* — ten are written, and the word that needs a Revit is
 still the last one. The first 52 are what one night with a real model bought; the arithmetic on the rest has
 not changed, only the size of it - and the ten fragments added on 2026-09-08, four for

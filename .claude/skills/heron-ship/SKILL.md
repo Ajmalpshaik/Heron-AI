@@ -243,7 +243,7 @@ apt-get update && apt-get install -y dotnet-sdk-10.0     # ~2 minutes
 | | result |
 |---|---|
 | `check-compile.py` | **all 5 projects on all 8 releases, 2020–2027** |
-| `check-fragments-compile.py` | **all 372 fragments on every release each one claims** |
+| `check-fragments-compile.py` | **every fragment on every release each one claims** - derive the total with `ls brain/fragments \| wc -l`, because this row said 372 for three days after it was 395 |
 | `check-api-surface.py` | **every Revit member Heron calls exists in every release** |
 | `tests/test_bridge_roundtrip.py` | **passes**, after the one build its own failure message prints |
 

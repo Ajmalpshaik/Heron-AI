@@ -28,6 +28,21 @@ ls brain/fragments | wc -l
 
 ---
 
+# CLOSED 2026-09-19 - this note has emptied into the permanent registers
+
+**Its work is done and it is ready to be deleted**, which is what
+[`work-notes/README.md`](README.md) says a note is for. Nothing here needs to survive in this file:
+
+| what it held | where it lives now |
+|---|---|
+| The twenty-three built | the library itself, and [HANDOVER](../HANDOVER.md) 2026-09-19 |
+| That none of them is proven | [NEEDS-CHECKING](../NEEDS-CHECKING.md) **A19** |
+| What is still buildable, and the two that never will be | [PROPOSALS](../PROPOSALS.md) 2026-09-19 |
+| The dimension routes and their four different start dates | [16 §Break 2](../16-version-support-strategy.md) and the `revit-version-support` skill |
+
+**It is kept until the owner has read it once**, because it is the only place the original question and
+the wrong answers are recorded side by side. Delete it after that.
+
 # 2026-09-18 - TWENTY-THREE OF THESE ARE NOW BUILT
 
 **Read this section before the rows below it.** The owner said *"build all

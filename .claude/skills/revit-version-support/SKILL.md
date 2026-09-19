@@ -79,13 +79,44 @@ matters on a locked-down corporate machine — and is unaffected by the 2027 mov
 | 2022 | Tag references | `TaggedElementId`, `LeaderEnd`, `HasElbow` | `GetTaggedElementIds()`, `GetLeaderEnd(ref)`, `HasLeaderElbow()` |
 | 2024 | Element id storage | `IntegerValue` (int) | `Value` (long) — `IntegerValue` is deprecated and **throws** above 32 bits |
 | 2024 | Built-in category and parameter enums | 32-bit | 64-bit — old int casts throw |
-| 2025 | Dimensions | one `Dimension` class | `LinearDimension`, `RadialDimension`, `ArcLengthDimension`. Exact-type checks fail |
+| 2025 | Dimensions | one `Dimension` class | `LinearDimension`, `RadialDimension`, `ArcLengthDimension`. Exact-type checks fail — **and the same change brought the first PROJECT-side creation route**, see below |
 | 2026 | Add-in isolation | — | `<ManifestSettings>` in the manifest. ⚠ Read by **Revit 2025 or older this crashes Revit** — it must be stripped per release |
 | 2027 | Runtime | .NET 8 | .NET 10 |
 | 2027 | All-user add-in path | `ProgramData` | `Program Files` |
 
 Also removed or deprecated at 2027: AXM import, several `Mechanical.Zone` members, legacy rebar
 creation methods, and several `EnergyDataSettings` properties.
+
+## Creating a dimension — four routes, four different histories
+
+**Measured 2026-09-19 against every reference assembly 2020 to 2027**, after a fragment failed to
+compile on the obvious-looking call.
+
+**The `New...Dimension` names are a trap.** `NewLinearDimension`, `NewRadialDimension`,
+`NewDiameterDimension`, `NewArcLengthDimension` and `NewAngularDimension` all belong to the FAMILY
+EDITOR's creation object. A project document's `doc.Create` is a different type and **cannot reach any
+of them**. The name reads correct, the code does not compile, and nothing in the table above says so.
+
+| want | the call that works in a PROJECT | from |
+|---|---|---|
+| Linear | `NewDimension(View, Line, ReferenceArray)` on the base item factory, via `doc.Create` | 2020 |
+| Angular | `AngularDimension.Create(Document, View, Arc, IList<Reference>, DimensionType)` — a static | 2020 |
+| Radial | `RadialDimension.Create(Document, View, Reference, bool)` | **2025** |
+| Diameter | the same call with `isDiameter: true` | **2025** |
+| Arc length | `ArcLengthDimension.Create(Document, View, Arc, Reference, IList<Reference>)` | **2025** |
+
+**So a radius cannot be dimensioned through the API on Revit 2020 to 2024 at all** — not by Heron and
+not by anything else. That is the API's limit, not a choice. `DiameterDimension.Create` exists on **no**
+release; the `isDiameter` flag is the only route to a diameter dimension in a project.
+
+`brain/fragments/create-radial-dimension/` therefore declares `revit: ["2025", "2026", "2027"]`, and
+`tools/check-fragments-compile.py` enforces it — 394 fragments claim 2024, 395 claim 2025.
+
+## Phase creation — there is no such thing, on any release
+
+**`Phase` carries no members of any kind.** No `Create`, no static, nothing — checked in all eight
+reference assemblies on 2026-09-19. Phases are made by hand in Revit and the API can only read them and
+assign elements to them. Do not plan a fragment for it; the answer will not change with a release.
 
 ## Members that simply ARRIVED — the class the table above misses
 
