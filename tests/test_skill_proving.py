@@ -96,7 +96,7 @@ def main():
     source = io.open(os.path.join(ROOT, "tools", "prove-skill.py"),
                      encoding="utf-8").read()
     words = set([PS.UNDERSTOOD, PS.BLOCKED, PS.NOT_UNDERSTOOD, PS.PLAN_OK,
-                 PS.CROSSING])
+                 PS.CROSSING, PS.OUT_OF_DATE])
     check("PROVEN" not in words,
           "the verdict vocabulary does not contain the word (%s)"
           % ", ".join(sorted(words)))
@@ -106,9 +106,10 @@ def main():
                if line.strip().startswith("return ")]
     verdicts = [line for line in returns
                 if any(w in line for w in ("CROSSING", "BLOCKED", "PLAN_OK",
-                                           "NOT_UNDERSTOOD", "UNDERSTOOD"))]
-    check(len(verdicts) == 5,
-          "verdict() reaches exactly five verdicts, each a named constant (%d)"
+                                           "NOT_UNDERSTOOD", "UNDERSTOOD",
+                                           "OUT_OF_DATE"))]
+    check(len(verdicts) == 6,
+          "verdict() reaches exactly six verdicts, each a named constant (%d)"
           % len(verdicts))
     check(not [line for line in returns
                if line not in verdicts and "said(" not in line
@@ -132,6 +133,40 @@ def main():
     check('IN_FRONT_OF_A_MODEL = ("PROVEN", "PRODUCTION")' in source,
           "PROVEN appears only as a FRAGMENT status it reads, never as a "
           "verdict it writes")
+
+    # A RECORDING OUTLIVES THE SENTENCES IT COUNTED (register row 152). The
+    # tool that WRITES the recordings must not read a stale one as agreement.
+    tidy = fake_skill("READ", ["COUNT_ELEMENTS"])
+    reaching = [("how many ducts are there", "COUNT_ELEMENTS", "READ",
+                 "identity", "reach")]
+    word, why = PS.verdict(PS.Plan(tidy, by_capability, chain, ladder),
+                           reaching)
+    check(word == PS.UNDERSTOOD,
+          "a recording that covers the skill's sentences can say UNDERSTOOD")
+    word, why = PS.verdict(PS.Plan(tidy, by_capability, chain, ladder),
+                           reaching, {"gone": [], "fresh": ["and one more"]})
+    check(word == PS.OUT_OF_DATE,
+          "the SAME rows, against a skill that has since grown a sentence, "
+          "cannot")
+    check(any("never measured" in line for line in why),
+          "and it says how many were never measured")
+    # THE DANGER IS NOT SUPPRESSED BY THE STALENESS, and a finding about a
+    # sentence nobody says any more is not a finding about today's library.
+    word, _why = PS.verdict(
+        PS.Plan(tidy, by_capability, chain, ladder),
+        reaching + [("check the connections", "MIRROR_ELEMENTS", "MODIFY",
+                     "hybrid", "crossing")],
+        {"gone": [], "fresh": ["and one more"]})
+    check(word == PS.CROSSING,
+          "a crossing on a sentence the skill STILL says outranks the "
+          "staleness")
+    word, _why = PS.verdict(
+        PS.Plan(tidy, by_capability, chain, ladder),
+        reaching + [("a sentence it no longer says", "MIRROR_ELEMENTS",
+                     "MODIFY", "hybrid", "crossing")],
+        {"gone": ["a sentence it no longer says"], "fresh": []})
+    check(word == PS.OUT_OF_DATE,
+          "and a crossing on one it no longer says is dropped, not reported")
 
     print()
     print("2. classify() gives the register's cases the register's words")
@@ -277,6 +312,46 @@ def main():
                           % (plan.id, slug, name))
         check(str(doc.get("model", "")).startswith("FILL IN"),
               "%s does not name a model it has never seen" % plan.id)
+
+    print()
+    print("the fingerprint block, printed by four sweeps and written once")
+    # FOUR COPIES OF SIX PRINTS is four places to edit the day the block
+    # learns something new - and it has just learned WHICH TREE built the
+    # store (register row 131). These are built rather than run, so no store
+    # is needed and CI, which has none, still checks them.
+    lines = PS.ROUTING.fingerprint_lines({"error": "no HERON_KNOWLEDGE"})
+    check(len(lines) == 1 and "no store" in lines[0],
+          "a store that cannot be found says so, and says nothing else")
+    lines = PS.ROUTING.fingerprint_lines(
+        {"path": "/x/global.db", "md5": "abc", "counts": {"fragments": 3},
+         "built_from": "/tree/a", "other_tree": False,
+         "running_in": "/tree/a"})
+    check(any("built by /tree/a" in line for line in lines),
+          "a store names the tree it was built from")
+    check(not any("NOT THE TREE" in line for line in lines),
+          "and says nothing more when that is the tree running here")
+    lines = PS.ROUTING.fingerprint_lines(
+        {"path": "/x/global.db", "md5": "abc", "counts": {"fragments": 3},
+         "built_from": "/tree/a", "other_tree": True,
+         "running_in": "/tree/b"})
+    check(any("NOT THE TREE RUNNING HERE" in line for line in lines)
+          and any("/tree/b" in line for line in lines),
+          "a store built by ANOTHER tree is said loudly, and both are named")
+    check(any("row 131" in line for line in lines),
+          "pointing at the row that is the cost of not knowing")
+    # AND AN ABSENT ANSWER IS NOT AGREEMENT. A recording or a store written
+    # before this was recorded carries no key, and must not read as "the
+    # same tree" (D-52).
+    lines = PS.ROUTING.fingerprint_lines(
+        {"path": "/x/global.db", "md5": "abc", "counts": {"fragments": 3}})
+    check(not any("built by" in line for line in lines),
+          "a fingerprint taken before this existed claims nothing about a "
+          "tree")
+    lines = PS.ROUTING.fingerprint_lines(
+        {"path": "/x/global.db", "md5": "abc", "counts": {"fragments": 3},
+         "built_from": None})
+    check(any("NOT RECORDED" in line for line in lines),
+          "and a store that was asked and has no answer says NOT RECORDED")
 
     print()
     if FAILURES:

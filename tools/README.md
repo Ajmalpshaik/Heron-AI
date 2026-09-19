@@ -1499,6 +1499,8 @@ a row whose Status still reads OPEN after a LATER row closed it. Four were that 
 (rows 37, 44, 96, 97) and no pattern finds them - the closure is written in a different row, in prose.
 **This narrows the pile you have to read. It does not replace reading it.**
 
+**And it now asks about a row that argues with itself** - a Status that begins with *open* and carries a **dated** `FIXED` or `CLOSED` claim further down the same cell. Row 127 was that shape for an evening: the fix was appended under the sentence saying OPEN rather than replacing it, so the row was fixed while every count and every list went on calling it open. The test is deliberately narrow - a dated claim in capitals, inside one sentence, not the word *fixed* in passing - because eleven open rows mention something else being fixed or closed and **every one of them is genuinely open**. It asks; it never re-counts, because which sentence is the state is a reader's judgement and a tool that guessed would start closing rows. [`tests/test_open_defects.py`](../tests/test_open_defects.py) pins both halves.
+
 ## `new-agent.py` - scaffold the next agent from its row in the register
 
 ```bash

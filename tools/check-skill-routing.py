@@ -98,6 +98,19 @@ seam the same sentences as one half of a skill's proof - imports it. Two copies
 of *what a crossing is* would start disagreeing about the same skill on the
 same day, and the whole argument of this file is that a disagreement between
 two declarations is the thing worth finding.
+
+`words_moved()` is here for the same reason and answers the other half of it:
+whether a saved measurement is still ABOUT the sentences a skill says. Both
+`tools/prove-skill.py`, which writes the recordings, and
+`tools/generate-skill-catalog.py`, which draws them, read it from here.
+
+**It compares the PHRASES and not `_index_fingerprint()` above.** The store is
+one file every worktree writes, so its md5 differs between two runs for reasons
+that change nothing, and a rule hung on it would cry stale every time - noise a
+reader learns to ignore. Utterances live in `brain/skills/*.yaml`, under version
+control, and can be rewritten without the store changing at all. The fingerprint
+answers *which library was asked*; the phrases answer *which sentences* - and it
+was the second question that went unasked for a week (register row 152).
 """
 
 import argparse
@@ -127,12 +140,22 @@ ASKS_A_QUESTION = ("READ", "ANALYZE")
 
 
 def _index_fingerprint():
-    """{path, md5, counts} for the store this sweep will actually read.
+    """{path, md5, counts, built_from, other_tree} for the store read here.
 
-    The same block `check-risk-crossings.py` prints, and for the reason row 116
-    gives: two runs of a sweep over this store are not comparable unless the
-    index they ran against is known to be the same one. A failure to read it is
-    REPORTED and never returned as a zero (D-52).
+    The block `check-risk-crossings.py` prints too - it IMPORTS this rather
+    than keeping its own, which it did until 2026-09-19 and which is how two
+    copies of one rule start drifting. The reason is row 116's: two runs of a
+    sweep over this store are not comparable unless the index they ran against
+    is known to be the same one. A failure to read it is REPORTED and never
+    returned as a zero (D-52).
+
+    `built_from` is the fragment folder the store was last rebuilt from, and
+    `other_tree` is True when that is not the tree running now. The store is
+    ONE file for every checkout on the machine, so this names the session
+    whose opinion is currently in it - row 131, where a verified fragment edit
+    was ABSENT again minutes later because two other worktrees were up. It is
+    None on a store written before `heron_search.index` recorded it, and an
+    absent answer is not the same as agreement.
     """
     import heron_scope as SCOPE
 
@@ -160,6 +183,21 @@ def _index_fingerprint():
             for table in ("identities", "fragments", "vectors", "utterances"):
                 counts[table] = db.execute(
                     "SELECT COUNT(*) FROM %s" % table).fetchone()[0]
+            # WHOSE FRAGMENTS ARE IN IT. Read in the same read-only
+            # connection, and a store too old to carry the row answers None
+            # rather than naming a tree it does not know.
+            try:
+                found = db.execute(
+                    "SELECT digest FROM index_state WHERE name = 'search_root'"
+                ).fetchone()
+                out["built_from"] = found[0] if found else None
+            except sqlite3.OperationalError as exc:
+                # Only the table not being there yet - a store written
+                # before `heron_search.index` recorded this. Any other
+                # fault is a broken store and must not read as "no tree".
+                if "no such table" not in str(exc):
+                    raise
+                out["built_from"] = None
         finally:
             db.close()
     except Exception as why:                                   # noqa: BLE001
@@ -167,6 +205,80 @@ def _index_fingerprint():
         return out
 
     out["counts"] = counts
+    if out.get("built_from"):
+        import heron_fragment as FRAG
+        here = os.path.abspath(FRAG.FRAGMENTS_DIR).replace(os.sep, "/")
+        out["other_tree"] = out["built_from"] != here
+        out["running_in"] = here
+    return out
+
+
+def words_moved(rows, utterances):
+    """(gone, fresh) - the phrases a recording and a skill no longer share.
+
+    A recording holds the sentence it measured. A skill's utterances live in
+    git and get edited without anyone re-taking one, so `words 1 of 4 reach`
+    outlives the four it counted and the card goes on showing a number about
+    sentences the skill no longer says. That is D-30's staleness, and the
+    catalogue held the fingerprint for it without ever comparing anything.
+
+    THIS COMPARES THE PHRASES AND NOT THE STORE, which is the whole design.
+    `global.db` is one file every worktree writes (row 116), so its md5
+    differs between two renders for reasons that change nothing, and a rule
+    hung on it would cry STALE on every page - noise a reader learns to
+    ignore, which is worse than silence. The phrases are under version
+    control, and a difference in them is a real one.
+
+    `gone` was measured and is no longer said. `fresh` is said today and was
+    never measured. Either one makes the count a statement about a different
+    set of sentences.
+    """
+    measured = [str(row[0]) for row in rows if row]
+    says = [str(one) for one in utterances]
+    gone = [one for one in measured if one not in says]
+    fresh = [one for one in says if one not in measured]
+    return gone, fresh
+
+
+def fingerprint_lines(index, lead="  "):
+    """The fingerprint block as lines, so four sweeps print ONE of it.
+
+    `check-risk-crossings.py`, `prove-skill.py` (twice) and this file each
+    had their own copy of these six prints, which is four places to edit the
+    day the block learns something new - and it has just learned `built_from`.
+    Returning lines rather than printing keeps it usable from a tool that
+    wraps its output and from a test that reads it.
+
+    A STORE BUILT BY ANOTHER TREE IS SAID LOUDLY AND IS NOT AN ERROR. It is
+    the normal state on a machine running several worktrees, and the only
+    thing wrong with it was that nothing said so (row 131).
+    """
+    out = []
+    if index.get("error"):
+        return [lead + "no store: %s" % index["error"]]
+    out.append(lead + "store    %s" % index.get("path", "?"))
+    out.append(lead + "md5      %s" % index.get("md5", "?"))
+    if index.get("counts_error"):
+        out.append(lead + "counts   COULD NOT BE READ - %s"
+                   % index["counts_error"])
+        out.append(lead + "         Not reported as zero on purpose: a store")
+        out.append(lead + "         that cannot be read is not an empty one "
+                          "(D-52).")
+    elif index.get("counts"):
+        out.append(lead + "rows     %s" % ", ".join(
+            "%s %d" % (name, index["counts"][name])
+            for name in sorted(index["counts"])))
+    if "built_from" in index:
+        out.append(lead + "built by %s" % (index["built_from"]
+                                           or "NOT RECORDED - a store written "
+                                              "before anyone asked"))
+        if index.get("other_tree"):
+            out.append(lead + "         ^ NOT THE TREE RUNNING HERE, which is")
+            out.append(lead + "           %s" % index.get("running_in", "?"))
+            out.append(lead + "           The store is one file for every "
+                              "checkout; this")
+            out.append(lead + "           names whose fragments are in it "
+                              "(row 131).")
     return out
 
 
@@ -473,19 +585,8 @@ def main():
           % (args.revit, len(loaded), asked))
     print("")
     print("THE INDEX THIS RAN AGAINST - compare it before comparing counts:")
-    if index.get("error"):
-        print("  no store: %s" % index["error"])
-    else:
-        print("  store    %s" % index["path"])
-        print("  md5      %s" % index["md5"])
-        if index.get("counts_error"):
-            print("  counts   COULD NOT BE READ - %s" % index["counts_error"])
-            print("           Not reported as zero on purpose: a store that")
-            print("           cannot be read is not an empty one (D-52).")
-        else:
-            print("  rows     %s" % ", ".join(
-                "%s %d" % (name, index["counts"][name])
-                for name in sorted(index.get("counts") or {})))
+    for line in fingerprint_lines(index):
+        print(line)
     print("")
 
     def show(row):

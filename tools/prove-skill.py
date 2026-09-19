@@ -74,6 +74,21 @@ disagree only if somebody edited something.
 `--plan-only` is that half alone. It takes seconds, where the understanding
 half takes twenty-five minutes for forty-three sentences.
 
+AND `--routing-from` READS A RECORDING THAT CAN OUTLIVE ITS SENTENCES
+----------------------------------------------------------------------
+Twenty-five minutes is why the understanding half is saved and read back. The
+fingerprint printed beside it answers *which library was asked*. It cannot
+answer *which sentences* - utterances are edited in `brain/skills/*.yaml`
+without the store changing at all, so a recording stays word-perfect about
+four sentences after all four have been rewritten.
+
+`ROUTING.words_moved()` compares the phrases, which are under version control.
+A skill whose words have moved gets `OUT OF DATE` and **never `UNDERSTOOD`**;
+a crossing found on a sentence it STILL says is kept and still outranks
+everything, because that danger is real whatever the rest of the recording is
+worth; one found on a sentence nobody says any more is dropped rather than
+reported. Register row 152.
+
 WHAT IT WILL NEVER PRINT
 ------------------------
 **PROVEN.** Not once, from here. A skill is proved when a model has answered,
@@ -636,9 +651,10 @@ PLAN_OK = "PLAN OK"
 BLOCKED = "BLOCKED"
 NOT_UNDERSTOOD = "NOT UNDERSTOOD"
 CROSSING = "CROSSING"
+OUT_OF_DATE = "OUT OF DATE"
 
 
-def verdict(plan, measured):
+def verdict(plan, measured, moved=None):
     """(word, why). Never `PROVEN`, and the docstring says why at the top.
 
     BOTH HALVES ARE ALWAYS REPORTED, and the first version of this function
@@ -654,7 +670,13 @@ def verdict(plan, measured):
     plan is tidy and whose question is answered by a write is not in better
     shape than one resting on a DRAFT fragment.
     """
-    rows = measured or []
+    # A RECORDING OUTLIVES THE SENTENCES IT COUNTED. `moved` is
+    # ROUTING.words_moved()'s answer for this skill, and a row about a
+    # sentence the skill no longer says is dropped before anything is
+    # counted - it is not a finding about today's library.
+    gone = list((moved or {}).get("gone") or [])
+    fresh = list((moved or {}).get("fresh") or [])
+    rows = [r for r in (measured or []) if r[0] not in gone]
     crossings = [r for r in rows if r[4] == "crossing"]
     other = [r for r in rows if r[4] not in ("crossing", "reach")]
 
@@ -666,6 +688,16 @@ def verdict(plan, measured):
     why = [said(r, "ANSWERED BY A WRITE") for r in crossings]
     why += plan.blockers()
     why += [said(r, "understanding") for r in other]
+    if gone or fresh:
+        # SAID WHATEVER THE WORD IS, because a reader who sees BLOCKED must
+        # still learn that the other half is about different sentences.
+        why.append(
+            "THE RECORDING IS OUT OF DATE: %d sentence(s) this skill says "
+            "now were never measured%s%s"
+            % (len(fresh), (" (%s)" % ", ".join(repr(one) for one in fresh))
+               if fresh else "",
+               ("; %d measured sentence(s) it no longer says were dropped"
+                % len(gone)) if gone else ""))
 
     if crossings:
         return CROSSING, why
@@ -680,6 +712,16 @@ def verdict(plan, measured):
                          "crossings are"]
     if other:
         return NOT_UNDERSTOOD, why
+    if fresh or gone:
+        # EVERY SENTENCE THE RECORDING HOLDS REACHES, AND IT IS THE WRONG SET.
+        # UNDERSTOOD here would be the exact claim row 152 is about, made by
+        # the tool that WRITES the recordings rather than the page that
+        # reads them.
+        return OUT_OF_DATE, why + [
+            "every sentence the recording holds reaches a declared "
+            "capability - and the skill's words have moved since it was "
+            "taken, so that is a statement about a different set. Re-run "
+            "without --routing-from"]
     return UNDERSTOOD, ["every utterance reaches a declared capability, and "
                         "every capability has a PROVEN provider the plan can "
                         "reach in order. THE MODEL HALF IS STILL OWED - D-30 "
@@ -776,18 +818,14 @@ def main():
                                                 plan.already)))
     print("")
 
-    measured = {}
+    measured, moved = {}, {}
     if args.routing_from:
         taken, revit, index, measured = load_routing(args.routing_from)
         print("THE UNDERSTANDING HALF IS A RECORDING, NOT A RUN. Taken %s"
               % (taken or "at an unrecorded time"))
         print("against Revit %s and this index:" % (revit or "?"))
-        print("  store    %s" % index.get("path", "?"))
-        print("  md5      %s" % index.get("md5", "?"))
-        if index.get("counts"):
-            print("  rows     %s" % ", ".join(
-                "%s %d" % (name, index["counts"][name])
-                for name in sorted(index["counts"])))
+        for line in ROUTING.fingerprint_lines(index):
+            print(line)
         for line in GJ.wrap(
                 "The store is one file for every worktree on the machine and "
                 "every reader is a writer (row 136), so this is only as true "
@@ -800,6 +838,27 @@ def main():
             print("  NOT IN THE RECORDING, so no verdict for: %s"
                   % ", ".join(missing))
             print("")
+        # AND A SKILL THE RECORDING COVERS CAN STILL HAVE MOVED UNDER IT.
+        # The fingerprint above cannot see this: utterances are edited in
+        # brain/skills/*.yaml without the store changing at all (row 152).
+        for plan in plans:
+            if plan.id not in measured:
+                continue
+            gone, fresh = ROUTING.words_moved(measured[plan.id],
+                                              plan.skill.utterances())
+            moved[plan.id] = {"gone": gone, "fresh": fresh}
+            if gone or fresh:
+                print("  OUT OF DATE  %-22s %d sentence(s) never measured, "
+                      "%d measured and no longer said"
+                      % (plan.id, len(fresh), len(gone)))
+        if any(moved[k]["gone"] or moved[k]["fresh"] for k in moved):
+            for line in GJ.wrap(
+                    "Those skills get no UNDERSTOOD from this run. A crossing "
+                    "on a sentence the skill STILL says is kept and still "
+                    "counts - the danger is real whatever the rest of the "
+                    "recording is worth.", 74, "  "):
+                print(line)
+            print("")
     elif not args.plan_only:
         asked = sum(len(p.skill.utterances()) for p in plans)
         print("ASKING THE LIBRARY %d SENTENCE(S) THROUGH heron_brain.lookup -"
@@ -808,17 +867,8 @@ def main():
         print("")
         index = ROUTING._index_fingerprint()
         print("THE INDEX THIS RAN AGAINST - compare it before comparing counts:")
-        if index.get("error"):
-            print("  no store: %s" % index["error"])
-        else:
-            print("  store    %s" % index["path"])
-            print("  md5      %s" % index["md5"])
-            if index.get("counts_error"):
-                print("  counts   COULD NOT BE READ - %s" % index["counts_error"])
-            else:
-                print("  rows     %s" % ", ".join(
-                    "%s %d" % (name, index["counts"][name])
-                    for name in sorted(index.get("counts") or {})))
+        for line in ROUTING.fingerprint_lines(index):
+            print(line)
         print("")
         for plan in plans:
             measured[plan.id] = understanding(plan, args.revit)
@@ -848,7 +898,8 @@ def main():
     print("")
     counts = {}
     for plan in plans:
-        word, why = verdict(plan, measured.get(plan.id))
+        word, why = verdict(plan, measured.get(plan.id),
+                            moved.get(plan.id))
         counts[word] = counts.get(word, 0) + 1
         print("  %-22s %s" % (plan.id, word))
         for line in why:
