@@ -263,6 +263,78 @@ QUESTIONS = [
     "which ducts have no system name",
     "what is missing before I issue this",
     "how many of each size",
+
+    # TWENTY-TWO ORDINARY SENTENCES THE LIST HAD NO SUBJECT FOR, added
+    # 2026-09-19. The docstring asks for exactly this - "add to this list
+    # whenever a real session produces one" - and this session produced them
+    # by reading all 56 and asking which parts of a modeller's ordinary day
+    # they never touch.
+    #
+    # THE CRITERION WAS WRITTEN DOWN BEFORE A SINGLE ONE WAS ASKED, for the
+    # reason the block above gives: choosing them by which ones FAILED is
+    # optimising against the measurement.
+    #
+    #   1. It is a QUESTION, not an imperative. The discriminator here is
+    #      "was a READ beaten", and this file already says an imperative
+    #      reaching a write is correct rather than a crossing.
+    #   2. It opens a SUBJECT the existing list does not touch, or asks an
+    #      existing subject with the noun a modeller actually uses.
+    #   3. It is in Ajmal's own words - plain, and MEP first.
+    #
+    # The subjects the list had none of: rooms and spaces, tags, model
+    # warnings, airflow and flow rate, the ceiling void, grids, what changed
+    # between issues, and connection asked as a SWEEP rather than about one
+    # element ("is this connected to anything" is in the list; "which
+    # equipment is not connected to anything" is a different shape and a
+    # different fragment would own it).
+
+    # Rooms and spaces. Nothing in the list above asks about one at all, and
+    # every room-based MEP job starts here.
+    "what room is this in",
+    "which rooms have no name",
+    "what is the area of this room",
+    "are there any unplaced rooms",
+
+    # Tags and annotation. Row 134 names "check the tags before i issue this"
+    # as an AMBIGUOUS phrase between two READs; these are the ordinary
+    # questions around it, and none of them is declared.
+    "which elements are not tagged",
+    "are any of these tags overlapping",
+    "what is the scale of this view",
+
+    # Model health. "how big is this model" is in the list; how BAD it is was
+    # not asked at all, and warnings are the first thing a checker opens.
+    "how many warnings are in this model",
+    "are there any duplicate elements",
+    "which families are the heaviest",
+
+    # Airflow and flow rate - the numbers an MEP modeller reads off an
+    # element every day. The list had sizes and slopes and no quantities.
+    "what is the airflow in this duct",
+    "how much air is this diffuser giving",
+    "what is the flow rate in this pipe",
+
+    # The ceiling void. "how high is this off the floor" asks about an
+    # element; these ask about the SPACE left, which is the coordination
+    # question and a different owner.
+    "what is the ceiling height here",
+    "how much space is there above the ceiling",
+    "will this duct fit above the ceiling",
+
+    # Grids and levels. "which level is this on" is in the list; what the
+    # model HAS was never asked.
+    "what levels are in this model",
+    "which grids are in this view",
+
+    # Between issues. A revision question the list touches once, from the
+    # sheet end only.
+    "what changed since the last issue",
+    "which sheets have not been issued",
+
+    # Connection as a SWEEP. The three connection questions above are all
+    # about one element in front of you.
+    "which equipment is not connected to anything",
+    "which fixtures have no pipe",
 ]
 
 
