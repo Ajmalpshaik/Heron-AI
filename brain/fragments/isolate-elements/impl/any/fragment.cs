@@ -28,17 +28,7 @@
 var isolated = 0;
 var viewRefused = false;
 
-// A SHEET IS NAMED SEPARATELY, BECAUSE IT IS THE ONE THIS TEST LET THROUGH.
-//
-// The comment below used to say "a schedule, A SHEET, a legend, or a view
-// template", and a sheet was the one case it did not catch:
-// `CanUseTemporaryVisibilityModes()` answers TRUE for a ViewSheet - the
-// fragment's own comment calls that check *"Revit answering for itself"*, and
-// here Revit answers yes. Measured 2026-09-13 on sheet `A101` of
-// `Project1 work_ajmal.al`, handed 9 ducts that live in `1 - Mech` and are not
-// on that sheet: **`isolated 9`, `viewRefused false`**. Nothing was isolated.
-// FRAGMENT-ISSUES rows 20 and 24.
-if (view == null || view is ViewSheet || !view.CanUseTemporaryVisibilityModes())
+if (view == null || !view.CanUseTemporaryVisibilityModes())
 {
     // A schedule, a sheet, a legend, or a view template. Reported rather than
     // thrown, because asking to isolate in a schedule is an ordinary mistake.
@@ -51,10 +41,34 @@ else
         view.DisableTemporaryViewMode(TemporaryViewMode.TemporaryHideIsolate);
     }
 
+    // ON A SHEET, ONLY WHAT BELONGS TO THE SHEET CAN BE ISOLATED - AND THE
+    // ELEMENT IS DROPPED, NOT THE VIEW.
+    //
+    // `CanUseTemporaryVisibilityModes()` answers TRUE for a ViewSheet - the
+    // comment above calls that check "Revit answering for itself", and here
+    // Revit answers yes. Measured 2026-09-13 on sheet `A101` of
+    // `Project1 work_ajmal.al`, handed 9 ducts that live in `1 - Mech`:
+    // `isolated 9`, `viewRefused false`. Nothing was isolated.
+    // FRAGMENT-ISSUES rows 20, 24 and 123.
+    //
+    // Refusing the whole sheet was the first repair and it was too broad, for
+    // the reason `hide-elements` records at length: something drawn ON the
+    // sheet is genuinely there and isolating it is a real request. An element
+    // drawn on a view carries that view's id in `OwnerViewId`; a MODEL element
+    // carries `InvalidElementId`, which can never equal the sheet's.
+    //
+    // A run where every element is dropped leaves `ids` empty, and the guard
+    // below then isolates nothing and says so - which is the honest answer and
+    // not a refusal, because the VIEW was capable and the ELEMENTS were not
+    // there.
+    var onASheet = view is ViewSheet;
+
     var ids = new List<ElementId>();
     foreach (var element in elements)
     {
-        if (element != null) ids.Add(element.Id);
+        if (element == null) continue;
+        if (onASheet && element.OwnerViewId != view.Id) continue;
+        ids.Add(element.Id);
     }
 
     // An empty list would isolate NOTHING - a blank view, which looks exactly

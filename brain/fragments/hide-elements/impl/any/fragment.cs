@@ -32,30 +32,47 @@ var viewRefused = false;
 // does not - it is an ordinary view setting - so the check applies to the
 // temporary path only.
 //
-// A SHEET IS REFUSED BEFORE EITHER CHECK, BECAUSE IT PASSES BOTH.
-//
-// `CanUseTemporaryVisibilityModes()` answers TRUE for a ViewSheet, and
-// `CanBeHidden(sheet)` answers true for model elements that are not on it - so
-// nothing here refused, and `hidden` below counted the request. Measured
-// 2026-09-13 on `Cover Sheet` of `Snowdon-scratch_ajmal.al`: handed 191 ducts
-// that live in a different view entirely, this returned **`hidden 191`,
-// `viewRefused false`, `cannotHide 0`**. Nothing was hidden. Nothing could be:
-// a duct is not on a sheet, the viewport is. FRAGMENT-ISSUES rows 20 and 24.
-//
-// `viewRefused` is the field this fragment already declares for exactly this -
-// *the view cannot do what was asked* - so the repair is to let a sheet trip
-// it, not to invent a new answer.
-if (view == null || view is ViewSheet
-    || (!permanent && !view.CanUseTemporaryVisibilityModes()))
+if (view == null || (!permanent && !view.CanUseTemporaryVisibilityModes()))
 {
     viewRefused = true;
 }
 else
 {
+    // ON A SHEET, ONLY WHAT BELONGS TO THE SHEET CAN BE HIDDEN - AND THE
+    // ELEMENT IS REJECTED, NOT THE VIEW.
+    //
+    // Neither existing test catches a sheet: `CanUseTemporaryVisibilityModes()`
+    // answers TRUE for one, and `CanBeHidden(sheet)` answers true for model
+    // elements that are not on it - so nothing refused, and `hidden` below
+    // counted the request. Measured 2026-09-13 on `Cover Sheet` of
+    // `Snowdon-scratch_ajmal.al`: handed 191 ducts living in another view, this
+    // returned `hidden 191`, `viewRefused false`, `cannotHide 0`. Nothing was
+    // hidden and nothing could be - a duct is not on a sheet, the viewport is.
+    // FRAGMENT-ISSUES rows 20, 24 and 123.
+    //
+    // REFUSING THE WHOLE SHEET WAS THE FIRST REPAIR AND IT WAS TOO BROAD.
+    // Caught by Codex on PR #191: a text note, a revision cloud or a title
+    // block placed ON the sheet is genuinely hideable there, and "hide it on
+    // this drawing" is a real request. What the measurement establishes is only
+    // that OFF-SHEET elements must not be counted, so that is what is rejected.
+    //
+    // `OwnerViewId` is the discriminator and it is exact rather than clever: an
+    // element drawn on a view carries that view's id, and a MODEL element -
+    // every duct, wall and pipe - carries `InvalidElementId`, which can never
+    // equal the sheet's. It costs one comparison and needs no geometry.
+    var onASheet = view is ViewSheet;
+
     var ids = new List<ElementId>();
     foreach (var element in elements)
     {
         if (element == null) continue;
+
+        if (onASheet && element.OwnerViewId != view.Id)
+        {
+            cannotHide.Add(element.Id);
+            continue;
+        }
+
         if (!element.CanBeHidden(view))
         {
             cannotHide.Add(element.Id);

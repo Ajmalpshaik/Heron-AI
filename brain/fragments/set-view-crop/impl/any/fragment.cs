@@ -44,6 +44,15 @@ const double MillimetresPerFoot = 304.8;
 // **`applied true`, `enclosed 9`, `viewRefused false`**. `CropBoxActive` was
 // set and read back as true on the sheet, so even the read-back agreed - it is
 // the question that was wrong, not the answer. FRAGMENT-ISSUES rows 20 and 24.
+//
+// AND THIS ONE REFUSES THE WHOLE SHEET WHERE `hide-elements` AND
+// `isolate-elements` REJECT ONLY THE ELEMENTS, WHICH IS A DIFFERENCE ON
+// PURPOSE. Those two can be asked to hide or isolate something that genuinely
+// lives on the sheet - a text note, a revision cloud, a title block - so
+// refusing the view would block a real request, and they drop the off-sheet
+// elements instead. A CROP REGION IS NOT LIKE THAT: a sheet has none at all,
+// so there is no element, on the sheet or off it, that would make this call
+// mean something. There is nothing narrower to refuse than the view.
 if (view == null || view is ViewSheet || view.IsTemplate || !view.CanBePrinted)
 {
     viewRefused = true;
