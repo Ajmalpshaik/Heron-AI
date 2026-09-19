@@ -395,8 +395,19 @@ def judge(record, frag, expect=None):
 # 4. Running one job
 # ---------------------------------------------------------------------------
 
-def validate_command(job, record_path):
+def validate_command(job, record_path, session=None):
     """The `heron_bridge_client.py validate` line this job amounts to.
+
+    `--session <pid>` NAMES WHICH REVIT, and it goes in FIRST deliberately.
+    The client lifts it out with `pull_session` before it reads `--in`,
+    `--negative-in`, `--cross` and `--out` positionally, so its position
+    cannot disturb them - but reading "talk to this Revit, then do this" in
+    that order is what a person expects.
+
+    WITHOUT IT A BATCH CANNOT SAY WHICH REVIT IT MEANS. With two connected,
+    the client takes the first entry in the discovery directory, which is
+    sorted by filename and therefore arbitrary. A MODIFY batch aimed at one
+    model could run against the other, and nothing in the output would say so.
 
     THE ORDER IS NOT COSMETIC. `--in`, `--negative-in`, `--cross` and `--out` are
     read POSITIONALLY by the client - it walks pairs off the FRONT of what is
@@ -412,6 +423,8 @@ def validate_command(job, record_path):
     appear, so only these four care.
     """
     argv = [sys.executable, CLIENT, "validate"]
+    if session:
+        argv += ["--session", str(session)]
     if job["in"]:
         argv += ["--in", job["in"]]
     if job["negative-in"]:
@@ -444,13 +457,13 @@ def readable_command(argv):
     return " ".join('"%s"' % a if " " in a else a for a in argv)
 
 
-def run_one(job, env, quiet=True):
+def run_one(job, env, quiet=True, session=None):
     """Run and draft one fragment. Returns (record, verdict, why).
 
     `record` is None when the run produced nothing to judge.
     """
     record_path = os.path.join(RUNS, "%s.json" % job["fragment"])
-    argv = validate_command(job, record_path)
+    argv = validate_command(job, record_path, session)
 
     # THE OLD RECORD GOES BEFORE THE RUN, BECAUSE "the file is there" IS NOT
     # "this run wrote it". The check below only ever asked whether the path
@@ -570,6 +583,11 @@ def main(argv=None):
     parser.add_argument("--report", help="write the findings as JSON here")
     parser.add_argument("--client-id", default="heron-batch-prove",
                         help="the HERON_CLIENT_ID every job shares")
+    parser.add_argument("--session",
+                        help="which Revit, by pid, when more than one is "
+                             "connected. List them with `heron_bridge_client.py "
+                             "list`. WITH TWO REVITS OPEN AND NO --session THE "
+                             "TARGET IS ARBITRARY")
     args = parser.parse_args(argv)
 
     jobs, problems = read_jobs(args.jobs)
@@ -601,6 +619,8 @@ def main(argv=None):
     print("job file:  %s" % args.jobs)
     print("jobs:      %d" % len(jobs))
     print("client id: %s" % env["HERON_CLIENT_ID"])
+    print("session:   %s" % (args.session if args.session else
+                             "NOT PINNED - whichever Revit sorts first"))
     if args.dry_run:
         print("mode:      DRY RUN - nothing will be sent to Revit")
     print("")
@@ -616,11 +636,12 @@ def main(argv=None):
             # actually be run is the only honest thing to show them.
             verdict, why = WOULD_RUN, readable_command(validate_command(
                 job, os.path.join("brain", "proof-drafts", "runs",
-                                  "%s.json" % name))[2:])
+                                  "%s.json" % name), args.session)[2:])
 
         elif verdict is None:
             print("[%d/%d] %s" % (index, len(jobs), name))
-            record, verdict, why = run_one(job, env, quiet=not args.verbose)
+            record, verdict, why = run_one(job, env, quiet=not args.verbose,
+                                           session=args.session)
             if record is not None:
                 draft(name, record["run_record"], env)
                 verdict, why = judge(record, library[name], job["expect"])
