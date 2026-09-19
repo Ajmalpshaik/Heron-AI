@@ -491,10 +491,20 @@ def job_file(plan, by_slug, chain_supply, threshold_ordinal,
     if measured is None:
         add("#   NOT MEASURED on this run - see --plan-only. Run without it")
         add("#   before trusting the order below to be the thing Ajmal asked for.")
-    for phrase, capability, _risk, route, where in measured or []:
+    for row in measured or []:
+        # PADDED AND SLICED like every other reader of a measured row. This
+        # loop unpacked FIVE and crashed the moment `understanding()` grew a
+        # sixth field - `--jobs` with a recording, which no test covered
+        # because the suite's own job cases pass `measured=None`. Found by
+        # running it, not by reading it.
+        phrase, capability, _risk, route, where, told = (
+            list(row) + [None] * 6)[:6]
         add("#   %-9s %-40s -> %s%s"
             % (where, phrase[:40], capability or "-",
                " (%s)" % route if route else ""))
+        for tag in (told or ()):
+            add("#   %-9s %-40s    and the RETRIEVER said so itself: %s"
+                % ("", "", tag))
     if measured:
         add("#")
         for line in GJ.wrap(

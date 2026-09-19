@@ -14,6 +14,8 @@
 # THE WORDS IT CLAIMS, AND WHERE EACH ONE ACTUALLY LANDED:
 #   reach     what sizes are the ducts                 -> GROUP_AND_COUNT (identity)
 #   miss      give me a breakdown of the pipe sizes    -> REPORT_PIPE_SEGMENTS (hybrid)
+#                                                         and the RETRIEVER said so itself: a coin toss - no route preferred the winner
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #   reach     duct schedule by size                    -> GROUP_AND_COUNT (identity)
 #   reach     how many of each size                    -> GROUP_AND_COUNT (hybrid)
 #

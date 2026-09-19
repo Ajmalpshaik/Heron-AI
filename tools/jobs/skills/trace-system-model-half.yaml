@@ -12,9 +12,12 @@
 #
 # THE WORDS IT CLAIMS, AND WHERE EACH ONE ACTUALLY LANDED:
 #   reach     what is this connected to                -> TRACE_CONNECTIVITY (hybrid)
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #   miss      trace the system from here               -> READ_MEP_SYSTEM (hybrid)
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #   miss      which unit feeds this                    -> CHECK_EQUIPMENT_CLEARANCE (hybrid)
 #   miss      follow the pipe and tell me where it goe -> REPORT_PIPE_SEGMENTS (hybrid)
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #
 # A `miss` is not automatically a defect - a skill composes several
 # capabilities and `lookup` returns ONE, so the single best answer sitting

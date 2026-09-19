@@ -315,6 +315,35 @@ def main():
               "%s does not name a model it has never seen" % plan.id)
 
     print()
+    print("a job file emitted BESIDE a measurement, not only without one")
+    # THE BUG THIS PINS: `job_file()` unpacked FIVE fields from a measured
+    # row and crashed the moment `understanding()` grew a sixth - so
+    # `--jobs` with `--routing-from` died while `--jobs --plan-only` was
+    # fine. Every job case in this suite passed `measured=None`, which is
+    # exactly why nothing caught it. Found by running the tool.
+    one = real[0] if real else None
+    check(one is not None, "there is a plan to emit for")
+    if one is not None:
+        six = [(u, "COUNT_ELEMENTS", "READ", "identity", "reach",
+                ("a coin toss",)) for u in one.skill.utterances()]
+        text = PS.job_file(one, by_slug, chain, threshold_ordinal,
+                           threshold_name, ladder, six)
+        check("WHERE EACH ONE ACTUALLY LANDED" in text,
+              "a six-field measurement emits, where it used to raise "
+              "ValueError")
+        check("the RETRIEVER said so itself" in text,
+              "and the retriever's own words ride into the job file")
+        check(yaml.safe_load(text) is not None,
+              "and it still parses as YAML with them in")
+        five = [(u, "COUNT_ELEMENTS", "READ", "identity", "reach")
+                for u in one.skill.utterances()]
+        text = PS.job_file(one, by_slug, chain, threshold_ordinal,
+                           threshold_name, ladder, five)
+        check("WHERE EACH ONE ACTUALLY LANDED" in text
+              and "the RETRIEVER said so itself" not in text,
+              "a five-field recording still emits, and claims no complaint")
+
+    print()
     print("what the retriever said about how little it found")
     # ROW 137: a question inside a MODIFY skill reaching an unrelated MODIFY
     # is invisible to the risk comparison BY CONSTRUCTION. The retriever was

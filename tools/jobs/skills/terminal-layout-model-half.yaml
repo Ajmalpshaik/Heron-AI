@@ -13,9 +13,14 @@
 #
 # THE WORDS IT CLAIMS, AND WHERE EACH ONE ACTUALLY LANDED:
 #   miss      how many diffusers for this room         -> COUNT_BY_SPATIAL_CONTAINER (hybrid)
+#                                                         and the RETRIEVER said so itself: a coin toss - no route preferred the winner
 #   reach     lay out the air terminals                -> READ_ROOM_GEOMETRY (hybrid)
+#                                                         and the RETRIEVER said so itself: a coin toss - no route preferred the winner
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #   reach     place the grilles                        -> PLACE_FAMILY_INSTANCES (hybrid)
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #   reach     how many at 3 m coverage and where       -> REPORT_COVERAGE (hybrid)
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #
 # A `miss` is not automatically a defect - a skill composes several
 # capabilities and `lookup` returns ONE, so the single best answer sitting

@@ -14,8 +14,10 @@
 # THE WORDS IT CLAIMS, AND WHERE EACH ONE ACTUALLY LANDED:
 #   miss      how many sprinklers do I need            -> COUNT_ELEMENTS (hybrid)
 #   miss      how many sprinklers for this room        -> FILTER_ELEMENTS_IN_ROOM (hybrid)
+#                                                         and the RETRIEVER said so itself: a coin toss - no route preferred the winner
 #   miss      check my sprinkler spacing               -> CREATE_DIMENSION (hybrid)
 #   reach     lay out the heads                        -> READ_ROOM_GEOMETRY (hybrid)
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #   reach     there is a beam in the room              -> CHECK_OBSTRUCTIONS (identity)
 #   miss      pendent or upright here                  -> CREATE_DUCT (hybrid)
 #
