@@ -2452,8 +2452,11 @@ Not failures. Heron has no way to receive these inputs yet, so they have never e
 Measured with `python tools/generate-jobs.py` on 2026-09-19: **79 DRAFT fragments have no run record,
 35 can be arranged as a job, and 44 cannot.** The `everything else | 26` row above counts a different
 population — every fragment in the library that cannot run at all — so the two numbers were never in
-conflict, and neither supersedes the other. The 44 is the one that matters when arranging a proving
-session, because it is the list of things that will not go in a job file tomorrow morning.
+conflict. **The table above is a SNAPSHOT and should be read as one:** two of its rows say `Done` in
+their own text (`XYZ` at D-67, `FamilySymbol`), and the resolver has since accepted several more of
+the shapes it lists, so its total no longer describes a live backlog. The 44 below is derived from the
+resolver as it stands today, and it is the one that matters when arranging a proving session, because
+it is the list of things that will not go in a job file tomorrow morning.
 
 The 44, by what actually stops each one (a fragment can be stopped by two things at once, so these
 sum to more than 44):
@@ -2511,9 +2514,17 @@ added the line.** `WallType`, `FloorType` and `CeilingType` each have a row in `
 `RoofType` does not. `create-roof`'s own purpose says it was written because *"`CREATE_FLOOR` makes
 the slab and `CREATE_CEILING` makes the ceiling; the third member of that family was missing"* — and
 the same thing then happened again one level down, in the resolver. The machinery to find one is
-**already there**: `RoofType` is a kind of `HostObjAttributes`, which `FromRequest` already accepts, so
-the lookup would work today if the contract said that word. It says `RoofType`, the string match
-misses, and the fragment is dark. This is the cheapest row in the table by a distance.
+**already there**: `RoofType` is a kind of `HostObjAttributes`, and `OneOfClass` — the helper that
+already serves that branch — collects roof types along with the rest, so the *lookup* needs nothing
+new. What is missing is only the row that matches the word `RoofType` and hands it to `OneOfClass`.
+This is the cheapest row in the table by a distance.
+
+**The contract must NOT be widened to `HostObjAttributes` to reach that branch, and it is worth saying
+so here because it is the obvious shortcut.** The need's declared type becomes the generated variable's
+static type, and `create-roof` passes it to `NewFootPrintRoof(CurveArray, Level, RoofType, out ...)` —
+so a widened contract compiles nothing and fails on all eight releases at once. The narrow declaration
+is correct and D-54's own rule covers this: *narrower than the fragment can use is a regression dressed
+as precision*, and wider than it can use is simply a broken build.
 
 **`IList<Element>` — this is never "a list of things you point at", it is always the SECOND SET.** All
 three in the library are the same shape: the first set arrives from the selection, and the second is
@@ -2524,11 +2535,21 @@ category on the left and a category on the right. So the second set should be na
 set is found — **by category**. `selected` cannot do it: the selection is already spent on set one,
 which is the rule recorded on 2026-09-09 and the reason four more of the 44 are stuck.
 
+**SEVERAL categories, not one — and a single-category rule would have failed silently.**
+`check-room-mep-completeness` takes `ruleCategories` as a **list**, buckets what it is handed by
+`device.Category.Name`, and looks each rule's category up in that bucket. Hand it one category and
+every other rule finds nothing — so a room checked for diffusers, extract, sprinklers and detectors
+reports three of the four missing **when they are all there**, with no refusal anywhere. That is the
+shape this file fears most: a clean-looking answer that is wrong. `propose-mep-openings` is the same —
+services pass through walls, floors *and* roofs. So the value is comma-separated, which is what every
+other list here already does: `devices=Air Terminals, Sprinklers, Fire Alarm Devices`.
+
 **The part that needs a decision is narrowing.** `ducts=Ducts` collects every duct in the model, and
 the proving skill's own first rule is *prove on a small selection* — `FloorPlan: M1` gives 22 ducts
 where `FloorPlan: L3` gives 307. So a view-narrowed form is worth having, and `ducts=Ducts in
 FloorPlan: M1` is the readable one. It is proposed rather than assumed because it puts a keyword
-(`in`) inside a value, which nothing else here does.
+(`in`) inside a value, which nothing else here does — and because the comma is now spoken for by the
+category list above, so the two syntaxes have to be settled together rather than one at a time.
 
 **`Line` — this is already written, and the proof is in an error message.** D-72 built `PointPairs` so
 `create-line` could receive `IList<IList<XYZ>>`, and when it is handed the wrong number of points it
@@ -2562,8 +2583,8 @@ are put here; neither is taken.
 **`Arc` — the proposal is to write nothing, and that is the finding.** An arc is not hard. Revit
 builds one from three points and the parser for three points already exists, so the rule would be
 `arc=0,0,0; 5000,0,0; 2500,800,0` and an afternoon's work. **It would unblock nothing.** Its only
-customer in the entire library is `create-angular-dimension`, which also needs `references`, which is
-a face, which can never be typed. Writing it would produce a resolver that compiles, tests, reviews
+customer in the entire library is `create-angular-dimension`, which also needs `references` — a picked
+geometry reference, which can never be typed. Writing it would produce a resolver that compiles, tests, reviews
 well and is reachable by nobody. D-67 held `IList<IList<XYZ>>` back for exactly this reason and was
 right to; it was written the day somebody asked for `create-line` by name. **The trigger for this one
 is the same: the day a fragment wants an arc and is not standing behind a face.**
@@ -2578,9 +2599,23 @@ next to the one enum it does accept:
 > *"`IFCVersion` is deliberately NOT here — its members differ per release, and a name that resolves
 > on 2024 and refuses on 2021 is worse than a refusal on both."*
 
-That reasoning is sound and this section does not overturn it. It is listed because the fragment is
-also `risk: PUBLISH`, so **it is blocked twice**, and the enum question cannot be reached until the
-phase question is settled anyway. Nothing to decide today.
+That reasoning is sound and this section does not overturn it.
+
+> **CORRECTED 2026-09-19, before this section was a day old.** It first said this fragment was *"also
+> `risk: PUBLISH`, so it is blocked twice"*, and that is wrong. `export-model-to-ifc` declares
+> **`risk: MODIFY`**. The sibling directly beneath it in the generator's output —
+> `export-model-to-nwc` — is the `PUBLISH` one, and the two were read as one. **So the enum is not a
+> question that can wait behind a phase decision: it is this fragment's ONLY blocker**, and the
+> correction reverses what the reader should do about it.
+
+**And the correction exposes a real question rather than just fixing a sentence.** Two fragments that
+both write a file to disk from the same model carry **different risk levels** — `export-model-to-nwc`
+is `PUBLISH` and `export-model-to-ifc` is `MODIFY`. So the moment `IFCVersion` becomes typeable, IFC
+export runs for anyone who has switched writing on, while NWC export stays out of reach entirely. One
+of the two is mis-declared and it is not obvious from here which: `MODIFY` reads as *changes the
+model*, and neither of these changes the model — they emit a file beside it. **Settle the risk level
+before writing the enum resolver, not after**, because the resolver is what makes the discrepancy
+reachable.
 
 ---
 
@@ -2609,10 +2644,20 @@ be described by three numbers because a point IS three numbers, and a face is no
 at all. **The keyboard cannot say it.** Picking one needs Revit's own picking, which is a different
 mechanism from everything in `FromRequest` and a separate piece of work nobody has costed.
 
-So `create-radial-dimension` can never be arranged as a job, because a face is its *only* caller
-value. The other three each want a face **plus** something else, which is why `Line` and `Arc` appear
-above wearing a rule that will not unblock them. **Dimensions are behind the face, all three of them,
-and no syntax decision reaches them.**
+So `create-radial-dimension` can never be arranged as a job, because a picked reference is its *only*
+caller value. The other three each want one **plus** something else, which is why `Line` and `Arc`
+appear above wearing a rule that will not unblock them. **Dimensions are behind the picking, all three
+of them, and no syntax decision reaches them.**
+
+**A FACE IS THE COMMON CASE AND NOT THE WHOLE OF IT — and the difference only matters when somebody
+builds the picker.** `place-family-on-face` genuinely wants a face. `create-radial-dimension` does
+not: it refuses in its own words — *"A radial dimension witnesses an ARC, and the reference has to be
+to one"* — and `RadialDimension.Create` throws on *"a reference that is not an arc"*. A linear or
+angular dimension may witness an edge or a datum. So the thing that cannot be typed is a **geometry
+reference**, and which KIND is permitted is each fragment's own business. A picker built for faces
+alone would leave all three dimension fragments refusing at run time, having looked like it unblocked
+them. The refusal above is unchanged and correct for every one of the four; only the scope of the
+eventual fix is wider than the word *face* suggests.
 
 ---
 
