@@ -1123,3 +1123,105 @@ Step 6 is finished, and not before. At that point:
    a register that deletes itself files the destination inside the bin. **What ends is the Step 6
    content, not the file:** once step 3 has moved those rows out, this one holds whatever is
    unproven next.
+
+---
+
+## Group H — what `prove-agent.py track` cannot see, found 2026-09-19
+
+Added while proving the four owed add-in agents against the two live Revit 2024 sessions
+(`20472` *Project1 work_ajmal.al*, 3,529 elements; `36908` *test projject*, 3,594 elements).
+
+Five agents were proved and signed that day — SHT-029, DIM-031, GRP-033, PHS-032, SYS-030. Two
+could not be, and **neither failure is about the agent**. Both are about the tool that judges it.
+They are recorded here because a reader coming back to `IMP-019` and `LVL-027` will otherwise
+re-run them, get the same verdict, and conclude the agents are broken.
+
+### H1 — `compare()` reads only top-level numbers, so a list that moves is invisible
+
+[`tools/prove-agent.py`](../tools/prove-agent.py) `compare()` skips any value that is not an `int`
+or `float` at the top level of the reply. Its docstring gives the reason, and the reason is sound
+*for a string*: `"A string that differs is usually the document name, which is the input rather
+than the answer"`. It does not extend to a **list of things found in the model**, which is the
+answer and nothing else.
+
+**`IMP-019` is the case.** `track` reported `moved: NOT ESTABLISHED` — every comparable number
+identical, `importedCount: 0, linkedCadCount: 1, revitLinks: 0`. The raw replies, read by hand the
+same minute:
+
+| | session 20472 | session 36908 |
+|---|---|---|
+| `linkedCad[0].name` | `box.dwg` | `Project1 - Section - Section 1.dwg` |
+| `document` | `Project1 work_ajmal.al` | `test projject` |
+
+**The agent reads the model.** It names a different DWG in each, correctly. The count is 1 in both
+because each model happens to hold exactly one CAD link, and a count of one against a count of one
+is the only thing `compare()` was allowed to look at.
+
+**`LVL-027` is the same shape, one level down.** `track` found one number moving — `onNoLevel:
+3513 -> 3558`, which is really the element total wearing a different hat. Inside `levels[]`, which
+`compare()` never opens:
+
+| | session 20472 | session 36908 |
+|---|---|---|
+| Level 1 | **8** elements | **29** elements |
+| Level 2 | **8** elements | **7** elements |
+
+Identical names, identical elevations (0 and 4000), different contents. The per-level counts are
+the agent's actual answer and they move in both directions at once — which is *harder* to fake
+than a single total, not easier.
+
+**So the standing advice to "add or rename a level in one model" would work, and it treats the
+symptom.** `levelCount 2 -> 3` is a top-level number, so `compare()` would see it. But the evidence
+that the agent reads the model is already in hand; what is missing is a tool that can record it.
+
+### H2 — `track` cannot pass an argument, so an agent that needs one cannot be tracked at all
+
+`track` takes `--operation`, `--first`, `--second`, `--client-id`. There is no way to send an
+operation argument, and it sends the bare op. Three operations refuse without one:
+
+| Operation | Agent | Bare-op result |
+|---|---|---|
+| `read_parameters` | `HERON-REVIT-PAR-011` | `no_category` |
+| `select_by_category` | `HERON-REVIT-CAT-009`, `HERON-REVIT-SEL-008` | `operation_failed` |
+
+**`PAR-011` was then driven by hand with `category=Pipes`, and it is one of the strongest readers
+measured all day:**
+
+| | session 20472 | session 36908 |
+|---|---|---|
+| `elements` | 0 | **2** |
+| `distinctParameters` | 0 | **99** |
+| `listed` | 0 | **99** |
+| `typesRead` | 0 | **1** |
+
+Every number moves. It cannot be signed, because the tool that writes drafts has no way to make
+that call.
+
+### What would settle H1 and H2
+
+Both are one change to `tools/prove-agent.py`, and **neither has been made** — the file was not
+this session's to edit:
+
+| | |
+|---|---|
+| **H1** | Teach `compare()` to descend one level into a list: compare its length, and compare each item's own numbers and names positionally or by key. `linkedCad[0].name` and `levels[n].elements` both become visible, and `IMP-019` and `LVL-027` can be judged on their real answers |
+| **H2** | An `--arg key=value` option, repeatable, passed through to `op_args`. Unlocks `PAR-011`, and `CAT-009` / `SEL-008` if a category is supplied for each model |
+
+### H3 — the rest of the twenty-three are mostly not trackable, and that is correct
+
+Of the 23 add-in agents with no proof, the file headers show they are **not 23 separate readers**.
+Seven share `RevitWrite.cs` (`TSA-006`, `TRN-005`, `WRN-016`, `CTX-007`, `ELE-010`, `KRN-EVD-014`,
+`KRN-HUM-018`) and are the machinery *inside* a write — transactions, warning capture, context,
+evidence, human wording. Four share `Commands.cs` (`CON-001`, `HLT-025`, `UI-022`, `OPS-STP-007`).
+Two share `HeronApplication.cs` (`RIB-023`, `VER-002`). `CMP-021` compiles C#. `APP-003` is the
+dispatcher every operation already passes through.
+
+**None of those has a read operation to send**, so `track` cannot reach them and no amount of
+model would help. They need a different kind of proof — one that observes them doing their job
+during somebody else's operation — and that does not exist yet. Recorded rather than left looking
+unproved by neglect.
+
+`LNK-015` *is* reachable (`list_links`) and *is* thin: both models hold **zero Revit links**, so
+only `hostElements` moves. Note this is not the reason sometimes given — the linked **CAD** files
+belong to `IMP-019`, not to `LNK-015`. Proving `LNK-015` needs a model with a real Revit link in
+it.
