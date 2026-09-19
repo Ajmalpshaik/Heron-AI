@@ -98,6 +98,19 @@ seam the same sentences as one half of a skill's proof - imports it. Two copies
 of *what a crossing is* would start disagreeing about the same skill on the
 same day, and the whole argument of this file is that a disagreement between
 two declarations is the thing worth finding.
+
+`words_moved()` is here for the same reason and answers the other half of it:
+whether a saved measurement is still ABOUT the sentences a skill says. Both
+`tools/prove-skill.py`, which writes the recordings, and
+`tools/generate-skill-catalog.py`, which draws them, read it from here.
+
+**It compares the PHRASES and not `_index_fingerprint()` above.** The store is
+one file every worktree writes, so its md5 differs between two runs for reasons
+that change nothing, and a rule hung on it would cry stale every time - noise a
+reader learns to ignore. Utterances live in `brain/skills/*.yaml`, under version
+control, and can be rewritten without the store changing at all. The fingerprint
+answers *which library was asked*; the phrases answer *which sentences* - and it
+was the second question that went unasked for a week (register row 152).
 """
 
 import argparse
@@ -168,6 +181,33 @@ def _index_fingerprint():
 
     out["counts"] = counts
     return out
+
+
+def words_moved(rows, utterances):
+    """(gone, fresh) - the phrases a recording and a skill no longer share.
+
+    A recording holds the sentence it measured. A skill's utterances live in
+    git and get edited without anyone re-taking one, so `words 1 of 4 reach`
+    outlives the four it counted and the card goes on showing a number about
+    sentences the skill no longer says. That is D-30's staleness, and the
+    catalogue held the fingerprint for it without ever comparing anything.
+
+    THIS COMPARES THE PHRASES AND NOT THE STORE, which is the whole design.
+    `global.db` is one file every worktree writes (row 116), so its md5
+    differs between two renders for reasons that change nothing, and a rule
+    hung on it would cry STALE on every page - noise a reader learns to
+    ignore, which is worse than silence. The phrases are under version
+    control, and a difference in them is a real one.
+
+    `gone` was measured and is no longer said. `fresh` is said today and was
+    never measured. Either one makes the count a statement about a different
+    set of sentences.
+    """
+    measured = [str(row[0]) for row in rows if row]
+    says = [str(one) for one in utterances]
+    gone = [one for one in measured if one not in says]
+    fresh = [one for one in says if one not in measured]
+    return gone, fresh
 
 
 def _md5(path):

@@ -102,6 +102,7 @@ rather than evidence - the other half is a model (D-30).
 """
 
 import datetime
+import importlib.util
 import io
 import json
 import os
@@ -112,6 +113,18 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_skill as SKILL                                   # noqa: E402
 import heron_fragment as FRAG                                 # noqa: E402
+
+# THE FILENAME HAS A HYPHEN IN IT, so `import check-skill-routing` is not a
+# sentence Python will read - that is the whole of these four lines. It owns
+# the rules ABOUT a routing measurement, `classify()` and `words_moved()`
+# both, and `tools/prove-skill.py` reads them from the same place. A second
+# copy of either is how two tools start disagreeing about the same skill on
+# the same day.
+_spec = importlib.util.spec_from_file_location(
+    "heron_tool_check_skill_routing",
+    os.path.join(ROOT, "tools", "check-skill-routing.py"))
+ROUTING = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(ROUTING)
 
 OUT = os.environ.get("HERON_SKILL_CATALOG_OUT", "skill-catalog.html")
 
@@ -233,33 +246,6 @@ def said(rows, declared):
     return out
 
 
-def words_moved(rows, utterances):
-    """(gone, fresh) - the phrases a recording and a skill no longer share.
-
-    A recording holds the sentence it measured. A skill's utterances live in
-    git and get edited without anyone re-taking one, so `words 1 of 4 reach`
-    outlives the four it counted and the card goes on showing a number about
-    sentences the skill no longer says. That is D-30's staleness, and the
-    catalogue held the fingerprint for it without ever comparing anything.
-
-    THIS COMPARES THE PHRASES AND NOT THE STORE, which is the whole design.
-    `global.db` is one file every worktree writes (row 116), so its md5
-    differs between two renders for reasons that change nothing, and a rule
-    hung on it would cry STALE on every page - noise a reader learns to
-    ignore, which is worse than silence. The phrases are under version
-    control, and a difference in them is a real one.
-
-    `gone` was measured and is no longer said. `fresh` is said today and was
-    never measured. Either one makes the count a statement about a different
-    set of sentences.
-    """
-    measured = [str(row[0]) for row in rows if row]
-    says = [str(one) for one in utterances]
-    gone = [one for one in measured if one not in says]
-    fresh = [one for one in says if one not in measured]
-    return gone, fresh
-
-
 def collect(recordings=None):
     """`recordings` names the folder to read the measurement from.
 
@@ -301,7 +287,7 @@ def collect(recordings=None):
         spoke = moved = None
         if skill.id in recorded:
             spoke = said(recorded[skill.id], wants)
-            gone, fresh = words_moved(recorded[skill.id], skill.utterances())
+            gone, fresh = ROUTING.words_moved(recorded[skill.id], skill.utterances())
             moved = {"gone": gone, "fresh": fresh}
             # A CROSSING THE SKILL NO LONGER SAYS IS NOT A LIVE CROSSING, and
             # one it still says is, stale recording or not - so the danger is

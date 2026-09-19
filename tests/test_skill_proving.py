@@ -96,7 +96,7 @@ def main():
     source = io.open(os.path.join(ROOT, "tools", "prove-skill.py"),
                      encoding="utf-8").read()
     words = set([PS.UNDERSTOOD, PS.BLOCKED, PS.NOT_UNDERSTOOD, PS.PLAN_OK,
-                 PS.CROSSING])
+                 PS.CROSSING, PS.OUT_OF_DATE])
     check("PROVEN" not in words,
           "the verdict vocabulary does not contain the word (%s)"
           % ", ".join(sorted(words)))
@@ -106,9 +106,10 @@ def main():
                if line.strip().startswith("return ")]
     verdicts = [line for line in returns
                 if any(w in line for w in ("CROSSING", "BLOCKED", "PLAN_OK",
-                                           "NOT_UNDERSTOOD", "UNDERSTOOD"))]
-    check(len(verdicts) == 5,
-          "verdict() reaches exactly five verdicts, each a named constant (%d)"
+                                           "NOT_UNDERSTOOD", "UNDERSTOOD",
+                                           "OUT_OF_DATE"))]
+    check(len(verdicts) == 6,
+          "verdict() reaches exactly six verdicts, each a named constant (%d)"
           % len(verdicts))
     check(not [line for line in returns
                if line not in verdicts and "said(" not in line
@@ -132,6 +133,40 @@ def main():
     check('IN_FRONT_OF_A_MODEL = ("PROVEN", "PRODUCTION")' in source,
           "PROVEN appears only as a FRAGMENT status it reads, never as a "
           "verdict it writes")
+
+    # A RECORDING OUTLIVES THE SENTENCES IT COUNTED (register row 152). The
+    # tool that WRITES the recordings must not read a stale one as agreement.
+    tidy = fake_skill("READ", ["COUNT_ELEMENTS"])
+    reaching = [("how many ducts are there", "COUNT_ELEMENTS", "READ",
+                 "identity", "reach")]
+    word, why = PS.verdict(PS.Plan(tidy, by_capability, chain, ladder),
+                           reaching)
+    check(word == PS.UNDERSTOOD,
+          "a recording that covers the skill's sentences can say UNDERSTOOD")
+    word, why = PS.verdict(PS.Plan(tidy, by_capability, chain, ladder),
+                           reaching, {"gone": [], "fresh": ["and one more"]})
+    check(word == PS.OUT_OF_DATE,
+          "the SAME rows, against a skill that has since grown a sentence, "
+          "cannot")
+    check(any("never measured" in line for line in why),
+          "and it says how many were never measured")
+    # THE DANGER IS NOT SUPPRESSED BY THE STALENESS, and a finding about a
+    # sentence nobody says any more is not a finding about today's library.
+    word, _why = PS.verdict(
+        PS.Plan(tidy, by_capability, chain, ladder),
+        reaching + [("check the connections", "MIRROR_ELEMENTS", "MODIFY",
+                     "hybrid", "crossing")],
+        {"gone": [], "fresh": ["and one more"]})
+    check(word == PS.CROSSING,
+          "a crossing on a sentence the skill STILL says outranks the "
+          "staleness")
+    word, _why = PS.verdict(
+        PS.Plan(tidy, by_capability, chain, ladder),
+        reaching + [("a sentence it no longer says", "MIRROR_ELEMENTS",
+                     "MODIFY", "hybrid", "crossing")],
+        {"gone": ["a sentence it no longer says"], "fresh": []})
+    check(word == PS.OUT_OF_DATE,
+          "and a crossing on one it no longer says is dropped, not reported")
 
     print()
     print("2. classify() gives the register's cases the register's words")

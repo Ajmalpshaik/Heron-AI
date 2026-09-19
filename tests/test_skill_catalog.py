@@ -279,13 +279,13 @@ def main():
     # NOTHING HERE EDITS brain/skills. Row 142 is what a suite that rewrites
     # the real library costs, and this checkout is shared - so the SKILL is
     # left alone and the RECORDING is the thing written for the case.
-    check(tool.words_moved([["a", "X", "READ", "identity", "reach"]],
+    check(tool.ROUTING.words_moved([["a", "X", "READ", "identity", "reach"]],
                            ["a"]) == ([], []),
           "the same sentence measured and said has moved nothing")
-    check(tool.words_moved([["a", "X", "READ", "identity", "reach"]],
+    check(tool.ROUTING.words_moved([["a", "X", "READ", "identity", "reach"]],
                            []) == (["a"], []),
           "a sentence measured and no longer said is GONE")
-    check(tool.words_moved([], ["b"]) == ([], ["b"]),
+    check(tool.ROUTING.words_moved([], ["b"]) == ([], ["b"]),
           "a sentence said today and never measured is FRESH")
 
     where = tempfile.mkdtemp()
@@ -385,8 +385,12 @@ def main():
               "as NEITHER whole nor short - it counts as out of date")
     finally:
         shutil.rmtree(where)
-    check(tool.words_moved.__doc__
-          and "store" in tool.words_moved.__doc__.lower(),
+    check(tool.ROUTING.words_moved.__module__
+          == tool.ROUTING.classify.__module__,
+          "the rule lives beside classify(), in the module both tools read "
+          "it from - one copy, or they disagree about the same skill")
+    check(tool.ROUTING.words_moved.__doc__
+          and "store" in tool.ROUTING.words_moved.__doc__.lower(),
           "and the rule says in its own words why it reads the phrases and "
           "not the store")
 
