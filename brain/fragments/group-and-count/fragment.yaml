@@ -70,3 +70,12 @@ utterances:
   - group them and count
   - give me a schedule of the types
   - break it down by type
+  # ADDED 2026-09-19. Both sentences reached a WRITE: "what sizes are the
+  # ducts" to AUTO_SIZE_MEP, which RESIZES ducts when asked what size they
+  # are, and "duct schedule by size" to SET_MEP_SIZE. The first is the one
+  # that proves declaring is the only repair - BOTH routes ranked the write
+  # first, words #1 AND nearness #1, so no re-ranking could ever reach it.
+  # This fragment already declares "what sizes are they", "break it down by
+  # size" and "give me a schedule of the types"; only the noun differed.
+  - what sizes are the ducts
+  - duct schedule by size

@@ -100,3 +100,10 @@ utterances:
   - is this still connected
   - where does this run go
   - check the connectivity
+  # ADDED 2026-09-19. Measured: this sentence reached CONNECT_AIR_TERMINALS,
+  # a MODIFY - it CONNECTS ductwork when asked whether the ductwork is
+  # connected. This fragment already declares "is this still connected" and
+  # "check the connectivity", so the ownership was 90% here; the word
+  # "ductwork" was all that pushed it into the ranked route. Row 116's fix
+  # is declaring, not demoting.
+  - is the ductwork still connected
