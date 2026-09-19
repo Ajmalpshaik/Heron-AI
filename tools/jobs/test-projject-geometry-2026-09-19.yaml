@@ -1,0 +1,88 @@
+# Two geometry readers, on the one Revit session that was free. 2026-09-19.
+#
+#     python tools/batch-prove.py tools/jobs/test-projject-geometry-2026-09-19.yaml --dry-run --session 36908
+#     python tools/batch-prove.py tools/jobs/test-projject-geometry-2026-09-19.yaml --session 36908
+#
+# --session 36908 IS NOT OPTIONAL. The other connected Revit (20472,
+# "Project1 work_ajmal.al") belongs to another chat and must not be touched.
+# Both fragments here are READ, so nothing is written either way - the flag is
+# about reading the RIGHT model, which is just as easy to get wrong.
+#
+# THE NEGATIVE IS THE SAME FOR BOTH, AND IT WAS MEASURED RATHER THAN CHOSEN.
+# Both fragments work on GEOMETRY. A level is a real, selectable element with
+# no measurable extent, so handing them two levels gives a selection that is
+# genuinely non-empty and genuinely has nothing for them to measure:
+#
+#     find-nearest-elements   Ducts  -> nearest 8, targetBoxes 8, tied 1
+#                             Levels -> nearest 0, targetBoxes 0,
+#                                       UNMEASURABLE 2  <- it says so itself
+#     check-minimum-clearance Ducts  -> tooClose 10, pairsChecked 56
+#                             Levels -> tooClose 0,  pairsChecked 0
+#
+# That is rule 3 satisfied from the useful direction: a DIFFERENT selection
+# that exists, rather than a cleared one that refuses for being empty.
+#
+# A VALUE-DRIVEN NEGATIVE WAS TRIED FIRST FOR THE CLEARANCE CHECK AND FAILED
+# HONESTLY, which is worth writing down. `defaultClearance=0.001` should leave
+# nothing too close - and it still returned `tooClose 4`, because four of these
+# ducts are joined end to end and their gap really is zero. The fragment was
+# right and the arrangement was wrong. Had it been shipped as the negative it
+# would have read as the fragment ignoring its threshold.
+#
+# WHAT THE MODEL HOLDS - read back 2026-09-19, session 36908, before any value
+# below was typed:
+#
+#   Ducts    8 in "HERON ROOM TEST"   (56 pairs, 10 of them within 5 m)
+#   Levels   2, selectable in "East - Mech" and in no floor plan - rule 3,
+#            a level does not appear in its own plan
+#   Walls   24, Pipes 2, Rooms 7 (present but not visible in any view that
+#            can be named, so no room fragment is arranged here)
+
+model: test projject, Revit 2024, 3,594 elements
+
+defaults:
+  in: test projject
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    categoryName: Ducts
+    inViewOnly: "HERON ROOM TEST"
+
+  negative-set:
+    categoryName: Levels
+    inViewOnly: "East - Mech"
+
+jobs:
+
+  # `expect: nearest` IS NOT OPTIONAL. `targetBoxes` counts what was LOOKED AT
+  # and moves with the selection whatever the fragment concludes - 8 against 0
+  # here only because the negative selection is smaller. `nearest` is the
+  # answer: which element is closest to which.
+  - fragment: find-nearest-elements
+    set:
+      metric: centre
+    negative-set:
+      metric: centre
+    expect: nearest
+
+  # Same shape, same reason. `pairsChecked` is 56 against 0 and is a work
+  # counter - it says how much arithmetic was done, not what was found.
+  # `tooClose` is the finding.
+  #
+  # `rules` is deliberately empty so that `defaultClearance` alone decides.
+  # 5000 mm is far wider than anything in this model needs, which is the point:
+  # rule 2 says ask for what the model HAS, and a defect-finder needs the
+  # defect to exist before it can be seen finding one.
+  - fragment: check-minimum-clearance
+    set:
+      defaultClearance: 5000
+      rules: ""
+      includeInsulation: false
+    negative-set:
+      defaultClearance: 5000
+      rules: ""
+      includeInsulation: false
+    expect: tooClose

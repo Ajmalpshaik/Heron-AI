@@ -1,0 +1,67 @@
+# The first fragment the new second-set rule unblocked. 2026-09-19.
+#
+#     python tools/batch-prove.py tools/jobs/test-projject-openings-2026-09-19.yaml --dry-run --session 36908
+#     python tools/batch-prove.py tools/jobs/test-projject-openings-2026-09-19.yaml --session 36908
+#
+# --session 36908 IS NOT OPTIONAL. The other connected Revit (20472) belongs to
+# another chat. This is a READ, so nothing is written either way - the flag is
+# about reading the RIGHT model, which is as easy to get wrong.
+#
+# THE TWO SETS COME FROM DIFFERENT PLACES AND THAT IS THE WHOLE POINT OF THIS
+# RUN. `elements` - the services - arrive through the setup chain from a
+# SELECTION IN A VIEW. `hosts` arrives through the resolver added in PR #196,
+# which takes a CATEGORY NAME and means every one of them IN THE MODEL. There
+# is no view in scope when that value is resolved.
+#
+#   8 ducts, selected in "HERON ROOM TEST"
+#   28 walls, counted across the whole model
+#
+# SO 8 AGAINST 28 IS THE RULE WORKING, NOT A FAULT. Written here loudly because
+# the first person to see a second set larger than the view they were looking at
+# will read it as a bug, and it is the designed behaviour.
+#
+# WHAT THE MODEL HOLDS - read back 2026-09-19, session 36908, before any value
+# below was typed. Host categories counted MODEL-WIDE, which is the population
+# the resolver uses:
+#
+#   Walls     28 placed        <- the positive
+#   Roofs      0 placed        <- the negative
+#   Floors     1 placed
+#   Ceilings   1 placed
+#   Ducts      8 in "HERON ROOM TEST"
+#
+# THE NEGATIVE IS A REAL HOST CATEGORY THAT THIS MODEL GENUINELY HAS NONE OF,
+# which is rule 2 read the right way round. `Roofs` is a category a duct could
+# plausibly pass through, so asking for it is a sensible question rather than a
+# nonsense one - and the answer is honestly empty. An empty second set is a
+# VALUE in the new resolver rather than a refusal, and that path has never run
+# on any model, so this leg is the first exercise of it.
+
+model: test projject, Revit 2024, 3,594 elements
+
+defaults:
+  in: test projject
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  # THE SAME EIGHT DUCTS IN BOTH LEGS. Only `hosts` differs, so anything that
+  # moves between the two legs is the second set and nothing else.
+  set:
+    categoryName: Ducts
+    inViewOnly: "HERON ROOM TEST"
+
+  negative-set:
+    categoryName: Ducts
+    inViewOnly: "HERON ROOM TEST"
+
+jobs:
+
+  - fragment: propose-mep-openings
+    set:
+      hosts: "Walls"
+      allowanceMm: 50
+    negative-set:
+      hosts: "Roofs"
+      allowanceMm: 50
