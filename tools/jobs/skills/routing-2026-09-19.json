@@ -1,0 +1,337 @@
+{
+  "index": {
+    "counts": {
+      "fragments": 395,
+      "identities": 2580,
+      "utterances": 0,
+      "vectors": 395
+    },
+    "md5": "c11932038e6e539d44f990e88403d8bb",
+    "path": "/root/heron-kb/global.db"
+  },
+  "revit": "2020",
+  "skills": {
+    "check-connectivity": [
+      [
+        "is the ductwork still connected",
+        "TRACE_CONNECTIVITY",
+        "READ",
+        "identity",
+        "reach"
+      ],
+      [
+        "check the connections",
+        "MIRROR_ELEMENTS",
+        "MODIFY",
+        "hybrid",
+        "crossing"
+      ],
+      [
+        "did anything come apart",
+        "SELECT_BY_CONNECTION_STATUS",
+        "READ",
+        "identity",
+        "reach"
+      ],
+      [
+        "check the system is complete",
+        "AUTO_SIZE_MEP",
+        "MODIFY",
+        "hybrid",
+        "crossing"
+      ]
+    ],
+    "count-elements": [
+      [
+        "how many ducts are there",
+        "FILTER_ELEMENTS_BY_CATEGORY",
+        "READ",
+        "identity",
+        "reach"
+      ],
+      [
+        "count the air terminals",
+        "COUNT_ELEMENTS",
+        "READ",
+        "identity",
+        "reach"
+      ],
+      [
+        "how many sprinklers on level 2",
+        "COUNT_ELEMENTS",
+        "READ",
+        "identity",
+        "reach"
+      ],
+      [
+        "give me the number of fire dampers",
+        "COUNT_ELEMENTS",
+        "READ",
+        "identity",
+        "reach"
+      ]
+    ],
+    "find-blank-parameters": [
+      [
+        "which ducts have no system name",
+        "READ_MEP_SYSTEM",
+        "READ",
+        "hybrid",
+        "miss"
+      ],
+      [
+        "find the blank parameters",
+        "DESCRIBE_BLANK_PARAMETERS",
+        "ANALYZE",
+        "hybrid",
+        "reach"
+      ],
+      [
+        "what is missing before I issue this",
+        "SELECT_VISIBLE_IN_VIEW",
+        "READ",
+        "hybrid",
+        "miss"
+      ],
+      [
+        "check for empty values",
+        "GROUP_AND_COUNT",
+        "READ",
+        "hybrid",
+        "miss"
+      ]
+    ],
+    "mep-grayout": [
+      [
+        "do the grayout",
+        "HIGHLIGHT_VS_REST",
+        "MODIFY",
+        "identity",
+        "reach"
+      ],
+      [
+        "do the grayout for MEP",
+        "HIGHLIGHT_VS_REST",
+        "MODIFY",
+        "hybrid",
+        "reach"
+      ],
+      [
+        "grey out the background",
+        "SET_CATEGORY_GRAPHICS",
+        "MODIFY",
+        "hybrid",
+        "reach"
+      ],
+      [
+        "make the architecture light and the services strong",
+        "CHECK_EQUIPMENT_CLEARANCE",
+        "READ",
+        "hybrid",
+        "miss"
+      ],
+      [
+        "grey the background and turn the rebar off",
+        "SET_CATEGORY_GRAPHICS",
+        "MODIFY",
+        "hybrid",
+        "reach"
+      ]
+    ],
+    "select-elements": [
+      [
+        "select all the ducts",
+        "SELECT_BY_CATEGORIES",
+        "READ",
+        "hybrid",
+        "reach"
+      ],
+      [
+        "highlight them",
+        "HIGHLIGHT_VS_REST",
+        "MODIFY",
+        "hybrid",
+        "escalation"
+      ],
+      [
+        "show me the ones you found",
+        "SET_SELECTION",
+        "EXECUTE",
+        "identity",
+        "reach"
+      ],
+      [
+        "select the 300x300 dampers",
+        "SELECT_BY_CATEGORIES",
+        "READ",
+        "hybrid",
+        "reach"
+      ]
+    ],
+    "size-breakdown": [
+      [
+        "what sizes are the ducts",
+        "GROUP_AND_COUNT",
+        "READ",
+        "identity",
+        "reach"
+      ],
+      [
+        "give me a breakdown of the pipe sizes",
+        "REPORT_PIPE_SEGMENTS",
+        "READ",
+        "hybrid",
+        "miss"
+      ],
+      [
+        "duct schedule by size",
+        "GROUP_AND_COUNT",
+        "READ",
+        "identity",
+        "reach"
+      ],
+      [
+        "how many of each size",
+        "GROUP_AND_COUNT",
+        "READ",
+        "hybrid",
+        "reach"
+      ]
+    ],
+    "space-airflow": [
+      [
+        "work out the airflow for this room",
+        "PLACE_ROOMS",
+        "MODIFY",
+        "hybrid",
+        "miss"
+      ],
+      [
+        "calculate the air for these spaces",
+        "READ_SPACE_LOADS",
+        "READ",
+        "hybrid",
+        "reach"
+      ],
+      [
+        "set the supply air flow",
+        "REPORT_SPACE_AIRFLOW",
+        "READ",
+        "hybrid",
+        "miss"
+      ],
+      [
+        "how much air does this room need",
+        "FILTER_ELEMENTS_IN_ROOM",
+        "READ",
+        "hybrid",
+        "miss"
+      ]
+    ],
+    "sprinkler-layout": [
+      [
+        "how many sprinklers do I need",
+        "COUNT_ELEMENTS",
+        "READ",
+        "hybrid",
+        "miss"
+      ],
+      [
+        "how many sprinklers for this room",
+        "FILTER_ELEMENTS_IN_ROOM",
+        "READ",
+        "hybrid",
+        "miss"
+      ],
+      [
+        "check my sprinkler spacing",
+        "CREATE_DIMENSION",
+        "MODIFY",
+        "hybrid",
+        "miss"
+      ],
+      [
+        "lay out the heads",
+        "READ_ROOM_GEOMETRY",
+        "READ",
+        "hybrid",
+        "reach"
+      ],
+      [
+        "there is a beam in the room",
+        "CHECK_OBSTRUCTIONS",
+        "READ",
+        "identity",
+        "reach"
+      ],
+      [
+        "pendent or upright here",
+        "CREATE_DUCT",
+        "MODIFY",
+        "hybrid",
+        "miss"
+      ]
+    ],
+    "terminal-layout": [
+      [
+        "how many diffusers for this room",
+        "COUNT_BY_SPATIAL_CONTAINER",
+        "READ",
+        "hybrid",
+        "miss"
+      ],
+      [
+        "lay out the air terminals",
+        "READ_ROOM_GEOMETRY",
+        "READ",
+        "hybrid",
+        "reach"
+      ],
+      [
+        "place the grilles",
+        "PLACE_FAMILY_INSTANCES",
+        "MODIFY",
+        "hybrid",
+        "reach"
+      ],
+      [
+        "how many at 3 m coverage and where",
+        "REPORT_COVERAGE",
+        "READ",
+        "hybrid",
+        "reach"
+      ]
+    ],
+    "trace-system": [
+      [
+        "what is this connected to",
+        "TRACE_CONNECTIVITY",
+        "READ",
+        "hybrid",
+        "reach"
+      ],
+      [
+        "trace the system from here",
+        "READ_MEP_SYSTEM",
+        "READ",
+        "hybrid",
+        "miss"
+      ],
+      [
+        "which unit feeds this",
+        "CHECK_EQUIPMENT_CLEARANCE",
+        "READ",
+        "hybrid",
+        "miss"
+      ],
+      [
+        "follow the pipe and tell me where it goes",
+        "REPORT_PIPE_SEGMENTS",
+        "READ",
+        "hybrid",
+        "miss"
+      ]
+    ]
+  },
+  "taken": "2026-09-19T20:25:26Z"
+}
