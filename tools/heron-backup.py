@@ -24,8 +24,16 @@ in this repository was protecting any of them:
                       makes it evidence, HeronAudit never prunes it, and it is
                       NOT in git. Lose it and the Capability Gap report has
                       nothing to read and no way to get it back.
-    config/           the settings, including write.enabled - which docs/12
-                      section 9 calls a SECURITY BOUNDARY.
+    config/           the settings, including write.enabled - the switch D-19
+                      puts writing behind, which HeronPermissions reads before
+                      it will allow MODIFY or above.
+
+                      This line cited "docs/12 section 9" until 2026-09-19.
+                      There is no section 9 in docs/12 - it has six - and that
+                      document never mentions write.enabled at all. The wrong
+                      citation had already been copied into docs/07 by somebody
+                      reading this docstring and trusting it, which is what a
+                      stale reference does: it does not stay in one file.
     knowledge/        see below.
 
 A grep for backup across every .py, .cs and .ps1 in the repository returned
