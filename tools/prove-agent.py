@@ -216,10 +216,29 @@ def bridges(client_id=None):
     return live
 
 
-def ask(bridge, operation):
+def parse_args(pairs):
+    """`["category=Pipes"]` to `{"category": "Pipes"}`.
+
+    Values stay STRINGS. The bridge and the add-in already agree on how to
+    read a category name or a number out of one, and guessing a type here
+    would put a third opinion between them.
+    """
+    out = {}
+    for pair in pairs or ():
+        if "=" not in pair:
+            raise ValueError("--arg wants KEY=VALUE, and %r has no '='." % pair)
+        key, value = pair.split("=", 1)
+        key = key.strip()
+        if not key:
+            raise ValueError("--arg %r has an empty name." % pair)
+        out[key] = value
+    return out
+
+
+def ask(bridge, operation, op_args=None):
     """Send one operation and return the reply, or a refusal dict."""
     try:
-        return bridge.request(operation)
+        return bridge.request(operation, op_args=op_args or None)
     except Exception as why:                                  # noqa: BLE001
         return {"ok": False, "error": "no_answer", "message": str(why)}
 
@@ -391,8 +410,30 @@ def cmd_track(args):
     where_a = describe(ask(first, "count_elements"))
     where_b = describe(ask(second, "count_elements"))
 
-    a = ask(first, args.operation)
-    b = ask(second, args.operation)
+    # THE SAME ARGUMENTS GO TO BOTH MODELS, AND THAT IS THE WHOLE POINT.
+    #
+    # Tracking asks whether the ANSWER follows the MODEL. Varying the input
+    # between the two runs would let a different answer come from the
+    # different input rather than from the different model, which is the one
+    # thing this file exists to rule out. So `--arg` is parsed once and sent
+    # twice, unchanged.
+    #
+    # WHY IT EXISTS. `track` sent a bare operation, and three operations
+    # refuse without an argument - `read_parameters` answers `no_category`,
+    # `select_by_category` answers `operation_failed`. Measured 2026-09-19:
+    # HERON-REVIT-PAR-011 could not be tracked at all, then moved 0 -> 2
+    # elements and 0 -> 99 parameters the moment `category=Pipes` was handed
+    # to it by hand. The agent was never the problem; there was no box to
+    # type in.
+    try:
+        op_args = parse_args(args.arg)
+    except ValueError as why:
+        w("%s\n" % why)
+        w("Nothing was drafted.\n")
+        return 1
+
+    a = ask(first, args.operation, op_args)
+    b = ask(second, args.operation, op_args)
 
     for label, reply, session in (("first", a, args.first),
                                   ("second", b, args.second)):
@@ -457,6 +498,13 @@ def cmd_track(args):
         "agent": args.agent,
         "name": agents[args.agent],
         "operation": args.operation,
+        # THE ARGUMENTS ARE PART OF THE TEST AND WERE MISSING FROM IT.
+        # `--arg category=Ducts` decides what the agent is even asked about,
+        # and a proof recording only the operation cannot be reproduced or
+        # judged: a later run against a different category would be
+        # indistinguishable from this one. Recorded as it was typed.
+        "arguments": ", ".join("%s=%s" % (k, v)
+                               for k, v in sorted(op_args.items())) or "(none)",
         "date": datetime.date.today().isoformat(),
         "by": "",
         "source": os.path.relpath(source, ROOT).replace(os.sep, "/"),
@@ -477,21 +525,105 @@ def cmd_track(args):
     return 0
 
 
-def compare(a, b):
-    """Which numbers moved between two replies, and which did not.
+# Keys that are the ENVELOPE rather than the answer. `document` is the model's
+# own name - the input - and counting it would make every run pass.
+ENVELOPE = ("ok", "document", "projectKey", "reads", "placedElements")
 
-    Only NUMBERS, and only keys both replies carry. A string that differs is
-    usually the document name, which is the input rather than the answer, and
-    counting it as movement would make every run pass.
+# `elements` is skipped ONLY where it is the scalar total, never where it is the
+# answer itself. It sat in ENVELOPE unconditionally until 2026-09-19, which was
+# right while this function read numbers only and wrong the moment it started
+# descending into lists: `read_parameters` and `list_groups` BOTH return their
+# per-element answer under that exact name, so two models with equal totals and
+# completely different contents compared as "nothing moved". A skip inherited
+# from the old behaviour, quietly cancelling the new one.
+SCALAR_ONLY_SKIP = ("elements",)
+
+# How far into a list to look, and how many of its items. A reply that lists
+# 3,000 elements should not produce 3,000 rows of evidence; the first few
+# settle the question, and the LENGTH of the list is compared whatever it is.
+LIST_ITEMS = 5
+
+
+def _scalars(item, prefix, into_moved, into_same, other):
+    """Compare one list item's own fields against the matching item.
+
+    NAMES COUNT HERE, AND THEY DO NOT AT THE TOP LEVEL. The distinction is
+    not a fudge: at the top level a string is nearly always the document
+    name, which is what was ASKED. Inside a list it is a thing the agent
+    FOUND in the model, which is what was ANSWERED. `linkedCad[0].name`
+    is the answer and nothing else.
+    """
+    if not isinstance(item, dict) or not isinstance(other, dict):
+        if item != other:
+            into_moved.append((prefix, item, other))
+        else:
+            into_same.append((prefix, item))
+        return
+    for key in sorted(set(item) & set(other)):
+        x, y = item.get(key), other.get(key)
+        if isinstance(x, bool) or isinstance(y, bool):
+            continue
+        if not isinstance(x, (int, float, str)) or not isinstance(y, (int, float, str)):
+            continue
+        where = "%s.%s" % (prefix, key)
+        if x != y:
+            into_moved.append((where, x, y))
+        else:
+            into_same.append((where, x))
+
+
+def compare(a, b):
+    """Which answers moved between two replies, and which did not.
+
+    TOP LEVEL: only NUMBERS, and only keys both replies carry. A string that
+    differs up here is usually the document name, which is the input rather
+    than the answer, and counting it as movement would make every run pass.
+
+    INSIDE A LIST: the length, and then each item's own numbers AND names.
+    Added 2026-09-19, because reading only the top level was quietly losing
+    two agents that plainly do read the model:
+
+      IMP-019   `linkedCadCount` is 1 in both models, so nothing moved - while
+                `linkedCad[0].name` held `box.dwg` against
+                `Project1 - Section - Section 1.dwg`. The count of one CAD
+                link against one CAD link was the only thing this function
+                was allowed to see.
+
+      LVL-027   both models hold two levels named the same at the same
+                elevations, so every top-level number held but `onNoLevel`.
+                Inside `levels[]`: 8 and 8 elements against 29 and 7. The
+                per-level counts are the agent's actual answer, and they move
+                in BOTH directions at once - which is harder to fake than a
+                single total, not easier.
+
+    A list is compared POSITIONALLY, and that is a real limit rather than an
+    oversight: two models may list the same things in a different order, and
+    a positional comparison would call that movement. It is the right default
+    because every reply seen so far sorts its list, and because the failure
+    mode is a draft that looks STRONGER than it is - so the gap text, and a
+    person, still have to read it. Row T1 of docs/NEEDS-CHECKING.md.
     """
     moved, same = [], []
-    skip = ("placedElements", "elements")
     for key in sorted(set(a) & set(b)):
-        if key in skip or key in ("ok", "document", "projectKey", "reads"):
+        if key in ENVELOPE:
             continue
         x, y = a.get(key), b.get(key)
         if isinstance(x, bool) or isinstance(y, bool):
             continue
+        if key in SCALAR_ONLY_SKIP and not (isinstance(x, list)
+                                            and isinstance(y, list)):
+            continue
+
+        if isinstance(x, list) and isinstance(y, list):
+            where = "%s[]" % key
+            if len(x) != len(y):
+                moved.append((where, len(x), len(y)))
+            else:
+                same.append((where, len(x)))
+            for i in range(min(len(x), len(y), LIST_ITEMS)):
+                _scalars(x[i], "%s[%d]" % (key, i), moved, same, y[i])
+            continue
+
         if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
             continue
         if x != y:
@@ -499,6 +631,143 @@ def compare(a, b):
         else:
             same.append((key, x))
     return moved, same
+
+
+
+# --------------------------------------------------------------------------
+# varying the ARGUMENT instead of the model
+
+MIN_TRACKING_ROWS = 3
+
+
+def cmd_vary(args):
+    """Run one agent on ONE model across several values of one argument.
+
+    WHY THIS EXISTS, AND IT IS NOT A CONVENIENCE.
+
+    `track` proves an agent reads the model by opening two models and asking
+    whether the answer moved. It takes exactly two, and on 2026-09-19 nine
+    agents were signed on that basis - while `brain/heron_validate.py`, judging
+    the SAME decision for a fragment, refuses two in these words:
+
+        "the tracking set has only 2 row(s). D-53 asks for the answer to
+         follow the input across SEVERAL different inputs; two cannot
+         show that."
+
+    One decision, two tools, two different bars, and nothing comparing them.
+    A review found it; the seven signatures that rest on the lower bar are a
+    separate question from this code.
+
+    THE INPUT IS NOT ALWAYS THE MODEL. For an agent driven by an argument -
+    `read_parameters` with a category, `select_by_category` with a category -
+    the thing D-53 calls the input is the ARGUMENT. Varying it across three
+    values on one model is a truer reading of "the answer follows the input"
+    than opening a third file, and it needs no second Revit, which matters on
+    a machine where the other session belongs to somebody else.
+
+    IT ALSO SETTLES THE OTHER HALF. `track`'s draft says no input makes these
+    agents correctly return nothing - and that is false for exactly this
+    family: a category the model has none of returns an honest empty answer.
+    That is D-30's negative leg, and it was sitting one argument away the
+    whole time. Include such a value and the draft records it as one.
+    """
+    agents = registry_agents()
+    if args.agent not in agents:
+        w("'%s' is not in %s. An agent starts as a row there.%s"
+          % (args.agent, os.path.relpath(REGISTRY, ROOT), "\n"))
+        return 1
+    source = source_of(args.agent)
+    if not source:
+        w("No add-in source declares %s.%s" % (args.agent, "\n"))
+        return 1
+
+    values = [v.strip() for v in args.arg_values.split(",") if v.strip()]
+    if len(values) < MIN_TRACKING_ROWS:
+        w("--arg-values has %d value(s). D-53 asks for the answer to follow "
+          "the input across SEVERAL different inputs, and this file reads "
+          "that as at least %d - the same number brain/heron_validate.py "
+          "enforces for a fragment.%s"
+          % (len(values), MIN_TRACKING_ROWS, "\n"))
+        return 1
+
+    live = dict((str(getattr(b, "pid", "")), b) for b in bridges(args.client_id))
+    if str(args.session) not in live:
+        w("No Revit session %s. Connected: %s%s"
+          % (args.session, ", ".join(sorted(live)) or "(none)", "\n"))
+        return 1
+    bridge = live[str(args.session)]
+    where = describe(ask(bridge, "count_elements"))
+
+    rows, refusals = [], []
+    for value in values:
+        reply = ask(bridge, args.operation, {args.arg_name: value})
+        if not reply.get("ok"):
+            refusals.append((value, reply.get("error"),
+                             (reply.get("message") or "")[:90]))
+            continue
+        numbers = dict((k, v) for k, v in reply.items()
+                       if isinstance(v, (int, float))
+                       and not isinstance(v, bool) and k not in ENVELOPE)
+        rows.append({"input": "%s=%s" % (args.arg_name, value),
+                     "value": ", ".join("%s: %s" % (k, numbers[k])
+                                        for k in sorted(numbers)) or "(nothing numeric)"})
+
+    for value, error, message in refusals:
+        w("  %s=%s was REFUSED: %s - %s%s"
+          % (args.arg_name, value, error, message, "\n"))
+    if len(rows) < MIN_TRACKING_ROWS:
+        w("Only %d value(s) ran. A refused value is not a tracking row - it "
+          "shows the agent never looked, not that it looked and found "
+          "nothing. Nothing was drafted.%s" % (len(rows), "\n"))
+        return 1
+
+    distinct = set(r["value"] for r in rows)
+    gaps = []
+    if len(distinct) < 2:
+        gaps.append(
+            "EVERY value came back the same. An agent ignoring its input "
+            "produces exactly that, which is what tracking exists to rule "
+            "out - vary the input until the answer moves")
+    empty = [r for r in rows if r["value"] == "(nothing numeric)"
+             or all(part.endswith(" 0") or part.endswith(": 0")
+                    for part in r["value"].split(", "))]
+    if empty:
+        gaps.append(
+            "D-30's NEGATIVE LEG WAS RUN AND IS RECORDED: %s returned an "
+            "empty answer, so this agent does have an input that makes it "
+            "correctly return nothing. That is a real negative case and not "
+            "a D-53 substitute" % empty[0]["input"])
+    else:
+        gaps.append(
+            "no input in this set came back empty, so D-30's negative leg is "
+            "met by D-53 tracking rather than by an empty case. If the model "
+            "has a value of this argument it holds none of, adding it would "
+            "be stronger")
+
+    draft = {
+        "agent": args.agent,
+        "name": agents[args.agent],
+        "operation": args.operation,
+        "arguments": "%s varied across %s" % (args.arg_name, ", ".join(values)),
+        "date": datetime.date.today().isoformat(),
+        "by": "",
+        "source": os.path.relpath(source, ROOT).replace(os.sep, "/"),
+        "fingerprint": fingerprint(source),
+        "first_model": "%s, session %s" % (where, args.session),
+        "second_model": "(not used - the INPUT was varied, not the model)",
+        "moved": "; ".join("%s -> %s" % (r["input"], r["value"]) for r in rows),
+        "held_same": "(n/a - this is an input-varied tracking set)",
+        "tracking": rows,
+        "gaps": gaps,
+    }
+    path = write_draft(args.agent, draft)
+    w("%sDrafted %s%s" % ("\n", os.path.relpath(path, ROOT).replace(os.sep, "/"), "\n"))
+    w("  %d input(s) ran, %d distinct answer(s).%s" % (len(rows), len(distinct), "\n"))
+    for r in rows:
+        w("    %-28s %s%s" % (r["input"], r["value"][:80], "\n"))
+    w("%sRead it, then sign it under your own name:%s" % ("\n", "\n"))
+    w("  python tools/prove-agent.py accept %s --by \"Your Name\"%s" % (args.agent, "\n"))
+    return 0
 
 
 def cmd_review(args):
@@ -614,6 +883,9 @@ def main(argv=None):
                        help="the add-in operation, e.g. list_levels")
     track.add_argument("--first", required=True, help="first session id")
     track.add_argument("--second", required=True, help="second session id")
+    track.add_argument("--arg", action="append", default=[], metavar="KEY=VALUE",
+                       help="an operation argument, repeatable. The SAME "
+                            "arguments go to both models - see cmd_track()")
     track.add_argument("--client-id", default=None,
                        help="identify as this chat, so a Revit the chat is "
                             "already using does not refuse. See bridges()")
@@ -625,6 +897,23 @@ def main(argv=None):
     accept.add_argument("agent")
     accept.add_argument("--by", required=True, help="your name - the signature")
 
+    vary = sub.add_parser(
+        "vary", help="run one agent on ONE model across several values of one "
+                     "argument - D-53 tracking where the INPUT is the argument")
+    vary.add_argument("agent")
+    vary.add_argument("--operation", required=True,
+                      help="the add-in operation, e.g. read_parameters")
+    vary.add_argument("--session", required=True,
+                      help="which Revit. One is enough - the model does not vary")
+    vary.add_argument("--arg-name", required=True, metavar="KEY",
+                      help="the argument to vary, e.g. category")
+    vary.add_argument("--arg-values", required=True, metavar="A,B,C",
+                      help="at least three values, comma separated. Include one "
+                           "the model has none of and D-30's negative leg is "
+                           "recorded as a real empty case")
+    vary.add_argument("--client-id", default=None,
+                      help="identify as this chat. See bridges()")
+
     sub.add_parser("check", help="which recorded proofs have gone stale")
 
     args = parser.parse_args(argv)
@@ -634,6 +923,7 @@ def main(argv=None):
     return {
         "sessions": cmd_sessions,
         "track": cmd_track,
+        "vary": cmd_vary,
         "review": cmd_review,
         "accept": cmd_accept,
         "check": cmd_check,

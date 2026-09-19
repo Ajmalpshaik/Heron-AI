@@ -948,7 +948,7 @@ Use a real job file: one with an architectural or structural link, and ideally o
 ## Group M — phases and design options (needs Revit and a real job file)
 
 `HERON-REVIT-PHS-032` — [`revit/Heron.Revit.Addin/RevitPhases.cs`](../revit/Heron.Revit.Addin/RevitPhases.cs).
-Compiles on 2020–2027, 0 warnings, 2026-09-15. **Never run.** Read-only — nothing here sets a view's
+Compiles on 2020–2027, 0 warnings, 2026-09-15. **Tracked against two models 2026-09-19 and signed** ([`brain/agent-proofs/HERON-REVIT-PHS-032.yaml`](../brain/agent-proofs/HERON-REVIT-PHS-032.yaml)) - so it is no longer NEVER RUN. That proof is D-53 tracking and it is NOT these rows: the cases below are still unchecked, and tracking says the answer follows the model, not that any one of them is right. Read-only — nothing here sets a view's
 phase or activates an option, because both change what everybody else on the job sees in that view.
 
 Use a real job file: one with Existing and New Construction at least, and ideally one design option set.
@@ -975,7 +975,7 @@ same shafts — and *"all ducts"* means something different in each.
 ## Group N — duct and pipe systems, and what is connected to nothing (needs Revit and a real MEP model)
 
 `HERON-REVIT-SYS-030` — [`revit/Heron.Revit.Addin/RevitSystems.cs`](../revit/Heron.Revit.Addin/RevitSystems.cs).
-Compiles on 2020–2027, 0 errors, 2026-09-16. **Never run.** Read-only — nothing is connected, renamed
+Compiles on 2020–2027, 0 errors, 2026-09-16. **Tracked against two models 2026-09-19 and signed** ([`brain/agent-proofs/HERON-REVIT-SYS-030.yaml`](../brain/agent-proofs/HERON-REVIT-SYS-030.yaml)) - so it is no longer NEVER RUN. That proof is D-53 tracking and it is NOT these rows: the cases below are still unchecked, and tracking says the answer follows the model, not that any one of them is right. Read-only — nothing is connected, renamed
 or put on a system, and no transaction is opened.
 
 Use a real MEP job, not a sample: one with duct AND pipe systems, and ideally one you already know has
@@ -1012,7 +1012,7 @@ about what any of them returns.
 ## Group P — parameters, and the two ways the answer is confidently wrong (needs Revit and a real model)
 
 `HERON-REVIT-PAR-011` — [`revit/Heron.Revit.Addin/RevitParameters.cs`](../revit/Heron.Revit.Addin/RevitParameters.cs).
-Compiles on 2020–2027, 0 errors, 2026-09-16. **Never run.** Read-only — no parameter is written, and no
+Compiles on 2020–2027, 0 errors, 2026-09-16. **Proved 2026-09-19 and signed** ([`brain/agent-proofs/HERON-REVIT-PAR-011.yaml`](../brain/agent-proofs/HERON-REVIT-PAR-011.yaml)) - so it is no longer NEVER RUN. It went signed, then WITHDRAWN, then signed again the same day: the first proof rested on two models and claimed no empty input existed, which [U5](#) disproved. The one that stands varies `category` across Ducts, Pipes and Air Terminals, and the last of those IS the empty case. That proof is D-53 tracking and it is NOT these rows: the cases below are still unchecked, and tracking says the answer follows the model, not that any one of them is right. Read-only — no parameter is written, and no
 transaction is opened.
 
 Use a real project, not a sample: one with shared parameters loaded, at least one project parameter
@@ -1056,7 +1056,7 @@ reported instead.
 ## Group S — groups and assemblies, and the edit that lands in twelve places (needs Revit)
 
 `HERON-REVIT-GRP-033` — [`revit/Heron.Revit.Addin/RevitGroups.cs`](../revit/Heron.Revit.Addin/RevitGroups.cs).
-Compiles on 2020–2027, 0 errors, 2026-09-16. **Never run.** Read-only — nothing is grouped, ungrouped
+Compiles on 2020–2027, 0 errors, 2026-09-16. **Tracked against two models 2026-09-19 and signed** ([`brain/agent-proofs/HERON-REVIT-GRP-033.yaml`](../brain/agent-proofs/HERON-REVIT-GRP-033.yaml)) - so it is no longer NEVER RUN. That proof is D-53 tracking and it is NOT these rows: the cases below are still unchecked, and tracking says the answer follows the model, not that any one of them is right. Read-only — nothing is grouped, ungrouped
 or edited, and no transaction is opened.
 
 Use a model that actually uses groups: one group type placed several times, ideally one nested group,
@@ -1123,3 +1123,258 @@ Step 6 is finished, and not before. At that point:
    a register that deletes itself files the destination inside the bin. **What ends is the Step 6
    content, not the file:** once step 3 has moved those rows out, this one holds whatever is
    unproven next.
+
+---
+
+## Group T — what `prove-agent.py track` cannot see, found 2026-09-19
+
+*Lettered T because Group H was already taken by the lease (H1-H10). Written as H first, which put two H1 rows in one register and made `check-gaps` count both - fixed the same day.*
+
+Added while proving the four owed add-in agents against the two live Revit 2024 sessions
+(`20472` *Project1 work_ajmal.al*, 3,529 elements; `36908` *test projject*, 3,594 elements).
+
+Five agents were proved and signed that day — SHT-029, DIM-031, GRP-033, PHS-032, SYS-030. Two
+could not be, and **neither failure is about the agent**. Both are about the tool that judges it.
+They are recorded here because a reader coming back to `IMP-019` and `LVL-027` will otherwise
+re-run them, get the same verdict, and conclude the agents are broken.
+
+### T1 — `compare()` reads only top-level numbers, so a list that moves is invisible
+
+[`tools/prove-agent.py`](../tools/prove-agent.py) `compare()` skips any value that is not an `int`
+or `float` at the top level of the reply. Its docstring gives the reason, and the reason is sound
+*for a string*: `"A string that differs is usually the document name, which is the input rather
+than the answer"`. It does not extend to a **list of things found in the model**, which is the
+answer and nothing else.
+
+**`IMP-019` is the case.** `track` reported `moved: NOT ESTABLISHED` — every comparable number
+identical, `importedCount: 0, linkedCadCount: 1, revitLinks: 0`. The raw replies, read by hand the
+same minute:
+
+| | session 20472 | session 36908 |
+|---|---|---|
+| `linkedCad[0].name` | `box.dwg` | `Project1 - Section - Section 1.dwg` |
+| `document` | `Project1 work_ajmal.al` | `test projject` |
+
+**The agent reads the model.** It names a different DWG in each, correctly. The count is 1 in both
+because each model happens to hold exactly one CAD link, and a count of one against a count of one
+is the only thing `compare()` was allowed to look at.
+
+**`LVL-027` is the same shape, one level down.** `track` found one number moving — `onNoLevel:
+3513 -> 3558`, which is really the element total wearing a different hat. Inside `levels[]`, which
+`compare()` never opens:
+
+| | session 20472 | session 36908 |
+|---|---|---|
+| Level 1 | **8** elements | **29** elements |
+| Level 2 | **8** elements | **7** elements |
+
+Identical names, identical elevations (0 and 4000), different contents. The per-level counts are
+the agent's actual answer and they move in both directions at once — which is *harder* to fake
+than a single total, not easier.
+
+**So the standing advice to "add or rename a level in one model" would work, and it treats the
+symptom.** `levelCount 2 -> 3` is a top-level number, so `compare()` would see it. But the evidence
+that the agent reads the model is already in hand; what is missing is a tool that can record it.
+
+### T2 — `track` cannot pass an argument, so an agent that needs one cannot be tracked at all
+
+`track` takes `--operation`, `--first`, `--second`, `--client-id`. There is no way to send an
+operation argument, and it sends the bare op. Three operations refuse without one:
+
+| Operation | Agent | Bare-op result |
+|---|---|---|
+| `read_parameters` | `HERON-REVIT-PAR-011` | `no_category` |
+| `select_by_category` | `HERON-REVIT-CAT-009`, `HERON-REVIT-SEL-008` | `operation_failed` |
+
+**`PAR-011` was then driven by hand with `category=Pipes`, and it is one of the strongest readers
+measured all day:**
+
+| | session 20472 | session 36908 |
+|---|---|---|
+| `elements` | 0 | **2** |
+| `distinctParameters` | 0 | **99** |
+| `listed` | 0 | **99** |
+| `typesRead` | 0 | **1** |
+
+Every number moves. It cannot be signed, because the tool that writes drafts has no way to make
+that call.
+
+### What would settle T1 and T2
+
+Both are one change to `tools/prove-agent.py`, and **neither has been made** — the file was not
+this session's to edit:
+
+| | |
+|---|---|
+| ~~**T1**~~ | **DONE 2026-09-19.** Teach `compare()` to descend one level into a list: compare its length, and compare each item's own numbers and names positionally or by key. `linkedCad[0].name` and `levels[n].elements` both become visible, and `IMP-019` and `LVL-027` can be judged on their real answers |
+| ~~**T2**~~ | **DONE 2026-09-19.** An `--arg key=value` option, repeatable, passed through to `op_args`. Unlocks `PAR-011`, and `CAT-009` / `SEL-008` if a category is supplied for each model |
+
+### T3 — the rest of the twenty-three are mostly not trackable, and that is correct
+
+Of the 23 add-in agents with no proof, the file headers show they are **not 23 separate readers**.
+Seven share `RevitWrite.cs` (`TSA-006`, `TRN-005`, `WRN-016`, `CTX-007`, `ELE-010`, `KRN-EVD-014`,
+`KRN-HUM-018`) and are the machinery *inside* a write — transactions, warning capture, context,
+evidence, human wording. Four share `Commands.cs` (`CON-001`, `HLT-025`, `UI-022`, `OPS-STP-007`).
+Two share `HeronApplication.cs` (`RIB-023`, `VER-002`). `CMP-021` compiles C#. `APP-003` is the
+dispatcher every operation already passes through.
+
+**None of those has a read operation to send**, so `track` cannot reach them and no amount of
+model would help. They need a different kind of proof — one that observes them doing their job
+during somebody else's operation — and that does not exist yet. Recorded rather than left looking
+unproved by neglect.
+
+`LNK-015` *is* reachable (`list_links`) and *is* thin: both models hold **zero Revit links**, so
+only `hostElements` moves. Note this is not the reason sometimes given — the linked **CAD** files
+belong to `IMP-019`, not to `LNK-015`. Proving `LNK-015` needs a model with a real Revit link in
+it.
+
+### T1 and T2 were fixed the same day, and T3 stands
+
+**Read this rather than the two rows above**, which say the changes were not made. They were, an hour
+later and on the owner's say-so. `tools/prove-agent.py` now does both:
+
+- **`compare()` descends one level into a list** — its length, then each item's own numbers *and
+  names*, first `LIST_ITEMS = 5` items.
+- **`track --arg KEY=VALUE`**, repeatable, passed through to `op_args`. The **same** arguments go to
+  both models, deliberately: varying them would let a different answer come from a different input
+  rather than a different model, which is the one thing tracking exists to rule out.
+
+Four agents were then proved and signed that could not be before:
+
+| Agent | What moved, once the tool could see it |
+|---|---|
+| `IMP-019` | `linkedCad[0].name: box.dwg -> Project1 - Section - Section 1.dwg` |
+| `LVL-027` | `levels[0].elements: 8 -> 29`, `levels[1].elements: 8 -> 7`, `onNoLevel: 3513 -> 3558` |
+| `PAR-011` | `distinctParameters: 95 -> 90`, `listed: 95 -> 90`, `parameters[]: 95 -> 90` (`--arg category=Ducts`) |
+| `SEL-008` | `selected: 18 -> 8` (`--arg category=Ducts`) |
+
+**The guard that mattered was checked first:** `compare(A, A)` — the same reply against itself —
+still returns nothing moved. A change that widens what counts as movement has to be shown not to
+manufacture it.
+
+**Ducts were chosen over pipes on purpose.** `category=Pipes` gave `0 -> 2` elements and `0 -> 99`
+parameters, and a zero is the weaker half of a pair: an agent that failed to read would also return
+zero. `Ducts` gives **18 against 8** and **95 against 90** — both sides non-zero and different,
+which no fallback and no constant can produce.
+
+#### One honest side effect: the thin-tracking flag now over-fires on list-heavy replies
+
+`TRACKING IS THIN` compares how many things moved against how many held. Descending into lists adds
+every matching item field to the *held* side, and on a parameter report those are **Revit's own
+parameter names, identical by nature**. `PAR-011` reads *3 moved, 44 held* and is flagged thin,
+while its real argument — 95 distinct parameters against 90, both non-zero — is strong.
+
+**No threshold was invented to paper over it.** The gap text already says the reader judges, and
+that is what happened here. Recorded so the next person reading `PAR-011`'s proof knows the flag is
+inflated rather than the evidence weak.
+
+#### `CAT-009` is genuinely not trackable, and that is the correct answer
+
+`select_by_category` returns `categories: 1` in **both** models, and it should. `CAT-009` maps a BIM
+word to a Revit category — *"Ducts"* to `OST_DuctCurves` — and that answer does not depend on which
+model is open, because it is a lookup rather than a reading. Tracking cannot prove it and proving it
+by tracking would mean nothing. It needs a different kind of test: a table of words against the
+categories they must resolve to.
+
+`DOC-004` is the same shape from the other end. It chooses *which document*, and `document` is
+excluded from `compare()` as the input. Every one of the fifteen signed proofs names the right model,
+which is real evidence that it works — but it is evidence sitting in fifteen other agents' files,
+not a proof of its own.
+
+---
+
+## Group I — the twenty-three that were tried and never passed, sorted by WHY
+
+Read 2026-09-19, from the run records in `brain/proof-drafts/runs/` rather than by re-running
+anything. **71 fragments are DRAFT. 44 cannot be arranged at all** (`generate-jobs.py`, measured over
+all 71 rather than only the never-tried ones). **27 can be, and 23 of those already have a run
+record** — they were put in front of a real model between 9 and 17 September and no signature
+followed. Nobody had been back to ask why.
+
+The answer is not one answer. It is three, and only the first is proving work.
+
+### I1 — the arrangement was wrong, and that is all (6)
+
+Each of these ran, or failed to run, for a reason that is fixed by typing different values. **Every
+one still has to be re-run before anyone believes it**; what follows is a diagnosis, not a result.
+
+| Fragment | What the record says | What to change |
+|---|---|---|
+| `auto-size-pipe` | positive `setup_failed - the arrangement could not be re-made`; the **negative ran fine** and did real work (`noFlow 14`, `refused 8`) | Only the positive selection broke. The model it needs is `Snowdon-scratch_ajmal.al` — it has the pipes; Project1 has none |
+| `set-wall-constraints` | positive `rehosted: 4`, negative `notAWall: 3, rehosted: 0` — **both legs already look right** | Nothing. This is the one STALE signature: it passed, then the code changed under it. It needs re-proving, not re-arranging |
+| `set-design-option` | `available: 0, wasPossible: false` on both legs | It ran against a model with **no design options**. `Project1 work_ajmal.al` has **1** |
+| `create-workset-3d-views` | both legs `created: 2` — identical | The negative was not a different case. It needs a value-driven one |
+| `place-accessory-on-run` | `bad_request_value: No family type called "Damper"` | Name a family type the model actually carries |
+| `switch-active-project` | `switched: false`, *"Revit refused to change to the view"* | The view name was wrong. Note this one changes which project is in front, so it wants care rather than a batch |
+
+### I2 — the model has not got it (13)
+
+**Not failures, and re-running them changes nothing.** Each needs content no open model carries, and
+`fragment-proving` rule 2 is exactly this: a fragment asked for what the model has not got returns
+POSITIVE EMPTY and wears the blame.
+
+| Needs | Fragments |
+|---|---|
+| **An IMPORTED CAD** — a link is not an import, and both said so in the same words: `notAnImport: 307`, `importsRead: 0` | `convert-cad-to-directshape`, `extract-cad-curves` |
+| **Rooms, and doors between them** | `report-door-room-links`, `center-room-tags` (room tags) |
+| **Tags or dimensions** — `notMovable: 15`, *"0 by its tag head, 0 by its location point"* | `move-annotation` |
+| **Assemblies** — `notAnAssembly: 22` | `create-assembly-views` |
+| **A named DWG export setup** — *"name the DWG export setup; Revit's defaults..."* | `export-views-to-dwg` |
+| **The flow-arrow family loaded** — `No symbol 'M_Air Flow Arrow : Standard' is loaded` | `place-flow-arrows` |
+| **An area scheme with areas** — `areas: 0, placedCount: 0` | `report-areas` |
+| **Electrical circuits** — `panels: 0, elements: 0` | `select-by-electrical-circuit` |
+| **Openings** — `found: 0` across all five opening categories | `select-openings` |
+| **MEP runs that can take an offset** — `set: 0, withoutOffsets: 0` | `set-mep-justification` |
+| **A section mark placed on a sheet** — `markers: 4` but `hidden: 0, shown: 0` | `set-section-mark-visibility` |
+
+**ONE MODEL COULD ANSWER MOST OF THIS.** Rooms with doors, a section on a sheet, an imported DWG
+beside the linked one, and an area scheme would clear **six** of the thirteen at a stroke. That is a
+request to the owner, not a job for a batch.
+
+### I3 — blocked on something being built (4)
+
+| Fragment | What stops it |
+|---|---|
+| `find-clashes` | `'against' is an id, and Heron resolves one by NAMING the thing it belongs to. There is no rule for this name yet` |
+| `place-rooms` | `levelId`, `phaseId`, `planViewId` are all `ElementId` |
+| `set-global-parameter` | `"ParameterValue" is not one of them yet` — D-54 takes a view, a level, a category, a name, a number and true/false |
+| `place-structural-family` | Not an input problem — [row 128](FRAGMENT-ISSUES.md) of FRAGMENT-ISSUES. It placed a column when told `structuralType=Beam`, and which of two causes that is has not been settled |
+
+The first three are the same shape as the 44, and **PR #190 proposed rules for six such shapes on the
+same day** — proposals only, no code. If those land, this group shrinks.
+
+### What this changes about the count
+
+**The honest figure for "worth re-running" is 6, not 23 and not 41.** Thirteen are waiting on a
+model and four on a decision. Saying 23 without the split would send somebody to re-run thirteen
+fragments that cannot pass and to blame them when they do not.
+
+---
+
+## Group U — a review found six things in Group T's own work, and all six held
+
+Codex reviewed [PR #189](https://github.com/Ajmalpshaik/Heron-AI/pull/189) on 2026-09-19 and left six
+comments. **Every one was checked against the code and every one was right.** Four are fixed below;
+two are open and one of those is the reason two signatures were withdrawn the same day.
+
+Recorded here rather than only in the PR because a review comment disappears into a merged branch and
+a register does not.
+
+| ID | What it found | State |
+|---|---|---|
+| ~~**U1**~~ | `elements` sat in the unconditional envelope skip, so a **list** by that name was never traversed - and `read_parameters` and `list_groups` both return their per-element answer under exactly that name. Two models with equal totals and different contents compared as *nothing moved*. A skip inherited from the number-only behaviour, silently cancelling the list traversal added the same day | **FIXED.** `SCALAR_ONLY_SKIP` - skipped where it is the scalar total, compared where it is a list. Both cases tested, and the same-reply-twice guard re-checked |
+| ~~**U2**~~ | `track --arg` made the arguments part of the test and the draft recorded only `operation`, so `PAR-011` and `SEL-008` never said `category=Ducts` was supplied. Not reproducible, and a later run with a different category would be indistinguishable | **FIXED.** The draft carries an `arguments:` line |
+| ~~**U3**~~ | Four register sections still read **Never run** for agents that had been tracked and signed hours earlier | **FIXED.** `PHS-032`, `SYS-030`, `PAR-011`, `GRP-033` corrected - and corrected *without* closing their detailed cases, which tracking does not touch. `LNK-015` still reads Never run, correctly |
+| ~~**U4**~~ | Row 118 was claimed twice - by this branch and by [PR #191](https://github.com/Ajmalpshaik/Heron-AI/pull/191) the same day | **FIXED** in the merge. Theirs keeps 118-125, mine is **126** |
+| ~~**U5**~~ | **`PAR-011` and `SEL-008` DO have an empty case, and their signed proofs said no input could produce one.** `category=Pipes` returned `elements 0, distinctParameters 0` on session 20472 - measured in the very session that signed them. So D-53 tracking is not the right substitute: D-30's real negative leg is possible and owed | **FIXED the same day.** Both were withdrawn, then re-proved properly with the new `vary` mode and re-signed. `read_parameters` across `Ducts / Pipes / Air Terminals` on session 36908 returned **8 elements and 90 parameters / 2 and 99 / 0 and 0** - three inputs, three distinct answers, and **`Air Terminals` is a real empty case**. D-30's negative leg is now RUN and recorded rather than substituted, and the review was right that it was one argument away the whole time |
+| **U6** | **Nine agent proofs were signed on TWO models. The repository's own gate refuses two for a fragment**, in these words: *"the tracking set has only 2 row(s). D-53 asks for the answer to follow the input across SEVERAL different inputs; two cannot show that"* ([`brain/heron_validate.py`](../brain/heron_validate.py)) | **HALF FIXED, and the other half is bigger than it looked.** `prove-agent.py vary` now runs one agent across several values of ONE ARGUMENT on ONE model and **refuses fewer than three**, the same number the fragment gate enforces. That settles every argument-driven agent and needs no second Revit. It cannot settle an agent that reads the WHOLE MODEL - for those a third input is a third model. **THIRTEEN proofs are in that position, not the seven first counted:** the six signed before 2026-09-19 used the same two sessions, 36860 and 71340. Each now carries the caveat in its own `gaps`, recorded rather than withdrawn - the evidence that the answer moved is real, and it is thinner than this library's own standard |
+
+**U6 is the one that matters most and it is not a bug in anybody's code.** It is one decision, D-53,
+implemented twice at different strengths, and nothing compares the two. The fragment path enforces
+three rows in code; the agent path never had a threshold at all because the tool's whole shape is
+two-models-at-once.
+
+**A third input need not be a third model.** For an argument-driven agent it can be a third
+**argument** - `category=Ducts`, `Duct Fittings`, `Pipes` - which is closer to what D-53 asks
+(*the answer follows the input*) than a third file would be. That is a change to `track`, not a
+request for another Revit.

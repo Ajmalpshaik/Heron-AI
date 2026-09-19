@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -49,35 +49,24 @@ contract:
       type: bool
 
 proof:
-  date: '2026-09-13'
+  date: '2026-09-19'
   by: Ajmal PS
-  model: test projject (3,509 elements), Revit 2024, session 40932
+  model: test projject (3,594 elements), Revit 2024, session 36908
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-in-region, set-selection with this phase's own values - run inside a transaction,
-    and Revit reported the transaction group ROLLED BACK afterwards. returned isolated 3,
-    viewRefused false. inputs came view as given; elements from the selection (3). on test
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned isolated 24,
+    viewRefused false. inputs came view as given; elements from the selection (24). on test
     projject
-  negative_case: run with minMm=-2000,23000,0, maxMm=14000,32000,4000, exact=false, categories=Ducts,
-    view=HERON DUCT SCHEDULE instead - chosen because it should not contain what this fragment
-    reports - the arrangement was re-made first by running select-in-region, set-selection
-    with this phase's own values - run inside a transaction, and Revit reported the transaction
-    group ROLLED BACK afterwards. returned isolated 0, viewRefused true. inputs came view
-    as given; elements from the selection (3). on test projject
+  negative_case: run with categoryName=Walls, inViewOnly=1 - Plumbing, view=HERON DUCT SCHEDULE
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-by-category-name, set-selection with this phase's
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned isolated 0, viewRefused true. inputs came view as given; elements
+    from the selection (24). on test projject
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  caveat: >-
-    THE NEGATIVE IS A SCHEDULE, THE FIRST VIEW TYPE FOUND THAT ACTUALLY REFUSES.
-    FRAGMENT-ISSUES rows 20 and 24 record that a ViewSheet does NOT: it answers
-    CanUseTemporaryVisibilityModes with yes and reports isolated 9 for elements that are not on
-    it. A ViewSchedule answers no - isolated 0, viewRefused true - so the refusal this fragment
-    declares can finally be made to fire. THE POSITIVE USES '{3D}' RATHER THAN A PLAN, and that
-    matters: the plan views here sit on phase Existing while the ducts were built in New
-    Construction, so a plan answers isolated 3 for elements it was not showing anyway. Counted
-    before choosing - 6 ducts visible in '{3D}', 0 in '1 - Mech', '2 - Mech' and '1 - Ceiling
-    Mech'.
-  fingerprint: ec3faf82971bc5c3
-
+  fingerprint: c36964d2fc56d010
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

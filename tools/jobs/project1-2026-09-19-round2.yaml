@@ -1,0 +1,113 @@
+# Round two, 2026-09-19 - the four that did not pass the first batch, re-arranged.
+#
+#     python tools/batch-prove.py tools/jobs/project1-2026-09-19-round2.yaml --dry-run --session 20472
+#     python tools/batch-prove.py tools/jobs/project1-2026-09-19-round2.yaml --session 20472
+#
+# THREE OF THE FOUR WERE MY ARRANGEMENT, NOT THE FRAGMENT. Each was diagnosed
+# from the run record the first batch wrote, not guessed at:
+#
+#   find-degenerate-lines    NEG NOT EMPTY - the negative returned
+#                            `shortestMm 2000.00000000002`. It was RIGHT to:
+#                            that is the shortest of the 18 ducts SCANNED, not
+#                            a line found under the threshold, and it is
+#                            non-zero whatever the fragment does. Fixed in the
+#                            fragment's own contract as `role: accounting`
+#                            rather than papered over with `expect:` here -
+#                            a contract fix every later run inherits.
+#                            Re-run unchanged to confirm.
+#
+#   move-elements-to-point   POSITIVE EMPTY - and the run record says why in
+#                            one word: `noLocationPoint: 9`. It moves an
+#                            element by its LOCATION POINT, and a duct is a
+#                            LocationCurve. Text notes were no better -
+#                            `noLocationPoint: 15`. Duct FITTINGS are family
+#                            instances and do have one, so the legs swap to
+#                            fittings against ducts: same view, same model,
+#                            and the ONLY difference between them is the
+#                            thing the fragment cares about.
+#
+#   place-structural-family  NO NEGATIVE - `points: ""` was refused with
+#                            `bad_request_value` before the fragment ran, so
+#                            the second leg never happened. The refusal is
+#                            good behaviour and the wrong tool for a negative.
+#                            Trying instead a real point with a structural
+#                            type the family cannot take.
+#
+# THE FOURTH IS NOT HERE AND IS NOT A FAILURE - see the foot of this file.
+
+model: Project1 work_ajmal.al, Revit 2024, 3,529 elements
+
+defaults:
+  in: Project1 work_ajmal.al
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Ducts
+    inViewOnly: "1 - Mech"
+  negative-set:
+    categoryName: Text Notes
+    inViewOnly: "Legend 1"
+
+jobs:
+
+  # UNCHANGED FROM ROUND ONE ON PURPOSE. The job was already right; what
+  # changed is the fragment's declaration of what `shortestMm` is. Re-running
+  # it as written is the check that the contract fix was the whole story.
+  - fragment: find-degenerate-lines
+    setup: []
+    set:
+      categories:    "Ducts"
+      shorterThanMm: 100000
+    negative-set:
+      categories:    "Ducts"
+      shorterThanMm: 0.001
+
+  # 8 duct fittings against 9 ducts, both in "1 - Mech", both real, both
+  # non-empty. A fitting is a FamilyInstance with a location POINT; a duct is
+  # a LocationCurve and has none. That is the whole distinction this fragment
+  # turns on, so it is the whole distinction between the two legs.
+  - fragment: move-elements-to-point
+    write: true
+    set:
+      categoryName: "Duct Fittings"
+      inViewOnly: "1 - Mech"
+      target: "0,0,0"
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "1 - Mech"
+      target: "0,0,0"
+
+  # "305x305x97UC" is a COLUMN. Asking it to go in as a Beam is a real request
+  # with a real symbol and a real level that Revit should decline to place -
+  # nothing refused up front, and nothing created. If it places one anyway it
+  # is ignoring structuralType, which is a finding worth having.
+  - fragment: place-structural-family
+    setup: []
+    write: true
+    set:
+      symbol:         "305x305x97UC"
+      points:         "0,0,0"
+      level:          "Level 1"
+      structuralType: "Column"
+    negative-set:
+      symbol:         "305x305x97UC"
+      points:         "0,0,0"
+      level:          "Level 1"
+      structuralType: "Beam"
+    expect: placed
+
+# ==========================================================================
+# move-annotation IS NOT HERE, and the reason is the model rather than the
+# fragment.
+#
+# It moves "a tag, a dimension, a text note". Session 20472 holds ZERO tags
+# and ZERO dimensions, and its 15 text notes all came back `notMovable: 15`
+# with the finding "0 moved - 0 by its tag head, 0 by its location point".
+# A TextNote is positioned by `Coord`, which is neither of the two handles
+# this fragment reaches for, so there is nothing in this model it can move.
+#
+# Rule 2: a fragment asked for what the model has not got returns POSITIVE
+# EMPTY and wears the blame for it. Session 36908 ("test projject") has 6
+# dimensions and is the place to prove this one - a separate arrangement
+# against a separate model, not a line in this file.

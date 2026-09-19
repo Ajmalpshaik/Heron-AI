@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -85,42 +85,29 @@ contract:
       type: IList<ElementId>
 
 proof:
-  date: '2026-09-13'
+  date: '2026-09-19'
   by: Ajmal PS
-  model: test projject (3,432 elements), Revit 2024, session 40932
+  model: test projject (3,594 elements), Revit 2024, session 36908
   positive_case: run as it would normally be run - the arrangement was re-made first by running
-    select-in-region, set-selection with this phase's own values - run inside a transaction,
+    select-by-category-name, set-selection with this phase's own values - run inside a transaction,
     and Revit reported the transaction group ROLLED BACK afterwards. returned allowUnconnectedToBecomeBound
     true, elevationChanged 0 item(s), newBase Level, newTop Level, notAWall 0 item(s), refused
-    0 item(s), rehosted 4, unconnectedTop 0 item(s), wantBase true, wantTop true. inputs came
-    elements from the selection (4); baseLevelId as given; topLevelId as given; allowUnconnectedToBecomeBound
+    0 item(s), rehosted 24, unconnectedTop 0 item(s), wantBase true, wantTop true. inputs
+    came elements from the selection (24); baseLevelId as given; topLevelId as given; allowUnconnectedToBecomeBound
     as given. on test projject
-  negative_case: run with minMm=-2000,23000,0, maxMm=14000,32000,4000, exact=false, categories=Ducts,
-    baseLevelId=Level 1, topLevelId=Level 2, allowUnconnectedToBecomeBound=true instead -
-    chosen because it should not contain what this fragment reports - the arrangement was
-    re-made first by running select-in-region, set-selection with this phase's own values
-    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned allowUnconnectedToBecomeBound true, elevationChanged 0 item(s), newBase Level,
-    newTop Level, notAWall 3 item(s) [925780, 925782, 925784], refused 0 item(s), rehosted
-    0, unconnectedTop 0 item(s), wantBase true, wantTop true. inputs came elements from the
-    selection (3); baseLevelId as given; topLevelId as given; allowUnconnectedToBecomeBound
-    as given. on test projject
+  negative_case: run with allowUnconnectedToBecomeBound=True, baseLevelId=Level 1, categoryName=Ducts,
+    inViewOnly=HERON ROOM TEST, topLevelId=Level 2 instead - chosen because it should not
+    contain what this fragment reports - the arrangement was re-made first by running select-by-category-name,
+    set-selection with this phase's own values - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned allowUnconnectedToBecomeBound true,
+    elevationChanged 0 item(s), newBase Level, newTop Level, notAWall 8 item(s) [925780, 925782,
+    925784, ...], refused 0 item(s), rehosted 0, unconnectedTop 0 item(s), wantBase true,
+    wantTop true. inputs came elements from the selection (8); baseLevelId as given; topLevelId
+    as given; allowUnconnectedToBecomeBound as given. on test projject
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  caveat: >-
-    THE CODE WAS FIXED TO MAKE THIS PROOF POSSIBLE, and the broken version is what the earlier
-    run measured. The top block read WALL_TOP_OFFSET and tested IsReadOnly BEFORE setting
-    WALL_HEIGHT_TYPE - and on a wall with an unconnected top Revit greys that offset out, so
-    every unconnected wall was refused and allowUnconnectedToBecomeBound could never do the one
-    thing it exists for. Measured first: rehosted 0, refused 4. The constraint is now set
-    before the offset is read. BOTH FLAG SETTINGS WERE SEEN. With it false the same four walls
-    came back rehosted 4, refused 0, unconnectedTop 4 - the top correctly left alone, which is
-    the leg tests/cases.yaml declares as its negative. With it true, rehosted 4 and
-    unconnectedTop 0. elevationChanged was empty in every run, so the fragment's own promise -
-    nothing moves - held throughout.
-  fingerprint: 6d6417ec0c6dbef3
-
+  fingerprint: 3bc73bcc66df4e88
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

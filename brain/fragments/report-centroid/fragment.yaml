@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -57,6 +57,26 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-19'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,529 elements), Revit 2024, session 20472
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values. returned centroidOf
+    9 entry(ies), combined XYZ, findings 1 item(s) [9 centroid(s) computed, 0 element(s) have
+    no solid geometry ...], noSolid 0 item(s). inputs came elements from the selection (9).
+    on Project1 work_ajmal.al
+  negative_case: run with categoryName=Text Notes, inViewOnly=Legend 1 instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running select-by-category-name, set-selection with this phase's own values. returned
+    centroidOf 0 entry(ies), combined (null), findings 1 item(s) [0 centroid(s) computed,
+    15 element(s) have no solid geometry...], noSolid 15 item(s) [926071, 926073, 926074,
+    ...]. inputs came elements from the selection (15). on Project1 work_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 5c7537a420e0cc2d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

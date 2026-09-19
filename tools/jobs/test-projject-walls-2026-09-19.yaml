@@ -1,0 +1,76 @@
+# The one STALE signature in the library, re-proved. 2026-09-19.
+#
+#     python tools/batch-prove.py tools/jobs/test-projject-walls-2026-09-19.yaml --dry-run --session 36908
+#     python tools/batch-prove.py tools/jobs/test-projject-walls-2026-09-19.yaml --session 36908
+#
+# --session 36908 IS NOT OPTIONAL. Two Revits are connected and the OTHER one
+# (20472, Project1 work_ajmal.al) belongs to a different chat. Without this the
+# target is whichever discovery file sorts first, and this is a MODIFY batch.
+#
+# WHY THIS FRAGMENT AND WHY NOW. `set-wall-constraints` is the single STALE row
+# in `check-signatures.py` - signed by Ajmal PS on 2026-09-13 and then the code
+# moved under it, so the recorded proof no longer describes what runs. That is
+# D-30 working rather than a fault, and re-proving it is exactly what D-30 asks.
+# It has outlived two handovers as "the one stale signature, not touched".
+#
+# WHAT THE MODEL HOLDS - read back 2026-09-19, session 36908, before any value
+# below was typed:
+#
+#   Walls    24 in "1 - Plumbing", 24 in "HERON ROOM TEST", 28 in "{3D}"
+#   Ducts     8 in "HERON ROOM TEST"
+#   Levels    2 - Level 1 and Level 2
+#   Rooms, Doors, Room Tags, Dimensions   0 in every view that can be named
+#
+# THE OLD PROOF USED A REGION and this one does not. `select-in-region` with
+# minMm/maxMm found 4 walls on 2026-09-13; the coordinates that framed them are
+# a fact about where somebody was standing in that model on that day, and they
+# are not re-derivable now. A category in a named view is reproducible by
+# anybody holding the file, which is what a proof is for.
+
+model: test projject, Revit 2024, 3,594 elements
+
+defaults:
+  in: test projject
+
+  # risk: MODIFY. `validate` never sends `apply`, so both phases run for real
+  # inside a TransactionGroup and are rolled back (D-55). Nothing is kept.
+  write: true
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  # 24 walls. Larger than rule 1 would like, and accepted deliberately: this is
+  # a parameter write per wall, not geometry, and the timeout that rule exists
+  # for was 307 ducts being re-sized. Every view in this model carries the same
+  # 24 or 28, so there is no smaller honest selection to take.
+  set:
+    categoryName: Walls
+    inViewOnly: "1 - Plumbing"
+
+  # A DIFFERENT SELECTION, NOT A CLEARED ONE. 8 real ducts, which this fragment
+  # should report as `notAWall` and rehost none of - the shape the 2026-09-13
+  # record already showed (notAWall 3, rehosted 0) from its own region negative.
+  negative-set:
+    categoryName: Ducts
+    inViewOnly: "HERON ROOM TEST"
+
+jobs:
+
+  # baseLevelId and topLevelId are declared ElementId, and D-54 resolves a
+  # LEVEL BY NAME into one - proved by the 2026-09-13 run, which passed exactly
+  # these two words and came back `newBase Level, newTop Level, rehosted 4`.
+  # This model has only Level 1 and Level 2, so there is no ambiguity to trip on.
+  - fragment: set-wall-constraints
+    set:
+      baseLevelId: "Level 1"
+      topLevelId: "Level 2"
+      allowUnconnectedToBecomeBound: true
+    negative-set:
+      baseLevelId: "Level 1"
+      topLevelId: "Level 2"
+      allowUnconnectedToBecomeBound: true
+    # `rehosted` is the work. Everything else it declares is a description of
+    # what it looked at - notAWall is non-zero in the NEGATIVE by design, so
+    # judging on "any declared result moved off zero" would pass the negative.
+    expect: rehosted
