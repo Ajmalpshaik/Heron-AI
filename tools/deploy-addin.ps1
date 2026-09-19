@@ -27,21 +27,61 @@
 .PARAMETER Remove
     Uninstall instead of installing.
 
+.PARAMETER Rollback
+    Put back the install this script last replaced, and stop.
+
 .EXAMPLE
     .\tools\deploy-addin.ps1 -RevitVersion 2024
 
 .EXAMPLE
     .\tools\deploy-addin.ps1 -RevitVersion 2024 -Remove
 
+.EXAMPLE
+    .\tools\deploy-addin.ps1 -RevitVersion 2024 -Rollback
+
 .NOTES
     Revit must be closed. Assemblies loaded into Revit cannot be unloaded,
     so an update always needs a restart (docs/07 section 7).
+
+    ROLLBACK, AND WHY IT IS HERE RATHER THAN IN heron-backup.py
+    ------------------------------------------------------------
+    docs/07 section 7 rule 5 says rollback must be TESTED, not merely
+    implemented, and brain/heron_update.py enforces that: a release without a
+    recorded `rollback_tested` is REFUSED with ROLLBACK_NOT_TESTED. Until
+    2026-09-19 nothing in this repository could perform the test it demands.
+
+    tools/heron-backup.py covers the DATA class - `%APPDATA%\Heron`, the
+    audit log, the settings and the knowledge. It has never touched the
+    add-in, and the add-in is the PRODUCT class. So the one thing an update
+    replaces was the one thing with no way back: this script overwrote the
+    previous install with Copy-Item -Force and kept nothing.
+
+    That is what the block below fixes. Before anything is overwritten, the
+    install being replaced is copied aside, with a manifest recording what it
+    was and when. -Rollback puts it back.
+
+    WHERE THE COPY LIVES, and the honest limit of it. It goes in
+
+        %LOCALAPPDATA%\Heron\install-backup\<version>\
+
+    which is Heron's own folder rather than Autodesk's, so nothing here ever
+    writes a stray file into the folder Revit scans for manifests. It is
+    machine-local and NOT roamed: losing the profile or the disk loses it,
+    and the way back from that is to build and deploy again from source.
+    Calling it a backup of the product would overstate it - the product's
+    real home is git. It is the previous install, kept so that an update
+    which turns out badly has somewhere to go at the moment it is noticed.
+
+    ONE deep only, deliberately. Two would need a policy for which to restore
+    and a way to say so, and an update that has gone wrong twice running is
+    not a case for a longer history - it is a case for rebuilding from source.
 #>
 [CmdletBinding()]
 param(
     [string] $RevitVersion = "2024",
     [string] $Configuration = "Debug",
-    [switch] $Remove
+    [switch] $Remove,
+    [switch] $Rollback
 )
 
 $ErrorActionPreference = "Stop"
@@ -54,21 +94,105 @@ $target   = Join-Path $env:APPDATA "Autodesk\Revit\Addins\$RevitVersion"
 $addinDir = Join-Path $target "Heron"
 $manifest = Join-Path $target "Heron.addin"
 
-if ($Remove) {
-    if (Test-Path $manifest) { Remove-Item $manifest -Force;               Write-Host "Removed $manifest" }
-    if (Test-Path $addinDir) { Remove-Item $addinDir -Recurse -Force;      Write-Host "Removed $addinDir" }
-    Write-Host ""
-    Write-Host "Heron uninstalled for Revit $RevitVersion. Restart Revit to unload it."
-    return
-}
+# Heron's own folder, never Autodesk's - see the -Rollback note in the header.
+$backupDir      = Join-Path $env:LOCALAPPDATA "Heron\install-backup\$RevitVersion"
+$backupAddinDir = Join-Path $backupDir "Heron"
+$backupManifest = Join-Path $backupDir "Heron.addin"
+$backupRecord   = Join-Path $backupDir "replaced.json"
 
 # Revit holds a lock on loaded assemblies; deploying under it silently fails.
 # Checked fresh here rather than trusting a caller: a build takes long enough
 # that Revit can be opened in between, and this is the last gate before files
 # are replaced.
+#
+# This now guards REMOVE AND ROLLBACK TOO, and did not before 2026-09-19.
+# Remove-Item on an assembly Revit has loaded fails with a file-in-use error
+# halfway through the folder, which leaves a partial install behind and reads
+# as "the uninstall went wrong" rather than "close Revit first". Every path
+# below replaces or deletes the same locked files, so they all want the same
+# gate and the same sentence.
 $blocked = Get-RevitBlockReason -RevitVersion $RevitVersion -Running (Get-RunningRevit)
 if ($blocked) {
-    throw "Cannot install for Revit ${RevitVersion}: $blocked. Close it and run this again - a loaded assembly cannot be replaced, so installing now would half-update and look like it worked."
+    $verb = if ($Remove) { "uninstall" } elseif ($Rollback) { "roll back" } else { "install" }
+    throw "Cannot $verb for Revit ${RevitVersion}: $blocked. Close it and run this again - a loaded assembly cannot be replaced, so doing this now would half-finish and look like it worked."
+}
+
+function Save-PreviousInstall {
+    <#
+    .SYNOPSIS
+        Copy the install about to be replaced, so -Rollback has somewhere to
+        go. Silent and cheap when there is nothing installed yet.
+    #>
+    if (-not (Test-Path $addinDir)) { return }
+
+    if (Test-Path $backupDir) { Remove-Item $backupDir -Recurse -Force }
+    New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
+
+    Copy-Item $addinDir -Destination $backupAddinDir -Recurse -Force
+    if (Test-Path $manifest) { Copy-Item $manifest -Destination $backupManifest -Force }
+
+    # What it was, so a rollback can say what it is putting back rather than
+    # just doing it. A restore nobody can read back is the same evidence as
+    # no restore - the shape brain/heron_update.py already refuses.
+    $replacedDll = Join-Path $backupAddinDir "Heron.Revit.Addin.dll"
+    $record = [ordered]@{
+        revitVersion = $RevitVersion
+        replacedAt   = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+        assembly     = if (Test-Path $replacedDll) {
+                           (Get-Item $replacedDll).VersionInfo.FileVersion
+                       } else { $null }
+        sha256       = if (Test-Path $replacedDll) {
+                           (Get-FileHash $replacedDll -Algorithm SHA256).Hash
+                       } else { $null }
+        fileCount    = @(Get-ChildItem $backupAddinDir -Recurse -File).Count
+    }
+    $record | ConvertTo-Json | Set-Content -Path $backupRecord -Encoding UTF8
+
+    Write-Host "  kept the install being replaced in $backupDir"
+}
+
+if ($Rollback) {
+    if (-not (Test-Path $backupAddinDir)) {
+        throw "Nothing to roll back to for Revit $RevitVersion. $backupDir holds no previous install - this script keeps one only from the moment it has replaced something, and it is machine-local, so a new profile or a cleared cache starts empty. Build and deploy from source instead:`n  dotnet build revit\Heron.Revit.Addin\Heron.Revit.Addin.csproj -c $Configuration -p:RevitVersion=$RevitVersion`n  .\tools\deploy-addin.ps1 -RevitVersion $RevitVersion"
+    }
+
+    if (Test-Path $backupRecord) {
+        $was = Get-Content $backupRecord -Raw | ConvertFrom-Json
+        Write-Host "Rolling back Revit $RevitVersion to the install replaced at $($was.replacedAt)"
+        Write-Host "  assembly $($was.assembly), $($was.fileCount) file(s)"
+    }
+
+    if (Test-Path $addinDir) { Remove-Item $addinDir -Recurse -Force }
+    Copy-Item $backupAddinDir -Destination $addinDir -Recurse -Force
+    if (Test-Path $backupManifest) { Copy-Item $backupManifest -Destination $manifest -Force }
+
+    # Verify what was WRITTEN, for the same reason the deploy path does.
+    $rolledDll = Join-Path $addinDir "Heron.Revit.Addin.dll"
+    if (-not (Test-Path $rolledDll)) {
+        throw "Rollback finished but $rolledDll is not there. Do not start Revit against this folder."
+    }
+    if (-not (Test-Path $manifest)) {
+        throw "Rollback finished but $manifest is not there, so Revit would not find Heron at all."
+    }
+
+    Write-Host ""
+    Write-Host "Rolled back to $addinDir"
+    Write-Host "Restart Revit $RevitVersion - the version in memory is still the one you just left."
+    return
+}
+
+if ($Remove) {
+    # Backed up first, so an uninstall is recoverable too. An uninstall is
+    # the one action a user takes when something is already going wrong, and
+    # it is the worst moment to discover there is no way back.
+    Save-PreviousInstall
+
+    if (Test-Path $manifest) { Remove-Item $manifest -Force;               Write-Host "Removed $manifest" }
+    if (Test-Path $addinDir) { Remove-Item $addinDir -Recurse -Force;      Write-Host "Removed $addinDir" }
+    Write-Host ""
+    Write-Host "Heron uninstalled for Revit $RevitVersion. Restart Revit to unload it."
+    Write-Host "Put it back with:  .\tools\deploy-addin.ps1 -RevitVersion $RevitVersion -Rollback"
+    return
 }
 
 # Find the build output rather than assuming its shape. Directory.Build.props
@@ -113,6 +237,12 @@ if ($isDotNet) {
         throw "The build in $buildOut targets $runtimeName, but Revit $RevitVersion needs $wantedRuntime. Rebuild first:`n  dotnet build revit\Heron.Revit.Addin\Heron.Revit.Addin.csproj -c $Configuration -p:RevitVersion=$RevitVersion"
     }
 }
+
+# The last moment at which the install being replaced still exists. Every
+# check above has passed by now, so this copies only when a deploy is really
+# about to happen - a run that threw on the wrong build flavour leaves the
+# previous rollback point intact rather than spending it on a no-op.
+Save-PreviousInstall
 
 New-Item -ItemType Directory -Force -Path $addinDir | Out-Null
 
