@@ -37,6 +37,7 @@ WHAT IT DOES NOT PROVE
 
 import io
 import os
+import re
 import sys
 import tempfile
 
@@ -312,6 +313,39 @@ def main():
                           % (plan.id, slug, name))
         check(str(doc.get("model", "")).startswith("FILL IN"),
               "%s does not name a model it has never seen" % plan.id)
+
+    print()
+    print("what the retriever said about how little it found")
+    # ROW 137: a question inside a MODIFY skill reaching an unrelated MODIFY
+    # is invisible to the risk comparison BY CONSTRUCTION. The retriever was
+    # saying "no route preferred this" in plain words the whole time, in the
+    # `note` lookup already returns, and every sweep threw it away.
+    import inspect
+    import heron_retrieve as RETRIEVE
+    # THE SEAMS ARE CLOSED BEFORE THE SEARCH. Python joins adjacent string
+    # literals, so a sentence a reader sees whole is broken across lines in
+    # the source and a literal substring search would miss it - reporting a
+    # reword that never happened, which is the loudest kind of wrong test.
+    source = re.sub(r'"\s*\n\s*"', "",
+                    inspect.getsource(RETRIEVE.Contest.sentence))
+    for tag, marker in PS.ROUTING.NOTHING_FOUND:
+        check(marker in source,
+              "heron_retrieve still writes %r - matched, never re-derived"
+              % marker)
+    check(PS.ROUTING.unsettled("") == ()
+          and PS.ROUTING.unsettled(None) == (),
+          "no note is an EMPTY answer, which is the absence of a complaint "
+          "and not a clean sweep (D-52)")
+    both = ("5 candidate(s). A COIN TOSS: the top two are 0.4 of one fusion "
+            "rank apart. The words route matched 392 fragment(s) - at least "
+            "as many as the 392 the filter left - so it ranked the library "
+            "rather than selecting from it")
+    told = PS.ROUTING.unsettled(both)
+    check(len(told) == 2,
+          "a note carrying two of the retriever's complaints reports both")
+    check(PS.ROUTING.unsettled(
+        "the winner is 3.4 rank(s) clear of the runner-up") == (),
+          "and a note carrying none reports none")
 
     print()
     print("the fingerprint block, printed by four sweeps and written once")

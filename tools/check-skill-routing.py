@@ -240,6 +240,41 @@ def words_moved(rows, utterances):
     return gone, fresh
 
 
+# WHAT THE RETRIEVER ALREADY SAID ABOUT HOW LITTLE IT FOUND, AND EVERY SWEEP
+# THREW AWAY. `heron_retrieve.Contest.sentence()` writes these clauses, and
+# `heron_brain.lookup` carries them across in `note` - so the evidence has been
+# at this seam all along and no sweep has ever read it. FRAGMENT-ISSUES row 137
+# is the cost: a question inside a MODIFY skill reaching an unrelated MODIFY is
+# invisible to the risk comparison BY CONSTRUCTION, and the retriever was
+# saying "no route preferred this" in plain words the whole time.
+#
+# THE PHRASES ARE MATCHED AND NOT RE-DERIVED. A second implementation of "was
+# this contested" would be a second opinion about the retriever's own
+# measurement. `tests/test_skill_proving.py` pins each phrase against
+# `Contest.sentence`'s source, so a reword there fails loudly and names it
+# rather than quietly turning this section off.
+NOTHING_FOUND = (
+    ("a coin toss - no route preferred the winner", "A COIN TOSS"),
+    ("the words route ranked the library rather than selecting from it",
+     "ranked the library rather than selecting from it"),
+    ("one candidate, so nothing was contested",
+     "a shortlist of one is not a ranking"),
+    ("the pool is not yet evidence, so 'both agree' means nothing",
+     "'both agree' means nothing here yet"),
+)
+
+
+def unsettled(note):
+    """The retriever's own sentences about how little it found, as short tags.
+
+    An empty tuple means it said none of them, which is NOT the same as
+    saying the answer is good - it is the absence of a complaint (D-52). A
+    note that could not be read is empty for the same reason.
+    """
+    said = note or ""
+    return tuple(tag for tag, marker in NOTHING_FOUND if marker in said)
+
+
 def fingerprint_lines(index, lead="  "):
     """The fingerprint block as lines, so four sweeps print ONE of it.
 
@@ -549,6 +584,10 @@ def main():
 
     reaches, misses, crossings = [], [], []
     view_changes, escalations, unresolved = [], [], []
+    # WHAT THE RETRIEVER SAID ABOUT ITS OWN CONFIDENCE, collected beside the
+    # five lists rather than folded into them: an unsettled answer can be in
+    # ANY of them, and a sixth bucket would make a reader choose.
+    nothing_found = []
     asked = 0
 
     for sid, srisk, said, needs in loaded:
@@ -580,6 +619,13 @@ def main():
             {"crossing": crossings, "view": view_changes,
              "escalation": escalations, "reach": reaches,
              "miss": misses}[where].append(row)
+
+            # AND WHAT THE RETRIEVER ITSELF SAID ABOUT IT. Read from the
+            # `note` it already returns, never re-derived (row 137).
+            told = unsettled(answer.get("note"))
+            if told:
+                nothing_found.append((sid, phrase, capability, risk, where,
+                                      told))
 
     print("Revit %s   skills: %d   utterances asked: %d"
           % (args.revit, len(loaded), asked))
@@ -650,6 +696,26 @@ def main():
         print("  none")
     for row in misses:
         print(show(row))
+
+    print("")
+    print("THE RETRIEVER SAID IT FOUND NOTHING, IN ITS OWN WORDS (%d) - and"
+          % len(nothing_found))
+    print("this cuts ACROSS the five lists above, which is the point. A")
+    print("crossing is decided by comparing the sentence's reach against the")
+    print("SKILL's declared risk, so a question sitting inside a MODIFY skill")
+    print("can never register as one (row 137). This does not ask about risk")
+    print("at all: it reports what `heron_retrieve.Contest` already measured")
+    print("and `lookup` already carried back in `note`, which every sweep")
+    print("including this one used to throw away.")
+    if not nothing_found:
+        print("  none - and that is the ABSENCE of a complaint, not a clean")
+        print("  sweep (D-52). The retriever says these things when it can;")
+        print("  silence is not a claim that the answers are good.")
+    for sid, phrase, capability, risk, where, told in nothing_found:
+        print("  %-18s %-40s -> %-26s %-7s (%s)"
+              % (sid, phrase[:40], capability, risk, where))
+        for tag in told:
+            print("  %-18s %s" % ("", tag))
 
     if unresolved:
         print("")
