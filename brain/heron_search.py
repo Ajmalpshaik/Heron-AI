@@ -444,7 +444,13 @@ def indexed_from(store):
         row = store.execute(
             "SELECT digest FROM index_state WHERE name = 'search_root'"
         ).fetchone()
-    except sqlite3.OperationalError:
+    except sqlite3.OperationalError as exc:
+        # THE NORMAL CASE IS THE TABLE NOT BEING THERE YET, and only that.
+        # Anything else is a broken store, and swallowing it would answer
+        # "no tree recorded" about a store that cannot be read at all - the
+        # plausible zero D-52 exists to stop.
+        if "no such table" not in str(exc):
+            raise
         return None
     return row["digest"] if row else None
 

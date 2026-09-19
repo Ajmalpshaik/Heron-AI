@@ -29,6 +29,7 @@ import io
 import os
 import shutil
 import sys
+import sqlite3
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -76,6 +77,29 @@ def main():
             check(again == n and SEARCH.indexed_from(store) == here,
                   "a second rebuild is not refused - this names, it does not "
                   "gate")
+
+            # A MISSING TABLE AND A BROKEN STORE ARE DIFFERENT ANSWERS. The
+            # first is the normal case on a store written before this was
+            # recorded; the second must NOT read as "no tree", which is the
+            # plausible zero D-52 exists to stop and what
+            # tools/check-narrow-errors.py refuses in one line.
+            class _Raises(object):
+                def __init__(self, exc):
+                    self.exc = exc
+
+                def execute(self, *a, **k):
+                    raise self.exc
+
+            check(SEARCH.indexed_from(_Raises(
+                sqlite3.OperationalError("no such table: index_state"))) is None,
+                  "a store with no such table names no tree, quietly")
+            try:
+                SEARCH.indexed_from(_Raises(
+                    sqlite3.OperationalError("database disk image is malformed")))
+                check(False, "a broken store must not answer quietly")
+            except sqlite3.OperationalError:
+                check(True, "and a store that is broken raises rather than "
+                            "reading as no tree (D-52)")
 
             print()
             print("1. The common sentence costs one lookup")

@@ -191,7 +191,12 @@ def _index_fingerprint():
                     "SELECT digest FROM index_state WHERE name = 'search_root'"
                 ).fetchone()
                 out["built_from"] = found[0] if found else None
-            except sqlite3.OperationalError:
+            except sqlite3.OperationalError as exc:
+                # Only the table not being there yet - a store written
+                # before `heron_search.index` recorded this. Any other
+                # fault is a broken store and must not read as "no tree".
+                if "no such table" not in str(exc):
+                    raise
                 out["built_from"] = None
         finally:
             db.close()
