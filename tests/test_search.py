@@ -207,6 +207,63 @@ def main():
                   "words no fragment uses do not reach an identity match")
             check(not a.autorun,
                   "and nothing runs on a weak match - that is Step 10's job")
+            print()
+            print("8. Asking a question does not rewrite what Heron knows")
+            # ROW 136. `heron_brain._Open` calls SEARCH.index() on EVERY
+            # lookup, and this function opened with DELETE FROM identities -
+            # against a store that is ONE file for every checkout on the
+            # machine. So a question asked from one tree silently replaced what
+            # Heron knew with that tree's opinion. Measured 2026-09-19: six
+            # declared phrases confirmed present BY NAME, and gone after a
+            # single lookup from a tree that did not declare them.
+            #
+            # THE SECOND TREE IS STOOD IN FOR BY A ROW NO FRAGMENT DECLARES,
+            # because that is precisely what one looks like from in here: a
+            # phrase in the table that this tree's own files cannot account
+            # for. A second worktree cannot be built inside a test; this is the
+            # exact thing that was destroyed, and it is destroyed the same way.
+            store.execute(
+                "INSERT OR REPLACE INTO identities (phrase, fragment_id) "
+                "VALUES ('a phrase another tree declared', 'FRG-ELE-001')")
+            store.db.commit()
+
+            SEARCH.index(store)
+            check(store.execute(
+                      "SELECT fragment_id FROM identities WHERE phrase = "
+                      "'a phrase another tree declared'").fetchone() is not None,
+                  "indexing again with nothing changed leaves another tree's "
+                  "declaration STANDING - on the old code that row was gone, "
+                  "and that is row 136 in one line")
+
+            os.utime(os.path.join(ROOT, "brain", "fragments",
+                                  "set-selection", "fragment.yaml"), None)
+            SEARCH.index(store)
+            check(store.execute(
+                      "SELECT fragment_id FROM identities WHERE phrase = "
+                      "'a phrase another tree declared'").fetchone() is not None,
+                  "and touching a file without changing a character still "
+                  "changes nothing - hashed like heron_embed, not timed, "
+                  "because a checkout moves every mtime it touches")
+
+            # AND THE OTHER HALF, or this is a skip that never stops skipping.
+            # A REAL change must still rebuild, and rebuilding correctly DROPS
+            # the row above - a tree's own files replacing the table is what
+            # indexing IS. Merging is what makes a declaration durable; this
+            # only stops a reader destroying one on its way past.
+            store.execute("UPDATE fragments SET domain = domain || ' changed' "
+                          "WHERE id = 'FRG-ELE-001'")
+            store.db.commit()
+            SEARCH.index(store)
+            check(store.execute(
+                      "SELECT fragment_id FROM identities WHERE phrase = "
+                      "'a phrase another tree declared'").fetchone() is None,
+                  "a REAL change rebuilds, so the skip is a skip and not a "
+                  "stop - D-30: it has to find nothing when there is nothing")
+
+            check(SEARCH.index(store, force=True) >= 2,
+                  "and force=True rebuilds whatever the digest says, matching "
+                  "heron_embed.index(store, force=True)")
+
         finally:
             store.close()
     finally:

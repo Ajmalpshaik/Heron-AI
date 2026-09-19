@@ -165,6 +165,10 @@ def ensure_tables(store):
             phrase      TEXT PRIMARY KEY,
             fragment_id TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS index_state (
+            name   TEXT PRIMARY KEY,
+            digest TEXT NOT NULL
+        );
     """)
     # A store built before D-61 has the table without the column. ADD COLUMN is
     # the whole migration: an existing row keeps a NULL fingerprint, and
@@ -179,14 +183,108 @@ def ensure_tables(store):
     store.db.commit()
 
 
-def index(store):
+# The two separators the digest below joins with. Written as code points
+# rather than as escapes because they must never be confused with anything a
+# fragment could legitimately contain: UNIT SEPARATOR between the fields of one
+# row, RECORD SEPARATOR between rows. A comma would have made "a,b" and "a","b"
+# hash the same.
+FIELD_SEP = chr(31)
+ROW_SEP = chr(30)
+
+
+def library_digest(store):
+    """What `index()` would read, hashed without parsing any of it.
+
+    TWO HALVES, BECAUSE `index()` READS TWO SOURCES. The store supplies the
+    fragment ROWS - id, semantic identity, capability, domain - and the files
+    supply the prose, the purpose and the utterances. A digest over the files
+    alone would call a temporary store built for a test identical to the global
+    one, because both read the same folder off disk.
+
+    THE FILES ARE HASHED AS BYTES AND NEVER PARSED. `FRAG.load_all()` is the
+    expensive half of indexing - measured 2026-09-19 at 3.27s for 395 fragments
+    against 0.33s to read and hash the same files - so deciding whether to
+    parse must not itself cost a parse. Bytes rather than mtime, for the reason
+    docs/05 s7 and `heron_embed.index` both give: a git checkout moves every
+    file's mtime without changing a character.
+    """
+    digest = hashlib.blake2b(digest_size=16)
+
+    for row in store.fragments():
+        digest.update((FIELD_SEP.join([
+            row["id"] or "", row["semantic_identity"] or "",
+            row["capability"] or "", row["domain"] or ""]) + ROW_SEP)
+            .encode("utf-8"))
+
+    root = FRAG.FRAGMENTS_DIR
+    if os.path.isdir(root):
+        for name in sorted(os.listdir(root)):
+            folder = os.path.join(root, name)
+            if not os.path.isdir(folder):
+                continue
+            digest.update((name + FIELD_SEP).encode("utf-8"))
+            try:
+                with open(os.path.join(folder, "fragment.yaml"), "rb") as handle:
+                    digest.update(handle.read())
+            except (IOError, OSError):
+                # A folder with no readable fragment.yaml is a REAL state -
+                # load_all() records it as a problem and carries on - so it has
+                # to hash to something stable rather than be skipped, or such a
+                # folder appearing and disappearing would not move the digest.
+                digest.update(b"unreadable")
+            digest.update(ROW_SEP.encode("utf-8"))
+    return digest.hexdigest()
+
+
+def index(store, force=False):
     """Rebuild the searchable text from the fragments the scope holds.
 
     Reads the fragment files for their purpose - the store keeps the metadata,
     the file keeps the prose, and duplicating the prose into the store would be
     a second copy to keep in step.
+
+    IT DOES NOTHING WHEN NOTHING HAS CHANGED, AND THAT IS A CORRECTNESS FIX
+    RATHER THAN A SAVING. FRAGMENT-ISSUES row 136: `heron_brain._Open` calls
+    this on EVERY lookup, and this function opened with `DELETE FROM
+    identities`. The knowledge store is ONE file for every checkout on the
+    machine, so asking Heron a question from one worktree silently replaced
+    what Heron knew with that worktree's opinion - measured 2026-09-19, six
+    phrases confirmed present by name and gone after a single lookup from a
+    tree that did not declare them. EVERY READER WAS A WRITER.
+
+    THE SIBLING ALREADY HAD THE DISCIPLINE AND THIS HALF WAS MISSED.
+    `heron_embed.index` has been content-hashed per row since docs/05 s7, and
+    `_Open`'s own docstring says indexing is content-hashed ON BOTH ROUTES.
+    That sentence was true of the embedding and false here - which is exactly
+    why a reader reassured about COST would never go looking for a DELETE.
+
+    WHAT IT DOES NOT FIX, AND MUST NOT BE READ AS FIXING: two trees whose
+    fragments genuinely DIFFER still hash differently, so each still rebuilds
+    from its own files. A routing repair is durable only once every tree on the
+    machine declares it, which means MERGED. What this removes is the
+    destruction in the case where there was nothing to destroy - which is every
+    lookup in a shipped Heron, where there is one tree and it does not change
+    between questions.
+
+    `force=True` rebuilds regardless, matching `heron_embed.index`.
     """
     ensure_tables(store)
+
+    want = library_digest(store)
+    if not force:
+        have = store.execute(
+            "SELECT digest FROM index_state WHERE name = 'search'").fetchone()
+        # THE DIGEST ALONE IS NOT ENOUGH. It says the INPUT is unchanged, and
+        # the caller needs the OUTPUT to be there. A store whose rows were
+        # cleared by hand, or left empty by a write that did not finish,
+        # matches its own digest perfectly and answers nothing - so the skip is
+        # taken only when there is something to skip TO.
+        if have and have["digest"] == want:
+            rows = store.execute(
+                "SELECT COUNT(*) AS n FROM fragment_text").fetchone()
+            if rows and rows["n"]:
+                return rows["n"]
+
     store.execute("DELETE FROM fragment_text")
     store.execute("DELETE FROM identities")
 
@@ -243,6 +341,13 @@ def index(store):
                 "INSERT OR REPLACE INTO identities (phrase, fragment_id) "
                 "VALUES (?,?)", (key, row["id"]))
         indexed += 1
+
+    # AFTER the work and never before. A digest written first tells the next
+    # reader the table is current while this one is still filling it, and a
+    # crash in between leaves a store that skips a rebuild it never did.
+    store.execute(
+        "INSERT OR REPLACE INTO index_state (name, digest) VALUES ('search', ?)",
+        (want,))
 
     store.db.commit()
     return indexed

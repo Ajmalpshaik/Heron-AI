@@ -226,6 +226,20 @@ class _Open(object):
 
     Indexing is content-hashed on both routes, so re-indexing files that have
     not changed costs nothing and there is no staleness flag to keep in step.
+
+    THAT SENTENCE WAS TRUE OF THE EMBEDDING AND FALSE OF THE SEARCH UNTIL
+    2026-09-19, and it is worth reading as a warning rather than as history.
+    `heron_search.index()` opened with `DELETE FROM identities` and rebuilt
+    from the RUNNING PROCESS's own working tree - unconditionally, on every
+    one of these opens. The knowledge store is one file for every checkout on
+    the machine, so a question asked from one tree silently replaced what
+    Heron knew with that tree's opinion, and EVERY READER WAS A WRITER
+    (FRAGMENT-ISSUES row 136). It is hashed now, and skips when nothing has
+    moved.
+
+    THE HALF STILL NOT FIXED: two trees whose fragments genuinely DIFFER hash
+    differently and each still rebuilds from its own files. A routing repair is
+    durable only once every tree declares it, which means MERGED.
     """
 
     def __init__(self):

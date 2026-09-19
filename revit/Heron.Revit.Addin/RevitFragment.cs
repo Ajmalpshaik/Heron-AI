@@ -1080,8 +1080,31 @@ namespace Heron.Revit.Addin
             string verdict;
             if (applied)
             {
-                verdict = "the model was CHANGED and this is one undo step - Ctrl+Z in Revit "
-                        + "puts it back";
+                // ROW 117. THIS BRANCH USED TO SAY "the model was CHANGED", AND IT SAID IT
+                // FROM `applied` - THE CALLER'S REQUEST TO KEEP THE TRANSACTION, NOT A
+                // STATEMENT THAT ANY WORK WAS DONE. Measured 2026-09-17 on `test projject`:
+                // RENAME_ELEMENTS with a `find` that matched nothing reported
+                // `notMatched 10, planned 0, renamed 0` and then claimed the model had
+                // changed. It is the SAME FAMILY as the `rolledBack` branch below, which was
+                // fixed on 2026-09-09 for exactly this reason - a write describing its INTENT
+                // where a reader will take it as an OUTCOME.
+                //
+                // IT CANNOT READ THE COUNTS AND DECIDE FOR ITSELF, and that was considered
+                // rather than skipped. Which number means work and which means bookkeeping is
+                // D-52's `role`, and that lives in `fragment.yaml` on the brain side - this
+                // side is handed the C# and the bindings, never the contract. "All the
+                // numbers are zero" would ALSO have got the measured case wrong, because
+                // `notMatched 10` is non-zero in the very run that changed nothing. So this
+                // says what is CERTAIN - the transaction was kept - and sends the reader to
+                // the counts, which are already in the same reply.
+                //
+                // THE UNDO SENTENCE IS NOW CONDITIONAL, and that is the half that was
+                // actually dangerous rather than merely untrue: told to press Ctrl+Z after a
+                // run that did nothing, a modeller undoes whatever they did BEFORE it.
+                verdict = "'" + name + "' was KEPT: Revit accepted the transaction rather than "
+                        + "rolling it back. WHAT WAS ACTUALLY DONE IS IN THE COUNTS ABOVE, and "
+                        + "if they show no work then the model is exactly as it was. If work "
+                        + "was done it is ONE undo step - Ctrl+Z in Revit puts it back.";
             }
             else if (rolledBack)
             {

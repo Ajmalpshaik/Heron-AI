@@ -112,6 +112,40 @@ def main():
           "the client claimed it had, and a write that may still be standing "
           "is the one thing a reader must not have to guess at")
 
+    # ------------------------------------------------------------------
+    # ROW 117. THE `applied` BRANCH WAS THE ONE STILL SPEAKING FROM THE
+    # REQUEST, and it was only visible because row 111 above shipped: before
+    # that the whole reply was "RENAME_ELEMENTS ran in test projject" and the
+    # contradiction had nowhere to show.
+    # ------------------------------------------------------------------
+    claiming = [line for line in fragment.splitlines()
+                if "the model was CHANGED" in line
+                and not line.lstrip().startswith("//")]
+    check(not claiming,
+          "the add-in no longer ASSERTS 'the model was CHANGED' - measured "
+          "2026-09-17, a RENAME_ELEMENTS that matched nothing reported "
+          "`renamed 0` and said it anyway, because the sentence came from "
+          "`applied`, the request to keep the transaction, and not from any "
+          "work having happened (FRAGMENT-ISSUES row 117). As with `answer` "
+          "above, a mention in a comment is fine; a live claim is the bug")
+
+    check("was KEPT: Revit accepted the transaction" in fragment,
+          "it says what was KEPT instead - the transaction surviving is the "
+          "thing this side can actually witness. Which counts mean WORK is "
+          "D-52's `role` and lives in fragment.yaml, which the add-in is "
+          "never handed, so deciding here would be a guess")
+
+    check("WHAT WAS ACTUALLY DONE IS IN THE COUNTS ABOVE" in fragment,
+          "and sends the reader to the counts, which are already in the same "
+          "reply - 'every number is zero' would not have worked either, "
+          "because `notMatched 10` was non-zero in the run that changed "
+          "nothing")
+
+    check("If work " in fragment and "was done it is ONE undo step" in fragment,
+          "and the Ctrl+Z instruction is CONDITIONAL, which is the half that "
+          "was dangerous rather than merely untrue: told to undo after a run "
+          "that did nothing, a modeller undoes what they did BEFORE it")
+
     if FAILURES:
         print("FAILED")
         for failure in FAILURES:
