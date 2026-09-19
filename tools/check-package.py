@@ -396,7 +396,7 @@ def main():
     w("  journal lines and the hashes. Answering them found one defect: the\n")
     w("  add-in had NO rollback path at all, while brain/heron_update.py was\n")
     w("  refusing to ship any release that could not prove one had been\n")
-    w("  tested. Built and proved in the same run; FRAGMENT-ISSUES row 143.\n")
+    w("  tested. Built and proved in the same run; FRAGMENT-ISSUES row 147.\n")
     w("\n")
     w("  READ THAT AS HISTORY, NOT AS A PASS. It records one build on one\n")
     w("  machine on one day. A release cut from a later commit owes these\n")

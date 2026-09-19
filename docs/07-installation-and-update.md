@@ -387,7 +387,7 @@ writes only inside `Addins\<release>\Heron`, and never reaches the folder holdin
 
 **Answered YES on all three — but only after building the thing that makes it possible, because it did
 not exist.** See [section 10.8](#108-the-defect-this-run-found) for what was wrong and why it went
-unnoticed. Filed as row 143 in [FRAGMENT-ISSUES.md](FRAGMENT-ISSUES.md).
+unnoticed. Filed as row 147 in [FRAGMENT-ISSUES.md](FRAGMENT-ISSUES.md).
 
 The test is a real round trip, not a file copy checked by eye. For each release: a **genuinely
 different build** was made (`-p:Version=0.1.1`) and deployed over the good one, standing in for an
