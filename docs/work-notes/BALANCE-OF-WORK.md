@@ -7,7 +7,7 @@
 
 # The balance of work
 
-> **GENERATED 2026-09-19 17:58 by `python tools/balance-of-work.py --write`.**
+> **GENERATED 2026-09-19 18:26 by `python tools/balance-of-work.py --write`.**
 > **If that stamp is not today, this page is history and not a work list.** Every figure
 > below was read back out of the tool that owns it, and each row names the command that
 > derives it. Nothing here is typed by hand, so where this page and a register disagree,
@@ -24,8 +24,9 @@ business here. When every row does, delete the file and the tool with it.
 | # | What is left | Count | Derive it with |
 |---|---|---|---|
 | 1 | **Fragments that have never met a model** — the largest single body of work left | **79** of **395** | `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` |
-| 1a | — of those, **ready to prove right now**, needing only a Revit session | **35** | `python tools/generate-jobs.py` |
-| 1b | — of those, **structurally blocked**, each with a reason printed | **44** | `python tools/generate-jobs.py` |
+| 1a | — of those, never run **in this checkout** — see the warning below | **40** | `python tools/generate-jobs.py` |
+| 1b | — of those, **ready to prove right now**, needing only a Revit session | **14** | `python tools/generate-jobs.py` |
+| 1c | — of those, **structurally blocked**, each with a reason printed | **26** | `python tools/generate-jobs.py` |
 | 2 | **Skills never proved** | **10** of **10** | `grep -h '^heron-status:' brain/skills/*.yaml \| sort \| uniq -c` |
 | 3 | **Agents left to build** | **2** of **250** | `python tools/agent-count.py` |
 | 4 | **Agent proofs drafted but unsigned** | **4** | `ls brain/agent-proof-drafts/*.yaml` |
@@ -35,6 +36,13 @@ business here. When every row does, delete the file and the tool with it.
 | 8 | **Proposals awaiting the owner** | **21** of **22** | `python tools/owner-queue.py` |
 | 9 | **Signatures gone stale — proved, then the code moved under them** | **1** | `python tools/check-signatures.py` |
 | 10 | **Everything waiting on the owner personally**, across three registers | **145** | `python tools/owner-queue.py` |
+
+> **ROWS 1a TO 1c ARE ABOUT THIS CHECKOUT, NOT ABOUT THE PROJECT.** They count what has never
+> been run *here*, and `brain/proof-drafts/runs/` is gitignored, so every worktree starts almost
+> empty. On 2026-09-19 the main checkout held **309** run records and a fresh worktree held
+> **5** — the same library read as *14 ready* from one and *35 ready* from the other. **Regenerate
+> this page from the checkout you will actually prove in**, and treat a figure generated
+> anywhere else as meaningless. Row 1 itself is committed data and does not have this problem.
 
 **Rows 1 and 5 are not the same work and neither contains the other.** A fragment is proved
 against a model; a register row is a thing nothing has checked. A session that clears one can

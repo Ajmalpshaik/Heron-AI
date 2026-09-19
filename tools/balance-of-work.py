@@ -185,6 +185,13 @@ def collect():
     flat = re.sub(r"\s+", " ", re.sub(r"(?m)^#[ \t]?", "", jobs))
     d["jobs_ready"] = grab(flat, r"(\d+) of them can be arranged as written")
     d["jobs_blocked"] = grab(flat, r"(\d+) cannot, and are listed")
+    # How many DRAFTs have never been RUN HERE, which is not how many are DRAFT.
+    # brain/proof-drafts/runs/ is gitignored (.gitignore:193) and therefore
+    # per-worktree: main carried 309 records on 2026-09-19 and a fresh worktree
+    # carried 5. Rows 1a and 1b are a fact about THIS CHECKOUT, not the project,
+    # and the first version of this page shipped a worktree's 35/44 where the
+    # owner's own tree said 14/26.
+    d["jobs_norun"] = grab(flat, r"(\d+) fragment\(s\) are still DRAFT with no run record")
 
     docs = run(["tools/check-docs.py"])
     d["q_open"] = grab(docs, r"ACTUAL:\s*\d+ answered,\s*(\d+) open")
@@ -243,9 +250,11 @@ def render(d):
     w("|---|---|---|---|")
     w("| 1 | **Fragments that have never met a model** — the largest single body of work left | %s of %s | `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \\| sort \\| uniq -c` |"
       % (n(draft), n(total)))
-    w("| 1a | — of those, **ready to prove right now**, needing only a Revit session | %s | `python tools/generate-jobs.py` |"
+    w("| 1a | — of those, never run **in this checkout** — see the warning below | %s | `python tools/generate-jobs.py` |"
+      % n(d["jobs_norun"]))
+    w("| 1b | — of those, **ready to prove right now**, needing only a Revit session | %s | `python tools/generate-jobs.py` |"
       % n(d["jobs_ready"]))
-    w("| 1b | — of those, **structurally blocked**, each with a reason printed | %s | `python tools/generate-jobs.py` |"
+    w("| 1c | — of those, **structurally blocked**, each with a reason printed | %s | `python tools/generate-jobs.py` |"
       % n(d["jobs_blocked"]))
     w("| 2 | **Skills never proved** | %s of %s | `grep -h '^heron-status:' brain/skills/*.yaml \\| sort \\| uniq -c` |"
       % (n(skills_draft), n(skills_total)))
@@ -264,6 +273,13 @@ def render(d):
       % n(d["stale_sigs"]))
     w("| 10 | **Everything waiting on the owner personally**, across three registers | %s | `python tools/owner-queue.py` |"
       % n(d["owner_items"]))
+    w("")
+    w("> **ROWS 1a TO 1c ARE ABOUT THIS CHECKOUT, NOT ABOUT THE PROJECT.** They count what has never")
+    w("> been run *here*, and `brain/proof-drafts/runs/` is gitignored, so every worktree starts almost")
+    w("> empty. On 2026-09-19 the main checkout held **309** run records and a fresh worktree held")
+    w("> **5** — the same library read as *14 ready* from one and *35 ready* from the other. **Regenerate")
+    w("> this page from the checkout you will actually prove in**, and treat a figure generated")
+    w("> anywhere else as meaningless. Row 1 itself is committed data and does not have this problem.")
     w("")
     w("**Rows 1 and 5 are not the same work and neither contains the other.** A fragment is proved")
     w("against a model; a register row is a thing nothing has checked. A session that clears one can")
@@ -328,6 +344,7 @@ def to_console(d):
     out = [line, "THE BALANCE OF WORK   %s" % datetime.now().strftime("%Y-%m-%d %H:%M"), line, ""]
     pairs = [
         ("fragments never in front of a model", frag.get("DRAFT"), "of %s" % sum(frag.values()) if frag else ""),
+        ("  never run IN THIS CHECKOUT", d["jobs_norun"], "<- worktree-local"),
         ("  of those, arrangeable right now", d["jobs_ready"], ""),
         ("  of those, structurally blocked", d["jobs_blocked"], ""),
         ("skills never proved", d["skills"].get("DRAFT"), "of %s" % sum(d["skills"].values()) if d["skills"] else ""),
