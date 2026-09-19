@@ -1,0 +1,88 @@
+# Does every room have a duct in it. 2026-09-19.
+#
+#     python tools/batch-prove.py tools/jobs/test-projject-rooms-2026-09-19.yaml --dry-run --session 27244
+#     python tools/batch-prove.py tools/jobs/test-projject-rooms-2026-09-19.yaml --session 27244
+#
+# --session 27244, and the number CHANGED when Revit was restarted for the
+# rebuilt add-in. A job file carrying a stale session id aims at nothing.
+#
+# THE SETUP IS `select-in-region` AND NOT `select-by-category-name`, WHICH IS
+# THE WHOLE REASON THIS CAN BE ARRANGED AT ALL. `select-by-category-name` uses a
+# VIEW-SCOPED collector, and Rooms are unticked in Visibility/Graphics in every
+# view of this model - so it returns 0 rooms from a model holding 7, and a zero
+# from a hidden category is indistinguishable from an empty model. Measured
+# both ways today. `select-in-region` is not view-scoped and does not care.
+#
+# WHAT THE MODEL HOLDS - session 27244, `test projject`, 3,565 elements:
+#
+#   Rooms      7 total, of which 3 are NOT ENCLOSED
+#              4 reachable by region query - an unenclosed room has no
+#              bounding geometry, so 7 minus 3 is exactly the 4 that come back
+#   Ducts      8 in "HERON ROOM TEST"
+#
+# THE RULE IS ONE LINE AND IT IS DELIBERATELY SEVERE: every room, whatever it
+# is called, must contain at least one duct. `ruleRoomNames` is empty, which
+# matches every room. A real project rule would name toilets and ask for a
+# diffuser and an extract; this one exists to make the fragment ANSWER, and a
+# rule nothing satisfies is the surest way to see it find something.
+#
+# THE NEGATIVE HANDS IT DUCTS INSTEAD OF ROOMS. 8 real elements, selected the
+# same way, none of which is a room - so there is nothing to check a room rule
+# against and the honest answer is that no room came up short. A DIFFERENT
+# selection rather than a cleared one, which is rule 5.
+#
+# WHAT THIS ARRANGEMENT CANNOT REACH, recorded rather than left to be assumed.
+# The fragment declares `unbounded` - "rooms with no area, EXCLUDED AND
+# COUNTED, NEVER FAILED", a D-52 guard so that a room with no boundary is not
+# reported as missing everything. A region query can never select an unenclosed
+# room, so `unbounded` can only come back 0 here, and a reader seeing that zero
+# would conclude the model has none when it has THREE. That guard is exercised
+# by a separate hand-run using `select-unenclosed-rooms`, and IT WAS RUN:
+#
+#     select-unenclosed-rooms -> set-selection -> check-room-mep-completeness
+#     unbounded   3 item(s) [925712, 925713, 926537]
+#     shortRooms  0 item(s)
+#     "0 room(s) short of what the rules ask for. 3 had no area and..."
+#
+# All three EXCLUDED AND COUNTED, none reported as missing everything -
+# which is precisely the failure D-52 put that bucket there to prevent, and
+# it had never been exercised on any model. Recorded here because a reader
+# of the proof below will see `unbounded 0` and would otherwise conclude
+# this model has no unenclosed rooms. It has three.
+
+model: test projject, Revit 2024, 3,565 elements
+
+defaults:
+  in: test projject
+
+  setup:
+    - select-in-region
+    - set-selection
+
+  # A box far larger than the building, so the region is not the thing under
+  # test. Millimetres.
+  set:
+    minMm: "-200000,-200000,-50000"
+    maxMm: "200000,200000,100000"
+    exact: false
+    categories: Rooms
+
+  negative-set:
+    minMm: "-200000,-200000,-50000"
+    maxMm: "200000,200000,100000"
+    exact: false
+    categories: Ducts
+
+jobs:
+
+  - fragment: check-room-mep-completeness
+    set:
+      devices: "Ducts"
+      ruleRoomNames: "Room"
+      ruleCategories: "Ducts"
+      ruleMinimums: 1
+    negative-set:
+      devices: "Ducts"
+      ruleRoomNames: "Room"
+      ruleCategories: "Ducts"
+      ruleMinimums: 1

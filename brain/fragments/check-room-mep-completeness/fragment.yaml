@@ -1,6 +1,6 @@
 heron-agent: HERON-QA-BIM-011
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -86,6 +86,31 @@ contract:
       # room - it is one nobody asked about. Never a finding (D-52).
       role: accounting
       type: IList<ElementId>
+
+proof:
+  date: '2026-09-19'
+  by: Ajmal PS
+  model: test projject (3,565 elements), Revit 2024, session 27244
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-in-region, set-selection with this phase''s own values. returned findings 6 item(s)
+    [''Ducts'': 8 found across everything handed in, Room 1  - short of: Ducts (0 of 1), Room
+    4  - short of: Ducts (0 of 1), ...], noRule 0 item(s), ruleCount 1, shortRooms 4 item(s)
+    [925710, 926001, 926536, ...], unbounded 0 item(s). inputs came elements from the selection
+    (4); devices as given (8); ruleRoomNames as given (1); ruleCategories as given (1); ruleMinimums
+    as given (1). on test projject'
+  negative_case: 'run with categories=Ducts, devices=Ducts, exact=False, maxMm=200000,200000,100000,
+    minMm=-200000,-200000,-50000, ruleCategories=Ducts, ruleMinimums=1, ruleRoomNames=Room
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-in-region, set-selection with this phase''s own values.
+    returned findings 2 item(s) [''Ducts'': 8 found across everything handed in, 0 room(s)
+    short of what the rules ask for. 0 had no area and...], noRule 8 item(s) [925780, 925782,
+    925784, ...], ruleCount 1, shortRooms 0 item(s), unbounded 0 item(s). inputs came elements
+    from the selection (8); devices as given (8); ruleRoomNames as given (1); ruleCategories
+    as given (1); ruleMinimums as given (1). on test projject'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 59bc429fd9f9bbee
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
