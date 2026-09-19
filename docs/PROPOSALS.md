@@ -2610,3 +2610,205 @@ assemblies on 2026-09-19.
 **A radial dimension is a third kind and belongs in neither column:** it is impossible on Revit 2020 to
 2024 and ordinary from 2025, so `create-radial-dimension` exists and declares three releases. See
 [16 §Break 2](16-version-support-strategy.md).
+
+---
+
+## 2026-09-19 — five of PR #190's six proposals are built, and the sixth is still a refusal
+
+PR #190 measured the fragments that cannot be arranged as a job and **proposed** a rule for six
+shapes, changing no code. Five of those rules are now written. The sixth was a proposal to write
+nothing, and it still is.
+
+**Every claim in #190 was checked against the code before anything was built on it.** Its sibling
+PR #194 had to retract a finding that turned out to be a misuse of a tool, so none of the six was
+taken on trust. All six survived, and two of them survived with a correction to how they had been
+described — see *what #190 got half right*, below.
+
+### The count, measured rather than carried
+
+`python tools/generate-jobs.py` reports against DRAFT fragments **with no run record on this
+machine**, and that population moves with what is on disk. Both numbers below are for the same one:
+
+| the population | before | after |
+|---|---|---|
+| **83** DRAFT with no run record, at `7ec2b04` | 39 emitted, **44** unarrangeable | 46 emitted, **37** unarrangeable |
+| **70** DRAFT with no run record, at `de34462` | 26 emitted, **44** unarrangeable | 33 emitted, **37** unarrangeable |
+
+**Two populations, measured a half-hour apart, and the row that matters is the same in both.**
+Thirteen fragments gained a run record in between; every one of them was already being emitted, so
+the *emitted* figure drops by thirteen and the *unarrangeable* figure does not move at all. That is
+the number this work is about, and it is 44 before and 37 after on either reading.
+
+**Seven fragments moved**, and they are named by the diff of the two NOT EMITTED lists rather than
+by counting up the rules:
+
+`check-room-mep-completeness` · `connect-air-terminals` · `create-electrical-circuit` ·
+`create-roof` · `place-line-based-family` · `propose-mep-openings` · `rotate-elements-about-axis`
+
+**NONE OF THEM IS PROVEN AND NONE OF THEM IS CLAIMED TO BE.** What changed is that Heron now has a
+way to hand each of them the input that was stopping it, so a person can *arrange* a proof. The
+proof itself needs a model and a session, and that is somebody else's half.
+
+### The five rules
+
+| the shape | the rule | what it frees |
+|---|---|---|
+| **`RoofType`** | named, exactly like a wall type — one dispatch row | `create-roof` |
+| **`IList<Element>`** | the SECOND set, named by CATEGORY; `selected` refused | `check-room-mep-completeness`, `connect-air-terminals`, `propose-mep-openings` |
+| **`Line`** | two points, a semicolon between — the inside of one point pair | `rotate-elements-about-axis` |
+| **`IList<Curve>`** | the point-pair parser unchanged, each pair a bound line | `place-line-based-family` |
+| **`FamilyInstance`** | an electrical panel, by its own Panel Name | `create-electrical-circuit` |
+
+**The roof was the cheapest and it was the MEP case again.** `RoofType` derives from
+`HostObjAttributes`, which `FromRequest` has accepted since 2026-09-09 — so the lookup always
+worked and only the string comparison in the dispatch stood in the way, exactly as it stood in
+front of `DuctType` and `PipeType` in 2026-09-13. **The contract was NOT widened to say
+`HostObjAttributes`**, and #190's review was right to warn against it: the declared type becomes the
+generated variable's static type, `NewFootPrintRoof` takes a `RoofType`, and that edit would have
+traded a refusal for a build failure on all eight releases.
+
+**A set of elements is refused the word `selected`, where a set of IDS accepts it.** That is
+narrower on purpose, the same way `View3D` is narrower than `View`, and the reason is a fact about
+all three customers rather than a preference: every one of them takes its FIRST set down the setup
+chain, which ends by putting those elements in the Revit selection. The word would hand the
+identical elements to both roles — the arrangement `generate-jobs.py` already marks as unarrangeable
+for `unjoin-geometry` and `switch-join-order`, and the one that *runs*, and *answers*, and means
+nothing. A test asserts the claim the rule rests on, so the day a fragment declares a request-sourced
+set of elements with no chain-fed set beside it, "always the second set" stops being true out loud
+instead of quietly.
+
+### The sixth: an `Arc` is still refused, and the reason is now a test
+
+#190 proposed writing nothing, on the grounds that an Arc's only customer in the library also needs
+a face. **Checked, and true**: `create-angular-dimension` is the one fragment declaring an `Arc`, and
+it also declares `references (IList<Reference>)`. D-72 settled that a face is not a rule waiting to
+be written — it is what a mouse lands on, and no name, number or coordinate says which one. A
+three-point Arc parser would therefore have shipped reachable by nobody.
+
+That argument is true **of the library as it stands**, so it is now asserted rather than remembered:
+`test_an_arc_was_left_unwritten_and_the_reason_still_holds` fails the day a second fragment declares
+an `Arc`, and the decision gets made again with the new fact in hand.
+
+**And the Line rule must not be sold as bringing the dimensions back.** `create-linear-dimension`
+declares a `Line` *and* an `IList<Reference>`; it is still blocked, on the face, and a test asserts
+that too — #190 said it in a sentence, and a sentence is not a check.
+
+### What #190 got half right, and the correction is the useful part
+
+**"RoofType may work today if the contract simply says the word."** It does not, and the word in
+question is the confusing part. If a contract said `HostObjAttributes` the lookup would resolve —
+but the contract says `RoofType`, the dispatch compares the declared name as text, and so it fell to
+the catch-all. The missing half was always the resolver row, never the contract.
+
+**"`IList<Element>` — named by category, the way the first set is found."** Right, and the precedent
+it cited is not quite the one to copy. `propose-mep-openings` says in its own contract that its
+second set is "the same shape FIND_CLASHES uses" — and `find-clashes` declares
+`ICollection<ElementId>`, which is answered with the word `selected`. Copying *that* would have
+reproduced the one-set-twice trap. The category is the right spelling and
+`select-by-category-name` — step one of the setup chain — is the precedent that actually applies.
+
+### How it was proved, and what that does not cover
+
+- **Compiled on all eight releases**, 2020 through 2027, every project, via `tools/check-compile.py`.
+  That is what establishes that `RoofType`, `Curve`, `Line.CreateBound`,
+  `Application.ShortCurveTolerance` and `BuiltInParameter.RBS_ELEC_PANEL_NAME` exist with these
+  signatures across the whole supported range.
+- **`tests/test_generate_jobs.py` exits 1 on the code as it stood and 0 after.** Both were run. Seven
+  new tests, one per rule plus the Arc refusal, the hint coverage and the `selected` refusal — and
+  every fragment count in them is derived from the real library, the real setup chain and the real
+  registry, so a number that stops being true fails rather than ages.
+- **The transcription is still checked, not remembered.** `test_receivable_agrees_with_the_add_in`
+  reads the branches out of `RevitFragment.cs` and compares them to `generate-jobs.py`'s copy, in
+  both directions. It passes.
+
+**NONE OF THIS IS A BEHAVIOUR PROOF.** A compiler agreeing about a signature says nothing about
+whether `ManyByCategory` collects the right elements, whether a panel resolves in a model that has
+one, or whether a line comes out where somebody meant it. Seven fragments are now *arrangeable*;
+seven proofs are what would make them proven, and each needs a model in front of a person.
+
+---
+
+## 2026-09-19 — rule (d) refuses four fragments, and only two of them deserve it
+
+**A PROPOSAL, AND NO CODE CHANGED.** It relaxes a guard, and a guard that was written for a real
+reason, so it is Ajmal's call rather than a session's.
+
+### Where it came from
+
+Building the `IList<Element>` rule above, the session driving Revit 36908 asked whether
+`find-nearest-elements` and `check-minimum-clearance` should have `targets` flipped from
+`source: fragment` to `source: request`, which would have let the new category rule fill it.
+**Measured: it would work** — with that one line changed in each, `GJ.blockers` returns nothing and
+both are emitted as jobs. **And it was declined, correctly**, with a model measurement behind it:
+
+> `check-minimum-clearance` on 8 ducts, `targets` bound to `elements` — 56 pairs checked, 10 too
+> close at a 5 m threshold, and 4 still too close at 0.001 mm, because four of those ducts are
+> joined end to end and their gap really is zero.
+
+That is a correct and useful answer to *"are any of these ducts too close to each other"*, which is
+the clearance check somebody runs on a real job. It is not a degraded stand-in for the real one.
+`binds: elements` is the fragment saying **same set, on purpose**, and `RevitFragment.Binds()` exists
+to honour exactly that. Flipping the source would delete the default and change what the fragment
+MEANS rather than how it is fed.
+
+### The mechanism, measured rather than reasoned about
+
+Rule (d) fires on **exactly four fragments in the library**, and here is the part that decides the
+shape of any fix:
+
+| fragment | the two needs | how the duplicate arises |
+|---|---|---|
+| `check-minimum-clearance` | `elements`, `targets` | `targets` declares `binds: elements` |
+| `find-nearest-elements` | `elements`, `targets` | `targets` declares `binds: elements` |
+| `switch-join-order` | `first`, `second` | **both** declare `binds: elements` |
+| `unjoin-geometry` | `first`, `second` | **both** declare `binds: elements` |
+
+**In all four, the duplicate comes from an explicitly declared `binds:`.** There is no case in the
+library where rule (d) fires without one. So *"exempt a fragment that declared `binds:` on purpose"*
+— the obvious relaxation, and the one proposed — **would delete rule (d) outright**, not narrow it.
+
+### And the four are not the same case. They split two and two
+
+The two clearance-and-distance fragments measure a set **against itself**, and that is the job.
+
+The other two do not, **and both say so in their own purpose text**. `unjoin-geometry`:
+
+> "A join is a pair, and this takes pairs. Handing in a set and unjoining everything from everything
+> is a different and much more destructive operation."
+
+`first` and `second` are the two **sides of a pair**, element by element. Filling both from one set
+pairs every element with itself — a no-op at best, and against a fragment whose own text warns that
+the set-shaped version is *much more destructive*. Rule (d) is right about those two and should keep
+refusing them.
+
+### So the discriminator cannot be `binds:`, and the proposal is that the contract says which
+
+`binds: elements` is currently carrying two different meanings — *"the same set, deliberately"* and
+*"one side of a pair that happens to come from the same chain"* — and rule (d) cannot tell them
+apart, which is why it refuses all four. **Nothing in a contract distinguishes them today.**
+
+Three ways out, in the order they seem worth considering:
+
+1. **A contract key that says it.** Something like `same-set-is-valid: true` on the second need, set
+   on the two that mean it and absent on the two that do not. Rule (d) then exempts by declaration
+   rather than by guessing, and the two destructive ones stay guarded. Costs: a new key, and two
+   `fragment.yaml` edits.
+2. **A per-fragment allowlist in `generate-jobs.py`.** Cheaper and worse: the knowledge lives in the
+   tool rather than in the fragment that owns it, which is the arrangement this repository argues
+   against everywhere else.
+3. **Leave it.** Two fragments stay unarrangeable by the batch runner and reachable by hand, which
+   is what happens today and is not nothing — the hand route is how the measurement above was taken.
+
+**A note on what else it touches.** The batch runner refuses these; the exploring/`validate` path
+runs them, because it honours `binds:` and has no equivalent guard. Whatever is decided has to be
+decided for both, or the two paths keep disagreeing and the one a person uses to decide what goes in
+a job file is the unguarded one.
+
+### The separate thing underneath it
+
+`check-minimum-clearance`'s purpose opens *"Measures the real gap between TWO SETS of elements"*, and
+with `binds:` and no `source:` there is **no route by which a caller can ever supply a second,
+different set**. So the contract promises something unreachable. Either a `source: request` route
+should exist alongside the bind — which the new `IList<Element>` rule would now serve — or the
+purpose should stop promising it. That one is a fragment question and is being carried as
+FRAGMENT-ISSUES row 135 by the session that owns those files.

@@ -1982,6 +1982,109 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// ONE LINE, from two points: a semicolon between them, commas within.
+        ///
+        ///     "0,0,0; 5000,0,0"
+        ///
+        /// NO NEW SPELLING, AND THAT IS THE POINT. This is exactly the inside
+        /// of one `PointPairs` pair - the shape settled on 2026-09-14 - and
+        /// `PointPairs`' own refusal already calls a pair of points "a line".
+        /// A `Line` need was being refused while the parser that reads one sat
+        /// four methods above it, so what was missing was a dispatch row and a
+        /// bound curve, not a decision about syntax.
+        ///
+        /// MILLIMETRES, because `OnePoint` converts and everything downstream
+        /// is in Revit's internal feet by the time it gets here.
+        ///
+        /// A LINE OF NO LENGTH IS REFUSED RATHER THAN THROWN. `Line.CreateBound`
+        /// raises on two points closer together than Revit's short-curve
+        /// tolerance, and an exception out of here is reported as the FRAGMENT
+        /// failing - the fragment has not run yet. The tolerance is read off the
+        /// application rather than written down, because it is Revit's number
+        /// and not this file's.
+        /// </summary>
+        private static object OneLine(Document doc, string text, out string problem)
+        {
+            problem = null;
+
+            var points = ManyPoints(text, out problem);
+            if (points == null) return null;
+
+            if (points.Count != 2)
+            {
+                problem = "\"" + text + "\" has " + points.Count + " point"
+                        + (points.Count == 1 ? "" : "s") + " in it, and a line is drawn "
+                        + "between TWO. Separate the two ends with a SEMICOLON and their "
+                        + "three MILLIMETRE ordinates with commas - \"0,0,0; 5000,0,0\".";
+                return null;
+            }
+
+            return BoundLine(doc, points[0], points[1], text, out problem);
+        }
+
+        /// <summary>
+        /// SEVERAL LINES - the `PointPairs` spelling exactly, a PIPE between
+        /// them, handed back as curves.
+        ///
+        ///     "0,0,0; 5000,0,0 | 5000,0,0; 5000,3000,0"
+        ///
+        /// THE SAME PARSER, UNCHANGED, and no second syntax to learn: a caller
+        /// who can write `create-line`'s `pointPairs` can write
+        /// `place-line-based-family`'s `curves`. Every curve produced is a
+        /// straight one, and that is a real limit of this rule rather than an
+        /// oversight - an arc needs three points and a fourth question (which
+        /// way it bulges), and nothing in the library asks for a list of them.
+        /// </summary>
+        private static object ManyLines(Document doc, string text, out string problem)
+        {
+            problem = null;
+
+            var pairs = PointPairs(text, out problem);
+            if (pairs == null) return null;
+
+            var curves = new List<Curve>();
+            foreach (var pair in pairs)
+            {
+                var line = BoundLine(doc, pair[0], pair[1], text, out problem) as Curve;
+                if (line == null) return null;
+                curves.Add(line);
+            }
+            return curves;
+        }
+
+        /// <summary>
+        /// Two points to a bound line, or the refusal Revit would have thrown.
+        ///
+        /// THE DISTANCE IS CHECKED BEFORE THE CALL, not caught after it. Both
+        /// answers are a refusal either way; the difference is the sentence. A
+        /// caught exception says "Curve length is too small for Revit's
+        /// tolerance", which names a tolerance nobody has in millimetres and
+        /// does not say which pair of numbers is wrong.
+        /// </summary>
+        private static object BoundLine(Document doc, XYZ from, XYZ to, string text,
+                                        out string problem)
+        {
+            problem = null;
+
+            var shortest = 0.0;
+            try { shortest = doc.Application.ShortCurveTolerance; } catch { }
+
+            var length = from.DistanceTo(to);
+            if (length <= shortest)
+            {
+                problem = "The two ends of a line in \"" + text + "\" are "
+                        + HeronUnits.DescribeMillimetres(HeronUnits.FeetToMillimetres(length))
+                        + " apart, and Revit will not make a line shorter than "
+                        + HeronUnits.DescribeMillimetres(
+                              HeronUnits.FeetToMillimetres(shortest))
+                        + ". Check the two points are not the same one typed twice.";
+                return null;
+            }
+
+            return Line.CreateBound(from, to);
+        }
+
+        /// <summary>
         /// The graphic overrides a view carries, written the way Revit's own
         /// override dialog puts them.
         ///
@@ -2995,6 +3098,221 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// A SET OF ELEMENTS, NAMED BY CATEGORY - the second set, and in this
+        /// library it is only ever the second set.
+        ///
+        /// ALL THREE CUSTOMERS WERE READ BEFORE THIS WAS WRITTEN, and all three
+        /// are the same shape: a first set that arrives down the chain and a
+        /// second the caller names. `check-room-mep-completeness` takes
+        /// `elements` (the rooms) and `devices`; `connect-air-terminals` takes
+        /// `elements` (the terminals) and `ducts`; `propose-mep-openings` takes
+        /// `elements` (the services) and `hosts`. Every one of the three says so
+        /// in its own contract comment - "handing them in keeps the question of
+        /// which model they come from with whoever knows the answer" - and
+        /// `propose-mep-openings` names the precedent outright: the same shape
+        /// FIND_CLASHES uses for its second set.
+        ///
+        /// SO IT IS A CATEGORY NAME, WHICH IS HOW THE FIRST SET IS FOUND.
+        /// `select-by-category-name` is step one of the setup chain everything
+        /// here is proved with; it matches `doc.Settings.Categories` by name and
+        /// collects what is not a type. This does the same lookup - `OneCategory`,
+        /// already used by the `Category` branches - so the two sets are named
+        /// the same way and a reader has one rule to hold rather than two.
+        ///
+        /// SEVERAL CATEGORIES, COMMA SEPARATED, because a second set is often
+        /// more than one - "Ducts, Duct Fittings" - and every other list here is
+        /// already comma separated. An element named twice is counted once: two
+        /// overlapping category names are a typing slip, not an instruction to
+        /// hand the same wall over twice.
+        ///
+        /// THE WHOLE MODEL, NOT A VIEW, AND THAT HAS TO BE SAID OUT LOUD. There
+        /// is no view in scope here - this method is handed the document and the
+        /// selection and nothing else - so "Walls" means every wall in the file.
+        /// For a second set that is usually what is wanted, and the read-back
+        /// prints the count beside the name so an unexpectedly large one is
+        /// visible before anybody reads the result.
+        ///
+        /// A NAME THAT IS NOT A CATEGORY IS REFUSED; A CATEGORY THAT IS EMPTY IS
+        /// NOT. Those are different events. "Duct" is a mistyped "Ducts" and
+        /// nothing downstream can recover from it, so it stops here. "Ducts" in
+        /// a model with no ducts is a real and useful answer - it is half of
+        /// every negative case this second set has - so it contributes nothing
+        /// and says nothing.
+        ///
+        /// AND `selected` IS REFUSED HERE, WHERE A LIST OF IDS ACCEPTS IT.
+        /// Narrower on purpose, the same way `View3D` is narrower than `View`.
+        /// The first set of all three of these fragments arrives from the
+        /// selection, so the word would hand the identical elements to both
+        /// roles - which is exactly the arrangement `generate-jobs.py` already
+        /// marks as unarrangeable for `unjoin-geometry` and `switch-join-order`,
+        /// and it produces a confident answer that means nothing at all.
+        /// </summary>
+        private static object ManyByCategory(Document doc, string need, string text,
+                                             out string problem)
+        {
+            problem = null;
+
+            if (IsSelectionWord(text))
+            {
+                problem = "\"" + (text ?? "").Trim() + "\" cannot fill '" + need + "'. This "
+                        + "is the SECOND set, and the first one is what is selected in Revit "
+                        + "- so the word would hand the same elements to both, and the answer "
+                        + "would mean nothing. Name a category instead - \"Ducts\", or "
+                        + "\"Ducts, Duct Fittings\" for more than one.";
+                return null;
+            }
+
+            var named = Parts(text);
+            var elements = new List<Element>();
+            var already = new List<ElementId>();
+
+            foreach (var part in named)
+            {
+                var category = OneCategory(doc, part);
+                if (category == null)
+                {
+                    problem = "No category called \"" + part + "\" in " + doc.Title
+                            + ". '" + need + "' is a set of elements named by CATEGORY - "
+                            + "type what the Visibility/Graphics list shows, and separate "
+                            + "several with commas.";
+                    return null;
+                }
+
+                try
+                {
+                    foreach (var element in new FilteredElementCollector(doc)
+                                 .WhereElementIsNotElementType()
+                                 .OfCategoryId(category.Id))
+                    {
+                        if (element == null) continue;
+                        if (already.Contains(element.Id)) continue;
+                        already.Add(element.Id);
+                        elements.Add(element);
+                    }
+                }
+                catch { }
+            }
+
+            // AN EMPTY SECOND SET IS A VALUE, NOT A MISSING ONE - the same rule
+            // the id list already applies, and for a stronger reason here. "No
+            // ducts to tap into" and "no devices to look for" are the negative
+            // case these three fragments are proved with, and refusing it would
+            // put that case out of reach. A BLANK cannot be an omission: a need
+            // nobody supplied is reported unbound by `BindNeeds` and never
+            // reaches this method, so blank text means the caller typed nothing
+            // on purpose.
+            //
+            // TEXT THAT IS NOT BLANK AND NAMES NOTHING IS STILL REFUSED -
+            // ",,," is a typing slip rather than a decision, and it must not
+            // read as the deliberate empty set above.
+            if (named.Count == 0 && !string.IsNullOrWhiteSpace(text))
+            {
+                problem = "Nothing was named for '" + need + "'. Name a category - "
+                        + "\"Ducts\" - and separate several with commas.";
+                return null;
+            }
+            return elements;
+        }
+
+        /// <summary>
+        /// AN ELECTRICAL PANEL, BY ITS OWN PANEL NAME.
+        ///
+        /// ONE NEED IN THE LIBRARY - `create-electrical-circuit`'s `panel` - and
+        /// the class is keyed on the need's NAME for the same reason `OneIdNamed`
+        /// keys on it: a `FamilyInstance` is an INSTANCE, and `Element.Name` on
+        /// an instance returns its TYPE's name. Resolving a panel that way would
+        /// match every panel of that type in the building and bind whichever came
+        /// back first, which is the confident wrong answer `OneElement` exists to
+        /// refuse.
+        ///
+        /// A PANEL IS THE EXCEPTION, THE SAME WAY A ROOM IS. `SpatialElement` is
+        /// accepted above because a Room's Name is its own Name PARAMETER -
+        /// "Office 101", typed by whoever laid it out. A panel's Panel Name is
+        /// the same kind of thing: "LP-1", typed by whoever laid out the
+        /// distribution, unique on the panel schedule by construction, and the
+        /// name the fragment itself reads back on the way out as `PanelName`.
+        ///
+        /// SEARCHED BY THE PARAMETER, NOT BY THE CATEGORY. Every instance
+        /// carrying a non-blank Panel Name is a candidate, whatever category it
+        /// was modelled in - a panel family put in Electrical Fixtures rather
+        /// than Electrical Equipment is somebody else's problem, not a reason
+        /// this cannot find it.
+        ///
+        /// BLANK MEANS DELIBERATELY NONE, and the contract says so in its own
+        /// words: "optional - empty leaves the circuit unassigned". The fragment
+        /// then reports the circuit as unassigned out loud. Same spelling as
+        /// `OneIdNamed`'s, and reachable for the same reason - an omission is
+        /// reported unbound and never gets here.
+        /// </summary>
+        private static object OnePanelNamed(Document doc, string need, string text,
+                                            out string problem)
+        {
+            problem = null;
+
+            if (need != "panel")
+            {
+                problem = "'" + need + "' is one particular family instance, and there is no "
+                        + "rule for that name yet. The one instance Heron can name is an "
+                        + "electrical PANEL, by its Panel Name - because that is a name the "
+                        + "instance carries itself. Everything else written FamilyInstance "
+                        + "has only its TYPE's name, which would match every one of them.";
+                return null;
+            }
+
+            var said = (text ?? "").Trim();
+            if (said.Length == 0
+                || string.Equals(said, "none", StringComparison.OrdinalIgnoreCase))
+            {
+                // The circuit is created and left unassigned, which the fragment
+                // reports in its own findings. A real state Revit allows.
+                return null;
+            }
+
+            var found = new List<FamilyInstance>();
+            var known = new List<string>();
+
+            foreach (FamilyInstance instance in new FilteredElementCollector(doc)
+                         .OfClass(typeof(FamilyInstance)).WhereElementIsNotElementType())
+            {
+                if (instance == null) continue;
+
+                string carries = null;
+                try
+                {
+                    var parameter = instance.get_Parameter(BuiltInParameter.RBS_ELEC_PANEL_NAME);
+                    if (parameter != null) carries = parameter.AsString();
+                }
+                catch { continue; }
+
+                if (string.IsNullOrEmpty(carries)) continue;
+                if (!known.Contains(carries)) known.Add(carries);
+                if (string.Equals(carries, said, StringComparison.OrdinalIgnoreCase))
+                    found.Add(instance);
+            }
+
+            if (found.Count == 1) return found[0];
+
+            if (found.Count == 0)
+            {
+                known.Sort(StringComparer.OrdinalIgnoreCase);
+                problem = "No panel called \"" + said + "\" in " + doc.Title + ". A panel is "
+                        + "named by its PANEL NAME - the one on the panel schedule, not the "
+                        + "family type"
+                        + (known.Count == 0
+                              ? ". Nothing in this model carries a Panel Name at all."
+                              : ". This model has: " + string.Join(", ", known.ToArray()) + ".")
+                        + " Leave it blank to create the circuit unassigned.";
+                return null;
+            }
+
+            problem = found.Count + " panels in " + doc.Title + " carry the Panel Name \""
+                    + said + "\", so it does not say which one is meant. A panel name is "
+                    + "meant to be unique - two the same is a fault in the model rather "
+                    + "than in what was typed.";
+            return null;
+        }
+
+        /// <summary>
         /// A list value, split on commas.
         ///
         /// An empty entry is dropped rather than passed on: "Ducts,,Pipes" is a
@@ -3126,6 +3444,23 @@ namespace Heron.Revit.Addin
                 || wanted == "ICollection<IList<XYZ>>" || wanted == "IEnumerable<IList<XYZ>>")
                 return PointPairs(text, out problem);
 
+            // A LINE, AND A LIST OF CURVES - the pair parser above, one layer
+            // on. Both were refused while the thing that reads them sat here
+            // already: `PointPairs`' own message calls two points "a line", and
+            // a `Line` need was told there was no way to write it. `rotate-
+            // elements-about-axis` wants an axis and `place-line-based-family`
+            // wants the curves to lay a family along, and neither had ever run.
+            //
+            // THE DIMENSION FRAGMENTS DO NOT COME BACK WITH THIS, and saying so
+            // here is the point of the sentence. `create-linear-dimension`
+            // declares a `Line` AND an `IList<Reference>`; the second is a FACE
+            // and D-72 settled that a keyboard cannot say one. It stays blocked,
+            // and this rule must not be sold as having freed it.
+            if (wanted == "Line") return OneLine(doc, text, out problem);
+            if (wanted == "IList<Curve>" || wanted == "List<Curve>"
+                || wanted == "ICollection<Curve>" || wanted == "IEnumerable<Curve>")
+                return ManyLines(doc, text, out problem);
+
             // A TABLE BY NAME - the two request-sourced dictionaries in the
             // library, and the reason both fragments that own one had never run
             // a line. See NamedValues for the shape and for why the key is kept
@@ -3168,6 +3503,22 @@ namespace Heron.Revit.Addin
                 return OneOfClass(doc, typeof(FloorType), "floor type", text, out problem);
             if (wanted == "CeilingType")
                 return OneOfClass(doc, typeof(CeilingType), "ceiling type", text, out problem);
+            // THE FOURTH SIBLING, AND IT WAS THE MEP CASE ALL OVER AGAIN.
+            // `RoofType` derives from `HostObjAttributes`, which this method has
+            // accepted since 2026-09-09, so the LOOKUP has always worked - only
+            // the string comparison above stood in the way, exactly as it did
+            // for `DuctType` and `PipeType` under `MEPCurveType`. `create-roof`
+            // declares `RoofType`, fell through to the catch-all, and had never
+            // run a line.
+            //
+            // AND THE CONTRACT MUST NOT BE WIDENED TO SAY `HostObjAttributes`
+            // INSTEAD. The declared type becomes the generated variable's
+            // STATIC type - `HostObjAttributes roofType = ...` - and
+            // `NewFootPrintRoof` takes a `RoofType`, so that edit trades a
+            // refusal for a build failure on all eight releases. The resolver
+            // row is the missing half; the contract is already right.
+            if (wanted == "RoofType")
+                return OneOfClass(doc, typeof(RoofType), "roof type", text, out problem);
             if (wanted == "FilledRegionType")
                 return OneOfClass(doc, typeof(FilledRegionType), "filled region type",
                                   text, out problem);
@@ -3236,6 +3587,14 @@ namespace Heron.Revit.Addin
             if (wanted == "SpatialElement")
                 return OneOfClass(doc, typeof(SpatialElement), "room or space",
                                   text, out problem);
+
+            // AND A PANEL, BY THE SAME ARGUMENT ONE LAYER ALONG. An electrical
+            // panel is a FamilyInstance, so `Element.Name` gives its type's name
+            // and would match every panel of that type - but its PANEL NAME is
+            // its own, like a room's. The need's name is what says this is the
+            // one instance with a name to look up; see OnePanelNamed.
+            if (wanted == "FamilyInstance")
+                return OnePanelNamed(doc, need, text, out problem);
 
             // AN ENUM THE CALLER TYPES BY NAME. Only this one: its three values
             // have not moved 2020 to 2027. IFCVersion is deliberately NOT here -
@@ -3318,6 +3677,14 @@ namespace Heron.Revit.Addin
                 }
                 return ids;
             }
+
+            // THE SECOND SET, NAMED BY CATEGORY. The element-shaped twin of the
+            // id list above, and it is deliberately NOT the same rule: this one
+            // refuses `selected`, because the first set of all three fragments
+            // that ask for one already arrives that way. See ManyByCategory.
+            if (wanted == "IList<Element>" || wanted == "List<Element>"
+                || wanted == "ICollection<Element>" || wanted == "IEnumerable<Element>")
+                return ManyByCategory(doc, need, text, out problem);
 
             if (wanted == "IList<Color>" || wanted == "List<Color>")
             {

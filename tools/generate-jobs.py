@@ -160,6 +160,12 @@ RECEIVABLE = frozenset([
     "WallType", "FloorType", "CeilingType", "FilledRegionType",
     "HostObjAttributes", "MEPCurveType", "FamilySymbol",
     "Phase", "FilterElement",
+    # THE FOURTH SIBLING, ADDED 2026-09-19. Wall, floor and ceiling each had a
+    # row and roof did not, and the lookup had always worked - `RoofType`
+    # derives from `HostObjAttributes`, accepted since 2026-09-09. Only the
+    # string comparison in the dispatch stood in the way, the same way it stood
+    # in front of the six MEP type classes. `create-roof` was the one need.
+    "RoofType",
     # Lists, comma separated.
     "IList<string>", "List<string>", "ICollection<string>", "IEnumerable<string>",
     "IList<int>", "List<int>",
@@ -241,6 +247,35 @@ RECEIVABLE = frozenset([
     #
     # FRAGMENT-ISSUES row 91.
     "OverrideGraphicSettings", "ForgeTypeId", "ParameterValue",
+    # THE SECOND SET, NAMED BY CATEGORY - added 2026-09-19. Three fragments
+    # declare a caller-supplied `IList<Element>` and all three are the same
+    # shape: a first set down the chain and a second the caller names.
+    # `check-room-mep-completeness.devices`, `connect-air-terminals.ducts` and
+    # `propose-mep-openings.hosts`, the last of which names the precedent in
+    # its own contract - the same shape FIND_CLASHES uses for its second set.
+    #
+    # `selected` IS REFUSED FOR THIS ONE, where the id list accepts it: the
+    # first set of all three already arrives that way, so the word would hand
+    # the same elements to both roles. Narrower on purpose.
+    "IList<Element>", "List<Element>", "ICollection<Element>",
+    "IEnumerable<Element>",
+    # A LINE IS TWO POINTS AND A LIST OF CURVES IS PAIRS OF THEM - added
+    # 2026-09-19 and no new spelling: both are `PointPairs`, which has parsed
+    # this shape since 2026-09-14 and whose own refusal calls a pair "a line".
+    # `rotate-elements-about-axis.axis` and `place-line-based-family.curves`.
+    #
+    # THE DIMENSIONS DO NOT COME BACK WITH IT. `create-linear-dimension` wants
+    # a Line AND an `IList<Reference>`, and a face is not a rule waiting to be
+    # written. It stays blocked, and this row must not be read as freeing it.
+    "Line",
+    "IList<Curve>", "List<Curve>", "ICollection<Curve>", "IEnumerable<Curve>",
+    # AN ELECTRICAL PANEL, BY ITS OWN PANEL NAME - added 2026-09-19. The same
+    # argument as `SpatialElement`, one layer along: an instance normally has
+    # only its TYPE's name, and a panel is the exception because its Panel Name
+    # is its own - "LP-1", unique on the schedule, and the name
+    # `create-electrical-circuit` already reads back as `PanelName`. The
+    # need's NAME is what reaches it; every other FamilyInstance is refused.
+    "FamilyInstance",
 ])
 
 # The two `FromRequest` refuses BY NAME, with the reason it gives. Everything
@@ -648,6 +683,38 @@ def how_to_type(declared):
         return ('MILLIMETRES, "x,y,z"'
                 + ('; several separated by semicolons - "0,0,0; 5000,0,0"'
                    if "<" in wanted else ""))
+
+    # A LINE AND A LIST OF CURVES READ THE SAME TEXT AS A POINT PAIR, so they
+    # carry the same two warnings: the unit, and the separator. Neither says
+    # "comma separated" - a comma is what divides the three ordinates of ONE
+    # point, and offering it as the list separator is how "0,0,0,5000,0,0"
+    # becomes a valid-looking line somebody did not mean.
+    if wanted == "Line":
+        return ('MILLIMETRES, two points with a SEMICOLON between - '
+                '"0,0,0; 5000,0,0"')
+    if re.search(r"<Curve>$", wanted):
+        return ('MILLIMETRES, two points per curve with a SEMICOLON between - '
+                '"0,0,0; 5000,0,0" - and one curve separated from the next by a '
+                'PIPE. Every one is a straight line; an arc cannot be written')
+
+    # THE SECOND SET, AND THE HINT HAS TO SAY BOTH HALVES. A category name here
+    # means EVERY element of that category in the MODEL - there is no view in
+    # scope where this is resolved - and `selected` is refused, because the
+    # first set already arrives that way. Somebody who does not know the second
+    # half types the obvious word and gets a refusal they cannot place.
+    if re.search(r"<Element>$", wanted):
+        return ('a CATEGORY name - "Ducts", or "Ducts, Duct Fittings" for more '
+                'than one - and it means every one in the MODEL, not in a view. '
+                'This is the SECOND set, so `selected` is refused: the first '
+                'set is what is selected')
+
+    # A PANEL IS THE ONE INSTANCE WITH A NAME OF ITS OWN, and the hint has to
+    # say WHICH name, because the wrong one is right there in the Properties
+    # palette and resolves to nothing.
+    if wanted == "FamilyInstance":
+        return ('an electrical panel by its PANEL NAME - "LP-1", the one on the '
+                'panel schedule, not the family type. Leave it blank to create '
+                'the circuit unassigned')
     if "<" in wanted:
         hints.append("comma separated")
     if re.search(r"\b(View|Category|BuiltInCategory|Level)\b", wanted):
