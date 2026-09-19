@@ -29,6 +29,13 @@ needs:
   - FILTER_ELEMENTS_BY_CATEGORY
   - READ_ELEMENT_PARAMETERS
   - REPORT_FINDINGS
+  # MEASURED AT 0 OF 4, AND THIS IS WHY. FRG-QA-002 is "the missing link between
+  # reading a parameter and reporting on it: turns the blank and absent lists
+  # into sentences a modeller can act on" - which is this skill's whole purpose,
+  # and it declared the reading and the reporting with nothing in between.
+  # FRAGMENT-ISSUES row 116 already named this capability "the right owner it
+  # had previously hidden"; the skill had still not claimed it.
+  - DESCRIBE_BLANK_PARAMETERS
 
 # What must be true BEFORE it runs, so it fails early with something
 # useful instead of deep inside a transaction (docs/09 s2).

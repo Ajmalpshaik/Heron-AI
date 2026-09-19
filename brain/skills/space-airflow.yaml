@@ -29,6 +29,12 @@ needs:
   - FILTER_ELEMENTS_BY_CATEGORY
   - READ_ELEMENT_PARAMETERS
   - WRITE_ELEMENT_PARAMETERS
+  # MEASURED AT 0 OF 4. The purpose is working out the air a space needs, and a
+  # space's heating and cooling loads are what that calculation is FROM -
+  # FRG-MEP-011 reports them, and says for each figure whether Revit calculated
+  # it or somebody typed it in, which is the difference between a design figure
+  # and a guess. READ_ELEMENT_PARAMETERS cannot stand in for it.
+  - READ_SPACE_LOADS
 
 # What must be true BEFORE it runs, so it fails early with something
 # useful instead of deep inside a transaction (docs/09 s2).

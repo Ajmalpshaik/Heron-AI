@@ -28,6 +28,16 @@ utterances:
 needs:
   - FILTER_ELEMENTS_BY_CATEGORY
   - TRACE_CONNECTIVITY
+  # THE PURPOSE ABOVE PROMISES "reports where it is not [joined]" AND NOTHING
+  # HERE COULD DO IT. TRACE_CONNECTIVITY walks outward from ONE element, so it
+  # answers "what does this reach" and cannot sweep a category for loose ends.
+  # Added 2026-09-19 after tools/check-skill-routing.py measured this skill at
+  # 1 of 4: "did anything come apart" resolved to UNGROUP_ELEMENTS, a MODIFY
+  # that takes things apart in reply to a question about whether they already
+  # had (FRAGMENT-ISSUES row 133). SELECT_BY_CONNECTION_STATUS is the read that
+  # sentence deserves - FRG-MEP-033 already declares "find the loose ends" and
+  # "which ducts are not joined up" - and the skill had never claimed it.
+  - SELECT_BY_CONNECTION_STATUS
   - REPORT_FINDINGS
 
 # What must be true BEFORE it runs, so it fails early with something

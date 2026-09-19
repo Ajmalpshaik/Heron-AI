@@ -28,6 +28,12 @@ utterances:
 needs:
   - FILTER_ELEMENTS_BY_CATEGORY
   - SET_SELECTION
+  # FILTER_ELEMENTS_BY_CATEGORY IS SINGULAR AND "the ductwork" IS NOT.
+  # FRG-SEL-024's purpose says it plainly: what somebody means by "the ductwork"
+  # is five Revit categories - ducts, fittings, accessories, flex duct and the
+  # insulation. "select all the ducts" resolves there, and the skill could not
+  # have honoured its own utterance without it.
+  - SELECT_BY_CATEGORIES
 
 # What must be true BEFORE it runs, so it fails early with something
 # useful instead of deep inside a transaction (docs/09 s2).
