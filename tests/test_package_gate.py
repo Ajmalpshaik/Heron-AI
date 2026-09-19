@@ -146,9 +146,26 @@ def main():
     out = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "check-package.py")],
                          capture_output=True, text=True, cwd=ROOT)
     check(out.returncode == 0, "the gate passes on the current tree")
-    check("STILL OWED" in out.stdout,
-          "and still prints what it cannot answer - a green run here is not an "
-          "install and never reports itself as one")
+
+    # THE FOUR QUESTIONS BY THEIR OWN WORDS, NOT BY THE HEADING ABOVE THEM.
+    # This matched the literal string "STILL OWED" until 2026-09-19, when all
+    # four were answered on a real PC for the first time and that heading
+    # became the wrong words - they are not owed any more, they are simply
+    # not answerable HERE. The test then failed on a WORDING change while the
+    # behaviour it exists to protect had not moved at all.
+    #
+    # A test that breaks when prose is corrected is testing the prose. What
+    # matters is that the gate still LISTS what it cannot answer and still
+    # refuses to call itself an install - both checked below, and neither
+    # depends on what the heading says.
+    for question in ("the add-in actually loads, on each release",
+                     "an upgrade over a previous version keeps the user's settings",
+                     "a rollback recovers a working install",
+                     "Revit discovers the manifest from the per-user folder"):
+        check(question in out.stdout,
+              "it still names what it cannot answer - %s" % question)
+    check("not an install" in out.stdout,
+          "and a green run here is not an install and never reports itself as one")
 
     print()
     if FAILURES:
