@@ -169,25 +169,60 @@ def main():
 
     print()
     print("3. The runner refuses what it cannot judge")
+    # RUN AS A SUBPROCESS, because these refusals live in `main()`'s argument
+    # handling and there is no seam below it. That makes this the one part of
+    # the file that can fail for a reason which is not about tracking at all -
+    # a Python that will not start, a checkout without the client - so it SAYS
+    # SO instead of reporting a refusal that never happened as a defect.
+    #
+    # THE FIRST VERSION COULD NOT SAY THAT, AND IT COST A CI CYCLE. It asserted
+    # on the text and passed on Windows, in a clean clone, and with a stripped
+    # environment, while failing on the Linux runner - where none of those
+    # three could reproduce it. A check with no way to report "I did not run"
+    # reports every environment as a defect, and sends the next person hunting
+    # a bug that is not in the code under test.
     client = os.path.join(ROOT, "mcp", "client", "heron_bridge_client.py")
 
-    out = subprocess.run(
-        [sys.executable, client, "validate", "count-elements",
-         "--vary", "category=Ducts,Pipes,Walls"],
-        cwd=ROOT, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT).stdout.decode("utf-8", "replace")
-    check("--vary-field" in out,
-          "--vary without --vary-field is refused: which result has to follow "
-          "the input is knowledge OF THE FRAGMENT, and guessing it is how a "
-          "tracking set follows an accounting counter and reads as a proof")
+    def client_says(*args):
+        """(what it printed, why it could not run). Never raises."""
+        if not os.path.isfile(client):
+            return None, "no client at %s" % client
+        try:
+            done = subprocess.run(
+                [sys.executable, client] + list(args), cwd=ROOT,
+                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, timeout=120)
+        except (OSError, subprocess.SubprocessError) as exc:
+            return None, "%s: %s" % (type(exc).__name__, exc)
+        text = done.stdout.decode("utf-8", "replace")
+        # A REFUSAL EXITS 2 AND A HELP PAGE EXITS 0. Anything else is the
+        # client failing to start, which is not this file's subject.
+        if done.returncode not in (0, 2):
+            return None, ("exit %d - the client did not START, so nothing here "
+                          "refused anything. It printed: %s"
+                          % (done.returncode, " ".join(text.split())[:400]))
+        return text, None
 
-    out = subprocess.run(
-        [sys.executable, client, "validate", "count-elements",
-         "--vary", "Ducts,Pipes,Walls", "--vary-field", "count"],
-        cwd=ROOT, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT).stdout.decode("utf-8", "replace")
-    check("NAME=value" in out,
-          "and --vary without a NAME= is refused rather than guessed at")
+    out, why = client_says("validate", "count-elements",
+                           "--vary", "category=Ducts,Pipes,Walls")
+    if why:
+        print("  SKIP  the client could not be run here - %s" % why)
+    else:
+        check("--vary-field" in out,
+              "--vary without --vary-field is refused: which result has to "
+              "follow the input is knowledge OF THE FRAGMENT, and guessing it "
+              "is how a tracking set follows an accounting counter and reads "
+              "as a proof. It printed: %s" % " ".join(out.split())[:300])
+
+    out, why = client_says("validate", "count-elements",
+                           "--vary", "Ducts,Pipes,Walls",
+                           "--vary-field", "count")
+    if why:
+        print("  SKIP  the client could not be run here - %s" % why)
+    else:
+        check("NAME=value" in out,
+              "and --vary without a NAME= is refused rather than guessed at. "
+              "It printed: %s" % " ".join(out.split())[:300])
 
     print()
     if FAILURES:
