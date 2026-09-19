@@ -429,20 +429,48 @@ what must be true before it runs, and what it stands on. The parallel to the fra
 layer up.
 
 **A skill is only as proven as the weakest fragment under it**, and that is the one thing a list of
-names cannot show. Every skill in the library sits at `DRAFT`. Six of them rest entirely on `PROVEN`
-fragments and are waiting for nothing but somebody to look; four rest on something weaker and cannot
-move until those do. In a list of names they are identical. So each skill carries an **effective
-status** — the lowest rung on [docs/09](../docs/09-skills-and-fragments.md)'s ladder among the fragments
-serving it — beside the status its own card declares. A card can say anything; the chain underneath is
-the fact.
+names cannot show. Every skill in the library sits at `DRAFT`. Some rest entirely on `PROVEN`
+fragments and are waiting for nothing but somebody to look; others rest on something weaker and
+cannot move until those do — **the tool prints how many of each, and this page deliberately does
+not**, because it said *six and four* for long enough to be wrong. In a list of names they are
+identical. So each skill carries an **effective status** — the lowest rung on
+[docs/09](../docs/09-skills-and-fragments.md)'s ladder among the fragments serving it — beside the
+status its own card declares. A card can say anything; the chain underneath is the fact.
+
+**AND THE CHAIN IS ONLY HALF THE FACT.** A chain of `PROVEN` fragments says nothing about whether
+the skill's own sentences REACH it, and the two read identically on a card. So each skill also
+carries its **words**: how many of its own utterances land on a capability it declares, every
+sentence marked with where it actually went, and a loud tag when a question lands on something that
+CHANGES THE MODEL. **Neither half is a proof** — the footer says so — and the subtitle labels them
+`CHAIN:` and `WORDS:` so neither reads as the whole.
+
+That half is a **recording, never re-measured here**: one `heron_brain.lookup` per utterance is about
+twenty-five minutes, which is not a page render. It reads the newest `tools/jobs/skills/routing-*.json`
+that `prove-skill.py --routing-to` wrote. **A missing recording
+says `NOT MEASURED`**, which is a different sentence from *no crossings*, and **one whose sentences
+have moved since it was taken says `OUT OF DATE`** — compared against the PHRASES, which are in git,
+and never against the store, which every worktree writes
+([row 152](../docs/FRAGMENT-ISSUES.md)).
+
+**A card also shows what the RETRIEVER said about its own answer** ([row 157](../docs/FRAGMENT-ISSUES.md)).
+`heron_retrieve` has always written *a coin toss* when neither route preferred the winner, and *the
+words route ranked the library rather than selecting from it* when that route had no claim on the
+sentence — and every consumer used to drop it. A sentence that reaches the right capability **and**
+carries one of those is the right answer found by luck, and the page used to report it as a plain
+success. **The two complaints are not the same strength**, so the card says *the retriever
+complained*, never that the answer is wrong, and a complaint does not take a sentence out of the
+reach count — whether it spends it is a reader's call.
 
 **Reachability is reported per Revit release, never overall.** A skill declaring 2020–2027 whose
 fragments cover 2024 and 2025 works on two releases and claims eight; one overall figure is exactly
 what hides that. Same rule as `HERON-SKL-PRF-006`, same reason.
 
-**It concludes twice, so it has a test** ([`tests/test_skill_catalog.py`](../tests/test_skill_catalog.py)):
-the effective status and the per-release reachability are both judgements that can be wrong while the
-page still renders perfectly.
+**It concludes, so it has a test** ([`tests/test_skill_catalog.py`](../tests/test_skill_catalog.py)):
+the effective status, the per-release reachability, whether a recording still covers the skill's
+sentences, and what the retriever said about each answer are all judgements that can be wrong while
+the page still renders perfectly. **Nothing in that suite edits `brain/skills`** — `collect()` takes
+the recording folder so the whole path runs against a recording written for the test, which is
+[row 155](../docs/FRAGMENT-ISSUES.md)'s lesson about a suite that rewrites the library it is checking.
 
 The working prototype of `HERON-DOC-SKL-003`.
 
