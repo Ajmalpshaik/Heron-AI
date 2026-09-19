@@ -90,5 +90,23 @@ utterances:
   # THIS FIXES TWO SENTENCES AND NOT THE SHAPE. "how many sprinklers on level
   # 3" would still be ranked. The general repair is to index a SKILL's
   # utterances the way a fragment's are - see NEEDS-CHECKING group V.
+  #
+  # AND THE BARE PHRASE TOO, caught by Ajmal rather than by any check:
+  # "if i say how meny sriklers is there that time if you place the
+  # sproklers that menas that is dangeeres". He is right. Measured here
+  # the bare phrase resolved CORRECTLY to COUNT_ELEMENTS - and by 1.9
+  # ranks, with PLACE_FAMILY_INSTANCES second, on the ranked route. A
+  # question one and a half ranks from placing sprinklers is not safe,
+  # it is lucky, and the margin moves whenever the library does: the
+  # session sweeping the skills measured the SAME phrase reaching
+  # PLACE_FAMILY_INSTANCES in all three of its runs, from a tree without
+  # the two lines above.
+  #
+  # A CROSSING CHECK CANNOT CATCH THIS ONE. Theirs compares the resolved
+  # risk against the SKILL'S declared risk, and the skill claiming the
+  # phrase was sprinkler-layout, declared MODIFY - so a question sitting
+  # inside a write skill is invisible to it by construction. A
+  # declaration cannot make a question safe.
   - how many sprinklers on level 2
+  - how many sprinklers
   - give me the number of fire dampers
