@@ -54,8 +54,28 @@ def main():
         SCOPE.rebuild()
         store = SCOPE.open_scope(SCOPE.GLOBAL)
         try:
+            check(SEARCH.indexed_from(store) is None,
+                  "a store nobody has indexed names no tree - an absent "
+                  "answer, not agreement (D-52)")
             n, _ = SEARCH.index(store)
             check(n >= 2, "the scope indexes its fragments (%d)" % n)
+
+            # WHOSE FRAGMENTS ARE IN THE STORE (FRAGMENT-ISSUES row 131). It
+            # is ONE file for every checkout on the machine, so a rebuild
+            # replaces what Heron knows with the opinion of whichever tree
+            # asked last. index() knew both paths and recorded neither.
+            import heron_fragment as FRAG
+            here = os.path.abspath(FRAG.FRAGMENTS_DIR).replace(os.sep, "/")
+            check(SEARCH.indexed_from(store) == here,
+                  "and after indexing it names the tree it was built from")
+            # IT RECORDS AND DOES NOT REFUSE. Whether a scope should be
+            # per-worktree is the policy question row 131 leaves open, and a
+            # library function that started refusing would settle it by
+            # accident - so a second index from the same tree still works.
+            again, _ = SEARCH.index(store, force=True)
+            check(again == n and SEARCH.indexed_from(store) == here,
+                  "a second rebuild is not refused - this names, it does not "
+                  "gate")
 
             print()
             print("1. The common sentence costs one lookup")

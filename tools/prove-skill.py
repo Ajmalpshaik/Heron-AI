@@ -824,12 +824,8 @@ def main():
         print("THE UNDERSTANDING HALF IS A RECORDING, NOT A RUN. Taken %s"
               % (taken or "at an unrecorded time"))
         print("against Revit %s and this index:" % (revit or "?"))
-        print("  store    %s" % index.get("path", "?"))
-        print("  md5      %s" % index.get("md5", "?"))
-        if index.get("counts"):
-            print("  rows     %s" % ", ".join(
-                "%s %d" % (name, index["counts"][name])
-                for name in sorted(index["counts"])))
+        for line in ROUTING.fingerprint_lines(index):
+            print(line)
         for line in GJ.wrap(
                 "The store is one file for every worktree on the machine and "
                 "every reader is a writer (row 136), so this is only as true "
@@ -871,17 +867,8 @@ def main():
         print("")
         index = ROUTING._index_fingerprint()
         print("THE INDEX THIS RAN AGAINST - compare it before comparing counts:")
-        if index.get("error"):
-            print("  no store: %s" % index["error"])
-        else:
-            print("  store    %s" % index["path"])
-            print("  md5      %s" % index["md5"])
-            if index.get("counts_error"):
-                print("  counts   COULD NOT BE READ - %s" % index["counts_error"])
-            else:
-                print("  rows     %s" % ", ".join(
-                    "%s %d" % (name, index["counts"][name])
-                    for name in sorted(index.get("counts") or {})))
+        for line in ROUTING.fingerprint_lines(index):
+            print(line)
         print("")
         for plan in plans:
             measured[plan.id] = understanding(plan, args.revit)

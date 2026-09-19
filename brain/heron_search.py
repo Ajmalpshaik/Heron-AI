@@ -392,6 +392,24 @@ def index(store, force=False):
     store.execute(
         "INSERT OR REPLACE INTO index_state (name, digest) VALUES ('search', ?)",
         (want,))
+    # WHICH TREE THIS CAME FROM. The store is ONE file for every checkout on
+    # the machine, so a rebuild replaces what Heron knows with the opinion of
+    # whichever worktree asked last - FRAGMENT-ISSUES row 131, where a
+    # fragment edit that had been verified live was ABSENT again minutes
+    # later with nothing run but `grep`, because two other trees were up and
+    # neither carried it. This function knew both paths all along and
+    # recorded neither, so nothing anywhere could name the winner.
+    #
+    # IT RECORDS AND DOES NOT REFUSE. Whether a scope should be per-worktree,
+    # or whether this should decline to rebuild from a tree that is not the
+    # one the store was built for, is the open policy question row 131 leaves
+    # to the owner - and a library function that started refusing would
+    # settle it by accident. Naming the tree is the half that cannot break a
+    # caller, which is row 71's rule one layer down.
+    store.execute(
+        "INSERT OR REPLACE INTO index_state (name, digest) "
+        "VALUES ('search_root', ?)",
+        (os.path.abspath(FRAG.FRAGMENTS_DIR).replace(os.sep, "/"),))
 
     store.db.commit()
     # (written, skipped), MATCHING `heron_embed.index`. It used to return a
@@ -409,6 +427,26 @@ def index(store, force=False):
 # ---------------------------------------------------------------------------
 
 _ON_DISK = {"signature": None, "by_id": {}}
+
+
+def indexed_from(store):
+    """The fragment folder the store was last rebuilt from, or None.
+
+    None is a LEGITIMATE answer and not an error: a store written before this
+    was recorded has no row, and saying so is different from naming a tree.
+    D-52's rule - an absent measurement is not a clean one.
+
+    Nobody is refused on the strength of this. It exists so that a sweep
+    printing the store's fingerprint can also print WHOSE fragments are in
+    it, which FRAGMENT-ISSUES row 131 is the cost of not knowing.
+    """
+    try:
+        row = store.execute(
+            "SELECT digest FROM index_state WHERE name = 'search_root'"
+        ).fetchone()
+    except sqlite3.OperationalError:
+        return None
+    return row["digest"] if row else None
 
 
 def _disk_signature(root=None):

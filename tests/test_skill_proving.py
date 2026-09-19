@@ -314,6 +314,46 @@ def main():
               "%s does not name a model it has never seen" % plan.id)
 
     print()
+    print("the fingerprint block, printed by four sweeps and written once")
+    # FOUR COPIES OF SIX PRINTS is four places to edit the day the block
+    # learns something new - and it has just learned WHICH TREE built the
+    # store (register row 131). These are built rather than run, so no store
+    # is needed and CI, which has none, still checks them.
+    lines = PS.ROUTING.fingerprint_lines({"error": "no HERON_KNOWLEDGE"})
+    check(len(lines) == 1 and "no store" in lines[0],
+          "a store that cannot be found says so, and says nothing else")
+    lines = PS.ROUTING.fingerprint_lines(
+        {"path": "/x/global.db", "md5": "abc", "counts": {"fragments": 3},
+         "built_from": "/tree/a", "other_tree": False,
+         "running_in": "/tree/a"})
+    check(any("built by /tree/a" in line for line in lines),
+          "a store names the tree it was built from")
+    check(not any("NOT THE TREE" in line for line in lines),
+          "and says nothing more when that is the tree running here")
+    lines = PS.ROUTING.fingerprint_lines(
+        {"path": "/x/global.db", "md5": "abc", "counts": {"fragments": 3},
+         "built_from": "/tree/a", "other_tree": True,
+         "running_in": "/tree/b"})
+    check(any("NOT THE TREE RUNNING HERE" in line for line in lines)
+          and any("/tree/b" in line for line in lines),
+          "a store built by ANOTHER tree is said loudly, and both are named")
+    check(any("row 131" in line for line in lines),
+          "pointing at the row that is the cost of not knowing")
+    # AND AN ABSENT ANSWER IS NOT AGREEMENT. A recording or a store written
+    # before this was recorded carries no key, and must not read as "the
+    # same tree" (D-52).
+    lines = PS.ROUTING.fingerprint_lines(
+        {"path": "/x/global.db", "md5": "abc", "counts": {"fragments": 3}})
+    check(not any("built by" in line for line in lines),
+          "a fingerprint taken before this existed claims nothing about a "
+          "tree")
+    lines = PS.ROUTING.fingerprint_lines(
+        {"path": "/x/global.db", "md5": "abc", "counts": {"fragments": 3},
+         "built_from": None})
+    check(any("NOT RECORDED" in line for line in lines),
+          "and a store that was asked and has no answer says NOT RECORDED")
+
+    print()
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:
