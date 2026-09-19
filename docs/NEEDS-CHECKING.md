@@ -1225,3 +1225,56 @@ unproved by neglect.
 only `hostElements` moves. Note this is not the reason sometimes given — the linked **CAD** files
 belong to `IMP-019`, not to `LNK-015`. Proving `LNK-015` needs a model with a real Revit link in
 it.
+
+### H1 and H2 were fixed the same day, and H3 stands
+
+**Read this rather than the two rows above**, which say the changes were not made. They were, an hour
+later and on the owner's say-so. `tools/prove-agent.py` now does both:
+
+- **`compare()` descends one level into a list** — its length, then each item's own numbers *and
+  names*, first `LIST_ITEMS = 5` items.
+- **`track --arg KEY=VALUE`**, repeatable, passed through to `op_args`. The **same** arguments go to
+  both models, deliberately: varying them would let a different answer come from a different input
+  rather than a different model, which is the one thing tracking exists to rule out.
+
+Four agents were then proved and signed that could not be before:
+
+| Agent | What moved, once the tool could see it |
+|---|---|
+| `IMP-019` | `linkedCad[0].name: box.dwg -> Project1 - Section - Section 1.dwg` |
+| `LVL-027` | `levels[0].elements: 8 -> 29`, `levels[1].elements: 8 -> 7`, `onNoLevel: 3513 -> 3558` |
+| `PAR-011` | `distinctParameters: 95 -> 90`, `listed: 95 -> 90`, `parameters[]: 95 -> 90` (`--arg category=Ducts`) |
+| `SEL-008` | `selected: 18 -> 8` (`--arg category=Ducts`) |
+
+**The guard that mattered was checked first:** `compare(A, A)` — the same reply against itself —
+still returns nothing moved. A change that widens what counts as movement has to be shown not to
+manufacture it.
+
+**Ducts were chosen over pipes on purpose.** `category=Pipes` gave `0 -> 2` elements and `0 -> 99`
+parameters, and a zero is the weaker half of a pair: an agent that failed to read would also return
+zero. `Ducts` gives **18 against 8** and **95 against 90** — both sides non-zero and different,
+which no fallback and no constant can produce.
+
+#### One honest side effect: the thin-tracking flag now over-fires on list-heavy replies
+
+`TRACKING IS THIN` compares how many things moved against how many held. Descending into lists adds
+every matching item field to the *held* side, and on a parameter report those are **Revit's own
+parameter names, identical by nature**. `PAR-011` reads *3 moved, 44 held* and is flagged thin,
+while its real argument — 95 distinct parameters against 90, both non-zero — is strong.
+
+**No threshold was invented to paper over it.** The gap text already says the reader judges, and
+that is what happened here. Recorded so the next person reading `PAR-011`'s proof knows the flag is
+inflated rather than the evidence weak.
+
+#### `CAT-009` is genuinely not trackable, and that is the correct answer
+
+`select_by_category` returns `categories: 1` in **both** models, and it should. `CAT-009` maps a BIM
+word to a Revit category — *"Ducts"* to `OST_DuctCurves` — and that answer does not depend on which
+model is open, because it is a lookup rather than a reading. Tracking cannot prove it and proving it
+by tracking would mean nothing. It needs a different kind of test: a table of words against the
+categories they must resolve to.
+
+`DOC-004` is the same shape from the other end. It chooses *which document*, and `document` is
+excluded from `compare()` as the input. Every one of the fifteen signed proofs names the right model,
+which is real evidence that it works — but it is evidence sitting in fifteen other agents' files,
+not a proof of its own.

@@ -216,10 +216,29 @@ def bridges(client_id=None):
     return live
 
 
-def ask(bridge, operation):
+def parse_args(pairs):
+    """`["category=Pipes"]` to `{"category": "Pipes"}`.
+
+    Values stay STRINGS. The bridge and the add-in already agree on how to
+    read a category name or a number out of one, and guessing a type here
+    would put a third opinion between them.
+    """
+    out = {}
+    for pair in pairs or ():
+        if "=" not in pair:
+            raise ValueError("--arg wants KEY=VALUE, and %r has no '='." % pair)
+        key, value = pair.split("=", 1)
+        key = key.strip()
+        if not key:
+            raise ValueError("--arg %r has an empty name." % pair)
+        out[key] = value
+    return out
+
+
+def ask(bridge, operation, op_args=None):
     """Send one operation and return the reply, or a refusal dict."""
     try:
-        return bridge.request(operation)
+        return bridge.request(operation, op_args=op_args or None)
     except Exception as why:                                  # noqa: BLE001
         return {"ok": False, "error": "no_answer", "message": str(why)}
 
@@ -391,8 +410,30 @@ def cmd_track(args):
     where_a = describe(ask(first, "count_elements"))
     where_b = describe(ask(second, "count_elements"))
 
-    a = ask(first, args.operation)
-    b = ask(second, args.operation)
+    # THE SAME ARGUMENTS GO TO BOTH MODELS, AND THAT IS THE WHOLE POINT.
+    #
+    # Tracking asks whether the ANSWER follows the MODEL. Varying the input
+    # between the two runs would let a different answer come from the
+    # different input rather than from the different model, which is the one
+    # thing this file exists to rule out. So `--arg` is parsed once and sent
+    # twice, unchanged.
+    #
+    # WHY IT EXISTS. `track` sent a bare operation, and three operations
+    # refuse without an argument - `read_parameters` answers `no_category`,
+    # `select_by_category` answers `operation_failed`. Measured 2026-09-19:
+    # HERON-REVIT-PAR-011 could not be tracked at all, then moved 0 -> 2
+    # elements and 0 -> 99 parameters the moment `category=Pipes` was handed
+    # to it by hand. The agent was never the problem; there was no box to
+    # type in.
+    try:
+        op_args = parse_args(args.arg)
+    except ValueError as why:
+        w("%s\n" % why)
+        w("Nothing was drafted.\n")
+        return 1
+
+    a = ask(first, args.operation, op_args)
+    b = ask(second, args.operation, op_args)
 
     for label, reply, session in (("first", a, args.first),
                                   ("second", b, args.second)):
@@ -477,21 +518,93 @@ def cmd_track(args):
     return 0
 
 
-def compare(a, b):
-    """Which numbers moved between two replies, and which did not.
+# Keys that are the ENVELOPE rather than the answer. `document` is the model's
+# own name - the input - and counting it would make every run pass.
+ENVELOPE = ("ok", "document", "projectKey", "reads", "placedElements", "elements")
 
-    Only NUMBERS, and only keys both replies carry. A string that differs is
-    usually the document name, which is the input rather than the answer, and
-    counting it as movement would make every run pass.
+# How far into a list to look, and how many of its items. A reply that lists
+# 3,000 elements should not produce 3,000 rows of evidence; the first few
+# settle the question, and the LENGTH of the list is compared whatever it is.
+LIST_ITEMS = 5
+
+
+def _scalars(item, prefix, into_moved, into_same, other):
+    """Compare one list item's own fields against the matching item.
+
+    NAMES COUNT HERE, AND THEY DO NOT AT THE TOP LEVEL. The distinction is
+    not a fudge: at the top level a string is nearly always the document
+    name, which is what was ASKED. Inside a list it is a thing the agent
+    FOUND in the model, which is what was ANSWERED. `linkedCad[0].name`
+    is the answer and nothing else.
+    """
+    if not isinstance(item, dict) or not isinstance(other, dict):
+        if item != other:
+            into_moved.append((prefix, item, other))
+        else:
+            into_same.append((prefix, item))
+        return
+    for key in sorted(set(item) & set(other)):
+        x, y = item.get(key), other.get(key)
+        if isinstance(x, bool) or isinstance(y, bool):
+            continue
+        if not isinstance(x, (int, float, str)) or not isinstance(y, (int, float, str)):
+            continue
+        where = "%s.%s" % (prefix, key)
+        if x != y:
+            into_moved.append((where, x, y))
+        else:
+            into_same.append((where, x))
+
+
+def compare(a, b):
+    """Which answers moved between two replies, and which did not.
+
+    TOP LEVEL: only NUMBERS, and only keys both replies carry. A string that
+    differs up here is usually the document name, which is the input rather
+    than the answer, and counting it as movement would make every run pass.
+
+    INSIDE A LIST: the length, and then each item's own numbers AND names.
+    Added 2026-09-19, because reading only the top level was quietly losing
+    two agents that plainly do read the model:
+
+      IMP-019   `linkedCadCount` is 1 in both models, so nothing moved - while
+                `linkedCad[0].name` held `box.dwg` against
+                `Project1 - Section - Section 1.dwg`. The count of one CAD
+                link against one CAD link was the only thing this function
+                was allowed to see.
+
+      LVL-027   both models hold two levels named the same at the same
+                elevations, so every top-level number held but `onNoLevel`.
+                Inside `levels[]`: 8 and 8 elements against 29 and 7. The
+                per-level counts are the agent's actual answer, and they move
+                in BOTH directions at once - which is harder to fake than a
+                single total, not easier.
+
+    A list is compared POSITIONALLY, and that is a real limit rather than an
+    oversight: two models may list the same things in a different order, and
+    a positional comparison would call that movement. It is the right default
+    because every reply seen so far sorts its list, and because the failure
+    mode is a draft that looks STRONGER than it is - so the gap text, and a
+    person, still have to read it. Row H1 of docs/NEEDS-CHECKING.md.
     """
     moved, same = [], []
-    skip = ("placedElements", "elements")
     for key in sorted(set(a) & set(b)):
-        if key in skip or key in ("ok", "document", "projectKey", "reads"):
+        if key in ENVELOPE:
             continue
         x, y = a.get(key), b.get(key)
         if isinstance(x, bool) or isinstance(y, bool):
             continue
+
+        if isinstance(x, list) and isinstance(y, list):
+            where = "%s[]" % key
+            if len(x) != len(y):
+                moved.append((where, len(x), len(y)))
+            else:
+                same.append((where, len(x)))
+            for i in range(min(len(x), len(y), LIST_ITEMS)):
+                _scalars(x[i], "%s[%d]" % (key, i), moved, same, y[i])
+            continue
+
         if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
             continue
         if x != y:
@@ -614,6 +727,9 @@ def main(argv=None):
                        help="the add-in operation, e.g. list_levels")
     track.add_argument("--first", required=True, help="first session id")
     track.add_argument("--second", required=True, help="second session id")
+    track.add_argument("--arg", action="append", default=[], metavar="KEY=VALUE",
+                       help="an operation argument, repeatable. The SAME "
+                            "arguments go to both models - see cmd_track()")
     track.add_argument("--client-id", default=None,
                        help="identify as this chat, so a Revit the chat is "
                             "already using does not refuse. See bridges()")
