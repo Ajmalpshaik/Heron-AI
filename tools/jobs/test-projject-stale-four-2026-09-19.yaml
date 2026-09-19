@@ -1,0 +1,109 @@
+# The four signatures that went STALE, re-proved. 2026-09-19.
+#
+#     python tools/batch-prove.py tools/jobs/test-projject-stale-four-2026-09-19.yaml --dry-run --session 36908
+#     python tools/batch-prove.py tools/jobs/test-projject-stale-four-2026-09-19.yaml --session 36908
+#
+# --session 36908 IS NOT OPTIONAL. The other connected Revit (20472) belongs to
+# a different chat, and three of these four are MODIFY.
+#
+# WHY THESE FOUR. They arrived STALE in a merge from main the same afternoon -
+# signed by Ajmal PS on 2026-09-08, 09-13, 09-13 and 09-17, and then the code
+# moved under them. A stale proof is not a failure and not neglect: it is D-30
+# working, and the only answer to it is to run the thing again. They were
+# nobody's task, which is exactly how a stale row survives a handover.
+#
+# THE ARRANGEMENTS ARE NOT INVENTED. Each was read back out of the fragment's
+# own previous proof and re-derived against this model, because the old ones
+# cannot be reproduced:
+#
+#   THE OLD NEGATIVES USED `select-in-region` with minMm/maxMm. Those
+#   coordinates framed 3 elements in this file on 2026-09-13 and they are a
+#   fact about where somebody was standing that day. A category in a named view
+#   is reproducible by anybody holding the file.
+#
+#   THE OLD NEGATIVE FOR THE THREE VIEW FRAGMENTS IS KEPT EXACTLY, because it
+#   is better than anything I would have invented: point the fragment at a
+#   SCHEDULE. A schedule cannot isolate, hide or crop, so the fragment refuses
+#   with `viewRefused true` while still holding a real, non-empty selection.
+#   That is a negative driven by the VIEW rather than by an empty selection -
+#   the shape rule 3 asks for and the shape a cleared selection can never give.
+#
+# WHAT THE MODEL HOLDS - read back 2026-09-19, session 36908:
+#
+#   Walls   24 in "1 - Plumbing", 24 in "HERON ROOM TEST", 28 in "{3D}"
+#   Ducts    8 in "HERON ROOM TEST"
+#   Levels   Level 1, Level 2
+#
+#   "HERON DUCT SCHEDULE" is NOT verified here and is taken from the previous
+#   proofs of all three view fragments, against this same file. `find-views`
+#   cannot confirm it - it reports `skippedNonDrawing 8` and excludes schedules
+#   by design. If the name has changed the run says "No view called ..." and
+#   nothing is harmed; that is a cheaper check than building one.
+
+model: test projject, Revit 2024, 3,594 elements
+
+defaults:
+  in: test projject
+  write: true
+  setup:
+    - select-by-category-name
+    - set-selection
+  set:
+    categoryName: Walls
+    inViewOnly: "1 - Plumbing"
+  negative-set:
+    categoryName: Walls
+    inViewOnly: "1 - Plumbing"
+
+jobs:
+
+  # A READ, and the only one here that is not view-driven. Its negative is
+  # driven by the VALUE: a type name this model has not got. If it returns
+  # types anyway it is ignoring typeNameContains.
+  - fragment: select-types
+    setup: []
+    write: false
+    set:
+      categories: "Walls"
+      familyNameContains: ""
+      typeNameContains: ""
+    negative-set:
+      categories: "Walls"
+      familyNameContains: ""
+      typeNameContains: "ZZZNOSUCHTYPENAME"
+
+  # SAME 24 WALLS IN BOTH LEGS. Only the VIEW differs, which is the whole
+  # point - a plan can isolate and a schedule cannot.
+  - fragment: isolate-elements
+    set:
+      view: "1 - Plumbing"
+    negative-set:
+      view: "HERON DUCT SCHEDULE"
+
+  - fragment: hide-elements
+    set:
+      view: "1 - Plumbing"
+      permanent: false
+    negative-set:
+      view: "HERON DUCT SCHEDULE"
+      permanent: false
+
+  # THE ONE THAT TAKES ITS ELEMENTS STRAIGHT FROM THE CHAIN. Its previous proof
+  # ran `select-by-category-name` ALONE - no `set-selection` - so the elements
+  # came from the chain rather than from Revit's selection, and a chain reset
+  # would throw them away. `keep-chain` is what stops that, and without it this
+  # reads as a missing selection rather than a discarded one.
+  - fragment: set-view-crop
+    setup:
+      - select-by-category-name
+    keep-chain: true
+    set:
+      categoryName: Walls
+      inViewOnly: "{3D}"
+      view: "{3D}"
+      marginMm: 3000
+    negative-set:
+      categoryName: Walls
+      inViewOnly: "{3D}"
+      view: "HERON DUCT SCHEDULE"
+      marginMm: 3000

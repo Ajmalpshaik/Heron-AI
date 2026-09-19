@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -89,24 +89,25 @@ contract:
       type: int
 
 proof:
-  date: '2026-09-08'
+  date: '2026-09-19'
   by: Ajmal PS
-  model: Snowdon-scratch_ajmal.al (9,628 elements), Revit 2024, session 1680
-  positive_case: 'run as it would normally be run. returned elements 4 item(s) [Mitered Elbows
-    / Taps, Tees, Taps, ...], familyNeedle Duct, found 4, matchedNames 4 item(s) [Rectangular
-    Duct : Mitered Elbows / Taps, Round Duct : Tees, Round Duct : Taps, ...], scanned 460,
-    typeNeedle (null), wantedCategoryIds HashSet`1. inputs came categories as given (1); familyNameContains
-    as given; typeNameContains as given. on Snowdon-scratch_ajmal.al'
-  negative_case: run with categories=Ducts, familyNameContains=ZZZNOTHINGHERE, typeNameContains=
-    instead - chosen because it should not contain what this fragment reports. returned elements
-    0 item(s), familyNeedle ZZZNOTHINGHERE, found 0, matchedNames 0 item(s), scanned 460,
-    typeNeedle (null), wantedCategoryIds HashSet`1. inputs came categories as given (1); familyNameContains
-    as given; typeNameContains as given. on Snowdon-scratch_ajmal.al
+  model: test projject (3,594 elements), Revit 2024, session 36908
+  positive_case: 'run as it would normally be run. returned elements 6 item(s) [Exterior -
+    Brick on Mtl. Stud, Generic - 200mm, Generic - 90mm Brick, ...], familyNeedle (null),
+    found 6, matchedNames 6 item(s) [Basic Wall : Exterior - Brick on Mtl. Stud, Basic Wall
+    : Generic - 200mm, Basic Wall : Generic - 90mm Brick, ...], scanned 611, typeNeedle (null),
+    wantedCategoryIds HashSet`1. inputs came categories as given (1); familyNameContains as
+    given; typeNameContains as given. on test projject'
+  negative_case: run with categories=Walls, categoryName=Walls, familyNameContains=, inViewOnly=1
+    - Plumbing, typeNameContains=ZZZNOSUCHTYPENAME instead - chosen because it should not
+    contain what this fragment reports. returned elements 0 item(s), familyNeedle (null),
+    found 0, matchedNames 0 item(s), scanned 611, typeNeedle ZZZNOSUCHTYPENAME, wantedCategoryIds
+    HashSet`1. inputs came categories as given (1); familyNameContains as given; typeNameContains
+    as given. on test projject
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 87a67fd2c4d91790
-
+  fingerprint: d569cfc98237b7e2
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
