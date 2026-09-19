@@ -405,13 +405,26 @@ def main():
                 crossings.append(row)
             elif srisk in ASKS_A_QUESTION and risk in CHANGES_A_VIEW:
                 view_changes.append(row)
-            elif rung(risk) > rung(srisk) >= 0:
+            elif (risk in CHANGES_THE_MODEL or risk in CHANGES_A_VIEW) \
+                    and rung(risk) > rung(srisk) >= 0:
                 # HIGHER ON THE LADDER THAN THE SKILL DECLARES, from a skill
                 # that was not asking a question. A DIFFERENT CLAIM from a
                 # crossing and kept apart from it on purpose: nobody asked
                 # anything, so "a question answered by a write" is the wrong
                 # sentence - but the request still reached further up the
                 # ladder than the skill that owns the words.
+                #
+                # THE RISK MUST ACTUALLY DO SOMETHING, and testing the rung
+                # alone was not enough. The first version of this rule was
+                # `rung(risk) > rung(srisk)`, and it reported
+                # `find the blank parameters` - READ, resolving to
+                # DESCRIBE_BLANK_PARAMETERS at ANALYZE - as an escalation.
+                # docs/12 s2 gives ANALYZE side effects **none**, and row 116
+                # names that capability as the RIGHT owner for that sentence,
+                # so the rule had flagged the one case the register calls
+                # correct. Same over-reporting the sibling tool records fixing
+                # ("it flagged anything that was not READ"), reproduced here
+                # by reading position on the ladder as if it meant harm.
                 #
                 # THIS LIST EXISTS BECAUSE THE FIRST RUN HID ONE. `highlight
                 # them` belongs to select-elements, declared EXECUTE, and
