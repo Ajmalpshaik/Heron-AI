@@ -1,0 +1,226 @@
+# Ten of the fourteen arrangeable fragments, 2026-09-19.
+#
+#     python tools/batch-prove.py tools/jobs/project1-2026-09-19.yaml --dry-run --session 20472
+#     python tools/batch-prove.py tools/jobs/project1-2026-09-19.yaml --session 20472
+#
+# --session IS NOT OPTIONAL HERE. Two Revit 2024 sessions are connected, and
+# without it the target is whichever discovery file sorts first - which for a
+# MODIFY batch means writing into a model nobody chose. PR #188, today.
+#
+# EVERY VALUE BELOW WAS MEASURED AGAINST THIS MODEL BEFORE IT WAS TYPED, and
+# the measurement is written beside it. generate-jobs.py types the NAMES; the
+# values are judgement, and eleven confident meaningless results in one batch
+# on 2026-09-09 are what happens when they are guessed.
+#
+# WHAT THE MODEL ACTUALLY HOLDS - read back 2026-09-19, session 20472:
+#
+#   Ducts              18  (9 visible in "1 - Mech", 9 hidden there)
+#   Duct Fittings      16  (8 in "1 - Mech")
+#   Text Notes         15  (ALL of them in "Legend 1" - none in any plan,
+#                           ceiling, section, elevation or 3D view)
+#   Levels              2  (Level 1 @ 0, Level 2 @ 4000; 2 selectable in
+#                           "East - Mech", 1 in "Section 1", 0 in a floor plan
+#                           - rule 3, a level does not appear in its own plan)
+#   Grids               0
+#   Pipes, Air Terminals, Walls, Lines, Generic Models, Detail Items
+#                       0 in "1 - Mech"
+#   Wall TYPES          6  incl. "Generic - 200mm"  (0 walls placed - a type
+#                           needs no instance, which is why this still works)
+#   Structural Columns  1 type, "305x305x97UC"  (0 placed)
+#   Revit links         0      CAD links 1 (box.dwg)
+#
+# FOUR OF THE FOURTEEN ARE NOT HERE, each for a measured reason - listed at
+# the foot of this file rather than left to look like an oversight.
+
+model: Project1 work_ajmal.al, Revit 2024, 3,529 elements
+
+defaults:
+  # NAMED, NEVER ASSUMED. `model:` above is a note for the reader; this is the
+  # line Revit acts on, and --session on the command line is the belt to its
+  # braces.
+  in: Project1 work_ajmal.al
+
+  # A rolled-back write clears the Revit selection, so the arrangement is
+  # re-made before EACH phase. Only the first step resets the chain - step two
+  # consumes what step one left, so the order is not interchangeable.
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  # THE DEFAULT SELECTION IS NINE DUCTS. Rule 1: small, deliberately. A heavy
+  # write on a big selection is not a stronger test, it is a slower one, and a
+  # timeout says nothing at all about the fragment.
+  set:
+    categoryName: Ducts
+    inViewOnly: "1 - Mech"
+
+  # THE DEFAULT NEGATIVE IS FIFTEEN TEXT NOTES - a DIFFERENT selection, not a
+  # cleared one. Clearing it leaves `elements` unbound and the executor refuses,
+  # which proves nothing. These are annotation with no solid geometry and no
+  # level, so a fragment that works on model elements should find nothing in
+  # them while still having been handed fifteen real elements to look at.
+  negative-set:
+    categoryName: Text Notes
+    inViewOnly: "Legend 1"
+
+jobs:
+
+  # ---------------------------------------------------------------- reads
+
+  # NO SELECTION: it takes categories by name and searches the whole model.
+  # BOTH LEGS ARE DRIVEN BY THE VALUE, which is the shape this fragment
+  # allows: 18 ducts all measure well under 100 m, and none is under a
+  # micron. If the negative answers anyway it is ignoring shorterThanMm,
+  # and that is a finding rather than a pass.
+  - fragment: find-degenerate-lines
+    setup: []
+    set:
+      categories:    "Ducts"
+      shorterThanMm: 100000
+    negative-set:
+      categories:    "Ducts"
+      shorterThanMm: 0.001
+
+  # MEASURED BOTH WAYS BEFORE BEING TYPED: Text Notes 15 of 15 have no level,
+  # Ducts 0 of 18. Two real selections, opposite answers, neither empty.
+  #
+  # `expect: elements` IS NOT OPTIONAL HERE. `findings` is ONE item in BOTH
+  # legs - the fragment always writes a sentence, "0 of 18 ... have no level"
+  # being as much a finding as "15 of 15". Judged on findings this passes
+  # whatever it does. `elements` is the real result: 15 against 0.
+  - fragment: select-without-level
+    setup: []
+    set:
+      categories: "Text Notes"
+    negative-set:
+      categories: "Ducts"
+    expect: elements
+
+  # MEASURED: "1 - Mech" hides 9 of the 18 ducts and shows the other 9, which
+  # is a tidy split and not a coincidence worth trusting twice. "{3D}" hides
+  # none of them. Same category both legs, so only the VIEW differs.
+  - fragment: select-hidden-in-view
+    setup: []
+    set:
+      view:       "1 - Mech"
+      categories: "Ducts"
+    negative-set:
+      view:       "{3D}"
+      categories: "Ducts"
+
+  # Selection-driven, both legs from `defaults:` - 9 ducts against 15 text
+  # notes. A duct is a solid with a footprint; a text note is not.
+  - fragment: report-centroid
+
+  # Same pair, same reason. Left on the defaults deliberately: retyping an
+  # arrangement per job is how one copy comes to name a different view.
+  - fragment: measure-perimeter
+
+  # ---------------------------------------------------------------- writes
+  # risk: MODIFY. `validate` never sends `apply`, so both phases run for real
+  # inside a TransactionGroup and are rolled back (D-55). Nothing is kept.
+
+  # THE ONE JOB WHOSE LEGS ARE THE DEFAULTS SWAPPED. This fragment moves
+  # ANNOTATION, so the text notes are the positive and the ducts - which are
+  # not annotation - are the negative.
+  - fragment: move-annotation
+    write: true
+    set:
+      categoryName: Text Notes
+      inViewOnly: "Legend 1"
+      target: "1000,0,0"
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "1 - Mech"
+      target: "1000,0,0"
+
+  # Defaults as they stand: ducts move to a model point, text notes cannot -
+  # annotation is view-specific and has no model position to move to.
+  # MILLIMETRES, which is what this model works in.
+  - fragment: move-elements-to-point
+    write: true
+    set:
+      target: "0,0,0"
+    negative-set:
+      target: "0,0,0"
+
+  # DATUMS ARE NOT IN A FLOOR PLAN - rule 3, and it is the whole reason this
+  # job names an elevation. Measured: 2 levels selectable in "East - Mech",
+  # 1 in "Section 1", 0 in "1 - Mech". The negative hands it 9 ducts in a
+  # view they are visible in, so the selection is real and simply holds no
+  # datum to change.
+  - fragment: set-datum-extent-type
+    write: true
+    set:
+      categoryName: Levels
+      inViewOnly: "East - Mech"
+      view:         "East - Mech"
+      viewSpecific: true
+    negative-set:
+      categoryName: Ducts
+      inViewOnly: "1 - Mech"
+      view:         "1 - Mech"
+      viewSpecific: true
+
+  # NO WALLS ARE PLACED AND IT DOES NOT MATTER: hostType is a TYPE, and
+  # "Generic - 200mm" is one of six wall types the model carries. The negative
+  # is driven by the value - layer 99 of a wall that has nothing like 99
+  # layers. If it applies anyway it is not reading layerIndex.
+  - fragment: set-compound-layer-width
+    setup: []
+    write: true
+    set:
+      hostType:   "Generic - 200mm"
+      layerIndex: 0
+      widthMm:    250
+    negative-set:
+      hostType:   "Generic - 200mm"
+      layerIndex: 99
+      widthMm:    250
+
+  # THE NEGATIVE OF A CREATOR IS A DEGENERATE INPUT, which is the pattern
+  # tools/jobs/creators-project1.yaml settled - a wall from a point to itself,
+  # grids with no spacings. Here it is nowhere to put it. "305x305x97UC" is
+  # the only structural column type this model carries, read back from
+  # select-types.
+  - fragment: place-structural-family
+    setup: []
+    write: true
+    set:
+      symbol:         "305x305x97UC"
+      points:         "0,0,0"
+      level:          "Level 1"
+      structuralType: "Column"
+    negative-set:
+      symbol:         "305x305x97UC"
+      points:         ""
+      level:          "Level 1"
+      structuralType: "Column"
+    expect: placed
+
+# ==========================================================================
+# THE FOUR NOT ATTEMPTED, and why. Each was measured, not assumed.
+#
+#   copy-from-link          The model has ZERO Revit links - `list_links`
+#                           reports linkTypes 0, loaded 0, placements 0. The
+#                           one linked file is a CAD DWG, which is not a
+#                           RevitLinkInstance. Rule 2: asking for what the
+#                           model has not got produces POSITIVE EMPTY and the
+#                           fragment wears the blame.
+#
+#   create-view-filter      Wants categoryIds (ICollection<ElementId>) and
+#                           parameterId (ElementId) as RAW IDS. D-54 resolves
+#                           a view, a level, a category, a name, a number and
+#                           true/false BY NAME; an ElementId is none of those,
+#                           and typing a number read off one model is exactly
+#                           the confident meaningless result this file exists
+#                           to avoid.
+#
+#   repoint-view-reference  Same shape - targetViewId is a raw ElementId.
+#
+#   check-model-standards   Arrangeable, but every one of its six values is a
+#                           judgement about what SHOULD be true of this model -
+#                           name patterns, required parameters, suspect names.
+#                           Choosing them at speed would test the values
+#                           rather than the fragment. Deliberately left for a
+#                           sitting that can give it the attention.

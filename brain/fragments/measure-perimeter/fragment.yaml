@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-RM-028
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -57,6 +57,27 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-09-19'
+  by: Ajmal PS
+  model: Project1 work_ajmal.al (3,529 elements), Revit 2024, session 20472
+  positive_case: run as it would normally be run - the arrangement was re-made first by running
+    select-by-category-name, set-selection with this phase's own values. returned MillimetresPerFoot
+    304.8, findings 1 item(s) [9 measured - 0 from Revit's own room perimeter, 9 round thei...],
+    fromGeometry 9, fromParameter 0, holesSkipped 0, perimeterOf 9 entry(ies), totalMm 206819.781983246,
+    unmeasurable 0 item(s). inputs came elements from the selection (9). on Project1 work_ajmal.al
+  negative_case: run with categoryName=Text Notes, inViewOnly=Legend 1 instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running select-by-category-name, set-selection with this phase's own values. returned
+    MillimetresPerFoot 304.8, findings 1 item(s) [0 measured - 0 from Revit's own room perimeter,
+    0 round thei...], fromGeometry 0, fromParameter 0, holesSkipped 0, perimeterOf 0 entry(ies),
+    totalMm 0, unmeasurable 15 item(s) [926071, 926073, 926074, ...]. inputs came elements
+    from the selection (15). on Project1 work_ajmal.al
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 38913569d57a73ff
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
