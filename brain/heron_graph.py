@@ -171,14 +171,27 @@ def impact(store, fragment_id):
     }
 
 
-def orphans(store):
+def orphans(store, fragments=None):
     """Fragments nothing can compose with, and capabilities nobody wants.
 
     An orphan is not automatically wrong - a recipe legitimately stands alone -
     but a FILTER that nothing consumes is usually a filter whose contract does
     not match anything, which is a defect a tool can see and a person cannot.
+
+    `fragments` names the library to ask about, the same way composes_into()
+    and composes_from() already take it, and it exists for one reason:
+    tests/test_graph.py has to run this over a library with a contract broken
+    on purpose. Without the parameter the only way to do that was to break
+    brain/fragments ITSELF and put it back afterwards, which left the real
+    library wrong for 11.9s of every run - long enough for a concurrent
+    `git add -A` to commit 55 fragments nobody edited, and permanent if the run
+    was killed rather than merely failing. See docs/FRAGMENT-ISSUES.md row 142.
+
+    `is not None` rather than `or`, so an EMPTY library is asked about as an
+    empty library. Falling through to the real one on a falsy argument is how
+    a caller ends up being answered about a library it did not pass.
     """
-    fragments = _loaded()
+    fragments = fragments if fragments is not None else _loaded()
     found = []
     for fragment_id, frag in sorted(fragments.items()):
         if frag.kind == "recipe":
