@@ -38,6 +38,7 @@ this folder exists to remove.
 | 2026-09-17 | [Three bugs in one PROVEN fragment, and the gate that cannot see any of them](2026-09-17-model-three-bugs-in-one-proven-fragment.md) |
 | 2026-09-17 | [What actually blocks the 62 drafts](2026-09-17-model-what-actually-blocks-the-62-drafts.md) |
 | 2026-09-17 | [The banner names the model, and keeps moving while Revit cannot](2026-09-17-the-banner-names-the-model-and-keeps-moving-while-revit.md) |
+| 2026-09-16 | [E12 failed in front of Revit, and the E rows were renumbered mid-flight](2026-09-16-e11-e14-renumbered-mid-flight.md) |
 | 2026-09-12 | [HANDOVER — 2026-09-12 (the SECOND SITTING of the improvement-gate track): a Windows-only failure nobody knew about, the sources re-read, and the housekeeping ledger retired](2026-09-12-the-second-sitting-of-the-improvement-gate-track-a-windows-o.md) |
 | 2026-09-12 | [HANDOVER — 2026-09-12 (the IMPROVEMENT-GATE track): a change now has to say what it is for, and two red suites went green](2026-09-12-the-improvement-gate-track-a-change-now-has-to-say-what-it-i.md) |
 | 2026-09-10 | [HANDOVER — 2026-09-10 (the HOUSEKEEPING track): three READMEs were wrong by more than a hundred, and the write path was documented as not existing](2026-09-10-the-housekeeping-track-three-readmes-were-wrong-by-more-than.md) |

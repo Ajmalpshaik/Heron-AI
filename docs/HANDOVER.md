@@ -86,11 +86,13 @@ when the thing you hit is on no list at all.
 > was 188. **Derive every number before trusting it**; each row names the command.
 >
 > **UPDATED 2026-09-16.** A working session, not a proving one: a copper refrigerant pipe type built
-> in `PIPE` for a real job, **12 new fragments because the job needed them**, and 13 signed. Read
-> [`work-notes/handover/mep-session-2026-09-16.md`](work-notes/handover/mep-session-2026-09-16.md)
-> before touching the MEP or family fragments — it names two things left undone in the model, four
-> traps that each cost an hour, and four defects now filed as
-> [`FRAGMENT-ISSUES.md`](FRAGMENT-ISSUES.md) rows 95–98, two of them still OPEN.
+> in `PIPE` for a real job, **12 new fragments because the job needed them**, and 13 signed. **Its working note was deleted
+> on 2026-09-19, once every durable part of it had landed elsewhere** — which is what a work note
+> is for. What survives, and what to read before touching the MEP or family fragments, is
+> [`FRAGMENT-ISSUES.md`](FRAGMENT-ISSUES.md) rows 95–99 — of which **95 to 98 are now FIXED and only
+> 99 is still open**, held as a question rather than a bug. This sentence read *"rows 95–98, two of
+> them still OPEN"* until 2026-09-19, and both halves of that had drifted: derive it with
+> `python tools/open-defects.py` rather than reading a range here.
 
 **395 fragments. 316 `PROVEN`, 79 `DRAFT`, as of 2026-09-19** — and on 2026-09-14 **all 360 compiled on
 all eight releases they claim, for the first time.** These two numbers moved twice while this block was
@@ -125,9 +127,10 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 ### 2026-09-19 — TWENTY-THREE FRAGMENTS BUILT FOR RECORDED GAPS, AND FOUR API FACTS THAT CHANGED THE ANSWER
 
 **Merged as PR #184.** The owner read out five lists of Revit jobs - roughly 290 of them - and asked
-which Heron could do. Twenty-three came back with no route at all, were recorded in
-[`work-notes/requested-fragments-2026-09-17.md`](work-notes/requested-fragments-2026-09-17.md), and
-were then built. **372 → 395 fragments. All twenty-three are `DRAFT` and none has met a model.**
+which Heron could do. Twenty-three came back with no route at all, were recorded, and
+were then built. **The note that recorded them was deleted on 2026-09-19 once it had emptied** — that
+none of the twenty-three has met a model is [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) **A19**, and what
+is still worth building is in [`PROPOSALS.md`](PROPOSALS.md). **372 → 395 fragments. All twenty-three are `DRAFT` and none has met a model.**
 
 **THE COMPILER WAS INSTALLED FIRST AND IT PAID FOR ITSELF IN THE FIRST HOUR.** The section below says
 the compile gates are five minutes away; they are, and writing twenty-three fragments without them
@@ -1680,7 +1683,7 @@ any of this survives contact with a real specification.
 > being taken: a dated section per sitting. **Where a sentence above this line disagrees with one below
 > it, the one below is later.** Nothing above has been deleted.
 >
-> Full working note: [`work-notes/handover/proving-session-2026-09-15.md`](work-notes/handover/proving-session-2026-09-15.md).
+> Its working note was deleted on 2026-09-19, its durable half having landed first.
 > Durable detail: [`FRAGMENT-ISSUES.md`](FRAGMENT-ISSUES.md) rows **89–94** and
 > [`DECISIONS.md`](DECISIONS.md) **D-72**.
 
@@ -2203,7 +2206,7 @@ than passed, superseded by `E16`. **If you strike a row, strike the ID.**
 
 ## The E numbers in NEEDS-CHECKING's prose were all one too low
 
-[`HANDOVER-E11-E14.md`](../HANDOVER-E11-E14.md) warned about exactly this - *"If you remember E11
+[`the 2026-09-16 sitting`](handover-archive/2026-09-16-e11-e14-renumbered-mid-flight.md) warned about exactly this - *"If you remember E11
 failed, that row is E12 now"* - and **the warning did not reach the file it was warning about.** The
 heading `### E11 FAILED` sat directly beneath a table row reading `E11 ... PASSED`. Corrected to `E12`,
 with the old numbers named rather than quietly swapped.

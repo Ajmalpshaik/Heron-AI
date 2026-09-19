@@ -133,9 +133,10 @@ pull request — see below.
 
 ## A note on scale
 
-The [agent registry](docs/28-agent-registry.md) lists **250 agents**, of which about 70 are built.
+The [agent registry](docs/28-agent-registry.md) lists **250 agents**, and most of them are built by now.
+**Do not trust a number typed here** — this line read *about 70* for nine days after it stopped being true.
 That is a **target organisation chart**, not a to-do list — `python tools/agent-count.py` reconciles
-it against the code and prints what is genuinely left. Please do not open a pull request implementing
+it against the code and prints what is built and what is genuinely left. Please do not open a pull request implementing
 forty of them.
 
 The project is built one working vertical slice at a time — see [docs/ROADMAP.md](docs/ROADMAP.md).
