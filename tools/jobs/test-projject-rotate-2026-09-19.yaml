@@ -1,0 +1,87 @@
+# The millimetre axis no compiler can check. 2026-09-19.
+#
+#     python tools/batch-prove.py tools/jobs/test-projject-rotate-2026-09-19.yaml --dry-run --session 27244
+#     python tools/batch-prove.py tools/jobs/test-projject-rotate-2026-09-19.yaml --session 27244
+#
+# --session 27244 IS NOT OPTIONAL and the number CHANGED. Revit was restarted to
+# pick up the rebuilt add-in, so `test projject` is session 27244 now and no
+# longer 36908. A job file carrying a stale session id is a MODIFY batch aimed
+# at nothing, or worse at something else.
+#
+# WHY THIS FRAGMENT IS WORTH A SLOT. `axis` is a Line - two points in
+# MILLIMETRES, converted to Revit's internal feet on the way in. That
+# conversion is the one thing a compiler cannot check and a green CI cannot
+# see: an axis typed in metres puts the line a thousand times too close to the
+# origin, the elements swing around a point nowhere near where anybody meant,
+# and nothing downstream reports a fault. It is a D3-class unit error and the
+# only way to find it is to watch a real model move.
+#
+# "0,0,0; 0,0,5000" is a VERTICAL axis through the project origin, 5 m tall.
+# 0.7854 radians is 45 degrees - a quarter turn is 1.5708, and radians rather
+# than degrees is itself a place to get it wrong, so it is written out here
+# rather than left as a number somebody has to trust.
+#
+# risk: MODIFY. `validate` never sends `apply`, so both phases run for real
+# inside a TransactionGroup and are rolled back (D-55). Nothing is kept.
+#
+# WHAT THE MODEL HOLDS - session 27244, `test projject`, 3,565 elements. Note
+# the count DROPPED from the 3,594 measured before the restart: the earlier
+# runs were all rolled back and never saved, so this is the file's own state
+# and the right one to measure against.
+#
+#   Ducts    8 in "HERON ROOM TEST"   - things that can be rotated
+#   Levels   2 in "East - Mech"       - things that cannot
+#
+# THE NEGATIVE IS A DATUM, NOT AN EMPTY SELECTION. Two real levels, selected in
+# a view where they are genuinely visible - rule 3 - handed to a fragment that
+# rotates model elements about a line. A level is a datum plane and does not
+# turn about an arbitrary axis, so the honest answer is that nothing rotated.
+# That is a DIFFERENT selection rather than a cleared one, which is the shape
+# rule 5 asks for and the shape an empty selection can never give, because an
+# empty selection is refused for being empty rather than answered.
+
+model: test projject, Revit 2024, 3,565 elements
+
+defaults:
+  in: test projject
+  write: true
+
+  setup:
+    - select-by-category-name
+    - set-selection
+
+  set:
+    categoryName: Ducts
+    inViewOnly: "HERON ROOM TEST"
+
+  # THE FIRST NEGATIVE WAS WRONG AND THE FRAGMENT WAS RIGHT. Two LEVELS were
+  # handed in on the assumption that a datum plane does not turn about an
+  # arbitrary axis. It does: the run came back `rotated 2 item(s) [311, 694]`,
+  # so Revit rotates a level quite happily and the negative was a bad guess
+  # about Revit rather than a test of the fragment. Kept in writing because
+  # "that cannot rotate" was an assumption I had not measured.
+  #
+  # THE SAME EIGHT DUCTS IN BOTH LEGS NOW, and the negative is driven by the
+  # VALUE: rotate them by nothing. An angle of zero is a real, well-formed
+  # request that should move nothing, and if it reports eight rotated anyway
+  # the fragment is not reading its angle - which is a finding worth having.
+  negative-set:
+    categoryName: Ducts
+    inViewOnly: "HERON ROOM TEST"
+
+jobs:
+
+  # THE SAME AXIS AND ANGLE IN BOTH LEGS, so the only thing that differs is
+  # what was handed in. If the negative rotates anything, it is not reading the
+  # selection.
+  - fragment: rotate-elements-about-axis
+    set:
+      axis: "0,0,0; 0,0,5000"
+      angleRadians: 0.7854
+    negative-set:
+      axis: "0,0,0; 0,0,5000"
+      angleRadians: 0
+    # `rotated` is the work. Anything else this fragment declares describes what
+    # it looked at, and a count of what was examined moves with the selection
+    # whatever the fragment concludes.
+    expect: rotated

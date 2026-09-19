@@ -393,6 +393,18 @@ def unblocked_by(shape):
     Read off the real library, the real chain and the real registry - the same
     three inputs `generate-jobs.py` uses - so this counts what would actually be
     emitted rather than what a comment claims.
+
+    OVER THE WHOLE LIBRARY, NOT OVER `GJ.candidates()`, AND THAT DISTINCTION IS
+    THE TEST'S WHOLE MEANING. `candidates()` is a WORK QUEUE: DRAFT and never
+    yet in front of a model. A fragment leaves it the moment somebody proves
+    the thing - which is success, not change. Asked through that filter, this
+    check answered "nothing frees them" on 2026-09-19 within hours of the rules
+    landing, because `check-room-mep-completeness` and
+    `rotate-elements-about-axis` had been PROVED using the very rules it was
+    asserting about. The rule frees a SHAPE; which fragments happen to be
+    unproven today is a fact about the backlog and has nothing to do with
+    whether the resolver works. Same failure as a hard-coded count in a README,
+    and it fails in the direction that looks like the feature broke.
     """
     found = library()
     supply = GJ.chain_provides(found)
@@ -400,7 +412,7 @@ def unblocked_by(shape):
 
     wanted = shape.replace(" ", "")
     freed = []
-    for slug in GJ.candidates(found):
+    for slug in sorted(found):
         frag = found[slug]
         asks = [n for n in frag.needs()
                 if HF.need_source(n) == "request"

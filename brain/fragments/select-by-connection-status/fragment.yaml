@@ -122,3 +122,10 @@ utterances:
   - show me the open pipe ends
   - select elements with an unconnected end
   - which runs are fully connected
+  # ADDED 2026-09-19, and this was the worst of the five measured that day.
+  # It reached UNGROUP_ELEMENTS - a MODIFY that TAKES THINGS APART - when
+  # asked whether anything had come apart, and by 15.0 ranks, so nothing
+  # marginal about it. This fragment already declares "find the loose ends"
+  # and "which ducts are not joined up", which is the same question in a
+  # modeller's other words.
+  - did anything come apart
