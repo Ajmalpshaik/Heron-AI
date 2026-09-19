@@ -792,7 +792,7 @@ return from `Json.Error` and never reach `Report`.
 > **This heading said `E11` until 2026-09-16, and every E number in the three sections
 > above it was one too low.** The rows were renumbered on `main` when #147's unsaved-model
 > row became `E11` and pushed the four below it down; the prose was written before that and
-> was merged without being re-read against the table it describes. [`HANDOVER-E11-E14.md`](../HANDOVER-E11-E14.md)
+> was merged without being re-read against the table it describes. [`the 2026-09-16 sitting`](handover-archive/2026-09-16-e11-e14-renumbered-mid-flight.md)
 > warned about exactly this — *"If you remember E11 failed, that row is E12 now"* — and the
 > warning did not reach the file it was warning about. **The numbers below are corrected to
 > match the table; the fact that they were wrong is left here on purpose**, because a

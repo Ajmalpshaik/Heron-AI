@@ -90,7 +90,7 @@ to project 3 — Heron needs to work on project 1… that is agentic work."*
 
 Separate from the write guard, and also **unproven**:
 
-- **The executor never read `binds:`.** Main's [FRAGMENT-ISSUES row 96](docs/FRAGMENT-ISSUES.md)
+- **The executor never read `binds:`.** Main's [FRAGMENT-ISSUES row 96](../FRAGMENT-ISSUES.md)
   recorded it as `needs_unbound`; **row 100 measured what it actually did**, which is worse — it
   fell through to the selection branch and bound *whatever was selected in Revit*, reporting a
   clean run. Fixed.
