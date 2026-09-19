@@ -145,11 +145,25 @@ def test_the_shapes_d54_refuses_are_refused_here():
     # They are asserted in the direction they moved, just below, rather than
     # quietly dropped - a shorter list is how a claim disappears unnoticed.
     for kind in ("IDictionary<ElementId, string>",
-                 "IList<Element>",
                  "IList<Reference>",
-                 "IFCVersion", "FamilyInstance"):
+                 "IFCVersion"):
         ok, why = GJ.receivable(kind)
         check(not ok and why, "%s is refused, with a reason" % kind)
+
+    # AND TWO MORE MOVED ON 2026-09-19, off the list directly above this one -
+    # asserted in the direction they moved for the same reason every other
+    # departure here is. `IList<Element>` is the SECOND SET, named by category
+    # the way the first set is found; `FamilyInstance` is an electrical panel
+    # by its own Panel Name. Both were on this roll-call until that day.
+    #
+    # `IFCVersion` and `IList<Reference>` STAYED, and the two are not the same
+    # kind of staying. An enum whose members differ per release is a decision
+    # nobody has made; a FACE is a thing a keyboard cannot say. Only the first
+    # is waiting on anything.
+    for kind in ("IList<Element>", "List<Element>", "ICollection<Element>",
+                 "FamilyInstance"):
+        ok, _ = GJ.receivable(kind)
+        check(ok, "%s can be typed in - it could not before 2026-09-19" % kind)
 
     # AND THE SIX THAT MOVED. This half fails if somebody takes them back out.
     for kind in ("ElementId", "IList<ElementId>", "ICollection<ElementId>",
@@ -271,14 +285,25 @@ def test_an_element_is_a_type_and_a_list_of_them_is_still_refused():
     blind, _ = GJ.receivable("Element")
     check(not blind, "an Element with no need-name is refused, not assumed a type")
 
-    # AND THE LIST FORM DID NOT COME WITH IT. The three fragments declaring
-    # `IList<Element>` as a caller value want instances, and a comma-separated
-    # list of type names is not what they are asking for. Letting it through on
-    # the strength of the singular would bind the wrong thing quietly.
-    refused, why = GJ.receivable("IList<Element>")
-    check(not refused, "a list of them is not")
-    check(why and "not one of them yet" in why,
-          "and says so rather than half-accepting it")
+    # AND THE LIST FORM CAME LATER, BY A DIFFERENT RULE - 2026-09-19, and the
+    # difference is the whole reason the singular is still refused.
+    #
+    # This block used to read "a list of them is not", on the reasoning that the
+    # three fragments declaring `IList<Element>` want INSTANCES and a list of
+    # type names is not what they are asking for. THE FIRST HALF WAS RIGHT AND
+    # IS WHY THE RULE IS NOT THE SINGULAR ONE: a list of elements is not
+    # resolved by naming each one, it is resolved by naming a CATEGORY and
+    # taking what is in it. The ambiguity `OneElement` refuses - which of three
+    # walls did you mean - cannot arise when the answer is allowed to be plural,
+    # the same argument the id list already made in 2026-09-14.
+    ok, _ = GJ.receivable("IList<Element>")
+    check(ok, "a list of them IS typeable, by category, since 2026-09-19")
+
+    # AND THE SINGULAR DID NOT MOVE WITH IT. One particular element still has
+    # no name of its own, and a category naming one element is a coincidence
+    # rather than a rule.
+    refused, why = GJ.receivable("Element", "host")
+    check(not refused, "one particular element is still refused")
 
     # The hint a person reads beside the blank names what to write. It no longer
     # has to warn that an instance cannot be given: since row 13 an instance-
@@ -324,6 +349,279 @@ def test_the_narrowed_declarations_resolve():
                     stranded.append("%s %s (%s)" % (frag.slug, need.get("name"), declared))
     check(not stranded, "no fragment was narrowed onto a type Revit cannot take (%s)"
           % ("; ".join(stranded[:3]) or "none"))
+
+
+# ---------------------------------------------------------------------------
+# The five shapes that gained a rule on 2026-09-19, and the one that did not
+# ---------------------------------------------------------------------------
+#
+# PR #190 measured 44 DRAFT fragments that could not be arranged and PROPOSED a
+# rule for six shapes, changing no code. These are those proposals, built - and
+# each test names the fragments its rule frees, counted off the real library
+# rather than carried in a sentence. A count in prose goes stale silently; a
+# count derived here fails the day it stops being true.
+#
+# EVERY ONE OF THEM ALSO HAS TO SURVIVE `test_receivable_agrees_with_the_add_in`
+# above, which reads the branches out of `RevitFragment.cs`. That is what makes
+# these assertions about REVIT rather than about a Python set.
+
+
+_LIBRARY = []
+
+
+def library():
+    """The real fragment library, keyed BY SLUG - `main()`'s own first act.
+
+    `HF.load_all()` keys by ID, and `chain_provides` looks the setup chain up
+    by slug. Re-keying here rather than reaching for `load_all` directly is
+    what makes these tests ask the generator's question rather than one that
+    merely resembles it.
+
+    READ ONCE. 395 fragments off the disk is a second and a half, the tests
+    below ask for the library eleven times, and a suite that takes a minute is
+    a suite people stop running between edits.
+    """
+    if not _LIBRARY:
+        found, _ = HF.load_all()
+        _LIBRARY.append(dict((frag.slug, frag) for frag in found.values()))
+    return _LIBRARY[0]
+
+
+def unblocked_by(shape):
+    """Fragments whose ONLY blocker is a caller value of this shape.
+
+    Read off the real library, the real chain and the real registry - the same
+    three inputs `generate-jobs.py` uses - so this counts what would actually be
+    emitted rather than what a comment claims.
+    """
+    found = library()
+    supply = GJ.chain_provides(found)
+    _, ordinal, ladder = GJ.write_threshold()
+
+    wanted = shape.replace(" ", "")
+    freed = []
+    for slug in GJ.candidates(found):
+        frag = found[slug]
+        asks = [n for n in frag.needs()
+                if HF.need_source(n) == "request"
+                and (n.get("type") or "").replace(" ", "") == wanted]
+        if not asks:
+            continue
+        if GJ.blockers(frag, supply, ordinal, ladder):
+            continue
+        freed.append(slug)
+    return sorted(freed)
+
+
+def test_a_roof_type_is_named_like_the_other_three():
+    print("A roof type is named the way a wall type is")
+
+    ok, why = GJ.receivable("RoofType")
+    check(ok, "RoofType can be typed in (%s)" % (why or "yes"))
+
+    # THE LOOKUP WAS NEVER THE PROBLEM, and that is why this one is a single
+    # row rather than a parser. `RoofType` derives from `HostObjAttributes`,
+    # which has been accepted since 2026-09-09, so the same object arrived
+    # happily under the base name and was refused under its own - exactly the
+    # shape `DuctType` and `PipeType` were in until 2026-09-13.
+    ok, _ = GJ.receivable("HostObjAttributes")
+    check(ok, "and its base class was already accepted, which is why")
+
+    freed = unblocked_by("RoofType")
+    check(freed == ["create-roof"],
+          "it frees create-roof and nothing else: %s" % (freed or "nothing"))
+
+
+def test_the_second_set_is_named_by_category():
+    print("A caller-supplied set of elements is named by category")
+
+    for kind in ("IList<Element>", "List<Element>", "ICollection<Element>",
+                 "IEnumerable<Element>"):
+        ok, why = GJ.receivable(kind)
+        check(ok, "%s can be typed in (%s)" % (kind, why or "yes"))
+
+    # THE CLAIM THE RULE RESTS ON, CHECKED RATHER THAN ASSERTED. The rule is
+    # "always the SECOND set", and it is only safe because the FIRST set of
+    # every fragment asking for one arrives down the chain. If a fragment ever
+    # declares a request-sourced list of elements with no host-sourced one
+    # beside it, "second set" stops being true and the category rule has to be
+    # thought about again rather than inherited.
+    found = library()
+    firstless = []
+    for frag in found.values():
+        asks = [n for n in frag.needs()
+                if HF.need_source(n) == "request"
+                and (n.get("type") or "").replace(" ", "") == "IList<Element>"]
+        if not asks:
+            continue
+        chained = [n for n in frag.needs()
+                   if HF.need_source(n) != "request"
+                   and (n.get("type") or "").replace(" ", "") == "IList<Element>"]
+        if not chained:
+            firstless.append(frag.slug)
+    check(not firstless,
+          "every fragment asking for one has a first set too (%s)"
+          % ("; ".join(sorted(firstless)) or "all three do"))
+
+    # AND THE HINT CARRIES BOTH HALVES. A category name here means every
+    # element of that category in the MODEL - there is no view where this is
+    # resolved - and `selected` is refused, which is the word somebody reaches
+    # for first. A blank with neither warning beside it is how the second set
+    # quietly becomes the first one again.
+    hint = GJ.how_to_type("IList<Element>")
+    check("CATEGORY" in hint, "the hint says a category names it: %r" % hint)
+    check("MODEL" in hint, "and that it means the whole model, not a view")
+    check("selected" in hint, "and that the selection is refused here")
+
+    freed = unblocked_by("IList<Element>")
+    check(freed == ["check-room-mep-completeness", "connect-air-terminals",
+                    "propose-mep-openings"],
+          "it frees the three second-set fragments: %s" % (freed or "nothing"))
+
+
+def test_a_line_is_two_points_and_curves_are_pairs_of_them():
+    print("A line and a list of curves read the point-pair spelling")
+
+    for kind in ("Line", "IList<Curve>", "List<Curve>", "ICollection<Curve>",
+                 "IEnumerable<Curve>"):
+        ok, why = GJ.receivable(kind)
+        check(ok, "%s can be typed in (%s)" % (kind, why or "yes"))
+
+    # NO NEW SPELLING, AND THE HINTS HAVE TO PROVE IT. Both are the pair
+    # parser settled on 2026-09-14: the unit is millimetres and the separator
+    # between two points is a semicolon, with a PIPE between curves. A hint
+    # offering "comma separated" would be describing the ordinates of one
+    # point and would read as the list separator.
+    line = GJ.how_to_type("Line")
+    check("MILLIMETRES" in line, "a line names the unit: %r" % line)
+    check("SEMICOLON" in line, "and what separates its two ends")
+    check("comma separated" not in line, "and does not offer the flat list")
+
+    curves = GJ.how_to_type("IList<Curve>")
+    check("MILLIMETRES" in curves, "a curve list names the unit: %r" % curves)
+    check("PIPE" in curves, "and the separator between two curves")
+    check("arc" in curves, "and says an arc cannot be written this way")
+
+    freed = unblocked_by("Line")
+    check(freed == ["rotate-elements-about-axis"],
+          "a Line frees the rotation axis and nothing else: %s"
+          % (freed or "nothing"))
+
+    # AND THE DIMENSION DOES NOT COME BACK WITH IT. `create-linear-dimension`
+    # declares a Line AND an `IList<Reference>`, and a face is not a rule
+    # waiting to be written. This is the assertion that stops the Line rule
+    # being sold as having freed the dimensions - PR #190 said so in words and
+    # a word is not a check.
+    found = library()
+    supply = GJ.chain_provides(found)
+    _, ordinal, ladder = GJ.write_threshold()
+    still = GJ.blockers(found["create-linear-dimension"], supply, ordinal, ladder)
+    check(any("face" in r.lower() for r in still),
+          "a linear dimension is still blocked, on the face: %s" % (still or "nothing"))
+
+    freed = unblocked_by("IList<Curve>")
+    check(freed == ["place-line-based-family"],
+          "a curve list frees the line-based family and nothing else: %s"
+          % (freed or "nothing"))
+
+
+def test_a_panel_is_named_by_its_own_panel_name():
+    print("An electrical panel is named by its Panel Name")
+
+    ok, why = GJ.receivable("FamilyInstance")
+    check(ok, "FamilyInstance can be typed in (%s)" % (why or "yes"))
+
+    # AND THE SINGULAR `Element` DID NOT MOVE WITH IT, which is the boundary
+    # this rule has to stay on the right side of. A panel is nameable because
+    # its PANEL NAME is its own - like a room's Name parameter, and unlike
+    # `Element.Name` on an instance, which gives the TYPE's name and would
+    # match every panel of that type in the building.
+    refused, _ = GJ.receivable("Element", "host")
+    check(not refused, "one particular element is still refused")
+
+    ok, _ = GJ.receivable("SpatialElement")
+    check(ok, "and a room is nameable for exactly the same reason")
+
+    # THE HINT HAS TO SAY WHICH NAME. The family type is right there in the
+    # Properties palette, it is the obvious thing to type, and it resolves to
+    # nothing - so the blank has to say PANEL NAME before anybody fills it.
+    hint = GJ.how_to_type("FamilyInstance")
+    check("PANEL NAME" in hint, "the hint names the parameter: %r" % hint)
+    check("blank" in hint, "and says blank leaves the circuit unassigned")
+
+    freed = unblocked_by("FamilyInstance")
+    check(freed == ["create-electrical-circuit"],
+          "it frees the circuit and nothing else: %s" % (freed or "nothing"))
+
+
+def test_an_arc_was_left_unwritten_and_the_reason_still_holds():
+    print("An Arc rule was proposed, refused, and the reason is checked here")
+
+    # THE SIXTH PROPOSAL WAS TO WRITE NOTHING, and this test is what keeps that
+    # decision honest rather than merely recorded. An Arc is three points and a
+    # day's work; the argument against it is that its ONLY customer in the
+    # library also needs a face, so the resolver would ship reachable by
+    # nobody. That argument is true of the library as it stands and stops being
+    # true the moment a second fragment declares an Arc - at which point this
+    # fails and the decision gets made again with the new fact in hand.
+    ok, why = GJ.receivable("Arc")
+    check(not ok and why, "an Arc is still refused, with a reason")
+
+    found = library()
+    wants = sorted(frag.slug for frag in found.values()
+                   for need in frag.needs()
+                   if HF.need_source(need) == "request"
+                   and (need.get("type") or "").replace(" ", "") == "Arc")
+    check(wants == ["create-angular-dimension"],
+          "one fragment in the library asks for one: %s" % (wants or "none"))
+
+    faces = [need.get("name") for need in found["create-angular-dimension"].needs()
+             if "Reference" in (need.get("type") or "")]
+    check(faces,
+          "and it also needs a face, which no rule can ever supply: %s" % faces)
+
+
+def test_every_shape_with_a_new_syntax_has_a_hint():
+    print("A shape a person cannot guess at carries a hint beside the blank")
+
+    # THE BLANK IS WHERE THE MISTAKE HAPPENS. A shape whose syntax is not
+    # obvious from its type name and whose hint is empty is a value somebody
+    # will type wrongly - that is the whole reason `how_to_type` exists, and
+    # nothing checked that a newly receivable shape had been given one.
+    for kind in ("RoofType", "IList<Element>", "Line", "IList<Curve>",
+                 "FamilyInstance"):
+        hint = GJ.how_to_type(kind)
+        check(hint and hint.strip(),
+              "%s has something written beside its blank: %r" % (kind, hint))
+
+
+def test_the_second_set_refuses_the_selection_word_in_the_add_in():
+    print("The add-in refuses `selected` for a second set, and says why")
+
+    # THE ONE CLAIM THE PYTHON TRANSCRIPTION CANNOT SEE. `RECEIVABLE` records
+    # that a shape is accepted; it cannot record that this one is accepted
+    # NARROWLY. A list of ids takes the word `selected` and a list of elements
+    # deliberately does not - because the first set of all three fragments
+    # asking for one already arrives that way, so the word would hand the same
+    # elements to both roles and the answer would mean nothing.
+    #
+    # Read out of the C# for the same reason `accepted_by_revit` is: the
+    # authority is the add-in, and a rule nobody checks is a rule that drifts.
+    source = io.open(REVIT_FRAGMENT, encoding="utf-8").read()
+    opens = source.find("private static object ManyByCategory")
+    closes = source.find("private static object OnePanelNamed")
+    # FOUND RATHER THAN INDEXED, so an add-in without the method reports a
+    # failed check instead of a traceback that stops the rest of the suite.
+    check(opens >= 0 and closes > opens,
+          "the add-in has a ManyByCategory to read")
+    body = source[opens:closes] if (opens >= 0 and closes > opens) else ""
+
+    check("IsSelectionWord(text)" in body,
+          "the second set asks whether the selection word was typed")
+    check("SECOND set" in body,
+          "and the refusal says it is the second set")
+    check("Name a category" in body,
+          "and says what to type instead")
 
 
 def test_spaces_in_a_type_do_not_change_the_answer():
@@ -694,6 +992,13 @@ def main():
                  test_an_element_is_a_type_and_a_list_of_them_is_still_refused,
                  test_a_point_is_millimetres_and_says_so,
                  test_the_narrowed_declarations_resolve,
+                 test_a_roof_type_is_named_like_the_other_three,
+                 test_the_second_set_is_named_by_category,
+                 test_a_line_is_two_points_and_curves_are_pairs_of_them,
+                 test_a_panel_is_named_by_its_own_panel_name,
+                 test_an_arc_was_left_unwritten_and_the_reason_still_holds,
+                 test_every_shape_with_a_new_syntax_has_a_hint,
+                 test_the_second_set_refuses_the_selection_word_in_the_add_in,
                  test_spaces_in_a_type_do_not_change_the_answer,
                  test_the_write_threshold_comes_from_the_registry,
                  test_a_broken_registry_stops_the_run_rather_than_guessing,
