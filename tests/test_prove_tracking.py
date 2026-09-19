@@ -29,10 +29,11 @@ which is every check that happens before a model is opened:
      the skills and three more proofs can each be ARRANGED
 
 WHAT IT DOES NOT PROVE
-  That any of it runs. The model half is not implemented and the tool says so
-  rather than sending something half-built at a live model - see its own
-  closing lines. Nothing here has been in front of Revit, and a tracking set
-  is not a proof until a person signs one (`brain/proof-drafts/README.md`).
+  `live_runner`, which is the one function that needs a Revit. Everything
+  around it is covered, including the run LOOP - `run_rows` takes its runner
+  as an argument and this suite passes a fake. Nothing here has been in front
+  of Revit, and a tracking set is not a proof until a person signs one
+  (`brain/proof-drafts/README.md`).
 """
 
 import io
@@ -311,9 +312,15 @@ def main():
     check("never signs" in tool and "never promotes" in tool,
           "the tool says in its own words that it never signs and never "
           "promotes")
-    check("THE MODEL HALF IS NOT IMPLEMENTED" in tool,
-          "and says plainly that the model half is not built, rather than "
-          "sending something half-built at a live model")
+    check("IS THE ONE FUNCTION NOTHING HERE HAS EXERCISED" in tool,
+          "and names the one function no test here can reach - live_runner, "
+          "which needs a Revit")
+    check("A run that cannot pass `judge()` **writes nothing**" in tool,
+          "and says that a set which cannot pass is not written out looking "
+          "like evidence")
+    check("cmd_prove" in tool,
+          "and says whose call it sends, rather than inventing a second "
+          "opinion about talking to the executor")
     check("does not replace D-30" in tool,
           "and that tracking is not an easier route past a negative case")
 

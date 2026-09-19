@@ -70,8 +70,24 @@ WHAT IT REFUSES, ALL OF IT BEFORE REVIT IS TOUCHED
 
 `--dry-run` stops after all of that and prints what it would send. **Every one
 of those checks runs without a Revit**, which is what makes this file testable
-at all: `tests/test_prove_tracking.py` proves the arrangement half, and the
-model half is the one thing it cannot.
+at all.
+
+WHAT IS PROVED HERE AND WHAT IS NOT, EXACTLY
+----------------------------------------------
+`tests/test_prove_tracking.py` covers the arrangement, the judgement, and the
+run LOOP - the last of those because `run_rows` takes its runner as an
+argument and the suite passes a fake that returns known replies.
+
+**`live_runner` IS THE ONE FUNCTION NOTHING HERE HAS EXERCISED.** It needs a
+Revit and there is none where this was written. It is kept small and boring
+for that reason: it resolves the source and contract, opens one bridge, and
+sends `cmd_prove`'s own call - same operation, same three arguments, same
+`chain: "reset"` on the first and not after, same timeout. That call has run
+against real models for weeks, and a second opinion about how to talk to the
+executor is the last thing this file should contribute.
+
+A run that cannot pass `judge()` **writes nothing**. A record that looks like
+a proof and is not is worse than having none.
 
 WHAT IT DOES NOT DO
 -------------------
@@ -89,6 +105,7 @@ as an easier route.
 
 import argparse
 import importlib.util
+import io
 import json
 import os
 import sys
@@ -341,6 +358,100 @@ def write_path_refusal(frag, threshold_ordinal, ladder):
     return None
 
 
+def live_runner(frag, session=None, in_document=None, client_id=None):
+    """(runner, close, where) for a connected Revit, or (None, None, reason).
+
+    THE SEND IS `cmd_prove`'s, COPIED DELIBERATELY AND SAID SO. Same operation
+    (`run_fragment_read`), same three arguments (`name`, `source`, `needs`),
+    same `chain: "reset"` on the first call and not after, same timeout. It is
+    copied because that call is the one that has run against real models for
+    weeks, and a second opinion about how to talk to the executor is the last
+    thing this file should contribute.
+
+    **THIS IS THE ONE PART OF THIS TOOL NOTHING HERE HAS EXERCISED.** Every
+    other function is proved in `tests/test_prove_tracking.py` on a fake
+    runner; this one needs a Revit, and there is none where it was written.
+    It is kept small and boring for exactly that reason - it resolves, sends,
+    and hands the reply straight back.
+
+    THE CHAIN IS RESET ONCE AND THEN CONTINUES, which is not a detail. Row 71's
+    own case was an answer that looked identical across three inputs; an
+    inherited chain would produce that honestly and the rows would be a lie
+    about the fragment rather than about the input.
+    """
+    import heron_bridge_client as CLIENT
+
+    root = ROOT
+    source_path = os.path.join(root, "brain", "fragments", frag.slug,
+                               "impl", "any", "fragment.cs")
+    if not os.path.isfile(source_path):
+        return None, None, "%s has no impl/any/fragment.cs to send" % frag.slug
+
+    refusal = CLIENT.risk_refusal(root, frag.slug)
+    if refusal is not None:
+        return None, None, refusal
+
+    needs = CLIENT.needs_for(root, frag.slug)
+    if needs is None:
+        return None, None, ("%s's contract could not be read with certainty, "
+                            "so nothing was sent" % frag.slug)
+
+    with io.open(source_path, encoding="utf-8") as handle:
+        source = handle.read()
+
+    live, starting, _unused, mismatched = CLIENT.discover()
+    if not live and starting:
+        return None, None, ("Revit is still starting - its bridge is not "
+                            "answering yet. Try again shortly.")
+    if not live:
+        return None, None, ("No Revit is connected. Press Heron on the ribbon "
+                            "to connect first.")
+
+    chosen, refusal = CLIENT.only_session(live, session)
+    if refusal is not None:
+        for bridge in live:
+            bridge.close()
+        return None, None, refusal
+
+    bridge = chosen[0]
+    for other in chosen[1:]:
+        other.close()
+
+    opening = bridge.request("count_elements")
+    if opening is None or not opening.get("ok"):
+        bridge.close()
+        return None, None, ("could not identify the active model, and a "
+                            "tracking set about a model that will not name "
+                            "itself is not evidence")
+
+    where = "%s (%s elements), Revit %s, session %s" % (
+        opening.get("document"), "{:,}".format(opening.get("count", 0)),
+        bridge.revit_version, bridge.pid)
+
+    state = {"first": True}
+
+    def runner(sending):
+        args = {"name": frag.slug, "source": source, "needs": needs,
+                "values": [{"name": k, "value": v}
+                           for k, v in sorted(sending.items())]}
+        if state["first"]:
+            args["chain"] = "reset"
+            state["first"] = False
+        if in_document:
+            args["document"] = in_document
+        return bridge.request("run_fragment_read", op_args=args,
+                              response_timeout=180.0) or {}
+
+    def close():
+        try:
+            bridge.release()
+        except Exception:                                      # noqa: BLE001
+            pass
+        bridge.close()
+
+    return runner, close, where
+
+
 def plan(frag, need_name, values, field, held=None):
     """What would be sent, as a person can check it before it is."""
     held = dict(held or {})
@@ -372,6 +483,10 @@ def main(argv=None):
     parser.add_argument("--set", action="append", default=[], metavar="N=V",
                         dest="held",
                         help="hold another caller value still; repeatable")
+    parser.add_argument("--session", metavar="PID",
+                        help="which connected Revit, when more than one is")
+    parser.add_argument("--in", dest="in_document", metavar="NAME",
+                        help="a model that is open but not in front")
     parser.add_argument("--dry-run", action="store_true",
                         help="check everything and send nothing")
     args = parser.parse_args(argv)
@@ -462,15 +577,56 @@ def main(argv=None):
         print("Dry run. Nothing was sent to Revit and nothing was written.")
         return 0
 
-    print("THE MODEL HALF IS NOT IMPLEMENTED IN THIS FILE YET, and saying so")
-    print("is the honest answer rather than sending something half-built at a")
-    print("live model. What is built and proved is the ARRANGEMENT above and")
-    print("the JUDGEMENT in `judge()` - every check that can be made without a")
-    print("Revit. Wiring the runs through mcp/client/heron_bridge_client.py is")
-    print("the next step, and it needs a session to develop against.")
+    runner, close, where = live_runner(frag, args.session, args.in_document)
+    if runner is None:
+        print("NOT RUN - %s" % where)
+        return 1
+
+    print("model:  %s" % where)
     print("")
-    print("Run it with --dry-run to get the plan as JSON.")
-    return 3
+    try:
+        rows, refused = run_rows(runner, args.vary, values, held, field)
+    finally:
+        close()
+
+    for value, error, message in refused:
+        print("  %s=%s REFUSED: %s - %s" % (args.vary, value, error, message))
+    for row in rows:
+        print("  %-34s %s %s" % (row["input"], row["field"], row["value"]))
+    print("")
+
+    good, why = judge(rows)
+    print("%s" % why)
+    if not good:
+        print("")
+        print("NOTHING WAS WRITTEN. A set that cannot pass is not recorded as")
+        print("evidence - reading a record that looks like a proof and is not")
+        print("is worse than having none.")
+        return 1
+
+    record = {
+        "run_record": "brain/proof-drafts/runs/%s.json" % frag.slug,
+        "fragment": frag.slug,
+        "date": __import__("time").strftime("%Y-%m-%d"),
+        "model": where,
+        "tracking": rows,
+        "phases": [],
+    }
+    if not os.path.isdir(RUNS):
+        os.makedirs(RUNS)
+    path = os.path.join(RUNS, "%s.json" % frag.slug)
+    with io.open(path, "w", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, indent=2, sort_keys=True))
+
+    print("")
+    print("Wrote %s" % os.path.relpath(path, ROOT).replace(os.sep, "/"))
+    print("")
+    print("IT IS NOT A PROOF YET. heron_validate reads this record and asks")
+    print("the same two questions again; a person then signs it under their")
+    print("own name. The machine never signs.")
+    print("")
+    print("  python brain/heron_validate.py draft %s" % frag.slug)
+    return 0
 
 
 if __name__ == "__main__":
