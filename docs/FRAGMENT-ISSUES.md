@@ -2544,6 +2544,17 @@ shape this file fears most: a clean-looking answer that is wrong. `propose-mep-o
 services pass through walls, floors *and* roofs. So the value is comma-separated, which is what every
 other list here already does: `devices=Air Terminals, Sprinklers, Fire Alarm Devices`.
 
+**AND FOR ONE OF THE THREE, A CATEGORY IS NOT ENOUGH — it throws away the very thing the contract asks
+for.** `connect-air-terminals` says in its own words that the list is handed in because it *"keeps the
+choice with whoever knows which system is which"*. Its body then takes whatever it is given and picks
+the **geometrically nearest** duct to each terminal, with no system test of its own — Revit declines
+only when the system *types* disagree, which does not separate two supply runs of the same type
+passing near each other. So `ducts=Ducts` hands it every duct in the model and quietly restores the
+guess the contract was written to prevent: a diffuser tapped into whichever run happens to be closest,
+on a plan where two are. **A category alone is the wrong rule here even though it is the right rule for
+the other two**, and the missing piece is a way to say which SYSTEM — which is a name, so it is a
+D-54-shaped question rather than a new kind of one.
+
 **The part that needs a decision is narrowing.** `ducts=Ducts` collects every duct in the model, and
 the proving skill's own first rule is *prove on a small selection* — `FloorPlan: M1` gives 22 ducts
 where `FloorPlan: L3` gives 307. So a view-narrowed form is worth having, and `ducts=Ducts in
@@ -2575,10 +2586,17 @@ protection applies unchanged: **two panels with the same name is a refusal, neve
 **There is a second, cheaper route here and it is not free.** `panel`'s own comment says it is
 *"optional — empty leaves the circuit unassigned"*, the contract never declares `optional: true`, and
 [row 101](#) records that the key is read by nothing **deliberately** — this library refuses rather
-than quietly supplying an empty value. So honouring `optional` would unblock this fragment today with
-no resolver at all, at the cost of reopening a decision already taken on purpose, and it would prove
-the fragment only in its degraded state, with the circuit left off every panel schedule. Both routes
-are put here; neither is taken.
+than quietly supplying an empty value. So honouring `optional` would unblock this fragment without a
+resolver, at the cost of reopening a decision already taken on purpose, and it would prove the
+fragment only in its degraded state, with the circuit left off every panel schedule. Both routes are
+put here; neither is taken.
+
+**That route is TWO edits, not one, and the cheaper-sounding half is the one that is missing.**
+Teaching the binder to honour `optional:` changes nothing here by itself, because **`panel` does not
+declare it** — only its comment calls the value optional, and a comment binds nothing. The contract
+would have to gain `optional: true` as well. Worth being exact about, because "honour a key three
+fragments already declare" sounds like one change to shared machinery and this fragment would sit
+exactly where it is afterwards.
 
 **`Arc` — the proposal is to write nothing, and that is the finding.** An arc is not hard. Revit
 builds one from three points and the parser for three points already exists, so the rule would be
@@ -2617,6 +2635,14 @@ model*, and neither of these changes the model — they emit a file beside it. *
 before writing the enum resolver, not after**, because the resolver is what makes the discrepancy
 reachable.
 
+**AND THIS QUESTION IS NOT YET WHERE THE OWNER WOULD LOOK FOR IT.** `tools/owner-queue.py` builds his
+queue from [`OPEN-QUESTIONS.md`](OPEN-QUESTIONS.md) and does not read this file, so a decision recorded
+only here is invisible to it — which is how a question that gates a piece of work waits behind a page
+nobody is prompted to open. **The session that wrote this was scoped out of `OPEN-QUESTIONS.md` and
+did not edit it**, so the row is owed rather than written: *which of `export-model-to-ifc` (`MODIFY`)
+and `export-model-to-nwc` (`PUBLISH`) is declared wrong, given that neither changes the model.* It is
+named here so the gap is visible instead of silent.
+
 ---
 
 #### The nine that want one particular element are not waiting on a rule
@@ -2628,14 +2654,35 @@ missing is that a job file runs unattended and cannot reach over and click a duc
 blocked by the *batch runner*, not by the shape. They are proved one at a time, by hand, with the
 element selected. Recording them alongside genuine shape gaps makes the wall look taller than it is.
 
+> **CORRECTED 2026-09-19 — SEVEN, NOT NINE, AND THE OTHER TWO CANNOT BE PROVED THIS WAY AT ALL.**
+> `measure-distance` needs `first` **and** `second`; `measure-available-fall` needs `upstream` **and**
+> `downstream`. Both needs are `Element`, `source: request`, and `OneElement` refuses unless **exactly
+> one** thing is selected — then returns `selected[0]` to whichever need asks. **So both sides bind the
+> same element**, and the fragment measures a duct against itself: zero distance, zero fall, and a
+> reply that looks like an answer. Selecting two refuses instead, which is the safe half of it.
+> There is no arrangement of one selection that fills two singular needs — the same wall
+> [§3i](#) recorded on 2026-09-09 for two-SET fragments, arriving here one element at a time. These
+> two need per-input picking, or the second value chained from an earlier fragment. **The paragraph
+> above was right about seven and wrong about two, and the two it was wrong about would not have
+> refused — they would have answered.**
+
 ---
 
 #### The face cannot be done, and this is not a rule waiting to be written
 
 Four of the 44 want a `Reference`: `place-family-on-face`, `create-linear-dimension`,
-`create-angular-dimension` and `create-radial-dimension`. **The answer is no, and it is settled** —
-[D-72](DECISIONS.md) decided it on 2026-09-14 and `FromRequest` already refuses it in those words
-rather than falling through to the catch-all that would end *"not one of them yet"*.
+`create-angular-dimension` and `create-radial-dimension`. **The answer is no** — [D-72](DECISIONS.md)
+reasoned it out on 2026-09-14 and `FromRequest` already refuses it in those words rather than falling
+through to the catch-all that would end *"not one of them yet"*.
+
+> **THIS FIRST SAID "AND IT IS SETTLED", AND THAT WORD WAS DOING WORK IT HAD NOT EARNED.**
+> Corrected 2026-09-19. **D-72 carries no `Status:` line** — every neighbour has one (D-54 *Accepted*,
+> D-73 *Proposed*), and D-72 has none at all. So what is true is narrower and worth stating exactly:
+> the refusal is **built, shipped and observable** in `FromRequest` today, and the *reasoning* for it
+> is written down — but the decision has never been formally accepted, so nothing here may treat it as
+> closed. **The physical argument below stands on its own** and does not depend on D-72's status: a
+> face has no name, number or coordinate whatever anybody decides. What stays open is the POLICY —
+> whether Heron eventually grows a picker — and that is the owner's, not this file's.
 
 Revit identifies a face as **a particular solid, on a particular element, seen in a particular view**.
 It is what a mouse lands on. It has no name, no number and no coordinate — the same face has different
