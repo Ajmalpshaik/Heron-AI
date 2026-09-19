@@ -1126,7 +1126,9 @@ Step 6 is finished, and not before. At that point:
 
 ---
 
-## Group H — what `prove-agent.py track` cannot see, found 2026-09-19
+## Group T — what `prove-agent.py track` cannot see, found 2026-09-19
+
+*Lettered T because Group H was already taken by the lease (H1-H10). Written as H first, which put two H1 rows in one register and made `check-gaps` count both - fixed the same day.*
 
 Added while proving the four owed add-in agents against the two live Revit 2024 sessions
 (`20472` *Project1 work_ajmal.al*, 3,529 elements; `36908` *test projject*, 3,594 elements).
@@ -1136,7 +1138,7 @@ could not be, and **neither failure is about the agent**. Both are about the too
 They are recorded here because a reader coming back to `IMP-019` and `LVL-027` will otherwise
 re-run them, get the same verdict, and conclude the agents are broken.
 
-### H1 — `compare()` reads only top-level numbers, so a list that moves is invisible
+### T1 — `compare()` reads only top-level numbers, so a list that moves is invisible
 
 [`tools/prove-agent.py`](../tools/prove-agent.py) `compare()` skips any value that is not an `int`
 or `float` at the top level of the reply. Its docstring gives the reason, and the reason is sound
@@ -1174,7 +1176,7 @@ than a single total, not easier.
 symptom.** `levelCount 2 -> 3` is a top-level number, so `compare()` would see it. But the evidence
 that the agent reads the model is already in hand; what is missing is a tool that can record it.
 
-### H2 — `track` cannot pass an argument, so an agent that needs one cannot be tracked at all
+### T2 — `track` cannot pass an argument, so an agent that needs one cannot be tracked at all
 
 `track` takes `--operation`, `--first`, `--second`, `--client-id`. There is no way to send an
 operation argument, and it sends the bare op. Three operations refuse without one:
@@ -1197,17 +1199,17 @@ measured all day:**
 Every number moves. It cannot be signed, because the tool that writes drafts has no way to make
 that call.
 
-### What would settle H1 and H2
+### What would settle T1 and T2
 
 Both are one change to `tools/prove-agent.py`, and **neither has been made** — the file was not
 this session's to edit:
 
 | | |
 |---|---|
-| **H1** | Teach `compare()` to descend one level into a list: compare its length, and compare each item's own numbers and names positionally or by key. `linkedCad[0].name` and `levels[n].elements` both become visible, and `IMP-019` and `LVL-027` can be judged on their real answers |
-| **H2** | An `--arg key=value` option, repeatable, passed through to `op_args`. Unlocks `PAR-011`, and `CAT-009` / `SEL-008` if a category is supplied for each model |
+| ~~**T1**~~ | **DONE 2026-09-19.** Teach `compare()` to descend one level into a list: compare its length, and compare each item's own numbers and names positionally or by key. `linkedCad[0].name` and `levels[n].elements` both become visible, and `IMP-019` and `LVL-027` can be judged on their real answers |
+| ~~**T2**~~ | **DONE 2026-09-19.** An `--arg key=value` option, repeatable, passed through to `op_args`. Unlocks `PAR-011`, and `CAT-009` / `SEL-008` if a category is supplied for each model |
 
-### H3 — the rest of the twenty-three are mostly not trackable, and that is correct
+### T3 — the rest of the twenty-three are mostly not trackable, and that is correct
 
 Of the 23 add-in agents with no proof, the file headers show they are **not 23 separate readers**.
 Seven share `RevitWrite.cs` (`TSA-006`, `TRN-005`, `WRN-016`, `CTX-007`, `ELE-010`, `KRN-EVD-014`,
@@ -1226,7 +1228,7 @@ only `hostElements` moves. Note this is not the reason sometimes given — the l
 belong to `IMP-019`, not to `LNK-015`. Proving `LNK-015` needs a model with a real Revit link in
 it.
 
-### H1 and H2 were fixed the same day, and H3 stands
+### T1 and T2 were fixed the same day, and T3 stands
 
 **Read this rather than the two rows above**, which say the changes were not made. They were, an hour
 later and on the owner's say-so. `tools/prove-agent.py` now does both:

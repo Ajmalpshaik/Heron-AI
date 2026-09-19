@@ -585,7 +585,7 @@ def compare(a, b):
     a positional comparison would call that movement. It is the right default
     because every reply seen so far sorts its list, and because the failure
     mode is a draft that looks STRONGER than it is - so the gap text, and a
-    person, still have to read it. Row H1 of docs/NEEDS-CHECKING.md.
+    person, still have to read it. Row T1 of docs/NEEDS-CHECKING.md.
     """
     moved, same = [], []
     for key in sorted(set(a) & set(b)):
