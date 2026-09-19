@@ -111,10 +111,19 @@ namespace Heron.Core
                        "' permission level, which Heron does not grant to anything yet.";
             }
 
+            // THE REASON HAD GONE STALE IN THE TEXT A USER READS. It said the
+            // write path "has never been run against a real model", which was
+            // true when it was written and has not been since. How many
+            // fragments at risk MODIFY are PROVEN is derived, never typed
+            // here - the library answers it - and a proof under D-30 IS a
+            // recorded run against a named real model, so one of them is
+            // enough to make that sentence false. The DEFAULT does not change -
+            // it is off, and it stays off - only the reason given for it,
+            // which is now the one that will not expire.
             return "Heron's ability to change the model is switched off, so nothing was sent " +
-                   "to Revit. This is the default, and while the write path has never been " +
-                   "run against a real model it is the right default. To turn it on, use the " +
-                   "lock button on the Heron AI ribbon, or set " +
+                   "to Revit. This is the default and it stays the default: changing " +
+                   "somebody's model is their decision to make, not Heron's. To turn it on, " +
+                   "use the lock button on the Heron AI ribbon, or set " +
                    WriteEnabledKey + " = true in " + HeronConfig.FilePath +
                    ". It takes effect straight away - Allows() reads that file fresh every " +
                    "time, so there is nothing to restart. Setting it back to false stops " +

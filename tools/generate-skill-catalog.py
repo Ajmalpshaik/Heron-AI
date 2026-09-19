@@ -76,6 +76,22 @@ matches.
 so in those words rather than showing nothing, which would read as a
 clean sweep.
 
+AND A RECORDING OUTLIVES THE SENTENCES IT COUNTED
+---------------------------------------------------
+The fingerprint was printed and never compared, so `words 1 of 4 reach`
+went on being shown after the four had been edited. The comparison is
+made against the PHRASES rather than the store: `global.db` is one file
+every worktree writes, so its md5 differs between two renders for
+reasons that change nothing, and a rule hung on it would cry STALE on
+every page - noise a reader learns to ignore, which is worse than
+silence. The phrases are in git, and a difference in them is a real one.
+
+A card whose words have moved reads **OUT OF DATE**, names how many were
+never measured and how many are no longer said, and is counted as
+NEITHER whole nor short. **A crossing is never suppressed by it**: one
+found on a sentence the skill still says stays loud, and one found on a
+sentence nobody says any more is not a live danger.
+
 WHAT IT DOES NOT CLAIM
 ------------------------
 That any of this has been run against a model. Being in the catalogue is
@@ -86,6 +102,7 @@ rather than evidence - the other half is a model (D-30).
 """
 
 import datetime
+import importlib.util
 import io
 import json
 import os
@@ -96,6 +113,18 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_skill as SKILL                                   # noqa: E402
 import heron_fragment as FRAG                                 # noqa: E402
+
+# THE FILENAME HAS A HYPHEN IN IT, so `import check-skill-routing` is not a
+# sentence Python will read - that is the whole of these four lines. It owns
+# the rules ABOUT a routing measurement, `classify()` and `words_moved()`
+# both, and `tools/prove-skill.py` reads them from the same place. A second
+# copy of either is how two tools start disagreeing about the same skill on
+# the same day.
+_spec = importlib.util.spec_from_file_location(
+    "heron_tool_check_skill_routing",
+    os.path.join(ROOT, "tools", "check-skill-routing.py"))
+ROUTING = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(ROUTING)
 
 OUT = os.environ.get("HERON_SKILL_CATALOG_OUT", "skill-catalog.html")
 
@@ -217,9 +246,16 @@ def said(rows, declared):
     return out
 
 
-def collect():
+def collect(recordings=None):
+    """`recordings` names the folder to read the measurement from.
+
+    It exists so the WHOLE path can be exercised against a recording written
+    for a test, rather than only the pieces. Nothing in this file may edit
+    `brain/skills` to make a case appear - row 142 is what that costs, and a
+    checkout several sessions share is the thing being protected.
+    """
     book, broken = providers()
-    where_meta, recorded = routing()
+    where_meta, recorded = routing(recordings)
     found, problems = SKILL.load_all()
     rows = []
 
@@ -247,6 +283,18 @@ def collect():
 
         dead = unreachable(under, declared)
 
+        # THE RECORDING, AND WHETHER IT IS STILL ABOUT THESE SENTENCES.
+        spoke = moved = None
+        if skill.id in recorded:
+            spoke = said(recorded[skill.id], wants)
+            gone, fresh = ROUTING.words_moved(recorded[skill.id], skill.utterances())
+            moved = {"gone": gone, "fresh": fresh}
+            # A CROSSING THE SKILL NO LONGER SAYS IS NOT A LIVE CROSSING, and
+            # one it still says is, stale recording or not - so the danger is
+            # counted off today's words while the record keeps what it found.
+            spoke["crossing_live"] = [one for one in spoke["crossing"]
+                                      if one not in gone]
+
         rows.append({
             "id": skill.id, "name": card.get("name") or skill.id,
             "domain": card.get("domain") or "",
@@ -259,8 +307,7 @@ def collect():
             "preconditions": [str(one) for one in
                               (card.get("preconditions") or [])],
             "revit": declared, "under": under, "unreachable_on": dead,
-            "words": (said(recorded[skill.id], wants)
-                      if skill.id in recorded else None),
+            "words": spoke, "words_moved": moved,
         })
     return rows, problems + broken, where_meta
 
@@ -334,6 +381,7 @@ footer{padding:16px 20px;border-top:1px solid var(--rule);color:var(--muted);
     <option value="crossing">a question answered by a write</option>
     <option value="short">not every word reaches</option>
     <option value="all">every word reaches</option>
+    <option value="stale">the recording is out of date</option>
     <option value="none">not measured</option>
   </select>
   <select id="dom"><option value="">any domain</option></select>
@@ -363,13 +411,23 @@ function card(r){
   // THE WORDS, BESIDE THE CHAIN. A card with no recording says so in those
   // words: an absent measurement is not a clean one, and the difference is
   // the whole reason this half was added (FRAGMENT-ISSUES row 132).
+  // A RECORDING OUTLIVES THE SENTENCES IT COUNTED. When the skill's words
+  // have moved since it was taken, the count is about a different set, so it
+  // is replaced rather than shown - but a crossing among the words the skill
+  // STILL says is live either way, and is never suppressed.
   const w = r.words;
-  const words = !w
+  const m = r.words_moved;
+  const stale = !!(m && (m.gone.length || m.fresh.length));
+  const cross = w ? (w.crossing_live || w.crossing) : [];
+  const count = !w
     ? `<span class="t">words NOT MEASURED</span>`
+    : stale
+    ? `<span class="t warn">words OUT OF DATE &mdash; ${
+        m.fresh.length} never measured, ${m.gone.length} no longer said</span>`
     : `<span class="t ${w.reach === w.total ? "proven" : "warn"}">words ${
-        w.reach} of ${w.total} reach</span>` + (w.crossing.length
-      ? `<span class="t bad">${w.crossing.length} answered by a write</span>`
-      : "");
+        w.reach} of ${w.total} reach</span>`;
+  const words = count + (cross.length
+    ? `<span class="t bad">${cross.length} answered by a write</span>` : "");
   return `<div class="s">
     <h2>${esc(r.name)}</h2>
     <div class="cap">${esc(r.id)}${r.domain ? " &middot; " + esc(r.domain) : ""}</div>
@@ -395,6 +453,10 @@ function card(r){
           u.by.length ? esc(u.by.join(", ")) + " (" + esc(u.status) + ")"
                       : "<b>nothing provides this</b>"}</li>`).join("")}</ul></dd>
       <dt>revit</dt><dd>${esc(r.revit.join(", ")) || "not declared"}</dd>
+      ${stale ? `<dt>words moved</dt><dd><ul>${
+        m.fresh.map(p => `<li>${esc(p)} &mdash; never measured</li>`).join("")
+      }${m.gone.map(p => `<li>${esc(p)} &mdash; measured, no longer said</li>`
+        ).join("")}</ul>re-take with <code>python tools/prove-skill.py --routing-to tools/jobs/skills/routing-&lt;date&gt;.json</code></dd>` : ""}
       ${r.preconditions.length ? `<dt>before</dt><dd><ul>${
         r.preconditions.map(p => `<li>${esc(p)}</li>`).join("")}</ul></dd>` : ""}
       ${r.unreachable_on.length ? `<dt>dead on</dt><dd><ul>${
@@ -410,10 +472,14 @@ function draw(){
   const say = document.getElementById("words").value;
   const shown = rows.filter(r => {
     if (where && r.domain !== where) return false;
+    const rm = r.words_moved, old = !!(rm && (rm.gone.length || rm.fresh.length));
+    const rc = r.words ? (r.words.crossing_live || r.words.crossing) : [];
     if (say === "none" && r.words) return false;
-    if (say === "crossing" && !(r.words && r.words.crossing.length)) return false;
-    if (say === "short" && !(r.words && r.words.reach < r.words.total)) return false;
-    if (say === "all" && !(r.words && r.words.reach === r.words.total)) return false;
+    if (say === "crossing" && !rc.length) return false;
+    if (say === "stale" && !old) return false;
+    // OUT OF DATE IS NEITHER, so it answers no to both of the last two.
+    if (say === "short" && !(r.words && !old && r.words.reach < r.words.total)) return false;
+    if (say === "all" && !(r.words && !old && r.words.reach === r.words.total)) return false;
     if (want === "UNSERVED" && r.effective !== "UNSERVED") return false;
     if (want === "PROVEN" && r.effective !== "PROVEN") return false;
     if (want === "weak" && (r.effective === "PROVEN")) return false;
@@ -444,9 +510,15 @@ def main():
     # a sentence that answers a question with a write, and a single number
     # that merged the two would hide exactly the case this half was added for.
     measured = [one for one in rows if one["words"]]
+    # A RECORDING WHOSE SENTENCES HAVE MOVED IS NOT A CLEAN ONE. It stays in
+    # `measured` - it did measure something - and is kept OUT of `whole`,
+    # because a word added since cannot have reached anything.
+    stale = [one for one in measured
+             if one["words_moved"]["gone"] or one["words_moved"]["fresh"]]
     whole = [one for one in measured
-             if one["words"]["reach"] == one["words"]["total"]]
-    writes = [one for one in measured if one["words"]["crossing"]]
+             if one not in stale
+             and one["words"]["reach"] == one["words"]["total"]]
+    writes = [one for one in measured if one["words"]["crossing_live"]]
 
     payload = {
         "rows": rows,
@@ -461,9 +533,13 @@ def main():
                if not measured else
                ("%d of %d measured, %d have every word reaching a capability "
                 "they declare, and %d answer a question with something that "
-                "CHANGES THE MODEL. Recorded %s against index %s - a recording, "
-                "not a run."
+                "CHANGES THE MODEL.%s Recorded %s against index %s - a "
+                "recording, not a run."
                 % (len(measured), len(rows), len(whole), len(writes),
+                   (" %d recording(s) are OUT OF DATE - the skill's words "
+                    "changed since they were taken, so their counts are "
+                    "about different sentences." % len(stale))
+                   if stale else "",
                    where_meta.get("taken") or "at an unrecorded time",
                    (where_meta.get("index") or "?")[:8])))),
         "footer": (
@@ -475,7 +551,10 @@ def main():
             "capability it declares, read from %s and NOT re-measured here - "
             "one lookup per utterance is about twenty-five minutes. A card "
             "reading NOT MEASURED has no recording covering it, which is a "
-            "different thing from having no crossings. NEITHER HALF IS A "
+            "different thing from having no crossings; one reading OUT OF "
+            "DATE has a recording about sentences the skill no longer says, "
+            "compared against the PHRASES, which are in git, and never "
+            "against the store, which every worktree writes. NEITHER HALF IS A "
             "PROOF: being in this catalogue is NOT a claim that anything has "
             "been run against a model, and understanding is half a proof - "
             "the other half is a model (D-30). Re-run rather than edit."
@@ -501,8 +580,12 @@ def main():
              len(writes)))
         for one in writes:
             w("    %s answers %s with a write\n"
-              % (one["id"], ", ".join(repr(each)
-                                      for each in one["words"]["crossing"])))
+              % (one["id"], ", ".join(repr(each) for each in
+                                      one["words"]["crossing_live"])))
+        for one in stale:
+            w("    %s OUT OF DATE - %d never measured, %d no longer said\n"
+              % (one["id"], len(one["words_moved"]["fresh"]),
+                 len(one["words_moved"]["gone"])))
     for one in dead:
         w("  %s is unreachable on %s\n"
           % (one["id"], ", ".join(each["revit"]

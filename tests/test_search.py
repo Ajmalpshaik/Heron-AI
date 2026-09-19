@@ -29,6 +29,7 @@ import io
 import os
 import shutil
 import sys
+import sqlite3
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -54,8 +55,51 @@ def main():
         SCOPE.rebuild()
         store = SCOPE.open_scope(SCOPE.GLOBAL)
         try:
+            check(SEARCH.indexed_from(store) is None,
+                  "a store nobody has indexed names no tree - an absent "
+                  "answer, not agreement (D-52)")
             n, _ = SEARCH.index(store)
             check(n >= 2, "the scope indexes its fragments (%d)" % n)
+
+            # WHOSE FRAGMENTS ARE IN THE STORE (FRAGMENT-ISSUES row 131). It
+            # is ONE file for every checkout on the machine, so a rebuild
+            # replaces what Heron knows with the opinion of whichever tree
+            # asked last. index() knew both paths and recorded neither.
+            import heron_fragment as FRAG
+            here = os.path.abspath(FRAG.FRAGMENTS_DIR).replace(os.sep, "/")
+            check(SEARCH.indexed_from(store) == here,
+                  "and after indexing it names the tree it was built from")
+            # IT RECORDS AND DOES NOT REFUSE. Whether a scope should be
+            # per-worktree is the policy question row 131 leaves open, and a
+            # library function that started refusing would settle it by
+            # accident - so a second index from the same tree still works.
+            again, _ = SEARCH.index(store, force=True)
+            check(again == n and SEARCH.indexed_from(store) == here,
+                  "a second rebuild is not refused - this names, it does not "
+                  "gate")
+
+            # A MISSING TABLE AND A BROKEN STORE ARE DIFFERENT ANSWERS. The
+            # first is the normal case on a store written before this was
+            # recorded; the second must NOT read as "no tree", which is the
+            # plausible zero D-52 exists to stop and what
+            # tools/check-narrow-errors.py refuses in one line.
+            class _Raises(object):
+                def __init__(self, exc):
+                    self.exc = exc
+
+                def execute(self, *a, **k):
+                    raise self.exc
+
+            check(SEARCH.indexed_from(_Raises(
+                sqlite3.OperationalError("no such table: index_state"))) is None,
+                  "a store with no such table names no tree, quietly")
+            try:
+                SEARCH.indexed_from(_Raises(
+                    sqlite3.OperationalError("database disk image is malformed")))
+                check(False, "a broken store must not answer quietly")
+            except sqlite3.OperationalError:
+                check(True, "and a store that is broken raises rather than "
+                            "reading as no tree (D-52)")
 
             print()
             print("1. The common sentence costs one lookup")

@@ -149,6 +149,10 @@ an edit.
 | [D-78](#d-78--the-metadata-checker-owns-metadata-validity-and-the-third-row-folds-into-it) | The metadata checker owns metadata validity, and the third row folds into it | ✅ Accepted · 2026-09-16 |
 | [D-79](#d-79--a-generated-name-is-six-parts-lower-case-hyphenated-with-the-version-last) | A generated name is six parts, lower case, hyphenated, with the version last | ✅ Accepted · 2026-09-16 |
 | [D-80](#d-80--five-development-rows-are-the-hosts-because-the-host-is-the-model) | Five Development rows are the host's, because the host is the model | ✅ Accepted · 2026-09-17 |
+| [D-81](#d-81--carried-text-is-stamped-not-scanned) | Carried text is stamped, not scanned | ✅ Accepted · 2026-09-20 |
+| [D-82](#d-82--the-cloud-line-is-drawn-by-content-type-not-by-scope) | The cloud line is drawn by content type, not by scope | ✅ Accepted · 2026-09-20 |
+| [D-83](#d-83--an-ingest-may-cross-and-it-carries-the-practice-not-the-count) | An ingest may cross, and it carries the practice, not the count | ✅ Accepted · 2026-09-20 |
+| [D-84](#d-84--the-sandbox-is-renamed-not-rebuilt) | The sandbox is renamed, not rebuilt | ✅ Accepted · 2026-09-20 |
 
 ## Format
 
@@ -4999,3 +5003,165 @@ single decision is how a register loses track of which happened.
 The owner considered each and accepted all three: he works through Claude Code, on his own machine.
 **If that ever changes, this is the decision to revisit**, and
 [`brain/heron_provider.py`](../brain/heron_provider.py) is the layer that would serve it.
+
+
+---
+
+## D-81 — Carried text is stamped, not scanned
+
+**Status:** Accepted · **Date:** 2026-09-20 · **Answers:** [Q-51](OPEN-QUESTIONS.md)
+
+### Context
+
+Heron makes no model calls, so Heron cannot be injected — **Heron is the carrier.** Today every source
+it carries is its own. The RAG work creates the exception: project standards, specifications, imported
+packages. **Retrieval becoming useful and Heron carrying text it did not write are the same event.**
+
+Q-51 offered three shapes. The owner was asked in the drawing-office form of the question, with a
+worked example: a supplier's datasheet whose own small print claims QCS approval, asked back to him
+later as fact. Heron would not have lied — it would have carried the supplier's sentence without
+saying whose it was.
+
+### Decision
+
+**Shape 1. Mark, do not scan.** Every part carrying text Heron did not write is stamped with its
+`source`, and Heron **attributes rather than asserts** — *"the supplier's datasheet says yes"*, never a
+bare *"yes"*.
+
+**A stamp, in the sense a drawing is stamped FOR INFORMATION ONLY — NOT FOR CONSTRUCTION.** The sheet
+is still read. What changes is that nobody builds from it by accident.
+
+**No chunk scanner is built.** Shapes 2 and 3 are refused, not deferred.
+
+### Consequences
+
+- **Half is already there.** [`heron_context.py`](../brain/heron_context.py) stamps each part with
+  `source`. What is owed is the ATTRIBUTION half — the rule that a part stamped as somebody else's may
+  not be spoken in Heron's own voice.
+- **This decision does not make Heron safe against a hostile document**, and must not be quoted as if
+  it did. It makes Heron **honest about whose words it is repeating**, which is a different property.
+- [`tests/test_carried_sources.py`](../tests/test_carried_sources.py) already answers *is Heron still
+  only carrying its own words?* — it becomes the tripwire for this rule rather than for the question.
+
+---
+
+## D-82 — The cloud line is drawn by content type, not by scope
+
+**Status:** Accepted · **Date:** 2026-09-20 · **Answers:** [Q-54](OPEN-QUESTIONS.md) ·
+**Supersedes the framing of** [D-24](#d-24--embeddings-are-computed-locally-by-default)
+
+### Context
+
+[D-24](#d-24--embeddings-are-computed-locally-by-default) says *local by default, cloud opt-in
+**per scope***, and no opt-in path was ever built, so the choice it describes cannot be made at all.
+Q-54 asked whether that switch was worth building or was a switch nobody would turn on.
+
+**The owner answered a different question, and the difference is the decision.** He did not want the
+line drawn around a project. He wanted it drawn around **what the thing is**, and he asked for the
+earlier position to be changed outright: *"in our previous decision also we need to change — it was
+never give anything cloud."*
+
+### Decision
+
+| | Cloud |
+|---|---|
+| **Documents** — PDFs, specifications, standards, **and client project documents** | **May go** |
+| **Revit models, families, model data** | **Never leave the PC** |
+
+**"All documents" was tested before it was recorded.** He was asked specifically whether client tender
+documents and consultant drawing sets were included, with the safer alternative — published standards
+only — put beside it. He chose all documents, explicitly.
+
+### Consequences
+
+- **D-24's per-scope framing is superseded**, not its caution. Local stays the default; what changes is
+  what the opt-in is drawn around.
+- **The switch must be able to tell a document from model data**, which is a classification the code
+  does not currently make anywhere.
+- **The cost was stated and accepted:** everything in means the superseded revision goes in too, and
+  Heron will answer from it confidently.
+
+### Two things he asked while deciding, recorded because the answers bound the decision
+
+**"More context means better answers and no hallucination — am I right?"** Half right, and the
+counter-example is in this repository. [Row 114](FRAGMENT-ISSUES.md) is Heron telling him **twice**
+there was no condensate drain in a model holding **63** such elements, with full model access. More
+RELEVANT context reduces hallucination; it does not remove it, and more is not automatically better —
+which is why retrieval takes the top ~20 and re-ranks rather than sending everything.
+
+**"It will not go to GitHub — am I right?"** Correct, and **verified against `.gitignore` rather than
+asserted**. Three layers: the store lives in `%APPDATA%\Heron\knowledge`, outside the repository; the
+databases are ignored; and the SOURCE documents are blocked by extension — `*.pdf`, `*.docx`, `*.xlsx`.
+The file's own comment says why it is permanent: *"A fork propagates and GitHub caches, so this one is
+permanent if it happens once."*
+
+---
+
+## D-83 — An ingest may cross, and it carries the practice, not the count
+
+**Status:** Accepted · **Date:** 2026-09-20 · **Answers:** [Q-55](OPEN-QUESTIONS.md)
+
+### Context
+
+[docs/20 §4](20-knowledge-trust-and-conflict.md) wants conflict detection at **write** time, because
+resolving a conflict once at ingest is far cheaper than resolving it on every query. At read time the
+crossing is already authorised and deliberately limited to **a number and a clause number, never a
+clause**. At write time nothing has been asked of anybody, and [D-33](#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once) makes cross-scope
+contractual rather than technical.
+
+### Decision
+
+**Yes — and the owner declined the ceiling the question offered.** He does not want a count. He wants
+the **prior practice, by project, in words**:
+
+> *"In Project A you used 700mm ceiling void. Do you want the same here?"*
+
+His own sentence: *"it need to remember to me — in project one we did like this, so do you need to do
+like that. AI need to tell me and remind me."*
+
+So an INGEST may read another scope, and **the crossing carries the practice**, not only the number.
+
+### Consequences
+
+- **This is wider than the read-time crossing**, which still returns a clause number and no clause. Two
+  different limits now exist for two different moments, and that is deliberate.
+- **It is safe because it is him.** He worked on both projects and already knows both, so Heron is
+  reminding him of his own work. **The day a second person uses Heron**, someone could be shown a
+  client's practice having never worked for that client.
+- **Revisit on the first multi-user install**, not before. Recorded as a reservation rather than
+  resolved, because resolving it now would design for a user who does not exist.
+
+---
+
+## D-84 — The sandbox is renamed, not rebuilt
+
+**Status:** Accepted · **Date:** 2026-09-20 · **Answers:** [Q-56](OPEN-QUESTIONS.md)
+
+### Context
+
+`HERON-AHR-SBX-016` is asked to run a newly built agent *"in isolation — never against a live model,
+never able to write production knowledge"*. What is built runs it as ordinary Python **in the
+supervising process**. An agent that cooperates is held. One that does not can call `open()`, import
+the bridge, reach into globals or delete files, and nothing is in its way.
+
+**That is most of the value and none of the guarantee**, and the word *sandbox* implies otherwise.
+
+### Decision
+
+**Keep what exists. Build no subprocess. And take the word out.**
+
+*"Sandbox"* is replaced with **"watched, not contained"** in the module and in the
+`HERON-AHR-SBX-016` register row.
+
+### Consequences
+
+- **The rename is the deliverable, not a tidy-up.** The owner chose the option whose entire point is
+  that the name stops promising what the code does not do. Shipping the behaviour without the rename
+  would deliver the opposite of what was decided.
+- **What it still catches is the honest accident** — a new agent reaching for Revit because nobody told
+  it not to — which is what a first run usually produces. Contained, recorded, reported.
+- **What it does not catch is a hostile or badly broken agent**, and there is now nowhere in the
+  repository that claims otherwise.
+- **A runaway agent still cannot be stopped**, because the timeout lives in the subprocess that was not
+  built. That is the cost, and it is accepted while `write.enabled` is `false` and nothing generated has
+  ever run near a model — [Golden Rule 11](14-golden-rules.md) is the rail carrying this.

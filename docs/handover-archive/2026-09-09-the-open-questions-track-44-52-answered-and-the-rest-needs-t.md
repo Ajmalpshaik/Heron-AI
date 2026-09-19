@@ -1,4 +1,4 @@
-# HANDOVER — 2026-09-09 (the open-questions track): 44 → 52 answered, and the rest needs the PC
+# HANDOVER — 2026-09-09 (the open-questions track): 44 → 52 answered, and the rest needs the PC *(superseded — the live count is in [OPEN-QUESTIONS.md](../OPEN-QUESTIONS.md))*
 
 > **Archived session note.** This is a record of work that is finished. It was moved out of
 > [`HANDOVER.md`](../HANDOVER.md) on 2026-09-12 so that file could go back to being the short
