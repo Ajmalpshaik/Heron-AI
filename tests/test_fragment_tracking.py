@@ -88,6 +88,13 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
+# `heron_fragment` FIRST, WHICH IS WHAT tests/test_validate_agent.py DOES.
+# That file imports the same module, runs the same kind of check, and passes on
+# the Linux runner where this one has failed every time. Matching the import
+# order of the one test that works is a cheap thing to try when the difference
+# cannot be reproduced anywhere else - and it is the only structural difference
+# left between the two files. FRAGMENT-ISSUES row 153.
+import heron_fragment as HF                                   # noqa: E402,F401
 import heron_validate as V                                    # noqa: E402
 
 FAILURES = []
