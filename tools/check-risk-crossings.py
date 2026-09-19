@@ -44,10 +44,24 @@ honest; a fixed list stops measuring the day somebody optimises against it.
 WHAT IT DOES NOT DECIDE
 -----------------------
 **An imperative is not a question.** "isolate all the pipes" resolving to
-ISOLATE_ELEMENTS is CORRECT even though isolating is not a READ, and so is
-"hide everything except the walls" landing on HIDE_ELEMENTS. Those are reported
-separately and are not failures: what marks a real crossing is that **a READ
-was right there and lost**.
+ISOLATE_ELEMENTS is CORRECT even though isolating is not a READ. Those are
+reported separately and are not failures: what marks a real crossing is that
+**a READ was right there and lost**.
+
+**AND THE LINE IS AT EXECUTE, NOT AT "IT IS AN IMPERATIVE"** - this sentence
+used to name "hide everything except the walls" landing on HIDE_ELEMENTS as
+equally correct, and the rule below reported it as a crossing anyway. The rule
+was right and the sentence was wrong (register row 145). `isolate-elements` is
+**EXECUTE**: Revit's Temporary Isolate, gone when the view is reset.
+`hide-elements` is **MODIFY**, and its own fragment gives the reason - a
+permanent hide is saved into the view, survives closing the model, appears on
+the printed sheet, and the next person to open that view has no idea why
+something is missing. **A capability's risk is the worst thing it can do**,
+not the thing the modeller probably meant.
+
+So: an imperative reaching an **EXECUTE** view change is correct and is
+reported separately. An imperative reaching a **MODIFY** is still worth
+reading, and widening the discriminator to excuse it would delete the check.
 
 That test is crude and deliberately so. A tool that tried to parse intent would
 be a second, worse retriever. Judgement stays with the reader - which is why
