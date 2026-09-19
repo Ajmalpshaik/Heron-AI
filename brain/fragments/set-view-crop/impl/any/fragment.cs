@@ -34,7 +34,26 @@ const double MillimetresPerFoot = 304.8;
 // A schedule or a legend has no crop region to set. `CanBePrinted` is the
 // property that separates a drawable view from one that is not, and a template
 // is refused because cropping one would reach every view using it.
-if (view == null || view.IsTemplate || !view.CanBePrinted)
+//
+// A SHEET IS REFUSED FIRST, AND `CanBePrinted` IS WHY IT HAD TO BE.
+//
+// A sheet is the most printable thing in the model, so that test answers TRUE
+// for one - it separates drawable from not-drawable, which is a different
+// question from *does this have a crop region*. Measured 2026-09-13 on sheet
+// `A101` of `Project1 work_ajmal.al`, handed 9 ducts that live in `1 - Mech`:
+// **`applied true`, `enclosed 9`, `viewRefused false`**. `CropBoxActive` was
+// set and read back as true on the sheet, so even the read-back agreed - it is
+// the question that was wrong, not the answer. FRAGMENT-ISSUES rows 20 and 24.
+//
+// AND THIS ONE REFUSES THE WHOLE SHEET WHERE `hide-elements` AND
+// `isolate-elements` REJECT ONLY THE ELEMENTS, WHICH IS A DIFFERENCE ON
+// PURPOSE. Those two can be asked to hide or isolate something that genuinely
+// lives on the sheet - a text note, a revision cloud, a title block - so
+// refusing the view would block a real request, and they drop the off-sheet
+// elements instead. A CROP REGION IS NOT LIKE THAT: a sheet has none at all,
+// so there is no element, on the sheet or off it, that would make this call
+// mean something. There is nothing narrower to refuse than the view.
+if (view == null || view is ViewSheet || view.IsTemplate || !view.CanBePrinted)
 {
     viewRefused = true;
 }
