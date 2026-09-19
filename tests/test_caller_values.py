@@ -268,6 +268,49 @@ def run():
           client.report_undeclared("x", [{"name": "nope", "value": "1"}],
                                    declares), None)
 
+    # ---- model_line: the header names where the phases RAN -----------------
+    #
+    # FRAGMENT-ISSUES row 15. The header came from the opening count_elements
+    # call, which answers for the document IN FRONT, while every phase runs
+    # against --in when a job pins one. Three fragments were signed with
+    # `model: Project1 work_ajmal.al (3,445 elements)` and had run somewhere
+    # else. The element count was the worst part: it belonged to a model those
+    # fragments never touched.
+
+    here = client.model_line({"document": "Project1", "count": 3445},
+                             [{"document": "Project1"},
+                              {"document": "Project1"}], "2024", 23804)
+    check("nothing pinned: the header keeps the count",
+          here, "Project1 (3,445 elements), Revit 2024, session 23804")
+
+    # ROW 15's OWN CASE, verbatim from the row.
+    elsewhere = client.model_line(
+        {"document": "Project1 work_ajmal.al", "count": 3445},
+        [{"document": "Snowdon-scratch_ajmal.al"}], "2024", 23804)
+    check("pinned elsewhere: the header names where it RAN",
+          elsewhere.startswith("Snowdon-scratch_ajmal.al"), True)
+    check("and the count is DROPPED, not carried to the wrong model",
+          "3,445 elements), " not in elsewhere, True)
+    check("and it says which model the count came from instead",
+          "measured on Project1 work_ajmal.al" in elsewhere, True)
+
+    # A PROOF WHOSE LEGS RAN IN DIFFERENT DOCUMENTS IS A FINDING. Picking one
+    # would hide it.
+    split = client.model_line({"document": "A", "count": 10},
+                              [{"document": "B"}, {"document": "C"}],
+                              "2024", 1)
+    check("phases that disagree are said out loud, not resolved",
+          split.startswith("PHASES RAN AGAINST DIFFERENT DOCUMENTS: B, C"),
+          True)
+
+    check("no phase naming one falls back to the active document",
+          client.model_line({"document": "A", "count": 10},
+                            [{"ok": False}], "2024", 1),
+          "A (10 elements), Revit 2024, session 1")
+    check("and so does an empty phase list",
+          client.model_line({"document": "A", "count": 10}, [], "2024", 1),
+          "A (10 elements), Revit 2024, session 1")
+
     for line in passes:
         print("  PASS  " + line)
 

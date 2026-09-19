@@ -1368,6 +1368,74 @@ def cmd_prove(names, in_document=None, values=None, session=None):
     return 1 if failures else 0
 
 
+def model_line(opening, phases, revit_version, pid):
+    """The `model:` header a proof carries, built from where the phases RAN.
+
+    FRAGMENT-ISSUES ROW 15. This header used to come from the opening
+    `count_elements` call, which answers for the document IN FRONT - and every
+    phase runs against `--in` when a job pins one. The two disagreed inside the
+    same proof: three fragments were signed with
+    `model: Project1 work_ajmal.al (3,445 elements)` while each case's own text
+    ended *"on Snowdon-scratch_ajmal.al"*, which is where they actually ran.
+
+    **THE ELEMENT COUNT WAS THE WORST PART.** 3,445 belongs to a model those
+    fragments never touched, so a reader checking the evidence against the
+    model would have been checking the wrong one.
+
+    THE OBVIOUS REPAIR IS A NO-OP AND THE ROW SAYS SO. Passing the pinned
+    document to the opening call changes nothing: `RevitOperations.cs:60` is
+    `case "count_elements": return CountElements(app);` - `app` only, no
+    `request` - so a `document` sent with it is discarded in silence and the
+    header would go on naming the active model. That route needs an add-in
+    change and a deploy.
+
+    THIS IS THE OTHER ROUTE, WHICH NEEDS NEITHER. Every phase already records
+    `document` from its own reply, so the truth the header contradicted was
+    sitting in the same file. Three cases, and the middle one is the point:
+
+      every phase names the SAME document as the opening call
+          nothing was pinned, or it was pinned to the active one. The count
+          belongs to that model, so it is kept
+
+      the phases name a DIFFERENT document
+          the count came from `count_elements` on the ACTIVE document and does
+          NOT belong to the model the fragment ran against. It is dropped
+          rather than carried across, because a number attached to the wrong
+          model is what made this a defect rather than a typo
+
+      the phases DISAGREE with each other
+          said out loud. A proof whose legs ran against different documents is
+          a finding, and picking one of them would hide it
+    """
+    seen = []
+    for phase in phases or []:
+        where = (phase or {}).get("document")
+        if where and where not in seen:
+            seen.append(where)
+
+    active = (opening or {}).get("document")
+    count = (opening or {}).get("count", 0)
+    tail = "Revit %s, session %s" % (revit_version, pid)
+
+    if not seen:
+        # No phase reported one - the opening call is all there is, and saying
+        # so is better than a header that looks derived when it is not.
+        return "%s (%s elements), %s" % (active, "{:,}".format(count), tail)
+
+    if len(seen) > 1:
+        return ("PHASES RAN AGAINST DIFFERENT DOCUMENTS: %s - active was %s, "
+                "%s" % (", ".join(seen), active, tail))
+
+    where = seen[0]
+    if where == active:
+        return "%s (%s elements), %s" % (where, "{:,}".format(count), tail)
+
+    return ("%s, %s - the count is NOT recorded because %s elements was "
+            "measured on %s, the document in front, and this ran against "
+            "another one (row 15)"
+            % (where, tail, "{:,}".format(count), active))
+
+
 def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=None, out=None,
                  values=None, negative_values=None, setup_values=None,
                  negative_setup_values=None, writing=False, setup=None,
@@ -1517,10 +1585,19 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
         bridge.close()
         return 1
 
+    # HELD BEFORE THE BRIDGE IS CLOSED. The record's header is built after the
+    # phases have reported, by which point `bridge` is released and closed -
+    # reading these off it there would be reading a closed object.
+    revit_version, pid = bridge.revit_version, bridge.pid
+
+    # PROVISIONAL, AND REPLACED BELOW ONCE THE PHASES HAVE REPORTED. Printed
+    # here because a person watching the run wants to know what is in front
+    # before anything is sent; the RECORD's header is built from where the
+    # phases actually ran - see model_line and row 15.
     model = "%s (%s elements), Revit %s, session %s" % (
         opening.get("document"), "{:,}".format(opening.get("count", 0)),
         bridge.revit_version, bridge.pid)
-    print("model:  %s" % model)
+    print("active: %s" % model)
     print("")
 
     phases = []
@@ -1876,6 +1953,9 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
 
     bridge.release()
     bridge.close()
+
+    # ROW 15. Built from where the phases RAN, not from what was in front.
+    model = model_line(opening, phases, revit_version, pid)
 
     record = {
         "run_record": out or "brain/proof-drafts/runs/%s.json" % name,
