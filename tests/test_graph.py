@@ -20,6 +20,10 @@ WHAT IT PROVES
   3. Sole provision is called out - the dangerous case, because a caller that
      asked for the capability never named the fragment.
   4. Nothing is stored that could be computed, so nothing can go stale.
+
+WHAT IT MUST NOT DO
+  Break the real library to prove any of it. The break happens in a copy under
+  the system temp folder, for the reason stand_in_library() gives.
 """
 
 import io
@@ -84,8 +88,9 @@ def break_elements(text):
     return None
 
 
-def providers_of_elements():
-    """EVERY fragment on disk that provides `elements`, found rather than named.
+def providers_of_elements(root):
+    """EVERY fragment under `root` that provides `elements`, found rather
+    than named.
 
     This list was hardcoded twice and was wrong both times. It named one
     fragment until 2026-08-29, when the library grew a second and breaking one
@@ -97,8 +102,11 @@ def providers_of_elements():
     So it is derived. A test whose fixture is a list of filenames is a test
     that expires quietly the next time somebody does the thing this repository
     is for - adding a fragment.
+
+    `root` is passed in rather than computed, because the library this is asked
+    about is the throwaway copy and never brain/fragments - see
+    stand_in_library().
     """
-    root = os.path.join(ROOT, "brain", "fragments")
     found = []
     for name in sorted(os.listdir(root)):
         path = os.path.join(root, name, "fragment.yaml")
@@ -107,6 +115,49 @@ def providers_of_elements():
         if break_elements(io.open(path, encoding="utf-8").read()) is not None:
             found.append(path)
     return found
+
+
+def stand_in_library(destination):
+    """A copy of the library to break, so that the real one never is.
+
+    THIS TEST USED TO BREAK brain/fragments ITSELF. It rewrote the `provides:`
+    block of all 55 fragments that provide `elements`, ran the deriver over
+    them, and wrote the originals back - correctly, on every path that returns.
+    Measured 2026-09-19: the real library sat broken for 11.9s of a 67s run,
+    18% of it, with `git status` reporting 55 modified files for that whole
+    window.
+
+    Two things were wrong with that, and only one of them was about exceptions.
+
+      A KILLED RUN LEAVES THEM BROKEN. tools/check-gaps.py runs every suite
+      through subprocess.run with a 300s timeout, and a timeout KILLS the
+      child; so does Ctrl+Break, and so does the machine going down. `finally`
+      runs through none of those. What survives is 55 fragments whose contracts
+      say `somethingElse`, and nothing on disk saying why.
+
+      AND NOTHING HAS TO CRASH AT ALL. Several sessions share this checkout and
+      its worktrees. One that runs `git add -A` inside those 11.9 seconds
+      commits 55 fragment.yaml changes nobody made and is told nothing - the
+      same shape as row 131 of docs/FRAGMENT-ISSUES.md, one layer out: a shared
+      thing left as whichever process got there last wrote it.
+
+    So the break happens somewhere the repository does not live. Only
+    fragment.yaml is copied - load() reads only fragment.yaml, and the impl/
+    trees are two thirds of the files for seconds that would buy nothing.
+    That shortcut is a bet, so main() checks it: the copy must hold the same
+    fragments, and read with the same problems, as brain/fragments. A load()
+    that starts needing a sibling file fails there rather than quietly testing
+    a smaller library.
+    """
+    source = os.path.join(ROOT, "brain", "fragments")
+    for name in sorted(os.listdir(source)):
+        card = os.path.join(source, name, "fragment.yaml")
+        if not os.path.isfile(card):
+            continue
+        folder = os.path.join(destination, name)
+        os.makedirs(folder)
+        shutil.copyfile(card, os.path.join(folder, "fragment.yaml"))
+    return destination
 
 
 def check(condition, what):
@@ -118,55 +169,92 @@ def check(condition, what):
 def main():
     home = tempfile.mkdtemp(prefix="heron-graph-")
     os.environ["HERON_KNOWLEDGE"] = home
-    providers = providers_of_elements()
-    originals = dict((path, io.open(path, encoding="utf-8").read())
-                     for path in providers)
-
-    def break_providers():
-        """Rename what EVERY provider of `elements` leaves behind.
-
-        All of them, or the consumer keeps a feeder and never orphans - which
-        looks like this test failing and is actually the library being fine.
-        """
-        for path, text in originals.items():
-            io.open(path, "w", encoding="utf-8").write(break_elements(text))
-
-    def restore_providers():
-        for path, text in originals.items():
-            io.open(path, "w", encoding="utf-8").write(text)
+    workspace = tempfile.mkdtemp(prefix="heron-graph-library-")
 
     import heron_scope as SCOPE
     import heron_graph as G
     import heron_capability as CAP
+    import heron_fragment as FRAG
 
     try:
+        library = stand_in_library(os.path.join(workspace, "fragments"))
+        providers = providers_of_elements(library)
+        originals = dict((path, io.open(path, encoding="utf-8").read())
+                         for path in providers)
+
+        def loaded():
+            """The stand-in, RE-READ from disk every time it is asked for.
+
+            Not read once and reused. The last check of section 1 is that
+            putting the files back puts the graph back, and a dict loaded once
+            would make that sentence true whatever the deriver did.
+            """
+            found, _problems = FRAG.load_all(library)
+            return found
+
+        def break_providers():
+            """Rename what EVERY provider of `elements` leaves behind.
+
+            All of them, or the consumer keeps a feeder and never orphans -
+            which looks like this test failing and is actually the library
+            being fine.
+            """
+            for path, body in originals.items():
+                with io.open(path, "w", encoding="utf-8") as handle:
+                    handle.write(break_elements(body))
+
+        def restore_providers():
+            for path, body in originals.items():
+                with io.open(path, "w", encoding="utf-8") as handle:
+                    handle.write(body)
+
         SCOPE.rebuild()
         store = SCOPE.open_scope(SCOPE.GLOBAL)
         try:
             CAP.rebuild(store)
 
+            print("0. The stand-in IS the library, not something like it")
+            real, real_problems = FRAG.load_all()
+            mirror, mirror_problems = FRAG.load_all(library)
+            check(sorted(real) == sorted(mirror),
+                  "the copy holds the same %d fragment(s) as brain/fragments - "
+                  "one that had lost any would test a smaller library and say "
+                  "nothing about this one" % len(real))
+            check(len(real_problems) == len(mirror_problems),
+                  "and reads with the same %d problem(s), so copying only "
+                  "fragment.yaml lost nothing load() wanted"
+                  % len(real_problems))
+            check(len(providers) > 1,
+                  "%d of them provide `elements`, and every one gets broken"
+                  % len(providers))
+
+            print()
             print("1. THE DERIVER CATCHES A BREAK IT WAS GIVEN")
-            before = G.composes_into("FRG-ELE-001")
+            before = G.composes_into("FRG-ELE-001", loaded())
             check("FRG-SEL-001" in before,
                   "with the real contracts, the filter feeds the action: %s"
                   % ", ".join(before))
+            check(before == G.composes_into("FRG-ELE-001", real),
+                  "and brain/fragments answers identically - what is about to "
+                  "be broken is THIS library, not a resemblance of it")
 
             # Break it on purpose: rename what the filter provides, so the
-            # action's `elements` need is no longer met by anything.
+            # action's `elements` need is no longer met by anything. IN THE
+            # COPY. Nothing in this file opens a file under brain/ for writing.
             break_providers()
-            after = G.composes_into("FRG-ELE-001")
+            after = G.composes_into("FRG-ELE-001", loaded())
             check("FRG-SEL-001" not in after,
                   "rename what it provides and the composition is GONE - the "
                   "deriver saw it, so its clean answers mean something")
 
-            broken = G.orphans(store)
+            broken = G.orphans(store, loaded())
             check(any(i == "FRG-ELE-001" for i, _w in broken),
                   "and the filter is reported as an orphan nothing can consume")
             check(any(i == "FRG-SEL-001" for i, _w in broken),
                   "and the action as one nothing can feed")
 
             restore_providers()
-            check(G.composes_into("FRG-ELE-001") == before,
+            check(G.composes_into("FRG-ELE-001", loaded()) == before,
                   "put it back and the graph returns to what it was - it is "
                   "reading the files, not remembering")
 
@@ -178,7 +266,7 @@ def main():
             # model (D-46). Testing the thing under test survives the library
             # growing; testing a global property does not, and this is the
             # second assertion in this file to learn that.
-            healed = [i for i, _w in G.orphans(store)]
+            healed = [i for i, _w in G.orphans(store, loaded())]
             check("FRG-ELE-001" not in healed and "FRG-SEL-001" not in healed,
                   "and the orphans the break created go with it")
 
@@ -238,7 +326,12 @@ def main():
         finally:
             store.close()
     finally:
-        restore_providers()
+        # NOTHING HERE PUTS brain/fragments BACK, because nothing here took it
+        # apart. Both of these can fail, or never run at all, and the
+        # repository is still exactly as this suite found it. That is the whole
+        # of what the copy buys - a `finally` is a promise about the paths that
+        # return, and a killed process does not take any of them.
+        shutil.rmtree(workspace, ignore_errors=True)
         shutil.rmtree(home, ignore_errors=True)
         os.environ.pop("HERON_KNOWLEDGE", None)
 
