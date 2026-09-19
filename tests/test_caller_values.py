@@ -178,6 +178,58 @@ def run():
     check("a fragment whose risk cannot be read is refused, not assumed safe",
           client.risk_refusal(root, "no-such-fragment-anywhere") is not None, True)
 
+    # ---- undeclared_values: the silent drop, named -------------------------
+    #
+    # FRAGMENT-ISSUES row 71. `--set maxSteps=200` against a fragment that
+    # declares no `maxSteps` was accepted, ignored and never mentioned, and the
+    # fragment looked broken. The contract is on disk before anything is sent,
+    # so the client can say so while Revit is still untouched.
+
+    declares = [
+        {"name": "start", "type": "Element", "source": "request"},
+        {"name": "elements", "type": "IList<Element>"},
+        {"name": "tolerance", "type": "double", "source": "request"},
+    ]
+
+    odd, takeable = client.undeclared_values(
+        [{"name": "maxSteps", "value": "200"}], declares)
+    check("row 71's own value is named as undeclared", odd, ["maxSteps"])
+    check("and the reply says what CAN be typed, request-sourced only",
+          takeable, ["start (Element)", "tolerance (double)"])
+
+    odd, _ = client.undeclared_values(
+        [{"name": "tolerance", "value": "25"}], declares)
+    check("a declared value is silent", odd, [])
+
+    odd, _ = client.undeclared_values(
+        [{"name": "elements", "value": "x"}], declares)
+    check("a need filled by a FRAGMENT is declared, so naming it is not a "
+          "warning", odd, [])
+
+    odd, takeable = client.undeclared_values(
+        [{"name": "totallyMadeUpValue", "value": "42"}], [])
+    check("a fragment that declares nothing still names the stray value",
+          odd, ["totallyMadeUpValue"])
+    check("and offers nothing, rather than an empty list read as a shrug",
+          takeable, [])
+
+    odd, _ = client.undeclared_values([], declares)
+    check("no values is not a finding", odd, [])
+    odd, _ = client.undeclared_values(None, None)
+    check("and neither is nothing at all", odd, [])
+
+    odd, _ = client.undeclared_values(
+        [{"name": "width", "value": "1"}, {"name": "widthMm", "value": "1"}],
+        [{"name": "width", "type": "double", "source": "request"}])
+    check("the mistyped twin is named and the real one is not - the shape "
+          "that cost six names on 2026-09-09", odd, ["widthMm"])
+
+    # IT NAMES, IT DOES NOT REFUSE. Row 71 allows either; refusing would change
+    # what a caller relying on today's behaviour gets, and naming is enough.
+    check("report_undeclared returns nothing - it cannot refuse a run",
+          client.report_undeclared("x", [{"name": "nope", "value": "1"}],
+                                   declares), None)
+
     for line in passes:
         print("  PASS  " + line)
 

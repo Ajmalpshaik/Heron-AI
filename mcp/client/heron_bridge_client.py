@@ -962,6 +962,73 @@ def caller_values(pairs):
     return values
 
 
+def undeclared_values(values, needs):
+    """The typed names this fragment declares no need for, and what it does take.
+
+    Returns (undeclared, takeable) - both lists of names, both possibly empty.
+
+    FRAGMENT-ISSUES ROW 71. Proving `trace-connectivity`, `--set maxSteps=200`
+    was passed against `--negative-set maxSteps=0` and both legs came back
+    `reached 25`. The fragment declares no `maxSteps` at all, so the value was
+    accepted, ignored, and never mentioned - and the fragment looked broken.
+    `list-levels --set totallyMadeUpValue=42` runs clean for the same reason.
+
+    IT IS THE MISTYPED-INPUT FAMILY, WHICH THIS REPOSITORY ALREADY KNOWS THE
+    COST OF. `tools/generate-jobs.py` exists because six input names were
+    mistyped on 2026-09-09, `widthMm` for `width` among them - and that tool
+    only protects a GENERATED job file. A hand-run `fragment`, `prove` or
+    `validate` takes anything. A mistyped name and an invented one are the same
+    event, and both read as a fragment that ignores its input.
+
+    THE CHECK IS HERE AND NOT IN THE ADD-IN BECAUSE THE CONTRACT IS HERE.
+    `needs_for` has already read `contract.needs` off disk before anything is
+    sent - the client knows every declared name while Revit is still untouched.
+    The add-in could not do this as cheaply: it is handed the `needs` block, but
+    refusing there would mean a round trip to learn about a typo.
+
+    IT NAMES, IT DOES NOT REFUSE. Row 71's own words are "refusing an
+    undeclared caller value, OR NAMING IT, would have turned a confusing run
+    into a one-line answer". Naming is the half that cannot break a caller who
+    is relying on today's behaviour, and it is enough: the confusing part was
+    never the drop, it was the silence.
+    """
+    declared = set()
+    takeable = []
+    for need in needs or []:
+        name = (need or {}).get("name")
+        if not name:
+            continue
+        declared.add(name)
+        # WHAT A PERSON CAN ACTUALLY TYPE. A need filled by an earlier fragment
+        # or by the wrapper is not an answer to "what should I have written",
+        # so offering it would send somebody to set a value that is not theirs
+        # to set.
+        if (need or {}).get("source") == "request":
+            takeable.append("%s (%s)" % (name, need.get("type") or "?"))
+
+    undeclared = [entry.get("name") for entry in (values or [])
+                  if entry and entry.get("name") not in declared]
+    return undeclared, takeable
+
+
+def report_undeclared(fragment, values, needs):
+    """Say so, once, before Revit is touched. Never refuses; returns nothing."""
+    undeclared, takeable = undeclared_values(values, needs)
+    if not undeclared:
+        return
+    # THE NAME IN THE FIRST COLUMN, because `prove` prints a 30-wide column of
+    # fragment names and a warning that did not line up under one would read as
+    # being about whichever fragment was last.
+    for name in undeclared:
+        print("%-30s IGNORED '%s' - not a value this fragment declares, so it "
+              "will be dropped" % (fragment, name))
+    print("%-30s it takes: %s"
+          % ("", ", ".join(takeable) if takeable
+             else "no caller values at all"))
+    print("%-30s a mistyped name and an invented one look the same here "
+          "(FRAGMENT-ISSUES row 71)" % "")
+
+
 def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
                  expect=None):
     """
@@ -1003,6 +1070,11 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
     needs = needs_for(root, name)
     if needs is None:
         return 2
+
+    # BEFORE REVIT IS TOUCHED. The contract is already read, so a typed name
+    # this fragment does not declare can be named here rather than dropped in
+    # silence eleven seconds later (row 71).
+    report_undeclared(name, values, needs)
 
     live, starting, _, mismatched = discover()
     if not live and starting:
@@ -1145,6 +1217,12 @@ def cmd_prove(names, in_document=None, values=None, session=None):
         needs = needs_for(root, name)
         if needs is None:
             return 2
+
+        # ONE `--set` BLOCK SERVES EVERY FRAGMENT IN A `prove` RUN, so a value
+        # meant for the third is undeclared by the first two and that is not a
+        # mistake. It is still said, once per fragment, because the alternative
+        # is silence on the run where it IS a typo.
+        report_undeclared(name, values, needs)
 
         sources.append((name, source, needs))
 
@@ -1365,6 +1443,13 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     needs = needs_for(root, name)
     if needs is None:
         return 2
+
+    # BOTH LEGS, because row 71's case was a value typed into the NEGATIVE that
+    # the fragment never declared - `--set maxSteps=200` against
+    # `--negative-set maxSteps=0`, and both legs came back identical.
+    report_undeclared(name, values, needs)
+    if negative_values is not None and negative_values is not values:
+        report_undeclared(name, negative_values, needs)
 
     live, starting, _, mismatched = discover()
     if not live and starting:
