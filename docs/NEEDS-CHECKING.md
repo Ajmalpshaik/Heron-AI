@@ -1396,7 +1396,7 @@ records are not. Re-derive it where you will actually work.
 | | | |
 |---|---|---|
 | **26** | **no run record here** | Nothing has tried them in this checkout. `generate-jobs.py` offers **4** and marks **22** unarrangeable with a reason each |
-| **19** | **POSITIVE EMPTY — the model lacks the content** | It ran and found nothing, so the arrangement was wrong rather than the fragment. CAD imports, groups, design options, openings, electrical circuits, areas, annotation. **These need a MODEL, not code** |
+| **19** | **POSITIVE EMPTY — it ran and found nothing** | So the arrangement was wrong rather than the fragment. **17 need MODEL CONTENT** — CAD imports, groups, design options, openings, electrical circuits, areas, annotation. **2 need a PERMISSION PHASE THAT DOES NOT EXIST** and were miscounted here first: `export-families` and `export-schedule-to-csv` are `risk: PUBLISH`, which `HeronPermissions` puts out of reach for Phase 0 and Phase 1, so nothing is sent to Revit at all. No model will ever unblock those two — checked by reading `risk:` on all nineteen rather than assuming the bucket was uniform |
 | **13** | **POSITIVE never ran or was refused** | The binder said no before the fragment started. A refusal to start is not an answer, and it is the cheapest of these to read: the message names the need |
 | **7** | **NEG NOT EMPTY — the negative was arranged wrong** | Listed below, because this is the group a session can fix at a desk |
 | **1** | **judged by nothing at all** | `describe-blank-parameters` |
