@@ -19,7 +19,7 @@ that day**:
 > **If you are the owner and you want only what is waiting on YOU, read
 > [`FOR-THE-OWNER.md`](FOR-THE-OWNER.md) and run `python tools/owner-queue.py`.** The page is the
 > structure; the tool is the list, derived from the registers at the moment you ask so that it cannot
-> go stale. It also says what is **safe to use today** — **114 proven `READ` fragments cannot modify a
+> go stale. It also says what is **safe to use today** — **144 proven `READ` fragments cannot modify a
 > model**, so they are safe on a live project now.
 >
 > **For the next stretch as an ordered plan**, open
@@ -2598,3 +2598,75 @@ for hours with fixed code sitting unused on disk, which reads exactly like the f
 it would. Five of its six files were byte-identical to `.claude/skills/`; the sixth differed only in
 paths pointing at `.Codex/`. It was deleted, and `test_change_gate.py` went green the moment it was -
 that untracked folder was the only red suite on the board.
+
+## The owner answered the last four questions, and the way they were asked is the finding
+
+**`Q-51`, `Q-54`, `Q-55` and `Q-56` close as [D-81](DECISIONS.md) to [D-84](DECISIONS.md).** The
+register, which **until 2026-09-20 said 52 answered / 4 open**, now reads **56 / 0**. The owner
+queue goes **144 to 140**, decisions waiting on
+him **25 to 21**, and [OPEN-QUESTIONS](OPEN-QUESTIONS.md) **drops out of the queue entirely.**
+
+**All four were put to him at once and dismissed. The same four translated into Malayalam, at his own
+request, were dismissed again. Asked ONE AT A TIME, in plain words with a worked example each, he
+answered all four in minutes** - and asked for `Q-51` to be re-explained *in English with a different
+example* before answering it. **The language was never the barrier. The batch was**, and that is worth
+more than the four answers: this register has carried unanswered questions for months while the way of
+asking went unexamined.
+
+**Two of his answers were better than any option offered**, which is the argument for asking rather
+than choosing a default on his behalf:
+
+| | |
+|---|---|
+| **`Q-54`** | The question offered cloud opt-in **per scope**, as [D-24](DECISIONS.md) frames it. He drew the line by **what the thing is** instead - all documents may go, **models and families never** - and asked for the earlier position to be changed outright. [D-82](DECISIONS.md) supersedes D-24's framing, not its caution |
+| **`Q-55`** | The question offered the read-time ceiling - a count and a clause number, never a clause. **He declined the ceiling**: he wants the **prior practice by name**, *"in Project A you used 700mm, do you want the same here?"* [D-83](DECISIONS.md) |
+
+`Q-51` took shape 1 - **carried text is stamped, not scanned**; Heron attributes rather than asserts.
+`Q-56` took the cheapest honest answer - **nothing more than today, and the word "sandbox" goes**,
+which makes the **rename the deliverable** rather than a tidy-up.
+
+**Two things he asked while deciding are recorded inside [D-82](DECISIONS.md)**, because the answers
+bound the decision. *"More context means no hallucination - am I right?"* - half right, and
+[row 114](FRAGMENT-ISSUES.md) is the counter-example from this repository. *"It will not go to GitHub -
+am I right?"* - correct, and **verified against `.gitignore` rather than asserted**: the store lives
+outside the repository, the databases are ignored, and the SOURCE documents are blocked by extension.
+
+### Two suites that looked red were the sweep, not the code
+
+`check-gaps.py` reported `test_brain_reachable.py` and `test_docs_guard.py` as **FAIL**, and **both
+pass when run on their own** - the first takes 103s inside a serial sweep. **That was told to the owner
+as "2 failing tests" before it was checked, and corrected in the same session.** Run a suite alone
+before reporting it red.
+
+### And `check-docs.py`'s exit code is not what `| tail` reports
+
+`python tools/check-docs.py | tail -20; echo $?` prints the exit of **`tail`**, which is always 0. The
+gate was read as green while it was **exiting 1**. Redirect to a file and read `$?` from the command
+itself.
+
+### The four counts that stayed at 52 were quotations, not drift
+
+`check-docs.py` gates on every stated count **including the archive**, and it carries a deliberate
+exemption for a figure **quoted as history** - `used to`, `it said`, `until 20XX`, `superseded`. All
+four stale lines were genuine quotations **missing the marker that says so**, so they carry one now
+rather than being rewritten. **The archived handover keeps its title** and gains *"superseded"*. The
+marker is load-bearing by design: *"Write 'it said 14 answered' and this stays quiet."*
+
+### The balance as it stands tonight
+
+The owner asked for this in one table, and asked that it be given in this shape whenever he asks again.
+
+| | Balance |
+|---|---|
+| **Skill runner** | **1 - does not exist.** [Row 141](FRAGMENT-ISSUES.md) - the only real build item, and the blocker for every skill proof |
+| Skills proved | **0 of 10** |
+| Fragments proved | **328 of 395** - 67 owed |
+| Revit agents proved | **15 of 36** - 21 owed. The other ~214 never touch a model and are covered by passing suites |
+| Agents to build | **2** - both Documentation, parked until the first release tag, blocking nothing |
+| Open defects | **38** of 144 |
+| Waiting on the owner | **140** - 21 decisions, 21 proposals, **0 questions** |
+| Platform, add-in, install, rollback | **Nothing owed.** Loads on 2020, 2024 and 2027 |
+
+**Safe on a live project today: 144 proven `READ` fragments** - that number read **114** in this file's
+own cold-start instructions until 2026-09-20, understating by thirty what the owner was allowed to use.
+Derive it, never read it: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml`.
