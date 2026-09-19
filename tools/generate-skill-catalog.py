@@ -43,11 +43,46 @@ that only draws needs no test, one that CONCLUDES does. This one decides
 a skill's effective status and its reachability, and both are judgements
 that can be wrong while the page still renders.
 
+AND THE CHAIN IS ONLY HALF THE FACT
+-------------------------------------
+The paragraph above was the whole of this page until 2026-09-19, and it
+has the shape FRAGMENT-ISSUES row 132 names: **a statement about the
+FRAGMENTS that reads as a statement about the SKILL**. `heron_brain
+.catalogue()` makes the same move with `ready`, computed from whether a
+capability has any provider at all.
+
+Measured: seven of the ten skills rest on a chain that is PROVEN all the
+way down, and of those seven exactly ONE has every sentence it declares
+reaching a capability it declares. Six do not, and one of the three
+"weaker" skills answers two ordinary questions with a write. On a page
+that showed only the chain, `count-elements` and `mep-grayout` were the
+same card.
+
+So each skill now carries its WORDS beside its chain - how many of its
+own utterances reach a capability it declares, and loudly when one
+reaches something that changes the model.
+
+IT IS A RECORDING, AND THE PAGE SAYS SO
+-----------------------------------------
+That measurement asks `heron_brain.lookup` once per utterance and takes
+about twenty-five minutes for forty-three sentences, which is not a page
+render. It is READ from a file `tools/prove-skill.py --routing-to`
+wrote, with the date and the index fingerprint it was taken against
+printed beside it - row 116's rule, because the store is one file for
+every worktree and two measurements are comparable only when that block
+matches.
+
+**No recording is NOT the same as no crossings.** A card with none says
+so in those words rather than showing nothing, which would read as a
+clean sweep.
+
 WHAT IT DOES NOT CLAIM
 ------------------------
 That any of this has been run against a model. Being in the catalogue is
 not evidence, and the page says so in its own footer rather than leaving
-a reader to assume it.
+a reader to assume it. **Neither half is a proof**: a chain of PROVEN
+fragments is not a proven skill, and words that reach are understanding
+rather than evidence - the other half is a model (D-30).
 """
 
 import datetime
@@ -112,8 +147,79 @@ def unreachable(under, declared):
     return dead
 
 
+RECORDINGS = os.path.join(ROOT, "tools", "jobs", "skills")
+
+NOT_MEASURED = "NOT MEASURED"
+
+
+def routing(folder=None):
+    """(meta, {skill id: [row]}) from the newest saved routing measurement.
+
+    Written by `tools/prove-skill.py --routing-to`. Read rather than
+    re-computed for the reason in the header: one lookup per utterance is
+    twenty-five minutes, and a page nobody waits for is a page nobody runs.
+
+    A MISSING OR UNREADABLE FILE RETURNS EMPTY AND SAYS WHY. It never returns
+    a zero dressed as a measurement (D-52) - the caller marks every card
+    NOT MEASURED, which is a different sentence from "no crossings".
+    """
+    folder = folder or RECORDINGS
+    meta = {"taken": None, "index": None, "revit": None, "file": None,
+            "why": None}
+    if not os.path.isdir(folder):
+        meta["why"] = "no %s" % os.path.relpath(folder, ROOT)
+        return meta, {}
+
+    saved = sorted(name for name in os.listdir(folder)
+                   if name.startswith("routing-") and name.endswith(".json"))
+    if not saved:
+        meta["why"] = ("no routing-*.json in %s - run `python "
+                       "tools/prove-skill.py --routing-to %s/routing-<date>"
+                       ".json`" % (os.path.relpath(folder, ROOT),
+                                   os.path.relpath(folder, ROOT)))
+        return meta, {}
+
+    # NEWEST BY NAME, and the names carry the date for exactly this reason.
+    path = os.path.join(folder, saved[-1])
+    try:
+        doc = json.loads(io.open(path, encoding="utf-8").read())
+    except (IOError, OSError, ValueError) as why:
+        meta["why"] = "%s could not be read - %s" % (saved[-1], why)
+        return meta, {}
+
+    meta["file"] = saved[-1]
+    meta["taken"] = doc.get("taken")
+    meta["revit"] = doc.get("revit")
+    meta["index"] = (doc.get("index") or {}).get("md5")
+    return meta, doc.get("skills") or {}
+
+
+def said(rows, declared):
+    """What a skill's own words did, as a card can show it.
+
+    `where` is `check-skill-routing.classify`'s word, recorded at measuring
+    time - this file does not re-decide it, because a second opinion about
+    what a crossing is would be a second opinion.
+    """
+    out = {"total": len(rows), "reach": 0, "crossing": [], "elsewhere": [],
+           "landed": []}
+    for row in rows:
+        phrase, capability, risk, route, where = (list(row) + [None] * 5)[:5]
+        out["landed"].append({"phrase": phrase, "capability": capability,
+                              "risk": risk, "route": route, "where": where})
+        if where == "reach":
+            out["reach"] += 1
+        elif where == "crossing":
+            out["crossing"].append(phrase)
+        else:
+            out["elsewhere"].append(phrase)
+    out["declared"] = list(declared)
+    return out
+
+
 def collect():
     book, broken = providers()
+    where_meta, recorded = routing()
     found, problems = SKILL.load_all()
     rows = []
 
@@ -153,8 +259,10 @@ def collect():
             "preconditions": [str(one) for one in
                               (card.get("preconditions") or [])],
             "revit": declared, "under": under, "unreachable_on": dead,
+            "words": (said(recorded[skill.id], wants)
+                      if skill.id in recorded else None),
         })
-    return rows, problems + broken
+    return rows, problems + broken, where_meta
 
 
 HTML = u"""<title>Heron Skill Catalogue</title>
@@ -221,6 +329,13 @@ footer{padding:16px 20px;border-top:1px solid var(--rule);color:var(--muted);
     <option value="weak">weaker than PROVEN</option>
     <option value="PROVEN">PROVEN all the way down</option>
   </select>
+  <select id="words">
+    <option value="">any words</option>
+    <option value="crossing">a question answered by a write</option>
+    <option value="short">not every word reaches</option>
+    <option value="all">every word reaches</option>
+    <option value="none">not measured</option>
+  </select>
   <select id="dom"><option value="">any domain</option></select>
 </div>
 <main id="out"></main>
@@ -244,6 +359,17 @@ function card(r){
   const dead = r.unreachable_on.length
     ? `<div class="t bad">unreachable on ${
         r.unreachable_on.map(d => esc(d.revit)).join(", ")}</div>` : "";
+
+  // THE WORDS, BESIDE THE CHAIN. A card with no recording says so in those
+  // words: an absent measurement is not a clean one, and the difference is
+  // the whole reason this half was added (FRAGMENT-ISSUES row 132).
+  const w = r.words;
+  const words = !w
+    ? `<span class="t">words NOT MEASURED</span>`
+    : `<span class="t ${w.reach === w.total ? "proven" : "warn"}">words ${
+        w.reach} of ${w.total} reach</span>` + (w.crossing.length
+      ? `<span class="t bad">${w.crossing.length} answered by a write</span>`
+      : "");
   return `<div class="s">
     <h2>${esc(r.name)}</h2>
     <div class="cap">${esc(r.id)}${r.domain ? " &middot; " + esc(r.domain) : ""}</div>
@@ -252,9 +378,17 @@ function card(r){
       <span class="t read">${esc(r.risk)}</span>
       <span class="t">card says ${esc(r.declared_status)}</span>
       <span class="t ${chain}">chain is ${esc(r.effective)}</span>
+      ${words}
       ${dead}
     </div>
-    <ul class="words">${r.utterances.map(u => `<li>${esc(u)}</li>`).join("")}</ul>
+    <ul class="words">${r.utterances.map(u => {
+      const hit = w && w.landed.find(l => l.phrase === u);
+      if (!hit) return `<li>${esc(u)}</li>`;
+      const mark = hit.where === "reach" ? "proven"
+                 : hit.where === "crossing" ? "bad" : "warn";
+      return `<li>${esc(u)} <span class="t ${mark}">${esc(hit.where)} &rarr; ${
+        esc(hit.capability)} ${esc(hit.risk)}</span></li>`;
+    }).join("")}</ul>
     <details><summary>what it stands on</summary><dl>
       <dt>needs</dt><dd><ul>${r.under.map(u =>
         `<li><code>${esc(u.capability)}</code> &mdash; ${
@@ -273,8 +407,13 @@ function draw(){
   const q = document.getElementById("q").value.toLowerCase().trim();
   const want = document.getElementById("chain").value;
   const where = dom.value;
+  const say = document.getElementById("words").value;
   const shown = rows.filter(r => {
     if (where && r.domain !== where) return false;
+    if (say === "none" && r.words) return false;
+    if (say === "crossing" && !(r.words && r.words.crossing.length)) return false;
+    if (say === "short" && !(r.words && r.words.reach < r.words.total)) return false;
+    if (say === "all" && !(r.words && r.words.reach === r.words.total)) return false;
     if (want === "UNSERVED" && r.effective !== "UNSERVED") return false;
     if (want === "PROVEN" && r.effective !== "PROVEN") return false;
     if (want === "weak" && (r.effective === "PROVEN")) return false;
@@ -287,7 +426,7 @@ function draw(){
     ? shown.map(card).join("")
     : `<div class="none">Nothing matches.</div>`;
 }
-["q", "chain", "dom"].forEach(id =>
+["q", "chain", "dom", "words"].forEach(id =>
   document.getElementById(id).addEventListener("input", draw));
 draw();
 </script>
@@ -295,27 +434,52 @@ draw();
 
 
 def main():
-    rows, problems = collect()
+    rows, problems, where_meta = collect()
     unserved = [one for one in rows if one["effective"] == UNSERVED]
     proven = [one for one in rows if one["effective"] == "PROVEN"]
     dead = [one for one in rows if one["unreachable_on"]]
 
+    # THE OTHER HALF, COUNTED THE SAME WAY. `measured` is deliberately not
+    # folded into `proven`: a skill can have a chain of PROVEN fragments and
+    # a sentence that answers a question with a write, and a single number
+    # that merged the two would hide exactly the case this half was added for.
+    measured = [one for one in rows if one["words"]]
+    whole = [one for one in measured
+             if one["words"]["reach"] == one["words"]["total"]]
+    writes = [one for one in measured if one["words"]["crossing"]]
+
     payload = {
         "rows": rows,
         "subtitle": (
-            "%d skill(s), generated from brain/skills at %s. %d rest on a "
-            "chain that is PROVEN all the way down; %d on something weaker; "
-            "%d on a capability nothing provides."
+            "%d skill(s), generated from brain/skills at %s. CHAIN: %d rest "
+            "on one that is PROVEN all the way down; %d on something weaker; "
+            "%d on a capability nothing provides. WORDS: %s"
             % (len(rows), datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
                len(proven), len(rows) - len(proven) - len(unserved),
-               len(unserved))),
+               len(unserved),
+               ("NOT MEASURED - %s" % (where_meta.get("why") or "no recording"))
+               if not measured else
+               ("%d of %d measured, %d have every word reaching a capability "
+                "they declare, and %d answer a question with something that "
+                "CHANGES THE MODEL. Recorded %s against index %s - a recording, "
+                "not a run."
+                % (len(measured), len(rows), len(whole), len(writes),
+                   where_meta.get("taken") or "at an unrecorded time",
+                   (where_meta.get("index") or "?")[:8])))),
         "footer": (
             "Generated from brain/skills and brain/fragments by "
             "tools/generate-skill-catalog.py. A skill's CHAIN is the lowest "
             "status on docs/09's ladder among the fragments serving it - a "
-            "card can say anything, the chain underneath is the fact. Being "
-            "in this catalogue is NOT a claim that anything has been run "
-            "against a model. Re-run rather than edit."),
+            "card can say anything, the chain underneath is the fact. Its "
+            "WORDS are the other half: how many of its own utterances reach a "
+            "capability it declares, read from %s and NOT re-measured here - "
+            "one lookup per utterance is about twenty-five minutes. A card "
+            "reading NOT MEASURED has no recording covering it, which is a "
+            "different thing from having no crossings. NEITHER HALF IS A "
+            "PROOF: being in this catalogue is NOT a claim that anything has "
+            "been run against a model, and understanding is half a proof - "
+            "the other half is a model (D-30). Re-run rather than edit."
+            % (where_meta.get("file") or "no recording")),
     }
 
     text = HTML.replace("__DATA__", json.dumps(payload, sort_keys=True))
@@ -327,6 +491,18 @@ def main():
     w("%d skill(s): %d PROVEN all the way down, %d weaker, %d unserved\n"
       % (len(rows), len(proven), len(rows) - len(proven) - len(unserved),
          len(unserved)))
+    if not measured:
+        w("  words NOT MEASURED - %s\n"
+          % (where_meta.get("why") or "no recording"))
+    else:
+        w("  words: %d of %d skills measured (%s), %d reach throughout, "
+          "%d answer a question with a write\n"
+          % (len(measured), len(rows), where_meta.get("file"), len(whole),
+             len(writes)))
+        for one in writes:
+            w("    %s answers %s with a write\n"
+              % (one["id"], ", ".join(repr(each)
+                                      for each in one["words"]["crossing"])))
     for one in dead:
         w("  %s is unreachable on %s\n"
           % (one["id"], ", ".join(each["revit"]
