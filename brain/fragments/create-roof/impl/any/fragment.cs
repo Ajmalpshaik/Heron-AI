@@ -67,7 +67,18 @@ else
     {
         try
         {
-            ModelCurveArray madeEdges = null;
+            // INSTANTIATED EVEN THOUGH IT IS AN `out`, AND THAT IS THE WHOLE
+            // DEFECT. Declared `= null` this call threw
+            // "Value cannot be null" on a model that had a real RoofType, a
+            // real Level and a well-formed four-point boundary - measured
+            // 2026-09-19 on `test projject`, Revit 2024, where the binder had
+            // already PROVED the type resolves by refusing a made-up name in
+            // the same arrangement. Autodesk's own sample for this call
+            // instantiates the array first; the parameter crosses the interop
+            // boundary and a null going in is not the same as an unassigned
+            // local. `out` reassigns it immediately afterwards, so this line
+            // costs one allocation and buys the call working at all.
+            ModelCurveArray madeEdges = new ModelCurveArray();
             var roof = doc.Create.NewFootPrintRoof(footprint, level, roofType, out madeEdges);
 
             if (roof == null)
