@@ -21,13 +21,25 @@ separates the one contest that is not a judgement call: a sentence a READ
 claims, answered by something that WRITES. `check-risk-crossings.py` asks
 sentences NOBODY declares, because the first can only test what is declared.
 
-**A WRITE THAT DECLARES A QUESTION IS INVISIBLE TO BOTH.** Ask the search and
-the declaring fragment WINS - by `identity`, which short-circuits before any
-ranking runs - so `check-routing` sees a fragment answering its own sentence
-and calls it correct. And the sentence IS declared, so it is not one of the
-ones `check-risk-crossings` was written to try. The defect lives in the gap
-between the two, and it needs no search at all to find: it is a property of
-the card.
+**A WRITE THAT DECLARES A QUESTION IS INVISIBLE TO BOTH**, and to
+`check-routing` for two independent reasons rather than one:
+
+  - its first test keeps a row where `rung(risk[winner]) > rung(risk[claimer])`,
+    and a fragment declaring its OWN sentence and winning has winner ==
+    claimer, so the comparison is false and there is no crossing to report;
+  - its second opens `if risk_of(store, fid) != "READ": continue`, so a
+    sentence claimed by a MODIFY is skipped on the first line - and two lines
+    later `if served == fid: continue` carries the belief in a comment,
+    **`# the host answers correctly`**.
+
+That comment is right about every case that tool was built for and wrong
+about this one. Nothing in it is at fault; the question was never asked of it.
+And the sentence IS declared, so it is not one of the ones
+`check-risk-crossings` was written to try - that sweep exists precisely
+because the first can only test what is declared.
+
+The defect lives in the gap between the two, and it needs no search at all to
+find: it is a property of the card.
 
 Found 2026-09-19 while checking whether four sentences had a READ to give
 them to (FRAGMENT-ISSUES row 146). *"what scale is this view"* resolves to
