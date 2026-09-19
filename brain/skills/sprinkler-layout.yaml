@@ -18,7 +18,24 @@ purpose: >
 
 # The words Ajmal actually says, not the words the technique is named after.
 utterances:
-  - how many sprinklers
+  # WAS "how many sprinklers" UNTIL 2026-09-19, AND THE OWNER RULED ON IT.
+  # A layout skill claiming a bare count question is a question answered by
+  # placing families - he put it plainly: "if i say how meny sriklers is there
+  # that time if you place the sproklers that menas that is dangeeres".
+  #
+  # THIS IS NOT ROW 113's FORBIDDEN MOVE. That rule forbids weakening an
+  # utterance to buy back a RANK, and nothing here is chasing a number: the
+  # sentence was miscategorised. "how many sprinklers" is a COUNT and belongs to
+  # count-elements; the design question this skill actually answers is how many
+  # are NEEDED. Both sentences now exist and each has one owner, which is more
+  # words in the library rather than fewer.
+  #
+  # tools/check-skill-routing.py CALLED THE OLD ONE CORRECT and that is the
+  # tool's limit, recorded in FRAGMENT-ISSUES row 132: it decides a crossing
+  # from the skill's DECLARED risk, so a question sitting in a MODIFY skill is
+  # invisible to it by construction. A declaration cannot make a question safe.
+  - how many sprinklers do I need
+  - how many sprinklers for this room
   - check my sprinkler spacing
   - lay out the heads
   - there is a beam in the room
@@ -31,6 +48,11 @@ needs:
   - READ_ROOM_GEOMETRY
   - PLACE_FAMILY_INSTANCES
   - CHECK_OBSTRUCTIONS
+  # "check my sprinkler spacing" IS A COVERAGE QUESTION AND NOTHING HERE ANSWERED
+  # IT. FRG-DOC-024 reports the area each head serves at a stated radius, the
+  # total, and how far each is from its nearest neighbour - the last of those is
+  # spacing. CHECK_OBSTRUCTIONS finds the beam; it does not measure the spread.
+  - REPORT_COVERAGE
 
 # What must be true BEFORE it runs, so it fails early with something
 # useful instead of deep inside a transaction (docs/09 s2).

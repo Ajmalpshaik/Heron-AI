@@ -29,6 +29,14 @@ needs:
   - FILTER_ELEMENTS_BY_CATEGORY
   - READ_ROOM_GEOMETRY
   - PLACE_FAMILY_INSTANCES
+  # BOTH OF THIS SKILL'S ROOM SENTENCES NEEDED CAPABILITIES IT NEVER DECLARED.
+  # FRG-ELE-018 is "the filter every room-based MEP job needs - terminals in
+  # this room", and READ_ROOM_GEOMETRY gives the shape, not the contents, so
+  # "how many diffusers for this room" had nothing to narrow with. FRG-DOC-024
+  # reports what each point-based element covers at a stated radius and is
+  # "built for air terminals" - which is "how many at 3 m coverage and where".
+  - FILTER_ELEMENTS_IN_ROOM
+  - REPORT_COVERAGE
 
 # What must be true BEFORE it runs, so it fails early with something
 # useful instead of deep inside a transaction (docs/09 s2).

@@ -57,6 +57,13 @@ needs:
   # Rebar off. Not an override on elements - the CATEGORY is switched off in
   # the view, which is why overriding graphics could never have done it.
   - SET_CATEGORY_VISIBILITY
+  # THE SKILL IS NAMED AFTER THIS CAPABILITY AND NEVER DECLARED IT. FRG-VIEW-038's
+  # own purpose is "greys everything else in the view and gives the elements
+  # handed in a colour of their own - THE GRAYOUT". Added 2026-09-19: "do the
+  # grayout" resolves to it BY IDENTITY, so the library answered this skill's
+  # flagship sentence with a capability outside its plan every single time, not
+  # sometimes (FRAGMENT-ISSUES row 132).
+  - HIGHLIGHT_VS_REST
 
 # What must be true BEFORE it runs, so it fails early with something
 # useful instead of deep inside a transaction (docs/09 s2).
