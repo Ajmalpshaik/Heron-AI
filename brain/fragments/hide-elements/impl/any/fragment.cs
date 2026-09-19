@@ -31,7 +31,22 @@ var viewRefused = false;
 // A temporary hide needs the view to support temporary modes. A permanent one
 // does not - it is an ordinary view setting - so the check applies to the
 // temporary path only.
-if (view == null || (!permanent && !view.CanUseTemporaryVisibilityModes()))
+//
+// A SHEET IS REFUSED BEFORE EITHER CHECK, BECAUSE IT PASSES BOTH.
+//
+// `CanUseTemporaryVisibilityModes()` answers TRUE for a ViewSheet, and
+// `CanBeHidden(sheet)` answers true for model elements that are not on it - so
+// nothing here refused, and `hidden` below counted the request. Measured
+// 2026-09-13 on `Cover Sheet` of `Snowdon-scratch_ajmal.al`: handed 191 ducts
+// that live in a different view entirely, this returned **`hidden 191`,
+// `viewRefused false`, `cannotHide 0`**. Nothing was hidden. Nothing could be:
+// a duct is not on a sheet, the viewport is. FRAGMENT-ISSUES rows 20 and 24.
+//
+// `viewRefused` is the field this fragment already declares for exactly this -
+// *the view cannot do what was asked* - so the repair is to let a sheet trip
+// it, not to invent a new answer.
+if (view == null || view is ViewSheet
+    || (!permanent && !view.CanUseTemporaryVisibilityModes()))
 {
     viewRefused = true;
 }

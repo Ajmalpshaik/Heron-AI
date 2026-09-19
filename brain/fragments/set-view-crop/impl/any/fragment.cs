@@ -34,7 +34,17 @@ const double MillimetresPerFoot = 304.8;
 // A schedule or a legend has no crop region to set. `CanBePrinted` is the
 // property that separates a drawable view from one that is not, and a template
 // is refused because cropping one would reach every view using it.
-if (view == null || view.IsTemplate || !view.CanBePrinted)
+//
+// A SHEET IS REFUSED FIRST, AND `CanBePrinted` IS WHY IT HAD TO BE.
+//
+// A sheet is the most printable thing in the model, so that test answers TRUE
+// for one - it separates drawable from not-drawable, which is a different
+// question from *does this have a crop region*. Measured 2026-09-13 on sheet
+// `A101` of `Project1 work_ajmal.al`, handed 9 ducts that live in `1 - Mech`:
+// **`applied true`, `enclosed 9`, `viewRefused false`**. `CropBoxActive` was
+// set and read back as true on the sheet, so even the read-back agreed - it is
+// the question that was wrong, not the answer. FRAGMENT-ISSUES rows 20 and 24.
+if (view == null || view is ViewSheet || view.IsTemplate || !view.CanBePrinted)
 {
     viewRefused = true;
 }

@@ -28,7 +28,17 @@
 var isolated = 0;
 var viewRefused = false;
 
-if (view == null || !view.CanUseTemporaryVisibilityModes())
+// A SHEET IS NAMED SEPARATELY, BECAUSE IT IS THE ONE THIS TEST LET THROUGH.
+//
+// The comment below used to say "a schedule, A SHEET, a legend, or a view
+// template", and a sheet was the one case it did not catch:
+// `CanUseTemporaryVisibilityModes()` answers TRUE for a ViewSheet - the
+// fragment's own comment calls that check *"Revit answering for itself"*, and
+// here Revit answers yes. Measured 2026-09-13 on sheet `A101` of
+// `Project1 work_ajmal.al`, handed 9 ducts that live in `1 - Mech` and are not
+// on that sheet: **`isolated 9`, `viewRefused false`**. Nothing was isolated.
+// FRAGMENT-ISSUES rows 20 and 24.
+if (view == null || view is ViewSheet || !view.CanUseTemporaryVisibilityModes())
 {
     // A schedule, a sheet, a legend, or a view template. Reported rather than
     // thrown, because asking to isolate in a schedule is an ordinary mistake.
