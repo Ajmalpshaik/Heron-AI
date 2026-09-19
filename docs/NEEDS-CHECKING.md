@@ -1338,7 +1338,7 @@ request to the owner, not a job for a batch.
 | `find-clashes` | `'against' is an id, and Heron resolves one by NAMING the thing it belongs to. There is no rule for this name yet` |
 | `place-rooms` | `levelId`, `phaseId`, `planViewId` are all `ElementId` |
 | `set-global-parameter` | `"ParameterValue" is not one of them yet` — D-54 takes a view, a level, a category, a name, a number and true/false |
-| `place-structural-family` | Not an input problem — [row 118](FRAGMENT-ISSUES.md) of FRAGMENT-ISSUES. It placed a column when told `structuralType=Beam`, and which of two causes that is has not been settled |
+| `place-structural-family` | Not an input problem — [row 128](FRAGMENT-ISSUES.md) of FRAGMENT-ISSUES. It placed a column when told `structuralType=Beam`, and which of two causes that is has not been settled |
 
 The first three are the same shape as the 44, and **PR #190 proposed rules for six such shapes on the
 same day** — proposals only, no code. If those land, this group shrinks.
