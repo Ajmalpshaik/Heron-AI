@@ -440,7 +440,7 @@ function card(r){
   // A REACH THE RETRIEVER COMPLAINED ABOUT IS NOT A CLEAN REACH. The right
   // capability, found by a coin toss, or by a words route that ranked the
   // library rather than selecting from it - and the page reported it as a
-  // plain success (row 155). THE TWO COMPLAINTS ARE NOT THE SAME STRENGTH:
+  // plain success (row 157). THE TWO COMPLAINTS ARE NOT THE SAME STRENGTH:
   // a coin toss says NEITHER route preferred the winner; the words one says
   // only that THAT route had no claim, and nearness may still have. So the
   // card says the retriever complained, never that the answer is wrong.
@@ -548,7 +548,7 @@ def main():
     # A REACH THE RETRIEVER COMPLAINED ABOUT. Counted beside `whole`
     # rather than subtracted from it: the sentence DID reach a declared
     # capability, and whether a complaint spends that is a reader's call,
-    # not a number this page may quietly revise (row 155).
+    # not a number this page may quietly revise (row 157).
     shaky = [one for one in measured if one["words"]["reach_unsettled"]]
     shaky_words = sum(len(one["words"]["reach_unsettled"]) for one in shaky)
 

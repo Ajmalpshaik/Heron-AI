@@ -385,7 +385,7 @@ def main():
               "as NEITHER whole nor short - it counts as out of date")
     finally:
         shutil.rmtree(where)
-    # WHAT THE RETRIEVER SAID, CARRIED ONTO THE CARD (register row 155).
+    # WHAT THE RETRIEVER SAID, CARRIED ONTO THE CARD (register row 157).
     # A recording taken before prove-skill recorded it has FIVE fields and
     # must still read - an old one reports no complaint, which is the
     # absence of one and not a clean answer.
