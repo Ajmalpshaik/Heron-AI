@@ -98,10 +98,28 @@ def main():
           "and the number it enforces is 3")
     check(T.MIN_TRACKING_ROWS == 3,
           "this tool reads the same bar (%d)" % T.MIN_TRACKING_ROWS)
-    check("tracking" not in io.open(
+    # THIS CHECK USED TO ASSERT THE OPPOSITE, AND IT WAS RIGHT WHEN WRITTEN.
+    # It read `"tracking" not in heron_bridge_client.py` - "NOTHING in the
+    # client produces one, the gap this tool fills" - and that was true of
+    # every version of the client until 2026-09-20, when `validate --vary`
+    # wired the runs through it (FRAGMENT-ISSUES row 152). The claim did not
+    # become wrong; the gap got filled, which is what this tool's own last
+    # lines asked for: "Wiring the runs through mcp/client/heron_bridge_client.py
+    # is the next step, and it needs a session to develop against."
+    #
+    # SO THE CHECK IS INVERTED RATHER THAN DELETED. The two halves have to
+    # agree on the SHAPE of a tracking row or a set written by one is
+    # unreadable by the other, and asserting the wiring exists is what keeps
+    # them agreeing.
+    client = io.open(
         os.path.join(ROOT, "mcp", "client", "heron_bridge_client.py"),
-        encoding="utf-8").read(),
-        "and NOTHING in the client produces one - the gap this tool fills")
+        encoding="utf-8").read()
+    check('record["tracking"] = tracking' in client,
+          "the client WRITES a tracking set now - the gap this tool described "
+          "is filled, by `validate --vary NAME=a,b,c --vary-field FIELD`")
+    check('"input"' in client and '"field"' in client and '"value"' in client,
+          "and it writes the same three keys this tool and heron_validate "
+          "both read - input, field, value")
 
     print()
     print("2. every refusal, on a fault built to trigger it, all from disk")
