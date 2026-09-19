@@ -394,6 +394,35 @@ def test_a_job_with_no_negative_arrangement_is_refused():
     verdict, why = BP.job_refusal(job, library)
     check(verdict is None, "with a negative arrangement it is runnable")
 
+    # A NEGATIVE THAT DIFFERS ONLY IN THE ARRANGEMENT IS STILL A NEGATIVE.
+    # FRAGMENT-ISSUES row 142: `negative-setup-set` gives the setup chain its
+    # own values, and this check did not know about it - so a job whose two
+    # legs differ only in how they were ARRANGED was refused here, before the
+    # client was ever called, with a message naming the two keys it did know.
+    # The client's own half of that bug had already been repaired and this one
+    # still said no, which is why it was found by RUNNING such a job rather
+    # than by reading either file.
+    job["negative-set"] = {}
+    job["negative-setup-set"] = {"categories": "Floors"}
+    verdict, why = BP.job_refusal(job, library)
+    check(verdict is None,
+          "a negative that differs ONLY in its setup chain is runnable too")
+
+    check("negative-setup-set" in BP.job_refusal(
+              {"fragment": "sample", "setup": [], "set": {}, "negative-set": {},
+               "write": False, "cross": None, "in": None, "negative-in": None,
+               "expect": None, "timeout": 60}, library)[1],
+          "and the refusal names all three ways to say it, not two")
+
+    # AND A JOB DICT WITHOUT THE KEY AT ALL MUST NOT CRASH. It is optional by
+    # design, and every fixture written before today leaves it out.
+    bare = {"fragment": "sample", "setup": [], "set": {},
+            "negative-set": {"categoryName": "Sheets"}, "write": False,
+            "cross": None, "in": None, "negative-in": None,
+            "expect": None, "timeout": 60}
+    verdict, _ = BP.job_refusal(bare, library)
+    check(verdict is None, "a job dict missing the optional key reads as absent")
+
 
 def test_the_job_file_is_checked_against_the_contract():
     print("A mistyped name in the job file is caught before Revit is touched")

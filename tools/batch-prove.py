@@ -293,14 +293,27 @@ def job_refusal(job, library):
                          "for it to keep, and what would survive is whatever an "
                          "earlier run left behind")
 
-    if not job["negative-set"] and not job["negative-in"]:
+    # `.get` AND NOT `[...]` FOR THE NEW KEY. `build_jobs` always sets it, and
+    # a job dict assembled anywhere else - a test fixture, a caller written
+    # before today - has no business crashing on a key that is OPTIONAL by
+    # design. It reads as absent, which is what it is.
+    if (not job["negative-set"] and not job["negative-in"]
+            and not job.get("negative-setup-set")):
         # `validate` with no negative arrangement STOPS AND WAITS at the
         # keyboard, which in a batch is a hang rather than a question. It is
         # also the arrangement D-30 exists for, so a job without one is not a
         # job that could ever have passed.
-        return REFUSED, ("no negative arrangement. Give it `negative-set:` or "
-                         "`negative-in:` - without one, `validate` stops and "
-                         "waits for somebody to arrange it by hand")
+        #
+        # `negative-setup-set` COUNTS, and leaving it out of this test made the
+        # flag useless from here: a proof whose two legs differ only in the
+        # ARRANGEMENT was refused before the client was ever called, with a
+        # message naming the two keys it did know. Found by writing such a job
+        # and running it, rather than by reading - the client's own half of
+        # this had already been fixed and the batch runner still said no.
+        return REFUSED, ("no negative arrangement. Give it `negative-set:`, "
+                         "`negative-setup-set:` or `negative-in:` - without "
+                         "one, `validate` stops and waits for somebody to "
+                         "arrange it by hand")
 
     if job["expect"]:
         names = set(p.get("name") for p in frag.provides() or []

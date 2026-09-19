@@ -1460,6 +1460,31 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
             if step_risk in ("MODIFY", "PUBLISH", "ADMIN"):
                 deferred_setup.add(step)
 
+    # A DEFERRED STEP CANNOT BE GIVEN ITS OWN VALUES, SO SAYING SO IS REFUSED
+    # RATHER THAN IGNORED. A step at MODIFY or above travels WITH the fragment
+    # in the request's `setup` array, and that array carries a name, a source
+    # and the needs - no values. `RevitFragment.RunSetupSteps` binds every step
+    # from the run's top-level `supplied`, so `--setup-set` would be accepted
+    # here, sent, and quietly not applied - and if the step and the fragment
+    # share a name like `categories`, the silent collision this flag exists to
+    # kill is still there for write arrangements. Named by review on PR #198.
+    #
+    # REFUSING IS THE HONEST HALF OF A FIX THAT NEEDS A DEPLOY. Carrying
+    # per-step values needs the add-in to read them, which is C# and costs a
+    # rebuild and a Revit restart. Until then this is a wrong answer that
+    # cannot be produced, rather than one produced silently.
+    if (setup_values or negative_setup_values) and deferred_setup:
+        print("setup values cannot reach a setup step that CHANGES the model.")
+        print("")
+        print("  %s" % ", ".join(sorted(deferred_setup)))
+        print("")
+        print("Those run inside the fragment's own transaction group, and the")
+        print("add-in binds them from the run's values - there is nowhere to")
+        print("put a value meant only for them. Give the chain and the fragment")
+        print("different NAMES, or use a read-only chain, or teach the add-in")
+        print("per-step values (C#, so a rebuild and a Revit restart).")
+        return 2
+
     def deferred_specs():
         """The deferred steps as the add-in wants them, in the declared order."""
         specs = []
@@ -1483,7 +1508,7 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
                           "needs": json.dumps(step_needs)})
         return specs
 
-    def arrange(document, using=None):
+    def arrange(document, using=None, negative=False):
         """Re-make the arrangement before a phase, and say if it could not be.
 
         WHY THIS IS PER PHASE AND NOT ONCE. A rolled-back write CLEARS the
@@ -1541,10 +1566,19 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
             # fragment, so a chain selecting on `categories` and a fragment
             # asking about `categories` collapsed into one value - silently,
             # and the job still ran. Absent, this is exactly what it was.
-            if using is None:
-                chosen_setup = setup_values or values
+            # THE PHASE IS PASSED IN, NEVER INFERRED FROM `using`. It was
+            # inferred for one commit and `--negative-setup-set` could not
+            # work at all: a negative that differs ONLY in its setup chain
+            # leaves `negative_values` empty, so `using` arrived None, this
+            # read it as the positive phase and re-used the POSITIVE setup -
+            # recording a negative run against the wrong arrangement and
+            # calling it evidence. Named by review on PR #198 as a P1, and it
+            # is the sharpest kind of defect this file can have: a proof that
+            # ran, passed, and was about something else.
+            if negative:
+                chosen_setup = negative_setup_values or using or values
             else:
-                chosen_setup = negative_setup_values or using
+                chosen_setup = setup_values or values
             if chosen_setup:
                 step_args["values"] = chosen_setup
             if position == 0:
@@ -1559,8 +1593,9 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
                 return False
         return True
 
-    def run_fragment(phase, document, arranged, reset, using=None):
-        if setup and not arrange(document, using):
+    def run_fragment(phase, document, arranged, reset, using=None,
+                     negative=False):
+        if setup and not arrange(document, using, negative):
             phases.append({"phase": phase, "ok": False, "error": "setup_failed",
                            "message": "the arrangement could not be re-made",
                            "arranged": arranged})
@@ -1670,7 +1705,10 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     run_fragment("positive", in_document, "run as it would normally be run",
                  reset_chain)
 
-    if negative_in or negative_values:
+    # `negative_setup_values` COUNTS AS A NEGATIVE CASE. Left out, a proof
+    # whose two legs differ only in the ARRANGEMENT fell through to the
+    # interactive prompt and waited at a keyboard nobody was at.
+    if negative_in or negative_values or negative_setup_values:
         # THE NEGATIVE CASE FOR A VIEW FRAGMENT IS ANOTHER VIEW, and until this
         # existed there was no way to say so: `validate` could change the
         # document between phases but not the caller's values, so anything
@@ -1689,10 +1727,17 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
         if negative_values:
             parts.append("with " + ", ".join("%s=%s" % (v["name"], v["value"])
                                              for v in negative_values))
+        # THE ARRANGEMENT GOES IN THE RECORD TOO. A proof whose legs differ
+        # only in the setup chain would otherwise be written down as "run
+        # instead" with nothing after it, and a reader could not tell the two
+        # legs apart at all.
+        if negative_setup_values:
+            parts.append("arranged with " + ", ".join(
+                "%s=%s" % (v["name"], v["value"]) for v in negative_setup_values))
         run_fragment("negative", negative_in or in_document,
                      "run %s instead - chosen because it should not contain what "
                      "this fragment reports" % " ".join(parts),
-                     reset_chain, using=negative_values or None)
+                     reset_chain, using=negative_values or None, negative=True)
     else:
         print("")
         print("NEGATIVE CASE. Arrange an answer that must come back empty -")

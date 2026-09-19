@@ -192,6 +192,17 @@ def ensure_tables(store):
 FIELD_SEP = chr(31)
 ROW_SEP = chr(30)
 
+# BUMP THIS WHENEVER `index()` DERIVES ANYTHING DIFFERENTLY - what goes into
+# `fragment_text`, how a phrase is normalised, how a clash is resolved.
+#
+# WITHOUT IT A CODE-ONLY REPAIR NEVER TAKES EFFECT. The digest is computed from
+# the fragment rows and the files, so an upgrade that changes this function
+# without changing a single fragment still matches the digest the PREVIOUS
+# version wrote - and `_Open` never passes `force=True`, so the old tables
+# would be served until some unrelated fragment happened to change. Named by
+# review on PR #198.
+INDEX_FORMAT = 2
+
 
 def library_digest(store):
     """What `index()` would read, hashed without parsing any of it.
@@ -210,6 +221,7 @@ def library_digest(store):
     file's mtime without changing a character.
     """
     digest = hashlib.blake2b(digest_size=16)
+    digest.update(("search-index/%d" % INDEX_FORMAT + ROW_SEP).encode("utf-8"))
 
     for row in store.fragments():
         digest.update((FIELD_SEP.join([
