@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-032
+semantic-identity: "how far is it round the edge of this"
+kind: filter
+domain: revit.geometry
+capability: MEASURE_PERIMETER
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Measures the perimeter of each element given - the distance round its boundary -
+  and totals them.
+
+  **AREA, VOLUME AND LENGTH WERE ALL COVERED AND PERIMETER WAS NOT.**
+  `REPORT_AREAS`, `MEASURE_ELEMENT_VOLUME` and `MEASURE_ELEMENT_LENGTHS` answer
+  the other three. Perimeter appears in this library only INSIDE
+  `REPORT_DUCT_WEIGHT` and `MEASURE_RUN_QUANTITIES`, as sheet-metal arithmetic on
+  a duct section, and never as a number anybody can ask for about a room or a
+  floor. It is what skirting, coving, edge trim and kerb are all measured in.
+
+  **A ROOM'S PERIMETER IS REVIT'S OWN, NOT A SUM OF SEGMENTS.** Rooms carry
+  `ROOM_PERIMETER`, computed against the same boundary rules the area uses. Adding
+  up boundary segments instead gives a different number wherever a boundary
+  location setting is not at the wall centre, and it would disagree with the room
+  schedule on the same sheet.
+
+  **EVERYTHING ELSE IS MEASURED FROM ITS FOOTPRINT.** For a floor, a ceiling or a
+  filled region the perimeter is the length round the largest horizontal face,
+  and holes in it are NOT added - somebody asking for the perimeter of a slab
+  wants the outside, and the count of faces skipped says how many there were.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: perimeterOf
+      role: result
+      type: IDictionary<ElementId, double>
+    - name: totalMm
+      role: result
+      type: double
+    - name: unmeasurable
+      # No perimeter parameter and no horizontal face to walk. Given and
+      # unusable, never a thing it measured (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `BuiltInParameter.ROOM_PERIMETER`, `Options`, `Solid.Faces` and `Face.GetEdgesAsCurveLoops`
+  are present 2020 through 2027 - read off the reference assemblies at both ends
+  on 2026-09-18. Lengths come out of Revit in internal FEET and are turned into
+  millimetres ONCE here, at the report, because that is what the answer speaks -
+  304.8 appears exactly once in this file (D-20).
+
+# ROUTING - repeated in REPORT_AREAS and MEASURE_ELEMENT_LENGTHS.
+#
+#   "how long is the skirting"        -> here, on the rooms
+#   "what is the area"                -> REPORT_AREAS / READ_ROOM_GEOMETRY
+#   "how long is this duct"           -> MEASURE_ELEMENT_LENGTHS
+#   "how much metal in this ductwork" -> REPORT_DUCT_WEIGHT - it uses a
+#                                        perimeter internally and reports kilos
+
+utterances:
+  - what is the perimeter of these rooms
+  - how long is the skirting
+  - measure round the edge of this
+  - total the perimeter
+  - perimeter of this floor

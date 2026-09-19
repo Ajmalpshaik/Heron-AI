@@ -1,0 +1,32 @@
+positive:
+  - given: >
+      a drafting view with two detail lines drawn by an accidental double-click,
+      bounded to the Lines category, threshold 1 mm, on Revit 2024
+    expect: >
+      exactly those two - confirmed by selecting them with a crossing window,
+      which is the only way to pick them by hand, and by `shortestMm` being a
+      fraction of a millimetre
+
+negative:
+  - given: the same view with the threshold set to 0.001 mm
+    expect: >
+      EMPTY, with `examined` still showing every line was measured. Empty here is
+      the right answer and the examined count is what proves the scan ran
+
+  - given: a threshold of 0
+    expect: >
+      refused by name with the reason, not treated as "find everything" or as
+      "find nothing"
+
+  - given: a clean model with no short lines, bounded to Lines
+    expect: empty, and `shortestMm` reporting the genuinely shortest real line
+
+  - given: the same request with no category list
+    expect: >
+      every duct, pipe and wall measured too, AND the finding saying so. Correct,
+      slow, and probably not what was meant
+
+second_route:
+  - >
+      a schedule of Lines with the Length field added, sorted ascending, and the
+      top rows read by hand

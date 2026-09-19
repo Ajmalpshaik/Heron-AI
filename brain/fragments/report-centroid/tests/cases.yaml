@@ -1,0 +1,36 @@
+positive:
+  - given: >
+      one rectangular structural column, on Revit 2024
+    expect: >
+      a centroid at the middle of it - checked against a point halfway along each
+      side, which for a simple box is the one case where the answer can be
+      predicted by hand
+
+  - given: >
+      an L-shaped floor slab
+    expect: >
+      a centroid INSIDE the L, and measurably different from the centre of its
+      bounding box. That difference is the whole reason this fragment exists, so
+      REPORT_BOUNDING_BOX should be run alongside and the two compared
+
+negative:
+  - given: a set of tags and text notes
+    expect: >
+      all counted in `noSolid`, `centroidOf` empty, `combined` null. Annotation
+      has no volume and giving it a bounding-box centre instead would mix two
+      different measurements in one answer
+
+  - given: an unplaced room
+    expect: counted in `noSolid`, not reported as a centroid at the origin
+
+  - given: >
+      one very large beam and twenty small bolts
+    expect: >
+      the combined point close to the BEAM, not midway between the two groups. A
+      count-weighted average would put it among the bolts, which is the mistake
+      worth arranging a case for
+
+second_route:
+  - >
+      a mass floor schedule or a physical-properties read on the same element,
+      and the centre of gravity compared

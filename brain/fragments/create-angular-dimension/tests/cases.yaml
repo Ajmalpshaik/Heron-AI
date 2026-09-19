@@ -1,0 +1,25 @@
+positive:
+  - given: >
+      a floor plan, two walls meeting at a known splay, their face references,
+      and an arc centred on the point where they meet, on Revit 2024
+    expect: >
+      one angular dimension reading the real angle - checked against the angle
+      the walls were drawn at, not read off the report
+
+negative:
+  - given: one reference
+    expect: refused by name, nothing created
+
+  - given: an arc whose centre is NOT where the two references meet
+    expect: >
+      either a refusal or a dimension reading the wrong angle. THIS IS THE CASE
+      WORTH ARRANGING: it is the mistake somebody will actually make, and the
+      wrong-angle outcome is silent
+
+  - given: a view template handed in as the view
+    expect: refused by name, not a silent empty answer
+
+second_route:
+  - >
+      Revit's own Annotate then Angular dimension picked on the same two walls,
+      and the two values compared

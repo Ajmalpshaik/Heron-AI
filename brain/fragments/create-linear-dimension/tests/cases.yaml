@@ -1,0 +1,32 @@
+positive:
+  - given: >
+      a floor plan, two wall face references picked off geometry read with
+      ComputeReferences on, and a line offset clear of both, on Revit 2024
+    expect: >
+      one dimension reading the real distance between those two faces - checked
+      against a tape measure in Revit, not read off the report
+
+  - given: four grid references on one line
+    expect: a chained dimension string with three segments, not four separate dimensions
+
+negative:
+  - given: one reference
+    expect: >
+      refused by name saying two is the minimum, nothing created. A dimension
+      with one reference has nothing to measure between
+
+  - given: a view template handed in as the view
+    expect: >
+      refused by name. A template holds no annotation, and a silent empty answer
+      would read as "this view will not take dimensions"
+
+  - given: >
+      a reference to an element that is hidden in that view by a filter
+    expect: >
+      reported - "a dimension can only measure what the view shows". This is the
+      likely real-world failure and a bare null would explain nothing
+
+second_route:
+  - >
+      Revit's own Annotate then Aligned dimension picked on the same two faces,
+      and the two values compared

@@ -1,0 +1,32 @@
+positive:
+  - given: >
+      four points at grid intersections on Level 1, a loaded structural column
+      family type, and structuralType "column", on Revit 2024
+    expect: >
+      four columns, and EVERY ONE READING AS STRUCTURAL in the structural column
+      schedule. That last half is the whole point: PLACE_FAMILY_INSTANCES also
+      puts four things in the model and they are all non-structural
+
+  - given: the same points with structuralType "footing"
+    expect: footings, reading as footings in the schedule
+
+negative:
+  - given: an empty list of points
+    expect: nothing placed, nothing thrown, a finding saying there were no points
+
+  - given: structuralType "sprinkler"
+    expect: >
+      refused by name with the list of what Revit does know, and NOTHING placed.
+      A silent fall back to NonStructural here would recreate the exact defect
+      this fragment exists to fix
+
+  - given: a line-based beam family handed in with points
+    expect: >
+      counted in `failed`. Revit refuses the point overload for a line-based
+      family, per point, and the run survives it
+
+second_route:
+  - >
+      Revit's own Structure then Column at the same grid intersections, and the
+      two compared in the structural column schedule - specifically the
+      Structural Usage column, not the count

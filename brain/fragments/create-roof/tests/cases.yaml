@@ -1,0 +1,30 @@
+positive:
+  - given: >
+      a rectangular boundary on the top level with a loaded roof type, on
+      Revit 2024
+    expect: >
+      a roof at that level, checked IN A SECTION against the level rather than
+      read off the report, and `edges` matching the number of boundary segments
+
+  - given: the same request on Revit 2020
+    expect: >
+      the same roof. NewFootPrintRoof did not change at 2022 the way NewFloor
+      did, so this is the case that confirms one path is correct and no run-time
+      lookup is owed
+
+negative:
+  - given: a boundary of two points
+    expect: refused by name, nothing created
+
+  - given: a boundary that crosses itself
+    expect: reported, not a silently strange roof
+
+  - given: a model set out to a survey datum, where Elevation and ProjectElevation differ
+    expect: >
+      the roof at the height Revit SHOWS for that level, not off by the survey
+      offset. No error either way - only a section reveals it
+
+second_route:
+  - >
+      Revit's own Architecture then Roof by Footprint on the same outline, and
+      the two compared in a section

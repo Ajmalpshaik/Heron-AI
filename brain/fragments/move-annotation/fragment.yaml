@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-105
+semantic-identity: "put this tag exactly here, rather than wherever a rule decides"
+kind: action
+domain: revit.annotation
+capability: MOVE_ANNOTATION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Moves an annotation - a tag, a dimension, a text note - to a point the caller
+  names.
+
+  **NOTHING IN THE LIBRARY MOVED AN ANNOTATION TO A POINT, AND THAT IS A SHAPE
+  RATHER THAN ONE MISSING FRAGMENT.** Every tag fragment here is RULE-based:
+  `ARRANGE_TAGS` spreads them out, `STACK_TAGS` columns them at the side,
+  `CENTER_ROOM_TAGS` puts them back in the middle, `ARRANGE_TAGS_TO_VIEW_EDGES`
+  parks them down the edges. All four decide the position themselves. Not one
+  takes a position. So *move this tag*, *move this dimension* and *set the tag
+  location* were one missing capability wearing three names.
+
+  **A TAG IS MOVED BY ITS HEAD, NOT BY ITS LOCATION.** `IndependentTag` carries
+  `TagHeadPosition`, and moving the element instead drags the whole tag including
+  its leader anchor. Those are different results and only one of them is what
+  somebody asking to move a tag means.
+
+  **THE LEADER IS NOT TOUCHED.** What the tag points AT stays what it points at;
+  only where the head sits changes. A fragment that re-anchored the leader while
+  moving the head would quietly re-tag things.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: target
+      type: XYZ
+      source: request
+  provides:
+    - name: moved
+      role: result
+      type: IList<ElementId>
+    - name: notMovable
+      # Annotation with neither a tag head nor a location point - nothing here
+      # can say where it should go. Given and unusable (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `IndependentTag.TagHeadPosition` and
+  `ElementTransformUtils.MoveElement(Document, ElementId, XYZ)` are present 2020
+  through 2027 - read off the reference assemblies at both ends on 2026-09-18.
+  The target arrives in internal FEET, converted at the edge (D-20).
+
+# ROUTING - repeated in ARRANGE_TAGS, STACK_TAGS and CENTER_ROOM_TAGS.
+#
+#   "move this tag here"           -> here
+#   "move this dimension"          -> here
+#   "the tags are on top of each other" -> ARRANGE_TAGS - a RULE, and the right
+#                                    answer when there are forty of them
+#   "stack the tags at the side"   -> STACK_TAGS
+#   "put the room tags back"       -> CENTER_ROOM_TAGS
+#   "move a model element"         -> MOVE_ELEMENTS_TO_POINT
+
+utterances:
+  - move this tag here
+  - put the tag at this point
+  - move this dimension
+  - set the tag location
+  - move the text note here

@@ -1,0 +1,86 @@
+heron-agent: HERON-QA-BIM-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-032
+semantic-identity: "the lines that are too short to be real, that nobody can see or select"
+kind: filter
+domain: revit.quality
+capability: FIND_DEGENERATE_LINES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Finds lines and other curve-driven elements that are shorter than a stated
+  length - the accidental double-click leftovers nobody can see, select or
+  delete by hand.
+
+  **`FIND_OVERLAPPING_LINES` IS A DIFFERENT DEFECT.** That one finds lines drawn
+  ON TOP of each other, which are each perfectly real and visible. A degenerate
+  line is one with almost no length at all: it prints as nothing, it cannot be
+  picked without a crossing window, and it sits in the model inflating counts and
+  tripping up anything that walks geometry. Nothing looked for them.
+
+  **THE THRESHOLD IS THE CALLER'S AND THERE IS NO SENSIBLE DEFAULT.** Revit's own
+  short-curve tolerance is about 0.8 mm; a detail line of 2 mm is equally
+  certainly a mistake and a 50 mm one might be deliberate. A number invented here
+  would become a number quietly relied on, so it is asked for (D-33).
+
+  **IT REPORTS AND DELETES NOTHING.** This is a READ. `DELETE_ELEMENTS` is the
+  other half and it reports the true blast radius first, which matters: deleting
+  a line can take a dimension with it.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+    - name: shorterThanMm
+      type: double
+      source: request
+  provides:
+    - name: elements
+      role: result
+      type: IList<Element>
+    - name: shortestMm
+      role: result
+      type: double
+    - name: examined
+      # How many curve-driven elements were looked at, so an empty answer can be
+      # told from an empty scan. Evidence it looked (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `LocationCurve`, `Curve.Length` and `ElementMulticategoryFilter` are present
+  2020 through 2027 - read off the reference assemblies at both ends. Lengths are
+  internal FEET inside Revit and the threshold arrives in millimetres, so 304.8
+  appears once, converting the threshold in (D-20).
+
+# ROUTING - repeated in FIND_OVERLAPPING_LINES and FIND_DUPLICATE_ELEMENTS.
+#
+#   "find the tiny leftover lines"   -> here
+#   "lines drawn on top of each other" -> FIND_OVERLAPPING_LINES - a different
+#                                      defect, and both of those lines are real
+#   "the same thing placed twice"    -> FIND_DUPLICATE_ELEMENTS
+#   "now get rid of them"            -> DELETE_ELEMENTS, which reports what ELSE
+#                                      goes - a line can take a dimension with it
+
+utterances:
+  - find degenerate lines
+  - find zero length lines
+  - detect tiny lines nobody can select
+  - find the leftover line fragments

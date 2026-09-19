@@ -1,0 +1,86 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-033
+semantic-identity: "where is the middle of this, by volume rather than by its box"
+kind: filter
+domain: revit.geometry
+capability: REPORT_CENTROID
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reports each element's centroid - the centre of its actual volume - and the
+  combined centroid of the whole set.
+
+  **`REPORT_BOUNDING_BOX` GIVES THE BOX AND THAT IS A DIFFERENT NUMBER.** The
+  centre of an axis-aligned box is not the centre of the thing inside it, and for
+  anything L-shaped, sloped or rotated the two are far apart - the box's centre
+  can sit in fresh air outside the element entirely. Measured 2026-09-18, the only
+  centroid in the whole library is computed inside `CENTER_ROOM_TAGS` for tag
+  placement and never handed back.
+
+  **THE COMBINED CENTROID IS WEIGHTED BY VOLUME, NOT BY COUNT.** Averaging the
+  centroids treats a bolt and a beam as equals and gives an answer that is not the
+  centre of anything. Weighting by volume is what makes it a centre of mass for a
+  set of the same material - and because it is only that when the material is the
+  same, the finding says so rather than letting somebody read it as one.
+
+  **AN ELEMENT WITH NO SOLID IS COUNTED, NOT GUESSED AT.** Annotation, most
+  analytical elements and an unplaced room have no volume, so they have no
+  centroid; giving them their bounding box centre instead would quietly mix two
+  different measurements in one answer.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: centroidOf
+      role: result
+      type: IDictionary<ElementId, XYZ>
+    - name: combined
+      role: result
+      type: XYZ
+    - name: noSolid
+      # No solid geometry, so no centroid exists. Given and unusable, never a
+      # thing it measured (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Solid.ComputeCentroid`, `Solid.Volume`, `Options` and `Element.get_Geometry`
+  are present 2020 through 2027 - read off the reference assemblies at both ends
+  on 2026-09-18. Coordinates stay in Revit's internal FEET and are NOT converted
+  here: a point is handed on to another fragment far more often than it is read
+  by a person, and the conversion belongs at the edge that speaks to one (D-20).
+
+# ROUTING - repeated in REPORT_BOUNDING_BOX and REPORT_LOCATION.
+#
+#   "where is the middle of this"   -> here - by volume
+#   "how big a box does it fill"    -> REPORT_BOUNDING_BOX - and its centre is a
+#                                      different point, sometimes outside the
+#                                      element altogether
+#   "where is it"                   -> REPORT_LOCATION - the insertion point
+#                                      Revit holds, which is neither of those
+#   "how much volume"               -> MEASURE_ELEMENT_VOLUME
+
+utterances:
+  - where is the centroid
+  - find the centre of mass
+  - what is the middle of these by volume
+  - centroid of this element

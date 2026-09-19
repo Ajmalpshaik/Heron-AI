@@ -1,0 +1,28 @@
+positive:
+  - given: >
+      one free-standing family instance and a target coordinate 5 m away, on
+      Revit 2024
+    expect: >
+      the element AT that coordinate - checked with REPORT_LOCATION afterwards
+      and against a dimension in Revit, not read off the count
+
+negative:
+  - given: a wall handed in
+    expect: >
+      counted in `noLocationPoint`, NOT moved. A wall is positioned by a curve
+      and "put this wall at that coordinate" has three different answers -
+      picking one silently is the failure worth preventing
+
+  - given: an element constrained to a grid, and a target off that grid
+    expect: >
+      counted in `notAtPoint`, not in `moved`. The move throws no error and the
+      element does not arrive, which is exactly the case a count of "how many did
+      I call move on" would report as success
+
+  - given: an element already at the target
+    expect: counted as moved, nothing attempted, no error
+
+second_route:
+  - >
+      the same element moved by hand in Revit to the same coordinate typed into
+      the properties palette, and the two positions compared

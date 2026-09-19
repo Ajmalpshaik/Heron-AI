@@ -1,0 +1,26 @@
+positive:
+  - given: an ordinary MEP project on Revit 2024
+    expect: >
+      the categories that model has, with Ducts, Pipes and Mechanical Equipment
+      among them - checked against Revit's own Visibility/Graphics dialog, which
+      lists the same set
+
+negative:
+  - given: >
+      a document opened on a non-English Revit - French or Arabic
+    expect: >
+      the names IN THAT LANGUAGE. This is the case worth arranging: it is not a
+      failure, it is the reason SELECT_BY_CATEGORY_NAME exists, and a run that
+      came back in English would mean something is translating behind the scenes
+
+  - given: a family document rather than a project
+    expect: >
+      whatever it reports, recorded rather than assumed. A family has categories
+      too and the answer will be a much shorter list - an empty one would mean
+      the iteration is wrong
+
+second_route:
+  - >
+      Revit's own Visibility/Graphics Overrides dialog on the same model, and the
+      two lists compared - specifically the count, which is the easiest thing to
+      get quietly wrong by skipping sub-categories

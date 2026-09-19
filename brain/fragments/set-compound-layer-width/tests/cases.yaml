@@ -1,0 +1,36 @@
+positive:
+  - given: >
+      a basic wall type with a named insulation layer, its index read from
+      REPORT_COMPOUND_STRUCTURE, and a new thickness of 150 mm, on Revit 2024
+    expect: >
+      the layer at 150 mm AND the whole wall thicker by the difference - checked
+      in the type's Edit Structure dialog and by measuring a placed wall in plan,
+      not read off the report. `wasMm` must be the old value, which is what makes
+      the change reversible
+
+negative:
+  - given: a layer index of 99 on a three-layer wall
+    expect: >
+      refused by name, saying how many layers there are and where the numbers
+      come from. Nothing changed
+
+  - given: a curtain wall type
+    expect: >
+      refused by name. A curtain wall has NO layers - REPORT_COMPOUND_STRUCTURE
+      correctly reports no build-up for one - and a silent zero-layer answer here
+      would read as a broken wall
+
+  - given: a width of 0 mm
+    expect: refused by name, nothing changed
+
+  - given: >
+      the change applied, and then a SECOND wall of the same type looked at
+    expect: >
+      IT HAS ALSO CHANGED. This is not a defect and it is the case worth
+      arranging: the finding says so in words, and anybody who did not want it
+      needed DUPLICATE_TYPE first
+
+second_route:
+  - >
+      the same layer edited by hand in the type's Edit Structure dialog, and the
+      two wall thicknesses compared in plan

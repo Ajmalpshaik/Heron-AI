@@ -1,0 +1,78 @@
+heron-agent: HERON-REVIT-CAT-009
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-031
+semantic-identity: "what categories does this model actually have"
+kind: filter
+domain: revit.document
+capability: LIST_CATEGORIES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists the categories in this document - their names, whether they can carry a
+  project parameter, and how many sub-categories each has.
+
+  **NOTHING LISTED THEM.** `SELECT_BY_CATEGORY_NAME` returns NEAR MISSES when a
+  name does not match, which is the closest thing in the library and is not a
+  list - it only answers once somebody has already guessed wrong. So the question
+  a modeller asks first, *what is even in here*, had no answer.
+
+  **CATEGORY NAMES ARE LOCALISED AND THE INTERNAL IDENTIFIERS ARE NOT.** On a
+  French or Arabic Revit the names come back in that language. That is not a
+  defect to work around: it is exactly why `SELECT_BY_CATEGORY_NAME` exists, and
+  this fragment is what tells somebody which names their machine will accept.
+
+  **IT LISTS WHAT THE DOCUMENT HAS, NOT WHAT REVIT KNOWS.** Every release carries
+  hundreds of built-in categories whether or not the model uses them. This reads
+  `Document.Settings.Categories`, which is the document's own set, and reports
+  sub-categories with it because that is where an object-style override actually
+  lives.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: names
+      role: result
+      type: IList<string>
+    - name: bindable
+      # How many of them can carry a project parameter - the number that decides
+      # whether ADD_PROJECT_PARAMETER can reach a category at all. A thing it
+      # FOUND, so a result (D-52).
+      role: result
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.Settings.Categories`, `Category.Name`, `Category.SubCategories` and
+  `Category.AllowsBoundParameters` are present 2020 through 2027 - read off the
+  reference assemblies at both ends on 2026-09-18. `Categories` is iterated
+  rather than indexed, so nothing here depends on an ordering Revit does not
+  promise.
+
+# ROUTING - repeated in SELECT_BY_CATEGORY_NAME and REPORT_FILTERABLE_PARAMETERS.
+#
+#   "what categories are in this model" -> here
+#   "everything in duct accessories"    -> SELECT_BY_CATEGORY_NAME - and this
+#                                          fragment is what tells you the name
+#                                          that machine will accept
+#   "which parameters can I filter on"  -> REPORT_FILTERABLE_PARAMETERS
+
+utterances:
+  - list the categories
+  - what categories are in this model
+  - show me all categories
+  - which categories can take a parameter

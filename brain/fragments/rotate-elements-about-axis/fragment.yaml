@@ -1,0 +1,96 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-068
+semantic-identity: "tilt these about a horizontal axis, not about the vertical one"
+kind: action
+domain: revit.elements
+capability: ROTATE_ELEMENTS_ABOUT_AXIS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Turns elements about ANY axis the caller gives - a line in space, in any
+  direction - and checks they really turned.
+
+  **`ROTATE_ELEMENTS` IS THE VERTICAL AXIS AND ONLY THAT.** Its own
+  semantic-identity says so: *"turn these elements about a vertical axis"*. That
+  is the right answer for a mis-oriented piece of equipment in plan and cannot
+  express a tilt at all - a sloped panel, a raked support, anything rotated about
+  a horizontal axis had no route.
+
+  **THE AXIS IS A LINE, NOT A NAME.** "Rotate about X" means nothing until
+  somebody says WHERE the X axis is; two elements rotated about lines through
+  their own centres end up somewhere different from two rotated about a shared
+  line. So the caller gives the line and owns that decision.
+
+  **THE ANGLE IS IN RADIANS, WHICH IS WHAT REVIT TAKES.** Degrees are converted
+  at the edge, before this, the same way millimetres are (D-20). A fragment doing
+  it again would rotate by a factor of 57.
+
+  **IT CHECKS, RATHER THAN ASSUMING.** Revit refuses to rotate a pinned element,
+  and a constraint can hold one still while the call reports no error at all. The
+  position is read before and after, so "it did not move" is reported rather than
+  passing as success.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: axis
+      type: Line
+      source: request
+    - name: angleRadians
+      type: double
+      source: request
+  provides:
+    - name: rotated
+      role: result
+      type: IList<ElementId>
+    - name: didNotMove
+      # Elements Revit accepted and that are still where they were - pinned, or
+      # held by a constraint. Evidence it looked, never a thing it turned (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: refused
+      # Elements Revit would not rotate at all. Evidence, never a result (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ElementTransformUtils.RotateElement(Document, ElementId, Line, double)` is
+  present 2020 through 2027 - read off the reference assemblies at both ends on
+  2026-09-18. The angle is in RADIANS and the axis is in internal FEET; both are
+  converted at the edge (D-20). No ElementId is built from an int, so 2024's
+  64-bit ids do not reach this code.
+
+# ROUTING - repeated in ROTATE_ELEMENTS.
+#
+#   "tilt this panel"              -> here, with a horizontal axis
+#   "rotate this about X"          -> here - and say WHERE the X axis is
+#   "turn this damper round"       -> ROTATE_ELEMENTS - vertical axis, which is
+#                                     what almost every plan-view rotation wants
+#   "rotate the beam's section"    -> NOT a rotation at all. A beam's
+#                                     cross-section rotation is an instance
+#                                     PARAMETER - WRITE_ELEMENT_PARAMETERS
+
+utterances:
+  - tilt these elements
+  - rotate about a horizontal axis
+  - rotate these about this line
+  - rotate on the X axis
+  - rake these supports

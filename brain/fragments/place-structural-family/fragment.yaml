@@ -1,0 +1,87 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-064
+semantic-identity: "put a structural column or a footing at each of these points"
+kind: action
+domain: revit.elements
+capability: PLACE_STRUCTURAL_FAMILY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places a point-based family at each point as a REAL STRUCTURAL MEMBER - a
+  column, a footing - with the structural type the caller asked for.
+
+  **IT EXISTS BECAUSE `PLACE_FAMILY_INSTANCES` HARDCODES `NonStructural`, AND
+  THAT WAS RIGHT FOR WHAT IT WAS WRITTEN FOR.** Its own purpose names air
+  terminals, sprinkler heads and detectors, and none of those is a structural
+  member. The defect was never the hardcoding: it was that no OTHER route
+  existed, so structural work silently used the wrong one and every column and
+  isolated footing went into the model as non-structural, with nothing saying so.
+
+  **A NON-STRUCTURAL COLUMN IS NOT A HARMLESS LABEL.** It changes what the
+  structural schedules count, what an analytical model picks up, and what a
+  take-off prices. It looks identical on every drawing.
+
+  **THE TYPE IS ASKED FOR AND NEVER INFERRED FROM THE FAMILY.** A family loaded
+  into Structural Columns can still be placed non-structurally, and which is
+  wanted is a decision about the job (D-33).
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: symbol
+      type: FamilySymbol
+      source: request
+    - name: points
+      type: IList<XYZ>
+      source: request
+    - name: level
+      type: Level
+      source: request
+    - name: structuralType
+      type: string
+      source: request
+  provides:
+    - name: placed
+      role: result
+      type: IList<ElementId>
+    - name: failed
+      # Points nothing could be placed at. Never an instance it placed (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.Create.NewFamilyInstance(XYZ, FamilySymbol, Level, StructuralType)`
+  is present 2020 through 2027 - read off the reference assemblies at both ends
+  on 2026-09-18, along with every value of `StructuralType`. Points arrive in
+  internal FEET, converted at the edge (D-20).
+
+# ROUTING - repeated in PLACE_FAMILY_INSTANCES and PLACE_LINE_BASED_FAMILY.
+#
+#   "put a column at each grid intersection" -> here
+#   "place the pad footings"                 -> here, structuralType Footing
+#   "place these sprinkler heads"            -> PLACE_FAMILY_INSTANCES, which is
+#                                               NonStructural and correct for it
+#   "put a beam along this line"             -> PLACE_LINE_BASED_FAMILY
+
+utterances:
+  - place structural columns at these points
+  - put a column at each grid intersection
+  - place the pad footings
+  - place these as structural
+  - add columns on this level

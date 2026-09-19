@@ -1,0 +1,30 @@
+positive:
+  - given: >
+      a model with some ducts whose level parameter was cleared, bounded to the
+      Ducts category, on Revit 2024
+    expect: >
+      exactly those ducts, and NOT the rest - counted in Revit by selecting them
+      and reading the properties palette, not off the report
+
+  - given: the same run bounded to Walls, in a model where every wall has a level
+    expect: >
+      an empty set and a finding saying how many were examined. Empty here is the
+      right answer and the `checked` count is what proves it looked
+
+negative:
+  - given: the same request with NO category list
+    expect: >
+      a large set - views, sheets, materials, annotation - AND the finding saying
+      so in words. This is correct and useless, and the warning is the fragment
+      doing its job rather than a caveat
+
+  - given: an MEP model, bounded to Ducts, where every duct HAS a level
+    expect: >
+      empty. THIS IS THE CASE THAT CATCHES THE LOOKUP BUG: a lookup that stops
+      before RBS_START_LEVEL_PARAM returns every duct in the model here, which is
+      a confident, enormous and entirely wrong answer
+
+second_route:
+  - >
+      a schedule of the same category with the Level field added, sorted by
+      Level, and the blank rows counted by hand

@@ -1,0 +1,30 @@
+positive:
+  - given: >
+      three face-based panels and a HORIZONTAL axis through their common edge,
+      with an angle of 15 degrees converted to radians before the call, on
+      Revit 2024
+    expect: >
+      all three tilted by 15 degrees - checked IN A SECTION against a protractor,
+      not read off the count. A vertical-axis rotation would leave them flat and
+      report exactly the same three
+
+negative:
+  - given: the same elements, pinned
+    expect: >
+      all three in `refused`, none in `rotated`. This is the case that separates
+      this fragment from one that reports success for doing nothing
+
+  - given: an angle of zero
+    expect: >
+      refused by name, nothing attempted, and the message saying that is not the
+      same as nothing being turnable
+
+  - given: no axis
+    expect: >
+      refused by name, with the message about a line rather than an axis name.
+      Defaulting to the Z axis here would silently make this ROTATE_ELEMENTS
+
+second_route:
+  - >
+      Revit's own Modify then Rotate, with the rotation axis set on the same
+      line, and the two compared in a section

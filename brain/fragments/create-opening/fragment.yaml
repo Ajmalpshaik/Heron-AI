@@ -1,0 +1,83 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-067
+semantic-identity: "cut the hole through this wall or slab"
+kind: action
+domain: revit.elements
+capability: CREATE_OPENING
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Cuts an opening through a host element - a wall, a floor, a roof or a ceiling -
+  from a closed boundary.
+
+  **THIS IS THE HALF `PROPOSE_MEP_OPENINGS` SAYS SOMEBODY ELSE MUST DO, AND
+  NOBODY DID.** Its own purpose reads: *"It creates nothing... The list this
+  produces is meant to be read, argued with, and only then acted on - by a
+  separate write that somebody approved."* Measured 2026-09-18: that write did
+  not exist anywhere in the library. So Heron could find every place the services
+  pass through structure, size each hole, audit the holes already cut and check
+  their sleeves - and could not cut one.
+
+  **THE SPLIT IS RIGHT AND IS KEPT.** Proposing and cutting stay two operations,
+  because cutting holes in somebody's structure is not a thing to do as a side
+  effect of looking for them. This fragment is the deliberate second step, run on
+  a list a person has seen.
+
+  **THE BOUNDARY IS IN THE HOST'S PLANE AND THE CALLER OWNS IT.** Revit projects
+  the profile onto the host; a boundary worked out against the wrong face comes
+  back as an opening in the wrong place rather than as an error.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a run of
+  forty penetrations is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: host
+      type: Element
+      source: request
+    - name: boundary
+      type: IList<XYZ>
+      source: request
+    - name: perpendicularFace
+      type: bool
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: ElementId
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.Create.NewOpening(Element, CurveArray, bool)` is present 2020 through
+  2027 - read off the reference assemblies at both ends on 2026-09-18. The bool
+  chooses whether the profile is cut perpendicular to the face or vertically,
+  which matters on a sloped roof and on nothing else. Lengths are internal FEET.
+
+# ROUTING - repeated in PROPOSE_MEP_OPENINGS and AUDIT_MEP_OPENINGS.
+#
+#   "cut the holes"                  -> here, on a list somebody has approved
+#   "where do the holes need to be"  -> PROPOSE_MEP_OPENINGS - it creates nothing
+#   "are the holes already cut right"-> AUDIT_MEP_OPENINGS
+#   "are the sleeves big enough"     -> CHECK_SLEEVE_SIZE
+#   "where are the shafts"           -> SELECT_OPENINGS - a READ
+
+utterances:
+  - cut an opening in this wall
+  - make the hole through the slab
+  - cut the penetrations
+  - create an opening
+  - put a hole in this wall for the duct

@@ -1,0 +1,96 @@
+heron-agent: HERON-REVIT-SEL-008
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SEL-033
+semantic-identity: "what is in the model here and not showing on this view"
+kind: filter
+domain: revit.selection
+capability: SELECT_HIDDEN_IN_VIEW
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Hands back the elements that exist in the model, in the categories given, and
+  are NOT showing in a named view.
+
+  **IT IS `SELECT_VISIBLE_IN_VIEW` SUBTRACTED FROM THE MODEL, AND NOTHING DID
+  THAT SUBTRACTION.** `DIAGNOSE_VISIBILITY` takes ONE element and one view and
+  works out which of the eight mechanisms hid it - a different question, and
+  useless until you already know which element to ask about. This is how you find
+  out which one to ask about.
+
+  **THE GAP BETWEEN THE MODEL AND THE DRAWING IS THE WHOLE POINT.** A view applies
+  its crop, its view range, its phase filter, its category switches, its view
+  filters, its worksets and its template, and every one of them can remove
+  something that is unquestionably in the model. Counting the model and reporting
+  it as the drawing is the commonest way a schedule and a plan end up disagreeing;
+  this names the difference.
+
+  **THE CATEGORY LIST IS WHAT MAKES THE ANSWER MEAN ANYTHING.** Unbounded, this
+  returns every view, sheet, material and view template in the document as
+  "hidden in this view", all of which is true and none of which is useful. The
+  finding says so in every unbounded run.
+
+  **IT ANSWERS WHAT IS MISSING, NEVER WHY.** A large answer here is a question for
+  `DIAGNOSE_VISIBILITY`, one element at a time.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - it opens none and needs none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: elements
+      role: result
+      type: IList<Element>
+    - name: inModel
+      # How many were in the model to begin with, so a big answer can be told
+      # from a big model. Evidence it looked, never a thing it found (D-52).
+      role: accounting
+      type: int
+    - name: showing
+      # How many the view does show. The other half of the subtraction, so the
+      # two add up and a reader can check the arithmetic (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  The view-scoped `FilteredElementCollector(Document, ElementId)` constructor,
+  `View.IsTemplate` and `ElementMulticategoryFilter` are present 2020 through
+  2027 - read off the reference assemblies at both ends. Categories are handed to
+  the filter as `BuiltInCategory` values rather than as ElementIds built from
+  them, so 2024's 64-bit ids do not reach this code.
+
+# ROUTING - repeated in SELECT_VISIBLE_IN_VIEW and DIAGNOSE_VISIBILITY.
+#
+#   "what is not showing here"      -> here
+#   "what IS showing here"          -> SELECT_VISIBLE_IN_VIEW - the other half
+#   "why can't I see this duct"     -> DIAGNOSE_VISIBILITY - ONE element, and
+#                                      which of the eight mechanisms hid it.
+#                                      This fragment finds you the element to ask
+#                                      about; that one answers why
+#   "bring hidden elements back"    -> SHOW_ELEMENTS - a WRITE
+
+utterances:
+  - what is hidden in this view
+  - select hidden elements
+  - which ducts are not showing on this plan
+  - what is missing from this drawing
+  - find elements not visible here

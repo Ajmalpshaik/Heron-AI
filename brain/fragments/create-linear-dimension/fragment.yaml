@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-101
+semantic-identity: "dimension between these two references, on this view"
+kind: action
+domain: revit.annotation
+capability: CREATE_LINEAR_DIMENSION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws one linear dimension along a line, between the references given.
+
+  **THE PLAIN DIMENSION, WHICH THE LIBRARY DID NOT HAVE.** `CREATE_DIMENSION`
+  reads as the general one and is not: its own purpose calls it *"the duct-spacing
+  dimension, and that is the whole of its scope"* - centre to centre, across
+  parallel linear elements. Every other dimension fragment is similarly specific -
+  grids and levels, rooms, wall openings, family instances, MEP runs. Measured
+  2026-09-18, none of them answers *"dimension from this to that"*.
+
+  **THE REFERENCES ARE THE CALLER'S AND ARE NOT GUESSED.** A face, an edge, a
+  centreline and a grid are four different references on the same wall, and which
+  one a drawing should dimension to is a drafting decision, not something to
+  infer (D-33). Working them out is the composing skill's job; this draws the
+  dimension.
+
+  **TWO REFERENCES IS THE MINIMUM AND MORE IS A STRING.** Three or more on one
+  line gives the chained dimension a drawing actually carries, which is why the
+  input is a list rather than a pair.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: line
+      type: Line
+      source: request
+    - name: references
+      type: IList<Reference>
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: ElementId
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and said
+      # no. Never a thing it FOUND (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `NewDimension(View, Line, ReferenceArray)` on the base item factory is present
+  2020 through 2027 - read off the reference assemblies at both ends on
+  2026-09-18 - and is reached through `doc.Create`, which inherits it.
+
+  **IT IS NOT `NewLinearDimension`, AND THAT COST A COMPILE HERE.** The
+  obvious-sounding name belongs to the FAMILY EDITOR's creation object and is not
+  reachable from a project document at all. The same is true of `NewRadialDimension`, `NewDiameterDimension` and
+  `NewArcLengthDimension` - see CREATE_RADIAL_DIMENSION, which has to use a
+  different call and is only available from Revit 2025. The 2025 dimension subclasses (LinearDimension, RadialDimension,
+  ArcLengthDimension) changed what comes BACK, not how it is made, and nothing
+  here names a subclass, so one path serves every release.
+
+# ROUTING - repeated in CREATE_DIMENSION and DIMENSION_GRIDS_AND_LEVELS.
+#
+#   "dimension from this to that"    -> here
+#   "dimension the duct spacing"     -> CREATE_DIMENSION - centrelines of
+#                                       parallel MEP runs, and only that
+#   "dimension the grids"            -> DIMENSION_GRIDS_AND_LEVELS
+#   "dimension the rooms"            -> DIMENSION_ROOMS
+#   "dimension the doors in this wall"-> DIMENSION_WALL_OPENINGS
+#   "dimension to a radius"          -> CREATE_RADIAL_DIMENSION
+
+utterances:
+  - dimension between these two
+  - put a dimension from here to here
+  - dimension these references
+  - add a linear dimension
+  - dimension across these

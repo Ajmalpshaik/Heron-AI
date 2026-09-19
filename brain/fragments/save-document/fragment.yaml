@@ -1,0 +1,80 @@
+heron-agent: HERON-REVIT-DOC-004
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-033
+semantic-identity: "save the model to disk"
+kind: action
+domain: revit.document
+capability: SAVE_DOCUMENT
+version: 1
+source: OFFICIAL
+risk: PUBLISH
+
+purpose: >
+  Saves the open document to its existing file.
+
+  **NOTHING IN HERON COULD SAVE.** Measured 2026-09-18 across every fragment and
+  the whole add-in: `Document.Save` appears nowhere. Heron could modify a model
+  in twenty ways and every change waited for a hand on the keyboard.
+
+  **SAVING A WORKSHARED MODEL IS NOT SYNCING IT.** A local save writes the local
+  file and reaches nobody else on the job. That distinction is the one people get
+  wrong, so a workshared document is saved here AND told plainly that nothing has
+  gone to central - `SYNC_WITH_CENTRAL` is the other job.
+
+  **IT IS `PUBLISH` RISK AND IT IS NOT UNDOABLE.** A save commits whatever is in
+  the model right now, including a change somebody was about to undo. Phase 0 and
+  Phase 1 refuse `PUBLISH` unconditionally, so this is written and deliberately
+  unreachable until the register says otherwise.
+
+  **IT NEVER CHOOSES A FILENAME.** `SaveAs` is a different and far more dangerous
+  operation - it can overwrite another model - and inventing a path is exactly
+  how that happens. A document with no path yet is refused rather than saved
+  somewhere invented.
+
+  OPENS NO TRANSACTION AND MUST NOT BE INSIDE ONE, the same as
+  `SYNC_WITH_CENTRAL`.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: saved
+      role: result
+      type: bool
+    - name: refused
+      # Why it declined, in the user's words - evidence it looked and said no.
+      # Never a thing it DID (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.Save(SaveOptions)`, `Document.PathName`, `Document.IsReadOnly` and
+  `Document.IsWorkshared` are present 2020 through 2027 - read off the reference
+  assemblies at both ends on 2026-09-18. `SaveAs` is deliberately not called here
+  at all.
+
+# ROUTING - repeated in SYNC_WITH_CENTRAL.
+#
+#   "save the model"        -> here
+#   "sync to central"       -> SYNC_WITH_CENTRAL - and on a workshared model a
+#                              save is NOT that, which is the confusion worth
+#                              preventing
+#   "save it somewhere else"-> NOT HERE, and nothing does it. SaveAs can
+#                              overwrite another model and no fragment invents a
+#                              path
+
+utterances:
+  - save the model
+  - save this file
+  - save my changes

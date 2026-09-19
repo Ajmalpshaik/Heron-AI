@@ -1,0 +1,29 @@
+positive:
+  - given: >
+      a straight wall on Level 1 and a rectangular boundary lying on its face,
+      sized from PROPOSE_MEP_OPENINGS with an allowance, on Revit 2024
+    expect: >
+      a real hole - checked IN A SECTION and by the duct passing through it
+      without a clash, not read off the report. AUDIT_MEP_OPENINGS should then
+      find it and CHECK_SLEEVE_SIZE should agree it fits
+
+  - given: a floor slab and a boundary in its plane
+    expect: the slab penetrated, checked in section
+
+negative:
+  - given: no host
+    expect: refused by name, nothing cut
+
+  - given: a boundary of two points
+    expect: refused by name, nothing cut
+
+  - given: a boundary that does not lie on the host at all
+    expect: >
+      reported, nothing cut. This is the case that matters most: a profile
+      worked out against the wrong face is the likely mistake, and a silent
+      opening in the wrong place is worse than a refusal
+
+second_route:
+  - >
+      Revit's own Architecture then Wall Opening on the same wall, and the two
+      compared in a section

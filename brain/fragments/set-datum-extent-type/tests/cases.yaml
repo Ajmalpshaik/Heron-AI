@@ -1,0 +1,33 @@
+positive:
+  - given: >
+      a grid on a floor plan whose ends are on the shared 3D extent, with
+      viewSpecific true, on Revit 2024
+    expect: >
+      that grid now 2D IN THIS VIEW ONLY - checked by shortening it here and
+      confirming it is unchanged on another plan. The report must also say what
+      it found before it changed anything
+
+  - given: the same grid, with viewSpecific false
+    expect: >
+      back on the shared extent, AND the finding warning that a 3D extent reaches
+      every view. Checked on a second plan
+
+negative:
+  - given: a wall handed in with the grids
+    expect: >
+      counted in `notADatum`, nothing attempted on it, and the grids still done
+
+  - given: a grid whose ends are ALREADY view-specific, with viewSpecific true
+    expect: >
+      counted in `wasAlready`, `changed` empty. A fragment that counted these as
+      changes would report success for doing nothing, which is the shape D-30's
+      negative leg exists to catch
+
+  - given: no view
+    expect: refused by name
+
+second_route:
+  - >
+      the 3D/2D toggle clicked by hand on the same grid end in Revit, and the two
+      compared - including on a second view, which is where the shared-extent
+      warning is either true or wrong

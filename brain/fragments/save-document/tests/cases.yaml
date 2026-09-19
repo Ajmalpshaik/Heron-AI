@@ -1,0 +1,27 @@
+positive:
+  - given: >
+      an ordinary single-user model with one unsaved change, on Revit 2024, run
+      OUTSIDE any transaction
+    expect: >
+      the file's timestamp on disk moving and the change surviving a close and
+      reopen - not read off the report. `saved` true
+
+negative:
+  - given: a workshared local model
+    expect: >
+      saved, AND the finding saying IN WORDS that nothing went to central. A
+      second user reloading latest must NOT see the change - which is the case
+      that proves the warning is true rather than decorative
+
+  - given: a document that has never been saved, so has no path
+    expect: >
+      refused by name, nothing written. This is the case that matters: inventing
+      a filename here is how a model gets overwritten
+
+  - given: a document open read-only
+    expect: refused by name
+
+second_route:
+  - >
+      Ctrl+S by hand on the same model, and the file timestamps compared - then
+      the workshared case checked from a second user's session

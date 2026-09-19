@@ -1,0 +1,95 @@
+heron-agent: HERON-REVIT-CMP-021
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-070
+semantic-identity: "make this layer of the wall build-up thicker"
+kind: action
+domain: revit.elements
+capability: SET_COMPOUND_LAYER_WIDTH
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Changes the thickness of one layer in a wall, floor, roof or ceiling type's
+  build-up, and reports what it was before.
+
+  **`REPORT_COMPOUND_STRUCTURE` READS THE BUILD-UP AND NOTHING WROTE IT.** So
+  *"modify thickness"* - asked plainly, and the ordinary answer to a spec change -
+  had no route. `WRITE_ELEMENT_PARAMETERS` cannot reach a layer: a wall's
+  thickness is not an instance parameter, it is the sum of its layers.
+
+  **IT IS A TYPE CHANGE AND IT REACHES EVERY INSTANCE.** This is the thing to say
+  before running it, not after. Editing the build-up of *Basic Wall: 200 Blockwork*
+  changes every one of them in the model. If that is not wanted, `DUPLICATE_TYPE`
+  first and edit the copy - and the finding says so in every run.
+
+  **THE STRUCTURE IS READ, CHANGED AND WRITTEN BACK AS A WHOLE.** Revit hands out
+  a COPY of the compound structure, so changing it in place does nothing at all
+  until it is set back on the type. That silent no-op is the mistake this fragment
+  exists to make impossible.
+
+  **THE LAYER IS BY INDEX, AND THE INDEX IS REVIT'S.** `REPORT_COMPOUND_STRUCTURE`
+  is what turns "the insulation" into a number; guessing it here would change the
+  wrong layer and still report success.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: hostType
+      type: HostObjAttributes
+      source: request
+    - name: layerIndex
+      type: int
+      source: request
+    - name: widthMm
+      type: double
+      source: request
+  provides:
+    - name: applied
+      role: result
+      type: bool
+    - name: wasMm
+      role: result
+      type: double
+    - name: refused
+      # Why it declined, in the user's words - evidence it looked and said no.
+      # Never a thing it FOUND (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `HostObjAttributes.GetCompoundStructure`, `HostObjAttributes.SetCompoundStructure`,
+  `CompoundStructure.GetLayerWidth`, `CompoundStructure.SetLayerWidth` and
+  `CompoundStructure.LayerCount` are present 2020 through 2027 - read off the
+  reference assemblies at both ends on 2026-09-18. Widths are internal FEET
+  inside Revit; 304.8 appears twice here and only at the edges, once in and once
+  out (D-20).
+
+# ROUTING - repeated in REPORT_COMPOUND_STRUCTURE and DUPLICATE_TYPE.
+#
+#   "make the insulation thicker"   -> here, with the index that one gives you
+#   "what is this wall made of"     -> REPORT_COMPOUND_STRUCTURE - and it is
+#                                      where the layer INDEX comes from
+#   "just for this wall"            -> DUPLICATE_TYPE first. There is no such
+#                                      thing as a per-instance build-up
+#   "what is in this curtain wall"  -> REPORT_CURTAIN_ELEMENTS - a curtain wall
+#                                      has no layers at all
+
+utterances:
+  - make this layer thicker
+  - change the insulation thickness
+  - set the wall layer width
+  - modify the thickness of this build up

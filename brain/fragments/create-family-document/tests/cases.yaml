@@ -1,0 +1,35 @@
+positive:
+  - given: >
+      the path to a metric generic model family template that exists on this
+      machine, on Revit 2024
+    expect: >
+      an open, empty family document of the template's category - checked by
+      reading its category in Revit, not off the report, and by it appearing in
+      the open-documents list. REPORT_OPEN_DOCUMENTS should then see it
+
+negative:
+  - given: a path that does not exist
+    expect: >
+      refused BY NAME saying so, and explaining that template folders differ by
+      version, language and installation. Not a raw file exception
+
+  - given: no template path at all
+    expect: >
+      refused by name. NOT a fall back to some default template - a guessed
+      template makes the wrong KIND of family, which is worse than failing
+
+  - given: >
+      a template saved by a NEWER Revit than the one running
+    expect: >
+      refused with the reason named. This is the real-world failure on a mixed
+      version office and a bare null would explain nothing
+
+  - given: the document created and then never closed
+    expect: >
+      it stays open. That is stated in the findings rather than tidied up
+      silently - closing somebody else's document is not this fragment's decision
+
+second_route:
+  - >
+      File then New then Family by hand from the same template, and the two
+      documents' categories and parameter lists compared
