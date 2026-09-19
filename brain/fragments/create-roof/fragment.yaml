@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -72,6 +72,21 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+# HELD ON PURPOSE, NOT FORGOTTEN. Signed on real evidence - the roof was read
+# back off Revit at 5000 x 4000 mm, base 4000 mm, on a level sitting at
+# 4000 mm - and NOT promoted, because `tests/cases.yaml` declares a second
+# route and nobody has run it: build the same footprint through Revit's own
+# Architecture > Roof by Footprint and compare the two IN A SECTION.
+#
+# THAT IS A PERSON'S JOB AND CANNOT BE DONE FROM HERE - it is Revit's user
+# interface, not an API call. Named by review on PR #198, which was right:
+# D-30 asks for a second route "where one exists", and this fragment's own
+# case file says one does.
+proof-held: >
+  waiting on the second route its own tests/cases.yaml declares - the same
+  footprint drawn through Revit's Architecture > Roof by Footprint, and the
+  two compared in a section. Everything else is recorded and signed.
 
 proof:
   date: '2026-09-19'

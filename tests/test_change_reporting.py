@@ -141,6 +141,14 @@ def main():
           "because `notMatched 10` was non-zero in the run that changed "
           "nothing")
 
+    check("IF anything was written, all of it is ONE" in fragment
+          and "no new undo entry" in fragment,
+          "and the Ctrl+Z instruction is CONDITIONAL - if nothing was written "
+          "there may be no new undo entry, and a modeller told to press it "
+          "undoes whatever they did BEFORE. Row 117's first repair made this "
+          "conditional; rewording it for the setup-steps case put the "
+          "unconditional promise straight back, half an hour later")
+
     check("THE COUNTS ABOVE ARE WHAT THIS FRAGMENT DID" in fragment
           and "do not by themselves" in fragment,
           "and it does not conclude the model is UNTOUCHED from counts of "

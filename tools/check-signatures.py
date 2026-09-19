@@ -73,8 +73,20 @@ import heron_fragment as F                                   # noqa: E402
 
 
 def findings():
-    """(unused, stale, signed_total). Every fragment signed but not promoted."""
-    unused, stale, signed = [], [], 0
+    """(unused, stale, held, signed_total). Every fragment signed, not promoted.
+
+    `held` IS A THIRD ANSWER AND IT WAS MISSING. This file's own header says a
+    fragment "signed and meant to WAIT" has to carry that intent as a caveat -
+    and then had no way to READ one, so a deliberate hold was reported as an
+    oversight and failed the gate. `create-roof` on 2026-09-19 is the case:
+    signed on real evidence, correctly NOT promoted because `tests/cases.yaml`
+    declares a second route nobody has run, and nothing could say so.
+
+    THE CAVEAT IS A DECLARED KEY, NOT PROSE. `proof-held:` in fragment.yaml
+    holds the REASON, so a reader sees why and this tool can tell a hold from a
+    forgotten promotion. Prose in a comment would leave it guessing again.
+    """
+    unused, stale, held, signed = [], [], [], 0
 
     folders, _problems = F.load_all()
     for _id, frag in sorted(folders.items()):
@@ -87,15 +99,19 @@ def findings():
             continue
 
         allowed, why = F.can_promote(frag, "PROVEN")
-        row = (frag.slug, by, proof.get("date"), why)
-        (unused if allowed else stale).append(row)
+        waiting = (frag.data.get("proof-held") or "").strip()
+        row = (frag.slug, by, proof.get("date"), waiting or why)
+        if waiting:
+            held.append(row)
+        else:
+            (unused if allowed else stale).append(row)
 
-    return unused, stale, signed
+    return unused, stale, held, signed
 
 
 def main(argv):
     show_all = "--all" in argv
-    unused, stale, signed = findings()
+    unused, stale, held, signed = findings()
 
     print("Signatures in the library: %d" % signed)
     print("")
@@ -107,6 +123,15 @@ def main(argv):
         print("")
         for name, by, date, why in unused:
             print("  %-32s %s, %s" % (name, by, date))
+        print("")
+
+    if held:
+        print("HELD - signed, and DELIBERATELY not promoted (%d)" % len(held))
+        print("Each one says in its own file why it waits. This is not a gap.")
+        print("")
+        for name, by, date, why in held:
+            print("  %-32s %s, %s" % (name, by, date))
+            print("      %s" % why)
         print("")
 
     if stale:

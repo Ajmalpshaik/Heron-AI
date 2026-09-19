@@ -1,4 +1,4 @@
-# What is this floor sitting against. 2026-09-19.
+# What passes through this ceiling. 2026-09-19.
 #
 #     python tools/batch-prove.py tools/jobs/test-projject-touching-2026-09-19.yaml --dry-run --session 36216
 #     python tools/batch-prove.py tools/jobs/test-projject-touching-2026-09-19.yaml --session 36216
@@ -6,11 +6,18 @@
 # --session 36216 IS NOT OPTIONAL. It is the only Revit connected, and a job
 # file carrying a stale session id aims at nothing.
 #
-# THE SETUP IS `select-in-region` AND NOT `select-by-category-name`, AND THAT
-# IS THE WHOLE REASON THIS CAN BE ARRANGED. `target` is `Element` - ONE
-# particular element - so the add-in binds `selected` only when Revit's
-# selection holds EXACTLY ONE thing and refuses otherwise. This model has
-# exactly one Floor, so a region query for Floors leaves exactly one.
+# IT ASKS ABOUT THE CEILING, NOT THE FLOOR, AND EVERY WORD BELOW USED TO SAY
+# FLOOR. The file was written for the floor, measured, and then re-aimed at the
+# ceiling when nothing turned out to overlap the floor - and the prose was left
+# behind, so it described an experiment nobody ran. Found by review on PR #198,
+# and it is the one thing a job file must never do: a passing run under a
+# heading that names a different arrangement is a misleading proof.
+#
+# `target` is `Element` - ONE particular element - so the add-in binds
+# `selected` only when Revit's selection holds EXACTLY ONE thing and refuses
+# otherwise. This model has exactly one Ceiling, so a region query for Ceilings
+# leaves exactly one. It has exactly one Floor too, which is why either could
+# be the target and why the prose had to say WHICH.
 #
 # `select-by-category-name` would have been the obvious chain and is the wrong
 # one: it uses a VIEW-SCOPED collector, the only view name this session can
@@ -23,18 +30,25 @@
 # WHAT THE MODEL HOLDS - session 36216, `test projject`, 3,565 elements,
 # counted MODEL-WIDE rather than in any view:
 #
-#   Floors     1 placed      <- the target, and the reason one binds
-#   Walls     28 placed      <- the positive question
-#   Ceilings   1 placed
+#   Ceilings   1 placed      <- the target, and the reason one binds
+#   Ducts      8 in "HERON ROOM TEST"   <- the positive question
+#   Floors     1 placed      <- the target the first version used
+#   Walls     28 placed
 #   Roofs      0 placed      <- the negative question
 #
 # THE NEGATIVE IS A REAL CATEGORY THIS MODEL GENUINELY HAS NONE OF, which is
 # rule 2 read the right way round rather than a cleared input. A roof is a
-# thing a floor could plausibly touch - in a single-storey building the roof
-# sits on the same walls - so asking is a sensible question rather than a
-# nonsense one, and the answer is honestly empty. The TARGET does not move
-# between the legs: the same one floor is handed in both times, so anything
-# that changes is the QUESTION and nothing else.
+# thing a ceiling could plausibly meet, so asking is a sensible question rather
+# than a nonsense one, and the answer is honestly empty. The TARGET does not
+# move between the legs: the same one ceiling is handed in both times, so
+# anything that changes is the QUESTION and nothing else.
+#
+# IT HAS NOT PASSED, AND THE REASON IS WORTH MORE THAN THE JOB. `select-touching`
+# means OVERLAP and says so itself - "Nothing OVERLAPS it. That is not the same
+# as nothing being related." A floor and the walls it sits against correctly
+# return 0, and ducts running ABOVE a ceiling do too. It needs two things that
+# genuinely interpenetrate, reachable from a single-instance target, and this
+# model has no such pair. Row 149.
 #
 # THIS IS A READ. Nothing is written either way, and the session flag is about
 # reading the right model rather than about safety.
@@ -47,7 +61,7 @@ defaults:
   # `select-in-region` AFTER ALL, AND IT IS THE NEW `setup-set:` THAT ALLOWS IT.
   # This chain was written first, refused by the dry run because its selector
   # need is called `categories` and so is `select-touching`'s question, and one
-  # flat `set` could not hold both - FRAGMENT-ISSUES row 147. `setup-set:` gives
+  # flat `set` could not hold both - FRAGMENT-ISSUES row 149. `setup-set:` gives
   # the chain its own values, so the collision is gone rather than dodged.
   #
   # AND THE DODGE HAD ITS OWN COST, WHICH IS WHY IT WAS NOT KEPT.

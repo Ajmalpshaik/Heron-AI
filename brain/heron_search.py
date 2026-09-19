@@ -854,7 +854,13 @@ def main(argv):
 
     store = SCOPE.open_scope(SCOPE.GLOBAL)
     try:
-        n = index(store)
+        # UNPACKED, because `index()` returns a PAIR now. It returned a bare
+        # count until FRAGMENT-ISSUES row 136 taught it to skip, and this line
+        # then handed a tuple to `%d` - so the advertised entry point at the
+        # top of this file ended in TypeError on EVERY successful run. Found by
+        # review on PR #198. A change to a return type is not finished until
+        # its own command line has been run.
+        n, unchanged = index(store)
         text = " ".join(argv)
         answer = ask(store, text)
         print("Asked:  %s" % text)
@@ -864,7 +870,9 @@ def main(argv):
         for c in answer.candidates:
             print("          %-14s %-28s %s" % (c["id"], c["capability"], c["status"]))
         print()
-        print("%d fragment(s) indexed in the global scope." % n)
+        print("%d fragment(s) indexed in the global scope%s."
+              % (n if n else unchanged,
+                 "" if n else " - unchanged, so nothing was rewritten"))
         return 0
     finally:
         store.close()

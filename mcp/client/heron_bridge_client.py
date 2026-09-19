@@ -903,7 +903,7 @@ def pull_values(rest):
         "--view": ("pairs", True),
         "--negative-set": ("negatives", False),
         "--negative-view": ("negatives", True),
-        # THE SETUP CHAIN'S OWN VALUES. FRAGMENT-ISSUES row 147: a chain and
+        # THE SETUP CHAIN'S OWN VALUES. FRAGMENT-ISSUES row 149: a chain and
         # the fragment under test could not be given different values for a
         # name they SHARE, and `categories` is shared by 88 fragment/chain
         # pairs in this library. Optional, and when it is absent every setup

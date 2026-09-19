@@ -1110,12 +1110,25 @@ namespace Heron.Revit.Addin
                 // nothing. Found by review on PR #198, and it is this row's own
                 // mistake made twice: describing the whole group's outcome from
                 // one part's counts.
+                // AND IT STILL MUST NOT PROMISE AN UNDO STEP, WHICH THE SECOND
+                // VERSION DID. Row 117's first repair made Ctrl+Z conditional
+                // for exactly this reason; rewording it for the setup-steps
+                // case put the unconditional promise straight back. Two
+                // sentences, the same defect, half an hour apart - found by
+                // review on PR #198.
+                //
+                // THE HAZARD IS NOT THE UNTRUE HALF, IT IS THE INSTRUCTION. If
+                // nothing was written there may be NO new undo entry, and a
+                // modeller told to press Ctrl+Z then undoes whatever they did
+                // BEFORE running this. Saying "if anything was written" costs
+                // one clause and cannot send anybody backwards.
                 verdict = "'" + name + "' was KEPT: Revit accepted the transaction rather than "
-                        + "rolling it back, and it is ONE undo step - Ctrl+Z in Revit puts the "
-                        + "whole of it back. THE COUNTS ABOVE ARE WHAT THIS FRAGMENT DID and "
-                        + "nothing more: anything a setup step did was kept in the same step "
-                        + "and is not counted here, so counts of zero do not by themselves "
-                        + "mean the model is untouched.";
+                        + "rolling it back. THE COUNTS ABOVE ARE WHAT THIS FRAGMENT DID and "
+                        + "nothing more - anything a setup step did was kept in the same group "
+                        + "and is not counted here, so counts of zero do not by themselves mean "
+                        + "the model is untouched. IF anything was written, all of it is ONE "
+                        + "undo step; if nothing was, there is no new undo entry and Ctrl+Z "
+                        + "would undo whatever you did before this.";
             }
             else if (rolledBack)
             {
