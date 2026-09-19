@@ -1550,8 +1550,20 @@ one model and show the answer FOLLOWING the input. [D-53](DECISIONS.md) is the
 rule, `prove-agent.py` is the working example, and `MIN_TRACKING_ROWS = 3` is
 already enforced in `brain/heron_validate.py` for agents.
 
-**IT IS THE HIGHEST-LEVERAGE THING LEFT IN THE PROVING MACHINERY** and it is
-deliberately not started here: PR #198 was already large and carrying the
-row 136 root-cause fix, and a feature this size belongs on its own branch
-rather than delaying seventeen repairs. Recorded so the next session does not
-have to re-derive which three fragments matter or why.
+**BUILT 2026-09-20, AND IT WAS SMALLER THAN THIS GROUP EXPECTED.** The judging
+half already existed and nothing had ever produced one - see
+[row 150](FRAGMENT-ISSUES.md). `validate --vary NAME=a,b,c --vary-field FIELD`
+is the running half, demonstrated end to end on `test projject` against
+`filter-elements-by-category`: `Ducts 8`, `Pipes 2`, `Air Terminals 0`,
+`Walls 28`, and `heron_validate draft` wrote a proper D-53 negative case from it.
+
+**THE THREE FRAGMENTS ARE STILL NOT PROVED**, and that is the honest state: the
+machinery exists, and each of them still needs an arrangement, a model and a
+signature. What has changed is that they are now *provable*, which they were
+not. Whoever takes them needs an input each answer genuinely depends on:
+
+| fragment | what to vary | why that one |
+|---|---|---|
+| `trace-connectivity` | the `start` element | `reached` is seeded with it, so nothing else moves the answer - `elements` only feeds the GEOMETRIC route |
+| `report-findings` | `whatWasChecked` / the checked set | its result is prose, so the tracked field has to be the sentence, and the sentence must differ per input |
+| `describe-blank-parameters` | `parameterName` | its record already shows the shape - `blank 22, absent 0` against `blank 0, absent 22` - which is a tracking set nobody could record |
