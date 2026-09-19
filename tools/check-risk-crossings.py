@@ -234,6 +234,35 @@ QUESTIONS = [
     # fix is a question for the owner, not a quiet widening of `reads`.
     "isolate all the pipes in the current view but leave out the "
     "condensate drain system",
+
+    # SENTENCES THE LIBRARY ITSELF SAYS AJMAL SAYS, AND THAT NO FRAGMENT
+    # CLAIMS. Added 2026-09-19 by the session that built
+    # tools/check-skill-routing.py, which is the docstring's instruction
+    # ("add to this list whenever a real session produces one") met from a
+    # source that did not exist when this list was written: brain/skills.
+    #
+    # THE CRITERION WAS FIXED BEFORE THE RESULTS WERE SEEN, on purpose. Each
+    # of these is declared in a skill's `utterances:` and declared by NO
+    # fragment - measured, not judged - which is exactly the hole rows 113 and
+    # 116 name: identity cannot fire, so ranking decides, and ranking is the
+    # thing that answers a question with a write. Choosing them by which ones
+    # FAILED would be optimising against the measurement, which is the drift
+    # this list's own docstring exists to prevent.
+    #
+    # They are a SAMPLE of the 37 such sentences and not all of them: asking
+    # all 37 here would make this sweep a duplicate of check-skill-routing.py,
+    # which asks every one of them against a different discriminator - a
+    # skill's own declared risk, rather than "was a READ beaten".
+    "how much air does this room need",
+    "how many sprinklers",
+    "how many diffusers for this room",
+    "is the ductwork still connected",
+    "what is this connected to",
+    "which unit feeds this",
+    "what sizes are the ducts",
+    "which ducts have no system name",
+    "what is missing before I issue this",
+    "how many of each size",
 ]
 
 
