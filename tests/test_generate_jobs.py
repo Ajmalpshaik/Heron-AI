@@ -132,6 +132,59 @@ def test_receivable_agrees_with_the_add_in():
           % (", ".join(extra) or "none"))
 
 
+def test_an_id_is_resolved_by_its_name_not_by_its_type():
+    print("An ElementId need is judged on its NAME, the way the add-in judges it")
+
+    # MEASURED BEFORE IT WAS WRITTEN, 2026-09-19. `create-view-filter` was
+    # emitted as arrangeable, a job was built from it, and Revit refused the
+    # moment it arrived: "'parameterId' is an id, and Heron resolves one by
+    # NAMING the thing it belongs to ... There is no rule for this name yet".
+    # The TYPE was receivable and the NAME was not, and only the type was being
+    # asked about - so the job file read like a worklist and one slot bought
+    # nothing. FRAGMENT-ISSUES row 139, the same shape as row 13.
+    known = GJ.id_need_names()
+    check(len(known) > 10,
+          "the add-in's id names are READ OUT OF RevitFragment.cs, not typed "
+          "here (%d found)" % len(known))
+    check("levelId" in known and "categoryIds" in known,
+          "and the set is the right one - levelId and categoryIds are in it")
+
+    ok, _ = GJ.receivable("ElementId", "levelId")
+    check(ok, "a name OneIdNamed has a rule for is receivable")
+
+    ok, _ = GJ.receivable("ICollection<ElementId>", "categoryIds")
+    check(ok, "and so is a LIST of them, because the list branch calls "
+              "OneIdNamed once per part")
+
+    ok, why = GJ.receivable("ElementId", "parameterId")
+    check(not ok,
+          "and `parameterId` is NOT - this is the case that was measured "
+          "against a model rather than reasoned about")
+    check("no rule for this one" in (why or ""),
+          "and the reason says WHY rather than restating the type name")
+
+    # THE DIRECTION THAT MATTERS. Nothing the tool EMITS may carry an id need
+    # the add-in cannot resolve, or the job is refused on arrival - which is
+    # worse than not emitting it, because a refusal costs a Revit slot and
+    # reads as a fragment defect.
+    unknown = []
+    for frag in library().values():
+        for need in frag.needs():
+            if HF.need_source(need) != "request":
+                continue
+            declared = (need.get("type") or "").replace(" ", "")
+            if "ElementId" not in declared:
+                continue
+            name = need.get("name")
+            if name and name not in known:
+                emitted, _ = GJ.receivable(declared, name)
+                if emitted:
+                    unknown.append("%s.%s (%s)" % (frag.slug, name, declared))
+    check(not unknown,
+          "no fragment in the library is offered with an id need the add-in "
+          "has no rule for (%s)" % (", ".join(sorted(unknown)) or "none"))
+
+
 def test_the_shapes_d54_refuses_are_refused_here():
     print("The shapes D-54 refuses are marked, not emitted")
 
@@ -1000,6 +1053,7 @@ def test_the_blocked_are_listed_with_a_reason_each():
 
 def main():
     for test in (test_receivable_agrees_with_the_add_in,
+                 test_an_id_is_resolved_by_its_name_not_by_its_type,
                  test_the_shapes_d54_refuses_are_refused_here,
                  test_an_element_is_a_type_and_a_list_of_them_is_still_refused,
                  test_a_point_is_millimetres_and_says_so,

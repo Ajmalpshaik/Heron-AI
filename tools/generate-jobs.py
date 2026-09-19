@@ -359,18 +359,91 @@ def is_type_need_name(need_name):
     return (need_name or "").endswith("Type")
 
 
+ADDIN_FRAGMENT = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitFragment.cs")
+
+_ID_NAME = re.compile(r'name == "([A-Za-z]+)"')
+
+
+def id_need_names(path=ADDIN_FRAGMENT):
+    """Every need-name `OneIdNamed` in the add-in has a rule for.
+
+    READ OUT OF THE C#, NEVER TYPED HERE, for the same reason `risk_ladder`
+    reads the enum: this file decides whether to EMIT a job and Revit decides
+    whether to REFUSE it, and the two disagreeing produces a job that is
+    generated every time and always declines. That is worse than either
+    behaviour alone, because the job file then reads like a worklist.
+
+    AN `ElementId` IS RESOLVED BY THE NEED'S NAME, NOT BY ITS TYPE, and that
+    is the whole reason this exists. `OneIdNamed` dispatches on the name -
+    `levelId` finds a Level, `sheetId` a sheet's number - and a name it does
+    not hold is refused rather than guessed at, because the alternative is
+    searching every element in the model and binding whatever matched.
+
+    RAISES when the add-in cannot be read or `OneIdNamed` cannot be found, and
+    that is the whole point of the change. The first version returned an empty
+    set and called it "cannot tell", and `receivable` then skipped its guard
+    and fell through to "the TYPE is receivable" - so a missing or refactored
+    add-in silently marked EVERY id need arrangeable, which is exactly the
+    outcome this function exists to prevent. Found by review on PR #198.
+
+    "I could not tell" and "it is fine" must not collapse into one answer on a
+    path where being wrong sends a job to Revit to be refused. Stopping loudly
+    is the only safe third option.
+    """
+    try:
+        source = io.open(path, encoding="utf-8", errors="replace").read()
+    except (IOError, OSError) as exc:
+        raise RuntimeError(
+            "Cannot read %s, so which id NAMES the add-in resolves is unknown "
+            "and no job can be judged: %s. Nothing was generated." % (path, exc))
+
+    start = source.find("OneIdNamed(Document")
+    if start < 0:
+        raise RuntimeError(
+            "Found no `OneIdNamed(Document` in %s, so the table of id names "
+            "this tool must agree with cannot be read. If that method was "
+            "renamed, rename it here too - do not delete this check, because "
+            "without it every ElementId need is reported as arrangeable and "
+            "the jobs are refused on arrival. Nothing was generated." % path)
+    # To the end of that method: the next method's signature at class indent.
+    end = source.find(chr(10) + "        private static", start + 1)
+    if end < 0:
+        end = len(source)
+    return set(_ID_NAME.findall(source[start:end]))
+
+
+ID_NEED_REASON = (
+    "`%s (%s)` cannot be typed in: an id is resolved by the need's NAME - "
+    "`levelId` finds a Level, `categoryIds` a category - and `OneIdNamed` in "
+    "the add-in has no rule for this one. It refuses rather than searching "
+    "every element in the model and binding whatever happened to match. Give "
+    "the name a rule there, or change the contract to ask for the THING "
+    "rather than its id")
+
+
 def receivable(declared, need_name=None):
     """(ok, why-not). Can a caller type this type in at all?
 
     `why-not` is the reason Revit itself would give, not a restatement of the
     type name - see NAMED_REFUSALS.
 
-    `need_name` decides exactly one type, `Element`, and is ignored for every
-    other - see is_type_need_name.
+    `need_name` decides two types and is ignored for the rest: `Element` (see
+    is_type_need_name) and anything carrying `ElementId` (see id_need_names).
     """
     wanted = (declared or "").replace(" ", "")
     if wanted == "Element" and not is_type_need_name(need_name):
         return False, ELEMENT_INSTANCE_REASON
+    if "ElementId" in wanted and need_name:
+        # MEASURED RATHER THAN REASONED, 2026-09-19. `create-view-filter` was
+        # emitted as arrangeable and refused the moment it reached Revit -
+        # "'parameterId' is an id, and Heron resolves one by NAMING the thing
+        # it belongs to ... There is no rule for this name yet". The type was
+        # receivable and the NAME was not, and only the type was being asked
+        # about. FRAGMENT-ISSUES row 139, and the same shape as row 13.
+        # No `if known` guard any more: id_need_names() RAISES rather than
+        # returning an empty set, so reaching here means the table was read.
+        if need_name not in id_need_names():
+            return False, ID_NEED_REASON % (need_name, declared)
     if wanted in RECEIVABLE:
         return True, None
     for _, matches, reason in NAMED_REFUSALS:

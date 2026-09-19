@@ -49,6 +49,7 @@ scope store that is not derivable from the files on disk, which is exactly why
 it may never be the reason an answer is right.
 """
 
+import glob
 import os
 import re
 import hashlib
@@ -165,6 +166,10 @@ def ensure_tables(store):
             phrase      TEXT PRIMARY KEY,
             fragment_id TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS index_state (
+            name   TEXT PRIMARY KEY,
+            digest TEXT NOT NULL
+        );
     """)
     # A store built before D-61 has the table without the column. ADD COLUMN is
     # the whole migration: an existing row keeps a NULL fingerprint, and
@@ -179,14 +184,150 @@ def ensure_tables(store):
     store.db.commit()
 
 
-def index(store):
+# The two separators the digest below joins with. Written as code points
+# rather than as escapes because they must never be confused with anything a
+# fragment could legitimately contain: UNIT SEPARATOR between the fields of one
+# row, RECORD SEPARATOR between rows. A comma would have made "a,b" and "a","b"
+# hash the same.
+FIELD_SEP = chr(31)
+ROW_SEP = chr(30)
+
+# BUMP THIS WHENEVER `index()` DERIVES ANYTHING DIFFERENTLY - what goes into
+# `fragment_text`, how a phrase is normalised, how a clash is resolved.
+#
+# WITHOUT IT A CODE-ONLY REPAIR NEVER TAKES EFFECT. The digest is computed from
+# the fragment rows and the files, so an upgrade that changes this function
+# without changing a single fragment still matches the digest the PREVIOUS
+# version wrote - and `_Open` never passes `force=True`, so the old tables
+# would be served until some unrelated fragment happened to change. Named by
+# review on PR #198.
+INDEX_FORMAT = 2
+
+
+def library_digest(store):
+    """What `index()` would read, hashed without parsing any of it.
+
+    TWO HALVES, BECAUSE `index()` READS TWO SOURCES. The store supplies the
+    fragment ROWS - id, semantic identity, capability, domain - and the files
+    supply the prose, the purpose and the utterances. A digest over the files
+    alone would call a temporary store built for a test identical to the global
+    one, because both read the same folder off disk.
+
+    THE FILES ARE HASHED AS BYTES AND NEVER PARSED. `FRAG.load_all()` is the
+    expensive half of indexing - measured 2026-09-19 at 3.27s for 395 fragments
+    against 0.33s to read and hash the same files - so deciding whether to
+    parse must not itself cost a parse. Bytes rather than mtime, for the reason
+    docs/05 s7 and `heron_embed.index` both give: a git checkout moves every
+    file's mtime without changing a character.
+    """
+    digest = hashlib.blake2b(digest_size=16)
+    digest.update(("search-index/%d" % INDEX_FORMAT + ROW_SEP).encode("utf-8"))
+
+    for row in store.fragments():
+        digest.update((FIELD_SEP.join([
+            row["id"] or "", row["semantic_identity"] or "",
+            row["capability"] or "", row["domain"] or ""]) + ROW_SEP)
+            .encode("utf-8"))
+
+    root = FRAG.FRAGMENTS_DIR
+    if os.path.isdir(root):
+        for name in sorted(os.listdir(root)):
+            folder = os.path.join(root, name)
+            if not os.path.isdir(folder):
+                continue
+            digest.update((name + FIELD_SEP).encode("utf-8"))
+            try:
+                with open(os.path.join(folder, "fragment.yaml"), "rb") as handle:
+                    digest.update(handle.read())
+                # THE IMPLEMENTATION COUNTS, AND LEAVING IT OUT BROKE SOMETHING
+                # THIS FUNCTION DOES NOT OWN. Found by review on PR #198.
+                # `index()` also calls `forget_stale()`, which drops cached
+                # wordings whose fragment FINGERPRINT has moved - and D-61
+                # computes that fingerprint from the IMPLEMENTATION, precisely
+                # so that editing the C# invalidates evidence recorded against
+                # it. Hashing only `fragment.yaml` meant an impl edit left the
+                # digest unchanged, the skip was taken, `forget_stale` never
+                # ran, and the cache kept answering from wordings confirmed
+                # against code that no longer exists. A fragment .cs is LIVE -
+                # it is sent on every call - so that window had no end.
+                for impl in sorted(glob.glob(os.path.join(
+                        folder, "impl", "*", "fragment.cs"))):
+                    digest.update(os.path.basename(
+                        os.path.dirname(impl)).encode("utf-8"))
+                    with open(impl, "rb") as handle:
+                        digest.update(handle.read())
+            except (IOError, OSError):
+                # A folder with no readable fragment.yaml is a REAL state -
+                # load_all() records it as a problem and carries on - so it has
+                # to hash to something stable rather than be skipped, or such a
+                # folder appearing and disappearing would not move the digest.
+                digest.update(b"unreadable")
+            digest.update(ROW_SEP.encode("utf-8"))
+    return digest.hexdigest()
+
+
+def index(store, force=False):
     """Rebuild the searchable text from the fragments the scope holds.
 
     Reads the fragment files for their purpose - the store keeps the metadata,
     the file keeps the prose, and duplicating the prose into the store would be
     a second copy to keep in step.
+
+    IT DOES NOTHING WHEN NOTHING HAS CHANGED, AND THAT IS A CORRECTNESS FIX
+    RATHER THAN A SAVING. FRAGMENT-ISSUES row 136: `heron_brain._Open` calls
+    this on EVERY lookup, and this function opened with `DELETE FROM
+    identities`. The knowledge store is ONE file for every checkout on the
+    machine, so asking Heron a question from one worktree silently replaced
+    what Heron knew with that worktree's opinion - measured 2026-09-19, six
+    phrases confirmed present by name and gone after a single lookup from a
+    tree that did not declare them. EVERY READER WAS A WRITER.
+
+    THE SIBLING ALREADY HAD THE DISCIPLINE AND THIS HALF WAS MISSED.
+    `heron_embed.index` has been content-hashed per row since docs/05 s7, and
+    `_Open`'s own docstring says indexing is content-hashed ON BOTH ROUTES.
+    That sentence was true of the embedding and false here - which is exactly
+    why a reader reassured about COST would never go looking for a DELETE.
+
+    WHAT IT DOES NOT FIX, AND MUST NOT BE READ AS FIXING: two trees whose
+    fragments genuinely DIFFER still hash differently, so each still rebuilds
+    from its own files. A routing repair is durable only once every tree on the
+    machine declares it, which means MERGED. What this removes is the
+    destruction in the case where there was nothing to destroy - which is every
+    lookup in a shipped Heron, where there is one tree and it does not change
+    between questions.
+
+    Returns `(written, skipped)`, matching `heron_embed.index` - a skip is
+    `(0, rows)` and a rebuild is `(rows, 0)`, so `heron_index._counts` reports
+    what actually happened rather than reading a bare number as work done.
+
+    `force=True` rebuilds regardless, matching `heron_embed.index`.
     """
     ensure_tables(store)
+
+    want = library_digest(store)
+    if not force:
+        have = store.execute(
+            "SELECT digest FROM index_state WHERE name = 'search'").fetchone()
+        # THE DIGEST ALONE IS NOT ENOUGH. It says the INPUT is unchanged, and
+        # the caller needs the OUTPUT to be there. A store whose rows were
+        # cleared by hand, or left empty by a write that did not finish,
+        # matches its own digest perfectly and answers nothing - so the skip is
+        # taken only when there is something to skip TO.
+        #
+        # BOTH TABLES, NOT ONE. `identities` is an INDEPENDENT output and it is
+        # the one `short_circuit()` reads; checking only `fragment_text` meant
+        # that a dropped or half-restored identity table matched its digest,
+        # `ensure_tables()` recreated it EMPTY, and the skip returned without
+        # rebuilding it - so every exact-phrase route stayed missing while the
+        # declarations sat in the files, and even an explicit rebuild would not
+        # have brought them back. Found by review on PR #198.
+        if have and have["digest"] == want:
+            rows = store.execute(
+                "SELECT (SELECT COUNT(*) FROM fragment_text) AS texts, "
+                "(SELECT COUNT(*) FROM identities) AS ids").fetchone()
+            if rows and rows["texts"] and rows["ids"]:
+                return 0, rows["texts"]
+
     store.execute("DELETE FROM fragment_text")
     store.execute("DELETE FROM identities")
 
@@ -244,8 +385,22 @@ def index(store):
                 "VALUES (?,?)", (key, row["id"]))
         indexed += 1
 
+    # AFTER the work and never before. A digest written first tells the next
+    # reader the table is current while this one is still filling it, and a
+    # crash in between leaves a store that skips a rebuild it never did.
+    store.execute(
+        "INSERT OR REPLACE INTO index_state (name, digest) VALUES ('search', ?)",
+        (want,))
+
     store.db.commit()
-    return indexed
+    # (written, skipped), MATCHING `heron_embed.index`. It used to return a
+    # bare count, and `heron_index._counts` reads a scalar as
+    # `(written, 0)` - so the moment this function learned to skip, every
+    # no-op call reported that it had REWRITTEN the whole library while the
+    # vector index beside it correctly reported nothing. An audit that says
+    # the opposite of what happened is worse than no audit. Found by review
+    # on PR #198.
+    return indexed, 0
 
 
 # ---------------------------------------------------------------------------
@@ -699,7 +854,13 @@ def main(argv):
 
     store = SCOPE.open_scope(SCOPE.GLOBAL)
     try:
-        n = index(store)
+        # UNPACKED, because `index()` returns a PAIR now. It returned a bare
+        # count until FRAGMENT-ISSUES row 136 taught it to skip, and this line
+        # then handed a tuple to `%d` - so the advertised entry point at the
+        # top of this file ended in TypeError on EVERY successful run. Found by
+        # review on PR #198. A change to a return type is not finished until
+        # its own command line has been run.
+        n, unchanged = index(store)
         text = " ".join(argv)
         answer = ask(store, text)
         print("Asked:  %s" % text)
@@ -709,7 +870,9 @@ def main(argv):
         for c in answer.candidates:
             print("          %-14s %-28s %s" % (c["id"], c["capability"], c["status"]))
         print()
-        print("%d fragment(s) indexed in the global scope." % n)
+        print("%d fragment(s) indexed in the global scope%s."
+              % (n if n else unchanged,
+                 "" if n else " - unchanged, so nothing was rewritten"))
         return 0
     finally:
         store.close()

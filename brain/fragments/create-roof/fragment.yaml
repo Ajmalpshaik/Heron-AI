@@ -56,9 +56,58 @@ contract:
       # afterwards. A thing it MADE, so a result (D-52).
       role: result
       type: int
+    - name: measuredMm
+      # WHAT REVIT SAYS IS THERE, read back off the new element, in the units
+      # the caller typed. A STRING and not a list entry, because a reply
+      # truncates a list item at sixty characters and this sentence is the
+      # evidence - "5000 x 4000 mm on plan, base at 4000 mm" arrived as
+      # "5000 x 4000 mm on plan, base at 40...", which is not a measurement
+      # anybody can quote.
+      #
+      # ACCOUNTING, NOT A RESULT (D-52). `created` is the thing it made; this
+      # describes that thing. It must not count toward "did this come back
+      # empty" - on the negative leg nothing is made and there is correctly
+      # nothing to measure.
+      role: accounting
+      type: string
     - name: findings
       type: IList<string>
 
+# HELD ON PURPOSE, NOT FORGOTTEN. Signed on real evidence - the roof was read
+# back off Revit at 5000 x 4000 mm, base 4000 mm, on a level sitting at
+# 4000 mm - and NOT promoted, because `tests/cases.yaml` declares a second
+# route and nobody has run it: build the same footprint through Revit's own
+# Architecture > Roof by Footprint and compare the two IN A SECTION.
+#
+# THAT IS A PERSON'S JOB AND CANNOT BE DONE FROM HERE - it is Revit's user
+# interface, not an API call. Named by review on PR #198, which was right:
+# D-30 asks for a second route "where one exists", and this fragment's own
+# case file says one does.
+proof-held: >
+  waiting on the second route its own tests/cases.yaml declares - the same
+  footprint drawn through Revit's Architecture > Roof by Footprint, and the
+  two compared in a section. Everything else is recorded and signed.
+
+proof:
+  date: '2026-09-19'
+  by: Ajmal PS
+  model: test projject (3,565 elements), Revit 2024, session 36216
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned MillimetresPerFoot 304.8, created
+    1 item(s) [id 926629], edges 4, findings 2 item(s) [Roof created on 'Level 2' with 4 edge(s).
+    It is FLAT - no sl..., Measured back from Revit - see measuredMm], measuredMm 5000 x 4000
+    mm on plan, base at 4000 mm, level 'Level 2' sits at 4000 mm. inputs came level as given;
+    roofType as given; boundary as given (4). on test projject
+  negative_case: run with boundary=0,0,0; 5000,0,0, level=Level 2, roofType=Generic - 400mm
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    MillimetresPerFoot 304.8, created (null), edges 0, findings 1 item(s) [A roof needs at
+    least three boundary points and 2 were given], measuredMm . inputs came level as given;
+    roofType as given; boundary as given (2). on test projject
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 18569b2411b7d3ea
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

@@ -112,6 +112,51 @@ def main():
           "the client claimed it had, and a write that may still be standing "
           "is the one thing a reader must not have to guess at")
 
+    # ------------------------------------------------------------------
+    # ROW 117. THE `applied` BRANCH WAS THE ONE STILL SPEAKING FROM THE
+    # REQUEST, and it was only visible because row 111 above shipped: before
+    # that the whole reply was "RENAME_ELEMENTS ran in test projject" and the
+    # contradiction had nowhere to show.
+    # ------------------------------------------------------------------
+    claiming = [line for line in fragment.splitlines()
+                if "the model was CHANGED" in line
+                and not line.lstrip().startswith("//")]
+    check(not claiming,
+          "the add-in no longer ASSERTS 'the model was CHANGED' - measured "
+          "2026-09-17, a RENAME_ELEMENTS that matched nothing reported "
+          "`renamed 0` and said it anyway, because the sentence came from "
+          "`applied`, the request to keep the transaction, and not from any "
+          "work having happened (FRAGMENT-ISSUES row 117). As with `answer` "
+          "above, a mention in a comment is fine; a live claim is the bug")
+
+    check("was KEPT: Revit accepted the transaction" in fragment,
+          "it says what was KEPT instead - the transaction surviving is the "
+          "thing this side can actually witness. Which counts mean WORK is "
+          "D-52's `role` and lives in fragment.yaml, which the add-in is "
+          "never handed, so deciding here would be a guess")
+
+    check("THE COUNTS ABOVE ARE WHAT THIS FRAGMENT DID" in fragment,
+          "and sends the reader to the counts, which are already in the same "
+          "reply - 'every number is zero' would not have worked either, "
+          "because `notMatched 10` was non-zero in the run that changed "
+          "nothing")
+
+    check("IF anything was written, all of it is ONE" in fragment
+          and "no new undo entry" in fragment,
+          "and the Ctrl+Z instruction is CONDITIONAL - if nothing was written "
+          "there may be no new undo entry, and a modeller told to press it "
+          "undoes whatever they did BEFORE. Row 117's first repair made this "
+          "conditional; rewording it for the setup-steps case put the "
+          "unconditional promise straight back, half an hour later")
+
+    check("THE COUNTS ABOVE ARE WHAT THIS FRAGMENT DID" in fragment
+          and "do not by themselves" in fragment,
+          "and it does not conclude the model is UNTOUCHED from counts of "
+          "zero - a request carrying deferred write SETUP steps runs them in "
+          "the same group and Assimilate keeps what they did, so the counts "
+          "of the fragment under test cannot speak for the whole group. Found "
+          "by review on PR #198, and it is row 117's own mistake made twice")
+
     if FAILURES:
         print("FAILED")
         for failure in FAILURES:

@@ -1,0 +1,61 @@
+# Can this model be given a lid at all. 2026-09-19.
+#
+#     python tools/batch-prove.py tools/jobs/test-projject-roof-2026-09-19.yaml --dry-run --session 36216
+#     python tools/batch-prove.py tools/jobs/test-projject-roof-2026-09-19.yaml --session 36216
+#
+# --session 36216 IS NOT OPTIONAL. It is the only Revit connected right now,
+# and a job file carrying a stale session id is a MODIFY batch aimed at
+# nothing, or worse at something else.
+#
+# THE NEGATIVE IS TWO POINTS, AND IT IS A VALUE RATHER THAN AN ABSENCE.
+# `fragment.cs:22` is `if (boundary == null || boundary.Count < 3)` - so two
+# points BIND perfectly well as an IList<XYZ>, the fragment RUNS, and it
+# decides for itself that two points are not an area. That is the shape D-30
+# asks for and the shape an empty value can never give: an empty `points` is
+# refused by the BINDER before the fragment runs, which is a refusal to start
+# rather than an answer. Measured the hard way on `place-structural-family`,
+# row 128.
+#
+# THE BOUNDARY CLOSES ITSELF - `boundary[(i + 1) % boundary.Count]` - so four
+# corners make a rectangle and the fourth edge back to the first is drawn by
+# the fragment. The corner is NOT repeated here, because repeating it would
+# make a zero-length edge and trip the `badPoint` guard instead.
+#
+# MILLIMETRES, AND THAT IS THE THING NO COMPILER CAN CHECK. 5000 x 4000 is a
+# 5 m by 4 m roof. Read as feet it would be a mile and a half across, which is
+# the D3-class error this arrangement exists to catch.
+#
+# WHAT THE MODEL HOLDS - session 36216, `test projject`, 3,565 elements:
+#
+#   Levels   2      Level 1 at 0, Level 2 at 4000
+#   Roofs    0 placed
+#
+# ROOF TYPES ARE THE OPEN QUESTION AND THIS RUN IS PARTLY TO ANSWER IT. This
+# is a MECHANICAL model - ducts, pipes, sprinklers, VAV units - and a
+# mechanical template often ships no RoofType at all. If none resolves, the
+# fragment is not provable on this model and that is a finding about the
+# MODEL rather than about the fragment.
+#
+# risk: MODIFY. `validate` never sends `apply`, so both legs run for real
+# inside a TransactionGroup and are rolled back (D-55). Nothing is kept.
+
+model: test projject, Revit 2024, 3,565 elements
+
+defaults:
+  in: test projject
+  write: true
+
+jobs:
+
+  - fragment: create-roof
+    set:
+      level: "Level 2"
+      roofType: "Generic - 400mm"
+      boundary: "0,0,0; 5000,0,0; 5000,4000,0; 0,4000,0"
+    negative-set:
+      level: "Level 2"
+      roofType: "Generic - 400mm"
+      boundary: "0,0,0; 5000,0,0"
+    # `created` is the work. `edges` moves with it and is also a result, but
+    # `created` is the one that says a roof exists.
+    expect: created
