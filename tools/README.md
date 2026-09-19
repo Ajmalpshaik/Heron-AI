@@ -1507,6 +1507,53 @@ rule, and the first version of this very command broke it.
 the defect - *"a gate nobody runs is the same as no gate."* Being undocumented is the quieter version
 of the same thing.
 
+## `check-declared-questions.py` — does a WRITE claim a QUESTION in writing?
+
+```bash
+python tools/check-declared-questions.py
+python tools/check-declared-questions.py --all    # also the instructions
+```
+
+Always exits 0. It reports; it does not gate.
+
+**Neither routing sweep can see this one.**
+`check-routing.py` asks each
+fragment's own utterances back to the search and separates *a sentence a READ claims, answered by
+something that WRITES*. `check-risk-crossings.py`
+asks sentences **nobody** declares, because the first can only test what is declared.
+
+A write that DECLARES a question falls between them. Ask the search and the declaring fragment
+**wins, by `identity`**, which short-circuits before any ranking runs — so `check-routing` sees a
+fragment answering its own sentence and calls it correct; and the sentence *is* declared, so it is
+not one `check-risk-crossings` was written to try. **No ranking change repairs one.**
+
+Found while checking whether four crossings had a READ to give them to
+([row 146](../docs/FRAGMENT-ISSUES.md)): *"what scale is this view"* resolves to `SET_VIEW_SCALE`,
+a **MODIFY**, by `identity` — because that fragment declares the phrase in its own `utterances:`
+block.
+
+**It reads the FILES and never the store**, so it holds in CI where there is none, and two runs
+disagree only if somebody edited a fragment. The write line is read from `HeronOperationRegistry.cs`
+through `generate-jobs.write_threshold()` — Golden Rule 19, never typed — and a risk `HeronRisk`
+does not name is **reported rather than assumed safe**.
+
+**An imperative is not a question**, and the two that cost false findings the first time this was run
+by hand are pinned in the suite: *"do the grayout"* opens with a word a careless pattern reads as an
+auxiliary, and *"which elbow this type inserts, change it"* asks and then says what to do. The second
+is listed separately, never counted — the same separation `check-risk-crossings.py` makes.
+
+**It never suggests deleting an utterance to tidy the report.** [Row 113](../docs/FRAGMENT-ISSUES.md)'s
+forbidden move is weakening a declaration to buy a number, and the mirror of it is deleting a sentence
+a modeller really says so a sweep comes back clean. The repair is declaring the sentence on the READ
+that should own it — and where no READ exists, the finding is a **capability gap**, which is a
+different and larger thing.
+
+**It concludes, so it has a test** ([`tests/test_declared_questions.py`](../tests/test_declared_questions.py)),
+and every sentence in it is a real declared utterance rather than an invented one — an invented
+sentence would only prove the pattern matches itself.
+
+---
+
 ## `open-defects.py` - how many of Heron's own defects are still open
 
 ```bash
