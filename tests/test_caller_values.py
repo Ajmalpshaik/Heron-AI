@@ -52,38 +52,76 @@ def run():
 
     # ---- pull_values: what is lifted, and what is left alone ----------------
 
-    kept, pairs, negs = client.pull_values(["list-levels"])
+    kept, pairs, negs, _su, _nsu = client.pull_values(["list-levels"])
     check("a plain fragment name is left untouched", (kept, pairs), (["list-levels"], []))
 
-    kept, pairs, negs = client.pull_values(["audit-view-filters", "--view", "Level 1"])
+    kept, pairs, negs, _su, _nsu = client.pull_values(["audit-view-filters", "--view", "Level 1"])
     check("--view is lifted and rewritten as view=",
           (kept, pairs), (["audit-view-filters"], ["view=Level 1"]))
 
-    kept, pairs, negs = client.pull_values(["frag", "--set", "categories=Ducts"])
+    kept, pairs, negs, _su, _nsu = client.pull_values(["frag", "--set", "categories=Ducts"])
     check("--set is lifted verbatim", (kept, pairs), (["frag"], ["categories=Ducts"]))
+
+    # ---- the setup chain's OWN values. FRAGMENT-ISSUES row 149 -------------
+    #
+    # A chain and the fragment under test could not be given different values
+    # for a name they SHARE. `select-touching` asks about `categories` and
+    # `select-in-region` selects on `categories`, one flat dict held both, and
+    # the fragment's value silently won - the job still ran, on the wrong
+    # population. 88 fragment/chain pairs in this library share a name.
+
+    kept, pairs, negs, sup, nsup = client.pull_values(
+        ["frag", "--set", "categories=Ducts", "--setup-set", "categories=Ceilings"])
+    check("--setup-set lands in its OWN list, not with --set",
+          (kept, pairs, sup), (["frag"], ["categories=Ducts"], ["categories=Ceilings"]))
+
+    kept, pairs, negs, sup, nsup = client.pull_values(
+        ["frag", "--negative-set", "categories=Roofs",
+         "--negative-setup-set", "categories=Ceilings"])
+    check("and the negative twin keeps its own list too",
+          (negs, nsup), (["categories=Roofs"], ["categories=Ceilings"]))
+
+    # THE SPELLING TRAP THIS REPLACED. The old parser routed by
+    # `token.endswith("set")` and `token.startswith("--negative")`, and
+    # `--negative-setup-set` satisfies BOTH - so a lookup table decides now
+    # rather than two string rules that disagree with each other.
+    kept, pairs, negs, sup, nsup = client.pull_values(
+        ["frag", "--negative-setup-set", "a=1"])
+    check("--negative-setup-set is not read as --negative-set",
+          (negs, nsup), ([], ["a=1"]))
+
+    kept, pairs, negs, sup, nsup = client.pull_values(["frag", "--setup-set"])
+    check("a setup value with nothing after it is refused, like the others",
+          kept, None)
+
+    # ABSENT MEANS ABSENT, and that is what makes this safe to add: every job
+    # file written before today sends exactly what it sent before.
+    kept, pairs, negs, sup, nsup = client.pull_values(
+        ["frag", "--set", "categories=Ducts"])
+    check("no --setup-set leaves both new lists empty", (sup, nsup), ([], []))
 
     # ORDER. --in is read positionally by cmd_prove after this runs, so a value
     # typed anywhere must not shuffle what is left.
-    kept, pairs, negs = client.pull_values(
+    kept, pairs, negs, _su, _nsu = client.pull_values(
         ["--in", "Project1", "audit-view-filters", "--view", "Level 1"])
     check("the flags that follow keep their positions",
           kept, ["--in", "Project1", "audit-view-filters"])
 
-    kept, pairs, negs = client.pull_values(
+    kept, pairs, negs, _su, _nsu = client.pull_values(
         ["--view", "Level 1", "--in", "Project1", "frag"])
     check("a value typed FIRST still leaves --in at the front",
           kept, ["--in", "Project1", "frag"])
 
-    kept, pairs, negs = client.pull_values(
+    kept, pairs, negs, _su, _nsu = client.pull_values(
         ["frag", "--set", "a=1", "--view", "Level 1", "--set", "b=2"])
     check("several values are collected in the order typed",
           pairs, ["a=1", "view=Level 1", "b=2"])
 
-    kept, pairs, negs = client.pull_values(["frag", "--view"])
+    kept, pairs, negs, _su, _nsu = client.pull_values(["frag", "--view"])
     check("--view with nothing after it is refused, not silently dropped",
           (kept, pairs), (None, None))
 
-    kept, pairs, negs = client.pull_values(["frag", "--set"])
+    kept, pairs, negs, _su, _nsu = client.pull_values(["frag", "--set"])
     check("--set with nothing after it is refused", (kept, pairs), (None, None))
 
     # ---- the negative case's own values ------------------------------------
@@ -92,22 +130,22 @@ def run():
     # For a fragment that reads a view, the arrangement IS a different view -
     # so these travel separately and must not leak into the positive case.
 
-    kept, pairs, negs = client.pull_values(
+    kept, pairs, negs, _su, _nsu = client.pull_values(
         ["report-category-visibility", "--view", "L2", "--negative-view", "Model Linking"])
     check("the negative view is kept apart from the positive one",
           (kept, pairs, negs),
           (["report-category-visibility"], ["view=L2"], ["view=Model Linking"]))
 
-    kept, pairs, negs = client.pull_values(
+    kept, pairs, negs, _su, _nsu = client.pull_values(
         ["frag", "--negative-set", "categories=Walls"])
     check("--negative-set lands in the negative list only",
           (pairs, negs), ([], ["categories=Walls"]))
 
-    kept, pairs, negs = client.pull_values(["frag", "--view", "L2"])
+    kept, pairs, negs, _su, _nsu = client.pull_values(["frag", "--view", "L2"])
     check("no negative typed means no negative values - not a copy of the positive",
           negs, [])
 
-    kept, pairs, negs = client.pull_values(["frag", "--negative-view"])
+    kept, pairs, negs, _su, _nsu = client.pull_values(["frag", "--negative-view"])
     check("--negative-view with nothing after it is refused",
           (kept, pairs, negs), (None, None, None))
 
@@ -142,7 +180,7 @@ def run():
 
     # ---- the two together, as a command line actually arrives ---------------
 
-    kept, pairs, negs = client.pull_values(
+    kept, pairs, negs, _su, _nsu = client.pull_values(
         ["report-tags-and-targets", "--view", "01 - Mech Plan"])
     check("end to end: a typed line becomes what crosses the wire",
           (kept, client.caller_values(pairs)),

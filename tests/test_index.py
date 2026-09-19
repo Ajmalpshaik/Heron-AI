@@ -122,9 +122,17 @@ def main():
         # afterwards writes the same rows over the same library - so the
         # agent ran them rather than doing something of its own.
         mine = answer["ran"]["fragment keyword"]["written"]
-        check(mine == SEARCH.index(store),
-              "the keyword index wrote %d rows, the same as calling it "
-              "directly" % mine)
+        # CALLING IT AGAIN NOW SKIPS, AND THAT IS THE POINT OF THE SKIP.
+        # `index()` is content-hashed since FRAGMENT-ISSUES row 136, so a
+        # second call over an unchanged library writes nothing and reports
+        # (0, rows). It used to rebuild every time, which is what let a
+        # question asked from one checkout wipe another's declarations. So
+        # the comparison is against what the SKIP reports, and `force=True`
+        # is what asks for the old behaviour deliberately.
+        written, skipped = SEARCH.index(store)
+        check(written == 0 and skipped == mine,
+              "the keyword index wrote %d rows, and calling it directly now "
+              "skips %d - the same library, unchanged" % (mine, skipped))
         check(mine == len(held),
               "and that is every fragment in the library, not just the one "
               "imported - the keyword index rebuilds the lot")
