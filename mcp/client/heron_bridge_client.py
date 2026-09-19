@@ -1579,7 +1579,16 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
             if negative:
                 chosen_setup = negative_setup_values or using or values
             else:
-                chosen_setup = setup_values or values
+                # `using` ON THE POSITIVE SIDE TOO, AND `--vary` IS WHY. The
+                # positive branch read only `values`, so a tracked run handed
+                # its varied value to the FRAGMENT and not to the chain - and
+                # `describe-blank-parameters`, whose chain needs the same
+                # `parameterName` it does, failed every row with
+                # "'parameterName (string)' is a value the CALLER supplies".
+                # Found by running it, first time out. `using` is what THIS
+                # phase actually ran with, which is what the chain must be
+                # arranged from, and the negative branch had said so all along.
+                chosen_setup = setup_values or using or values
             if chosen_setup:
                 step_args["values"] = chosen_setup
             if position == 0:
