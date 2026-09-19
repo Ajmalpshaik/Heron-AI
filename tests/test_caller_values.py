@@ -62,7 +62,7 @@ def run():
     kept, pairs, negs, _su, _nsu = client.pull_values(["frag", "--set", "categories=Ducts"])
     check("--set is lifted verbatim", (kept, pairs), (["frag"], ["categories=Ducts"]))
 
-    # ---- the setup chain's OWN values. FRAGMENT-ISSUES row 143 -------------
+    # ---- the setup chain's OWN values. FRAGMENT-ISSUES row 147 -------------
     #
     # A chain and the fragment under test could not be given different values
     # for a name they SHARE. `select-touching` asks about `categories` and

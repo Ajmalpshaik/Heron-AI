@@ -395,7 +395,7 @@ def test_a_job_with_no_negative_arrangement_is_refused():
     check(verdict is None, "with a negative arrangement it is runnable")
 
     # A NEGATIVE THAT DIFFERS ONLY IN THE ARRANGEMENT IS STILL A NEGATIVE.
-    # FRAGMENT-ISSUES row 143: `negative-setup-set` gives the setup chain its
+    # FRAGMENT-ISSUES row 147: `negative-setup-set` gives the setup chain its
     # own values, and this check did not know about it - so a job whose two
     # legs differ only in how they were ARRANGED was refused here, before the
     # client was ever called, with a message naming the two keys it did know.
