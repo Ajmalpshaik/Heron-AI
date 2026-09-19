@@ -49,6 +49,7 @@ scope store that is not derivable from the files on disk, which is exactly why
 it may never be the reason an answer is right.
 """
 
+import glob
 import os
 import re
 import hashlib
@@ -226,6 +227,23 @@ def library_digest(store):
             try:
                 with open(os.path.join(folder, "fragment.yaml"), "rb") as handle:
                     digest.update(handle.read())
+                # THE IMPLEMENTATION COUNTS, AND LEAVING IT OUT BROKE SOMETHING
+                # THIS FUNCTION DOES NOT OWN. Found by review on PR #198.
+                # `index()` also calls `forget_stale()`, which drops cached
+                # wordings whose fragment FINGERPRINT has moved - and D-61
+                # computes that fingerprint from the IMPLEMENTATION, precisely
+                # so that editing the C# invalidates evidence recorded against
+                # it. Hashing only `fragment.yaml` meant an impl edit left the
+                # digest unchanged, the skip was taken, `forget_stale` never
+                # ran, and the cache kept answering from wordings confirmed
+                # against code that no longer exists. A fragment .cs is LIVE -
+                # it is sent on every call - so that window had no end.
+                for impl in sorted(glob.glob(os.path.join(
+                        folder, "impl", "*", "fragment.cs"))):
+                    digest.update(os.path.basename(
+                        os.path.dirname(impl)).encode("utf-8"))
+                    with open(impl, "rb") as handle:
+                        digest.update(handle.read())
             except (IOError, OSError):
                 # A folder with no readable fragment.yaml is a REAL state -
                 # load_all() records it as a problem and carries on - so it has
@@ -266,6 +284,10 @@ def index(store, force=False):
     lookup in a shipped Heron, where there is one tree and it does not change
     between questions.
 
+    Returns `(written, skipped)`, matching `heron_embed.index` - a skip is
+    `(0, rows)` and a rebuild is `(rows, 0)`, so `heron_index._counts` reports
+    what actually happened rather than reading a bare number as work done.
+
     `force=True` rebuilds regardless, matching `heron_embed.index`.
     """
     ensure_tables(store)
@@ -279,11 +301,20 @@ def index(store, force=False):
         # cleared by hand, or left empty by a write that did not finish,
         # matches its own digest perfectly and answers nothing - so the skip is
         # taken only when there is something to skip TO.
+        #
+        # BOTH TABLES, NOT ONE. `identities` is an INDEPENDENT output and it is
+        # the one `short_circuit()` reads; checking only `fragment_text` meant
+        # that a dropped or half-restored identity table matched its digest,
+        # `ensure_tables()` recreated it EMPTY, and the skip returned without
+        # rebuilding it - so every exact-phrase route stayed missing while the
+        # declarations sat in the files, and even an explicit rebuild would not
+        # have brought them back. Found by review on PR #198.
         if have and have["digest"] == want:
             rows = store.execute(
-                "SELECT COUNT(*) AS n FROM fragment_text").fetchone()
-            if rows and rows["n"]:
-                return rows["n"]
+                "SELECT (SELECT COUNT(*) FROM fragment_text) AS texts, "
+                "(SELECT COUNT(*) FROM identities) AS ids").fetchone()
+            if rows and rows["texts"] and rows["ids"]:
+                return 0, rows["texts"]
 
     store.execute("DELETE FROM fragment_text")
     store.execute("DELETE FROM identities")
@@ -350,7 +381,14 @@ def index(store, force=False):
         (want,))
 
     store.db.commit()
-    return indexed
+    # (written, skipped), MATCHING `heron_embed.index`. It used to return a
+    # bare count, and `heron_index._counts` reads a scalar as
+    # `(written, 0)` - so the moment this function learned to skip, every
+    # no-op call reported that it had REWRITTEN the whole library while the
+    # vector index beside it correctly reported nothing. An audit that says
+    # the opposite of what happened is worse than no audit. Found by review
+    # on PR #198.
+    return indexed, 0
 
 
 # ---------------------------------------------------------------------------

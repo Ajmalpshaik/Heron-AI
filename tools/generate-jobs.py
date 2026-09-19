@@ -379,18 +379,32 @@ def id_need_names(path=ADDIN_FRAGMENT):
     not hold is refused rather than guessed at, because the alternative is
     searching every element in the model and binding whatever matched.
 
-    Returns an empty set if the add-in cannot be read, and `receivable` treats
-    that as "cannot tell" rather than as "nothing is resolvable" - a missing
-    checkout must not silently mark every id need arrangeable OR blocked.
+    RAISES when the add-in cannot be read or `OneIdNamed` cannot be found, and
+    that is the whole point of the change. The first version returned an empty
+    set and called it "cannot tell", and `receivable` then skipped its guard
+    and fell through to "the TYPE is receivable" - so a missing or refactored
+    add-in silently marked EVERY id need arrangeable, which is exactly the
+    outcome this function exists to prevent. Found by review on PR #198.
+
+    "I could not tell" and "it is fine" must not collapse into one answer on a
+    path where being wrong sends a job to Revit to be refused. Stopping loudly
+    is the only safe third option.
     """
     try:
         source = io.open(path, encoding="utf-8", errors="replace").read()
-    except (IOError, OSError):
-        return set()
+    except (IOError, OSError) as exc:
+        raise RuntimeError(
+            "Cannot read %s, so which id NAMES the add-in resolves is unknown "
+            "and no job can be judged: %s. Nothing was generated." % (path, exc))
 
     start = source.find("OneIdNamed(Document")
     if start < 0:
-        return set()
+        raise RuntimeError(
+            "Found no `OneIdNamed(Document` in %s, so the table of id names "
+            "this tool must agree with cannot be read. If that method was "
+            "renamed, rename it here too - do not delete this check, because "
+            "without it every ElementId need is reported as arrangeable and "
+            "the jobs are refused on arrival. Nothing was generated." % path)
     # To the end of that method: the next method's signature at class indent.
     end = source.find(chr(10) + "        private static", start + 1)
     if end < 0:
@@ -426,8 +440,9 @@ def receivable(declared, need_name=None):
         # it belongs to ... There is no rule for this name yet". The type was
         # receivable and the NAME was not, and only the type was being asked
         # about. FRAGMENT-ISSUES row 139, and the same shape as row 13.
-        known = id_need_names()
-        if known and need_name not in known:
+        # No `if known` guard any more: id_need_names() RAISES rather than
+        # returning an empty set, so reaching here means the table was read.
+        if need_name not in id_need_names():
             return False, ID_NEED_REASON % (need_name, declared)
     if wanted in RECEIVABLE:
         return True, None

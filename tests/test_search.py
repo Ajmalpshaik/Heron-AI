@@ -53,7 +53,7 @@ def main():
         SCOPE.rebuild()
         store = SCOPE.open_scope(SCOPE.GLOBAL)
         try:
-            n = SEARCH.index(store)
+            n, _ = SEARCH.index(store)
             check(n >= 2, "the scope indexes its fragments (%d)" % n)
 
             print()
@@ -260,9 +260,19 @@ def main():
                   "a REAL change rebuilds, so the skip is a skip and not a "
                   "stop - D-30: it has to find nothing when there is nothing")
 
-            check(SEARCH.index(store, force=True) >= 2,
+            written, skipped = SEARCH.index(store, force=True)
+            check(written >= 2 and skipped == 0,
                   "and force=True rebuilds whatever the digest says, matching "
-                  "heron_embed.index(store, force=True)")
+                  "heron_embed.index(store, force=True) - %d written" % written)
+
+            # AND A SKIP MUST REPORT ITSELF AS A SKIP. `heron_index._counts`
+            # reads a bare number as "(written, 0)", so while this returned a
+            # scalar every no-op call claimed it had rewritten the whole
+            # library - next to a vector index correctly reporting nothing.
+            # Found by review on PR #198.
+            written, skipped = SEARCH.index(store)
+            check(written == 0 and skipped >= 2,
+                  "a skip reports (0, rows) and never counts itself as work")
 
         finally:
             store.close()

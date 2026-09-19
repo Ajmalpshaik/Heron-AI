@@ -421,7 +421,13 @@ def main(argv):
 
             store = open_scope(GLOBAL)
             try:
-                indexed = SEARCH.index(store)
+                # `force=True` BECAUSE THIS IS THE EXPLICIT RECOVERY PATH.
+                # `index()` skips when the library digest is unchanged, which
+                # is right for the read path and wrong here: somebody typing
+                # --rebuild has usually just deleted or damaged a store, and a
+                # skip would hand them back the broken one. Found by review on
+                # PR #198, which named this command by name.
+                indexed, _ = SEARCH.index(store, force=True)
                 EMBED.index(store)
                 store.db.commit()
             finally:

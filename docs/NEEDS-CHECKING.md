@@ -1389,7 +1389,43 @@ different owner each. The same method turned 23 agents into 6-13-4 on the same
 day, and it costs a minute.
 
 **`runs/` IS GITIGNORED, SO THIS IS A MEASUREMENT OF ONE CHECKOUT.** 326 run
-records existed here when this was taken. A different worktree will sort the
+records existed here when this was taken. **THE NUMBERS BELOW CANNOT BE
+REPRODUCED FROM A FRESH CLONE AND NO GATE CAN CATCH THEM GOING STALE** - said
+plainly because a committed table of derived counts is normally a thing this
+repository refuses. It is kept because the SORT is the value and the sort does
+not go stale: which bucket a fragment belongs in is a property of the fragment.
+Re-derive the counts where you will actually prove, with:
+
+```
+python - <<'EOF'
+import json, io, os, glob, yaml, re, collections
+def empty(v):
+    s = str(v).strip()
+    if s in ("", "0", "(null)", "None", "False", "false", "[]", "{}"): return True
+    return bool(re.match(r"^0 (item|entry|entrie)", s))
+b = collections.defaultdict(list)
+for f in sorted(glob.glob("brain/fragments/*/fragment.yaml")):
+    slug = os.path.basename(os.path.dirname(f))
+    text = io.open(f, encoding="utf-8").read()
+    if "heron-status: DRAFT" not in text: continue
+    rec = os.path.join("brain/proof-drafts/runs", slug + ".json")
+    if not os.path.isfile(rec): b["no run record"].append(slug); continue
+    d = json.load(io.open(rec, encoding="utf-8"))
+    ph = {p.get("phase"): p for p in d.get("phases", [])}
+    if "positive" not in ph or not ph["positive"].get("ok"):
+        b["positive refused"].append(slug); continue
+    if "negative" not in ph: b["no negative"].append(slug); continue
+    y = yaml.safe_load(text)
+    res = [p["name"] for p in ((y.get("contract") or {}).get("provides") or [])
+           if p.get("role") == "result"]
+    pv, nv = ph["positive"].get("provides") or {}, ph["negative"].get("provides") or {}
+    pe = all(empty(pv.get(r)) for r in res) if res else None
+    nf = any(not empty(nv.get(r)) for r in res) if res else None
+    b["positive empty" if pe else ("negative not empty" if nf else "re-run")].append(slug)
+for k in sorted(b, key=lambda k: -len(b[k])):
+    print("%-22s %d  %s" % (k, len(b[k]), " ".join(b[k])))
+EOF
+``` A different worktree will sort the
 same 66 differently — the DRAFT/PROVEN split is committed and shared, the
 records are not. Re-derive it where you will actually work.
 

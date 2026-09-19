@@ -1101,10 +1101,21 @@ namespace Heron.Revit.Addin
                 // THE UNDO SENTENCE IS NOW CONDITIONAL, and that is the half that was
                 // actually dangerous rather than merely untrue: told to press Ctrl+Z after a
                 // run that did nothing, a modeller undoes whatever they did BEFORE it.
+                // AND IT MUST NOT SAY THE MODEL IS UNCHANGED, WHICH THE FIRST
+                // VERSION DID. A request carrying deferred write SETUP steps
+                // runs them through RunSetupSteps inside THIS SAME group, and
+                // Assimilate keeps whatever they did - so "the counts show no
+                // work, therefore nothing changed" is false exactly when an
+                // arrangement was built and the fragment under test then found
+                // nothing. Found by review on PR #198, and it is this row's own
+                // mistake made twice: describing the whole group's outcome from
+                // one part's counts.
                 verdict = "'" + name + "' was KEPT: Revit accepted the transaction rather than "
-                        + "rolling it back. WHAT WAS ACTUALLY DONE IS IN THE COUNTS ABOVE, and "
-                        + "if they show no work then the model is exactly as it was. If work "
-                        + "was done it is ONE undo step - Ctrl+Z in Revit puts it back.";
+                        + "rolling it back, and it is ONE undo step - Ctrl+Z in Revit puts the "
+                        + "whole of it back. THE COUNTS ABOVE ARE WHAT THIS FRAGMENT DID and "
+                        + "nothing more: anything a setup step did was kept in the same step "
+                        + "and is not counted here, so counts of zero do not by themselves "
+                        + "mean the model is untouched.";
             }
             else if (rolledBack)
             {

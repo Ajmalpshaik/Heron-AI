@@ -1,9 +1,9 @@
 # What is this floor sitting against. 2026-09-19.
 #
-#     python tools/batch-prove.py tools/jobs/test-projject-touching-2026-09-19.yaml --dry-run --session 27244
-#     python tools/batch-prove.py tools/jobs/test-projject-touching-2026-09-19.yaml --session 27244
+#     python tools/batch-prove.py tools/jobs/test-projject-touching-2026-09-19.yaml --dry-run --session 36216
+#     python tools/batch-prove.py tools/jobs/test-projject-touching-2026-09-19.yaml --session 36216
 #
-# --session 27244 IS NOT OPTIONAL. It is the only Revit connected, and a job
+# --session 36216 IS NOT OPTIONAL. It is the only Revit connected, and a job
 # file carrying a stale session id aims at nothing.
 #
 # THE SETUP IS `select-in-region` AND NOT `select-by-category-name`, AND THAT
@@ -20,7 +20,7 @@
 # from a model with none, which is the trap the rooms proof hit on this same
 # model. `select-in-region` is not view-scoped and does not care.
 #
-# WHAT THE MODEL HOLDS - session 27244, `test projject`, 3,565 elements,
+# WHAT THE MODEL HOLDS - session 36216, `test projject`, 3,565 elements,
 # counted MODEL-WIDE rather than in any view:
 #
 #   Floors     1 placed      <- the target, and the reason one binds

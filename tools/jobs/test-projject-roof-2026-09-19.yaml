@@ -1,9 +1,9 @@
 # Can this model be given a lid at all. 2026-09-19.
 #
-#     python tools/batch-prove.py tools/jobs/test-projject-roof-2026-09-19.yaml --dry-run --session 27244
-#     python tools/batch-prove.py tools/jobs/test-projject-roof-2026-09-19.yaml --session 27244
+#     python tools/batch-prove.py tools/jobs/test-projject-roof-2026-09-19.yaml --dry-run --session 36216
+#     python tools/batch-prove.py tools/jobs/test-projject-roof-2026-09-19.yaml --session 36216
 #
-# --session 27244 IS NOT OPTIONAL. It is the only Revit connected right now,
+# --session 36216 IS NOT OPTIONAL. It is the only Revit connected right now,
 # and a job file carrying a stale session id is a MODIFY batch aimed at
 # nothing, or worse at something else.
 #
@@ -25,7 +25,7 @@
 # 5 m by 4 m roof. Read as feet it would be a mile and a half across, which is
 # the D3-class error this arrangement exists to catch.
 #
-# WHAT THE MODEL HOLDS - session 27244, `test projject`, 3,565 elements:
+# WHAT THE MODEL HOLDS - session 36216, `test projject`, 3,565 elements:
 #
 #   Levels   2      Level 1 at 0, Level 2 at 4000
 #   Roofs    0 placed

@@ -135,16 +135,19 @@ def main():
           "D-52's `role` and lives in fragment.yaml, which the add-in is "
           "never handed, so deciding here would be a guess")
 
-    check("WHAT WAS ACTUALLY DONE IS IN THE COUNTS ABOVE" in fragment,
+    check("THE COUNTS ABOVE ARE WHAT THIS FRAGMENT DID" in fragment,
           "and sends the reader to the counts, which are already in the same "
           "reply - 'every number is zero' would not have worked either, "
           "because `notMatched 10` was non-zero in the run that changed "
           "nothing")
 
-    check("If work " in fragment and "was done it is ONE undo step" in fragment,
-          "and the Ctrl+Z instruction is CONDITIONAL, which is the half that "
-          "was dangerous rather than merely untrue: told to undo after a run "
-          "that did nothing, a modeller undoes what they did BEFORE it")
+    check("THE COUNTS ABOVE ARE WHAT THIS FRAGMENT DID" in fragment
+          and "do not by themselves" in fragment,
+          "and it does not conclude the model is UNTOUCHED from counts of "
+          "zero - a request carrying deferred write SETUP steps runs them in "
+          "the same group and Assimilate keeps what they did, so the counts "
+          "of the fragment under test cannot speak for the whole group. Found "
+          "by review on PR #198, and it is row 117's own mistake made twice")
 
     if FAILURES:
         print("FAILED")
