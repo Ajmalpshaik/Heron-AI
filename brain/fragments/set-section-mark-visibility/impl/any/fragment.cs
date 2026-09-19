@@ -29,6 +29,30 @@ int shown = 0;
 var unmatched = new List<ElementId>();
 string refused = "";
 
+// A VIEW IS ON A SHEET WHEN A VIEWPORT POINTS AT IT, AND THAT IS THE ONLY
+// READING THAT IS TRUE.
+//
+// This read was `BuiltInParameter.VIEWER_SHEET_NUMBER` is not empty, with a
+// comment claiming it "gets the empty case right". IT DOES NOT. Revit fills
+// that parameter with its placeholder `---` for a view that is on no sheet,
+// and `---` is not empty - so every view read as PLACED and every mark was
+// skipped. Measured 2026-09-13 on `1 - Mech` of `Project1 work_ajmal.al`:
+// `markers 5`, `unmatched 0`, `hidden 0`, `shown 0` - all five marks found,
+// all five matched to their views, and none acted on, in a model where
+// `list-sheets` reported 0 sheets. FRAGMENT-ISSUES row 23.
+//
+// A viewport is Revit's own record of the placement rather than a string it
+// formats for a schedule, so there is no placeholder to recognise and nothing
+// to translate. The empty case comes out right for free: no viewport, not on
+// a sheet.
+var placedViewIds = new HashSet<ElementId>();
+foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(Viewport)))
+{
+    var viewport = element as Viewport;
+    if (viewport == null) continue;
+    try { placedViewIds.Add(viewport.ViewId); } catch { }
+}
+
 // Every section and elevation view, by name, with whether it is on a sheet.
 // Revit keeps view names unique, so the name is a safe key.
 var onSheet = new Dictionary<string, bool>();
@@ -41,17 +65,7 @@ foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(ViewSec
     try { name = section.Name ?? ""; } catch { }
     if (name.Length == 0) continue;
 
-    string sheetNumber = null;
-    try
-    {
-        // Revit fills this in when the view is placed. One read, and it gets
-        // the empty case right, which hunting through viewports does not.
-        var parameter = section.get_Parameter(BuiltInParameter.VIEWER_SHEET_NUMBER);
-        if (parameter != null && parameter.HasValue) sheetNumber = parameter.AsString();
-    }
-    catch { }
-
-    onSheet[name] = !string.IsNullOrEmpty(sheetNumber);
+    onSheet[name] = placedViewIds.Contains(section.Id);
 }
 
 var markers = new List<Element>();

@@ -9,10 +9,20 @@
 // which cannot see a type that has been loaded and never used - the one
 // somebody wants to rename before it spreads, or check against a standard.
 //
-// `categories` NULL OR EMPTY MEANS EVERY CATEGORY. That is the honest answer
-// to "what types are in this model" rather than a missing input, so it is
-// allowed rather than refused. The count is reported so a request that meant
-// one category and passed none is visible as an absurd number.
+// AT LEAST ONE CATEGORY IS REQUIRED, AND THIS COMMENT USED TO SAY THE
+// OPPOSITE. It read "NULL OR EMPTY MEANS EVERY CATEGORY... allowed rather than
+// refused" until 2026-09-19, and a caller believed it: calling with
+// `categories=` returns `bad_request_value: No categories were named. Separate
+// them with commas.` That refusal is not this fragment's - it comes from the
+// BINDER (`RevitFragment.cs`), which rejects an empty `IList<Category>` before
+// a line of this file runs. The binder is right to: guessing a category is how
+// a job runs against the wrong thing. THE COMMENT WAS THE FALSE HALF.
+// FRAGMENT-ISSUES row 112.
+//
+// The loop below still tolerates an empty list, and that is deliberate rather
+// than dead code - it is what the fragment would do if the binder ever allowed
+// one - but nothing can reach it from a caller today, so do not document it as
+// a behaviour anybody can use.
 //
 // FAMILY NAME IS TWO DIFFERENT QUESTIONS:
 //
