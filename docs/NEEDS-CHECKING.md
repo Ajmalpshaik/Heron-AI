@@ -1293,8 +1293,15 @@ followed. Nobody had been back to ask why.
 
 > **THE TWO COUNTS ABOVE WENT STALE THE SAME DAY. THE SPLIT BELOW DID NOT.**
 > Re-derived 2026-09-19 on a Linux container at `main`: `heron_fragment.load_all` counts **395
-> fragments, 328 PROVEN, 67 DRAFT**, and `python tools/generate-jobs.py` reports **37 unarrangeable
-> of 67** — not 71 and 44. The seven that moved are named by the commit that freed them:
+> fragments, 328 PROVEN, 67 DRAFT**, and `python tools/generate-jobs.py` reports **27 emitted,
+> 40 unarrangeable** — not 71 and 44. **THE FIRST VERSION OF THIS CORRECTION SAID 37 AND WAS
+> WRONG, WHICH IS THE PARAGRAPH'S OWN LESSON ARRIVING ONE LAYER UP.** 37 was read out of
+> [PROPOSALS § the seven that moved](PROPOSALS.md), where it is **correct** — and it is measured
+> over a different population: *DRAFT with no run record*, on a machine that HAD run records.
+> This container has none, so `generate-jobs.py` measures all 67 and answers 40. Re-measured at
+> `3dd7159`, the very commit the 37 was written at: **40 there too**, so nothing moved — the
+> number was taken from prose and attributed to a command that says something else. Run it.
+> The seven that moved are named by the commit that freed them:
 > [PR #196](https://github.com/Ajmalpshaik/Heron-AI/pull/196) is titled *"Five of the six proposed
 > rules are built, and **seven fragments can be arranged**"*, and `git merge-base --is-ancestor`
 > puts it **after** the commit carrying this paragraph. **Derive both rather than reading them
