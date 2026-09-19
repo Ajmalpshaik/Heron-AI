@@ -1378,3 +1378,75 @@ two-models-at-once.
 **argument** - `category=Ducts`, `Duct Fittings`, `Pipes` - which is closer to what D-53 asks
 (*the answer follows the input*) than a third file would be. That is a change to `track`, not a
 request for another Revit.
+
+## Group V — all 66 unproven fragments, sorted by WHY, read off disk 2026-09-19
+
+**NOT ONE REVIT CALL WAS MADE TO PRODUCE THIS TABLE.** Every fragment that has
+ever been run leaves a record in `brain/proof-drafts/runs/`, and the record
+holds both phases with what each one bound and what each one returned. Sorting
+them is reading, not proving — and it turns *"66 left"* into six lists with a
+different owner each. The same method turned 23 agents into 6-13-4 on the same
+day, and it costs a minute.
+
+**`runs/` IS GITIGNORED, SO THIS IS A MEASUREMENT OF ONE CHECKOUT.** 326 run
+records existed here when this was taken. A different worktree will sort the
+same 66 differently — the DRAFT/PROVEN split is committed and shared, the
+records are not. Re-derive it where you will actually work.
+
+| | | |
+|---|---|---|
+| **26** | **no run record here** | Nothing has tried them in this checkout. `generate-jobs.py` offers **4** and marks **22** unarrangeable with a reason each |
+| **19** | **POSITIVE EMPTY — the model lacks the content** | It ran and found nothing, so the arrangement was wrong rather than the fragment. CAD imports, groups, design options, openings, electrical circuits, areas, annotation. **These need a MODEL, not code** |
+| **13** | **POSITIVE never ran or was refused** | The binder said no before the fragment started. A refusal to start is not an answer, and it is the cheapest of these to read: the message names the need |
+| **7** | **NEG NOT EMPTY — the negative was arranged wrong** | Listed below, because this is the group a session can fix at a desk |
+| **1** | **judged by nothing at all** | `describe-blank-parameters` |
+
+### The 7 whose negative found something, and what is actually wrong with each
+
+**None of these is a fragment defect.** Every one is a proof that was arranged
+badly, and three of them are the same mistake: **the negative changed something
+the answer does not depend on.**
+
+| fragment | what the negative did | why it could never work |
+|---|---|---|
+| `add-project-parameter` | same `categories=Ducts` in both legs | not a contrast at all. `bound true` both times because nothing differed |
+| `create-workset-3d-views` | changed the CATEGORY | it makes one view per WORKSET. A category cannot move that answer |
+| `find-unused-materials` | changed the region box | *unused in the project* is a project-wide fact. `unusedMaterials 60` both times |
+| `report-open-documents` | changed the category | it lists what is OPEN IN REVIT. No selection on earth changes that |
+| `trace-connectivity` | changed the region, kept `start=selected` | the START never moved, so the walk never moved. `reached 25` both times |
+| `place-structural-family` | Text Notes in a Legend | already [row 128](FRAGMENT-ISSUES.md) — it placed a column when asked for a beam |
+| `report-findings` | nothing matched, honestly | the negative is **CORRECT** — it says *"NOTHING WAS CHECKED"*. `report` is PROSE, so a non-empty string reads as a find |
+
+**THREE OF THESE ARE MODEL-INDEPENDENT FOR A SELECTION** — `create-workset-3d-views`,
+`find-unused-materials`, `report-open-documents`. Handing them a different
+selection is the wrong experiment, and no amount of re-arranging fixes it.
+[D-53](DECISIONS.md) is what they need: vary an INPUT the answer genuinely
+depends on, across **three or more** values, and show the answer following it.
+That is the same ruling `prove-agent.py track` already applies to agents that
+can never return empty, and `refresh-view` and `save-document` are marked the
+same way by `generate-jobs.py` today.
+
+**`trace-connectivity` IS THE ONE THAT CAN BE FIXED WITH ONE VALUE** — give it a
+different `start`, ideally an element connected to nothing, and the walk has
+somewhere else to go.
+
+### The singleton, and it was measured rather than assumed
+
+`describe-blank-parameters` is **the only fragment of 395 that declares no
+`role: result` at all** — checked across the whole library, DRAFT and PROVEN.
+So `batch-prove` cannot judge it: its rule is *did a declared result come back
+empty*, and there is no declared result to look at.
+
+**ITS RUN RECORD IS ALREADY A TEXTBOOK D-53 PROOF and nothing can score it.**
+On `Snowdon-scratch_ajmal.al`, 9,638 elements:
+
+```
+positive   blank 22, absent 0    "22 element(s) have Comments but it is empty"
+negative   blank 0,  absent 22   "22 element(s) do NOT have ZZZ NO SUCH PARAMETER at all"
+```
+
+The inputs moved and the answer moved with them, **in opposite directions**.
+That is exactly what tracking asks for. **What it needs is a way to RECORD
+that, not another run** — and whoever builds it should check whether
+`heron_validate` can accept a tracked proof for a fragment, the way
+`prove-agent.py vary` already does for an agent.
