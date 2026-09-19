@@ -633,6 +633,143 @@ def compare(a, b):
     return moved, same
 
 
+
+# --------------------------------------------------------------------------
+# varying the ARGUMENT instead of the model
+
+MIN_TRACKING_ROWS = 3
+
+
+def cmd_vary(args):
+    """Run one agent on ONE model across several values of one argument.
+
+    WHY THIS EXISTS, AND IT IS NOT A CONVENIENCE.
+
+    `track` proves an agent reads the model by opening two models and asking
+    whether the answer moved. It takes exactly two, and on 2026-09-19 nine
+    agents were signed on that basis - while `brain/heron_validate.py`, judging
+    the SAME decision for a fragment, refuses two in these words:
+
+        "the tracking set has only 2 row(s). D-53 asks for the answer to
+         follow the input across SEVERAL different inputs; two cannot
+         show that."
+
+    One decision, two tools, two different bars, and nothing comparing them.
+    A review found it; the seven signatures that rest on the lower bar are a
+    separate question from this code.
+
+    THE INPUT IS NOT ALWAYS THE MODEL. For an agent driven by an argument -
+    `read_parameters` with a category, `select_by_category` with a category -
+    the thing D-53 calls the input is the ARGUMENT. Varying it across three
+    values on one model is a truer reading of "the answer follows the input"
+    than opening a third file, and it needs no second Revit, which matters on
+    a machine where the other session belongs to somebody else.
+
+    IT ALSO SETTLES THE OTHER HALF. `track`'s draft says no input makes these
+    agents correctly return nothing - and that is false for exactly this
+    family: a category the model has none of returns an honest empty answer.
+    That is D-30's negative leg, and it was sitting one argument away the
+    whole time. Include such a value and the draft records it as one.
+    """
+    agents = registry_agents()
+    if args.agent not in agents:
+        w("'%s' is not in %s. An agent starts as a row there.%s"
+          % (args.agent, os.path.relpath(REGISTRY, ROOT), "\n"))
+        return 1
+    source = source_of(args.agent)
+    if not source:
+        w("No add-in source declares %s.%s" % (args.agent, "\n"))
+        return 1
+
+    values = [v.strip() for v in args.arg_values.split(",") if v.strip()]
+    if len(values) < MIN_TRACKING_ROWS:
+        w("--arg-values has %d value(s). D-53 asks for the answer to follow "
+          "the input across SEVERAL different inputs, and this file reads "
+          "that as at least %d - the same number brain/heron_validate.py "
+          "enforces for a fragment.%s"
+          % (len(values), MIN_TRACKING_ROWS, "\n"))
+        return 1
+
+    live = dict((str(getattr(b, "pid", "")), b) for b in bridges(args.client_id))
+    if str(args.session) not in live:
+        w("No Revit session %s. Connected: %s%s"
+          % (args.session, ", ".join(sorted(live)) or "(none)", "\n"))
+        return 1
+    bridge = live[str(args.session)]
+    where = describe(ask(bridge, "count_elements"))
+
+    rows, refusals = [], []
+    for value in values:
+        reply = ask(bridge, args.operation, {args.arg_name: value})
+        if not reply.get("ok"):
+            refusals.append((value, reply.get("error"),
+                             (reply.get("message") or "")[:90]))
+            continue
+        numbers = dict((k, v) for k, v in reply.items()
+                       if isinstance(v, (int, float))
+                       and not isinstance(v, bool) and k not in ENVELOPE)
+        rows.append({"input": "%s=%s" % (args.arg_name, value),
+                     "value": ", ".join("%s: %s" % (k, numbers[k])
+                                        for k in sorted(numbers)) or "(nothing numeric)"})
+
+    for value, error, message in refusals:
+        w("  %s=%s was REFUSED: %s - %s%s"
+          % (args.arg_name, value, error, message, "\n"))
+    if len(rows) < MIN_TRACKING_ROWS:
+        w("Only %d value(s) ran. A refused value is not a tracking row - it "
+          "shows the agent never looked, not that it looked and found "
+          "nothing. Nothing was drafted.%s" % (len(rows), "\n"))
+        return 1
+
+    distinct = set(r["value"] for r in rows)
+    gaps = []
+    if len(distinct) < 2:
+        gaps.append(
+            "EVERY value came back the same. An agent ignoring its input "
+            "produces exactly that, which is what tracking exists to rule "
+            "out - vary the input until the answer moves")
+    empty = [r for r in rows if r["value"] == "(nothing numeric)"
+             or all(part.endswith(" 0") or part.endswith(": 0")
+                    for part in r["value"].split(", "))]
+    if empty:
+        gaps.append(
+            "D-30's NEGATIVE LEG WAS RUN AND IS RECORDED: %s returned an "
+            "empty answer, so this agent does have an input that makes it "
+            "correctly return nothing. That is a real negative case and not "
+            "a D-53 substitute" % empty[0]["input"])
+    else:
+        gaps.append(
+            "no input in this set came back empty, so D-30's negative leg is "
+            "met by D-53 tracking rather than by an empty case. If the model "
+            "has a value of this argument it holds none of, adding it would "
+            "be stronger")
+
+    draft = {
+        "agent": args.agent,
+        "name": agents[args.agent],
+        "operation": args.operation,
+        "arguments": "%s varied across %s" % (args.arg_name, ", ".join(values)),
+        "date": datetime.date.today().isoformat(),
+        "by": "",
+        "source": os.path.relpath(source, ROOT).replace(os.sep, "/"),
+        "fingerprint": fingerprint(source),
+        "first_model": "%s, session %s" % (where, args.session),
+        "second_model": "(not used - the INPUT was varied, not the model)",
+        "moved": "; ".join("%s -> %s" % (r["input"], r["value"]) for r in rows),
+        "held_same": "(n/a - this is an input-varied tracking set)",
+        "tracking": rows,
+        "gaps": gaps,
+    }
+    path = write_draft(args.agent, draft)
+    w("%sDrafted %s%s" % ("\n", os.path.relpath(path, ROOT).replace(os.sep, "/"), "\n"))
+    w("  %d input(s) ran, %d distinct answer(s).%s" % (len(rows), len(distinct), "\n"))
+    for r in rows:
+        w("    %-28s %s%s" % (r["input"], r["value"][:80], "\n"))
+    w("%sRead it, then sign it under your own name:%s" % ("\n", "\n"))
+    w("  python tools/prove-agent.py accept %s --by \"Your Name\"%s" % (args.agent, "\n"))
+    return 0
+
+
 def cmd_review(args):
     """Read a draft, gaps first."""
     if not os.path.isdir(DRAFTS):
@@ -760,6 +897,23 @@ def main(argv=None):
     accept.add_argument("agent")
     accept.add_argument("--by", required=True, help="your name - the signature")
 
+    vary = sub.add_parser(
+        "vary", help="run one agent on ONE model across several values of one "
+                     "argument - D-53 tracking where the INPUT is the argument")
+    vary.add_argument("agent")
+    vary.add_argument("--operation", required=True,
+                      help="the add-in operation, e.g. read_parameters")
+    vary.add_argument("--session", required=True,
+                      help="which Revit. One is enough - the model does not vary")
+    vary.add_argument("--arg-name", required=True, metavar="KEY",
+                      help="the argument to vary, e.g. category")
+    vary.add_argument("--arg-values", required=True, metavar="A,B,C",
+                      help="at least three values, comma separated. Include one "
+                           "the model has none of and D-30's negative leg is "
+                           "recorded as a real empty case")
+    vary.add_argument("--client-id", default=None,
+                      help="identify as this chat. See bridges()")
+
     sub.add_parser("check", help="which recorded proofs have gone stale")
 
     args = parser.parse_args(argv)
@@ -769,6 +923,7 @@ def main(argv=None):
     return {
         "sessions": cmd_sessions,
         "track": cmd_track,
+        "vary": cmd_vary,
         "review": cmd_review,
         "accept": cmd_accept,
         "check": cmd_check,
