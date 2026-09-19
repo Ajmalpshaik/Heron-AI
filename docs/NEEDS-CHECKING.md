@@ -1413,11 +1413,11 @@ the answer does not depend on.**
 | `create-workset-3d-views` | changed the CATEGORY | it makes one view per WORKSET. A category cannot move that answer |
 | `find-unused-materials` | changed the region box | *unused in the project* is a project-wide fact. `unusedMaterials 60` both times |
 | `report-open-documents` | changed the category | it lists what is OPEN IN REVIT. No selection on earth changes that |
-| `trace-connectivity` | changed the region, kept `start=selected` | the START never moved, so the walk never moved. `reached 25` both times |
+| `trace-connectivity` | changed the region, kept `start=selected` | `reached` is seeded with the START, so it can NEVER be empty. Read below — this entry was wrong first |
 | `place-structural-family` | Text Notes in a Legend | already [row 128](FRAGMENT-ISSUES.md) — it placed a column when asked for a beam |
 | `report-findings` | nothing matched, honestly | the negative is **CORRECT** — it says *"NOTHING WAS CHECKED"*. `report` is PROSE, so a non-empty string reads as a find |
 
-**THREE OF THESE ARE MODEL-INDEPENDENT FOR A SELECTION** — `create-workset-3d-views`,
+**FOUR OF THE SEVEN NEED TRACKING RATHER THAN A BETTER NEGATIVE. THREE ARE MODEL-INDEPENDENT FOR A SELECTION** — `create-workset-3d-views`,
 `find-unused-materials`, `report-open-documents`. Handing them a different
 selection is the wrong experiment, and no amount of re-arranging fixes it.
 [D-53](DECISIONS.md) is what they need: vary an INPUT the answer genuinely
@@ -1426,9 +1426,36 @@ That is the same ruling `prove-agent.py track` already applies to agents that
 can never return empty, and `refresh-view` and `save-document` are marked the
 same way by `generate-jobs.py` today.
 
-**`trace-connectivity` IS THE ONE THAT CAN BE FIXED WITH ONE VALUE** — give it a
-different `start`, ideally an element connected to nothing, and the walk has
-somewhere else to go.
+**`trace-connectivity` IS A FOURTH TRACKING CASE, AND THIS ENTRY SAID THE
+OPPOSITE FOR AN HOUR.** It was written as *"the one that can be fixed with one
+value — give it a different `start`"*, and then the code was read. Two things
+make that wrong:
+
+```
+fragment.cs:54   queue.Enqueue(start);
+fragment.cs:61   reached.Add(current);      <- the start, on the first pass
+fragment.cs:95   foreach (var candidate in elements)   <- GEOMETRIC route only
+```
+
+**`reached` ALWAYS CONTAINS THE START, so it can never come back empty** while
+anything binds at all — which is the exact shape [D-53](DECISIONS.md) exists
+for, and no choice of start changes it.
+
+**And `elements` does not constrain the walk.** The declared-connector route
+follows `Connector.IsConnected` wherever it goes; the pool is consulted only
+when looking for a geometric neighbour within `tolerance`. So the old negative
+— which moved the region and kept `start=selected` — was changing something
+that can only move `joinedByGeometry`, and `reached 25` in both legs was the
+fragment behaving exactly as written.
+
+**`generate-jobs.py` CANNOT SEE THIS SHAPE.** It marks `refresh-view` and
+`save-document` for tracking because they *take* nothing but the document; this
+one takes three things and still cannot return empty, because it seeds its own
+answer. Worth a rule there. **THE REST OF THE LIBRARY WAS SWEPT FOR THE SAME SHAPE AND
+IT IS A SINGLETON** — every fragment's `role: result` fields were matched against
+its own need names across all 395, looking for a result seeded directly from an
+input, and `trace-connectivity` is the only one (`reached` and `joinedByGeometry`,
+both from `start`). So this is one fragment to mark, not a class to design for.
 
 ### The singleton, and it was measured rather than assumed
 
