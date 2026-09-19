@@ -47,7 +47,7 @@ defaults:
   # `select-in-region` AFTER ALL, AND IT IS THE NEW `setup-set:` THAT ALLOWS IT.
   # This chain was written first, refused by the dry run because its selector
   # need is called `categories` and so is `select-touching`'s question, and one
-  # flat `set` could not hold both - FRAGMENT-ISSUES row 142. `setup-set:` gives
+  # flat `set` could not hold both - FRAGMENT-ISSUES row 143. `setup-set:` gives
   # the chain its own values, so the collision is gone rather than dodged.
   #
   # AND THE DODGE HAD ITS OWN COST, WHICH IS WHY IT WAS NOT KEPT.

@@ -228,7 +228,7 @@ def read_jobs(path):
             "negative-set": _merge(defaults.get("negative-set"),
                                    row.get("negative-set")),
             # THE SETUP CHAIN'S OWN VALUES, AND THEY ARE OPTIONAL ON PURPOSE.
-            # FRAGMENT-ISSUES row 142: `set` went to every setup step AND to
+            # FRAGMENT-ISSUES row 143: `set` went to every setup step AND to
             # the fragment as one flat dict, so a chain selecting on
             # `categories` and a fragment asking about `categories` collapsed
             # into one value - silently, and the job still ran, reporting a
