@@ -72,3 +72,23 @@ utterances:
   - how many are there
   - count them
   - give me the number
+  # ADDED 2026-09-19 because the SKILL `count-elements` declares these two and
+  # NOTHING ELSE DID, so neither reached the identity route and both were
+  # ranked instead. Measured through heron_lookup with a model open:
+  #   "how many sprinklers on level 2"    -> PLACE_FAMILY_INSTANCES (MODIFY)
+  #   "give me the number of fire dampers" -> READ_MODEL_WARNINGS
+  # A question that would PLACE sprinklers, and a count answered with
+  # warnings. The risk warning fired correctly on the first, so nothing could
+  # have happened unasked - but a modeller should not need warning off "how
+  # many".
+  #
+  # "give me the number" was ALREADY declared here and did not help: the
+  # identity table matches a whole normalised sentence, so a trailing "of fire
+  # dampers" makes it a different phrase entirely. Declaring the general form
+  # does not cover the specific one.
+  #
+  # THIS FIXES TWO SENTENCES AND NOT THE SHAPE. "how many sprinklers on level
+  # 3" would still be ranked. The general repair is to index a SKILL's
+  # utterances the way a fragment's are - see NEEDS-CHECKING group V.
+  - how many sprinklers on level 2
+  - give me the number of fire dampers
