@@ -47,7 +47,7 @@ this folder exists to remove.
 | 2026-09-09 | [HANDOVER — 2026-09-09 (the ROLES track): 989 provides declared, and nothing reads a name any more](2026-09-09-the-roles-track-989-provides-declared-and-nothing-reads-a-na.md) |
 | 2026-09-10 | [HANDOVER — 2026-09-10 (the PROVING track, day four): 0 proved, 5 defects found, and the add-in was a day stale](2026-09-10-the-proving-track-day-four-0-proved-5-defects-found-and-the.md) |
 | 2026-09-09 | [HANDOVER — 2026-09-09 (the PROVING track, day three): 142 → 159, and four sessions in one tree](2026-09-09-the-proving-track-day-three-142-159-and-four-sessions-in-one.md) |
-| 2026-09-09 | [HANDOVER — 2026-09-09 (the open-questions track): 44 → 52 answered, and the rest needs the PC](2026-09-09-the-open-questions-track-44-52-answered-and-the-rest-needs-t.md) |
+| 2026-09-09 | [HANDOVER — 2026-09-09 (the open-questions track): 44 → 52 answered, and the rest needs the PC](2026-09-09-the-open-questions-track-44-52-answered-and-the-rest-needs-t.md) — superseded |
 | 2026-09-09 | [HANDOVER — 2026-09-09, the second sitting: 142 → 159, and three capabilities that already existed](2026-09-09-the-second-sitting-142-159-and-three-capabilities-that-alrea.md) |
 | 2026-09-09 | [HANDOVER — 2026-09-09 (the PROVING track, day two): 52 → 142, and Heron can now change a model](2026-09-09-the-proving-track-day-two-52-142-and-heron-can-now-change-a.md) |
 | 2026-09-09 | [HANDOVER — 2026-09-09 (the REFUSAL-PROOFS track): silence made illegal, and eight of it proved](2026-09-09-the-refusal-proofs-track-silence-made-illegal-and-eight-of-i.md) |

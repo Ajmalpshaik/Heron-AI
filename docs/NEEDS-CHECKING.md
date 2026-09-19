@@ -220,9 +220,9 @@ python tools/check-compile.py          # 2020 through 2027, all four projects, 0
 | ~~**A9**~~ | ~~On any machine with the .NET SDK, run `python tools/check-fragments-compile.py`~~ | **DONE 2026-09-06, on the owner's PC, at 343 fragments — `Every fragment compiles on every release it claims`, all eight, 2020 through 2027.** This row had been run green once before at **329** and left open because the library kept growing; it is closed now because the machine that can re-run it in minutes is the owner's own, so it stops being a row and becomes a command. **What it proves is the API surface agreeing and the contract being kept** — each fragment leaving what it promised at the declared type. **It proves nothing about behaviour**, which needs a real model and a proof carrying a negative case ([D-30](DECISIONS.md)). The nine version defects this check caught before they were written are recorded in the git history of this row rather than repeated here |
 | **A10** | `pip install --user sentence-transformers` then `python brain/heron_rerank.py`, then the tracked question and the twelve of the Stage 0b run — **on a machine that can reach `huggingface.co`** | **Stage 7's after-measurement, and it is the only thing standing between R-41 and DONE.** The seam is built and the absent half is tested; no cross-encoder has ever run. Pass looks like: `Backend: cross-encoder`, then the same tracked question at 360 fragments and 62 chunks with the top five and the winner's lead recorded beside the 2026-09-11 `absent` row in [`brain/retrieval-history.md`](../brain/retrieval-history.md) — **whichever way it comes out.** A re-ranker that does not improve the order is a result worth the same as one that does, and R-55 says a threshold is never moved to make a report look better. Also record the **real download size** against the 500 MB – 2 GB this repository has only ever quoted from a field reading |
 | **A11** | In Revit, run any Heron read tool and look at the reply the server receives — **on the owner's PC** | **The project key reaching the server, which is what names a project knowledge store.** `RevitOperations.ProjectKey()` was added on 2026-09-11; the add-in already computed this identity for its own preview/commit pairing (`RevitWrite.DocumentKey`) and never sent it, so `heron_standards` either skipped the project scope or would have named a store after a file path. **The compile half is closed.** This row was filed saying it had *never been compiled* — and the .NET 10 SDK turned out to be one `apt-get install dotnet-sdk-10.0` away in the Ubuntu archive, which [docs/30 §2a](30-compiling-away-from-windows.md) had already measured and this row assumed was unavailable. `tools/check-compile.py`: **COMPILED 2020 through 2027**, all four projects, 0 warnings. `tools/check-api-surface.py` against the **shipped** assemblies: *every referenced type and member exists*, all eight. **What is left needs Revit**: a `projectKey` field present in the `count_elements` and `select_by_category` replies, its value **the same string across a save, a rename and a move of the model**, and `pinned.project_key` non-`None` in a conversation that has run **only read tools**. A compile proves the member exists and the signature matches; it is not evidence that the value is stable across a rename |
-| **A12** | On the PC: `.\tools\deploy-addin.ps1 -RevitVersion 2024`, start Revit, and look for the **Heron AI** tab | **The four delivery questions `tools/check-package.py` prints and cannot answer.** That gate reads the manifest, the entry class, the deploy rewrite, the install path and the release-to-runtime map, and every one of those is a claim about *text*. Pass looks like: the add-in **loads** without Revit's *"cannot run the external application"* dialog, the ribbon button appears with its icon, and `%APPDATA%\Autodesk\Revit\Addins\2024\Heron.addin` exists with **no administrator prompt anywhere** — which is the no-admin promise in [07 §5](07-installation-and-update.md) and the one the gate can only check the *intent* of. Worth repeating on 2020 and on 2027, because they are the two ends of the runtime range |
-| **A13** | On the PC, with a previous Heron already installed: deploy over it, then start Revit | **Upgrade and rollback, neither of which has ever been done.** Pass looks like: settings under `%APPDATA%\Heron` survive, Revit loads the new assembly rather than the cached old one, and `-Remove` followed by a redeploy of the previous build gets back to a working install. **A loaded assembly cannot be unloaded**, so every step needs Revit closed — and the interesting case is the one where somebody forgets, which `deploy-addin.ps1` refuses on purpose |
-| **A14** | On the PC: `python tests/test_context.py`, then `for %t in (tests\test_*.py) do @python %t >nul 2>&1 || echo FAIL %t` | **That the suite total is the same number on Windows as on Linux.** It was not: `test_context` failed there on one check — *a part read from disk cites the file* — because the check compared a source against a hardcoded `/` while the value arrives from `heron_fragment.repo_relative()`, which is `os.path.relpath` and spells it `brain\fragments\...`. **So the machine saw 38 of 41 where every document promised 39**, and the `heron-ship` skill's whole job is telling a later session which failures are theirs. Fixed 2026-09-12 by normalising at the comparison — the same choice `heron_fragment.fingerprint()` already made for the same reason, and NOT inside `repo_relative()`, whose value is written into the store's `fragments.folder` column. Pass looks like: `test_context.py` **exits 0 on Windows**, and the failing set is exactly the three that need the MCP SDK and a built .NET test host — no fourth. **Fixed on Linux, where the defect cannot appear**, so this row is the proof, not the fix. **PARTLY RUN 2026-09-12 on the owner's Windows checkout, and the answer is that it does NOT pass yet** — `check-gaps.py` reported **three** unfinished suites and **not one of them is the MCP-SDK-or-.NET trio this row predicts**: `test_ingest` dies on `UnicodeEncodeError: 'charmap' codec can't encode character '→'` — it prints `→` and the cp1252 console cannot, **the same Linux-only assumption as the `/` this row was opened for**; `test_reachable` fails **five** checks, having been recorded as *fixed rather than excused* on 2026-09-12; and `test_document_retrieval` fails **one real assertion** — *the best hit is the thickness clause 9.1.1, not the section above it*. **That third one is NOT this row's kind of defect and was filed here in error on 2026-09-12, corrected the same day by testing it instead of reasoning about it:** forcing the fallback with `HERON_EMBED_MODEL=definitely/not-a-real-model-xyz` on **the same machine, same OS, same run** makes it **exit 0**, and the default `model` backend makes it **exit 1**. It is a **backend** difference, not an operating-system one — CI passes it only because CI cannot reach `huggingface.co` and falls back to `lexical`. Its real record is the **2026-09-12 section of [`brain/retrieval-history.md`](../brain/retrieval-history.md)**. The other two fail on **both** backends and do belong here. `test_context` itself was not re-run. **Recorded, not fixed** |
+| ~~**A12**~~ | ~~On the PC: `.\tools\deploy-addin.ps1 -RevitVersion 2024`, start Revit, and look for the **Heron AI** tab~~ | **DONE 2026-09-19 on the owner's PC — and on ALL THREE releases installed there, 2020, 2024 and 2027, rather than on 2024 alone.** Written up in full, with the journal lines and the hashes, in [07 section 10](07-installation-and-update.md). Built from commit `48ae1dc`, one release at a time because the build output folder is shared, and placed by the documented script. **Two of the four questions are answered by Revit rather than by Heron**, which is the part this row was really asking for: every journal records `API_SUCCESS { Starting External Application: Heron AI, Class: Heron.Revit.Addin.HeronApplication, Vendor : AJPS(Ajmal PS - Heron AI) }`, and **no journal contains *"cannot run the external application"***. The ribbon built on all three — `HeronBridgeToggle`, `HeronStatus` and `HeronWriteToggle` under tab **Heron AI**, panel **Bridge** — and the owner clicked **Changes** on 2020, which logged `Write permission set to False from the ribbon` and `True` two seconds later, so the icon drew well enough to find and press. **The manifest question is answered three ways**, because one line naming a path is not the same as nothing else being able to supply it: every pushbutton line names `%APPDATA%\Autodesk\Revit\Addins\<release>\Heron\Heron.Revit.Addin.dll`; `%ProgramData%\Autodesk\Revit\Addins` and all three `Program Files` `AddIns` folders hold nothing called `Heron*`, so the per-user manifest is the only one on the machine; and each deployed assembly was **file-locked** by its own Revit while running. **Revit 2027 says it outright** in two lines the older releases do not emit — `The add-in folder '...\Addins\2027\Heron' was registered for the context 'DEFAULT'` and `[Jrn.AddInManifest] Rvt.Attr.AddInManifest: Heron.addin ... Rvt.Attr.AddInLoadFailureMessage: NoError , 0.248000`. **The no-admin promise held**: `IsInRole(Administrator)` was `False` throughout, six deploys and three rollbacks wrote only to `%APPDATA%` and `%LOCALAPPDATA%`, and **no UAC prompt appeared at any point**. **And the runtimes really are three different ones**, read back out of the deployed bytes rather than out of a build log: `.NETFramework,Version=v4.7.2` on 2020, `v4.8` on 2024, `.NETCoreApp,Version=v10.0` on 2027 — the thing a single-release test can never show. **One gap in the script's own guard, found by doing this:** it separates builds by whether a `deps.json` exists, which catches a 2027 build going into 2024 but **cannot tell net472 from net48**, because neither emits one. A 2024 build deployed into 2020 would pass every check. It did not happen here, but nothing stands behind that guard |
+| ~~**A13**~~ | ~~On the PC, with a previous Heron already installed: deploy over it, then start Revit~~ | **DONE 2026-09-19 on the owner's PC, on all three releases — and the rollback half could not be done at all until it was built, which is the finding.** Written up in [07 section 10](07-installation-and-update.md), filed as [row 147](FRAGMENT-ISSUES.md). **The upgrade half passed cleanly.** Every release already carried an install, so each of the six deploys was an upgrade rather than a first install, and `%APPDATA%\Heron\config\heron.config` hashed `9FC06D52CEBB099977BF0EBF9C68389652D717A84A9F536351ADBDF7FBC7FB39` **before and after every one of them**. The file's own first line claims *"Owned by you. Never overwritten by an update"* and that is now measured rather than asserted — it carries `write.enabled = true`, which is the switch [D-19](DECISIONS.md) puts writing behind. `audit/` stayed 3 files / 4,049,586 bytes and `knowledge/` 4 files / 4,235,331 bytes across it. **The rollback half had no mechanism.** This row's own recipe — *"`-Remove` followed by a redeploy of the previous build"* — assumes the previous build still exists somewhere, and it did not: `deploy-addin.ps1` overwrote it with `Copy-Item -Force` and kept nothing, `heron-backup.py` covers only the DATA class and says so, and `brain/heron_update.py` meanwhile **refuses** any release that cannot show a recorded rollback test. Built into `deploy-addin.ps1` — every deploy now keeps the install it replaces in `%LOCALAPPDATA%\Heron\install-backup\<release>\` with a `replaced.json`, and `-Rollback` puts it back. **Proved as a round trip with a genuinely different build**, not a file copy checked by eye: a second build at `-p:Version=0.1.1` deployed over the good one to stand in for a bad update, then rolled back, then every file hashed — **2020 22 files restored, 0 differing; 2024 22 and 0; 2027 15 and 0**, manifest restored all three times. The counts differ because the Framework releases carry `System.*` assemblies .NET 10 has in the box and 2027 carries a `deps.json` they do not. **What it does NOT prove, said plainly:** it proves the FILES come back, and no more. The restored install is byte-identical to the one proved to load, so it loads for the same reason — **inference, not an independent observation**, and no release was restarted a second time to make it one. **The interesting case this row named — somebody forgetting to close Revit — is now guarded on `-Remove` and `-Rollback` too**, which it was not: `Remove-Item` on a loaded assembly fails part-way through the folder and reads as a broken uninstall rather than as *"close Revit first"* |
+| **A14** | On the PC: `python tests/test_context.py`, then `for %t in (tests\test_*.py) do @python %t >nul 2>&1 || echo FAIL %t` | **That the suite total is the same number on Windows as on Linux.** It was not: `test_context` failed there on one check — *a part read from disk cites the file* — because the check compared a source against a hardcoded `/` while the value arrives from `heron_fragment.repo_relative()`, which is `os.path.relpath` and spells it `brain\fragments\...`. **So the machine saw 38 of 41 where every document promised 39**, and the `heron-ship` skill's whole job is telling a later session which failures are theirs. Fixed 2026-09-12 by normalising at the comparison — the same choice `heron_fragment.fingerprint()` already made for the same reason, and NOT inside `repo_relative()`, whose value is written into the store's `fragments.folder` column. Pass looks like: `test_context.py` **exits 0 on Windows**, and the failing set is exactly the three that need the MCP SDK and a built .NET test host — no fourth. **Fixed on Linux, where the defect cannot appear**, so this row is the proof, not the fix. **PARTLY RUN 2026-09-12 on the owner's Windows checkout, and the answer is that it does NOT pass yet** — `check-gaps.py` reported **three** unfinished suites and **not one of them is the MCP-SDK-or-.NET trio this row predicts**: `test_ingest` dies on `UnicodeEncodeError: 'charmap' codec can't encode character '→'` — it prints `→` and the cp1252 console cannot, **the same Linux-only assumption as the `/` this row was opened for**; `test_reachable` fails **five** checks, having been recorded as *fixed rather than excused* on 2026-09-12; and `test_document_retrieval` fails **one real assertion** — *the best hit is the thickness clause 9.1.1, not the section above it*. **That third one is NOT this row's kind of defect and was filed here in error on 2026-09-12, corrected the same day by testing it instead of reasoning about it:** forcing the fallback with `HERON_EMBED_MODEL=definitely/not-a-real-model-xyz` on **the same machine, same OS, same run** makes it **exit 0**, and the default `model` backend makes it **exit 1**. It is a **backend** difference, not an operating-system one — CI passes it only because CI cannot reach `huggingface.co` and falls back to `lexical`. Its real record is the **2026-09-12 section of [`brain/retrieval-history.md`](../brain/retrieval-history.md)**. The other two fail on **both** backends and do belong here. `test_context` itself was not re-run. **Recorded, not fixed** **`test_context.py` ITSELF WAS RE-RUN 2026-09-19 ON THE OWNER'S WINDOWS PC AND EXITS 0**, which is the one half of this row recorded as *"not re-run"* and is now settled — the `/`-versus-`\` fix from 2026-09-12 holds on the machine where the defect can actually appear, and the run reports `every one of the 395 cases.yaml files yields an abstract`. **The other three suites this row names were NOT re-run and nothing here claims anything about them.** |
 
 | **A15** | On the machine that can reach `huggingface.co`: `python brain/heron_embed.py` (expect `Backend: model`), then re-ask the **twelve questions** of the Stage 0b run at 360 fragments and record every column | **Whether a confidence floor can be derived at all — which is what `R-56` to `R-59` stand on.** Carried in from `docs/work-notes/plans/rag/03-working-note.md` as `W-8` when that note was retired 2026-09-12; it was the only record of it. [R-60](work-notes/plans/rag/01-requirements.md) says the floor comes from a measurement and **from nothing else**, and on the `lexical` backend at 360 fragments the measurement **does not separate a BIM question from a question about cats**: twelve questions, **every column overlapping**, and *"how do I bake sourdough bread"* holding the widest winning gap of all twelve. Two reasons, both structural — **reciprocal rank fusion keeps order and discards strength**, so the fused score never could carry it; and `heron_embed`'s own docstring says the built-in backend **"IS NOT MEANING"**. Pass looks like: the twelve questions on `model`, with the BIM columns and the cat column **visibly apart**, recorded in [`brain/retrieval-history.md`](../brain/retrieval-history.md). **A fail is worth as much as a pass** — if the trained backend does not separate them either, then `R-56` to `R-59` are not blocked on the network, they are wrong, and [R-55](work-notes/plans/rag/01-requirements.md) forbids moving a threshold to make that look better |
 | **A16** | On the PC, with a MODIFY fragment and something selected: `HERON_CLIENT_ID=<one id> python mcp/client/heron_bridge_client.py fragment <name> --write` — **no `--apply`** — then read the element's own value back, not the count | **THE ROLLBACK, IN FRONT OF A MODEL. The oldest open wound in this repository, and no container could close it.** Three rollbacks failed before: the worst took a model from **9,628 placed elements to 3,966 with every floor plan gone**, the third was **seventeen renamed sheets** — so it was never about size. `SafeRollBack` returned `void`, a group whose status was not `Started` skipped silently, and a `RollBack()` that threw was swallowed, so **a failed rollback and a clean one produced byte-identical output**. Fixed 2026-09-09, deployed 2026-09-10, and **never seen working**. **DONE 2026-09-12, on the owner's PC, against `Project1 work_ajmal.al` (Revit 2024, 3,447 elements) — `align-mep-elevation`, 9 ducts, `edge=top targetZ=20`.** It ran for real (`aligned 9`, `notCurveBased 0`), and **three independent witnesses agree**: Heron said *"NOTHING WAS KEPT... Revit reported the transaction group rolled back"*; the ducts read **3100.0 / 2950.0 / 2800.0** before and after, unchanged, **read off the Properties palette rather than counted** — the three failures prove a count cannot see an edit; and **Revit's own dirty flag stayed clean**, which is the one witness with no reason to agree with Heron. Held twice, through two paths — the direct `fragment --write` run and a `validate --write` run with `--setup select-by-category-name --setup set-selection --keep-chain`. **WHAT THIS DOES NOT SAY.** The **negative case could not be arranged**: `Duct Tags` resolves but holds **0 elements** in that model, so the refusal would have been empty for the wrong reason, which is not evidence. **`--apply` was never sent**, so the KEEP half of *preview → apply → rollback* is still unwitnessed and `D1`–`D6` remain untouched. **9 ducts is not 9,628**, and this exercised the **fragment executor's** group (`RevitFragment.cs`), **not** the move path's (`RevitWrite.cs`). `write.enabled` was set true for the run and **back to false afterwards**. Evidence: `brain/proof-drafts/runs/align-mep-elevation.json` |
@@ -1291,6 +1291,21 @@ all 71 rather than only the never-tried ones). **27 can be, and 23 of those alre
 record** — they were put in front of a real model between 9 and 17 September and no signature
 followed. Nobody had been back to ask why.
 
+> **THE TWO COUNTS ABOVE WENT STALE THE SAME DAY. THE SPLIT BELOW DID NOT.**
+> Re-derived 2026-09-19 on a Linux container at `main`: `heron_fragment.load_all` counts **395
+> fragments, 328 PROVEN, 67 DRAFT**, and `python tools/generate-jobs.py` reports **37 unarrangeable
+> of 67** — not 71 and 44. The seven that moved are named by the commit that freed them:
+> [PR #196](https://github.com/Ajmalpshaik/Heron-AI/pull/196) is titled *"Five of the six proposed
+> rules are built, and **seven fragments can be arranged**"*, and `git merge-base --is-ancestor`
+> puts it **after** the commit carrying this paragraph. **Derive both rather than reading them
+> here** — this file's own rule, and [FRAGMENT-ISSUES row 143](FRAGMENT-ISSUES.md) is the row.
+>
+> **AND NOTHING BELOW CAN BE RE-DERIVED ANYWHERE BUT THE PROVING MACHINE.** The sort was read from
+> `brain/proof-drafts/runs/`, which is **gitignored**: on a fresh clone it does not exist, which is
+> why `generate-jobs.py` measured all 67 DRAFT above rather than the 27 this paragraph describes.
+> So I1, I2 and I3 are a **one-machine fact recorded in a shared file** — no clone and no CI run can
+> check a single row of them. The split is still the useful part; the totals are not.
+
 The answer is not one answer. It is three, and only the first is proving work.
 
 ### I1 — the arrangement was wrong, and that is all (6)
@@ -1378,3 +1393,256 @@ two-models-at-once.
 **argument** - `category=Ducts`, `Duct Fittings`, `Pipes` - which is closer to what D-53 asks
 (*the answer follows the input*) than a third file would be. That is a change to `track`, not a
 request for another Revit.
+
+## Group V — all 66 unproven fragments, sorted by WHY, read off disk 2026-09-19
+
+**NOT ONE REVIT CALL WAS MADE TO PRODUCE THIS TABLE.** Every fragment that has
+ever been run leaves a record in `brain/proof-drafts/runs/`, and the record
+holds both phases with what each one bound and what each one returned. Sorting
+them is reading, not proving — and it turns *"66 left"* into six lists with a
+different owner each. The same method turned 23 agents into 6-13-4 on the same
+day, and it costs a minute.
+
+**`runs/` IS GITIGNORED, SO THIS IS A MEASUREMENT OF ONE CHECKOUT.** 326 run
+records existed here when this was taken. **THE NUMBERS BELOW CANNOT BE
+REPRODUCED FROM A FRESH CLONE AND NO GATE CAN CATCH THEM GOING STALE** - said
+plainly because a committed table of derived counts is normally a thing this
+repository refuses. It is kept because the SORT is the value and the sort does
+not go stale: which bucket a fragment belongs in is a property of the fragment.
+Re-derive the counts where you will actually prove, with:
+
+```
+python - <<'EOF'
+import json, io, os, glob, yaml, re, collections
+def empty(v):
+    s = str(v).strip()
+    if s in ("", "0", "(null)", "None", "False", "false", "[]", "{}"): return True
+    return bool(re.match(r"^0 (item|entry|entrie)", s))
+b = collections.defaultdict(list)
+for f in sorted(glob.glob("brain/fragments/*/fragment.yaml")):
+    slug = os.path.basename(os.path.dirname(f))
+    text = io.open(f, encoding="utf-8").read()
+    if "heron-status: DRAFT" not in text: continue
+    rec = os.path.join("brain/proof-drafts/runs", slug + ".json")
+    if not os.path.isfile(rec): b["no run record"].append(slug); continue
+    d = json.load(io.open(rec, encoding="utf-8"))
+    ph = {p.get("phase"): p for p in d.get("phases", [])}
+    if "positive" not in ph or not ph["positive"].get("ok"):
+        b["positive refused"].append(slug); continue
+    if "negative" not in ph: b["no negative"].append(slug); continue
+    y = yaml.safe_load(text)
+    res = [p["name"] for p in ((y.get("contract") or {}).get("provides") or [])
+           if p.get("role") == "result"]
+    pv, nv = ph["positive"].get("provides") or {}, ph["negative"].get("provides") or {}
+    pe = all(empty(pv.get(r)) for r in res) if res else None
+    nf = any(not empty(nv.get(r)) for r in res) if res else None
+    b["positive empty" if pe else ("negative not empty" if nf else "re-run")].append(slug)
+for k in sorted(b, key=lambda k: -len(b[k])):
+    print("%-22s %d  %s" % (k, len(b[k]), " ".join(b[k])))
+EOF
+``` A different worktree will sort the
+same 66 differently — the DRAFT/PROVEN split is committed and shared, the
+records are not. Re-derive it where you will actually work.
+
+| | | |
+|---|---|---|
+| **26** | **no run record here** | Nothing has tried them in this checkout. `generate-jobs.py` offers **4** and marks **22** unarrangeable with a reason each |
+| **19** | **POSITIVE EMPTY — it ran and found nothing** | So the arrangement was wrong rather than the fragment. **17 need MODEL CONTENT** — CAD imports, groups, design options, openings, electrical circuits, areas, annotation. **2 need a PERMISSION PHASE THAT DOES NOT EXIST** and were miscounted here first: `export-families` and `export-schedule-to-csv` are `risk: PUBLISH`, which `HeronPermissions` puts out of reach for Phase 0 and Phase 1, so nothing is sent to Revit at all. No model will ever unblock those two — checked by reading `risk:` on all nineteen rather than assuming the bucket was uniform |
+| **13** | **POSITIVE never ran or was refused** | The binder said no before the fragment started. A refusal to start is not an answer, and it is the cheapest of these to read: the message names the need |
+| **7** | **NEG NOT EMPTY — the negative was arranged wrong** | Listed below, because this is the group a session can fix at a desk |
+| **1** | **judged by nothing at all** | `describe-blank-parameters` |
+
+### The 7 whose negative found something, and what is actually wrong with each
+
+**None of these is a fragment defect.** Every one is a proof that was arranged
+badly, and three of them are the same mistake: **the negative changed something
+the answer does not depend on.**
+
+| fragment | what the negative did | why it could never work |
+|---|---|---|
+| `add-project-parameter` | same `categories=Ducts` in both legs | not a contrast at all. `bound true` both times because nothing differed |
+| `create-workset-3d-views` | changed the CATEGORY | it makes one view per WORKSET. A category cannot move that answer |
+| `find-unused-materials` | changed the region box | *unused in the project* is a project-wide fact. `unusedMaterials 60` both times |
+| `report-open-documents` | changed the category | it lists what is OPEN IN REVIT. No selection on earth changes that |
+| `trace-connectivity` | changed the region, kept `start=selected` | `reached` is seeded with the START, so it can NEVER be empty. Read below — this entry was wrong first |
+| `place-structural-family` | Text Notes in a Legend | already [row 128](FRAGMENT-ISSUES.md) — it placed a column when asked for a beam |
+| `report-findings` | nothing matched, honestly | the negative is **CORRECT** — it says *"NOTHING WAS CHECKED"*. `report` is PROSE, so a non-empty string reads as a find |
+
+**FOUR OF THE SEVEN NEED TRACKING RATHER THAN A BETTER NEGATIVE. THREE ARE MODEL-INDEPENDENT FOR A SELECTION** — `create-workset-3d-views`,
+`find-unused-materials`, `report-open-documents`. Handing them a different
+selection is the wrong experiment, and no amount of re-arranging fixes it.
+[D-53](DECISIONS.md) is what they need: vary an INPUT the answer genuinely
+depends on, across **three or more** values, and show the answer following it.
+That is the same ruling `prove-agent.py track` already applies to agents that
+can never return empty, and `refresh-view` and `save-document` are marked the
+same way by `generate-jobs.py` today.
+
+**`trace-connectivity` IS A FOURTH TRACKING CASE, AND THIS ENTRY SAID THE
+OPPOSITE FOR AN HOUR.** It was written as *"the one that can be fixed with one
+value — give it a different `start`"*, and then the code was read. Two things
+make that wrong:
+
+```
+fragment.cs:54   queue.Enqueue(start);
+fragment.cs:61   reached.Add(current);      <- the start, on the first pass
+fragment.cs:95   foreach (var candidate in elements)   <- GEOMETRIC route only
+```
+
+**`reached` ALWAYS CONTAINS THE START, so it can never come back empty** while
+anything binds at all — which is the exact shape [D-53](DECISIONS.md) exists
+for, and no choice of start changes it.
+
+**And `elements` does not constrain the walk.** The declared-connector route
+follows `Connector.IsConnected` wherever it goes; the pool is consulted only
+when looking for a geometric neighbour within `tolerance`. So the old negative
+— which moved the region and kept `start=selected` — was changing something
+that can only move `joinedByGeometry`, and `reached 25` in both legs was the
+fragment behaving exactly as written.
+
+**`generate-jobs.py` CANNOT SEE THIS SHAPE.** It marks `refresh-view` and
+`save-document` for tracking because they *take* nothing but the document; this
+one takes three things and still cannot return empty, because it seeds its own
+answer. Worth a rule there. **THE REST OF THE LIBRARY WAS SWEPT FOR THE SAME SHAPE AND
+IT IS A SINGLETON** — every fragment's `role: result` fields were matched against
+its own need names across all 395, looking for a result seeded directly from an
+input, and `trace-connectivity` is the only one (`reached` and `joinedByGeometry`,
+both from `start`). So this is one fragment to mark, not a class to design for.
+
+### The singleton, and it was measured rather than assumed
+
+`describe-blank-parameters` is **the only fragment of 395 that declares no
+`role: result` at all** — checked across the whole library, DRAFT and PROVEN.
+So `batch-prove` cannot judge it: its rule is *did a declared result come back
+empty*, and there is no declared result to look at.
+
+**ITS RUN RECORD IS ALREADY A TEXTBOOK D-53 PROOF and nothing can score it.**
+On `Snowdon-scratch_ajmal.al`, 9,638 elements:
+
+```
+positive   blank 22, absent 0    "22 element(s) have Comments but it is empty"
+negative   blank 0,  absent 22   "22 element(s) do NOT have ZZZ NO SUCH PARAMETER at all"
+```
+
+The inputs moved and the answer moved with them, **in opposite directions**.
+That is exactly what tracking asks for. **What it needs is a way to RECORD
+that, not another run** — and whoever builds it should check whether
+`heron_validate` can accept a tracked proof for a fragment, the way
+`prove-agent.py vary` already does for an agent.
+
+## Group W — three fragments stand between the skills and three more proofs
+
+Measured 2026-09-20 against the eleven model-half job files the skills session
+generated (#199). Of the ten skills, **seven have no unproven step at all** —
+every fragment in their plan is already `PROVEN`, so `batch-prove` reports
+ALREADY and sends nothing, and what they are waiting for is a runner that can
+execute a COMPOSITION ([row 141](FRAGMENT-ISSUES.md)).
+
+**Three skills have unproven steps, and between them those are only THREE
+fragments:**
+
+| skill | the step that is not proven | risk |
+|---|---|---|
+| `check-connectivity` | `trace-connectivity`, `report-findings` | READ, SUGGEST |
+| `find-blank-parameters` | `describe-blank-parameters`, `report-findings` | ANALYZE, SUGGEST |
+| `trace-system` | `trace-connectivity` | READ |
+
+**AND ALL THREE ARE THE SAME KIND OF THING, WHICH IS THE POINT OF THIS GROUP.**
+Every one of them sits in a Group V bucket that `batch-prove`'s rule cannot
+judge, and not one is a defect:
+
+* **`trace-connectivity`** seeds `reached` with its own `start`, so the answer
+  can never come back empty whatever it is handed.
+* **`report-findings`** answers with PROSE. Its negative is *correct* — it says
+  *"NOTHING WAS CHECKED"* — and a non-empty string reads as a find.
+* **`describe-blank-parameters`** is the only fragment of 395 declaring no
+  `role: result` at all, so there is nothing for the rule to look at. Its run
+  record is already a textbook tracking proof and nothing can score it.
+
+**SO ONE PIECE OF MACHINERY UNBLOCKS THREE FRAGMENTS AND THREE SKILLS**: a
+tracking mode for fragments, the same shape `tools/prove-agent.py vary` already
+gives agents — run one fragment across **three or more** values of one input on
+one model and show the answer FOLLOWING the input. [D-53](DECISIONS.md) is the
+rule, `prove-agent.py` is the working example, and `MIN_TRACKING_ROWS = 3` is
+already enforced in `brain/heron_validate.py` for agents.
+
+**IT IS THE HIGHEST-LEVERAGE THING LEFT IN THE PROVING MACHINERY** and it is
+deliberately not started here: PR #198 was already large and carrying the
+row 136 root-cause fix, and a feature this size belongs on its own branch
+rather than delaying seventeen repairs. Recorded so the next session does not
+have to re-derive which three fragments matter or why.
+
+> **STARTED 2026-09-19, AND THE HALF THAT NEEDS NO REVIT IS BUILT AND TESTED.**
+> `tools/prove-tracking.py` does every check that can be made before a model is
+> opened, and `--dry-run` answers completely. **All three fragments above are
+> arrangeable**, proved in `tests/test_prove_tracking.py`: `trace-connectivity`
+> varying `tolerance` with `start=selected` held still, `report-findings`
+> varying `whatWasChecked` with `checkedCount` held, and
+> `describe-blank-parameters` varying `parameterName`.
+>
+> **ONE CORRECTION TO THE READING ABOVE.** `describe-blank-parameters` is
+> described here as having nothing for the rule to look at because it declares
+> no `role: result`. `heron_fragment.provide_role` reads an **absent** `role:`
+> as `result` - the stricter reading, and deliberately so - therefore its
+> `findings` IS a declared result and a tracking row can carry it.
+>
+> **What is not built is the runs**, which need a live session to develop
+> against. The tool exits 3 and names that rather than sending something
+> half-built at a model. [FRAGMENT-ISSUES row 151](FRAGMENT-ISSUES.md).
+---
+
+## Group X — the SKILLS, and the one thing only the PC can answer — 2026-09-19
+
+**THIS WAS WRITTEN AS GROUP V, THEN W, AND IS X. THE REASON IS THE ROW BELOW IT.** A brief asked
+for a "Group V" on 2026-09-19 when none existed — the thirteen it was after are
+**[Group I2](#i2--the-model-has-not-got-it-13)** — so this session took the free letter. Another
+session took the same free letter the same afternoon for a larger sort, merged first, and keeps it.
+Same hazard as the row numbers, one namespace along.
+
+**Ten skills have been DRAFT since Step 14 and nothing could say why.**
+[`tools/prove-skill.py`](../tools/prove-skill.py) now asks, and measures every half that a machine
+with no Revit can measure. It reports **BLOCKED 2, CROSSING 1, NOT UNDERSTOOD 6, UNDERSTOOD 1** —
+and **it cannot print PROVEN**, because a skill is proved when a model has answered.
+[`tests/test_skill_proving.py`](../tests/test_skill_proving.py) pins that by reading the verdict
+function's own returns.
+
+**Everything below is what is left, and every row of it needs the PC.**
+
+| | What to run, and what it would settle |
+|---|---|
+| **X1** | **The ten job files.** `tools/jobs/skills/<skill>-model-half.yaml`, one per skill, in `tools/jobs/example.yaml`'s shape, steps in an order that composes and `keep-chain: true` exactly where a need can only come down the chain. `python tools/batch-prove.py <file> --dry-run` first. **Read each header before running it** — it says how many of its own steps `batch-prove` will refuse as `ALREADY`, which for seven of the ten is all of them |
+| **X2** | **And that refusal is the finding, not a fault — [row 141](FRAGMENT-ISSUES.md).** `batch-prove` refuses **32 of the 37 steps**, correctly: each capability's own model half is already evidenced. What is NOT evidenced is the **composition**, and nothing in this repository can run one. `prove` in `mcp/client/heron_bridge_client.py` does run a chain — first fragment resets it, the rest continue, one lease — but calls `run_fragment_read` only, so the four MODIFY skills have no chain runner at all, and it judges nothing: no negative case, no draft, no signature. **Chain, write, judgement — no one runner has all three.** Each job file carries the `prove` command line for its own chain, which is as far as today's tooling reaches |
+| **X3** | **Two skills need a hand on the mouse before their batch runs.** `check-connectivity` and `trace-system` both go through `trace-connectivity`, whose `start` is one PARTICULAR element. Select it in Revit and type `selected` in the blank — the add-in refuses if none or several are selected, so the batch has to be arranged around that one pick |
+| **X4** | **`trace-system` cannot run its own plan at all — [row 142](FRAGMENT-ISSUES.md).** It declares `REPORT_FINDINGS`, and neither `filter-elements-by-id` nor `trace-connectivity` provides the `findings` that fragment needs. Two plausible repairs, both the owner's, neither guessed at. **No Revit needed to decide it; a Revit needed to prove whichever is chosen** |
+| **X5** | **The routing half is a RECORDING and will go stale.** `tools/jobs/skills/routing-2026-09-19.json` is what `prove-skill.py --routing-from` and the skill catalogue both read. Re-take it with `python tools/prove-skill.py --routing-to tools/jobs/skills/routing-<date>.json` — about twenty-five minutes for forty-three sentences — and **compare the index fingerprint before comparing any count** ([row 116](FRAGMENT-ISSUES.md)). It needs no Revit, only time. **SINCE 2026-09-19 IT NO LONGER GOES STALE IN SILENCE** ([row 152](FRAGMENT-ISSUES.md)): `ROUTING.words_moved()` compares the recording's PHRASES against the skills' own utterances - which needs no store, so it holds in CI - and a skill whose words have moved is `OUT OF DATE` on the page and in the tool, never `UNDERSTOOD`. **That does not re-take it**: what the check buys is that nobody reads a stale count as a clean one. The fingerprint still answers a different question - WHICH LIBRARY was asked - and is still the one to compare before comparing counts |
+
+### What is NOT waiting on the PC, and is waiting on a person
+
+Three findings are one-line edits in `brain/fragments/`, which the session that found them was told
+not to touch. They need no Revit at all — only whoever owns those files.
+
+- **[Row 146](FRAGMENT-ISSUES.md)** — seven sentences with an owner named per sentence. The repair
+  is [row 116](FRAGMENT-ISSUES.md)'s *declaring, not demoting*: one line added to one `utterances:`
+  block, after which identity fires before ranking runs.
+- **[Row 134](FRAGMENT-ISSUES.md)** — *"change the insulation thickness"* is the dangerous one.
+  `set-compound-layer-width` edits a wall, floor, roof or ceiling **TYPE**; `set-mep-insulation`
+  edits what was handed in. A modeller means the pipe.
+- **[Row 140](FRAGMENT-ISSUES.md)** — four declarations in three skills name a capability that
+  outranks the skill's own risk. **The obvious repair is the one that must not be taken**: raising
+  the skill's risk removes it from `check-skill-routing.py`'s `ASKS_A_QUESTION`, and its crossings
+  stop being reported.
+
+**And four of [row 146](FRAGMENT-ISSUES.md)'s crossings cannot be repaired by anybody's edit**,
+because nothing in the library reads the thing: an MEP element's size, which workset an element is
+on, an insulation thickness, and a view's scale. Those are fragments somebody has to write, and then
+a Revit to prove them.
+
+> **THE NUMBER COLLIDED TWICE MORE WHILE THIS WAS BEING WRITTEN, AND THEN THE LETTER DID.** This
+> session's row was 147 against [PR #200](https://github.com/Ajmalpshaik/Heron-AI/pull/200), then 148
+> against [PR #198](https://github.com/Ajmalpshaik/Heron-AI/pull/198), and is **150**; #198's own
+> [row 149](FRAGMENT-ISSUES.md) counts the same hazard four times in one day from the other side.
+> Then this group, written as V, met a larger Group V from #198 - and its Group W as well, so it is X.
+> [U4](#group-u--a-review-found-six-things-in-group-ts-own-work-and-all-six-held) records it happening
+> to row 118. **Nothing sees an in-flight branch**, so no local tool can prevent it, and announcing a
+> number is only half a fix — it does not help when two sessions announce at the same hour. What
+> actually held every time: **keep both, renumber the later one, and check for duplicates
+> afterwards** — no row and no group has been lost yet.

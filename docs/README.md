@@ -3,7 +3,7 @@
 > **Status:** **Phase 0 is complete** — Steps 1 to 5, proven in real Revit 2020 and 2024. **Step 6 (the
 > first write) and the whole of Phase 2 (Steps 7 to 14) are built, compile on all eight releases, and
 > have never loaded into Revit.** **All ten skills are `DRAFT`; 328 of the 395 fragments are `PROVEN`
-> as of 2026-09-18** — this line said *every fragment is `DRAFT`* long after that stopped being true, so
+> as of 2026-09-19** — this line said *every fragment is `DRAFT`* long after that stopped being true, so
 > derive it: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 >
 > **Do not trust this paragraph over the tool.** `python tools/check-gaps.py` is computed from disk on
@@ -31,8 +31,8 @@
 > `python tools/owner-queue.py` derives one at the moment you ask. Three typed lists were found
 > stale on 2026-09-12, which is why.
 
-**52 answered · 4 open, and nothing gates any phase.**
-Two of the four, `Q-54` and `Q-55`, moved in on 2026-09-12 from a RAG work note that was retired — they had been owed for days while this line said one was open, which is why a question belongs in this register and nowhere else. `Q-43` to `Q-48` were all opened on
+**56 answered · 0 open, and nothing gates any phase.**
+**The last four were answered on 2026-09-20** — [D-81](DECISIONS.md) to [D-84](DECISIONS.md) — asked back to the owner one at a time, in plain words with a worked example each. Two of the four, `Q-54` and `Q-55`, moved in on 2026-09-12 from a RAG work note that was retired — they had been owed for days while this line said one was open, which is why a question belongs in this register and nowhere else. `Q-43` to `Q-48` were all opened on
 2026-09-09, and every one of them was found by a tool asking a question nobody had asked before rather
 than by reading. `Q-49` and `Q-50` followed the same day from reading someone else's repository at file
 level ([33 §5](33-external-repository-research.md)):

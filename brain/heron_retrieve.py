@@ -1152,13 +1152,14 @@ def find(store, text, revit=None, limit=5):
 
     fid, status = SEARCH.short_circuit(store, text)
     if fid and fid in keep:
-        return SEARCH.Answer(
-            "identity", fid,
-            autorun=status in SEARCH.RUNNABLE_UNASKED,
-            note=("%s is %s, so it may run without asking" % (fid, status))
-            if status in SEARCH.RUNNABLE_UNASKED else
-            ("%s matched exactly but is %s - nobody has watched it work, so it "
-             "is offered, not run" % (fid, status)))
+        # ROW 127, AND IT IS THE SAME CALL THE OTHER SEAM MAKES. The status
+        # here comes from the INDEX, and `heron_lookup` turns it into *"so it
+        # may run without asking"* - a permission. On 2026-09-19 it granted one
+        # on a row demoted to DRAFT that morning, in a reply whose own totals,
+        # derived live from disk, disagreed with it. The fragment's file is the
+        # authority; `may_run_unasked` asks both and can only ever withhold.
+        allowed, told = SEARCH.may_run_unasked(fid, status)
+        return SEARCH.Answer("identity", fid, autorun=allowed, note=told)
 
     fid, hits = SEARCH.recall(store, text)
     if fid and fid in keep:

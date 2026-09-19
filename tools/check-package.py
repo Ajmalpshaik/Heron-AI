@@ -382,13 +382,25 @@ def main():
       "class exists and is an IExternalApplication, the deploy rewrite still\n"
       "matches, nothing redistributes Autodesk's assemblies, the install stays\n"
       "per-user, and every supported release has a runtime row.\n\n")
-    w("STILL OWED, AND NOT ANSWERABLE HERE - each needs Windows and a Revit:\n")
+    w("STILL NOT ANSWERABLE HERE - each needs Windows and a Revit:\n")
     w("  - the add-in actually loads, on each release\n")
     w("  - an upgrade over a previous version keeps the user's settings\n")
     w("  - a rollback recovers a working install\n")
     w("  - Revit discovers the manifest from the per-user folder\n")
-    w("  See docs/07 and docs/NEEDS-CHECKING.md. A green run here is not an\n")
-    w("  install, and must never be reported as one.\n")
+    w("  A green run here is not an install, and must never be reported as\n")
+    w("  one. That has not changed and cannot: every question above is about\n")
+    w("  what Revit DOES, and nothing in this file has ever seen a Revit.\n")
+    w("\n")
+    w("  ALL FOUR WERE ANSWERED ON 2026-09-19, on Revit 2020, 2024 and 2027\n")
+    w("  on the owner's PC, from commit 48ae1dc - docs/07 section 10 has the\n")
+    w("  journal lines and the hashes. Answering them found one defect: the\n")
+    w("  add-in had NO rollback path at all, while brain/heron_update.py was\n")
+    w("  refusing to ship any release that could not prove one had been\n")
+    w("  tested. Built and proved in the same run; FRAGMENT-ISSUES row 147.\n")
+    w("\n")
+    w("  READ THAT AS HISTORY, NOT AS A PASS. It records one build on one\n")
+    w("  machine on one day. A release cut from a later commit owes these\n")
+    w("  four answers again, and this gate still cannot give them.\n")
     return 0
 
 

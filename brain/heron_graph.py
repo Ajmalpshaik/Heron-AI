@@ -185,7 +185,7 @@ def orphans(store, fragments=None):
     brain/fragments ITSELF and put it back afterwards, which left the real
     library wrong for 11.9s of every run - long enough for a concurrent
     `git add -A` to commit 55 fragments nobody edited, and permanent if the run
-    was killed rather than merely failing. See docs/FRAGMENT-ISSUES.md row 142.
+    was killed rather than merely failing. See docs/FRAGMENT-ISSUES.md row 155.
 
     `is not None` rather than `or`, so an EMPTY library is asked about as an
     empty library. Falling through to the real one on a falsy argument is how

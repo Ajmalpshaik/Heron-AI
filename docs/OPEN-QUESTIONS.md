@@ -19,7 +19,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 52 answered · 4 open · nothing blocking any phase**
+**Progress: 56 answered · 0 open · nothing blocking any phase**
 
 **The count moved 1 → 3 on 2026-09-12 without anybody asking anything new.** `Q-54` and `Q-55` were
 raised on 2026-09-10 and 2026-09-11 and had been living in a work note — `Q-D` and `Q-E` in
@@ -468,7 +468,7 @@ because it changes no ranking. If it is ever wanted it is a separate question, n
 
 ---
 
-### 🟠 Q-51 — What guards the path from retrieval to context, on the day Heron indexes text it did not write? *(new, 2026-09-09)*
+### ✅ Q-51 — What guards the path from retrieval to context, on the day Heron indexes text it did not write? → **Stamp it. Provenance, not scanning** *(asked 2026-09-09, answered 2026-09-20)*
 
 Found by reading [`ruvnet/ruflo`](https://github.com/ruvnet/ruflo) at file level
 ([33 §5.2](33-external-repository-research.md)). Its `agentdb-retrieval-guard.ts` scans every chunk
@@ -541,9 +541,24 @@ which is the question whose answer changing is what makes this one urgent.
 
 **So this question stays open on purpose**, and it is no longer something anybody has to remember.
 
+**ANSWERED 2026-09-20 by the owner: shape 1, mark and do not scan.**
+
+Every part carrying text Heron did not write is **stamped with its source**, and Heron **attributes
+rather than asserts** - *"the supplier's datasheet says yes"*, never a bare *"yes"*. **No chunk scanner
+is built.**
+
+**The owner was given the drawing-office form of it and chose on that:** a stamp is
+**FOR INFORMATION ONLY - NOT FOR CONSTRUCTION**. You still read the sheet; you know what it is and
+whose it is. The worked example was a supplier datasheet whose own small print claims QCS approval,
+asked back later as fact.
+
+**Half of this already exists** - `heron_context.py` stamps each part with `source` - so what is owed
+is the ATTRIBUTION half: the rule that a part stamped as somebody else's may not be spoken in Heron's
+own voice. Shapes 2 and 3 are refused, not deferred.
+
 ---
 
-### 🔵 Q-54 — Is the cloud-embedding opt-in worth building, or is it a switch nobody will turn on? *(moved here 2026-09-12)*
+### ✅ Q-54 — Is the cloud-embedding opt-in worth building, or is it a switch nobody will turn on? → **Build it, and split by CONTENT TYPE rather than by scope** *(asked 2026-09-10, answered 2026-09-20)*
 
 **Carried in as `Q-D` from `docs/work-notes/plans/rag/03-working-note.md` §5 when that note was
 retired.** It was the note's only home and a work note is deleted at the end of its life, so it comes
@@ -561,9 +576,38 @@ it may be a switch with no user.
 a switch nobody turns on. An unbuilt setting that is written down is cheaper than a built one that is
 not used, and either is better than a specification promising a choice the code cannot offer.
 
+**ANSWERED 2026-09-20 by the owner - and the answer changes the SHAPE of the question.**
+
+[D-24](DECISIONS.md) frames the opt-in **per scope**. The owner's rule is **per content type**, and he
+asked for the earlier position to be changed outright: *"in our previous decision also we need to
+change - it was never give anything cloud."*
+
+| | Cloud |
+|---|---|
+| **Documents** - PDFs, specs, standards, **and client project documents** | **May go.** Asked specifically about client tender documents and consultant drawing sets and he said yes, all of them |
+| **Revit models, families, model data** | **Never leave the PC** |
+
+**Two things he asked while deciding, answered at the time and recorded because the answers bound the
+decision:**
+
+**"More context means better answers and no hallucination - am I right?"** Half right, and the
+counter-example is in this repository: [row 114](FRAGMENT-ISSUES.md) is Heron telling him **twice**
+there was no condensate drain in a model holding **63** such elements, with full model access. More
+RELEVANT context reduces hallucination. It does not remove it, and more is not automatically better -
+which is why retrieval takes the top ~20 and re-ranks rather than sending everything.
+
+**"It will not go to GitHub - am I right?"** **Correct, and verified against `.gitignore` rather than
+asserted.** Three layers: the store lives in `%APPDATA%\Heron\knowledge`, outside the repository;
+the databases are ignored; and the SOURCE documents are blocked by extension - `*.pdf`, `*.docx`,
+`*.xlsx`. The file's own comment says why it is permanent: *"A fork propagates and GitHub caches, so
+this one is permanent if it happens once."*
+
+**What he accepted as the cost:** everything in means the superseded revision goes in too, and Heron
+will answer from it confidently. He was told this plainly before answering.
+
 ---
 
-### 🟡 Q-55 — May an INGEST read another scope? *(raised 2026-09-11 by building Stage 8; moved here 2026-09-12)*
+### ✅ Q-55 — May an INGEST read another scope? → **Yes — and it must carry the PRACTICE, not only the count** *(asked 2026-09-11, answered 2026-09-20)*
 
 **Carried in as `Q-E` from `docs/work-notes/plans/rag/03-working-note.md` §5 when that note was
 retired.**
@@ -582,9 +626,25 @@ matter rather than a technical one.
 **a number and a clause number, never a clause**. A write-time version could hold to the same limit.
 Whether it may happen at all is still the owner's call.
 
+**ANSWERED 2026-09-20 by the owner - and he asked for MORE than this question offered.**
+
+The question offered the read-time limit: **a number and a clause number, never a clause.** The owner
+declined that ceiling. He wants Heron to **remind him with the actual prior practice, by project**:
+
+> *"In Project A you used 700mm ceiling void. Do you want the same here?"*
+
+So an INGEST **may** read another scope, and the crossing **carries the practice**, not only the count.
+His words: *"it need to remember to me - in project one we did like this, so do you need to do like
+that. AI need to tell me and remind me."*
+
+**One reservation, put to him at the time and recorded rather than resolved:** this is safe because it
+is HIM - he worked on both projects and already knows both, so Heron is reminding him of his own work.
+**The day a second person uses Heron**, someone could be shown a client's practice having never worked
+for that client. **Revisit on the first multi-user install**, not before.
+
 ---
 
-### 🟠 Q-56 — What actually contains a new agent while it runs? *(raised 2026-09-14 by a review of the Agent Sandbox)*
+### ✅ Q-56 — What actually contains a new agent while it runs? → **Nothing more than today — and the word "sandbox" goes** *(asked 2026-09-14, answered 2026-09-20)*
 
 `HERON-AHR-SBX-016`'s row asks it to run a newly built agent "in isolation — never against a live
 model, never able to write production knowledge". What is built runs the agent as ordinary Python **in
@@ -616,6 +676,15 @@ ever run near a model.
 *Cheapest honest answer if unsure:* say so in the module and the register row — **"watched, not
 contained"** — and leave the subprocess until an agent is actually being generated by
 `HERON-AHR-BLD-004`. The gap is written at the top of `brain/heron_sandbox.py` either way.
+
+**ANSWERED 2026-09-20 by the owner: the cheapest honest answer, which this question itself proposed.**
+
+**Watch, and record what it tried.** What exists stays; **no subprocess isolation is built.** It holds
+only agents that cooperate, and that is exactly the honest accident a first run usually produces.
+
+**And the word goes.** *"Sandbox"* must be replaced with **"watched, not contained"** in the module and
+in the `HERON-AHR-SBX-016` register row. The owner chose the option whose whole point is that the name
+stops promising what the code does not do - so the rename is the deliverable here, not a tidy-up.
 
 ---
 

@@ -44,10 +44,24 @@ honest; a fixed list stops measuring the day somebody optimises against it.
 WHAT IT DOES NOT DECIDE
 -----------------------
 **An imperative is not a question.** "isolate all the pipes" resolving to
-ISOLATE_ELEMENTS is CORRECT even though isolating is not a READ, and so is
-"hide everything except the walls" landing on HIDE_ELEMENTS. Those are reported
-separately and are not failures: what marks a real crossing is that **a READ
-was right there and lost**.
+ISOLATE_ELEMENTS is CORRECT even though isolating is not a READ. Those are
+reported separately and are not failures: what marks a real crossing is that
+**a READ was right there and lost**.
+
+**AND THE LINE IS AT EXECUTE, NOT AT "IT IS AN IMPERATIVE"** - this sentence
+used to name "hide everything except the walls" landing on HIDE_ELEMENTS as
+equally correct, and the rule below reported it as a crossing anyway. The rule
+was right and the sentence was wrong (register row 145). `isolate-elements` is
+**EXECUTE**: Revit's Temporary Isolate, gone when the view is reset.
+`hide-elements` is **MODIFY**, and its own fragment gives the reason - a
+permanent hide is saved into the view, survives closing the model, appears on
+the printed sheet, and the next person to open that view has no idea why
+something is missing. **A capability's risk is the worst thing it can do**,
+not the thing the modeller probably meant.
+
+So: an imperative reaching an **EXECUTE** view change is correct and is
+reported separately. An imperative reaching a **MODIFY** is still worth
+reading, and widening the discriminator to excuse it would delete the check.
 
 That test is crude and deliberately so. A tool that tried to parse intent would
 be a second, worse retriever. Judgement stays with the reader - which is why
@@ -63,9 +77,8 @@ what a user would really have got, not a simulation of one.
 
 import argparse
 import hashlib
+import importlib.util
 import os
-import pathlib
-import sqlite3
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -94,49 +107,19 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 # So a bare number from this tool is a sample. Printing the store's identity
 # next to the number is what makes two samples worth comparing - and if they
 # disagree while the fingerprint matches, the ranker really is the suspect.
-def _index_fingerprint():
-    """{path, md5, counts} for the store this sweep will actually read.
+# THE STORE'S FINGERPRINT IS IMPORTED, NOT KEPT HERE. This file carried its
+# own copy of `_index_fingerprint()` until 2026-09-19 - same behaviour, two
+# sets of comments - and the two would have had to be edited together the day
+# the block learned to name WHICH TREE the store was built from. That is the
+# drift this repository keeps finding: two copies of one rule is how one of
+# them goes stale. The filename has a hyphen in it, so the import is by path.
+_SPEC = importlib.util.spec_from_file_location(
+    "heron_tool_check_skill_routing",
+    os.path.join(ROOT, "tools", "check-skill-routing.py"))
+_ROUTING = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(_ROUTING)
 
-    A failure to read it is REPORTED, never returned as a zero: a fingerprint
-    that silently reads as an empty store is the plausible-zero shape D-52
-    names, in the one place whose whole job is to make runs comparable.
-    """
-    import heron_scope as SCOPE
-
-    out = {}
-    try:
-        # One spelling. scope_path joins with os.sep while HERON_KNOWLEDGE
-        # arrives however the caller typed it, so the same file printed twice
-        # can read as two - which is the one thing this block exists to stop.
-        out["path"] = SCOPE.scope_path(SCOPE.GLOBAL).replace(os.sep, "/")
-    except ValueError as why:
-        return {"error": str(why)}
-
-    try:
-        with open(out["path"], "rb") as handle:
-            out["md5"] = hashlib.md5(handle.read()).hexdigest()
-    except (IOError, OSError) as why:
-        out["md5"] = "unreadable (%s)" % why
-        return out
-
-    counts = {}
-    try:
-        uri = pathlib.Path(out["path"]).as_uri() + "?mode=ro"
-        db = sqlite3.connect(uri, uri=True)
-        try:
-            for table in ("identities", "fragments", "vectors", "utterances"):
-                counts[table] = db.execute(
-                    "SELECT COUNT(*) FROM %s" % table).fetchone()[0]
-        finally:
-            db.close()
-    except Exception as why:                                   # noqa: BLE001
-        # Named, not swallowed. Whatever went wrong here, the reader must not
-        # be handed a row of zeroes that looks like a fresh store.
-        out["counts_error"] = "%s: %s" % (type(why).__name__, why)
-        return out
-
-    out["counts"] = counts
-    return out
+_index_fingerprint = _ROUTING._index_fingerprint
 
 
 def _md5(path):
@@ -263,6 +246,78 @@ QUESTIONS = [
     "which ducts have no system name",
     "what is missing before I issue this",
     "how many of each size",
+
+    # TWENTY-TWO ORDINARY SENTENCES THE LIST HAD NO SUBJECT FOR, added
+    # 2026-09-19. The docstring asks for exactly this - "add to this list
+    # whenever a real session produces one" - and this session produced them
+    # by reading all 56 and asking which parts of a modeller's ordinary day
+    # they never touch.
+    #
+    # THE CRITERION WAS WRITTEN DOWN BEFORE A SINGLE ONE WAS ASKED, for the
+    # reason the block above gives: choosing them by which ones FAILED is
+    # optimising against the measurement.
+    #
+    #   1. It is a QUESTION, not an imperative. The discriminator here is
+    #      "was a READ beaten", and this file already says an imperative
+    #      reaching a write is correct rather than a crossing.
+    #   2. It opens a SUBJECT the existing list does not touch, or asks an
+    #      existing subject with the noun a modeller actually uses.
+    #   3. It is in Ajmal's own words - plain, and MEP first.
+    #
+    # The subjects the list had none of: rooms and spaces, tags, model
+    # warnings, airflow and flow rate, the ceiling void, grids, what changed
+    # between issues, and connection asked as a SWEEP rather than about one
+    # element ("is this connected to anything" is in the list; "which
+    # equipment is not connected to anything" is a different shape and a
+    # different fragment would own it).
+
+    # Rooms and spaces. Nothing in the list above asks about one at all, and
+    # every room-based MEP job starts here.
+    "what room is this in",
+    "which rooms have no name",
+    "what is the area of this room",
+    "are there any unplaced rooms",
+
+    # Tags and annotation. Row 134 names "check the tags before i issue this"
+    # as an AMBIGUOUS phrase between two READs; these are the ordinary
+    # questions around it, and none of them is declared.
+    "which elements are not tagged",
+    "are any of these tags overlapping",
+    "what is the scale of this view",
+
+    # Model health. "how big is this model" is in the list; how BAD it is was
+    # not asked at all, and warnings are the first thing a checker opens.
+    "how many warnings are in this model",
+    "are there any duplicate elements",
+    "which families are the heaviest",
+
+    # Airflow and flow rate - the numbers an MEP modeller reads off an
+    # element every day. The list had sizes and slopes and no quantities.
+    "what is the airflow in this duct",
+    "how much air is this diffuser giving",
+    "what is the flow rate in this pipe",
+
+    # The ceiling void. "how high is this off the floor" asks about an
+    # element; these ask about the SPACE left, which is the coordination
+    # question and a different owner.
+    "what is the ceiling height here",
+    "how much space is there above the ceiling",
+    "will this duct fit above the ceiling",
+
+    # Grids and levels. "which level is this on" is in the list; what the
+    # model HAS was never asked.
+    "what levels are in this model",
+    "which grids are in this view",
+
+    # Between issues. A revision question the list touches once, from the
+    # sheet end only.
+    "what changed since the last issue",
+    "which sheets have not been issued",
+
+    # Connection as a SWEEP. The three connection questions above are all
+    # about one element in front of you.
+    "which equipment is not connected to anything",
+    "which fixtures have no pipe",
 ]
 
 
@@ -321,19 +376,9 @@ def main():
     print("Revit %s   questions asked: %d" % (args.revit, len(QUESTIONS)))
     print("")
     print("THE INDEX THIS RAN AGAINST - compare it before comparing counts:")
-    if index.get("error"):
-        print("  no store: %s" % index["error"])
-    else:
-        print("  store    %s" % index["path"])
-        print("  md5      %s" % index["md5"])
-        if index.get("counts_error"):
-            print("  counts   COULD NOT BE READ - %s" % index["counts_error"])
-            print("           Not reported as zero on purpose: a store that")
-            print("           cannot be read is not an empty one (D-52).")
-        else:
-            print("  rows     %s" % ", ".join(
-                "%s %d" % (name, index["counts"][name])
-                for name in sorted(index.get("counts") or {})))
+    for line in _ROUTING.fingerprint_lines(index):
+        print(line)
+    if not index.get("error"):
         print("  Two runs whose numbers differ while THIS block matches are a")
         print("  question about the ranker. Two whose numbers differ and whose")
         print("  block differs are a question about the index, and that is the")

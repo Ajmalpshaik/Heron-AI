@@ -25,9 +25,11 @@ contains and this layer correctly finds nothing - that is Step 10's job, and
 this file asserts the limit rather than papering over it.
 """
 
+import io
 import os
 import shutil
 import sys
+import sqlite3
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -53,8 +55,51 @@ def main():
         SCOPE.rebuild()
         store = SCOPE.open_scope(SCOPE.GLOBAL)
         try:
-            n = SEARCH.index(store)
+            check(SEARCH.indexed_from(store) is None,
+                  "a store nobody has indexed names no tree - an absent "
+                  "answer, not agreement (D-52)")
+            n, _ = SEARCH.index(store)
             check(n >= 2, "the scope indexes its fragments (%d)" % n)
+
+            # WHOSE FRAGMENTS ARE IN THE STORE (FRAGMENT-ISSUES row 131). It
+            # is ONE file for every checkout on the machine, so a rebuild
+            # replaces what Heron knows with the opinion of whichever tree
+            # asked last. index() knew both paths and recorded neither.
+            import heron_fragment as FRAG
+            here = os.path.abspath(FRAG.FRAGMENTS_DIR).replace(os.sep, "/")
+            check(SEARCH.indexed_from(store) == here,
+                  "and after indexing it names the tree it was built from")
+            # IT RECORDS AND DOES NOT REFUSE. Whether a scope should be
+            # per-worktree is the policy question row 131 leaves open, and a
+            # library function that started refusing would settle it by
+            # accident - so a second index from the same tree still works.
+            again, _ = SEARCH.index(store, force=True)
+            check(again == n and SEARCH.indexed_from(store) == here,
+                  "a second rebuild is not refused - this names, it does not "
+                  "gate")
+
+            # A MISSING TABLE AND A BROKEN STORE ARE DIFFERENT ANSWERS. The
+            # first is the normal case on a store written before this was
+            # recorded; the second must NOT read as "no tree", which is the
+            # plausible zero D-52 exists to stop and what
+            # tools/check-narrow-errors.py refuses in one line.
+            class _Raises(object):
+                def __init__(self, exc):
+                    self.exc = exc
+
+                def execute(self, *a, **k):
+                    raise self.exc
+
+            check(SEARCH.indexed_from(_Raises(
+                sqlite3.OperationalError("no such table: index_state"))) is None,
+                  "a store with no such table names no tree, quietly")
+            try:
+                SEARCH.indexed_from(_Raises(
+                    sqlite3.OperationalError("database disk image is malformed")))
+                check(False, "a broken store must not answer quietly")
+            except sqlite3.OperationalError:
+                check(True, "and a store that is broken raises rather than "
+                            "reading as no tree (D-52)")
 
             print()
             print("1. The common sentence costs one lookup")
@@ -207,11 +252,165 @@ def main():
                   "words no fragment uses do not reach an identity match")
             check(not a.autorun,
                   "and nothing runs on a weak match - that is Step 10's job")
+            print()
+            print("8. Asking a question does not rewrite what Heron knows")
+            # ROW 136. `heron_brain._Open` calls SEARCH.index() on EVERY
+            # lookup, and this function opened with DELETE FROM identities -
+            # against a store that is ONE file for every checkout on the
+            # machine. So a question asked from one tree silently replaced what
+            # Heron knew with that tree's opinion. Measured 2026-09-19: six
+            # declared phrases confirmed present BY NAME, and gone after a
+            # single lookup from a tree that did not declare them.
+            #
+            # THE SECOND TREE IS STOOD IN FOR BY A ROW NO FRAGMENT DECLARES,
+            # because that is precisely what one looks like from in here: a
+            # phrase in the table that this tree's own files cannot account
+            # for. A second worktree cannot be built inside a test; this is the
+            # exact thing that was destroyed, and it is destroyed the same way.
+            store.execute(
+                "INSERT OR REPLACE INTO identities (phrase, fragment_id) "
+                "VALUES ('a phrase another tree declared', 'FRG-ELE-001')")
+            store.db.commit()
+
+            SEARCH.index(store)
+            check(store.execute(
+                      "SELECT fragment_id FROM identities WHERE phrase = "
+                      "'a phrase another tree declared'").fetchone() is not None,
+                  "indexing again with nothing changed leaves another tree's "
+                  "declaration STANDING - on the old code that row was gone, "
+                  "and that is row 136 in one line")
+
+            os.utime(os.path.join(ROOT, "brain", "fragments",
+                                  "set-selection", "fragment.yaml"), None)
+            SEARCH.index(store)
+            check(store.execute(
+                      "SELECT fragment_id FROM identities WHERE phrase = "
+                      "'a phrase another tree declared'").fetchone() is not None,
+                  "and touching a file without changing a character still "
+                  "changes nothing - hashed like heron_embed, not timed, "
+                  "because a checkout moves every mtime it touches")
+
+            # AND THE OTHER HALF, or this is a skip that never stops skipping.
+            # A REAL change must still rebuild, and rebuilding correctly DROPS
+            # the row above - a tree's own files replacing the table is what
+            # indexing IS. Merging is what makes a declaration durable; this
+            # only stops a reader destroying one on its way past.
+            store.execute("UPDATE fragments SET domain = domain || ' changed' "
+                          "WHERE id = 'FRG-ELE-001'")
+            store.db.commit()
+            SEARCH.index(store)
+            check(store.execute(
+                      "SELECT fragment_id FROM identities WHERE phrase = "
+                      "'a phrase another tree declared'").fetchone() is None,
+                  "a REAL change rebuilds, so the skip is a skip and not a "
+                  "stop - D-30: it has to find nothing when there is nothing")
+
+            written, skipped = SEARCH.index(store, force=True)
+            check(written >= 2 and skipped == 0,
+                  "and force=True rebuilds whatever the digest says, matching "
+                  "heron_embed.index(store, force=True) - %d written" % written)
+
+            # AND A SKIP MUST REPORT ITSELF AS A SKIP. `heron_index._counts`
+            # reads a bare number as "(written, 0)", so while this returned a
+            # scalar every no-op call claimed it had rewritten the whole
+            # library - next to a vector index correctly reporting nothing.
+            # Found by review on PR #198.
+            written, skipped = SEARCH.index(store)
+            check(written == 0 and skipped >= 2,
+                  "a skip reports (0, rows) and never counts itself as work")
+
         finally:
             store.close()
     finally:
         shutil.rmtree(home, ignore_errors=True)
         os.environ.pop("HERON_KNOWLEDGE", None)
+
+    # ---- ROW 127: a PERMISSION may not be read from the cache alone --------
+    #
+    # `short_circuit` reads a fragment's status out of the INDEX, and
+    # heron_lookup turns it into "so it may run without asking". On 2026-09-19
+    # it said exactly that about a fragment demoted to DRAFT the same morning,
+    # and closed the same reply with a total derived live from disk that
+    # disagreed. The file is the authority; the index is a cache.
+    print()
+    print("ROW 127 - the index is a cache, the file is the authority")
+    room = tempfile.mkdtemp(prefix="heron-disk-status-")
+    try:
+        def fragment(folder, fid, status):
+            here = os.path.join(room, folder)
+            os.makedirs(here)
+            io.open(os.path.join(here, "fragment.yaml"), "w",
+                    encoding="utf-8").write(
+                        u"heron-status: %s\nid: %s\ncapability: X\n"
+                        u"contract:\n  needs:\n    - name: id\n" % (status, fid))
+
+        fragment("proved", "FRG-TEST-001", "PROVEN")
+        fragment("drafted", "FRG-TEST-002", "DRAFT")
+
+        check(SEARCH.disk_status("FRG-TEST-001", room) == "PROVEN",
+              "the status is read from the fragment's own file")
+        check(SEARCH.disk_status("FRG-TEST-002", room) == "DRAFT",
+              "for each one separately")
+        check(SEARCH.disk_status("FRG-TEST-999", room) is None,
+              "and an id no file carries reads as None, never as a status")
+
+        # `id:` ALSO APPEARS INDENTED INSIDE A CONTRACT on real fragments, and
+        # taking the first match anywhere would read a need's name as the
+        # fragment's own id.
+        check(SEARCH.disk_status("id", room) is None,
+              "a need called `id` inside the contract is not read as the "
+              "fragment's id - the parse is TOP LEVEL only")
+
+        allowed, told = SEARCH.may_run_unasked("FRG-TEST-001", "PROVEN", room)
+        check(allowed and "may run without asking" in told,
+              "index and file agreeing on PROVEN still grants, unchanged")
+
+        # ROW 127's OWN CASE.
+        allowed, told = SEARCH.may_run_unasked("FRG-TEST-002", "PROVEN", room)
+        check(not allowed, "a stale PROVEN in the index does NOT grant when "
+                           "the file says DRAFT")
+        check("the index says PROVEN while the fragment's own file says DRAFT"
+              in told,
+              "and the refusal names BOTH, so a reader can see which is stale")
+        check("re-index" in told, "and says how to clear it")
+
+        # ABSENCE IS A LEGITIMATE STATE, NOT EVIDENCE OF STALENESS. A store
+        # can be indexed from another root, or hold rows that never had a file
+        # - this suite's own FRG-QA-900 has `folder='x'` and no file anywhere.
+        # Row 127's defect is the two sources answering DIFFERENTLY, and a
+        # rule that punished absence to catch it would change behaviour far
+        # beyond the defect. That rule was written first and removed.
+        allowed, told = SEARCH.may_run_unasked("FRG-TEST-999", "PROVEN", room)
+        check(allowed and "may run without asking" in told,
+              "an id with no file behaves exactly as before - absence is not "
+              "disagreement")
+
+        allowed, told = SEARCH.may_run_unasked("FRG-TEST-002", "DRAFT", room)
+        check(not allowed and "nobody has watched it work" in told,
+              "and when both agree it is DRAFT, the old sentence is unchanged")
+
+        # THE WHOLE SAFETY ARGUMENT: no arrangement makes this grant something
+        # the old code refused.
+        every = [("FRG-TEST-001", "PROVEN"), ("FRG-TEST-001", "DRAFT"),
+                 ("FRG-TEST-002", "PROVEN"), ("FRG-TEST-002", "DRAFT"),
+                 ("FRG-TEST-999", "PROVEN"), ("FRG-TEST-999", "DRAFT")]
+        widened = [pair for pair in every
+                   if SEARCH.may_run_unasked(pair[0], pair[1], room)[0]
+                   and pair[1] not in SEARCH.RUNNABLE_UNASKED]
+        check(not widened,
+              "across every combination it never grants where the index alone "
+              "would not have - it can only ever WITHHOLD")
+
+        # And it is cheap enough to sit in a lookup - see the docstring.
+        import time
+        start = time.time()
+        for _ in range(50):
+            SEARCH.disk_status("FRG-TEST-001", room)
+        warm = (time.time() - start) / 50.0
+        check(warm < 0.05,
+              "a warm read costs %.4fs, so a lookup can afford to ask" % warm)
+    finally:
+        shutil.rmtree(room, ignore_errors=True)
 
     print()
     if FAILURES:

@@ -39,6 +39,20 @@ rather than interpreted: a row whose state has been corrected to FIXED,
 WITHDRAWN or NOT A DEFECT drops out, and a row hedged as "OPEN as a question"
 or "OPEN, and it is the owner's call" stays in, because it is.
 
+A ROW THAT CONTRADICTS ITSELF IS REPORTED SEPARATELY
+-----------------------------------------------------
+A cell can be appended to rather than reordered - the fix written under the
+sentence that says OPEN - and then the row is fixed while the sweep, which
+reads the first word, goes on counting it. Row 127 did exactly that between
+2026-09-19 and the same evening, and no count or list showed it.
+
+So a state that BEGINS with "open" and also carries a DATED `FIXED` or
+`CLOSED` claim is printed as a question. The test is deliberately narrow: a
+dated claim in capitals, not the word "fixed" in passing, because eleven open
+rows mention something else being fixed or closed and every one of them is
+genuinely open. **It asks; it never re-counts**, because which sentence is the
+state is a reader's judgement and a tool that guessed would start closing rows.
+
 THE ONE THING THIS CANNOT SEE is a row whose state cell still says OPEN when a
 LATER row has closed it. Four of those were found by hand on 2026-09-16 (rows
 37, 44, 96 and 97) and there is no pattern that finds them, because the closure
@@ -57,6 +71,11 @@ SECTION_START = "## 5. HERON'S OWN DEFECTS"
 SECTION_END = "## 6. WHAT CANNOT BE RUN AT ALL"
 
 ROW = re.compile(r"^\|\s*\*{0,2}(\d+)\*{0,2}\s*\|")
+
+# A DATED CLAIM IN CAPITALS, not the word in passing. `[^.]` keeps it inside
+# one sentence, so "7 of 14 fixed" followed three sentences later by a date
+# is not a hit - measured against every row in the register: no false ones.
+SETTLED = re.compile(r"\b(FIXED|CLOSED)\b[^.]{0,40}?\d{4}-\d{2}-\d{2}")
 
 
 def rows():
@@ -102,6 +121,8 @@ def main():
         return 0
 
     is_open = [(n, s) for n, s in found if s.lower().startswith("open")]
+    arguing = [(n, s, SETTLED.search(s).group(0))
+               for n, s in is_open if SETTLED.search(s)]
 
     out = sys.stdout.write
     out("Heron's own defects - docs/FRAGMENT-ISSUES.md section 5\n")
@@ -122,6 +143,13 @@ def main():
     out("  ids                 : %s\n"
         % ", ".join(str(n) for n, _ in is_open))
     out("\n")
+    if arguing:
+        out("  ROWS THAT ARGUE WITH THEMSELVES - the state begins with OPEN\n"
+            "  and the same cell carries a dated fix. One of the two is\n"
+            "  wrong, and which one is a reader's call:\n")
+        for number, _state, claim in arguing:
+            out("    %3d  says OPEN, and also %r\n" % (number, claim))
+        out("\n")
     out("Read the ids, not the count. A row can say OPEN after a later row\n"
         "has closed it - four did on 2026-09-16 - and no pattern sees that.\n")
     return 0

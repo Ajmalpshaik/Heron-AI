@@ -19,7 +19,7 @@ that day**:
 > **If you are the owner and you want only what is waiting on YOU, read
 > [`FOR-THE-OWNER.md`](FOR-THE-OWNER.md) and run `python tools/owner-queue.py`.** The page is the
 > structure; the tool is the list, derived from the registers at the moment you ask so that it cannot
-> go stale. It also says what is **safe to use today** — **114 proven `READ` fragments cannot modify a
+> go stale. It also says what is **safe to use today** — **144 proven `READ` fragments cannot modify a
 > model**, so they are safe on a live project now.
 >
 > **For the next stretch as an ordered plan**, open
@@ -119,7 +119,7 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Add-in | **THAT CLAIM WAS WRONG AND IS CORRECTED. Rebuilt and redeployed 2026-09-10, to Revit 2020, 2024 AND 2027**, verified at binary level. The binary Revit had loaded was dated 2026-09-08 23:06 while `RevitFragment.cs` was written 2026-09-09 23:14 - so D-67's caller-value widening and the rollback check had NEVER reached the machine ([FRAGMENT-ISSUES](FRAGMENT-ISSUES.md) rows 8 and 12). Deploy ONE release at a time. Rebuild it after ANY change under `revit/` — and check the framework first: `check-compile.py` builds 2020–2027 into one folder and the newest wins, so a run of it leaves .NET 10 binaries that Revit 2024 refuses with *"Revit cannot run the external application"*. `deploy-addin.ps1` now guards this rather than trusting the operator |
 | Agents | **215 of 250 have code** as of 2026-09-16, 4 host-provided by D-01, **31 left** — `python tools/agent-count.py`. **Sixteen departments are complete.** Phase 0/1's agent list is COMPLETE. The 31 split cleanly and the split is the useful part: **16 wait on one sentence from the owner** — **F23** four Documentation rows, **F27** five Development rows, **F31** five Standards rows, **F15/F17** two Naming rows — and **10 Revit Engineering rows are open work**. **Four were built on 2026-09-16**: `HERON-REVIT-API-020` (reasons ABOUT the API rather than touching a model), `HERON-REVIT-SYS-030` (MEP systems), `HERON-REVIT-PAR-011` (parameters) and `HERON-REVIT-GRP-033` (groups and assemblies). **They are not blocked on a compiler** — [§30](30-compiling-away-from-windows.md) is a five-minute install and every one builds on 2020–2027 once it is done. They are blocked on a MODEL: each is `MODIFY` in the register, which that column defines as the HIGHEST permission it can require, so each is built READ-FIRST exactly as `RevitLinks` and `RevitPhases` were — and none of the five has ever run |
 | MCP tools | **24** as of 2026-09-16. The five a modeller will feel are **`revit_links`** (2026-09-14), **`revit_phases`** (2026-09-15), **`revit_systems`**, **`revit_parameters`** and **`revit_groups`** (all 2026-09-16), and they answer the same class of question: **a number about a model is only a number about the part of it you asked for.** Elements inside a LINK are not in the host document; a count is a fact about a model AND a phase AND a design option; an MEP element **connected to nothing** is on no system and missing from every total; a parameter check that reads only the INSTANCE reports a confident zero on data sitting on the TYPE; and an element inside a GROUP carries your edit into every placement of that group, which Revit does not warn about. All five read-only. **`revit_groups` is the PRE-FLIGHT for the write tools** — it is how `RevitWrite`'s *"almost certainly inside a group"* stops being a guess made afterwards. **Define a new tool ABOVE `if __name__ == "__main__"`** — `server.run()` never returns, so a decorator below it never runs and the tool is simply absent while the registry still declares it. Round-one Codex finding; `tests/test_api_docs.py` checks it now. Derive the count: `grep -c '^@server.tool()' mcp/server/heron_mcp_server.py` |
-| Open questions | **52 answered, 4 open, nothing gating any phase.** `Q-51` — what guards retrieval-into-context on the day Heron indexes text it did not write — stays open **on purpose**, with [`tests/test_carried_sources.py`](../tests/test_carried_sources.py) watching for the day it becomes real. **`Q-54` and `Q-55` arrived on 2026-09-12 from a retired work note**, having been owed since 2026-09-10 while this line said one. **`Q-56` arrived on 2026-09-14** — the Agent Sandbox restrains an agent that cooperates and not one that does not, and the word sandbox implies otherwise. Derived by `python tools/check-docs.py`, never read from a sentence |
+| Open questions | **56 answered, 0 open, nothing gating any phase.** **The last four closed 2026-09-20** as [D-81](DECISIONS.md) to [D-84](DECISIONS.md), and the method is the finding: asked back to the owner **one at a time, in plain words, with a worked example each**. Four at once was dismissed twice, and so was the same set translated into Malayalam — **the language was not the barrier, the batch was.** `Q-51` carried text is **stamped, not scanned**. `Q-54` **changed the shape of its own question**: the cloud line is drawn by **content type, not scope** — all documents may go, models and families never — superseding D-24's framing at his explicit request. `Q-55` went **further than the question offered**: not a count and a clause number but the **prior practice by name**. `Q-56` took the cheapest honest answer — nothing more than today, **and the word sandbox goes**, which makes the rename the deliverable. Derived by `python tools/check-docs.py`, never read from a sentence |
 | Tools | **36** in `tools/` and **20** MCP tools as of 2026-09-15 — `ls tools/*.py \| wc -l` and `grep -c '^@server.tool()' mcp/server/heron_mcp_server.py`. New since the last entry: `generate-contract-reference.py` (what was built, against what it promised) and `api-changes.py` (what each Revit release stopped shipping). New MCP tools include `revit_links` and `revit_phases` |
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
@@ -1096,7 +1096,7 @@ was deliberate: a rule that only binds once the code passes is not a rule the co
 > a decision, a numbered document, Revit open, the PC, or a network.
 
 **This section used to carry the list, and on 2026-09-12 it opened with *"Every question is answered —
-41 of 41 — and nothing blocks any phase."*** The file held **53 questions, 52 answered and three open**,
+41 of 41 — and nothing blocks any phase."*** It said **53 questions, 52 answered and three open**,
 and two of those three had been open for two days. Anyone reading this section would have concluded
 nothing was waiting on them.
 
@@ -2583,8 +2583,8 @@ carries a type.
 
 | | |
 |---|---|
-| **Seven crossings** | duct size, pipe diameter, an element's workset, what is missing its Mark, views on a sheet, insulation thickness, selecting pipes in a view. Each needs an owner chosen per sentence; none was obvious enough to claim at speed |
-| **Five ambiguous phrases** | all read-vs-read, so none is dangerous. Each needs a judgement about which fragment owns the sentence |
+| **Seven crossings** | ~~duct size, pipe diameter, an element's workset, what is missing its Mark, views on a sheet, insulation thickness, selecting pipes in a view~~ **MEASURED 2026-09-19, and it is not seven — [FRAGMENT-ISSUES rows 144 and 146](FRAGMENT-ISSUES.md).** Five are still live; *pipe diameter* and *what is missing its Mark* did not come back; and **three this row never named are crossings today**, one of them *"how high is this off the floor"* answered by MOVING the thing. Of the eleven live, **seven have an owner already in the library that never declared the sentence** — named per sentence in row 146 — and **four have no READ to give them to at all**: nothing reports an MEP element's size, an element's workset or an insulation thickness, and `SET_VIEW_SCALE` is the only capability in the library with SCALE in its name. Those four are capability gaps, not routing defects, and no amount of declaring reaches them |
+| **Five ambiguous phrases** | ~~all read-vs-read, so none is dangerous~~ **IT IS SIX AND TWO ARE WRITE-VS-WRITE — [row 134](FRAGMENT-ISSUES.md), and both were judged 2026-09-19.** *"change the insulation thickness"* belongs to `SET_MEP_INSULATION`: the other claimant edits a wall, floor, roof or ceiling **TYPE**, so every element of that type in the project changes, where `set-mep-insulation` edits what was handed in. *"duplicate with detailing"* is far smaller — both claimants are right and the phrase carries no NUMBER. **Neither was edited**; all four files are under `brain/fragments/`, and the exact one-line repairs are written into row 134 |
 | **Row 117** | a write that renamed nothing said *"the model was CHANGED"*. `WithVerdict` writes that from `applied` - the request - not from work having happened. Visible only because row 111 shipped the same day |
 | **`set-wall-constraints`** | still the one STALE signature. Predates this sitting and was not touched |
 
@@ -2598,3 +2598,75 @@ for hours with fixed code sitting unused on disk, which reads exactly like the f
 it would. Five of its six files were byte-identical to `.claude/skills/`; the sixth differed only in
 paths pointing at `.Codex/`. It was deleted, and `test_change_gate.py` went green the moment it was -
 that untracked folder was the only red suite on the board.
+
+## The owner answered the last four questions, and the way they were asked is the finding
+
+**`Q-51`, `Q-54`, `Q-55` and `Q-56` close as [D-81](DECISIONS.md) to [D-84](DECISIONS.md).** The
+register, which **until 2026-09-20 said 52 answered / 4 open**, now reads **56 / 0**. The owner
+queue goes **144 to 140**, decisions waiting on
+him **25 to 21**, and [OPEN-QUESTIONS](OPEN-QUESTIONS.md) **drops out of the queue entirely.**
+
+**All four were put to him at once and dismissed. The same four translated into Malayalam, at his own
+request, were dismissed again. Asked ONE AT A TIME, in plain words with a worked example each, he
+answered all four in minutes** - and asked for `Q-51` to be re-explained *in English with a different
+example* before answering it. **The language was never the barrier. The batch was**, and that is worth
+more than the four answers: this register has carried unanswered questions for months while the way of
+asking went unexamined.
+
+**Two of his answers were better than any option offered**, which is the argument for asking rather
+than choosing a default on his behalf:
+
+| | |
+|---|---|
+| **`Q-54`** | The question offered cloud opt-in **per scope**, as [D-24](DECISIONS.md) frames it. He drew the line by **what the thing is** instead - all documents may go, **models and families never** - and asked for the earlier position to be changed outright. [D-82](DECISIONS.md) supersedes D-24's framing, not its caution |
+| **`Q-55`** | The question offered the read-time ceiling - a count and a clause number, never a clause. **He declined the ceiling**: he wants the **prior practice by name**, *"in Project A you used 700mm, do you want the same here?"* [D-83](DECISIONS.md) |
+
+`Q-51` took shape 1 - **carried text is stamped, not scanned**; Heron attributes rather than asserts.
+`Q-56` took the cheapest honest answer - **nothing more than today, and the word "sandbox" goes**,
+which makes the **rename the deliverable** rather than a tidy-up.
+
+**Two things he asked while deciding are recorded inside [D-82](DECISIONS.md)**, because the answers
+bound the decision. *"More context means no hallucination - am I right?"* - half right, and
+[row 114](FRAGMENT-ISSUES.md) is the counter-example from this repository. *"It will not go to GitHub -
+am I right?"* - correct, and **verified against `.gitignore` rather than asserted**: the store lives
+outside the repository, the databases are ignored, and the SOURCE documents are blocked by extension.
+
+### Two suites that looked red were the sweep, not the code
+
+`check-gaps.py` reported `test_brain_reachable.py` and `test_docs_guard.py` as **FAIL**, and **both
+pass when run on their own** - the first takes 103s inside a serial sweep. **That was told to the owner
+as "2 failing tests" before it was checked, and corrected in the same session.** Run a suite alone
+before reporting it red.
+
+### And `check-docs.py`'s exit code is not what `| tail` reports
+
+`python tools/check-docs.py | tail -20; echo $?` prints the exit of **`tail`**, which is always 0. The
+gate was read as green while it was **exiting 1**. Redirect to a file and read `$?` from the command
+itself.
+
+### The four counts that stayed at 52 were quotations, not drift
+
+`check-docs.py` gates on every stated count **including the archive**, and it carries a deliberate
+exemption for a figure **quoted as history** - `used to`, `it said`, `until 20XX`, `superseded`. All
+four stale lines were genuine quotations **missing the marker that says so**, so they carry one now
+rather than being rewritten. **The archived handover keeps its title** and gains *"superseded"*. The
+marker is load-bearing by design: *"Write 'it said 14 answered' and this stays quiet."*
+
+### The balance as it stands tonight
+
+The owner asked for this in one table, and asked that it be given in this shape whenever he asks again.
+
+| | Balance |
+|---|---|
+| **Skill runner** | **1 - does not exist.** [Row 141](FRAGMENT-ISSUES.md) - the only real build item, and the blocker for every skill proof |
+| Skills proved | **0 of 10** |
+| Fragments proved | **328 of 395** - 67 owed |
+| Revit agents proved | **15 of 36** - 21 owed. The other ~214 never touch a model and are covered by passing suites |
+| Agents to build | **2** - both Documentation, parked until the first release tag, blocking nothing |
+| Open defects | **38** of 144 |
+| Waiting on the owner | **140** - 21 decisions, 21 proposals, **0 questions** |
+| Platform, add-in, install, rollback | **Nothing owed.** Loads on 2020, 2024 and 2027 |
+
+**Safe on a live project today: 144 proven `READ` fragments** - that number read **114** in this file's
+own cold-start instructions until 2026-09-20, understating by thirty what the owner was allowed to use.
+Derive it, never read it: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml`.

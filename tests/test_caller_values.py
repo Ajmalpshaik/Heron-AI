@@ -52,38 +52,76 @@ def run():
 
     # ---- pull_values: what is lifted, and what is left alone ----------------
 
-    kept, pairs, negs = client.pull_values(["list-levels"])
+    kept, pairs, negs, _su, _nsu = client.pull_values(["list-levels"])
     check("a plain fragment name is left untouched", (kept, pairs), (["list-levels"], []))
 
-    kept, pairs, negs = client.pull_values(["audit-view-filters", "--view", "Level 1"])
+    kept, pairs, negs, _su, _nsu = client.pull_values(["audit-view-filters", "--view", "Level 1"])
     check("--view is lifted and rewritten as view=",
           (kept, pairs), (["audit-view-filters"], ["view=Level 1"]))
 
-    kept, pairs, negs = client.pull_values(["frag", "--set", "categories=Ducts"])
+    kept, pairs, negs, _su, _nsu = client.pull_values(["frag", "--set", "categories=Ducts"])
     check("--set is lifted verbatim", (kept, pairs), (["frag"], ["categories=Ducts"]))
+
+    # ---- the setup chain's OWN values. FRAGMENT-ISSUES row 149 -------------
+    #
+    # A chain and the fragment under test could not be given different values
+    # for a name they SHARE. `select-touching` asks about `categories` and
+    # `select-in-region` selects on `categories`, one flat dict held both, and
+    # the fragment's value silently won - the job still ran, on the wrong
+    # population. 88 fragment/chain pairs in this library share a name.
+
+    kept, pairs, negs, sup, nsup = client.pull_values(
+        ["frag", "--set", "categories=Ducts", "--setup-set", "categories=Ceilings"])
+    check("--setup-set lands in its OWN list, not with --set",
+          (kept, pairs, sup), (["frag"], ["categories=Ducts"], ["categories=Ceilings"]))
+
+    kept, pairs, negs, sup, nsup = client.pull_values(
+        ["frag", "--negative-set", "categories=Roofs",
+         "--negative-setup-set", "categories=Ceilings"])
+    check("and the negative twin keeps its own list too",
+          (negs, nsup), (["categories=Roofs"], ["categories=Ceilings"]))
+
+    # THE SPELLING TRAP THIS REPLACED. The old parser routed by
+    # `token.endswith("set")` and `token.startswith("--negative")`, and
+    # `--negative-setup-set` satisfies BOTH - so a lookup table decides now
+    # rather than two string rules that disagree with each other.
+    kept, pairs, negs, sup, nsup = client.pull_values(
+        ["frag", "--negative-setup-set", "a=1"])
+    check("--negative-setup-set is not read as --negative-set",
+          (negs, nsup), ([], ["a=1"]))
+
+    kept, pairs, negs, sup, nsup = client.pull_values(["frag", "--setup-set"])
+    check("a setup value with nothing after it is refused, like the others",
+          kept, None)
+
+    # ABSENT MEANS ABSENT, and that is what makes this safe to add: every job
+    # file written before today sends exactly what it sent before.
+    kept, pairs, negs, sup, nsup = client.pull_values(
+        ["frag", "--set", "categories=Ducts"])
+    check("no --setup-set leaves both new lists empty", (sup, nsup), ([], []))
 
     # ORDER. --in is read positionally by cmd_prove after this runs, so a value
     # typed anywhere must not shuffle what is left.
-    kept, pairs, negs = client.pull_values(
+    kept, pairs, negs, _su, _nsu = client.pull_values(
         ["--in", "Project1", "audit-view-filters", "--view", "Level 1"])
     check("the flags that follow keep their positions",
           kept, ["--in", "Project1", "audit-view-filters"])
 
-    kept, pairs, negs = client.pull_values(
+    kept, pairs, negs, _su, _nsu = client.pull_values(
         ["--view", "Level 1", "--in", "Project1", "frag"])
     check("a value typed FIRST still leaves --in at the front",
           kept, ["--in", "Project1", "frag"])
 
-    kept, pairs, negs = client.pull_values(
+    kept, pairs, negs, _su, _nsu = client.pull_values(
         ["frag", "--set", "a=1", "--view", "Level 1", "--set", "b=2"])
     check("several values are collected in the order typed",
           pairs, ["a=1", "view=Level 1", "b=2"])
 
-    kept, pairs, negs = client.pull_values(["frag", "--view"])
+    kept, pairs, negs, _su, _nsu = client.pull_values(["frag", "--view"])
     check("--view with nothing after it is refused, not silently dropped",
           (kept, pairs), (None, None))
 
-    kept, pairs, negs = client.pull_values(["frag", "--set"])
+    kept, pairs, negs, _su, _nsu = client.pull_values(["frag", "--set"])
     check("--set with nothing after it is refused", (kept, pairs), (None, None))
 
     # ---- the negative case's own values ------------------------------------
@@ -92,22 +130,22 @@ def run():
     # For a fragment that reads a view, the arrangement IS a different view -
     # so these travel separately and must not leak into the positive case.
 
-    kept, pairs, negs = client.pull_values(
+    kept, pairs, negs, _su, _nsu = client.pull_values(
         ["report-category-visibility", "--view", "L2", "--negative-view", "Model Linking"])
     check("the negative view is kept apart from the positive one",
           (kept, pairs, negs),
           (["report-category-visibility"], ["view=L2"], ["view=Model Linking"]))
 
-    kept, pairs, negs = client.pull_values(
+    kept, pairs, negs, _su, _nsu = client.pull_values(
         ["frag", "--negative-set", "categories=Walls"])
     check("--negative-set lands in the negative list only",
           (pairs, negs), ([], ["categories=Walls"]))
 
-    kept, pairs, negs = client.pull_values(["frag", "--view", "L2"])
+    kept, pairs, negs, _su, _nsu = client.pull_values(["frag", "--view", "L2"])
     check("no negative typed means no negative values - not a copy of the positive",
           negs, [])
 
-    kept, pairs, negs = client.pull_values(["frag", "--negative-view"])
+    kept, pairs, negs, _su, _nsu = client.pull_values(["frag", "--negative-view"])
     check("--negative-view with nothing after it is refused",
           (kept, pairs, negs), (None, None, None))
 
@@ -142,7 +180,7 @@ def run():
 
     # ---- the two together, as a command line actually arrives ---------------
 
-    kept, pairs, negs = client.pull_values(
+    kept, pairs, negs, _su, _nsu = client.pull_values(
         ["report-tags-and-targets", "--view", "01 - Mech Plan"])
     check("end to end: a typed line becomes what crosses the wire",
           (kept, client.caller_values(pairs)),
@@ -177,6 +215,101 @@ def run():
     # must not collapse into one answer on a path where being wrong is costly.
     check("a fragment whose risk cannot be read is refused, not assumed safe",
           client.risk_refusal(root, "no-such-fragment-anywhere") is not None, True)
+
+    # ---- undeclared_values: the silent drop, named -------------------------
+    #
+    # FRAGMENT-ISSUES row 71. `--set maxSteps=200` against a fragment that
+    # declares no `maxSteps` was accepted, ignored and never mentioned, and the
+    # fragment looked broken. The contract is on disk before anything is sent,
+    # so the client can say so while Revit is still untouched.
+
+    declares = [
+        {"name": "start", "type": "Element", "source": "request"},
+        {"name": "elements", "type": "IList<Element>"},
+        {"name": "tolerance", "type": "double", "source": "request"},
+    ]
+
+    odd, takeable = client.undeclared_values(
+        [{"name": "maxSteps", "value": "200"}], declares)
+    check("row 71's own value is named as undeclared", odd, ["maxSteps"])
+    check("and the reply says what CAN be typed, request-sourced only",
+          takeable, ["start (Element)", "tolerance (double)"])
+
+    odd, _ = client.undeclared_values(
+        [{"name": "tolerance", "value": "25"}], declares)
+    check("a declared value is silent", odd, [])
+
+    odd, _ = client.undeclared_values(
+        [{"name": "elements", "value": "x"}], declares)
+    check("a need filled by a FRAGMENT is declared, so naming it is not a "
+          "warning", odd, [])
+
+    odd, takeable = client.undeclared_values(
+        [{"name": "totallyMadeUpValue", "value": "42"}], [])
+    check("a fragment that declares nothing still names the stray value",
+          odd, ["totallyMadeUpValue"])
+    check("and offers nothing, rather than an empty list read as a shrug",
+          takeable, [])
+
+    odd, _ = client.undeclared_values([], declares)
+    check("no values is not a finding", odd, [])
+    odd, _ = client.undeclared_values(None, None)
+    check("and neither is nothing at all", odd, [])
+
+    odd, _ = client.undeclared_values(
+        [{"name": "width", "value": "1"}, {"name": "widthMm", "value": "1"}],
+        [{"name": "width", "type": "double", "source": "request"}])
+    check("the mistyped twin is named and the real one is not - the shape "
+          "that cost six names on 2026-09-09", odd, ["widthMm"])
+
+    # IT NAMES, IT DOES NOT REFUSE. Row 71 allows either; refusing would change
+    # what a caller relying on today's behaviour gets, and naming is enough.
+    check("report_undeclared returns nothing - it cannot refuse a run",
+          client.report_undeclared("x", [{"name": "nope", "value": "1"}],
+                                   declares), None)
+
+    # ---- model_line: the header names where the phases RAN -----------------
+    #
+    # FRAGMENT-ISSUES row 15. The header came from the opening count_elements
+    # call, which answers for the document IN FRONT, while every phase runs
+    # against --in when a job pins one. Three fragments were signed with
+    # `model: Project1 work_ajmal.al (3,445 elements)` and had run somewhere
+    # else. The element count was the worst part: it belonged to a model those
+    # fragments never touched.
+
+    here = client.model_line({"document": "Project1", "count": 3445},
+                             [{"document": "Project1"},
+                              {"document": "Project1"}], "2024", 23804)
+    check("nothing pinned: the header keeps the count",
+          here, "Project1 (3,445 elements), Revit 2024, session 23804")
+
+    # ROW 15's OWN CASE, verbatim from the row.
+    elsewhere = client.model_line(
+        {"document": "Project1 work_ajmal.al", "count": 3445},
+        [{"document": "Snowdon-scratch_ajmal.al"}], "2024", 23804)
+    check("pinned elsewhere: the header names where it RAN",
+          elsewhere.startswith("Snowdon-scratch_ajmal.al"), True)
+    check("and the count is DROPPED, not carried to the wrong model",
+          "3,445 elements), " not in elsewhere, True)
+    check("and it says which model the count came from instead",
+          "measured on Project1 work_ajmal.al" in elsewhere, True)
+
+    # A PROOF WHOSE LEGS RAN IN DIFFERENT DOCUMENTS IS A FINDING. Picking one
+    # would hide it.
+    split = client.model_line({"document": "A", "count": 10},
+                              [{"document": "B"}, {"document": "C"}],
+                              "2024", 1)
+    check("phases that disagree are said out loud, not resolved",
+          split.startswith("PHASES RAN AGAINST DIFFERENT DOCUMENTS: B, C"),
+          True)
+
+    check("no phase naming one falls back to the active document",
+          client.model_line({"document": "A", "count": 10},
+                            [{"ok": False}], "2024", 1),
+          "A (10 elements), Revit 2024, session 1")
+    check("and so does an empty phase list",
+          client.model_line({"document": "A", "count": 10}, [], "2024", 1),
+          "A (10 elements), Revit 2024, session 1")
 
     for line in passes:
         print("  PASS  " + line)
