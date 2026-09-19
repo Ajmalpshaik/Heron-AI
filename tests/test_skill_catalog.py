@@ -142,7 +142,7 @@ def main():
           "each listed" % (len(narrow), len(FRAG.REVIT_VERSIONS)))
 
     print("\n4. the declared status and the chain are kept apart")
-    rows, problems = tool.collect()
+    rows, problems, where_meta = tool.collect()
     check(not problems, "the real library reads clean%s"
           % ("" if not problems else ": %s" % "; ".join(problems[:3])))
     check(all("declared_status" in one and "effective" in one
@@ -156,6 +156,10 @@ def main():
           "and the effective status is always a real rung or UNSERVED")
     print("       %d of %d row(s) declare something other than their chain"
           % (len(apart), len(rows)))
+    check(isinstance(where_meta, dict) and "why" in where_meta
+          and "taken" in where_meta,
+          "and collect() hands back where the WORDS half came from, so the "
+          "page can say it is a recording rather than a run")
 
     print("\n5. every skill appears exactly once")
     found, _ = SKILL.load_all()
@@ -165,7 +169,65 @@ def main():
     check(all(one["utterances"] for one in rows),
           "each carrying the words somebody actually says")
 
-    print("\n6. the page is real output")
+    print("\n6. the WORDS are the other half, and an absent one says so")
+    # A MISSING RECORDING MUST NOT READ AS A CLEAN ONE. That is the whole
+    # difference between `words: null` and `0 crossings`, and it is the
+    # reason routing() returns a reason rather than an empty measurement.
+    nowhere = tempfile.mkdtemp()
+    try:
+        meta, recorded = tool.routing(os.path.join(nowhere, "not-here"))
+        check(recorded == {}, "a missing folder yields no measurement")
+        check(meta.get("why"), "and says WHY rather than returning a zero "
+                               "dressed as a measurement (D-52)")
+        meta, recorded = tool.routing(nowhere)
+        check(recorded == {} and meta.get("why"),
+              "an empty folder is named too, with the command that fills it")
+        check("prove-skill" in (meta.get("why") or ""),
+              "and the reason names the tool that writes one")
+
+        bad = os.path.join(nowhere, "routing-2026-01-01.json")
+        io.open(bad, "w", encoding="utf-8").write(u"{ not json")
+        meta, recorded = tool.routing(nowhere)
+        check(recorded == {} and "could not be read" in (meta.get("why") or ""),
+              "and an unreadable recording is reported, never swallowed")
+    finally:
+        shutil.rmtree(nowhere)
+
+    # `said` is counting, not judging: `where` was decided by
+    # check-skill-routing.classify when the measurement was taken, and a
+    # second opinion here would be a second opinion.
+    counted = tool.said([
+        ("a", "COUNT_ELEMENTS", "READ", "identity", "reach"),
+        ("b", "MIRROR_ELEMENTS", "MODIFY", "hybrid", "crossing"),
+        ("c", "READ_MEP_SYSTEM", "READ", "hybrid", "miss"),
+        ("d", "HIGHLIGHT_VS_REST", "MODIFY", "hybrid", "escalation"),
+    ], ["COUNT_ELEMENTS"])
+    check(counted["total"] == 4 and counted["reach"] == 1,
+          "said() counts what reached (%d of %d)"
+          % (counted["reach"], counted["total"]))
+    check(counted["crossing"] == ["b"],
+          "and separates a question answered by a write BY NAME")
+    check(sorted(counted["elsewhere"]) == ["c", "d"],
+          "from the ones that merely landed elsewhere")
+    check(len(counted["landed"]) == 4,
+          "and keeps every landing so a card can show each sentence")
+
+    measured = [one for one in rows if one["words"]]
+    check(all(("words" in one) for one in rows),
+          "every row carries the key, measured or not")
+    if measured:
+        check(all(one["words"]["total"] == len(one["utterances"])
+                  for one in measured),
+              "and a measured row covers every utterance the skill declares")
+        # THE CASE THE HALF WAS ADDED FOR. A chain of PROVEN fragments and a
+        # skill whose own words do not reach it are the same card without it.
+        split = [one for one in measured
+                 if one["effective"] == "PROVEN"
+                 and one["words"]["reach"] < one["words"]["total"]]
+        print("       %d skill(s) have a PROVEN chain AND a word that does "
+              "not reach - invisible on the chain alone" % len(split))
+
+    print("\n7. the page is real output")
     where = tempfile.mkdtemp()
     try:
         out = os.path.join(where, "page.html")
@@ -192,6 +254,14 @@ def main():
               "the subtitle's count is the one that was counted")
         check("NOT a claim that anything has been run" in payload["footer"],
               "and the footer says being in here is not evidence")
+        check("CHAIN:" in payload["subtitle"]
+              and "WORDS:" in payload["subtitle"],
+              "the subtitle carries BOTH halves, so neither reads as the whole")
+        check("NOT re-measured here" in payload["footer"],
+              "and the footer says the words are a recording, not a run")
+        check("NOT MEASURED" in text,
+              "the page can say NOT MEASURED - an absent recording is not a "
+              "clean one")
     finally:
         shutil.rmtree(where)
 
@@ -201,7 +271,7 @@ def main():
         for line in FAILURES:
             print("  - %s" % line)
         return 1
-    print("PASS    the chain underneath is the fact")
+    print("PASS    the chain underneath is the fact, and the words are\n        the other half of it")
     return 0
 
 

@@ -985,6 +985,73 @@ def caller_values(pairs):
     return values
 
 
+def undeclared_values(values, needs):
+    """The typed names this fragment declares no need for, and what it does take.
+
+    Returns (undeclared, takeable) - both lists of names, both possibly empty.
+
+    FRAGMENT-ISSUES ROW 71. Proving `trace-connectivity`, `--set maxSteps=200`
+    was passed against `--negative-set maxSteps=0` and both legs came back
+    `reached 25`. The fragment declares no `maxSteps` at all, so the value was
+    accepted, ignored, and never mentioned - and the fragment looked broken.
+    `list-levels --set totallyMadeUpValue=42` runs clean for the same reason.
+
+    IT IS THE MISTYPED-INPUT FAMILY, WHICH THIS REPOSITORY ALREADY KNOWS THE
+    COST OF. `tools/generate-jobs.py` exists because six input names were
+    mistyped on 2026-09-09, `widthMm` for `width` among them - and that tool
+    only protects a GENERATED job file. A hand-run `fragment`, `prove` or
+    `validate` takes anything. A mistyped name and an invented one are the same
+    event, and both read as a fragment that ignores its input.
+
+    THE CHECK IS HERE AND NOT IN THE ADD-IN BECAUSE THE CONTRACT IS HERE.
+    `needs_for` has already read `contract.needs` off disk before anything is
+    sent - the client knows every declared name while Revit is still untouched.
+    The add-in could not do this as cheaply: it is handed the `needs` block, but
+    refusing there would mean a round trip to learn about a typo.
+
+    IT NAMES, IT DOES NOT REFUSE. Row 71's own words are "refusing an
+    undeclared caller value, OR NAMING IT, would have turned a confusing run
+    into a one-line answer". Naming is the half that cannot break a caller who
+    is relying on today's behaviour, and it is enough: the confusing part was
+    never the drop, it was the silence.
+    """
+    declared = set()
+    takeable = []
+    for need in needs or []:
+        name = (need or {}).get("name")
+        if not name:
+            continue
+        declared.add(name)
+        # WHAT A PERSON CAN ACTUALLY TYPE. A need filled by an earlier fragment
+        # or by the wrapper is not an answer to "what should I have written",
+        # so offering it would send somebody to set a value that is not theirs
+        # to set.
+        if (need or {}).get("source") == "request":
+            takeable.append("%s (%s)" % (name, need.get("type") or "?"))
+
+    undeclared = [entry.get("name") for entry in (values or [])
+                  if entry and entry.get("name") not in declared]
+    return undeclared, takeable
+
+
+def report_undeclared(fragment, values, needs):
+    """Say so, once, before Revit is touched. Never refuses; returns nothing."""
+    undeclared, takeable = undeclared_values(values, needs)
+    if not undeclared:
+        return
+    # THE NAME IN THE FIRST COLUMN, because `prove` prints a 30-wide column of
+    # fragment names and a warning that did not line up under one would read as
+    # being about whichever fragment was last.
+    for name in undeclared:
+        print("%-30s IGNORED '%s' - not a value this fragment declares, so it "
+              "will be dropped" % (fragment, name))
+    print("%-30s it takes: %s"
+          % ("", ", ".join(takeable) if takeable
+             else "no caller values at all"))
+    print("%-30s a mistyped name and an invented one look the same here "
+          "(FRAGMENT-ISSUES row 71)" % "")
+
+
 def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
                  expect=None):
     """
@@ -1026,6 +1093,11 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
     needs = needs_for(root, name)
     if needs is None:
         return 2
+
+    # BEFORE REVIT IS TOUCHED. The contract is already read, so a typed name
+    # this fragment does not declare can be named here rather than dropped in
+    # silence eleven seconds later (row 71).
+    report_undeclared(name, values, needs)
 
     live, starting, _, mismatched = discover()
     if not live and starting:
@@ -1169,6 +1241,12 @@ def cmd_prove(names, in_document=None, values=None, session=None):
         if needs is None:
             return 2
 
+        # ONE `--set` BLOCK SERVES EVERY FRAGMENT IN A `prove` RUN, so a value
+        # meant for the third is undeclared by the first two and that is not a
+        # mistake. It is still said, once per fragment, because the alternative
+        # is silence on the run where it IS a typo.
+        report_undeclared(name, values, needs)
+
         sources.append((name, source, needs))
 
     live, starting, _, mismatched = discover()
@@ -1290,6 +1368,74 @@ def cmd_prove(names, in_document=None, values=None, session=None):
     return 1 if failures else 0
 
 
+def model_line(opening, phases, revit_version, pid):
+    """The `model:` header a proof carries, built from where the phases RAN.
+
+    FRAGMENT-ISSUES ROW 15. This header used to come from the opening
+    `count_elements` call, which answers for the document IN FRONT - and every
+    phase runs against `--in` when a job pins one. The two disagreed inside the
+    same proof: three fragments were signed with
+    `model: Project1 work_ajmal.al (3,445 elements)` while each case's own text
+    ended *"on Snowdon-scratch_ajmal.al"*, which is where they actually ran.
+
+    **THE ELEMENT COUNT WAS THE WORST PART.** 3,445 belongs to a model those
+    fragments never touched, so a reader checking the evidence against the
+    model would have been checking the wrong one.
+
+    THE OBVIOUS REPAIR IS A NO-OP AND THE ROW SAYS SO. Passing the pinned
+    document to the opening call changes nothing: `RevitOperations.cs:60` is
+    `case "count_elements": return CountElements(app);` - `app` only, no
+    `request` - so a `document` sent with it is discarded in silence and the
+    header would go on naming the active model. That route needs an add-in
+    change and a deploy.
+
+    THIS IS THE OTHER ROUTE, WHICH NEEDS NEITHER. Every phase already records
+    `document` from its own reply, so the truth the header contradicted was
+    sitting in the same file. Three cases, and the middle one is the point:
+
+      every phase names the SAME document as the opening call
+          nothing was pinned, or it was pinned to the active one. The count
+          belongs to that model, so it is kept
+
+      the phases name a DIFFERENT document
+          the count came from `count_elements` on the ACTIVE document and does
+          NOT belong to the model the fragment ran against. It is dropped
+          rather than carried across, because a number attached to the wrong
+          model is what made this a defect rather than a typo
+
+      the phases DISAGREE with each other
+          said out loud. A proof whose legs ran against different documents is
+          a finding, and picking one of them would hide it
+    """
+    seen = []
+    for phase in phases or []:
+        where = (phase or {}).get("document")
+        if where and where not in seen:
+            seen.append(where)
+
+    active = (opening or {}).get("document")
+    count = (opening or {}).get("count", 0)
+    tail = "Revit %s, session %s" % (revit_version, pid)
+
+    if not seen:
+        # No phase reported one - the opening call is all there is, and saying
+        # so is better than a header that looks derived when it is not.
+        return "%s (%s elements), %s" % (active, "{:,}".format(count), tail)
+
+    if len(seen) > 1:
+        return ("PHASES RAN AGAINST DIFFERENT DOCUMENTS: %s - active was %s, "
+                "%s" % (", ".join(seen), active, tail))
+
+    where = seen[0]
+    if where == active:
+        return "%s (%s elements), %s" % (where, "{:,}".format(count), tail)
+
+    return ("%s, %s - the count is NOT recorded because %s elements was "
+            "measured on %s, the document in front, and this ran against "
+            "another one (row 15)"
+            % (where, tail, "{:,}".format(count), active))
+
+
 def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=None, out=None,
                  values=None, negative_values=None, setup_values=None,
                  negative_setup_values=None, vary=None, vary_field=None,
@@ -1391,6 +1537,13 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     if needs is None:
         return 2
 
+    # BOTH LEGS, because row 71's case was a value typed into the NEGATIVE that
+    # the fragment never declared - `--set maxSteps=200` against
+    # `--negative-set maxSteps=0`, and both legs came back identical.
+    report_undeclared(name, values, needs)
+    if negative_values is not None and negative_values is not values:
+        report_undeclared(name, negative_values, needs)
+
     live, starting, _, mismatched = discover()
     if not live and starting:
         print("Revit is still starting - its bridge is not answering yet.")
@@ -1433,10 +1586,19 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
         bridge.close()
         return 1
 
+    # HELD BEFORE THE BRIDGE IS CLOSED. The record's header is built after the
+    # phases have reported, by which point `bridge` is released and closed -
+    # reading these off it there would be reading a closed object.
+    revit_version, pid = bridge.revit_version, bridge.pid
+
+    # PROVISIONAL, AND REPLACED BELOW ONCE THE PHASES HAVE REPORTED. Printed
+    # here because a person watching the run wants to know what is in front
+    # before anything is sent; the RECORD's header is built from where the
+    # phases actually ran - see model_line and row 15.
     model = "%s (%s elements), Revit %s, session %s" % (
         opening.get("document"), "{:,}".format(opening.get("count", 0)),
         bridge.revit_version, bridge.pid)
-    print("model:  %s" % model)
+    print("active: %s" % model)
     print("")
 
     phases = []
@@ -1875,6 +2037,9 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
 
     bridge.release()
     bridge.close()
+
+    # ROW 15. Built from where the phases RAN, not from what was in front.
+    model = model_line(opening, phases, revit_version, pid)
 
     record = {
         "run_record": out or "brain/proof-drafts/runs/%s.json" % name,

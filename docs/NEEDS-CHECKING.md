@@ -1291,6 +1291,21 @@ all 71 rather than only the never-tried ones). **27 can be, and 23 of those alre
 record** — they were put in front of a real model between 9 and 17 September and no signature
 followed. Nobody had been back to ask why.
 
+> **THE TWO COUNTS ABOVE WENT STALE THE SAME DAY. THE SPLIT BELOW DID NOT.**
+> Re-derived 2026-09-19 on a Linux container at `main`: `heron_fragment.load_all` counts **395
+> fragments, 328 PROVEN, 67 DRAFT**, and `python tools/generate-jobs.py` reports **37 unarrangeable
+> of 67** — not 71 and 44. The seven that moved are named by the commit that freed them:
+> [PR #196](https://github.com/Ajmalpshaik/Heron-AI/pull/196) is titled *"Five of the six proposed
+> rules are built, and **seven fragments can be arranged**"*, and `git merge-base --is-ancestor`
+> puts it **after** the commit carrying this paragraph. **Derive both rather than reading them
+> here** — this file's own rule, and [FRAGMENT-ISSUES row 143](FRAGMENT-ISSUES.md) is the row.
+>
+> **AND NOTHING BELOW CAN BE RE-DERIVED ANYWHERE BUT THE PROVING MACHINE.** The sort was read from
+> `brain/proof-drafts/runs/`, which is **gitignored**: on a fresh clone it does not exist, which is
+> why `generate-jobs.py` measured all 67 DRAFT above rather than the 27 this paragraph describes.
+> So I1, I2 and I3 are a **one-machine fact recorded in a shared file** — no clone and no CI run can
+> check a single row of them. The split is still the useful part; the totals are not.
+
 The answer is not one answer. It is three, and only the first is proving work.
 
 ### I1 — the arrangement was wrong, and that is all (6)
@@ -1550,9 +1565,90 @@ one model and show the answer FOLLOWING the input. [D-53](DECISIONS.md) is the
 rule, `prove-agent.py` is the working example, and `MIN_TRACKING_ROWS = 3` is
 already enforced in `brain/heron_validate.py` for agents.
 
+**IT IS THE HIGHEST-LEVERAGE THING LEFT IN THE PROVING MACHINERY** and it is
+deliberately not started here: PR #198 was already large and carrying the
+row 136 root-cause fix, and a feature this size belongs on its own branch
+rather than delaying seventeen repairs. Recorded so the next session does not
+have to re-derive which three fragments matter or why.
+
+> **STARTED 2026-09-19, AND THE HALF THAT NEEDS NO REVIT IS BUILT AND TESTED.**
+> `tools/prove-tracking.py` does every check that can be made before a model is
+> opened, and `--dry-run` answers completely. **All three fragments above are
+> arrangeable**, proved in `tests/test_prove_tracking.py`: `trace-connectivity`
+> varying `tolerance` with `start=selected` held still, `report-findings`
+> varying `whatWasChecked` with `checkedCount` held, and
+> `describe-blank-parameters` varying `parameterName`.
+>
+> **ONE CORRECTION TO THE READING ABOVE.** `describe-blank-parameters` is
+> described here as having nothing for the rule to look at because it declares
+> no `role: result`. `heron_fragment.provide_role` reads an **absent** `role:`
+> as `result` - the stricter reading, and deliberately so - therefore its
+> `findings` IS a declared result and a tracking row can carry it.
+>
+> **What is not built is the runs**, which need a live session to develop
+> against. The tool exits 3 and names that rather than sending something
+> half-built at a model. [FRAGMENT-ISSUES row 151](FRAGMENT-ISSUES.md).
+---
+
+## Group X — the SKILLS, and the one thing only the PC can answer — 2026-09-19
+
+**THIS WAS WRITTEN AS GROUP V, THEN W, AND IS X. THE REASON IS THE ROW BELOW IT.** A brief asked
+for a "Group V" on 2026-09-19 when none existed — the thirteen it was after are
+**[Group I2](#i2--the-model-has-not-got-it-13)** — so this session took the free letter. Another
+session took the same free letter the same afternoon for a larger sort, merged first, and keeps it.
+Same hazard as the row numbers, one namespace along.
+
+**Ten skills have been DRAFT since Step 14 and nothing could say why.**
+[`tools/prove-skill.py`](../tools/prove-skill.py) now asks, and measures every half that a machine
+with no Revit can measure. It reports **BLOCKED 2, CROSSING 1, NOT UNDERSTOOD 6, UNDERSTOOD 1** —
+and **it cannot print PROVEN**, because a skill is proved when a model has answered.
+[`tests/test_skill_proving.py`](../tests/test_skill_proving.py) pins that by reading the verdict
+function's own returns.
+
+**Everything below is what is left, and every row of it needs the PC.**
+
+| | What to run, and what it would settle |
+|---|---|
+| **X1** | **The ten job files.** `tools/jobs/skills/<skill>-model-half.yaml`, one per skill, in `tools/jobs/example.yaml`'s shape, steps in an order that composes and `keep-chain: true` exactly where a need can only come down the chain. `python tools/batch-prove.py <file> --dry-run` first. **Read each header before running it** — it says how many of its own steps `batch-prove` will refuse as `ALREADY`, which for seven of the ten is all of them |
+| **X2** | **And that refusal is the finding, not a fault — [row 141](FRAGMENT-ISSUES.md).** `batch-prove` refuses **32 of the 37 steps**, correctly: each capability's own model half is already evidenced. What is NOT evidenced is the **composition**, and nothing in this repository can run one. `prove` in `mcp/client/heron_bridge_client.py` does run a chain — first fragment resets it, the rest continue, one lease — but calls `run_fragment_read` only, so the four MODIFY skills have no chain runner at all, and it judges nothing: no negative case, no draft, no signature. **Chain, write, judgement — no one runner has all three.** Each job file carries the `prove` command line for its own chain, which is as far as today's tooling reaches |
+| **X3** | **Two skills need a hand on the mouse before their batch runs.** `check-connectivity` and `trace-system` both go through `trace-connectivity`, whose `start` is one PARTICULAR element. Select it in Revit and type `selected` in the blank — the add-in refuses if none or several are selected, so the batch has to be arranged around that one pick |
+| **X4** | **`trace-system` cannot run its own plan at all — [row 142](FRAGMENT-ISSUES.md).** It declares `REPORT_FINDINGS`, and neither `filter-elements-by-id` nor `trace-connectivity` provides the `findings` that fragment needs. Two plausible repairs, both the owner's, neither guessed at. **No Revit needed to decide it; a Revit needed to prove whichever is chosen** |
+| **X5** | **The routing half is a RECORDING and will go stale.** `tools/jobs/skills/routing-2026-09-19.json` is what `prove-skill.py --routing-from` and the skill catalogue both read. Re-take it with `python tools/prove-skill.py --routing-to tools/jobs/skills/routing-<date>.json` — about twenty-five minutes for forty-three sentences — and **compare the index fingerprint before comparing any count** ([row 116](FRAGMENT-ISSUES.md)). It needs no Revit, only time |
+
+### What is NOT waiting on the PC, and is waiting on a person
+
+Three findings are one-line edits in `brain/fragments/`, which the session that found them was told
+not to touch. They need no Revit at all — only whoever owns those files.
+
+- **[Row 146](FRAGMENT-ISSUES.md)** — seven sentences with an owner named per sentence. The repair
+  is [row 116](FRAGMENT-ISSUES.md)'s *declaring, not demoting*: one line added to one `utterances:`
+  block, after which identity fires before ranking runs.
+- **[Row 134](FRAGMENT-ISSUES.md)** — *"change the insulation thickness"* is the dangerous one.
+  `set-compound-layer-width` edits a wall, floor, roof or ceiling **TYPE**; `set-mep-insulation`
+  edits what was handed in. A modeller means the pipe.
+- **[Row 140](FRAGMENT-ISSUES.md)** — four declarations in three skills name a capability that
+  outranks the skill's own risk. **The obvious repair is the one that must not be taken**: raising
+  the skill's risk removes it from `check-skill-routing.py`'s `ASKS_A_QUESTION`, and its crossings
+  stop being reported.
+
+**And four of [row 146](FRAGMENT-ISSUES.md)'s crossings cannot be repaired by anybody's edit**,
+because nothing in the library reads the thing: an MEP element's size, which workset an element is
+on, an insulation thickness, and a view's scale. Those are fragments somebody has to write, and then
+a Revit to prove them.
+
+> **THE NUMBER COLLIDED TWICE MORE WHILE THIS WAS BEING WRITTEN, AND THEN THE LETTER DID.** This
+> session's row was 147 against [PR #200](https://github.com/Ajmalpshaik/Heron-AI/pull/200), then 148
+> against [PR #198](https://github.com/Ajmalpshaik/Heron-AI/pull/198), and is **150**; #198's own
+> [row 149](FRAGMENT-ISSUES.md) counts the same hazard four times in one day from the other side.
+> Then this group, written as V, met a larger Group V from #198 - and its Group W as well, so it is X.
+> [U4](#group-u--a-review-found-six-things-in-group-ts-own-work-and-all-six-held) records it happening
+> to row 118. **Nothing sees an in-flight branch**, so no local tool can prevent it, and announcing a
+> number is only half a fix — it does not help when two sessions announce at the same hour. What
+> actually held every time: **keep both, renumber the later one, and check for duplicates
+> afterwards** — no row and no group has been lost yet.
 **BUILT 2026-09-20, AND IT WAS SMALLER THAN THIS GROUP EXPECTED.** The judging
 half already existed and nothing had ever produced one - see
-[row 150](FRAGMENT-ISSUES.md). `validate --vary NAME=a,b,c --vary-field FIELD`
+[row 152](FRAGMENT-ISSUES.md). `validate --vary NAME=a,b,c --vary-field FIELD`
 is the running half, demonstrated end to end on `test projject` against
 `filter-elements-by-category`: `Ducts 8`, `Pipes 2`, `Air Terminals 0`,
 `Walls 28`, and `heron_validate draft` wrote a proper D-53 negative case from it.
@@ -1568,7 +1664,7 @@ not. Whoever takes them needs an input each answer genuinely depends on:
 | `report-findings` | `whatWasChecked` / the checked set | its result is prose, so the tracked field has to be the sentence, and the sentence must differ per input |
 | `describe-blank-parameters` | `parameterName` | its record already shows the shape - `blank 22, absent 0` against `blank 0, absent 22` - which is a tracking set nobody could record |
 
-## Group X — what tracking proved, and the two walls it hit, 2026-09-20
+## Group Y — what tracking proved, and the two walls it hit, 2026-09-20
 
 **The first fragment proved by TRACKING rather than by an empty case**, on
 `test projject`, Revit 2024, session 36216.

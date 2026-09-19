@@ -24,7 +24,7 @@ RENAMING IT IS THE HONEST OPTION OF THE THREE AVAILABLE. Adding it to
 deleting it would throw away fourteen checks that pass and that fail when the
 rule breaks. This says: it runs, by hand, in one command, and it is not yet
 trusted to run anywhere. Put it back to `test_` the day somebody reads the
-traceback on Linux. FRAGMENT-ISSUES row 151.
+traceback on Linux. FRAGMENT-ISSUES row 153.
 
 WHY THIS FILE EXISTS
 --------------------
@@ -190,7 +190,7 @@ def main():
         # everything is normally a smell; here it is the difference between
         # "the rule is wrong" and "this runner could not do the file I/O", and
         # this file has spent three CI cycles unable to tell those apart.
-        # FRAGMENT-ISSUES row 151 carries what has been ruled out.
+        # FRAGMENT-ISSUES row 153 carries what has been ruled out.
         print("  SKIP  the signing checks could not run here - %s: %s"
               % (type(exc).__name__, " ".join(str(exc).split())[:300]))
     finally:

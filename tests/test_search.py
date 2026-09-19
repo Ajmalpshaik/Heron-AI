@@ -25,6 +25,7 @@ contains and this layer correctly finds nothing - that is Step 10's job, and
 this file asserts the limit rather than papering over it.
 """
 
+import io
 import os
 import shutil
 import sys
@@ -279,6 +280,93 @@ def main():
     finally:
         shutil.rmtree(home, ignore_errors=True)
         os.environ.pop("HERON_KNOWLEDGE", None)
+
+    # ---- ROW 127: a PERMISSION may not be read from the cache alone --------
+    #
+    # `short_circuit` reads a fragment's status out of the INDEX, and
+    # heron_lookup turns it into "so it may run without asking". On 2026-09-19
+    # it said exactly that about a fragment demoted to DRAFT the same morning,
+    # and closed the same reply with a total derived live from disk that
+    # disagreed. The file is the authority; the index is a cache.
+    print()
+    print("ROW 127 - the index is a cache, the file is the authority")
+    room = tempfile.mkdtemp(prefix="heron-disk-status-")
+    try:
+        def fragment(folder, fid, status):
+            here = os.path.join(room, folder)
+            os.makedirs(here)
+            io.open(os.path.join(here, "fragment.yaml"), "w",
+                    encoding="utf-8").write(
+                        u"heron-status: %s\nid: %s\ncapability: X\n"
+                        u"contract:\n  needs:\n    - name: id\n" % (status, fid))
+
+        fragment("proved", "FRG-TEST-001", "PROVEN")
+        fragment("drafted", "FRG-TEST-002", "DRAFT")
+
+        check(SEARCH.disk_status("FRG-TEST-001", room) == "PROVEN",
+              "the status is read from the fragment's own file")
+        check(SEARCH.disk_status("FRG-TEST-002", room) == "DRAFT",
+              "for each one separately")
+        check(SEARCH.disk_status("FRG-TEST-999", room) is None,
+              "and an id no file carries reads as None, never as a status")
+
+        # `id:` ALSO APPEARS INDENTED INSIDE A CONTRACT on real fragments, and
+        # taking the first match anywhere would read a need's name as the
+        # fragment's own id.
+        check(SEARCH.disk_status("id", room) is None,
+              "a need called `id` inside the contract is not read as the "
+              "fragment's id - the parse is TOP LEVEL only")
+
+        allowed, told = SEARCH.may_run_unasked("FRG-TEST-001", "PROVEN", room)
+        check(allowed and "may run without asking" in told,
+              "index and file agreeing on PROVEN still grants, unchanged")
+
+        # ROW 127's OWN CASE.
+        allowed, told = SEARCH.may_run_unasked("FRG-TEST-002", "PROVEN", room)
+        check(not allowed, "a stale PROVEN in the index does NOT grant when "
+                           "the file says DRAFT")
+        check("the index says PROVEN while the fragment's own file says DRAFT"
+              in told,
+              "and the refusal names BOTH, so a reader can see which is stale")
+        check("re-index" in told, "and says how to clear it")
+
+        # ABSENCE IS A LEGITIMATE STATE, NOT EVIDENCE OF STALENESS. A store
+        # can be indexed from another root, or hold rows that never had a file
+        # - this suite's own FRG-QA-900 has `folder='x'` and no file anywhere.
+        # Row 127's defect is the two sources answering DIFFERENTLY, and a
+        # rule that punished absence to catch it would change behaviour far
+        # beyond the defect. That rule was written first and removed.
+        allowed, told = SEARCH.may_run_unasked("FRG-TEST-999", "PROVEN", room)
+        check(allowed and "may run without asking" in told,
+              "an id with no file behaves exactly as before - absence is not "
+              "disagreement")
+
+        allowed, told = SEARCH.may_run_unasked("FRG-TEST-002", "DRAFT", room)
+        check(not allowed and "nobody has watched it work" in told,
+              "and when both agree it is DRAFT, the old sentence is unchanged")
+
+        # THE WHOLE SAFETY ARGUMENT: no arrangement makes this grant something
+        # the old code refused.
+        every = [("FRG-TEST-001", "PROVEN"), ("FRG-TEST-001", "DRAFT"),
+                 ("FRG-TEST-002", "PROVEN"), ("FRG-TEST-002", "DRAFT"),
+                 ("FRG-TEST-999", "PROVEN"), ("FRG-TEST-999", "DRAFT")]
+        widened = [pair for pair in every
+                   if SEARCH.may_run_unasked(pair[0], pair[1], room)[0]
+                   and pair[1] not in SEARCH.RUNNABLE_UNASKED]
+        check(not widened,
+              "across every combination it never grants where the index alone "
+              "would not have - it can only ever WITHHOLD")
+
+        # And it is cheap enough to sit in a lookup - see the docstring.
+        import time
+        start = time.time()
+        for _ in range(50):
+            SEARCH.disk_status("FRG-TEST-001", room)
+        warm = (time.time() - start) / 50.0
+        check(warm < 0.05,
+              "a warm read costs %.4fs, so a lookup can afford to ask" % warm)
+    finally:
+        shutil.rmtree(room, ignore_errors=True)
 
     print()
     if FAILURES:
