@@ -154,24 +154,25 @@ namespace Heron.Revit.Addin
                     // BEFORE a risky change, which is what turning this on is.
                     // It names what becomes possible rather than asking "are
                     // you sure" about nothing in particular.
-                    var ask = new TaskDialog("Let Heron change this model?")
-                    {
-                        MainInstruction = "Allow Heron to change models?",
-                        MainContent =
-                            "Heron will be able to move, edit and create elements when you ask it to. "
-                            + "It still previews first and still asks before keeping anything, and "
-                            + "every change is one Ctrl+Z.\n\n"
-                            + "This stays on until you turn it off, including after Revit restarts. "
-                            + "The ribbon padlock shows which state you are in.",
-                        CommonButtons = TaskDialogCommonButtons.None,
-                        AllowCancellation = true
-                    };
-                    ask.AddCommandLink(TaskDialogCommandLinkId.CommandLink1,
-                        "Turn changes on", "Heron may change models until you turn this off.");
-                    ask.AddCommandLink(TaskDialogCommandLinkId.CommandLink2,
-                        "Leave it off", "Heron keeps reading only. Nothing changes.");
+                    //
+                    // A WINDOW SINCE 2026-09-20, asked for by Ajmal in the
+                    // same breath as Bridge Status. What changed and why is
+                    // written up on HeronChangesWindow; the short version is
+                    // that the sentence which matters - Heron will be able to
+                    // move, edit and create elements - sat at the same weight
+                    // as the sentence about heron.config.
+                    var answer = HeronChangesWindow.Ask(HeronApplication.Log);
 
-                    if (ask.Show() != TaskDialogResult.CommandLink1)
+                    // NULL IS NOT NO. The window could not be drawn, so
+                    // nobody has been asked yet - and a permission question
+                    // that answers itself is the one outcome this must never
+                    // have, in either direction. Saying no here would be
+                    // safe and would also be a lie about what the user
+                    // chose, and they would press the padlock again and
+                    // watch nothing happen.
+                    if (!answer.HasValue) answer = AskPlainly();
+
+                    if (answer != true)
                     {
                         HeronApplication.Log("Write toggle: offered, declined. Still off.");
                         return Result.Cancelled;
@@ -199,7 +200,39 @@ namespace Heron.Revit.Addin
                 return Result.Failed;
             }
         }
-    }
+
+        /// <summary>
+        /// The same question with no window around it. TRUE to turn changes
+        /// on.
+        ///
+        /// Word for word what the ribbon padlock asked before the window
+        /// existed, deliberately unchanged: a fallback that has already been
+        /// used in Revit is worth more than a better sentence nobody has ever
+        /// read. It is reached only when the window will not draw, which a
+        /// WPF window inside a host application has more ways to do than a
+        /// TaskDialog has.
+        /// </summary>
+        private static bool AskPlainly()
+        {
+            var ask = new TaskDialog("Let Heron change this model?")
+            {
+                MainInstruction = "Allow Heron to change models?",
+                MainContent =
+                    "Heron will be able to move, edit and create elements when you ask it to. "
+                    + "It still previews first and still asks before keeping anything, and "
+                    + "every change is one Ctrl+Z.\n\n"
+                    + "This stays on until you turn it off, including after Revit restarts. "
+                    + "The ribbon padlock shows which state you are in.",
+                CommonButtons = TaskDialogCommonButtons.None,
+                AllowCancellation = true
+            };
+            ask.AddCommandLink(TaskDialogCommandLinkId.CommandLink1,
+                "Turn changes on", "Heron may change models until you turn this off.");
+            ask.AddCommandLink(TaskDialogCommandLinkId.CommandLink2,
+                "Leave it off", "Heron keeps reading only. Nothing changes.");
+
+            return ask.Show() == TaskDialogResult.CommandLink1;
+        }    }
 
     /// <summary>
     /// Reports bridge state. Reads nothing from the model, opens no

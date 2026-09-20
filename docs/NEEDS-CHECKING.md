@@ -1736,9 +1736,10 @@ C# - a rebuild and a Revit restart.
 **All of it compiles on all eight releases with 0 warnings, and none of it has been seen in Revit** -
 the ribbon is built at `OnStartup`, so every row here needs the add-in deployed and Revit restarted.
 
-**What was proved without Revit.** `HeronBridgeStatusWindow.cs` references no Revit API, so it was
-compiled into a bare WPF host and rendered: four states, `988x1246`, `988x1246`, `988x1051` and
-`988x681` pixels at 2x, written to PNG and looked at. Two faults were found that way and fixed - an
+**What was proved without Revit.** Neither window references a Revit API, so both were compiled
+into a bare WPF host and rendered: the four Bridge Status states at `988x1246`, `988x1246`,
+`988x1051` and `988x681`, and the Changes window at `988x877`, all at 2x, written to PNG and
+looked at. Two faults were found that way and fixed - an
 empty box under `THIS SESSION` when there is no identity, and a `Changes` card describing a Heron that
 did not start. **That proves what it draws, not that Revit will host it**, and the rows below are the
 difference between the two.
@@ -1754,13 +1755,24 @@ difference between the two.
 | **Z7** | Press `Esc`, and separately drag the window by its header | `Esc` closes it. The header drags it. Neither is Revit's, because the window has no system chrome at all |
 | **Z8** | Look at it on a **150%** display | The one thing the render cannot answer. Text crisp, nothing clipped, the window centred on Revit rather than on the primary screen. Same unproven scaling path as `B17` above |
 | **Z9** | Do Z1 and Z2 on **2020** as well as on a modern release | 2020 is `net472` and 2027 is `net10.0-windows` - two different WPF stacks under the same source. `ControlTemplate` built from `FrameworkElementFactory` is the part most likely to differ, and the buttons are where it would show |
+| **Z10** | Press the **Changes** padlock while it is OFF | The Changes window, not a TaskDialog. Amber strip, amber lamp, `Let Heron change this model?`, three green ticks. The amber button reads **Turn changes on** |
+| **Z11** | In that window press `Esc`, then the **X**, then **Leave it off** | All three leave it off. The padlock does not move and the log says `Write toggle: offered, declined. Still off.` **`Enter` must do NOTHING** - there is deliberately no default button, because a confirmation you can clear by leaning on a key is not one |
+| **Z12** | Press **Turn changes on** | The padlock opens and its label changes to `Changes ON`. Open Bridge Status: the Changes card is amber and the chip reads `ON`, read from `heron.config` rather than remembered |
+| **Z13** | Press the padlock again, while it is ON | **No window at all.** It goes straight to off. Making the safe direction slower is how people learn to click through warnings, and D-19 says the ON direction is the only one that asks |
 
 **The button inside the panel keeps the name `Heron`.** Offered as a rename to `Connect` on 2026-09-20 and declined by the owner the same day, so the full path stays
 `Heron > AI Bridge > Heron` and every printed string is already correct for it. Recorded so the repetition is not read later as an oversight worth tidying.
 
-**Where the numbers came from.** The renders are reproducible: the harness compiles
-`revit/Heron.Revit.Addin/HeronBridgeStatusWindow.cs` directly, with no copy of it, and nothing about
-it is checked in - it is a scratch project, and rebuilding it is four lines of csproj.
+**Where the numbers came from.** The renders are reproducible: the harness compiles the three real
+source files directly - `HeronBridgeStatusWindow.cs`, `HeronWindowStyle.cs` and
+`HeronChangesWindow.cs` - with no copy of any of them, and nothing about it is checked in. It is a
+scratch project and rebuilding it is six lines of csproj.
+
+**The shared chrome was proved by rendering twice.** Moving the palette, the card, the title bar
+and all three button templates out of Bridge Status and into `HeronWindowStyle` is a refactor of
+code that already worked, so the four states were re-rendered afterwards and compared to the
+earlier PNGs **byte for byte: 4 of 4 identical**. A refactor that moves no pixels is the only kind
+worth doing to a window nobody has seen in Revit yet.
 
 ### And deploying it made A12's unguarded gap actually happen
 
