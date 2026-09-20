@@ -1633,7 +1633,15 @@ namespace Heron.Revit.Addin
                 // `value` is what was CARRIED and `shaped` is what survived
                 // the revival. Passing both is what lets the note say "2 of
                 // 1128" instead of "(2)" - row 75.
-                how.Add(name + " " + origin + Size(shaped, value));
+                //
+                // NAMED, BECAUSE BOTH ARE `object` AND A SWAP COMPILES. Read
+                // positionally this line is two identical-looking arguments,
+                // and getting them the wrong way round prints "1128 of 2" -
+                // a sentence that is wrong in the confident direction.
+                // tests/test_binding_note.py asserts this very call, because
+                // the test host links the FORMATTER and cannot see this file.
+                how.Add(name + " " + origin
+                        + Size(shaped: shaped, before: value));
             }
 
             if (fromRequest.Count > 0)

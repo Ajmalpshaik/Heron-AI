@@ -274,24 +274,62 @@ def unlisted(root=None):
     never built it once - on any release.
 
     Returns paths in the repository's own spelling, sorted, so a caller can
-    print them. It reads the DISK and never the build, so it holds on a
+    print them. It reads the SOURCE TREE and never the build, so it holds on a
     machine with no .NET at all - which is the point: the failure it catches
     is somebody adding a project, not somebody's toolchain.
+
+    IT ASKS GIT WHICH PROJECTS ARE TRACKED, and walks the disk only when git
+    cannot answer. A walk alone reports a GENERATED project as forgotten:
+    `check-fragments-compile.py --keep` deliberately leaves
+    `build/<version>/FragmentCheck.csproj` behind for inspection, `build/` is
+    in `.gitignore`, and the gate would then exit 1 on the next run because an
+    earlier documented command was given a documented flag. A tracked file is
+    exactly the right test - a project nobody committed is not one this gate
+    was written to compile.
     """
     where = ROOT if root is None else root
     known = set(PROJECTS) | set(NOT_SHIPPED)
+    found = _tracked_projects(where)
+    if found is None:
+        found = _walked_projects(where)
+    return sorted(rel for rel in found if rel not in known)
+
+
+def _tracked_projects(where):
+    """Every .csproj git tracks, or None when git cannot say.
+
+    None rather than an empty list, and the distinction is the whole reason
+    this is a separate function: "git told me there are none" and "there is no
+    git here" are different answers, and D-52 says an absent measurement is
+    not a clean one. An empty result from a real repository is believed; a
+    missing git falls back to the walk.
+    """
+    try:
+        out = subprocess.check_output(
+            ["git", "-C", where, "ls-files", "--", "*.csproj"],
+            stderr=subprocess.DEVNULL)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return [line.strip().replace("\\", "/")
+            for line in out.decode("utf-8", "replace").splitlines()
+            if line.strip()]
+
+
+def _walked_projects(where):
+    """The fallback for a tree that is not a git checkout.
+
+    `build` is excluded here for the reason `_tracked_projects` does not need
+    to bother: it is where the generated FragmentCheck project lands.
+    """
     out = []
     for folder, dirs, files in os.walk(where):
         dirs[:] = [d for d in dirs
-                   if d not in (".git", "bin", "obj", "node_modules")]
+                   if d not in (".git", "bin", "obj", "build", "node_modules")]
         for name in files:
-            if not name.endswith(".csproj"):
-                continue
-            rel = os.path.relpath(os.path.join(folder, name), where)
-            rel = rel.replace(os.sep, "/")
-            if rel not in known:
-                out.append(rel)
-    return sorted(out)
+            if name.endswith(".csproj"):
+                rel = os.path.relpath(os.path.join(folder, name), where)
+                out.append(rel.replace(os.sep, "/"))
+    return out
 
 
 def disagreements(table=None):

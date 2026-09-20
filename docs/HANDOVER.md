@@ -156,14 +156,17 @@ the **10.0.x** SDK, `-p:EnableWindowsTargeting=true` — the same command, OS, S
 now **fails the gate** on any `.csproj` that neither `PROJECTS` nor the named `NOT_SHIPPED` accounts
 for, so the next exclusion has to be readable where the gate is.
 
-**LEFT FOR THE NEXT SESSION — [row 162](FRAGMENT-ISSUES.md), recorded and not fixed.** There are
-**204** `tests/test_*.py` on disk and `check-gaps.py` runs **203**. `test_bridge_roundtrip.py` is
-skipped by name, and unlike row 161 **its reason is in the right place** — in a comment beside the
-skip, and correct: with no host binary the suite `return 1`, which would read as a FAIL for a build
-step nobody took. The defect is that the suite has **no exit-3 path**, so it cannot say *"I could not
-run"*, and a silenced suite prints nothing at all — not `ok`, not `wait`. The repair is the one
-`tests/test_binding_note.py` already uses next door. Compare `ls tests/test_*.py | wc -l` against the
-count the sweep prints; they differ by one until this is done.
+**LEFT FOR THE NEXT SESSION — [row 162](FRAGMENT-ISSUES.md), recorded and not fixed.** **One suite
+more sits in `tests/` than `check-gaps.py` ever runs**, and no total is written here on purpose —
+`ls tests/test_*.py | wc -l` against the count the sweep prints is the check, and it is off by one
+until this is done. `test_bridge_roundtrip.py` is the one, skipped by name, and unlike row 161 **its
+reason is in the right place** — in a comment beside the skip, and correct: with no host binary the
+suite `return 1`, which would read as a FAIL for a build step nobody took. The defect is that the
+suite has **no exit-3 path**, so it cannot say *"I could not run"*, and a silenced suite prints
+nothing at all — not `ok`, not `wait`. The repair is the one `tests/test_binding_note.py` already
+uses next door, and a Codex review on PR #212 made the same point about **this paragraph**: a typed
+total goes stale the moment a suite is added, while *"exactly one is skipped, and silently"* stays
+true and is what the next session actually needs.
 
 **Nothing here needed a Revit, and nothing here is evidence about one.** Compiling is the API surface
 agreeing. `(2 of 1128)` has still never been seen in a real binding note, row 75 is still **OPEN**, and
