@@ -24,9 +24,14 @@ purpose: >
   thing, and the two are easy to confuse because they carry the same name -
   which is also how the marker is matched to its view here.
 
-  **WHETHER IT IS ON A SHEET IS ONE PARAMETER READ.** Revit fills the sheet
-  number in on the view when it is placed. Hunting through viewports for the
-  answer is slower and gets the empty case wrong.
+  **A VIEW IS ON A SHEET WHEN A VIEWPORT POINTS AT IT.** A viewport is Revit's
+  own record of the placement rather than a string it formats, so there is no
+  placeholder to recognise and nothing to translate, and the empty case comes
+  out right for free: no viewport, not on a sheet. This read the view's
+  sheet-number parameter until 2026-09-13 and that is what got the empty case
+  WRONG - Revit writes its placeholder there for a view on no sheet, the
+  placeholder is not empty, so every view read as placed and every mark was
+  skipped.
 
   **IT UNHIDES EVERYTHING FIRST, THEN HIDES WHAT SHOULD BE HIDDEN.** Without
   that, a mark hidden on an earlier run stays hidden after its section is
@@ -76,7 +81,8 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. The marker category, the per-view hide
-  and unhide, and the view's sheet-number parameter are unchanged 2020 to 2027.
+  and unhide, and `Viewport.ViewId` are unchanged 2020 to 2027, and no
+  `ElementId.IntegerValue` is read, so the 2024 widening does not reach this.
   A marker is matched to its view BY NAME, which Revit keeps unique across
   views - there is no direct link from the marker element to the view it
   belongs to on any release here.

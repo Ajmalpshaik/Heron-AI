@@ -94,3 +94,10 @@ utterances:
   - what is the system name
   - are these all on the same system
   - what system type is this
+  # ADDED 2026-09-20. Measured through mcp/server/heron_brain.lookup: this
+  # sentence already answers READ_MEP_SYSTEM, so today's behaviour is
+  # unchanged - but it arrived by `hybrid`, and on an earlier index the same
+  # sentence reached AUTO_SIZE_MEP, which RE-SIZES the ductwork when asked
+  # whether the system is complete. Declared so it resolves by `identity`
+  # before any ranking runs. FRAGMENT-ISSUES row 133.
+  - check the system is complete
