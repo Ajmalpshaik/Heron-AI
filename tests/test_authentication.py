@@ -122,12 +122,24 @@ def main():
 
     print("\n2. The ACL names one principal")
     made = body(server, "private NamedPipeServerStream CreatePipe()")
-    check("WindowsIdentity.GetCurrent().User" in made,
-          "the access rule names the CURRENT USER")
-    check(made.count("AddAccessRule") == 1,
-          "exactly one rule is added (%d)" % made.count("AddAccessRule"))
-    check(made.count("AccessControlType.Allow") == 1,
-          "and exactly one Allow")
+
+    # PER BRANCH, NOT ACROSS THE WHOLE METHOD. These three used to count over
+    # the method entire and expect ONE of each, which was true only while the
+    # .NET 8+ branch passed no PipeSecurity at all - and that turned out to be
+    # the defect, not the design (section 6 below, and FRAGMENT-ISSUES 5b row
+    # 23). Counting over the whole body would now demand the two branches
+    # SHARE one rule between them, which is the opposite of what is wanted.
+    # Each branch gets its own, and each must name exactly one principal.
+    halves = made.split("#else")
+    check(len(halves) == 2, "CreatePipe has exactly two build branches")
+    for label, half in (("the .NET Framework branch", halves[0]),
+                        ("the .NET 8+ branch", halves[-1])):
+        check("WindowsIdentity.GetCurrent().User" in half,
+              "%s names the CURRENT USER" % label)
+        check(half.count("AddAccessRule") == 1,
+              "%s adds exactly one rule (%d)" % (label, half.count("AddAccessRule")))
+        check(half.count("AccessControlType.Allow") == 1,
+              "%s has exactly one Allow" % label)
     for group in ("WellKnownSidType", "Everyone", "AuthenticatedUsers",
                   "NetworkService", "BUILTIN", "S-1-1-0", "Users",
                   "SecurityIdentifier("):
@@ -209,11 +221,24 @@ def main():
     check("#else" in made and "#endif" in made,
           "and .NET 8 has its own branch")
     after = made.split("#else")[1]
-    check("PipeSecurity" not in after,
-          "which passes no PipeSecurity - the default ACL already "
-          "restricts to the creating user there")
+
+    # THIS CHECK USED TO ASSERT THE OPPOSITE, and it was wrong. It read
+    # `"PipeSecurity" not in after` - "which passes no PipeSecurity, the
+    # default ACL already restricts to the creating user there" - repeating
+    # the claim the source made. Measured 2026-09-21 by creating the pipe with
+    # exactly those arguments on net8.0-windows and reading its ACL back: the
+    # default grants READ to the world group and to the anonymous logon
+    # account as well as to the user. The Framework branch gave one rule; that
+    # one gave five. So the branch now asks for the ACL too, and this asserts
+    # it does. FRAGMENT-ISSUES section 5b, row 23.
+    check("PipeSecurity" in after,
+          "and it asks for an ACL rather than trusting the default, which "
+          "was measured and does NOT restrict the pipe to the creating user")
+    check("NamedPipeServerStreamAcl.Create" in after,
+          "through NamedPipeServerStreamAcl.Create - .NET Core has no "
+          "NamedPipeServerStream constructor that takes a PipeSecurity")
     check("security" in made.split("#else")[0],
-          "while the first branch passes one")
+          "while the first branch passes one to its constructor")
     check("CreateNewInstance" in made,
           "and CreateNewInstance is granted, without which only the FIRST "
           "pipe instance can be made")

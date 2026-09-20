@@ -172,10 +172,18 @@ def collect():
     d["prop_total"], d["prop_open"] = proposals_open()
     d["notes"] = live_work_notes()
 
+    # THE AGGREGATE LINES, NOT THE PER-SECTION ONES. `grab` is re.search, which
+    # takes the FIRST match, and open-defects.py grew a second section (5b, the
+    # defects found by READING rather than by proving) on 2026-09-20. From that
+    # day this row reported section 5's figures as if they were the whole
+    # register - 33 of 163 - and showed no 5b id at all, which is precisely the
+    # "a number that hides the rest" failure this page exists to refuse.
+    # open-defects.py now emits three TOTAL/OPEN lines meant for a consumer.
+    # Reported by a Codex review on PR #219.
     defects = run(["tools/open-defects.py"])
-    d["defect_open"] = grab(defects, r"still OPEN\s*:\s*(\d+)")
-    d["defect_rows"] = grab(defects, r"rows in the section\s*:\s*(\d+)")
-    d["defect_ids"] = grab(defects, r"ids\s*:\s*([0-9, ]+)")
+    d["defect_open"] = grab(defects, r"OPEN across both sections\s*:\s*(\d+)")
+    d["defect_rows"] = grab(defects, r"TOTAL rows, all sections\s*:\s*(\d+)")
+    d["defect_ids"] = grab(defects, r"TOTAL ids, all sections\s*:\s*([0-9a-zA-Z, \-]+)")
 
     agents = run(["tools/agent-count.py"])
     d["agents_left"] = grab(agents, r"Register reconciles:.*?(\d+) left")

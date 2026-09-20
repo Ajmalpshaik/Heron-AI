@@ -20,7 +20,10 @@ Always exits 0. This reports; it does not gate.
 
 WHY THIS EXISTS
 ---------------
-Thirty check-*.py gates check RULES - does it compile, is the metadata there,
+The check-*.py gates - `ls tools/check-*.py | wc -l` of them, and the number
+is derived there rather than typed here, because this file of all files has no
+business carrying a count it cannot invalidate - check RULES: does it compile,
+is the metadata there,
 does the routing resolve, does the licence header exist. Not one of them
 records that a file was READ. So a second session had no way to know the first
 had already read a file, and the only honest thing it could do was read it
@@ -72,11 +75,17 @@ import argparse
 import datetime
 import io
 import os
+import re
 import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LEDGER = os.path.join(ROOT, "docs", "REVIEW-LEDGER.tsv")
+
+# The same file in git's spelling, so in_scope() can leave it out of its own
+# sweep, and the register the `issue` notes have to point into.
+LEDGER_TRACKED = "docs/REVIEW-LEDGER.tsv"
+REGISTER = os.path.join(ROOT, "docs", "FRAGMENT-ISSUES.md")
 
 COLUMNS = ["when", "who", "path", "blob", "verdict", "note"]
 VERDICTS = ("clean", "issue")
@@ -118,6 +127,15 @@ def in_scope():
             continue          # brain yaml keeps its own gates
         if p.lower().endswith(BINARY_EXT):
             continue
+        if p == LEDGER_TRACKED:
+            # THE LEDGER CANNOT REVIEW ITSELF, and leaving it in was not a
+            # harmless oddity: marking it computes its hash and then APPENDS
+            # the mark to that same file, so the hash is wrong the instant it
+            # is written. The row would be stale before the command returned,
+            # and the sweep could never report every file read - it would
+            # always be one short, for ever, with no way to close it.
+            # Reported by a Codex review on PR #219.
+            continue
         paths.append(p)
     return sorted(paths)
 
@@ -127,17 +145,29 @@ def blobs(paths):
 
     Not `git ls-files -s`, which reports the index - a file edited and not yet
     staged would keep its old hash there and a stale mark would read as valid.
+
+    A TRACKED FILE THAT IS NOT ON DISK IS NORMAL, AND USED TO BREAK EVERYTHING.
+    `git ls-files` still lists a file deleted but not yet staged, and
+    `hash-object --stdin-paths` fails on the whole batch when one path is
+    missing - so a single in-progress deletion returned an empty dict, `state()`
+    gave up, and the command printed an error instead of the balance for the
+    other eleven hundred files. Missing paths are now left OUT of the result and
+    the caller reports them as deleted, which is a fact worth showing rather
+    than a reason to show nothing. Reported by a Codex review on PR #219.
     """
     if not paths:
         return {}
-    text = git(["hash-object", "--stdin-paths"], stdin_text="\n".join(paths) + "\n")
+    here = [p for p in paths if os.path.isfile(os.path.join(ROOT, p))]
+    if not here:
+        return {}
+    text = git(["hash-object", "--stdin-paths"], stdin_text="\n".join(here) + "\n")
     shas = [l.strip() for l in text.splitlines() if l.strip()]
-    if len(shas) != len(paths):
+    if len(shas) != len(here):
         out("Could not hash every file: asked for %d paths, got %d hashes."
-            % (len(paths), len(shas)))
+            % (len(here), len(shas)))
         out("Refusing to report a balance from an incomplete hash set.")
         return {}
-    return dict(zip(paths, shas))
+    return dict(zip(here, shas))
 
 
 def read_ledger():
@@ -156,7 +186,19 @@ def read_ledger():
             if len(cells) != len(COLUMNS):
                 bad.append((n, line))
                 continue
-            rows.append(dict(zip(COLUMNS, cells)))
+            row = dict(zip(COLUMNS, cells))
+            # A VERDICT NOBODY DEFINED IS NOT A PASS. The row shapes were
+            # checked and the verdict was not, so `cleen` - a typo, or the
+            # wreckage of a hand-resolved merge conflict - fell through the
+            # `clean` branch in state() and made the sweep SKIP a file that has
+            # no valid review at all. It did not even show up in the malformed
+            # list, because six columns were present. Unknown verdicts are
+            # malformed now, so the file returns to the queue and the row is
+            # named. Reported by a Codex review on PR #219.
+            if row["verdict"] not in VERDICTS:
+                bad.append((n, line))
+                continue
+            rows.append(row)
     return rows, bad
 
 
@@ -177,8 +219,15 @@ def state():
     rows, bad = read_ledger()
     latest = latest_by_path(rows)
 
-    clean, found, stale, unchecked = [], [], [], []
+    clean, found, stale, unchecked, gone = [], [], [], [], []
     for p in paths:
+        # Tracked, but not on disk - a deletion that has not been staged yet.
+        # Named rather than counted as unread: nobody needs to read a file that
+        # is being removed, and calling it unread would keep the sweep one
+        # short with no way to close it.
+        if p not in now:
+            gone.append(p)
+            continue
         r = latest.get(p)
         if r is None:
             unchecked.append(p)
@@ -192,9 +241,10 @@ def state():
     live = set(paths)
     orphans = sorted(q for q in latest if q not in live)
 
-    return {"paths": paths, "now": now, "latest": latest, "bad": bad,
+    return {"paths": [p for p in paths if p in now], "now": now,
+            "latest": latest, "bad": bad,
             "clean": clean, "found": found, "stale": stale,
-            "unchecked": unchecked, "orphans": orphans}
+            "unchecked": unchecked, "orphans": orphans, "gone": gone}
 
 
 def by_dir(paths):
@@ -217,6 +267,9 @@ def cmd_status(st):
     out("  never opened        %5d" % len(st["unchecked"]))
     out("  STALE - changed     %5d   (read once, edited since - read again)"
         % len(st["stale"]))
+    if st["gone"]:
+        out("  tracked, not on disk%5d   (a deletion not staged yet - not counted above)"
+            % len(st["gone"]))
     out("")
     out("  left to read        %5d" % (len(st["unchecked"]) + len(st["stale"])))
 
@@ -289,6 +342,41 @@ def cmd_history(path):
             % (r["when"], r["who"], r["verdict"], r["blob"][:12], r["note"]))
 
 
+_SECTION_5B = "## 5b. HERON'S OWN DEFECTS found by reading"
+_SECTION_6 = "## 6. WHAT CANNOT BE RUN AT ALL"
+_ROW = re.compile(r"^\|\s*\*{0,2}(\d+)\*{0,2}\s*\|")
+_CITED = re.compile(r"^5b-(\d+)$", re.IGNORECASE)
+
+
+def _row_id(text):
+    """`5b-3` -> 3. Anything else -> None, so prose in a note is ignored
+    rather than mistaken for a row that does not exist."""
+    m = _CITED.match(text.strip().rstrip(".,;"))
+    return int(m.group(1)) if m else None
+
+
+def register_rows():
+    """Every row number in section 5b, or None if the section cannot be read.
+
+    None and an empty set are different answers and the caller treats them
+    differently: an empty 5b means nothing has been recorded yet, and an
+    unreadable one means this tool cannot check the reference at all - in which
+    case it refuses rather than writing a mark nobody has verified.
+    """
+    try:
+        with io.open(REGISTER, "r", encoding="utf-8") as handle:
+            src = handle.read()
+    except (IOError, OSError):
+        return None
+    if _SECTION_5B not in src:
+        return None
+    body = src[src.index(_SECTION_5B):]
+    if _SECTION_6 in body:
+        body = body[:body.index(_SECTION_6)]
+    return set(int(m.group(1)) for m in
+               (_ROW.match(line) for line in body.split("\n")) if m)
+
+
 def who():
     """One id per person. HERON_CLIENT_ID first, then git's own idea of who
     this is - never a hardcoded default that quietly attributes work."""
@@ -312,11 +400,38 @@ def cmd_mark(path, verdict, note):
         elif not os.path.exists(os.path.join(ROOT, path)):
             out("No such tracked file. Check the spelling, forward slashes.")
         return
-    if verdict == "issue" and not note:
-        out("An issue needs --note with its row number in FRAGMENT-ISSUES.md 5b.")
-        out("Write the defect there FIRST, then mark the file with its row.")
-        out("A file marked `issue` with no row is a finding nobody can find.")
-        return
+    if verdict == "issue":
+        if not note:
+            out("An issue needs --note with its row number in FRAGMENT-ISSUES.md 5b.")
+            out("Write the defect there FIRST, then mark the file with its row.")
+            out("A file marked `issue` with no row is a finding nobody can find.")
+            return
+
+        # AND THE ROW HAS TO EXIST. Requiring the note to be non-empty was not
+        # the same as requiring it to POINT anywhere: `--note 5b-999`, or a
+        # sentence, was accepted and appended for ever while the tool claimed
+        # the defect could be found in section 5b. That is the exact state the
+        # refusal above exists to prevent, reached by a typo.
+        # Reported by a Codex review on PR #219.
+        wanted = register_rows()
+        if wanted is None:
+            out("Could not read section 5b of docs/FRAGMENT-ISSUES.md, so the")
+            out("row in --note cannot be checked. Refusing rather than writing")
+            out("a mark whose reference nobody has verified.")
+            return
+        cited = [c for c in re.split(r"[,\s]+", note) if c.strip()]
+        missing = [c for c in cited if _row_id(c) and _row_id(c) not in wanted]
+        if not any(_row_id(c) for c in cited):
+            out("--note must name at least one row in section 5b, like 5b-3.")
+            out("Got: %s" % note)
+            return
+        if missing:
+            out("No such row in FRAGMENT-ISSUES.md section 5b: %s"
+                % ", ".join(missing))
+            out("Section 5b has %d row(s): %s"
+                % (len(wanted), ", ".join("5b-%d" % n for n in sorted(wanted))))
+            out("Write the defect there FIRST. Nothing was recorded.")
+            return
 
     sha = blobs([path]).get(path)
     if not sha:

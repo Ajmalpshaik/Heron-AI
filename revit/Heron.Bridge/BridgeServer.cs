@@ -283,14 +283,21 @@ namespace Heron.Bridge
 #else
             // .NET 8+ (Revit 2025, 2026, 2027). THE SAME ACL, AND IT HAS TO BE
             // ASKED FOR HERE TOO - the comment that used to sit on these lines
-            // said "the default ACL already restricts to the creating user",
-            // and that was measured and found FALSE. Creating the pipe with the
-            // arguments below and no PipeSecurity, then reading its own ACL
-            // back on net8.0-windows, gives:
+            // said the default already restricted the pipe to the creating
+            // user, and that was measured and found FALSE. Creating the pipe
+            // with the arguments below and no PipeSecurity, then reading its
+            // own ACL back on net8.0-windows, returned FIVE rules where the
+            // Framework branch returns one: the user, the system account and
+            // the local administrators as expected - and beside them, READ
+            // access for the world group and for the anonymous logon account.
             //
-            //     Everyone                      Allow  Read, Synchronize
-            //     NT AUTHORITY\ANONYMOUS LOGON  Allow  Read, Synchronize
-            //     SYSTEM / Administrators / me  Allow  full
+            // The rules are written out in full in FRAGMENT-ISSUES section 5b,
+            // row 23, and are deliberately NOT spelled here:
+            // tests/test_authentication.py reads this method as TEXT and
+            // refuses any group principal it finds in it. That is the right
+            // check - it cannot tell a SID that is granted from one that is
+            // merely being described, and the conservative reading is the safe
+            // one.
             //
             // Read is not Write, so no stranger could ever send a request and
             // the token still guards every command - but PipeInstances is 2 and

@@ -1607,7 +1607,7 @@ python tools/review-ledger.py --history <path>      # what one file has been thr
 Reads [`docs/REVIEW-LEDGER.tsv`](../docs/REVIEW-LEDGER.tsv). Always exits 0 - it reports, it does not
 gate.
 
-**Thirty `check-*.py` gates check rules. None of them records that a file was READ.** So a second
+**The `check-*.py` gates check rules. None of them records that a file was READ.** So a second
 session had no way to know the first had already read a file, and the only honest thing it could do
 was read it again - which is the whole sweep done twice, and the second pass is indistinguishable from
 the first in every report Heron prints. **No total is written here**; the tool derives one every time

@@ -2582,6 +2582,25 @@ namespace Heron.Revit.Addin
                             + "4.5mm.";
                     return null;
                 }
+
+                // NOT A REAL NUMBER, AND THIS BRANCH WAS MISSED THE FIRST TIME.
+                // The `length` case below was guarded on 2026-09-20 and this one
+                // was not, which a Codex review on PR #219 caught: `number NaN`
+                // parses (TryParse honours the culture's NaN symbol whatever
+                // NumberStyles says) and went straight into a
+                // DoubleParameterValue, so a SET_GLOBAL_PARAMETER request
+                // reached GlobalParameter.SetValue with a NaN in it. There is no
+                // millimetre bound to apply here - a unitless number may be any
+                // finite value - so the check is only that it IS finite.
+                // FRAGMENT-ISSUES section 5b, row 3.
+                if (double.IsNaN(number) || double.IsInfinity(number))
+                {
+                    problem = "\"" + rest + "\" is not a real number, so Heron will not put it "
+                            + "in a parameter. A value like that usually arrives from a "
+                            + "calculation that did not work out. Type digits only - 4.5.";
+                    return null;
+                }
+
                 return new DoubleParameterValue(number);
             }
 

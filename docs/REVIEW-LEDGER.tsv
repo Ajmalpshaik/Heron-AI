@@ -21,3 +21,4 @@ when	who	path	blob	verdict	note
 2026-09-21	ajmal-pc	revit/Heron.Bridge/BridgeServer.cs	d353e253cc34f4b44e6c9b41a1f31df27a007dd4	issue	5b-22 open; 5b-23 FIXED here
 2026-09-21	ajmal-pc	mcp/server/heron_session.py	bd3298e6a78d8f80c4ff6eb7044236165fea29ea	clean	the four-case table is implemented correctly and MEASURED: version_for_filter run over all 7 states, chosen-closed returns None and says so (row 159 holds), several-none-chosen names the count (row 130 holds). Every refusal carries 'Nothing has been sent to Revit'. Considered and dismissed: discard of 'stale' from discover() - discover() prunes those files itself, the returned list is only for reporting
 2026-09-21	ajmal-pc	mcp/server/heron_write.py	98c150e3902eba57ff339e2ab740ad9601878ef1	issue	5b-24 FIXED here (decimal comma, ten times out)
+2026-09-21	ajmal-pc	revit/Heron.Bridge/BridgeIdentity.cs	40211a0e2d1f0e9d08d75efea7b0355464e17bd4	issue	5b-21

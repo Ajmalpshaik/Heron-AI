@@ -167,7 +167,7 @@ def report(label, found, show_all):
         else:
             out("  No rows matched the pattern. Check it before believing "
                 "this.\n\n")
-        return 0
+        return 0, 0, []
 
     is_open = [(n, s) for n, s in found if s.lower().startswith("open")]
     arguing = [(n, s, SETTLED.search(s).group(0))
@@ -196,25 +196,39 @@ def report(label, found, show_all):
             out("    %-5s  says OPEN, and also %r\n"
                 % (ident(label, number), claim))
         out("\n")
-    return len(is_open)
+    return len(is_open), len(found), [ident(label, n) for n, _ in is_open]
 
 
 def main():
     show_all = "--all" in sys.argv
     out = sys.stdout.write
 
-    total, seen = 0, 0
+    total, seen, all_rows, all_ids = 0, 0, 0, []
     for label, start, ends in SECTIONS:
         found = rows(start, ends, label)
         if found is None:
             continue          # rows() has already said which heading moved
         seen += 1
-        total += report(label, found, show_all)
+        section_open, section_rows, section_ids = report(label, found, show_all)
+        total += section_open
+        all_rows += section_rows
+        all_ids.extend(section_ids)
         out("\n")
 
     if not seen:
         return 0
 
+    # THE AGGREGATE, ON ITS OWN LINES AND NAMED SO IT CAN BE PARSED.
+    # tools/balance-of-work.py reads this output with re.search, which takes
+    # the FIRST match - so the moment section 5b arrived beside section 5, the
+    # dashboard silently began reporting section 5's numbers as the whole
+    # truth: 33 of 163 where the real figures were larger, with every 5b id
+    # missing. A consumer reading a per-section line was never going to
+    # survive a second section. These three lines are the contract; the
+    # per-section blocks above stay for a human to read.
+    # Reported by a Codex review on PR #219.
+    out("  TOTAL rows, all sections  : %d\n" % all_rows)
+    out("  TOTAL ids, all sections   : %s\n" % (", ".join(all_ids) or "(none)"))
     out("  OPEN across both sections : %d\n\n" % total)
     out("Read the ids, not the count. A row can say OPEN after a later row\n"
         "has closed it - four did on 2026-09-16 - and no pattern sees that.\n")
