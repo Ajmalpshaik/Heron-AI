@@ -2720,6 +2720,22 @@ The owner asked for this in one table, and asked that it be given in this shape 
 | Waiting on the owner | **140** - 21 decisions, 21 proposals, **0 questions** |
 | Platform, add-in, install, rollback | **Nothing owed.** Loads on 2020, 2024 and 2027 |
 
+> **THE TABLE ABOVE WAS TRUE WHEN WRITTEN AND FOUR ROWS HAVE MOVED SINCE, 2026-09-20 LATER THE SAME DAY.** Derived, not typed - run the commands in
+> [work-notes/BALANCE-OF-WORK.md](work-notes/BALANCE-OF-WORK.md) rather than believing either version.
+>
+> | | Was | Is |
+> |---|---|---|
+> | Fragments proved | 328 of 395 | **329 of 395**, 66 owed |
+> | Open defects | 38 of 144 | **33 of 163** - the register grew by 19 rows and more closed than opened |
+> | Waiting on the owner | 140 | **146** |
+> | Questions | 0 | **1** - `Q-57`, *may a fragment or skill that WRITES declare a question* |
+> | `set-wall-constraints` STALE | the one stale signature | **none is stale.** It reads PROVEN and `check-signatures.py` says nothing is waiting; `create-roof` is HELD on purpose |
+>
+> **AND THE ONE THAT IS NOT A COUNT: FOURTEEN QUESTIONS ARE ANSWERED BY SOMETHING THAT WRITES**, measured twice by two independent routes and named one by one in
+> [FRAGMENT-ISSUES row 116](FRAGMENT-ISSUES.md). Asking the diameter of a pipe CREATES a pipe; asking to select the pipes in a view CAPS THEIR OPEN ENDS; asking
+> which workset something is on CREATES a workset. Every one of the fourteen has a READ sitting beside it that lost, so *there is no READ to give the sentence to*
+> is disproved - but the right owner is obvious for some and wrong for others, so none was declared and the choice is still his.
+
 **Safe on a live project today: 144 proven `READ` fragments** - that number read **114** in this file's
 own cold-start instructions until 2026-09-20, understating by thirty what the owner was allowed to use.
 Derive it, never read it: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml`.
