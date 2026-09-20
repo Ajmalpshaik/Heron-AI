@@ -16,7 +16,8 @@ Revit and no Windows.
 
 WHY THIS EXISTS
 ---------------
-`tools/check-compile.py` compiles the four PROJECTS. Until this file, **nothing
+`tools/check-compile.py` compiles the hand-built projects - it says how many,
+and this sentence deliberately does not. Until this file, **nothing
 compiled the fragments** - and a fragment is C# that will one day be handed to
 Roslyn and run inside Revit (D-28). So the library's whole point, the part that
 does the work, was the one part no compiler had ever read.

@@ -3998,44 +3998,19 @@ namespace Heron.Revit.Addin
             return value;
         }
 
+        // THE RULE LIVES IN HeronBindingNote.cs, LINKED BY SOURCE INTO A
+        // TEST HOST. It counts two collections and touches no Autodesk type,
+        // so splitting it out is what makes it provable on a machine with no
+        // Revit - the same move HeronStackGuard.cs and HeronActivityBanner.cs
+        // already make. There is exactly one copy of it.
         private static string Size(object shaped)
         {
-            return Size(shaped, null);
+            return HeronBindingNote.Size(shaped, null);
         }
 
-        /// <summary>
-        /// How many, and HOW MANY WERE OFFERED when those differ.
-        ///
-        /// FRAGMENT-ISSUES row 75. Shape() revives carried ElementIds through
-        /// doc.GetElement(id) on the HOST document and silently drops the ones
-        /// that do not resolve. Zero survivors is handled honestly - it returns
-        /// null and the caller says "nothing usable survived". A PARTIAL
-        /// revival was not: 1128 linked walls carried over, two ids happened
-        /// to name real elements in the host document, and the binding note
-        /// read "elements from select-from-link (2)" - which is indistinguish-
-        /// able from a deliberate narrowing to two.
-        ///
-        /// "2 of 1128" is the same fact with nothing added and nothing
-        /// guessed. It does not stop the wrong binding - the two host elements
-        /// are still bound, and stopping it needs the carried value to say
-        /// which DOCUMENT it came from, which is the row's real repair. It
-        /// makes the loss visible, which is the half that cannot break a
-        /// caller relying on today's behaviour.
-        ///
-        /// NO THRESHOLD, DELIBERATELY. "Refuse below some percentage" needs a
-        /// floor, and R-60 says a floor is derived from a measurement or it is
-        /// not set at all. Reporting both numbers needs neither.
-        /// </summary>
         private static string Size(object shaped, object before)
         {
-            var list = shaped as ICollection;
-            if (list == null) return "";
-
-            var was = before as ICollection;
-            if (was != null && was.Count != list.Count)
-                return " (" + list.Count + " of " + was.Count + ")";
-
-            return " (" + list.Count + ")";
+            return HeronBindingNote.Size(shaped, before);
         }
 
         private static bool Fields(Dictionary<string, string> need,

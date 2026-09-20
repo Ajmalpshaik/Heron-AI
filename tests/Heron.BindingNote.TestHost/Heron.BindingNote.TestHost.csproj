@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proves the binding note's counting WITHOUT Revit.
+
+    The same source-linking pattern Heron.StackGuard.TestHost and
+    Heron.Banner.TestHost already use, and for the reason that project file
+    states: HeronBindingNote.cs touches no Autodesk type - it counts two
+    collections - so it is linked here BY SOURCE rather than through a project
+    reference. Referencing Heron.Revit.Addin would drag in RevitAPI.dll and
+    make the one testable piece untestable on any machine without Revit.
+
+    Linking the source has the second property that file names too: there is
+    exactly ONE copy of the rule. A second implementation written to test the
+    first is how `binds:` came to be honoured by the Python half and ignored
+    by the C# executor (FRAGMENT-ISSUES row 96).
+
+    Why it exists at all: FRAGMENT-ISSUES row 75. A partial revival of carried
+    ElementIds printed "(2)" where 1128 were offered, which reads exactly like
+    a deliberate narrowing to two. The formatter is now the only thing that
+    distinguishes the two, and a compiler cannot catch a regression in it -
+    which is what this host is for.
+
+        Run it with `dotnet run`, pointed at this folder, passing
+        -p:RevitVersion=2024. (XML comments cannot carry a double
+        hyphen, so the flag is spelled out rather than shown.)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.BindingNote.TestHost</RootNamespace>
+    <AssemblyName>Heron.BindingNote.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronBindingNote.cs"
+             Link="HeronBindingNote.cs" />
+  </ItemGroup>
+
+</Project>

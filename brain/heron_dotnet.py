@@ -82,13 +82,40 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Every project, in dependency order so the first failure is the deepest one.
+#
+# IT SAID "EVERY PROJECT" WHILE NAMING FIVE OF SIX. `Heron.Banner.TestHost`
+# was left out ON PURPOSE when it arrived on 2026-09-17 (`5669e7e`), and the
+# reason was sound: it is a WinExe WPF project, CI builds on Linux with
+# EnableWindowsTargeting, and that combination had never been watched go
+# green. THE REASON LIVED ONLY IN THE COMMIT MESSAGE. Nothing in this file,
+# in the project file, or in the gate said a project was being held back, so
+# the next reader could not tell a decision from an oversight - and the
+# comment above them read "every project". That is FRAGMENT-ISSUES row 160.
+#
+# The condition that commit set was "trivial once someone has watched one
+# green run". It has been watched: 2026-09-20, `tools/check-compile.py` on
+# Linux with the 10.0.x SDK and -p:EnableWindowsTargeting=true - the same
+# command, OS, SDK line and flag gates.yml uses - built all seven projects on
+# all eight releases, Banner included. So it is listed now, on that evidence.
+#
+# `tools/api-surface` stays out: it is a tool that reads the Revit assemblies
+# rather than something Heron ships, and it targets no Revit release. It is
+# named in NOT_SHIPPED instead of being silently absent, because silently
+# absent is the thing that went wrong here.
 PROJECTS = [
     "platform/Heron.Core/Heron.Core.csproj",
     "revit/Heron.Bridge/Heron.Bridge.csproj",
     "revit/Heron.Revit.Addin/Heron.Revit.Addin.csproj",
+    "tests/Heron.Banner.TestHost/Heron.Banner.TestHost.csproj",
+    "tests/Heron.BindingNote.TestHost/Heron.BindingNote.TestHost.csproj",
     "tests/Heron.Bridge.TestHost/Heron.Bridge.TestHost.csproj",
     "tests/Heron.StackGuard.TestHost/Heron.StackGuard.TestHost.csproj",
 ]
+
+# The one project that is a tool rather than something Heron ships. Named here
+# so `unlisted()` can tell "deliberately out" from "somebody forgot", which is
+# the distinction the missing Banner host had no way to make.
+NOT_SHIPPED = ["tools/api-surface/ApiSurface.csproj"]
 
 # The range Directory.Build.props knows how to target. Kept as an explicit list
 # rather than a range() so that adding a Revit release is a deliberate edit
@@ -234,6 +261,37 @@ def why_unbuildable(release, desktop_major):
                 "the WindowsDesktop targets is .NET %d; %s"
                 % (needed, desktop_major, fix))
     return None
+
+
+def unlisted(root=None):
+    """
+    Every .csproj on disk that neither PROJECTS nor NOT_SHIPPED names.
+
+    THE SAME ARGUMENT `disagreements()` MAKES, ONE LEVEL UP: a hand-written
+    list is only worth keeping if something checks it, and nothing did.
+    `Heron.Banner.TestHost` sat beside a comment reading *"every project"*
+    for long enough to answer two NEEDS-CHECKING rows, and the compile gate
+    never built it once - on any release.
+
+    Returns paths in the repository's own spelling, sorted, so a caller can
+    print them. It reads the DISK and never the build, so it holds on a
+    machine with no .NET at all - which is the point: the failure it catches
+    is somebody adding a project, not somebody's toolchain.
+    """
+    where = ROOT if root is None else root
+    known = set(PROJECTS) | set(NOT_SHIPPED)
+    out = []
+    for folder, dirs, files in os.walk(where):
+        dirs[:] = [d for d in dirs
+                   if d not in (".git", "bin", "obj", "node_modules")]
+        for name in files:
+            if not name.endswith(".csproj"):
+                continue
+            rel = os.path.relpath(os.path.join(folder, name), where)
+            rel = rel.replace(os.sep, "/")
+            if rel not in known:
+                out.append(rel)
+    return sorted(out)
 
 
 def disagreements(table=None):
