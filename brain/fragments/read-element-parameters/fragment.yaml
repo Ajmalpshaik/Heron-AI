@@ -130,6 +130,33 @@ utterances:
   # have no value', which together ARE this question. Mark is an identifier and
   # is never bulk-written, so a READ owning the sentence is the safe end of it.
   - what is missing its mark
+  # ADDED 2026-09-20, ON THE OWNER'S EXPLICIT CALL, AND ALL FIVE ARE THE SAME
+  # JUDGEMENT: this fragment owns the questions that ask for ONE VALUE OFF AN
+  # ELEMENT. Each was measured answering a fragment that CHANGES THE MODEL -
+  # AUTO_SIZE_MEP, CREATE_PIPE, CREATE_WORKSET, AUTO_SIZE_MEP and AUTO_SIZE_PIPE -
+  # and in every case the READ the crossings tool named as beaten was the wrong
+  # owner: a duct WEIGHT is not a size, the pipe SEGMENT TYPES a project stocks
+  # are not this pipe's diameter, SELECT_BY_WORKSET answers the inverse question
+  # (workset in, elements out), READ_SPACE_LOADS is about spaces rather than
+  # ducts, and MEASURE_MEP_VELOCITY is a velocity in ducts rather than a flow
+  # rate in a pipe. FRAGMENT-ISSUES rows 116 and 146; row 146 said to TRY this
+  # fragment before writing anything new, and this is that being done.
+  # 
+  # THE PURPOSE ABOVE IS WHY IT FITS: version 2 exists because v1 answered
+  # `absent` for TYPE parameters and names SIZE as the first example. Instance is
+  # asked first and type second, so whichever carries the value answers and
+  # `resolvedFrom` says which.
+  # 
+  # WHAT THIS DOES NOT DO, said plainly: it reads a parameter the caller NAMES,
+  # so these sentences resolve to a READ that then needs `parameterName` bound -
+  # Size, Diameter, Workset, Flow. That is a binding step, not an answer, and it
+  # is the whole point: an unbound READ asks, where the writer it used to reach
+  # acted.
+  - what size is this duct
+  - what is the diameter of this pipe
+  - what workset is this on
+  - what is the airflow in this duct
+  - what is the flow rate in this pipe
   - what level are they on
   - which level is each duct on
   - what parameters does this duct have
