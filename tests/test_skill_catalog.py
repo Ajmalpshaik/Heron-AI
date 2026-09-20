@@ -377,6 +377,47 @@ def main():
                                             or one["words_moved"]["fresh"])]
         check(len(stale) == 1 and stale[0]["id"] == REAL_ID,
               "exactly the skill whose words moved, and no other")
+        # A COMPLAINT WITH NO STALENESS, WHICH IS WHERE THE SUBTITLE BROKE.
+        # The two caveats were written as `shaky + stale if stale else ""`,
+        # which Python reads as `(shaky + stale) if stale else ""` - so with
+        # no stale recording the COMPLAINT sentence vanished with it. The
+        # page computed the number and dropped it, inside the change that
+        # added the row about pages dropping what they computed.
+        io.open(os.path.join(where, "routing-2000-01-04.json"), "w",
+                encoding="utf-8").write(json.dumps({
+                    "taken": "2000-01-04", "index": {"md5": "0" * 32},
+                    "skills": {REAL_ID: [
+                        [one, "COUNT_ELEMENTS", "READ", "hybrid", "reach",
+                         ["a coin toss"] if one == live else []]
+                        for one in REAL_SAYS]}}))
+        rows, _, _ = tool.collect(recordings=where)
+        card = [row for row in rows if row["id"] == REAL_ID][0]
+        check(not card["words_moved"]["gone"]
+              and not card["words_moved"]["fresh"],
+              "a recording covering every sentence is NOT out of date")
+        check(card["words"]["reach_unsettled"] == [live],
+              "and the one complaint is on a sentence that reached")
+
+        keep_out = os.environ.get("HERON_SKILL_CATALOG_OUT")
+        out2 = os.path.join(where, "page2.html")
+        os.environ["HERON_SKILL_CATALOG_OUT"] = out2
+        try:
+            third = load_tool()
+            third.RECORDINGS = where
+            check(third.main() == 0, "the page generates")
+        finally:
+            if keep_out is None:
+                os.environ.pop("HERON_SKILL_CATALOG_OUT", None)
+            else:
+                os.environ["HERON_SKILL_CATALOG_OUT"] = keep_out
+        said = json.loads(re.search(
+            r"const DATA = (\{.*\});",
+            io.open(out2, encoding="utf-8").read(), re.S).group(1))["subtitle"]
+        check("THE RETRIEVER COMPLAINED" in said,
+              "the subtitle says so WITHOUT a stale recording beside it")
+        check("OUT OF DATE" not in said,
+              "and does not claim a staleness it has not got")
+
         # AND IT IS NOT COUNTED AS REACHING. This is the whole point of the
         # exclusion: the recording says every word it holds reaches, and the
         # skill has since grown three the recording never saw.

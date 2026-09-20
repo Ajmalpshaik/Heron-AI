@@ -552,6 +552,25 @@ def main():
     shaky = [one for one in measured if one["words"]["reach_unsettled"]]
     shaky_words = sum(len(one["words"]["reach_unsettled"]) for one in shaky)
 
+    # TWO CAVEATS, BUILT AS A VARIABLE RATHER THAN NESTED IN THE FORMAT.
+    # The first version read `shaky_text + stale_text if stale else ""`, which
+    # Python parses as `(shaky_text + stale_text) if stale else ""` - so with
+    # no stale recording the SHAKY sentence vanished too. The page computed
+    # the number and dropped it, which is the whole of what row 157 is about,
+    # committed inside the change that added row 157. Found by reading the
+    # rendered subtitle rather than the code.
+    caveats = ""
+    if shaky:
+        caveats += (" %d sentence(s) across %d skill(s) reached a declared "
+                    "capability AND THE RETRIEVER COMPLAINED - its own note "
+                    "says a coin toss, where neither route preferred the "
+                    "winner, or a words route that ranked the library rather "
+                    "than selecting from it." % (shaky_words, len(shaky)))
+    if stale:
+        caveats += (" %d recording(s) are OUT OF DATE - the skill's words "
+                    "changed since they were taken, so their counts are "
+                    "about different sentences." % len(stale))
+
     payload = {
         "rows": rows,
         "subtitle": (
@@ -568,18 +587,7 @@ def main():
                 "CHANGES THE MODEL.%s Recorded %s against index %s - a "
                 "recording, not a run."
                 % (len(measured), len(rows), len(whole), len(writes),
-                   ("%s%s"
-                    % ((" %d sentence(s) across %d skill(s) reached a "
-                        "declared capability AND THE RETRIEVER COMPLAINED - "
-                        "its own note says a coin toss, where neither route "
-                        "preferred the winner, or a words route that ranked "
-                        "the library rather than selecting from it."
-                        % (shaky_words, len(shaky))) if shaky else "",
-                       ""))
-                   + (" %d recording(s) are OUT OF DATE - the skill's words "
-                    "changed since they were taken, so their counts are "
-                    "about different sentences." % len(stale))
-                   if stale else "",
+                   caveats,
                    where_meta.get("taken") or "at an unrecorded time",
                    (where_meta.get("index") or "?")[:8])))),
         "footer": (
