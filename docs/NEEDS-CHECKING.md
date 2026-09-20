@@ -1653,3 +1653,76 @@ a Revit to prove them.
 > number is only half a fix — it does not help when two sessions announce at the same hour. What
 > actually held every time: **keep both, renumber the later one, and check for duplicates
 > afterwards** — no row and no group has been lost yet.
+**BUILT 2026-09-20, AND IT WAS SMALLER THAN THIS GROUP EXPECTED.** The judging
+half already existed and nothing had ever produced one - see
+[row 156](FRAGMENT-ISSUES.md). `validate --vary NAME=a,b,c --vary-field FIELD`
+is the running half, demonstrated end to end on `test projject` against
+`filter-elements-by-category`: `Ducts 8`, `Pipes 2`, `Air Terminals 0`,
+`Walls 28`, and `heron_validate draft` wrote a proper D-53 negative case from it.
+
+**THE THREE FRAGMENTS ARE STILL NOT PROVED**, and that is the honest state: the
+machinery exists, and each of them still needs an arrangement, a model and a
+signature. What has changed is that they are now *provable*, which they were
+not. Whoever takes them needs an input each answer genuinely depends on:
+
+| fragment | what to vary | why that one |
+|---|---|---|
+| `trace-connectivity` | the `start` element | `reached` is seeded with it, so nothing else moves the answer - `elements` only feeds the GEOMETRIC route |
+| `report-findings` | `whatWasChecked` / the checked set | its result is prose, so the tracked field has to be the sentence, and the sentence must differ per input |
+| `describe-blank-parameters` | `parameterName` | its record already shows the shape - `blank 22, absent 0` against `blank 0, absent 22` - which is a tracking set nobody could record |
+
+## Group Y — what tracking proved, and the two walls it hit, 2026-09-20
+
+**The first fragment proved by TRACKING rather than by an empty case**, on
+`test projject`, Revit 2024, session 36216.
+
+**`check-minimum-clearance` — PROVEN.** `defaultClearance` varied across five
+values, `tooClose` following it every time:
+
+```
+      1 mm  ->   4        6000 mm  ->  10
+   1500 mm  ->   6       20000 mm  ->  18
+   3000 mm  ->   6
+```
+
+Rising with the clearance, which is what the physical question demands. A
+fragment ignoring its input, measuring nothing, or answering about a set it was
+not given could not produce that. Signed and promoted — **329 PROVEN, 66 DRAFT.**
+
+### Wall 1 — the tracked field must be one the REPLY renders in full
+
+**`find-nearest-elements` ran perfectly and cannot be proved this way.** Three
+metrics - `centre`, `gap`, `manhattan` - are three genuinely different
+calculations, and all three came back **`8 entry(ies)`**. The DISTANCES differ;
+the reply truncates a dictionary to its entry count, so nothing that varies is
+visible, and `heron_validate` would refuse the set with *"every tracking row
+came back 8 entry(ies)"* - correctly, because from where it stands they did.
+
+**So the field has to be one whose NUMBER moves, not one whose contents move.**
+`tooClose` worked because the COUNT changed; `distancesMm` failed because only
+the values inside did. That is the same truncation that made `create-roof`
+report *"base at 40..."* ([row 138](FRAGMENT-ISSUES.md)) and it is a property of
+the reply, not of tracking.
+
+**The repair, for whoever wants this fragment:** have it leave a short STRING
+that carries the answer - the way `create-roof` now leaves `measuredMm` - and
+track that. A contract change, small, and it makes the fragment more honest for
+a reader too.
+
+### Wall 2 — a fragment needing ONE element AND a set cannot be arranged
+
+**`trace-connectivity` blocks two skills and is still blocked.** It needs
+`start` (one particular `Element`) and `elements` (the candidate set), and the
+only way to name one element is `selected`, which means the whole Revit
+selection. So the chain must leave **eight** for `elements` and **exactly one**
+for `start`, from one selection, and there is no way to say that.
+
+`setup-set` does not help: it gives the CHAIN its own values, and this needs two
+different selections in one arrangement.
+
+**It is the same gap the skills session hit from the other side** - `elementIds
+(IList<ElementId>)` cannot be typed in, so `filter-elements-by-id` cannot pick
+out one element either. One rule in `OneIdNamed` for an id named by its Revit
+element id would unblock both, and it is the rule `RevitFragment` deliberately
+refuses to guess at. **That is the next thing worth building**, and it is add-in
+C# - a rebuild and a Revit restart.

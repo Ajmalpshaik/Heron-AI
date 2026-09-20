@@ -138,7 +138,7 @@ against `Size` as it stood before the fix, **3 of 7 checks fail and the host exi
 that still pass are exactly the ones that must not move.
 
 **THE LESSON WORTH CARRYING IS THE SECOND ONE, AND IT IS ABOUT BEING WRONG.**
-[Row 160](FRAGMENT-ISSUES.md): `brain/heron_dotnet.py` listed the projects the compile gate builds
+[Row 161](FRAGMENT-ISSUES.md): `brain/heron_dotnet.py` listed the projects the compile gate builds
 under the comment *"Every project, in dependency order"* while naming **five of six**, and
 `Heron.Banner.TestHost` had never been compiled on any release. **The first reading of that was that
 somebody forgot, and it was written down that way before being checked.** It was wrong. `5669e7e` left
@@ -156,9 +156,9 @@ the **10.0.x** SDK, `-p:EnableWindowsTargeting=true` — the same command, OS, S
 now **fails the gate** on any `.csproj` that neither `PROJECTS` nor the named `NOT_SHIPPED` accounts
 for, so the next exclusion has to be readable where the gate is.
 
-**LEFT FOR THE NEXT SESSION — [row 161](FRAGMENT-ISSUES.md), recorded and not fixed.** There are
+**LEFT FOR THE NEXT SESSION — [row 162](FRAGMENT-ISSUES.md), recorded and not fixed.** There are
 **204** `tests/test_*.py` on disk and `check-gaps.py` runs **203**. `test_bridge_roundtrip.py` is
-skipped by name, and unlike row 160 **its reason is in the right place** — in a comment beside the
+skipped by name, and unlike row 161 **its reason is in the right place** — in a comment beside the
 skip, and correct: with no host binary the suite `return 1`, which would read as a FAIL for a build
 step nobody took. The defect is that the suite has **no exit-3 path**, so it cannot say *"I could not
 run"*, and a silenced suite prints nothing at all — not `ok`, not `wait`. The repair is the one

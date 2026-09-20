@@ -1438,7 +1438,8 @@ def model_line(opening, phases, revit_version, pid):
 
 def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=None, out=None,
                  values=None, negative_values=None, setup_values=None,
-                 negative_setup_values=None, writing=False, setup=None,
+                 negative_setup_values=None, vary=None, vary_field=None,
+                 writing=False, setup=None,
                  keep_chain=False, allow_publish=False):
     """
     Run ONE fragment through the phases a proof needs, and record what came back.
@@ -1740,7 +1741,16 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
             if negative:
                 chosen_setup = negative_setup_values or using or values
             else:
-                chosen_setup = setup_values or values
+                # `using` ON THE POSITIVE SIDE TOO, AND `--vary` IS WHY. The
+                # positive branch read only `values`, so a tracked run handed
+                # its varied value to the FRAGMENT and not to the chain - and
+                # `describe-blank-parameters`, whose chain needs the same
+                # `parameterName` it does, failed every row with
+                # "'parameterName (string)' is a value the CALLER supplies".
+                # Found by running it, first time out. `using` is what THIS
+                # phase actually ran with, which is what the chain must be
+                # arranged from, and the negative branch had said so all along.
+                chosen_setup = setup_values or using or values
             if chosen_setup:
                 step_args["values"] = chosen_setup
             if position == 0:
@@ -1864,13 +1874,87 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     # DEFECT ROW 11, and the default is deliberate - see the docstring.
     reset_chain = not keep_chain
 
-    run_fragment("positive", in_document, "run as it would normally be run",
-                 reset_chain)
+    # NOT WHEN TRACKING. With `--vary` the positive phase IS the first tracked
+    # input, and running it here first would run the fragment WITHOUT the value
+    # being varied - which on the first live run came back
+    # `needs_request_values`, wrote a failed phase into the record, and then ran
+    # again. Two phases called "positive", one of them about nothing.
+    if not vary:
+        run_fragment("positive", in_document, "run as it would normally be run",
+                     reset_chain)
+
+    # ---- D-53 TRACKING, WHICH REPLACES THE NEGATIVE RATHER THAN JOINING IT --
+    #
+    # The FIRST value ran above as the positive phase, so the loop starts at
+    # the second and every run is recorded. `draft_from_record` prefers
+    # `tracking` over a negative phase when both are present, and there is no
+    # negative here by construction: a fragment that cannot come back empty has
+    # no arrangement that makes it.
+    tracking = []
+    if vary:
+        vary_name, _, listed = vary.partition("=")
+        vary_name = vary_name.strip()
+        vary_values = [v.strip() for v in listed.split(",") if v.strip()]
+
+        def with_value(one):
+            """The caller's values with `vary_name` set to `one`."""
+            kept = [v for v in (values or []) if v.get("name") != vary_name]
+            return kept + [{"name": vary_name, "value": one}]
+
+        def answered(record):
+            """What the named field came back as, or None if it did not run."""
+            if not record or not record.get("ok"):
+                return None
+            got = (record.get("provides") or {}).get(vary_field)
+            return None if got is None else str(got)
+
+        if vary_values:
+            # THE FIRST TRACKED INPUT IS THE POSITIVE PHASE. A record needs one
+            # and this is honestly it: the fragment run for real, with a value
+            # the tracking set names.
+            first = run_fragment("positive", in_document,
+                                 "run with %s=%s - the first of %d tracked inputs"
+                                 % (vary_name, vary_values[0], len(vary_values)),
+                                 reset_chain, using=with_value(vary_values[0]))
+            got = answered(first)
+            if got is not None:
+                tracking.append({"input": "%s=%s" % (vary_name, vary_values[0]),
+                                 "field": vary_field, "value": got})
+
+        for one in vary_values[1:]:
+            record = run_fragment("tracked %s=%s" % (vary_name, one), in_document,
+                                  "run with %s=%s" % (vary_name, one),
+                                  reset_chain, using=with_value(one))
+            got = answered(record)
+            if got is None:
+                print("  %s=%s did not answer with '%s' - not recorded"
+                      % (vary_name, one, vary_field))
+                continue
+            tracking.append({"input": "%s=%s" % (vary_name, one),
+                             "field": vary_field, "value": got})
+
+        print("")
+        print("TRACKED %d input(s) of '%s' against '%s':"
+              % (len(tracking), vary_name, vary_field))
+        for row in tracking:
+            print("  %-34s %s" % (row["input"], row["value"][:60]))
+        if len(tracking) < 3:
+            print("")
+            print("FEWER THAN THREE ANSWERED. heron_validate will refuse this")
+            print("set, and it is right to: two cannot show an answer following")
+            print("an input. The record is written anyway so the runs are not")
+            print("lost - read it and arrange more values.")
 
     # `negative_setup_values` COUNTS AS A NEGATIVE CASE. Left out, a proof
     # whose two legs differ only in the ARRANGEMENT fell through to the
     # interactive prompt and waited at a keyboard nobody was at.
-    if negative_in or negative_values or negative_setup_values:
+    # `vary` REPLACES THE NEGATIVE CASE and must not fall through to the
+    # keyboard prompt below. A fragment that cannot come back empty has no
+    # negative arrangement to ask a person for, which is the whole reason
+    # D-53 exists.
+    if vary:
+        pass
+    elif negative_in or negative_values or negative_setup_values:
         # THE NEGATIVE CASE FOR A VIEW FRAGMENT IS ANOTHER VIEW, and until this
         # existed there was no way to say so: `validate` could change the
         # document between phases but not the caller's values, so anything
@@ -1964,6 +2048,8 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
         "model": model,
         "phases": phases,
     }
+    if tracking:
+        record["tracking"] = tracking
     path = out or os.path.join(root, "brain", "proof-drafts", "runs",
                                "%s.json" % name)
     folder = os.path.dirname(os.path.abspath(path))
@@ -2223,7 +2309,21 @@ def main(argv):
         # then set-selection - because a rolled-back write clears the selection.
         rest, session = pull_session(rest)
         setup = []
-        cleaned, skip = [], False
+        # --vary NAME=a,b,c PROVES A FRAGMENT THAT CANNOT COME BACK EMPTY.
+        # D-53: some fragments describe whatever they are handed, so no
+        # arrangement makes the answer empty and D-30's negative leg cannot be
+        # met by one - COUNT_ELEMENTS is the example the decision was written
+        # against. The leg is met instead by the answer FOLLOWING the input
+        # across several different inputs. NEEDS-CHECKING Group W names the
+        # three fragments this unblocks and the three skills behind them.
+        #
+        # `heron_validate` HAS JUDGED THIS SINCE THE DECISION WAS WRITTEN and
+        # nothing produced it. It reads `record["tracking"]`, refuses fewer
+        # than three rows in those words, refuses rows that all came back the
+        # same, and writes the negative text itself. Only the RUNNING half was
+        # missing, which is why this is an addition rather than a mechanism.
+        vary, vary_field = None, None
+        setup, cleaned, skip = [], [], False
         for index, token in enumerate(rest):
             if skip:
                 skip = False
@@ -2235,8 +2335,39 @@ def main(argv):
                 setup.append(rest[index + 1])
                 skip = True
                 continue
+            if token == "--vary":
+                if index + 1 >= len(rest):
+                    print("--vary needs NAME=value,value,value after it")
+                    return 2
+                vary = rest[index + 1]
+                skip = True
+                continue
+            if token == "--vary-field":
+                if index + 1 >= len(rest):
+                    print("--vary-field needs the name of a declared result")
+                    return 2
+                vary_field = rest[index + 1]
+                skip = True
+                continue
             cleaned.append(token)
         rest = cleaned
+
+        if vary:
+            # THE FIELD IS NAMED AND NEVER GUESSED. Which result has to follow
+            # the input is knowledge OF THE FRAGMENT, and `generate-jobs.py`
+            # leaves `expect:` blank for the same reason. Picking the first
+            # declared result here would quietly track an accounting counter on
+            # some fragment and call the answer proved.
+            if not vary_field:
+                print("--vary needs --vary-field too: name the ONE declared")
+                print("result that has to follow the input. Guessing it is how")
+                print("a tracking set follows a counter and reads as a proof.")
+                return 2
+            if "=" not in vary:
+                print("--vary takes NAME=value,value,value - at least three")
+                print("values, because two cannot show an answer FOLLOWING an")
+                print("input (D-53, and heron_validate refuses two by name).")
+                return 2
         options = {"in_document": None, "cross": None, "negative_in": None,
                    "out": None}
         flags = {"--in": "in_document", "--cross": "cross",
@@ -2288,6 +2419,7 @@ def main(argv):
                             negative_values=negative_values,
                             setup_values=setup_values,
                             negative_setup_values=negative_setup_values,
+                            vary=vary, vary_field=vary_field,
                             writing=writing,
                             setup=setup, keep_chain=keep_chain,
                             allow_publish=allow_publish, **options)

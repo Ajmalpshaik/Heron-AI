@@ -90,7 +90,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # green. THE REASON LIVED ONLY IN THE COMMIT MESSAGE. Nothing in this file,
 # in the project file, or in the gate said a project was being held back, so
 # the next reader could not tell a decision from an oversight - and the
-# comment above them read "every project". That is FRAGMENT-ISSUES row 160.
+# comment above them read "every project". That is FRAGMENT-ISSUES row 161.
 #
 # The condition that commit set was "trivial once someone has watched one
 # green run". It has been watched: 2026-09-20, `tools/check-compile.py` on
