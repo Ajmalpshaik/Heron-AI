@@ -1786,7 +1786,35 @@ build log:
 assembly would very likely have loaded - and that is exactly what makes it worth writing down. A
 failure that does not show on the machine that caused it is one that shows on somebody else's.
 
-**The fix is the script's, not this change's**: `deploy-addin.ps1` should read the
-`TargetFrameworkAttribute` out of the assembly it is about to copy and refuse when it disagrees with
-the release being deployed for, instead of inferring from whether a `deps.json` exists. Until it does,
-**build for the release immediately before deploying for it**, every time.
+**FIXED THE SAME DAY, and tested rather than reasoned about.** `deploy-addin.ps1` now reads the
+`TargetFrameworkAttribute` out of `Heron.Revit.Addin.dll` before it copies anything, and refuses when
+it disagrees with the release being deployed for. It reads the assembly as BYTES rather than loading
+it: reflection would lock the file about to be replaced, and Windows PowerShell runs on .NET
+Framework, which cannot load a .NET 10 assembly at all - so the release most worth checking is the one
+reflection could not check.
+
+The two proxies it replaces are gone, because they were standing in for exactly this fact and between
+them could not see the case above. `$isDotNet` is now derived from the release rather than from
+whether a `deps.json` happens to be lying in the build folder, which also removes the circularity the
+2026-09-12 comment in that file still records.
+
+**Six cases run on the PC, 2026-09-20:**
+
+| build made for | deployed for | result |
+|---|---|---|
+| 2027 (.NET 10) | 2020 | refused |
+| 2020 (net472) | 2027 | refused |
+| **2024 (net48)** | **2020** | **refused** - the case that got through |
+| 2020 (net472) | 2020 | allowed, deployed bytes read `v4.7.2` |
+| 2027 (.NET 10) | 2027 | allowed, deployed bytes read `v10.0` |
+| any | **2028** | refused - Heron does not know that release's runtime, and will not guess |
+
+That last row is new behaviour rather than a restoration. The old guard treated anything from 2027
+onward as .NET 10, so a 2027 build would have been deployed for a release nobody has seen.
+`Directory.Build.props` calls an unlisted release an error rather than a guess; this now agrees with
+it.
+
+**One defect found by running it, which reasoning would not have caught.** The first run refused
+correctly and said the build was made for `.` - PowerShell **unrolls a one-element array** on its way
+out of a function, so the array came back as a bare string, whose `.Count` is also 1 and whose `[0]`
+is the first character. The guard was right and its sentence was gibberish. `@()` at the call site.
