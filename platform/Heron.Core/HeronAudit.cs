@@ -39,15 +39,25 @@ namespace Heron.Core
     {
         private static readonly object WriteLock = new object();
 
-        /// <summary>
-        /// A new Workflow ID. One request, one id, carried through every layer
-        /// that touches it so a single line of the trail can be followed all
-        /// the way back.
-        /// </summary>
-        public static string NewWorkflowId()
-        {
-            return Guid.NewGuid().ToString("N").Substring(0, 12);
-        }
+        // THE WORKFLOW ID IS MINTED BY HeronIdentity AND NOWHERE ELSE.
+        //
+        // This class used to carry a NewWorkflowId of its own - a bare
+        // 12-character GUID slice - and both live callers used it, so the
+        // trail was not keyed the way HeronIdentity's own docstring says it
+        // is: "the correlation key that ties one sentence to every agent,
+        // retrieval, model call and element touched (docs/21 section 13)".
+        // Nothing broke, because either id is unique enough. What was lost is
+        // the one property the documented format is FOR: audit-YYYYMM.jsonl
+        // could not be sorted or skimmed by workflow id, because there was no
+        // time in it.
+        //
+        // Deleted rather than reconciled, which is this repository's own rule
+        // one file over: HeronPermissions keeps SetWriteEnabled in one place
+        // so that a second writer is not "a second definition of this
+        // setting, and the day the two disagree the button reports a state
+        // the permission gate does not honour". Identity had that second
+        // definition. Call HeronIdentity.NewWorkflowId().
+        // FRAGMENT-ISSUES section 5b, row 6.
 
         /// <summary>
         /// Records one request. Never throws: an audit failure must not take

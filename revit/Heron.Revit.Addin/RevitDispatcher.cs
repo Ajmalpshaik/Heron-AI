@@ -184,7 +184,7 @@ namespace Heron.Revit.Addin
                     "Heron has not finished starting. Try again in a moment.");
             }
 
-            var job = new RevitJob(request, HeronAudit.NewWorkflowId());
+            var job = new RevitJob(request, HeronIdentity.NewWorkflowId());
 
             // THE BANNER GOES UP HERE, BEFORE Raise, AND THAT ORDER IS THE
             // WHOLE TRICK. Revit draws on the same thread it works on, so the

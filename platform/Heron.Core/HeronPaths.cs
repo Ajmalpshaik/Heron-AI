@@ -93,16 +93,50 @@ namespace Heron.Core
         /// <summary>
         /// True when the path is safe for an update or a cleanup to delete.
         /// Anything under DATA is the user's and is never touched.
+        ///
+        /// A FOLDER MERELY NAMED LIKE HERON'S IS NOT INSIDE IT. This used to
+        /// ask StartsWith on the bare text, and Path.GetFullPath returns no
+        /// trailing separator - so with Derived at %LOCALAPPDATA%\Heron, the
+        /// path %LOCALAPPDATA%\HeronBackup\anything started with it and this
+        /// answered TRUE. Heron-old, Heron.bak and "Heron backup" did the
+        /// same. Nothing in the repository passed such a path, so nothing was
+        /// deleted; the defect was that the next caller would not know. This
+        /// is a public guard whose whole job is to be the protection, and
+        /// platform/README.md presents it as exactly that.
+        /// FRAGMENT-ISSUES section 5b, row 1.
         /// </summary>
         public static bool IsSafeToDelete(string path)
         {
             if (string.IsNullOrEmpty(path)) return false;
-            var full = Path.GetFullPath(path);
-            var data = Path.GetFullPath(Data);
-            var derived = Path.GetFullPath(Derived);
+            string full;
+            // A path the operating system cannot even parse is not a path this
+            // may call safe. GetFullPath throws on an empty volume, an illegal
+            // character or a name too long, and the honest answer to all three
+            // is the same one: no.
+            try { full = Path.GetFullPath(path); }
+            catch (ArgumentException) { return false; }
+            catch (NotSupportedException) { return false; }
+            catch (PathTooLongException) { return false; }
 
-            if (full.StartsWith(data, StringComparison.OrdinalIgnoreCase)) return false;
-            return full.StartsWith(derived, StringComparison.OrdinalIgnoreCase);
+            if (IsWithin(full, Path.GetFullPath(Data))) return false;
+            return IsWithin(full, Path.GetFullPath(Derived));
+        }
+
+        /// <summary>
+        /// Whether one path is the folder itself or something inside it -
+        /// compared segment by segment rather than character by character.
+        ///
+        /// The root counts as inside itself: docs/06 lists DERIVED as "safe
+        /// to delete at any time, rebuildable", which is a statement about
+        /// the whole folder and not only its contents.
+        /// </summary>
+        private static bool IsWithin(string full, string root)
+        {
+            if (string.Equals(full, root, StringComparison.OrdinalIgnoreCase)) return true;
+            var separator = Path.DirectorySeparatorChar.ToString();
+            var prefix = root.EndsWith(separator, StringComparison.Ordinal)
+                ? root : root + separator;
+            return full.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
         }
 
         private static string Ensure(string path)

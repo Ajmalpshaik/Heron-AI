@@ -307,7 +307,7 @@ namespace Heron.Revit.Addin
                        HeronUnits.DescribeVerticalMove(preview.MillimetresUp);
 
             var handler = new CollectWarnings();
-            var workflow = HeronAudit.NewWorkflowId();
+            var workflow = HeronIdentity.NewWorkflowId();
 
             // WHAT ACTUALLY MOVED, which is not the same as what was asked to.
             // Filled in by Verify. Declared out here because the answer has to

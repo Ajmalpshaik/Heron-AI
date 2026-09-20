@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Runs the kernel classes that nothing had ever run.
+
+    FRAGMENT-ISSUES section 5b, row 7 counted the suites that name each of the
+    ten kernel classes and found four at zero: HeronStop, HeronUnits,
+    HeronIdentity and HeronAtomicWrite. Row 3 is a units-guard defect, and the
+    proof for it had to be written from scratch in a throwaway console project
+    because there was nowhere to put it. This is that place.
+
+    A PROJECT REFERENCE, NOT A SOURCE LINK, and the difference is deliberate.
+    The other three test hosts link one .cs file because the file they need
+    lives in Heron.Revit.Addin, and referencing that project would drag in
+    RevitAPI.dll. Heron.Core has no Revit reference at all - that is the
+    kernel's defining property, stated in its own project file - so the
+    honest thing is to reference it and test the assembly everything else
+    actually loads.
+
+    It is the same mocked-Revit-boundary approach docs/13 section 3
+    describes: no Revit, no Windows, no model.
+
+        Run it with `dotnet run`, pointed at this folder, passing
+        -p:RevitVersion=2024. (XML comments cannot carry a double
+        hyphen, so the flag is spelled out rather than shown.)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.Kernel.TestHost</RootNamespace>
+    <AssemblyName>Heron.Kernel.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\platform\Heron.Core\Heron.Core.csproj" />
+  </ItemGroup>
+
+</Project>
