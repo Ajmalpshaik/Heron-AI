@@ -13,3 +13,5 @@ when	who	path	blob	verdict	note
 2026-09-20	ajmal-pc	revit/Heron.Revit.Addin/RevitOperations.cs	8477ef461eed5ebf4f81495f799167740ce647ce	issue	5b-14,5b-15,5b-16
 2026-09-20	ajmal-pc	revit/Heron.Revit.Addin/RevitWrite.cs	8ba8996820bf306fb3ed56d17b24e19434e86d4b	issue	5b-9,5b-11,5b-12,5b-13 open; 5b-10 FIXED here
 2026-09-20	ajmal-pc	revit/Heron.Revit.Addin/RevitDispatcher.cs	136eb030cb2802ccfab7cb6f78851509f49ed0fe	issue	5b-18. Considered and dismissed: Clean() strips char.IsControl but not Cf format chars such as U+202E, so a fragment name could in principle reverse text on the banner - cosmetic, capped at 44 chars, not worth a row
+2026-09-20	ajmal-pc	revit/Heron.Revit.Addin/HeronApplication.cs	e9b88b1a31a946da87b483b01463ddae83310178	issue	5b-19,5b-20
+2026-09-20	ajmal-pc	revit/Heron.Revit.Addin/Commands.cs	e723531225d8003141cf9148f7af2e15715aa6aa	issue	5b-20 (second site, line 68)
