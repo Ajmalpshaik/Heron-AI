@@ -196,7 +196,13 @@ def routing(folder=None):
     meta = {"taken": None, "index": None, "revit": None, "file": None,
             "why": None}
     if not os.path.isdir(folder):
-        meta["why"] = "no %s" % os.path.relpath(folder, ROOT)
+        # FRAG.repo_relative, NOT os.path.relpath. On Windows relpath RAISES
+        # across drives, and this line runs precisely when the folder is
+        # somewhere unusual - a test's scratch directory under %TEMP% on C:
+        # while the checkout is on D: is the case that found it. The report
+        # of a missing folder is not worth a crash, and brain/heron_fragment.py
+        # owns this rule.
+        meta["why"] = "no %s" % FRAG.repo_relative(folder)
         return meta, {}
 
     saved = sorted(name for name in os.listdir(folder)
@@ -204,8 +210,8 @@ def routing(folder=None):
     if not saved:
         meta["why"] = ("no routing-*.json in %s - run `python "
                        "tools/prove-skill.py --routing-to %s/routing-<date>"
-                       ".json`" % (os.path.relpath(folder, ROOT),
-                                   os.path.relpath(folder, ROOT)))
+                       ".json`" % (FRAG.repo_relative(folder),
+                                   FRAG.repo_relative(folder)))
         return meta, {}
 
     # NEWEST BY NAME, and the names carry the date for exactly this reason.
