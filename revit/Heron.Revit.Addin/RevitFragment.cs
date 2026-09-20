@@ -1630,7 +1630,10 @@ namespace Heron.Revit.Addin
                      .Append(" = (").Append(type).Append(")__heron[\"")
                      .Append(name).Append("\"];\n");
 
-                how.Add(name + " " + origin + Size(shaped));
+                // `value` is what was CARRIED and `shaped` is what survived
+                // the revival. Passing both is what lets the note say "2 of
+                // 1128" instead of "(2)" - row 75.
+                how.Add(name + " " + origin + Size(shaped, value));
             }
 
             if (fromRequest.Count > 0)
@@ -3997,8 +4000,42 @@ namespace Heron.Revit.Addin
 
         private static string Size(object shaped)
         {
+            return Size(shaped, null);
+        }
+
+        /// <summary>
+        /// How many, and HOW MANY WERE OFFERED when those differ.
+        ///
+        /// FRAGMENT-ISSUES row 75. Shape() revives carried ElementIds through
+        /// doc.GetElement(id) on the HOST document and silently drops the ones
+        /// that do not resolve. Zero survivors is handled honestly - it returns
+        /// null and the caller says "nothing usable survived". A PARTIAL
+        /// revival was not: 1128 linked walls carried over, two ids happened
+        /// to name real elements in the host document, and the binding note
+        /// read "elements from select-from-link (2)" - which is indistinguish-
+        /// able from a deliberate narrowing to two.
+        ///
+        /// "2 of 1128" is the same fact with nothing added and nothing
+        /// guessed. It does not stop the wrong binding - the two host elements
+        /// are still bound, and stopping it needs the carried value to say
+        /// which DOCUMENT it came from, which is the row's real repair. It
+        /// makes the loss visible, which is the half that cannot break a
+        /// caller relying on today's behaviour.
+        ///
+        /// NO THRESHOLD, DELIBERATELY. "Refuse below some percentage" needs a
+        /// floor, and R-60 says a floor is derived from a measurement or it is
+        /// not set at all. Reporting both numbers needs neither.
+        /// </summary>
+        private static string Size(object shaped, object before)
+        {
             var list = shaped as ICollection;
-            return list == null ? "" : " (" + list.Count + ")";
+            if (list == null) return "";
+
+            var was = before as ICollection;
+            if (was != null && was.Count != list.Count)
+                return " (" + list.Count + " of " + was.Count + ")";
+
+            return " (" + list.Count + ")";
         }
 
         private static bool Fields(Dictionary<string, string> need,
