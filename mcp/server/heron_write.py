@@ -65,6 +65,12 @@ MAX_MM = 100.0 * 1000.0 * 1000.0
 
 _NUMBER = re.compile(r"^([+-]?(?:\d+\.?\d*|\.\d+))\s*([a-zA-Z]*)$")
 
+# A comma used to GROUP THOUSANDS, and nothing else: one to three digits, then
+# one or more groups of exactly three. "1,000" and "1,234,567.5" match; "1,5"
+# and "2,54" do not, because those are a decimal comma or a typo and this
+# function is not allowed to decide which.
+_THOUSANDS = re.compile(r"^[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?\s*[a-zA-Z]*$")
+
 
 class BadDistance(Exception):
     """Not a distance Heron will act on, with the reason in the message."""
@@ -85,9 +91,39 @@ def parse_millimetres(text):
     if text is None:
         raise BadDistance("No distance was given. Say how far, like '200 mm'.")
 
-    cleaned = str(text).strip().replace(",", "")
-    if not cleaned:
+    raw = str(text).strip()
+    if not raw:
         raise BadDistance("No distance was given. Say how far, like '200 mm'.")
+
+    # A COMMA IS NOT ALWAYS A THOUSANDS SEPARATOR, AND DELETING IT COSTS A
+    # FACTOR OF TEN. This line used to be `.replace(",", "")` unconditionally,
+    # so "1,5 m" - one and a half metres to most of Europe, and to plenty of
+    # engineers on a Qatar job - became "15 m". Measured 2026-09-21:
+    #
+    #     "1,5 m"  -> 15000.0 mm        "1.5 m" -> 1500.0 mm      ten times
+    #     "0,5 m"  ->  5000.0 mm        "0.5 m" ->  500.0 mm      ten times
+    #     "2,54 cm"-> 2540.0 mm
+    #
+    # It passed every check below it: in range, not zero, not NaN. The only
+    # thing between that and a real move was whether the user re-read their own
+    # number in the preview. This function's own docstring names the failure -
+    # "a model that moved by a thousand times what was meant, and looks fine
+    # until somebody measures it" - and the comma was how it got there.
+    #
+    # A comma grouping thousands is unambiguous and still accepted; anything
+    # else is REFUSED rather than guessed, which is this file's whole rule.
+    # FRAGMENT-ISSUES section 5b, row 24.
+    if "," in raw:
+        if _THOUSANDS.match(raw):
+            raw = raw.replace(",", "")
+        else:
+            raise BadDistance(
+                "'%s' has a comma in it and Heron will not guess what it means. "
+                "A comma is a decimal point in some countries and a thousands "
+                "separator in others, and the difference is ten times the move. "
+                "Write it with a point - '1.5 m' - or say it in millimetres." % text)
+
+    cleaned = raw
 
     match = _NUMBER.match(cleaned)
     if not match:

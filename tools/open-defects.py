@@ -68,7 +68,23 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REGISTER = os.path.join(ROOT, "docs", "FRAGMENT-ISSUES.md")
 
 SECTION_START = "## 5. HERON'S OWN DEFECTS"
+SECTION_5B = "## 5b. HERON'S OWN DEFECTS found by reading"
 SECTION_END = "## 6. WHAT CANNOT BE RUN AT ALL"
+
+# TWO REGISTERS, COUNTED APART. Section 5 is what PROVING against a model
+# found; 5b is what READING the repository file by file found. A reader asking
+# "what did the sweep turn up" must not have to subtract one from the other,
+# and the two go stale differently - a proving defect is re-tested by running
+# the fragment, a reading defect by reading the file again.
+#
+# Each section names EVERY heading that could follow it, not just the next one.
+# Section 5 ends at 5b when 5b is there and at section 6 when it is not, so
+# inserting 5b did not silently make section 5 swallow it - which would have
+# merged two id spaces that both start at 1.
+SECTIONS = [
+    ("5", SECTION_START, [SECTION_5B, SECTION_END]),
+    ("5b", SECTION_5B, [SECTION_END]),
+]
 
 ROW = re.compile(r"^\|\s*\*{0,2}(\d+)\*{0,2}\s*\|")
 
@@ -78,23 +94,41 @@ ROW = re.compile(r"^\|\s*\*{0,2}(\d+)\*{0,2}\s*\|")
 SETTLED = re.compile(r"\b(FIXED|CLOSED)\b[^.]{0,40}?\d{4}-\d{2}-\d{2}")
 
 
-def rows():
-    """Every (id, state) pair in section 5, in the order they are written."""
+def rows(start=None, ends=None, label="5"):
+    """Every (id, state) pair in one section, in the order they are written.
+
+    Called with no arguments it reads section 5, which is what it has always
+    done and what tests/test_open_defects.py calls.
+    """
+    start = SECTION_START if start is None else start
+    ends = [SECTION_5B, SECTION_END] if ends is None else ends
+
     with open(REGISTER, encoding="utf-8") as handle:
         src = handle.read()
 
-    try:
-        body = src[src.index(SECTION_START):src.index(SECTION_END)]
-    except ValueError:
-        # The headings moved. Say so rather than silently reporting zero -
-        # a register that reports "no open defects" because it could not find
-        # the register is the worst answer available.
+    # The headings moved. Say so rather than silently reporting zero - a
+    # register that reports "no open defects" because it could not find the
+    # register is the worst answer available.
+    if start not in src:
         sys.stdout.write(
-            "Could not find section 5 in docs/FRAGMENT-ISSUES.md.\n"
-            "  Looked for: %r ... %r\n"
-            "  The headings have moved. Fix this tool, do not trust it.\n"
-            % (SECTION_START, SECTION_END))
+            "Could not find section %s in docs/FRAGMENT-ISSUES.md.\n"
+            "  Looked for: %r\n"
+            "  The heading has moved. Fix this tool, do not trust it.\n"
+            % (label, start))
         return None
+
+    opened = src.index(start)
+    after = [src.index(e) for e in ends if e in src and src.index(e) > opened]
+    if not after:
+        sys.stdout.write(
+            "Found section %s but nothing that ends it.\n"
+            "  Looked for any of: %s\n"
+            "  Reading to the end of the file would sweep in later sections,\n"
+            "  so this reports nothing rather than a wrong number.\n"
+            % (label, ", ".join(repr(e) for e in ends)))
+        return None
+
+    body = src[opened:min(after)]
 
     found = []
     for line in body.split("\n"):
@@ -109,47 +143,93 @@ def rows():
     return found
 
 
-def main():
-    show_all = "--all" in sys.argv
-    found = rows()
-    if found is None:
-        return 0
+def ident(label, number):
+    """Section 5's rows have always been called by their bare number, and are
+    referred to that way all over this repository. 5b's carry their section,
+    because `3` alone would now be ambiguous and a defect nobody can find is
+    the one failure this register exists to prevent."""
+    return str(number) if label == "5" else "%s-%d" % (label, number)
+
+
+def report(label, found, show_all):
+    """Print one section and return how many of its rows are open."""
+    out = sys.stdout.write
+    out("Heron's own defects - docs/FRAGMENT-ISSUES.md section %s\n" % label)
+    out("=" * 62 + "\n\n")
 
     if not found:
-        sys.stdout.write("No rows matched in section 5. Check the pattern "
-                         "before believing this.\n")
-        return 0
+        out("  No rows in this section yet.\n\n")
+        if label == "5b":
+            out("  THAT IS NOT THE SAME AS NOTHING BEING WRONG. This section\n"
+                "  fills as the repository is read, and an empty table means\n"
+                "  nothing until you know how much reading has been done:\n\n"
+                "      python tools/review-ledger.py\n\n")
+        else:
+            out("  No rows matched the pattern. Check it before believing "
+                "this.\n\n")
+        return 0, 0, []
 
     is_open = [(n, s) for n, s in found if s.lower().startswith("open")]
     arguing = [(n, s, SETTLED.search(s).group(0))
                for n, s in is_open if SETTLED.search(s)]
 
-    out = sys.stdout.write
-    out("Heron's own defects - docs/FRAGMENT-ISSUES.md section 5\n")
-    out("=" * 62 + "\n\n")
-
     if show_all:
         for number, state in found:
             mark = "OPEN" if state.lower().startswith("open") else "    "
-            out("  %s %3d  %s\n" % (mark, number, state[:96]))
+            out("  %s %-5s  %s\n" % (mark, ident(label, number), state[:96]))
         out("\n")
     else:
         for number, state in is_open:
-            out("  %3d  %s\n" % (number, state[:100]))
+            out("  %-5s  %s\n" % (ident(label, number), state[:100]))
         out("\n")
 
     out("  rows in the section : %d\n" % len(found))
     out("  still OPEN          : %d\n" % len(is_open))
     out("  ids                 : %s\n"
-        % ", ".join(str(n) for n, _ in is_open))
+        % ", ".join(ident(label, n) for n, _ in is_open))
     out("\n")
     if arguing:
         out("  ROWS THAT ARGUE WITH THEMSELVES - the state begins with OPEN\n"
             "  and the same cell carries a dated fix. One of the two is\n"
             "  wrong, and which one is a reader's call:\n")
         for number, _state, claim in arguing:
-            out("    %3d  says OPEN, and also %r\n" % (number, claim))
+            out("    %-5s  says OPEN, and also %r\n"
+                % (ident(label, number), claim))
         out("\n")
+    return len(is_open), len(found), [ident(label, n) for n, _ in is_open]
+
+
+def main():
+    show_all = "--all" in sys.argv
+    out = sys.stdout.write
+
+    total, seen, all_rows, all_ids = 0, 0, 0, []
+    for label, start, ends in SECTIONS:
+        found = rows(start, ends, label)
+        if found is None:
+            continue          # rows() has already said which heading moved
+        seen += 1
+        section_open, section_rows, section_ids = report(label, found, show_all)
+        total += section_open
+        all_rows += section_rows
+        all_ids.extend(section_ids)
+        out("\n")
+
+    if not seen:
+        return 0
+
+    # THE AGGREGATE, ON ITS OWN LINES AND NAMED SO IT CAN BE PARSED.
+    # tools/balance-of-work.py reads this output with re.search, which takes
+    # the FIRST match - so the moment section 5b arrived beside section 5, the
+    # dashboard silently began reporting section 5's numbers as the whole
+    # truth: 33 of 163 where the real figures were larger, with every 5b id
+    # missing. A consumer reading a per-section line was never going to
+    # survive a second section. These three lines are the contract; the
+    # per-section blocks above stay for a human to read.
+    # Reported by a Codex review on PR #219.
+    out("  TOTAL rows, all sections  : %d\n" % all_rows)
+    out("  TOTAL ids, all sections   : %s\n" % (", ".join(all_ids) or "(none)"))
+    out("  OPEN across both sections : %d\n\n" % total)
     out("Read the ids, not the count. A row can say OPEN after a later row\n"
         "has closed it - four did on 2026-09-16 - and no pattern sees that.\n")
     return 0

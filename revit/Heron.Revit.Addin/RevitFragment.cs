@@ -1925,8 +1925,26 @@ namespace Heron.Revit.Addin
                     return null;
                 }
 
-                if (millimetres > HeronUnits.MaxMillimetres
-                    || millimetres < -HeronUnits.MaxMillimetres)
+                // NOT A NUMBER AT ALL, AND THE BOUNDS BELOW CANNOT SEE IT.
+                // double.TryParse accepts "NaN", "nan" and "NAN" whatever
+                // NumberStyles is set to - the culture's NaNSymbol is honoured
+                // regardless - and NaN compares FALSE against every bound, so
+                // a greater-than / less-than pair passes it straight through
+                // to new XYZ(...). Measured 2026-09-20 against the real parse
+                // and the real comparison; FRAGMENT-ISSUES section 5b, row 3.
+                if (double.IsNaN(millimetres) || double.IsInfinity(millimetres))
+                {
+                    problem = "\"" + parts[index] + "\" is not a real number, so Heron cannot "
+                            + "place a point at it. A value like that usually arrives from a "
+                            + "calculation that did not work out. Type digits only - 250 or 250.5.";
+                    return null;
+                }
+
+                // THE BOUND, ASKED OF THE PART THAT OWNS IT. HeronUnits already
+                // refuses NaN, both infinities and anything past 100 km; this
+                // used to be a hand-written pair of comparisons beside it, and
+                // the two drifted. One guard, one answer.
+                if (!HeronUnits.IsUsableMillimetres(millimetres))
                 {
                     problem = "\"" + parts[index] + "\" is further than 100 km from the origin, "
                             + "which is not a coordinate in any building. Heron reads a point in "
@@ -2564,6 +2582,25 @@ namespace Heron.Revit.Addin
                             + "4.5mm.";
                     return null;
                 }
+
+                // NOT A REAL NUMBER, AND THIS BRANCH WAS MISSED THE FIRST TIME.
+                // The `length` case below was guarded on 2026-09-20 and this one
+                // was not, which a Codex review on PR #219 caught: `number NaN`
+                // parses (TryParse honours the culture's NaN symbol whatever
+                // NumberStyles says) and went straight into a
+                // DoubleParameterValue, so a SET_GLOBAL_PARAMETER request
+                // reached GlobalParameter.SetValue with a NaN in it. There is no
+                // millimetre bound to apply here - a unitless number may be any
+                // finite value - so the check is only that it IS finite.
+                // FRAGMENT-ISSUES section 5b, row 3.
+                if (double.IsNaN(number) || double.IsInfinity(number))
+                {
+                    problem = "\"" + rest + "\" is not a real number, so Heron will not put it "
+                            + "in a parameter. A value like that usually arrives from a "
+                            + "calculation that did not work out. Type digits only - 4.5.";
+                    return null;
+                }
+
                 return new DoubleParameterValue(number);
             }
 
@@ -2577,8 +2614,22 @@ namespace Heron.Revit.Addin
                             + "MILLIMETRES. Type digits only - 2700, not 2700mm.";
                     return null;
                 }
-                if (millimetres > HeronUnits.MaxMillimetres
-                    || millimetres < -HeronUnits.MaxMillimetres)
+                // NOT A NUMBER AT ALL. The same hole as the point parser above
+                // and the more dangerous half of it: this value goes into a
+                // DoubleParameterValue, so a NaN that gets past here is written
+                // to a parameter on somebody's model rather than used for one
+                // geometry call. FRAGMENT-ISSUES section 5b, row 3.
+                if (double.IsNaN(millimetres) || double.IsInfinity(millimetres))
+                {
+                    problem = "\"" + rest + "\" is not a real number, so Heron will not put it "
+                            + "in a parameter. A value like that usually arrives from a "
+                            + "calculation that did not work out. Type digits only - 2700.";
+                    return null;
+                }
+
+                // THE BOUND, ASKED OF THE PART THAT OWNS IT - see the note in
+                // the point parser above.
+                if (!HeronUnits.IsUsableMillimetres(millimetres))
                 {
                     problem = "\"" + rest + "\" is longer than 100 km, which is not a length "
                             + "in any building. Heron reads a length in MILLIMETRES - a number "

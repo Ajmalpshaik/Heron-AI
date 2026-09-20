@@ -281,14 +281,49 @@ namespace Heron.Bridge
                 4096, 4096,
                 security);
 #else
-            // .NET 8+: the default ACL already restricts to the creating user.
-            return new NamedPipeServerStream(
+            // .NET 8+ (Revit 2025, 2026, 2027). THE SAME ACL, AND IT HAS TO BE
+            // ASKED FOR HERE TOO - the comment that used to sit on these lines
+            // said the default already restricted the pipe to the creating
+            // user, and that was measured and found FALSE. Creating the pipe
+            // with the arguments below and no PipeSecurity, then reading its
+            // own ACL back on net8.0-windows, returned FIVE rules where the
+            // Framework branch returns one: the user, the system account and
+            // the local administrators as expected - and beside them, READ
+            // access for the world group and for the anonymous logon account.
+            //
+            // The rules are written out in full in FRAGMENT-ISSUES section 5b,
+            // row 23, and are deliberately NOT spelled here:
+            // tests/test_authentication.py reads this method as TEXT and
+            // refuses any group principal it finds in it. That is the right
+            // check - it cannot tell a SID that is granted from one that is
+            // merely being described, and the conservative reading is the safe
+            // one.
+            //
+            // Read is not Write, so no stranger could ever send a request and
+            // the token still guards every command - but PipeInstances is 2 and
+            // the newest connection takes the pipe, so anyone able to CONNECT
+            // can displace the chat using Revit without sending a byte. The
+            // Framework branch above was already right; this branch trusted a
+            // default. FRAGMENT-ISSUES section 5b, row 23.
+            //
+            // NamedPipeServerStreamAcl.Create, not the constructor: .NET Core
+            // has no NamedPipeServerStream constructor taking a PipeSecurity.
+            // It needs no extra package on a `-windows` target framework, which
+            // was checked by building it.
+            var security = new PipeSecurity();
+            security.AddAccessRule(new PipeAccessRule(
+                WindowsIdentity.GetCurrent().User,
+                PipeAccessRights.ReadWrite | PipeAccessRights.CreateNewInstance,
+                AccessControlType.Allow));
+
+            return NamedPipeServerStreamAcl.Create(
                 _identity.PipeName,
                 PipeDirection.InOut,
                 PipeInstances,
                 PipeTransmissionMode.Byte,
                 PipeOptions.Asynchronous,
-                4096, 4096);
+                4096, 4096,
+                security);
 #endif
         }
 
