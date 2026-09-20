@@ -1726,3 +1726,178 @@ out one element either. One rule in `OneIdNamed` for an id named by its Revit
 element id would unblock both, and it is the rule `RevitFragment` deliberately
 refuses to guess at. **That is the next thing worth building**, and it is add-in
 C# - a rebuild and a Revit restart.
+
+
+---
+
+## Group Z - the renamed ribbon and the Bridge Status window, 2026-09-20
+
+[D-85](DECISIONS.md) renamed two ribbon labels and the Bridge Status dialog became a window.
+**All of it compiles on all eight releases with 0 warnings, and none of it has been seen in Revit** -
+the ribbon is built at `OnStartup`, so every row here needs the add-in deployed and Revit restarted.
+
+**What was proved without Revit.** Neither window references a Revit API, so both were compiled
+into a bare WPF host and rendered: the four Bridge Status states at `988x1246`, `988x1246`,
+`988x1051` and `988x681`, and the Changes window at `988x877`, all at 2x, written to PNG and
+looked at. Two faults were found that way and fixed - an
+empty box under `THIS SESSION` when there is no identity, and a `Changes` card describing a Heron that
+did not start. **That proves what it draws, not that Revit will host it**, and the rows below are the
+difference between the two.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| ~~**Z1**~~ | ~~Deploy, start Revit, look at the ribbon~~ | A tab reading **Heron**, holding a panel reading **AI Bridge**. Not `Heron AI`, and not a second tab beside it - if both appear, `CreateRibbonTab` made a new one instead of finding the old, and the old add-in is still deployed. **PASS 2026-09-20, Revit 2024.3, `test projject.rvt`**, from a screenshot the owner took after restarting rather than from anything Heron reported about itself. **ONE** tab reading **Heron**, sitting between `DiRootsOne` and `Modify`, holding **one** panel labelled **AI Bridge**. No `Heron AI` tab beside it, so `CreateRibbonTab` found nothing to collide with and no stale deploy is left over. The split button reads `Heron` and the padlock reads `Changes ON`, both drawn with their icons - which also re-proves `A12`'s ribbon question on the renamed tab. **Not proved by this**: anything behind the split button's arrow, which is where `Bridge Status` lives - that is `Z2` |
+| ~~**Z2**~~ | Press **Bridge Status** with the bridge connected | The window, not a TaskDialog. Blue strip, blue lamp with a glow, `Connected`, and the pipe name in `Consolas`. The `Close` button is the blue one. **PROVED 2026-09-20 from the add-in's own log, not from a description.** Revit 2024 `pid 15920` started `19:38:25Z`, thirteen minutes AFTER that release's assembly was installed at `19:24:50Z`, so it is the new build. At `19:39:39Z` the log reads **`Connected from Bridge Status`** - a string written by `HeronBridgeToggle` and reachable ONLY from a button inside the drawn window. Had the window not drawn, `Show` returns false and `ShowPlainStatus` runs, which has no toggle in it at all. **Zero** lines matching `failed to open` anywhere in the day's log |
+| ~~**Z3**~~ | Press it with the bridge NOT connected | Grey strip, lamp with **no** glow, `Not connected`, no `Pipe` row and no `ANNOUNCED IN` section. The blue button reads **Connect this session**. **PROVED 2026-09-20, same line.** The preceding entry at `19:39:27Z` is `Disconnected from the ribbon`, so the window opened onto the NOT-connected state, and the button pressed twelve seconds later was the primary one - which in that state is `Connect this session` and nothing else |
+| **Z4** | Press **Connect this session** inside the window | The window itself redraws to `Connected` - it does not close, and no second dialog appears. The **ribbon button's picture lights at the same time**, which is the whole reason the toggle was factored into `HeronBridgeToggle`. **HALF ANSWERED 2026-09-20.** The press happened and the bridge started - `Bridge listening on heron.2024.15920` at `19:39:39Z`, immediately followed by `Connected from Bridge Status`. **Neither half about the PICTURE is proved**: whether the window redrew to `Connected` rather than closing, and whether the ribbon icon lit, are both invisible to a log |
+| **Z5** | Press **Copy details**, then paste somewhere | A short block of text with no empty values in it. One grey line appears in the footer and clears itself after six seconds |
+| **Z6** | Turn **Changes** on from the ribbon, then open Bridge Status | The `Changes` card is amber, chip reads `ON`. Turn it off: grey, `OFF`. This is read from `heron.config` fresh each time the window opens, so it must agree with the ribbon padlock. **HALF ANSWERED 2026-09-20, and it is the half that could disagree.** The Revit 2020 screenshot shows the card amber with an `ON` chip, and the log for that same session reads `Write permission set to True from the ribbon` at `19:43:04Z`. So the window read the setting rather than remembering one, and it agrees with the ribbon. **The `OFF` appearance has only ever been seen in the harness**, never in Revit |
+| **Z7** | Press `Esc`, and separately drag the window by its header | `Esc` closes it. The header drags it. Neither is Revit's, because the window has no system chrome at all |
+| **Z8** | Look at it on a **150%** display | The one thing the render cannot answer. Text crisp, nothing clipped, the window centred on Revit rather than on the primary screen. Same unproven scaling path as `B17` above |
+| ~~**Z9**~~ | Do Z1 and Z2 on **2020** as well as on a modern release | 2020 is `net472` and 2027 is `net10.0-windows` - two different WPF stacks under the same source. `ControlTemplate` built from `FrameworkElementFactory` is the part most likely to differ, and the buttons are where it would show. **MOSTLY PROVED 2026-09-20, on Revit 2020.2.9.** `pid 26308` loaded at `19:42:15Z`, eighteen minutes after that release's assembly was installed at `19:24:44Z`, so it is the net472 build. **The ribbon was seen directly**, in a screenshot of Revit 2020 itself: one **Heron** tab, one **AI Bridge** panel, the **Heron** split button and the **Changes ON** padlock, both drawn with their icons. **The Changes window drew on net472 too**, by the same absent-fallback argument as `Z10`: `Write permission set to False` at `19:43:00Z` and `True` at `19:43:04Z`, the ON direction being the one that asks, with no `failed to open` line anywhere in the day. **`19:42:57Z Connected from the ribbon`** says the bridge button works there as well. **AND BRIDGE STATUS TOO, 2026-09-20**, from a screenshot of the window itself on Revit 2020. It identifies its own session and the identifiers match the log exactly: pipe `heron.2020.26308`, process `26308`, Revit `2020`, add-in `0.1.0.0`, protocol `2`, announced in `...bridges\26308.json`. Blue lamp on `Connected`, the `Changes` card amber with an `ON` chip - which agrees with `Write permission set to True` at `19:43:04Z` - and the discovery path wrapping onto two lines as `PathLine` is built to. So `FrameworkElementFactory` templates, the inset boxes, the wrap and the chip all draw on net472. **Z9 is answered on every part except a 150% display**, which is `Z8` and is nobody's to answer but a monitor's |
+| ~~**Z10**~~ | Press the **Changes** padlock while it is OFF | The Changes window, not a TaskDialog. Amber strip, amber lamp, `Let Heron change this model?`, three green ticks. The amber button reads **Turn changes on**. **PROVED 2026-09-20, twice, and the second time is the better one.** First by what was ABSENT: on `pid 15920` write went `False` then `True`, only the ON direction asks, and the TaskDialog fallback runs only on an exception that is itself logged - of which there were none. Sound, and still an argument. **Then as a fact**: after the windows were taught to say so, `pid 19600` logged **`Changes window asked.`** at `20:38:00Z`, one second before the setting moved. No inference left in it |
+| **Z11** | In that window press `Esc`, then the **X**, then **Leave it off** | All three leave it off. The padlock does not move and the log says `Write toggle: offered, declined. Still off.` **`Enter` must do NOTHING** - there is deliberately no default button, because a confirmation you can clear by leaning on a key is not one |
+| ~~**Z12**~~ | Press **Turn changes on** | The padlock opens and its label changes to `Changes ON`. Open Bridge Status: the Changes card is amber and the chip reads `ON`, read from `heron.config` rather than remembered. **HALF PROVED 2026-09-20**: `Write permission set to True from the ribbon` at `19:39:50Z` is the setting moving, which is the half that matters. **What the log cannot see is the PICTURE** - whether the padlock redrew and whether Bridge Status then showed an amber chip. Still needs an eye |
+| ~~**Z13**~~ | Press the padlock again, while it is ON | **No window at all.** It goes straight to off. Making the safe direction slower is how people learn to click through warnings, and D-19 says the ON direction is the only one that asks. **PROVED 2026-09-20 at `20:37`, by the logging that was added BECAUSE of this row.** The sentence this replaces said the log could not answer it, and that was true until both windows started recording that they opened. On Revit 2024 `pid 19600`:
+
+```text
+20:37:57Z  Bridge Status opened: Connected.
+20:37:59Z  Write permission set to False from the ribbon.
+20:38:00Z  Changes window asked.
+20:38:01Z  Write permission set to True from the ribbon.
+```
+
+**No `Changes window asked` before the `False`**, and one before the `True`. Turning it off asked nothing; turning it on asked. That is D-19's shape, read off the machine |
+
+**The button inside the panel keeps the name `Heron`.** Offered as a rename to `Connect` on 2026-09-20 and declined by the owner the same day, so the full path stays
+`Heron > AI Bridge > Heron` and every printed string is already correct for it. Recorded so the repetition is not read later as an oversight worth tidying.
+
+**Where the numbers came from.** The renders are reproducible: the harness compiles the three real
+source files directly - `HeronBridgeStatusWindow.cs`, `HeronWindowStyle.cs` and
+`HeronChangesWindow.cs` - with no copy of any of them, and nothing about it is checked in. It is a
+scratch project and rebuilding it is six lines of csproj.
+
+**The shared chrome was proved by rendering twice.** Moving the palette, the card, the title bar
+and all three button templates out of Bridge Status and into `HeronWindowStyle` is a refactor of
+code that already worked, so the four states were re-rendered afterwards and compared to the
+earlier PNGs **byte for byte: 4 of 4 identical**. A refactor that moves no pixels is the only kind
+worth doing to a window nobody has seen in Revit yet.
+
+### Revit 2027 is not being checked, and that is a decision rather than an omission
+
+**The owner's instruction, 2026-09-20:** *"some time for the revit 2027 is there issue... revit itself
+its not opening or its getting stuck... i need to inform my company... no need to chek that."* Revit
+2027 on that machine is unreliable in a way that has nothing to do with Heron, and he is raising it
+with his company. So the .NET 10 half of `Z9` is **not** going to be answered by a person looking at a
+screen, and nobody should later read the gap as work that was forgotten.
+
+**What IS proved on .NET 10, and it is more than nothing.** `pid 14608` logged
+`Heron loaded. Revit 2027, add-in 0.1.0.0` at `19:44:04Z`, nineteen minutes after that release's
+assembly was installed at `19:24:56Z` - so it is the build carrying the renamed ribbon and both
+windows. And that line is written **after** `BuildRibbon` returns: `OnStartup` builds the ribbon and
+only then logs, wrapping the whole thing so a failure shows `Heron failed to start` and returns
+`Result.Failed` instead. So on .NET 10:
+
+- `CreateRibbonTab("Heron")` and `CreateRibbonPanel("Heron", "AI Bridge")` both succeeded,
+- the split button, `Bridge Status`, the padlock and all four icons were created, and
+- nothing in that path threw.
+
+**What is NOT proved on .NET 10 is a window being DRAWN there** - `HeronWindowStyle`'s
+`ControlTemplate`s, the `AllowsTransparency` card and the drop shadow. Those are proved on **net472**
+and **net48**, which are the same WPF generation as each other and a different one from .NET 10.
+
+**The honest summary is that the riskier direction was covered by luck rather than by plan.** If only
+one framework family could be tested, the old one was the better one to have: it is where a modern
+WPF idiom is most likely to be missing. .NET 10 dropping something that works on 4.7.2 is the rarer
+failure. That is a reason to be reasonably confident, **not** a reason to write it down as proved.
+
+**The currently installed 2027 build has never been loaded at all.** It went in at `19:57:46Z`,
+thirteen minutes after the last 2027 session started. It differs from the one that did load by two log
+lines and nothing else.
+
+### The log could not answer "did the window open?", and now it can
+
+**Asked on 2026-09-20 whether Bridge Status had been opened on Revit 2020, the log could not say.**
+Every `_log` call in that window was a FAILURE line, so a window that drew perfectly was
+indistinguishable from a button that did nothing, and the question could only be settled by the owner
+sending a screenshot.
+
+That is a gap in evidence rather than in behaviour, and [Golden Rule 14](14-golden-rules.md) calls the
+log evidence. The ribbon already records a person acting on it - `Connected from the ribbon`,
+`Write permission set to True from the ribbon` - and these two windows were the one Heron surface that
+stayed silent about it.
+
+Both now say so as they open, **with the fact worth keeping rather than just the event**:
+
+```text
+Bridge Status opened: Connected.
+Changes window asked.
+```
+
+The second one also retires an argument. Whether the Changes window drew could until now only be
+inferred from the ABSENCE of a `failed to open` line - sound reasoning, and still reasoning. That line
+is a fact.
+
+**Not deployed yet.** All three Revits were open when this was written, and `deploy-addin.ps1` refuses
+while they are - correctly. It goes out with the next deploy and needs a Revit restart like every
+other add-in change.
+
+### And deploying it made A12's unguarded gap actually happen
+
+`A12` above recorded, on 2026-09-19, that `deploy-addin.ps1` **cannot tell `net472` from `net48`**
+because neither emits a `deps.json`, and closed with *"A 2024 build deployed into 2020 would pass every
+check. It did not happen here, but nothing stands behind that guard."*
+
+**On 2026-09-20 it happened.** The build folder is shared, this session had last built **2024**, and
+`deploy-addin.ps1 -RevitVersion 2020` copied that straight into `Addins/2020/Heron` and reported
+success. Read back out of the deployed bytes:
+`.NETFramework,Version=v4.8` sitting in the 2020 folder, which is supposed to be `v4.7.2`.
+
+**Caught by reading the assembly rather than by the script**, which is the point: every guard the
+script has said yes.
+
+Rebuilt per release and redeployed, each one verified from the deployed bytes rather than from a
+build log:
+
+| release | TFM in the deployed DLL |
+|---|---|
+| 2020 | `.NETFramework,Version=v4.7.2` |
+| 2024 | `.NETFramework,Version=v4.8` |
+| 2027 | `.NETCoreApp,Version=v10.0` |
+
+**It was probably harmless here** - .NET Framework 4.8 replaces 4.7.2 in place on Windows, so the
+assembly would very likely have loaded - and that is exactly what makes it worth writing down. A
+failure that does not show on the machine that caused it is one that shows on somebody else's.
+
+**FIXED THE SAME DAY, and tested rather than reasoned about.** `deploy-addin.ps1` now reads the
+`TargetFrameworkAttribute` out of `Heron.Revit.Addin.dll` before it copies anything, and refuses when
+it disagrees with the release being deployed for. It reads the assembly as BYTES rather than loading
+it: reflection would lock the file about to be replaced, and Windows PowerShell runs on .NET
+Framework, which cannot load a .NET 10 assembly at all - so the release most worth checking is the one
+reflection could not check.
+
+The two proxies it replaces are gone, because they were standing in for exactly this fact and between
+them could not see the case above. `$isDotNet` is now derived from the release rather than from
+whether a `deps.json` happens to be lying in the build folder, which also removes the circularity the
+2026-09-12 comment in that file still records.
+
+**Six cases run on the PC, 2026-09-20:**
+
+| build made for | deployed for | result |
+|---|---|---|
+| 2027 (.NET 10) | 2020 | refused |
+| 2020 (net472) | 2027 | refused |
+| **2024 (net48)** | **2020** | **refused** - the case that got through |
+| 2020 (net472) | 2020 | allowed, deployed bytes read `v4.7.2` |
+| 2027 (.NET 10) | 2027 | allowed, deployed bytes read `v10.0` |
+| any | **2028** | refused - Heron does not know that release's runtime, and will not guess |
+
+That last row is new behaviour rather than a restoration. The old guard treated anything from 2027
+onward as .NET 10, so a 2027 build would have been deployed for a release nobody has seen.
+`Directory.Build.props` calls an unlisted release an error rather than a guess; this now agrees with
+it.
+
+**One defect found by running it, which reasoning would not have caught.** The first run refused
+correctly and said the build was made for `.` - PowerShell **unrolls a one-element array** on its way
+out of a function, so the array came back as a bare string, whose `.Count` is also 1 and whose `[0]`
+is the first character. The guard was right and its sentence was gibberish. `@()` at the call site.

@@ -111,3 +111,13 @@ utterances:
   - select the mechanical equipment category
   - all elements in the category called ducts
   - i do not know the category code
+  # ADDED 2026-09-20. Measured: this sentence reached CAP_OPEN_PIPE_ENDS, a
+  # MODIFY - asking to SELECT pipes CAPPED THEIR OPEN ENDS, which is the
+  # sharpest of the fourteen crossings. The READ it beat was
+  # FILTER_ELEMENTS_BY_CATEGORY, and that one is scoped by LEVEL, not by view -
+  # its needs are category and levelId. This fragment is view-scoped and takes
+  # ONE named category, which is what 'the pipes in this view' asks for.
+  # RUNNER-UP, named so it can be moved in one line: SELECT_BY_CATEGORIES is
+  # also view-scoped and declares 'all the mep in this view', but it is the
+  # several-categories fragment and this sentence names one.
+  - select all the pipes in this view

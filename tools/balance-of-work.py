@@ -158,9 +158,15 @@ def collect():
     d["skills"] = statuses("brain/skills", "*.yaml")
 
     drafts_dir = os.path.join(ROOT, "brain", "agent-proof-drafts")
+    # [] MEANS NONE ARE WAITING, None MEANS NOBODY LOOKED, AND THE TWO MUST
+    # NOT COLLAPSE. Both were [] until 2026-09-20, and an empty list is falsy,
+    # so row 4 printed "not derived" - which this page tells its reader does
+    # NOT mean zero - on a board where every draft had in fact been signed.
+    # Same shape as row 9 the same day. A missing folder is the only honest
+    # "not derived" here.
     d["agent_drafts"] = sorted(
         f[:-5] for f in os.listdir(drafts_dir) if f.endswith(".yaml")
-    ) if os.path.isdir(drafts_dir) else []
+    ) if os.path.isdir(drafts_dir) else None
 
     d["rows"], d["rows_done"] = register_rows()
     d["prop_total"], d["prop_open"] = proposals_open()
@@ -197,6 +203,13 @@ def collect():
     d["q_open"] = grab(docs, r"ACTUAL:\s*\d+ answered,\s*(\d+) open")
     d["q_ids"] = grab(docs, r"still open:\s*(.+)")
     d["stale_sigs"] = grab(docs, r"STALE - signed, then the code changed under it \((\d+)\)")
+    # check-signatures.py prints that heading ONLY when something is stale,
+    # and "No signature is waiting" when nothing is. Without this second read
+    # the row could never say zero - it said "not derived", which this tool
+    # tells the reader does NOT mean zero. A clean board read as an unchecked
+    # one on 2026-09-19 and 2026-09-20.
+    if d["stale_sigs"] is None and "No signature is waiting" in docs:
+        d["stale_sigs"] = "0"
 
     return d
 
@@ -261,7 +274,7 @@ def render(d):
     w("| 3 | **Agents left to build** | %s of %s | `python tools/agent-count.py` |"
       % (n(d["agents_left"]), n(d["agents_total"])))
     w("| 4 | **Agent proofs drafted but unsigned** | %s | `ls brain/agent-proof-drafts/*.yaml` |"
-      % n(len(d["agent_drafts"]) if d["agent_drafts"] else None))
+      % n(len(d["agent_drafts"]) if d["agent_drafts"] is not None else None))
     w("| 5 | **Proving-register rows still open** | %s of %s | `python tools/owner-queue.py` |"
       % (n(rows_left), n(d["rows"])))
     w("| 6 | **Heron's own defects still open** | %s of %s | `python tools/open-defects.py` |"
@@ -349,7 +362,8 @@ def to_console(d):
         ("  of those, structurally blocked", d["jobs_blocked"], ""),
         ("skills never proved", d["skills"].get("DRAFT"), "of %s" % sum(d["skills"].values()) if d["skills"] else ""),
         ("agents left to build", d["agents_left"], "of %s" % d["agents_total"] if d["agents_total"] else ""),
-        ("agent proofs unsigned", len(d["agent_drafts"]), ""),
+        ("agent proofs unsigned",
+         len(d["agent_drafts"]) if d["agent_drafts"] is not None else None, ""),
         ("proving-register rows open", rows_left, "of %s" % d["rows"] if d["rows"] else ""),
         ("Heron's own defects open", d["defect_open"], "of %s" % d["defect_rows"] if d["defect_rows"] else ""),
         ("questions unanswered", d["q_open"], ""),

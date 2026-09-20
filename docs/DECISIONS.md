@@ -153,6 +153,8 @@ an edit.
 | [D-82](#d-82--the-cloud-line-is-drawn-by-content-type-not-by-scope) | The cloud line is drawn by content type, not by scope | ✅ Accepted · 2026-09-20 |
 | [D-83](#d-83--an-ingest-may-cross-and-it-carries-the-practice-not-the-count) | An ingest may cross, and it carries the practice, not the count | ✅ Accepted · 2026-09-20 |
 | [D-84](#d-84--the-sandbox-is-renamed-not-rebuilt) | The sandbox is renamed, not rebuilt | ✅ Accepted · 2026-09-20 |
+| [D-85](#d-85--the-tab-says-heron-the-panel-says-ai-bridge-and-the-product-is-still-heron-ai) | The tab says Heron, the panel says AI Bridge, and the product is still Heron AI | ✅ Accepted · 2026-09-20 |
+| [D-86](#d-86--a-write-may-declare-a-question-only-when-answering-it-requires-the-write) | A write may declare a question only when answering it requires the write | ✅ Accepted — **Date:** 2026-09-21 — **Answers:** [Q-57](OPEN-QUESTIONS.md) — **Evidence:** [FRAGMENT-ISSUES rows 158, 137 and 113](FRAGMENT-ISSUES.md) · 2026-09-21 |
 
 ## Format
 
@@ -5165,3 +5167,108 @@ the bridge, reach into globals or delete files, and nothing is in its way.
 - **A runaway agent still cannot be stopped**, because the timeout lives in the subprocess that was not
   built. That is the cost, and it is accepted while `write.enabled` is `false` and nothing generated has
   ever run near a model — [Golden Rule 11](14-golden-rules.md) is the rail carrying this.
+
+---
+
+## D-85 — The tab says Heron, the panel says AI Bridge, and the product is still Heron AI
+
+**Status:** Accepted · **Date:** 2026-09-20 · **Supersedes one sentence of:** [D-37](#d-37--the-name-is-heron-ai-and-no-trademark-check-has-been-done)
+
+### Context
+
+D-37 settled the name and said it *"stays in the ribbon tab, the assemblies, the folder names, the
+install command and the documents"*. Ajmal asked on 2026-09-20 for the ribbon tab to read **Heron**,
+and for the panel — until now just **Bridge** — to read **AI Bridge**.
+
+### Decision
+
+**Two strings changed, and nothing else.**
+
+| | Before | Now |
+|---|---|---|
+| Ribbon tab | `Heron AI` | `Heron` |
+| Panel | `Bridge` | `AI Bridge` |
+| Ribbon path a user is told | `Heron AI > Heron` | `Heron > AI Bridge > Heron` |
+
+**The product is still Heron AI.** The assemblies, the folder names under the user profile, the
+`.addin` manifest, the `Product` in `Directory.Build.props` and every document are untouched, so
+nothing installed and nothing anybody has written down breaks. **This is not the rename D-37's
+consequences section priced**, and that window is still open and still closes at publication.
+
+Where the "AI" went is the part worth stating: onto the panel that actually earns it. The bridge is the
+thing an AI talks through, and nothing else on that tab is.
+
+### Consequences
+
+- **Eight printed strings moved with it.** The ribbon path is a promise made in five places outside the
+  add-in — the MCP server, the health report, the session reply, the runtime verdict and the bridge
+  client — plus the deploy script and two tests that assert on it. A tab renamed without them is a tool
+  that tells the user to press a button that no longer exists.
+- **Every dialog title the add-in shows now reads `Heron`**, to match the tab. The `.addin` manifest
+  `<Name>` is deliberately NOT among them: that is the string Revit itself quotes back in *"cannot run
+  the external application Heron AI"*, and `tests/test_package_gate.py` asserts on it.
+- **The recorded proofs keep their old wording**, because they are evidence of what was on screen on
+  the day they were taken. [`A12`](NEEDS-CHECKING.md) says *"tab Heron AI, panel Bridge"* and stays
+  that way — rewriting it would be editing a proof, which [Golden Rule 4](14-golden-rules.md) forbids.
+  A new row asks for the new labels to be seen.
+- **Compiled on all eight releases, 2020 to 2027, 0 warnings. Not yet seen in Revit** — the ribbon is
+  built at `OnStartup`, so this needs a Revit restart before anybody can look at it.
+
+## D-86 — A write may declare a question only when answering it requires the write
+
+**Status:** Accepted — **Date:** 2026-09-21 — **Answers:** [Q-57](OPEN-QUESTIONS.md) — **Evidence:** [FRAGMENT-ISSUES rows 158, 137 and 113](FRAGMENT-ISSUES.md)
+
+### Context
+
+[Row 158](FRAGMENT-ISSUES.md) found **ten fragments and five skills above the write line declaring a
+sentence that asks and stops**, in their own `utterances:` blocks. The starkest is `SET_VIEW_SCALE`, a
+MODIFY, declaring *"what scale is this view"* — so that question resolves to a write by `identity`,
+which short-circuits before ranking runs and **no re-ranking repairs one**.
+
+Nothing in the repository forbade it and nothing allowed it. `grep -iE 'utterance'
+docs/14-golden-rules.md` returns nothing and no decision covered it, so *"no rule"* was the state by
+default — the one nobody chose.
+
+**Some of the fifteen are right, which is why this was a question rather than a defect list.** *"How
+many sprinklers do I need"* on `sprinkler-layout` belongs there, because answering it **is** the
+layout — unlike *"how many sprinklers on level 2"*, a count, which went to `count-elements`.
+
+### Decision
+
+**A write may keep a question ONLY when the question cannot be answered without performing the write.**
+
+| | Keeps it | Why |
+|---|---|---|
+| `sprinkler-layout` — *"how many sprinklers do I need"* | **Yes** | Counting them IS laying them out. Nothing else can answer it |
+| `SET_VIEW_SCALE` — *"what scale is this view"* | **No** | A scale can be read without touching it |
+
+The test is **whether the write is required to answer**, never whether a sweep comes back clean. That
+distinction is what keeps this from being [row 113](FRAGMENT-ISSUES.md)'s forbidden move in a mirror:
+deleting a sentence a modeller really says, so a report goes quiet, is the same error as weakening one
+to buy a rank.
+
+**This is about what Heron OFFERS, not about what it can do.** [Golden Rule 19](14-golden-rules.md)
+already gates the operation by its risk, looked up by name, and [row 137](FRAGMENT-ISSUES.md) traced
+that end to end — none of the fifteen can change a model while the padlock is closed. The harm this
+rule addresses is a modeller who asks a question and is handed a change.
+
+### Consequences
+
+- **The fifteen are judged one at a time, and this rule does not sort them mechanically.** It names the
+  test; each sentence still needs somebody to apply it. `REPLACE_MATERIAL`'s *"why will this material
+  not purge"* was moved to a write **deliberately**, with the reasoning in a comment above it, and
+  `DIMENSION_FAMILY_INSTANCES`' *"how far apart are these on the drawing"* says *on the drawing*, which
+  is arguably an instruction to annotate. Both survive or fall on the same test, not on a pattern.
+- **A SENTENCE THAT LEAVES A WRITE NEEDS SOMEWHERE TO GO FIRST, AND THE STARKEST CASE IS THE WORST ONE.**
+  [Row 146](FRAGMENT-ISSUES.md) measured a view's scale as the library's **one certain capability gap**:
+  `SET_VIEW_SCALE` is the only capability with SCALE in its name, and a view's scale is not an element
+  parameter, so nothing reads it. Removing *"what scale is this view"* from the writer before something
+  can answer it does not close the crossing — it drops the sentence into ranking, where it may find a
+  different writer, and that is measurably worse than the declared route it had. **So the order is:
+  build the READ, then move the sentence.**
+- **`tools/check-declared-questions.py` becomes a report that can be closed.** It runs on every pull
+  request and has had fifteen findings that no reader could ever act on, because there was no rule to
+  act against. There is one now.
+- **It does not create a gate.** Nothing enforces this automatically today, and writing a checker that
+  decides *"could this be answered without the write"* would be a machine making the judgement this
+  decision just said needs a person.

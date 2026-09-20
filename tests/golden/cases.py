@@ -52,7 +52,7 @@ CASES = [
     {
         "id": "G-01",
         "capability": "Bridge connect / disconnect",
-        "request": "Press Heron AI > Heron on the ribbon",
+        "request": "Press Heron > AI Bridge > Heron on the ribbon",
         "expected": "Connects. The button's icon lights. Pressing again disconnects.",
         "status": PROVEN,
         "revit": ["2020", "2024"],

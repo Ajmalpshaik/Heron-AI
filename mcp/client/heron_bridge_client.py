@@ -626,7 +626,7 @@ def cmd_list():
     if not live:
         print("No Revit is connected.")
         print("")
-        print("Open Revit, then press  Heron AI > Heron  on the ribbon to connect.")
+        print("Open Revit, then press  Heron > AI Bridge > Heron  on the ribbon to connect.")
         print("A Revit that was never connected is invisible here, by design.")
         if stale:
             print("")

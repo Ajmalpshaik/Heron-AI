@@ -142,3 +142,8 @@ utterances:
   - the annotation is all on top of itself
   - tags overlapping on this sheet
   - check the tags before i issue this
+  # ADDED 2026-09-20. Measured: this sentence reached ARRANGE_TAGS, a MODIFY -
+  # it MOVES THE TAGS when asked whether any overlap. This fragment's whole
+  # identity is 'the tags are printing on top of each other in this view', so
+  # the ownership was never in doubt; the words simply were not declared.
+  - are any of these tags overlapping

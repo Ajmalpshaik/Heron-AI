@@ -123,7 +123,19 @@ namespace Heron.Core
             return "Heron's ability to change the model is switched off, so nothing was sent " +
                    "to Revit. This is the default and it stays the default: changing " +
                    "somebody's model is their decision to make, not Heron's. To turn it on, " +
-                   "use the lock button on the Heron AI ribbon, or set " +
+                   // THE TAB IS CALLED `Heron` AND THE PANEL `AI Bridge`, and this
+                   // sentence said "the Heron AI ribbon" until 2026-09-21. The rename
+                   // landed in #213, which corrected the messages on the Python side -
+                   // heron_session.py, heron_mcp_server.py and the bridge client all
+                   // say "Heron > AI Bridge > Heron" - and left the two in
+                   // platform/Heron.Core behind. This one is LIVE: it is what a
+                   // modeller reads every time a write is refused, so it was sending
+                   // them to a tab that does not exist. FRAGMENT-ISSUES 5b-4.
+                   //
+                   // The button's own label is `Changes`; whether this sentence should
+                   // call it that or keep describing the padlock is the owner's call
+                   // and 5b-4 stays open for it. The PATH is not a judgement.
+                   "use the padlock button under  Heron > AI Bridge  on the ribbon, or set " +
                    WriteEnabledKey + " = true in " + HeronConfig.FilePath +
                    ". It takes effect straight away - Allows() reads that file fresh every " +
                    "time, so there is nothing to restart. Setting it back to false stops " +

@@ -196,27 +196,22 @@ def routing(folder=None):
     meta = {"taken": None, "index": None, "revit": None, "file": None,
             "why": None}
     if not os.path.isdir(folder):
-        # FRAG.repo_relative, not os.path.relpath: `folder` is a caller's
-        # argument and need not be inside the checkout. On Windows relpath
-        # RAISES across drives rather than returning something useless, and
-        # tests/test_skill_catalog.py passes a mkdtemp() path - which is on C:
-        # while the repository is on D:, so the line written to EXPLAIN a
-        # missing folder was the line that crashed. Green on the Linux runner,
-        # where there is one mount and it cannot happen.
-        # FRAGMENT-ISSUES section 5b, row 17.
+        # FRAG.repo_relative, NOT os.path.relpath. On Windows relpath RAISES
+        # across drives, and this line runs precisely when the folder is
+        # somewhere unusual - a test's scratch directory under %TEMP% on C:
+        # while the checkout is on D: is the case that found it. The report
+        # of a missing folder is not worth a crash, and brain/heron_fragment.py
+        # owns this rule.
         meta["why"] = "no %s" % FRAG.repo_relative(folder)
         return meta, {}
 
     saved = sorted(name for name in os.listdir(folder)
                    if name.startswith("routing-") and name.endswith(".json"))
     if not saved:
-        # Both of these are the same cross-drive crash as the one above, in the
-        # same function - fixing only the line a traceback names leaves the next
-        # two waiting for whoever calls this with a folder one directory along.
-        here = FRAG.repo_relative(folder)
         meta["why"] = ("no routing-*.json in %s - run `python "
                        "tools/prove-skill.py --routing-to %s/routing-<date>"
-                       ".json`" % (here, here))
+                       ".json`" % (FRAG.repo_relative(folder),
+                                   FRAG.repo_relative(folder)))
         return meta, {}
 
     # NEWEST BY NAME, and the names carry the date for exactly this reason.

@@ -107,3 +107,12 @@ utterances:
   # "ductwork" was all that pushed it into the ranked route. Row 116's fix
   # is declaring, not demoting.
   - is the ductwork still connected
+  # ADDED 2026-09-20. Measured through mcp/server/heron_brain.lookup: this
+  # sentence already answers TRACE_CONNECTIVITY, so nothing about today's
+  # behaviour changes - but it arrived by `hybrid`, a RANKED GUESS, and this
+  # is the sentence that reached MIRROR_ELEMENTS (a MODIFY) on an earlier
+  # index. Declared so it resolves by `identity` and short-circuits before
+  # ranking, which is the only route no re-rank can move. FRAGMENT-ISSUES
+  # row 133; the owner authorised pinning where the ranking already picks
+  # the READ. Row 116's fix is declaring, not demoting.
+  - check the connections

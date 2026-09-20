@@ -156,3 +156,14 @@ utterances:
   - which rooms are not placed
   - space areas by level
   - list the rooms and their sizes
+  # ADDED 2026-09-20. Measured: this sentence reached PLACE_ROOM_AT_POINT, a
+  # MODIFY - it PLACES A ROOM when asked what a room's area is. This fragment
+  # reports number, name, level, area and volume and already declares 'what is
+  # the area of each space'; the singular was all that was missing.
+  # FRAGMENT-ISSUES row 116. Declaring, not demoting.
+  - what is the area of this room
+  # ADDED 2026-09-20. Measured: this sentence reached PLACE_ROOMS, a MODIFY -
+  # it PLACES ROOMS when asked which ones have no name. The name is one of the
+  # five fields this fragment reports, and it already declares 'which rooms are
+  # not placed', the same shape of question about a different field.
+  - which rooms have no name

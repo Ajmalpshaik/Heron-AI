@@ -216,27 +216,115 @@ Write-Host "  from $buildOut"
 # run the external application Heron AI", with nothing to say why. Found by
 # doing it, 2026-09-08.
 #
-# 2020-2024 are .NET Framework and have no deps.json. 2025+ are .NET and
-# always do, naming the runtime they need. That one file separates them.
-$depsFile = Join-Path $buildOut "Heron.Revit.Addin.deps.json"
-$isDotNet = Test-Path $depsFile
-$wantsDotNet = [int]$RevitVersion -ge 2025
+# WHAT THIS USED TO DO, AND THE CASE IT COULD NOT SEE. Until 2026-09-20 this
+# guard read the presence of a deps.json (".NET or .NET Framework?") and then
+# that file's runtimeTarget (".NET 8 or .NET 10?"). Both are PROXIES for the
+# runtime rather than the runtime itself, and between them they could not tell
+# net472 from net48, because neither emits a deps.json at all. So a Revit 2024
+# build deployed into the 2020 folder passed every check and reported success.
+#
+# That was written down as a known gap on 2026-09-19 (NEEDS-CHECKING A12) and
+# it happened for real the next day: .NETFramework,Version=v4.8 sitting in
+# Addins\2020, found by reading the deployed assembly rather than by anything
+# here.
+#
+# SO THIS ASKS THE ASSEMBLY WHAT IT WAS BUILT FOR. Every Heron build stamps a
+# TargetFrameworkAttribute - GenerateAssemblyInfo is on in
+# Directory.Build.props - and that string IS the fact the two proxies were
+# standing in for. One check now, covering all eight releases and the two
+# pairs neither proxy could separate.
+#
+# READ AS BYTES, NEVER LOADED. Reflection would lock the file this script is
+# about to replace, and Windows PowerShell runs on .NET Framework, which
+# cannot load a .NET 10 assembly at all - so the release most worth checking
+# is the one reflection could not check. The attribute is stored as plain
+# UTF-8 in the metadata, so finding it costs a read and locks nothing.
 
-if ($isDotNet -ne $wantsDotNet) {
-    $found = if ($isDotNet) { ".NET (Revit 2025 and later)" } else { ".NET Framework (Revit 2024 and earlier)" }
-    $need  = if ($wantsDotNet) { ".NET (Revit 2025 and later)" } else { ".NET Framework (Revit 2024 and earlier)" }
-    throw "The build in $buildOut is $found, but Revit $RevitVersion needs $need. Revit would refuse to load it and would not say why. Rebuild first:`n  dotnet build revit\Heron.Revit.Addin\Heron.Revit.Addin.csproj -c $Configuration -p:RevitVersion=$RevitVersion"
+function Get-AssemblyTargetFramework {
+    <#
+        Every distinct TargetFrameworkAttribute value in an assembly's bytes.
+
+        Returns an array so the caller can tell "none" from "one" from "more
+        than one" and refuse on anything but exactly one. Guessing which of
+        two is the real one is how a guard becomes a coin toss.
+    #>
+    param([string] $Path)
+
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    $text  = [System.Text.Encoding]::UTF8.GetString($bytes)
+
+    return @([regex]::Matches($text, '\.NET(?:Framework|CoreApp),Version=v\d+(?:\.\d+)+') |
+             ForEach-Object { $_.Value } |
+             Sort-Object -Unique)
 }
 
-# 2025 and 2026 are .NET 8; 2027 moved to .NET 10. Both have a deps.json, so
-# the check above passes either way and this is what separates them.
-if ($isDotNet) {
-    $wantedRuntime = if ([int]$RevitVersion -ge 2027) { "v10.0" } else { "v8.0" }
-    $runtimeName = (Get-Content $depsFile -Raw | ConvertFrom-Json).runtimeTarget.name
-    if ($runtimeName -notlike "*$wantedRuntime*") {
-        throw "The build in $buildOut targets $runtimeName, but Revit $RevitVersion needs $wantedRuntime. Rebuild first:`n  dotnet build revit\Heron.Revit.Addin\Heron.Revit.Addin.csproj -c $Configuration -p:RevitVersion=$RevitVersion"
-    }
+function Get-ExpectedTargetFramework {
+    <#
+        The release-to-runtime table, and it is Directory.Build.props's table.
+
+        A release not listed there is an ERROR there and an error here, never
+        a guess - Autodesk has moved the runtime twice already, at 2025 and at
+        2027. The old guard treated anything past 2027 as .NET 10 and would
+        have happily deployed a 2027 build for a release nobody has seen.
+    #>
+    param([int] $Release)
+
+    if ($Release -eq 2020) { return ".NETFramework,Version=v4.7.2" }
+    if ($Release -ge 2021 -and $Release -le 2024) { return ".NETFramework,Version=v4.8" }
+    if ($Release -ge 2025 -and $Release -le 2026) { return ".NETCoreApp,Version=v8.0" }
+    if ($Release -eq 2027) { return ".NETCoreApp,Version=v10.0" }
+    return $null
 }
+
+function Get-RuntimeName {
+    <# The same fact in words a person reads, for the message. #>
+    param([string] $Tfm)
+
+    if ($Tfm -match '^\.NETFramework,Version=v(.+)$') { return ".NET Framework $($Matches[1])" }
+    if ($Tfm -match '^\.NETCoreApp,Version=v(.+)$')   { return ".NET $($Matches[1] -replace '\.0$', '')" }
+    return $Tfm
+}
+
+$rebuildLine = "dotnet build revit\Heron.Revit.Addin\Heron.Revit.Addin.csproj -c $Configuration -p:RevitVersion=$RevitVersion"
+
+$wantedTfm = Get-ExpectedTargetFramework -Release ([int]$RevitVersion)
+if (-not $wantedTfm) {
+    throw "Heron does not know which .NET runtime Revit $RevitVersion uses, so it will not guess which build to deploy. Supported today: 2020 to 2027. Confirm the runtime for that release against the Autodesk SDK and add it to Directory.Build.props and to Get-ExpectedTargetFramework in this script."
+}
+
+$mainAssembly = Join-Path $buildOut "Heron.Revit.Addin.dll"
+if (-not (Test-Path $mainAssembly)) {
+    throw "No Heron.Revit.Addin.dll in $buildOut, so there is nothing to check and nothing to deploy. Build for this release first:`n  $rebuildLine"
+}
+
+# @() AROUND THE CALL, and it is load-bearing. PowerShell UNROLLS a
+# one-element array on its way out of a function, so the array built
+# inside comes back as a bare string - whose .Count is also 1, so the
+# check below still passes, and whose [0] is then the first CHARACTER.
+# The first run of this guard refused correctly and said the build was
+# made for ".", which is how that surfaced.
+$foundTfm = @(Get-AssemblyTargetFramework -Path $mainAssembly)
+
+if ($foundTfm.Count -eq 0) {
+    throw "Could not tell which runtime the build in $buildOut was made for - it carries no target framework. Rather than deploy something Revit may refuse to load without saying why, build for this release and run this again:`n  $rebuildLine"
+}
+
+if ($foundTfm.Count -gt 1) {
+    throw "The build in $buildOut names more than one runtime ($($foundTfm -join ', ')), so this cannot say which it really is. Delete $buildOut, then build for this release alone:`n  $rebuildLine"
+}
+
+if ($foundTfm[0] -ne $wantedTfm) {
+    throw "The build in $buildOut was made for $(Get-RuntimeName $foundTfm[0]), but Revit $RevitVersion needs $(Get-RuntimeName $wantedTfm). Revit would refuse to load it and would not say why. The build folder is shared between every release, so whichever was built last is what is sitting there - build for this one and run this again:`n  $rebuildLine"
+}
+
+Write-Host "  built for $(Get-RuntimeName $wantedTfm), which is what Revit $RevitVersion needs"
+
+# DERIVED FROM THE RELEASE, and no longer from whether a deps.json happens
+# to be lying in the build folder. The copy step below and the check after
+# it both need to know whether this release carries runtime metadata, and
+# reading that off the file they are about to copy was circular - the
+# comment further down still records the day that bit.
+$isDotNet = $wantedTfm.StartsWith(".NETCoreApp")
 
 # The last moment at which the install being replaced still exists. Every
 # check above has passed by now, so this copies only when a deploy is really
@@ -271,11 +359,15 @@ if (Test-Path $resourceSource) {
 # some project shapes runtimeconfig.json - naming the runtime and every
 # dependency the host must resolve. THE ASSEMBLIES ALONE ARE NOT A DEPLOYMENT.
 #
-# This was missed until 2026-09-12: the check above reads deps.json to decide
-# whether the build is the right flavour, and then the copy took *.dll only,
-# so the file the check had just relied on was left behind. A guard that
-# passes while the thing it guards is broken is worse than no guard - it was
-# the reason nobody looked here.
+# This was missed until 2026-09-12: the check above USED TO read deps.json to
+# decide whether the build was the right flavour, and then the copy took
+# *.dll only, so the file the check had just relied on was left behind. A
+# guard that passes while the thing it guards is broken is worse than no
+# guard - it was the reason nobody looked here.
+#
+# That circularity is gone since 2026-09-20: the flavour comes from the
+# assembly's own target framework, and deps.json is now only ever a file to
+# copy. The paragraph stays because the lesson did not go with it.
 #
 # .NET Framework (2020-2024) emits neither, so there is nothing to copy and
 # nothing to check. That is why this went unnoticed: 2024 is the release
@@ -325,5 +417,5 @@ Write-Host "Manifest    $manifest"
 Write-Host ""
 Write-Host "Next:"
 Write-Host "  1. Start Revit $RevitVersion"
-Write-Host "  2. Ribbon > Heron AI > Heron   (click to connect, click again to disconnect)"
+Write-Host "  2. Ribbon > Heron > AI Bridge > Heron   (click to connect, click again to disconnect)"
 Write-Host "  3. python mcp\client\heron_bridge_client.py ping"

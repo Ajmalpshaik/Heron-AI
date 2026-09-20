@@ -227,7 +227,7 @@ def revit_health() -> str:
     if not live and not starting and not mismatched:
         lines.append("No Revit is connected.")
         lines.append("")
-        lines.append("Open Revit, then press  Heron AI > Heron  on the ribbon. The button lights up "
+        lines.append("Open Revit, then press  Heron > AI Bridge > Heron  on the ribbon. The button lights up "
                      "when it is connected, and a Revit that was never connected is invisible to "
                      "Heron by design - nothing reaches a model the user did not offer up.")
 

@@ -31,7 +31,7 @@
 > `python tools/owner-queue.py` derives one at the moment you ask. Three typed lists were found
 > stale on 2026-09-12, which is why.
 
-**56 answered · 1 open, and nothing gates any phase.** The open one is [Q-57](OPEN-QUESTIONS.md) — may a fragment or skill that WRITES declare a question?
+**57 answered · 0 open, and nothing gates any phase.** The last was [Q-57](OPEN-QUESTIONS.md), closed 2026-09-21 as [D-86](DECISIONS.md) (a write may declare a question only when answering it REQUIRES the write) — may a fragment or skill that WRITES declare a question?
 **The last four were answered on 2026-09-20** — [D-81](DECISIONS.md) to [D-84](DECISIONS.md) — asked back to the owner one at a time, in plain words with a worked example each. Two of the four, `Q-54` and `Q-55`, moved in on 2026-09-12 from a RAG work note that was retired — they had been owed for days while this line said one was open, which is why a question belongs in this register and nowhere else. `Q-43` to `Q-48` were all opened on
 2026-09-09, and every one of them was found by a tool asking a question nobody had asked before rather
 than by reading. `Q-49` and `Q-50` followed the same day from reading someone else's repository at file
