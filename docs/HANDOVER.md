@@ -124,6 +124,51 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-20 — A FORMATTER THAT WAS ONLY COMPILED, AND A GATE THAT SAID "EVERY PROJECT" WHILE NAMING FIVE OF SIX
+
+**PR #212, draft.** Two things, and the second was found by doing the first.
+
+**A review finding was right and is fixed.** `RevitFragment.Size` had become the only thing separating
+`(2 of 1128)` from the misleading `(2)` that [row 75](FRAGMENT-ISSUES.md) is about, and it shipped in
+#210 with **no test**. A compiler cannot catch a regression in its wording or in the ORDER of its two
+`object` arguments. The rule now lives in `revit/Heron.Revit.Addin/HeronBindingNote.cs`, which touches
+no Autodesk type, so `tests/Heron.BindingNote.TestHost` links it **BY SOURCE** — one copy of the rule,
+[row 96](FRAGMENT-ISSUES.md)'s lesson. **It was measured against the previous implementation**: built
+against `Size` as it stood before the fix, **3 of 7 checks fail and the host exits 1**, and the four
+that still pass are exactly the ones that must not move.
+
+**THE LESSON WORTH CARRYING IS THE SECOND ONE, AND IT IS ABOUT BEING WRONG.**
+[Row 160](FRAGMENT-ISSUES.md): `brain/heron_dotnet.py` listed the projects the compile gate builds
+under the comment *"Every project, in dependency order"* while naming **five of six**, and
+`Heron.Banner.TestHost` had never been compiled on any release. **The first reading of that was that
+somebody forgot, and it was written down that way before being checked.** It was wrong. `5669e7e` left
+it out **on purpose** — a `WinExe` WPF project, CI on Linux with `EnableWindowsTargeting`, never
+watched go green — and said both where it belonged and what would unblock it. **The reason lived only
+in the commit message**, so a held-back project and a forgotten one looked identical.
+
+What caught it was reading the commit that added the file **before** writing the row. That is the
+queue rule *"VERIFY BEFORE YOU BELIEVE"* earning its place again, and the row keeps the wrong first
+reading in writing because the shape of the mistake is the point.
+
+The condition `5669e7e` set is now met and Banner is listed: `tools/check-compile.py` on **Linux**,
+the **10.0.x** SDK, `-p:EnableWindowsTargeting=true` — the same command, OS, SDK line and flag
+`gates.yml` itself uses — builds **all seven projects on all eight releases**. `heron_dotnet.unlisted()`
+now **fails the gate** on any `.csproj` that neither `PROJECTS` nor the named `NOT_SHIPPED` accounts
+for, so the next exclusion has to be readable where the gate is.
+
+**LEFT FOR THE NEXT SESSION — [row 161](FRAGMENT-ISSUES.md), recorded and not fixed.** There are
+**204** `tests/test_*.py` on disk and `check-gaps.py` runs **203**. `test_bridge_roundtrip.py` is
+skipped by name, and unlike row 160 **its reason is in the right place** — in a comment beside the
+skip, and correct: with no host binary the suite `return 1`, which would read as a FAIL for a build
+step nobody took. The defect is that the suite has **no exit-3 path**, so it cannot say *"I could not
+run"*, and a silenced suite prints nothing at all — not `ok`, not `wait`. The repair is the one
+`tests/test_binding_note.py` already uses next door. Compare `ls tests/test_*.py | wc -l` against the
+count the sweep prints; they differ by one until this is done.
+
+**Nothing here needed a Revit, and nothing here is evidence about one.** Compiling is the API surface
+agreeing. `(2 of 1128)` has still never been seen in a real binding note, row 75 is still **OPEN**, and
+D3 in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) is still the line that catches a unit error.
+
 ### 2026-09-19 — TWENTY-THREE FRAGMENTS BUILT FOR RECORDED GAPS, AND FOUR API FACTS THAT CHANGED THE ANSWER
 
 **Merged as PR #184.** The owner read out five lists of Revit jobs - roughly 290 of them - and asked
