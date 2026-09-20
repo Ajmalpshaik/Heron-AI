@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "make the tag leaders bend into the tag instead of running di
 kind: action
 domain: revit.annotation
 capability: FORCE_TAG_LEADER_LSHAPE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -56,7 +56,12 @@ contract:
       source: request
     - name: elements
       type: IList<Element>
-    # Paper millimetres for the horizontal leg into the tag.
+    # PAPER MILLIMETRES, and it no longer sets the shoulder's length -
+    # nothing does. Both legs now fall out of the geometry as the separation
+    # between the element and the head. This is the GUARD STUB: how far the
+    # head must sit across from the element before a corner is worth drawing
+    # at all, and how big the sideways hook is when it is not. Scaled by the
+    # view, like every clearance here.
     - name: legMm
       type: double
       source: request
@@ -64,6 +69,75 @@ contract:
     - name: bent
       role: result
       type: int
+    - name: upTheSheetLeftStraight
+      # Runs lying UP the plan rather than across it. Left straight on
+      # purpose: their leader already drops onto them cleanly and a corner
+      # would be a kink in something correct. They also keep their ATTACHED
+      # end, because nothing was written and so nothing had to be freed.
+      role: accounting
+      type: IList<ElementId>
+    - name: alreadyStraight
+      # Tags whose head already sits on the element's own row, so the leader
+      # is one clean horizontal line with no corner to make. DONE, not
+      # refused: a straight leader is the right answer to that geometry, and
+      # bending it would put a kink in something already correct. Accounting,
+      # because it is the evidence it looked rather than a bend it made (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: hooked
+      # Tags whose head sat almost directly over the element, where a corner
+      # would collapse onto the line. Given a small sideways hook at the
+      # head's level instead. These ARE bent, and are counted in `bent` too -
+      # this says which ones took the degenerate route.
+      role: accounting
+      type: IList<ElementId>
+    - name: endsAttached
+      # Leader ends put BACK to attached after the corner was placed. An
+      # attached leader follows its duct when the duct moves; a free one does
+      # not, so this is the state a drawing has to be left in.
+      role: result
+      type: int
+    - name: legStillTrue
+      # Tags whose run to the duct is STILL true after being re-attached -
+      # end and corner still share an across-coordinate. Re-attaching hands
+      # the end back to Revit, which may move it; this is the measurement of
+      # whether it did, not an assumption that it did not.
+      role: result
+      type: int
+    - name: cornerMovedToEnd
+      # Tags whose corner had to be rebuilt over the end Revit chose when the
+      # leader was re-attached. Dragging the end onto the corner only holds
+      # while the leader is free; attaching undoes it. Building the corner
+      # over the attached end instead cannot be undone, because attaching has
+      # already happened by then.
+      role: result
+      type: int
+    - name: legWentDiagonal
+      # Tags whose run went diagonal again once re-attached. The honest other
+      # half of legStillTrue - if this is not empty, an attached end and a
+      # true L cannot both be had by this route, and that is worth knowing
+      # rather than hiding.
+      role: accounting
+      type: IList<ElementId>
+    - name: endsLeftFree
+      # Ends that could NOT be put back. Each one is a leader that has
+      # stopped following its duct, so it is named rather than counted.
+      role: accounting
+      type: IList<ElementId>
+    - name: endsMoved
+      # Leader STARTING points moved onto the corner's across-position. This
+      # is what makes the run down to the element true rather than a
+      # diagonal: the corner is only one end of that leg, and setting it
+      # alone leaves a short shoulder with a long diagonal hanging off it.
+      role: result
+      type: int
+    - name: usedLeaderEnd
+      # Tags whose host gave no location, so the corner had to be taken from
+      # the leader end instead. The weaker route, and the one that produced a
+      # degenerate run when it was the only route. Counted so it is never
+      # silent (D-52).
+      role: accounting
+      type: IList<ElementId>
     - name: noLeader
       # Tags with no leader, so it could not be bent. The evidence it looked,
       # never a thing it found (D-52).
