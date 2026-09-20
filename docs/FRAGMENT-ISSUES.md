@@ -2502,6 +2502,30 @@ matched. Pick one and stay on it for the whole run.
 
 ---
 
+## 5b. HERON'S OWN DEFECTS found by reading the repository, file by file
+
+> Section 5 holds what **proving against a model** found. This holds what **reading** found — the word-by-word sweep of every tracked file that is not `brain/**.yaml`, recorded in [`REVIEW-LEDGER.tsv`](REVIEW-LEDGER.tsv). **How many that is, and how many have been read, is derived and not typed here.**
+>
+> **They are kept apart because they are found differently and they go stale differently.** A proving defect is re-tested by running the fragment again. A reading defect is re-tested by reading the file again — and the ledger knows when that is necessary, because the file's content hash stopped matching the one recorded when it was read.
+>
+> **No number is typed here.** Derive it:
+>
+> ```bash
+> python tools/open-defects.py          # both sections, by id
+> python tools/review-ledger.py         # how much of the repository has been read
+> ```
+
+**THE SWEEP RECORDS, IT DOES NOT REPAIR.** A file found wrong is marked `issue` in the ledger and written up here; the file itself is left alone. A sweep that also fixes things stops being a sweep — the reader loses track of which files have actually been read, and a repair made in passing is a change nobody reviewed. Anything big enough to need its own sitting gets **`OPEN — needs a sitting`** and waits there.
+
+**A ROW HERE IS WRITTEN FOR A SESSION THAT WAS NOT PRESENT.** Name the file and the line; say what is wrong in the words you would use out loud; and say what you did **not** check, so the next reader knows where your reading stopped rather than assuming it was complete.
+
+| # | Defect | State |
+|---|---|---|
+
+*No rows yet. The sweep has not begun. `python tools/review-ledger.py` is the honest answer to the question this empty table cannot answer on its own — whether nothing is wrong, or whether nobody has looked.*
+
+---
+
 ## 6. WHAT CANNOT BE RUN AT ALL — 100 fragments, by what they need
 
 Not failures. Heron has no way to receive these inputs yet, so they have never executed a line.

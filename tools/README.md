@@ -1569,8 +1569,15 @@ python tools/open-defects.py            # the open ones, by id
 python tools/open-defects.py --all      # every row, with its state
 ```
 
-Reads section 5 of [`docs/FRAGMENT-ISSUES.md`](../docs/FRAGMENT-ISSUES.md) and prints the **ids** of
-every row whose Status begins with *open*. Always exits 0 - it reports, it does not gate.
+Reads sections **5 and 5b** of [`docs/FRAGMENT-ISSUES.md`](../docs/FRAGMENT-ISSUES.md) and prints the
+**ids** of every row whose Status begins with *open*. Always exits 0 - it reports, it does not gate.
+
+**The two sections are counted apart, and that is the point.** Section 5 is what **proving against a
+model** found; **5b** is what **reading the repository file by file** found. They are re-tested
+differently - a proving defect by running the fragment again, a reading defect by reading the file
+again - and [`review-ledger.py`](#review-ledgerpy---which-files-have-been-read-word-by-word) knows
+when the second is due. 5b's ids print as `5b-3` rather than `3`, because a bare number would now be
+ambiguous and a defect nobody can find is the failure this register exists to prevent.
 
 It exists because that section was headed *"six still open"* from the day it was written until
 2026-09-16, and by then ninety-four rows had been appended and twenty-nine were open. **No append was
@@ -1583,6 +1590,51 @@ a row whose Status still reads OPEN after a LATER row closed it. Four were that 
 **This narrows the pile you have to read. It does not replace reading it.**
 
 **And it now asks about a row that argues with itself** - a Status that begins with *open* and carries a **dated** `FIXED` or `CLOSED` claim further down the same cell. Row 127 was that shape for an evening: the fix was appended under the sentence saying OPEN rather than replacing it, so the row was fixed while every count and every list went on calling it open. The test is deliberately narrow - a dated claim in capitals, inside one sentence, not the word *fixed* in passing - because eleven open rows mention something else being fixed or closed and **every one of them is genuinely open**. It asks; it never re-counts, because which sentence is the state is a reader's judgement and a tool that guessed would start closing rows. [`tests/test_open_defects.py`](../tests/test_open_defects.py) pins both halves.
+
+---
+
+## `review-ledger.py` - which files have been read, word by word
+
+```bash
+python tools/review-ledger.py                       # the balance
+python tools/review-ledger.py --next 20             # what to read next
+python tools/review-ledger.py --mark <path> clean
+python tools/review-ledger.py --mark <path> issue --note 5b-3
+python tools/review-ledger.py --stale               # marks that no longer apply
+python tools/review-ledger.py --history <path>      # what one file has been through
+```
+
+Reads [`docs/REVIEW-LEDGER.tsv`](../docs/REVIEW-LEDGER.tsv). Always exits 0 - it reports, it does not
+gate.
+
+**Thirty `check-*.py` gates check rules. None of them records that a file was READ.** So a second
+session had no way to know the first had already read a file, and the only honest thing it could do
+was read it again - which is the whole sweep done twice, and the second pass is indistinguishable from
+the first in every report Heron prints. **No total is written here**; the tool derives one every time
+it runs, because a count typed into a README is the cache-with-no-invalidation this repository keeps
+paying for.
+
+**The mark carries the file's content hash, and that is the whole design.** `open-defects.py` already
+names the failure this ledger could easily have become - *a prose total is a cache with no
+invalidation* - and a bare "checked" tick is exactly that: marked today, the file edited tomorrow,
+and the tick still reads *checked* while describing content nobody has seen. It is **worse** than no
+tick, because a session trusts it and skips the file. So a row records the git blob hash of the file
+**as it was read**. When the file changes by one byte the hash stops matching and the row goes
+**STALE by itself** - nobody has to remember to withdraw it, and no session has to trust that
+somebody did. That was measured rather than reasoned: `tools/open-defects.py` was marked clean, then
+genuinely edited in the same sitting, and the ledger reported it stale with the two hashes side by
+side without being asked.
+
+**Scope is every tracked file except `brain/**.yaml`**, which keeps its own gates and the retrieval
+evals - the owner's decision, 2026-09-20.
+
+**The sweep records; it does not repair.** A file found wrong is marked `issue` and written up in
+section **5b** of [`docs/FRAGMENT-ISSUES.md`](../docs/FRAGMENT-ISSUES.md); the file itself is left
+alone. `--mark ... issue` **refuses without a `--note`** carrying the 5b row, because a file marked
+*issue* with nowhere to read the issue is a finding nobody can find.
+
+**The ledger is append-only.** Rows are never rewritten or removed; the newest row for a path counts
+and the ones behind it are that file's history, which `--history` prints.
 
 ## `new-agent.py` - scaffold the next agent from its row in the register
 
