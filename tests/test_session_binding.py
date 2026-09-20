@@ -37,7 +37,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 
-from heron_session import SessionBinding, NotBound      # noqa: E402
+from heron_session import (SessionBinding, NotBound,
+                           version_for_filter, NOTHING_CONNECTED)      # noqa: E402
 import heron_bridge_client as bridge                   # noqa: E402
 
 
@@ -178,6 +179,60 @@ def main():
     except NotBound as unbound:
         check("No Revit is connected" in str(unbound),
               "nothing connected -> says so, and which button to press")
+
+    print()
+    print("6. the version wall says WHICH case, and never slides")
+    # FRAGMENT-ISSUES row 130: a modeller with two Revits open was told none
+    # was connected, because `_revit_version` returned (None, None) for
+    # "nothing connected" AND for "several connected, none chosen", and its
+    # caller printed the first sentence for both. Measured with sessions
+    # 20472 and 36908 live.
+    #
+    # THIS IS TESTED HERE AND NOT BESIDE ITS CALLER because heron_session
+    # imports no MCP SDK - CI cannot import heron_mcp_server at all, so a
+    # test living there would never run on the machine that matters.
+    a, b = FakeSession(20472, "2020"), FakeSession(36908, "2024")
+
+    release, how = version_for_filter([], None, False)
+    check(release is None and how == NOTHING_CONNECTED,
+          "nothing connected -> no release, and it says so")
+
+    release, how = version_for_filter([a, b], None, False)
+    check(release is None and "2 Revits are connected" in how
+          and "none has been chosen" in how,
+          "two connected and none chosen -> a DIFFERENT sentence, with the "
+          "count in it: %r" % how)
+    check(how != NOTHING_CONNECTED,
+          "and it is never the nothing-connected one, which is row 130")
+
+    release, how = version_for_filter([a, b], 36908, True)
+    check(release == "2024" and how == "chosen",
+          "a chosen session decides the release, and says it was chosen")
+    release, how = version_for_filter([a, b], 36908, False)
+    check(release == "2024" and how == "assumed, not chosen",
+          "and an assumption is still named as one")
+
+    release, how = version_for_filter([a], None, False)
+    check(release == "2020" and how == "the only Revit connected",
+          "one connected -> used, and named as the assumption it is")
+
+    # THE DANGEROUS ROW OF THIS FILE'S OWN TABLE, at the version wall.
+    # CHOSEN + it closed -> STOP. Never slide onto another. The old code
+    # slid: with the chosen session gone and one other live, it returned
+    # THAT one's release as "the only Revit connected".
+    release, how = version_for_filter([a], 36908, True)
+    check(release is None and "you chose" in how and "has closed" in how,
+          "a CHOSEN Revit that has closed stops the wall rather than "
+          "sliding onto the survivor: %r" % how)
+    check(release != "2020",
+          "and the survivor's release is NOT used - that is the slide")
+
+    # ASSUMED + it closed -> quietly take the remaining one. Same table,
+    # different row, and the two must not be collapsed.
+    release, how = version_for_filter([a], 36908, False)
+    check(release == "2020" and how == "the only Revit connected",
+          "an ASSUMED session that closed does quietly take the remaining "
+          "one - the other row of the same table")
 
     print()
     if failures:

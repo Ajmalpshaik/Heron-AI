@@ -14,7 +14,9 @@
 # THE WORDS IT CLAIMS, AND WHERE EACH ONE ACTUALLY LANDED:
 #   miss      which ducts have no system name          -> READ_MEP_SYSTEM (hybrid)
 #   reach     find the blank parameters                -> DESCRIBE_BLANK_PARAMETERS (hybrid)
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #   miss      what is missing before I issue this      -> SELECT_VISIBLE_IN_VIEW (hybrid)
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #   miss      check for empty values                   -> GROUP_AND_COUNT (hybrid)
 #
 # A `miss` is not automatically a defect - a skill composes several

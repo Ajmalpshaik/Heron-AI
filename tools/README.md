@@ -429,20 +429,48 @@ what must be true before it runs, and what it stands on. The parallel to the fra
 layer up.
 
 **A skill is only as proven as the weakest fragment under it**, and that is the one thing a list of
-names cannot show. Every skill in the library sits at `DRAFT`. Six of them rest entirely on `PROVEN`
-fragments and are waiting for nothing but somebody to look; four rest on something weaker and cannot
-move until those do. In a list of names they are identical. So each skill carries an **effective
-status** — the lowest rung on [docs/09](../docs/09-skills-and-fragments.md)'s ladder among the fragments
-serving it — beside the status its own card declares. A card can say anything; the chain underneath is
-the fact.
+names cannot show. Every skill in the library sits at `DRAFT`. Some rest entirely on `PROVEN`
+fragments and are waiting for nothing but somebody to look; others rest on something weaker and
+cannot move until those do — **the tool prints how many of each, and this page deliberately does
+not**, because it said *six and four* for long enough to be wrong. In a list of names they are
+identical. So each skill carries an **effective status** — the lowest rung on
+[docs/09](../docs/09-skills-and-fragments.md)'s ladder among the fragments serving it — beside the
+status its own card declares. A card can say anything; the chain underneath is the fact.
+
+**AND THE CHAIN IS ONLY HALF THE FACT.** A chain of `PROVEN` fragments says nothing about whether
+the skill's own sentences REACH it, and the two read identically on a card. So each skill also
+carries its **words**: how many of its own utterances land on a capability it declares, every
+sentence marked with where it actually went, and a loud tag when a question lands on something that
+CHANGES THE MODEL. **Neither half is a proof** — the footer says so — and the subtitle labels them
+`CHAIN:` and `WORDS:` so neither reads as the whole.
+
+That half is a **recording, never re-measured here**: one `heron_brain.lookup` per utterance is about
+twenty-five minutes, which is not a page render. It reads the newest `tools/jobs/skills/routing-*.json`
+that `prove-skill.py --routing-to` wrote. **A missing recording
+says `NOT MEASURED`**, which is a different sentence from *no crossings*, and **one whose sentences
+have moved since it was taken says `OUT OF DATE`** — compared against the PHRASES, which are in git,
+and never against the store, which every worktree writes
+([row 152](../docs/FRAGMENT-ISSUES.md)).
+
+**A card also shows what the RETRIEVER said about its own answer** ([row 157](../docs/FRAGMENT-ISSUES.md)).
+`heron_retrieve` has always written *a coin toss* when neither route preferred the winner, and *the
+words route ranked the library rather than selecting from it* when that route had no claim on the
+sentence — and every consumer used to drop it. A sentence that reaches the right capability **and**
+carries one of those is the right answer found by luck, and the page used to report it as a plain
+success. **The two complaints are not the same strength**, so the card says *the retriever
+complained*, never that the answer is wrong, and a complaint does not take a sentence out of the
+reach count — whether it spends it is a reader's call.
 
 **Reachability is reported per Revit release, never overall.** A skill declaring 2020–2027 whose
 fragments cover 2024 and 2025 works on two releases and claims eight; one overall figure is exactly
 what hides that. Same rule as `HERON-SKL-PRF-006`, same reason.
 
-**It concludes twice, so it has a test** ([`tests/test_skill_catalog.py`](../tests/test_skill_catalog.py)):
-the effective status and the per-release reachability are both judgements that can be wrong while the
-page still renders perfectly.
+**It concludes, so it has a test** ([`tests/test_skill_catalog.py`](../tests/test_skill_catalog.py)):
+the effective status, the per-release reachability, whether a recording still covers the skill's
+sentences, and what the retriever said about each answer are all judgements that can be wrong while
+the page still renders perfectly. **Nothing in that suite edits `brain/skills`** — `collect()` takes
+the recording folder so the whole path runs against a recording written for the test, which is
+[row 155](../docs/FRAGMENT-ISSUES.md)'s lesson about a suite that rewrites the library it is checking.
 
 The working prototype of `HERON-DOC-SKL-003`.
 
@@ -1478,6 +1506,61 @@ rule, and the first version of this very command broke it.
 `check-signatures.py` existed for two days with nothing calling it, and its own commit message named
 the defect - *"a gate nobody runs is the same as no gate."* Being undocumented is the quieter version
 of the same thing.
+
+## `check-declared-questions.py` — does a WRITE claim a QUESTION in writing?
+
+```bash
+python tools/check-declared-questions.py
+python tools/check-declared-questions.py --all    # also the instructions
+```
+
+Always exits 0. It reports; it does not gate.
+
+**Neither routing sweep can see this one.**
+`check-routing.py` asks each
+fragment's own utterances back to the search and separates *a sentence a READ claims, answered by
+something that WRITES*. `check-risk-crossings.py`
+asks sentences **nobody** declares, because the first can only test what is declared.
+
+A write that DECLARES a question falls between them. Ask the search and the declaring fragment
+**wins, by `identity`**, which short-circuits before any ranking runs — so `check-routing` sees a
+fragment answering its own sentence and calls it correct; and the sentence *is* declared, so it is
+not one `check-risk-crossings` was written to try. **No ranking change repairs one.**
+
+Found while checking whether four crossings had a READ to give them to
+([row 146](../docs/FRAGMENT-ISSUES.md)): *"what scale is this view"* resolves to `SET_VIEW_SCALE`,
+a **MODIFY**, by `identity` — because that fragment declares the phrase in its own `utterances:`
+block.
+
+**It reads the FILES and never the store**, so it holds in CI where there is none, and two runs
+disagree only if somebody edited a fragment. The write line is read from `HeronOperationRegistry.cs`
+through `generate-jobs.write_threshold()` — Golden Rule 19, never typed — and a risk `HeronRisk`
+does not name is **reported rather than assumed safe**.
+
+**An imperative is not a question**, and the two that cost false findings the first time this was run
+by hand are pinned in the suite: *"do the grayout"* opens with a word a careless pattern reads as an
+auxiliary, and *"which elbow this type inserts, change it"* asks and then says what to do. The second
+is listed separately, never counted — the same separation `check-risk-crossings.py` makes.
+
+**It never suggests deleting an utterance to tidy the report.** [Row 113](../docs/FRAGMENT-ISSUES.md)'s
+forbidden move is weakening a declaration to buy a number, and the mirror of it is deleting a sentence
+a modeller really says so a sweep comes back clean. The repair is declaring the sentence on the READ
+that should own it — and where no READ exists, the finding is a **capability gap**, which is a
+different and larger thing.
+
+**And it reads the SKILLS through the same rule**, adapted in four lines rather than copied — a
+skill declares a risk and a list of utterances just as a fragment does. That is exactly where
+[row 137](../docs/FRAGMENT-ISSUES.md) said the blind spot was: a crossing compares a sentence's
+reach against the **skill's own** declared risk, so a question inside a MODIFY skill never
+registers as one. This asks nothing about reach. **Five today**, and **some of them are probably
+right** — *"how many sprinklers do I need"* may genuinely belong to a layout skill, because
+answering it IS the layout. The tool says so in its own output rather than asking for a deletion.
+
+**It concludes, so it has a test** ([`tests/test_declared_questions.py`](../tests/test_declared_questions.py)),
+and every sentence in it is a real declared utterance rather than an invented one — an invented
+sentence would only prove the pattern matches itself.
+
+---
 
 ## `open-defects.py` - how many of Heron's own defects are still open
 

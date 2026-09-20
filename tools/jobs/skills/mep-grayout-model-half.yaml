@@ -29,9 +29,14 @@
 # THE WORDS IT CLAIMS, AND WHERE EACH ONE ACTUALLY LANDED:
 #   reach     do the grayout                           -> HIGHLIGHT_VS_REST (identity)
 #   reach     do the grayout for MEP                   -> HIGHLIGHT_VS_REST (hybrid)
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #   reach     grey out the background                  -> SET_CATEGORY_GRAPHICS (hybrid)
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #   miss      make the architecture light and the serv -> CHECK_EQUIPMENT_CLEARANCE (hybrid)
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #   reach     grey the background and turn the rebar o -> SET_CATEGORY_GRAPHICS (hybrid)
+#                                                         and the RETRIEVER said so itself: a coin toss - no route preferred the winner
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #
 # A `miss` is not automatically a defect - a skill composes several
 # capabilities and `lookup` returns ONE, so the single best answer sitting
