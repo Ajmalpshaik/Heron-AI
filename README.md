@@ -62,10 +62,12 @@ millimetres or 200 feet.
 **Until 2026-09-06 this paragraph went on to say none of it had ever loaded into Revit and no fragment
 had met a model. Both have now happened.** The add-in is deployed in Revit 2024 and D-28's executor
 compiles a fragment's C# inside Revit's own process against the assemblies Revit has actually loaded.
-**329 of the 395 fragments are `PROVEN` as of 2026-09-19** — each on a recorded proof against a named
-model, with a negative case and a staleness fingerprint ([D-30](docs/DECISIONS.md)). **The other 79 have
+**329 of the 395 fragments are `PROVEN`, re-derived 2026-09-20** — each on a recorded proof against a named
+model, with a negative case and a staleness fingerprint ([D-30](docs/DECISIONS.md)). **The other 66 have
 still never met a model**, and twenty-three of those were written on 2026-09-18 to close recorded gaps,
-so they are new rather than neglected.
+so they are new rather than neglected. That count read **79** until 2026-09-20 — 395 − 329 is 66, so the
+two halves of one sentence disagreed by thirteen. Exactly the failure the next paragraph warns about,
+sitting directly above the warning.
 
 **Do not trust those two numbers — derive them.** They move hourly while a proving session runs, and this
 line read *"16 of 349"* for two days after neither half was true:
