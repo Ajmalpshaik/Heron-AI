@@ -315,16 +315,38 @@ def _tracked_projects(where):
             if line.strip()]
 
 
-def _walked_projects(where):
-    """The fallback for a tree that is not a git checkout.
+def _generated_dirs(where):
+    """Directory names .gitignore says hold generated output.
 
-    `build` is excluded here for the reason `_tracked_projects` does not need
-    to bother: it is where the generated FragmentCheck project lands.
+    READ RATHER THAN TYPED, and that is not only the house rule about derived
+    values. The tree that made this necessary is where the generated
+    FragmentCheck project lands, and naming it here would be a second list to
+    keep in step with .gitignore - which is the failure this repository keeps
+    having. Only the plain `name/` lines are taken; a pattern with a wildcard
+    or a slash inside is not a directory name and is left alone.
     """
+    names = {".git"}
+    try:
+        text = io.open(os.path.join(where, ".gitignore"), encoding="utf-8").read()
+    except (IOError, OSError):
+        return names
+    for line in text.splitlines():
+        line = line.strip()
+        if (not line or line.startswith("#") or not line.endswith("/")
+                or any(ch in line for ch in "*?![")):
+            continue
+        name = line[:-1].lstrip("/")
+        if name and "/" not in name:
+            names.add(name)
+    return names
+
+
+def _walked_projects(where):
+    """The fallback for a tree that is not a git checkout."""
+    skip = _generated_dirs(where)
     out = []
     for folder, dirs, files in os.walk(where):
-        dirs[:] = [d for d in dirs
-                   if d not in (".git", "bin", "obj", "build", "node_modules")]
+        dirs[:] = [d for d in dirs if d not in skip]
         for name in files:
             if name.endswith(".csproj"):
                 rel = os.path.relpath(os.path.join(folder, name), where)
