@@ -1293,8 +1293,15 @@ followed. Nobody had been back to ask why.
 
 > **THE TWO COUNTS ABOVE WENT STALE THE SAME DAY. THE SPLIT BELOW DID NOT.**
 > Re-derived 2026-09-19 on a Linux container at `main`: `heron_fragment.load_all` counts **395
-> fragments, 328 PROVEN, 67 DRAFT**, and `python tools/generate-jobs.py` reports **37 unarrangeable
-> of 67** — not 71 and 44. The seven that moved are named by the commit that freed them:
+> fragments, 328 PROVEN, 67 DRAFT**, and `python tools/generate-jobs.py` reports **27 emitted,
+> 40 unarrangeable** — not 71 and 44. **THE FIRST VERSION OF THIS CORRECTION SAID 37 AND WAS
+> WRONG, WHICH IS THE PARAGRAPH'S OWN LESSON ARRIVING ONE LAYER UP.** 37 was read out of
+> [PROPOSALS § the seven that moved](PROPOSALS.md), where it is **correct** — and it is measured
+> over a different population: *DRAFT with no run record*, on a machine that HAD run records.
+> This container has none, so `generate-jobs.py` measures all 67 and answers 40. Re-measured at
+> `3dd7159`, the very commit the 37 was written at: **40 there too**, so nothing moved — the
+> number was taken from prose and attributed to a command that says something else. Run it.
+> The seven that moved are named by the commit that freed them:
 > [PR #196](https://github.com/Ajmalpshaik/Heron-AI/pull/196) is titled *"Five of the six proposed
 > rules are built, and **seven fragments can be arranged**"*, and `git merge-base --is-ancestor`
 > puts it **after** the commit carrying this paragraph. **Derive both rather than reading them
@@ -1613,8 +1620,7 @@ function's own returns.
 | **X2** | **And that refusal is the finding, not a fault — [row 141](FRAGMENT-ISSUES.md).** `batch-prove` refuses **32 of the 37 steps**, correctly: each capability's own model half is already evidenced. What is NOT evidenced is the **composition**, and nothing in this repository can run one. `prove` in `mcp/client/heron_bridge_client.py` does run a chain — first fragment resets it, the rest continue, one lease — but calls `run_fragment_read` only, so the four MODIFY skills have no chain runner at all, and it judges nothing: no negative case, no draft, no signature. **Chain, write, judgement — no one runner has all three.** Each job file carries the `prove` command line for its own chain, which is as far as today's tooling reaches |
 | **X3** | **Two skills need a hand on the mouse before their batch runs.** `check-connectivity` and `trace-system` both go through `trace-connectivity`, whose `start` is one PARTICULAR element. Select it in Revit and type `selected` in the blank — the add-in refuses if none or several are selected, so the batch has to be arranged around that one pick |
 | **X4** | **`trace-system` cannot run its own plan at all — [row 142](FRAGMENT-ISSUES.md).** It declares `REPORT_FINDINGS`, and neither `filter-elements-by-id` nor `trace-connectivity` provides the `findings` that fragment needs. Two plausible repairs, both the owner's, neither guessed at. **No Revit needed to decide it; a Revit needed to prove whichever is chosen** |
-| **X5** | **The routing half is a RECORDING and will go stale.** `tools/jobs/skills/routing-2026-09-19.json` is what `prove-skill.py --routing-from` and the skill catalogue both read. Re-take it with `python tools/prove-skill.py --routing-to tools/jobs/skills/routing-<date>.json` — about twenty-five minutes for forty-three sentences — and **compare the index fingerprint before comparing any count** ([row 116](FRAGMENT-ISSUES.md)). It needs no Revit, only time. **SINCE 2026-09-19 IT NO LONGER GOES STALE IN SILENCE** ([row 152](FRAGMENT-ISSUES.md)): `ROUTING.words_moved()` compares the recording's PHRASES against the skills' own utterances - which needs no store, so it holds in CI - and a skill whose words have moved is `OUT OF DATE` on the page and in the tool, never `UNDERSTOOD`. **That does not re-take it**: what the check buys is that nobody reads a stale count as a clean one. The fingerprint still answers a different question - WHICH LIBRARY was asked - and is still the one to compare before comparing counts |
-| **X5** | **The routing half is a RECORDING and will go stale.** `tools/jobs/skills/routing-2026-09-19.json` is what `prove-skill.py --routing-from` and the skill catalogue both read. Re-take it with `python tools/prove-skill.py --routing-to tools/jobs/skills/routing-<date>.json` — about twenty-five minutes for forty-three sentences — and **compare the index fingerprint before comparing any count** ([row 116](FRAGMENT-ISSUES.md)). It needs no Revit, only time. **SINCE 2026-09-19 IT NO LONGER GOES STALE IN SILENCE** ([row 155](FRAGMENT-ISSUES.md)): `ROUTING.words_moved()` compares the recording's PHRASES against the skills' own utterances - which needs no store, so it holds in CI - and a skill whose words have moved is `OUT OF DATE` on the page and in the tool, never `UNDERSTOOD`. **That does not re-take it**: what the check buys is that nobody reads a stale count as a clean one. The fingerprint still answers a different question - WHICH LIBRARY was asked - and is still the one to compare before comparing counts |
+| **X5** | **The routing half is a RECORDING and will go stale.** `tools/jobs/skills/routing-2026-09-19.json` is what `prove-skill.py --routing-from` and the skill catalogue both read. Re-take it with `python tools/prove-skill.py --routing-to tools/jobs/skills/routing-<date>.json` — about twenty-five minutes for forty-three sentences — and **compare the index fingerprint before comparing any count** ([row 116](FRAGMENT-ISSUES.md)). It needs no Revit, only time. **SINCE 2026-09-19 IT NO LONGER GOES STALE IN SILENCE** ([row 152](FRAGMENT-ISSUES.md)): `ROUTING.words_moved()` compares the recording's PHRASES against the skills' own utterances - which needs no store, so it holds in CI - and a skill whose words have moved is `OUT OF DATE` on the page and in the tool, never `UNDERSTOOD`. **That does not re-take it**: what the check buys is that nobody reads a stale count as a clean one. The fingerprint still answers a different question - WHICH LIBRARY was asked. **RE-TAKEN 2026-09-19** as `routing-2026-09-19b.json`, and the comparison is worth keeping: the two stores' md5 **differ** and **not one of the 43 answers moved**, so the fingerprint is a poor test of whether a recording is still true ([row 152](FRAGMENT-ISSUES.md)). The new one also carries what the RETRIEVER said about each answer ([row 157](FRAGMENT-ISSUES.md)) - **24 of 43 sentences carry a complaint, 12 of them among the 24 that reach** |
 
 ### What is NOT waiting on the PC, and is waiting on a person
 
@@ -1649,7 +1655,7 @@ a Revit to prove them.
 > afterwards** — no row and no group has been lost yet.
 **BUILT 2026-09-20, AND IT WAS SMALLER THAN THIS GROUP EXPECTED.** The judging
 half already existed and nothing had ever produced one - see
-[row 155](FRAGMENT-ISSUES.md). `validate --vary NAME=a,b,c --vary-field FIELD`
+[row 160](FRAGMENT-ISSUES.md). `validate --vary NAME=a,b,c --vary-field FIELD`
 is the running half, demonstrated end to end on `test projject` against
 `filter-elements-by-category`: `Ducts 8`, `Pipes 2`, `Air Terminals 0`,
 `Walls 28`, and `heron_validate draft` wrote a proper D-53 negative case from it.

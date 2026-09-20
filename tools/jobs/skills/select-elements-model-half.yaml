@@ -14,9 +14,13 @@
 #
 # THE WORDS IT CLAIMS, AND WHERE EACH ONE ACTUALLY LANDED:
 #   reach     select all the ducts                     -> SELECT_BY_CATEGORIES (hybrid)
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #   escalation highlight them                           -> HIGHLIGHT_VS_REST (hybrid)
+#                                                         and the RETRIEVER said so itself: a coin toss - no route preferred the winner
 #   reach     show me the ones you found               -> SET_SELECTION (identity)
 #   reach     select the 300x300 dampers               -> SELECT_BY_CATEGORIES (hybrid)
+#                                                         and the RETRIEVER said so itself: a coin toss - no route preferred the winner
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #
 # A `miss` is not automatically a defect - a skill composes several
 # capabilities and `lookup` returns ONE, so the single best answer sitting

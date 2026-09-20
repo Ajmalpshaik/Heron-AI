@@ -14,8 +14,11 @@
 # THE WORDS IT CLAIMS, AND WHERE EACH ONE ACTUALLY LANDED:
 #   reach     is the ductwork still connected          -> TRACE_CONNECTIVITY (identity)
 #   crossing  check the connections                    -> MIRROR_ELEMENTS (hybrid)
+#                                                         and the RETRIEVER said so itself: a coin toss - no route preferred the winner
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #   reach     did anything come apart                  -> SELECT_BY_CONNECTION_STATUS (identity)
 #   crossing  check the system is complete             -> AUTO_SIZE_MEP (hybrid)
+#                                                         and the RETRIEVER said so itself: the words route ranked the library rather than selecting from it
 #
 # A `miss` is not automatically a defect - a skill composes several
 # capabilities and `lookup` returns ONE, so the single best answer sitting
