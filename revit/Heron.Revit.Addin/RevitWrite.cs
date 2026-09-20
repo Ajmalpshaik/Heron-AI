@@ -895,6 +895,19 @@ namespace Heron.Revit.Addin
         /// could not do what was asked, and continuing past one produces a
         /// model that is subtly wrong rather than obviously unchanged. Those
         /// roll the whole thing back.
+        ///
+        /// AND SO IS ANYTHING ABOVE AN ERROR, WHICH THIS USED TO MISS. The
+        /// test was `== FailureSeverity.Error`, and `FailureSeverity` has a
+        /// fourth member above it: read out of the shipped `RevitAPI.dll` by
+        /// reflection rather than from memory, it is
+        /// `None=0, Warning=1, Error=2, DocumentCorruption=3` - the same on
+        /// Revit 2020 and Revit 2024. So `DocumentCorruption` matched neither
+        /// branch, was not rolled back, was not counted, and fell through to
+        /// Continue - leaving `warnings: 0` in the reply and in the audit while
+        /// Revit was reporting the worst thing it can report. The comparison is
+        /// `>=` so that a severity added above these is caught by arriving
+        /// rather than by somebody remembering to add a branch for it.
+        /// FRAGMENT-ISSUES section 5b, row 10.
         /// </summary>
         private sealed class CollectWarnings : IFailuresPreprocessor
         {
@@ -906,7 +919,7 @@ namespace Heron.Revit.Addin
 
                 foreach (var message in messages)
                 {
-                    if (message.GetSeverity() == FailureSeverity.Error)
+                    if (message.GetSeverity() >= FailureSeverity.Error)
                     {
                         return FailureProcessingResult.ProceedWithRollBack;
                     }

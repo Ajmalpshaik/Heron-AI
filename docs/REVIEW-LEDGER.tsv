@@ -11,3 +11,4 @@ when	who	path	blob	verdict	note
 2026-09-20	ajmal-pc	platform/Heron.Core/HeronOperationRegistry.cs	e5aa880b1209914c181c69b3eafabd911ab03d0f	clean	fails-closed verified by tests/test_tool_registry.py, which compares declarations against routing in BOTH languages and passes. NB routing is in RevitOperations.cs, not RevitDispatcher.cs - looking in the wrong file gives a false positive
 2026-09-20	ajmal-pc	revit/Heron.Revit.Addin/RevitWrite.cs	77c6e04ea0bcedab961f99dd4f3d3b98df579a0e	issue	5b-9,5b-10,5b-11,5b-12,5b-13
 2026-09-20	ajmal-pc	revit/Heron.Revit.Addin/RevitOperations.cs	8477ef461eed5ebf4f81495f799167740ce647ce	issue	5b-14,5b-15,5b-16
+2026-09-20	ajmal-pc	revit/Heron.Revit.Addin/RevitWrite.cs	8ba8996820bf306fb3ed56d17b24e19434e86d4b	issue	5b-9,5b-11,5b-12,5b-13 open; 5b-10 FIXED here
