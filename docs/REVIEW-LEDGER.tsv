@@ -1,1 +1,5 @@
 when	who	path	blob	verdict	note
+2026-09-20	ajmal-pc	platform/Heron.Core/HeronPaths.cs	4c6f1e992460eaad1930bbad65963dc551c7833a	issue	5b-1
+2026-09-20	ajmal-pc	platform/Heron.Core/HeronStop.cs	c8cc99638ca024cb2b6cb199dcb8d7acc9d2aeea	issue	5b-2
+2026-09-20	ajmal-pc	platform/Heron.Core/HeronAtomicWrite.cs	28651c8a4ab2f6d2d66d9bb0ad2268bdc5e477b0	clean	considered and dismissed: the .tmp name is shared, so two processes saving the same file race - but the only config writer is HeronPermissions on a user toggle, and BridgeIdentity writes a per-bridge file. Narrow, not a defect
+2026-09-20	ajmal-pc	platform/Heron.Core/HeronUnits.cs	ff9c599dfb6a573849f2a553ef7664741bc06948	clean	correct in itself; its guard IsUsableMillimetres is the one two callers fail to use - see 5b-3
