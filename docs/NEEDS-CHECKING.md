@@ -1783,6 +1783,38 @@ code that already worked, so the four states were re-rendered afterwards and com
 earlier PNGs **byte for byte: 4 of 4 identical**. A refactor that moves no pixels is the only kind
 worth doing to a window nobody has seen in Revit yet.
 
+### Revit 2027 is not being checked, and that is a decision rather than an omission
+
+**The owner's instruction, 2026-09-20:** *"some time for the revit 2027 is there issue... revit itself
+its not opening or its getting stuck... i need to inform my company... no need to chek that."* Revit
+2027 on that machine is unreliable in a way that has nothing to do with Heron, and he is raising it
+with his company. So the .NET 10 half of `Z9` is **not** going to be answered by a person looking at a
+screen, and nobody should later read the gap as work that was forgotten.
+
+**What IS proved on .NET 10, and it is more than nothing.** `pid 14608` logged
+`Heron loaded. Revit 2027, add-in 0.1.0.0` at `19:44:04Z`, nineteen minutes after that release's
+assembly was installed at `19:24:56Z` - so it is the build carrying the renamed ribbon and both
+windows. And that line is written **after** `BuildRibbon` returns: `OnStartup` builds the ribbon and
+only then logs, wrapping the whole thing so a failure shows `Heron failed to start` and returns
+`Result.Failed` instead. So on .NET 10:
+
+- `CreateRibbonTab("Heron")` and `CreateRibbonPanel("Heron", "AI Bridge")` both succeeded,
+- the split button, `Bridge Status`, the padlock and all four icons were created, and
+- nothing in that path threw.
+
+**What is NOT proved on .NET 10 is a window being DRAWN there** - `HeronWindowStyle`'s
+`ControlTemplate`s, the `AllowsTransparency` card and the drop shadow. Those are proved on **net472**
+and **net48**, which are the same WPF generation as each other and a different one from .NET 10.
+
+**The honest summary is that the riskier direction was covered by luck rather than by plan.** If only
+one framework family could be tested, the old one was the better one to have: it is where a modern
+WPF idiom is most likely to be missing. .NET 10 dropping something that works on 4.7.2 is the rarer
+failure. That is a reason to be reasonably confident, **not** a reason to write it down as proved.
+
+**The currently installed 2027 build has never been loaded at all.** It went in at `19:57:46Z`,
+thirteen minutes after the last 2027 session started. It differs from the one that did load by two log
+lines and nothing else.
+
 ### The log could not answer "did the window open?", and now it can
 
 **Asked on 2026-09-20 whether Bridge Status had been opened on Revit 2020, the log could not say.**
