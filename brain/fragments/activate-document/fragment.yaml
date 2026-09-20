@@ -7,7 +7,7 @@ heron-layer: brain
 id: FRG-DOC-030
 semantic-identity: "make a document on disk the window in front, project or family alike"
 kind: action
-domain: revit.documents
+domain: revit.document
 capability: ACTIVATE_DOCUMENT
 version: 1
 source: OFFICIAL
