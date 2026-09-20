@@ -1755,10 +1755,19 @@ difference between the two.
 | **Z7** | Press `Esc`, and separately drag the window by its header | `Esc` closes it. The header drags it. Neither is Revit's, because the window has no system chrome at all |
 | **Z8** | Look at it on a **150%** display | The one thing the render cannot answer. Text crisp, nothing clipped, the window centred on Revit rather than on the primary screen. Same unproven scaling path as `B17` above |
 | ~~**Z9**~~ | Do Z1 and Z2 on **2020** as well as on a modern release | 2020 is `net472` and 2027 is `net10.0-windows` - two different WPF stacks under the same source. `ControlTemplate` built from `FrameworkElementFactory` is the part most likely to differ, and the buttons are where it would show. **MOSTLY PROVED 2026-09-20, on Revit 2020.2.9.** `pid 26308` loaded at `19:42:15Z`, eighteen minutes after that release's assembly was installed at `19:24:44Z`, so it is the net472 build. **The ribbon was seen directly**, in a screenshot of Revit 2020 itself: one **Heron** tab, one **AI Bridge** panel, the **Heron** split button and the **Changes ON** padlock, both drawn with their icons. **The Changes window drew on net472 too**, by the same absent-fallback argument as `Z10`: `Write permission set to False` at `19:43:00Z` and `True` at `19:43:04Z`, the ON direction being the one that asks, with no `failed to open` line anywhere in the day. **`19:42:57Z Connected from the ribbon`** says the bridge button works there as well. **AND BRIDGE STATUS TOO, 2026-09-20**, from a screenshot of the window itself on Revit 2020. It identifies its own session and the identifiers match the log exactly: pipe `heron.2020.26308`, process `26308`, Revit `2020`, add-in `0.1.0.0`, protocol `2`, announced in `...bridges\26308.json`. Blue lamp on `Connected`, the `Changes` card amber with an `ON` chip - which agrees with `Write permission set to True` at `19:43:04Z` - and the discovery path wrapping onto two lines as `PathLine` is built to. So `FrameworkElementFactory` templates, the inset boxes, the wrap and the chip all draw on net472. **Z9 is answered on every part except a 150% display**, which is `Z8` and is nobody's to answer but a monitor's |
-| ~~**Z10**~~ | Press the **Changes** padlock while it is OFF | The Changes window, not a TaskDialog. Amber strip, amber lamp, `Let Heron change this model?`, three green ticks. The amber button reads **Turn changes on**. **PROVED 2026-09-20 by what is ABSENT.** On `pid 15920`, write went `False` at `19:39:44Z` and `True` at `19:39:50Z`; only the ON direction asks. The log line is the same whichever asked - but the TaskDialog fallback runs only when `Ask` returns null, which happens only on an exception that is itself logged, and there is no such line. So the window drew and the amber button was pressed |
+| ~~**Z10**~~ | Press the **Changes** padlock while it is OFF | The Changes window, not a TaskDialog. Amber strip, amber lamp, `Let Heron change this model?`, three green ticks. The amber button reads **Turn changes on**. **PROVED 2026-09-20, twice, and the second time is the better one.** First by what was ABSENT: on `pid 15920` write went `False` then `True`, only the ON direction asks, and the TaskDialog fallback runs only on an exception that is itself logged - of which there were none. Sound, and still an argument. **Then as a fact**: after the windows were taught to say so, `pid 19600` logged **`Changes window asked.`** at `20:38:00Z`, one second before the setting moved. No inference left in it |
 | **Z11** | In that window press `Esc`, then the **X**, then **Leave it off** | All three leave it off. The padlock does not move and the log says `Write toggle: offered, declined. Still off.` **`Enter` must do NOTHING** - there is deliberately no default button, because a confirmation you can clear by leaning on a key is not one |
 | ~~**Z12**~~ | Press **Turn changes on** | The padlock opens and its label changes to `Changes ON`. Open Bridge Status: the Changes card is amber and the chip reads `ON`, read from `heron.config` rather than remembered. **HALF PROVED 2026-09-20**: `Write permission set to True from the ribbon` at `19:39:50Z` is the setting moving, which is the half that matters. **What the log cannot see is the PICTURE** - whether the padlock redrew and whether Bridge Status then showed an amber chip. Still needs an eye |
-| **Z13** | Press the padlock again, while it is ON | **No window at all.** It goes straight to off. Making the safe direction slower is how people learn to click through warnings, and D-19 says the ON direction is the only one that asks. **NOT ANSWERED, and the log cannot answer it.** Write went to `False` at `19:39:44Z` with nothing else recorded - but a window that does not appear writes no line either, so silence proves nothing here. This one needs an eye |
+| ~~**Z13**~~ | Press the padlock again, while it is ON | **No window at all.** It goes straight to off. Making the safe direction slower is how people learn to click through warnings, and D-19 says the ON direction is the only one that asks. **PROVED 2026-09-20 at `20:37`, by the logging that was added BECAUSE of this row.** The sentence this replaces said the log could not answer it, and that was true until both windows started recording that they opened. On Revit 2024 `pid 19600`:
+
+```text
+20:37:57Z  Bridge Status opened: Connected.
+20:37:59Z  Write permission set to False from the ribbon.
+20:38:00Z  Changes window asked.
+20:38:01Z  Write permission set to True from the ribbon.
+```
+
+**No `Changes window asked` before the `False`**, and one before the `True`. Turning it off asked nothing; turning it on asked. That is D-19's shape, read off the machine |
 
 **The button inside the panel keeps the name `Heron`.** Offered as a rename to `Connect` on 2026-09-20 and declined by the owner the same day, so the full path stays
 `Heron > AI Bridge > Heron` and every printed string is already correct for it. Recorded so the repetition is not read later as an oversight worth tidying.
@@ -1773,6 +1782,38 @@ and all three button templates out of Bridge Status and into `HeronWindowStyle` 
 code that already worked, so the four states were re-rendered afterwards and compared to the
 earlier PNGs **byte for byte: 4 of 4 identical**. A refactor that moves no pixels is the only kind
 worth doing to a window nobody has seen in Revit yet.
+
+### Revit 2027 is not being checked, and that is a decision rather than an omission
+
+**The owner's instruction, 2026-09-20:** *"some time for the revit 2027 is there issue... revit itself
+its not opening or its getting stuck... i need to inform my company... no need to chek that."* Revit
+2027 on that machine is unreliable in a way that has nothing to do with Heron, and he is raising it
+with his company. So the .NET 10 half of `Z9` is **not** going to be answered by a person looking at a
+screen, and nobody should later read the gap as work that was forgotten.
+
+**What IS proved on .NET 10, and it is more than nothing.** `pid 14608` logged
+`Heron loaded. Revit 2027, add-in 0.1.0.0` at `19:44:04Z`, nineteen minutes after that release's
+assembly was installed at `19:24:56Z` - so it is the build carrying the renamed ribbon and both
+windows. And that line is written **after** `BuildRibbon` returns: `OnStartup` builds the ribbon and
+only then logs, wrapping the whole thing so a failure shows `Heron failed to start` and returns
+`Result.Failed` instead. So on .NET 10:
+
+- `CreateRibbonTab("Heron")` and `CreateRibbonPanel("Heron", "AI Bridge")` both succeeded,
+- the split button, `Bridge Status`, the padlock and all four icons were created, and
+- nothing in that path threw.
+
+**What is NOT proved on .NET 10 is a window being DRAWN there** - `HeronWindowStyle`'s
+`ControlTemplate`s, the `AllowsTransparency` card and the drop shadow. Those are proved on **net472**
+and **net48**, which are the same WPF generation as each other and a different one from .NET 10.
+
+**The honest summary is that the riskier direction was covered by luck rather than by plan.** If only
+one framework family could be tested, the old one was the better one to have: it is where a modern
+WPF idiom is most likely to be missing. .NET 10 dropping something that works on 4.7.2 is the rarer
+failure. That is a reason to be reasonably confident, **not** a reason to write it down as proved.
+
+**The currently installed 2027 build has never been loaded at all.** It went in at `19:57:46Z`,
+thirteen minutes after the last 2027 session started. It differs from the one that did load by two log
+lines and nothing else.
 
 ### The log could not answer "did the window open?", and now it can
 
