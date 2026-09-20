@@ -80,6 +80,8 @@ def main():
     reads("0.5 m", 500.0)
     reads("20 cm", 200.0)
     reads("1,200", 1200.0)              # someone typed a thousands separator
+    reads("1,234,567 mm", 1234567.0)    # several groups, still unambiguous
+    reads("1,000.5 mm", 1000.5)         # grouping AND a decimal point
     reads("+200", 200.0)
 
     print()
@@ -96,6 +98,17 @@ def main():
     refuses("2 ft", "feet are refused, not converted")
     refuses('6"', "inches are refused, not converted")
     refuses("200 200", "two numbers is not a distance")
+
+    # A DECIMAL COMMA IS NOT A THOUSANDS SEPARATOR, and the parser used to
+    # delete every comma without asking which it was. Measured 2026-09-21,
+    # before the fix: "1,5 m" gave 15000.0 mm where "1.5 m" gives 1500.0 -
+    # TEN TIMES, and it passed every check after it because 15 metres is in
+    # range, is not zero and is not NaN. Half of Europe writes a decimal that
+    # way. FRAGMENT-ISSUES section 5b, row 24.
+    refuses("1,5 m", "a decimal comma, and dropping it is ten times the move")
+    refuses("0,5 m", "the same, and it cleared every other check")
+    refuses("2,54 cm", "the same, in the unit an inch is usually converted to")
+    refuses("1,5", "the same with no unit, where mm is assumed")
 
     print()
     print("A refusal explains the unit rather than just saying no")
