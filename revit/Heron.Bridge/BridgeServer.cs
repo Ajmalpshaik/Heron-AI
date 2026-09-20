@@ -310,20 +310,50 @@ namespace Heron.Bridge
             // has no NamedPipeServerStream constructor taking a PipeSecurity.
             // It needs no extra package on a `-windows` target framework, which
             // was checked by building it.
-            var security = new PipeSecurity();
-            security.AddAccessRule(new PipeAccessRule(
-                WindowsIdentity.GetCurrent().User,
-                PipeAccessRights.ReadWrite | PipeAccessRights.CreateNewInstance,
-                AccessControlType.Allow));
+            //
+            // ASKED FOR ON WINDOWS ONLY, AND THAT IS NOT A WEAKENING. An ACL is
+            // a Windows object: constructing PipeSecurity anywhere else throws
+            // PlatformNotSupportedException before a single rule is added, so
+            // an unguarded call does not harden the pipe on Linux - it stops
+            // the server starting at all. Revit is Windows-only and the add-in
+            // never takes the other path. The one thing that does is
+            // tests/Heron.Bridge.TestHost, which runs this very server with no
+            // Revit and no Windows to prove the framing, the token check, the
+            // newest-connection handover and the lease
+            // (tests/test_bridge_roundtrip.py). It went red the day the ACL
+            // arrived, on the exception above, and a suite that cannot start
+            // the host proves nothing about any of them.
+            //
+            // What the other path gives up is the ACL and nothing else: on Unix
+            // .NET backs a named pipe with a socket under the temp directory,
+            // created with the process umask, and every request still has to
+            // carry the per-session token. It is a test transport, not a
+            // shipped one.
+            if (OperatingSystem.IsWindows())
+            {
+                var security = new PipeSecurity();
+                security.AddAccessRule(new PipeAccessRule(
+                    WindowsIdentity.GetCurrent().User,
+                    PipeAccessRights.ReadWrite | PipeAccessRights.CreateNewInstance,
+                    AccessControlType.Allow));
 
-            return NamedPipeServerStreamAcl.Create(
+                return NamedPipeServerStreamAcl.Create(
+                    _identity.PipeName,
+                    PipeDirection.InOut,
+                    PipeInstances,
+                    PipeTransmissionMode.Byte,
+                    PipeOptions.Asynchronous,
+                    4096, 4096,
+                    security);
+            }
+
+            return new NamedPipeServerStream(
                 _identity.PipeName,
                 PipeDirection.InOut,
                 PipeInstances,
                 PipeTransmissionMode.Byte,
                 PipeOptions.Asynchronous,
-                4096, 4096,
-                security);
+                4096, 4096);
 #endif
         }
 

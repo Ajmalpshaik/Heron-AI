@@ -40,6 +40,7 @@ WHAT IT PROVES
 """
 
 import importlib.util
+import io
 import os
 import re
 import sys
@@ -62,7 +63,7 @@ def check(ok, said):
 
 def state_of(line):
     """The state cell, read exactly as the tool reads it."""
-    cells = line.split("|")
+    cells = OD.CELL.split(line)
     return re.sub(r"[`*]", "", cells[-2]).strip()
 
 
@@ -125,6 +126,30 @@ def main():
             print("       no row argues with itself. That is today's state, "
                   "not a rule this suite enforces")
         check(True, "reported either way - a finding is a question")
+
+    print("\n5. every row of both sections has exactly three cells")
+    # THIS IS A GATE AND NOT A REPORT, which the four above deliberately are
+    # not. A malformed row is not a judgement call: the state cell is read by
+    # position, so a literal pipe anywhere in a row's text makes the tool read
+    # a fragment of a sentence as the state. Rows 15, 156 and 163 each did
+    # that, silently, and row 162 said OPEN for a day while the sweep counted
+    # it neither open nor settled. Write a literal pipe as \\| - in a code
+    # span too, which is where all four hid.
+    src = io.open(OD.REGISTER, encoding="utf-8").read()
+    opened = src.index(OD.SECTION_START)
+    body_text = src[opened:src.index(OD.SECTION_END)]
+    malformed = []
+    for line in body_text.split("\n"):
+        match = OD.ROW.match(line)
+        if not match:
+            continue
+        cells = OD.CELL.split(line)
+        if len(cells) != 5:
+            malformed.append((match.group(1), len(cells) - 2))
+    check(not malformed,
+          "no row holds a literal | (%s)"
+          % (", ".join("row %s has %d cells" % m for m in malformed)
+             if malformed else "all rows have 3"))
 
     print()
     if FAILURES:

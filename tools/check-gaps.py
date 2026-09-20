@@ -139,10 +139,6 @@ def check_tests():
     for name in sorted(os.listdir(folder)):
         if not name.startswith("test_") or not name.endswith(".py"):
             continue
-        if name == "test_bridge_roundtrip.py":
-            # Needs the compiled test host. Its absence is a build step, not a
-            # gap in the code, and check-compile covers the compiling.
-            continue
         started = time.time()
         try:
             proc = subprocess.run([sys.executable, os.path.join(folder, name)],

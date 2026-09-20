@@ -64,9 +64,10 @@ security descriptor, or the CreateNewInstance flag in note 2 of HANDOVER
 section 4. Revit runs on Windows, so a POSIX pass is a strong signal and is
 never the final word - A4 in NEEDS-CHECKING.md means the WINDOWS run.
 
-Exit 0 = the bridge works. This is the "Prove it" line for Step 1 in
-docs/27-build-order.md, in a form that can run in CI on a machine with no
-Revit installed.
+Exit 0 = the bridge works. Exit 3 = the host binary has not been built, so
+nothing was checked - that is NOT a pass, and the line above says what to run.
+This is the "Prove it" line for Step 1 in docs/27-build-order.md, in a form
+that can run in CI on a machine with no Revit installed.
 """
 
 import json
@@ -78,6 +79,10 @@ import sys
 import time
 
 WINDOWS = os.name == "nt"
+
+# The repository's fourth state - see tests/README.md. Not a pass, not a
+# failure: the suite could not run, and says so rather than guessing.
+COULD_NOT_RUN = 3
 
 REVIT_VERSION = "2024"
 HOST_LIFETIME_S = "45"
@@ -251,9 +256,17 @@ def call(handle, op, client=CLIENT):
 
 def main():
     if not os.path.exists(host_binary()):
-        print("FAIL  %s not found." % host_binary())
-        print("      %s" % BUILD_HINT)
-        return 1
+        # EXIT 3, NOT 1, AND THE DIFFERENCE IS THE WHOLE OF FRAGMENT-ISSUES
+        # ROW 162. A missing host binary is a build step nobody took, not a
+        # claim about the code - and while this path returned 1,
+        # tools/check-gaps.py had to silence the suite BY NAME to stop the
+        # sweep reporting a FAIL for it. A silenced suite prints nothing at
+        # all, so "every test passes" quietly meant one fewer than there are.
+        # Saying "could not run" out loud is what lets the sweep name it.
+        print("COULD NOT RUN - %s not found." % host_binary())
+        print("      Build it first: %s" % BUILD_HINT)
+        print("      This is exit 3, which is NOT a pass: nothing was checked.")
+        return COULD_NOT_RUN
 
     if WINDOWS:
         print("Starting the bridge host (no Revit)...")
