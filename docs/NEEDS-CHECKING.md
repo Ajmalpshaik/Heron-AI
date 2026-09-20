@@ -1758,3 +1758,35 @@ difference between the two.
 **Where the numbers came from.** The renders are reproducible: the harness compiles
 `revit/Heron.Revit.Addin/HeronBridgeStatusWindow.cs` directly, with no copy of it, and nothing about
 it is checked in - it is a scratch project, and rebuilding it is four lines of csproj.
+
+### And deploying it made A12's unguarded gap actually happen
+
+`A12` above recorded, on 2026-09-19, that `deploy-addin.ps1` **cannot tell `net472` from `net48`**
+because neither emits a `deps.json`, and closed with *"A 2024 build deployed into 2020 would pass every
+check. It did not happen here, but nothing stands behind that guard."*
+
+**On 2026-09-20 it happened.** The build folder is shared, this session had last built **2024**, and
+`deploy-addin.ps1 -RevitVersion 2020` copied that straight into `Addins/2020/Heron` and reported
+success. Read back out of the deployed bytes:
+`.NETFramework,Version=v4.8` sitting in the 2020 folder, which is supposed to be `v4.7.2`.
+
+**Caught by reading the assembly rather than by the script**, which is the point: every guard the
+script has said yes.
+
+Rebuilt per release and redeployed, each one verified from the deployed bytes rather than from a
+build log:
+
+| release | TFM in the deployed DLL |
+|---|---|
+| 2020 | `.NETFramework,Version=v4.7.2` |
+| 2024 | `.NETFramework,Version=v4.8` |
+| 2027 | `.NETCoreApp,Version=v10.0` |
+
+**It was probably harmless here** - .NET Framework 4.8 replaces 4.7.2 in place on Windows, so the
+assembly would very likely have loaded - and that is exactly what makes it worth writing down. A
+failure that does not show on the machine that caused it is one that shows on somebody else's.
+
+**The fix is the script's, not this change's**: `deploy-addin.ps1` should read the
+`TargetFrameworkAttribute` out of the assembly it is about to copy and refuse when it disagrees with
+the release being deployed for, instead of inferring from whether a `deps.json` exists. Until it does,
+**build for the release immediately before deploying for it**, every time.
