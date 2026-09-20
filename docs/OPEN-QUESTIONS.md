@@ -19,7 +19,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 56 answered · 1 open · nothing blocking any phase**
+**Progress: 57 answered · 0 open · nothing blocking any phase**
 
 **The count moved 1 → 3 on 2026-09-12 without anybody asking anything new.** `Q-54` and `Q-55` were
 raised on 2026-09-10 and 2026-09-11 and had been living in a work note — `Q-D` and `Q-E` in
@@ -1609,7 +1609,7 @@ moment to re-read this, not the moment to quietly make an exception.
 
 ---
 
-### 🟠 Q-57 — May a fragment or skill that WRITES declare a question? *(new, 2026-09-19)*
+### ✅ Q-57 — May a fragment or skill that WRITES declare a question? → **Only when answering it REQUIRES the write** *(asked 2026-09-19, answered 2026-09-21)*
 
 [FRAGMENT-ISSUES row 158](FRAGMENT-ISSUES.md) found **ten fragments and five skills above the write
 line declaring a sentence that asks and stops**, in their own `utterances:` blocks. The starkest is
@@ -1640,6 +1640,19 @@ So the question is not *are these wrong* but **what is the rule**:
 **The third is the current state by default, and it is the one nobody chose.** Choosing it explicitly
 would at least make `tools/check-declared-questions.py` a report that a reader can close rather than
 one that stays open forever.
+
+**Answer: the second one — a write may declare a question ONLY when the question cannot
+be answered without performing the write. See [D-86](DECISIONS.md).** Chosen 2026-09-21, over the
+blanket ban and over leaving it unruled. `sprinkler-layout` keeps *"how many sprinklers do I need"*,
+because counting them **is** the layout; `SET_VIEW_SCALE` loses *"what scale is this view"*, because
+a scale can be read without touching it.
+
+**The rule names the test and does not sort the fifteen** — each still needs a person to
+apply it, and that cost was accepted with the answer. **One consequence is sharp enough to record
+here and not only in the decision:** a sentence that LEAVES a write needs somewhere to go first.
+[Row 146](FRAGMENT-ISSUES.md) measured a view's scale as the library's one CERTAIN capability gap
+— nothing reads it — so removing that sentence before something can answer it drops it
+into ranking, where it may find a different writer. **Build the READ, then move the sentence.**
 
 → [FRAGMENT-ISSUES row 158](FRAGMENT-ISSUES.md), [row 137](FRAGMENT-ISSUES.md),
 [row 113](FRAGMENT-ISSUES.md), [14 — Golden Rules](14-golden-rules.md)
