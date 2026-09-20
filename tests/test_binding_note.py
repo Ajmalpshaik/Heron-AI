@@ -75,40 +75,62 @@ def _asked(what):
     return out.decode("utf-8", "replace")
 
 
-def _has_sdk():
-    """Is there an SDK here, not merely a runtime?
+def _majors(said, prefix=None):
+    """The MAJOR version of every line dotnet listed, highest last.
 
-    THE TWO ARE DIFFERENT AND THIS SUITE NEEDS THE SDK. A runtime RUNS a
-    built assembly; only an SDK BUILDS one, and this suite builds its host
-    before running it. Asking `--list-runtimes` alone answers the wrong
-    question: on a machine with a runtime and no SDK it returns a target,
-    `dotnet build` then fails, and a missing dependency is reported as a
-    FAILING REPOSITORY - exactly the confusion FRAGMENT-ISSUES row 162 is
-    about, in the suite that row's own repair is named after.
+    `--list-runtimes` prints "Microsoft.NETCore.App 10.0.12 [path]" and
+    `--list-sdks` prints "10.0.112 [path]", so the version is the first field
+    for one and the second for the other. One reader with a prefix rather
+    than two, because two would drift.
     """
-    said = _asked("--list-sdks")
-    return bool(said and said.strip())
+    out = []
+    for line in (said or "").splitlines():
+        parts = line.split()
+        if prefix:
+            if not line.startswith(prefix):
+                continue
+            parts = parts[1:]
+        if not parts:
+            continue
+        try:
+            out.append(int(parts[0].split(".")[0]))
+        except ValueError:
+            continue
+    return sorted(set(out))
 
 
 def _tfm():
-    """The newest Microsoft.NETCore.App this machine can actually run.
+    """The newest framework BOTH an installed SDK can build and a runtime can run.
 
-    Asked rather than assumed, the same way tests/test_bridge_roundtrip.py
-    asks it - a hardcoded target framework is how a suite comes to need a
-    specific SDK for no reason anybody wrote down.
+    A RUNTIME AND AN SDK ARE DIFFERENT THINGS AND THIS SUITE NEEDS BOTH. Only
+    an SDK BUILDS an assembly; only a runtime RUNS one. This suite builds its
+    host and then runs it, so it needs a target that is under the newest SDK
+    and present among the runtimes.
+
+    ASKING EITHER ONE ALONE PICKS A TARGET THAT CANNOT BE BUILT, and both
+    mistakes were review findings on PR #212 rather than guesses:
+
+      - runtimes alone: a machine with a runtime and NO SDK returns a target,
+        `dotnet build` fails, and a missing dependency is reported as a
+        FAILING REPOSITORY;
+      - and adding a bare "is there any SDK" is not enough either - a .NET 10
+        runtime beside only the .NET 8 SDK still selects `net10.0`, which
+        that SDK cannot target, and the build fails the same way.
+
+    Both end as exit 1 where the honest answer is exit 3. That is exactly the
+    confusion FRAGMENT-ISSUES row 162 is about, in the suite that row's own
+    repair is named after, which is why it is worth this much care.
+
+    Returns None when no runtime and SDK meet.
     """
-    said = _asked("--list-runtimes")
-    if said is None:
+    runtimes = _majors(_asked("--list-runtimes"), "Microsoft.NETCore.App")
+    sdks = _majors(_asked("--list-sdks"))
+    if not runtimes or not sdks:
         return None
-    majors = []
-    for line in said.splitlines():
-        if not line.startswith("Microsoft.NETCore.App "):
-            continue
-        try:
-            majors.append(int(line.split()[1].split(".")[0]))
-        except (IndexError, ValueError):
-            continue
-    return "net%d.0" % max(majors) if majors else None
+    # An SDK builds for its own major and older, so the target cannot be
+    # newer than the newest SDK - and it must be one a runtime can run.
+    usable = [m for m in runtimes if m <= max(sdks)]
+    return "net%d.0" % max(usable) if usable else None
 
 
 CALL_SITE = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitFragment.cs")
@@ -154,27 +176,34 @@ def crosses_the_seam():
 def main():
     tfm = _tfm()
     if tfm is None:
-        print("COULD NOT RUN - no .NET runtime on this machine.")
-        print("  Linux:   apt-get install -y dotnet-sdk-10.0")
-        print("  This is exit 3, which is NOT a pass: nothing was checked.")
-        return COULD_NOT_RUN
-
-    if not _has_sdk():
-        print("COULD NOT RUN - a .NET runtime is here but no SDK, and this")
-        print("  suite BUILDS its host before running it.")
+        print("COULD NOT RUN - no framework here that an installed SDK can")
+        print("  build AND an installed runtime can run. This suite BUILDS")
+        print("  its host and then runs it, so it needs both.")
         print("  Linux:   apt-get install -y dotnet-sdk-10.0")
         print("  This is exit 3, which is NOT a pass: nothing was checked.")
         return COULD_NOT_RUN
 
     out_dir = "bin/x64/Debug-%s/" % tfm
-    built = subprocess.call(
+    # READ THE OUTPUT RATHER THAN ONLY PIPING IT. `subprocess.call` with
+    # stdout=PIPE and nobody reading deadlocks as soon as the child fills the
+    # OS pipe buffer - 64 KiB on Linux, which a verbose restore failure
+    # passes easily. Demonstrated rather than assumed: a child writing 1 MB
+    # to a piped stdout under `call` never returns. The suite would then hang
+    # until the outer CI timeout instead of saying PASS, FAIL or NOT RUN.
+    # `run` reads the pipe, so it cannot fill, and the captured text is then
+    # there to PRINT - which the old version threw away, leaving a build
+    # failure with no diagnostic. A Codex review on PR #212 raised both.
+    built = subprocess.run(
         ["dotnet", "build", HOST, "-p:RevitVersion=2024",
          "-p:HeronTfm=%s" % tfm, "-p:OutputPath=%s" % out_dir],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    if built != 0:
-        print("FAILED - the test host did not build.")
+    if built.returncode != 0:
+        print("FAILED - the test host did not build for %s." % tfm)
         print("  dotnet build %s -p:RevitVersion=2024 -p:HeronTfm=%s "
               "-p:OutputPath=%s" % (HOST, tfm, out_dir))
+        said = (built.stdout or b"").decode("utf-8", "replace").strip()
+        for line in said.splitlines()[-25:]:
+            print("    %s" % line)
         return 1
 
     dll = os.path.join(HOST, out_dir, "Heron.BindingNote.TestHost.dll")

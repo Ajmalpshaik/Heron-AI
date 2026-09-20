@@ -152,9 +152,11 @@ reading in writing because the shape of the mistake is the point.
 
 The condition `5669e7e` set is now met and Banner is listed: `tools/check-compile.py` on **Linux**,
 the **10.0.x** SDK, `-p:EnableWindowsTargeting=true` — the same command, OS, SDK line and flag
-`gates.yml` itself uses — builds **all seven projects on all eight releases**. `heron_dotnet.unlisted()`
-now **fails the gate** on any `.csproj` that neither `PROJECTS` nor the named `NOT_SHIPPED` accounts
-for, so the next exclusion has to be readable where the gate is.
+`gates.yml` itself uses — builds **every project in `PROJECTS` on every release in `RELEASES`**, and
+CI has since done the same. No totals are written here on purpose: the gate prints its own, and both
+lists are meant to grow. `heron_dotnet.unlisted()` now **fails the gate** on any `.csproj` that
+neither `PROJECTS` nor the named `NOT_SHIPPED` accounts for, so the next exclusion has to be readable
+where the gate is.
 
 **LEFT FOR THE NEXT SESSION — [row 162](FRAGMENT-ISSUES.md), recorded and not fixed.** **One suite
 more sits in `tests/` than `check-gaps.py` ever runs**, and no total is written here on purpose —
