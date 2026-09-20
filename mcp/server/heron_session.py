@@ -62,6 +62,84 @@ class NotBound(Exception):
         self.sessions = sessions or []
 
 
+# ---------------------------------------------------------------- the wall
+#
+# WHICH REVIT RELEASE THE VERSION FILTER SHOULD USE, AND HOW THAT WAS DECIDED.
+# A PURE function of what is connected, so it can be tested with no Revit and
+# no MCP SDK - which is the whole reason it lives here rather than beside its
+# one caller in `heron_mcp_server.py`, a module CI cannot import.
+
+NOTHING_CONNECTED = "nothing is connected"
+CANNOT_BE_READ = "the connected Revits could not be read"
+
+
+def version_for_filter(live, chosen_pid, chosen_explicitly):
+    """(release, how) for the version wall, from what is connected.
+
+    SIX ANSWERS, WHERE THE OLD BODY HAD FOUR AND ONE OF THOSE COVERED THREE
+    DIFFERENT SITUATIONS:
+
+        release + "chosen"                       picked, and still live
+        release + "assumed, not chosen"          bound without being picked
+        release + "the only Revit connected"     one live, so used and named
+        None    + "nothing is connected"         )
+        None    + "N Revits ... none chosen"     ) all three were (None, None)
+        None    + "the Revit you chose ... "     )
+
+    `_revit_version` returned `(None, None)` for the last three alike, and its
+    caller printed *"No Revit is connected, so the version filter did not
+    run"* for all of them. FRAGMENT-ISSUES row 130 is a modeller with two
+    Revits open being told none was - measured with sessions 20472 and 36908
+    live, and `revit_use_session 36908` in the very next call naming one of
+    them. Row 159 is the third, which was worse: it did not print that
+    sentence at all, it returned the SURVIVOR's release.
+
+    **AND THE WORDING IS THE SMALLER HALF.** The filter genuinely did not run,
+    so no fragment was checked against the release it would run on - and the
+    configuration where that check matters MOST is exactly the one that
+    reached this path: more than one release open at once.
+
+    `how` is never None. An answer with no release still says WHY, because
+    *nothing is connected* and *four are and you have not picked* send a
+    reader to different actions, and D-52's rule is that an absent measurement
+    is not a clean one.
+
+    AN ASSUMPTION IS STILL NAMED AS ONE. With exactly one Revit live and no
+    choice made, the release is used and called *the only Revit connected* -
+    this file's own table says an assumption is not a choice, and the cheapest
+    place to keep that honest is where it is made.
+    """
+    live = list(live or [])
+    if chosen_pid is not None:
+        for one in live:
+            if one.pid == chosen_pid:
+                return one.revit_version, ("chosen" if chosen_explicitly
+                                           else "assumed, not chosen")
+        if chosen_explicitly:
+            # A CHOICE THAT HAS CLOSED IS NOT AN INVITATION TO TAKE THE NEXT
+            # ONE, and the old code took it. With the chosen Revit gone and
+            # exactly one other live, it fell to the branch below and returned
+            # that one's release as "the only Revit connected" - the version
+            # wall quietly moving to a release the user never picked. This
+            # file's own table, four lines from here, is the rule it broke:
+            # CHOSEN + it closed -> STOP. Never slide onto another.
+            #
+            # Found 2026-09-20 by reading this function while repairing row
+            # 130, not by the row, and recorded separately as row 159.
+            return None, ("the Revit you chose (pid %s) has closed"
+                          % chosen_pid)
+    if len(live) == 1:
+        return live[0].revit_version, "the only Revit connected"
+    if not live:
+        return None, NOTHING_CONNECTED
+    # SEVERAL, AND NONE PICKED. Naming the count is what makes the sentence
+    # actionable: a reader who is told "2 are connected" knows there is
+    # something to pick between, where "none is connected" tells them to go
+    # and start Revit.
+    return None, ("%d Revits are connected and none has been chosen"
+                  % len(live))
+
+
 class SessionBinding(object):
     """Which Revit this chat is talking to, and how that was decided."""
 

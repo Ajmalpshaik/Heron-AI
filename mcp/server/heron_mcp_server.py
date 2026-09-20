@@ -66,6 +66,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "client"))
 
 import heron_bridge_client as bridge          # noqa: E402
+import heron_session as session                      # noqa: E402
 from heron_session import SessionBinding, NotBound   # noqa: E402
 from heron_write import (BadDistance, DocumentPin, PendingApproval,   # noqa: E402
                          describe_vertical, parse_millimetres)
@@ -1132,27 +1133,27 @@ def _revit_version():
     means - a fair question before touching a model, an absurd one before
     reading a file that shipped with Heron. So this never calls it.
 
-    Returns (None, None) when nothing is connected, and the caller then says
-    the version filter did not run rather than quietly leaving it out.
+    THE RULE IS IN `heron_session.version_for_filter` AND ONLY THE PLUMBING IS
+    HERE - gather what is connected, ask, close. That module imports no MCP
+    SDK, so `tests/test_session_binding.py` exercises every outcome with no
+    Revit and CI runs it; this module CI cannot even import.
+
+    `how` is NEVER None, including when there is no release. It used to be,
+    and `(None, None)` meant two different things - nothing connected, or
+    several connected and none chosen - which is FRAGMENT-ISSUES row 130.
     """
     try:
         live, _starting, _mismatched = binding.sessions()
-    except Exception:
-        return None, None
+    except Exception as why:                                   # noqa: BLE001
+        # NAMED, NOT SWALLOWED. A reader told "nothing is connected" when the
+        # truth is "I could not look" goes and starts a Revit that is already
+        # running (D-52).
+        return None, "%s (%s)" % (session.CANNOT_BE_READ,
+                                  type(why).__name__)
 
     try:
-        if binding.pid is not None:
-            for b in live:
-                if b.pid == binding.pid:
-                    return b.revit_version, ("chosen" if binding.was_chosen
-                                             else "assumed, not chosen")
-        if len(live) == 1:
-            # An assumption, and named as one. It decides only which fragments
-            # are OFFERED, never which model is touched - but rule 5 of the
-            # handover's own list is that an assumption is not a choice, and
-            # the cheapest place to keep that honest is where it is made.
-            return live[0].revit_version, "the only Revit connected"
-        return None, None
+        return session.version_for_filter(live, binding.pid,
+                                          binding.was_chosen)
     finally:
         for b in live:
             b.close()
@@ -1373,7 +1374,16 @@ def heron_lookup(request: str) -> str:
 
     if revit is None:
         lines.append("")
-        lines.append("No Revit is connected, so the version filter did not run.")
+        # THE FIRST LETTER ONLY. `.capitalize()` lower-cases the rest, so
+        # "2 Revits are connected" came out as "2 revits" - the product's
+        # own name in lower case, in a sentence a modeller reads.
+        said = how or session.NOTHING_CONNECTED
+        lines.append("%s%s, so the version filter did not run."
+                     % (said[:1].upper(), said[1:]))
+        if how and "none has been chosen" in how:
+            lines.append("Pick one with `revit_use_session <pid>` and ask "
+                         "again - with more than one release open, the "
+                         "filter is the thing that matters most.")
     else:
         lines.append("")
         lines.append("Filtered to Revit %s (%s)." % (revit, how))
@@ -1491,7 +1501,16 @@ def heron_context(request: str, path: str = "", full: bool = False,
         lines.append("")
 
     if revit is None:
-        lines.append("No Revit is connected, so the version filter did not run.")
+        # THE FIRST LETTER ONLY. `.capitalize()` lower-cases the rest, so
+        # "2 Revits are connected" came out as "2 revits" - the product's
+        # own name in lower case, in a sentence a modeller reads.
+        said = how or session.NOTHING_CONNECTED
+        lines.append("%s%s, so the version filter did not run."
+                     % (said[:1].upper(), said[1:]))
+        if how and "none has been chosen" in how:
+            lines.append("Pick one with `revit_use_session <pid>` and ask "
+                         "again - with more than one release open, the "
+                         "filter is the thing that matters most.")
     else:
         lines.append("Filtered to Revit %s (%s)." % (revit, how))
 
