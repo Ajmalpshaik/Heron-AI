@@ -133,6 +133,24 @@ def main():
         print("Directory.Build.props first - D-05, the runtime table is never guessed.")
         return 2
 
+    # BEFORE ANY BUILDING, AND DELIBERATELY BEFORE THE .NET CHECK. A project
+    # nobody listed is a hole in this gate whatever is installed, and saying so
+    # needs no compiler - so it is caught on a machine with no .NET too.
+    forgotten = NET.unlisted()
+    if forgotten:
+        print("FAIL  %d .csproj on disk that nothing here builds:"
+              % len(forgotten))
+        for one in forgotten:
+            print("        %s" % one)
+        print()
+        print("      This gate compiles the list in brain/heron_dotnet.py, and a")
+        print("      project missing from it is never built on ANY release.")
+        print("      Heron.Banner.TestHost was held back that way for three days")
+        print("      for a good reason nobody could find, because the reason was")
+        print("      in a commit message - FRAGMENT-ISSUES row 161. Add it to")
+        print("      PROJECTS, or to NOT_SHIPPED where the reason is READABLE.")
+        return 1
+
     ok, detail = have_dotnet()
     if not ok:
         print("FAIL  no .NET SDK on this machine (%s)" % detail)
@@ -195,8 +213,10 @@ def main():
         return 1
 
     print()
-    print("Every project compiles on every version tried. That is the API surface")
-    print("agreeing - it is NOT evidence that anything behaves correctly. D3 in")
+    print("All %d projects compile on every version tried, and no .csproj on"
+          % len(PROJECTS))
+    print("disk is missing from that list. That is the API surface agreeing -")
+    print("it is NOT evidence that anything behaves correctly. D3 in")
     print("NEEDS-CHECKING.md is still the line that catches a unit error.")
     return 0
 

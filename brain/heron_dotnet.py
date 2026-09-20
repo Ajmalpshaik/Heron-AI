@@ -82,13 +82,40 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Every project, in dependency order so the first failure is the deepest one.
+#
+# IT SAID "EVERY PROJECT" WHILE NAMING FIVE OF SIX. `Heron.Banner.TestHost`
+# was left out ON PURPOSE when it arrived on 2026-09-17 (`5669e7e`), and the
+# reason was sound: it is a WinExe WPF project, CI builds on Linux with
+# EnableWindowsTargeting, and that combination had never been watched go
+# green. THE REASON LIVED ONLY IN THE COMMIT MESSAGE. Nothing in this file,
+# in the project file, or in the gate said a project was being held back, so
+# the next reader could not tell a decision from an oversight - and the
+# comment above them read "every project". That is FRAGMENT-ISSUES row 161.
+#
+# The condition that commit set was "trivial once someone has watched one
+# green run". It has been watched: 2026-09-20, `tools/check-compile.py` on
+# Linux with the 10.0.x SDK and -p:EnableWindowsTargeting=true - the same
+# command, OS, SDK line and flag gates.yml uses - built all seven projects on
+# all eight releases, Banner included. So it is listed now, on that evidence.
+#
+# `tools/api-surface` stays out: it is a tool that reads the Revit assemblies
+# rather than something Heron ships, and it targets no Revit release. It is
+# named in NOT_SHIPPED instead of being silently absent, because silently
+# absent is the thing that went wrong here.
 PROJECTS = [
     "platform/Heron.Core/Heron.Core.csproj",
     "revit/Heron.Bridge/Heron.Bridge.csproj",
     "revit/Heron.Revit.Addin/Heron.Revit.Addin.csproj",
+    "tests/Heron.Banner.TestHost/Heron.Banner.TestHost.csproj",
+    "tests/Heron.BindingNote.TestHost/Heron.BindingNote.TestHost.csproj",
     "tests/Heron.Bridge.TestHost/Heron.Bridge.TestHost.csproj",
     "tests/Heron.StackGuard.TestHost/Heron.StackGuard.TestHost.csproj",
 ]
+
+# The one project that is a tool rather than something Heron ships. Named here
+# so `unlisted()` can tell "deliberately out" from "somebody forgot", which is
+# the distinction the missing Banner host had no way to make.
+NOT_SHIPPED = ["tools/api-surface/ApiSurface.csproj"]
 
 # The range Directory.Build.props knows how to target. Kept as an explicit list
 # rather than a range() so that adding a Revit release is a deliberate edit
@@ -234,6 +261,97 @@ def why_unbuildable(release, desktop_major):
                 "the WindowsDesktop targets is .NET %d; %s"
                 % (needed, desktop_major, fix))
     return None
+
+
+def unlisted(root=None):
+    """
+    Every .csproj on disk that neither PROJECTS nor NOT_SHIPPED names.
+
+    THE SAME ARGUMENT `disagreements()` MAKES, ONE LEVEL UP: a hand-written
+    list is only worth keeping if something checks it, and nothing did.
+    `Heron.Banner.TestHost` sat beside a comment reading *"every project"*
+    for long enough to answer two NEEDS-CHECKING rows, and the compile gate
+    never built it once - on any release.
+
+    Returns paths in the repository's own spelling, sorted, so a caller can
+    print them. It reads the SOURCE TREE and never the build, so it holds on a
+    machine with no .NET at all - which is the point: the failure it catches
+    is somebody adding a project, not somebody's toolchain.
+
+    IT ASKS GIT WHICH PROJECTS ARE TRACKED, and walks the disk only when git
+    cannot answer. A walk alone reports a GENERATED project as forgotten:
+    `check-fragments-compile.py --keep` deliberately leaves
+    `build/<version>/FragmentCheck.csproj` behind for inspection, `build/` is
+    in `.gitignore`, and the gate would then exit 1 on the next run because an
+    earlier documented command was given a documented flag. A tracked file is
+    exactly the right test - a project nobody committed is not one this gate
+    was written to compile.
+    """
+    where = ROOT if root is None else root
+    known = set(PROJECTS) | set(NOT_SHIPPED)
+    found = _tracked_projects(where)
+    if found is None:
+        found = _walked_projects(where)
+    return sorted(rel for rel in found if rel not in known)
+
+
+def _tracked_projects(where):
+    """Every .csproj git tracks, or None when git cannot say.
+
+    None rather than an empty list, and the distinction is the whole reason
+    this is a separate function: "git told me there are none" and "there is no
+    git here" are different answers, and D-52 says an absent measurement is
+    not a clean one. An empty result from a real repository is believed; a
+    missing git falls back to the walk.
+    """
+    try:
+        out = subprocess.check_output(
+            ["git", "-C", where, "ls-files", "--", "*.csproj"],
+            stderr=subprocess.DEVNULL)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return [line.strip().replace("\\", "/")
+            for line in out.decode("utf-8", "replace").splitlines()
+            if line.strip()]
+
+
+def _generated_dirs(where):
+    """Directory names .gitignore says hold generated output.
+
+    READ RATHER THAN TYPED, and that is not only the house rule about derived
+    values. The tree that made this necessary is where the generated
+    FragmentCheck project lands, and naming it here would be a second list to
+    keep in step with .gitignore - which is the failure this repository keeps
+    having. Only the plain `name/` lines are taken; a pattern with a wildcard
+    or a slash inside is not a directory name and is left alone.
+    """
+    names = {".git"}
+    try:
+        text = io.open(os.path.join(where, ".gitignore"), encoding="utf-8").read()
+    except (IOError, OSError):
+        return names
+    for line in text.splitlines():
+        line = line.strip()
+        if (not line or line.startswith("#") or not line.endswith("/")
+                or any(ch in line for ch in "*?![")):
+            continue
+        name = line[:-1].lstrip("/")
+        if name and "/" not in name:
+            names.add(name)
+    return names
+
+
+def _walked_projects(where):
+    """The fallback for a tree that is not a git checkout."""
+    skip = _generated_dirs(where)
+    out = []
+    for folder, dirs, files in os.walk(where):
+        dirs[:] = [d for d in dirs if d not in skip]
+        for name in files:
+            if name.endswith(".csproj"):
+                rel = os.path.relpath(os.path.join(folder, name), where)
+                out.append(rel.replace(os.sep, "/"))
+    return out
 
 
 def disagreements(table=None):
