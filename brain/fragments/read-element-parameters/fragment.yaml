@@ -122,6 +122,14 @@ utterances:
   - read the mark values
   - get the size parameter
   - which ones have no value
+  # ADDED 2026-09-20. Measured: this sentence reached REPOINT_VIEW_REFERENCE, a
+  # MODIFY. The READ it beat was FIND_UNTAGGED_ELEMENTS, and that is the WRONG
+  # owner - a tag is an annotation, a Mark is an instance parameter, and an
+  # element can have one without the other. No capability in the library reads
+  # Mark by name; this one declares 'what is the Mark on these' and 'which ones
+  # have no value', which together ARE this question. Mark is an identifier and
+  # is never bulk-written, so a READ owning the sentence is the safe end of it.
+  - what is missing its mark
   - what level are they on
   - which level is each duct on
   - what parameters does this duct have
