@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -93,6 +93,39 @@ contract:
       # doubt it (D-52).
       role: accounting
       type: int
+
+proof:
+  date: '2026-09-20'
+  by: Ajmal PS
+  model: test projject (3,565 elements), Revit 2024, session 36216
+  positive_case: run with defaultClearance=1 - the first of 5 tracked inputs - the arrangement
+    was re-made first by running select-by-category-name, set-selection with this phase's
+    own values. returned MillimetresPerFoot 304.8, axisGap Func`5, clearances 0 entry(ies),
+    defaultClearance 0.00328083989501312, gapsMm 4 entry(ies), includeInsulation false, jacketOf
+    Func`2, judgedBy 4 entry(ies), pairsChecked 56, targetInfo 8 item(s) [[Autodesk.Revit.DB.Mechanical.Duct,
+    Autodesk.Revit.DB.Boundi..., [Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi...,
+    [Autodesk.Revit.DB.Mechanical.Duct, Autodesk.Revit.DB.Boundi..., ...], targetJacket 8
+    entry(ies), tooClose 4 item(s) [925780 -> 925782, 925782 -> 925780, 925782 -> 925784,
+    ...]. inputs came elements from set-selection (8); targets from set-selection as 'elements'
+    (8); defaultClearance as given; rules as given (0); includeInsulation as given. on test
+    projject
+  negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). check-minimum-clearance\
+    \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
+    \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
+    \ about a set it was not given - is caught here by the answer following the input exactly\
+    \ across 5 different inputs:\n\n      defaultClearance=1 -> tooClose 4 item(s) [925780\
+    \ -> 925782, 925782 -> 925780, 925782 -> 925784, ...]\n      defaultClearance=1500 ->\
+    \ tooClose 6 item(s) [925780 -> 925782, 925782 -> 925780, 925782 -> 925784, ...]\n   \
+    \   defaultClearance=3000 -> tooClose 6 item(s) [925780 -> 925782, 925782 -> 925780, 925782\
+    \ -> 925784, ...]\n      defaultClearance=6000 -> tooClose 10 item(s) [925780 -> 925782,\
+    \ 925780 -> 925784, 925782 -> 925780, ...]\n      defaultClearance=20000 -> tooClose 18\
+    \ item(s) [925780 -> 925782, 925780 -> 925784, 925782 -> 925780, ...]\n\n    Different\
+    \ inputs, exact matches every time. A fragment falling back to the active view, the whole\
+    \ model, or a previous run could not do that."
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 26cbfa1fe88697fd
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
