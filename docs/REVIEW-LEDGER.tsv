@@ -6,3 +6,6 @@ when	who	path	blob	verdict	note
 2026-09-20	ajmal-pc	platform/Heron.Core/HeronPermissions.cs	899f85931b72c8b7647bcd357f2c844e99f17580	issue	5b-4
 2026-09-20	ajmal-pc	platform/Heron.Core/HeronAudit.cs	d5037feaf1d26e8eaa0805f8a5aff0061dbae4d2	issue	5b-5
 2026-09-20	ajmal-pc	platform/Heron.Core/HeronIdentity.cs	e3df4d667177b126b0ad73238b29ac050f9989af	issue	5b-6
+2026-09-20	ajmal-pc	platform/Heron.Core/HeronLease.cs	635bf63c7fe0b78f664cf0578c8f4af7943d7e51	clean	correct and wired in (BridgeServer.cs:430). Its only test cover is the suite row 162 silences - recorded as 5b-7
+2026-09-20	ajmal-pc	platform/Heron.Core/HeronConfig.cs	88543f3016832b734df8a492550f87d500807976	issue	5b-8
+2026-09-20	ajmal-pc	platform/Heron.Core/HeronOperationRegistry.cs	e5aa880b1209914c181c69b3eafabd911ab03d0f	clean	fails-closed verified by tests/test_tool_registry.py, which compares declarations against routing in BOTH languages and passes. NB routing is in RevitOperations.cs, not RevitDispatcher.cs - looking in the wrong file gives a false positive
