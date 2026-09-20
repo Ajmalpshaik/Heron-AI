@@ -35,8 +35,23 @@ namespace Heron.Revit.Addin
     /// </summary>
     public sealed class HeronApplication : IExternalApplication
     {
-        private const string TabName = "Heron AI";
-        private const string PanelName = "Bridge";
+        // THE RIBBON LABELS, and only the labels.
+        //
+        // D-37 settled that the product is called Heron AI and said the name
+        // "stays in the ribbon tab". D-85 narrows that one sentence on
+        // Ajmal's instruction, 2026-09-20: the TAB reads "Heron", and the
+        // "AI" moves onto the panel that actually carries it - the bridge is
+        // the thing an AI talks through, and nothing else on this tab is.
+        //
+        // The product name is untouched: assemblies, folders, the manifest
+        // and every document still say Heron AI. Only what Revit draws
+        // changed, so nothing installed or written down breaks.
+        //
+        // These two strings are the ribbon path users are TOLD, so anything
+        // that prints it - the MCP server, the health report, the deploy
+        // script - has to agree with them. "Heron > AI Bridge > Heron".
+        private const string TabName = "Heron";
+        private const string PanelName = "AI Bridge";
 
         /// <summary>The pictures that ARE the connected / disconnected state.</summary>
         internal const string ConnectedIcon = "BridgeConnected.png";
@@ -165,7 +180,7 @@ namespace Heron.Revit.Addin
             {
                 // Never take Revit down. A failed add-in should be visible and
                 // inert, not fatal.
-                TaskDialog.Show("Heron AI", "Heron failed to start:\n\n" + ex.Message);
+                TaskDialog.Show("Heron", "Heron failed to start:\n\n" + ex.Message);
                 return Result.Failed;
             }
         }

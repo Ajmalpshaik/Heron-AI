@@ -295,5 +295,5 @@ def _nothing_connected(starting, mismatched):
     if mismatched:
         return ("A Revit is connected but speaks a different protocol version. Restart that "
                 "Revit to finish updating; Heron will not talk across protocols.")
-    return ("No Revit is connected. Open Revit, then press  Heron AI > Heron  on the ribbon. "
+    return ("No Revit is connected. Open Revit, then press  Heron > AI Bridge > Heron  on the ribbon. "
             "The button lights up when it is connected.")

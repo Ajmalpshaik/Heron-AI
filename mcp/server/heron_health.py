@@ -148,7 +148,7 @@ def assess(live=None, starting=None, mismatched=None, config_problems=None,
         # The designed resting state. Not a fault.
         components.append(Component(
             "bridge", WARNING,
-            "no Revit connected. Open Revit and press Heron AI > Heron - a Revit that "
+            "no Revit connected. Open Revit and press Heron > AI Bridge > Heron - a Revit that "
             "was never connected is invisible to Heron by design"))
 
     # --- the two halves understanding each other --------------------------

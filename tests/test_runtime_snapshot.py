@@ -72,7 +72,7 @@ def main():
     idle = rt.snapshot(ASKED, LIBRARY, release="2024", bridge="none")
     check(verdict(idle, "SET_SELECTION").verdict == rt.NEEDS_REVIT,
           "permitted, with no Revit answering -> NEEDS_REVIT")
-    check("Heron AI > Heron" in verdict(idle, "SET_SELECTION").detail,
+    check("Heron > AI Bridge > Heron" in verdict(idle, "SET_SELECTION").detail,
           "and it says which button to press")
 
     blind = rt.snapshot(ASKED, LIBRARY)

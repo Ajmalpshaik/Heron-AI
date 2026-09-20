@@ -153,6 +153,7 @@ an edit.
 | [D-82](#d-82--the-cloud-line-is-drawn-by-content-type-not-by-scope) | The cloud line is drawn by content type, not by scope | ✅ Accepted · 2026-09-20 |
 | [D-83](#d-83--an-ingest-may-cross-and-it-carries-the-practice-not-the-count) | An ingest may cross, and it carries the practice, not the count | ✅ Accepted · 2026-09-20 |
 | [D-84](#d-84--the-sandbox-is-renamed-not-rebuilt) | The sandbox is renamed, not rebuilt | ✅ Accepted · 2026-09-20 |
+| [D-85](#d-85--the-tab-says-heron-the-panel-says-ai-bridge-and-the-product-is-still-heron-ai) | The tab says Heron, the panel says AI Bridge, and the product is still Heron AI | ✅ Accepted · 2026-09-20 |
 
 ## Format
 
@@ -5165,3 +5166,49 @@ the bridge, reach into globals or delete files, and nothing is in its way.
 - **A runaway agent still cannot be stopped**, because the timeout lives in the subprocess that was not
   built. That is the cost, and it is accepted while `write.enabled` is `false` and nothing generated has
   ever run near a model — [Golden Rule 11](14-golden-rules.md) is the rail carrying this.
+
+---
+
+## D-85 — The tab says Heron, the panel says AI Bridge, and the product is still Heron AI
+
+**Status:** Accepted · **Date:** 2026-09-20 · **Supersedes one sentence of:** [D-37](#d-37--the-name-is-heron-ai-and-no-trademark-check-has-been-done)
+
+### Context
+
+D-37 settled the name and said it *"stays in the ribbon tab, the assemblies, the folder names, the
+install command and the documents"*. Ajmal asked on 2026-09-20 for the ribbon tab to read **Heron**,
+and for the panel — until now just **Bridge** — to read **AI Bridge**.
+
+### Decision
+
+**Two strings changed, and nothing else.**
+
+| | Before | Now |
+|---|---|---|
+| Ribbon tab | `Heron AI` | `Heron` |
+| Panel | `Bridge` | `AI Bridge` |
+| Ribbon path a user is told | `Heron AI > Heron` | `Heron > AI Bridge > Heron` |
+
+**The product is still Heron AI.** The assemblies, the folder names under the user profile, the
+`.addin` manifest, the `Product` in `Directory.Build.props` and every document are untouched, so
+nothing installed and nothing anybody has written down breaks. **This is not the rename D-37's
+consequences section priced**, and that window is still open and still closes at publication.
+
+Where the "AI" went is the part worth stating: onto the panel that actually earns it. The bridge is the
+thing an AI talks through, and nothing else on that tab is.
+
+### Consequences
+
+- **Eight printed strings moved with it.** The ribbon path is a promise made in five places outside the
+  add-in — the MCP server, the health report, the session reply, the runtime verdict and the bridge
+  client — plus the deploy script and two tests that assert on it. A tab renamed without them is a tool
+  that tells the user to press a button that no longer exists.
+- **Every dialog title the add-in shows now reads `Heron`**, to match the tab. The `.addin` manifest
+  `<Name>` is deliberately NOT among them: that is the string Revit itself quotes back in *"cannot run
+  the external application Heron AI"*, and `tests/test_package_gate.py` asserts on it.
+- **The recorded proofs keep their old wording**, because they are evidence of what was on screen on
+  the day they were taken. [`A12`](NEEDS-CHECKING.md) says *"tab Heron AI, panel Bridge"* and stays
+  that way — rewriting it would be editing a proof, which [Golden Rule 4](14-golden-rules.md) forbids.
+  A new row asks for the new labels to be seen.
+- **Compiled on all eight releases, 2020 to 2027, 0 warnings. Not yet seen in Revit** — the ribbon is
+  built at `OnStartup`, so this needs a Revit restart before anybody can look at it.

@@ -200,7 +200,7 @@ def _judge(name, rows, release, bridge, write_enabled, ceiling):
         return Capability(
             name, NEEDS_REVIT,
             "permitted, and there is no Revit answering - open Revit and press "
-            "Heron AI > Heron",
+            "Heron > AI Bridge > Heron",
             risk=risk, provider=rows[0].get("id"))
 
     return Capability(name, AVAILABLE, "%d provider(s)" % len(rows),

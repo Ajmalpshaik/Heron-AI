@@ -278,6 +278,14 @@ A 2024 build deployed into 2020 would pass every check in the script. It did not
 monikers above were read back per release and are correct — but the guard is narrower than it looks,
 and nothing else stands behind it.
 
+> **It happened on 2026-09-20, and the guard was replaced the same day.** A session built for 2024 and
+> deployed for 2020; the script said *Deployed* and `.NETFramework,Version=v4.8` went into
+> `Addins0`. Caught by reading the assembly, not by anything in the script. `deploy-addin.ps1` now
+> reads the `TargetFrameworkAttribute` out of the assembly it is about to copy and refuses on any
+> disagreement, which covers all eight releases and both pairs the old proxies could not separate. Six
+> cases were run to prove it - see **Group Z** in [NEEDS-CHECKING](NEEDS-CHECKING.md). **The paragraph
+> above stays as written**, because it is the record of the gap being spotted a day before it bit.
+
 ### 10.3 Question 1 — the add-in actually loads, on each release
 
 **Answered YES on all three.** Revit's own journal, not Heron's log:
@@ -306,6 +314,13 @@ the file each came from:
 
 with `parentId: CustomCtrl_%CustomCtrl_%Heron AI%Bridge%HeronBridge` — tab **Heron AI**, panel
 **Bridge**. Both event registrations succeeded too (`ViewActivated`, `DocumentClosing`).
+
+> **Those two labels changed on 2026-09-20 and this paragraph is left as it was.** It is the journal's
+> own wording on the day it was read, and a proof is not edited after the fact
+> ([Golden Rule 4](14-golden-rules.md)). What a journal written today would say instead is
+> `%Heron%AI Bridge%` - tab **Heron**, panel **AI Bridge**, per
+> [D-85](DECISIONS.md). The three button ids and their texts are unchanged, so the table above still
+> reads true. Looking at the new labels in Revit is `Z1` in [NEEDS-CHECKING](NEEDS-CHECKING.md).
 **No journal contains *"cannot run the external application"*.** Heron's own log agrees, three lines:
 
 ```text
