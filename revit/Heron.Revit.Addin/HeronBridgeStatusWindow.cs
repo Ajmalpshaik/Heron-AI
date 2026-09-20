@@ -202,6 +202,26 @@ namespace Heron.Revit.Addin
 
                 Build();
                 Render();
+
+                // IT SAYS IT OPENED, and that is not chatter.
+                //
+                // On 2026-09-20 the owner was asked to open this window on
+                // Revit 2020 - the one release running the old .NET Framework
+                // - and the log could not confirm he had. Every line this
+                // window wrote was a FAILURE line, so a window that worked
+                // perfectly was indistinguishable from a button that did
+                // nothing. He had to send a screenshot to answer it.
+                //
+                // The ribbon already logs "Connected from the ribbon" and
+                // "Write permission set to X from the ribbon", so a person
+                // acting on a Heron surface is exactly what this log records.
+                // This was the one surface that stayed silent about it.
+                //
+                // The STATE goes in the line as well, because "it opened" and
+                // "it opened saying Connected" are different facts and only
+                // the second one is worth anything afterwards.
+                _log("Bridge Status opened: " + _headline.Text + ".");
+
                 _shell.Window.ShowDialog();
                 return true;
             }

@@ -85,7 +85,23 @@ namespace Heron.Revit.Addin
             try
             {
                 Build();
+
+                // WHICH THING ASKED, recorded at the moment it asks.
+                //
+                // Until now the log said "Write permission set to True from
+                // the ribbon" whether this window or the old TaskDialog had
+                // put the question - so whether the window drew could only be
+                // argued from the ABSENCE of a failure line. That argument is
+                // sound and it is still an argument. This is a fact.
+                _log("Changes window asked.");
+
                 _shell.Window.ShowDialog();
+
+                // AND WHAT WAS ANSWERED. WriteToggleCommand logs the setting
+                // moving, but it logs nothing at all when the answer is no -
+                // the decline line is written there and says only "offered,
+                // declined". Saying it here too would be a second record of
+                // one fact, so this deliberately does not.
                 return _turnOn;
             }
             catch (Exception ex)
