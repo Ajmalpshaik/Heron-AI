@@ -197,6 +197,13 @@ def collect():
     d["q_open"] = grab(docs, r"ACTUAL:\s*\d+ answered,\s*(\d+) open")
     d["q_ids"] = grab(docs, r"still open:\s*(.+)")
     d["stale_sigs"] = grab(docs, r"STALE - signed, then the code changed under it \((\d+)\)")
+    # check-signatures.py prints that heading ONLY when something is stale,
+    # and "No signature is waiting" when nothing is. Without this second read
+    # the row could never say zero - it said "not derived", which this tool
+    # tells the reader does NOT mean zero. A clean board read as an unchecked
+    # one on 2026-09-19 and 2026-09-20.
+    if d["stale_sigs"] is None and "No signature is waiting" in docs:
+        d["stale_sigs"] = "0"
 
     return d
 

@@ -181,30 +181,6 @@ RECORDINGS = os.path.join(ROOT, "tools", "jobs", "skills")
 NOT_MEASURED = "NOT MEASURED"
 
 
-def short_path(path):
-    """`path` relative to the repository, or the whole thing when it cannot be.
-
-    NOT DEFENSIVE CODING - os.path.relpath RAISES on Windows when the two
-    paths are on different drives: "path is on mount 'C:', start on mount
-    'D:'". Heron's repository lives on D: on the owner's PC and Python's
-    temp folder is on C:, so every caller handing this a temp directory
-    crashes there and on no other machine. CI is Linux, where a drive letter
-    does not exist, so it can never see this.
-
-    That is not hypothetical. tests/test_skill_catalog.py passes a temp
-    folder on purpose - to prove routing() reports a missing recording
-    rather than inventing a zero - and it died here on 2026-09-20 with a
-    traceback instead, on the one machine the tests are actually run on.
-
-    An absolute path in the message is a worse sentence, not a wrong one.
-    A traceback is both.
-    """
-    try:
-        return os.path.relpath(path, ROOT)
-    except ValueError:
-        return path
-
-
 def routing(folder=None):
     """(meta, {skill id: [row]}) from the newest saved routing measurement.
 
@@ -220,7 +196,13 @@ def routing(folder=None):
     meta = {"taken": None, "index": None, "revit": None, "file": None,
             "why": None}
     if not os.path.isdir(folder):
-        meta["why"] = "no %s" % short_path(folder)
+        # FRAG.repo_relative, NOT os.path.relpath. On Windows relpath RAISES
+        # across drives, and this line runs precisely when the folder is
+        # somewhere unusual - a test's scratch directory under %TEMP% on C:
+        # while the checkout is on D: is the case that found it. The report
+        # of a missing folder is not worth a crash, and brain/heron_fragment.py
+        # owns this rule.
+        meta["why"] = "no %s" % FRAG.repo_relative(folder)
         return meta, {}
 
     saved = sorted(name for name in os.listdir(folder)
@@ -228,7 +210,8 @@ def routing(folder=None):
     if not saved:
         meta["why"] = ("no routing-*.json in %s - run `python "
                        "tools/prove-skill.py --routing-to %s/routing-<date>"
-                       ".json`" % (short_path(folder), short_path(folder)))
+                       ".json`" % (FRAG.repo_relative(folder),
+                                   FRAG.repo_relative(folder)))
         return meta, {}
 
     # NEWEST BY NAME, and the names carry the date for exactly this reason.
