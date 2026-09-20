@@ -6,6 +6,7 @@
 // See docs/29-metadata-standard.md
 
 using System;
+using System.Globalization;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -13,6 +14,63 @@ using Heron.Core;
 
 namespace Heron.Revit.Addin
 {
+    /// <summary>
+    /// Connecting and disconnecting, in the one place that does it.
+    ///
+    /// TWO THINGS NOW ASK FOR IT - the ribbon button and the Bridge Status
+    /// window - and a second copy of these six lines is how the ribbon
+    /// picture ends up disagreeing with the bridge. The picture is the state
+    /// (see the ribbon skill), so whatever flips the bridge has to be the
+    /// thing that repaints the button, every time, including when it fails.
+    ///
+    /// IT THROWS RATHER THAN REPORTING. The two callers say it differently -
+    /// a ribbon command hands Revit a `message`, a window writes a line in
+    /// its own footer - so the wording belongs to them and only the doing
+    /// belongs here.
+    /// </summary>
+    internal static class HeronBridgeToggle
+    {
+        /// <summary>
+        /// Flips the bridge, and leaves the ribbon picture telling the truth.
+        ///
+        /// <paramref name="where"/> is for the log alone, and it earns its
+        /// place: "Connected from the ribbon" and "Connected from Bridge
+        /// Status" answer different questions on the day a session turns out
+        /// to have been connected by somebody who does not remember doing it.
+        /// </summary>
+        internal static void Toggle(string where)
+        {
+            var bridge = HeronApplication.Bridge;
+            if (bridge == null)
+                throw new InvalidOperationException(
+                    "Heron did not start, so there is nothing to connect. The log that says why is in "
+                    + HeronPaths.Logs + ".");
+
+            try
+            {
+                if (bridge.IsRunning)
+                {
+                    bridge.Stop();
+                    HeronApplication.SetBridgeIcon(false);
+                    HeronApplication.Log("Disconnected from " + where + ".");
+                    return;
+                }
+
+                bridge.Start();
+                HeronApplication.SetBridgeIcon(true);
+                HeronApplication.Log("Connected from " + where + ".");
+            }
+            catch
+            {
+                // The icon follows what the bridge ACTUALLY is, not what was
+                // attempted. A half-started bridge rolls itself back, so this
+                // reads false - and the button must not claim otherwise.
+                HeronApplication.SetBridgeIcon(bridge.IsRunning);
+                throw;
+            }
+        }
+    }
+
     /// <summary>
     /// Connects this Revit session, or disconnects it. One button, both ways.
     ///
@@ -45,25 +103,17 @@ namespace Heron.Revit.Addin
 
             try
             {
-                if (bridge.IsRunning)
-                {
-                    bridge.Stop();
-                    HeronApplication.SetBridgeIcon(false);
-                    HeronApplication.Log("Disconnected from the ribbon.");
-                    return Result.Succeeded;
-                }
-
-                bridge.Start();
-                HeronApplication.SetBridgeIcon(true);
-                HeronApplication.Log("Connected from the ribbon.");
+                HeronBridgeToggle.Toggle("the ribbon");
                 return Result.Succeeded;
             }
             catch (Exception ex)
             {
-                // The icon follows what the bridge actually is, not what was
-                // attempted. A half-started bridge rolls itself back, so this
-                // reads false - and the button must not claim otherwise.
-                HeronApplication.SetBridgeIcon(bridge.IsRunning);
+                // NO SetBridgeIcon HERE ANY MORE. It used to be, and it had
+                // to be - but the rule it enforced moved into Toggle, which
+                // repaints from what the bridge ACTUALLY is before it
+                // rethrows. Doing it twice would not be wrong, only a second
+                // place that has to be remembered, which is how the first
+                // copy of this rule went stale.
                 HeronApplication.Log("Bridge toggle failed: " + ex);
                 message = "Could not change the Heron bridge: " + ex.Message;
                 return Result.Failed;
@@ -152,7 +202,22 @@ namespace Heron.Revit.Addin
     }
 
     /// <summary>
-    /// Reports bridge state. Reads nothing from the model.
+    /// Reports bridge state. Reads nothing from the model, opens no
+    /// transaction, and needs no document - it answers on the start screen
+    /// too, which is exactly where somebody whose ribbon looks wrong will go
+    /// looking.
+    ///
+    /// SINCE 2026-09-20 THIS IS A WINDOW, not a TaskDialog. What changed and
+    /// why is written up on HeronBridgeStatusWindow; the short version is
+    /// that six aligned lines of pipe names and file paths answered the
+    /// question in their first word and then buried it under the evidence.
+    ///
+    /// THE OLD DIALOG IS STILL HERE, as the fallback. A WPF window inside a
+    /// host application has more ways to fail than a TaskDialog does, and if
+    /// it will not draw the answer still has to arrive - in the plainest form
+    /// Revit has. Somebody who pressed Bridge Status and got nothing at all
+    /// has not learnt that a window failed; they have learnt that the button
+    /// does not work.
     /// </summary>
     [Transaction(TransactionMode.Manual)]
     [Regeneration(RegenerationOption.Manual)]
@@ -160,25 +225,85 @@ namespace Heron.Revit.Addin
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
+            var shown = HeronBridgeStatusWindow.Show(
+                ReadStatus,
+                delegate { HeronBridgeToggle.Toggle("Bridge Status"); },
+                HeronApplication.Log);
+
+            if (!shown) ShowPlainStatus();
+            return Result.Succeeded;
+        }
+
+        /// <summary>
+        /// A snapshot of the bridge as text, which is all the window is
+        /// allowed to know. Handed over as a delegate rather than called once,
+        /// because the window calls it again after every connect or
+        /// disconnect - a snapshot taken once and trusted for ever is how a
+        /// window ends up describing a session that has moved on.
+        /// </summary>
+        private static HeronBridgeStatus ReadStatus()
+        {
+            var status = new HeronBridgeStatus
+            {
+                LogFolder = HeronPaths.Logs,
+
+                // Read fresh, never remembered. This is the same file the
+                // permission gate reads on every single call (D-19), so
+                // caching it here would be a second answer to a question that
+                // is only allowed one.
+                WriteEnabled = HeronPermissions.WriteEnabled(),
+            };
+
+            var bridge = HeronApplication.Bridge;
+            if (bridge == null)
+            {
+                status.State = HeronBridgeState.DidNotStart;
+                return status;
+            }
+
+            var id = bridge.Identity;
+            status.State = bridge.IsRunning
+                ? HeronBridgeState.Connected
+                : HeronBridgeState.NotConnected;
+            status.PipeName = id.PipeName;
+            status.ProcessId = id.ProcessId.ToString(CultureInfo.InvariantCulture);
+            status.RevitVersion = id.RevitVersion;
+            status.AddinVersion = id.AddinVersion;
+            status.ProtocolVersion = Heron.Bridge.BridgeIdentity.ProtocolVersion
+                .ToString(CultureInfo.InvariantCulture);
+            status.DiscoveryFilePath = id.DiscoveryFilePath;
+            return status;
+        }
+
+        /// <summary>
+        /// The answer with no window around it.
+        ///
+        /// Word for word what Bridge Status said before the window existed,
+        /// deliberately unchanged: a fallback that has already been run in
+        /// Revit is worth more than a better sentence nobody has ever seen.
+        /// Only the title moved, and it moved to follow the ribbon tab.
+        /// </summary>
+        private static void ShowPlainStatus()
+        {
             var bridge = HeronApplication.Bridge;
 
             if (bridge == null)
             {
-                TaskDialog.Show("Heron AI",
+                TaskDialog.Show("Heron",
                     "Heron did not start.\n\nThe log that says why is in\n"
                     + HeronPaths.Logs + ".");
-                return Result.Succeeded;
+                return;
             }
 
             if (!bridge.IsRunning)
             {
-                TaskDialog.Show("Heron AI",
+                TaskDialog.Show("Heron",
                     "Not connected.\n\nPress Heron on the ribbon to make this session reachable.");
-                return Result.Succeeded;
+                return;
             }
 
             var id = bridge.Identity;
-            TaskDialog.Show("Heron AI",
+            TaskDialog.Show("Heron",
                 "Connected.\n\n" +
                 "Pipe:      " + id.PipeName + "\n" +
                 "Process:   " + id.ProcessId + "\n" +
@@ -186,8 +311,6 @@ namespace Heron.Revit.Addin
                 "Add-in:    " + id.AddinVersion + "\n" +
                 "Protocol:  " + Heron.Bridge.BridgeIdentity.ProtocolVersion + "\n\n" +
                 "Announced in:\n" + id.DiscoveryFilePath);
-
-            return Result.Succeeded;
         }
     }
 
@@ -224,14 +347,14 @@ namespace Heron.Revit.Addin
             if (HeronStop.IsStopped)
             {
                 HeronStop.Resume();
-                TaskDialog.Show("Heron AI",
+                TaskDialog.Show("Heron",
                     "Heron can work again.\n\n" +
                     "It will still ask you to approve anything that changes the model.");
                 return Result.Succeeded;
             }
 
             HeronStop.Stop();
-            TaskDialog.Show("Heron AI",
+            TaskDialog.Show("Heron",
                 "Heron is stopped.\n\n" +
                 "Nothing more will be sent to the model until you press this again.\n\n" +
                 "This stops what comes NEXT. It cannot interrupt something Revit has already " +

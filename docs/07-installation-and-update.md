@@ -306,6 +306,13 @@ the file each came from:
 
 with `parentId: CustomCtrl_%CustomCtrl_%Heron AI%Bridge%HeronBridge` — tab **Heron AI**, panel
 **Bridge**. Both event registrations succeeded too (`ViewActivated`, `DocumentClosing`).
+
+> **Those two labels changed on 2026-09-20 and this paragraph is left as it was.** It is the journal's
+> own wording on the day it was read, and a proof is not edited after the fact
+> ([Golden Rule 4](14-golden-rules.md)). What a journal written today would say instead is
+> `%Heron%AI Bridge%` - tab **Heron**, panel **AI Bridge**, per
+> [D-85](DECISIONS.md). The three button ids and their texts are unchanged, so the table above still
+> reads true. Looking at the new labels in Revit is `Z1` in [NEEDS-CHECKING](NEEDS-CHECKING.md).
 **No journal contains *"cannot run the external application"*.** Heron's own log agrees, three lines:
 
 ```text

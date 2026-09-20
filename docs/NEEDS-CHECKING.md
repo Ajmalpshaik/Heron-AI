@@ -1726,3 +1726,35 @@ out one element either. One rule in `OneIdNamed` for an id named by its Revit
 element id would unblock both, and it is the rule `RevitFragment` deliberately
 refuses to guess at. **That is the next thing worth building**, and it is add-in
 C# - a rebuild and a Revit restart.
+
+
+---
+
+## Group Z - the renamed ribbon and the Bridge Status window, 2026-09-20
+
+[D-85](DECISIONS.md) renamed two ribbon labels and the Bridge Status dialog became a window.
+**All of it compiles on all eight releases with 0 warnings, and none of it has been seen in Revit** -
+the ribbon is built at `OnStartup`, so every row here needs the add-in deployed and Revit restarted.
+
+**What was proved without Revit.** `HeronBridgeStatusWindow.cs` references no Revit API, so it was
+compiled into a bare WPF host and rendered: four states, `988x1246`, `988x1246`, `988x1051` and
+`988x681` pixels at 2x, written to PNG and looked at. Two faults were found that way and fixed - an
+empty box under `THIS SESSION` when there is no identity, and a `Changes` card describing a Heron that
+did not start. **That proves what it draws, not that Revit will host it**, and the rows below are the
+difference between the two.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **Z1** | Deploy, start Revit, look at the ribbon | A tab reading **Heron**, holding a panel reading **AI Bridge**. Not `Heron AI`, and not a second tab beside it - if both appear, `CreateRibbonTab` made a new one instead of finding the old, and the old add-in is still deployed |
+| **Z2** | Press **Bridge Status** with the bridge connected | The window, not a TaskDialog. Blue strip, blue lamp with a glow, `Connected`, and the pipe name in `Consolas`. The `Close` button is the blue one |
+| **Z3** | Press it with the bridge NOT connected | Grey strip, lamp with **no** glow, `Not connected`, no `Pipe` row and no `ANNOUNCED IN` section. The blue button reads **Connect this session** |
+| **Z4** | Press **Connect this session** inside the window | The window itself redraws to `Connected` - it does not close, and no second dialog appears. The **ribbon button's picture lights at the same time**, which is the whole reason the toggle was factored into `HeronBridgeToggle` |
+| **Z5** | Press **Copy details**, then paste somewhere | A short block of text with no empty values in it. One grey line appears in the footer and clears itself after six seconds |
+| **Z6** | Turn **Changes** on from the ribbon, then open Bridge Status | The `Changes` card is amber, chip reads `ON`. Turn it off: grey, `OFF`. This is read from `heron.config` fresh each time the window opens, so it must agree with the ribbon padlock |
+| **Z7** | Press `Esc`, and separately drag the window by its header | `Esc` closes it. The header drags it. Neither is Revit's, because the window has no system chrome at all |
+| **Z8** | Look at it on a **150%** display | The one thing the render cannot answer. Text crisp, nothing clipped, the window centred on Revit rather than on the primary screen. Same unproven scaling path as `B17` above |
+| **Z9** | Do Z1 and Z2 on **2020** as well as on a modern release | 2020 is `net472` and 2027 is `net10.0-windows` - two different WPF stacks under the same source. `ControlTemplate` built from `FrameworkElementFactory` is the part most likely to differ, and the buttons are where it would show |
+
+**Where the numbers came from.** The renders are reproducible: the harness compiles
+`revit/Heron.Revit.Addin/HeronBridgeStatusWindow.cs` directly, with no copy of it, and nothing about
+it is checked in - it is a scratch project, and rebuilding it is four lines of csproj.
