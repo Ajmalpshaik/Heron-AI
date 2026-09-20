@@ -19,7 +19,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 56 answered · 0 open · nothing blocking any phase**
+**Progress: 56 answered · 1 open · nothing blocking any phase**
 
 **The count moved 1 → 3 on 2026-09-12 without anybody asking anything new.** `Q-54` and `Q-55` were
 raised on 2026-09-10 and 2026-09-11 and had been living in a work note — `Q-D` and `Q-E` in
@@ -1606,6 +1606,43 @@ already asked for.
 
 **Revisit if that ever stops being true** — the first tool that wants to return thousands of rows is the
 moment to re-read this, not the moment to quietly make an exception.
+
+---
+
+### 🟠 Q-57 — May a fragment or skill that WRITES declare a question? *(new, 2026-09-19)*
+
+[FRAGMENT-ISSUES row 158](FRAGMENT-ISSUES.md) found **ten fragments and five skills above the write
+line declaring a sentence that asks and stops**, in their own `utterances:` blocks. The starkest is
+`SET_VIEW_SCALE`, a MODIFY, declaring *"what scale is this view"* — so that question resolves to a
+write by `identity`, which short-circuits before ranking runs. **No re-ranking repairs one.**
+
+**Nothing in the repository forbids it.** `grep -iE 'utterance' docs/14-golden-rules.md` returns
+nothing; no decision covers it either. The rules that come closest point in opposite directions:
+[row 113](FRAGMENT-ISSUES.md)'s forbidden move is **weakening a declaration to buy a rank**, and its
+mirror — deleting a sentence a modeller really says so a sweep comes back clean — would be the same
+error. Golden Rule 19 puts the real gate on the OPERATION's risk by name, so none of these can change
+a model while the padlock is closed ([row 137](FRAGMENT-ISSUES.md) traced that end to end).
+
+**And some of the fifteen are probably right, which is why this is a question rather than a defect
+list.** *"How many sprinklers do I need"* on `sprinkler-layout` may genuinely belong there — answering
+it **is** the layout — unlike *"how many sprinklers on level 2"*, which is a count and was given to
+`count-elements`. *"How far apart are these on the drawing"* on `DIMENSION_FAMILY_INSTANCES` says *on
+the drawing*, which is arguably an instruction to annotate. And `REPLACE_MATERIAL`'s *"why will this
+material not purge"* was moved there **deliberately**, with the reasoning in a comment above it.
+
+So the question is not *are these wrong* but **what is the rule**:
+
+- a blanket *a write never declares a question* — simple, and it would delete sentences that belong;
+- *a write may declare a question only when answering it REQUIRES the write* — true of the layout
+  skills, false of `SET_VIEW_SCALE`, and it needs a judgement per sentence;
+- *no rule* — the padlock is the gate, and a wrong offer is not a wrong change.
+
+**The third is the current state by default, and it is the one nobody chose.** Choosing it explicitly
+would at least make `tools/check-declared-questions.py` a report that a reader can close rather than
+one that stays open forever.
+
+→ [FRAGMENT-ISSUES row 158](FRAGMENT-ISSUES.md), [row 137](FRAGMENT-ISSUES.md),
+[row 113](FRAGMENT-ISSUES.md), [14 — Golden Rules](14-golden-rules.md)
 
 ---
 

@@ -377,6 +377,47 @@ def main():
                                             or one["words_moved"]["fresh"])]
         check(len(stale) == 1 and stale[0]["id"] == REAL_ID,
               "exactly the skill whose words moved, and no other")
+        # A COMPLAINT WITH NO STALENESS, WHICH IS WHERE THE SUBTITLE BROKE.
+        # The two caveats were written as `shaky + stale if stale else ""`,
+        # which Python reads as `(shaky + stale) if stale else ""` - so with
+        # no stale recording the COMPLAINT sentence vanished with it. The
+        # page computed the number and dropped it, inside the change that
+        # added the row about pages dropping what they computed.
+        io.open(os.path.join(where, "routing-2000-01-04.json"), "w",
+                encoding="utf-8").write(json.dumps({
+                    "taken": "2000-01-04", "index": {"md5": "0" * 32},
+                    "skills": {REAL_ID: [
+                        [one, "COUNT_ELEMENTS", "READ", "hybrid", "reach",
+                         ["a coin toss"] if one == live else []]
+                        for one in REAL_SAYS]}}))
+        rows, _, _ = tool.collect(recordings=where)
+        card = [row for row in rows if row["id"] == REAL_ID][0]
+        check(not card["words_moved"]["gone"]
+              and not card["words_moved"]["fresh"],
+              "a recording covering every sentence is NOT out of date")
+        check(card["words"]["reach_unsettled"] == [live],
+              "and the one complaint is on a sentence that reached")
+
+        keep_out = os.environ.get("HERON_SKILL_CATALOG_OUT")
+        out2 = os.path.join(where, "page2.html")
+        os.environ["HERON_SKILL_CATALOG_OUT"] = out2
+        try:
+            third = load_tool()
+            third.RECORDINGS = where
+            check(third.main() == 0, "the page generates")
+        finally:
+            if keep_out is None:
+                os.environ.pop("HERON_SKILL_CATALOG_OUT", None)
+            else:
+                os.environ["HERON_SKILL_CATALOG_OUT"] = keep_out
+        said = json.loads(re.search(
+            r"const DATA = (\{.*\});",
+            io.open(out2, encoding="utf-8").read(), re.S).group(1))["subtitle"]
+        check("THE RETRIEVER COMPLAINED" in said,
+              "the subtitle says so WITHOUT a stale recording beside it")
+        check("OUT OF DATE" not in said,
+              "and does not claim a staleness it has not got")
+
         # AND IT IS NOT COUNTED AS REACHING. This is the whole point of the
         # exclusion: the recording says every word it holds reaches, and the
         # skill has since grown three the recording never saw.
@@ -385,6 +426,27 @@ def main():
               "as NEITHER whole nor short - it counts as out of date")
     finally:
         shutil.rmtree(where)
+    # WHAT THE RETRIEVER SAID, CARRIED ONTO THE CARD (register row 157).
+    # A recording taken before prove-skill recorded it has FIVE fields and
+    # must still read - an old one reports no complaint, which is the
+    # absence of one and not a clean answer.
+    five = tool.said([["a", "X", "READ", "identity", "reach"]], ["X"])
+    check(five["unsettled"] == [] and five["reach_unsettled"] == [],
+          "a five-field recording reads, and claims no complaint")
+    six = tool.said([["a", "X", "READ", "hybrid", "reach", ["a coin toss"]],
+                     ["b", "Y", "MODIFY", "hybrid", "crossing", ["a coin toss"]],
+                     ["c", "Z", "READ", "identity", "reach", []]], ["X"])
+    check(six["unsettled"] == ["a", "b"],
+          "every sentence the retriever complained about is named")
+    check(six["reach_unsettled"] == ["a"],
+          "and the ones that REACHED are counted apart - a crossing is "
+          "already loud, a quiet reach is the one nobody looks at")
+    check(six["reach"] == 2,
+          "a complaint does not take a sentence out of `reach` - it DID "
+          "reach, and whether that spends it is a reader's call")
+    check(six["landed"][0]["told"] == ["a coin toss"],
+          "and the retriever's own words ride on the sentence they are about")
+
     check(tool.ROUTING.words_moved.__module__
           == tool.ROUTING.classify.__module__,
           "the rule lives beside classify(), in the module both tools read "

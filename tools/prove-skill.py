@@ -342,11 +342,16 @@ class Plan(object):
 # ---------------------------------------------------------------------------
 
 def understanding(plan, revit):
-    """[(phrase, capability, risk, route, where)] for every utterance.
+    """[(phrase, capability, risk, route, where, told)] for every utterance.
 
     `where` is `check-skill-routing.classify`'s word, imported rather than
     re-decided. A tool that judged a crossing differently from the sweep that
     reports crossings would be the drift, not the fix.
+
+    `told` is `ROUTING.unsettled`'s reading of the retriever's OWN note - what
+    it said about how little it found. It is a sixth field on purpose: a
+    recording written before this exists is still read correctly, because
+    every consumer pads and slices rather than unpacking a fixed width.
     """
     import heron_brain as brain
 
@@ -357,15 +362,17 @@ def understanding(plan, revit):
             answer = brain.lookup(phrase, revit=revit)
         except Exception as why:                               # noqa: BLE001
             out.append((phrase, None, None, None,
-                        "unresolved: %s: %s" % (type(why).__name__, why)))
+                        "unresolved: %s: %s" % (type(why).__name__, why), ()))
             continue
         capability = answer.get("capability")
         if not capability:
-            out.append((phrase, None, None, None, "unresolved: no capability"))
+            out.append((phrase, None, None, None, "unresolved: no capability",
+                        ROUTING.unsettled(answer.get("note"))))
             continue
         risk = (answer.get("risk") or "").upper()
         out.append((phrase, capability, risk, answer.get("route") or "?",
-                    ROUTING.classify(plan.risk, risk, capability, declared)))
+                    ROUTING.classify(plan.risk, risk, capability, declared),
+                    ROUTING.unsettled(answer.get("note"))))
     return out
 
 
@@ -484,10 +491,20 @@ def job_file(plan, by_slug, chain_supply, threshold_ordinal,
     if measured is None:
         add("#   NOT MEASURED on this run - see --plan-only. Run without it")
         add("#   before trusting the order below to be the thing Ajmal asked for.")
-    for phrase, capability, _risk, route, where in measured or []:
+    for row in measured or []:
+        # PADDED AND SLICED like every other reader of a measured row. This
+        # loop unpacked FIVE and crashed the moment `understanding()` grew a
+        # sixth field - `--jobs` with a recording, which no test covered
+        # because the suite's own job cases pass `measured=None`. Found by
+        # running it, not by reading it.
+        phrase, capability, _risk, route, where, told = (
+            list(row) + [None] * 6)[:6]
         add("#   %-9s %-40s -> %s%s"
             % (where, phrase[:40], capability or "-",
                " (%s)" % route if route else ""))
+        for tag in (told or ()):
+            add("#   %-9s %-40s    and the RETRIEVER said so itself: %s"
+                % ("", "", tag))
     if measured:
         add("#")
         for line in GJ.wrap(
@@ -681,9 +698,17 @@ def verdict(plan, measured, moved=None):
     other = [r for r in rows if r[4] not in ("crossing", "reach")]
 
     def said(row, lead):
-        phrase, capability, risk, _route, where = row
-        return "%s: %r reached %s (%s), which is a %s" % (
-            lead, phrase, capability or "nothing", risk or "?", where)
+        # PADDED AND SLICED, never unpacked to a fixed width - a recording
+        # written before `told` existed has five fields and must still read.
+        phrase, capability, risk, _route, where, told = (
+            list(row) + [None] * 6)[:6]
+        # ONE return, and it starts with the format string - the suite reads
+        # this function's returns to prove no verdict word is built on the
+        # spot, and a helper with a bare `return out` reads like one.
+        return "%s: %r reached %s (%s), which is a %s%s" % (
+            lead, phrase, capability or "nothing", risk or "?", where,
+            "".join("\n      and the RETRIEVER said so itself: %s" % tag
+                    for tag in (told or ())))
 
     why = [said(r, "ANSWERED BY A WRITE") for r in crossings]
     why += plan.blockers()

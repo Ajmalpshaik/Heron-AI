@@ -37,6 +37,7 @@ WHAT IT DOES NOT PROVE
 
 import io
 import os
+import re
 import sys
 import tempfile
 
@@ -312,6 +313,68 @@ def main():
                           % (plan.id, slug, name))
         check(str(doc.get("model", "")).startswith("FILL IN"),
               "%s does not name a model it has never seen" % plan.id)
+
+    print()
+    print("a job file emitted BESIDE a measurement, not only without one")
+    # THE BUG THIS PINS: `job_file()` unpacked FIVE fields from a measured
+    # row and crashed the moment `understanding()` grew a sixth - so
+    # `--jobs` with `--routing-from` died while `--jobs --plan-only` was
+    # fine. Every job case in this suite passed `measured=None`, which is
+    # exactly why nothing caught it. Found by running the tool.
+    one = real[0] if real else None
+    check(one is not None, "there is a plan to emit for")
+    if one is not None:
+        six = [(u, "COUNT_ELEMENTS", "READ", "identity", "reach",
+                ("a coin toss",)) for u in one.skill.utterances()]
+        text = PS.job_file(one, by_slug, chain, threshold_ordinal,
+                           threshold_name, ladder, six)
+        check("WHERE EACH ONE ACTUALLY LANDED" in text,
+              "a six-field measurement emits, where it used to raise "
+              "ValueError")
+        check("the RETRIEVER said so itself" in text,
+              "and the retriever's own words ride into the job file")
+        check(yaml.safe_load(text) is not None,
+              "and it still parses as YAML with them in")
+        five = [(u, "COUNT_ELEMENTS", "READ", "identity", "reach")
+                for u in one.skill.utterances()]
+        text = PS.job_file(one, by_slug, chain, threshold_ordinal,
+                           threshold_name, ladder, five)
+        check("WHERE EACH ONE ACTUALLY LANDED" in text
+              and "the RETRIEVER said so itself" not in text,
+              "a five-field recording still emits, and claims no complaint")
+
+    print()
+    print("what the retriever said about how little it found")
+    # ROW 137: a question inside a MODIFY skill reaching an unrelated MODIFY
+    # is invisible to the risk comparison BY CONSTRUCTION. The retriever was
+    # saying "no route preferred this" in plain words the whole time, in the
+    # `note` lookup already returns, and every sweep threw it away.
+    import inspect
+    import heron_retrieve as RETRIEVE
+    # THE SEAMS ARE CLOSED BEFORE THE SEARCH. Python joins adjacent string
+    # literals, so a sentence a reader sees whole is broken across lines in
+    # the source and a literal substring search would miss it - reporting a
+    # reword that never happened, which is the loudest kind of wrong test.
+    source = re.sub(r'"\s*\n\s*"', "",
+                    inspect.getsource(RETRIEVE.Contest.sentence))
+    for tag, marker in PS.ROUTING.NOTHING_FOUND:
+        check(marker in source,
+              "heron_retrieve still writes %r - matched, never re-derived"
+              % marker)
+    check(PS.ROUTING.unsettled("") == ()
+          and PS.ROUTING.unsettled(None) == (),
+          "no note is an EMPTY answer, which is the absence of a complaint "
+          "and not a clean sweep (D-52)")
+    both = ("5 candidate(s). A COIN TOSS: the top two are 0.4 of one fusion "
+            "rank apart. The words route matched 392 fragment(s) - at least "
+            "as many as the 392 the filter left - so it ranked the library "
+            "rather than selecting from it")
+    told = PS.ROUTING.unsettled(both)
+    check(len(told) == 2,
+          "a note carrying two of the retriever's complaints reports both")
+    check(PS.ROUTING.unsettled(
+        "the winner is 3.4 rank(s) clear of the runner-up") == (),
+          "and a note carrying none reports none")
 
     print()
     print("the fingerprint block, printed by four sweeps and written once")
