@@ -92,15 +92,22 @@ For each ticked product, for each ticked Revit version:
 3.  Detect an existing install                 -> and say in the report that it is being replaced
 4.  Back up whatever is already there          -> so Rollback has something to restore
 5.  REMOVE the old files, then copy the new    -> replace, never merge two versions in one folder
-6.  Copy  <Product>.addin  +  <Product>.dll    -> into %APPDATA%\...\Addins\<version>\
+6.  Copy the product's WHOLE FOLDER of files   -> into ...\Addins\<version>\<Product>\  (R-40, R-41)
+6a. Place <Product>.addin                      -> at ...\Addins\<version>\<Product>.addin
 7.  Rewrite the <Assembly> line in the manifest -> to the real deployed path
 8.  Verify the files landed and parse          -> the checks tools/check-package.py already makes
 9.  Report, per product, per version           -> installed / replaced / skipped / failed and WHY
 ```
 
-**Step 5 is the one to get right.** Copying new files over old ones without removing them first leaves
-whatever the new version no longer ships — a stale DLL Revit may still load, or an orphaned `.addin`
-that makes Revit report a class it cannot find. Replace means **remove, then copy**.
+**Step 5 is the one to get right, and yesterday's version of it was wrong.** It said *remove, then
+copy*. A remove **fails** while Revit holds the assembly open, and Heron's own "is Revit closed" check
+can be wrong — a second Revit on another desktop, a scanner holding a file. So: **rename the old folder
+aside, install clean, sweep the set-aside folders on a later run.** A locked file cannot be deleted but
+can be renamed. [R-38](#the-lessons-from-aj-tools), from [L2](04-lessons-from-aj-tools.md).
+
+**Step 6 changed too.** A product is a **folder of files**, not two files, and each product gets its own
+folder rather than sharing one with every other Heron product
+([R-40](#the-lessons-from-aj-tools), [R-41](#the-lessons-from-aj-tools)).
 
 Steps 1, 3, 4, 5 and the refusal in step 1 **already exist** in
 [`tools/deploy-addin.ps1`](../../../../tools/deploy-addin.ps1). The installer should **drive that
@@ -130,7 +137,7 @@ logic, not re-implement it** — two copies of a deploy rule is two rules that d
 |---|---|---|---|
 | R-7 | The installer **detects which Revit versions are installed** and lists only those | Not in the owner's brief — **added here**; without it the installer cannot know where to copy | MUST |
 | R-8 | The user ticks **which versions** to install into | Follows R-7; a modeller with 2020 and 2024 open on one PC is normal | MUST |
-| R-9 | Supported set is **2020 → 2027**, eight releases | [`docs/16`](../../../16-version-support-strategy.md) | MUST |
+| R-9 | ~~Supported set is **2020 → 2027**, eight releases~~ **Superseded by [R-39](#the-lessons-from-aj-tools) 2026-09-21** — a typed list goes stale silently. The set is whatever the package carries | [`docs/16`](../../../16-version-support-strategy.md); [L3](04-lessons-from-aj-tools.md) | MUST |
 | R-10 | A product that does not support a version is **greyed out with the reason**, never silently skipped | [`docs/14`](../../../14-golden-rules.md) — an error must say what to do next | MUST |
 
 ### Getting the files
@@ -161,7 +168,7 @@ logic, not re-implement it** — two copies of a deploy rule is two rules that d
 | R-22 | Uninstall removes the product's files **and nothing else**. The user's data survives | [`HeronPaths.IsSafeToDelete`](../../../../platform/Heron.Core/HeronPaths.cs) | MUST |
 | R-23 | **Update** replaces a product in place and keeps the user's settings | [`docs/07 §7`](../../../07-installation-and-update.md) | MUST |
 | R-23a | There is **no separate Update or Repair button**. Install detects an existing version and replaces it | Owner, 2026-09-21; [S8](00-structure.md) | MUST |
-| R-23b | Replacing **removes the old files first, then copies** — never a copy over the top | Follows R-23a; a stale DLL left behind is one Revit may still load | MUST |
+| R-23b | ~~Replacing **removes the old files first, then copies**~~ **Corrected by [R-38](#the-lessons-from-aj-tools) 2026-09-21** — a delete FAILS while Revit holds the DLL open. Rename aside, then install clean | Follows R-23a; [L2](04-lessons-from-aj-tools.md) | MUST |
 | R-24 | Rollback is **tested**, not merely implemented | [`docs/07 §7`](../../../07-installation-and-update.md) rule 5; `brain/heron_update.py` refuses a release without `rollback_tested` | MUST |
 
 ### The three routes
@@ -182,6 +189,31 @@ logic, not re-implement it** — two copies of a deploy rule is two rules that d
 | R-34 | Ticking **tools without the connector** is a supported install. No AI is installed, and the tools work | Owner, 2026-09-21 | MUST |
 | R-35 | Both pieces build into the **same `Heron` tab**, and neither may assume it is loaded first | Revit's `CreateRibbonTab` throws when the tab exists; `HeronApplication.BuildRibbon()` already catches it | MUST |
 | R-36 | `Heron Doc`, `Heron MEP` and every future tab have **one tick each** — no sub-choice | [S3](00-structure.md) | MUST |
+
+### The Settings panel
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| R-42 | The `Heron` tab carries a **Settings panel**, installed whenever any Heron product is | Owner, 2026-09-21; [S9](00-structure.md) | MUST |
+| R-43 | From it the user turns **tabs and panels on and off** — hiding what is installed, not removing it | Owner, 2026-09-21 | MUST |
+| R-44 | The choice is **saved under `%APPDATA%\Heron`** and survives every install, update and replace | [S9](00-structure.md); [R-20](#installing) | MUST |
+| R-45 | Hiding a panel **never uninstalls it**. Un-hiding needs no installer and no download | [S9](00-structure.md) — install decides disk, settings decides screen | MUST |
+| R-46 | The Settings panel reads its list from **the same manifest the installer uses**, never a list written into the window | [Stage 1](02-implementation.md); a second list is a second thing to keep in step | MUST |
+| R-47 | A panel hidden by a user who then installs a **new** product: the new one is **visible by default** | Nothing has been said; **assumed here** — a user who installs a thing expects to see it. Reverse it if wrong | SHOULD |
+
+### The lessons from AJ Tools
+
+Each row cites the lesson it came from in [`04-lessons-from-aj-tools.md`](04-lessons-from-aj-tools.md).
+**Three of them correct a row written on 2026-09-20.**
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| R-37 | Every file is **cleared of its download mark**, before the copy and again on the copies. A marked DLL makes Revit refuse the add-in | [L1](04-lessons-from-aj-tools.md) | MUST |
+| R-38 | Replacing **renames the old folder aside**, installs clean, and sweeps set-aside folders on a later run. **Never delete first** — the delete fails while Revit holds the file | [L2](04-lessons-from-aj-tools.md) — **corrects [R-23b](#uninstall-and-update)** | MUST |
+| R-38a | The sweep is **best-effort**. A folder still held open fails to delete and is swept next time; it can never fail an install | [L2](04-lessons-from-aj-tools.md) | MUST |
+| R-39 | Which Revit versions can be installed is read from **what the package contains**, never from a typed list | [L3](04-lessons-from-aj-tools.md) — **supersedes [R-9](#revit-versions)**; and [AGENTS.md](../../../../AGENTS.md) *never type a number a command can derive* | MUST |
+| R-40 | A product ships **one payload folder per Revit release**, carrying that release's build **and everything the runtime needs beside it** | [L4](04-lessons-from-aj-tools.md) — .NET 8+ fails on a missing dependency manifest | MUST |
+| R-41 | Each product installs into **its own folder**, never a shared one. Two products carrying different versions of the same helper assembly must not overwrite each other | [L5](04-lessons-from-aj-tools.md) — **corrects §4** | MUST |
 
 ### Shipping it
 

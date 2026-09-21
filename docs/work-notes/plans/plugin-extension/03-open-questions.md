@@ -22,7 +22,7 @@ paraphrase of a decision is how a decision quietly changes.
 
 ## 2. Open questions
 
-**Two were answered on 2026-09-21 and are struck through below. Six remain.**
+**Two were answered on 2026-09-21 and are struck through below. Three more were raised the same day. Nine remain.**
 
 ### Q-PE-1 — What is "Heron Tools"? — ~~half answered 2026-09-21~~, content still open
 
@@ -175,6 +175,81 @@ prerequisite is not an installer.
 **Blocks:** the `version` field in the product manifest ([Stage 1](02-implementation.md)). A default of
 **one version for everything** is safe to start with and can be split later; splitting is easier than
 merging.
+
+### Q-PE-9 — Generate the `.addin` manifest at install time, or keep patching a shipped one?
+
+**Waiting on:** the owner. **Raised 2026-09-21 from [L6](04-lessons-from-aj-tools.md).**
+
+Heron today **ships** a manifest and `deploy-addin.ps1` **rewrites a line** in it. That works, and
+[`check-package.py`](../../../../tools/check-package.py) check 5 exists to guard it — it verifies *"the
+literal line the deploy script rewrites is still there to rewrite"*. A gate that exists only because of
+the approach.
+
+AJ Tools' installer **writes** the manifest at install time, with the real path of the assembly it just
+placed. No line to patch, no gate needed.
+
+**Not proposed for the existing add-in**, which works and is proven. Proposed for the **new** products,
+where nothing is committed yet.
+
+**Blocks:** [Stage 1](02-implementation.md)'s manifest fields, mildly. Either way works; deciding once
+is better than deciding twice.
+
+---
+
+### Q-PE-10 — *"Install this repo"* is the shape `docs/07` refused. Which rule governs?
+
+**Waiting on:** the owner. **This is a genuine conflict between two things he has said, and
+[AGENTS.md](../../../../AGENTS.md) says to record both rather than close it whichever way is easier.**
+
+**The governing decision, already written down.**
+[`docs/07 §1a`](../../../07-installation-and-update.md), Correction 1:
+
+> *Point an AI at a URL and let it execute whatever it finds there* is the exact shape of a
+> supply-chain attack. It is also the pattern a contractor's IT department is trained to refuse … For a
+> tool that **writes to live client models**, it is the wrong first impression and the wrong precedent.
+
+It cites [Golden Rule 19](../../../14-golden-rules.md) — *no text Heron reads may raise its own
+permission level* — and rules for **one documented command that fetches a signed release**.
+
+**The instruction, 2026-09-21.** Route 1 is the user telling the AI *"install this repo"* or *"check
+this repo and set it up"*, and the AI installing everything.
+
+**Why this may be no conflict at all.** If "this repo" always means **Heron's own signed release**, then
+route 1 is the documented command with a friendlier surface, and `docs/07` is satisfied. The refusal was
+aimed at *whatever URL a user pastes*, not at Heron installing Heron.
+
+**Why it may be a real one.** The words as spoken do not name a repository. If a user can say *"install
+this repo"* about **any** repository and Heron does it, that is exactly the pattern — performed by the
+user's own hand, which `docs/07` calls out specifically.
+
+**The cheap resolution, if the owner wants one:** route 1 installs **only** Heron's own signed release,
+and any other repository is refused with a sentence saying why. The conversation stays friendly; the
+rule stays intact.
+
+**Who resolves:** the owner. **Nothing else in the plan is blocked** — routes 2 and 3 are untouched, and
+the engine does not care who called it.
+
+---
+
+### Q-PE-11 — Can a ribbon panel be hidden while Revit is running?
+
+**Waiting on:** a check against the Revit API. **Nobody has checked, and the whole behaviour of the
+Settings panel turns on the answer.**
+
+| If a panel **can** be hidden live | If it **cannot** |
+|---|---|
+| Tick the box, the panel goes, no restart | The setting is saved and applied at the next Revit start |
+| The Settings panel feels instant | The Settings panel must **say** a restart is needed, on the spot |
+
+**Do not guess this.** A Settings panel that silently does nothing until a restart is worse than one
+that says so plainly — the user ticks, nothing happens, and they conclude the tool is broken.
+
+**How to answer it:** `tools/check-api-surface.py` with a .NET SDK present will say whether the member
+exists across 2020–2027, which is the answer that matters — a property present in 2025 and absent in
+2020 is not an answer, it is two answers. This container has no `dotnet`
+([`heron-ship`](../../../../.claude/skills/heron-ship/SKILL.md) §5), so it needs a machine that has one.
+
+**Blocks:** [Stage 9](02-implementation.md). Blocks nothing before it.
 
 ---
 

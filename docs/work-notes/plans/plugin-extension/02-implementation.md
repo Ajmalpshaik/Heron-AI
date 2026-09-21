@@ -11,7 +11,7 @@
 
 ## 1. How to use this note
 
-Nine stages, in order. **Each one proves something the next stage depends on.**
+Ten stages, in order. **Each one proves something the next stage depends on.**
 
 Every stage has:
 
@@ -42,7 +42,7 @@ a stage being marked done on a compile alone:
 - Stage 2 — a tab appearing in Revit
 - Stage 3 — files landing in the Addins folder
 - Stage 4 — the window drawing and behaving
-- Stage 6 — routes A and B installing on a real machine
+- Stage 6 — routes 1 and 2 installing on a real machine
 - Stage 7 — an uninstall leaving the user's data intact
 - Stage 8 — the signed installer running past SmartScreen
 
@@ -289,7 +289,7 @@ Whether a particular contractor's firewall allows it. That is found on site, and
 
 ---
 
-## Stage 6 — Routes A and B, onto the same engine
+## Stage 6 — Routes 1 and 2, onto the same engine
 
 **Status: NOT STARTED**
 
@@ -301,14 +301,16 @@ that lives in three places is three rules, and two of them go stale.
 
 ### Do
 
-1. **Route B — repo download** ([R-29](01-requirements.md)). A setup file in the repository: the user
-   sets the project location, runs it, and it configures everything.
+1. **Route 2 — the repo handed to the AI** ([R-29](01-requirements.md)). The user downloads the repo and
+   gives it to the AI in-product; the AI installs from the files it was given.
 2. **Route B downloads nothing** ([R-30](01-requirements.md)). Its files are already in the repo, so it
    must take the local path through the engine rather than the release path. This is the offline install
    that [Q-PE-5](03-open-questions.md) wanted, arriving as a side effect.
-3. **Route A — cloud** ([R-28](01-requirements.md)). A new person gives the repository and everything
-   installs with no further input. Which products and which Revit versions come from the cloud plan
-   rather than from tick boxes.
+3. **Route 1 — natural language** ([R-28](01-requirements.md)). The user says *"install this repo"* and
+   the AI installs everything, **then asks which panels they want**. Asking afterwards is the point: a
+   conversation can install first and narrow later, which a window cannot.
+   **Read [Q-PE-10](03-open-questions.md) before building this one** — whether route 1 may act on any
+   repository, or only Heron's own signed release, is unresolved and it is a security question.
 4. **Both report** ([R-32](01-requirements.md)) — what was installed, into which Revit versions, what was
    skipped and why. An automatic install that says nothing cannot be checked by the person it happened
    to.
@@ -317,8 +319,8 @@ that lives in three places is three rules, and two of them go stale.
 
 ### Done when
 
-- Route B installs on a machine **with networking off**, from a fresh clone, and the tabs appear.
-- Route A installs for a new person with no input past handing over the repository.
+- Route 2 installs on a machine **with networking off**, from a fresh clone, and the tabs appear.
+- Route 1 installs from a sentence, then **asks which panels** and honours the answer.
 - **The engine is one engine:** a rule changed once — the refusal while Revit is open is the cheapest to
   test — changes behaviour in **all three** routes. Break it deliberately and watch all three fail;
   that is the only proof that they share it.
@@ -388,6 +390,51 @@ stage.
 
 That the products are any good. That is what the fragments' own proofs are for.
 
+## Stage 9 — The Settings panel
+
+**Status: NOT STARTED**
+
+**Last, and deliberately so.** It decides what is *shown*, which is meaningless until something is
+reliably *installed*. [S9](00-structure.md).
+
+### Do
+
+1. **Answer [Q-PE-11](03-open-questions.md) first.** Can a ribbon panel be hidden while Revit is
+   running, on every release from 2020 to 2027? **The whole design of this stage depends on it**, and it
+   needs a machine with a .NET SDK, which this container has not got.
+2. A **Settings panel** on the `Heron` tab, installed whenever any Heron product is
+   ([R-42](01-requirements.md)).
+3. A window listing every installed tab and panel, each with a tick
+   ([R-43](01-requirements.md)) — its list read from **the manifest**, never typed into the window
+   ([R-46](01-requirements.md)).
+4. The choice saved under `%APPDATA%\Heron` ([R-44](01-requirements.md)), so it survives every install
+   and replace.
+5. Each product's ribbon build **reads that choice** and builds only what is on. A hidden panel is
+   **still installed** ([R-45](01-requirements.md)) — un-hiding needs no installer and no download.
+6. If the answer to step 1 is *no*, the window **says a restart is needed, on the spot**. It never ticks
+   the box and does nothing visible.
+7. The window is a tool window and its code-behind **never touches the Revit API directly** — the
+   `ExternalEvent` pattern, per
+   [`revit-ribbon-and-windows`](../../../../.claude/skills/revit-ribbon-and-windows/SKILL.md).
+
+### Done when
+
+- Every panel can be hidden and brought back, and a screenshot records both states.
+- Hiding a panel, closing Revit and reopening it: **still hidden**. The choice is persistent, not a
+  session toggle.
+- Running the installer again — including a replace — leaves the choices **untouched**
+  ([R-44](01-requirements.md)).
+- Hiding a panel and then checking the Addins folder: **the files are still there**
+  ([R-45](01-requirements.md)).
+- Installing a new product while others are hidden: the new one is **visible**
+  ([R-47](01-requirements.md)) — and if that turns out to be the wrong default, the row says to reverse
+  it rather than to argue about it.
+
+### Cannot prove
+
+Whether the list is the one a modeller wants to see. That is a question for a modeller using it for a
+week, not for a test.
+
 ---
 
 ## 3. Order, and why it is this order
@@ -399,9 +446,10 @@ Stage 2  second tab     -> CHEAPEST POSSIBLE PROOF that the whole plan works
 Stage 3  engine         -> install works before anything is drawn
 Stage 4  window         -> a face on a working engine
 Stage 5  download       -> the network, last of the mechanics
-Stage 6  routes A and B -> the other two front doors, onto the SAME engine
+Stage 6  routes 1 and 2 -> the other two front doors, onto the SAME engine
 Stage 7  uninstall      -> the way back, before real users arrive
 Stage 8  sign and ship  -> the locked-down laptop is the real exam
+Stage 9  settings       -> what is SHOWN, once what is INSTALLED is reliable
 ```
 
 **Stage 2 is the one to do first after the paperwork.** It costs a dummy button and it answers the
@@ -425,6 +473,7 @@ Update this table as stages complete. **Do not mark a stage done without its evi
 | 3 | Installer core | NOT STARTED | — |
 | 4 | The window | NOT STARTED | — |
 | 5 | GitHub download | NOT STARTED | — |
-| 6 | Routes A and B | NOT STARTED | — |
+| 6 | Routes 1 and 2 | NOT STARTED | — |
 | 7 | Uninstall / update / rollback | NOT STARTED | — |
 | 8 | Sign and ship | NOT STARTED | — |
+| 9 | The Settings panel | NOT STARTED | — |

@@ -49,7 +49,7 @@ That sentence is the whole structure. Everything below follows from it.
 
 ---
 
-## 3. The eight structural decisions
+## 3. The nine structural decisions
 
 These were taken by the owner in conversation on 2026-09-20. **They are not yet in
 [DECISIONS.md](../../../DECISIONS.md)** — moving them there is Stage 1 of
@@ -162,37 +162,44 @@ If a button ever needs logic that no fragment has, that is a signal to **write t
 it**, not to write private code behind the button. Private code behind a button is code the AI cannot
 reach, cannot explain and cannot audit.
 
-### S7 — Three ways in, one engine underneath
+### S7 — Three ways in, and two of them are the AI
 
-Stated by the owner on 2026-09-21. **There are three ways Heron gets onto a machine, and they are not
-three installers.** They are three front doors onto the same install engine.
+**Restated 2026-09-21, and it changes what was written on 2026-09-20.** That version called route A
+"cloud" and route B "a setup file you run". The owner's fuller account makes both of them **the AI
+doing the installing**, and only route C a window.
 
-| | Route | Who it is for | What the user does |
+| | Route | What the user does | Who installs |
 |---|---|---|---|
-| **A** | **Cloud** | a new person joining, per the cloud planning | gives the repository; everything installs by itself |
-| **B** | **Repo download** | anyone who takes the whole repo | sets the project location, runs the setup file; everything configures by itself |
-| **C** | **Manual installer** | a modeller who just wants the tools | double-clicks the installer, ticks what they want, presses Install |
+| **1** | **Natural language** | says *"install this repo"* or *"check this repo and set it up"* | **the AI** — fetches, installs everything, **then asks which panels they want** |
+| **2** | **Repo upload** | downloads the repo and hands it to the AI in-product | **the AI** — installs from the files given to it |
+| **3** | **Manual, one click** | double-clicks the installer | **the window** — tick, customise, Install |
 
-> Owner, 2026-09-21: *"if they provide the repository, it will automatically install everything …
-> Alternatively, if someone downloads the repo, all the files will be included, along with an
-> installation file. Once they set the project location and run the setup, everything can be
-> configured automatically."*
+> Owner, 2026-09-21: *"The user can tell the AI something like, 'Install this repo' or 'Check this repo
+> and set it up.' The system will automatically install all the plugins and everything. From there, it
+> will ask the user which panels they need."*
 
-**Why one engine and not three.** A rule that lives in three installers is three rules, and two of them
-go stale. The engine ([Stage 3](02-implementation.md)) owns every rule — Revit detection, the refusal
-while Revit is open, the copy, the overwrite, the verify. A, B and C differ only in **who chooses** and
-**where the files come from**:
+**Route 1 asks afterwards; route 3 asks first.** That is the real difference between them, and it is a
+design choice rather than an accident: a conversation can install first and narrow later, a window
+cannot. Route 2 sits between — the files are already decided, the panels still have to be.
+
+**Still one engine.** Whoever is choosing, the rules are the same ones — Revit detection, the refusal
+while Revit is open, the unblock, the rename-aside, the replace, the verify, the report. A rule that
+lives in three installers is three rules and two of them go stale, so the engine
+([Stage 3](02-implementation.md)) owns every one and the three routes only decide **what** to install.
 
 ```text
-   A  cloud        -> choices come from the cloud plan    -\
-   B  repo + setup -> choices come from the setup answers  --> ONE ENGINE -> Revit Addins folder
-   C  installer    -> choices come from the tick boxes    -/
+   1  natural language -> the AI asks, after installing   -\
+   2  repo handed over -> the AI asks, about panels        --> ONE ENGINE -> Revit Addins folder
+   3  installer window -> the user ticks, before           -/
 ```
 
-**Route B ships the files with the repo.** Unlike route C it does not have to download anything — the
-repo already carries them. That is worth noting against [S5](#s5--files-come-from-a-signed-github-release):
-**route C downloads, route B does not**, so the offline case that [Q-PE-5](03-open-questions.md) worries
-about is already solved for anyone who took the repo.
+**Route 2 downloads nothing** — the user already has the files — so it is the offline install, arriving
+as a side effect rather than as a feature ([Q-PE-5](03-open-questions.md)).
+
+**Routes 1 and 2 have a rule of their own that route 3 does not need.** They are an AI acting on a
+repository, and [Golden Rule 19](../../../14-golden-rules.md) and
+[`docs/07 §1a`](../../../07-installation-and-update.md) have something specific to say about that shape.
+It is not settled here — see [Q-PE-10](03-open-questions.md).
 
 ### S8 — Install replaces; there is no separate upgrade path
 
@@ -212,6 +219,41 @@ patterns and audit log. The product is replaced; the data is not
 ([S4](#s4--install-stays-per-user-and-never-asks-for-admin-rights),
 [`HeronPaths`](../../../../platform/Heron.Core/HeronPaths.cs)). A wipe that reached it would destroy a
 year of work on a button press labelled *Install*.
+
+### S9 — Installing and showing are two different things
+
+**New 2026-09-21.** The `Heron` tab gets a **Settings panel**, and from it the user turns tabs and
+panels on and off.
+
+> Owner, 2026-09-21: *"after he install there is in the Heron tab there is one panel settings … if he
+> install all the tools … from that tab he can turn off and on the tabs from their settings panels,
+> like same like pyRevit … so they can hide the panels also."*
+
+**The distinction this decision exists to hold:**
+
+| | Decides | Lives in | Changing it means |
+|---|---|---|---|
+| **Install** | what is **on disk** | `%APPDATA%\Autodesk\Revit\Addins\…` | running the installer again |
+| **Settings** | what is **on screen** | the user's own Heron data | ticking a box in Revit |
+
+A modeller who installed everything and only wants two panels today should **not** have to run an
+installer to say so, and should not lose the rest by saying it. Install is a decision about the machine;
+settings is a decision about the afternoon.
+
+**Where the setting lives, and why that matters.** Under `%APPDATA%\Heron` — the **data** class, which
+[S8](#s8--install-replaces-there-is-no-separate-upgrade-path) and
+[`HeronPaths`](../../../../platform/Heron.Core/HeronPaths.cs) say an install replaces **nothing** of. So
+a user's hidden-panel choices survive every update. If they lived beside the product they would be wiped
+by the next Install, and the user would blame the update for a tidy ribbon going untidy.
+
+**The one thing nobody has checked**, and the whole behaviour of the panel turns on it: whether a Revit
+ribbon panel can be hidden **while Revit is running**, or whether the choice only takes effect at the
+next start. That is [Q-PE-11](03-open-questions.md), and it is written as unchecked rather than guessed.
+
+**The three tabs this applies to, today:** `Heron`, `Heron Doc`, `Heron MEP`. The owner confirmed on
+2026-09-21 that these are the three for now and more will be named later — so the Settings panel must
+read its list from the same manifest the installer does ([Stage 1](02-implementation.md)), never from a
+list written into the settings window.
 
 ---
 

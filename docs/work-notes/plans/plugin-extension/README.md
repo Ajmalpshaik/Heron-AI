@@ -21,10 +21,11 @@ applies — and so that an AI picking this up **reads facts instead of inventing
 
 | | |
 |---|---|
-| [`00-structure.md`](00-structure.md) | **What shape this is.** The eight structural decisions. **Read first — structure decides the requirements** |
+| [`00-structure.md`](00-structure.md) | **What shape this is.** The nine structural decisions. **Read first — structure decides the requirements** |
 | [`01-requirements.md`](01-requirements.md) | **What the installer must do.** One row per requirement, each with a source |
-| [`02-implementation.md`](02-implementation.md) | **How it gets built.** Nine stages, and what proves each one |
-| [`03-open-questions.md`](03-open-questions.md) | **What is not decided**, and the parking space for new ideas. Two were answered on 2026-09-21 |
+| [`02-implementation.md`](02-implementation.md) | **How it gets built.** Ten stages, and what proves each one |
+| [`03-open-questions.md`](03-open-questions.md) | **What is not decided**, and the parking space for new ideas. Two answered and three raised on 2026-09-21 |
+| [`04-lessons-from-aj-tools.md`](04-lessons-from-aj-tools.md) | **What AJ Tools' installer already learned the hard way.** Eight lessons, three of which corrected a row written the day before |
 
 ## The three rules of this folder
 
