@@ -289,11 +289,29 @@ class SessionBinding(object):
 
 
 def _nothing_connected(starting, mismatched):
+    """
+    Why there is no session to act on, and what to do about it.
+
+    ALL THREE SAY NOTHING WAS SENT, and until 2026-09-21 none of them did -
+    while this module's own docstring says "Every refusal says 'nothing has
+    been sent to Revit' in as many words", and gives the reason: the user's
+    first thought on any refusal is "did it half-do something?".
+
+    THE TWO THAT MATTER MOST WERE THE TWO IT READ LEAST LIKE. With no Revit
+    connected at all, nothing having been sent is nearly self-evident. With a
+    Revit RUNNING but not answering yet, or one connected and speaking
+    another protocol, it is not self-evident at all - something is plainly
+    there, and a modeller reading either of those mid-conversation has real
+    reason to wonder whether the last thing they asked went through.
+    FRAGMENT-ISSUES section 5b, row 36.
+    """
     if starting:
         return ("Revit is running but its bridge is not answering yet - it is probably still "
-                "starting up. Try again in a moment.")
+                "starting up. Nothing has been sent to Revit. Try again in a moment.")
     if mismatched:
-        return ("A Revit is connected but speaks a different protocol version. Restart that "
-                "Revit to finish updating; Heron will not talk across protocols.")
-    return ("No Revit is connected. Open Revit, then press  Heron > AI Bridge > Heron  on the ribbon. "
-            "The button lights up when it is connected.")
+        return ("A Revit is connected but speaks a different protocol version. Nothing has been "
+                "sent to Revit. Restart that Revit to finish updating; Heron will not talk "
+                "across protocols.")
+    return ("No Revit is connected, so nothing has been sent to Revit. Open Revit, then press  "
+            "Heron > AI Bridge > Heron  on the ribbon. The button lights up when it is "
+            "connected.")

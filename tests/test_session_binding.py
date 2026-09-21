@@ -30,6 +30,7 @@ user's next command lands on someone else's model.
     python tests/test_session_binding.py
 """
 
+import io
 import os
 import sys
 
@@ -233,6 +234,37 @@ def main():
     check(release == "2020" and how == "the only Revit connected",
           "an ASSUMED session that closed does quietly take the remaining "
           "one - the other row of the same table")
+
+    print()
+    print("7. EVERY refusal says nothing was sent, including the three that did not")
+    # The module docstring says "Every refusal says 'nothing has been sent to
+    # Revit' in as many words", and gives the reason: the user's first thought
+    # on any refusal is "did it half-do something?". Three of them - no Revit,
+    # bridge still starting, protocol mismatch - did not, and the last two are
+    # the ones where it reads least obvious: a Revit is plainly THERE.
+    # FRAGMENT-ISSUES section 5b, row 36.
+    import heron_session as SESSION
+    for label, args in (("nothing connected", (False, False)),
+                        ("a bridge still starting", (True, False)),
+                        ("a protocol mismatch", (False, True))):
+        said = SESSION._nothing_connected(*args)
+        check("othing has been sent to Revit" in said,
+              "%s -> says nothing was sent" % label)
+
+    # AND THE THREE CALLS ABOVE ARE ALL OF THEM. Counting the sentence in the
+    # source would be the obvious check and it is the wrong one: two of these
+    # messages are built from a pair of adjacent string literals, so the
+    # phrase is not contiguous in the file even though it is in the answer.
+    # Counting the RETURNS instead is what makes "every branch" true - a
+    # fourth added later fails this and has to be covered above.
+    source = io.open(os.path.join(ROOT, "mcp", "server", "heron_session.py"),
+                     encoding="utf-8").read()
+    body = source[source.index("def _nothing_connected"):]
+    body = body[:body.index("\n\n\n")] if "\n\n\n" in body else body
+    returns = body.count("return (")
+    check(returns == 3,
+          "_nothing_connected has exactly the three branches checked above "
+          "(%d)" % returns)
 
     print()
     if failures:
