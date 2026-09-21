@@ -103,6 +103,38 @@ windows_desktop_toolchain = NET.windows_desktop_toolchain
 why_unbuildable = NET.why_unbuildable
 
 
+#: MSBuild and NuGet errors that are about the TOOLCHAIN, not about Heron's
+#: code. Every one of them is raised BEFORE a line of C# is read, so none of
+#: them can be a statement about the code:
+#:
+#:   MSB3644  the reference assemblies for .NETFramework vX were not found
+#:   MSB4019  an imported project was not found - the shape docs/30 records
+#:            for the .NET 8 SDK on 2025-2027, which omits the WindowsDesktop
+#:            targets
+#:   NU1101   the package could not be found on any feed
+#:
+#: This exists because the closing lines of this gate used to say, of ANY
+#: failure, "a failure is normal for code no compiler has read yet ... fix it
+#: and run this again" - and on 2026-09-21 that sentence sent a reader at
+#: their own code for an MSB3644 on Revit 2020 in a fresh container. It did
+#: not reproduce: the same command passed all eight releases minutes later
+#: with a warm package cache, and CI had compiled 2020 green on the same
+#: commit throughout. FRAGMENT-ISSUES row 5b-74.
+TOOLCHAIN_ERRORS = ("MSB3644", "MSB4019", "NU1101")
+
+
+def only_the_toolchain(errors):
+    """True when EVERY error is the toolchain rather than the code.
+
+    Every one, not any one: a real compile error beside a missing targeting
+    pack is still a real compile error, and rounding the pair up to "try
+    again" would hide it. That is the same rule the four states are drawn
+    along everywhere else here.
+    """
+    return bool(errors) and all(
+        any(code in one for code in TOOLCHAIN_ERRORS) for one in errors)
+
+
 def build(project, version):
     """Build one project for one Revit version. Returns (ok, error lines)."""
     cmd = ["dotnet", "build", project, "-p:RevitVersion=" + version, "--nologo"]
@@ -175,6 +207,7 @@ def main():
     print()
 
     passed, failed, skipped = [], [], []
+    toolchain_only = []      # failed, and not on anything the compiler read
 
     for version in wanted:
         missing = why_unbuildable(version, desktop_major)
@@ -195,6 +228,11 @@ def main():
                 print("   FAIL  %s" % name)
                 for line in errors[:8]:
                     print("         %s" % line)
+                if only_the_toolchain(errors):
+                    toolchain_only.append(version)
+                    print("         ^ every error here is MSBuild or NuGet saying")
+                    print("           something is MISSING, raised before a line of")
+                    print("           C# was read. That is not this code.")
                 break     # later projects depend on this one; the rest is noise
         (failed if broke else passed).append(version)
         print()
@@ -208,8 +246,17 @@ def main():
     if failed:
         print("FAILED     %s" % ", ".join(failed))
         print()
-        print("A failure is normal for code no compiler has read yet, and each one")
-        print("names its file and line. Fix it and run this again.")
+        if toolchain_only:
+            print("BUT %s failed ONLY on toolchain errors - nothing there is a"
+                  % ", ".join(toolchain_only))
+            print("statement about this code. Run it again first: a cold NuGet cache")
+            print("on a fresh clone produces exactly this, measured 2026-09-21 when")
+            print("Revit 2020 failed MSB3644 once here and passed on every run after.")
+            print("If it persists, docs/30-compiling-away-from-windows.md is the page.")
+            print()
+        print("Each failure above names its file and line. A failure in code the")
+        print("compiler actually READ is normal for code no compiler has read yet -")
+        print("fix it and run this again.")
         return 1
 
     print()

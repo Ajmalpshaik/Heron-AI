@@ -336,6 +336,23 @@ class Bridge(object):
         return None
 
 
+#: HOW LONG TO WAIT FOR `tasklist` BEFORE ANSWERING "CANNOT TELL".
+#: Every pipe operation in this file is bounded on purpose - _connect has a
+#: deadline, _read_line runs the read on a daemon thread and joins with one,
+#: and both response timeouts come from heron_config. The one subprocess call
+#: was not, so the function whose docstring says it answers alive, dead or
+#: cannot tell had a fourth outcome: never. bridge_process_is_running() asks
+#: once per image in BRIDGE_IMAGES, so that was three unbounded calls per
+#: process id, on the path a modeller is waiting on. Row 5b-72.
+#:
+#: Five seconds, not one: tasklist on a loaded machine is slow rather than
+#: instant, and a deadline that fires on a healthy box would call a live
+#: Revit unknown and prune nothing. Not a config key - eight settings are
+#: declared in HeronConfig.Defaults and read back by a second reader, and
+#: row 5b-29 is what a ninth costs when the two drift.
+TASKLIST_TIMEOUT_S = 5.0
+
+
 def process_is_running(pid, image="Revit.exe"):
     """
     Is that process alive, AND is it still the program we think it is?
@@ -357,8 +374,12 @@ def process_is_running(pid, image="Revit.exe"):
         out = subprocess.check_output(
             ["tasklist", "/FI", "PID eq %s" % pid, "/FI", "IMAGENAME eq %s" % image, "/NH"],
             stderr=subprocess.STDOUT, universal_newlines=True,
+            timeout=TASKLIST_TIMEOUT_S,
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     except Exception:
+        # TimeoutExpired lands here too, which is the point: a deadline turns
+        # "never answered" into "cannot tell", the one answer this function
+        # promises. Row 5b-72.
         return None
 
     # A filter that matches nothing prints an INFO line, not a row. Look for

@@ -76,6 +76,21 @@ FAST = ["check-docs", "check-metadata", "check-structure"]
 # Everything this tool knows how to run. Anything not here can still be
 # recorded with --stated, and is then marked as a claim rather than a
 # measurement - see stated_gates().
+#
+# THE TWO AT THE BOTTOM ARE HERE BECAUSE check-change.py ASKS FOR THEM.
+# Its BY_SIGNAL table owes ["check-compile", "check-api-surface"] for a
+# revit-version signal - any change touching a .cs file or
+# Directory.Build.props - and neither was in this table, so every such change
+# came back REVISE, "gate(s) this change owes were not run", unless the author
+# knew to reach for --stated. That files a real measurement as a claim, which
+# is the one thing --stated exists NOT to be used for. Measured on PR #228,
+# 2026-09-21; FRAGMENT-ISSUES row 5b-73.
+#
+# Both run on a machine with a .NET SDK. check-api-surface answers in seconds
+# with its assemblies cached; check-compile takes minutes, which is presumably
+# why it was left out - but check-gaps is slower still and has been here all
+# along, and --gate is opt-in, so nothing gets slower by default. What changes
+# is that it becomes POSSIBLE to record what the other tool requires.
 RUNNABLE = {
     "check-docs":      ["python3", "tools/check-docs.py"],
     "check-metadata":  ["python3", "tools/check-metadata.py"],
@@ -85,6 +100,8 @@ RUNNABLE = {
     "check-package":   ["python3", "tools/check-package.py"],
     "check-routing":   ["python3", "tools/check-routing.py"],
     "check-intrusion": ["python3", "tools/check-intrusion.py"],
+    "check-compile":      ["python3", "tools/check-compile.py"],
+    "check-api-surface":  ["python3", "tools/check-api-surface.py"],
 }
 
 PASS, FAIL, NOT_RUN = "PASS", "FAIL", "NOT RUN"
