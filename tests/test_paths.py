@@ -30,7 +30,10 @@ WHAT IT PROVES
   7. EVERY FAILURE THE CONTRACT DECLARES IS NAMED BY THE CODE AND REACHED.
 """
 
+import glob
+import io
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -111,9 +114,17 @@ def main():
                  "who/knows.bin", "Community/pack"):
         check(PATHS.classify(path)["class"] == PATHS.UNKNOWN,
               "'%s' classifies as UNKNOWN" % path)
-    answer = PATHS.classify("Documentation/readme.md")
+    # ASKED OF who/knows.bin AND NOT OF Documentation, SINCE 2026-09-21.
+    # Four of the five paths above - Documentation, Tests, Configuration,
+    # Community - are folders docs/06 s2 DRAWS IN ITS OWN TREE and never
+    # gives a class to, so they are not the "nothing knows about this"
+    # case this pair is asserting. Asking Documentation for that sentence
+    # pinned a message that told the reader it was not in docs/06 at all,
+    # which is false. Row 5b-85; the five have their own section below,
+    # and the assertion itself is unchanged.
+    answer = PATHS.classify("who/knows.bin")
     check("not a gap" in answer["why"],
-          "and the answer says that is truthful rather than a gap")
+          "and a genuinely unknown path says that is truthful, not a gap")
     check(answer["matched"] is None, "with nothing matched")
     for operation in ("cleanup", "repair", "product-update", "uninstall"):
         answer = PATHS.may(operation, "Documentation/readme.md")
@@ -212,6 +223,59 @@ def main():
     check(not unreached,
           "and every one was reached above%s"
           % ("" if not unreached else ": %s" % ", ".join(unreached)))
+
+    print()
+    print("The two kinds of UNKNOWN, told apart against docs/06 s2 itself")
+    #
+    # Until 2026-09-21 every message in the module said "the twenty folders
+    # docs/06 s2 names". MEASURED against the document: its tree draws 19,
+    # its table gives a class to 14 of them, and the other five come back
+    # UNKNOWN with a sentence saying they are not in docs/06 at all. They
+    # are. Row 5b-85. The counts below are DERIVED from the document rather
+    # than typed, so this goes red if either side moves.
+    doc = io.open(sorted(glob.glob(os.path.join(ROOT, "docs", "06-*.md")))[0],
+                  encoding="utf-8").read()
+    section = doc[doc.index("## 2. Workspace architecture"):
+                  doc.index("## 3. Agent Registry")]
+    tree = section[section.index("```text"):
+                   section.index("```", section.index("```text") + 7)]
+    drawn = [line.strip().lstrip("+- ").strip() for line in tree.splitlines()
+             if line.strip().startswith("+--")]
+    tabled = []
+    for _klass, cell in re.findall(
+            r"\|\s*\*\*(Product|Data|Derived)\*\*\s*\|\s*([^|]+)\|", section):
+        tabled += [x.strip().lower() for x in cell.split(",")]
+    no_class = [n for n in drawn if n.lower() not in tabled]
+
+    check(len(drawn) >= 15 and len(no_class) > 0,
+          "docs/06 s2 draws %d folders and gives a class to %d of them"
+          % (len(drawn), len(drawn) - len(no_class)))
+    # getattr RATHER THAN PATHS.UNCLASSIFIED, so a module without it goes
+    # RED here and the checks below still run. A suite that dies on a
+    # missing attribute reports one crash where it could have reported
+    # eleven failures, and eleven is what tells you the shape of the
+    # regression. Learned on this suite, 2026-09-21.
+    declared = getattr(PATHS, "UNCLASSIFIED", ())
+    check(sorted(n.lower() for n in no_class) == sorted(declared),
+          "and UNCLASSIFIED holds exactly the ones it leaves out: %s"
+          % ", ".join(sorted(n.lower() for n in no_class)))
+
+    for name in no_class:
+        answer = PATHS.classify(name + "/thing.txt")
+        check(answer["class"] == PATHS.UNKNOWN and answer.get("unnamed") is False,
+              "%s is UNKNOWN but NOT unnamed - docs/06 s2 draws it" % name)
+        check("IS one of the" in answer["why"] and "Q-13" in answer["why"],
+              "and the reason says so, and points at Q-13 rather than "
+              "inventing a class for %s" % name)
+
+    stranger = PATHS.classify("Sketches/idea.txt")
+    check(stranger["class"] == PATHS.UNKNOWN and stranger.get("unnamed") is True,
+          "a folder docs/06 s2 really does not name reads as unnamed")
+
+    check("twenty" not in io.open(
+              os.path.join(ROOT, "brain", "heron_paths.py"),
+              encoding="utf-8").read().split("Until 2026-09-21")[0],
+          "and no message above the correction still says twenty")
 
     print()
     if FAILURES:
