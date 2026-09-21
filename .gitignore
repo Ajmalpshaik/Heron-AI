@@ -191,3 +191,12 @@ build/compile-results.json
 # Neither belongs in history. Only the README explaining the folder is tracked.
 brain/proof-drafts/*.yaml
 brain/proof-drafts/runs/
+
+# THE BUILT INSTALLER, KEPT WHERE IT CAN BE FOUND.
+# A single-file publish of platform/Heron.Installer.App, put here because
+# platform/Heron.Installer.App/bin/x64/Debug/ is not somewhere anybody should
+# have to dig to find an installer. It sits beside the add-in projects it
+# installs, which is where the owner asked for it on 2026-09-21. It is BUILD
+# OUTPUT and is never committed - what a downloader gets is the release asset,
+# which is Stage 5.
+/revit/HeronInstaller.exe
