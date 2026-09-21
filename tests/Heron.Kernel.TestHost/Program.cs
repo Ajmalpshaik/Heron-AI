@@ -358,6 +358,25 @@ namespace Heron.Kernel.TestHost
                 Check(!HeronAppend.Line(null, "nowhere") && !HeronAppend.Line("", "nowhere"),
                       "and so does no path at all");
 
+                // AND IT DOES NOT SLEEP THROUGH A FAILURE THAT CANNOT CLEAR.
+                //
+                // `Write` told the two apart in its comments from the first
+                // day - "busy: worth another attempt" against "permissions:
+                // retrying changes nothing" - and returned the same bare
+                // `false` for both, so the retry loop spent 20 + 40 + 60 + 80
+                // ms on a path that was never going to work, per line. A path
+                // holding a NUL character is refused by the framework before
+                // any I/O happens, so it is the one of those three this
+                // machine can produce; the timing is what distinguishes "it
+                // gave up" from "it tried five times".
+                var refusedAt = DateTime.UtcNow;
+                var gaveUp = HeronAppend.Line("bad\0path.log", "nowhere");
+                var spent = (DateTime.UtcNow - refusedAt).TotalMilliseconds;
+                Check(!gaveUp, "a path the framework refuses outright answers false");
+                Check(spent < 100,
+                      "and returns in " + (int)spent + " ms rather than sleeping "
+                      + "through four backoffs for a failure that cannot clear");
+
                 // NO TORN LINES. Ten threads, a hundred lines each: every one
                 // of the thousand is whole and on its own line. The mutex is
                 // what makes taking turns different from sharing the file.

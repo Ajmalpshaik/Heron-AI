@@ -593,16 +593,6 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
-        /// Compile once, keep it. Returns null on success, or the refusal.
-        ///
-        /// A COMPILE FAILURE HERE IS NOT THE SAME AS A FAILURE IN THE GATE.
-        /// tools/check-fragments-compile.py builds against the reference
-        /// assemblies for a release; this builds against the assemblies Revit
-        /// has actually loaded. When those two disagree, this one is right -
-        /// and the disagreement is worth reporting rather than smoothing over,
-        /// because it means the gate is checking something the model is not.
-        /// </summary>
-        /// <summary>
         /// Runs the arrangement steps that have to change the model, each in
         /// its own transaction inside the caller's group. Null when they all
         /// ran; a refusal to hand straight back when one did not.
@@ -753,6 +743,23 @@ namespace Heron.Revit.Addin
             return Json.ReadObjectArray("{\"needs\":" + needsText + "}", "needs");
         }
 
+        /// <summary>
+        /// Compile once, keep it. Returns null on success, or the refusal.
+        ///
+        /// A COMPILE FAILURE HERE IS NOT THE SAME AS A FAILURE IN THE GATE.
+        /// tools/check-fragments-compile.py builds against the reference
+        /// assemblies for a release; this builds against the assemblies Revit
+        /// has actually loaded. When those two disagree, this one is right -
+        /// and the disagreement is worth reporting rather than smoothing over,
+        /// because it means the gate is checking something the model is not.
+        ///
+        /// THIS PARAGRAPH SPENT ITS LIFE ABOVE THE WRONG METHOD. It sat as a
+        /// second, adjacent summary in front of RunSetupSteps, which C#
+        /// accepts - the last one wins - so it compiled clean while Compile
+        /// itself had no documentation at all and RunSetupSteps was headed by
+        /// a paragraph about compiling. Nothing catches that; it was found by
+        /// reading the file. FRAGMENT-ISSUES section 5b.
+        /// </summary>
         private static string Compile(string source, int prologueLines, out Script<object> script)
         {
             script = null;
