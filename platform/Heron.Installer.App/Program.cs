@@ -55,10 +55,19 @@ namespace Heron.Installer.App
             var deployer = new DeployScriptDeployer(root);
             var installed = new InstalledProductsOnDisk(revit);
 
+            // ASKED OF THE DEPLOYER, NEVER TYPED AGAIN. The window greys a
+            // release nothing has been built for, and "built" only means
+            // anything alongside a configuration - Debug and Release are two
+            // different folders and the deploy script reads exactly one of
+            // them. Writing "Release" here as well would be a second copy of
+            // a word that has already cost a round trip once.
+            var builds = new BuildsOnDisk(root, deployer.Configuration);
+
             var screen = InstallerScreen.Build(manifest,
                                                revit.InstalledReleases(),
                                                revit.RunningRevits(),
-                                               installed);
+                                               installed,
+                                               builds);
 
             var window = new InstallerWindow(screen, VersionOf(manifest));
             window.InstallPressed += delegate (IReadOnlyList<string> products,

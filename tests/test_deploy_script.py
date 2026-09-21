@@ -279,6 +279,109 @@ def main():
         check(os.path.exists(os.path.join(ROOT, which)),
               "%s exists in the repository" % which)
 
+    # AND THE OTHER FILE THAT HAD THE SAME WRONG POINTER, found 2026-09-21
+    # while fixing the fallback below. The row above was written as "asked of
+    # the repository rather than pinned to a name, so it also catches the next
+    # one" - and it asked of ONE FILE, so the next one was already there and it
+    # could not see it. tools/check-api-surface.py said the same wrong name, in
+    # the same sentence about the same change, and nothing was looking.
+    #
+    # NAMED HERE RATHER THAN SWEPT REPOSITORY-WIDE, and that is a measured
+    # limit rather than laziness: Directory.Build.props itself names a .targets
+    # file, legitimately, in the paragraph recording the measurement that ruled
+    # it out. A sweep would have to tell a live pointer from a written-up dead
+    # end, and a check that has to be clever about which mentions count is a
+    # check that will be wrong quietly. Adding a tool here is one line.
+    for tool in ("tools/check-api-surface.py",):
+        other = io.open(os.path.join(ROOT, tool), encoding="utf-8").read()
+        for which in sorted(set(re.findall(r"Directory\.Build\.[A-Za-z]+", other))):
+            check(os.path.exists(os.path.join(ROOT, which)),
+                  "%s names %s, and it exists" % (tool, which))
+
+    print()
+    print("NO BUILD FOR THE RELEASE ASKED FOR IS A REFUSAL, NOT A SUBSTITUTION")
+    # THE DEFECT. Finding no build for the release it was asked about, this
+    # script took ANY build it could see and let the runtime guard decide.
+    # THE GUARD READS THE RUNTIME, NOT THE YEAR: 2021, 2022, 2023 and 2024 all
+    # build net48, so one stale net48 leftover passes it for all four, deploys,
+    # and reports success. The same class of defect A12 recorded. It did not
+    # bite on 2026-09-21 only because the leftover happened to be .NET 10.
+    #
+    # ASKED OF THE CODE, NOT THE FILE, for the three below that matter: the
+    # comment above the refusal describes the fallback it replaced, in as many
+    # words, so a check written against `text` would pass against the version
+    # that still had one.
+    fallback = code.find("$buildOut = $candidates |\n                Sort-Object LastWriteTime")
+    check(fallback == -1,
+          "no second search takes whatever build is newest when the release "
+          "one is missing")
+    check("There is no $Configuration build for Revit $RevitVersion" in code,
+          "the refusal names the release it was asked about")
+    # THE COMMAND INSIDE THE REFUSAL, not merely somewhere in the file. The
+    # first draft of this check asked whether the script mentions that command
+    # at all, and $rebuildLine further down has carried it since before the
+    # fallback existed - so it was GREEN against the very version this section
+    # is about. A check that is true either way is not a check.
+    check("Build this release and run this again:`n  "
+          "dotnet build $productProjPath -c $Configuration "
+          "-p:RevitVersion=$RevitVersion" in code,
+          "and prints the exact command that makes that build, in the refusal "
+          "itself")
+    # THE REFUSAL COMES BEFORE ANYTHING IS TOUCHED. Both ends asserted first -
+    # str.find gives -1 for a string that is not there and -1 is less than
+    # every real position, which is how row 5b-79 passed loudest with the
+    # guard deleted.
+    # ASKED OF `text` AND NOT OF `code`: the second anchor is the blank line
+    # and the "# REPLACE" comment above the one call site that matters, which
+    # is the idiom the backup-before-delete check below already uses - and
+    # stripping the comments takes the anchor with it.
+    refuses = text.find("There is no $Configuration build for Revit $RevitVersion")
+    copies = text.find("Save-PreviousInstall\n\n# REPLACE")
+    check(refuses > 0 and copies > 0 and refuses < copies,
+          "and it refuses before the previous install is even backed up")
+    # THE DEBUG/RELEASE TRAP, which is trap 1 in this script's history: the
+    # installer window always deploys Release, the dev flow builds Debug, and
+    # the old message said only "No Release build found" - which reads as "your
+    # change failed" rather than "you built the other one".
+    check("$sameRelease" in code,
+          "it looks for the release in OTHER configurations too")
+    check("has been built, but not in $Configuration" in code,
+          "so a Debug build is reported as a Debug build, not as nothing")
+
+    print()
+    print("AND THE WINDOW ASKS THE SAME QUESTION IN THE SAME PLACE")
+    # BuildsOnDisk greys a release the window has no build for, BEFORE Install
+    # is pressed. If it looked anywhere but where this script looks, the window
+    # would grey a release this script would have installed happily - which is
+    # worse than the defect it fixes, because it refuses work that was
+    # possible. Two searches, one rule, and this is what holds them together.
+    builds_path = os.path.join(ROOT, "platform", "Heron.Installer",
+                               "WindowsAdapters.cs")
+    builds = io.open(builds_path, encoding="utf-8").read()
+    start = builds.find("public sealed class BuildsOnDisk")
+    check(start != -1, "the window has something that answers the question")
+    adapter = builds[start:] if start != -1 else ""
+    check('Path.Combine(_repoRoot, "revit", project, "bin")' in adapter,
+          "and it looks under revit\\<project>\\bin, where this script looks")
+    check('$projDir  = Join-Path $repoRoot "revit\\$productProject"' in code
+          and 'Join-Path $projDir "bin"' in code,
+          "which is the path this script builds, spelled the same way")
+    check("SearchOption.AllDirectories" in adapter,
+          "it searches rather than assuming the shape, as this script does")
+    check("-Recurse -Filter $productAssembly" in code,
+          "and this script searches the same way")
+    check("_configuration" in adapter and "IsAFolderInThePath" in adapter,
+          "it filters by configuration and matches the release as a whole "
+          "folder - the script's two -like patterns")
+    check('Where-Object { $_.FullName -like "*\\$RevitVersion\\*" }' in code,
+          "and the script's release pattern still has its separators, which "
+          "is what makes 2020 not match 2020-old")
+    check("deployer.Configuration" in io.open(
+              os.path.join(ROOT, "platform", "Heron.Installer.App", "Program.cs"),
+              encoding="utf-8").read(),
+          "and the window takes the configuration FROM the deployer rather "
+          "than writing Release out a second time")
+
     print()
     print("The one flag that makes a downloaded Heron installable - D-96")
     # THIS IS NOT THIS SCRIPT, IT IS ITS CALLER, and it is here because

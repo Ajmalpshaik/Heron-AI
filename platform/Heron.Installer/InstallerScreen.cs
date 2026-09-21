@@ -22,6 +22,25 @@ namespace Heron.Installer
         /// hunting for the right box.
         /// </summary>
         public bool Chosen { get; set; }
+
+        /// <summary>
+        /// False greys the box out. Never hidden, never dropped - a release
+        /// that vanished from the list would read as a Revit Heron could not
+        /// find, which is a different and wrong answer.
+        /// </summary>
+        public bool CanBeTicked { get; internal set; }
+
+        /// <summary>
+        /// Why it is greyed out, in plain English, or null when it is not.
+        ///
+        /// SAID BEFORE INSTALL IS PRESSED - R-10, and the reason this field
+        /// exists at all. A release with no build on this PC could be ticked
+        /// until 2026-09-21, and the only way to find out was to press
+        /// Install and read the refusal. The owner hit that five times in one
+        /// evening. The product rows have carried their reason since Stage 4;
+        /// this is the same rule applied to the row above them.
+        /// </summary>
+        public string WhyNot { get; internal set; }
     }
 
     /// <summary>One line of the product list, as it appears on screen.</summary>
@@ -74,6 +93,38 @@ namespace Heron.Installer
     public interface IInstalledProducts
     {
         bool IsInstalled(HeronProduct product, string release);
+    }
+
+    /// <summary>
+    /// Whether there is anything to install for a product and a release -
+    /// asked BEFORE Install is pressed.
+    ///
+    /// WHY THIS IS A QUESTION AND NOT AN ACTION. The window must never build
+    /// anything: a build takes minutes, needs an SDK a modeller has no reason
+    /// to own, and a window that starts one on opening is a window that looks
+    /// frozen. So it asks the only thing that costs nothing - is the built
+    /// file already on this disk - and greys the release when the answer is no.
+    ///
+    /// IT MUST ASK EXACTLY WHAT THE DEPLOY SCRIPT ASKS. tools\deploy-addin.ps1
+    /// is what actually installs, and if this looked in a different place the
+    /// window would grey a release the script would have installed happily -
+    /// which is worse than the defect it fixes. The implementation mirrors
+    /// that script's own search, including its configuration.
+    /// </summary>
+    public interface IProductBuilds
+    {
+        /// <summary>A build for that product and release is on this PC now.</summary>
+        bool HasBuild(HeronProduct product, string release);
+
+        /// <summary>
+        /// The one command that makes it, for the sentence on the greyed row.
+        ///
+        /// DERIVED FROM THE PRODUCT, never written out: R-3 says adding a
+        /// product is a line in the manifest, and a command with a project
+        /// name typed into it would be that rule broken in the one place
+        /// nobody looks - a sentence.
+        /// </summary>
+        string BuildCommand(HeronProduct product, string release);
     }
 
     /// <summary>
@@ -130,10 +181,22 @@ namespace Heron.Installer
         /// <param name="installedReleases">Which Revits are on this PC.</param>
         /// <param name="openRevits">Which are open right now, or null.</param>
         /// <param name="installed">Which products are already there, or null.</param>
+        /// <param name="builds">
+        /// Which releases there is anything to install FOR, or null when that
+        /// could not be found out.
+        ///
+        /// NULL LEAVES EVERY RELEASE TICKABLE, and that is the deliberate
+        /// direction to be wrong in. Greying a release that could have been
+        /// installed costs a modeller an install they were entitled to, with
+        /// a sentence telling them to build something that is already built.
+        /// Leaving one tickable costs a refusal after the press - which is
+        /// exactly where this stood before, so it is no worse than nothing.
+        /// </param>
         public static InstallerScreen Build(ProductManifest manifest,
                                             IEnumerable<string> installedReleases,
                                             IEnumerable<RunningRevit> openRevits,
-                                            IInstalledProducts installed)
+                                            IInstalledProducts installed,
+                                            IProductBuilds builds)
         {
             if (manifest == null) throw new ArgumentNullException("manifest");
 
@@ -142,7 +205,7 @@ namespace Heron.Installer
 
             var choices = new List<ReleaseChoice>();
             foreach (var release in releases)
-                choices.Add(new ReleaseChoice { Release = release, Chosen = true });
+                choices.Add(Choice(manifest, release, builds));
             screen.Releases = choices;
 
             screen.NothingFound = releases.Count > 0 ? null
@@ -184,8 +247,84 @@ namespace Heron.Installer
         public IReadOnlyList<string> ChosenReleases()
         {
             var chosen = new List<string>();
-            foreach (var r in Releases) if (r.Chosen) chosen.Add(r.Release);
+            foreach (var r in Releases)
+            {
+                // A GREYED RELEASE INSTALLS NOTHING EVEN IF ITS TICK ARRIVES
+                // SET, exactly as ToInstall above says of a greyed product
+                // row. The window should not be able to send one, and this
+                // is the place that makes that true rather than trusting it.
+                if (!r.CanBeTicked) continue;
+                if (r.Chosen) chosen.Add(r.Release);
+            }
             return chosen;
+        }
+
+        // -------------------------------------------------------- releases
+        /// <summary>
+        /// One release tick box, and whether there is anything to put in it.
+        ///
+        /// THE RULE, AND WHY IT IS THIS ONE. A release is greyed when every
+        /// product that could be installed into it has no build on this PC.
+        /// One product with a build is enough to keep it tickable, because
+        /// that install really would work - the rows below say what else
+        /// would not.
+        ///
+        /// A RELEASE NO PRODUCT SUPPORTS IS LEFT ALONE. It cannot be
+        /// installed either, but the honest reason is not "nothing has been
+        /// built" and the product rows already carry the right one. Answering
+        /// the wrong question loudly is how a window teaches a modeller to
+        /// stop reading it.
+        /// </summary>
+        private static ReleaseChoice Choice(ProductManifest manifest,
+                                            string release,
+                                            IProductBuilds builds)
+        {
+            var choice = new ReleaseChoice
+            {
+                Release = release,
+                Chosen = true,
+                CanBeTicked = true,
+            };
+
+            if (builds == null) return choice;
+
+            var missing = new List<HeronProduct>();
+            foreach (var product in manifest.Products)
+            {
+                // A HEADING HAS NO FILES OF ITS OWN, so it has no build to
+                // look for - D-93. Its pieces are in this same list and are
+                // asked about on their own account.
+                if (product.IsHeading) continue;
+                if (!product.MayBeOffered) continue;
+                if (!product.SupportsRevit(release)) continue;
+
+                if (builds.HasBuild(product, release)) return choice;
+                missing.Add(product);
+            }
+
+            if (missing.Count == 0) return choice;
+
+            var how = new List<string>();
+            foreach (var product in missing)
+            {
+                var command = builds.BuildCommand(product, release);
+                if (!string.IsNullOrEmpty(command) && !how.Contains(command))
+                    how.Add(command);
+            }
+
+            choice.CanBeTicked = false;
+            choice.Chosen = false;
+            choice.WhyNot =
+                "Nothing has been built for Revit " + release + " on this PC, so " +
+                "there is nothing to install into it. Ticking it would only get " +
+                "as far as the same answer after pressing Install." +
+                (how.Count == 0
+                    ? " Build it first, then open this window again."
+                    : " Build it first, then open this window again:" +
+                      Environment.NewLine + "    " +
+                      string.Join(Environment.NewLine + "    ", how.ToArray()));
+
+            return choice;
         }
 
         // ------------------------------------------------------------- rows

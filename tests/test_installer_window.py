@@ -20,6 +20,7 @@ proves is the thing a screenshot would NOT show:
     there is no Update button and no Repair button - R-23a
     the reason a row is greyed out is PRINTED, not only in a tooltip - R-10
     a row's own text WRAPS rather than clipping in silence - AB1, row 5b-97
+    a RELEASE with no build is greyed and the reason is PRINTED, not hovered
     Close Revit first is built BEFORE the Install button, not after a failure
     the waiting happens off the window's thread, so it cannot freeze
 
@@ -164,7 +165,18 @@ def main():
     # block in this window already wraps, so a bare find() returns the FIRST
     # one - which sits above the tick box and made this check red against the
     # fixed file. The occurrence that matters is the one inside this block.
-    tick = window.find("var tick = new CheckBox")
+    #
+    # AND FROM THE PRODUCT LIST, not from the first CheckBox in the file.
+    # ReleaseList() is built above ProductList() and makes a `var tick = new
+    # CheckBox` of its own, so every anchor below was landing on the RELEASE
+    # box and the block being read spanned both. It passed either way, which
+    # is the shape of a check that is not checking. Narrowed 2026-09-21 while
+    # the release box was being given its own greying rule - a tightening, and
+    # nothing in this section was relaxed to make anything pass.
+    products_at = window.find("private UIElement ProductList()")
+    check(products_at != -1, "the product list is built in its own method")
+    tick = window.find("var tick = new CheckBox",
+                       products_at if products_at != -1 else 0)
     enabled = window.find("IsEnabled = row.CanBeTicked", tick if tick != -1 else 0)
     wraps = window.find("TextWrapping = TextWrapping.Wrap",
                         tick if tick != -1 else 0)
@@ -195,6 +207,54 @@ def main():
     # promises adding a product is a line in a file.
     check("Widening" in block or "widened" in block,
           "and it records why widening the window was refused")
+
+    print()
+    print("A RELEASE WITH NO BUILD IS GREYED, and says why UNDERNEATH - R-10")
+    # FOUND BY WATCHING THE OWNER USE THE WINDOW, 2026-09-21. Every Revit on
+    # the PC could be ticked whether or not anything had been built for it,
+    # and the only way to find out was to press Install and read the refusal.
+    # He hit that five times in one evening. The product rows have carried
+    # their reason since Stage 4; this is the same rule on the row above them.
+    #
+    # WHAT IS CHECKED HERE IS THE DRAWING, AND ONLY THAT. Whether a release
+    # IS greyed is InstallerScreen's decision and is run against a fake disk
+    # by tests/test_installer_engine.py; what this file can say is that the
+    # window reads that decision rather than making one, and that the sentence
+    # reaches the screen rather than only a tooltip.
+    releases_at = window.find("private UIElement ReleaseList()")
+    check(releases_at != -1, "the release list is built in its own method")
+    release_block = window[releases_at:products_at] if -1 not in (releases_at, products_at) else ""
+    check("IsEnabled = release.CanBeTicked" in release_block,
+          "the release tick box is greyed by the SCREEN's decision")
+    check("ToolTip = release.WhyNot" in release_block,
+          "and the reason is on its tooltip")
+    # A TOOLTIP ON A DISABLED CONTROL DOES NOT SHOW. WPF's
+    # ToolTipService.ShowOnDisabled is false by default, so the line above
+    # would be invisible on exactly the boxes it is for. Read from the
+    # documentation, not from a window - nothing here draws one - which is why
+    # the printed sentence below is what actually carries R-10.
+    check("ToolTipService.SetShowOnDisabled" in release_block,
+          "and the tooltip is told to show on a disabled box, or it would not")
+    check("release.WhyNot != null" in release_block
+          and "Small(release.WhyNot" in release_block,
+          "AND PRINTED as well - nobody hovers over a box they cannot tick")
+    # The window must not work it out for itself. A release is greyed when no
+    # product that could go into it has a build, and that rule is only
+    # provable where it can be run against a fake disk.
+    check("HasBuild" not in window_code and "BuildsOnDisk" not in window_code,
+          "and the window never asks a disk anything - it draws what it was "
+          "handed")
+    check("CanBeTicked" in screen_code and "IProductBuilds" in screen_code,
+          "the rule itself is in InstallerScreen, where it can be tested")
+    # A GREYED RELEASE MUST NOT BE SENDABLE either, the same defensive rule
+    # the product rows already have: the window should not be able to send
+    # one, and the screen model is what makes that true rather than trusting
+    # it.
+    chosen = screen_code.find("public IReadOnlyList<string> ChosenReleases()")
+    check(chosen != -1, "the screen still decides which releases were chosen")
+    guard = screen_code.find("if (!r.CanBeTicked) continue;", chosen if chosen != -1 else 0)
+    check(guard != -1 and chosen != -1 and guard > chosen,
+          "and it drops a greyed release even if its tick arrives set")
 
     print()
     print("Close Revit first is BUILT BEFORE the Install button - item 6")

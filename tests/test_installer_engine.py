@@ -31,6 +31,8 @@ and that the WINDOW is offered the right thing to draw - Stage 4:
     an installed product stays tickable and says Install replaces it - R-23a
     Close Revit first is there before Install is pressed
     a greyed row installs nothing even if its tick arrives set
+    A RELEASE NOTHING HAS BEEN BUILT FOR IS GREYED TOO, with the command that
+      fixes it, and BuildsOnDisk looks where the deploy script looks
 
 Every one of those is a way an installer goes wrong quietly, which is the
 kind this repository has been bitten by: AJ Tools' lesson L3 installed nothing
@@ -38,10 +40,17 @@ at all on three releases and reported no failure.
 
 WHAT IT CANNOT PROVE
 --------------------
-That anything installs, or that any window appears. No file is written, no
-Revit is looked for, no PowerShell runs and nothing is drawn. The adapters
-that reach Windows - PowerShellRevitEnvironment, DeployScriptDeployer,
+That anything installs, or that any window appears. Nothing is written
+outside one temporary folder of the host's own, no Revit is looked for, no
+PowerShell runs and nothing is drawn. Three of the four adapters that reach
+Windows - PowerShellRevitEnvironment, DeployScriptDeployer,
 InstalledProductsOnDisk - are NOT exercised here and need the owner's machine.
+
+BuildsOnDisk is the exception and is genuinely run, against that temporary
+folder: it starts no process and resolves no special folder, so its path
+arithmetic is the same arithmetic here as on Windows. What is still owed there
+is whether the folder it names is the one MSBuild really wrote to.
+
 A green run here is not an install and must never be reported as one.
 
     python tests/test_installer_engine.py

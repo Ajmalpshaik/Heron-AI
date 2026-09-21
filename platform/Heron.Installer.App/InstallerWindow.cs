@@ -142,7 +142,7 @@ namespace Heron.Installer.App
         // ------------------------------------------------------------ parts
         private UIElement ReleaseList()
         {
-            var panel = new WrapPanel { Margin = new Thickness(12, 4, 0, 10) };
+            var panel = new WrapPanel { Margin = new Thickness(12, 4, 0, 0) };
 
             foreach (var release in _screen.Releases)
             {
@@ -152,7 +152,28 @@ namespace Heron.Installer.App
                     IsChecked = release.Chosen,
                     Margin = new Thickness(0, 4, 24, 4),
                     MinWidth = 120,
+
+                    // GREYED WHEN THERE IS NOTHING TO PUT IN IT - R-10, and
+                    // the screen model decided it, not this file. A release
+                    // with no build on the PC could be ticked until
+                    // 2026-09-21, and the only way to find out was to press
+                    // Install and read the refusal.
+                    IsEnabled = release.CanBeTicked,
+                    ToolTip = release.WhyNot,
                 };
+
+                // AND A TOOLTIP ON A DISABLED CONTROL DOES NOT SHOW, which is
+                // WPF's documented default and not a bug to be worked around:
+                // ToolTipService.ShowOnDisabled is false unless somebody says
+                // otherwise, so the line above would be invisible on exactly
+                // the boxes it is for.
+                //
+                // NOT SEEN, AND SAID SO. This is read from the documentation,
+                // not from a window - nothing here has been drawn. The
+                // sentence printed under the list is what actually carries
+                // R-10 either way; this only makes the tooltip agree with it.
+                ToolTipService.SetShowOnDisabled(tick, true);
+
                 _releaseTicks[release.Release] = tick;
                 panel.Children.Add(tick);
             }
@@ -160,7 +181,23 @@ namespace Heron.Installer.App
             if (_screen.Releases.Count == 0)
                 panel.Children.Add(Quiet("None."));
 
-            return panel;
+            // THE REASONS GO UNDER THE WHOLE ROW, not beside each box. The
+            // ticks sit in a WrapPanel so they flow across the window, and a
+            // sentence dropped into that flow would land wherever the wrap put
+            // it - next to the wrong release as soon as somebody has four
+            // Revits. So the boxes wrap and the reasons are listed below them,
+            // each naming its own release.
+            //
+            // PRINTED, NOT ONLY IN THE TOOLTIP. The tooltip above is for
+            // somebody who hovers; R-10 is about somebody who does not.
+            var block = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
+            block.Children.Add(panel);
+
+            foreach (var release in _screen.Releases)
+                if (release.WhyNot != null)
+                    block.Children.Add(Small(release.WhyNot, 12));
+
+            return block;
         }
 
         private UIElement ProductList()

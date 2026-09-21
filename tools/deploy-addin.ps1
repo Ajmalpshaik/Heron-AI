@@ -342,8 +342,17 @@ if ($Remove) {
 # catches a mismatch and always will - but a guard firing on every second
 # install is a design telling you something, not a design working.
 $projDir  = Join-Path $repoRoot "revit\$productProject"
-$candidates = @(Get-ChildItem -Path (Join-Path $projDir "bin") -Recurse -Filter $productAssembly -ErrorAction SilentlyContinue |
-                Where-Object { $_.FullName -like "*$Configuration*" })
+
+# READ ONCE, FILTERED TWICE. Every build of this product on disk, whatever
+# configuration it was made in - then the ones in the configuration asked for.
+# The wider list is what lets the refusal below say "there IS a build for this
+# release, in Debug" rather than only "there is none", which is trap 1 in this
+# script's own history: the installer window always deploys Release, the dev
+# flow builds Debug, and nine correct Debug builds sitting in a folder the
+# window never opens read as "your change failed". Cost a full round trip on
+# 2026-09-21.
+$allBuilds = @(Get-ChildItem -Path (Join-Path $projDir "bin") -Recurse -Filter $productAssembly -ErrorAction SilentlyContinue)
+$candidates = @($allBuilds | Where-Object { $_.FullName -like "*$Configuration*" })
 
 # The release folder, matched as a whole path segment. Without the separators
 # "2020" would also match a folder called "2020-old", and -like has no word
@@ -353,27 +362,74 @@ $buildOut = $candidates |
             Sort-Object LastWriteTime -Descending |
             Select-Object -First 1 -ExpandProperty DirectoryName
 
-# FALL BACK TO THE FLAT LAYOUT, because a folder built before this change - or
-# by a caller passing its own -p:OutputPath - has no release in its path. The
-# runtime guard below is what makes that safe: an old flat build for the wrong
-# release is refused there by reading the assembly, exactly as it was before.
+# NO BUILD FOR THIS RELEASE IS A REFUSAL, NOT A SUBSTITUTION - 2026-09-21.
+#
+# Until now, finding nothing for the release it was asked about, this took ANY
+# build it could see - the newest one anywhere under bin - and left the runtime
+# guard below to decide. THE GUARD READS THE RUNTIME, NOT THE YEAR. Revit 2021,
+# 2022, 2023 and 2024 all build net48, so one stale net48 leftover passes that
+# guard for all four, deploys, and reports success. It is the class of defect
+# A12 recorded: the wrong build installed, and nothing said.
+#
+# IT DID NOT BITE ON 2026-09-21 ONLY BECAUSE THE LEFTOVER WAS .NET 10, which
+# the guard could tell apart from the two releases it was wrongly offered to.
+# Luck, not a design.
+#
+# AND SINCE #242 THE FALLBACK BUYS NOTHING. Every release builds into its own
+# folder, so a build made on a current checkout is always found by the search
+# above. What the fallback reached for could only ever be a leftover from
+# before that change, or from a caller passing its own -p:OutputPath - and
+# neither of those is the release this run was asked about.
+#
+# So it refuses BY NAME, and says which command fixes it. A refusal a modeller
+# can act on beats a success that installed the wrong thing.
 if (-not $buildOut) {
-    $buildOut = $candidates |
-                Sort-Object LastWriteTime -Descending |
-                Select-Object -First 1 -ExpandProperty DirectoryName
-}
+    # WHAT IS ACTUALLY THERE, so the sentence can tell the two reasons apart:
+    # this release was never built, or it was built in the other configuration.
+    $sameRelease = @($allBuilds | Where-Object { $_.FullName -like "*\$RevitVersion\*" })
 
-if (-not $buildOut) {
-    throw "No $Configuration build found under $projDir\bin. Run:`n  dotnet build -c $Configuration -p:RevitVersion=$RevitVersion"
+    if ($sameRelease.Count -gt 0) {
+        $otherConfig = ($sameRelease | ForEach-Object { $_.DirectoryName } | Sort-Object -Unique) -join ", "
+        throw "Revit $RevitVersion has been built, but not in $Configuration - what is on disk is in $otherConfig. The installer window always deploys Release, so a Debug build is invisible to it. Build this release in $Configuration and run this again:`n  dotnet build $productProjPath -c $Configuration -p:RevitVersion=$RevitVersion"
+    }
+
+    # THE FOLDERS, NOT THE FOLDER NAMES. Taking the last part of each path
+    # reads well for bin\x64\Release\2024 and says "Release" for a flat
+    # leftover that has no release in it at all - which is the one case this
+    # sentence most needs to be clear about. A whole path is never ambiguous.
+    $elsewhere = @($candidates |
+                   Where-Object { $_.DirectoryName } |
+                   ForEach-Object { $_.DirectoryName } |
+                   Sort-Object -Unique)
+
+    $alsoHere = if ($elsewhere.Count -gt 0) {
+        " The $Configuration builds on disk are in: $($elsewhere -join ', ')."
+    } else {
+        " Nothing at all has been built here in $Configuration yet."
+    }
+
+    throw "There is no $Configuration build for Revit $RevitVersion under $projDir\bin, so there is nothing to install for that release.$alsoHere Heron will not put another release's build in its place: four of the eight releases share one .NET runtime, so a substitute can pass every check below and still be the wrong one. Build this release and run this again:`n  dotnet build $productProjPath -c $Configuration -p:RevitVersion=$RevitVersion"
 }
 Write-Host "  from $buildOut"
 
-# THE BUILD OUTPUT IS SHARED BETWEEN ALL EIGHT RELEASES, and the newest one
-# wins the search above. tools/check-compile.py builds 2020 through 2027 into
-# this same folder, so running it leaves 2027's assemblies sitting there - and
-# deploying those into Revit 2024 produced exactly one symptom: "Revit cannot
-# run the external application Heron AI", with nothing to say why. Found by
-# doing it, 2026-09-08.
+# THE BUILD OUTPUT USED TO BE SHARED BETWEEN ALL EIGHT RELEASES, and that is
+# why this guard exists. tools/check-compile.py builds 2020 through 2027, and
+# until #242 every one of them wrote into the same folder - so running it left
+# 2027's assemblies sitting where a deploy for Revit 2024 would find them, and
+# deploying those produced exactly one symptom: "Revit cannot run the external
+# application Heron AI", with nothing to say why. Found by doing it,
+# 2026-09-08.
+#
+# SINCE #242 EACH RELEASE HAS ITS OWN FOLDER. The sentence above said "IS
+# SHARED" until 2026-09-21 - it stopped being true in the commit that rewrote
+# the lines directly over it, which is how a comment outlives the code it was
+# written about. The search above now asks for the release it was told, and
+# the block above it refuses rather than substituting, so that collision
+# cannot happen on a current checkout at all.
+#
+# THE GUARD STAYS ANYWAY, and is not belt and braces: it is what catches a
+# folder filled by hand, a caller passing its own -p:OutputPath, and a
+# leftover from before that change.
 #
 # WHAT THIS USED TO DO, AND THE CASE IT COULD NOT SEE. Until 2026-09-20 this
 # guard read the presence of a deps.json (".NET or .NET Framework?") and then
