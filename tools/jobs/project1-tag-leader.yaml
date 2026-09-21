@@ -1,0 +1,70 @@
+# Re-proving FRG-VIEW-030 after leaders were added to it - 2026-09-21.
+#
+# WHY THIS EXISTS. `tag-elements-in-view` was signed on 2026-09-14 and the code
+# changed under it, so check-docs reports it STALE. That is D-30 working. The
+# version 1 proof covered `addLeader: false` and nothing else, so it says
+# nothing whatever about the leader work and cannot be leaned on.
+#
+# THE NEGATIVE IS VALUE-DRIVEN, which is the kind worth having. Both legs use
+# the SAME selection, the same view and the same offset - only `leader` moves:
+#
+#     leader=straight   leadersDrawn 15   tagged 15
+#     leader=none       leadersDrawn 0    tagged 15
+#
+# `tagged` staying put across both legs is the part that makes this a proof
+# rather than a coincidence: the fragment found and tagged the same 13 ducts
+# each time, and only whether it BENT THE LEADER changed. A negative that
+# emptied the selection instead would prove only that an empty selection tags
+# nothing, which nobody doubted.
+#
+# READ `tagged` IN THE NEGATIVE LEG BEFORE BELIEVING IT. This fragment refuses
+# to double-tag: it reads existing tags first. So if the rollback after the
+# positive leg did NOT hold, leg two meets 13 ducts that are already tagged and
+# answers `alreadyTagged 13, tagged 0, elbowsDrawn 0` - which passes the
+# expect: check for entirely the wrong reason. The tell is `tagged 0` with
+# `alreadyTagged 13`. Section 1c records rollback failing three times, so this
+# is a live possibility and not a hypothetical.
+#
+# NOTHING IS KEPT. `apply` is never sent, so each phase runs inside a
+# TransactionGroup and is rolled back (D-55). Check the model afterwards rather
+# than assuming: one Ctrl+Z in Revit removes any tag that survived.
+#
+# UNITS: `leaderOffsetMm` is MILLIMETRES and the fragment converts it itself
+# (`leaderOffsetMm * MmToFeet`). 3000 mm holds the head clear of the duct at
+# the scale this view is drawn at; it is a working value, not a standard.
+#
+#     python tools/batch-prove.py tools/jobs/project1-tag-leader.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/project1-tag-leader.yaml
+
+# TAGTYPEHINTID IS DECLARED, SO IT HAS TO BE SAID. It is a request value, and
+# batch-prove refuses rather than defaulting one - "guessing it is how a job runs
+# against the wrong thing and reports success". `none` means let the fragment
+# choose: the caller hint, then the project default, then first loaded.
+
+model: "Project1 (3,449 elements), Revit 2024 - view '1 - Mech'"
+
+defaults:
+  write: true
+  in: "Project1"
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: tag-elements-in-view
+    write: true
+    set:
+      categoryName:   Ducts
+      inViewOnly:     "1 - Mech"
+      view:           "1 - Mech"
+      leader:         straight
+      leaderOffsetMm: 8
+      tagTypeHintId:  none
+    negative-set:
+      categoryName:   Ducts
+      inViewOnly:     "1 - Mech"
+      view:           "1 - Mech"
+      leader:         none
+      leaderOffsetMm: 8
+      tagTypeHintId:  none
+    expect: leadersDrawn

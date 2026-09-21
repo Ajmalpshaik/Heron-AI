@@ -48,8 +48,12 @@ WHAT IT PROVES
   5. A NEW SESSION INVALIDATES EVERY EARLIER TOKEN, and ending one
      leaves nothing to replay.
 
-  6. BOTH BUILD BRANCHES EXIST - .NET Framework supplies the ACL and
-     .NET 8 relies on the default. Neither may be quietly dropped.
+  6. BOTH BUILD BRANCHES EXIST, AND BOTH SUPPLY THE ACL. This line read
+     "and .NET 8 relies on the default" until 2026-09-21, which is the
+     claim section 6 below now exists to refuse: the default was measured
+     off a real pipe and does NOT restrict it to the creating user.
+     Neither branch may be quietly dropped, and neither may go back to
+     trusting a default. FRAGMENT-ISSUES section 5b, rows 23 and 25.
 """
 
 import io
@@ -89,6 +93,35 @@ def body(source, signature):
     raise AssertionError("no matching brace for %s" % signature)
 
 
+def code_only(text):
+    """`text` with its `//` comments removed.
+
+    THE GROUP NAMES BELOW ARE GREPPED FOR, AND A COMMENT IS NOT A GRANT. When
+    the .NET 8 branch was repaired on 2026-09-21 the fix carried a comment
+    explaining what the old default ACL had actually contained - the words
+    `Everyone` and `ANONYMOUS LOGON`, measured off a real pipe - and this
+    suite failed on the comment while the code it described was now correct.
+    A test that cannot tell a grant from a sentence about a grant punishes
+    writing down why. The check is about what CreatePipe DOES.
+    """
+    kept = []
+    for line in text.split("\n"):
+        at = line.find("//")
+        kept.append(line if at < 0 else line[:at])
+    return "\n".join(kept)
+
+
+def branches(made):
+    """(framework, core) halves of a `#if NET472 || NET48` / `#else` method.
+
+    Counted SEPARATELY since 2026-09-21. Before then both counts were taken
+    over the whole method, which was only ever right because exactly one of
+    the two branches built an ACL - and that was the defect, not the design.
+    """
+    first, _, rest = made.partition("#else")
+    return first, rest
+
+
 def main():
     server = read("BridgeServer.cs")
     identity = read("BridgeIdentity.cs")
@@ -123,31 +156,30 @@ def main():
     print("\n2. The ACL names one principal")
     made = body(server, "private NamedPipeServerStream CreatePipe()")
 
-    # PER BRANCH, NOT ACROSS THE WHOLE METHOD. These three used to count over
-    # the method entire and expect ONE of each, which was true only while the
-    # .NET 8+ branch passed no PipeSecurity at all - and that turned out to be
-    # the defect, not the design (section 6 below, and FRAGMENT-ISSUES 5b row
-    # 23). Counting over the whole body would now demand the two branches
-    # SHARE one rule between them, which is the opposite of what is wanted.
-    # Each branch gets its own, and each must name exactly one principal.
-    halves = made.split("#else")
-    check(len(halves) == 2, "CreatePipe has exactly two build branches")
-    for label, half in (("the .NET Framework branch", halves[0]),
-                        ("the .NET 8+ branch", halves[-1])):
+    # EVERY BRANCH, NOT THE METHOD AS A WHOLE. Counting across both halves
+    # passed for as long as only ONE of them built an ACL, and the half that
+    # did not was the one serving Revit 2025, 2026 and 2027 - reading, on a
+    # real pipe, `Everyone: Read` and `ANONYMOUS LOGON: Read`. A total of one
+    # was the defect wearing the shape of a pass.
+    framework, core = branches(code_only(made))
+    for name, half in (("2020-2024 (.NET Framework)", framework),
+                       ("2025+ (.NET 8/10)", core)):
         check("WindowsIdentity.GetCurrent().User" in half,
-              "%s names the CURRENT USER" % label)
+              "%s: the access rule names the CURRENT USER" % name)
         check(half.count("AddAccessRule") == 1,
-              "%s adds exactly one rule (%d)" % (label, half.count("AddAccessRule")))
+              "%s: exactly one rule is added (%d)"
+              % (name, half.count("AddAccessRule")))
         check(half.count("AccessControlType.Allow") == 1,
-              "%s has exactly one Allow" % label)
-    for group in ("WellKnownSidType", "Everyone", "AuthenticatedUsers",
-                  "NetworkService", "BUILTIN", "S-1-1-0", "Users",
-                  "SecurityIdentifier("):
-        check(group not in made,
-              "no %s - the pipe is not opened to a group" % group)
-    check("AccessControlType.Deny" not in made,
-          "and no Deny rule, which would imply somebody else was allowed "
-          "in the first place")
+              "%s: and exactly one Allow" % name)
+        for group in ("WellKnownSidType", "Everyone", "AuthenticatedUsers",
+                      "NetworkService", "BUILTIN", "S-1-1-0", "Users",
+                      "SecurityIdentifier("):
+            check(group not in half,
+                  "%s: no %s - the pipe is not opened to a group"
+                  % (name, group))
+        check("AccessControlType.Deny" not in half,
+              "%s: and no Deny rule, which would imply somebody else was "
+              "allowed in the first place" % name)
 
     print("\n3. The token is checked before anything else")
     dispatch = body(server, "private string Dispatch(string request)")
@@ -220,25 +252,25 @@ def main():
           ".NET Framework supplies the ACL explicitly")
     check("#else" in made and "#endif" in made,
           "and .NET 8 has its own branch")
-    after = made.split("#else")[1]
-
-    # THIS CHECK USED TO ASSERT THE OPPOSITE, and it was wrong. It read
-    # `"PipeSecurity" not in after` - "which passes no PipeSecurity, the
-    # default ACL already restricts to the creating user there" - repeating
-    # the claim the source made. Measured 2026-09-21 by creating the pipe with
-    # exactly those arguments on net8.0-windows and reading its ACL back: the
-    # default grants READ to the world group and to the anonymous logon
-    # account as well as to the user. The Framework branch gave one rule; that
-    # one gave five. So the branch now asks for the ACL too, and this asserts
-    # it does. FRAGMENT-ISSUES section 5b, row 23.
-    check("PipeSecurity" in after,
-          "and it asks for an ACL rather than trusting the default, which "
-          "was measured and does NOT restrict the pipe to the creating user")
-    check("NamedPipeServerStreamAcl.Create" in after,
-          "through NamedPipeServerStreamAcl.Create - .NET Core has no "
-          "NamedPipeServerStream constructor that takes a PipeSecurity")
-    check("security" in made.split("#else")[0],
-          "while the first branch passes one to its constructor")
+    # THIS CHECK USED TO ASSERT THE DEFECT, AND WOULD HAVE BLOCKED THE FIX.
+    # It read: `PipeSecurity not in after` - "which passes no PipeSecurity -
+    # the default ACL already restricts to the creating user there". That
+    # sentence came from the comment beside the code, and both were wrong.
+    # Measured 2026-09-21 by creating the pipe with those exact arguments on
+    # net8.0-windows and reading its own ACL back: `Everyone  Allow  Read`
+    # and `NT AUTHORITY\ANONYMOUS LOGON  Allow  Read`, beside the user.
+    #
+    # A test written from a comment inherits whatever the comment got wrong,
+    # and then defends it. FRAGMENT-ISSUES section 5b, row 23.
+    framework_half, core_half = branches(made)
+    check("PipeSecurity" in core_half,
+          "and it supplies a PipeSecurity too - the default ACL does NOT "
+          "restrict to the creating user, which was measured off a real pipe")
+    check("NamedPipeServerStreamAcl.Create" in core_half,
+          "  through NamedPipeServerStreamAcl.Create, since .NET Core has no "
+          "NamedPipeServerStream constructor that takes one")
+    check("security" in framework_half,
+          "while the first branch passes one at construction")
     check("CreateNewInstance" in made,
           "and CreateNewInstance is granted, without which only the FIRST "
           "pipe instance can be made")

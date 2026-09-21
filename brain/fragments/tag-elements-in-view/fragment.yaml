@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "tag a mixed set of elements in one view, each with the right
 kind: action
 domain: revit.views
 capability: TAG_ELEMENTS_IN_VIEW
-version: 1
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -78,6 +78,38 @@ contract:
     - name: tagTypeHintId
       type: ElementId
       source: request
+    - name: leader
+      # none | straight, and `none` is the default ON PURPOSE - it is byte for
+      # byte the behaviour proved on 2026-09-14 (addLeader false, head at
+      # XYZ.Zero), so leaders did not disturb the path that was proved.
+      #
+      # `L` IS ACCEPTED BUT MEANS `straight` HERE. This fragment does not bend
+      # anything: FORCE_TAG_LEADER_LSHAPE (FRG-VIEW-088) owns that, because a
+      # bend needs LeaderEndCondition.Free set first and an elbow read back
+      # afterwards, and neither belongs in a tagging fragment. Ask for a
+      # leader here, then bend it there.
+      type: string
+      source: request
+    - name: minLengthMm
+      # MODEL MILLIMETRES - the run's own length, NOT a length on the paper.
+      # The exception among the millimetre values here, and deliberately so:
+      # "do not tag anything under half a metre" is a fact about the duct and
+      # must not change meaning when the view scale does. It is therefore the
+      # one value NOT multiplied by the scale.
+      #
+      # 0, the default, tags everything. A run shorter than this is reported
+      # in `tooShort` rather than dropped in silence.
+      type: double
+      source: request
+    - name: leaderOffsetMm
+      # PAPER MILLIMETRES, multiplied by the view scale - the house idiom, and
+      # the thing version 2 of this fragment got wrong. An unscaled 3000 mm is
+      # 60 mm on the sheet at 1:50, which ran the leaders across the drawing.
+      # Converted here with no units API call, deliberately, because UnitUtils
+      # splits at 2021 and this range starts at 2020. Unset arrives as 0 and a
+      # zero offset puts the head on what it points at, so 0 falls back to 8.
+      type: double
+      source: request
   provides:
     - name: tagged
       role: result
@@ -94,6 +126,35 @@ contract:
       # and this is the count of that correction actually happening.
       role: result
       type: int
+    - name: leadersDrawn
+      # Leaders actually drawn. A RESULT, not accounting: it is the thing the
+      # caller asked for when they asked for a leader, and it is what
+      # `leader=none` turns off - which is what lets the negative leg of a
+      # proof be value-driven rather than a second selection (D-30).
+      role: result
+      type: int
+    - name: leadersNotDrawn
+      # Elements tagged with NO leader though one was asked for, because Revit
+      # gave no location to run one from - hosted and nested things among them.
+      # The tag is real and the leader is not, so this is accounting, never a
+      # thing it made (D-52).
+      role: accounting
+      type: int
+    - name: tooShort
+      # Runs below the caller's minimum length, left untagged on purpose. A
+      # stub shorter than its own tag is clutter on a drawing. Counted, never
+      # silent - a tag count that falls with no reason given reads as elements
+      # the run could not handle.
+      role: accounting
+      type: IList<ElementId>
+    - name: verticalSkipped
+      # Risers. A duct running along the view's own direction has no length on
+      # the paper, so a tag on it sits against a dot and its leader points at
+      # nothing anybody can follow. NOT tagged, deliberately, and counted
+      # rather than quietly dropped - a count that falls with no reason given
+      # reads as elements the run could not handle.
+      role: accounting
+      type: IList<ElementId>
     - name: notTagged
       # *What it could not tag* - the third of the three things this reports,
       # beside what it tagged and what was already tagged. Never a tag it
@@ -101,6 +162,11 @@ contract:
       role: accounting
       type: IList<ElementId>
 
+# THIS PROOF IS THE VERSION 1 RECORD AND IT IS STALE. It was run before
+# leaders existed in this fragment, so it says nothing about `leader=straight`
+# or `leader=L` - only about the `none` path, which is unchanged. The
+# fingerprint below no longer matches the implementation and D-30 will report
+# STALE until this is re-run. Do not read the status above as covering leaders.
 proof:
   date: '2026-09-14'
   by: Ajmal PS

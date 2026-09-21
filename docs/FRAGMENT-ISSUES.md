@@ -2570,6 +2570,8 @@ matched. Pick one and stay on it for the whole run.
 | **25** | **ONE SETTINGS FILE, TWO READERS, AND AS OF THIS MORNING THEY DISAGREED.** Found 2026-09-21 reading `mcp/client/heron_config.py` in the sweep, hours after [row 8](#) was fixed - and CAUSED by that fix, which is why it is worth a row of its own rather than a line in row 8. `HeronConfig.GetBool` learned `on` and `off`, learned to trim, and learned to return the **fallback** for a word it does not recognise. `heron_config.truthy` on the Python side still read `raw in ("true", "1", "yes")` - so `on` was **false** there and **true** in the add-in. **THE LIVE CASE IS `write.enabled = on`.** The add-in would permit a change to the model; `heron_health` and `revit_health`, which both call `writing_enabled`, would report writing as **off**. That is precisely the hazard `HeronPermissions.cs:150-154` names in its own words - *"the button reports a state the permission gate does not honour"* - arriving from the other direction. **AND IT WAS INVISIBLE TO THE CHECK THAT EXISTS**: `tests/test_config_and_health.py` already reads `HeronConfig.cs` and compares the declared KEYS, which is why the closed set has never drifted. Nothing compared the VOCABULARY. A key list is not a parser. **WHAT WAS CHECKED RATHER THAN ASSUMED:** every caller of `truthy` - it is `writing_enabled` only, reached from `heron_mcp_server.py:166` and `heron_diagnose.py:96`, so `write.enabled` is the one key affected today; `ui.activityBanner` is read by the C# alone, and would have been the worse case had anything on this side read it, because its default is **true** and an unrecognised value collapsed to false. **WHAT WAS NOT CHECKED:** whether any THIRD reader of this file exists outside `platform/` and `mcp/` - the grep covered those two and `brain/`, which D-48 forbids from importing the config at all. **THE REPAIR IS THE WORDS AND THE CHECK.** `TRUE_WORDS` and `FALSE_WORDS` mirror the C# exactly, an unrecognised value falls back to the key's declared default, and the suite now reads `GetBool`'s body out of the C# and fails if the two word lists differ - proved by deleting `on` from the Python list and watching two checks go red. | **FIXED 2026-09-21, in the sitting that found it, and it is the one defect in this section that this session caused.** A fix to one half of a mirrored pair is not finished until the other half is looked at, and the only reason this was caught within the hour is that the sweep happened to reach the file next. The check is the durable part: the keys were compared and the vocabulary was not, so the drift had a door standing open |
 | **26** | **THE "NEVER COMPILED, NEVER RUN" SENTENCE IS IN FOUR FILES, AND THE TWO HARSHEST COPIES WERE THE TWO NOBODY HAD LOOKED AT.** Found 2026-09-21 reading `mcp/server/heron_health.py` in the sweep, straight after fixing [row 9](#), which is the same sentence in `RevitWrite.cs`. **A GREP FOR IT WAS THEN RUN ACROSS THE WHOLE TREE, WHICH IS THE PART WORTH COPYING** - fixing one copy of a stale claim and not looking for the others is how it reached four. **The four:** `HeronPermissions.cs` (corrected 2026-09-20), `RevitWrite.cs`'s banner ([row 9](#), corrected 2026-09-21), `heron_health.py`'s module docstring - *"While the write path has never been compiled or run (D-19)"* - and `tests/test_write_safety.py` - *"it has never been compiled, let alone executed"*. **BOTH HALVES OF THE LAST TWO ARE FALSE.** It compiles on all eight releases (`tools/check-compile.py`), and `NEEDS-CHECKING.md:484` records it moving three ducts under a single undo entry. **AND A FIFTH COPY WAS A TEST ASSERTING IT.** `tests/test_config_and_health.py` checked that the write-gate warning contains *"never been proven"*, describing that as *"the path has not met a real Revit"*. That is a test keeping an expired sentence alive: it would have gone red on any honest correction, which is exactly what it did. The claim is replaced rather than the wording loosened - the warning must now name **D3** and the missing MEASUREMENT, and must NOT contain either expired phrase. **WHAT IS STILL TRUE, and is what all four now say:** nobody has put a tape measure on the result. D3 - *"move them, then MEASURE one"* - is not struck through. **WHAT WAS NOT CHECKED:** whether the same claim appears in the numbered documents under `docs/` in a form the grep missed; it covered `.py`, `.cs` and `.md`, and `docs/NEEDS-CHECKING.md:471` already carries its own correction of it. | **FIXED 2026-09-21, all four, in the sitting that found the third.** The rule this earns: **a stale claim is never in one place.** Row 9 was filed as one file's banner; it was four files and a test, and the test was the one holding it in position |
 
+| **25** | **A TEST ASSERTED [ROW 23](#)'s DEFECT AND WOULD HAVE BLOCKED ITS FIX — CI CAUGHT IT, NOTHING ELSE DID.** [`tests/test_authentication.py`](../tests/test_authentication.py) section 6 read `check("PipeSecurity" not in after, "which passes no PipeSecurity - **the default ACL already restricts to the creating user there**")`. That sentence is the comment from [`BridgeServer.CreatePipe`](../revit/Heron.Bridge/BridgeServer.cs), copied into a test. **The comment was false** — measured off a real pipe on net8.0-windows, the default carries `Everyone Allow Read` and `NT AUTHORITY\ANONYMOUS LOGON Allow Read` — so the test was **defending the hole**, and repairing it turned the suite red. **A TEST WRITTEN FROM A COMMENT INHERITS WHATEVER THE COMMENT GOT WRONG, AND THEN DEFENDS IT.** That is the general lesson, and it is why this is a row rather than a footnote to 23. **THREE MORE CHECKS FAILED FOR A SECOND, DIFFERENT REASON.** Section 2 counted `AddAccessRule` and `AccessControlType.Allow` across the **whole method** and required exactly one of each — which was only ever right because exactly one of the two `#if` branches built an ACL. **The total of one WAS the defect, wearing the shape of a pass.** It also grepped the method text for `Everyone`, so the fix's comment *explaining what the old default had contained* read as a grant: **a check that cannot tell a grant from a sentence about a grant punishes writing down why.** **WHAT WAS NOT CHECKED**: whether any other suite here pins a claim taken from a comment rather than from behaviour. This one was found because it went red, not because anybody looked, and nothing since has looked. **FOUND TWICE, INDEPENDENTLY** — this session and the one it was forked from both hit the red suite and both repaired it; the comment-stripping below is the other session's answer and is the better of the two, because the first attempt merely reworded the comment to dodge the grep | **FIXED 2026-09-21, and the suite is STRONGER than before, not weakened to pass.** Section 2 now checks **each branch separately** — both must name the current user, both must add exactly one rule and one Allow, and neither may name a group. Comments are stripped first by a `code_only()` helper that says why. **Measured, because a strip that removed too much would be worse than the original bug**: a comment naming `Everyone` does **not** survive `code_only`, and a real `AddAccessRule(new PipeAccessRule(Everyone, …))` **does** — so a grant still fails the check and only an explanation is let through. Section 6 asserts the .NET 8 branch **does** supply a `PipeSecurity`, via `NamedPipeServerStreamAcl.Create`. The suite's own docstring said *".NET 8 relies on the default"* and now says the opposite, with the measurement. **69 checks, exit 0** |
+
 *No count is typed here — `python tools/open-defects.py` derives it, and `python tools/review-ledger.py` says how much of the repository has been read. A short table means nothing without the second number: it cannot tell you whether little was found or little was looked at.*
 
 ---
@@ -2902,6 +2904,68 @@ for ducts that are round. Every duct here is dia 102, 152 or 203 — an imperial
 
 **READ THE BINDING NOTE ON THE ANSWER.** `find-overlapping-lines` ran on a stale selection of ten
 equipment items and answered anyway; only `elements from the selection (10)` on the reply gave it away.
+
+---
+
+## Tag leaders, 2026-09-21 — five things measured against Project1
+
+Ajmal asked for every duct in `1 - Mech` tagged with an L-shaped leader. Five
+findings, all observed in front of the model rather than reasoned about.
+
+### 1. AN ATTACHED LEADER END AND A FORCED L CANNOT BOTH BE HAD
+
+The single most expensive thing here, and it is a hard Revit constraint rather
+than a missing call. Measured three ways on the same twelve tags:
+
+| what was tried | result |
+|---|---|
+| Free the end, move it onto the corner | true L — but re-attaching moved it back, **12 of 12 diagonal** |
+| Leave the end attached, set the elbow | silently ignored, **12 of 12** |
+| Leave it attached, set the elbow, `doc.Regenerate()` first | still ignored, **12 of 12** |
+
+With the end attached Revit owns the leader's shape. `SetLeaderElbow` returns
+normally and nothing bends — no exception, no warning. `force-tag-leader-lshape`
+now trades this where it costs least: a run lying UP the sheet is never bent and
+keeps its attached end; only a run bent ACROSS the sheet is left free, and each
+one is named in `endsLeftFree` rather than counted quietly.
+
+### 2. THE CORNER IS BUILT FROM BOTH ENDS, NOT FROM THE HEAD PLUS A LEG
+
+The fragment used to put the elbow a fixed leg-length from the HEAD and level
+with it. That fixes the shoulder and leaves the run back to the duct free to be
+a diagonal — a short stub with a long diagonal hanging off it, which is exactly
+what a modeller rejects on sight. The corner needs its across-position from one
+end and its along-position from the other, so both legs are axis-true.
+
+**And the corner is only ONE end of that leg.** Setting it alone cannot
+straighten the run: the other end is wherever Revit attached the leader. Both
+have to agree, which is why the leader start is moved too.
+
+### 3. A COUNTER THAT COUNTS THE CALL RETURNING IS NOT EVIDENCE
+
+An earlier version of `tag-elements-in-view` incremented `elbowsDrawn` the
+instant `SetLeaderElbow` did not throw. It reported **15 elbows drawn** and put
+**15 straight diagonals** on the drawing, and a proof passed on that number.
+Same family as `IndependentTag.Create` not honouring its type argument, which
+this library already reads back. **Read the value back out of Revit and compare
+it; a set call that returns is not a set call that took.**
+
+### 4. A COUNT REPORTED AND A COUNT IN THE MODEL DISAGREED
+
+`tag-elements-in-view --apply` reported `tagged 0` on a run that demonstrably
+created **12** tags — `revit_annotation` found them immediately afterwards, and
+the next run's `alreadyTagged 12` agreed. Not yet explained. **Do not trust this
+fragment's `tagged` on an applied run without reading the model back.**
+
+### 5. A VIEW-SCOPED SELECTION CANNOT REACH WHAT A VIEW FILTER HIDES
+
+Twice, at different duct counts: 14 tags created and 12 selectable; 13 created
+and 11 selectable. `1 - Mech` carries three view filters, and a filter hiding a
+duct hides its tag with it. The tags are real and correct — they simply never
+reach a step that selects by category in that view, so the bend never sees them.
+**Reconcile what a chain created against what the next step selected, every
+time.** A step that silently acts on fewer elements than the one before it looks
+exactly like a step that worked.
 
 ---
 
