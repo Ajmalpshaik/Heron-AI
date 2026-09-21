@@ -88,6 +88,24 @@ ungated: measured on the owner's PC 2026-09-22, 59 MB in the Hugging Face cache 
 and no stored login file. Trusted alone still works — it costs retrieval quality, and every answer
 says so.
 
+### Whether it worked, in one line
+
+Run this **inside the cloud session**, never on the owner's PC — that machine answers `model`
+regardless of what the cloud can reach, so asking it proves nothing about the environment:
+
+```bash
+python -c "import sys; sys.path.insert(0,'brain'); import heron_embed; print(heron_embed.backend())"
+```
+
+| It answers | Meaning |
+|---|---|
+| `('model', 'a trained model - this one understands meaning')` | the four domains are reachable |
+| `('lexical', 'built-in character n-grams ...')` | the weights were refused, and the reply names its own remedy |
+
+**Ask once per environment, and ask early.** Both backends return results and neither raises, so an
+environment with no weights looks exactly like a working one until a question turns on meaning rather
+than on shared words. This is the only thing on this page that cannot be checked from a checkout.
+
 ---
 
 ## 3. What the setup script does, and the three things it will not do
