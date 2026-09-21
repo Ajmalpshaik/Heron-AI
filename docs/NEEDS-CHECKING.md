@@ -2160,3 +2160,67 @@ asked.
 
 **What is still owed on this group.** `AB6`, and it is owed by Stage 2 closing rather than by anybody
 running anything. `AA9` is owed by a browser download.
+
+---
+
+## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
+
+**Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
+found by watching the owner use the window, after `Group AB` had already passed every row it asked for.
+
+**What he did.** Ticked Revit 2020, 2024 and 2027, ticked `Heron` + `AI Bridge connector`, pressed
+Install **once**. The window reported:
+
+> `'AI Bridge connector' installed for Revit 2020.`
+> `'AI Bridge connector' installed for Revit 2024.`
+> `'AI Bridge connector' installed for Revit 2027.`
+
+**Verified by reading the deployed files, not the success line** — the habit `A12` exists to enforce.
+The `TargetFrameworkAttribute` was read out of each installed `Heron.Revit.Addin.dll`:
+
+| Revit | Runtime actually installed | Expected |
+|---|---|---|
+| 2020 | `.NETFramework,Version=v4.7.2` | net472 — correct |
+| 2024 | `.NETFramework,Version=v4.8` | net48 — correct |
+| 2027 | `.NETCoreApp,Version=v10.0` | net10.0-windows — correct |
+
+Three releases, three different runtimes, one press. **That sequence was impossible before `#242`**,
+which gave every release its own build folder. Before it, each build overwrote the last and only the
+newest release could be installed — he hit that refusal **five times**.
+[the last failure](proof/multi-version-install-FAIL-debug-not-release.png),
+[all three in one press](proof/multi-version-install-PASS-all-three-one-press.png)
+
+### The failure in between was Debug-versus-Release, and this register already knew
+
+The first attempt after `#242` still refused 2020 and 2024. The cause was **not** the fix: the builds
+had been made in `Debug`, and `DeployScriptDeployer` (`WindowsAdapters.cs:415`) deploys `Release` and
+always has. So nine correct builds sat in a folder the installer never opens.
+
+**`AB5` above records this exact condition** — *"the window drives the deploy script with `-c Release`
+and only a Debug build existed"* — and it was read as a one-off rather than as the standing rule it is.
+Rebuilding in `Release` was the whole fix; no code changed.
+
+**2027 appeared to work during that failure, and that is worth understanding.** With no
+`Release/2020/` folder to find, the script fell back to the flat layout and found one leftover build
+from earlier that day. It was genuinely a .NET 10 build, so the runtime guard passed it for 2027 and
+refused it for the other two. **The guard behaved correctly and nothing wrong was installed.**
+
+### A hole this exposed, NOT yet fixed
+
+The fallback in `tools/deploy-addin.ps1` reaches for *any* build when it cannot find one for the
+release it was asked about, and the runtime guard is what is supposed to make that safe. **The guard
+reads the runtime, not the year.** Revit 2021, 2022, 2023 and 2024 all build `net48`, so a stale
+`net48` leftover would deploy into any of them and report success — **the same class of defect `A12`
+recorded**. It did not bite here only because the leftover happened to be .NET 10.
+
+Now that every release has its own folder, the fallback buys nothing on a current checkout and can
+still mislead. **Proposed and awaiting the owner's decision:** refuse when no build exists for the
+release asked for, rather than substituting a different one.
+
+### Stale after #242, to be corrected with the above
+
+Two comments still point at `Directory.Build.targets`, which does not exist — the fix landed in
+`Directory.Build.props` after the `.targets` attempt was measured as a silent no-op. In
+`tools/deploy-addin.ps1` (the block above the build discovery) and `tools/check-api-surface.py`. The
+same `deploy-addin.ps1` block also still claims *"THE BUILD OUTPUT IS SHARED BETWEEN ALL EIGHT
+RELEASES"*, which stopped being true in the commit that rewrote the lines above it.
