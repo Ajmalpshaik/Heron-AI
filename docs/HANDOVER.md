@@ -124,6 +124,43 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-21 (last of the day) — THE MORE PEOPLE ASKED, THE LESS THE GAP REPORT COULD SAY
+
+**[Row 5b-94](FRAGMENT-ISSUES.md). FIXED.** `brain/heron_capability.py`, the **tenth** live-path brain
+module — and the first file finished because the ledger's new column said what was owed. Its earlier
+mark listed `rebuild`, the gap report and `main` as **not read**, so that is where the reading started
+and that is where the defect was. **[Row 5b-90](FRAGMENT-ISSUES.md) paying for itself within the
+hour.**
+
+`want(store, name, why)` did `INSERT ... ON CONFLICT(name) DO UPDATE SET why = ?`. **The last writer
+won.** Measured: three different things wanting `TRACE_DUCT_SYSTEM` — skill `trace-system`, skill
+`size-check`, and a user asking by name — left **one** sentence.
+
+**And the one that survives in production is the generic one.** `heron_brain.resolve()` writes *"asked
+for by name and no fragment provides it"* every time somebody asks for a capability nobody provides,
+so **one person asking erases which skills were blocked**. `tests/test_skills.py` loops over every
+skill calling `want()`, so two skills needing one capability already lose one of the two.
+
+**The more people ask, the less the report can say about who needs it** — backwards for a function
+whose docstring says it *"turns 'we have no fragment for that' from a silence into a finding"*.
+
+**FIXED**: the table still holds **one row per capability** (docs/18: the gap IS the name), and the
+reasons share the cell, joined by `WHY_JOIN`, with `wanted_by()` reading them back in arrival order.
+**De-duplication is not cosmetic** — the common caller is a loop over every skill, which would
+otherwise grow the cell on every run. An empty `why` records *wanted, with no reason recorded* rather
+than blanking somebody else's.
+
+**Shown to fail: 3 checks**, and the fourth — that a repeat does not grow the cell — stays green in
+both. **The section asked before it called**, so it reported failures rather than a traceback:
+`heron-ship` §2a for the second row running.
+
+**Live-path brain modules read: 10 of 53.** Next: `heron_context`, then `heron_retrieve`.
+
+**A habit worth keeping, and it is the session's own finding twice over.** Both of the last two rows
+came from *finishing* something rather than starting it — 5b-93 from the reader half of the trail
+5b-91 had just tested, 5b-94 from the part of a file an earlier read had left. **The ledger now says
+which files are in that state**, and it is the most productive queue in the repository right now.
+
 ### 2026-09-21 (final) — THE GAP REPORT TELLING A MODELLER HERON HAS NEVER DONE ANYTHING
 
 **[Row 5b-93](FRAGMENT-ISSUES.md). FIXED.** `brain/heron_gaps.py`, the **ninth** live-path brain
