@@ -168,6 +168,80 @@ def main():
         check(not os.path.exists(os.path.join(root, "wf8.json")),
               "a completed workflow has nothing left to protect")
 
+        print()
+        print("A stage that THREW is not retried on the writing path")
+        # FRAGMENT-ISSUES section 5b, row 32. An exception was caught and the
+        # loop simply continued, up to three attempts, whether or not the
+        # stage could change the model - the blind retry this engine's own
+        # header says it never does. An exception carries no reply, so
+        # whether Revit got the request is unknown, and repeating an unknown
+        # write is how the same ducts move twice.
+        tries = []
+
+        def explodes():
+            tries.append(1)
+            raise RuntimeError("the pipe went away mid-write")
+
+        wf9 = Workflow("wf9", store)
+        try:
+            wf9.run("apply", explodes, inputs={"a": 1}, writes=True)
+            check(False, "a throwing WRITE stage stops the workflow")
+        except WorkflowStopped as stop:
+            check(True, "a throwing WRITE stage stops the workflow")
+            check(stop.failure is not None and stop.failure.touched_the_model is None,
+                  "and says the outcome is UNKNOWN - not False, which is the "
+                  "distinction the whole failure agent exists for")
+        check(len(tries) == 1,
+              "it was attempted ONCE, not three times (%d)" % len(tries))
+
+        # And the read path is unchanged, because repeating a question is free.
+        reads = []
+
+        def also_explodes():
+            reads.append(1)
+            raise RuntimeError("no answer")
+
+        wf10 = Workflow("wf10", store)
+        try:
+            wf10.run("look", also_explodes, inputs={"a": 1}, writes=False)
+        except WorkflowStopped:
+            pass
+        check(len(reads) == 3,
+              "a throwing READ stage is still retried - asking again costs "
+              "nothing (%d attempts)" % len(reads))
+
+        print()
+        print("A failed swap leaves the PREVIOUS checkpoint intact")
+        # The save has always claimed "a crash mid-write leaves the previous
+        # checkpoint intact" and did not do it: it deleted the old file and
+        # then renamed the new one in, leaving a window with no checkpoint at
+        # all - and load() answers a missing file with "nothing done yet", so
+        # a crash there silently discarded every finished stage. Row 5b-31.
+        wf11 = Workflow("wf11", store)
+        wf11.run("first", lambda: {"ok": True, "n": 1}, inputs={"a": 1})
+        check(store.load("wf11")["stages"].get("first", {}).get("status") == "done",
+              "the first stage is on disk")
+
+        # BOTH ARE STOPPED, so this catches the old shape as well as the new
+        # one: the previous implementation called os.remove and then
+        # os.rename, so failing only os.replace would not have touched it and
+        # this check would have passed against the defect it is written for.
+        real_replace, real_rename = os.replace, os.rename
+
+        def refuses(*_args, **_kwargs):
+            raise OSError("the disk went away between the write and the swap")
+
+        os.replace, os.rename = refuses, refuses
+        try:
+            wf11.run("second", lambda: {"ok": True, "n": 2}, inputs={"a": 2})
+        finally:
+            os.replace, os.rename = real_replace, real_rename
+
+        kept = store.load("wf11")["stages"]
+        check(kept.get("first", {}).get("status") == "done",
+              "and it is STILL there after a swap that failed - the finished "
+              "stage was not lost to a window where the file did not exist")
+
     finally:
         shutil.rmtree(root, ignore_errors=True)
 

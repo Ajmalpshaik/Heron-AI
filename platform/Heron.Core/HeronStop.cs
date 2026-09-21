@@ -72,10 +72,42 @@ namespace Heron.Core
             return Interlocked.Exchange(ref _stopped, 0) != 0;
         }
 
-        /// <summary>The refusal, in the user's terms.</summary>
+        /// <summary>
+        /// The refusal, in the user's terms.
+        ///
+        /// IT USED TO NAME A BUTTON THAT IS NOT THERE. The sentence read
+        /// "Press Heron AI &gt; Emergency Stop again to let it work", and that
+        /// ribbon button was removed on the owner's instruction on 2026-09-06
+        /// (D-46). The same decision names the replacement in its own words -
+        /// "the Heron button IS that control. It calls bridge.Stop(), so
+        /// nothing can reach Revit at all" - so there was a working control,
+        /// and the message sent the reader hunting for one that is not on the
+        /// ribbon. Nothing can set this flag today, so nobody has seen it;
+        /// the switch is kept for the file-based kill switch docs/21 section
+        /// 4 describes, and on the day that is built this is the first thing
+        /// a worried modeller reads.
+        ///
+        /// AND THE OBVIOUS REPLACEMENT IS ALSO WRONG, WHICH IS WHY THIS
+        /// NAMES NO BUTTON AT ALL. The register's own repair said to name
+        /// the Heron button as D-46 does. D-46 is about STOPPING: that
+        /// button calls bridge.Stop(), which disconnects the bridge. It does
+        /// not clear this flag. The only thing that calls Resume() is
+        /// EmergencyStopCommand (Commands.cs), and that command has no
+        /// ribbon entry - so today there is nothing a user can press that
+        /// lets Heron work again, and a message that named one would be the
+        /// same defect wearing a newer button. Checked by reading every
+        /// caller of Stop, Resume and IsStopped rather than assumed.
+        ///
+        /// WHOEVER BUILDS THE KILL SWITCH OWNS THIS SENTENCE. The way to
+        /// clear the stop arrives with the mechanism that can set it, and
+        /// this line has to name it on the same day - see docs/21 section 4.
+        /// The Ctrl+Z half is unchanged: it was the most useful thing in the
+        /// message and it is still true.
+        /// FRAGMENT-ISSUES section 5b, row 2.
+        /// </summary>
         public const string Message =
-            "Heron is stopped. Nothing was sent to Revit. Press Heron AI > Emergency Stop " +
-            "again to let it work, and remember that Ctrl+Z in Revit is what undoes anything " +
-            "that already happened.";
+            "Heron is stopped. Nothing was sent to Revit. Ctrl+Z in Revit undoes anything " +
+            "that already happened, and Heron stays stopped until whoever stopped it lets " +
+            "it work again.";
     }
 }

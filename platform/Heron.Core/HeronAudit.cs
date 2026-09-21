@@ -40,14 +40,54 @@ namespace Heron.Core
         private static readonly object WriteLock = new object();
 
         /// <summary>
-        /// A new Workflow ID. One request, one id, carried through every layer
-        /// that touches it so a single line of the trail can be followed all
-        /// the way back.
+        /// Where a LOST audit line is reported, set by whoever has somewhere
+        /// to report it. The add-in points this at its verbose log during
+        /// startup; nothing else has to.
+        ///
+        /// The kernel depends on nothing (docs/23), so it cannot call the
+        /// add-in's logger - and an audit that loses a line in silence is the
+        /// defect this exists to close, so it cannot simply give up either.
+        /// A hook is the only thing that is both. Null is a valid state and
+        /// means the loss goes unrecorded, which is what happened to every
+        /// lost line before 2026-09-21.
         /// </summary>
-        public static string NewWorkflowId()
+        public static Action<string> ReportLoss;
+
+        private static void Lost(string line)
         {
-            return Guid.NewGuid().ToString("N").Substring(0, 12);
+            var report = ReportLoss;
+            if (report == null) return;
+            try
+            {
+                report("AUDIT LINE LOST - the trail could not be appended to. " +
+                       "The line, so it is not gone entirely: " + line);
+            }
+            catch (Exception)
+            {
+                // Reporting a lost line must not be able to lose the
+                // operation that was being audited.
+            }
         }
+
+        // THE WORKFLOW ID IS MINTED BY HeronIdentity AND NOWHERE ELSE.
+        //
+        // This class used to carry a NewWorkflowId of its own - a bare
+        // 12-character GUID slice - and both live callers used it, so the
+        // trail was not keyed the way HeronIdentity's own docstring says it
+        // is: "the correlation key that ties one sentence to every agent,
+        // retrieval, model call and element touched (docs/21 section 13)".
+        // Nothing broke, because either id is unique enough. What was lost is
+        // the one property the documented format is FOR: audit-YYYYMM.jsonl
+        // could not be sorted or skimmed by workflow id, because there was no
+        // time in it.
+        //
+        // Deleted rather than reconciled, which is this repository's own rule
+        // one file over: HeronPermissions keeps SetWriteEnabled in one place
+        // so that a second writer is not "a second definition of this
+        // setting, and the day the two disagree the button reports a state
+        // the permission gate does not honour". Identity had that second
+        // definition. Call HeronIdentity.NewWorkflowId().
+        // FRAGMENT-ISSUES section 5b, row 6.
 
         /// <summary>
         /// Records one request. Never throws: an audit failure must not take
@@ -105,11 +145,31 @@ namespace Heron.Core
                 }
                 line.Append('}');
 
+                // ACROSS PROCESSES, NOT JUST ACROSS THREADS. This used to be
+                // `lock (WriteLock)` around File.AppendAllText - a per-process
+                // lock on a file every Revit on the machine appends to, and
+                // AppendAllText opens with FileShare.Read, so the second
+                // session's write threw and the catch below dropped the line
+                // with nobody told. Measured, not reasoned: see HeronAppend,
+                // and FRAGMENT-ISSUES section 5b row 5.
+                //
+                // The in-process lock stays. It costs nothing, and it keeps
+                // this session's own threads from queueing on a system-wide
+                // mutex when a plain one will do.
+                bool written;
                 lock (WriteLock)
                 {
-                    File.AppendAllText(CurrentFile(), line.ToString() + Environment.NewLine,
-                                       new UTF8Encoding(false));
+                    written = HeronAppend.Line(CurrentFile(), line.ToString());
                 }
+
+                // A HOLE IN THE EVIDENCE IS ITSELF EVIDENCE. Golden Rule 14
+                // makes this trail evidence and docs say it is never pruned;
+                // a line that silently did not arrive is the one failure it
+                // cannot have. Not throwing is still right - a full disk must
+                // not kill a Revit session - so the loss goes to the verbose
+                // log, which is disposable and rotated, through whatever the
+                // host wired up.
+                if (!written) Lost(line.ToString());
             }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }

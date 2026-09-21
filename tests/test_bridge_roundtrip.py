@@ -64,9 +64,10 @@ security descriptor, or the CreateNewInstance flag in note 2 of HANDOVER
 section 4. Revit runs on Windows, so a POSIX pass is a strong signal and is
 never the final word - A4 in NEEDS-CHECKING.md means the WINDOWS run.
 
-Exit 0 = the bridge works. This is the "Prove it" line for Step 1 in
-docs/27-build-order.md, in a form that can run in CI on a machine with no
-Revit installed.
+Exit 0 = the bridge works. Exit 3 = the host binary has not been built, so
+nothing was checked - that is NOT a pass, and the line above says what to run.
+This is the "Prove it" line for Step 1 in docs/27-build-order.md, in a form
+that can run in CI on a machine with no Revit installed.
 """
 
 import json
@@ -78,6 +79,10 @@ import sys
 import time
 
 WINDOWS = os.name == "nt"
+
+# The repository's fourth state - see tests/README.md. Not a pass, not a
+# failure: the suite could not run, and says so rather than guessing.
+COULD_NOT_RUN = 3
 
 REVIT_VERSION = "2024"
 HOST_LIFETIME_S = "45"
@@ -251,9 +256,17 @@ def call(handle, op, client=CLIENT):
 
 def main():
     if not os.path.exists(host_binary()):
-        print("FAIL  %s not found." % host_binary())
-        print("      %s" % BUILD_HINT)
-        return 1
+        # EXIT 3, NOT 1, AND THE DIFFERENCE IS THE WHOLE OF FRAGMENT-ISSUES
+        # ROW 162. A missing host binary is a build step nobody took, not a
+        # claim about the code - and while this path returned 1,
+        # tools/check-gaps.py had to silence the suite BY NAME to stop the
+        # sweep reporting a FAIL for it. A silenced suite prints nothing at
+        # all, so "every test passes" quietly meant one fewer than there are.
+        # Saying "could not run" out loud is what lets the sweep name it.
+        print("COULD NOT RUN - %s not found." % host_binary())
+        print("      Build it first: %s" % BUILD_HINT)
+        print("      This is exit 3, which is NOT a pass: nothing was checked.")
+        return COULD_NOT_RUN
 
     if WINDOWS:
         print("Starting the bridge host (no Revit)...")
@@ -404,6 +417,54 @@ def main():
 
         if not call(handle, "ping").get("ok"):
             failures.append("bridge stopped responding after malformed JSON")
+
+        # --- a line that never ends is refused, and the connection goes ---
+        #
+        # FRAGMENT-ISSUES section 5b, row 22. ReadLineAsync accumulates until
+        # it meets a newline, however far away that is, and it runs BEFORE the
+        # token is checked because the token is inside the line. The ceiling
+        # is what stops a client that forgot its trailing newline becoming
+        # unbounded growth inside Revit's process. This sends more than the
+        # ceiling with NO newline at all - the shape the protocol forbids.
+        #
+        # ITS OWN CONNECTION, because the refusal costs the connection: the
+        # rest of that line is still unread, and resynchronising on a newline
+        # the client has already shown it may never send is not recovery.
+        flood = connect(pipe_name)
+        try:
+            flood.write(b'{"op": "ping", "junk": "' + b"x" * (1024 * 1024 + 64))
+            flood.flush()
+            line = b""
+            while not line.endswith(b"\n"):
+                chunk = flood.read(1)
+                if not chunk:
+                    break
+                line += chunk
+            reply = json.loads(line.decode("utf-8").strip()) if line else {}
+            if reply.get("error") == "request_too_long":
+                print("  PASS  a line past the ceiling -> refused, not accumulated")
+            else:
+                failures.append("an unbounded line returned %r" % reply)
+        finally:
+            try:
+                flood.close()
+            except (IOError, OSError):
+                pass
+
+        # AND THE SESSION RECONNECTS, which is also the recovery this refusal
+        # relies on. Opening the flood connection displaced the first one -
+        # newest connection wins, proved further down - so the check that the
+        # bridge is still serving has to be made on a fresh connection, not
+        # on a handle the flood already took the pipe from.
+        try:
+            handle.close()
+        except (IOError, OSError):
+            pass
+        handle = connect(pipe_name)
+        if not call(handle, "ping").get("ok"):
+            failures.append("bridge stopped responding after an over-long line")
+        else:
+            print("  PASS  and the bridge is still serving the next connection")
 
         # --- a wrong token is refused before anything else ---
         reply = send_raw(handle, '{"op": "ping", "token": "not-the-token"}')

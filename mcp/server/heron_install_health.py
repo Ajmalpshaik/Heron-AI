@@ -112,6 +112,17 @@ def report(checks):
                            "defines. The install is a defined sequence, and "
                            "a step nobody specified is not one this agent "
                            "verifies." % name}
+        # STEP 16 IS PRODUCED, NEVER CHECKED, and a check handed in for it
+        # used to be accepted and then silently dropped - VERIFIED_BY_CHECKS
+        # stops at fifteen. Accepting something and ignoring it is the soft
+        # failure every other refusal on this page exists to prevent.
+        if str(name).strip() == STEPS[-1]:
+            return {"refused": "NOT_CHECKED_BY_A_CHECK", "step": name,
+                    "why": "'%s' is step 16 - the sentence the user reads - "
+                           "and it is PRODUCED by complete(), not reported "
+                           "on. A check for it would be the install "
+                           "confirming that it told somebody it worked."
+                           % name}
 
     steps, unchecked, worst = [], [], HEALTH.HEALTHY
     for name in VERIFIED_BY_CHECKS:
@@ -119,12 +130,30 @@ def report(checks):
         state = _state(check)
         if state is None:
             unchecked.append(name)
-            steps.append({"step": name, "state": "UNCHECKED",
-                          "why": "nothing checked this. 'Done' is not "
-                                 "evidence: the installer reports what it "
-                                 "ATTEMPTED, and every step here can be "
-                                 "attempted successfully and leave nothing "
-                                 "working."})
+            # BOTH ARE UNCHECKED AND THEY ARE NOT THE SAME SENTENCE. A step
+            # nobody looked at, and a step something looked at and reported
+            # in a word this agent does not know, both fail safe to
+            # UNCHECKED - which is right, and which the suite pins. But
+            # saying "nothing checked this" about the second is the merge
+            # this file's own docstring forbids one paragraph up: "nobody
+            # looked" and "fine" are the two readings an install report must
+            # never merge, and "nobody looked" and "I cannot read what they
+            # said" are two more.
+            said = str((check or {}).get("state") or "").strip() \
+                if isinstance(check, dict) else ""
+            if said:
+                why = ("something checked this and reported '%s', which is "
+                       "not one of %s. A state this agent cannot read is "
+                       "not a pass, so it counts as unchecked - but it is "
+                       "not the same as nobody having looked, and whoever "
+                       "wrote that word should be told."
+                       % (said, ", ".join(sorted(HEALTH.SEVERITY))))
+            else:
+                why = ("nothing checked this. 'Done' is not evidence: the "
+                       "installer reports what it ATTEMPTED, and every step "
+                       "here can be attempted successfully and leave "
+                       "nothing working.")
+            steps.append({"step": name, "state": "UNCHECKED", "why": why})
             continue
 
         # A STEP VERIFIED BY THE THING THAT PERFORMED IT IS NOT VERIFIED.

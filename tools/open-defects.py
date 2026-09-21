@@ -93,6 +93,15 @@ ROW = re.compile(r"^\|\s*\*{0,2}(\d+)\*{0,2}\s*\|")
 # is not a hit - measured against every row in the register: no false ones.
 SETTLED = re.compile(r"\b(FIXED|CLOSED)\b[^.]{0,40}?\d{4}-\d{2}-\d{2}")
 
+# A CELL BOUNDARY IS AN UNESCAPED PIPE. Markdown lets a table cell hold a
+# literal pipe as `\|`, and a plain split("|") chops the cell there - so the
+# LAST cell of such a row is a fragment of a sentence rather than the state,
+# and the row can never start with the word OPEN. That is not theory: row 162
+# said OPEN in writing for a day, wrote `ls tests/test_*.py \| wc -l` in the
+# same cell, and this tool reported it as neither open nor settled. A register
+# that cannot see one of its own open rows is the failure it exists to prevent.
+CELL = re.compile(r"(?<!\\)\|")
+
 
 def rows(start=None, ends=None, label="5"):
     """Every (id, state) pair in one section, in the order they are written.
@@ -135,9 +144,24 @@ def rows(start=None, ends=None, label="5"):
         match = ROW.match(line)
         if not match:
             continue
-        cells = line.split("|")
+        cells = CELL.split(line)
         if len(cells) < 3:
             continue
+        # THREE CELLS, OR SAY SO. A row with a fourth cell has a literal pipe
+        # somewhere in its text, and the state this tool then reads is a
+        # fragment of a sentence rather than the state. That is not a
+        # hypothetical: rows 15, 156 and 163 all read from the wrong cell
+        # until 2026-09-21, and one of them reported FIXED off the back of it.
+        # Complaining is the point - a silent misread is how a register loses
+        # sight of its own rows.
+        if len(cells) != 5:
+            sys.stdout.write(
+                "  MALFORMED  row %s of section %s has %d cells, not 3.\n"
+                "             A literal | in the text splits it - write it as"
+                " \\| - and\n"
+                "             until it is fixed the state below is read from"
+                " the wrong cell.\n"
+                % (ident(label, int(match.group(1))), label, len(cells) - 2))
         state = re.sub(r"[`*]", "", cells[-2]).strip()
         found.append((int(match.group(1)), state))
     return found

@@ -125,10 +125,40 @@ def _number(values, key, fallback):
         return float(fallback)
 
 
+# THE ADD-IN'S OWN WORDS, AND THEY HAVE TO BE THE SAME WORDS.
+# HeronConfig.GetBool in platform/Heron.Core is the other reader of this same
+# file. It accepts these four for true and these four for false, trims first,
+# and returns the DEFAULT for anything else - "a value nobody can parse is a
+# value nobody stated". tests/test_config_and_health.py reads the C# and
+# fails if these lists drift, because two hand-maintained copies of one
+# vocabulary is not one vocabulary.
+TRUE_WORDS = ("true", "1", "yes", "on")
+FALSE_WORDS = ("false", "0", "no", "off")
+
+
 def truthy(values, key):
-    """The add-in's own idea of true: true, 1 or yes, case-insensitively."""
+    """
+    The add-in's own idea of true, for a key this file declares.
+
+    AN UNRECOGNISED VALUE IS THE DEFAULT, NOT FALSE - which is what the C#
+    does and what this used to get wrong in the same way the C# did until
+    2026-09-21 (FRAGMENT-ISSUES section 5b row 8). While both halves read
+    `on` as false they at least agreed; fixing one and not the other is
+    worse, because `write.enabled = on` would then let the add-in permit a
+    change while the MCP server's own health report says writing is off. One
+    settings file with two readers that disagree is the exact hazard
+    HeronPermissions names: "the button reports a state the permission gate
+    does not honour".
+    """
     raw = str(values.get(key, DEFAULTS.get(key, ""))).strip().lower()
-    return raw in ("true", "1", "yes")
+    if raw in TRUE_WORDS:
+        return True
+    if raw in FALSE_WORDS:
+        return False
+    # Not a word either side understands. Fall back to what this key is
+    # declared as, exactly as the C# falls back to its caller's argument.
+    fallback = str(DEFAULTS.get(key, "")).strip().lower()
+    return fallback in TRUE_WORDS
 
 
 def operation_timeout(values=None):

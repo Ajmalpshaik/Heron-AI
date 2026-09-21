@@ -30,6 +30,7 @@ this folder exists to remove.
 
 | Date | Sitting |
 |---|---|
+| 2026-09-21 | [The sweep that closed section 5b, and then reopened it](2026-09-21-the-sweep-that-closed-5b-and-then-reopened-it.md) |
 | 2026-09-18 | [The proof path add-in agents never had, and the six that used it](2026-09-18-revit-the-proof-path-add-in-agents-never-had.md) |
 | 2026-09-17 | [The ten agents against two models, in two Revits at once](2026-09-17-revit-the-ten-agents-against-two-models.md) |
 | 2026-09-17 | [The last ten Revit agents, and why every one of them reads](2026-09-17-revit-the-last-ten-agents-read-first.md) |

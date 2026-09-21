@@ -142,11 +142,21 @@ namespace Heron.Bridge
             var json = new StringBuilder();
             json.Append("{\n");
             json.AppendFormat(CultureInfo.InvariantCulture, "  \"pid\": {0},\n", ProcessId);
-            json.AppendFormat("  \"pipeName\": \"{0}\",\n", Escape(PipeName));
-            json.AppendFormat("  \"revitVersion\": \"{0}\",\n", Escape(RevitVersion));
-            json.AppendFormat("  \"addinVersion\": \"{0}\",\n", Escape(AddinVersion));
+            // THE ESCAPER LIVES IN Json AND NOWHERE ELSE. This file used to
+            // carry its own, handling only the backslash and the double
+            // quote, beside a complete one in the same assembly and the same
+            // namespace. None of the four values below can carry a control
+            // character today - a pipe name built from a version and a pid,
+            // Revit's own version string, an assembly version, and a base64
+            // token - so nothing was broken. What it cost was a second
+            // definition of the same rule, and the day one of those inputs
+            // changes shape the failure is that no chat can find Revit at
+            // all. FRAGMENT-ISSUES section 5b, row 21.
+            json.AppendFormat("  \"pipeName\": \"{0}\",\n", Json.Escape(PipeName));
+            json.AppendFormat("  \"revitVersion\": \"{0}\",\n", Json.Escape(RevitVersion));
+            json.AppendFormat("  \"addinVersion\": \"{0}\",\n", Json.Escape(AddinVersion));
             json.AppendFormat(CultureInfo.InvariantCulture, "  \"protocolVersion\": {0},\n", ProtocolVersion);
-            json.AppendFormat("  \"token\": \"{0}\",\n", Escape(Token));
+            json.AppendFormat("  \"token\": \"{0}\",\n", Json.Escape(Token));
             json.AppendFormat("  \"startedAt\": \"{0}\"\n",
                 StartedAtUtc.ToString("o", CultureInfo.InvariantCulture));
             json.Append("}\n");
@@ -173,12 +183,6 @@ namespace Heron.Bridge
             }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
-        }
-
-        private static string Escape(string value)
-        {
-            if (string.IsNullOrEmpty(value)) return string.Empty;
-            return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
         }
     }
 }

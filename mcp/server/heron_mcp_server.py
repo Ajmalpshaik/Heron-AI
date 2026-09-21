@@ -1332,6 +1332,18 @@ def heron_lookup(request: str) -> str:
     #
     # SO THE ORDER IS LEFT ALONE AND THE CROSSING IS MADE VISIBLE. FRAGMENT-
     # ISSUES row 109.
+    # AND WHEN THE RISKS COULD NOT BE READ AT ALL, SAY SO RATHER THAN
+    # PRINTING NOTHING. An empty risk column makes every check below find
+    # nothing above READ, which reads exactly like a clean answer - a silent
+    # pass in the one place this warning exists for.
+    # FRAGMENT-ISSUES section 5b, row 35.
+    if found.get("risks_unreadable"):
+        lines.append("")
+        lines.append("  Heron could not read what these fragments are allowed "
+                     "to do (%s)," % found["risks_unreadable"])
+        lines.append("  so nothing below says whether this reads the model or "
+                     "changes it. Check before you run it.")
+
     top_risk = (found.get("risk") or "").upper()
     if top_risk and top_risk != "READ":
         reads = [c for c in found["candidates"]

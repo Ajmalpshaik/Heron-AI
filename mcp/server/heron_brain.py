@@ -45,13 +45,21 @@ evidence, never as the thing to ask for next. That is Step 12's whole purpose
 reaching its customer: a fragment can be replaced, split or retired and no
 call site here changes, because no call site here mentions one.
 
-NOTHING BELOW IS PROVEN
------------------------
-Every fragment and every skill is DRAFT, and D-30 promotes on one recorded
-proof containing a negative case, which needs a real model. So this file can
-tell the host what Heron knows how to do and who would do it; it cannot tell
-it that any of it works. Every answer says so rather than leaving the reader
-to remember.
+WHAT IS PROVEN IS SAID PER ANSWER, NEVER ASSUMED
+------------------------------------------------
+This section read "NOTHING BELOW IS PROVEN - every fragment and every skill
+is DRAFT" until 2026-09-21, which was true when it was written and stopped
+being true months ago: most of the library now carries a recorded proof.
+Derive it rather than reading a sentence here -
+`grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c` -
+and note the halves have parted company: every SKILL is still DRAFT, and the
+fragments are mostly not. FRAGMENT-ISSUES section 5b, row 26 is the same
+sentence outliving its facts in four other files.
+
+What has not changed is the rule: D-30 promotes on one recorded proof
+containing a negative case, which needs a real model. So every answer below
+carries the `status` of what it found, and a reader who wants to know whether
+something works reads that rather than trusting this paragraph.
 """
 
 import os
@@ -464,6 +472,18 @@ def resolve(capability, revit=None):
 # The user's own sentence, resolved to a capability
 # ---------------------------------------------------------------------------
 
+def _risks(store):
+    """
+    Every fragment's declared risk, keyed by id, read from the STORE.
+
+    Named rather than inline so the failure is testable: its caller turns an
+    exception here into a sentence on the answer, and a test that wants to
+    see that sentence cannot break `store.fragments()` without also breaking
+    retrieval, which calls it too.
+    """
+    return dict((row["id"], row.get("risk")) for row in store.fragments())
+
+
 def lookup(request, revit=None):
     """
     What the user asked for, resolved to a CAPABILITY through retrieval.
@@ -501,12 +521,21 @@ def lookup(request, revit=None):
         # which route to prefer, and this module's own docstring says no such
         # rule survives contact with the next example. This only lets the
         # crossing be SEEN.
-        risks = {}
+        #
+        # AND A FAILURE HERE IS SAID OUT LOUD. This used to be `except
+        # Exception: risks = {}` and nothing else, which made the crossing
+        # INVISIBLE in exactly the case this block exists to reveal: with no
+        # risks, the server's "a question answered by something that writes"
+        # warning reads an empty string, finds nothing above READ, and prints
+        # nothing at all - a silent pass that looks identical to a clean one.
+        # The answer is still returned, because a lookup that refuses because
+        # it could not read a risk column is worse; the reason travels with
+        # it. FRAGMENT-ISSUES section 5b, row 35.
+        risks, risks_unreadable = {}, None
         try:
-            for row in store.fragments():
-                risks[row["id"]] = row.get("risk")
-        except Exception:
-            risks = {}
+            risks = _risks(store)
+        except Exception as exc:
+            risks_unreadable = "%s: %s" % (type(exc).__name__, exc)
 
         candidates = []
         for c in (answer.candidates or []):
@@ -557,6 +586,10 @@ def lookup(request, revit=None):
             # finishing mid-request could label a lexically answered query
             # "model". Found by a review 2026-09-11.
             "backends": _backends(answer),
+            # None on every ordinary answer. A sentence when the declared
+            # risks could not be read, so a caller knows the risk fields
+            # below are absent rather than READ.
+            "risks_unreadable": risks_unreadable,
             "revit": revit,
         }
 

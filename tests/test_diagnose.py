@@ -190,6 +190,48 @@ def main():
           "and says plainly that it changed nothing")
 
     print()
+    print("6. The tools probe asks the question its own docstring asks")
+    # IT DID NOT. "Is every declared tool actually being offered" was the
+    # docstring, and the body counted the table and stopped, so the
+    # component was HEALTHY whatever the server did - in a report whose
+    # closing line is "a check that did not run is not a check that passed".
+    # FRAGMENT-ISSUES section 5b, row 34.
+    components, notes = [], []
+    DIAG._tools(components, notes)
+    row = [c for c in components if c.name == "tools"][0]
+    check(row.state == HEALTH.HEALTHY,
+          "on this tree the registry and the server agree, so it is HEALTHY")
+    check("offered" in row.detail,
+          "and it says so in terms of what is OFFERED, not just declared")
+
+    # AND IT NOTICES WHEN THEY DISAGREE. The server is read as TEXT rather
+    # than imported - importing it needs the MCP SDK, which is exactly what
+    # may be missing on the day somebody asks for a diagnosis - so a
+    # different file is all it takes to test the disagreement.
+    import heron_tools as REGISTRY
+    keep = REGISTRY.TOOLS
+    try:
+        REGISTRY.TOOLS = dict(keep)
+        REGISTRY.TOOLS.pop("revit_health")
+        components, notes = [], []
+        DIAG._tools(components, notes)
+        row = [c for c in components if c.name == "tools"][0]
+        check(row.state == HEALTH.FAILED and "revit_health" in row.detail,
+              "a tool the server offers and the registry does not declare is "
+              "FAILED, and named - it cannot be called at all")
+
+        REGISTRY.TOOLS = dict(keep)
+        REGISTRY.TOOLS["revit_invented"] = (REGISTRY.READ, None)
+        components, notes = [], []
+        DIAG._tools(components, notes)
+        row = [c for c in components if c.name == "tools"][0]
+        check(row.state == HEALTH.WARNING and "revit_invented" in row.detail,
+              "and a declared tool nobody offers is a WARNING - a dead entry "
+              "rather than a danger")
+    finally:
+        REGISTRY.TOOLS = keep
+
+    print()
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:

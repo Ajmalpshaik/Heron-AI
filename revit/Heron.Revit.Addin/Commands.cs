@@ -115,7 +115,16 @@ namespace Heron.Revit.Addin
                 // place that has to be remembered, which is how the first
                 // copy of this rule went stale.
                 HeronApplication.Log("Bridge toggle failed: " + ex);
-                message = "Could not change the Heron bridge: " + ex.Message;
+
+                // WHAT HAPPENED, THEN WHAT TO DO NEXT. This handed the
+                // modeller a raw .NET sentence with no second half - the same
+                // shape as the startup dialog, in a different file, which is
+                // why fixing one would not have found the other. Revit's own
+                // words are kept and attributed rather than presented as
+                // Heron's. FRAGMENT-ISSUES section 5b, row 20.
+                message = "Heron could not connect or disconnect the bridge, so nothing " +
+                          "changed. Your model is untouched. The log that says why is in " +
+                          HeronApplication.LogDirectory + ". Windows said: " + ex.Message;
                 return Result.Failed;
             }
         }

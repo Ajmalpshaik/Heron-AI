@@ -56,6 +56,13 @@ namespace Heron.Bridge
     /// </summary>
     public sealed class BridgeServer : IDisposable
     {
+        // THE LONGEST REQUEST HERON WILL READ ON ONE LINE, in characters.
+        // Generous by design: a select-by-id request naming several thousand
+        // elements is legitimate and nowhere near this. It is a backstop
+        // against a line that never ends, not a budget anybody should be
+        // tuning. See ReadBoundedLineAsync.
+        private const int MaxRequestChars = 1024 * 1024;
+
         // 2, not 1: preemption needs one instance servicing the current chat
         // AND a second already listening for the next one, at the same time.
         private const int PipeInstances = 2;
@@ -304,21 +311,101 @@ namespace Heron.Bridge
             // has no NamedPipeServerStream constructor taking a PipeSecurity.
             // It needs no extra package on a `-windows` target framework, which
             // was checked by building it.
-            var security = new PipeSecurity();
-            security.AddAccessRule(new PipeAccessRule(
-                WindowsIdentity.GetCurrent().User,
-                PipeAccessRights.ReadWrite | PipeAccessRights.CreateNewInstance,
-                AccessControlType.Allow));
+            //
+            // ASKED FOR ON WINDOWS ONLY, AND THAT IS NOT A WEAKENING. An ACL is
+            // a Windows object: constructing PipeSecurity anywhere else throws
+            // PlatformNotSupportedException before a single rule is added, so
+            // an unguarded call does not harden the pipe on Linux - it stops
+            // the server starting at all. Revit is Windows-only and the add-in
+            // never takes the other path. The one thing that does is
+            // tests/Heron.Bridge.TestHost, which runs this very server with no
+            // Revit and no Windows to prove the framing, the token check, the
+            // newest-connection handover and the lease
+            // (tests/test_bridge_roundtrip.py). It went red the day the ACL
+            // arrived, on the exception above, and a suite that cannot start
+            // the host proves nothing about any of them.
+            //
+            // What the other path gives up is the ACL and nothing else: on Unix
+            // .NET backs a named pipe with a socket under the temp directory,
+            // created with the process umask, and every request still has to
+            // carry the per-session token. It is a test transport, not a
+            // shipped one.
+            if (OperatingSystem.IsWindows())
+            {
+                var security = new PipeSecurity();
+                security.AddAccessRule(new PipeAccessRule(
+                    WindowsIdentity.GetCurrent().User,
+                    PipeAccessRights.ReadWrite | PipeAccessRights.CreateNewInstance,
+                    AccessControlType.Allow));
 
-            return NamedPipeServerStreamAcl.Create(
+                return NamedPipeServerStreamAcl.Create(
+                    _identity.PipeName,
+                    PipeDirection.InOut,
+                    PipeInstances,
+                    PipeTransmissionMode.Byte,
+                    PipeOptions.Asynchronous,
+                    4096, 4096,
+                    security);
+            }
+
+            return new NamedPipeServerStream(
                 _identity.PipeName,
                 PipeDirection.InOut,
                 PipeInstances,
                 PipeTransmissionMode.Byte,
                 PipeOptions.Asynchronous,
-                4096, 4096,
-                security);
+                4096, 4096);
 #endif
+        }
+
+        /// <summary>
+        /// ONE LINE, WITH A CEILING ON IT.
+        ///
+        /// StreamReader.ReadLineAsync accumulates until it meets a newline,
+        /// however far away that is - the 4096 handed to the constructor is
+        /// the buffer, not a maximum. This read, and the parse after it, both
+        /// run on UNAUTHENTICATED input: they have to, because the token is
+        /// inside the line. The threat model answers the security half - the
+        /// ACL keeps other people out, and a process already running as this
+        /// user can do far worse than exhaust Revit's memory - so what a
+        /// ceiling buys is robustness. A client that forgets the trailing
+        /// newline, which the protocol requires, otherwise becomes unbounded
+        /// growth inside Revit's process with nothing logged and no refusal,
+        /// because the code is still waiting for a line that never ends.
+        /// FRAGMENT-ISSUES section 5b, row 22.
+        ///
+        /// A character at a time, deliberately. The reader is buffered, so
+        /// this is not a read syscall per character, and the alternative -
+        /// chunked reads with leftovers carried between requests on one
+        /// connection - is where a framing bug would live. Correct framing is
+        /// worth more here than throughput on a local pipe.
+        /// </summary>
+        private static async Task<Line> ReadBoundedLineAsync(StreamReader reader)
+        {
+            var sb = new StringBuilder();
+            var one = new char[1];
+
+            while (true)
+            {
+                var got = await reader.ReadAsync(one, 0, 1).ConfigureAwait(false);
+
+                // End of stream. A last line with no newline is still a line;
+                // nothing at all means the client closed.
+                if (got == 0) return new Line { Text = sb.Length == 0 ? null : sb.ToString() };
+
+                var c = one[0];
+                if (c == '\n') return new Line { Text = sb.ToString() };
+                if (c == '\r') continue;                  // CRLF, or a stray CR
+                if (sb.Length >= MaxRequestChars) return new Line { TooLong = true };
+                sb.Append(c);
+            }
+        }
+
+        /// <summary>What one read came back with: the line, or the refusal.</summary>
+        private sealed class Line
+        {
+            public string Text;        // null when the client closed
+            public bool TooLong;
         }
 
         private async Task ServeAsync(NamedPipeServerStream pipe, CancellationToken token)
@@ -335,7 +422,7 @@ namespace Heron.Bridge
                     // rather than reconnecting per request, so read in a loop.
                     while (_running && !token.IsCancellationRequested)
                     {
-                        var read = reader.ReadLineAsync();
+                        var read = ReadBoundedLineAsync(reader);
                         var finished = await Task.WhenAny(read, Task.Delay(_idleRelease, token))
                                                  .ConfigureAwait(false);
 
@@ -344,7 +431,23 @@ namespace Heron.Bridge
                         // connection nobody is using and nobody is waiting for.
                         if (!ReferenceEquals(finished, read)) return;
 
-                        var line = await read.ConfigureAwait(false);
+                        var request = await read.ConfigureAwait(false);
+
+                        // PAST THE CEILING, AND THE CONNECTION GOES. Answering
+                        // and carrying on would mean resynchronising on a
+                        // newline this client has already shown it may never
+                        // send. It reconnects for the next request, which is
+                        // the same recovery preemption already relies on.
+                        if (request.TooLong)
+                        {
+                            await writer.WriteLineAsync(Json.Error("request_too_long",
+                                "That request was longer than Heron will read on one line. " +
+                                "The protocol is one request per line, ending in a newline."))
+                                .ConfigureAwait(false);
+                            return;
+                        }
+
+                        var line = request.Text;
                         if (line == null) return;            // client closed
                         if (line.Length == 0) continue;
 
@@ -434,6 +537,17 @@ namespace Heron.Bridge
             // BEFORE THE LEASE CLAIM, beside ping and info, because claiming
             // in order to release would renew the very thing being given up.
             // It touches no model and needs no Revit thread.
+            //
+            // AND THESE THREE ARE THE WHOLE OF WHAT IS ANSWERED HERE. Anything
+            // answered in this file never reaches RequestHandler, so it never
+            // reaches RevitOperations.Run and never reaches Gate - the one
+            // place that checks an operation's declared risk, and whose own
+            // justification is "for the sake of the operation nobody has
+            // written yet". A fourth `if` beside these would inherit that
+            // bypass for free. tests/test_tool_registry.py now names ping,
+            // info and release as the allow-list and fails on a fourth, so
+            // adding one is a conversation rather than an accident.
+            // FRAGMENT-ISSUES section 5b, row 14.
             if (op == "release")
             {
                 var who = Json.ReadString(request, "client");

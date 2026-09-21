@@ -153,13 +153,36 @@ namespace Heron.Core
                 ? parsed : fallback;
         }
 
+        /// <summary>
+        /// A boolean setting, or the fallback when the file does not state one.
+        ///
+        /// A VALUE NOBODY CAN PARSE IS A VALUE NOBODY STATED, which is what
+        /// GetInt ten lines up has always done and what this used to get
+        /// wrong: it returned the fallback only for null or empty, and read
+        /// everything else it did not recognise as FALSE. For every key but
+        /// one that failed safe - write.enabled and bridge.autoConnect both
+        /// default to false, so garbage resolving to false protects the
+        /// model. ui.activityBanner is read with a TRUE fallback, on purpose,
+        /// because a Revit frozen with no explanation reads as a crash - so
+        /// "on", "enabled" or "True " with a stray character silently turned
+        /// off the one thing telling a modeller Revit is working, while the
+        /// word they typed sat in their own config file looking accepted.
+        /// FRAGMENT-ISSUES section 5b, row 8.
+        /// </summary>
         public bool GetBool(string key, bool fallback)
         {
             var raw = Get(key);
             if (string.IsNullOrEmpty(raw)) return fallback;
-            return raw.Equals("true", StringComparison.OrdinalIgnoreCase)
-                || raw.Equals("1", StringComparison.Ordinal)
-                || raw.Equals("yes", StringComparison.OrdinalIgnoreCase);
+            var value = raw.Trim();
+            if (value.Equals("true", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("1", StringComparison.Ordinal)
+                || value.Equals("yes", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("on", StringComparison.OrdinalIgnoreCase)) return true;
+            if (value.Equals("false", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("0", StringComparison.Ordinal)
+                || value.Equals("no", StringComparison.OrdinalIgnoreCase)
+                || value.Equals("off", StringComparison.OrdinalIgnoreCase)) return false;
+            return fallback;
         }
 
         /// <summary>

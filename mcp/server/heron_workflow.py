@@ -159,9 +159,23 @@ class CheckpointStore(object):
             temp = path + ".tmp"
             with io.open(temp, "w", encoding="utf-8") as fh:
                 fh.write(json.dumps(state, indent=2, sort_keys=True, default=str))
-            if os.path.exists(path):
-                os.remove(path)
-            os.rename(temp, path)
+            # os.replace, NOT remove-then-rename. The comment above has always
+            # described an atomic swap and the code did not do one: it deleted
+            # the old file and then renamed the new one into place, leaving a
+            # window with NO checkpoint at all - and load() answers a missing
+            # file with "nothing done yet". A crash in that window silently
+            # discarded every finished stage, which is the exact loss
+            # checkpoints exist to prevent.
+            #
+            # THE C# SIDE HAD THIS AND FIXED IT A WEEK EARLIER. HeronConfig's
+            # own note reads "This was write-tmp, DELETE, move until
+            # 2026-09-16, which left a window with no config file at all",
+            # and HeronAtomicWrite exists because of it. The Python half was
+            # never looked at. FRAGMENT-ISSUES section 5b, row 31.
+            #
+            # os.replace is atomic on POSIX and on Windows, and unlike
+            # os.rename it overwrites an existing file on both.
+            os.replace(temp, path)
         except (IOError, OSError):
             # Losing a checkpoint costs repeated work. Failing the operation
             # because it could not be recorded costs the work itself.
@@ -233,6 +247,22 @@ class Workflow(object):
                 output = action()
             except Exception as exc:                     # a stage must not escape
                 last = "%s: %s" % (type(exc).__name__, exc)
+
+                # AND THIS IS ASKED, NOT DECIDED HERE. A stage that THREW was
+                # retried outright until 2026-09-21, up to three times, even
+                # on the writing path - which is the blind retry this file's
+                # own header says it never does. An exception carries no
+                # reply, so whether the request reached Revit is exactly the
+                # unknown outcome heron_failure was written for, and it
+                # already answers it: analyse(None, writes=...) is RETRY for
+                # a read and LOOK_AT_THE_MODEL for a write.
+                # FRAGMENT-ISSUES section 5b, row 32.
+                thrown = heron_failure.analyse(None, writes=writes)
+                if not thrown.may_retry:
+                    self._record(name, "failed", key, None, last, attempt)
+                    stage = Stage(name, "failed", None, last, attempt)
+                    self.stages.append((stage, undo))
+                    raise WorkflowStopped(name, last, thrown)
                 continue
 
             failure = heron_failure.analyse(output, writes=writes) \

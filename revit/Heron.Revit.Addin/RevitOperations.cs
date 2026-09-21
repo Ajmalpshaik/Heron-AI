@@ -435,7 +435,15 @@ namespace Heron.Revit.Addin
             var wanted = new List<BuiltInCategory>();
             var names = new List<string>();
 
-            foreach (var part in category.Split(','))
+            // NULL IS NOT A CATEGORY, AND IT USED TO BE A CRASH. Json.ReadString
+            // returns null for an absent key, so a request with no `category`
+            // at all reached Split and threw - caught by the dispatcher, which
+            // is right, and shown to the modeller as "Object reference not set
+            // to an instance of an object." The empty string was handled
+            // beautifully twenty lines below, by the refusal written for
+            // exactly this case. Treating null as empty is what lets the
+            // request reach it. FRAGMENT-ISSUES section 5b, row 15.
+            foreach (var part in (category ?? "").Split(','))
             {
                 var name = part.Trim();
                 if (name.Length == 0) continue;
@@ -515,14 +523,6 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
-        /// A BIM word to a Revit category, or the refusal to give back.
-        ///
-        /// Shared with the write path on purpose. One table means "ducts"
-        /// cannot mean OST_DuctCurves when Heron SELECTS and something else
-        /// when it MOVES - which is the kind of divergence that is invisible
-        /// in review and obvious only in the model afterwards.
-        /// </summary>
-        /// <summary>
         /// The document's PROJECT KEY - what a knowledge scope is named after.
         ///
         /// heron_scope._safe_key states the contract: the key is the UniqueId
@@ -550,6 +550,19 @@ namespace Heron.Revit.Addin
             return info == null ? null : info.UniqueId;
         }
 
+        /// <summary>
+        /// A BIM word to a Revit category, or the refusal to give back.
+        ///
+        /// Shared with the write path on purpose. One table means "ducts"
+        /// cannot mean OST_DuctCurves when Heron SELECTS and something else
+        /// when it MOVES - which is the kind of divergence that is invisible
+        /// in review and obvious only in the model afterwards.
+        ///
+        /// This paragraph sat above ProjectKey until 2026-09-21, stacked as a
+        /// second summary on an unrelated method while the one it describes
+        /// carried none - in a repository where the comment is the design
+        /// record. FRAGMENT-ISSUES section 5b, row 16.
+        /// </summary>
         internal static string ResolveCategory(string category, out BuiltInCategory builtIn)
         {
             builtIn = BuiltInCategory.INVALID;
