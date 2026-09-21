@@ -124,6 +124,53 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-21 (end) — THE AUDIT TRAIL'S OWN HALF HAD NO SUITE
+
+**[Row 5b-91](FRAGMENT-ISSUES.md). FIXED.** `brain/heron_audit.py`, the **eighth** live-path brain
+module.
+
+**Nothing under `tests/` imported it.** The BUILD ORDER check in `tools/check-gaps.py` covers the
+**fourteen steps docs/27 describes**; this file carries `Heron-Step: 17`, so no gate noticed.
+
+It is Golden Rule 14's requirement for the half of Heron that never reaches Revit, it is D-62's
+deliverable, and every line it writes goes into a file that is **append-only and never pruned**. Its
+docstring argues carefully about exactly that — the day `ms` went in quoted and a reader compared
+*"9"* against *"6620"* as text; never writing the user's sentence; the refusal codes that stop a
+correct refusal reading as a fault. **None of that argument was held by anything.**
+
+**And the promise in capitals was broken three ways.** `record()` says *NEVER FATAL*, and its
+`numbers` loop does `int(value)` **outside the `try`**. Measured: `ms="fast"` → `ValueError`,
+`float("nan")` → `ValueError`, `float("inf")` → **`OverflowError`, not even in that except list**, a
+list → `TypeError`. **The `ValueError` sitting in the except clause is the tell**: the author
+anticipated the conversion failing and guarded the wrong statement.
+
+**Not reachable from any caller** — all thirteen pass a `len()` or a `rowcount` — **and that is the
+dangerous half**: the early `return False` when there is nowhere to write means this code only ever
+runs where the trail really writes, which is somebody's machine and never this container.
+
+**Fixed**: the conversion is guarded per key, a bad number costs that one field and never the line,
+and it is **not** written as a string instead (the log is never pruned, so a quoted number is
+permanent). A `dropped` field names the key, because Golden Rule 14 does not allow a silent discard.
+
+**`tests/test_audit.py` is the larger half.** Eight sections holding the docstring's *arguments*
+rather than its lines. The central one runs **end to end through the reader**: three real refusals
+written, then `heron_gaps.analyse()` asked, and they must come back as **three correct refusals, none
+unclassified, none a defect** — which is `heron_gaps`'s own founding mistake tested from the other
+side. §6 proves **Q-44** the same way: an add-in file and a brain file in one directory come back as
+one list sorted by `at`, a truncated line costing one entry and not the report.
+
+**Shown to fail: 9 checks**, and the suite still ran to the end — each call sits in its own `try`, so
+an escape is reported as the failure it is rather than ending the run. **Two checks were vacuous in
+the first draft** (`all()` over an empty list is True); both now require a non-empty list first, which
+is [row 5b-79](FRAGMENT-ISSUES.md)'s false green in another shape.
+
+**Worth a look when somebody has time**: the BUILD ORDER check only sees the fourteen steps docs/27
+describes, so a `brain/` module at step 15 or above can have no suite and nothing will say so. How
+many are in that position has **not** been measured here.
+
+**Live-path brain modules read: 8 of 53.** Next: `heron_gaps` (read in passing for this row, not
+marked), then `heron_capability`.
+
 ### 2026-09-21 (last) — THE LEDGER SAID 142 FILES HAD BEEN READ; 113 HAD
 
 **[Row 5b-90](FRAGMENT-ISSUES.md). FIXED.** Found while marking eight modules for row 5b-89 that had
@@ -166,9 +213,7 @@ now carries *a fix is not proved until its test has been seen to FAIL*, the `get
 **Read this before writing a negative proof.** That section is the only thing standing between the
 next session and a fifth.
 
-**Still recorded, not fixed:** `brain/heron_audit.record()` says NEVER FATAL in capitals and lets
-`ValueError` and `OverflowError` out of its `int()` conversion, which sits **outside** the `try`.
-Unreachable today — every live caller passes `len(...)` or a `rowcount`.
+**That `heron_audit` note is now [row 5b-91](FRAGMENT-ISSUES.md) below, fixed, with a suite.**
 
 **Live-path brain modules read: 7 of 53**, and `brain/heron_audit.py` read but not yet marked.
 

@@ -125,6 +125,11 @@ def record(op, ok, fields=None, numbers=None, directory=None):
     this returns whether it wrote, so a test can tell "nowhere to write" apart
     from "wrote it".
 
+    THAT APPLIES TO BUILDING THE ROW AND NOT ONLY TO WRITING IT. A `numbers`
+    value that is not a whole number costs that one field - named in
+    `dropped` on the same line, because Golden Rule 14 says nothing is
+    discarded silently - and never the line, and never the request.
+
     There is no APPDATA on Linux and no HERON_AUDIT in a plain checkout, so on
     a developer machine this writes nothing and costs nothing.
     """
@@ -142,10 +147,35 @@ def record(op, ok, fields=None, numbers=None, directory=None):
         if value is None:
             continue
         row[key] = str(value)
+    # THE CONVERSION USED TO SIT OUTSIDE THE `try` BELOW, so a value that
+    # is not a whole number took down the request this was only supposed to
+    # DESCRIBE - out of a function whose docstring says NEVER FATAL in
+    # capitals. Measured 2026-09-21: ms="fast" and float("nan") both raised
+    # ValueError, and float("inf") raised OverflowError, which was not even
+    # in that except list. Row 5b-91.
+    #
+    # NOT reachable from any caller as things stand - every one of them
+    # passes a len() or a rowcount - and that is the dangerous half rather
+    # than the reassuring one: the early return above means this code only
+    # ever runs where the trail really writes, which is somebody's machine
+    # and not this container.
+    #
+    # A BAD NUMBER COSTS THAT ONE FIELD, NEVER THE LINE AND NEVER THE
+    # REQUEST. It is not written as a string either: the docstring's own
+    # "NUMBERS ARE WRITTEN AS NUMBERS" is about the day `ms` went in quoted
+    # and a reader compared "9" against "6620" as text, and the log is never
+    # pruned, so a quoted number is for ever. Golden Rule 14 says it is not
+    # dropped silently, so `dropped` names the key on the line itself.
+    dropped = []
     for key, value in sorted((numbers or {}).items()):
         if value is None:
             continue
-        row[key] = int(value)
+        try:
+            row[key] = int(value)
+        except (ValueError, TypeError, OverflowError):
+            dropped.append(key)
+    if dropped:
+        row["dropped"] = ",".join(dropped)
 
     try:
         directory_of = os.path.dirname(path)
