@@ -241,7 +241,8 @@ namespace Heron.Revit.Addin
                 "Leave it off", "Heron keeps reading only. Nothing changes.");
 
             return ask.Show() == TaskDialogResult.CommandLink1;
-        }    }
+        }
+    }
 
     /// <summary>
     /// Reports bridge state. Reads nothing from the model, opens no

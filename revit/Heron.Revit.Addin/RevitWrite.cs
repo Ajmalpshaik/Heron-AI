@@ -869,10 +869,6 @@ namespace Heron.Revit.Addin
         /// </summary>
         private static string DocumentKey(Document doc)
         {
-            // ProjectInformation is present in every project document. A
-            // family document has none, and Heron does not write to those -
-            // but falling back to the path is cheaper than a null reference
-            // inside a refusal that exists to keep the user safe.
             var info = doc.ProjectInformation;
 
             // IDENTITY ALONE, BECAUSE THAT IS WHAT IDENTITY IS FOR. This used
