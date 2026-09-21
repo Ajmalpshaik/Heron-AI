@@ -187,37 +187,57 @@ def _judge(name, rows, release, bridge, write_enabled, ceiling):
             "so whether they apply is unknown rather than no" % len(rows),
             risk=_worst_risk(rows))
 
-    risk = _worst_risk(rows)
+    # THE RISK AND THE PROVIDER COME FROM THE SAME ROW, which they did not
+    # until 2026-09-21. `risk` was the WORST across the providers and
+    # `provider` was `rows[0]["id"]` - so a capability answered by a READ
+    # fragment and a MODIFY one reported risk MODIFY beside the READ
+    # fragment's name, and a planner reading the pair would blame a fragment
+    # that is not the one being blocked. Naming the worst provider is also
+    # the only name worth printing beside a worst-case figure.
+    # FRAGMENT-ISSUES section 5b, row 27.
+    decided = _worst_provider(rows)
+    risk = decided.get("risk")
     if _rank(risk) > _rank(ceiling):
         return Capability(
             name, BLOCKED_BY_TRUST,
             "%s, and the ceiling here is %s%s"
             % (risk, ceiling,
                " - write.enabled is false" if not write_enabled else ""),
-            risk=risk, provider=rows[0].get("id"))
+            risk=risk, provider=decided.get("id"))
 
     if bridge != "connected":
         return Capability(
             name, NEEDS_REVIT,
             "permitted, and there is no Revit answering - open Revit and press "
             "Heron > AI Bridge > Heron",
-            risk=risk, provider=rows[0].get("id"))
+            risk=risk, provider=decided.get("id"))
 
     return Capability(name, AVAILABLE, "%d provider(s)" % len(rows),
-                      risk=risk, provider=rows[0].get("id"))
+                      risk=risk, provider=decided.get("id"))
 
 
-def _worst_risk(rows):
+def _worst_provider(rows):
     """
-    The highest risk among the providers, never the first one's.
+    The provider with the highest risk, never the first one.
 
     Same rule brain/heron_capability.py applies and for the same reason: a
     capability answered by a thing that reads and a thing that modifies is
     as dangerous as its most dangerous provider, whichever happens to sort
     first.
+
+    THE ROW, NOT JUST ITS RISK. This returned the risk alone, and every
+    caller then printed `rows[0]["id"]` beside it - two facts about two
+    different fragments, presented as one. Returning the row makes that
+    impossible to get wrong again. An empty dict for no rows, because the
+    only caller has already answered NO_PROVIDER by then.
     """
     worst = None
     for row in rows:
-        if worst is None or _rank(row.get("risk")) > _rank(worst):
-            worst = row.get("risk")
-    return worst
+        if worst is None or _rank(row.get("risk")) > _rank(worst.get("risk")):
+            worst = row
+    return worst or {}
+
+
+def _worst_risk(rows):
+    """The highest risk among the providers. See _worst_provider."""
+    return _worst_provider(rows).get("risk")

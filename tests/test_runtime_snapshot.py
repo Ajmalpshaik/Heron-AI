@@ -106,6 +106,16 @@ def main():
     check(verdict(mixed, "MIXED").verdict == rt.BLOCKED_BY_TRUST,
           "a capability with one READ and one MODIFY provider is judged by the "
           "MODIFY one")
+    # AND NAMED BY THE SAME ONE. This reported risk MODIFY beside
+    # provider FRG-A - the READ fragment, which happened to sort first - so
+    # the two facts printed side by side were about two different fragments,
+    # and a planner would have blamed the wrong one for being blocked.
+    # FRAGMENT-ISSUES section 5b, row 27.
+    check(verdict(mixed, "MIXED").risk == "MODIFY",
+          "the risk reported is the MODIFY one")
+    check(verdict(mixed, "MIXED").provider == "FRG-B",
+          "and the provider NAMED is the same fragment that risk came from, "
+          "not whichever happened to sort first")
 
     print()
     print("The environment is stated, never implied")
