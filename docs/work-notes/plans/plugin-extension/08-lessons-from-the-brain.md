@@ -155,6 +155,36 @@ them. → **[Q-B-1](#5-open-questions)**
 
 ---
 
+### B9 — The duplication it accumulated is the reason Heron exists, and Heron's answer is structural
+
+> Owner, 2026-09-21: *"we need to check them carefully. **Don't copy-paste blindly, because some skills
+> are overwritten. For the same work, we ended up with multiple skills or multiple fragments** — that was
+> the mistake, and that is why we invented Heron to fix these issues."*
+
+**This is the most important sentence in the whole read**, because it names what the re-authoring is
+actually for. Taking two fragments that do one job and carrying both across would reproduce the defect
+the new library was built to escape — and it would arrive looking like diligence.
+
+**Heron's answer is not a habit. It is the shape of the library**, and three separate things enforce it:
+
+| | |
+|---|---|
+| **One capability, one fragment** | `capability:` is unique across the store. Checked 2026-09-21: **no capability is claimed twice.** Two fragments doing one job cannot both be authoritative, because only one may own the name |
+| **A skill names capabilities, never fragment ids** | so a fragment can be replaced, split or retired without any skill changing. There is nothing to keep in step, so nothing drifts out of step |
+| **Three agents watch for it** | [`heron_duplicates.py`](../../../../brain/heron_duplicates.py) — *"nothing comparable is not nothing like it"* · [`heron_merge.py`](../../../../brain/heron_merge.py) — *"the same shape is not the same thing"* · [`check-skill-routing.py`](../../../../tools/check-skill-routing.py) — do a skill's own words actually reach its own capabilities |
+
+**So the porting rule needs one line added to it, and [06](06-porting-method.md) now carries it:** before
+a fragment comes across, ask **which capability it claims** — and if that capability already has an
+owner, the question is *widen the owner* or *this is a different job and needs a different name*.
+**Never both.**
+
+**Note what the middle row costs to break.** A skill naming fragment ids instead of capabilities is how
+the original ended up with skills overwriting each other: change a fragment and every skill pointing at
+it is silently wrong. Heron's skills name capabilities for exactly that reason, and that rule is worth
+more than any of the checkers.
+
+---
+
 ## 3. What is deliberately NOT taken
 
 | | Why |

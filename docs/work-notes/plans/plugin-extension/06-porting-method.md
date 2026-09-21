@@ -19,6 +19,38 @@ either works or does not.
 
 ---
 
+## 1a. Two warnings from the owner, and neither is optional
+
+> Owner, 2026-09-21: *"**Not everything in AJ tools.** There are some issues, and some tools don't work
+> or aren't good, so don't take those. **I will tell you one by one** which ones we need to take."*
+
+**So a tool being in AJ Tools is not a reason to port it.** The library contains tools that do not work
+and tools he does not rate, and only he knows which. §1's rule — one named tool at a time, only when he
+names it — **is that warning, and it is why the rule exists** rather than being caution for its own sake.
+
+> Owner, 2026-09-21, on the earlier brain: *"some skills are overwritten. **For the same work, we ended
+> up with multiple skills or multiple fragments** — that was the mistake, and that is why we invented
+> Heron."*
+
+**So one question comes before any fragment is written: which capability does this claim?**
+
+| Answer | What happens |
+|---|---|
+| **No owner yet** | a new fragment, a new capability name |
+| **Already owned** | **widen the owner** ([§5](#5-what-this-does-to-the-proven-count-and-it-will-look-like-going-backwards)) — never a second fragment for one job |
+| **Owned, but this is genuinely a different job** | a **different capability name**, stated plainly. If the name is hard to write, that is the signal it is the same job |
+
+**Heron makes the wrong answer structurally impossible**, which is the point: `capability:` is unique
+across the store, and a skill names capabilities rather than fragment ids, so nothing silently points at
+a fragment that changed under it. [B9](08-lessons-from-the-brain.md) has the three checkers that watch
+it.
+
+**The failure to avoid has a shape, and it looks like diligence:** porting two tools that do one job,
+writing a fragment for each, and ending with two answers to one question — which is precisely what the
+new library was built to escape.
+
+---
+
 ## 2. The loop
 
 ```text
