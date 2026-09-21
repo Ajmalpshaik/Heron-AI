@@ -67,8 +67,18 @@ yesterday wrong today:
     removed an output field ........ the caller reads a field that is gone
     removed a failure state ........ the caller handles one that never arrives
     added a failure state .......... the caller has no branch for it
+    the timeout fell ............... a call that finished inside the old
+                                     promise can fail under the new one
 
-The last one is included deliberately, and it is the one people argue about. A
+THE TIMEOUT RULE IS THE EIGHTH AND IT WAS MISSING FROM THIS TABLE UNTIL
+2026-09-21, while compare() enforced it. Measured: 60s -> 30s came back
+BREAKING and 60s -> 120s COMPATIBLE, which is right - raising a promise
+costs nobody anything, so only the downward direction counts. A reader
+working from a seven-row table would have lowered a timeout expecting
+COMPATIBLE. Row 5b-87.
+
+The added-failure-state row is included deliberately, and it is the one
+people argue about. A
 caller that handles failures exhaustively - which is the shape this repository
 asks for - has no branch for a state that did not exist when it was written.
 Calling that COMPATIBLE would be comfortable and wrong.

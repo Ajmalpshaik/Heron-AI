@@ -272,6 +272,8 @@ def main():
         name = os.path.basename(path)
         check(CON.validate(data, known, name) == [], "%s validates" % name)
 
+    breaking_table_matches_the_code()
+
     print()
     if FAILURES:
         print("FAILED  %d check(s)" % len(FAILURES))
@@ -279,6 +281,40 @@ def main():
             print("  - %s" % line)
         return 1
     print("PASS    the contract refuses what it must and calls a break a break")
+    return 0
+
+
+def breaking_table_matches_the_code():
+    """
+    Every rule compare() enforces is listed in the docstring people read.
+
+    The table said seven and compare() enforced eight: a SHORTENED TIMEOUT
+    is BREAKING and was missing from it until 2026-09-21. A reader working
+    from the table would have lowered a timeout expecting COMPATIBLE, which
+    is the one direction that turns a correct caller into a failing one.
+    Row 5b-87.
+
+    Asserted against the module's own docstring rather than a copy of it,
+    so the table cannot drift from the code again without this going red.
+    """
+    print()
+    print("The BREAKING table lists every rule compare() enforces")
+    doc = CON.__doc__ or ""
+
+    base = {"agent": "HERON-WSP-PTH-007", "version": "1.0.0",
+            "timeout-seconds": 60, "input": {}, "output": {},
+            "failures": ["X"], "allowed-tools": [], "retry": {}}
+
+    lower = dict(base, **{"timeout-seconds": 30, "version": "2.0.0"})
+    raise_it = dict(base, **{"timeout-seconds": 120, "version": "1.1.0"})
+
+    check(CON.compare(base, lower)[0] == "BREAKING",
+          "a SHORTENED timeout is BREAKING")
+    check(CON.compare(base, raise_it)[0] == "COMPATIBLE",
+          "and a LENGTHENED one is not - raising a promise costs nobody")
+    check("timeout fell" in doc,
+          "and the docstring's table says so, so a reader working from it "
+          "does not lower a timeout expecting COMPATIBLE")
     return 0
 
 
