@@ -52,6 +52,7 @@ diagnosis a lie about what the machine was like. Every finding says what to
 run or change, and a person runs it.
 """
 
+import io
 import os
 import sys
 
@@ -271,7 +272,27 @@ def _backups(components, notes):
 
 
 def _tools(components, notes):
-    """Is every declared tool actually being offered."""
+    """
+    Is every declared tool actually being offered - and nothing offered that
+    nobody declared.
+
+    IT USED TO ASK NEITHER. This docstring has said "is every declared tool
+    actually being offered" since it was written, and the body counted the
+    table and stopped: the component was HEALTHY whatever the server did, in
+    a report whose closing line is "a check that did not run is not a check
+    that passed". FRAGMENT-ISSUES section 5b, row 34.
+
+    THE SERVER IS READ AS TEXT, NOT IMPORTED, and that is the whole reason
+    this can run on the day it is wanted. Importing heron_mcp_server needs
+    the MCP SDK, which is exactly the thing that may be missing when
+    somebody types "diagnose Heron" - and a probe that cannot run when the
+    machine is broken is not a probe.
+
+    An undeclared tool is the serious direction: risk_of() raises for a name
+    nobody declared, so a tool offered without an entry cannot be called at
+    all. A declared tool nobody offers is a dead entry - untidy rather than
+    dangerous - and both are named.
+    """
     try:
         import heron_tools as tools
     except ImportError as exc:
@@ -279,11 +300,45 @@ def _tools(components, notes):
             "tools", HEALTH.FAILED,
             "the tool registry could not be read (%s)" % exc))
         return None
-    components.append(_component(
-        "tools", HEALTH.HEALTHY,
-        "%d declared, %d of them able to change a model"
-        % (len(tools.TOOLS),
-           sum(1 for name in tools.TOOLS if tools.writes(name)))))
+
+    declared = set(tools.TOOLS)
+    changing = sum(1 for name in declared if tools.writes(name))
+
+    server = os.path.join(HERE, "heron_mcp_server.py")
+    try:
+        import re
+        text = io.open(server, encoding="utf-8", errors="replace").read()
+        offered = set(re.findall(r"@server\.tool\(\)\s*\ndef\s+([a-z_]+)\s*\(",
+                                 text))
+    except (IOError, OSError) as exc:
+        notes.append("the server's own tool list could not be read: %s" % exc)
+        components.append(_component(
+            "tools", HEALTH.WARNING,
+            "%d declared, %d of them able to change a model - and whether the "
+            "server offers them could not be checked" % (len(declared), changing)))
+        return tools.TOOLS
+
+    undeclared = sorted(offered - declared)
+    unoffered = sorted(declared - offered)
+
+    if undeclared:
+        components.append(_component(
+            "tools", HEALTH.FAILED,
+            "the server offers %d tool(s) that the registry does not declare: "
+            "%s. An undeclared tool has no risk level, so Heron refuses it - "
+            "it is offered and cannot be called"
+            % (len(undeclared), ", ".join(undeclared))))
+    elif unoffered:
+        components.append(_component(
+            "tools", HEALTH.WARNING,
+            "%d declared tool(s) are not offered by the server: %s. The entry "
+            "is dead rather than dangerous, and one of the two files is wrong "
+            "about what Heron can do" % (len(unoffered), ", ".join(unoffered))))
+    else:
+        components.append(_component(
+            "tools", HEALTH.HEALTHY,
+            "%d declared and all %d offered, %d of them able to change a model"
+            % (len(declared), len(offered), changing)))
     return tools.TOOLS
 
 
