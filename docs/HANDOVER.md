@@ -164,9 +164,15 @@ an escape is reported as the failure it is rather than ending the run. **Two che
 the first draft** (`all()` over an empty list is True); both now require a non-empty list first, which
 is [row 5b-79](FRAGMENT-ISSUES.md)'s false green in another shape.
 
-**Worth a look when somebody has time**: the BUILD ORDER check only sees the fourteen steps docs/27
-describes, so a `brain/` module at step 15 or above can have no suite and nothing will say so. How
-many are in that position has **not** been measured here.
+**And the blind spot that let it happen is [row 5b-92](FRAGMENT-ISSUES.md), measured and closed in
+the same sitting.** `check-gaps.py`'s BUILD ORDER section asks *does every step docs/27 names have
+code and a test* — not *does every brain module have a test*. A module above the fourteen is invisible
+to it. **Measured with an AST walk over every suite: exactly ONE of the 145 was imported by no suite
+at all, and it was `heron_audit`.** A single instance, not a class — said plainly rather than left as
+a suspicion. The *THE BRAIN* section now asks the question too, and an untested module goes on the
+UNFINISHED list by name. **A filename match would have reported six gaps that are not there** — six
+modules have no suite of their own name and every one is well covered, `heron_fragment` by forty
+suites — so it resolves imports, not names.
 
 **Live-path brain modules read: 8 of 53.** Next: `heron_gaps` (read in passing for this row, not
 marked), then `heron_capability`.

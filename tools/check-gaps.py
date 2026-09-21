@@ -442,6 +442,37 @@ def check_brain_is_reachable():
             "request through a capability, which is Phase 2's third "
             "definition-of-done clause. Needs no Revit" % len(brain_modules))
 
+    # AND WHETHER ANYTHING TESTS IT, WHICH THE BUILD ORDER ABOVE CANNOT SEE.
+    # That check reads the fourteen steps docs/27 describes; brain/ has
+    # modules at higher steps, and `heron_audit.py` - Golden Rule 14's whole
+    # requirement for the half of Heron that never reaches Revit, writing
+    # into an append-only file - sat at step 17 with NO suite importing it
+    # and nothing said so. Row 5b-91. An import, not a filename: one suite
+    # covers several modules by design, and six modules have no suite of
+    # their own NAME while every one of them is well covered.
+    tested = set()
+    tests_dir = os.path.join(ROOT, "tests")
+    for name in sorted(os.listdir(tests_dir)):
+        if not name.endswith(".py"):
+            continue
+        text = read("tests", name)
+        for module in brain_modules:
+            if re.search(r"^\s*(?:import|from)\s+%s\b" % re.escape(module),
+                         text, re.M):
+                tested.add(module)
+
+    untested = [m for m in brain_modules if m not in tested]
+    if untested:
+        unfinished(
+            "%d brain module(s) are imported by no suite at all: %s. The "
+            "BUILD ORDER check above cannot see this - it reads the fourteen "
+            "steps docs/27 describes, and a module above them is invisible "
+            "to it. Needs no Revit"
+            % (len(untested), ", ".join("brain/%s.py" % m for m in untested)))
+    else:
+        print("  ok    every one of the %d is imported by at least one suite"
+              % len(brain_modules))
+
 
 def check_register():
     """NEEDS-CHECKING, split the same way this tool splits everything."""
