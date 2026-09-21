@@ -87,11 +87,12 @@ without the connector is a **supported install**, not a degraded one.
 For each ticked product, for each ticked Revit version:
 
 ```text
-1.  Check Revit is closed                      -> refuse, with the version named, if not
-2.  Fetch the product                          -> route C downloads and verifies; route B has it already
+1.  WAIT until Revit is closed                 -> keep checking; name the version still open (R-38a)
+2.  Fetch the product                          -> route 3 downloads and verifies; route 2 has it already
 3.  Detect an existing install                 -> and say in the report that it is being replaced
 4.  Back up whatever is already there          -> so Rollback has something to restore
-5.  REMOVE the old files, then copy the new    -> replace, never merge two versions in one folder
+5.  DELETE the old folder completely           -> nothing renamed, nothing left behind (R-38, R-38c)
+5a. VERIFY it is gone before copying anything  -> if not, STOP and change nothing further (R-38b)
 6.  Copy the product's WHOLE FOLDER of files   -> into ...\Addins\<version>\<Product>\  (R-40, R-41)
 6a. Place <Product>.addin                      -> at ...\Addins\<version>\<Product>.addin
 7.  Rewrite the <Assembly> line in the manifest -> to the real deployed path
@@ -99,11 +100,20 @@ For each ticked product, for each ticked Revit version:
 9.  Report, per product, per version           -> installed / replaced / skipped / failed and WHY
 ```
 
-**Step 5 is the one to get right, and yesterday's version of it was wrong.** It said *remove, then
-copy*. A remove **fails** while Revit holds the assembly open, and Heron's own "is Revit closed" check
-can be wrong — a second Revit on another desktop, a scanner holding a file. So: **rename the old folder
-aside, install clean, sweep the set-aside folders on a later run.** A locked file cannot be deleted but
-can be renamed. [R-38](#the-lessons-from-aj-tools), from [L2](04-lessons-from-aj-tools.md).
+**Steps 1 and 5 together are the ones to get right, and the owner settled them on 2026-09-21.**
+
+A delete **fails** while Revit holds the assembly open. AJ Tools works around that by renaming the old
+folder aside and sweeping later. **Heron does not**: the owner ruled that a best-effort sweep leaves
+`.old` folders piling up until nobody can tell which copy Revit is loading.
+
+**So Heron waits instead of working around it.** Step 1 keeps checking until Revit is genuinely closed;
+step 5 then deletes cleanly, because by then nothing is holding the files. **Nothing is ever renamed and
+nothing is ever left behind** ([R-38](#the-lessons-from-aj-tools), [R-38c](#the-lessons-from-aj-tools)).
+
+**Step 5a is what makes that safe.** Deleting has no fallback if it fails partway, so the folder is
+**verified gone before a single new file is copied**. If it is not gone, the installer **stops and
+changes nothing further** ([R-38b](#the-lessons-from-aj-tools)) — a clean refusal is recoverable, a
+half-written install is not.
 
 **Step 6 changed too.** A product is a **folder of files**, not two files, and each product gets its own
 folder rather than sharing one with every other Heron product
@@ -209,8 +219,10 @@ Each row cites the lesson it came from in [`04-lessons-from-aj-tools.md`](04-les
 | # | Requirement | Source | Status |
 |---|---|---|---|
 | R-37 | Every file is **cleared of its download mark**, before the copy and again on the copies. A marked DLL makes Revit refuse the add-in | [L1](04-lessons-from-aj-tools.md) | MUST |
-| R-38 | Replacing **renames the old folder aside**, installs clean, and sweeps set-aside folders on a later run. **Never delete first** — the delete fails while Revit holds the file | [L2](04-lessons-from-aj-tools.md) — **corrects [R-23b](#uninstall-and-update)** | MUST |
-| R-38a | The sweep is **best-effort**. A folder still held open fails to delete and is swept next time; it can never fail an install | [L2](04-lessons-from-aj-tools.md) | MUST |
+| R-38 | Replacing **waits for Revit to close**, then deletes the old install completely and installs clean. **Nothing is ever renamed and nothing is ever left behind** | Owner, 2026-09-21 — **overrules the rename mechanism**; see [L2](04-lessons-from-aj-tools.md) | MUST |
+| R-38a | While Revit is open the installer **keeps checking and waits**. It does not fail, and it does not work around it | Owner, 2026-09-21: *"until that close stage, it will always keep checking if Revit is closed"* | MUST |
+| R-38b | After deleting, the installer **verifies the folder is actually gone before copying anything**. If the delete did not fully succeed it **stops and changes nothing further** | Follows R-38 — this is what makes deleting safe without a rename; a half-deleted install with no way back is the one outcome worse than waiting | MUST |
+| R-38c | **No `.old` folders, no numbered copies, no leftovers of any kind.** One product, one folder, one version on disk | Owner, 2026-09-21: *"after a long time, you will end up with a lot of DLLs. That is a mistake"* | MUST |
 | R-39 | Which Revit versions can be installed is read from **what the package contains**, never from a typed list | [L3](04-lessons-from-aj-tools.md) — **supersedes [R-9](#revit-versions)**; and [AGENTS.md](../../../../AGENTS.md) *never type a number a command can derive* | MUST |
 | R-40 | A product ships **one payload folder per Revit release**, carrying that release's build **and everything the runtime needs beside it** | [L4](04-lessons-from-aj-tools.md) — .NET 8+ fails on a missing dependency manifest | MUST |
 | R-41 | Each product installs into **its own folder**, never a shared one. Two products carrying different versions of the same helper assembly must not overwrite each other | [L5](04-lessons-from-aj-tools.md) — **corrects §4** | MUST |

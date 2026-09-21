@@ -194,11 +194,16 @@ like one.
    re-implementing the copy. Two copies of a deploy rule drift, and the drift is found by a user.
 3. Implement **Revit version detection** ([R-7](01-requirements.md)) — which of 2020 to 2027 are on this
    PC. Detect from the machine, never from a guess.
-4. Implement the refusal when Revit is running ([R-17](01-requirements.md)), **naming the version**.
+4. Implement **waiting** while Revit is running ([R-38a](01-requirements.md)) — keep checking, name the
+   version still open, and do not proceed until it is genuinely closed. Waiting, not a one-shot refusal:
+   the user closes Revit and the install carries on without being started again.
 5. Per-product results ([R-19](01-requirements.md)): one product failing does not stop the rest.
-5a. **Replace, not merge** ([R-23a, R-23b](01-requirements.md)). Detect an existing install, back it up,
-   **remove its files, then copy the new ones**. A copy over the top leaves whatever the new version no
-   longer ships — a stale DLL Revit may still load, or an `.addin` naming a class that is gone.
+5a. **Wait, then replace cleanly** ([R-38](01-requirements.md)). Detect an existing install, back it up,
+   **delete its folder completely, verify it is gone, then copy**. Nothing is renamed and no `.old`
+   folder is ever created — the owner ruled on 2026-09-21 that a best-effort sweep piles up copies until
+   nobody can tell which one Revit is loading.
+5b. **If the delete does not fully succeed, STOP** ([R-38b](01-requirements.md)) and change nothing
+   further. A clean refusal is recoverable; a half-removed install is not.
 6. Every path through [`HeronPaths`](../../../../platform/Heron.Core/HeronPaths.cs). **Nothing else
    builds a Heron path** — that is the rule in [`platform/README.md`](../../../../platform/README.md).
 
@@ -206,7 +211,11 @@ like one.
 
 - Running the engine with `heron` and `heron-doc` installs both into a chosen Revit version, and both
   tabs appear on restart.
-- Running it with Revit **open** refuses, and the message names which Revit.
+- Running it with Revit **open** waits and names which Revit. Close it, and the install **continues on
+  its own** without being started again.
+- After a replace, the Addins folder holds **one copy of the product and no `.old` anything**
+  ([R-38c](01-requirements.md)). Count the folders before and after — this is the check that catches a
+  rename sneaking back in.
 - A deliberately broken product in the list fails **alone**, and the report says which and why.
 - Installing over an existing version **replaces** it: a file that version 1 shipped and version 2 does
   not is **gone** from the Addins folder afterwards. Plant one and check; this is the step that fails

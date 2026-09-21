@@ -40,23 +40,45 @@ copies. Its comment ties the marker directly to the Revit error it produces.
 **Heron's plan had nothing about this at all.** It would have hit every user who downloaded a release —
 which, under [S5](00-structure.md), is every route-C user there is. → **[R-37](01-requirements.md)**
 
-### L2 — Never delete a working install before its replacement is in place
+### L2 — Revit holds its DLLs open — and the owner rejected AJ Tools' answer to it
 
-**This corrects [R-23b](01-requirements.md), written yesterday.** That row says *remove the old files
-first, then copy*. AJ Tools' installer learned that **remove can fail**: Revit holds its loaded
-assemblies open, so a delete throws while Revit is running.
+**The fact is real and it is the important half.** Revit holds its loaded assemblies open, so **a delete
+throws while Revit is running**. AJ Tools' installer learned this and its own comment dates it as a
+defect already paid for.
 
-What it does instead is the part worth taking: a locked file cannot be deleted but **can be renamed**.
-So it renames the whole folder aside, installs clean, and sweeps the set-aside folders on a later run —
-best-effort, so a sweep that fails can never fail an install.
+**Its answer: rename the folder aside.** A locked file cannot be deleted but **can be renamed**, so it
+renames `AJ Tools` to `AJ Tools.<timestamp>.old`, installs clean, and sweeps the set-aside folders on a
+later run — best-effort, so a failed sweep can never fail an install.
 
-Its comment names the rule as a dated defect: *never destroy a working install before the replacement
-is in place.*
+**The owner overruled that on 2026-09-21, and he is right:**
 
-**Why this matters more for Heron than for AJ Tools.** Heron's installer is supposed to refuse while
-Revit is running ([R-17](01-requirements.md)) — but a refusal is a check, and a check can be wrong: a
-second Revit on another desktop, a background process, a file a virus scanner is holding. Rename-aside
-is what makes the failure survivable rather than destructive. → **[R-38](01-requirements.md)**
+> *"Do not rename the DLL … Renaming means if there is already a DLL there, you will just add a new name
+> in that DLL. After a long time, you will end up with a lot of DLLs. That is a mistake."*
+
+**The sweep is best-effort, which is exactly the problem.** A folder Revit still holds fails to delete
+and waits for next time — and if next time it is held again, it waits again. Nothing guarantees it is
+ever collected. Over a year of updates that is a `Addins\2024\` folder carrying a dozen dead copies of
+a product, each with its own DLLs, and nobody can tell which one Revit is loading.
+
+**Heron's answer instead — wait, then delete properly:**
+
+> *"Try to close Revit completely instead. Until that close stage, it will always keep checking if Revit
+> is closed. Once Revit is closed, you can put the DLL in."*
+
+| | AJ Tools | **Heron** |
+|---|---|---|
+| Revit open | rename aside, install anyway | **wait, and keep checking** |
+| Leftovers | `.old` folders, swept if possible | **none, ever** |
+| On disk | one live copy plus history | **one copy** |
+
+**The risk this trades for, and how it is covered.** Rename-aside protected against a delete that fails
+*partway* — a scanner holding one file for a moment — leaving a half-removed install. Deleting has no
+such fallback, so [R-38b](01-requirements.md) supplies one: **verify the folder is actually gone before
+copying anything**, and if it is not, **stop and change nothing further**. A clean refusal is recoverable;
+a half-written install is not.
+
+This keeps the owner's rule exactly — nothing renamed, nothing left behind — and removes the only
+scenario in which that rule would have hurt. → **[R-38, R-38a, R-38b, R-38c](01-requirements.md)**
 
 ### L3 — Never hardcode which Revit versions can be installed
 
@@ -149,7 +171,7 @@ every rule inside it does.
 | | Lesson | Became |
 |---|---|---|
 | L1 | Clear the download mark | [R-37](01-requirements.md) |
-| L2 | Rename aside, never delete first | [R-38](01-requirements.md) — **corrects R-23b** |
+| L2 | Revit holds its DLLs open | [R-38](01-requirements.md) — the FACT was taken; AJ Tools' rename-aside **answer was rejected** by the owner 2026-09-21 |
 | L3 | Derive the version list from the package | [R-39](01-requirements.md) — **corrects R-9** |
 | L4 | A payload folder per release | [R-40](01-requirements.md) |
 | L5 | A folder per product | [R-41](01-requirements.md) — **corrects §4** |
