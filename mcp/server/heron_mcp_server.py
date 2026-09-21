@@ -1834,6 +1834,8 @@ def heron_gaps(days: int = 0) -> str:
     window, e.g. days=7 for the last week. Needs no Revit.
     """
     result = brain.gaps(days or None)
+    if result.get("refused"):
+        return result["why"]
     found, wanted = result["found"], result["wanted"]
 
     if not found["requests"]:

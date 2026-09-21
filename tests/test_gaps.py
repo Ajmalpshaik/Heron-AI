@@ -25,6 +25,11 @@ WHAT IT PROVES
      out-rank every real one.
   6. A corrupt line costs one entry, not the file.
   7. An empty trail reports nothing rather than claiming there are no gaps.
+  9. AND A WINDOW THAT CANNOT HOLD A DAY IS REFUSED rather than emptying a
+     full trail - because the message check 7 proves is right for an empty
+     trail is a LIE about a full one, and `--days -7` used to reach it.
+ 10. The median of two runs is between them, not the slower one. The same
+     rule as a missing duration never being averaged in as zero.
 
 WHAT IT DOES NOT PROVE. That the report's ADVICE is right. It says what the
 trail contains; whether the thing most worth building is the thing that failed
@@ -174,6 +179,56 @@ def main():
         check(found["requests"] == 0, "an empty directory reads as zero requests")
         check("not the same as no gaps" in text,
               "and the report says so rather than reporting a clean bill")
+
+        print()
+        print("9. a window that cannot hold a day is refused, not emptied")
+        # ROW 5b-93, AND THE SECTION ABOVE IS WHY IT MATTERS. That message is
+        # right for an empty trail and a LIE for a full one, and `since()`
+        # could empty a full one: --days -7 came back with nothing, and the
+        # report then told somebody "Heron has no record of doing anything
+        # yet" about their own history. The window is where it belongs.
+        with io.open(os.path.join(workspace, "audit-202609.jsonl"), "w",
+                     encoding="utf-8") as handle:
+            for day in ("01", "10", "20"):
+                handle.write(u'{"at": "2026-09-%sT10:00:00.000Z", '
+                             u'"op": "revit_select", "ok": true}\n' % day)
+        entries, _ = GAPS.read(workspace)
+        check(len(entries) == 3, "three entries to window (%d)" % len(entries))
+
+        refused = None
+        try:
+            GAPS.since(entries, -7)
+        except ValueError as why:
+            refused = str(why)
+        check(refused is not None,
+              "a window of -7 days is REFUSED rather than returning nothing")
+        check(refused and "not a window" in refused,
+              "and the refusal says what was wrong with it")
+        check(GAPS.since(entries, 30) == entries,
+              "while a real window still works")
+        check(len(GAPS.since(entries, 7)) == 1,
+              "and still narrows - anchored on the newest entry, so a real "
+              "window can never come back empty")
+        for whole in (None, 0):
+            check(GAPS.since(entries, whole) == entries,
+                  "%r still means the whole trail" % (whole,))
+
+        print()
+        print("10. the median of two runs is between them, not the slower one")
+        # The same rule as duration() returning None rather than 0: this file
+        # refuses to average a missing duration with a real one because "that
+        # is how a timing report starts lying". Two runs is the ordinary case
+        # for most of the library.
+        middle, worst = GAPS._stat([10, 100])
+        check(middle == 55,
+              "median of 10 ms and 100 ms is 55, and it came back %s" % middle)
+        check(worst == 100, "and the worst is still 100")
+        check(GAPS._stat([10, 20, 100])[0] == 20, "an odd count is unchanged")
+        check(GAPS._stat([10, 20, 30, 100])[0] == 25,
+              "and four values take the middle pair")
+        check(GAPS._stat([7]) == (7, 7), "one run is its own median and worst")
+        check(GAPS._stat([]) == (None, None),
+              "and nothing timed stays None rather than becoming 0")
 
         print()
         print("   (bonus) a directory that does not exist is not an error")

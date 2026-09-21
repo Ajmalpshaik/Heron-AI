@@ -375,6 +375,29 @@ def main():
             check("_cannot_run()" in body,
                   "%s tells the caller what it still cannot RUN" % name)
 
+        # --- 6b. a window that empties the trail is not an empty trail ------
+        # ROW 5b-93, AND IT IS SECTION 7's ARGUMENT ONE TOOL ALONG. `gaps`
+        # took a `days` with no floor, `since()` returned nothing for one
+        # below 1, and the tool above turned that into "Heron has no record
+        # of doing anything yet" - said to somebody whose trail is full. The
+        # two answers send a user in opposite directions, which is exactly
+        # what section 7 exists to prevent for the catalogue.
+        print()
+        print("When the window, not the trail, is empty")
+        said = BRAIN.gaps(-7)
+        check(said.get("refused") == "NOT_A_WINDOW",
+              "a window of -7 days comes back REFUSED, as data")
+        check("not a window" in (said.get("why") or ""),
+              "and the reason says what was wrong with it, so the tool can "
+              "put it in front of the user instead of a wrong sentence")
+        check("found" not in said,
+              "and it does NOT come back looking like an answer with nothing "
+              "in it, which is the shape that read as 'never been asked'")
+        for real in (None, 0, 7):
+            ok = BRAIN.gaps(real)
+            check("found" in ok,
+                  "%r is still a real window and still answers" % (real,))
+
         # --- 7. it refuses rather than answering "nothing" ------------------
         # Last, because it takes the knowledge folder away. "Heron knows how to
         # do nothing" and "Heron cannot read what it knows" send a user in

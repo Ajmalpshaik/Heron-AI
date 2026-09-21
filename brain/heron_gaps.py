@@ -230,9 +230,25 @@ def duration(row):
 
 
 def since(entries, days):
-    """The last `days` days of the trail, by the newest entry rather than by
+    """
+    The last `days` days of the trail, by the newest entry rather than by
     today's date - a report read on Monday about work done on Friday must not
-    come back empty."""
+    come back empty.
+
+    `None` and `0` mean the whole trail. ANYTHING BELOW 1 IS REFUSED rather
+    than quietly returning nothing, because what "nothing" turns into two
+    functions later is the sentence *"Heron has no record of doing anything
+    yet"* - told to somebody whose trail is full. A window that cannot hold
+    a day is not a window, and the anchoring above means a real one can never
+    come back empty: the newest entry is always inside it. Row 5b-93.
+    """
+    if days is not None and not isinstance(days, bool) and days < 0:
+        raise ValueError(
+            "a window of %r days is not a window. Pass a whole number of days "
+            "from 1 upward, or None for the whole trail - this report is read "
+            "to find out what went wrong, and an empty answer from it reads as "
+            "'Heron has never been asked for anything', which would be a lie "
+            "about somebody's own history." % (days,))
     if not days or not entries:
         return entries
     newest = str(entries[-1].get("at", ""))[:10]
@@ -369,11 +385,25 @@ def wanted_but_unprovided():
 
 
 def _stat(values):
-    """median and worst, or None when nothing was timed."""
+    """
+    median and worst, or None when nothing was timed.
+
+    THE MIDDLE OF AN EVEN COUNT IS BETWEEN TWO VALUES, and taking the upper
+    one of the pair made the median of TWO runs the slower of them - so a
+    fragment run twice at 10 ms and 100 ms was reported as *median 100,
+    worst 100*. Two runs is the ordinary case for most of the library, which
+    is exactly where a reader has the least context to notice. This file
+    already refuses to average a missing duration with a real one because
+    "that is how a timing report starts lying"; this is the same rule one
+    function along. Row 5b-93.
+    """
     if not values:
         return None, None
     ordered = sorted(values)
-    return ordered[len(ordered) // 2], ordered[-1]
+    middle = len(ordered) // 2
+    if len(ordered) % 2:
+        return ordered[middle], ordered[-1]
+    return (ordered[middle - 1] + ordered[middle]) // 2, ordered[-1]
 
 
 def report(found, gaps, skipped=0, out=None):
@@ -473,6 +503,13 @@ def main(argv):
             days = int(argv[argv.index("--days") + 1])
         except (IndexError, ValueError):
             sys.stderr.write("--days needs a number, e.g. --days 7\n")
+            return 2
+        # AND A NUMBER IS NOT THE SAME AS A WINDOW. since() refuses below 1
+        # as well, and this is the message worth reading at a command line.
+        if days < 1:
+            sys.stderr.write(
+                "--days %d is not a window. Use 1 or more, or leave --days "
+                "off for the whole trail.\n" % days)
             return 2
 
     entries, skipped = read()

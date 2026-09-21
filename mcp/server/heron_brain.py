@@ -1390,7 +1390,15 @@ def gaps(days=None):
     import heron_gaps as GAPS
 
     entries, skipped = GAPS.read()
-    entries = GAPS.since(entries, days)
+    try:
+        entries = GAPS.since(entries, days)
+    except ValueError as why:
+        # AS DATA, NOT AS AN EXCEPTION. A window below 1 used to come back as
+        # an empty list, and the tool above turned that into "Heron has no
+        # record of doing anything yet" - told to somebody whose trail is
+        # full. The refusal carries the reason so the tool can say it.
+        # Row 5b-93.
+        return {"refused": "NOT_A_WINDOW", "why": str(why)}
     found = GAPS.analyse(entries)
 
     wanted = []
