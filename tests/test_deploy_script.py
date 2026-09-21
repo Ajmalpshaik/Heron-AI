@@ -261,6 +261,25 @@ def main():
           "and the module is dot-sourced BEFORE the function is called")
 
     print()
+    print("Every Directory.Build file it names EXISTS - row 5b-99")
+    # DERIVED, NOT TYPED. This script names Directory.Build.props five times
+    # and named Directory.Build.targets once, and that file does not exist -
+    # while Directory.Build.props says in capitals "IT MUST BE SET HERE, IN
+    # .props, AND NOT IN A .targets FILE" and records the measurement that
+    # proved .targets is too late: OutDir and ProjectDepsFilePath still
+    # pointing at the flat folder, and Revit 2027 refusing to load.
+    #
+    # So the one wrong pointer sent a reader to the exact dead end #242 wrote
+    # down so nobody would walk it again. Asked of the repository rather than
+    # pinned to a name, so it also catches the next one.
+    named = sorted(set(re.findall(r"Directory\.Build\.[A-Za-z]+", text)))
+    check(named, "it names at least one Directory.Build file (%s)"
+          % ", ".join(named) if named else "it names one at all")
+    for which in named:
+        check(os.path.exists(os.path.join(ROOT, which)),
+              "%s exists in the repository" % which)
+
+    print()
     print("The one flag that makes a downloaded Heron installable - D-96")
     # THIS IS NOT THIS SCRIPT, IT IS ITS CALLER, and it is here because
     # nothing anywhere held it and the ruling that made it load-bearing is
