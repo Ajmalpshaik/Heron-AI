@@ -124,6 +124,41 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-21 (last) — THE FIRST LIVE-PATH BRAIN MODULE, AND A FIX THAT BROKE A SUITE
+
+**[Row 5b-84](FRAGMENT-ISSUES.md). FIXED, in two files.** `brain/heron_router.py` is the first of
+the **53 live-path brain modules** to be read — the ones a request actually travels through, as
+opposed to the 90 in [row 5b-83](FRAGMENT-ISSUES.md) that nothing calls.
+
+**Two public methods on one class disagreed about the same input.** `route()` upper-cases the intent;
+`candidates()`, public and beside it, did not. Measured: `route("classify")` answers, and
+`candidates("classify")` raised **`KeyError: 'classify'`** — out of a module whose own docstring says
+*"a refusal is data rather than an exception because ... an exception two layers down arrives there
+as a stack trace"*. `candidates()` is the method a caller reaches for to SHOW the options.
+
+**THE FIRST VERSION OF THE ROW WAS WRONG AND THE ROW SAYS SO.** It called the bare `KeyError`
+unhandled. It is not — `brain/heron_availability.py`'s `resolve()` catches it **by name** and turns
+it into the router's refusal. So it was **load-bearing**, and changing one side without the other
+turned `tests/test_availability.py` red: green before the edit, two checks failing after.
+**I had not looked for a caller before writing.** A red suite is a claim about the code and was
+treated as one — the suite was not edited, the caller was.
+
+**What survives is still real**: the case mismatch, which no caller depended on, and a bare
+`KeyError` with no message as a signalling mechanism between two modules. `candidates()` now raises
+`ValueError` carrying the whole sentence, which is what `register()` beside it already did, and the
+one caller moved with it. **No gate covers this shape** — `check-narrow-errors` is about D-52's
+plausible zero, an error swallowed and returned as empty; this is its mirror.
+
+**Checked and standing**, in the module that enforces it: **confidentiality narrows and never
+widens**. The flag only ever removes candidates, no value of it adds one, and a confidential request
+with no local adapter is refused by name rather than falling back to the host — which that file says
+is the one failure it exists to prevent.
+
+**Three mistakes of my own were recorded today rather than quietly fixed** — a test that passed
+loudest when its guard was deleted ([5b-79](FRAGMENT-ISSUES.md)), a register row that turned CI red
+twice over one character ([5b-81](FRAGMENT-ISSUES.md)), and this one. They are in the register
+because the next reader needs the shape, not the apology.
+
 ### 2026-09-21 (latest) — NINETY BRAIN MODULES NOBODY CALLS, AND THE FIRST OPEN ROW IN 5b
 
 **[Row 5b-83](FRAGMENT-ISSUES.md). OPEN, and open on purpose.** Nothing was changed and no module was

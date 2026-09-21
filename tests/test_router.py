@@ -154,6 +154,47 @@ def main():
           "with nothing registered, there is nobody to ask and it says so")
 
     print()
+    print("11. The two public methods answer the same input the same way")
+    #
+    # Until 2026-09-21 they did not. route() upper-cased the intent and
+    # candidates() did not, so route("classify") answered and
+    # candidates("classify") raised a bare KeyError: 'classify' - from a
+    # module whose own docstring says a refusal is data rather than an
+    # exception "because an exception two layers down arrives there as a
+    # stack trace". Row 5b-84.
+    pair = ROUTER.Router()
+    pair.register("claude-code", ROUTER.HOST, strong=True)
+
+    check(pair.route("classify").get("adapter") == "claude-code",
+          "route() takes a lower-case intent")
+    try:
+        same = pair.candidates("classify")
+    except Exception as e:                                   # noqa: BLE001
+        same = e
+    check(same == [("claude-code", ROUTER.HOST)],
+          "and candidates() takes it too, rather than raising on the "
+          "spelling its sibling accepts")
+
+    # An unknown intent RAISES here rather than returning [], and that is
+    # deliberate: an empty list would read as "no adapter offers this" when
+    # the truth is "that is not an intent", and this module exists to keep
+    # those two apart.
+    try:
+        pair.candidates("nonsense")
+        raised = None
+    except ValueError as e:
+        raised = e
+    except Exception as e:                                   # noqa: BLE001
+        raised = ("wrong type", e)
+    check(isinstance(raised, ValueError),
+          "an unknown intent raises ValueError, the way register() already "
+          "does for the same mistake - not a bare KeyError")
+    check(isinstance(raised, ValueError) and "not a declared intent" in str(raised)
+          and "route()" in str(raised),
+          "and the message names the mistake and points at the method that "
+          "returns that refusal as data instead")
+
+    print()
     if FAILURES:
         print("FAILED  %d check(s)" % len(FAILURES))
         for line in FAILURES:
