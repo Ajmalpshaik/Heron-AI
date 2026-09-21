@@ -124,7 +124,23 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
-### 2026-09-21 (end of session) — A FOURTH MODULE WITH NOTHING WRONG WITH IT
+### 2026-09-21 (end of session) — A FOURTH MODULE WITH NOTHING WRONG, AND A FIFTH WITH A TABLE THE CODE OUTGREW
+
+**[Row 5b-87](FRAGMENT-ISSUES.md). FIXED.** `brain/heron_contract.py` — the module **all 249 other
+agents declare themselves to**, and the file that defines the word BREAKING for this repository. Its
+docstring lists **seven** rules for a breaking contract change. `compare()` enforces **eight**: a
+**shortened timeout** as well, with its own argument beside it. **Measured:** 60s → 30s is
+`BREAKING`, 60s → 120s is `COMPATIBLE` — the asymmetry is right, and it was entirely absent from the
+table a reader reads. Somebody lowering a timeout on the strength of seven rules would expect
+`COMPATIBLE` and raise a MINOR version.
+
+**The test is the part that lasts.** `tests/test_contract.py` now asserts the behaviour **and** that
+the module's own `__doc__` carries the rule — read from `CON.__doc__`, **not a copy of the table** —
+so the two cannot drift again. Copying it into the suite would have created the second home this
+module's own docstring refuses for `tier` and `risk`.
+
+**Verified rather than taken, in the same file:** `registry_ids()` returns exactly **250**, matching
+what `tools/agent-count.py` reconciles, and **all 127 contracts on disk** name an agent in it.
 
 **`brain/heron_registry.py` read word by word. No defect.** That is the result rather than an absence
 of one, and it is worth saying: four live-path modules read today, three had a defect and this one did
