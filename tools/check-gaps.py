@@ -179,10 +179,13 @@ def check_tests():
             # green nobody earned, and reporting it UNFINISHED would put a
             # missing pip package in the same list as unwritten code.
             #
-            # This exists because only the exit code crosses this boundary -
-            # stdout goes to DEVNULL - so a suite has no other way to say
-            # "I skipped". test_mcp_serves.py is the first to need it: the MCP
-            # SDK is not installed on a machine with no Revit.
+            # This exists because the exit code is the only thing a suite
+            # can say WITHOUT being read: "I skipped" has to survive being
+            # reduced to a number. It used to be the only thing that crossed
+            # at all - stdout went to DEVNULL until rows 160 and 166, and the
+            # comment above records what that cost. test_mcp_serves.py was
+            # the first to need the third code: the MCP SDK is not installed
+            # on a machine with no Revit.
             print("  wait  %s - skipped, see its own output for why" % name,
                   flush=True)
             waiting("%s could not run here" % name,
@@ -207,7 +210,21 @@ def check_tools():
     """The repository's own checkers."""
     print()
     print("CHECKERS - the repository checking itself")
-    for name in ("check-docs.py", "check-metadata.py", "check-structure.py"):
+    # THE FOUR THE SHIP CHECKLIST CALLS "THE FOUR THAT MUST PASS", and this
+    # ran THREE of them until 2026-09-21. The missing one was check-package,
+    # which is the only thing here that reads Heron.addin - and gates.yml
+    # says why that matters in its own words: "a manifest fault costs a
+    # modeller their whole add-in while every other gate on this page stays
+    # green." It needs nothing but Python and costs about a tenth of a
+    # second, so there was never a reason for it to be absent; it simply was.
+    # FRAGMENT-ISSUES row 5b-58.
+    #
+    # The list is typed rather than derived on purpose: these four are the
+    # ones a non-zero exit from means YOUR CHANGE, which is a judgement the
+    # ship checklist makes and this file follows. The other checkers in CI
+    # are reports, and a report's finding is a question for a person.
+    for name in ("check-docs.py", "check-metadata.py", "check-structure.py",
+                 "check-package.py"):
         proc = subprocess.run([sys.executable, os.path.join(ROOT, "tools", name)],
                               stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL, cwd=ROOT)
