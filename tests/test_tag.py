@@ -113,11 +113,20 @@ def main():
     # then refuses a SKIPPED release. So the release gate list was decided by
     # YAML indentation, and `check-compile` - whether the add-in compiles at
     # all - was not release-blocking. See heron_tag.RUNS.
+    #
+    # CHECK-PRODUCTS JOINED ON 2026-09-21, AND IT IS RELEASE-BLOCKING ON
+    # PURPOSE. It guards platform/heron-products.json - the manifest the
+    # installer reads and nothing compiles - where a duplicate addInId is a
+    # Revit LOAD FAILURE rather than a warning. Until that day it ran
+    # nowhere at all: not here, not in check-gaps (FRAGMENT-ISSUES row
+    # 5b-77). This suite is what caught the list moving under it, which is
+    # the whole reason the list is pinned here and derived there.
     check(GATES == ["check-docs", "check-metadata", "check-structure",
                     "check-signatures", "check-licence", "check-narrow-errors",
-                    "check-package", "check-routing", "check-intrusion",
+                    "check-package", "check-products", "check-routing",
+                    "check-intrusion",
                     "check-compile", "check-fragments-compile"],
-          "it is the eleven CI runs, in the order it runs them: %s"
+          "it is the twelve CI runs, in the order it runs them: %s"
           % ", ".join(GATES))
     for name in GATES:
         check("python tools/%s.py" % name in workflow,

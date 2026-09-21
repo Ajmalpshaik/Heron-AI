@@ -82,7 +82,7 @@ git diff --check
 **Those four are what you run; TEN decide the pull request.** CI's job of that name also runs
 `check-signatures`, `check-licence`, `check-narrow-errors`, `check-products`, `check-routing` and
 `check-intrusion`, and a non-zero from any of them turns the PR red. The skill lists them with what each catches - all four
-green locally and one of the other five red is a real morning, and it cost one
+green locally and one of the other six red is a real morning, and it cost one
 ([row 5b-70](docs/FRAGMENT-ISSUES.md)).
 
 **Say what the change is for before you make it, and prove it afterwards.**
