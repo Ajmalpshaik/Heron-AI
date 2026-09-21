@@ -119,8 +119,19 @@ what open source means — but nobody has to.
 |---|---|---|
 | Gets Heron by | one install command, prebuilt release | `git clone`, build from source |
 | Needs | Claude Code, Revit, **Python** *([Q-39](OPEN-QUESTIONS.md))* | Claude Code, Revit, **Python**, .NET SDK |
-| Add-in deployed by | the installer | `tools/deploy-addin.ps1` |
+| Add-in deployed by | **`HeronInstaller.exe`, and nothing else** — [D-96](DECISIONS.md) | `tools/deploy-addin.ps1` |
 | Sees | *"Selected 126 ducts in Tower-A"* | agent chains, logs, the build pipeline |
+
+**THE RIGHT-HAND COLUMN DOES NOT WORK FOR THE LEFT-HAND ONE, AND THAT WAS FOUND BY DOING IT.**
+[D-96](DECISIONS.md), from `AA9` on 2026-09-21. Windows marks everything that arrives through a
+browser, and the common `RemoteSigned` execution policy **refuses to run a downloaded unsigned script
+at all** — so somebody who downloads Heron cannot run `deploy-addin.ps1`, and the error they get says
+*"is not digitally signed"* without ever mentioning the download. The `Unblock-File` that would clear
+the mark is **inside the script being refused**, so it cannot save itself.
+
+**The installer walks past this**, because it launches PowerShell with `-ExecutionPolicy Bypass` —
+which is now load-bearing rather than a convenience. **A `git clone` is not a download**, carries no
+mark, and is why the developer column is unaffected.
 
 **[NOTE — open]** The exact plugin install command must be verified against current Claude Code plugin
 documentation before it goes in the README. Publishing an install command that does not work is worse

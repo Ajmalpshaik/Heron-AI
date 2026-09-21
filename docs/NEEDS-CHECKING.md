@@ -2054,8 +2054,31 @@ has still never done its job, and no run on this machine can make it.
 
 | | |
 |---|---|
-| **The execution policy wall** | Real, reproduced, and it blocks the documented way to install Heron. Not fixed here |
+| **The execution policy wall** | Real, reproduced, and it blocked the documented way to install Heron. **RULED ON THE SAME DAY - [D-96](DECISIONS.md)** |
 | **The download mark on an assembly** | Still unproven, and unprovable until a release asset exists |
+
+##### The owner ruled on it the same day - D-96, 2026-09-21
+
+Two ways out were put to him: **sign the script**, or **make the installer the only supported route**.
+He chose the second, in as many words: *"tell people to use the installer button only."*
+
+**So `AA9` stays FAILED and is no longer OPEN.** The wall is real and is not going away; what changed
+is that nobody is walked into it any more. [07 §1a](07-installation-and-update.md) now says
+`HeronInstaller.exe` where it used to offer `deploy-addin.ps1` to a modeller, and the installer's
+`-ExecutionPolicy Bypass` is **load-bearing rather than a convenience** - removing it breaks every
+downloaded install.
+
+**Signing was considered and refused**, and the reason is written down rather than left implicit: a
+certificate is a yearly cost and a renewal that silently breaks every install the day it lapses, to
+fix a route the installer already walks past.
+
+**`deploy-addin.ps1` does not change and is not deprecated.** It is still the one engine that copies a
+product in (R-31), the installer still drives it, and it still works perfectly from a `git clone` -
+which is not a download and carries no mark. What changed is **who is told to type it**.
+
+**The second half is untouched by the ruling.** `Unblock-File` still has never done its job, and no
+run on this machine can make it: a source build emits an unmarked assembly. It is owed by Stage 5's
+release asset, and when that arrives **the installer is the thing that will run into it**.
 
 ---
 
