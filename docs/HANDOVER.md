@@ -126,7 +126,7 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 
 ### 2026-09-21 (later) — THE INSTALLER'S FIRST READING, AND TWO FOLDERS FINISHED
 
-**Section 5b rows 78 to 82. All five FIXED.** **`platform/` and `mcp/` are now read to the end** — the first two folders to come off the list. The whole of Stage 3 and Stage 4 landed in **#233** — 2,924
+**Section 5b rows 78 to 82. All five FIXED.** **`platform/`, `mcp/` and the repository root are now read to the end** — the first three buckets to come off the list. The whole of Stage 3 and Stage 4 landed in **#233** — 2,924
 lines across `platform/Heron.Installer/`, `platform/Heron.Installer.App/`, `tools/deploy-addin.ps1` and
 `tools/HeronRevit.ps1` — and **none of it had been read by anyone**. This session read all ten files
 word by word. Seven came back clean; three did not, and every one of the three is the kind a compile
@@ -181,12 +181,23 @@ wrong earlier the same day**, by my own hand. `mcp/README.md` said **three tools
 three reads like a narrow door somebody could still reason about. Both numbers deleted rather than
 corrected, with the command that derives them in their place and the old figure kept and dated.
 
-**Three sweeps came back empty, and that is worth as much as the rows.** The pipe-deadlock shape of
+**Six sweeps came back empty, and that is worth as much as the rows.** The pipe-deadlock shape of
 5b-78 exists in **one** place: `WindowsAdapters.cs` is the only C# in the repository redirecting
 standard error, and the three Python sites that take both pipes all handle them concurrently
 (`subprocess.run`, `communicate()`, and a daemon drain thread). **No suite has all its assertions
 inside a loop.** And no gate or suite can pass by discovering nothing — the two candidates both have
-another check that fires first. Reported as one place, not a class.
+another check that fires first.
+
+Three more on the second pass, all against defect shapes this register already
+knows. **Every config key is declared**: `HeronConfig.Defaults` holds eight, all eight are read
+somewhere, and nothing reads a ninth - the nine that looked undeclared are capability names in the
+`revit.<domain>` namespace, plus a deliberate typo in `tests/test_config_and_health.py` that exists
+to prove an undeclared key is refused. That is [row 5b-29](FRAGMENT-ISSUES.md)'s shape, checked and
+absent. **The delete-before-write shape of [rows 5b-31 and 5b-79](FRAGMENT-ISSUES.md) is not a class
+in Python**: one site in `brain/`, `mcp/` and `tools/` matches it, and it is
+`check-fragments-compile.py` clearing its own generated build folder, which is gitignored and
+rebuildable. **And the review ledger - the sweep's own memory - is opened `"a"`**, so a crash
+mid-write can lose the last line and never the file. Reported as one place, not a class.
 
 **WHAT NEEDS WINDOWS — NONE OF IT WAS TOUCHED, AND TWO ROWS WERE ADDED TO IT.** `AA10` (the
 half-written backup: delete `replaced.json` by hand and confirm rollback refuses and changes nothing)
@@ -200,7 +211,16 @@ the current file.
 **Numbers at the end of it**, all derived: **252 register rows, 32 open** (all five new rows are
 FIXED, so the open count did not move), **117 of 1,179 files read, 0 stale**, ten gates green, and
 `check-gaps` exit 0 with nothing on its UNFINISHED list. **What is left to read is now four folders
-and the root**: `brain` 537, `tests` 229, `tools` 132, `docs` 125, `revit` 33, root 6.
+and nothing else**: `brain` 537, `tests` 229, `tools` 132, `docs` 125, `revit` 33.
+
+**The root came off last, and one file in it was read to a deliberate boundary.**
+`HERON_AI_MASTER_ARCHITECTURE.md` is a research brief whose body is **unedited on purpose**
+([D-57](DECISIONS.md)) — its own banner says the disagreements are the useful part and an edited
+brief stops showing what was proposed. So the body cannot go stale the way a normal file does, and
+the only part making a claim about today is the banner. Every claim in it was checked and holds:
+D-57 exists, [32](32-master-architecture-reconciliation.md) carries the sections it points at, the
+*nine exist and four are stricter* line is 32 §2's own headline rather than a number invented here,
+and every section it cites is really in the file. The mark says what was not read and why.
 
 ### 2026-09-21 — EIGHTEEN ROWS FROM READING, TWO WRONG TURNS WITHDRAWN, AND A GATE THAT HAD NEVER RUN
 
