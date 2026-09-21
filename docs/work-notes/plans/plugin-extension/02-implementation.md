@@ -455,8 +455,9 @@ different question: does the engine **decide** correctly before it acts?
 | **PASS** | `tests/test_installer_engine.py` — **38 checks** on a fake Revit and a fake deployer. A heading installs nothing of its own and names its pieces; a `PROVING` product is never offered; a release the product does not support is skipped **with the reason**; a release on the PC that was not ticked is reported rather than passed over; it **waits** while Revit is open and carries on by itself; a Revit whose release cannot be read blocks everything rather than guessing; reaching the wait ceiling changes **nothing**; one product failing does not stop the others |
 | **PASS** | `tests/test_deploy_script.py` — the text checks a Linux machine can make on the generalised deploy script: `-Product` defaults to `heron-bridge` and **that default resolves to the four values that used to be hardcoded**, no product name is left in the logic, the replace is a delete-then-copy with no rename, and all six older guards are still there |
 | **PASS** | `tools/check-package.py` — widened on 2026-09-21 from one manifest to **every product's**: each one still carries the line the deploy script rewrites, and the script refuses a rewrite that would match nothing |
-| **NOT RUN** | **Both Windows adapters.** `PowerShellRevitEnvironment` and `DeployScriptDeployer` have never executed a line. So has `deploy-addin.ps1` since it was changed — its rollback proof of 2026-09-19 is **STALE for the current file** |
-| **NEEDS REAL REVIT** | Every line under *Done when* above, and rows `AA7` to `AA9` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) |
+| **PASS** | `tests/test_deploy_script.py` again, for the refusal added 2026-09-21: **no build for the release asked for is a refusal, not a substitution.** It names the release, says what it did find, prints the exact `dotnet build` line, refuses **before** the previous install is even backed up, and tells *"built in Debug"* apart from *"never built"* |
+| **NOT RUN** | **Both Windows adapters.** `PowerShellRevitEnvironment` and `DeployScriptDeployer` have never executed a line. So has `deploy-addin.ps1` since it was changed — its rollback proof of 2026-09-19 is **STALE for the current file**, and the refusal above made it staler |
+| **NEEDS REAL REVIT** | Every line under *Done when* above, rows `AA7` to `AA9`, and **`AA11` and `AA12`** in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) |
 
 **Item 6 — every path through `HeronPaths` — is satisfied by the engine building no Heron path at all.**
 It does not reference [`Heron.Core`](../../../../platform/Heron.Core/HeronPaths.cs) and does not need
@@ -486,7 +487,24 @@ about whether the copy works.
 
 ## Stage 4 — The window
 
-**Status: PROVEN — 2026-09-21. DONE, except `AB6`.**
+**Status: PROVEN — 2026-09-21 for `AB1`-`AB8`. DONE, except `AB6`.**
+**One rule was added after that run and is NOT proven: `AB9` and `AB10`, waiting on the owner's PC.**
+
+> **ADDED 2026-09-21, AFTER the run below, and it came from watching rather than from a row.** A Revit
+> release with **no build on the PC** could be ticked, and the only way to find out was to press Install
+> and read the refusal — the owner hit that **five times in one evening**. `R-10` has said since this
+> stage was written that a row which cannot be installed is greyed **with the reason on it**, and `AB2`
+> proves the window does exactly that for products; the release tick boxes were the one row it had
+> never been applied to. They are greyed now, with the `dotnet build` command printed underneath.
+>
+> **The window still builds nothing.** `BuildsOnDisk` reads the directory `tools/deploy-addin.ps1`
+> reads and asks whether the file is already there — one directory read per product, cached while the
+> window is open, and it takes its configuration **from the deployer** so the two can never disagree.
+>
+> **NOT SEEN BY ANYBODY.** No window has been drawn. `AB9` and `AB10` in
+> [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) are that debt and they are a **pair**: one says the grey
+> appears, the other says it does not appear when it should not. A window that greys a release it could
+> have installed is worse than the defect being fixed.
 
 > **RUN ON THE OWNER'S PC, 2026-09-21. The window has been seen, and it installed something.** It drew,
 > it read, it listed the three releases on this PC, and **`AB3` — the row the whole design rests on —
@@ -554,6 +572,10 @@ rather than closed.
    the window says so plainly on a product already installed rather than leaving the user to guess
    whether they are about to duplicate it.
 4. Show detected Revit versions as tick boxes ([R-8](01-requirements.md)).
+4a. **Grey out a Revit release there is nothing to install into**, with the reason and the `dotnet
+   build` line under it ([R-10](01-requirements.md) again, applied to the release row). Added
+   2026-09-21. **The window must not build anything and must not get slower**: it reads the directory
+   the deploy script reads, once per product, and takes its configuration from the deployer.
 5. Grey out a product that does not support a ticked version, **with the reason on it**
    ([R-10](01-requirements.md)).
 6. The "Close Revit first" line is visible **before** the user presses Install, not after it fails.
@@ -570,6 +592,8 @@ rather than closed.
   `Heron` tab appears with the tools panel and no AI Bridge panel ([R-34](01-requirements.md)).
 - Pressing Install on an already-installed product **replaces** it and the window says it did, rather
   than reporting a fresh install that did not happen.
+- **A release with no build is greyed before Install is pressed, and a release with one is not.** Both
+  halves, or it is half an answer — `AB9` and `AB10`.
 
 ### Where it actually stands — the four states, kept apart
 
@@ -578,8 +602,9 @@ rather than closed.
 | **PASS** | Compiles. `tools/check-compile.py` — **all 13 projects on all 8 releases, 0 warnings**, the window included |
 | **PASS** | `tests/test_installer_engine.py` — **79 checks** against a fake Revit and a fake disk. Every row comes from the product list; the tab opens into two ticks; either piece on its own installs; a product that cannot be installed here is greyed **with the reason**; an installed one stays tickable and says Install replaces it; a greyed row installs nothing **even if its tick arrives set** |
 | **PASS** | `tests/test_installer_window.py` — the window holds no rules, names no product, has **no Update and no Repair button**, prints the grey reason rather than hiding it in a tooltip, builds the *Close Revit first* line **above** the Install button, and waits off the window's thread |
-| **NOT RUN** | **Nothing has been drawn.** And `InstalledProductsOnDisk`, the third Windows adapter, has never executed a line either |
-| **NEEDS REAL REVIT** | Every line under *Done when* above, and `AB1` to `AB7` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) |
+| **PASS** | **The release with no build is greyed, with the reason and the command under it.** Run against a fake Revit and, for `BuildsOnDisk`, against a **real temporary folder**: a Debug build is not a Release build, `2020-old` is not Revit 2020, one product with a build keeps the release offered, a release nothing supports is left alone, and not knowing leaves every release tickable |
+| **NOT RUN** | **Nothing has been drawn.** And `InstalledProductsOnDisk`, the third Windows adapter, has never executed a line either. `BuildsOnDisk` is the one adapter that does run here, and what that proves is its path arithmetic — not that the folder it names is the one MSBuild wrote to |
+| **NEEDS REAL REVIT** | Every line under *Done when* above, `AB1` to `AB7`, and **`AB9` and `AB10`** in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) |
 
 **The most important one is not a screenshot.** *Done when* asks that adding a product to the manifest
 makes it appear in the window **with the installer not rebuilt**. That is [R-3](01-requirements.md), it

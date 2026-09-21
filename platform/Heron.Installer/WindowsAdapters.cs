@@ -413,6 +413,146 @@ namespace Heron.Installer
     }
 
     /// <summary>
+    /// Whether a product has a build on this PC for a release, asked before
+    /// the window offers the release at all.
+    ///
+    /// WHY THIS EXISTS. Until 2026-09-21 every Revit found on the machine
+    /// could be ticked whether or not anything had been built for it, and the
+    /// only way to find out was to press Install and read the refusal. The
+    /// owner hit that five times in one evening. R-10 says a row that cannot
+    /// be installed is greyed WITH THE REASON; this is what lets the release
+    /// row obey it.
+    ///
+    /// IT LOOKS WHERE THE DEPLOY SCRIPT LOOKS, deliberately and to the letter.
+    /// tools\deploy-addin.ps1 searches revit\&lt;project&gt;\bin for the product's
+    /// assembly, keeps the paths carrying the configuration, and then the ones
+    /// carrying the release as a whole folder. So does this. A window that
+    /// looked somewhere else would grey a release the script would have
+    /// installed happily - a worse defect than the one being fixed, because it
+    /// would be wrong in the direction of refusing work that was possible.
+    ///
+    /// IT NEVER BUILDS ANYTHING and never starts a process. It is a directory
+    /// read per product, cached for as long as the window is open: a machine
+    /// with three Revits and one product asks the disk once.
+    ///
+    /// NOT RUN on Windows - see PowerShellRunner. The path arithmetic is plain
+    /// System.IO and runs anywhere, and tests\Heron.Installer.TestHost drives
+    /// it against a real temporary folder; whether the folder it names is the
+    /// one MSBuild really wrote to on the owner's PC is owed there.
+    /// </summary>
+    public sealed class BuildsOnDisk : IProductBuilds
+    {
+        private readonly string _repoRoot;
+        private readonly string _configuration;
+
+        /// <summary>
+        /// Every path under one project's bin holding that project's assembly,
+        /// read once. The window asks per release, and asking the disk eight
+        /// times for one answer is how a window comes to take a second to open.
+        /// </summary>
+        private readonly Dictionary<string, List<string>> _found =
+            new Dictionary<string, List<string>>(StringComparer.Ordinal);
+
+        public BuildsOnDisk(string repoRoot, string configuration)
+        {
+            if (string.IsNullOrEmpty(repoRoot)) throw new ArgumentNullException("repoRoot");
+            _repoRoot = repoRoot;
+            _configuration = string.IsNullOrEmpty(configuration) ? "Release" : configuration;
+        }
+
+        public bool HasBuild(HeronProduct product, string release)
+        {
+            var project = ProjectOf(product);
+            if (project == null || string.IsNullOrEmpty(release)) return false;
+
+            foreach (var path in Builds(project, product.Assembly))
+            {
+                // THE CONFIGURATION AS A SUBSTRING AND THE RELEASE AS A WHOLE
+                // FOLDER, which is what the script's two -like patterns mean.
+                // Without the separators "2020" also matches a folder called
+                // "2020-old", and neither -like nor IndexOf has a word
+                // boundary of its own.
+                if (path.IndexOf(_configuration, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                if (IsAFolderInThePath(path, release)) return true;
+            }
+
+            return false;
+        }
+
+        public string BuildCommand(HeronProduct product, string release)
+        {
+            var project = ProjectOf(product);
+            if (project == null || string.IsNullOrEmpty(release)) return null;
+
+            // THE SAME COMMAND THE DEPLOY SCRIPT PRINTS when it refuses, and
+            // it is spelled the way a Windows reader will retype it. Two
+            // sentences telling a modeller to run two different commands for
+            // one problem is how a person stops believing either.
+            return "dotnet build revit\\" + project + "\\" + project + ".csproj" +
+                   " -c " + _configuration +
+                   " -p:RevitVersion=" + release;
+        }
+
+        /// <summary>
+        /// The project folder, derived from the assembly name by dropping
+        /// .dll - which is how tools\deploy-addin.ps1 derives it, and the
+        /// only reason this file may know it at all without naming a product.
+        /// </summary>
+        private static string ProjectOf(HeronProduct product)
+        {
+            if (product == null || string.IsNullOrEmpty(product.Assembly)) return null;
+
+            var assembly = product.Assembly;
+            return assembly.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)
+                ? assembly.Substring(0, assembly.Length - 4)
+                : assembly;
+        }
+
+        private List<string> Builds(string project, string assembly)
+        {
+            List<string> cached;
+            if (_found.TryGetValue(project, out cached)) return cached;
+
+            var found = new List<string>();
+            try
+            {
+                var bin = Path.Combine(_repoRoot, "revit", project, "bin");
+                if (Directory.Exists(bin))
+                    found.AddRange(Directory.GetFiles(bin, assembly, SearchOption.AllDirectories));
+            }
+            catch (Exception)
+            {
+                // COULD NOT LOOK IS NOT "THERE IS NOTHING". A folder this
+                // account may not read, or a path Windows thinks is too long,
+                // must not grey a release that is perfectly installable - see
+                // the note on InstallerScreen.Build's `builds` parameter for
+                // which way round to be wrong. An empty list here reads as no
+                // build, so the list is left empty ONLY when the folder really
+                // is: anything thrown is swallowed into the same empty answer
+                // and the deploy script stays the thing that decides.
+                found.Clear();
+            }
+
+            _found[project] = found;
+            return found;
+        }
+
+        /// <summary>
+        /// `name` appears in `path` as a whole folder, under either
+        /// separator. Windows writes one and the machine this was developed
+        /// on writes the other, and the test host runs on the second.
+        /// </summary>
+        private static bool IsAFolderInThePath(string path, string name)
+        {
+            if (string.IsNullOrEmpty(path)) return false;
+
+            foreach (var part in path.Split('\\', '/'))
+                if (string.Equals(part, name, StringComparison.Ordinal)) return true;
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Drives tools\deploy-addin.ps1 for one product and one release.
     ///
     /// EVERY RULE ABOUT COPYING LIVES IN THAT SCRIPT and none of them is
@@ -436,6 +576,21 @@ namespace Heron.Installer
             _repoRoot = repoRoot;
             _configuration = string.IsNullOrEmpty(configuration) ? "Release" : configuration;
         }
+
+        /// <summary>
+        /// Which build this deploys - Release unless a caller said otherwise.
+        ///
+        /// READ RATHER THAN REPEATED, and that is the whole reason it is
+        /// public. BuildsOnDisk greys a release the window has no build for,
+        /// and it has to look in the SAME configuration this deploys from or
+        /// the two disagree: a window greying Release while the deploy reads
+        /// Debug tells a modeller to build something that is already built.
+        /// Nine correct Debug builds sitting in a folder the window never
+        /// opens cost a full round trip on 2026-09-21 - the hardcoded
+        /// "Release" above is exactly what was missed, and a second copy of
+        /// that word somewhere else is how it gets missed again.
+        /// </summary>
+        public string Configuration { get { return _configuration; } }
 
         public DeployOutcome Deploy(HeronProduct product, string release)
         {

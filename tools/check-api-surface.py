@@ -67,11 +67,21 @@ ALL_VERSIONS = ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 # enforces. So there is exactly one thing to read.
 BUILD_VERSION = "2024"
 
-# THE RELEASE IS A FOLDER IN THE PATH since 2026-09-21 - Directory.Build.targets
+# THE RELEASE IS A FOLDER IN THE PATH since 2026-09-21 - Directory.Build.props
 # gives every release its own, so 2020, 2024 and 2027 can sit on disk together
 # rather than overwriting one another. This reads the one it just built, named
 # rather than guessed, so it can never end up measuring a different release's
 # assembly and reporting the answer as if it were this one's.
+#
+# .props, AND NOT A .targets FILE - this line named a .targets one until
+# 2026-09-21, and no such file exists in this repository. Directory.Build.props
+# says in capitals why it has to be .props: OutDir and ProjectDepsFilePath are
+# both derived from OutputPath BEFORE a .targets file is imported, so setting
+# it there was measured leaving the assemblies in the new folder and the
+# deps.json in the old, with Revit 2027 refusing to load. A wrong pointer sends
+# the next reader down the one dead end that was written up so nobody would
+# walk it again. tests/test_deploy_script.py derives the check from this file,
+# so the next wrong pointer is caught rather than read.
 ADDIN = os.path.join("revit", "Heron.Revit.Addin", "bin", "x64", "Debug",
                      BUILD_VERSION, "Heron.Revit.Addin.dll")
 
