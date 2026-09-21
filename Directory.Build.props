@@ -39,6 +39,66 @@
   </PropertyGroup>
 
   <!--
+    ONE BUILD FOLDER PER REVIT RELEASE - added 2026-09-21, and it is a bug
+    report as much as a setting.
+
+    AppendTargetFrameworkToOutputPath is false above, so every release used to
+    write to the SAME bin\x64\<Configuration>\. Building 2024 overwrote 2020;
+    building 2027 overwrote 2024. Only the last one built survived, so only
+    that one release could be installed.
+
+    THE COST WAS PAID IN FULL. On 2026-09-21 the owner ticked all three
+    releases on his PC in the installer window and pressed Install. Two were
+    refused - correctly, by the runtime guard in deploy-addin.ps1 - because the
+    only build on disk was 2027's. He tried four times. Nothing was broken; it
+    simply could not work, and nothing said so until after the press.
+
+    THE TESTS ALREADY KNEW. tests/test_bridge_roundtrip.py carries the comment
+    "every target framework writes to the SAME bin/x64/Debug", and it,
+    test_kernel.py, test_stack_guard.py and test_binding_note.py each pass
+    -p:OutputPath=bin/x64/Debug-<tfm>/ by hand to dodge it. Four workarounds
+    for a thing nobody had fixed. This is that fix, made once.
+
+    SPLIT BY REVIT RELEASE, NOT BY TARGET FRAMEWORK. 2021 to 2024 all build
+    net48, but they are NOT interchangeable: DefineConstants below gives each
+    REVIT<year> and its _OR_GREATER siblings, so a 2021 build and a 2024 build
+    of the same source differ. A per-framework split would let a 2021 build
+    install into 2024 and never say a word - the exact class of defect A12
+    recorded.
+
+    IT MUST BE SET HERE, IN .props, AND NOT IN A .targets FILE. Measured with
+    `dotnet msbuild -getProperty:` on 2026-09-21: setting OutputPath from
+    Directory.Build.targets left OutDir AND ProjectDepsFilePath still pointing
+    at the flat folder, because both are derived from OutputPath before a
+    .targets file is imported. The build then wrote its assemblies to the new
+    folder and its deps.json to the old one, and Revit 2027 would not load -
+    "needs .NET runtime metadata and the build has none". A split output is
+    worse than a shared one, because it looks like it worked.
+
+    THE EXCEPTIONS ARE LISTED BY NAME, deliberately. A project that does not
+    vary with the release keeps the flat path: the installer, its engine, its
+    test host, and the API-surface reader are all net8.0 whatever Revit is
+    being built for, and all are opened BY PATH - by a person double-clicking
+    HeronInstaller.exe, or by a script. Burying them under a release number
+    they do not have would be a worse lie than the collision this fixes.
+
+    The list is here rather than a flag in each .csproj because a .csproj is
+    read AFTER this file, so a flag set there cannot be seen in time - the same
+    ordering that makes a .targets file too late. Adding a release-independent
+    project means adding a line here, and check-structure.py has no opinion
+    about it either way.
+  -->
+  <PropertyGroup>
+    <HeronReleaseIndependent Condition="
+        '$(MSBuildProjectName)' == 'Heron.Installer'          OR
+        '$(MSBuildProjectName)' == 'Heron.Installer.App'      OR
+        '$(MSBuildProjectName)' == 'Heron.Installer.TestHost' OR
+        '$(MSBuildProjectName)' == 'ApiSurface'">true</HeronReleaseIndependent>
+
+    <OutputPath Condition="'$(HeronReleaseIndependent)' != 'true'">bin\$(Platform)\$(Configuration)\$(RevitVersion)\</OutputPath>
+  </PropertyGroup>
+
+  <!--
     Map Revit version to its runtime.
 
     Autodesk moved the runtime at 2025 (.NET Framework to .NET 8) and again at

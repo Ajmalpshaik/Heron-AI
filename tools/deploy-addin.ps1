@@ -313,13 +313,41 @@ if ($Remove) {
 }
 
 # Find the build output rather than assuming its shape. Directory.Build.props
-# sets Platform=x64, so the path is bind\$Configuration - but that is a
+# sets Platform=x64, so the path is bin\x64\$Configuration - but that is a
 # build detail this script should not have to know.
+#
+# THE RELEASE IS PART OF THE PATH SINCE 2026-09-21, and that is the whole
+# point of Directory.Build.targets: each release builds into its own folder,
+# so 2020, 2024 and 2027 can all be on disk at once and one press of Install
+# can deploy every one of them. Before that they overwrote each other and only
+# the last built could be installed - the owner hit it four times in a row.
+#
+# SO THIS ASKS FOR THE RELEASE IT WAS TOLD, rather than taking whatever was
+# built most recently. Preferring the newest is what made a 2027 build the
+# answer to a question about 2020. The runtime guard further down still
+# catches a mismatch and always will - but a guard firing on every second
+# install is a design telling you something, not a design working.
 $projDir  = Join-Path $repoRoot "revit\$productProject"
-$buildOut = Get-ChildItem -Path (Join-Path $projDir "bin") -Recurse -Filter $productAssembly -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -like "*$Configuration*" } |
+$candidates = @(Get-ChildItem -Path (Join-Path $projDir "bin") -Recurse -Filter $productAssembly -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -like "*$Configuration*" })
+
+# The release folder, matched as a whole path segment. Without the separators
+# "2020" would also match a folder called "2020-old", and -like has no word
+# boundary of its own.
+$buildOut = $candidates |
+            Where-Object { $_.FullName -like "*\$RevitVersion\*" } |
             Sort-Object LastWriteTime -Descending |
             Select-Object -First 1 -ExpandProperty DirectoryName
+
+# FALL BACK TO THE FLAT LAYOUT, because a folder built before this change - or
+# by a caller passing its own -p:OutputPath - has no release in its path. The
+# runtime guard below is what makes that safe: an old flat build for the wrong
+# release is refused there by reading the assembly, exactly as it was before.
+if (-not $buildOut) {
+    $buildOut = $candidates |
+                Sort-Object LastWriteTime -Descending |
+                Select-Object -First 1 -ExpandProperty DirectoryName
+}
 
 if (-not $buildOut) {
     throw "No $Configuration build found under $projDir\bin. Run:`n  dotnet build -c $Configuration -p:RevitVersion=$RevitVersion"
@@ -431,7 +459,7 @@ if ($foundTfm.Count -gt 1) {
 }
 
 if ($foundTfm[0] -ne $wantedTfm) {
-    throw "The build in $buildOut was made for $(Get-RuntimeName $foundTfm[0]), but Revit $RevitVersion needs $(Get-RuntimeName $wantedTfm). Revit would refuse to load it and would not say why. The build folder is shared between every release, so whichever was built last is what is sitting there - build for this one and run this again:`n  $rebuildLine"
+    throw "The build in $buildOut was made for $(Get-RuntimeName $foundTfm[0]), but Revit $RevitVersion needs $(Get-RuntimeName $wantedTfm). Revit would refuse to load it and would not say why. Since 2026-09-21 each release builds into its own folder, so this means Revit $RevitVersion has never been built here - not that another release overwrote it. Build for this one and run this again:`n  $rebuildLine"
 }
 
 Write-Host "  built for $(Get-RuntimeName $wantedTfm), which is what Revit $RevitVersion needs"

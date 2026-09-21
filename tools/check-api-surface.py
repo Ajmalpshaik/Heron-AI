@@ -65,9 +65,15 @@ ALL_VERSIONS = ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 # The add-in is the only assembly that references Revit at all - Heron.Bridge
 # and Heron.Core are Revit-free by construction, which check-structure.py
 # enforces. So there is exactly one thing to read.
-ADDIN = os.path.join("revit", "Heron.Revit.Addin", "bin", "x64", "Debug",
-                     "Heron.Revit.Addin.dll")
 BUILD_VERSION = "2024"
+
+# THE RELEASE IS A FOLDER IN THE PATH since 2026-09-21 - Directory.Build.targets
+# gives every release its own, so 2020, 2024 and 2027 can sit on disk together
+# rather than overwriting one another. This reads the one it just built, named
+# rather than guessed, so it can never end up measuring a different release's
+# assembly and reporting the answer as if it were this one's.
+ADDIN = os.path.join("revit", "Heron.Revit.Addin", "bin", "x64", "Debug",
+                     BUILD_VERSION, "Heron.Revit.Addin.dll")
 
 TOOL_DIR = os.path.join("tools", "api-surface")
 CACHE = os.path.join(TOOL_DIR, ".assemblies")     # gitignored: bin/obj rules do not cover it
