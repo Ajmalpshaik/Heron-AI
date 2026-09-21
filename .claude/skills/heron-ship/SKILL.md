@@ -105,17 +105,31 @@ for t in tests/test_*.py; do python "$t" >/dev/null 2>&1 || echo "FAIL $t"; done
 Derive the number — `ls tests/test_*.py | wc -l`. Do not read a pass total here either. What matters is
 that the failures **do not share a reason**, because a lump total is how a real regression hides.
 
-**Four cannot run in full without an optional dependency.** They prove nothing either way:
+**Some cannot run in full without an optional dependency, and they prove nothing either way.**
+**TWO INSTALLS COVER ALL OF THEM**, and that is the part worth remembering rather than the list:
 
-| | needs | |
-|---|---|---|
-| `test_mcp_serves.py` | the **MCP SDK** | `pip install --user mcp` |
-| `test_served_claims.py` | the **MCP SDK** | same |
-| `test_bridge_roundtrip.py` | a **built .NET test host** | run it once: its failure prints the exact `dotnet build` line, TFM included |
-| `test_dotnet.py` | **any `dotnet`** — four of its eight claims only | `apt-get install -y dotnet-sdk-8.0` |
+| needs | |
+|---|---|
+| the **MCP SDK** | `pip install --user mcp` |
+| a **.NET SDK** | `apt-get update && apt-get install -y dotnet-sdk-10.0` |
 
-**All four exit 3, not 1**, so `check-gaps.py` reports them as waiting rather than failing.
-`test_served_claims.py` was the last one to join them, on 2026-09-17 — see §4.
+**Derive which ones, rather than reading a list here** — the same rule as the suite total four lines
+up, and for the same reason it is written twice:
+
+```bash
+grep -l 'COULD_NOT_RUN\|exit(3)' tests/test_*.py    # the suites that CAN say "could not run"
+for t in tests/test_*.py; do python "$t" >/dev/null 2>&1; [ $? -eq 3 ] && echo "waiting $t"; done
+```
+
+**They exit 3, not 1**, so `check-gaps.py` reports them as waiting rather than failing.
+
+> **This was a table of FOUR named suites until 2026-09-21, and it had been wrong for longer than
+> that.** `test_kernel.py`, `test_binding_note.py` and `test_stack_guard.py` each build and run a C#
+> test host and each exits 3 without an SDK, and none of the three was ever added — so the sentence
+> *"a fourth failure is probably yours"* below could send somebody hunting their own change over a
+> missing `dotnet`. It is the third time this file has gone stale in the same way, under a warning
+> about going stale in that way, which is why what replaces it is a COMMAND. The two installs above
+> do not change when a suite is added; a list of names does.
 
 **The fourth was this list's own missing row, and it cost a session.** `test_dotnet.py` was on nobody's
 list and **crashed** with `KeyError: 'buildable'` on any machine with no SDK — because
@@ -165,9 +179,14 @@ spelled `brain\fragments\...`. Nothing named it, so the machine showed three fai
 promised two. Fixed at the comparison — but **fixed on Linux, where the defect cannot appear**, so if
 you are on Windows this is the first run that proves it: [NEEDS-CHECKING](../../../docs/NEEDS-CHECKING.md) **A14**.
 
-**A fourth failure is probably yours — check this section first, then say so either way.** If one of the
-three starts passing, somebody installed something. If a fourth appears only on your operating system,
-suspect a path assumption before you suspect your change: that is twice now.
+**A failure that is NOT one of the waiting ones is probably yours — check this section first, then say
+so either way.** A suite that exits **3** is waiting on a dependency; one that exits **1** is a
+finding. If a waiting one starts passing, somebody installed something. If a failure appears only on
+your operating system, suspect a path assumption before you suspect your change: that is twice now.
+
+This sentence counted to four until 2026-09-21. It does not count any more, for the reason the block
+above gives - **the number changes every time a suite learns to say "could not run", and the exit code
+says which kind of failure you are looking at without anybody maintaining a total.**
 
 ## 3. The reports — a finding is a question, not a failure
 
@@ -179,10 +198,12 @@ python tools/check-revit-gate.py   # ~1.7 s  the fourteen Revit questions, as a 
 python tools/agent-count.py        # ~0.05 s the register reconciles
 ```
 
-`check-revit-gate` reports **62** for links and **59** for refusal reporting. Those are
+`check-revit-gate`'s two standing hits are **linked documents** and **rollback / refusal reporting** —
 [`Q-46`](../../../docs/OPEN-QUESTIONS.md) and [`Q-48`](../../../docs/OPEN-QUESTIONS.md), open and
-waiting on the owner. **They are not new and they are not yours.** Derive `check-reachable`'s count
-rather than reading one here — it moves whenever a module is added.
+waiting on the owner. **They are not new and they are not yours.** **Read the tool's own two numbers
+rather than one written here**: it said 62 and 59 until 2026-09-21, when they were 67 and 64, because
+the figures move with every fragment added. Derive `check-reachable`'s count the same way, for the
+same reason.
 
 ## 4. The one that exits 1 on purpose
 
@@ -242,7 +263,7 @@ apt-get update && apt-get install -y dotnet-sdk-10.0     # ~2 minutes
 
 | | result |
 |---|---|
-| `check-compile.py` | **all 5 projects on all 8 releases, 2020–2027** |
+| `check-compile.py` | **every project on all 8 releases, 2020–2027** - the tool prints the count and the projects by name; this row said **5** until 2026-09-21, when it was **8**, three rows above the one that already says to derive a total for exactly this reason |
 | `check-fragments-compile.py` | **every fragment on every release each one claims** - derive the total with `ls brain/fragments \| wc -l`, because this row said 372 for three days after it was 395 |
 | `check-api-surface.py` | **every Revit member Heron calls exists in every release** |
 | `tests/test_bridge_roundtrip.py` | **passes**, after the one build its own failure message prints |
