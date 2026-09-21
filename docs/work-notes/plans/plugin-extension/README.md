@@ -32,6 +32,7 @@ applies — and so that an AI picking this up **reads facts instead of inventing
 | [`03-open-questions.md`](03-open-questions.md) | **What is not decided**, and the parking space for new ideas. Two answered and three raised on 2026-09-21 |
 | [`04-lessons-from-aj-tools.md`](04-lessons-from-aj-tools.md) | **What AJ Tools' installer already learned the hard way.** Eight lessons, three of which corrected a row written the day before |
 | [`05-phases.md`](05-phases.md) | **Where this folder sits.** The installer is Phase 1 of three. Phase 2 outlined, Phase 3 not told yet |
+| [`06-porting-method.md`](06-porting-method.md) | **How one AJ Tools tool is brought across**, and why widening the fragment is the deliverable. Nothing taken yet |
 
 ## The three rules of this folder
 
