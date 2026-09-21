@@ -86,7 +86,7 @@ def plan(scopes, indexes=None, backend=None, origin=None, approval=None):
                        "empty index - it is a call that did not say what to "
                        "index."}
 
-    allowed, why_origin = FLG.origin_allowed(origin)
+    allowed, why_origin = FLG.origin_allowed(origin, "choosing a retrieval backend")
     if not allowed:
         return {"created": False, "refused": "NOT_FROM_THE_USER",
                 "why": why_origin,

@@ -189,7 +189,7 @@ def plan(release, installed=None, pinned=None, revit=None, origin=None,
                             "lifts it themselves."}
 
     # RULE 1. Consent, from the user, for THIS version.
-    allowed, why_origin = FLG.origin_allowed(origin)
+    allowed, why_origin = FLG.origin_allowed(origin, "an update")
     if not allowed:
         return {"proceed": False, "refused": "NOT_FROM_THE_USER",
                 "why": why_origin,

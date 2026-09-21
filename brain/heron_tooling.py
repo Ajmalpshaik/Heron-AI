@@ -110,7 +110,7 @@ def review(tool, permitted=None, origin=None, detected=None):
     said = []
 
     # 1. DETECT - which is executing something, so it is permitted first.
-    allowed, why_origin = FLG.origin_allowed(origin)
+    allowed, why_origin = FLG.origin_allowed(origin, "detecting an external tool")
     if not allowed:
         return {"ready": False, "refused": "NOT_FROM_THE_USER", "step":
                 "detect", "why": why_origin,

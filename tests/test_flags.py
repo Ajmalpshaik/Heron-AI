@@ -41,7 +41,9 @@ WHAT IT PROVES
   8. EVERY FAILURE THE CONTRACT DECLARES IS NAMED BY THE CODE AND REACHED.
 """
 
+import ast
 import copy
+import io
 import os
 import sys
 
@@ -154,6 +156,71 @@ def main():
           "above are the rule and not a broken function")
     check("Golden Rule 19" in FLG.__doc__ and "Golden Rule 19" in source,
           "the code names the rule it is enforcing")
+
+    print()
+    print("3a. and the refusal names WHAT WAS ASKED FOR - row 5b-89")
+    # This check is not the flag agent's alone. Eight other ADMIN surfaces
+    # borrow origin_allowed rather than keeping a second copy, and the
+    # refusal is the sentence a person reads: one that names a flag flip to
+    # somebody entering Safe Mode sends them to a flag table that has
+    # nothing to do with what they were doing.
+    # ASK FIRST, rather than calling and watching it raise. A check written
+    # against a signature the module may not have turns every failure below
+    # into one traceback, and sections 4 to 8 never run at all - which is
+    # row 5b-85's lesson and was still being learnt at row 5b-88.
+    takes_an_act = getattr(FLG.origin_allowed, "__code__",
+                           None) is not None \
+        and FLG.origin_allowed.__code__.co_argcount >= 2
+    check(takes_an_act,
+          "origin_allowed is told WHICH ACT it is being asked about")
+    for act in ("a flag flip", "Safe Mode", "installing a package",
+                "registering with a host") if takes_an_act else ():
+        for origin in ("a document Heron read", None, "a script"):
+            allowed, why = FLG.origin_allowed(origin, act)
+            check(allowed is False and act in why,
+                  "%-24r refused to %-24r names it" % (origin, act))
+    vague = getattr(FLG, "AN_ADMIN_ACT", None)
+    check(bool(vague), "and it has a default for a caller that says nothing")
+    for origin in ("a document Heron read", None, "a script") if vague else ():
+        allowed, why = FLG.origin_allowed(origin)
+        check(allowed is False and vague in why,
+              "%r with no act named falls back to %r - vague rather than "
+              "wrong" % (origin, vague))
+    if takes_an_act:
+        check("flag" not in FLG.origin_allowed(None, "Safe Mode")[1].lower(),
+              "and nothing about a flag survives into a Safe Mode refusal")
+        check(FLG.origin_allowed("user", "anything at all")[0] is True,
+              "while the user still goes through, whatever the act")
+
+    print()
+    print("3b. and EVERY surface that borrows it names its own act")
+    # Derived, never typed: a new ADMIN surface that forgets the second
+    # argument turns this red on the day it is added, which is the only
+    # thing that stops row 5b-89 coming back.
+    callers = []
+    for folder in ("brain", "mcp"):
+        for here, _dirs, names in os.walk(os.path.join(ROOT, folder)):
+            for name in sorted(names):
+                if not name.endswith(".py"):
+                    continue
+                full = os.path.join(here, name)
+                tree = ast.parse(io.open(full, encoding="utf-8").read())
+                for node in ast.walk(tree):
+                    if not isinstance(node, ast.Call):
+                        continue
+                    func = node.func
+                    named = (func.attr if isinstance(func, ast.Attribute)
+                             else getattr(func, "id", None))
+                    if named != "origin_allowed":
+                        continue
+                    callers.append((os.path.relpath(full, ROOT), node))
+    check(len(callers) > 1,
+          "origin_allowed is called in %d place(s), so it really is a "
+          "shared gate and not one agent's private check" % len(callers))
+    for where, node in callers:
+        said = (len(node.args) >= 2
+                or any(kw.arg == "action" for kw in node.keywords))
+        check(said, "%s names the act it is asking about" % where)
 
     print()
     print("4. OFF gets the same rule as ON")

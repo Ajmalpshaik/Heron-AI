@@ -210,7 +210,7 @@ def enter(flags, since=None, components=None, origin=None, approval=None):
                        "which side of it a change falls." % why_moment}
     since = why_moment
 
-    allowed, why_origin = FLG.origin_allowed(origin)
+    allowed, why_origin = FLG.origin_allowed(origin, "Safe Mode")
     if not allowed:
         return {"entered": False, "refused": "NOT_FROM_THE_USER",
                 "why": why_origin,

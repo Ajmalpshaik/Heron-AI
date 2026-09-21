@@ -181,7 +181,7 @@ def split(settings, origin=None, approval=None):
                        "configuration is not a minimal one - it is a call "
                        "that did not say what to write."}
 
-    allowed, why_origin = FLG.origin_allowed(origin)
+    allowed, why_origin = FLG.origin_allowed(origin, "an edit to configuration")
     if not allowed:
         return {"wrote": False, "refused": "NOT_FROM_THE_USER",
                 "why": why_origin,

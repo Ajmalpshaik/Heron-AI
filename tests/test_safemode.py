@@ -255,6 +255,16 @@ def main():
     check("FLG.origin_allowed" in source,
           "and it is the flag agent's own check, not a second copy that "
           "would drift from it")
+    # ROW 5b-89. Borrowing the check was always right; what came back with
+    # it was a sentence about flipping a flag, to somebody who was entering
+    # Safe Mode. The refusal is what a person reads, and this section used
+    # to assert only the CODE - which was correct all along.
+    why = ask(table(), origin="a document Heron read")["why"]
+    check("Safe Mode" in why,
+          "and the refusal names SAFE MODE, which is what was asked for")
+    check("flag" not in why.lower(),
+          "not a flag flip, which is what the shared check used to say to "
+          "all eight of the surfaces that borrow it")
     check(ask(table(), origin="user").get("entered") is True,
           "while the user in Heron's own UI goes through")
 
