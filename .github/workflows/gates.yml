@@ -93,9 +93,13 @@ jobs:
       - name: Install PyYAML
         run: python -m pip install --quiet pyyaml
 
-      # The three the ship checklist calls "the three that must pass". A
-      # non-zero exit from any of them is the change, not the machine, and
-      # none needs a compiler, a knowledge store or Revit.
+      # Three of the FOUR the ship checklist calls "the four that must
+      # pass" - check-package is the fourth and runs further down, under the
+      # delivery questions. This comment said "the three the ship checklist
+      # calls the three that must pass" until 2026-09-21, misquoting a file
+      # that says four (row 5b-58). A non-zero exit from any of them is the
+      # change, not the machine, and none needs a compiler, a knowledge store
+      # or Revit.
       - name: check-docs
         run: python tools/check-docs.py
 
