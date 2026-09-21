@@ -186,6 +186,45 @@ def main():
     check(report.ok, "while a chunk id cites it just as well as a locator")
     print()
 
+    print("5b. cited_ids - the one lookup whose answer cannot depend on a score")
+    # NEVER EXECUTED BY ANY SUITE UNTIL NOW. Traced across all four that
+    # import this module: 33 of its functions run in test_review_findings
+    # alone and cited_ids was not one of them, while
+    # mcp/server/heron_brain.py calls it on the live grounding seam. The only
+    # thing holding it asserted the STRING "cited_ids" appears in that file's
+    # source - row 5b-100's shape, one module along. Row 5b-101.
+    #
+    # WHAT THE CALLER NEEDS. It looks each marker up BY ID in the chunks
+    # table, which is "the one lookup whose answer cannot depend on a score".
+    # A marker this MISSES is a real clause that never gets carried, and the
+    # citation then resolves to nothing - the exact failure the function's
+    # own docstring says it exists to prevent.
+    check(G.cited_ids("as [abc123:0001] requires") == ["abc123:0001"],
+          "a bracketed chunk id is found")
+    check(G.cited_ids("[abc123:0001] and again [abc123:0001]")
+          == ["abc123:0001"],
+          "the same id twice is one lookup, not two")
+    check(G.cited_ids("[abc123:0001] then [def456:0002]")
+          == ["abc123:0001", "def456:0002"],
+          "two ids come back in the order they were written")
+
+    # THE DOCUMENTED RULE, and the one most likely to be lost to a tidier
+    # regex: a span with whitespace in it is a LOCATOR a person wrote, and
+    # locators are not unique across documents, so resolving one by id is
+    # meaningless.
+    check(G.cited_ids("see [Section 3] of the spec") == [],
+          "a bracketed LOCATOR with a space is skipped - it is not an id")
+    check(G.cited_ids("see [3.1.4] of the spec") == ["3.1.4"],
+          "while one without a space is offered, because this is "
+          "deliberately looser than _is_marker: a miss costs a real clause, "
+          "a false offer costs one query that answers None")
+
+    # AND IT IS HANDED A DRAFT, so it must survive whatever a draft is.
+    for empty in ("nothing here []", "plain prose", "", None):
+        check(G.cited_ids(empty) == [],
+              "%r yields no markers and does not raise" % (empty,))
+
+    print()
     print("6. R-49 - the threshold is per KIND of claim, from a named table")
     check(sorted(G.THRESHOLDS) == sorted([G.QUOTE, G.REFERENCE, G.NUMERIC,
                                           G.PARAPHRASE]),
