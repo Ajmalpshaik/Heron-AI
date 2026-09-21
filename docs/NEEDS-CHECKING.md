@@ -1974,6 +1974,113 @@ why this stage exists.
 **Nobody may mark Stage 2 done from a compile, from this file, or from the tests.** The word for what
 exists today is **BUILT**.
 
+### Group AA was RUN on the owner's PC - 2026-09-21. EIGHT ROWS PASS, AA9 FAILS
+
+**Stage 2 is PROVEN.** The paragraphs above are left exactly as they were written before the run,
+because the bet had to be visible when the answer arrived - and the answer is that **the bet paid**.
+`AA9` is about the download mark rather than the ribbon, so it does not touch that verdict - but it
+failed, and what it found is worse than what it was looking for.
+
+**Where it was run.** Windows 11, two 1920x1080 screens at **100% scaling**, Revit **2024.3** and Revit
+**2020.2.9**. Model `test projject.rvt`, the scratch model earlier fragment work used. Revit was closed
+before every deploy command. `HERON_CLIENT_ID=ajmal-pc` on every bridge call.
+
+| ID | Verdict | What was actually seen |
+|---|---|---|
+| **AA1** | **PASS** | **TWO tabs, `Heron` and `Heron Doc`, and only ONE of them reads `Heron`** - so `CreateRibbonTab` found the existing tab rather than making a second one, and **R-35 holds**. The `Heron` tab carried **both** an `AI Bridge` panel and a `Tools` panel. All three existing buttons worked with the two extra add-ins loaded: toggle connected (`pong <- Revit 2024, session 6384`), `Bridge Status` opened on the right session, `Changes` toggled both ways. The `Tools` panel's `Proof` button opened its dialog. [proof](proof/AA1-two-tabs-heron-and-heron-doc.png), [button](proof/AA1-tools-proof-button.png) |
+| **AA2** | **PASS - AND THIS IS THE ONE THAT WAS EXPECTED TO BREAK** | With the AI Bridge **removed**, a `Heron` tab still appeared, carrying the `Tools` panel and **no `AI Bridge` panel**. The tools piece **created the tab on its own**. So `CreateRibbonPanel` can reach a tab built by a different add-in, the assumption named above as the first to question is **sound**, and **R-34 is deliverable**: a site modeller can take Heron's tools and refuse the AI. [proof](proof/AA2-tools-only-heron-tab.png) |
+| **AA3** | **PASS** | AI Bridge alone: one `AI Bridge` panel, no `Tools` panel, bridge answered (`session 39652`). The proofs left nothing behind. [proof](proof/AA3-ai-bridge-only.png) |
+| **AA4** | **PASS** | `Heron Doc` gone, `Heron` untouched. On disk: no `Heron.Doc` folder, no `Heron.Doc.addin`, and **no `.old` anything** - R-38c. Beside it in the same folder sit `AJ Tools.20260819155602216` and `AJ Tools.20260820191129958`, which is the renaming-aside habit Heron was ruled against, still visibly piling up. [proof](proof/AA4-heron-doc-removed.png) |
+| **AA5** | **PASS** | Same on **Revit 2020** (`net472`): two tabs, one `Heron` tab carrying both panels, bridge answered (`session 11056`). `Z9`'s precedent of checking rather than assuming cost nothing here - the ribbon API behaved identically. [proof](proof/AA5-revit2020-two-tabs.png) |
+| **AA6** | **PASS** | With Revit open the deploy **refused**, naming the release **and the process**: *"Cannot install for Revit 2024: Revit 2024 is open (process 14536). Close it and run this again - a loaded assembly cannot be replaced, so doing this now would half-finish and look like it worked."* `Addins\2024` held 9 entries before and 9 after; no `Heron.Doc` folder and no manifest were created |
+| **AA7** | **PASS** | Run as `.\tools\deploy-addin.ps1 -RevitVersion 2024` with **no `-Product` at all**, which is how it was run before the switch existed. The default resolved to the same four values it always had, and the new runtime guard spoke: *"built for .NET Framework 4.8, which is what Revit 2024 needs"*. In Revit: tab, panel, and all three buttons - connect, disconnect (icon tracks state), `Bridge Status`, and `Changes` with its confirmation on the ON direction only. `ping` answered `pong <- Revit 2024, session 32928, add-in 0.1.0.0, protocol 2`. **The regression from generalising the script did not happen.** [tab](proof/AA7-heron-tab-ai-bridge-connected.png), [status](proof/AA7-bridge-status-window.png), [confirmation](proof/AA7-changes-confirmation.png) |
+| **AA8** | **PASS** | **Rollback was made provable rather than assumed.** Deploying the same build twice would restore an identical folder, so two marker files were planted in the install first. The replace then **removed** them (22 files, neither marker) - which is **R-38 proved by doing it**: replace, never copy over. The backup kept all **24** files including both markers, at the **new** path `install-backup\2024\Heron`, and `-Rollback` put all 24 back, naming what it was restoring first. Revit then started on the rolled-back install and the bridge answered. **The pre-change backup case was also run for real**: Revit 2027 still had a backup at the old path, and `-Rollback` there refused cleanly - *"Nothing to roll back to for Revit 2027"* plus the two commands to deploy from source - and changed nothing (15 files before and after). [proof](proof/AA8-rolled-back-addin-works.png) |
+| **AA9** | **FAIL - AND NOT THE FAILURE THIS ROW PREDICTED** | The owner downloaded the repository as a zip from GitHub in a browser. **All 2130 extracted files carry `ZoneId=3`**, so the condition was real. `dotnet build` succeeded. Then `.\tools\deploy-addin.ps1` **was refused by PowerShell before Revit was ever involved**: *"cannot be loaded. The file ... is not digitally signed. You cannot run this script on the current system."* His `CurrentUser` execution policy is **`RemoteSigned`**, which refuses any *downloaded* unsigned script. **`Unblock-File` is INSIDE that script, so it cannot clear its own mark** - and the row's predicted symptom, Revit saying only that it cannot run the external application, never arrived because nothing got as far as Revit. See the two sections below for what this does and does not mean |
+
+**What else this run established, none of it asked for by a row.**
+
+- **The runtime guard can tell `net472` from `net48`**, which is the pair neither of the old proxy checks
+  could separate: deploying for 2020 said *"built for .NET Framework 4.7.2, which is what Revit 2020
+  needs"* and for 2024 said *"4.8"*. `A12`'s gap is closed in practice, not only in source.
+- **The per-product backup path works per product**, not only per release: removing the tools wrote
+  `install-backup\2024\Heron.Tools` and removing Heron Doc wrote `install-backup\2024\Heron.Doc`,
+  which is exactly the collision the 2026-09-21 path change was made to stop.
+- **One honest side effect of that path change, seen on disk.** The new backup folder for `heron-bridge`
+  is `install-backup\<version>\Heron`, which is the *same path* the old layout used for the backed-up
+  folder itself. So the first new deploy **replaced** the old backup's folder, leaving the old
+  `Heron.addin` and `replaced.json` orphaned one level up. Nothing was lost that `-Rollback` could have
+  used, and it is inside Heron's own folder, but the header's *"no old backup is deleted or moved"* is
+  **not quite true for `heron-bridge`** and is true for every other product.
+- **`bridge.autoConnect = false` behaves correctly.** An early reading here suspected auto-connect,
+  then suspected a double-toggle. Both were wrong: **the owner was pressing the ribbon button himself
+  at the same time.** Recorded because the log line reads *"Connected from the ribbon"* either way, and
+  a second pair of hands on the machine is invisible to it.
+
+#### What AA9 actually found: the execution policy, not the download mark
+
+**A DOWNLOADED COPY OF HERON CANNOT BE INSTALLED BY HAND.** Not on this machine and not on any machine
+left at the Windows default for a developer. `Get-ExecutionPolicy -List` gives `CurrentUser =
+RemoteSigned`, which runs a script written locally and **refuses one that came from the internet unless
+it is signed**. Heron's is not signed. The refusal is a `SecurityError`, before a single line executes.
+
+**THE FIX FOR THE DOWNLOAD MARK CANNOT REACH ITSELF.** `Unblock-File` was added to
+`deploy-addin.ps1` on 2026-09-21 to clear the mark off the files Revit loads - R-37. It sits *inside*
+the script that is itself refused for carrying that mark. A person who downloads the zip has no way to
+run the thing that would fix the problem, and the message they get names signing rather than the zone.
+
+**THE INSTALLER IS NOT AFFECTED, AND THAT IS NOT LUCK.**
+`platform/Heron.Installer/WindowsAdapters.cs` launches `powershell.exe` with `-NoProfile
+-ExecutionPolicy Bypass`, and the comment beside it already says why. **Checked by running the deploy
+from the downloaded copy exactly the way the installer invokes it** - it deployed, Revit loaded it, the
+`Heron Doc` tab appeared and its button ran. **Proved it was the downloaded build and not a leftover
+from `AA1`**, which is the obvious thing to get wrong here: the deployed assembly hashed
+`AE35E790...` and so did the zip's build output, while the repo's own build of the same source hashed
+`A66D0EF1...`. Different file, and the repo copy had been uninstalled hours earlier by `AA4`.
+
+**So the damage is bounded to the by-hand route** - which is the route every one of these rows uses,
+and the route the README gives.
+
+#### And the thing AA9 set out to prove is STILL NOT PROVEN
+
+**A SOURCE ZIP CANNOT CREATE THE CONDITION R-37 GUARDS AGAINST.** The mark is on the *sources*:
+`Heron.Doc.csproj` carries `ZoneId=3`. The assembly `dotnet build` produces from them is a **brand new
+file and carries no mark at all** - measured, not assumed. So `Unblock-File` had nothing to clear, the
+deployed files came out unmarked either way, and **the guard was never exercised**.
+
+The case R-37 exists for is a zip that already contains **built DLLs** - a release asset, which is
+[Stage 5](work-notes/plans/plugin-extension/02-implementation.md). Until one exists, `Unblock-File`
+has still never done its job, and no run on this machine can make it.
+
+**What this row is owed, restated.** Two separate things, and they were one sentence before this run:
+
+| | |
+|---|---|
+| **The execution policy wall** | Real, reproduced, and it blocked the documented way to install Heron. **RULED ON THE SAME DAY - [D-96](DECISIONS.md)** |
+| **The download mark on an assembly** | Still unproven, and unprovable until a release asset exists |
+
+##### The owner ruled on it the same day - D-96, 2026-09-21
+
+Two ways out were put to him: **sign the script**, or **make the installer the only supported route**.
+He chose the second, in as many words: *"tell people to use the installer button only."*
+
+**So `AA9` stays FAILED and is no longer OPEN.** The wall is real and is not going away; what changed
+is that nobody is walked into it any more. [07 §1a](07-installation-and-update.md) now says
+`HeronInstaller.exe` where it used to offer `deploy-addin.ps1` to a modeller, and the installer's
+`-ExecutionPolicy Bypass` is **load-bearing rather than a convenience** - removing it breaks every
+downloaded install.
+
+**Signing was considered and refused**, and the reason is written down rather than left implicit: a
+certificate is a yearly cost and a renewal that silently breaks every install the day it lapses, to
+fix a route the installer already walks past.
+
+**`deploy-addin.ps1` does not change and is not deprecated.** It is still the one engine that copies a
+product in (R-31), the installer still drives it, and it still works perfectly from a `git clone` -
+which is not a download and carries no mark. What changed is **who is told to type it**.
+
+**The second half is untouched by the ruling.** `Unblock-File` still has never done its job, and no
+run on this machine can make it: a source build emits an unmarked assembly. It is owed by Stage 5's
+release asset, and when that arrives **the installer is the thing that will run into it**.
+
 ---
 
 ## Group AB - Stages 3 and 4 of the installer: the engine, and the window nobody has seen 2026-09-21
@@ -2024,3 +2131,32 @@ in how the window is opened rather than in what it draws.
 
 **Nobody may mark Stage 3 or Stage 4 done from a compile, from this file, or from the tests.** The word
 for what exists today is **BUILT**.
+
+### Group AB was RUN on the owner's PC - 2026-09-21. SIX ROWS PASS, ONE FAILED AND WAS FIXED, AB6 IS BLOCKED
+
+**Stages 3 and 4 are PROVEN, with one row that is blocked rather than passed.** The window has been
+seen, and **all three pieces that had never run one line have now run**: `PowerShellRevitEnvironment`
+found the three Revit releases on this PC, `InstalledProductsOnDisk` read the Addins folder, and
+`DeployScriptDeployer` **actually installed the AI Bridge** and Revit then loaded it.
+
+**Where it was run.** Same machine as Group AA - 1920x1080 at **100% scaling**, which matters because
+the one failure was a layout one and this is the plainest setting there is, not an exotic one.
+
+| ID | Verdict | What was actually seen |
+|---|---|---|
+| **AB1** | **FAILED, FIXED, RE-RUN PASSES** | The window appeared and read cleanly. The three releases on this PC were listed and all ticked; `Heron` carried **two ticks under it** and every other product was one tick, whole tab. **But the failure the row told us to watch for happened: text was cut off.** `heron-products.json` says *"...The three buttons that exist **today.**"* and the window drew *"...The three buttons that exist"*. **No ellipsis, and the truncated line still read as a finished sentence**, so nobody would know a word was missing. **Neither escape existed**: `Width = 620` with `ResizeMode.CanMinimize`, so it cannot be dragged wider, and the tooltip carries `WhyNot`, not the description. **Fixed the same day** by giving the tick box a wrapping `TextBlock` instead of a bare string - which is what every other block in that file already did. Widening to a bigger number was rejected: it would clip again, just as silently, the day a product with a longer description is added, and **R-3** says that is a line in a file rather than a change in the window. Re-run: the line wraps and `today.` is there. [the failure](proof/AB1-installer-window-FAIL-text-cut-off.png), [after the fix](proof/AB1-installer-window-fixed.png) |
+| **AB2** | **PASS** | Each row that cannot be ticked is greyed **and prints its reason underneath**, not only in a tooltip - R-10. *"Not ready yet. It is being built and tested, and installing it now would put a button in your ribbon that does nothing."* for the two Stage 2 throwaways, and *"Not built yet. It is in the plan, and it will appear here on its own when it is ready - this window reads the list rather than carrying it."* for Heron MEP. **None of them says SHIPPED, PROVING or PLANNED** |
+| **AB3** | **PASS - AND THIS IS THE ROW THE WHOLE DESIGN RESTS ON** | A `heron-structure` product was added to `platform\heron-products.json` by hand, with a fresh `addInId` and `state: SHIPPED`. The window was **reopened with no rebuild** and the new row was there - **`Heron Structure    Beams, columns and connections.`**, tickable rather than greyed. **The exe was last written at 19:22:39 and the manifest edited at 19:23:40**, so the running program predates the edit and nothing was recompiled. `Program.cs` walks up from the exe to find the live file rather than carrying a copy. **R-3 holds: adding Heron Structure next year is a line in a file.** The edit was undone and the file is byte-identical (same SHA-256, git clean). [proof](proof/AB3-new-product-without-rebuild.png) |
+| **AB4** | **PASS** | With the bridge installed the row read `Installed` and stayed tickable. Its folder was then deleted from `Addins\2024\` **by hand** and the window reopened: the row changed to **`Installed for Revit 2020 and 2027`** - it had dropped 2024 from disk, not from memory. The throwaway tools, which were installed for one release only, went to **`--`**. **R-2 holds: state is read from the disk every time.** Two extras fell out of the same look: the `heron-structure` row was **gone**, so the manifest is re-read in both directions; and both `.addin` manifests were still on disk while both rows reported not-installed, which is the *"BOTH, not either"* rule working. [proof](proof/AB4-state-read-from-disk.png) |
+| **AB5** | **PASS, AND IT INSTALLED FOR REAL** | With Revit 2024 open, ticking the AI Bridge and pressing Install gave: *"Revit 2024 is open (process 10828). Close it and this will carry on by itself - nothing has been changed yet."* It **named the release and the process**, the window kept responding, Install greyed itself, and the disk confirmed **nothing had been written**. Revit was then closed **without touching the window**, and the install **carried on by itself** and reported per product per release. The first attempt reported honestly that it could not install - *"'AI Bridge connector' was not installed for Revit 2024. dotnet build -c Release -p:RevitVersion=2024"* - because the window drives the deploy script with `-c Release` and only a Debug build existed. **That is the window reporting a real condition with the exact command to fix it, not a defect.** After that build, Install gave *"'AI Bridge connector' installed for Revit 2024."*, and Revit started on it: `Heron` tab, `AI Bridge` panel, bridge answered `pong <- Revit 2024, session 31228`. **The engine drove the script and the script installed something Revit loaded.** The screenshot below is a second start of that same install, `session 17040`, with `Bridge Status` open on it. [waiting](proof/AB5-waits-while-revit-open.png), [carried on](proof/AB5-continued-after-revit-closed.png), [installed](proof/AB5-installed-by-the-window.png), [in Revit](proof/AB5-installer-installed-addin-in-revit.png) |
+| **AB6** | **NOT RUN - BLOCKED, and the block is correct behaviour** | The row asks for the tools to be ticked **without** the AI Bridge. The only tools product that exists is the Stage 2 throwaway, whose state is `PROVING`, and the manifest says in as many words that **an installer MUST NOT offer one**. The window obeys: the row is greyed, and clicking it was tried and **left it unticked**. So this row cannot be run until `heron-tools` is a real product at `SHIPPED`. **The manifest was deliberately NOT edited to force it** - that would be rigging the test rather than running it. **What is already known**: `AA2` proved the *shape* by hand, so what is still unproven is only the **window's** ability to install tools without the bridge, and `AB3` proved the window follows the manifest with no rebuild, so the row should become tickable on its own the day the state changes. [proof](proof/AB6-tools-row-cannot-be-ticked.png) |
+| **AB7** | **PASS** | Two different sentences, each plain, neither an error and neither silence. Nothing ticked: *"Nothing is ticked, so there is nothing to install."* A product ticked but no release: *"No Revit version is ticked, so there is nowhere to install to."* The disk was checked after each and nothing had been created. [nothing ticked](proof/AB7-nothing-ticked.png), [no release](proof/AB7-no-revit-version-ticked.png) |
+
+**One thing the window does that no row asked for, and it is worth keeping.** Ticking a piece ticks its
+heading, and after an install it names the releases that were **on this PC but not ticked** - *"Revit
+2020 is on this PC but was not ticked, so nothing was installed for it. Run this again and tick it if
+that was not meant."* That is the shape of a mistake a modeller actually makes, answered before it is
+asked.
+
+**What is still owed on this group.** `AB6`, and it is owed by Stage 2 closing rather than by anybody
+running anything. `AA9` is owed by a browser download.

@@ -164,6 +164,7 @@ an edit.
 | [D-93](#d-93--the-product-list-is-a-manifest-read-as-data-never-a-list-written-into-the-installer) | The product list is a manifest read as data, never a list written into the installer | ✅ Accepted · 2026-09-21 |
 | [D-94](#d-94--install-replaces-there-is-no-separate-upgrade-path) | Install replaces; there is no separate upgrade path | ✅ Accepted · 2026-09-21 |
 | [D-95](#d-95--installing-and-showing-are-two-different-things) | Installing and showing are two different things | ✅ Accepted · 2026-09-21 |
+| [D-96](#d-96--a-downloaded-heron-is-installed-by-the-installer-and-only-by-the-installer) | A downloaded Heron is installed by the installer, and only by the installer | ✅ Accepted · 2026-09-21 |
 
 ## Format
 
@@ -5606,3 +5607,64 @@ The choice is saved under `%APPDATA%\Heron` — the data class, which
   never from a list written into the settings window.
 - **One confirmation is still owed on a machine with a .NET SDK:** that `RibbonPanel.Visible` exists in
   all eight supported releases. `tools/check-api-surface.py` answers it.
+
+---
+
+## D-96 — A downloaded Heron is installed by the installer, and only by the installer
+
+**Status:** Accepted · **Date:** 2026-09-21 · **Source:** Ajmal PS, 2026-09-21 · **Promoted from:** [NEEDS-CHECKING `AA9`](NEEDS-CHECKING.md)
+
+### Context
+
+`AA9` was run on the owner's PC on 2026-09-21: the repository was downloaded as a zip from GitHub **in
+a browser**, which is how most people will first get Heron. All **2130** extracted files carried
+`ZoneId=3`. `dotnet build` succeeded. Then the documented install command was **refused by PowerShell
+before Revit was ever involved**:
+
+> cannot be loaded. The file ... is not digitally signed. You cannot run this script on the current
+> system.
+
+The machine's `CurrentUser` execution policy is `RemoteSigned`, which runs a locally written script and
+refuses a **downloaded** unsigned one. That is a Windows default a great many people are sitting on,
+not an unusual setting.
+
+**And the repair could not reach itself.** `Unblock-File` was added to `deploy-addin.ps1` the same day
+to clear the mark off the files Revit loads ([R-37](work-notes/plans/plugin-extension/01-requirements.md)).
+It sits **inside** the script that is refused for carrying that mark. The message names *signing*
+rather than the zone, so it does not point at the cause either.
+
+Two ways out were put to the owner: **sign the script**, or **make the installer the only supported
+route**. He chose the second, in as many words: *"tell people to use the installer button only."*
+
+### Decision
+
+**Somebody who DOWNLOADED Heron installs it with `HeronInstaller.exe`. Nothing else is supported, and
+the documentation must stop offering anything else to that person.**
+
+| | How they get Heron | How they install it | Does the execution policy bite? |
+|---|---|---|---|
+| **A modeller** | downloads a release | **`HeronInstaller.exe`** | **No** — it launches PowerShell with `-NoProfile -ExecutionPolicy Bypass`, and `WindowsAdapters.cs` already says why |
+| **A developer** | `git clone` | `tools/deploy-addin.ps1` | **No** — a clone is not a download, so the files carry no mark |
+
+**`deploy-addin.ps1` is not deprecated and does not change.** It remains the one engine that copies a
+product in ([R-31](work-notes/plans/plugin-extension/01-requirements.md)), the installer drives it, and
+it works perfectly from a clone. What changes is **who is told to type it**.
+
+**Signing was not chosen, and the reason is recorded rather than left implicit:** a certificate is a
+yearly cost and a renewal that silently breaks every install the day it lapses, to fix a route the
+installer already walks past. The installer was built precisely so a modeller never opens a terminal.
+
+### Consequences
+
+- **Any instruction that tells a non-developer to run `deploy-addin.ps1` is now wrong** and must say
+  `HeronInstaller.exe` instead. [07 §1a](07-installation-and-update.md) carries the correction.
+- **The installer's `-ExecutionPolicy Bypass` is now load-bearing**, not a convenience. It was already
+  commented; it is now a decision, and removing it breaks every downloaded install.
+- **`Unblock-File` in `deploy-addin.ps1` stays**, and is still unproven. It guards a *different* case —
+  a zip that already contains **built DLLs**, which a source build never produces (measured in `AA9`:
+  the assembly `dotnet build` emits is a new file carrying no mark at all). That case arrives with
+  Stage 5's release asset, and the installer will be the thing that runs into it.
+- **A developer who downloads a zip instead of cloning is on the unsupported path.** They can
+  `Unblock-File` the script themselves; the documentation does not need to teach it, and this decision
+  does not pretend the route is gone.
+

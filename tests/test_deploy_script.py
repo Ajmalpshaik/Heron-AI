@@ -79,7 +79,35 @@ def main():
         return 1
 
     raw = io.open(SCRIPT, "rb").read()
-    text = raw.decode("utf-8", "replace")
+
+    # READ AS BYTES, THEN NORMALISED - and the two halves are for different
+    # questions, which is why they are kept apart.
+    #
+    # `raw` is the file as Windows PowerShell 5.1 will actually read it, and the
+    # ASCII check below is a statement about exactly those bytes. It must never
+    # be run against a cleaned-up copy.
+    #
+    # `text` is for asking what the script SAYS, and that question has nothing
+    # to do with line endings. It is normalised because of what happens on the
+    # one machine that can run this script for real:
+    #
+    #   Ajmal's PC has core.autocrlf=true in the system gitconfig and this
+    #   repository tracks no .gitattributes, so git stores LF and writes CRLF.
+    #   Measured 2026-09-21: deploy-addin.ps1 is 578 CRLF and 0 bare LF on disk,
+    #   while its blob has no CR at all.
+    #
+    # Any assertion below that spans a line break - and there is one, the
+    # backup-before-delete order check - then searches for "\n\n" in a file that
+    # holds "\r\n\r\n" and can NEVER match. THE TEST FAILED ON WINDOWS AND
+    # PASSED IN CI, which is the worst shape a check can have: CI is Linux, so
+    # it never saw it, and the failure surfaced only on the machine that had
+    # just proved the script works. Found while running Group AA (NEEDS-CHECKING).
+    #
+    # Normalising here rather than loosening the assertion: the assertion is
+    # precise on purpose - see the comment at the order check - and precision is
+    # the thing worth keeping.
+    text = raw.replace(b"\r\n", b"\n").decode("utf-8", "replace")
+
     manifest = json.loads(io.open(MANIFEST, encoding="utf-8-sig").read())
     products = dict((p["id"], p) for p in manifest["products"])
 
@@ -175,8 +203,34 @@ def main():
     check(".old" not in code and "Rename-Item" not in code,
           "nothing is renamed aside - no .old folder is ever made (R-38c)")
     # The backup is taken FIRST, so the delete always has a way back.
-    check(text.index("Save-PreviousInstall\n\n# REPLACE") <
-          text.index("Remove-Item $addinDir -Recurse -Force -ErrorAction"),
+    #
+    # THE LITERAL SPANS TWO LINE BREAKS ON PURPOSE, so do not shorten it.
+    # "Save-PreviousInstall" appears three times - the function, the call in the
+    # -Remove branch, and the call before the replace - and `index` finds the
+    # FIRST. That is the function definition, which sits above the delete
+    # whatever the order of the calls, so a shorter anchor passes without
+    # checking anything. Anchoring to the blank line and the "# REPLACE" comment
+    # names the one call site this is about.
+    #
+    # It only works because `text` had its line endings normalised at the read.
+    # If this ever fails on Windows and passes in CI, that normalisation is what
+    # went missing - not the script's ordering.
+    #
+    # `find`, NOT `index`. An anchor that has moved makes `index` raise
+    # ValueError, which kills the run on the spot: every check below this line
+    # goes unreported, and the traceback names a substring rather than the
+    # requirement. That is exactly how this file behaved on Windows before
+    # 2026-09-21 - it did not say "the backup might be taken after the delete",
+    # it crashed. Reporting which half went missing is the difference between a
+    # test and an accident.
+    backup_first = text.find("Save-PreviousInstall\n\n# REPLACE")
+    delete_after = text.find("Remove-Item $addinDir -Recurse -Force -ErrorAction")
+    check(backup_first != -1,
+          "the backup call still sits immediately above the REPLACE block")
+    check(delete_after != -1,
+          "the delete of the previous install is still where it was")
+    check(backup_first != -1 and delete_after != -1
+          and backup_first < delete_after,
           "and the backup is taken before the delete, not after")
 
     print()
@@ -197,8 +251,13 @@ def main():
           "so the path appears nowhere in this script's own logic")
     # A function used before it is dot-sourced is a runtime failure on the
     # first line that matters, and nothing here can run PowerShell to find out.
-    check(text.index('. (Join-Path $PSScriptRoot "HeronRevit.ps1")')
-          < text.index("$target   = Get-RevitAddinsFolder"),
+    # `find` for the same reason as the backup-before-delete check above: a
+    # moved anchor must report itself, not raise and take the rest of the run
+    # down with it.
+    dot_sourced = text.find('. (Join-Path $PSScriptRoot "HeronRevit.ps1")')
+    first_use = text.find("$target   = Get-RevitAddinsFolder")
+    check(dot_sourced != -1, "HeronRevit.ps1 is dot-sourced at all")
+    check(dot_sourced != -1 and first_use != -1 and dot_sourced < first_use,
           "and the module is dot-sourced BEFORE the function is called")
 
     print()

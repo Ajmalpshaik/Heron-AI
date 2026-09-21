@@ -176,9 +176,30 @@ namespace Heron.Installer.App
 
                 var tick = new CheckBox
                 {
-                    Content = row.Description == null
-                        ? row.Name
-                        : row.Name + "    " + row.Description,
+                    // A BARE STRING IN A CHECKBOX CLIPS, AND CLIPS SILENTLY.
+                    // Found 2026-09-21 the first time this window was ever
+                    // drawn - NEEDS-CHECKING AB1. The window is a fixed 620
+                    // wide and ResizeMode.CanMinimize, so the AI Bridge row
+                    // lost its last word - "The three buttons that exist
+                    // today." rendered as "...that exist" - with no ellipsis
+                    // to say so, and it still read as a finished sentence.
+                    //
+                    // NEITHER WAY OUT EXISTED: the window cannot be widened,
+                    // and ToolTip below carries WhyNot, not the description.
+                    //
+                    // A TextBlock that wraps costs one object and NO width
+                    // number. Widening to fit today's longest line would clip
+                    // the next line that outgrows it, just as quietly - and
+                    // R-3 says adding a product is a line in a file, never a
+                    // change in here. Every other block in this file already
+                    // wraps; this was the one that could not.
+                    Content = new TextBlock
+                    {
+                        Text = row.Description == null
+                            ? row.Name
+                            : row.Name + "    " + row.Description,
+                        TextWrapping = TextWrapping.Wrap,
+                    },
                     IsEnabled = row.CanBeTicked,
 
                     // THE REASON IS ON THE ROW - R-10. A greyed tick box with
