@@ -1304,10 +1304,14 @@ having two halves.
 **A gate that was already failing does not block** — but only when the evidence record was compared
 against a measured baseline, which is what `compared_to` in the record means. With no before-measurement
 the same record blocks, because nothing can tell a pre-existing failure from a new one and the tool says
-the cautious thing rather than the convenient one. This exists because two suites here exit **1** for
-want of the MCP SDK, so the tests gate reads FAIL on a plain container whatever anybody changed — and it
-is the same mechanism [`gates.yml`](../.github/workflows/gates.yml) already uses, comparing the **set**
-of failing suites against a known-failure list rather than counting them.
+the cautious thing rather than the convenient one. It exists for a gate that was **already** red for
+a reason nobody here caused — a broken install, a gate red on the base branch too. **The example this
+paragraph used to give was the one case it is not needed for**: it said *"two suites here exit 1 for
+want of the MCP SDK, so the tests gate reads FAIL on a plain container"*, and measured on 2026-09-21
+with the SDK made unimportable, both exit **3** and the tests gate reads **PASS**
+([row 5b-60](../docs/FRAGMENT-ISSUES.md)). The mechanism is the one
+[`gates.yml`](../.github/workflows/gates.yml) uses: compare a **set** against a named list rather than
+counting anything.
 
 ---
 
@@ -1320,9 +1324,10 @@ python tools/change-evidence.py compare before.json after.json
 ```
 
 **"Better" is a comparison**, and until this existed there was nothing a person could run mid-task to
-hold the two states side by side. CI had half of it — `gates.yml` compares the **set** of failing suites
-against a known-failure list rather than counting them — and that half is the good half, taken
-deliberately: a total hides a regression that arrives the same day something else is fixed.
+hold the two states side by side. CI had half of it — `gates.yml` compares a **set** against a named
+list rather than counting anything — and that half is the good half, taken deliberately: a total hides
+a regression that arrives the same day something else is fixed. (That list names the suites which
+**cannot run** there, since [row 5b-49](../docs/FRAGMENT-ISSUES.md).)
 
 It records only what a command derives — gate exits, the suite map, and the counts this repository has
 been wrong about in prose. **Not a dump of the tree.** A record big enough to hide a change in is a

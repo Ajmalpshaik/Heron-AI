@@ -138,8 +138,10 @@ the machine's missing SDK read as a broken repository, and `check-gaps.py` count
 is the bucket that means *somebody could fix this here*. Nobody could.
 
 Fixed 2026-09-17 in the suite, never in the agent: it now proves the refusal, names the four claims it
-is leaving unproven, and exits 3. **CI has an SDK and still proves all eight**, so the known-failure
-list in `gates.yml` is unchanged and must stay that way.
+is leaving unproven, and exits 3. **CI has an SDK and still proves all eight**, so the
+known-**NOT-RUNNABLE** list in `gates.yml` is unchanged and must stay that way. (It was a
+known-failure list until row 5b-49 taught the job to tell *could not run* from *failed*; this line
+said the old name until 2026-09-21.)
 
 **Install them rather than excusing them.** On 2026-09-15 a session treated all three as unavoidable
 on Linux for weeks. They are not: the commands above take a few minutes on a fresh container and

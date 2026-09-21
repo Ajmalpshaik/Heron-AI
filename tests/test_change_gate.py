@@ -208,6 +208,30 @@ def main():
     gate = EVIDENCE.tests_gate({}, "not run")
     check(gate["result"] == "NOT RUN", "and no suites at all is NOT RUN, not PASS")
 
+    # AND THE PRINTED SUMMARY HAS TO SAY THE SAME THING AS THE GATE. It did
+    # not: `bad` was every non-zero code, so one record printed
+    #
+    #     tests   PASS   2 ran, 1 could not run (test_mcp_serves.py)
+    #     2 ran, 1 did not pass
+    #
+    # three lines apart - the gate right, the headline merging NOT RUN into
+    # failed. A record exists to be believed, and a reader who reads the
+    # second line has been told the opposite of the first. Row 5b-60.
+    caught, held = io.StringIO(), sys.stdout
+    try:
+        sys.stdout = caught
+        EVIDENCE.show({"tests": {"a.py": 0, "b.py": 1, "c.py": 3},
+                       "gates": {}, "counts": {}})
+    finally:
+        sys.stdout = held
+    said = caught.getvalue()
+    check("3 ran, 1 did not pass, 1 could not run" in said,
+          "the printed summary counts failed and could-not-run separately")
+    check("b.py" in said and "c.py" in said,
+          "and names both, so neither is a number the reader has to trust")
+    check("could not run" in said.split("c.py", 1)[-1][:40],
+          "with c.py marked as could not run rather than as a failure")
+
     print()
     print("Evidence: a claim and a measurement are different kinds of fact")
     stated = EVIDENCE.stated_gates(["check-compile=PASS:ran on the PC"])

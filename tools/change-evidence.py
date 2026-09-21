@@ -18,10 +18,11 @@ WHAT IT IS FOR
 "Better" is a comparison, and this repository already refuses claims that have
 no evidence behind them (AGENTS.md, D-30). What was missing was anything a
 person could run mid-task to hold the two states side by side. CI has half of
-it - .github/workflows/gates.yml compares the SET of failing suites against a
-known-failure list rather than counting them - and that half is the good half,
-borrowed here deliberately: a total hides a regression that arrives on the same
-day something else is fixed.
+it - .github/workflows/gates.yml compares a SET against a named list rather
+than counting anything - and that half is the good half, borrowed here
+deliberately: a total hides a regression that arrives on the same day something
+else is fixed. (That list is a known-NOT-RUNNABLE one since row 5b-49; this
+paragraph called it a known-failure list until 2026-09-21, which is row 5b-60.)
 
 WHAT IT RECORDS, AND WHAT IT REFUSES TO RECORD
 -----------------------------------------------
@@ -370,9 +371,24 @@ def show(record):
     tests = record.get("tests", {})
     w("\nSuites:   %s\n" % record.get("tests_note", ""))
     if tests:
-        bad = sorted(n for n, c in tests.items() if c not in (0,))
-        w("  %d ran, %d did not pass\n" % (len(tests), len(bad)))
-        for name in bad:
+        # NOT RUN IS NOT A FAILURE, AND THIS LINE MERGED THEM. The gate
+        # three functions up gets it right - its `failed` excludes 3 and the
+        # result reads PASS - and `_code` below already knows the words. Only
+        # this headline counted them together, so one record printed
+        #
+        #     tests   PASS   2 ran, 1 could not run (test_mcp_serves.py)
+        #     2 ran, 1 did not pass
+        #
+        # three lines apart. Measured 2026-09-21 with the MCP SDK made
+        # unimportable. AGENTS.md states the rule this broke: separate the
+        # four states and never merge them. FRAGMENT-ISSUES row 5b-60.
+        failed = sorted(n for n, c in tests.items() if c not in (0, 3))
+        could_not = sorted(n for n, c in tests.items() if c == 3)
+        w("  %d ran, %d did not pass" % (len(tests), len(failed)))
+        if could_not:
+            w(", %d could not run" % len(could_not))
+        w("\n")
+        for name in failed + could_not:
             w("    %-28s %s\n" % (name, _code(tests[name])))
 
     counts_ = record.get("counts", {})
