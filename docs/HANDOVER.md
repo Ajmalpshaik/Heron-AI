@@ -136,13 +136,16 @@ its own memory — the file itself calls `DEFAULT_LIMIT` *"a default, not a law"
 caller may say, and the answer should be a sentence. **4 checks go red** against the old module; the
 genuinely-full case stays green in both, which is how the pair proves the change was narrow.
 
-**A SWEEP FOR THAT SHAPE WAS RUN AND IS NOT FINISHED.** An AST walk over `brain`, `mcp` and `tools`
-finds **28** calls to `max()`/`min()` over one argument with no `default=`. Three are safe by
-construction; a crude guard-detector clears twelve more; **13 are unchecked**, among them
-`heron_ground`, `heron_retrieve`, `heron_taxonomy`, `heron_composition` and `heron_mcp_server.py`.
-**A heuristic that reads eight lines is not a verdict**, and calling those thirteen defects on its
-word is the mistake 5b-84 already cost. They are named in the row so the next sitting starts there —
-**that is the best next chunk.**
+**THE SWEEP FOR THAT SHAPE IS FINISHED, AND IT IS NOT A CLASS.** An AST walk over `brain`, `mcp` and
+`tools` finds **28** calls to `max()`/`min()` over one argument with no `default=`. Three are safe by
+construction. A crude guard-detector flagged 16 as unguarded and **was wrong about 15 of them** — it
+cannot read `X if cond else Y`, `not x or`, a dict truthiness test, an `if` clause in a comprehension
+(Python evaluates it BEFORE the element), or a preceding `cited[0]` that would raise first. **All 13
+it could not clear were then read one by one, and every one is guarded.**
+
+**So `heron_queue` was the single instance**, and the reason is worth keeping: its guard was on the
+LIMIT rather than on the collection, so the collection could still be empty when the message was
+built. That is the shape to look for, not `max()` itself.
 
 **[Row 5b-85](FRAGMENT-ISSUES.md). FIXED, and no class was invented.** `brain/heron_paths.py` — the
 module that tells product from data from derived, so an update cannot destroy a modeller's fragment
