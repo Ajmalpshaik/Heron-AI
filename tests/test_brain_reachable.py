@@ -148,6 +148,34 @@ def main():
         check(ok["route"] in ("identity", "cache", "hybrid"),
               "and it says which route answered (%s), because an exact "
               "phrasing and a ranked guess are not the same claim" % ok["route"])
+        check(ok.get("risks_unreadable") is None,
+              "and on an ordinary answer nothing is reported unreadable")
+
+        # --- A RISK COLUMN NOBODY COULD READ IS NOT A CLEAN ANSWER ----------
+        # The block that fills these risks used to end `except Exception:
+        # risks = {}` and say nothing. With no risks, the server's "a question
+        # answered by something that writes" warning finds nothing above READ
+        # and prints nothing - a silent pass that looks exactly like a clean
+        # one, in the single case that block exists to reveal.
+        # FRAGMENT-ISSUES section 5b, row 35.
+        # _risks is patched rather than store.fragments, because retrieval
+        # calls store.fragments too - breaking it would break the whole
+        # lookup instead of the one read this check is about.
+        real_risks = BRAIN._risks
+
+        def refuses(_store):
+            raise RuntimeError("the fragments table would not open")
+
+        BRAIN._risks = refuses
+        try:
+            hurt = BRAIN.lookup("select all ducts", revit="2024")
+        finally:
+            BRAIN._risks = real_risks
+        check(hurt.get("risks_unreadable"),
+              "when the risks cannot be read the answer SAYS so rather than "
+              "reporting every fragment as risk None")
+        check("would not open" in (hurt.get("risks_unreadable") or ""),
+              "and it carries the reason, not just a flag")
 
         # --- 3b. the Context Manager, through the same seam -----------------
         # It is here because of what its own tooling found on the day it was
