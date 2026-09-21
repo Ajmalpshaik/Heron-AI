@@ -6,12 +6,20 @@ people who actually do BIM work are worth more than contributions from people wh
 > **Current stage: built ahead of what is proven, though less far than it was.** Phase 0 — the whole
 > path from a sentence to a selection changing on screen — is proven in real Revit 2020 and 2024. The
 > add-in has since been deployed to Revit 2020, 2024 and 2027, and D-28's executor compiles a
-> fragment's C# inside Revit's own process, so fragments do now meet real models: **167 of the 360
-> carry a recorded proof, 55 of them on the write path.** **All ten skills are still `DRAFT`**, and
-> 193 fragments have still never met a model.
+> fragment's C# inside Revit's own process, so fragments do now meet real models.
 >
-> Derive both numbers rather than believing this line —
+> **327 of the 395 fragments are `PROVEN`** — each on a recorded run against a named model.
+> **68 of the 395 fragments are `DRAFT`**, which is Heron's word for *has never met a model*.
+> **All ten skills are still `DRAFT`.** Derived 2026-09-21.
+>
+> Derive it rather than believing this line —
 > `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
+>
+> Both figures are written in the one form `tools/check-docs.py` can verify, and that is deliberate.
+> This paragraph said *"167 of the 360 carry a recorded proof"* and *"193 fragments have still never
+> met a model"* until 2026-09-21 — **wrong by 160**, in wording three words outside the pattern the
+> gate matches, directly above its own instruction to derive it
+> ([row 5b-50](docs/FRAGMENT-ISSUES.md)).
 >
 > So the most useful contributions are **proof** rather than more code, and the architecture questions
 > that are genuinely still open — see [Open Questions](docs/OPEN-QUESTIONS.md).
@@ -133,11 +141,12 @@ pull request — see below.
 
 ## A note on scale
 
-The [agent registry](docs/28-agent-registry.md) lists **250 agents**, and most of them are built by now.
-**Do not trust a number typed here** — this line read *about 70* for nine days after it stopped being true.
-That is a **target organisation chart**, not a to-do list — `python tools/agent-count.py` reconciles
-it against the code and prints what is built and what is genuinely left. Please do not open a pull request implementing
-forty of them.
+The [agent registry](docs/28-agent-registry.md) is a **target organisation chart**, not a to-do list.
+**Do not trust a number typed here** — this line read *about 70* for nine days after it stopped being
+true, and *"most of them are built by now"* until 2026-09-21, by which time none was left to build.
+`python tools/agent-count.py` reconciles the register against the code and prints, in one line, how
+many are built, how many the host provides, how many a decision deferred and how many are genuinely
+left. Please do not open a pull request implementing forty of them.
 
 The project is built one working vertical slice at a time — see [docs/ROADMAP.md](docs/ROADMAP.md).
 A contribution that makes one real thing work end-to-end is worth more than one that adds ten

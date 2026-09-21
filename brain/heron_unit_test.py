@@ -12,6 +12,7 @@ The suite sweep - every tests/test_*.py, and WHY each one that failed did.
     python brain/heron_unit_test.py
     python brain/heron_unit_test.py --suites test_docs_guard.py test_qa.py
     python brain/heron_unit_test.py --timeout 120
+    python brain/heron_unit_test.py --json        the whole result, for a caller
 
 WHAT IT IS FOR (docs/28, HERON-DEV-UNT-011)
 --------------------------------------------
@@ -24,9 +25,16 @@ The sweep already existed - as inline bash in .github/workflows/gates.yml,
 which cannot carry a metadata header. So D-75 could not close this row on
 an existing file the way it closed HERON-DEV-BLD-010 on check-compile.py:
 "a file has to be written before there is anything to claim". This is that
-file. The workflow's loop and this agent run the same suites the same way,
-and neither is generated from the other, which is a duplication worth
-naming rather than hiding - see WHAT IT DOES NOT DO.
+file.
+
+AND THE BASH IT WAS WRITTEN FROM IS GONE, BECAUSE THE COPIES HAD DRIFTED.
+This paragraph used to say the two "run the same suites the same way", and
+they did not: the workflow's loop took any non-zero exit as a failure, so a
+suite saying COULD NOT RUN landed on the failure list beside one that ran
+and broke - the single distinction this file exists for. Three suites were
+permanently excused for it, and once excused a real failure in one of them
+was invisible. gates.yml now CALLS this agent, with --json, and there is
+one sweep in one place. FRAGMENT-ISSUES row 5b-49.
 
 THREE EXIT CODES, NOT TWO, AND THE THIRD IS THE POINT
 -------------------------------------------------------
@@ -82,6 +90,7 @@ front of a model. That is D-30, and it travels in `unjudged`.
 from __future__ import annotations
 
 import glob
+import json
 import os
 import subprocess
 import sys
@@ -92,6 +101,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # The repository's own word for "could not run here". Anything else
 # non-zero is a failure. See the docstring.
 WAITING = 3
+
+# The four refusals that happen BEFORE any suite runs. Their answer carries
+# no `ok`, `waiting` or `failed` to read, so a caller has to be able to tell
+# them apart before it indexes anything - and they are exit 2, which is
+# neither a pass nor a test failure.
+BEFORE_ANYTHING_RAN = ("NO_SUITES", "NOT_A_SUITE", "NOT_A_ROOT", "BAD_TIMEOUT")
 
 # One suite's bound. test_brain_reachable.py is the longest on record at
 # about 45 seconds, so this is generous rather than tight: the bound is
@@ -295,12 +310,22 @@ def main(argv):
             return 2
 
     out = sweep(named=named, timeout=timeout)
+    refused_early = out.get("refused") in BEFORE_ANYTHING_RAN
+
+    if "--json" in rest:
+        # THE WHOLE RESULT, NOT A SUMMARY OF IT. The printed report below is
+        # written for a person and drops the two things a caller needs most:
+        # which suites are WAITING as against FAILED, and the last line each
+        # failure printed. .github/workflows/gates.yml kept a second copy of
+        # this sweep in bash for want of a way to ask (row 5b-49), and a
+        # second copy is a copy that drifts.
+        sys.stdout.write(json.dumps(out, indent=2, sort_keys=True) + "\n")
+        return 2 if refused_early else (0 if out["passed"] else 1)
 
     def w(text):
         sys.stdout.write(text.encode("ascii", "replace").decode("ascii"))
 
-    if out.get("refused") in ("NO_SUITES", "NOT_A_SUITE", "NOT_A_ROOT",
-                              "BAD_TIMEOUT"):
+    if refused_early:
         w("REFUSED  %s\n  %s\n" % (out["refused"], out["why"]))
         return 2
 

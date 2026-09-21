@@ -301,9 +301,10 @@ jobs:
           exit 1
 
       # agent-map.html and fragment-catalog.html are gitignored, so they exist
-      # nowhere a reader can reach. The catalog is a browsable view of all 360
-      # fragments. Uploading it means anyone can open the current one from a
-      # run without installing Python or Revit.
+      # nowhere a reader can reach. The catalog is a browsable view of EVERY
+      # fragment - no number here, because this line said 360 while there were
+      # 395, and the artefact itself is derived on every run. Uploading it means
+      # anyone can open the current one without installing Python or Revit.
       - name: Upload the generated catalog and map
         if: always()
         uses: actions/upload-artifact@v7
@@ -379,12 +380,39 @@ jobs:
       - name: Install PyYAML
         run: python -m pip install --quiet pyyaml
 
-      - name: Run every suite and compare the failing set
+      - name: Run every suite, and keep NOT RUN apart from FAILED
         shell: bash
         run: |
-          # The suites that fail on a plain Linux runner, and why. A lump
-          # pass total is how a real regression hides, so the build compares
-          # the SET of failures instead of counting them.
+          # THE SWEEP IS brain/heron_unit_test.py, AND IT USED TO BE A SECOND
+          # COPY OF IT WRITTEN IN BASH RIGHT HERE. That agent's docstring said
+          # "the workflow's loop and this agent run the same suites the same
+          # way", and they did not: it splits THREE ways and the loop here
+          # split TWO.
+          #
+          #   0   passed
+          #   3   COULD NOT RUN here - waiting on something this machine has
+          #       not got. Not a pass, and not a failure either
+          #   *   failed
+          #
+          # `python "$t" >/dev/null 2>&1 || basename "$t"` puts exit 3 and exit
+          # 1 in the same bucket, so a suite printing "COULD NOT RUN - this is
+          # exit 3, which is NOT a pass: nothing was checked" arrived here as a
+          # FAILURE and had to be excused by name. Once excused, a suite that
+          # starts genuinely FAILING is invisible - it was already on the list.
+          # Measured both ways in FRAGMENT-ISSUES row 5b-49.
+          #
+          # Running the agent rather than re-implementing it also brings WHY
+          # each failure failed, which is why nothing below re-runs anything.
+          code=0
+          python brain/heron_unit_test.py --json > "$RUNNER_TEMP/sweep.json" || code=$?
+
+          if [ "$code" -eq 2 ]; then
+            echo "::error::The sweep refused to run at all. That is not a test failure."
+            cat "$RUNNER_TEMP/sweep.json"
+            exit 1
+          fi
+
+          # THE SUITES THAT CANNOT RUN ON A PLAIN LINUX RUNNER, AND WHY.
           #
           #   test_bridge_roundtrip.py needs a built .NET test host
           #   test_mcp_serves.py       needs the MCP SDK
@@ -393,6 +421,10 @@ jobs:
           # The MCP SDK and the .NET host are left out on purpose: both drag in
           # native dependencies that break for reasons that have nothing to do
           # with this repository. Those three prove nothing either way here.
+          #
+          # IT IS A NOT-RUNNABLE LIST, NOT A FAILURE LIST. Each of these three
+          # must come back exit 3. One that comes back exit 1 has RUN and has
+          # something to say, and that is a failure like any other.
           #
           # test_graph.py and test_reachable.py were on this list until
           # 2026-09-12 and are gone, because both were fixed rather than
@@ -414,93 +446,121 @@ jobs:
             test_bridge_roundtrip.py \
             test_mcp_serves.py \
             test_served_claims.py \
-            | sort > "$RUNNER_TEMP/known-failures.txt"
+            | sort > "$RUNNER_TEMP/known-not-runnable.txt"
 
-          for t in tests/test_*.py; do
-            python "$t" > /dev/null 2>&1 || basename "$t"
-          done | sort > "$RUNNER_TEMP/actual-failures.txt"
+          python - "$RUNNER_TEMP" <<'PY'
+          import json, os, sys
+
+          temp = sys.argv[1]
+          report = json.load(open(os.path.join(temp, "sweep.json")))
+
+          def write(name, lines):
+              with open(os.path.join(temp, name), "w") as handle:
+                  for line in lines:
+                      handle.write(line + "\n")
+
+          write("not-runnable.txt", sorted(w["suite"] for w in report["waiting"]))
+          write("failures.txt", sorted(f["suite"] for f in report["failed"]))
+          write("why.txt", ["%s (exit %s)\n    %s" % (f["suite"], f["code"], f["why"])
+                            for f in report["failed"]])
+          # A SUITE THAT HUNG IS ITS OWN STATE AND MUST NOT FALL THROUGH THE
+          # GAP. It is not a pass, not a failure and not waiting on a package,
+          # and the sweep keeps it in a fourth list for exactly that reason.
+          write("hung.txt", ["%s (bound %ss)" % (t["suite"], t["bound"])
+                             for t in report["timedOut"]])
+          PY
 
           total=$(ls tests/test_*.py | wc -l)
-          failed=$(wc -l < "$RUNNER_TEMP/actual-failures.txt")
-          new=$(comm -13 "$RUNNER_TEMP/known-failures.txt" "$RUNNER_TEMP/actual-failures.txt")
-          fixed=$(comm -23 "$RUNNER_TEMP/known-failures.txt" "$RUNNER_TEMP/actual-failures.txt")
+          waiting=$(wc -l < "$RUNNER_TEMP/not-runnable.txt")
+          failed=$(wc -l < "$RUNNER_TEMP/failures.txt")
+          hung=$(wc -l < "$RUNNER_TEMP/hung.txt")
+          unexpected=$(comm -13 "$RUNNER_TEMP/known-not-runnable.txt" "$RUNNER_TEMP/not-runnable.txt")
+          ran_after_all=$(comm -23 "$RUNNER_TEMP/known-not-runnable.txt" "$RUNNER_TEMP/not-runnable.txt")
 
           {
             echo "### Test suites"
             echo
-            echo "Ran ${total} suites. ${failed} failed."
+            echo "Ran ${total} suites. ${failed} failed. ${waiting} could not run here."
+            if [ "$hung" -ne 0 ]; then
+              echo "${hung} did not finish."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
           status=0
 
-          if [ -n "$new" ]; then
-            echo "::error::A suite failed that is not on the known-failure list."
-            echo "New failures - these are the change, not the machine:"
-            echo "$new"
+          if [ "$hung" -ne 0 ]; then
+            echo "::error::A suite did not finish inside its bound."
+            cat "$RUNNER_TEMP/hung.txt"
             {
               echo
-              echo "**New failures — these are the change, not the machine:**"
+              echo "**A suite hung.** It is not a pass and not a failure — it never"
+              echo "said anything."
               echo
               echo '```'
-              echo "$new"
+              cat "$RUNNER_TEMP/hung.txt"
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
-
-            # AND WHY, NOT JUST WHICH. The loop above sends every suite's
-            # output to /dev/null, which is right for the 200 that pass and
-            # was the whole problem for the one that did not: when
-            # test_fragment_tracking.py failed here and passed on Windows,
-            # this job reported a filename six times and the reason was one
-            # line of the output it had thrown away. It took three sections
-            # made skippable, a wrong rename and a deletion to get as far as
-            # somebody running the file by hand on Linux, which took one
-            # command. FRAGMENT-ISSUES rows 160 and 166.
-            #
-            # Re-running is cheap: only the NEW failures, only when the job
-            # is already red, and a suite that fails twice with different
-            # output is itself worth knowing about.
-            echo "$new" | while read -r suite; do
-              [ -n "$suite" ] || continue
-              {
-                echo
-                echo "<details><summary>What <code>${suite}</code> printed</summary>"
-                echo
-                echo '```'
-                python "tests/${suite}" 2>&1 | tail -40
-                echo '```'
-                echo
-                echo "</details>"
-              } >> "$GITHUB_STEP_SUMMARY"
-              echo "--- ${suite} said: ---"
-              python "tests/${suite}" 2>&1 | tail -40
-            done
-
             status=1
           fi
 
-          if [ -n "$fixed" ]; then
-            echo "::error::A suite on the known-failure list passed."
-            echo "Somebody fixed something or installed something:"
-            echo "$fixed"
+          # A FAILURE IS A FAILURE WHATEVER LIST IT IS ON. Nothing is excused
+          # here: the three names above buy exit 3 and nothing else.
+          if [ "$failed" -ne 0 ]; then
+            echo "::error::A suite ran and failed."
+            echo "These RAN and had something to say - the change, not the machine:"
+            cat "$RUNNER_TEMP/why.txt"
             {
               echo
-              echo "**On the known-failure list, but it passed.** Somebody fixed"
-              echo "something or installed something. Say so — update the list in"
+              echo "**These suites ran and failed — the change, not the machine:**"
+              echo
+              echo '```'
+              cat "$RUNNER_TEMP/why.txt"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            status=1
+          fi
+
+          if [ -n "$unexpected" ]; then
+            echo "::error::A suite could not run here and is not on the not-runnable list."
+            echo "$unexpected"
+            {
+              echo
+              echo "**Could not run, and not on the list.** Either this machine lost"
+              echo "something it had, or a new suite needs an optional dependency."
+              echo "Say which in \`.github/workflows/gates.yml\` rather than widening"
+              echo "the list quietly."
+              echo
+              echo '```'
+              echo "$unexpected"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            status=1
+          fi
+
+          if [ -n "$ran_after_all" ]; then
+            echo "::error::A suite on the not-runnable list ran after all."
+            echo "Somebody installed something, or built the host:"
+            echo "$ran_after_all"
+            {
+              echo
+              echo "**On the not-runnable list, but it ran.** Somebody installed"
+              echo "something or built the test host. Say so — update the list in"
               echo "\`.github/workflows/gates.yml\` in the same change, rather than"
               echo "quietly recording a better number."
               echo
               echo '```'
-              echo "$fixed"
+              echo "$ran_after_all"
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
             status=1
           fi
 
           if [ "$status" -eq 0 ]; then
-            echo "The failing set is exactly the known-failure list. Nothing new broke."
+            echo "Nothing failed, and the suites that could not run are exactly the ones named here."
             {
               echo
-              echo "The failing set is exactly the known-failure list. Nothing new broke."
+              echo "Nothing failed, and the suites that could not run are exactly"
+              echo "the ones named here."
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 

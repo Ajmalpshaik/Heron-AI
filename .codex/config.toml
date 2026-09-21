@@ -1,3 +1,18 @@
 [mcp_servers.heron]
 command = "python"
 args = ["mcp/server/heron_mcp_server.py"]
+
+# THE SAME ID AS .mcp.json, AND IT HAS TO BE THE SAME ONE.
+#
+# The lease identifies a CHAT. A server started without HERON_CLIENT_ID takes
+# a fresh random id, which is right for a server on its own - it is one
+# process for one chat. It is wrong the moment that chat ALSO runs
+# mcp/client/heron_bridge_client.py from a command line: Heron then sees two
+# chats, and refuses the second with "in use by another chat". That refusal is
+# correct and it reads exactly like a fragment failing.
+#
+# heron_bridge_client.py states the rule and the incident it came from -
+# "ONE ID PER PERSON, SET EVERYWHERE", five interruptions in one session on
+# 2026-09-12. This file predates that fix by a week and was not in the list it
+# wrote. FRAGMENT-ISSUES row 5b-51.
+env = { HERON_CLIENT_ID = "ajmal-pc" }

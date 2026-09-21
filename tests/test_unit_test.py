@@ -25,7 +25,12 @@ WHAT IT PROVES
   4. IT RUNS AND IT DOES NOT FIX. `ranAnything` is true, `fixedAnything`
      is false, and no suite file is modified by a sweep.
 
-  5. EVERY FAILURE THE CONTRACT DECLARES IS NAMED AND REACHED. The names
+  5. --json CARRIES THE SPLIT ACROSS TO A CALLER. The printed report is
+     for a person; CI needs to know which suites are WAITING as against
+     FAILED, and it kept a second copy of this sweep in bash for want of
+     an answer (row 5b-49). A waiting suite must never appear in `failed`.
+
+  6. EVERY FAILURE THE CONTRACT DECLARES IS NAMED AND REACHED. The names
      are READ FROM THE CONTRACT, never typed here - a test that agrees
      only with itself is what let a withdrawn agent keep its contract
      (PROPOSALS F27).
@@ -33,12 +38,13 @@ WHAT IT PROVES
 IT SWEEPS A FIXTURE, NOT HERON
 -------------------------------
 Every case below builds a small tests/ tree in a temporary directory and
-points the agent at it. Running Heron's own 196 suites inside one of
-Heron's own suites would take ten minutes and would make this test fail
+points the agent at it. Running every suite in this repository inside one
+of its own suites would take ten minutes and would make this test fail
 whenever anything else did, which is the opposite of a test.
 """
 
 import io
+import json
 import os
 import shutil
 import sys
@@ -162,7 +168,33 @@ def main():
         check(".skip" not in logic and "quarantine" not in logic,
               "nothing in it skips or quarantines a suite")
 
-        print("\n5. every failure the contract declares is reached")
+        print("\n5. --json carries the split across to a caller")
+        where = tree(["test_green.py", "test_waiting.py", "test_red.py"])
+        made.append(where)
+        # main() sweeps ROOT, and ROOT is read at call time - so pointing
+        # the module at the fixture is how the CLI is exercised without
+        # running every suite in this repository inside one of them.
+        was_root, UNT.ROOT = UNT.ROOT, where
+        caught, held = io.StringIO(), sys.stdout
+        try:
+            sys.stdout = caught
+            code = UNT.main(["heron_unit_test.py", "--json"])
+        finally:
+            sys.stdout = held
+            UNT.ROOT = was_root
+        report = json.loads(caught.getvalue())
+        check(report["of"] == 3, "--json reports every suite it swept")
+        check([w["suite"] for w in report["waiting"]] == ["test_waiting.py"],
+              "the suite that exited 3 is in `waiting`")
+        check([f["suite"] for f in report["failed"]] == ["test_red.py"],
+              "and the ONLY thing in `failed` is the one that ran and broke")
+        check(report["failed"][0]["why"],
+              "carrying the last line it printed, so nothing has to re-run it")
+        check(code == 1, "the exit code still says something failed")
+        check(report["timedOut"] == [],
+              "and `timedOut` is its own list, not folded into either")
+
+        print("\n6. every failure the contract declares is reached")
         out, _ = sweep(["test_slow.py"], timeout=1)
         check(out["timedOut"] and out["timedOut"][0]["bound"] == 1,
               "a suite that hangs is TIMED_OUT at its bound")

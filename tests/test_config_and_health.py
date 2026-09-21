@@ -83,6 +83,36 @@ def csharp_keys_read():
     return keys
 
 
+HOST_ID = re.compile(r'HERON_CLIENT_ID"?\s*[:=]\s*"([^"]+)"')
+
+SKIP_FOLDERS = (".git", "__pycache__", "node_modules", "build", "obj", "bin",
+                "packages")
+
+
+def host_configs():
+    """
+    Every file that STARTS the MCP server, found rather than listed.
+
+    A `.json` or `.toml` naming `heron_mcp_server.py` is a host door, whoever
+    added it. Returns [(path relative to root, text)], sorted.
+    """
+    found = []
+    for where, folders, files in os.walk(ROOT):
+        folders[:] = [f for f in folders if f not in SKIP_FOLDERS]
+        for name in files:
+            if not name.endswith((".json", ".toml")):
+                continue
+            path = os.path.join(where, name)
+            try:
+                with io.open(path, encoding="utf-8") as handle:
+                    text = handle.read()
+            except (IOError, UnicodeDecodeError):
+                continue
+            if "heron_mcp_server.py" in text:
+                found.append((os.path.relpath(path, ROOT), text))
+    return sorted(found)
+
+
 def main():
     declared = csharp_declared()
 
@@ -287,6 +317,34 @@ def main():
     check("never been proven" not in gate.detail
           and "never been compiled" not in gate.detail,
           "and it does not repeat a sentence a reader can disprove in a minute")
+
+    print()
+    print("Every host that starts the MCP server pins the SAME client id")
+    # ONE ID PER PERSON, SET EVERYWHERE - and "everywhere" has to mean every
+    # door. heron_bridge_client.py states the rule and the incident: a single
+    # conversation using BOTH the MCP server and the command line was seen as
+    # two chats and refused, five times in one session on 2026-09-12. That
+    # comment named .mcp.json, the exported value and batch-prove.py - and
+    # .codex/config.toml was already in the tree, unlisted and unpinned, and
+    # nothing read either file. FRAGMENT-ISSUES row 5b-51.
+    #
+    # THE CONFIGS ARE FOUND, NOT LISTED, because a typed list goes stale the
+    # first time somebody adds a host and it goes stale silently - which is
+    # exactly how this happened.
+    hosts = host_configs()
+    check(len(hosts) >= 2,
+          "found %d host config(s) that start the MCP server: %s"
+          % (len(hosts), ", ".join(name for name, _ in hosts) or "none"))
+    pinned = {}
+    for name, text in hosts:
+        found = HOST_ID.search(text)
+        check(found is not None,
+              "%s starts the server and pins HERON_CLIENT_ID" % name)
+        if found:
+            pinned[name] = found.group(1)
+    check(len(set(pinned.values())) <= 1,
+          "and every one pins the same id: %s"
+          % (sorted(set(pinned.values())) or "none found"))
 
     print()
     print("Health: a healthy system says so briefly")
