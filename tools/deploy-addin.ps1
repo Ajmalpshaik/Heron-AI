@@ -162,9 +162,22 @@ $manifest = Join-Path $target $productAddin
 # WHAT THAT COSTS ONCE: a backup written before this change sits at the old
 # path and -Rollback will not find it. It fails cleanly, saying there is
 # nothing to roll back to and how to deploy from source instead, and the next
-# deploy writes a fresh one at the new path. No old backup is deleted or
-# moved - reaching into a path this script no longer owns to tidy it would be
-# a worse risk than the one it fixes.
+# deploy writes a fresh one at the new path.
+#
+# AND FOR heron-bridge, THE NEW PATH LANDS ON THE OLD BACKUP'S CONTENTS.
+# This said "No old backup is deleted or moved" until AA9's run on a real
+# machine showed otherwise, and the exception is the product that matters
+# most. The old layout put the backed-up folder at
+# install-backup\<version>\Heron; the new backupDir for heron-bridge IS
+# install-backup\<version>\Heron, because its productFolder is Heron. So
+# the first new deploy writes over it, and the old Heron.addin and
+# replaced.json are left orphaned one level up.
+#
+# NOTHING -Rollback COULD HAVE USED IS LOST - that backup was already
+# unreachable, which is the line above - and it is all inside Heron's own
+# folder. Every other product lands on a path the old layout never used.
+# Recorded rather than tidied: reaching into a path this script no longer
+# owns, to delete files, is a worse risk than the one it fixes. Row 5b-96.
 $backupDir      = Join-Path $env:LOCALAPPDATA "Heron\install-backup\$RevitVersion\$productFolder"
 $backupAddinDir = Join-Path $backupDir $productFolder
 $backupManifest = Join-Path $backupDir $productAddin

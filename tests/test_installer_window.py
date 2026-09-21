@@ -19,6 +19,7 @@ proves is the thing a screenshot would NOT show:
     no product is named in it, so adding one is a line in the manifest - R-3
     there is no Update button and no Repair button - R-23a
     the reason a row is greyed out is PRINTED, not only in a tooltip - R-10
+    a row's own text WRAPS rather than clipping in silence - AB1, row 5b-97
     Close Revit first is built BEFORE the Install button, not after a failure
     the waiting happens off the window's thread, so it cannot freeze
 
@@ -146,6 +147,54 @@ def main():
     check(window.index("ToolTip") < window.index("row.WhyNot != null"),
           "and printed as well, because nobody hovers over a row they "
           "cannot tick")
+
+    print()
+    print("A row's own text WRAPS, so it cannot be clipped in silence - AB1")
+    # AB1 FAILED ON A REAL MACHINE on 2026-09-21 and was fixed the same day
+    # (#235): the tick box carried a bare string, the window is a fixed 620
+    # wide with ResizeMode.CanMinimize, and the AI Bridge row lost its last
+    # word with NO ellipsis - "The three buttons that exist today." rendered
+    # as "...that exist", which still reads as a finished sentence.
+    #
+    # WHETHER IT LOOKS RIGHT NEEDS WINDOWS and this suite says so at the top.
+    # WHETHER IT CAN WRAP AT ALL DOES NOT. Nothing held the fix: reverting to
+    # `Content = row.Name + "    " + row.Description` compiles, passes every
+    # suite, and clips again on a machine nobody is watching. Row 5b-97.
+    # SEARCHED FROM THE TICK BOX, not from the top of the file. Every other
+    # block in this window already wraps, so a bare find() returns the FIRST
+    # one - which sits above the tick box and made this check red against the
+    # fixed file. The occurrence that matters is the one inside this block.
+    tick = window.find("var tick = new CheckBox")
+    enabled = window.find("IsEnabled = row.CanBeTicked", tick if tick != -1 else 0)
+    wraps = window.find("TextWrapping = TextWrapping.Wrap",
+                        tick if tick != -1 else 0)
+    # BOTH ENDS FIRST - str.find gives -1 for a string that is not there, and
+    # -1 is less than every real position, so a bare ordering check passes
+    # LOUDEST when the thing it guards has been deleted. Row 5b-79 paid for
+    # that lesson in the suite next door.
+    check(tick != -1, "the tick box is built here at all")
+    check(wraps != -1,
+          "and something in this window wraps its text rather than clipping")
+    check(tick != -1 and enabled != -1 and wraps != -1
+          and tick < wraps < enabled,
+          "and it is THE TICK BOX's own content that wraps, between the "
+          "CheckBox and its IsEnabled - not some other block further down")
+    # ASKED OF THE TICK BOX, NOT OF THE FILE. `AB1` is named elsewhere in
+    # this window too, so a plain `in window` passed against the version
+    # that had NOT been fixed - a check that is true either way is not a
+    # check. The block itself is what these three are about.
+    block = window[tick:enabled] if -1 not in (tick, enabled) else ""
+    check("Content = new TextBlock" in block,
+          "the content is a TextBlock, not a bare string - a string cannot "
+          "wrap and clips without an ellipsis")
+    check("AB1" in block,
+          "and the block names the row that found it, so the next person to "
+          "tidy this knows it was measured rather than guessed")
+    # THE FIX THAT WAS REJECTED, kept so it is not tried again. Widening to
+    # fit today's longest line clips the next one just as quietly, and R-3
+    # promises adding a product is a line in a file.
+    check("Widening" in block or "widened" in block,
+          "and it records why widening the window was refused")
 
     print()
     print("Close Revit first is BUILT BEFORE the Install button - item 6")

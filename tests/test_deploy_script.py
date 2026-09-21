@@ -261,6 +261,43 @@ def main():
           "and the module is dot-sourced BEFORE the function is called")
 
     print()
+    print("The one flag that makes a downloaded Heron installable - D-96")
+    # THIS IS NOT THIS SCRIPT, IT IS ITS CALLER, and it is here because
+    # nothing anywhere held it and the ruling that made it load-bearing is
+    # one day old.
+    #
+    # AA9, on a real machine, 2026-09-21: a Heron downloaded as a zip carries
+    # ZoneId=3 on all 2130 files, and PowerShell at the Windows default of
+    # RemoteSigned refuses an unsigned downloaded script BEFORE its first
+    # line runs. So Unblock-File, which lives inside this script, cannot
+    # clear the mark that stops this script running. Signing was considered
+    # and refused. D-96: the installer is the only supported route for a
+    # downloaded copy - which makes `-ExecutionPolicy Bypass` in the
+    # installer the thing that makes that route work at all.
+    #
+    # Remove those two lines and every downloaded install breaks, on every
+    # machine left at the Windows default, and no test said so. Row 5b-96.
+    adapters_path = os.path.join(ROOT, "platform", "Heron.Installer",
+                                 "WindowsAdapters.cs")
+    adapters = io.open(adapters_path, encoding="utf-8").read()
+    policy = adapters.find('ArgumentList.Add("-ExecutionPolicy")')
+    bypass = adapters.find('ArgumentList.Add("Bypass")')
+    check(policy != -1, "the installer passes -ExecutionPolicy to PowerShell")
+    check(bypass != -1, "and the value it passes is Bypass")
+    # BOTH POSITIONS FIRST. str.find gives -1 for a string that is not there,
+    # and -1 < every real position - the false green this suite already paid
+    # for once in row 5b-79.
+    check(policy != -1 and bypass != -1 and bypass > policy,
+          "in that order, so the value follows the flag it belongs to")
+    check("-NoProfile" in adapters,
+          "and -NoProfile is still there, so a user's own profile cannot "
+          "change what Heron's scripts see")
+    check("D-96" in adapters,
+          "and the code says WHY it cannot be removed, not only that it is "
+          "safe - the comment argued safety and said nothing about the "
+          "install breaking without it")
+
+    print()
     print("The download mark is cleared, which it was not before 2026-09-21")
     # R-37. It lived only in the Stage 2 proof script until that script was
     # deleted for being a second copy of the deploy rule. Deleting a file that
@@ -279,6 +316,41 @@ def main():
     check("CHANGE OF PATH" in text,
           "and the script says so, so a rollback that cannot find an old "
           "backup is explained rather than surprising")
+
+    # AND THE NOTE BESIDE IT WAS WRONG FOR THE PRODUCT THAT MATTERS MOST.
+    # It said "No old backup is deleted or moved" until AA9 ran on a real
+    # machine: heron-bridge's productFolder is Heron, so its NEW backupDir
+    # is install-backup\<version>\Heron - which is exactly where the OLD
+    # layout put the backed-up folder. The first new deploy writes over it.
+    # Nothing -Rollback could have used is lost, but the sentence was not
+    # true. Row 5b-96, and this pins the correction to the path above.
+    # THE OLD SENTENCE IS KEPT, AS A QUOTE. Deleting it would lose the half
+    # worth keeping - that it was true when it was written - so what this
+    # asks is that it appears ONCE and that the once is the correction
+    # recording it, not a claim still standing. The first draft of this
+    # check asked for the words to be absent and went red against the right
+    # answer.
+    #
+    # ASKED OF THE PROSE, NOT OF THE LINES. A comment wraps, so the claim
+    # sits across two lines with `# ` between them and a plain `in text`
+    # cannot see it - the first draft of this check reported the old file
+    # as having ZERO of them, which would have read as "already fixed".
+    # The comment bodies are joined into one run of words first.
+    prose = re.sub(r"\s+", " ", " ".join(
+        line.lstrip().lstrip("#").strip() for line in text.split("\n")
+        if line.lstrip().startswith("#")))
+    claim = "No old backup is deleted or moved"
+    check(prose.count(claim) == 1,
+          "the old claim appears once in the comments, not twice (%d)"
+          % prose.count(claim))
+    check(('This said "%s" until' % claim) in prose,
+          "and that once is the paragraph correcting it, not a claim that "
+          "is still standing")
+    check("THE NEW PATH LANDS ON THE OLD BACKUP" in text.upper(),
+          "and it names the one product that it does happen to")
+    check("$productFolder" in text and "install-backup" in text,
+          "while the path itself is still built from the product, which is "
+          "what makes the collision possible and is still right")
 
     print()
     print("The backup is built aside, and a half-written one is refused")
