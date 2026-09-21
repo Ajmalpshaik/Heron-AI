@@ -124,6 +124,348 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-21 (closing) — SIX PROMISES NOBODY WROTE DOWN, AND A SWEEP THAT WAS WRONG 28 TIMES
+
+**[Row 5b-95](FRAGMENT-ISSUES.md). OPEN — for a sitting, and the question is one sentence long.**
+
+**Six refusals the code produces and no contract declares**, across four agents:
+`HERON-FRG-UPD-008` → `STALE_APPROVAL`, `HERON-INS-HLT-009` → `NOT_CHECKED_BY_A_CHECK`,
+`HERON-NAM-VAL-002` → `MISSING_PART`, `BAD_VERSION`, `GENERATED_A_BAD_NAME`, and
+`HERON-SKL-UPD-003` → `REVISION_INCOMPLETE`.
+
+**`tools/generate-contract-reference.py` already reports them on every run and nothing records them**,
+so they are re-discovered and never closed. That is the whole reason the row exists. In the tool's own
+words this is *"the direction that breaks at run time"*: a caller handling every declared failure
+still meets an unhandled one.
+
+**Every one was read and every one is a correct refusal.** The three in `heron_naming` are all from
+`generate()`, whose eight declared failures are all from the `check()` side — the generate half was
+added and the contract never followed. **The session's own shape a fifth time.**
+
+**WHY IT IS OPEN.** `heron_contract.compare()` calls **an added failure state BREAKING**, which is
+MAJOR — so declaring these six takes four contracts from `1.0.0` to `2.0.0` **for a documentation
+correction, with no agent behaving any differently afterwards**. `compare()` cannot tell *the promise
+changed* from *the promise was written down wrong*, and all six sit in that gap. The alternative,
+making the code return an already-declared refusal, was checked and is wrong for all six: no declared
+code fits.
+
+**It is not urgent and the row says so.** `compare()` is exercised by its own suite and nothing else;
+no gate compares a contract against its previous version. The consequence today is a rule, not a red
+build.
+
+---
+
+**AND A NEGATIVE SWEEP WORTH MORE THAN THE ROW.** Before finding the tool, I measured the same
+question by hand and it was **wrong 28 times out of 28**. My scan said 26 contracts declare a refusal
+the code never names; the tool says **0**, and the tool is right — those codes are named as the prefix
+of an exception message (`raise LookupError("NO_SUCH_HANDLE: ...")`), and two more of my hits were a
+per-item annotation inside a list (`excluded.append({"refused": "WRONG_REVIT_VERSION"})`) mistaken for
+the agent's own refusal. **The tool recognises a refusal by POSITION**, which is the first line of its
+own suite.
+
+**Third time in one day a crude scan was wrong about nearly everything it flagged** —
+[5b-86](FRAGMENT-ISSUES.md) at 15 of 16, [5b-92](FRAGMENT-ISSUES.md) at 6 of 6, this at 28 of 28.
+`AGENTS.md` already says the thing that would have saved all three: **check whether a tool already
+owns the answer. Tool output beats a typed sentence, always.**
+
+**Before measuring a class by hand, run this and see whether it is already answered:**
+
+```bash
+ls tools/*.py | head -50          # 47 of them, and several ask questions like yours
+python tools/generate-contract-reference.py
+python tools/module-reach.py
+python tools/open-defects.py
+```
+
+**Also checked and discarded**: a scan of the seven ADMIN surfaces for the shapes that paid off
+earlier today — a bare `max()`/`min()`, an unguarded `[0]`, an `int()` on caller input — found five
+subscripts and **all five were guarded or inside a `main()` demonstration**. No row.
+
+### 2026-09-21 (last of the day) — THE MORE PEOPLE ASKED, THE LESS THE GAP REPORT COULD SAY
+
+**[Row 5b-94](FRAGMENT-ISSUES.md). FIXED.** `brain/heron_capability.py`, the **tenth** live-path brain
+module — and the first file finished because the ledger's new column said what was owed. Its earlier
+mark listed `rebuild`, the gap report and `main` as **not read**, so that is where the reading started
+and that is where the defect was. **[Row 5b-90](FRAGMENT-ISSUES.md) paying for itself within the
+hour.**
+
+`want(store, name, why)` did `INSERT ... ON CONFLICT(name) DO UPDATE SET why = ?`. **The last writer
+won.** Measured: three different things wanting `TRACE_DUCT_SYSTEM` — skill `trace-system`, skill
+`size-check`, and a user asking by name — left **one** sentence.
+
+**And the one that survives in production is the generic one.** `heron_brain.resolve()` writes *"asked
+for by name and no fragment provides it"* every time somebody asks for a capability nobody provides,
+so **one person asking erases which skills were blocked**. `tests/test_skills.py` loops over every
+skill calling `want()`, so two skills needing one capability already lose one of the two.
+
+**The more people ask, the less the report can say about who needs it** — backwards for a function
+whose docstring says it *"turns 'we have no fragment for that' from a silence into a finding"*.
+
+**FIXED**: the table still holds **one row per capability** (docs/18: the gap IS the name), and the
+reasons share the cell, joined by `WHY_JOIN`, with `wanted_by()` reading them back in arrival order.
+**De-duplication is not cosmetic** — the common caller is a loop over every skill, which would
+otherwise grow the cell on every run. An empty `why` records *wanted, with no reason recorded* rather
+than blanking somebody else's.
+
+**Shown to fail: 3 checks**, and the fourth — that a repeat does not grow the cell — stays green in
+both. **The section asked before it called**, so it reported failures rather than a traceback:
+`heron-ship` §2a for the second row running.
+
+**Live-path brain modules read: 10 of 53.** Next: `heron_context`, then `heron_retrieve`.
+
+**A habit worth keeping, and it is the session's own finding twice over.** Both of the last two rows
+came from *finishing* something rather than starting it — 5b-93 from the reader half of the trail
+5b-91 had just tested, 5b-94 from the part of a file an earlier read had left. **The ledger now says
+which files are in that state**, and it is the most productive queue in the repository right now.
+
+### 2026-09-21 (final) — THE GAP REPORT TELLING A MODELLER HERON HAS NEVER DONE ANYTHING
+
+**[Row 5b-93](FRAGMENT-ISSUES.md). FIXED.** `brain/heron_gaps.py`, the **ninth** live-path brain
+module and the reader half of the trail row 5b-91 just tested.
+
+**`since(entries, days)` took a window with no floor.** Measured on a trail of three entries:
+`--days 7` → 1, `--days 30` → 3, `--days 0` and `None` → 3, and **`--days -7` → 0**. `report()` then
+prints *"The audit trail is empty. Nothing has been asked of Heron yet"*, and the MCP tool prints
+*"Heron has no record of doing anything yet... nobody has asked it for anything"*.
+
+**Both are false claims about somebody's own history, and the second is the one a modeller reads.**
+`heron_gaps(days: int = 0)` declares an `int` with no lower bound and hands it straight down.
+
+This is **`tests/test_brain_reachable.py` §7's own argument one tool along** — *"'Heron knows how to do
+nothing' and 'Heron cannot read what it knows' send a user in opposite directions"* — and the module's
+own `duration()` makes it about timings: it returns `None` rather than 0 because *"averaging the two
+together is how a timing report starts lying."*
+
+**And the suite pinned the half that was right.** `test_gaps.py` §7 empties the directory to prove the
+message is correct for an empty trail. Nothing ever asked whether a **full** one could reach it.
+
+**The second half is four lines away in `_stat()`.** `ordered[len(ordered) // 2]` takes the upper of
+the middle pair, so **the median of two runs is the slower of them**: `_stat([10, 100])` returned
+`(100, 100)`, and the report printed *median 100 ms, worst 100 ms* for a fragment that ran at 10 and
+100. Two runs is the ordinary case for most of the library.
+
+**FIXED**: `since()` raises `ValueError` below 1 — refused where the semantics live, not at each
+caller, because there are two and the rule belongs to neither (row 5b-84's reasoning). The command
+line says it in its own words and exits **2**. `heron_brain.gaps()` turns it into
+`{"refused": "NOT_A_WINDOW", "why": ...}` and the MCP tool returns that sentence. **The refusal does
+not come back looking like an answer** — no `found` key — because *an answer with nothing in it* is
+the exact shape that read as *never been asked*. `_stat()` averages the middle pair for an even count.
+
+**Shown to fail: 7 checks** across two suites, **and the three checks that a real window still answers
+stay green in both**, which is how the pair proves the change was narrow.
+
+**The new sections asked before they called** — a `try` round the refusal rather than naming a symbol
+the old module has not got — so nothing crashed this time. That is
+[`heron-ship`](../.claude/skills/heron-ship/SKILL.md) §2a working the first time it was needed, one row
+after it was written.
+
+**Live-path brain modules read: 9 of 53.** Next: `heron_capability`, then `heron_context`.
+
+### 2026-09-21 (end) — THE AUDIT TRAIL'S OWN HALF HAD NO SUITE
+
+**[Row 5b-91](FRAGMENT-ISSUES.md). FIXED.** `brain/heron_audit.py`, the **eighth** live-path brain
+module.
+
+**Nothing under `tests/` imported it.** The BUILD ORDER check in `tools/check-gaps.py` covers the
+**fourteen steps docs/27 describes**; this file carries `Heron-Step: 17`, so no gate noticed.
+
+It is Golden Rule 14's requirement for the half of Heron that never reaches Revit, it is D-62's
+deliverable, and every line it writes goes into a file that is **append-only and never pruned**. Its
+docstring argues carefully about exactly that — the day `ms` went in quoted and a reader compared
+*"9"* against *"6620"* as text; never writing the user's sentence; the refusal codes that stop a
+correct refusal reading as a fault. **None of that argument was held by anything.**
+
+**And the promise in capitals was broken three ways.** `record()` says *NEVER FATAL*, and its
+`numbers` loop does `int(value)` **outside the `try`**. Measured: `ms="fast"` → `ValueError`,
+`float("nan")` → `ValueError`, `float("inf")` → **`OverflowError`, not even in that except list**, a
+list → `TypeError`. **The `ValueError` sitting in the except clause is the tell**: the author
+anticipated the conversion failing and guarded the wrong statement.
+
+**Not reachable from any caller** — all thirteen pass a `len()` or a `rowcount` — **and that is the
+dangerous half**: the early `return False` when there is nowhere to write means this code only ever
+runs where the trail really writes, which is somebody's machine and never this container.
+
+**Fixed**: the conversion is guarded per key, a bad number costs that one field and never the line,
+and it is **not** written as a string instead (the log is never pruned, so a quoted number is
+permanent). A `dropped` field names the key, because Golden Rule 14 does not allow a silent discard.
+
+**`tests/test_audit.py` is the larger half.** Eight sections holding the docstring's *arguments*
+rather than its lines. The central one runs **end to end through the reader**: three real refusals
+written, then `heron_gaps.analyse()` asked, and they must come back as **three correct refusals, none
+unclassified, none a defect** — which is `heron_gaps`'s own founding mistake tested from the other
+side. §6 proves **Q-44** the same way: an add-in file and a brain file in one directory come back as
+one list sorted by `at`, a truncated line costing one entry and not the report.
+
+**Shown to fail: 9 checks**, and the suite still ran to the end — each call sits in its own `try`, so
+an escape is reported as the failure it is rather than ending the run. **Two checks were vacuous in
+the first draft** (`all()` over an empty list is True); both now require a non-empty list first, which
+is [row 5b-79](FRAGMENT-ISSUES.md)'s false green in another shape.
+
+**And the blind spot that let it happen is [row 5b-92](FRAGMENT-ISSUES.md), measured and closed in
+the same sitting.** `check-gaps.py`'s BUILD ORDER section asks *does every step docs/27 names have
+code and a test* — not *does every brain module have a test*. A module above the fourteen is invisible
+to it. **Measured with an AST walk over every suite: exactly ONE of the 145 was imported by no suite
+at all, and it was `heron_audit`.** A single instance, not a class — said plainly rather than left as
+a suspicion. The *THE BRAIN* section now asks the question too, and an untested module goes on the
+UNFINISHED list by name. **A filename match would have reported six gaps that are not there** — six
+modules have no suite of their own name and every one is well covered, `heron_fragment` by forty
+suites — so it resolves imports, not names.
+
+**Live-path brain modules read: 8 of 53.** Next: `heron_gaps` (read in passing for this row, not
+marked), then `heron_capability`.
+
+### 2026-09-21 (last) — THE LEDGER SAID 142 FILES HAD BEEN READ; 113 HAD
+
+**[Row 5b-90](FRAGMENT-ISSUES.md). FIXED.** Found while marking eight modules for row 5b-89 that had
+only been read at one function.
+
+**Thirty of the 142 files `docs/REVIEW-LEDGER.tsv` counted as read carried notes opening *"PARTIAL
+READ and said so"*** — honest prose, written by sessions doing the right thing, **in a column nothing
+counts**. `AGENTS.md` sends people to `python tools/review-ledger.py` for how much of the repository
+has been read, and section 5b of `FRAGMENT-ISSUES.md` closes with *"A short table means nothing
+without the second number: it cannot tell you whether little was found or little was looked at."*
+**That second number is this one, and it was soft by 21%.**
+
+**It is a seventh column, not a third verdict.** `partial` as a verdict would have dropped **nineteen
+real findings** out of *read, issue found* to fix a count — 19 of the 30 carry a defect row as well.
+How much was read and what was found are separate questions about the same file, so `scope` holds
+`full` or `part` beside the verdict.
+
+The summary now separates **opened at all** from **READ WORD BY WORD**, and says which line is the
+one `AGENTS.md` asks for. **`--part` refuses without a `--note`** saying which part: a part-read mark
+nobody can resume is *worse* than no mark, because it takes the file out of the never-opened queue
+and puts nothing in its place.
+
+**Nothing was rewritten.** The ledger is append-only and `tests/test_review_ledger.py` §3 holds that,
+so each of the 29 still in scope got a **new row naming whose read it was** — re-classifying somebody
+else's mark is not reading the file again and must not read as if it were. A row written before the
+column has six cells and means `full`; a scope nobody defined is **malformed rather than assumed
+safe**, the rule the verdict column already had.
+
+**Shown to fail: 6 checks** in a new §7. **Two of its nine pass against the old tool for the wrong
+reason** — a seven-cell row is refused there as the wrong cell count, which happens to give the right
+answer — and that is recorded rather than counted as proof.
+
+**AND THE FIRST DRAFT CRASHED INSTEAD OF FAILING, FOR THE FOURTH TIME IN ONE DAY.** It named
+`RL.PART`, which the old tool has not got. Rows 5b-85, 5b-88, 5b-89 and 5b-90 are **one mistake made
+four times, twice after the lesson was written down** — so this time it went into a house rule rather
+than another paragraph: **[`.claude/skills/heron-ship`](../.claude/skills/heron-ship/SKILL.md) §2a**
+now carries *a fix is not proved until its test has been seen to FAIL*, the `getattr` and
+`__code__.co_argcount` forms that ask before they call, and the table of all four.
+
+**Read this before writing a negative proof.** That section is the only thing standing between the
+next session and a fifth.
+
+**That `heron_audit` note is now [row 5b-91](FRAGMENT-ISSUES.md) below, fixed, with a suite.**
+
+**Live-path brain modules read: 7 of 53**, and `brain/heron_audit.py` read but not yet marked.
+
+### 2026-09-21 (latest) — ONE GATE, NINE SURFACES, AND THE SAME WRONG SENTENCE TO ALL OF THEM
+
+**[Row 5b-89](FRAGMENT-ISSUES.md). FIXED.** `brain/heron_flags.py`, the **seventh** live-path brain
+module. `origin_allowed()` is Golden Rule 19's gate — *"permission comes from the user, through
+Heron's own UI, per action"* — and it fails closed correctly on everything that is not the user.
+
+**It is not the flag agent's private check.** An AST walk over `brain` and `mcp` finds it called in
+**nine** places: `heron_configuration`, `heron_update`, `heron_dependencies`, `heron_brain_init`,
+`heron_rag_init`, `heron_tooling`, `heron_safemode` and `mcp/server/heron_register` all borrow it
+rather than keeping a second copy. That is right, and `tests/test_safemode.py` §6 says so in as many
+words.
+
+**What came back with it was a sentence about flipping a flag.** Run end to end, entering Safe Mode
+from a document is refused with *"...and a flag flip is the shortest path from a sentence somebody
+else wrote to a write in a live model"*. Nothing was flipping a flag. All eight borrowers write a
+correct `proposal` naming their own act and then hand the reader a `why` about somebody else's — and
+one of the nine is on the MCP side, so the wrong sentence reaches a modeller's conversation.
+
+**And the suites checked the half that was right**: both assert the refusal CODE and the words *"data,
+never instruction"*, which is the ORIGIN half and was correct throughout. Nothing read the rest of the
+sentence. That is [rows 5b-80 and 5b-85](FRAGMENT-ISSUES.md) again.
+
+**FIXED**: `origin_allowed(origin, action=None)`, with nine call sites naming their own act. The
+default is `an ADMIN action` — **vague rather than wrong**, because naming the wrong act sends a
+reader off to check something they were never doing. Behaviour untouched. **The check that stops it
+returning is derived**: `tests/test_flags.py` §3b walks both trees with `ast` and asserts every caller
+names its act, so a new ADMIN surface that forgets goes red the day it is added. **Shown to fail: 13
+checks** across the two suites.
+
+**THE FIRST DRAFT CRASHED INSTEAD OF FAILING — THE THIRD TIME TODAY.** Calling the two-argument form
+against the old module raised `TypeError` and sections 4 to 8 never ran. It asks `__code__.co_argcount`
+first now. Rows [5b-85](FRAGMENT-ISSUES.md), [5b-88](FRAGMENT-ISSUES.md) and this one are the same
+lesson: **a check written against a name or a signature the module may not have must ASK before it
+calls.** Three in one day is a habit, not an accident.
+
+**RECORDED, NOT FIXED — two for the next session.**
+
+1. **`python tools/review-ledger.py` says *read 142 of 1180*, and 30 of those 142 were only PARTLY
+   read.** The word `PARTIAL` lives in a free-text note, so the headline cannot tell a full read from
+   a partial one, and `AGENTS.md` sends people to that number for exactly this question. A count
+   derived from prose is guessed, not derived. **Not done in that change**; it needed the 30
+   re-marked, and widening it would have stopped it being reviewable. **DONE in the next one — see
+   [row 5b-90](FRAGMENT-ISSUES.md) below**, and it is a seventh column rather than a third verdict,
+   because 19 of the 30 also carry a defect row.
+2. **`brain/heron_audit.record()` says NEVER FATAL in capitals and lets three exceptions out.** Its
+   `numbers` loop does `int(value)` **outside** the `try`, so `ms="fast"` raises `ValueError`,
+   `float("nan")` raises `ValueError` and `float("inf")` raises `OverflowError` — which is not even in
+   the except list. **Not reachable today**: every live caller passes `len(...)` or a `rowcount`. It is
+   a hardening, and the early `return False` when there is nowhere to write means it can only ever
+   fire on a machine where the trail really writes.
+
+**Live-path brain modules read: 7 of 53.** Next: `heron_gaps`, `heron_audit` (see above), then
+`heron_capability`.
+
+### 2026-09-21 (newest) — THE COST AGENT THAT READ THE CORPUS TWICE
+
+**[Row 5b-88](FRAGMENT-ISSUES.md). FIXED.** `brain/heron_classify.py`, the **sixth** live-path brain
+module. Its `_shape()` reads `SNIFF = 8192` bytes to decide text or binary, under a comment saying the
+bound is there because it is *"small enough that a folder of large binaries costs nothing"* — and then
+called `json.load` on the **whole file** for every file that came back text. **The bound protected
+binaries and not text, which is the half this agent actually walks.**
+
+**Why it is worth a row rather than a shrug: cost is this file's own argument.** Its docstring is
+headed *"THE COST PROBLEM IS THE DESIGN PROBLEM, AND IT IS WRITTEN DOWN"*, quotes
+[19 §96](19-context-and-cost.md) — *"Batch classification of 20,000 fragments should not run on a
+frontier model"* — and groups files so sixty-one thousand become a handful of questions. It reports
+the question count **so nobody has to guess what a run will cost**, and then read the corpus twice
+without saying so. And its input is **somebody else's repository**, which is the one place a 120 MB
+log or SQL dump is ordinary.
+
+**Measured twice, and the numbers are the deliverable.**
+
+| | old | new |
+|---|---|---|
+| 120 MB of prose starting with `t` | read in full, **240 MB peak**, 0.12s warm | **not opened** |
+| this repository, bytes read | **30.27 MB** | **11.50 MB** |
+| this repository, files opened twice | **2,127** of 2,127 | **7** |
+
+**The head test is sound, not a heuristic**, which is the only reason it may decide anything: RFC 8259
+says a JSON text is one value, and every value begins with `{`, `[`, a quote, `-`, a digit, or the
+exact words `true`, `false`, `null`. A file inside the sniff is parsed from the bytes already in hand;
+a larger one whose head cannot begin a value is rejected on that head; **only a large file that really
+does start like JSON is read in full**, and that is the one case where reading it is the only way to
+know.
+
+**Equivalence was proved BEFORE the cost was** — 22 cases through both paths, including the near-misses
+`truthy`, `nullify` and `for the record`: **cases where the answer changed: 0.**
+
+**THE TEST COUNTS OPENS RATHER THAN SECONDS.** A timing assertion would be flaky on somebody else's
+machine. `tests/test_classify.py` §8 swaps a counting `io` into the module and asserts how many times
+each fixture is opened, end to end through `_shape`. **Shown to fail: 20 checks go red** against the
+module as it stood.
+
+**AND I REPEATED [ROW 5b-85](FRAGMENT-ISSUES.md)'S OWN MISTAKE THREE ROWS LATER.** The first draft of
+that section read `CLS.JSON_STARTS` directly, so against the old module it raised `AttributeError` and
+the remaining checks never ran — **one traceback where there were twenty failures to report**. Same
+lesson, same day, same session, three rows apart. `getattr` with a default now, **and the reason is
+written beside it in the suite**, because knowing the lesson and reaching for it are evidently two
+different things. If you write a check against a name the module may not have, use `getattr`.
+
+**Gates: all ten green.** `check-routing` and `check-intrusion` exit **2** on a Linux container until
+`HERON_KNOWLEDGE` points at a folder — an empty one is enough — and then exit 0. That is the machine,
+not the change, and it has now cost time twice.
+
+**Live-path brain modules read: 6 of 53.** Next: `heron_flags`, `heron_gaps`, `heron_audit`.
+
 ### 2026-09-21 (end of session) — A FOURTH MODULE WITH NOTHING WRONG, AND A FIFTH WITH A TABLE THE CODE OUTGREW
 
 **[Row 5b-87](FRAGMENT-ISSUES.md). FIXED.** `brain/heron_contract.py` — the module **all 249 other

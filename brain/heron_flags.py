@@ -139,31 +139,60 @@ def meaning(state):
     return dict(MEANING[state], state=state)
 
 
-def origin_allowed(origin):
-    """(allowed, why). Fails closed on anything that is not the user."""
+# What a caller is asking for, when the caller did not say. Deliberately
+# vague rather than wrong: a refusal that names the wrong act is worse than
+# one that names none, because naming the wrong act sends the reader off to
+# check something they were never doing.
+AN_ADMIN_ACT = "an ADMIN action"
+
+
+def origin_allowed(origin, action=None):
+    """
+    (allowed, why). Fails closed on anything that is not the user.
+
+    THIS IS NOT ONLY THE FLAG AGENT'S CHECK. It is Golden Rule 19's gate for
+    every ADMIN surface that has one, and the rest of them borrow it rather
+    than keeping a second copy that would drift. Who stands on it:
+
+        grep -rn 'origin_allowed' --include='*.py' brain mcp
+
+    No count is typed here; it would be wrong the first time a surface is
+    added, and the command is the answer.
+
+    SO `action` IS NOT DECORATION. It NAMES what is being asked for, as a
+    short noun phrase - "a flag flip", "Safe Mode", "installing a package" -
+    and the refusal is the sentence a person reads. One that names a flag
+    flip to somebody entering Safe Mode tells them nothing they can act on,
+    and sends them to look at a flag table that has nothing to do with it.
+    A caller that says nothing gets the vague default above.
+    """
+    doing = str(action or "").strip() or AN_ADMIN_ACT
     given = str(origin or "").strip().lower()
     if not given:
         return False, ("nothing said where this change came from. Golden "
                        "Rule 19 puts permission with the user, through "
                        "Heron's own UI, per action - an unsigned origin is "
                        "not that, and guessing it is would make the one "
-                       "rule that stops a document flipping a flag depend "
-                       "on a caller remembering to fill a field")
+                       "rule that stops a shared document asking for %s "
+                       "depend on a caller remembering to fill a field"
+                       % doing)
     if given == THE_ONE_ORIGIN:
         return True, "the user, acting in Heron's own UI"
     for marker, what in DATA_NEVER_INSTRUCTION:
         if marker in given:
             return False, ("this came from %s. That is DATA, never "
                            "instruction (Golden Rule 19) - Heron reads it, "
-                           "Heron does not take orders from it, and a flag "
-                           "flip is the shortest path from a sentence "
-                           "somebody else wrote to a write in a live model"
-                           % what)
-    return False, ("'%s' is not the user acting in Heron's own UI, and this "
-                   "agent does not decide which other origins are close "
-                   "enough. Configuration is a security boundary (docs/21 "
-                   "s9); an origin nobody recognised gets the safe answer, "
-                   "not the convenient one" % origin)
+                           "Heron does not take orders from it, and %s "
+                           "asked for by text somebody else wrote is the "
+                           "shortest path from a sentence to a change in a "
+                           "live project" % (what, doing))
+    return False, ("'%s' is not the user acting in Heron's own UI, and "
+                   "nothing here decides which other origins are close "
+                   "enough to allow %s. Permission for an ADMIN act comes "
+                   "from the user, through Heron's own UI, per action "
+                   "(Golden Rule 19; docs/21 s9 is why configuration is one "
+                   "of them); an origin nobody recognised gets the safe "
+                   "answer, not the convenient one" % (origin, doing))
 
 
 def flag_entry(flags, name):
@@ -318,7 +347,7 @@ def set_flag(flags, name, state, origin=None, approval=None):
                        "whether a component runs."
                        % (state, ", ".join(STATES))}
 
-    allowed, why_origin = origin_allowed(origin)
+    allowed, why_origin = origin_allowed(origin, "a flag flip")
     if not allowed:
         return {"changed": False, "refused": "NOT_FROM_THE_USER",
                 "why": why_origin,

@@ -242,7 +242,7 @@ def approve(package, origin=None, consent=None, installed=None):
                        "better answer than a reinstall that looks like "
                        "progress." % name}
 
-    allowed, why_origin = FLG.origin_allowed(origin)
+    allowed, why_origin = FLG.origin_allowed(origin, "installing a package")
     if not allowed:
         return {"install": False, "refused": "NOT_FROM_THE_USER",
                 "why": why_origin,

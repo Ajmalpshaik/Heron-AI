@@ -128,6 +128,32 @@ def main():
                   "keep in step")
 
             print()
+            print("3b. every reason for wanting it is kept - row 5b-94")
+            # `want()` is what turns "we have no fragment for that" from a
+            # silence into a finding, and it used to keep only the LAST
+            # caller's reason. Measured: three different things wanting one
+            # capability left one sentence, and the one that survived was
+            # `heron_brain.resolve()`'s generic "asked for by name" - so one
+            # person asking erased which skills were blocked. The more people
+            # asked, the less the report could say about who needed it.
+            CAP.want(store, "TRACE_SYSTEM_TEMPERATURE", "needed by skill alpha")
+            CAP.want(store, "TRACE_SYSTEM_TEMPERATURE", "needed by skill beta")
+            CAP.want(store, "TRACE_SYSTEM_TEMPERATURE",
+                     "asked for by name and no fragment provides it")
+            CAP.want(store, "TRACE_SYSTEM_TEMPERATURE", "needed by skill alpha")
+            said = dict(CAP.gaps(store)).get("TRACE_SYSTEM_TEMPERATURE", "")
+            for one in ("alpha", "beta", "asked for by name"):
+                check(one in said,
+                      "the reason naming %r survived (%r)" % (one, said[:70]))
+            reasons = getattr(CAP, "wanted_by", lambda w: [w])(said)
+            check(len(reasons) == 3,
+                  "three distinct reasons, and the repeat did not make a "
+                  "fourth (%d)" % len(reasons))
+            check(said.count("alpha") == 1,
+                  "a caller looping over every skill does not grow the cell "
+                  "every run")
+
+            print()
             print("4. Risk is derived, and disagreement is a DEFECT")
             add(store, "FRG-SEL-901", "MOVE_THINGS", risk="MODIFY",
                 kind="action", domain="revit.geo")

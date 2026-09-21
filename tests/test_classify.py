@@ -31,9 +31,15 @@ WHAT IT PROVES
   6. AN UNANSWERED GROUP IS NAMED, NOT DROPPED.
 
   7. EVERY FAILURE THE CONTRACT DECLARES IS NAMED AND REACHED.
+
+  8. THE JSON CHECK READS NO MORE THAN IT MUST, AND ANSWERS THE SAME.
+     Proved by COUNTING THE OPENS, not by timing: a file too big for the
+     sniff whose head cannot begin a JSON value is never opened a second
+     time, and one that really does start like JSON still is. Row 5b-88.
 """
 
 import io
+import json
 import os
 import shutil
 import sys
@@ -63,6 +69,46 @@ def write(where, at, text, binary=False):
     mode, data = ("wb", text) if binary else ("w", text)
     with io.open(full, mode, **({} if binary else {"encoding": "utf-8"})) as h:
         h.write(data)
+
+
+class CountingIO(object):
+    """
+    `io`, but it remembers which paths were opened through it.
+
+    Row 5b-88 is a claim about how much gets READ, and a timing test for
+    that is a flaky test. This counts instead: dropped in as the module's
+    `io`, it makes "it did not open the file again" something a check can
+    assert. It delegates everything - the bytes are the real bytes.
+    """
+
+    def __init__(self):
+        self.opened = []
+
+    def open(self, path, *args, **kwargs):
+        self.opened.append(path)
+        return io.open(path, *args, **kwargs)
+
+
+def opens_during_shape(path):
+    """(the shape card, how many times `path` was opened to get it)."""
+    counter = CountingIO()
+    real = CLS.io
+    CLS.io = counter
+    try:
+        card = CLS._shape(path)
+    finally:
+        CLS.io = real
+    return card, counter.opened.count(path)
+
+
+def parses_the_old_way(path):
+    """What _shape used to do: json.load the whole file, every time."""
+    try:
+        with io.open(path, encoding="utf-8") as handle:
+            json.load(handle)
+        return True
+    except (ValueError, IOError, OSError, UnicodeDecodeError):
+        return False
 
 
 def main():
@@ -212,6 +258,60 @@ def main():
               "and every one was reached above%s"
               % ("" if not unreached else ": %s" % ", ".join(unreached)))
         check(len(answer["unjudged"]) == 5, "five things are left unjudged")
+
+        print("\n8. the JSON check reads no more than it must (row 5b-88)")
+        # One open is the sniff, which every text file pays and which is
+        # bounded. A SECOND open is the whole file being read, and that is
+        # the cost row 5b-88 is about. Sizes are just over SNIFF - the
+        # claim is about opens, so it holds at 100 KB and at 100 GB alike.
+        pad = "the duct run above the corridor ceiling was rerouted. "
+        big = CLS.SNIFF * 12
+        cases = os.path.join(yard, "sizes")
+        os.makedirs(cases)
+        filler = (pad * ((big // len(pad)) + 1))[:big]
+        write(cases, "small.json", '{"revit": "2024"}')
+        write(cases, "small.txt", "Ducts shall be insulated.")
+        write(cases, "big-prose.txt", filler)
+        write(cases, "big-truthy.txt", "truthy " + filler)
+        write(cases, "big-true.txt", "true")
+        write(cases, "big.json", '{"pad": "%s"}' % filler)
+        write(cases, "big-broken.json", '{"pad": "%s' % filler)
+
+        # name, does it parse, how many opens it may cost
+        expected = (("small.json", True, 1),
+                    ("small.txt", False, 1),
+                    ("big-prose.txt", False, 1),
+                    ("big-truthy.txt", False, 1),
+                    ("big-true.txt", True, 1),
+                    ("big.json", True, 2),
+                    ("big-broken.json", False, 2))
+        for name, parses, allowed in expected:
+            full = os.path.join(cases, name)
+            card, opens = opens_during_shape(full)
+            check(card["json"] is parses,
+                  "%s parses as JSON: %s" % (name, parses))
+            check(card["json"] == parses_the_old_way(full),
+                  "%s gets the SAME answer as reading the whole file"
+                  % name)
+            check(opens == allowed,
+                  "%s costs %d open(s), and the bound is %d"
+                  % (name, opens, allowed))
+
+        # The head test has to be sound, not a guess: every character RFC
+        # 8259 lets a JSON value begin with must be in the module's list,
+        # or a real JSON file larger than the sniff is dropped unread.
+        # getattr, not CLS.JSON_STARTS: a missing name would raise here
+        # and the checks below would never run, turning fifteen readable
+        # failures into one traceback. Same lesson as row 5b-85.
+        starts = getattr(CLS, "JSON_STARTS", "")
+        words = getattr(CLS, "JSON_WORDS", ())
+        for opener in '{[" -0123456789'.replace(" ", ""):
+            check(opener in starts,
+                  "a JSON value may begin with %r, and the module knows"
+                  % opener)
+        check(tuple(sorted(words)) == ("false", "null", "true"),
+              "and the three bare literals are matched whole, so `truthy` "
+              "is not mistaken for `true`")
     finally:
         shutil.rmtree(yard, ignore_errors=True)
 

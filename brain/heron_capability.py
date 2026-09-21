@@ -174,17 +174,60 @@ def rebuild(store):
     return len(seen)
 
 
+# How several reasons for one capability are kept in one column. The table
+# holds one row per capability by design - the gap is the NAME, and that is
+# what docs/18 says is the finding - so the reasons share the cell rather
+# than the row. Distinct ones only: the common caller is a loop over every
+# skill, which would otherwise write the same sentence on every run.
+WHY_JOIN = "; "
+
+
+def wanted_by(why):
+    """The distinct reasons in one stored `why`, in the order they arrived."""
+    found = []
+    for part in str(why or "").split(WHY_JOIN):
+        part = part.strip()
+        if part and part not in found:
+            found.append(part)
+    return found
+
+
 def want(store, name, why):
     """Record that something NEEDS this capability, whether or not it exists.
 
     This is what turns "we have no fragment for that" from a silence into a
     finding. A skill written in Step 14 that needs a capability nobody has
     built says so here, and the gap report reads it.
+
+    EVERY REASON IS KEPT, and that is the whole point of the function. It
+    used to be `ON CONFLICT DO UPDATE SET why = ?`, so the last caller won
+    and the earlier ones were gone. MEASURED 2026-09-21: three different
+    things wanting TRACE_DUCT_SYSTEM - two named skills and a user asking by
+    name - left ONE reason, and it was the least useful of the three.
+    `heron_brain.resolve()` writes the generic "asked for by name and no
+    fragment provides it", so one person asking erased which skills were
+    blocked. The more people asked, the less the gap report could say about
+    who needed it, which is backwards. Golden Rule 14. Row 5b-94.
     """
     ensure_tables(store)
-    store.execute(
-        "INSERT INTO capabilities_wanted (name, why) VALUES (?,?) "
-        "ON CONFLICT(name) DO UPDATE SET why = ?", (name, why, why))
+    why = str(why or "").strip()
+    if not why:
+        # A want with no reason is still a want - the NAME is the finding -
+        # but it must not blank a reason somebody else gave.
+        why = "wanted, with no reason recorded"
+    row = store.execute(
+        "SELECT why FROM capabilities_wanted WHERE name = ?", (name,)).fetchone()
+    if row is None:
+        store.execute(
+            "INSERT INTO capabilities_wanted (name, why) VALUES (?,?)",
+            (name, why))
+    else:
+        reasons = wanted_by(row["why"])
+        if why not in reasons:
+            reasons.append(why)
+            store.execute(
+                "UPDATE capabilities_wanted SET why = ? WHERE name = ?",
+                (WHY_JOIN.join(reasons), name))
     store.db.commit()
 
 

@@ -90,7 +90,7 @@ def plan(wanted, existing=None, origin=None, approval=None):
                        "creates nothing is not a safe one - it is a call "
                        "that did not say what to build."}
 
-    allowed, why_origin = FLG.origin_allowed(origin)
+    allowed, why_origin = FLG.origin_allowed(origin, "setting up the brain's store")
     if not allowed:
         return {"created": False, "refused": "NOT_FROM_THE_USER",
                 "why": why_origin,

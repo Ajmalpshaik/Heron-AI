@@ -163,7 +163,7 @@ def register(server, addins=None, origin=None, approval=None):
                 "proposal": "declare `needs_addin` as major.minor, and "
                             "somebody signs the day it changes."}
 
-    allowed, why_origin = FLG.origin_allowed(origin)
+    allowed, why_origin = FLG.origin_allowed(origin, "registering with a host")
     if not allowed:
         return {"register": False, "refused": "NOT_FROM_THE_USER",
                 "why": why_origin,

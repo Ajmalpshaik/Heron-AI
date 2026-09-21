@@ -13,6 +13,7 @@ Which files have been READ, word by word, and which have not.
     python tools/review-ledger.py --next 20                # what to read next
     python tools/review-ledger.py --mark PATH clean
     python tools/review-ledger.py --mark PATH issue --note 5b-3
+    python tools/review-ledger.py --mark PATH clean --part --note "what is left"
     python tools/review-ledger.py --stale                  # marks that no longer apply
     python tools/review-ledger.py --history PATH           # what this file has been through
 
@@ -87,7 +88,22 @@ LEDGER = os.path.join(ROOT, "docs", "REVIEW-LEDGER.tsv")
 LEDGER_TRACKED = "docs/REVIEW-LEDGER.tsv"
 REGISTER = os.path.join(ROOT, "docs", "FRAGMENT-ISSUES.md")
 
-COLUMNS = ["when", "who", "path", "blob", "verdict", "note"]
+COLUMNS = ["when", "who", "path", "blob", "verdict", "note", "scope"]
+
+# HOW MUCH OF THE FILE WAS READ, WHICH IS NOT THE SAME QUESTION AS WHAT WAS
+# FOUND. Thirty of the 142 files this ledger counted as read carried notes
+# opening "PARTIAL READ and said so" - honest prose, in a column nothing
+# counts - and NINETEEN of those thirty also carry a defect row, so the two
+# facts cannot share one field. The headline said `read 142 of 1180`;
+# AGENTS.md sends people to that number for exactly this question, and a
+# count derived from prose is guessed, not derived. Row 5b-90.
+#
+# A row written before this column existed has six cells and means `full`,
+# which is what it claimed at the time. Nothing is rewritten - the ledger is
+# append-only and tests/test_review_ledger.py s3 holds that - so a file read
+# in part is re-marked with a NEW row saying so.
+SCOPES = ("full", "part")
+FULL, PART = SCOPES
 # WHAT A REFUSAL EXITS WITH. Not 1: nothing FAILED - the tool declined to
 # write a mark it could not stand behind, which is the third state this
 # repository names everywhere else (check-package.py and change-evidence.py
@@ -189,6 +205,10 @@ def read_ledger():
             cells = line.split("\t")
             if cells[0] == "when":
                 continue                      # the header row
+            # Six is a row from before `scope` existed and is not malformed;
+            # it meant a whole file was read, which is what it said.
+            if len(cells) == len(COLUMNS) - 1:
+                cells = cells + [FULL]
             if len(cells) != len(COLUMNS):
                 bad.append((n, line))
                 continue
@@ -202,6 +222,11 @@ def read_ledger():
             # malformed now, so the file returns to the queue and the row is
             # named. Reported by a Codex review on PR #219.
             if row["verdict"] not in VERDICTS:
+                bad.append((n, line))
+                continue
+            # The same rule for `scope`, for the same reason: a word nobody
+            # defined must not fall through to the safe-looking branch.
+            if row["scope"] not in SCOPES:
                 bad.append((n, line))
                 continue
             rows.append(row)
@@ -247,9 +272,15 @@ def state():
     live = set(paths)
     orphans = sorted(q for q in latest if q not in live)
 
+    # ORTHOGONAL TO THE VERDICT, deliberately. Nineteen of the thirty files
+    # read only in part also carry a defect row, so a file can be in `found`
+    # and in `part` at once and both facts are true. Row 5b-90.
+    part = [(p, latest[p]) for p in (clean + [q for q, _ in found])
+            if latest[p]["scope"] == PART]
+
     return {"paths": [p for p in paths if p in now], "now": now,
             "latest": latest, "bad": bad,
-            "clean": clean, "found": found, "stale": stale,
+            "clean": clean, "found": found, "part": part, "stale": stale,
             "unchecked": unchecked, "orphans": orphans, "gone": gone}
 
 
@@ -263,13 +294,17 @@ def by_dir(paths):
 
 def cmd_status(st):
     total = len(st["paths"])
-    read_n = len(st["clean"]) + len(st["found"])
+    opened = len(st["clean"]) + len(st["found"])
+    part_n = len(st["part"])
 
-    out("Files READ word by word - docs/REVIEW-LEDGER.tsv\n")
+    out("Files READ - docs/REVIEW-LEDGER.tsv\n")
     out("  read and clean      %5d" % len(st["clean"]))
     out("  read, issue found   %5d" % len(st["found"]))
     out("  ---------------------------")
-    out("  read                %5d  of %d" % (read_n, total))
+    out("  opened at all       %5d  of %d" % (opened, total))
+    out("  of those, IN PART   %5d   (a start, not a read)" % part_n)
+    out("  READ WORD BY WORD   %5d   <- the number AGENTS.md asks for"
+        % (opened - part_n))
     out("  never opened        %5d" % len(st["unchecked"]))
     out("  STALE - changed     %5d   (read once, edited since - read again)"
         % len(st["stale"]))
@@ -277,9 +312,10 @@ def cmd_status(st):
         out("  tracked, not on disk%5d   (a deletion not staged yet - not counted above)"
             % len(st["gone"]))
     out("")
-    out("  left to read        %5d" % (len(st["unchecked"]) + len(st["stale"])))
+    out("  left to read        %5d   (never opened, STALE, and read in part)"
+        % (len(st["unchecked"]) + len(st["stale"]) + part_n))
 
-    left = st["unchecked"] + st["stale"]
+    left = st["unchecked"] + st["stale"] + [p for p, _ in st["part"]]
     if left:
         out("\nWhere the work is left:")
         counts = by_dir(left)
@@ -291,6 +327,12 @@ def cmd_status(st):
         for p, r in st["found"]:
             note = r["note"] or "(no row number written - find it in 5b)"
             out("  %-60s  %s" % (p, note))
+
+    if st["part"]:
+        out("\nRead IN PART - still owed a full pass, in each mark's own words:")
+        for p, r in st["part"]:
+            out("  %-58s  %s" % (p, (r["note"] or "(the mark does not say "
+                                     "what was left - it should)")[:70]))
 
     if st["orphans"]:
         out("\nRows for files that are no longer tracked (renamed or deleted):")
@@ -308,19 +350,22 @@ def cmd_status(st):
 def cmd_next(st, n):
     # Stale first: those were read once and have changed since, so they are the
     # ones where the ledger is currently telling a session something untrue.
-    queue = st["stale"] + st["unchecked"]
+    queue = st["stale"] + [p for p, _ in st["part"]] + st["unchecked"]
     if not queue:
         out("Nothing left. All %d files in scope have been read at their "
             "current content." % len(st["paths"]))
         return
-    out("Next %d of %d left to read (STALE first, then never opened):\n"
-        % (min(n, len(queue)), len(queue)))
+    out("Next %d of %d left to read (STALE first, then part-read, then "
+        "never opened):\n" % (min(n, len(queue)), len(queue)))
     stale = set(st["stale"])
+    part = set(p for p, _ in st["part"])
     for p in queue[:n]:
-        out("  %-6s %s" % ("STALE" if p in stale else "", p))
+        out("  %-6s %s" % ("STALE" if p in stale else
+                           ("PART" if p in part else ""), p))
     out("\nWhen a file is done:")
     out("  python tools/review-ledger.py --mark <path> clean")
     out("  python tools/review-ledger.py --mark <path> issue --note <5b row>")
+    out("  ... and --part on either, when only some of it was read")
 
 
 def cmd_stale(st):
@@ -393,7 +438,7 @@ def who():
     return w.replace("\t", " ") if w else "unknown"
 
 
-def cmd_mark(path, verdict, note):
+def cmd_mark(path, verdict, note, part=False):
     """
     Record one file as read. Returns 0 when a mark was written, COULD_NOT
     when it refused.
@@ -421,6 +466,17 @@ def cmd_mark(path, verdict, note):
             out("brain yaml keeps its own gates - it is deliberately out of scope.")
         elif not os.path.exists(os.path.join(ROOT, path)):
             out("No such tracked file. Check the spelling, forward slashes.")
+        return COULD_NOT
+    if part and not note:
+        # THE SAME RULE AS `issue`, FOR THE SAME REASON. A part-read mark
+        # with no note says a file was half read and nothing about which
+        # half, so the next session starts from the top anyway - which makes
+        # the mark worth LESS than no mark, because it also stops the file
+        # being offered as never opened.
+        out("--part needs --note saying WHAT WAS READ and what was not.")
+        out("A part-read mark nobody can resume is worse than no mark: it")
+        out("takes the file out of the 'never opened' queue and puts nothing")
+        out("in its place. Nothing was recorded.")
         return COULD_NOT
     if verdict == "issue":
         if not note:
@@ -459,7 +515,7 @@ def cmd_mark(path, verdict, note):
     if not sha:
         return COULD_NOT
     row = [datetime.date.today().isoformat(), who(), path, sha, verdict,
-           (note or "").replace("\t", " ").strip()]
+           (note or "").replace("\t", " ").strip(), PART if part else FULL]
 
     new = not os.path.exists(LEDGER)
     with io.open(LEDGER, "a", encoding="utf-8", newline="\n") as f:
@@ -468,9 +524,12 @@ def cmd_mark(path, verdict, note):
         f.write(u"\t".join(row) + u"\n")
 
     out("Marked %s" % path)
-    out("  %s at %s by %s" % (verdict, sha[:12], row[1]))
+    out("  %s%s at %s by %s"
+        % (verdict, " - READ IN PART ONLY" if part else "", sha[:12], row[1]))
     if verdict == "issue":
         out("  defect row: FRAGMENT-ISSUES.md 5b -> %s" % note)
+    if part:
+        out("  Still owed a full pass - it stays in the queue, marked PART.")
     out("  If this file changes, the mark goes stale by itself.")
     return 0
 
@@ -481,12 +540,15 @@ def main():
     ap.add_argument("--mark", nargs=2, metavar=("PATH", "VERDICT"),
                     help="record that PATH was read: clean | issue")
     ap.add_argument("--note", default="", help="row number in FRAGMENT-ISSUES.md 5b")
+    ap.add_argument("--part", action="store_true",
+                    help="only SOME of the file was read - --note must say "
+                         "which part, and it stays in the queue")
     ap.add_argument("--stale", action="store_true", help="marks that no longer apply")
     ap.add_argument("--history", metavar="PATH", help="what one file has been through")
     a = ap.parse_args()
 
     if a.mark:
-        return cmd_mark(a.mark[0], a.mark[1], a.note)
+        return cmd_mark(a.mark[0], a.mark[1], a.note, a.part)
     if a.history:
         cmd_history(a.history.replace("\\", "/").strip())
         return 0
