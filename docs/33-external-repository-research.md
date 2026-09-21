@@ -173,8 +173,9 @@ visible from a project page. That is [Q-53](OPEN-QUESTIONS.md).
    `positive_samples.json` and `negative_samples.json`** — [D-30](DECISIONS.md)'s own structure.
 5. **Everything else is already here, correctly, or is rejected with a reason.**
 
-**None of this goes in front of the proving pass.** 218 fragments have never met a model, that is the
-critical path, and every row above runs on any machine at any time.
+**None of this goes in front of the proving pass.** 68 of the 395 fragments are `DRAFT`, that is the
+critical path, and every row above runs on any machine at any time. This line said **218** until
+2026-09-21, which was the figure on the day it was written and had stopped being the argument it makes.
 
 ---
 

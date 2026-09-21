@@ -545,6 +545,153 @@ else:
                                       '%d (grep risk: and heron-status: in '
                                       'brain/fragments)' % real))
 
+
+    # ---------- THE SAME CLAIM IN OTHER WORDS ----------
+    #
+    # Every check above matches ONE wording, deliberately, because a loose
+    # pattern fires on the logs. The cost of that is a hole per synonym, and
+    # four claims fell through it: CONTRIBUTING.md said "193 fragments have
+    # still never met a model" (row 5b-50) while the gate above read the
+    # README's "68 of the 395 fragments are `DRAFT`" and passed; docs/32 and
+    # docs/33 both said "218 fragments have never met a model"; and README's
+    # own "The other 66 have still never met a model" sat two lines under a
+    # freshly re-derived 327 of 395.
+    #
+    # AND ONE OF THEM WAS INVISIBLE TWICE OVER. README's claim breaks across
+    # a line ending in "The other 66 have", so a per-LINE check cannot see it
+    # even with the right wording - the same shape as row 5b-36, where a
+    # refusal's sentence was split across two adjacent string literals and a
+    # source grep reported 2 of 3.
+    #
+    # So these read a SENTENCE, flattened across newlines, and the history
+    # and quotation rules are applied to the sentence rather than the line.
+    # Sentence, not paragraph: a table is one paragraph, and one historical
+    # row in it would switch the check off for every row beside it.
+    BREAK = re.compile(r'(?<=[.!?])\s+|\s*\|\s*')
+
+    def sentences(text):
+        """(first line, sentence, whole block, offset in block) each."""
+        found, start, held = [], 1, []
+
+        def flush():
+            block = ' '.join(held)
+            at = 0
+            for one in BREAK.split(block):
+                where = block.find(one, at)
+                if where < 0:
+                    where = at
+                if one.strip():
+                    found.append((start, one, block, where))
+                at = where + len(one)
+
+        for n, line in enumerate(text.split('\n'), 1):
+            if line.strip():
+                if not held:
+                    start = n
+                held.append(line)
+            elif held:
+                flush()
+                held = []
+        if held:
+            flush()
+        return found
+
+    def a_claim(block, at):
+        """False when the match opens inside a quotation - a citation.
+
+        COUNTED FROM THE START OF THE TABLE CELL, not of the block. A
+        register section is ONE block of several hundred rows, so parity
+        taken from its start is the parity of everything above rather than
+        of the sentence in hand - and it reported six citations in
+        FRAGMENT-ISSUES as claims the first time this ran. A quoted
+        sentence never spans a cell boundary: the row format escapes an
+        inner pipe as \\|, which is its own gate.
+        """
+        cell = block.rfind('|', 0, at) + 1
+        return block.count('"', cell, at) % 2 == 0
+
+    if status:
+        MET = re.compile(r'(\d+)\s+(?:of them\s+|fragments\s+)?'
+                         r'(?:have|has)\s+(?:still\s+)?never met a model',
+                         re.I)
+        PROOF = re.compile(r'(\d+)\s+of\s+the\s+(\d+)\s+carry a recorded '
+                           r'proof', re.I)
+        for p in md:
+            if '/work-notes/' in p or '/handover-archive/' in p:
+                continue
+            for i, one, block, off in sentences(allsrc.get(p, '')):
+                if HISTORY.search(one):
+                    continue
+                for m in MET.finditer(one):
+                    if not a_claim(block, off + m.start()):
+                        continue
+                    real = status.get('DRAFT', 0)
+                    if int(m.group(1)) != real:
+                        drift.append((p, i, '%s never met a model'
+                                      % m.group(1),
+                                      '%d DRAFT (grep heron-status: in '
+                                      'brain/fragments)' % real))
+                for m in PROOF.finditer(one):
+                    if not a_claim(block, off + m.start()):
+                        continue
+                    real = status.get('PROVEN', 0)
+                    if int(m.group(1)) != real:
+                        drift.append((p, i, '%s carry a recorded proof'
+                                      % m.group(1),
+                                      '%d PROVEN (grep heron-status: in '
+                                      'brain/fragments)' % real))
+                    if int(m.group(2)) != total:
+                        drift.append((p, i, 'of the %s' % m.group(2),
+                                      '%d (ls brain/fragments)' % total))
+
+    # ---------- THE WRITE PATH, ANSWERED BY THE REGISTER RATHER THAN BY A
+    # ---------- SENTENCE
+    #
+    # "The write path has never been compiled or run" was hunted three times
+    # - rows 5b-26, 5b-37 and 5b-44 - and each hunt grepped THE WORDING IT
+    # HAD JUST FIXED. Row 26 found four copies and closed with "WHAT WAS NOT
+    # CHECKED: whether the same claim appears in the numbered documents under
+    # docs/ IN A FORM THE GREP MISSED". Row 44 found the seventh and called
+    # itself the last. Three more were sitting in README.md, docs/README.md
+    # and docs/27-build-order.md, saying "never loaded into Revit" and "never
+    # moved anything" - row 5b-54.
+    #
+    # A fourth hunt would find the fourth wording and miss the fifth. So this
+    # asks the REGISTER instead: while NEEDS-CHECKING records B8 as a dated
+    # PASS - Revit 2024, three ducts moved 200 mm, 2026-09-07 - no live
+    # sentence may say the write path has never run. Strike B8 through
+    # differently and this check turns itself off, which is correct: it is
+    # then no longer a settled fact.
+    #
+    # docs/DECISIONS.md is exempt BY NAME and for a reason: D-19's Context
+    # records the conditions the decision was taken under - "written on a
+    # machine with no Revit, no Windows and no .NET SDK" - and rewriting that
+    # is rewriting history rather than correcting a claim.
+    b8 = re.search(r'^\|\s*~~\*\*B8\*\*~~.*$',
+                   allsrc.get(os.path.join(root, 'docs',
+                                           'NEEDS-CHECKING.md').replace(
+                       os.sep, '/'), ''), re.M)
+    moved = re.search(r'\*\*PASSED\s+(\d{4}-\d{2}-\d{2})', b8.group(0)) \
+        if b8 else None
+    if moved:
+        NEVER = re.compile(r'never loaded into revit'
+                           r'|never (?:been )?moved anything'
+                           r'|never (?:been )?run against a real model', re.I)
+        for p in md:
+            short = p[len(root):].lstrip('/') if p.startswith(root) else p
+            if ('/work-notes/' in p or '/handover-archive/' in p
+                    or short == 'docs/DECISIONS.md'):
+                continue
+            for i, one, block, off in sentences(allsrc.get(p, '')):
+                if HISTORY.search(one):
+                    continue
+                for m in NEVER.finditer(one):
+                    if not a_claim(block, off + m.start()):
+                        continue
+                    drift.append((p, i, "'%s'" % m.group(0),
+                                  'B8 in NEEDS-CHECKING.md: PASSED %s, three '
+                                  'ducts moved 200 mm' % moved.group(1)))
+
     if drift:
         for p, i, said, real in drift:
             out("  DRIFT: %s:%d says '%s'; the source says %s\n" % (p, i, said, real))

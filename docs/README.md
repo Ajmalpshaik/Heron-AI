@@ -1,9 +1,12 @@
 # Heron AI — Documentation Index
 
 > **Status:** **Phase 0 is complete** — Steps 1 to 5, proven in real Revit 2020 and 2024. **Step 6 (the
-> first write) and the whole of Phase 2 (Steps 7 to 14) are built, compile on all eight releases, and
-> have never loaded into Revit.** **All ten skills are `DRAFT`; 327 of the 395 fragments are `PROVEN`
-> as of 2026-09-19** — this line said *every fragment is `DRAFT`* long after that stopped being true, so
+> first write) has run once**: three ducts moved 200 mm in Revit 2024 on 2026-09-07
+> ([B8](NEEDS-CHECKING.md)), and what is still owed is a tape measure on the result — `D3`. **Phase 2
+> (Steps 7 to 14) is built and barely proven.** This line said both *"have never loaded into Revit"*
+> until 2026-09-21, a fortnight after the first write ([row 5b-54](FRAGMENT-ISSUES.md)).
+> **All ten skills are `DRAFT`; 327 of the 395 fragments are `PROVEN`
+> as of 2026-09-21** — this line said *every fragment is `DRAFT`* long after that stopped being true, so
 > derive it: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 >
 > **Do not trust this paragraph over the tool.** `python tools/check-gaps.py` is computed from disk on

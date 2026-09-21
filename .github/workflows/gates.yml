@@ -367,7 +367,10 @@ jobs:
           done
 
   tests:
-    name: Every suite, against the known-failure list
+    # The name said "against the known-failure list" while the list was a
+    # known-NOT-RUNNABLE one, which is the same defect one line up from
+    # its own fix. A job's name is what a reader sees on the board.
+    name: Every suite, and NOT RUN kept apart from FAILED
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
