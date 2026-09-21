@@ -10,6 +10,11 @@
 
 ## What this folder is
 
+> **This folder is Phase 1 of three** — see [`05-phases.md`](05-phases.md). Phase 2 brings AJ AI's
+> chat-to-fix and chat-to-create across and ports the AJ Tools tools onto Heron fragments; Phase 3 has
+> not been told yet and reaches back into Phase 2, so Phase 2 is not designed in detail until it is.
+
+
 Heron today is **one tab with three buttons**. This folder plans the step from that to **several Heron
 products**, each its own Revit tab, and **one installer window** that installs whichever ones the user
 ticks.
@@ -26,6 +31,7 @@ applies — and so that an AI picking this up **reads facts instead of inventing
 | [`02-implementation.md`](02-implementation.md) | **How it gets built.** Ten stages, and what proves each one |
 | [`03-open-questions.md`](03-open-questions.md) | **What is not decided**, and the parking space for new ideas. Two answered and three raised on 2026-09-21 |
 | [`04-lessons-from-aj-tools.md`](04-lessons-from-aj-tools.md) | **What AJ Tools' installer already learned the hard way.** Eight lessons, three of which corrected a row written the day before |
+| [`05-phases.md`](05-phases.md) | **Where this folder sits.** The installer is Phase 1 of three. Phase 2 outlined, Phase 3 not told yet |
 
 ## The three rules of this folder
 
