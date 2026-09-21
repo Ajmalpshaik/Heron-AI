@@ -7,7 +7,7 @@
 
 # The balance of work
 
-> **GENERATED 2026-09-19 18:26 by `python tools/balance-of-work.py --write`.**
+> **GENERATED 2026-09-21 01:22 by `python tools/balance-of-work.py --write`.**
 > **If that stamp is not today, this page is history and not a work list.** Every figure
 > below was read back out of the tool that owns it, and each row names the command that
 > derives it. Nothing here is typed by hand, so where this page and a register disagree,
@@ -23,19 +23,19 @@ business here. When every row does, delete the file and the tool with it.
 
 | # | What is left | Count | Derive it with |
 |---|---|---|---|
-| 1 | **Fragments that have never met a model** — the largest single body of work left | **79** of **395** | `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` |
-| 1a | — of those, never run **in this checkout** — see the warning below | **40** | `python tools/generate-jobs.py` |
-| 1b | — of those, **ready to prove right now**, needing only a Revit session | **14** | `python tools/generate-jobs.py` |
-| 1c | — of those, **structurally blocked**, each with a reason printed | **26** | `python tools/generate-jobs.py` |
+| 1 | **Fragments that have never met a model** — the largest single body of work left | **66** of **395** | `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c` |
+| 1a | — of those, never run **in this checkout** — see the warning below | **66** | `python tools/generate-jobs.py` |
+| 1b | — of those, **ready to prove right now**, needing only a Revit session | **27** | `python tools/generate-jobs.py` |
+| 1c | — of those, **structurally blocked**, each with a reason printed | **39** | `python tools/generate-jobs.py` |
 | 2 | **Skills never proved** | **10** of **10** | `grep -h '^heron-status:' brain/skills/*.yaml \| sort \| uniq -c` |
 | 3 | **Agents left to build** | **2** of **250** | `python tools/agent-count.py` |
-| 4 | **Agent proofs drafted but unsigned** | **4** | `ls brain/agent-proof-drafts/*.yaml` |
-| 5 | **Proving-register rows still open** | **120** of **161** | `python tools/owner-queue.py` |
-| 6 | **Heron's own defects still open** | **31** of **116** | `python tools/open-defects.py` |
-| 7 | **Questions unanswered** | **4** | `python tools/check-docs.py` |
+| 4 | **Agent proofs drafted but unsigned** | **0** | `ls brain/agent-proof-drafts/*.yaml` |
+| 5 | **Proving-register rows still open** | **130** of **187** | `python tools/owner-queue.py` |
+| 6 | **Heron's own defects still open** | **32** of **190** | `python tools/open-defects.py` |
+| 7 | **Questions unanswered** | **0** | `python tools/check-docs.py` |
 | 8 | **Proposals awaiting the owner** | **21** of **22** | `python tools/owner-queue.py` |
-| 9 | **Signatures gone stale — proved, then the code moved under them** | **1** | `python tools/check-signatures.py` |
-| 10 | **Everything waiting on the owner personally**, across three registers | **145** | `python tools/owner-queue.py` |
+| 9 | **Signatures gone stale — proved, then the code moved under them** | **0** | `python tools/check-signatures.py` |
+| 10 | **Everything waiting on the owner personally**, across three registers | **151** | `python tools/owner-queue.py` |
 
 > **ROWS 1a TO 1c ARE ABOUT THIS CHECKOUT, NOT ABOUT THE PROJECT.** They count what has never
 > been run *here*, and `brain/proof-drafts/runs/` is gitignored, so every worktree starts almost
@@ -52,20 +52,12 @@ leave the other untouched.
 
 Every drift this repository has caught was visible in a list and invisible in a total.
 
-**Questions still open:** Q-51, Q-54, Q-55, Q-56
-
-**Defects still open** (`docs/FRAGMENT-ISSUES.md` section 5): 8, 10, 15, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 32, 36, 39, 40, 41, 45, 71, 73, 75, 79, 99, 101, 103, 108, 110, 112, 116, 117
+**Defects still open** (`docs/FRAGMENT-ISSUES.md` section 5): 10, 18, 19, 21, 32, 36, 41, 45, 73, 75, 99, 101, 103, 108, 116, 120, 128, 129, 131, 132, 133, 135, 137, 140, 141, 142, 143, 144, 146, 148, 151, 158
 
 > A row can still say OPEN after a later row has closed it — four did on 2026-09-16, and no
 > pattern finds them. Reading beats grepping here.
 
 **Proposals still open** (`docs/PROPOSALS.md`): F1, F2, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21, F22
-
-**Agent proofs drafted and unsigned:** HERON-REVIT-DIM-031, HERON-REVIT-IMP-019, HERON-REVIT-LVL-027, HERON-REVIT-SHT-029
-
-> These are not waiting on a writer. They are waiting on a model — imports needs a **saved**
-> CAD link, and levels, sheets and annotation need one real project model rather than an
-> arrangement invented for the proof.
 
 ## Work notes still open, and what each is waiting for
 

@@ -147,11 +147,49 @@ def main():
     print()
     print("The add-in's own idea of true")
     for raw, expected in (("true", True), ("TRUE", True), ("1", True), ("yes", True),
-                          ("false", False), ("0", False), ("", False), ("maybe", False)):
+                          ("on", True), (" true ", True),
+                          ("false", False), ("0", False), ("no", False), ("off", False),
+                          ("", False), ("maybe", False)):
         values = dict(cfg.DEFAULTS)
         values["write.enabled"] = raw
         check(cfg.writing_enabled(values) is expected,
               "write.enabled=%r is %s" % (raw, expected))
+
+    print()
+    print("ONE SETTINGS FILE, TWO READERS, ONE VOCABULARY")
+    # THE WORDS, COMPARED AGAINST THE C# THAT READS THE SAME FILE. The keys
+    # were already compared, and the words were not - so on 2026-09-21 the
+    # add-in learned `on` and `off` and a fallback for anything it does not
+    # recognise (FRAGMENT-ISSUES section 5b row 8) while this side went on
+    # reading `on` as false. `write.enabled = on` would then have let the
+    # add-in permit a change while the MCP server's health report said
+    # writing was off - two answers from one file, which is the drift the
+    # key comparison above exists to prevent and could not see.
+    cs = io.open(CONFIG_CS, encoding="utf-8").read()
+    body = cs[cs.index("public bool GetBool"):]
+    body = body[:body.index("\n        }")]
+    said = set(re.findall(r'value\.Equals\("([^"]+)"', body))
+    mine = set(cfg.TRUE_WORDS) | set(cfg.FALSE_WORDS)
+    check(said == mine,
+          "GetBool and heron_config know the same %d words%s"
+          % (len(mine), "" if said == mine else
+             " - C# only: %s; Python only: %s"
+             % (sorted(said - mine) or "none", sorted(mine - said) or "none")))
+    check("return fallback;" in body,
+          "and the C# returns the FALLBACK for a word neither understands, "
+          "which is what truthy() mirrors with the declared default")
+
+    print()
+    print("A value nobody can parse is the DEFAULT, in both directions")
+    # write.enabled defaults to false and ui.activityBanner to true, so one
+    # key proves nothing about the other - the bug being guarded against is
+    # exactly an unrecognised value collapsing to false.
+    for key, expected in (("write.enabled", False), ("ui.activityBanner", True)):
+        for raw in ("maybe", "enabled", "2", ""):
+            values = dict(cfg.DEFAULTS)
+            values[key] = raw
+            check(cfg.truthy(values, key) is expected,
+                  "%s=%r falls back to its declared default (%s)" % (key, raw, expected))
 
     print()
     print("A busy timeout longer than the operation timeout is reported")
@@ -187,8 +225,21 @@ def main():
     hot = hp.assess(live=[1], writing=True)
     gate = [c for c in hot.components if c.name == "write gate"][0]
     check(gate.state == hp.WARNING, "an open write gate is a WARNING, never HEALTHY")
-    check("never been proven" in gate.detail,
-          "and it says why - the path has not met a real Revit")
+    # THE CLAIM CHANGED BECAUSE THE WORLD DID, NOT TO GET TO GREEN. This
+    # asserted the words "never been proven" and described them as "the path
+    # has not met a real Revit" - and the path HAS met one: NEEDS-CHECKING
+    # records it moving three ducts under a single undo entry. A test that
+    # pins an expired sentence keeps the sentence alive, which is how the
+    # same claim survived in four files (FRAGMENT-ISSUES section 5b row 26).
+    # What is still true and still worth warning about is the MEASUREMENT -
+    # D3, "move them, then MEASURE one" - so that is what is checked, by
+    # naming the row rather than the prose around it.
+    check("D3" in gate.detail and "measured" in gate.detail.lower(),
+          "and it says why - not that the path is untried, which expired, "
+          "but that nobody has measured what it did")
+    check("never been proven" not in gate.detail
+          and "never been compiled" not in gate.detail,
+          "and it does not repeat a sentence a reader can disprove in a minute")
 
     print()
     print("Health: a healthy system says so briefly")

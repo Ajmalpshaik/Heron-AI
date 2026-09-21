@@ -12,9 +12,17 @@ The safety rails around the first write. Runs without Revit.
 WHAT THIS PROVES AND WHAT IT DOES NOT.
 
 Step 6 is split across two machines by force: the add-in half is C# that only
-Revit can run, and it was written where there is no Revit and no .NET SDK -
-so it has never been compiled, let alone executed. This file tests the half
-that CAN be tested, and it is deliberate about which half that is:
+Revit can run. This paragraph said it "has never been compiled, let alone
+executed", which was true when it was written and is the FOURTH place that
+sentence outlived its facts - the .NET SDK turned out to be one
+`apt-get install dotnet-sdk-10.0` away, `tools/check-compile.py` builds every
+project on Revit 2020 through 2027, and NEEDS-CHECKING records the write path
+moving three ducts under a single undo entry. FRAGMENT-ISSUES section 5b rows
+9 and 26.
+
+What has NOT happened is the measurement: D3, "move them, then MEASURE one",
+is not struck through. This file tests the half that can be tested without
+Revit at all, and it is deliberate about which half that is:
 
     TESTED HERE   reading a distance a person typed, and the document pin
                   and single-use approval that decide whether a write is

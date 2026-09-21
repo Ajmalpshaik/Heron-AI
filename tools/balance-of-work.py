@@ -209,7 +209,13 @@ def collect():
 
     docs = run(["tools/check-docs.py"])
     d["q_open"] = grab(docs, r"ACTUAL:\s*\d+ answered,\s*(\d+) open")
-    d["q_ids"] = grab(docs, r"still open:\s*(.+)")
+    # [ \t]* AND NOT \s*, BECAUSE \s CROSSES A LINE BREAK. When every
+    # question is answered check-docs prints "still open:" with nothing after
+    # it, and \s* then walked to the NEXT line and captured its sentence - so
+    # this page read "Questions still open: agrees with the stated Progress
+    # line", which is not an id and not a question. Found 2026-09-21, the
+    # first day the count reached zero.
+    d["q_ids"] = grab(docs, r"still open:[ \t]*(\S.*)")
     d["stale_sigs"] = grab(docs, r"STALE - signed, then the code changed under it \((\d+)\)")
     # check-signatures.py prints that heading ONLY when something is stale,
     # and "No signature is waiting" when nothing is. Without this second read
