@@ -125,12 +125,6 @@ VECTOR_WEIGHT_BY_BACKEND = {
 QUALITY = {
     "PRODUCTION":  0.00012,
     "PROVEN":      0.00010,
-    # Between VALIDATED and PROVEN, which is where docs/24 puts it. Missing
-    # here until 2026-09-21, and QUALITY_SPAN below indexes this table by
-    # every status in OFFERABLE - so the two gaps were load-bearing on each
-    # other: adding SHADOW to one without the other raises KeyError at
-    # import. Row 5b-75.
-    "SHADOW":      0.00008,
     "VALIDATED":   0.00006,
     "TESTING":     0.00003,
     "DRAFT":       0.0,
@@ -457,17 +451,7 @@ class Excluded(object):
 # Statuses a fragment may be OFFERED at. DEPRECATED and ARCHIVED are excluded
 # by default: they exist so a record is never destroyed (Golden Rule 4), not so
 # they can be handed back as answers.
-#
-# SHADOW WAS EXCLUDED BY ACCIDENT UNTIL 2026-09-21, WHICH IS A DIFFERENT
-# SENTENCE FROM THE ONE ABOVE. docs/24's permission table puts SHADOW at
-# L3 - VERIFIED, beside PROVEN and allowed to MODIFY with a preview the user
-# accepts - so a fragment running in Shadow Mode was never offered at all,
-# in the module that answers a modeller's request. Two of the ladder's six
-# declarations were short a rung and two of them are in this file;
-# `tests/test_lifecycle_ladder.py` now holds all six against docs/24.
-# FRAGMENT-ISSUES row 5b-75.
-OFFERABLE = ("DISCOVERED", "DRAFT", "TESTING", "VALIDATED", "SHADOW",
-             "PROVEN", "PRODUCTION")
+OFFERABLE = ("DISCOVERED", "DRAFT", "TESTING", "VALIDATED", "PROVEN", "PRODUCTION")
 
 # WHAT THE NUDGE CAN ACTUALLY MOVE, DERIVED FROM THE TABLE ABOVE.
 #

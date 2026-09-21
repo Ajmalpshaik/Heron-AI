@@ -89,27 +89,7 @@ def repo_relative(path):
 KINDS = ("filter", "action", "recipe")
 
 # docs/09 section 5. In order: a fragment only ever moves along this list.
-#
-# SHADOW WAS MISSING UNTIL 2026-09-21, AND IT IS NOT AN AGENT-ONLY RUNG.
-# docs/24-trust-model.md is the document that reconciled six lifecycle
-# vocabularies into this one, and it says so in as many words: "SHADOW is the
-# genuinely new stage ... it belongs in the COMMON lifecycle rather than only
-# in the agent one. A *fragment* can shadow too." Its permission table puts
-# SHADOW at L3 - VERIFIED, beside PROVEN, allowed to MODIFY with a preview
-# the user accepts.
-#
-# What the gap did: `can_promote(frag, "SHADOW")` answered "'SHADOW' is not a
-# lifecycle state", and a fragment ALREADY at SHADOW made line 968 raise
-# ValueError from `STATUSES.index`. `tools/check-metadata.py` accepts
-# `Heron-Status: SHADOW` and `brain/heron_deployment.py` promotes through it,
-# so a file could carry it, pass the gate, and break this module.
-# heron_deployment's own words: "The ladder is the trust model; an optional
-# rung is not a rung." FRAGMENT-ISSUES row 5b-75.
-#
-# Nothing carried SHADOW on the day this was fixed, so it was latent rather
-# than live - and it would have bitten on the first day Shadow Mode was used,
-# which is the mechanism Golden Rule 13 and D-84 both lean on.
-STATUSES = ("DISCOVERED", "DRAFT", "TESTING", "VALIDATED", "SHADOW",
+STATUSES = ("DISCOVERED", "DRAFT", "TESTING", "VALIDATED",
             "PROVEN", "PRODUCTION", "DEPRECATED", "ARCHIVED")
 
 # The statuses that mean "this has been shown to work against a real model".

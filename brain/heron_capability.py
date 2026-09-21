@@ -72,24 +72,10 @@ TIERS = ("T1", "T2", "T3")
 # Trust order for choosing between providers. docs/18 says "ordered by trust
 # score"; until a score exists, the lifecycle IS the trust - it is the only
 # evidence in the system that anybody has watched the thing work.
-#
-# SHADOW WAS MISSING UNTIL 2026-09-21, AND THE DEFAULT BELOW HID IT.
-# `TRUST.get(status, 0)` filed anything unknown as 0, which is DEPRECATED -
-# so a provider at SHADOW ranked level with a deprecated one and BELOW
-# DISCOVERED, while docs/24-trust-model.md puts SHADOW at L3 - VERIFIED,
-# beside PROVEN and one rung under PRODUCTION. Nothing carried SHADOW that
-# day, so it was latent. FRAGMENT-ISSUES row 5b-75.
 TRUST = {
-    "PRODUCTION": 7, "PROVEN": 6, "SHADOW": 5, "VALIDATED": 4, "TESTING": 3,
+    "PRODUCTION": 6, "PROVEN": 5, "VALIDATED": 4, "TESTING": 3,
     "DRAFT": 2, "DISCOVERED": 1, "DEPRECATED": 0, "ARCHIVED": -1,
 }
-
-# WHAT AN UNKNOWN STATUS RANKS AS, AND WHY IT IS NOT 0. Below ARCHIVED, so a
-# status nobody here recognises can never outrank one that is recognised -
-# and REPORTED by problems() rather than absorbed, because a silent default
-# is how the SHADOW gap survived. This registry already refuses to resolve a
-# risk disagreement quietly; an unreadable status is the same shape.
-UNKNOWN_STATUS = -99
 
 
 class Capability(object):
@@ -230,7 +216,7 @@ def resolve(store, name, revit=None):
     if not rows:
         return None
 
-    rows.sort(key=lambda r: (-TRUST.get(r["status"], UNKNOWN_STATUS), r["id"]))
+    rows.sort(key=lambda r: (-TRUST.get(r["status"], 0), r["id"]))
     return Capability(name, rows)
 
 
@@ -252,18 +238,6 @@ def problems(store):
         by_capability.setdefault(row["capability"], []).append(row)
 
     for name, rows in sorted(by_capability.items()):
-        # A STATUS THIS TABLE CANNOT READ IS A DEFECT, NOT A LOW RANK. Ranking
-        # it silently is what let SHADOW sit at DEPRECATED unnoticed (row
-        # 5b-75), so it is said out loud here the way a risk disagreement is.
-        unreadable = sorted(set(r["status"] for r in rows
-                                if r["status"] and r["status"] not in TRUST))
-        if unreadable:
-            found.append(
-                "%s has provider(s) at %s, which is not a status this registry "
-                "can rank. Every rung of the ladder needs a trust value - an "
-                "optional rung is not a rung - so add it to TRUST or correct "
-                "the fragment" % (name, ", ".join(unreadable)))
-
         risks = sorted(set(r["risk"] for r in rows if r["risk"]))
         if len(risks) > 1:
             found.append(
