@@ -124,6 +124,39 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-21 — heron_retrieve: A NEGATIVE RESULT, AND A FINDING NOT WRITTEN
+
+**Started `brain/heron_retrieve.py` (1,329 lines, never read) and it is the first live-path module
+this sweep has opened where the answer is "nothing to fix here yet".** Recorded rather than left
+silent, because the next session should not re-derive it.
+
+**Every major claim in it has a named test.** The version wall in `tests/test_retrieve.py` §2 and §7;
+`Contest` has a suite of its own, `tests/test_contest.py`; `find_documents` is exercised by
+`test_document_retrieval.py` and four others; fusion, the quality nudge, weak-match labelling and
+retired-not-offered are §3 to §6. **This is the module that argues hardest and is held best**, which
+is worth knowing after three rows in a row of the opposite.
+
+**A FINDING CHECKED AND DELIBERATELY NOT WRITTEN.** The version wall compares release strings
+**exactly**: `eligible()` splits `row["revit"]` on commas and asks `str(revit) not in supported`, and
+`heron_fragment.supported` does **not** strip. So a declaration carrying a stray space would make a
+fragment silently unavailable on the one release it supports — **silent over-refusal on the rule this
+module calls non-negotiable.**
+
+**It is not a defect today, and the measurements are why.** All **395** fragments were checked: every
+`revit:` entry is a quoted string with **no inner whitespace**, and the stored column reads
+`'2020,2021,...'`. The caller's side is machine-supplied too — `_revit_version()` takes the release
+from `binding.sessions()`, a connected Revit reporting itself, not text anybody types.
+
+**So both sides are generated, and a `.strip()` would be a provable no-op.** Adding it with a row
+saying "fixed" would be [row 5b-95](FRAGMENT-ISSUES.md)'s failure in miniature — a finding
+manufactured out of a shape rather than found in behaviour. **Written here instead**, so if a release
+list ever starts being edited by hand, this is the first place to look.
+
+> **Two near misses in two modules today** — `screen()`'s 80-character cap and this — both looked like
+> violations of a rule stated in capitals, and both were sound on inspection. **A rule stated loudly
+> attracts false positives**, because the reader goes looking for it. Measure the behaviour before
+> writing the row.
+
 ### 2026-09-21 — THE INJECTION GUARD WAS HELD BY A STRING MATCH ON ANOTHER FILE
 
 **[Row 5b-100](FRAGMENT-ISSUES.md). FIXED**, and it is the hundredth row in section 5b.
