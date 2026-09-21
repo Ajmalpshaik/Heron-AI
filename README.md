@@ -189,7 +189,7 @@ Heron Platform        install, update, registry, security, audit — under all t
 | **the owner, or continuing work** | [**HANDOVER.md**](docs/HANDOVER.md) — what exists, what is proven versus merely built, the five things that will bite you, and what is waiting on a decision |
 | **an AI agent** | [**AGENTS.md**](AGENTS.md) — short, and the only file written for you |
 | **a developer** | [**docs/PROJECT-MAP.md**](docs/PROJECT-MAP.md) — which folder owns what, where to start a change, which source wins |
-| **a BIM modeller** | [01 — Vision & Principles](docs/01-vision-and-principles.md), then the Status section above. Reading a model is proven far more widely than changing one — **145 `READ` fragments are `PROVEN` against 166 `MODIFY`**, and `write.enabled` still defaults to `false` |
+| **a BIM modeller** | [01 — Vision & Principles](docs/01-vision-and-principles.md), then the Status section above. **What keeps you safe is the switch, not the library**: `write.enabled` defaults to `false` and stays there until the write path has been through the register. This row said *"reading a model is proven far more widely than changing one"* until 2026-09-21, beside its own two numbers saying the opposite — derive them instead ([row 5b-61](docs/FRAGMENT-ISSUES.md)) |
 | **a BIM manager** | [16 — Version Support](docs/16-version-support-strategy.md) and [12 — Security & Permissions](docs/12-security-and-permissions.md). **Declared support and tested releases are different lists** |
 
 Full routes, with what to read at each stop: [**PROJECT-MAP §E**](docs/PROJECT-MAP.md#e-routes-by-role).

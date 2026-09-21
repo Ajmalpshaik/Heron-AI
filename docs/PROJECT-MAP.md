@@ -221,12 +221,20 @@ Do **not** pick whichever makes the cleanup easier, and do not close a policy co
 [01 — Vision & Principles](01-vision-and-principles.md) → the [README](../README.md) status section →
 [NEEDS-CHECKING.md](NEEDS-CHECKING.md).
 
-What matters to you: **read and write are different things, and they are proven to different depths.**
-Reading is proven far more widely — **106 `READ` fragments carry a proof against 63 `MODIFY`** — and
-`write.enabled` still defaults to `false` whatever the fragment says.
+What matters to you: **read and write are different things, and what keeps you safe is the switch,
+not the library.** `write.enabled` defaults to **`false`** whatever the fragment says, and stays there
+until the write path has been through the register — `D3`, a tape measure on the three ducts it moved
+on 2026-09-07, is still owed.
 
-A fragment marked `DRAFT` **has never met a model.** 185 of 360 at the last count. Derive both rather
-than believing any of those numbers, including these:
+**This paragraph said *"reading is proven far more widely — 106 `READ` fragments carry a proof against
+63 `MODIFY`"* until 2026-09-21, and it was true the day it was written.** The library moved to 145
+against 166 and the sentence stayed, so it had become the opposite of true — in the paragraph written
+for the person deciding whether to trust Heron near their model. It said *185 of 360* are `DRAFT` in
+the same breath. `tools/check-docs.py` can see the *carry a proof* wording now
+([row 5b-61](FRAGMENT-ISSUES.md)).
+
+A fragment marked `DRAFT` **has never met a model.** Derive every one of these rather than believing
+any number typed here:
 
 ```bash
 grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c
