@@ -51,11 +51,42 @@ That sentence is the whole structure. Everything below follows from it.
 
 ## 3. The nine structural decisions
 
-These were taken by the owner in conversation on 2026-09-20. **They are not yet in
-[DECISIONS.md](../../../DECISIONS.md)** — moving them there is Stage 1 of
-[`02-implementation.md`](02-implementation.md).
+These were taken by the owner in conversation on 2026-09-20 and 2026-09-21. **They are now in
+[DECISIONS.md](../../../DECISIONS.md) as D-87 to D-95**, written there on 2026-09-21 — Stage 0 of
+[`02-implementation.md`](02-implementation.md), done.
+
+**DECISIONS.md is the permanent record from here on.** This section stays because the argument for each
+one is written out at length here, and a work note is where an argument is allowed to be long. Where the
+two disagree, **the decision wins and this note is out of date.**
+
+| | Here | Recorded as |
+|---|---|---|
+| **S1** | One product is one Revit tab | [D-87](../../../DECISIONS.md#d-87--one-heron-product-is-one-revit-ribbon-tab) |
+| **S2** | One manifest plus one DLL, its own GUID | [D-88](../../../DECISIONS.md#d-88--one-product-is-one-addin-manifest-plus-one-dll-each-with-its-own-addinid) |
+| **S3** | Custom Install is at tab level | [D-89](../../../DECISIONS.md#d-89--custom-install-is-at-tab-level-and-the-heron-tab-is-the-one-exception) |
+| **S4** | Per-user, never admin | [D-90](../../../DECISIONS.md#d-90--install-stays-per-user-and-never-asks-for-administrator-rights) |
+| **S5** | Files from a signed GitHub release | [D-91](../../../DECISIONS.md#d-91--product-files-come-from-a-signed-versioned-github-release) |
+| **S6** | A button is a front door, not new logic | [D-92](../../../DECISIONS.md#d-92--a-ribbon-button-is-a-front-door-onto-a-proven-fragment-not-new-logic) |
+| **S7** | Three ways in, one engine | [D-93](../../../DECISIONS.md#d-93--the-product-list-is-a-manifest-read-as-data-never-a-list-written-into-the-installer) — the **manifest** half. The three routes are Stage 6 and are **not** recorded yet |
+| **S8** | Install replaces; no upgrade path | [D-94](../../../DECISIONS.md#d-94--install-replaces-there-is-no-separate-upgrade-path) |
+| **S9** | Installing and showing are different | [D-95](../../../DECISIONS.md#d-95--installing-and-showing-are-two-different-things) |
+
+**Two things about that table are deliberate and worth reading twice.**
+
+**Stage 0 as written says *"write S1 to S6"*** — it was written on 2026-09-20, before S7, S8 and S9
+existed. All nine were written on the owner's instruction of 2026-09-21. Six would have left the three
+newest decisions in a work note that is deleted when the folder closes.
+
+**S7 did not survive the move whole.** It is two claims — *the product list is a manifest* and *there
+are three front doors onto one engine*. The first is structural and nothing later can proceed without
+it, so it is D-93. The second describes Stage 6, which is not built, not designed in detail, and has an
+unresolved security question in it ([Q-PE-10](03-open-questions.md)). **Recording an unbuilt route as a
+settled decision would be the thing this folder's own rule 2 forbids** — a decision and an assumption
+are different words. It is recorded when Stage 6 is reached.
 
 ### S1 — One product is one Revit tab
+
+> **Recorded as [D-87](../../../DECISIONS.md#d-87--one-heron-product-is-one-revit-ribbon-tab).**
 
 Not one panel. Not one button group. **A tab.**
 
@@ -63,6 +94,8 @@ Not one panel. Not one button group. **A tab.**
 way Autodesk's own `Systems` and `Annotate` tabs do.
 
 ### S2 — One product is one `.addin` manifest plus one DLL
+
+> **Recorded as [D-88](../../../DECISIONS.md#d-88--one-product-is-one-addin-manifest-plus-one-dll-each-with-its-own-addinid).**
 
 | Product | Manifest | Assembly | Tab |
 |---|---|---|---|
@@ -79,6 +112,8 @@ merged, and **one product cannot break another product's tab** — a crash in `H
 `Heron` tab standing.
 
 ### S3 — Custom Install is at tab level, and the Heron tab is the one exception
+
+> **Recorded as [D-89](../../../DECISIONS.md#d-89--custom-install-is-at-tab-level-and-the-heron-tab-is-the-one-exception).**
 
 The user ticks **which tabs** they want. **The panels inside a tab are ours.**
 
@@ -121,6 +156,8 @@ tools piece has to do the same.
 
 ### S4 — Install stays per-user, and never asks for admin rights
 
+> **Recorded as [D-90](../../../DECISIONS.md#d-90--install-stays-per-user-and-never-asks-for-administrator-rights).**
+
 `%APPDATA%\Autodesk\Revit\Addins\<version>\`, which is what `deploy-addin.ps1` already does.
 
 The target user is **a BIM modeller on a locked-down contractor laptop**. They cannot install anything
@@ -128,6 +165,8 @@ that needs an administrator without raising a ticket, and a ticket means the too
 This is already settled in [`docs/07 §5`](../../../07-installation-and-update.md).
 
 ### S5 — Files come from a signed GitHub release
+
+> **Recorded as [D-91](../../../DECISIONS.md#d-91--product-files-come-from-a-signed-versioned-github-release).**
 
 Chosen by the owner on 2026-09-20, and it agrees with
 [`docs/07 §1a`](../../../07-installation-and-update.md), which already ruled that the installer fetches
@@ -138,6 +177,8 @@ blocks GitHub will block the installer. An offline fallback is **[Q-PE-5](03-ope
 refused, just not first.
 
 ### S6 — A ribbon button is a front door, not new logic
+
+> **Recorded as [D-92](../../../DECISIONS.md#d-92--a-ribbon-button-is-a-front-door-onto-a-proven-fragment-not-new-logic).**
 
 This is the one that decides how much work Heron Doc and Heron MEP actually are.
 
@@ -163,6 +204,8 @@ it**, not to write private code behind the button. Private code behind a button 
 reach, cannot explain and cannot audit.
 
 ### S7 — Three ways in, and two of them are the AI
+
+> **Recorded as [D-93](../../../DECISIONS.md#d-93--the-product-list-is-a-manifest-read-as-data-never-a-list-written-into-the-installer)** — the manifest half only. The three routes are Stage 6 and are not recorded yet.
 
 **Restated 2026-09-21, and it changes what was written on 2026-09-20.** That version called route 1
 "cloud" and route 2 "a setup file you run". The owner's fuller account makes both of them **the AI
@@ -206,6 +249,8 @@ That is what keeps it clear of [`docs/07 §1a`](../../../07-installation-and-upd
 
 ### S8 — Install replaces; there is no separate upgrade path
 
+> **Recorded as [D-94](../../../DECISIONS.md#d-94--install-replaces-there-is-no-separate-upgrade-path).**
+
 > Owner, 2026-09-21: *"If an existing installation is detected, clicking 'Install' will remove or
 > overwrite the previous version with the new one."*
 
@@ -224,6 +269,8 @@ patterns and audit log. The product is replaced; the data is not
 year of work on a button press labelled *Install*.
 
 ### S9 — Installing and showing are two different things
+
+> **Recorded as [D-95](../../../DECISIONS.md#d-95--installing-and-showing-are-two-different-things).**
 
 **New 2026-09-21.** The `Heron` tab gets a **Settings panel**, and from it the user turns tabs and
 panels on and off.

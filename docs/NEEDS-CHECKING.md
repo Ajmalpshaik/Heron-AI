@@ -1901,3 +1901,52 @@ it.
 correctly and said the build was made for `.` - PowerShell **unrolls a one-element array** on its way
 out of a function, so the array came back as a bare string, whose `.Count` is also 1 and whose `[0]`
 is the first character. The guard was right and its sentence was gibberish. `@()` at the call site.
+
+---
+
+## Group AA - Stage 2 of the installer plan: can two Heron tabs live in one Revit? 2026-09-21
+
+**This is the question the whole installer plan rests on**, and it is the cheapest possible way to ask
+it - [Stage 2](work-notes/plans/plugin-extension/02-implementation.md). Two throwaway products were
+built, each with one panel and one button that does nothing:
+
+| | |
+|---|---|
+| `revit/Heron.Doc/` | a **second tab**, `Heron Doc` |
+| `revit/Heron.Tools/` | a **second piece of the first tab** - a `Tools` panel on the tab named `Heron` |
+
+**Both compile on all eight releases, 2020 to 2027, 0 warnings.** `tests/test_ribbon_tab_sharing.py`
+passes 26 checks on what is decidable in source. **Neither has been seen in a Revit, and until the rows
+below are answered the stage is BUILT, not PROVEN.** A compile proves the API agrees. It does not prove
+a tab appears.
+
+**Stage 3 must not begin until AA1, AA2 and AA3 have passed.** The plan says so in as many words: if
+this fails, the cost of finding out is one dummy button; finding out after the installer window is
+built costs the installer window.
+
+Build and deploy with:
+
+```powershell
+dotnet build revit\Heron.Doc\Heron.Doc.csproj      -p:RevitVersion=2024
+dotnet build revit\Heron.Tools\Heron.Tools.csproj  -p:RevitVersion=2024
+.\tools\deploy-stage2-proof.ps1 -RevitVersion 2024
+```
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **AA1** | Deploy **both** proofs with the AI Bridge add-in also installed. Start Revit. **Screenshot.** | **TWO tabs**: `Heron` and `Heron Doc`. The `Heron` tab carries **both** an `AI Bridge` panel and a `Tools` panel - **ONE tab, two panels**. **The failure to watch for is two tabs both reading `Heron`**, which on screen looks almost right: that would mean `CreateRibbonTab` made a second one instead of finding the first, and R-35 is broken. The `Heron` tab's **three existing buttons must still work** - press each one |
+| **AA2** | **TOOLS ONLY.** `.\tools\deploy-addin.ps1 -RevitVersion 2024 -Remove`, leaving only the Tools proof. Start Revit. **Screenshot.** | A `Heron` tab **exists**, carrying the `Tools` panel and **NO `AI Bridge` panel**. **THIS IS THE CASE EXPECTED TO BREAK FIRST** and the one [R-34](work-notes/plans/plugin-extension/01-requirements.md) promises - a site modeller who wants Heron's tools and refuses the AI. If **no tab appears at all**, the tools piece assumed it loaded second and something has to create the tab. A FAIL here is worth as much as a pass: it is the answer Stage 2 was built to get |
+| **AA3** | **AI BRIDGE ONLY.** Remove the Tools proof, reinstall the add-in. Start Revit. **Screenshot.** | The `Heron` tab exactly as it is today - one `AI Bridge` panel, three buttons, no `Tools` panel. This is the control case: it proves the proofs left nothing behind |
+| **AA4** | `.\tools\deploy-stage2-proof.ps1 -RevitVersion 2024 -Remove`, then start Revit | **`Heron Doc` is gone and `Heron` is untouched.** This is the uninstall story proved before any uninstaller exists. Check the Addins folder afterwards: no `Heron.Doc` folder, no `Heron.Doc.addin`, and **no `.old` anything** - [R-38c](work-notes/plans/plugin-extension/01-requirements.md) |
+| **AA5** | Do AA1 on **2020** as well as on a modern release | 2020 is `net472` and 2027 is `net10.0-windows`. The ribbon API is the same across both, but this has never been run, and `Z9` is the precedent for checking rather than assuming |
+| **AA6** | Run `.\tools\deploy-stage2-proof.ps1` **with Revit open** | It refuses, names the release that is open, and **changes nothing**. It uses the same detection `deploy-addin.ps1` uses rather than a second copy of that rule. **Not one line of that script has ever run** - it is PowerShell and this container is Linux |
+
+**What a FAIL on AA2 would mean, written down before the run so the answer is not argued afterwards.**
+Both pieces call `CreateRibbonTab` inside a `try` and catch `Autodesk.Revit.Exceptions.ArgumentException`,
+which is the documented behaviour for a tab that already exists. If tools-only still draws no tab, the
+assumption to question first is that `CreateRibbonPanel` can reach a tab created by a *different*
+add-in in the same session - which is exactly the kind of thing only a real Revit answers, and exactly
+why this stage exists.
+
+**Nobody may mark Stage 2 done from a compile, from this file, or from the tests.** The word for what
+exists today is **BUILT**.

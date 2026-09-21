@@ -155,6 +155,15 @@ an edit.
 | [D-84](#d-84--the-sandbox-is-renamed-not-rebuilt) | The sandbox is renamed, not rebuilt | ✅ Accepted · 2026-09-20 |
 | [D-85](#d-85--the-tab-says-heron-the-panel-says-ai-bridge-and-the-product-is-still-heron-ai) | The tab says Heron, the panel says AI Bridge, and the product is still Heron AI | ✅ Accepted · 2026-09-20 |
 | [D-86](#d-86--a-write-may-declare-a-question-only-when-answering-it-requires-the-write) | A write may declare a question only when answering it requires the write | ✅ Accepted — **Date:** 2026-09-21 — **Answers:** [Q-57](OPEN-QUESTIONS.md) — **Evidence:** [FRAGMENT-ISSUES rows 158, 137 and 113](FRAGMENT-ISSUES.md) · 2026-09-21 |
+| [D-87](#d-87--one-heron-product-is-one-revit-ribbon-tab) | One Heron product is one Revit ribbon tab | ✅ Accepted · 2026-09-21 |
+| [D-88](#d-88--one-product-is-one-addin-manifest-plus-one-dll-each-with-its-own-addinid) | One product is one .addin manifest plus one DLL, each with its own AddInId | ✅ Accepted · 2026-09-21 |
+| [D-89](#d-89--custom-install-is-at-tab-level-and-the-heron-tab-is-the-one-exception) | Custom Install is at tab level, and the Heron tab is the one exception | ✅ Accepted · 2026-09-21 |
+| [D-90](#d-90--install-stays-per-user-and-never-asks-for-administrator-rights) | Install stays per-user and never asks for administrator rights | ✅ Accepted · 2026-09-21 |
+| [D-91](#d-91--product-files-come-from-a-signed-versioned-github-release) | Product files come from a signed, versioned GitHub release | ✅ Accepted · 2026-09-21 |
+| [D-92](#d-92--a-ribbon-button-is-a-front-door-onto-a-proven-fragment-not-new-logic) | A ribbon button is a front door onto a proven fragment, not new logic | ✅ Accepted · 2026-09-21 |
+| [D-93](#d-93--the-product-list-is-a-manifest-read-as-data-never-a-list-written-into-the-installer) | The product list is a manifest read as data, never a list written into the installer | ✅ Accepted · 2026-09-21 |
+| [D-94](#d-94--install-replaces-there-is-no-separate-upgrade-path) | Install replaces; there is no separate upgrade path | ✅ Accepted · 2026-09-21 |
+| [D-95](#d-95--installing-and-showing-are-two-different-things) | Installing and showing are two different things | ✅ Accepted · 2026-09-21 |
 
 ## Format
 
@@ -5272,3 +5281,328 @@ rule addresses is a modeller who asks a question and is handed a change.
 - **It does not create a gate.** Nothing enforces this automatically today, and writing a checker that
   decides *"could this be answered without the write"* would be a machine making the judgement this
   decision just said needs a person.
+
+## D-87 — One Heron product is one Revit ribbon tab
+
+**Status:** Accepted · **Date:** 2026-09-21 · **Source:** Ajmal PS, 2026-09-20 · **Promoted from:** [S1](work-notes/plans/plugin-extension/00-structure.md)
+
+### Context
+
+Heron today is **one tab, `Heron`, with three buttons** — measured, not remembered:
+`HeronApplication.cs` lines 53–54 hold the two label strings, and `BuildRibbon()` holds every button
+there is. There is no ribbon manifest and no button list anywhere in `revit/`.
+
+The owner asked on 2026-09-20 for Heron to grow into several products — annotation tools, MEP tools,
+more later. The first question that had to be answered was **what a product IS on the ribbon**: a tab,
+a panel, or a group of buttons. Everything else in the installer follows from that answer, so it was
+taken first.
+
+### Decision
+
+**A product is a TAB.** Not a panel, not a button group.
+
+`Heron`, `Heron Doc` and `Heron MEP` sit side by side in the Revit ribbon, the same way Autodesk's own
+`Systems` and `Annotate` tabs do.
+
+> Owner, 2026-09-20: *"Not panels — tab level. What we have now, only Heron tab. Same like that we will
+> add Heron MEP, Heron Annotation, like that."*
+
+### Consequences
+
+- **Install and uninstall become file operations.** A tab is built by its own add-in, so installing a
+  product is *copy its files* and removing it is *delete its files*. Nothing is merged and nothing is
+  rewritten.
+- **A modeller can see what they have.** A tab carries its name in the ribbon. A panel buried inside
+  somebody else's tab does not, and a user who cannot name what they installed cannot ask for help
+  with it.
+- **It sets the unit of choice for the installer** — [D-89](#d-89--custom-install-is-at-tab-level-and-the-heron-tab-is-the-one-exception)
+  ticks tabs, not panels.
+
+## D-88 — One product is one .addin manifest plus one DLL, each with its own AddInId
+
+**Status:** Accepted · **Date:** 2026-09-21 · **Source:** Ajmal PS, 2026-09-20 · **Promoted from:** [S2](work-notes/plans/plugin-extension/00-structure.md)
+
+### Context
+
+[D-87](#d-87--one-heron-product-is-one-revit-ribbon-tab) says a product is a tab. The next question is
+**how Revit is told about it** — one add-in that builds every tab, or one add-in per tab.
+
+Today there is exactly one of each: `Heron.addin`, `AddInId` `7A1F4C62-…`, `VendorId` `AJPS`, building
+`Heron.Revit.Addin.dll`.
+
+### Decision
+
+**One product = one manifest + one assembly.**
+
+| Product | Manifest | Assembly | Tab |
+|---|---|---|---|
+| Heron AI Connector | `Heron.addin` | `Heron.Revit.Addin.dll` | `Heron` |
+| Heron Doc | `Heron.Doc.addin` | `Heron.Doc.dll` | `Heron Doc` |
+| Heron MEP | `Heron.MEP.addin` | `Heron.MEP.dll` | `Heron MEP` |
+
+**Every product carries its own new `AddInId` GUID.** Revit keys add-ins by that GUID, and two
+manifests sharing one is a load failure rather than a warning.
+
+**Not one add-in that builds every tab.** That was the alternative and it was refused.
+
+### Consequences
+
+- **One product cannot break another.** A crash inside `Heron.MEP.dll` leaves the `Heron` tab standing,
+  because Revit loaded them as two separate add-ins.
+- **The GUID becomes something a checker must guard.** A duplicate `addInId` is invisible in source and
+  fatal at load, so the product manifest ([D-93](#d-93--the-product-list-is-a-manifest-read-as-data-never-a-list-written-into-the-installer))
+  carries the field and its checker refuses a duplicate.
+- **`tools/check-package.py` reads only `Heron.addin` today.** Each new product's manifest owes the same
+  offline questions — parses, GUID, entry class exists, no `<ManifestSettings>` — and that is work the
+  gate does not do yet.
+
+## D-89 — Custom Install is at tab level, and the Heron tab is the one exception
+
+**Status:** Accepted · **Date:** 2026-09-21 · **Source:** Ajmal PS, 2026-09-20 and 2026-09-21 · **Promoted from:** [S3](work-notes/plans/plugin-extension/00-structure.md)
+
+### Context
+
+If a user could tick individual panels, the ribbon would have to be **rebuilt from a configuration file
+at every Revit startup** — a redesign of `BuildRibbon()` and a new file format to keep in step with the
+code, for every product, for ever.
+
+### Decision
+
+**The user ticks TABS. The panels inside a tab are ours.**
+
+**The `Heron` tab is the single exception, and it holds two pieces that tick separately:**
+
+```text
+[ ] Heron                        <- the tab
+      [ ] AI Bridge connector    <- the AI panel that exists today
+      [ ] All tools              <- the Heron tools, which do not exist yet
+```
+
+> Owner, 2026-09-21: *"For the Heron tab specifically, they can choose either or both options: all
+> tools and the AI connector."*
+
+Either, or both. **Ticking the tools and not the connector is a supported install**, not a degraded
+one. `Heron Doc` and `Heron MEP` have no such split — one tick each, whole tab.
+
+**Why the exception is real and not a slip.** The `Heron` tab is the only one carrying two different
+*kinds* of thing: a bridge to an AI, and ordinary Revit tools. A site modeller may want the tools and
+refuse the AI. Every other tab is tools only, so there is nothing to separate.
+
+### Consequences
+
+- **Each product keeps its ribbon hardcoded**, exactly the way `HeronApplication.cs` does today. No
+  ribbon manifest, no new file format, no startup parsing.
+- **The `Heron` tab is built by two installed pieces, so neither may assume it is first.** Revit decides
+  load order. `CreateRibbonTab` throws when the tab already exists — `BuildRibbon()` already catches
+  that, and the tools piece must catch it too, or tools-only and both-installed are two different
+  failures waiting to happen.
+- **A user cannot make the ribbon look wrong.** Fixing the layout stays our job rather than becoming a
+  defect report about a layout they chose.
+
+## D-90 — Install stays per-user and never asks for administrator rights
+
+**Status:** Accepted · **Date:** 2026-09-21 · **Source:** [`docs/07 §5`](07-installation-and-update.md); Ajmal PS, 2026-09-20 · **Promoted from:** [S4](work-notes/plans/plugin-extension/00-structure.md)
+
+### Context
+
+The target user is **a BIM modeller on a locked-down contractor laptop**. They cannot install anything
+needing an administrator without raising a ticket, and a ticket means the tool never gets used.
+
+`tools/deploy-addin.ps1` already installs into `%APPDATA%\Autodesk\Revit\Addins\<version>\`, per user,
+with no admin. `docs/07 §5` already settled it. This entry records it as a **constraint on the
+installer**, which did not exist when `docs/07` was written.
+
+### Decision
+
+**Per-user only. Every route. No exception, and no flag to add one.**
+
+The all-users install is refused on purpose, and it is refused even though it is cheap to build.
+
+### Consequences
+
+- **The installer is simpler here rather than richer.** No elevation prompt, no dual-path copy, no
+  "install for everyone" checkbox to explain.
+- **`tools/check-package.py` already guards it** — it fails on `ProgramData` or `Program Files`
+  appearing in an install path, and Revit 2027 moving the all-user location is exactly why naming both
+  is not enough on its own.
+- **A machine where several people share one Windows account** gets one shared install by accident
+  rather than by design. That is the cost, and it is accepted.
+
+## D-91 — Product files come from a signed, versioned GitHub release
+
+**Status:** Accepted · **Date:** 2026-09-21 · **Source:** Ajmal PS, 2026-09-20; [`docs/07 §1a`](07-installation-and-update.md) · **Promoted from:** [S5](work-notes/plans/plugin-extension/00-structure.md)
+
+### Context
+
+`docs/07 §1a` already ruled that Heron updates itself from **a versioned release artefact**, never from
+whatever the default branch happens to say today. The owner chose the same on 2026-09-20 for the
+installer.
+
+### Decision
+
+**Files come from a signed GitHub release, named by version.** Never a branch, never a raw file URL,
+never "whatever is newest on main".
+
+### Consequences
+
+- **A contractor firewall that blocks GitHub blocks the installer.** That is recorded here rather than
+  discovered on site. The offline route arrives as a side effect of route 2 — the repository handed to
+  the AI, which downloads nothing.
+- **A download must be verified before it is used**, and a file that fails verification never reaches
+  the Addins folder.
+- **Nothing downloaded is ever executed in order to decide what to install.** The product manifest is
+  read as data ([D-93](#d-93--the-product-list-is-a-manifest-read-as-data-never-a-list-written-into-the-installer)),
+  which is [Golden Rule 19](14-golden-rules.md) applied to the installer.
+
+## D-92 — A ribbon button is a front door onto a proven fragment, not new logic
+
+**Status:** Accepted · **Date:** 2026-09-21 · **Source:** Ajmal PS, 2026-09-20 · **Promoted from:** [S6](work-notes/plans/plugin-extension/00-structure.md)
+
+### Context
+
+This is the decision that settles **how much work Heron Doc and Heron MEP actually are**.
+
+A fragment body is already C# that compiles and runs inside Revit's own process, and most of the
+library is `PROVEN` against a real model. Derive the current split rather than trusting a number here:
+
+```bash
+grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c
+```
+
+### Decision
+
+**A button calls the same fragment body the AI calls.** One body, two front doors.
+
+```text
+                  +----------------------+
+   AI chat  ----> |                      |
+                  |   fragment body      | ----> Revit
+   Ribbon   ----> |   (proven C#)        |
+   button         +----------------------+
+```
+
+A button labelled **Auto Size** in `Heron MEP` does not get sizing logic written for it. It calls
+`auto-size-mep`.
+
+**If a button needs logic no fragment has, the answer is to write the fragment and prove it** — never
+to write private code behind the button.
+
+### Consequences
+
+- **A fix to the body fixes both doors. A proof of the body proves both.**
+- **Private code behind a button is refused**, because it is code the AI cannot reach, cannot explain
+  and cannot audit — and it would be the one part of Heron with no proof obligation.
+- **Building a tools tab becomes choosing which proven fragments deserve a button**, which is a
+  question for a modeller rather than a programming job.
+
+## D-93 — The product list is a manifest read as data, never a list written into the installer
+
+**Status:** Accepted · **Date:** 2026-09-21 · **Source:** Ajmal PS, 2026-09-20 (*"designed for future expansion"*); [S7](work-notes/plans/plugin-extension/00-structure.md), [S9](work-notes/plans/plugin-extension/00-structure.md)
+
+### Context
+
+Two separate parts of the plan need the same list of products: **the installer window**, which draws a
+tick per product, and **the Settings panel** ([D-95](#d-95--installing-and-showing-are-two-different-things)),
+which lists panels to hide. A list typed into either one is a second thing to keep in step, and the
+owner confirmed on 2026-09-21 that more tabs will be named later.
+
+### Decision
+
+**One manifest lists every Heron product, and it is read as data — never executed.**
+
+Each entry carries `id`, `name`, `description`, `tab`, `addin`, `assembly`, `addInId`, `revit`,
+`requires`, `version` and `partOf`.
+
+**`partOf` is what keeps the window honest.** Without it the installer cannot know that the `Heron`
+tab's two ticks belong under one heading, and they would show as two unrelated products. With it, the
+same field drives the indentation and nothing is special-cased in code.
+
+**A checker refuses a duplicate `addInId`, a `partOf` or `requires` naming a product not in the
+manifest, and an unsupported Revit release** — a duplicate GUID is invisible in source and fatal at
+load, and a typo in `partOf` surfaces as a missing tab rather than as an error.
+
+### Consequences
+
+- **Adding a product is a line in the manifest and a release asset.** Never a rebuild of the installer.
+  This is the single test the installer's window has to pass.
+- **The Settings panel reads the same file**, so there is one list rather than two.
+- **The manifest ships as a release asset**, so the installer reads the product list from the same
+  release it downloads the products from.
+- **A checker that has never failed has never been tested**, so the checker is proved by being made to
+  fail on a deliberately duplicated GUID, and that result is recorded beside the passing one.
+
+## D-94 — Install replaces; there is no separate upgrade path
+
+**Status:** Accepted · **Date:** 2026-09-21 · **Source:** Ajmal PS, 2026-09-21 · **Promoted from:** [S8](work-notes/plans/plugin-extension/00-structure.md)
+
+### Context
+
+> Owner, 2026-09-21: *"If an existing installation is detected, clicking 'Install' will remove or
+> overwrite the previous version with the new one."*
+
+### Decision
+
+**One button.** The installer never asks the user whether this is a fresh install, an upgrade or a
+repair. It finds what is there and replaces it. There is **no Update button and no Repair button.**
+
+**What must NOT be replaced along with it: `%APPDATA%\Heron`** — the user's brain, skills, learned
+patterns and audit log. The product is replaced; the data is not. `HeronPaths` already draws that line.
+
+### Consequences
+
+- **The user is not made to diagnose their own machine.** Install / Update / Repair / Modify asks them
+  to know which one they need, and they are the one person who cannot.
+- **It is also the only honest option for a Revit add-in.** Assemblies cannot be unloaded, so an
+  "upgrade in place" is a delete and a copy whatever the button says.
+- **A wipe that reached `%APPDATA%\Heron` would destroy a year of work on a button press labelled
+  *Install*.** That folder is untouched by every route, and it is checked byte-for-byte across an
+  install rather than assumed.
+
+## D-95 — Installing and showing are two different things
+
+**Status:** Accepted · **Date:** 2026-09-21 · **Source:** Ajmal PS, 2026-09-21 · **Promoted from:** [S9](work-notes/plans/plugin-extension/00-structure.md)
+
+### Context
+
+> Owner, 2026-09-21: *"after he install there is in the Heron tab there is one panel settings … from
+> that tab he can turn off and on the tabs from their settings panels, like same like pyRevit … so
+> they can hide the panels also."*
+
+A modeller who installed everything and only wants two panels today should not have to run an installer
+to say so, and should not lose the rest by saying it.
+
+### Decision
+
+**Install decides what is on DISK. Settings decides what is on SCREEN.**
+
+| | Decides | Lives in | Changing it means |
+|---|---|---|---|
+| **Install** | what is on disk | `%APPDATA%\Autodesk\Revit\Addins\…` | running the installer again |
+| **Settings** | what is on screen | the user's own Heron data | ticking a box in Revit |
+
+**The Settings panel hides PANELS and never tabs**, and the Revit API draws the line in the same place
+this decision already did:
+
+| | Live, no restart? | |
+|---|---|---|
+| **A panel** | **Yes** | `RibbonPanel.Visible` — read-write, **official Revit API** |
+| **A whole tab** | — | needs `AdWindows.dll`, which **Autodesk does not support** |
+
+**Heron takes no dependency on `Autodesk.Windows` / `AdWindows.dll` anywhere.** A user who wants a whole
+tab gone uninstalls that product.
+
+The choice is saved under `%APPDATA%\Heron` — the data class, which
+[D-94](#d-94--install-replaces-there-is-no-separate-upgrade-path) says an install replaces nothing of.
+
+### Consequences
+
+- **A hidden panel is still installed.** Un-hiding it needs no installer and no download.
+- **A user's hidden-panel choices survive every update.** If they lived beside the product they would
+  be wiped by the next Install, and the user would blame the update for a tidy ribbon going untidy.
+- **A tidier ribbon is not worth a tool that breaks on an Autodesk update nobody warned about**, which
+  is why the unsupported tab-hiding API is refused rather than used carefully.
+- **The Settings panel reads its list from the same manifest the installer does**
+  ([D-93](#d-93--the-product-list-is-a-manifest-read-as-data-never-a-list-written-into-the-installer)),
+  never from a list written into the settings window.
+- **One confirmation is still owed on a machine with a .NET SDK:** that `RibbonPanel.Visible` exists in
+  all eight supported releases. `tools/check-api-surface.py` answers it.
