@@ -445,6 +445,36 @@ jobs:
               echo "$new"
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
+
+            # AND WHY, NOT JUST WHICH. The loop above sends every suite's
+            # output to /dev/null, which is right for the 200 that pass and
+            # was the whole problem for the one that did not: when
+            # test_fragment_tracking.py failed here and passed on Windows,
+            # this job reported a filename six times and the reason was one
+            # line of the output it had thrown away. It took three sections
+            # made skippable, a wrong rename and a deletion to get as far as
+            # somebody running the file by hand on Linux, which took one
+            # command. FRAGMENT-ISSUES rows 160 and 166.
+            #
+            # Re-running is cheap: only the NEW failures, only when the job
+            # is already red, and a suite that fails twice with different
+            # output is itself worth knowing about.
+            echo "$new" | while read -r suite; do
+              [ -n "$suite" ] || continue
+              {
+                echo
+                echo "<details><summary>What <code>${suite}</code> printed</summary>"
+                echo
+                echo '```'
+                python "tests/${suite}" 2>&1 | tail -40
+                echo '```'
+                echo
+                echo "</details>"
+              } >> "$GITHUB_STEP_SUMMARY"
+              echo "--- ${suite} said: ---"
+              python "tests/${suite}" 2>&1 | tail -40
+            done
+
             status=1
           fi
 

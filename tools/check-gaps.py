@@ -128,6 +128,12 @@ def check_steps():
             print("  ok    Step %-2d %s" % (step, ", ".join(files)))
 
 
+# How much of a failing suite's own output to show. Enough for the FAILED
+# block every suite here ends with, and short enough that ten failures do not
+# bury the sections after this one.
+FAIL_LINES = 25
+
+
 def check_tests():
     """Every test suite, run."""
     print()
@@ -141,9 +147,20 @@ def check_tests():
             continue
         started = time.time()
         try:
+            # CAPTURED, NOT DISCARDED, AND THE REASON IS SIX RED CI RUNS.
+            # This ran every suite with stdout and stderr at DEVNULL and
+            # recorded only WHICH file failed. When
+            # tests/test_fragment_tracking.py failed on Linux and passed on
+            # Windows, that left nobody a way to see why: three sections were
+            # made skippable to bisect it, the file was renamed once, and in
+            # the end it was deleted - and the answer, when somebody finally
+            # ran the file by hand on Linux, was one line of its output
+            # (FRAGMENT-ISSUES rows 160 and 166). Holding the text of a suite
+            # that PASSED would be noise; holding the text of one that failed
+            # costs nothing and is the whole diagnosis.
             proc = subprocess.run([sys.executable, os.path.join(folder, name)],
-                                  stdout=subprocess.DEVNULL,
-                                  stderr=subprocess.DEVNULL, cwd=ROOT,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, cwd=ROOT,
                                   timeout=SUITE_TIMEOUT)
         except subprocess.TimeoutExpired:
             # Named, not silent. The whole point of the bound is that the
@@ -172,6 +189,15 @@ def check_tests():
                     "an optional dependency this machine does not have")
         else:
             print("  FAIL  %s (%.1fs)" % (name, took), flush=True)
+            # WHY, not just which. The last lines are where a suite here puts
+            # its verdict - every one of them prints its failures at the end,
+            # under FAILED, which is the convention tests/README.md states.
+            said = (proc.stdout or b"").decode("utf-8", "replace").strip()
+            tail = said.splitlines()[-FAIL_LINES:]
+            for line in tail:
+                print("          %s" % line, flush=True)
+            if not tail:
+                print("          (it printed nothing at all)", flush=True)
             unfinished("%s FAILS" % name)
     print("  %.0fs for the suites" % (time.time() - section_started),
           flush=True)

@@ -430,6 +430,29 @@ def availability(bridge):
     return "(in use by another chat, ~%d min left)" % minutes
 
 
+def refuse_off_windows():
+    """
+    True when this machine cannot reach a bridge, having said so.
+
+    THE REFUSAL USED TO BE THE FIRST LINE OF main(), WHICH MADE IT ANSWER
+    QUESTIONS IT HAD NOT READ. `validate --vary category=...` with no
+    `--vary-field` is a bad command line, not a request for Revit, and the
+    refusal written for it - "name the ONE declared result that has to follow
+    the input" - was unreachable anywhere but Windows. That cost six red CI
+    runs and a deleted test suite before anybody ran the command on Linux and
+    read what it actually printed: FRAGMENT-ISSUES row 160.
+
+    So the guard lives with the commands that genuinely need a pipe, and
+    every check that can be made without one is made first. Answering "this
+    needs Windows" to a question that was wrong on every platform is not
+    being helpful - it hides the real answer.
+    """
+    if os.name == "nt":
+        return False
+    print("Heron's bridge uses Windows named pipes. Revit is Windows-only.")
+    return True
+
+
 def discover(prune=True):
     """
     Read the address book, then verify each entry by talking to it.
@@ -612,6 +635,12 @@ def pull_session(rest):
 
 
 def cmd_list():
+    # This one needs a pipe. Said here rather than in main(), so that a
+    # command line nobody could run anywhere is refused on its own terms
+    # first (FRAGMENT-ISSUES row 160).
+    if refuse_off_windows():
+        return 2
+
     live, starting, stale, mismatched = discover()
     if not live and starting:
         print("Revit is still starting.")
@@ -650,6 +679,12 @@ def cmd_list():
 
 
 def cmd_ping(pid=None):
+    # This one needs a pipe. Said here rather than in main(), so that a
+    # command line nobody could run anywhere is refused on its own terms
+    # first (FRAGMENT-ISSUES row 160).
+    if refuse_off_windows():
+        return 2
+
     live, starting, _, mismatched = discover()
     if not live and starting:
         print("Revit is still starting - its bridge is not answering yet. Try again shortly.")
@@ -696,6 +731,12 @@ def cmd_count(pid=None):
     The answer always names the document. A bare number is how somebody acts
     on a count that came from a model they were not looking at.
     """
+    # This one needs a pipe. Said here rather than in main(), so that a
+    # command line nobody could run anywhere is refused on its own terms
+    # first (FRAGMENT-ISSUES row 160).
+    if refuse_off_windows():
+        return 2
+
     live, starting, _, mismatched = discover()
     if not live and starting:
         print("Revit is still starting - its bridge is not answering yet. Try again shortly.")
@@ -1073,6 +1114,12 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
     the change for real and rolls it back, which is a record of what happened
     rather than a prediction of what would.
     """
+    # This one needs a pipe. Said here rather than in main(), so that a
+    # command line nobody could run anywhere is refused on its own terms
+    # first (FRAGMENT-ISSUES row 160).
+    if refuse_off_windows():
+        return 2
+
     root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     source_path = os.path.join(root, "brain", "fragments", name, "impl", "any", "fragment.cs")
 
@@ -1215,6 +1262,12 @@ def cmd_prove(names, in_document=None, values=None, session=None):
     another is a real disagreement rather than something that changed in
     between.
     """
+    # This one needs a pipe. Said here rather than in main(), so that a
+    # command line nobody could run anywhere is refused on its own terms
+    # first (FRAGMENT-ISSUES row 160).
+    if refuse_off_windows():
+        return 2
+
     root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
     sources = []
@@ -1487,6 +1540,12 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     arrangement already written, and those proofs would quietly begin testing
     something other than what they say.
     """
+    # This one needs a pipe. Said here rather than in main(), so that a
+    # command line nobody could run anywhere is refused on its own terms
+    # first (FRAGMENT-ISSUES row 160).
+    if refuse_off_windows():
+        return 2
+
     root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
     # KEEPING THE CHAIN WITH NOTHING TO KEEP IS NOT A NO-OP. With no setup this
@@ -2086,6 +2145,12 @@ def cmd_release():
     so and changes nothing. The one thing that frees another chat's session is
     still the Heron button, which is a person deciding at the machine.
     """
+    # This one needs a pipe. Said here rather than in main(), so that a
+    # command line nobody could run anywhere is refused on its own terms
+    # first (FRAGMENT-ISSUES row 160).
+    if refuse_off_windows():
+        return 2
+
     live, starting, _, mismatched = discover()
     if not live and starting:
         print("Revit is still starting - its bridge is not answering yet.")
@@ -2114,6 +2179,12 @@ def cmd_doctor():
     found rather than what it expected, so the output is useful even when
     the conclusion is wrong.
     """
+    # This one needs a pipe. Said here rather than in main(), so that a
+    # command line nobody could run anywhere is refused on its own terms
+    # first (FRAGMENT-ISSUES row 160).
+    if refuse_off_windows():
+        return 2
+
     import platform
 
     print("Heron doctor")
@@ -2210,10 +2281,11 @@ def cmd_doctor():
 
 
 def main(argv):
-    if os.name != "nt":
-        print("Heron's bridge uses Windows named pipes. Revit is Windows-only.")
-        return 2
-
+    # NO PLATFORM CHECK HERE. It used to be the first two lines, and it
+    # answered "this needs Windows" to command lines that were wrong on every
+    # platform - see refuse_off_windows, and FRAGMENT-ISSUES row 160. Each
+    # command that needs a pipe refuses for itself, after the arguments have
+    # been read.
     if len(argv) < 2:
         return cmd_list()
     if argv[1] == "ping":
