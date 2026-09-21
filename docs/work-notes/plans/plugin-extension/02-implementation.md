@@ -3,8 +3,10 @@
 > **Type:** Operational work note. **Not specification.** Where a sentence here disagrees with the
 > [Constitution](../../../../HERON_CONSTITUTION.md), the [Golden Rules](../../../14-golden-rules.md) or
 > [DECISIONS.md](../../../DECISIONS.md), **those win and this note is out of date.**
-> **Status:** **Active.** Stage 0 and Stage 1 are DONE. Stage 2 is **BUILT AND UNPROVEN** and needs
-> a Windows machine with Revit. Stages 3 to 9 are NOT STARTED. Opened 2026-09-20.
+> **Status:** **Active.** Stage 0 and Stage 1 are DONE. **Stages 2, 3 and 4 were RUN on the owner's PC
+> on 2026-09-21 and are PROVEN** — Revit 2024.3 and Revit 2020.2.9, fourteen rows passed, one failed and
+> was fixed the same day, and two are owed (`AA9` needs a browser download, `AB6` is blocked until
+> `heron-tools` is a real product). Stages 5 to 9 are NOT STARTED. Opened 2026-09-20.
 > **Owner:** Ajmal PS.
 > **Read [`00-structure.md`](00-structure.md) and [`01-requirements.md`](01-requirements.md) first.**
 
@@ -201,13 +203,23 @@ That Revit accepts the GUIDs. Only a real Revit does that — Stage 2.
 
 ## Stage 2 — Prove the shape with a second tab
 
-**Status: BUILT AND UNPROVEN — 2026-09-21. NOT DONE.**
+**Status: PROVEN — 2026-09-21. DONE, except `AA9`.**
 
-> **This stage needs Ajmal's Windows machine and cannot be finished without it.**
-> The code exists, it compiles on all eight releases, and everything decidable in source has been
-> checked. **Nothing here has seen a ribbon.** A compile proves the API agrees; it does not prove a tab
-> appears. Until three screenshots exist, this stage is **BUILT**, and the word **PROVEN** must not be
-> used about it.
+> **RUN ON THE OWNER'S PC, 2026-09-21. The question this stage was built to ask has an answer, and the
+> answer is yes.** Revit 2024.3 and Revit 2020.2.9: **two tabs appeared, `Heron` and `Heron Doc`, and
+> only one of them read `Heron`** — so `CreateRibbonTab` found the existing tab instead of making a
+> second one, and **R-35 holds**. The `Heron` tab carried an `AI Bridge` panel and a `Tools` panel
+> together, built by two separate add-ins.
+>
+> **`AA2`, the case written down as the one expected to break first, did not break.** With the AI Bridge
+> removed, the tools piece **created the `Heron` tab on its own**. So `CreateRibbonPanel` can reach a tab
+> another add-in made, **S3 stands as designed**, and **R-34 is deliverable**: the tools and the AI
+> connector stay separate products.
+>
+> `AA1` to `AA8` PASS. **`AA9` is NOT RUN** — it needs the repository downloaded as a zip through a
+> browser, which is what puts the Windows mark on the files, so `Unblock-File` in `deploy-addin.ps1`
+> **still has never run**. Rows and evidence: [NEEDS-CHECKING](../../../NEEDS-CHECKING.md), Group AA.
+> Screenshots: [`docs/proof/`](../../../proof/).
 
 ### What exists now
 
@@ -338,12 +350,18 @@ mixing a real tool into it would leave both unproven when it failed.
 
 ## Stage 3 — The installer core, with no window at all
 
-**Status: BUILT AND UNPROVEN — 2026-09-21. NOT DONE.**
+**Status: PROVEN — 2026-09-21. DONE.**
 
-> **Everything this engine DECIDES is tested. Nothing it DOES has run.** The two places it reaches
-> Windows — asking which Revit is installed and open, and copying a product in — are PowerShell, and this
-> container is Linux. A compile and 38 passing decision checks are not an install, and must never be
-> reported as one.
+> **RUN ON THE OWNER'S PC, 2026-09-21. The engine did something, not just decided something.** All three
+> pieces that had never run one line have now run: `PowerShellRevitEnvironment` found Revit 2020, 2024
+> and 2027 on the PC and named the open one by process id; `InstalledProductsOnDisk` read the Addins
+> folder and changed its answer when a folder was deleted by hand; and **`DeployScriptDeployer` actually
+> installed the AI Bridge for Revit 2024**, which Revit then loaded — tab, panel, and the bridge
+> answering `ping`.
+>
+> It also refused correctly: with Revit open it changed **nothing** and said which process was holding
+> it, then carried on by itself once Revit closed. Rows and evidence:
+> [NEEDS-CHECKING](../../../NEEDS-CHECKING.md), Group AB.
 >
 > **It was also built before Stage 2 was proved.** The plan says Stage 3 must not begin until `AA1`,
 > `AA2` and `AA3` have passed; the owner chose to build it anyway on 2026-09-21. That is recorded in
@@ -462,12 +480,27 @@ about whether the copy works.
 
 ## Stage 4 — The window
 
-**Status: BUILT AND UNPROVEN — 2026-09-21. NOT DONE.**
+**Status: PROVEN — 2026-09-21. DONE, except `AB6`.**
 
-> **No pixel has been drawn.** It is WPF and this container is Linux. It compiles on all eight releases
-> with 0 warnings, and everything it would SHOW is tested against a fake Revit — but whether the window
-> appears, is readable, and installs anything is owed on the owner's PC: `AB1` to `AB7` in
-> [NEEDS-CHECKING](../../../NEEDS-CHECKING.md).
+> **RUN ON THE OWNER'S PC, 2026-09-21. The window has been seen, and it installed something.** It drew,
+> it read, it listed the three releases on this PC, and **`AB3` — the row the whole design rests on —
+> passed**: a product added to `platform/heron-products.json` by hand appeared in the window **with no
+> rebuild**, the running exe predating the edit by a minute. **R-3 holds: adding a product next year is
+> a line in a file.**
+>
+> **`AB1` FAILED and was fixed the same day.** The window is a fixed 620 wide and cannot be resized, and
+> the longest description lost its last word — *"the three buttons that exist"* instead of *"...exist
+> today."* — with **no ellipsis**, so the truncated line still read as a finished sentence, and neither
+> the tooltip nor dragging the window could recover it. The tick box now carries a wrapping `TextBlock`
+> rather than a bare string, which is what every other block in that file already did. Widening the
+> window was rejected as a fix: it clips again, just as silently, the first time a longer product is
+> added — and that is the one thing R-3 promises will only ever be a line in a file.
+>
+> **`AB6` is NOT RUN and is blocked rather than failed.** It asks for the tools to be installed without
+> the bridge, and the only tools product that exists is the Stage 2 throwaway at `PROVING`, which the
+> manifest forbids an installer to offer. The window obeys — the row is greyed and would not tick. **The
+> manifest was deliberately not edited to force it.** Rows and evidence:
+> [NEEDS-CHECKING](../../../NEEDS-CHECKING.md), Group AB. Screenshots: [`docs/proof/`](../../../proof/).
 
 ### What exists now
 
