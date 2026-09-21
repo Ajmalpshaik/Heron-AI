@@ -70,8 +70,28 @@ CLASSIFICATION SAYS WHAT IT KNOWS; PERMISSION ERRS TOWARD PROTECTION
 ----------------------------------------------------------------------
 Those are two different jobs and merging them is how an unknown folder
 gets treated as safe. `classify()` answers UNKNOWN when it does not
-recognise a path, honestly - docs/06 s2 names twenty folders and a
-workspace has more than twenty things in it.
+recognise a path, honestly - a workspace has more in it than any
+document lists.
+
+AND THERE ARE TWO KINDS OF UNKNOWN, WHICH THIS SAID WERE ONE
+--------------------------------------------------------------
+Until 2026-09-21 every message here said "the twenty folders docs/06 s2
+names", and it is not twenty and they are not all named. MEASURED:
+
+    19   folders docs/06 s2 NAMES, in its own tree
+    14   of those its table gives a CLASS to
+     5   it names and never classifies - Community, Configuration,
+         Documentation, RAG, Tests
+    17   words this module matches on: those 14, plus index, indexes
+         and vector as its reading of the table's "vector indexes"
+
+So all five of those come back UNKNOWN, and the sentence told the reader
+they were not in docs/06 at all. They are. What is missing is a CLASS
+for them, and that gap is the document's - Q-13 is the open question
+about this whole split - so this module names the gap rather than
+inventing five answers the document declined to give. `main()` below
+demonstrated the bug as a feature, printing Documentation as an unknown
+path; it now says which kind of unknown it is.
 
 `may()` reads UNKNOWN as DATA. Not because it is, but because nothing can
 show it is not, and the two wrong answers are not the same size: treating
@@ -105,13 +125,22 @@ FOLDERS = (
     (PRODUCT, ("core", "agents", "revit", "mcp", "packages")),
 )
 
+# NAMED BY docs/06 s2 AND GIVEN NO CLASS BY IT. Not an oversight here: the
+# document's own table stops at fourteen of the nineteen it draws, and
+# choosing a class for these five is Q-13's to settle, not this module's.
+# They are listed so the refusal can say WHICH kind of unknown it is -
+# "docs/06 does not name it" and "docs/06 names it and does not classify
+# it" send a reader to two different places.
+UNCLASSIFIED = ("community", "configuration", "documentation", "rag", "tests")
+
 MEANING = {
     PRODUCT: "replaced wholesale on update; the user never edits it. "
              "Losing it costs a download.",
     DATA: "belongs to the user and must survive every update, uninstall "
           "and reinstall. Losing it loses something nobody can regenerate.",
     DERIVED: "safe to delete at any time, because something rebuilds it.",
-    UNKNOWN: "not one of the twenty folders docs/06 s2 names.",
+    UNKNOWN: "docs/06 s2 gives it no class, either because it does not "
+             "name it at all or because it names it and stops there.",
 }
 
 # Whether a class is IN SCOPE for an operation - and what being in scope
@@ -164,9 +193,12 @@ def classify(path):
     """
     {klass, why} - product, data, derived, or UNKNOWN.
 
-    Honest about not knowing. docs/06 s2 names twenty folders and a
-    workspace has more than twenty things in it, so a fourth answer is
-    the truthful one rather than a gap.
+    Honest about not knowing, and honest about WHICH not-knowing it is.
+    A workspace has more in it than any document lists, so a fourth
+    answer is the truthful one rather than a gap - but five of the
+    folders docs/06 s2 draws in its own tree are never given a class by
+    it, and saying those are "not in docs/06" sends a reader looking in
+    the wrong place. `unnamed` in the answer tells the two apart.
     """
     name = str(path or "").strip().lower()
     if not name:
@@ -184,10 +216,21 @@ def classify(path):
                 return {"class": klass, "matched": word,
                         "why": "'%s' is %s: %s" % (word, klass,
                                                    MEANING[klass])}
-    return {"class": UNKNOWN, "matched": None,
-            "why": "%s matches none of the twenty folders docs/06 s2 names. "
-                   "That is the truthful answer, not a gap - a workspace "
-                   "has more than twenty things in it." % path}
+    named_unclassified = [w for w in UNCLASSIFIED if w in words_here]
+    if named_unclassified:
+        return {"class": UNKNOWN, "matched": named_unclassified[0],
+                "unnamed": False,
+                "why": "'%s' IS one of the nineteen folders docs/06 s2 draws, "
+                       "and is one of the five it never gives a class to - "
+                       "%s. That is a gap in the document rather than in this "
+                       "table, and choosing a class for them is Q-13's to "
+                       "settle, so nothing is invented here."
+                       % (named_unclassified[0], ", ".join(UNCLASSIFIED))}
+    return {"class": UNKNOWN, "matched": None, "unnamed": True,
+            "why": "%s matches none of the folders docs/06 s2 classifies, "
+                   "and is not one of the five it names without classifying. "
+                   "That is the truthful answer, not a gap - a workspace has "
+                   "more in it than any document lists." % path}
 
 
 def may(operation, path):
@@ -256,12 +299,18 @@ def main(argv):
         print("  %-18s %s" % (operation, "  ".join(row)))
 
     print()
-    print("  An unknown path is read as DATA, and only for permission:")
-    found = classify("Documentation/readme.md")
-    answer = may("cleanup", "Documentation/readme.md")
-    print("    classify -> %s    may(cleanup) reads it as -> %s"
-          % (found["class"], answer["read_as"]))
-    print("    %s" % answer["why"][-150:])
+    print("  An unknown path is read as DATA, and only for permission -")
+    print("  and the TWO KINDS of unknown are told apart:")
+    for path in ("Documentation/readme.md", "Sketches/idea.txt"):
+        found = classify(path)
+        answer = may("cleanup", path)
+        print("    %-24s %-8s named by docs/06: %-5s reads as %s"
+              % (path, found["class"],
+                 "no" if found.get("unnamed") else "YES", answer["read_as"]))
+    print()
+    print("    Documentation is one of the FIVE docs/06 s2 draws and never")
+    print("    classifies - %s." % ", ".join(UNCLASSIFIED))
+    print("    Saying it is 'not in docs/06' sent a reader to the wrong page.")
 
     print()
     print("  Four agents each carried their own copy of docs/06 s2 before")

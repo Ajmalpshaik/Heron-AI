@@ -115,10 +115,18 @@ def resolve(router, intent, probes, needs_context=0, confidential=False,
     # confidential scope may consider. Asking it rather than re-deciding here
     # is what keeps the narrowing in one place - and an unknown intent is its
     # refusal to word, not this module's.
+    # ValueError SINCE 2026-09-21, AND IT WAS KeyError BEFORE. The router used
+    # to let a bare `KeyError: '<intent>'` out of candidates() - no message,
+    # and out of a module whose own docstring says a refusal is data rather
+    # than an exception. It now raises ValueError carrying the whole sentence,
+    # the way its own register() already did. This handler is the ONLY caller
+    # of candidates() outside the router, it caught that KeyError by name, and
+    # changing one without the other turned tests/test_availability.py red -
+    # which is row 5b-84, and the half of it that was learned the hard way.
     try:
         candidates = [name for name, _kind
                       in router.candidates(intent, confidential)]
-    except KeyError:
+    except ValueError:
         routed = router.route(intent, confidential)
         return {"refused": routed.get("refused", "NOTHING_AVAILABLE"),
                 "why": routed.get("why", "no adapter offers %s" % intent),

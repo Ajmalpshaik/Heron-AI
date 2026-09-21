@@ -98,7 +98,33 @@ class Router(object):
         return name
 
     def candidates(self, intent, confidential=False):
-        """Every adapter that could serve this, in registration order."""
+        """
+        Every adapter that could serve this, in registration order.
+
+        SAME SPELLING RULES AS route(), AND THAT IS A FIX RATHER THAN A
+        DETAIL. Until 2026-09-21 this took the intent exactly as handed in
+        while route() upper-cased it, so `route("classify")` answered and
+        `candidates("classify")` raised a bare `KeyError: 'classify'` - two
+        public methods on one class disagreeing about the same input.
+
+        AN UNKNOWN INTENT RAISES, AND IT RAISES A SENTENCE. It cannot return
+        [] the way route() returns a refusal, because a list has nowhere to
+        put a reason - and an empty one would read as "no adapter offers
+        this" when the truth is "that is not an intent". Those are different
+        answers and this module exists to keep them apart. ValueError with
+        the whole explanation is what register() already does for exactly
+        this mistake, so the module answers it one way rather than two.
+        Row 5b-84.
+        """
+        intent = (intent or "").upper()
+        if intent not in INTENTS:
+            raise ValueError(
+                "'%s' is not a declared intent. The set is %s, and it is "
+                "deliberately short - a guessed intent sends work to the "
+                "wrong kind of thinking. Call route() instead if you want "
+                "that refusal as data rather than as an exception."
+                % (intent, ", ".join(sorted(INTENTS))))
+
         need = INTENTS[intent]
         found = []
         for name, kind, intents, strong in self._adapters:
