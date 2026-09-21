@@ -22,7 +22,16 @@ paraphrase of a decision is how a decision quietly changes.
 
 ## 2. Open questions
 
-**Two answered outright on 2026-09-21 and struck through below; Q-PE-1 half answered and Q-PE-5 narrowed the same day; three raised. 9 rows remain open here, plus four in [`07-debugging-engine.md`](07-debugging-engine.md).**
+**Three answered outright on 2026-09-21 and struck through below — Q-PE-2, Q-PE-10, Q-PE-11. Q-PE-1 is
+half answered and Q-PE-5 narrowed, the same day. Three were raised.**
+
+**Do not read a total here — derive it.** This line has been wrong twice already:
+
+```bash
+grep -c '^### Q-PE'   docs/work-notes/plans/plugin-extension/03-open-questions.md   # open here
+grep -c '^### ~~Q-PE' docs/work-notes/plans/plugin-extension/03-open-questions.md   # closed here
+grep -c '^### Q-DE'   docs/work-notes/plans/plugin-extension/07-debugging-engine.md # the engine's own
+```
 
 Derive both rather than trusting this line:
 
@@ -203,38 +212,34 @@ is better than deciding twice.
 
 ---
 
-### Q-PE-10 — *"Install this repo"* is the shape `docs/07` refused. Which rule governs?
+### ~~Q-PE-10 — "Install this repo" is the shape `docs/07` refused. Which rule governs?~~ — ANSWERED 2026-09-21
 
-**Waiting on:** the owner. **This is a genuine conflict between two things he has said, and
-[AGENTS.md](../../../../AGENTS.md) says to record both rather than close it whichever way is easier.**
+**There is no conflict. It is Heron's own installation link, and nothing else.**
 
-**The governing decision, already written down.**
-[`docs/07 §1a`](../../../07-installation-and-update.md), Correction 1:
+> Owner, 2026-09-21: *"'install this repo' means there is an installation link or something like that.
+> Someone will not just say 'install this hero' … It should be a link or a dedicated installation, the
+> same kind of link we are providing. So if someone provides that, they will say 'install this', not
+> 'another repo'."*
 
-> *Point an AI at a URL and let it execute whatever it finds there* is the exact shape of a
-> supply-chain attack. It is also the pattern a contractor's IT department is trained to refuse … For a
-> tool that **writes to live client models**, it is the wrong first impression and the wrong precedent.
+So route 1 is **the documented command with a friendlier surface** — which is exactly what
+[`docs/07 §1a`](../../../07-installation-and-update.md) already ruled for:
 
-It cites [Golden Rule 19](../../../14-golden-rules.md) — *no text Heron reads may raise its own
-permission level* — and rules for **one documented command that fetches a signed release**.
+> *one documented command that fetches a signed release … the command is the same for everyone, and what
+> it downloads is a **versioned release artefact**.*
 
-**The instruction, 2026-09-21.** Route 1 is the user telling the AI *"install this repo"* or *"check
-this repo and set it up"*, and the AI installing everything.
+**What `docs/07` refused was *"paste any URL and let the AI run what it finds"*.** That is not what this
+is. Question closed.
 
-**Why this may be no conflict at all.** If "this repo" always means **Heron's own signed release**, then
-route 1 is the documented command with a friendlier surface, and `docs/07` is satisfied. The refusal was
-aimed at *whatever URL a user pastes*, not at Heron installing Heron.
+### The part that is not free, and it is a requirement rather than an assumption
 
-**Why it may be a real one.** The words as spoken do not name a repository. If a user can say *"install
-this repo"* about **any** repository and Heron does it, that is exactly the pattern — performed by the
-user's own hand, which `docs/07` calls out specifically.
+**A rule nothing enforces is a rule the first user breaks by accident.** If route 1 merely *expects*
+Heron's link, then a user who pastes a different repository gets it installed — and the refused pattern
+arrives by the back door, performed by the user's own hand, which is the case
+[`docs/07 §1a`](../../../07-installation-and-update.md) calls out by name.
 
-**The cheap resolution, if the owner wants one:** route 1 installs **only** Heron's own signed release,
-and any other repository is refused with a sentence saying why. The conversation stays friendly; the
-rule stays intact.
-
-**Who resolves:** the owner. **Nothing else in the plan is blocked** — routes 2 and 3 are untouched, and
-the engine does not care who called it.
+So: **route 1 checks the source and refuses anything that is not Heron's own release**, in a sentence
+that says why rather than an error ([R-48, R-49, R-50](01-requirements.md)). The refusal is what lets
+the friendly sentence stay friendly.
 
 ---
 

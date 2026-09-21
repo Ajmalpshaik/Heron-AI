@@ -196,10 +196,13 @@ lives in three installers is three rules and two of them go stale, so the engine
 **Route 2 downloads nothing** — the user already has the files — so it is the offline install, arriving
 as a side effect rather than as a feature ([Q-PE-5](03-open-questions.md)).
 
-**Routes 1 and 2 have a rule of their own that route 3 does not need.** They are an AI acting on a
-repository, and [Golden Rule 19](../../../14-golden-rules.md) and
-[`docs/07 §1a`](../../../07-installation-and-update.md) have something specific to say about that shape.
-It is not settled here — see [Q-PE-10](03-open-questions.md).
+**Routes 1 and 2 have a rule of their own that route 3 does not need**, and it was settled on
+2026-09-21 ([Q-PE-10](03-open-questions.md)): *"install this"* means **Heron's own installation link**,
+the signed release, and **never an arbitrary repository**. Route 1 **checks the source and refuses**
+anything else ([R-48, R-49](01-requirements.md)).
+
+That is what keeps it clear of [`docs/07 §1a`](../../../07-installation-and-update.md), which refused
+*"paste any URL and let the AI run what it finds"* — a different thing from Heron installing Heron.
 
 ### S8 — Install replaces; there is no separate upgrade path
 
