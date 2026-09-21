@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Runs the install engine WITHOUT Windows and WITHOUT Revit.
+
+    Every rule the engine decides - what to install, what to skip and why,
+    when to wait, what to do when one product fails - is exercised here
+    against a fake Revit and a fake deployer. That is the whole reason those
+    two are interfaces: the deciding is testable on the machine this
+    repository is developed on, and only the two adapters that reach Windows
+    need the owner's PC.
+
+        dotnet build tests/Heron.Installer.TestHost
+        dotnet run   tests/Heron.Installer.TestHost/bin/x64/Debug/Heron.Installer.TestHost.dll
+
+    Exit 0 = every rule holds. Exit 1 = one does not, and it is named.
+
+    IT PROVES NOTHING ABOUT AN INSTALL. No file is copied, no Revit is
+    looked for, no PowerShell runs. A green run here is not an install and
+    must never be reported as one.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Heron.Installer.TestHost</RootNamespace>
+    <AssemblyName>Heron.Installer.TestHost</AssemblyName>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <HeronTfm>net8.0</HeronTfm>
+
+    <!--
+      RUNS ON WHATEVER RUNTIME IS ACTUALLY HERE. This targets net8.0 to match
+      the engine, and a machine carrying only the .NET 10 runtime refuses to
+      start it otherwise - which would make the one machine best set up to
+      build Heron the one that cannot run its tests. tools/api-surface needed
+      exactly this fix, for exactly this reason.
+    -->
+    <RollForward>LatestMajor</RollForward>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\platform\Heron.Installer\Heron.Installer.csproj" />
+  </ItemGroup>
+
+</Project>

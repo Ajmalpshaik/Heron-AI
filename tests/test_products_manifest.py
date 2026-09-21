@@ -135,6 +135,23 @@ def main():
                 lambda d: product(d, "heron-doc").__setitem__("addInId", None),
                 "needs addInId")
 
+        refuses(tmp, "installable-with-no-folder",
+                lambda d: product(d, "heron-doc").__setitem__("folder", None),
+                "needs folder")
+
+        # R-41 / lesson L5: two products in one folder carry their own
+        # dependencies into the same place and overwrite each other.
+        refuses(tmp, "two-products-one-folder",
+                lambda d: product(d, "heron-doc").__setitem__(
+                    "folder", product(d, "heron-bridge")["folder"]),
+                "shared folder")
+
+        # A separator or a '..' would write outside the Revit Addins folder.
+        refuses(tmp, "folder-is-a-path",
+                lambda d: product(d, "heron-doc").__setitem__(
+                    "folder", "..\\..\\Windows"),
+                "not a plain folder name")
+
         refuses(tmp, "two-levels-deep",
                 lambda d: product(d, "heron").__setitem__("partOf", "heron-doc"),
                 "one indent")

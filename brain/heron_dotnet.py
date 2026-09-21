@@ -104,6 +104,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # absent is the thing that went wrong here.
 PROJECTS = [
     "platform/Heron.Core/Heron.Core.csproj",
+    # The install engine - Stage 3. RELEASE-INDEPENDENT: it installs FOR a
+    # Revit release without ever loading into one, so it pins net8.0 rather
+    # than following HeronTfm. Listed here anyway, because check-compile
+    # refuses a .csproj on disk that nothing builds, and a project nothing
+    # builds is a project nobody notices breaking.
+    "platform/Heron.Installer/Heron.Installer.csproj",
     "revit/Heron.Bridge/Heron.Bridge.csproj",
     "revit/Heron.Revit.Addin/Heron.Revit.Addin.csproj",
     # STAGE 2 SHAPE PROOFS, deleted when that stage closes. Listed here so
@@ -115,6 +121,7 @@ PROJECTS = [
     "tests/Heron.Banner.TestHost/Heron.Banner.TestHost.csproj",
     "tests/Heron.BindingNote.TestHost/Heron.BindingNote.TestHost.csproj",
     "tests/Heron.Bridge.TestHost/Heron.Bridge.TestHost.csproj",
+    "tests/Heron.Installer.TestHost/Heron.Installer.TestHost.csproj",
     "tests/Heron.Kernel.TestHost/Heron.Kernel.TestHost.csproj",
     "tests/Heron.StackGuard.TestHost/Heron.StackGuard.TestHost.csproj",
 ]
@@ -123,6 +130,17 @@ PROJECTS = [
 # so `unlisted()` can tell "deliberately out" from "somebody forgot", which is
 # the distinction the missing Banner host had no way to make.
 NOT_SHIPPED = ["tools/api-surface/ApiSurface.csproj"]
+
+# The project `packages()` reads when it is asked about no project in
+# particular: the add-in, because it is the one that carries the Revit API
+# references and those are the whole point of the question.
+#
+# NAMED, NOT COUNTED. It was `PROJECTS[2]` until 2026-09-21, and adding a
+# project to the list above moved the index onto Heron.Bridge - which has no
+# Revit API reference - so packages() started reporting a different project
+# and said nothing about it. An index into a list people add to is a bug
+# waiting for the next person to add something.
+ADDIN_PROJECT = "revit/Heron.Revit.Addin/Heron.Revit.Addin.csproj"
 
 # The range Directory.Build.props knows how to target. Kept as an explicit list
 # rather than a range() so that adding a Revit release is a deliberate edit
@@ -414,7 +432,7 @@ def packages(project=None):
     The Revit API ones carry `$(RevitVersion).*`, so the package set
     follows the release rather than being pinned per release.
     """
-    where = project or os.path.join(ROOT, *PROJECTS[2].split("/"))
+    where = project or os.path.join(ROOT, *ADDIN_PROJECT.split("/"))
     try:
         text = io.open(where, encoding="utf-8").read()
     except (IOError, OSError):

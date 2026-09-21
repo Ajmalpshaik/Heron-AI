@@ -266,6 +266,13 @@ def main():
     # FROM THE PROBE, NOT FROM `answer`. The claim is about what
     # packages() reports, and reading it here rather than out of a
     # successful answer proves it on a machine with no SDK too.
+    # NAMED, NOT COUNTED. This read PROJECTS[2] until 2026-09-21, and
+    # adding a project to that list moved the index onto one with no Revit
+    # API reference at all. The default is a name now, and the name has to
+    # go on being one of the projects.
+    check(NET.ADDIN_PROJECT in NET.PROJECTS,
+          "the project packages() falls back to is one that is built: %s"
+          % NET.ADDIN_PROJECT)
     refs = NET.packages()
     names = dict((ref["package"], ref) for ref in refs)
     check("Nice3point.Revit.Api.RevitAPI" in names,

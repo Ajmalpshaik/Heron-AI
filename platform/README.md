@@ -10,7 +10,12 @@
 
 ## What's here
 
-One project, `Heron.Core`. Nine classes, each the Kernel half of an agent in
+**Two projects since 2026-09-21** — `Heron.Core`, and `Heron.Installer`, which this folder's own
+*What will be here* has listed since it was written.
+
+### `Heron.Core`
+
+Nine classes, each the Kernel half of an agent in
 [the registry](../docs/28-agent-registry.md):
 
 | Class | Does | Step |
@@ -25,9 +30,32 @@ One project, `Heron.Core`. Nine classes, each the Kernel half of an agent in
 | [`HeronStop.cs`](Heron.Core/HeronStop.cs) | Emergency Stop — one switch that stops Heron doing anything further | 6 |
 | [`HeronUnits.cs`](Heron.Core/HeronUnits.cs) | Unit conversion. Millimetres, which is what the user says, to whatever Revit wants | 6 |
 
+### `Heron.Installer` — BUILT, NOT PROVEN
+
+The install engine, and **no window** — Stage 3 of
+[the plugin extension plan](../docs/work-notes/plans/plugin-extension/02-implementation.md). Given the
+product list, a set of products and a set of Revit releases, it decides what goes where, **waits** while
+Revit is open, and reports per product per release.
+
+| | |
+|---|---|
+| [`ProductManifest.cs`](Heron.Installer/ProductManifest.cs) | reads `platform/heron-products.json`. Nothing about a product is written in code |
+| [`InstallPlan.cs`](Heron.Installer/InstallPlan.cs) | what will be installed where, and what is skipped **with the reason**. Pure: no files, no Revit, no clock |
+| [`IRevitEnvironment.cs`](Heron.Installer/IRevitEnvironment.cs) | the two questions about Windows, as an interface, so a test can answer them |
+| [`InstallEngine.cs`](Heron.Installer/InstallEngine.cs) | plan, wait, deploy, report. **It never closes Revit** |
+| [`WindowsAdapters.cs`](Heron.Installer/WindowsAdapters.cs) | the only two places it touches Windows. Both shell out to the scripts in `tools/` rather than repeating their rules. **Neither has ever run** |
+
+**It is the one project here that is not Kernel plumbing**, and it is also the only one nothing else
+references — it sits at the bottom of the stack like everything in this folder, and nothing sits on it.
+It pins `net8.0` rather than following the Revit release, because it installs **for** a release without
+ever loading into one.
+
+> **Everything it DECIDES is tested; nothing it DOES has run.** 38 checks pass against a fake Revit and
+> a fake deployer. No file has been written and no PowerShell has executed — that needs Windows.
+
 ## What will be here
 
-Installer · update system · package manager · event bus · workflow engine ·
+Update system · package manager · event bus · workflow engine ·
 the remaining registries · secret store.
 
 ## Rules for this folder

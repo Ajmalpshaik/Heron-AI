@@ -48,6 +48,7 @@ Exit 1 = one of them answered no, and the answer names the file.
 
 import importlib.util
 import io
+import json
 import os
 import re
 import sys
@@ -59,6 +60,7 @@ MANIFEST = "revit/Heron.Revit.Addin/Heron.addin"
 ADDIN_PROJ = "revit/Heron.Revit.Addin/Heron.Revit.Addin.csproj"
 PROPS = "Directory.Build.props"
 DEPLOY = "tools/deploy-addin.ps1"
+PRODUCTS = "platform/heron-products.json"
 SETUP = "tools/setup.ps1"
 ADDIN_SRC = "revit/Heron.Revit.Addin"
 
@@ -85,6 +87,42 @@ def read(rel):
                        errors="replace").read()
     except OSError:
         return None
+
+
+def installable_products():
+    """
+    Every product that has files of its own, from the one product list.
+
+    A HEADING - `heron` - installs nothing and has no folder, no manifest and
+    no assembly (D-93). It is not a product with missing fields; it is a tab
+    name that other products join. Anything with a folder has files.
+
+    The project folder is derived by dropping .dll, which is how
+    tools/deploy-addin.ps1 derives it. If that ever stops being true this
+    returns paths that do not exist, and the caller reports them rather than
+    passing quietly - which is the behaviour wanted either way.
+    """
+    raw_list = read(PRODUCTS)
+    if raw_list is None:
+        return []
+
+    try:
+        products = json.loads(raw_list).get("products", [])
+    except ValueError:
+        return []
+
+    out = []
+    for p in products:
+        folder, assembly, addin = p.get("folder"), p.get("assembly"), p.get("addin")
+        if not (folder and assembly and addin):
+            continue
+        project = assembly[:-4] if assembly.endswith(".dll") else assembly
+        out.append({
+            "id": p.get("id"),
+            "assembly": assembly,
+            "addin_path": "revit/%s/%s" % (project, addin),
+        })
+    return out
 
 
 def releases():
@@ -253,6 +291,7 @@ def manifest_problems(raw, assembly_name, classes):
 
 def main():
     problems = []
+    skipped = []
     checked = 0
 
     # --- 1, 2, 3, 4, 6: the manifest ---------------------------------------
@@ -274,17 +313,58 @@ def main():
         return 1
 
     # --- 5: the rewrite the deploy script performs --------------------------
+    #
+    # THIS CHECK CHANGED SHAPE ON 2026-09-21 and got wider, not weaker.
+    #
+    # It used to read the literal out of the .Replace( in deploy-addin.ps1 and
+    # look for it in Heron.addin - one literal, one manifest. That worked while
+    # the script deployed one product. Stage 3 made it deploy any of them, so
+    # the literal became "<Assembly>$productAssembly</Assembly>", a PowerShell
+    # variable, and matching it against a manifest could only ever fail.
+    #
+    # What the check was FOR has not changed: String.Replace hands the string
+    # back unchanged when it matches nothing and says nothing about it, so a
+    # manifest that spells its assembly differently deploys pointing one folder
+    # up from where the DLL is. Revit then finds the manifest, fails to find the
+    # assembly, and reports only that it cannot run the external application.
+    #
+    # So it now asks the same question of EVERY product that can be installed,
+    # against that product's own manifest - four files where there was one -
+    # and separately that the script still refuses the rewrite when it would
+    # match nothing. Both halves have to be there: the loop catches a manifest
+    # that has drifted, the guard catches a product added after this ran.
     deploy = read(DEPLOY) or ""
+
     checked += 1
-    literal = re.search(r'\.Replace\(\s*"([^"]+)"', deploy)
-    if literal:
-        needle = literal.group(1)
-        if needle not in raw:
+    if "$manifestXml.Contains($needle)" not in deploy:
+        problems.append(
+            "%s no longer refuses to rewrite a manifest that does not contain "
+            "the line it is about to replace. String.Replace does not fail when "
+            "it matches nothing, so without that guard the manifest deploys "
+            "pointing at the wrong path and Revit says only that it cannot run "
+            "the external application" % DEPLOY)
+
+    for product in installable_products():
+        addin_rel = product["addin_path"]
+        addin_raw = read(addin_rel)
+        if addin_raw is None:
+            # A product declared before its files exist - heron-mep is exactly
+            # that, and tools/check-products.py is what holds a PLANNED row to
+            # its state. Saying nothing here would hide it, so it is counted as
+            # asked and reported as not yet answerable.
+            skipped.append("%s (%s) has no manifest yet - nothing to check"
+                           % (product["id"], addin_rel))
+            continue
+
+        checked += 1
+        needle = "<Assembly>%s</Assembly>" % product["assembly"]
+        if needle not in addin_raw:
             problems.append(
-                "%s rewrites the literal %r, and %s no longer contains it. "
-                "String.Replace does not fail when it matches nothing - the "
-                "manifest would deploy pointing at the wrong path"
-                % (DEPLOY, needle, MANIFEST))
+                "%s does not contain %r, which is what %s rewrites to point at "
+                "the deployed copy. String.Replace does not fail when it matches "
+                "nothing - '%s' would deploy with its manifest naming a DLL one "
+                "folder above the one that is there"
+                % (addin_rel, needle, DEPLOY, product["id"]))
 
     # --- 7: Autodesk's assemblies are never redistributed -------------------
     checked += 1
@@ -384,6 +464,15 @@ def main():
     w("Classes read:     %d in %s/\n" % (len(classes), ADDIN_SRC))
     w("Questions asked:  %d\n\n" % checked)
 
+    if skipped:
+        # NOT a pass and NOT a failure. A question that could not be asked yet
+        # is its own state, and printing it is what stops it being read as
+        # either - the same rule tests/README.md sets for exit 3.
+        w("NOT ASKED YET (%d) - declared, not built:\n" % len(skipped))
+        for s in skipped:
+            w("  - %s\n" % s)
+        w("\n")
+
     if problems:
         w("PACKAGING PROBLEMS (%d):\n" % len(problems))
         for p in problems:
@@ -392,9 +481,11 @@ def main():
         return 1
 
     w("Every offline delivery question answered. The manifest parses, its entry\n"
-      "class exists and is an IExternalApplication, the deploy rewrite still\n"
-      "matches, nothing redistributes Autodesk's assemblies, the install stays\n"
-      "per-user, and every supported release has a runtime row.\n\n")
+      "class exists and is an IExternalApplication, EVERY product's manifest\n"
+      "still carries the line the deploy script rewrites and the script still\n"
+      "refuses a rewrite that would match nothing, nothing redistributes\n"
+      "Autodesk's assemblies, the install stays per-user, and every supported\n"
+      "release has a runtime row.\n\n")
     w("STILL NOT ANSWERABLE HERE - each needs Windows and a Revit:\n")
     w("  - the add-in actually loads, on each release\n")
     w("  - an upgrade over a previous version keeps the user's settings\n")

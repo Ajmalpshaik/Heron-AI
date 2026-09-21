@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The install engine. STAGE 3 - no window, no screen, nothing to look at.
+
+    docs/work-notes/plans/plugin-extension/02-implementation.md, Stage 3.
+
+    WHY THIS IS C# AND NOT POWERSHELL, WHICH WAS THE OBVIOUS CHOICE.
+    The two things an install actually DOES - find Revit, copy the files - are
+    already written in PowerShell and proven: tools\HeronRevit.ps1 and
+    tools\deploy-addin.ps1. Rewriting either would be two copies of one rule,
+    which R-31 refuses.
+
+    What is NOT written anywhere is the DECIDING: which products, for which
+    releases, in what order, what to skip and why, and what to do while Revit
+    is still open. That half has to be testable, and a repository worked on
+    from Linux cannot run one line of PowerShell.
+
+    So the split is: THIS DECIDES, POWERSHELL ACTS. Everything in here is
+    pure enough to run and be tested anywhere; the two adapters that reach
+    Windows sit behind IRevitEnvironment and IProductDeployer and are the only
+    parts that need the owner's machine.
+
+    net8.0, NOT net8.0-windows. The engine never touches a Windows API
+    directly - it shells out for that - and a plain target is what lets its
+    tests run on the machine this repository is developed on.
+
+    NOT a Revit add-in. It never loads into Revit.exe, so it may use
+    System.Text.Json freely - the reason revit\Heron.Bridge\Json.cs is
+    hand-written (a serializer in Revit's load context is a known and
+    unpleasant class of bug) does not apply here.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Heron.Installer</RootNamespace>
+    <AssemblyName>Heron.Installer</AssemblyName>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+
+    <!--
+      Directory.Build.props drives every other project from RevitVersion and
+      maps it to a runtime. This one is release-independent: it installs FOR a
+      Revit release without ever loading into one, so it is built once.
+    -->
+    <HeronTfm>net8.0</HeronTfm>
+  </PropertyGroup>
+
+</Project>

@@ -215,20 +215,29 @@ That Revit accepts the GUIDs. Only a real Revit does that — Stage 2.
 |---|---|
 | [`revit/Heron.Doc/`](../../../../revit/Heron.Doc/) | the SECOND tab — `Heron Doc`, one panel, one button that shows a message |
 | [`revit/Heron.Tools/`](../../../../revit/Heron.Tools/) | the SECOND PIECE of the FIRST tab — a `Tools` panel on the tab named `Heron` |
-| [`tools/deploy-stage2-proof.ps1`](../../../../tools/deploy-stage2-proof.ps1) | puts them into Revit and takes them out again |
+| [`tools/deploy-addin.ps1`](../../../../tools/deploy-addin.ps1) | puts them into Revit and takes them out again — `-Product heron-doc`, `-Product heron-tools` |
 | [`tests/test_ribbon_tab_sharing.py`](../../../../tests/test_ribbon_tab_sharing.py) | the half a machine with no Revit can answer |
 
 **Both are throwaways and both say so in their own headers.** They are `PROVING` in the product
 manifest — the state meaning *the files exist and no user may be offered them* — and the whole of both
 projects is deleted when the real Heron Doc and Heron tools are built.
 
-**`tools/deploy-addin.ps1` cannot deploy them, and it was left alone.** Every path in it names
-`Heron.Revit.Addin` — the project folder, the DLL, the manifest, the rollback. That script is proven,
-including its rollback (2026-09-19), and widening a proven script to carry a throwaway is how a working
-thing breaks. So Stage 2 got its own small script instead, which installs nothing a user gets, has no
-product list and no rollback, refuses to touch `Heron.addin` or `Heron.Revit.Addin.dll` by name, and is
-deleted with the rest of the stage. **This is recorded as a finding for Stage 3**, where R-31's one
-engine is built: the real engine has to drive a deploy that knows more than one product.
+**How these get onto a machine changed on 2026-09-21, in the middle of the stage.** When Stage 2 was
+built, `tools/deploy-addin.ps1` named `Heron.Revit.Addin` in every path and could deploy nothing else,
+so the stage was given a small throwaway script of its own rather than widening a proven one. Stage 3
+then had to widen it anyway — [R-31](01-requirements.md) allows exactly one engine, and an engine that
+can install one product is not one. The throwaway had become a **second copy of the deploy rule**, which
+is how one of two copies goes stale, so **it was deleted** and Stage 2 now deploys with the real script:
+
+```powershell
+.\tools\deploy-addin.ps1 -RevitVersion 2024 -Product heron-doc
+.\tools\deploy-addin.ps1 -RevitVersion 2024 -Product heron-tools
+```
+
+**That makes this stage's proof worth more, not less.** The Revit session that answers AA1 to AA6 now
+exercises the script that ships, rather than one written to be thrown away. What it costs is that
+`deploy-addin.ps1` has **changed since its last proof and has not been run** — see the four states
+below, and rows `AA7` to `AA9` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md).
 
 **The cheapest way to find out the whole plan works.** Before any Doc or MEP tool is written, build a
 second product that does almost nothing, and see whether **two Heron tabs can live in one Revit**.
@@ -275,7 +284,8 @@ is Revit's to choose, so **neither piece may assume it is first**.
 | **PASS** | Compiles. `tools/check-compile.py` — **all 9 projects on all 8 releases, 2020 to 2027, 0 warnings**, with the two new ones included. That is the API agreeing and **nothing more** |
 | **PASS** | `tests/test_ribbon_tab_sharing.py` — 26 checks. The two Heron pieces name the same tab character for character, **neither assumes it loaded first**, the panels have different names, Heron Doc is its own tab, three manifests carry three different GUIDs, and nothing under `revit/` touches `Autodesk.Windows` |
 | **NEEDS REAL REVIT** | **(a)** two Heron tabs side by side · **(b)** all three combinations — AI Bridge only, tools only, both — as ONE `Heron` tab · **(c)** deleting the second product's two files takes its tab and leaves the first untouched |
-| **NOT RUN** | The deploy script has never executed. It is PowerShell for Windows and this container is Linux, so not one line of it has run anywhere |
+| **NOT RUN** | `tools/deploy-addin.ps1` has not executed since it was changed. It is PowerShell for Windows and this container is Linux, so not one line of it has run here. **Its rollback proof of 2026-09-19 is STALE for the current file** |
+| **PASS** | `tests/test_deploy_script.py` — the text checks a Linux machine can make on it: `-Product` defaults to `heron-bridge` and **that default resolves to the four values that used to be hardcoded**, no product name is left in the logic, and all six guards are still there |
 
 **Tools-only is still the case expected to break first**, and nothing done here changes that. What has
 been done is remove every way it could break *silently*: the tab strings are compared by a test rather
@@ -285,25 +295,29 @@ and catching that one would catch nothing Revit throws.
 
 ### How to finish it — on the machine with Revit on it
 
+**Close Revit before each command.** Every one of them refuses while it is open and names the release
+it found; that refusal is itself row `AA6`.
+
 ```powershell
 dotnet build revit\Heron.Doc\Heron.Doc.csproj      -p:RevitVersion=2024
 dotnet build revit\Heron.Tools\Heron.Tools.csproj  -p:RevitVersion=2024
 
 # (b) BOTH - one Heron tab with two panels, plus a second Heron Doc tab
-.\tools\deploy-stage2-proof.ps1 -RevitVersion 2024
+.\tools\deploy-addin.ps1 -RevitVersion 2024 -Product heron-doc
+.\tools\deploy-addin.ps1 -RevitVersion 2024 -Product heron-tools
 #    start Revit, SCREENSHOT
 
 # (b) TOOLS ONLY - the case that breaks first
-.\tools\deploy-addin.ps1 -RevitVersion 2024 -Remove
+.\tools\deploy-addin.ps1 -RevitVersion 2024 -Product heron-bridge -Remove
 #    start Revit, SCREENSHOT: a Heron tab WITH NO AI Bridge panel
 
 # (b) AI BRIDGE ONLY - what exists today
-.\tools\deploy-stage2-proof.ps1 -RevitVersion 2024 -Product Tools -Remove
-.\tools\deploy-addin.ps1 -RevitVersion 2024
+.\tools\deploy-addin.ps1 -RevitVersion 2024 -Product heron-tools  -Remove
+.\tools\deploy-addin.ps1 -RevitVersion 2024 -Product heron-bridge
 #    start Revit, SCREENSHOT
 
 # (c) the uninstall story, before any uninstaller exists
-.\tools\deploy-stage2-proof.ps1 -RevitVersion 2024 -Remove
+.\tools\deploy-addin.ps1 -RevitVersion 2024 -Product heron-doc -Remove
 #    start Revit: Heron Doc gone, Heron tab and its three buttons untouched
 ```
 
@@ -324,10 +338,50 @@ mixing a real tool into it would leave both unproven when it failed.
 
 ## Stage 3 — The installer core, with no window at all
 
-**Status: NOT STARTED**
+**Status: BUILT AND UNPROVEN — 2026-09-21. NOT DONE.**
+
+> **Everything this engine DECIDES is tested. Nothing it DOES has run.** The two places it reaches
+> Windows — asking which Revit is installed and open, and copying a product in — are PowerShell, and this
+> container is Linux. A compile and 38 passing decision checks are not an install, and must never be
+> reported as one.
+>
+> **It was also built before Stage 2 was proved.** The plan says Stage 3 must not begin until `AA1`,
+> `AA2` and `AA3` have passed; the owner chose to build it anyway on 2026-09-21. That is recorded in
+> [NEEDS-CHECKING Group AA](../../../NEEDS-CHECKING.md) with what it costs if `AA2` fails — the engine
+> survives, the *shape* does not.
 
 **Separate the engine from the face.** A window on top of a broken engine is two problems that look
 like one.
+
+### The shape it took — C# decides, PowerShell acts
+
+Everything that has to be **got right** is in C#, where it can be run against a fake Revit and a fake
+deployer on any machine. Everything that has to **touch Windows** is one thin adapter per job, and each
+one shells out to the script that already owns that rule rather than writing a second copy of it.
+
+| | |
+|---|---|
+| [`platform/Heron.Installer/ProductManifest.cs`](../../../../platform/Heron.Installer/ProductManifest.cs) | reads `platform/heron-products.json`. Nothing about a product is written in code — [R-3](01-requirements.md) |
+| [`InstallPlan.cs`](../../../../platform/Heron.Installer/InstallPlan.cs) | what will be installed where, and **what is skipped with the reason** — [R-10](01-requirements.md). Pure: no files, no Revit, no clock |
+| [`IRevitEnvironment.cs`](../../../../platform/Heron.Installer/IRevitEnvironment.cs) | the two questions about Windows, as an interface, so a test can answer them |
+| [`InstallEngine.cs`](../../../../platform/Heron.Installer/InstallEngine.cs) | plan → **wait for Revit** → deploy each → report per product per release |
+| [`WindowsAdapters.cs`](../../../../platform/Heron.Installer/WindowsAdapters.cs) | **the only two places this reaches Windows.** One dot-sources [`tools/HeronRevit.ps1`](../../../../tools/HeronRevit.ps1); the other runs [`tools/deploy-addin.ps1`](../../../../tools/deploy-addin.ps1). **Neither has ever run** |
+| [`tests/Heron.Installer.TestHost/`](../../../../tests/Heron.Installer.TestHost/) | 38 checks against a fake Revit and a fake deployer |
+
+**`tools/deploy-addin.ps1` was generalised rather than copied.** It deployed exactly one add-in until
+2026-09-21 — every path in it said `Heron.Revit.Addin`. [R-31](01-requirements.md) allows one engine, so
+the four facts that differ per product now come from the product list. Three other things were found
+missing while doing it and were fixed in the same file, each one a requirement that was already written
+down and simply not implemented:
+
+| | |
+|---|---|
+| [R-37](01-requirements.md) | the **download mark** is cleared on the deployed files. A DLL that arrived through a browser makes Revit refuse the add-in with a message naming nothing useful |
+| [R-38](01-requirements.md) | it **replaces**, rather than copying over. The previous install's folder is deleted and verified gone before anything is copied, so a file the old version shipped and the new one dropped cannot go on being loaded |
+| [R-38b](01-requirements.md) | a delete that does not finish **stops**, having copied nothing. The backup is taken first, so `-Rollback` always has somewhere to go |
+
+**Nothing is renamed aside and no `.old` folder is ever made** — [R-38c](01-requirements.md), and it is
+checked by a test rather than remembered.
 
 ### Do
 
@@ -366,9 +420,43 @@ like one.
 - `%APPDATA%\Heron` is **byte-for-byte unchanged** across an install ([R-20](01-requirements.md)).
   Compare before and after; do not assume.
 
+### Where it actually stands — the four states, kept apart
+
+**Not one of the six lines above has been answered.** Every one of them is about what happens on a
+machine with a Revit on it, and none of them can be asked here. What *can* be asked was, and it is a
+different question: does the engine **decide** correctly before it acts?
+
+| | |
+|---|---|
+| **PASS** | `tests/test_installer_engine.py` — **38 checks** on a fake Revit and a fake deployer. A heading installs nothing of its own and names its pieces; a `PROVING` product is never offered; a release the product does not support is skipped **with the reason**; a release on the PC that was not ticked is reported rather than passed over; it **waits** while Revit is open and carries on by itself; a Revit whose release cannot be read blocks everything rather than guessing; reaching the wait ceiling changes **nothing**; one product failing does not stop the others |
+| **PASS** | `tests/test_deploy_script.py` — the text checks a Linux machine can make on the generalised deploy script: `-Product` defaults to `heron-bridge` and **that default resolves to the four values that used to be hardcoded**, no product name is left in the logic, the replace is a delete-then-copy with no rename, and all six older guards are still there |
+| **PASS** | `tools/check-package.py` — widened on 2026-09-21 from one manifest to **every product's**: each one still carries the line the deploy script rewrites, and the script refuses a rewrite that would match nothing |
+| **NOT RUN** | **Both Windows adapters.** `PowerShellRevitEnvironment` and `DeployScriptDeployer` have never executed a line. So has `deploy-addin.ps1` since it was changed — its rollback proof of 2026-09-19 is **STALE for the current file** |
+| **NEEDS REAL REVIT** | Every line under *Done when* above, and rows `AA7` to `AA9` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) |
+
+**Item 6 — every path through `HeronPaths` — is satisfied by the engine building no Heron path at all.**
+It does not reference [`Heron.Core`](../../../../platform/Heron.Core/HeronPaths.cs) and does not need
+to: the only paths it makes are to the two scripts it runs, inside the repository. **The two Heron paths
+in this stage are both built in PowerShell** — the Addins folder and
+`%LOCALAPPDATA%\Heron\install-backup\` — and a `.ps1` cannot call a C# class.
+[`platform/README.md`](../../../../platform/README.md) rule 3 says `HeronPaths` is the only thing that
+builds a Heron path, so **that rule and `tools/deploy-addin.ps1` disagree, and have since 2026-09-19.**
+Recorded, not resolved: it predates this stage, and the fix is a decision about how PowerShell asks for
+a path rather than a line to change here.
+
+**Why the waiting is worth its own line.** Revit holds every assembly it has loaded, so a delete fails
+while it is open. AJ Tools renames the folder aside and sweeps later; the owner refused that, because
+the copies pile up until nobody can tell which one Revit is loading. This waits instead — and it
+**never closes Revit**, because an open Revit has a model in it and that model very likely has unsaved
+work. There is no `-Force` and no "it looked idle".
+
 ### Cannot prove
 
 Anything about the window, and anything about downloading — the files are local at this stage.
+
+**And anything at all about installing.** No file was written, no Revit was looked for, no PowerShell
+ran. A green test run here says the engine would make the right decisions; it says nothing whatever
+about whether the copy works.
 
 ---
 
@@ -627,7 +715,7 @@ Update this table as stages complete. **Do not mark a stage done without its evi
 | 0 | Record the decisions | **DONE** 2026-09-21 | [D-87 to D-95](../../../DECISIONS.md); `grep -c '^## D-'` 88 -> 97; `check-docs` 0 broken links |
 | 1 | Product manifest | **DONE** 2026-09-21 | `platform/heron-products.json`; `check-products.py` PASSES on it and **FAILS exit 1** on a duplicated `addInId`; `tests/test_products_manifest.py` 36 checks, 16 faults each refused by name |
 | 2 | Second tab | **BUILT AND UNPROVEN** 2026-09-21 | Compiles on all 8 releases, 0 warnings; `tests/test_ribbon_tab_sharing.py` 26 checks pass. **NEEDS REAL REVIT** - no ribbon has been seen, no screenshot exists |
-| 3 | Installer core | NOT STARTED | — |
+| 3 | Installer core | **BUILT AND UNPROVEN** 2026-09-21 | `platform/Heron.Installer/` builds; `tests/test_installer_engine.py` 38 checks pass against a fake Revit; `deploy-addin.ps1` generalised to every product and `tests/test_deploy_script.py` passes. **NOT RUN** - both Windows adapters and the deploy script itself have never executed |
 | 4 | The window | NOT STARTED | — |
 | 5 | GitHub download | NOT STARTED | — |
 | 6 | Routes 1 and 2 | NOT STARTED | — |

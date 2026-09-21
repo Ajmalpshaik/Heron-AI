@@ -3,9 +3,9 @@
 > **Type:** Operational work note. **Not specification.** Where a sentence here disagrees with the
 > [Constitution](../../../../HERON_CONSTITUTION.md), the [Golden Rules](../../../14-golden-rules.md) or
 > [DECISIONS.md](../../../DECISIONS.md), **those win and this note is out of date.**
-> **Status:** **Active.** Stage 0 and Stage 1 are **DONE**; Stage 2 is **BUILT AND UNPROVEN** and needs
-> a Windows machine with Revit ([Group AA](../../../NEEDS-CHECKING.md)). Stages 3 to 9 are NOT STARTED.
-> Opened 2026-09-20.
+> **Status:** **Active.** Stage 0 and Stage 1 are **DONE**; Stage 2 and Stage 3 are **BUILT AND
+> UNPROVEN** and both need a Windows machine with Revit ([Group AA](../../../NEEDS-CHECKING.md)).
+> Stages 4 to 9 are NOT STARTED. Opened 2026-09-20.
 > **Owner:** Ajmal PS.
 
 ---
@@ -17,9 +17,12 @@
 > not been told yet and reaches back into Phase 2, so Phase 2 is not designed in detail until it is.
 
 
-> **Stage 2 is the stop.** Everything after it assumes two Heron tabs can live in one Revit, and
-> **that has not been seen yet.** The code is written and compiles on all eight releases; no ribbon
-> has been looked at. **Stage 3 must not begin until AA1, AA2 and AA3 pass.**
+> **Stage 2 was the stop, and it was passed without being answered — 2026-09-21.** Everything after it
+> assumes two Heron tabs can live in one Revit, and **that has still not been seen.** The code is
+> written and compiles on all eight releases; no ribbon has been looked at. The note said *Stage 3 must
+> not begin until AA1, AA2 and AA3 pass*; **the owner chose to build Stage 3 anyway.** That is recorded
+> rather than edited away, together with what it costs if `AA2` fails — the install engine survives,
+> the **shape** does not. [Group AA](../../../NEEDS-CHECKING.md) has both.
 
 Heron today is **one tab with three buttons**. This folder plans the step from that to **several Heron
 products**, each its own Revit tab, and **one installer window** that installs whichever ones the user

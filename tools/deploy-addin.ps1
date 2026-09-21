@@ -75,11 +75,21 @@
     ONE deep only, deliberately. Two would need a policy for which to restore
     and a way to say so, and an update that has gone wrong twice running is
     not a case for a longer history - it is a case for rebuilding from source.
+
+    THE DOWNLOAD MARK - added 2026-09-21, R-37. Windows stamps anything that
+    came through a browser, and a marked assembly makes Revit refuse the
+    add-in with a message naming nothing useful. Cleared on the deployed
+    files. Harmless on a build made here; the case it is for is somebody who
+    downloaded the repository as a zip.
+
+    ASCII ONLY. Windows PowerShell 5.1 reads a file with no BOM as ANSI, and
+    tools\check-structure.py fails a non-ASCII .ps1 without one.
 #>
 [CmdletBinding()]
 param(
     [string] $RevitVersion = "2024",
     [string] $Configuration = "Debug",
+    [string] $Product = "heron-bridge",
     [switch] $Remove,
     [switch] $Rollback
 )
@@ -90,14 +100,72 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 
 . (Join-Path $PSScriptRoot "HeronRevit.ps1")
 
+# WHICH PRODUCT, READ FROM THE LIST RATHER THAN WRITTEN HERE.
+#
+# This script deployed exactly one thing until 2026-09-21 - every path in it
+# said Heron.Revit.Addin - and Stage 3 needs it to deploy any of them, because
+# R-31 refuses a second copy of the copy rule. So the four facts that differ
+# per product are looked up instead of typed:
+#
+#     folder      where the assemblies land under Addins\<version>\
+#     addin       the manifest file Revit scans for
+#     assembly    the DLL that must be there afterwards
+#     project     where to find the build, derived from the assembly name
+#
+# THE DEFAULT IS THE ADD-IN THIS SCRIPT HAS ALWAYS DEPLOYED, and resolves to
+# exactly the values that were hardcoded: folder Heron, Heron.addin,
+# Heron.Revit.Addin.dll, revit\Heron.Revit.Addin. Running it with no -Product
+# does today what it did yesterday.
+#
+# `folder` is NOT derived from the assembly name. heron-bridge's assembly is
+# Heron.Revit.Addin.dll and its folder is Heron - that is the live layout on
+# every machine Heron is installed on, and deriving it would move an existing
+# install and orphan the copy Revit is already loading.
+$productListPath = Join-Path $repoRoot "platform\heron-products.json"
+if (-not (Test-Path $productListPath)) {
+    throw "The Heron product list is not at $productListPath, so this cannot tell which files belong to '$Product'. The Heron files are incomplete - fetch them again."
+}
+
+$productList = (Get-Content $productListPath -Raw | ConvertFrom-Json).products
+$chosen = $productList | Where-Object { $_.id -eq $Product } | Select-Object -First 1
+
+if (-not $chosen) {
+    $known = ($productList | Where-Object { $_.folder } | ForEach-Object { $_.id }) -join ", "
+    throw "There is no Heron product called '$Product'. The ones that can be deployed are: $known."
+}
+if (-not $chosen.folder) {
+    throw "'$($chosen.name)' is a tab built by its pieces, so there is nothing to deploy under that name. Deploy the pieces instead."
+}
+
+$productName     = $chosen.name
+$productFolder   = $chosen.folder
+$productAddin    = $chosen.addin
+$productAssembly = $chosen.assembly
+$productProject  = $productAssembly -replace '\.dll$', ''
+$productProjPath = "revit\$productProject\$productProject.csproj"
+
 $target   = Join-Path $env:APPDATA "Autodesk\Revit\Addins\$RevitVersion"
-$addinDir = Join-Path $target "Heron"
-$manifest = Join-Path $target "Heron.addin"
+$addinDir = Join-Path $target $productFolder
+$manifest = Join-Path $target $productAddin
 
 # Heron's own folder, never Autodesk's - see the -Rollback note in the header.
-$backupDir      = Join-Path $env:LOCALAPPDATA "Heron\install-backup\$RevitVersion"
-$backupAddinDir = Join-Path $backupDir "Heron"
-$backupManifest = Join-Path $backupDir "Heron.addin"
+#
+# ONE BACKUP PER PRODUCT PER RELEASE, and that is a CHANGE OF PATH made on
+# 2026-09-21. It used to be Heron\install-backup\<version>; it is now
+# Heron\install-backup\<version>\<folder>. Without the extra level, rolling
+# back Heron Doc would restore whatever product was replaced last - and with
+# several products installed, that is the AI Bridge landing on top of a newer
+# one with nothing to say it happened.
+#
+# WHAT THAT COSTS ONCE: a backup written before this change sits at the old
+# path and -Rollback will not find it. It fails cleanly, saying there is
+# nothing to roll back to and how to deploy from source instead, and the next
+# deploy writes a fresh one at the new path. No old backup is deleted or
+# moved - reaching into a path this script no longer owns to tidy it would be
+# a worse risk than the one it fixes.
+$backupDir      = Join-Path $env:LOCALAPPDATA "Heron\install-backup\$RevitVersion\$productFolder"
+$backupAddinDir = Join-Path $backupDir $productFolder
+$backupManifest = Join-Path $backupDir $productAddin
 $backupRecord   = Join-Path $backupDir "replaced.json"
 
 # Revit holds a lock on loaded assemblies; deploying under it silently fails.
@@ -134,7 +202,7 @@ function Save-PreviousInstall {
     # What it was, so a rollback can say what it is putting back rather than
     # just doing it. A restore nobody can read back is the same evidence as
     # no restore - the shape brain/heron_update.py already refuses.
-    $replacedDll = Join-Path $backupAddinDir "Heron.Revit.Addin.dll"
+    $replacedDll = Join-Path $backupAddinDir $productAssembly
     $record = [ordered]@{
         revitVersion = $RevitVersion
         replacedAt   = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
@@ -153,7 +221,7 @@ function Save-PreviousInstall {
 
 if ($Rollback) {
     if (-not (Test-Path $backupAddinDir)) {
-        throw "Nothing to roll back to for Revit $RevitVersion. $backupDir holds no previous install - this script keeps one only from the moment it has replaced something, and it is machine-local, so a new profile or a cleared cache starts empty. Build and deploy from source instead:`n  dotnet build revit\Heron.Revit.Addin\Heron.Revit.Addin.csproj -c $Configuration -p:RevitVersion=$RevitVersion`n  .\tools\deploy-addin.ps1 -RevitVersion $RevitVersion"
+        throw "Nothing to roll back to for Revit $RevitVersion. $backupDir holds no previous install of '$productName' - this script keeps one only from the moment it has replaced something, and it is machine-local, so a new profile or a cleared cache starts empty. Build and deploy from source instead:`n  dotnet build $productProjPath -c $Configuration -p:RevitVersion=$RevitVersion`n  .\tools\deploy-addin.ps1 -RevitVersion $RevitVersion -Product $Product"
     }
 
     if (Test-Path $backupRecord) {
@@ -167,7 +235,7 @@ if ($Rollback) {
     if (Test-Path $backupManifest) { Copy-Item $backupManifest -Destination $manifest -Force }
 
     # Verify what was WRITTEN, for the same reason the deploy path does.
-    $rolledDll = Join-Path $addinDir "Heron.Revit.Addin.dll"
+    $rolledDll = Join-Path $addinDir $productAssembly
     if (-not (Test-Path $rolledDll)) {
         throw "Rollback finished but $rolledDll is not there. Do not start Revit against this folder."
     }
@@ -190,16 +258,16 @@ if ($Remove) {
     if (Test-Path $manifest) { Remove-Item $manifest -Force;               Write-Host "Removed $manifest" }
     if (Test-Path $addinDir) { Remove-Item $addinDir -Recurse -Force;      Write-Host "Removed $addinDir" }
     Write-Host ""
-    Write-Host "Heron uninstalled for Revit $RevitVersion. Restart Revit to unload it."
-    Write-Host "Put it back with:  .\tools\deploy-addin.ps1 -RevitVersion $RevitVersion -Rollback"
+    Write-Host "$productName uninstalled for Revit $RevitVersion. Restart Revit to unload it."
+    Write-Host "Put it back with:  .\tools\deploy-addin.ps1 -RevitVersion $RevitVersion -Product $Product -Rollback"
     return
 }
 
 # Find the build output rather than assuming its shape. Directory.Build.props
 # sets Platform=x64, so the path is bind\$Configuration - but that is a
 # build detail this script should not have to know.
-$projDir  = Join-Path $repoRoot "revit\Heron.Revit.Addin"
-$buildOut = Get-ChildItem -Path (Join-Path $projDir "bin") -Recurse -Filter "Heron.Revit.Addin.dll" -ErrorAction SilentlyContinue |
+$projDir  = Join-Path $repoRoot "revit\$productProject"
+$buildOut = Get-ChildItem -Path (Join-Path $projDir "bin") -Recurse -Filter $productAssembly -ErrorAction SilentlyContinue |
             Where-Object { $_.FullName -like "*$Configuration*" } |
             Sort-Object LastWriteTime -Descending |
             Select-Object -First 1 -ExpandProperty DirectoryName
@@ -285,16 +353,16 @@ function Get-RuntimeName {
     return $Tfm
 }
 
-$rebuildLine = "dotnet build revit\Heron.Revit.Addin\Heron.Revit.Addin.csproj -c $Configuration -p:RevitVersion=$RevitVersion"
+$rebuildLine = "dotnet build $productProjPath -c $Configuration -p:RevitVersion=$RevitVersion"
 
 $wantedTfm = Get-ExpectedTargetFramework -Release ([int]$RevitVersion)
 if (-not $wantedTfm) {
     throw "Heron does not know which .NET runtime Revit $RevitVersion uses, so it will not guess which build to deploy. Supported today: 2020 to 2027. Confirm the runtime for that release against the Autodesk SDK and add it to Directory.Build.props and to Get-ExpectedTargetFramework in this script."
 }
 
-$mainAssembly = Join-Path $buildOut "Heron.Revit.Addin.dll"
+$mainAssembly = Join-Path $buildOut $productAssembly
 if (-not (Test-Path $mainAssembly)) {
-    throw "No Heron.Revit.Addin.dll in $buildOut, so there is nothing to check and nothing to deploy. Build for this release first:`n  $rebuildLine"
+    throw "No $productAssembly in $buildOut, so there is nothing to check and nothing to deploy. Build for this release first:`n  $rebuildLine"
 }
 
 # @() AROUND THE CALL, and it is load-bearing. PowerShell UNROLLS a
@@ -331,6 +399,43 @@ $isDotNet = $wantedTfm.StartsWith(".NETCoreApp")
 # about to happen - a run that threw on the wrong build flavour leaves the
 # previous rollback point intact rather than spending it on a no-op.
 Save-PreviousInstall
+
+# REPLACE, NEVER COPY OVER - R-38, R-38b, R-38c, added 2026-09-21.
+#
+# Until now this created the folder with -Force and copied into it. Copying
+# over an install leaves behind every file the OLD version shipped and the new
+# one does not, and Revit loads what is in the folder rather than what the
+# build produced. A helper assembly dropped in version 2 goes on being loaded
+# by version 1's copy of it, and the symptom is a bug that was fixed months
+# ago coming back on one machine and nowhere else.
+#
+# NOTHING IS RENAMED AND NO .old FOLDER IS EVER MADE. AJ Tools' installer
+# renames the folder aside when it cannot delete it and sweeps up later; the
+# owner ruled against that on 2026-09-21, because the copies pile up until
+# nobody can tell which one Revit is loading. The install refuses while Revit
+# is open instead - the guard above - so by here the files are not locked.
+#
+# IF THE DELETE DOES NOT FULLY SUCCEED, STOP - R-38b. A clean refusal is
+# recoverable, and Save-PreviousInstall has already run, so the previous
+# install is in the backup folder and -Rollback can put it back. A half
+# removed install is what is NOT recoverable, so nothing is copied after a
+# delete that did not finish.
+if (Test-Path $addinDir) {
+    # Never anything but this product's own folder under this release's Addins
+    # directory. A path that is not exactly that is a bug in the product list,
+    # not a folder to delete - and Remove-Item -Recurse -Force does not ask.
+    $expected = Join-Path $target $productFolder
+    if ($addinDir -ne $expected) {
+        throw "Refusing to delete '$addinDir': it is not '$expected', which is where '$productName' is installed. Nothing was changed."
+    }
+
+    Remove-Item $addinDir -Recurse -Force -ErrorAction SilentlyContinue
+
+    if (Test-Path $addinDir) {
+        $left = @(Get-ChildItem $addinDir -Recurse -File -ErrorAction SilentlyContinue)
+        throw "Could not fully remove the previous install of '$productName' at $addinDir - $($left.Count) file(s) are still there. Something has them open. NOTHING FURTHER WAS CHANGED, and the install being replaced is in $backupDir; put it back with:`n  .\tools\deploy-addin.ps1 -RevitVersion $RevitVersion -Product $Product -Rollback"
+    }
+}
 
 New-Item -ItemType Directory -Force -Path $addinDir | Out-Null
 
@@ -377,7 +482,7 @@ if ($isDotNet) {
                     Where-Object { $_.Name -like "*.deps.json" -or $_.Name -like "*.runtimeconfig.json" }
 
     if (-not $runtimeFiles) {
-        throw "Revit $RevitVersion needs .NET runtime metadata and the build in $buildOut has none. Revit would load the assembly and fail to resolve its dependencies, reporting only that it cannot run the external application. Rebuild first:`n  dotnet build revit\Heron.Revit.Addin\Heron.Revit.Addin.csproj -c $Configuration -p:RevitVersion=$RevitVersion"
+        throw "Revit $RevitVersion needs .NET runtime metadata and the build in $buildOut has none. Revit would load the assembly and fail to resolve its dependencies, reporting only that it cannot run the external application. Rebuild first:`n  $rebuildLine"
     }
 
     $runtimeFiles | ForEach-Object {
@@ -391,11 +496,30 @@ if ($Configuration -eq "Debug" -and $pdb) {
     $pdb | ForEach-Object { Copy-Item $_.FullName -Destination $addinDir -Force }
 }
 
+# THE DOWNLOAD MARK, cleared on the files Revit will actually load - R-37.
+#
+# Windows stamps anything that arrived through a browser with a zone marker,
+# and Copy-Item carries that marker along with the file. A marked assembly
+# makes Revit refuse the add-in with a message naming nothing useful, so the
+# person looking at it has no way to tell what is wrong. AJ Tools' installer
+# hit this and clears the marker twice; L1 in docs/work-notes/plans/
+# plugin-extension/04-lessons-from-aj-tools.md.
+#
+# A build made on this machine carries no marker, so this is a no-op most of
+# the time. It is not a no-op for somebody who downloaded the repository as a
+# zip, which is how most people will first get Heron.
+#
+# SilentlyContinue because a missing marker is the normal case and is not a
+# failure, and because the cmdlet is not worth stopping a good deploy over.
+Get-ChildItem -Path $addinDir -File -Recurse | ForEach-Object {
+    Unblock-File -Path $_.FullName -ErrorAction SilentlyContinue
+}
+
 # Verify what was WRITTEN, not what was intended. The deployed folder is what
 # Revit reads, and every failure this script has caused looked like success at
 # this point.
-$deployedDll  = Join-Path $addinDir "Heron.Revit.Addin.dll"
-$deployedDeps = Join-Path $addinDir "Heron.Revit.Addin.deps.json"
+$deployedDll  = Join-Path $addinDir $productAssembly
+$deployedDeps = Join-Path $addinDir ($productProject + ".deps.json")
 
 if (-not (Test-Path $deployedDll)) {
     throw "Deployment finished but $deployedDll is not there. Nothing was installed."
@@ -405,11 +529,39 @@ if ($isDotNet -and -not (Test-Path $deployedDeps)) {
 }
 
 # Point the manifest at the deployed assembly.
-$manifestSource = Join-Path $repoRoot "revit\Heron.Revit.Addin\Heron.addin"
-(Get-Content $manifestSource -Raw).Replace(
-    "<Assembly>Heron.Revit.Addin.dll</Assembly>",
-    "<Assembly>Heron\Heron.Revit.Addin.dll</Assembly>"
-) | Set-Content -Path $manifest -Encoding UTF8
+$manifestSource = Join-Path $repoRoot "revit\$productProject\$productAddin"
+if (-not (Test-Path $manifestSource)) {
+    throw "$manifestSource is missing, so Revit would have a DLL it never looks at. The Heron files are incomplete - fetch them again."
+}
+
+# Point the shipped manifest at where the assembly actually landed. The file
+# in the repository names the DLL; the deployed one names the path under the
+# release folder.
+$needle      = "<Assembly>$productAssembly</Assembly>"
+$replacement = "<Assembly>$productFolder\$productAssembly</Assembly>"
+$manifestXml = Get-Content $manifestSource -Raw
+
+# STRING.REPLACE DOES NOT FAIL WHEN IT MATCHES NOTHING. It hands back the
+# string unchanged and says nothing, so a manifest that spells the assembly
+# differently - a rename, a stray space, a line break inside the element -
+# would deploy pointing at a DLL one folder up from where the file is. Revit
+# would find the manifest, fail to find the assembly, and report only that it
+# cannot run the external application.
+#
+# Until 2026-09-21 tools/check-package.py caught that by reading the literal
+# out of this script and looking for it in Heron.addin. It could do that while
+# the literal was a literal. The name now comes from the product list, so the
+# check moved in here, where it can see the real value.
+if (-not $manifestXml.Contains($needle)) {
+    throw "$manifestSource does not contain '$needle', so pointing it at the deployed assembly would silently do nothing and Revit would look for '$productAssembly' in the wrong folder. The manifest and platform\heron-products.json disagree about what '$productName' builds. Nothing was written."
+}
+
+$manifestXml.Replace($needle, $replacement) | Set-Content -Path $manifest -Encoding UTF8
+
+# And the manifest, which is the first file Revit reads. It is written here
+# rather than copied, so it should carry no marker - cleared anyway, because
+# the cost is nothing and the failure it prevents is unreadable.
+Unblock-File -Path $manifest -ErrorAction SilentlyContinue
 
 Write-Host ""
 Write-Host "Deployed to $addinDir"
@@ -417,5 +569,8 @@ Write-Host "Manifest    $manifest"
 Write-Host ""
 Write-Host "Next:"
 Write-Host "  1. Start Revit $RevitVersion"
-Write-Host "  2. Ribbon > Heron > AI Bridge > Heron   (click to connect, click again to disconnect)"
-Write-Host "  3. python mcp\client\heron_bridge_client.py ping"
+Write-Host "  2. Look for the $($chosen.tab) tab on the ribbon"
+if ($Product -eq "heron-bridge") {
+    Write-Host "     Ribbon > Heron > AI Bridge > Heron   (click to connect, click again to disconnect)"
+    Write-Host "  3. python mcp\client\heron_bridge_client.py ping"
+}

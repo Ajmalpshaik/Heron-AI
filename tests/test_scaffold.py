@@ -83,8 +83,12 @@ def main():
               "and a file with no ALLOWED gives nothing")
 
         print("\n2. the produced file is real XML")
+        # "platform/Heron.Core", not "platform". platform held one project
+        # until 2026-09-21 and holds two since, so the bare layer name is
+        # now correctly refused - section 4 below checks that it is, and
+        # that the refusal says how to be specific.
         answer = NCR.author("Heron.Reporting", "mcp",
-                            references=["platform"],
+                            references=["platform/Heron.Core"],
                             why="Reports, rendered away from Revit.")
         check(answer["authored"] is True, "it authored")
         tree = ET.fromstring(answer["text"])
@@ -122,8 +126,10 @@ def main():
         check(NCR.projects_in("brain") == [],
               "brain really holds no .csproj")
         check(NCR.projects_in("platform") == [
-            os.path.join("platform", "Heron.Core", "Heron.Core.csproj")],
-              "while platform holds exactly one: %s"
+            os.path.join("platform", "Heron.Core", "Heron.Core.csproj"),
+            os.path.join("platform", "Heron.Installer",
+                         "Heron.Installer.csproj")],
+              "while platform holds two since 2026-09-21: %s"
               % NCR.projects_in("platform"))
 
         print("\n4. a layer with several projects is asked about")
@@ -134,6 +140,30 @@ def main():
         check(len(NCR.projects_in("revit")) > 1,
               "it really does: %s" % ", ".join(NCR.projects_in("revit")))
         check("D-33" in said["why"], "and the reason names D-33")
+
+        # A REFUSAL THAT NAMES NO WAY OUT IS A DEAD END. Until 2026-09-21 a
+        # reference could only ever name a layer, so "which one do you mean"
+        # asked for something the caller could not say. platform gaining a
+        # second project is what found it.
+        said = NCR.author("Heron.X", "mcp", references=["platform"])
+        reached.add(said.get("refused"))
+        check(said.get("refused") == "WHICH_PROJECT",
+              "platform holds more than one too, so it is asked about")
+        check("platform/Heron.Core" in said["why"],
+              "and the refusal SAYS HOW to be specific: %r"
+              % said["why"][-60:])
+        named = NCR.author("Heron.X", "mcp",
+                           references=["platform/Heron.Installer"])
+        check(named.get("authored") is True,
+              "naming one of them authors")
+        check(named["referencePaths"]["platform"].endswith(
+            "Heron.Installer.csproj"),
+              "against the project that was named, not the first: %s"
+              % named["referencePaths"]["platform"])
+        said = NCR.author("Heron.X", "mcp", references=["platform/Heron.Nope"])
+        reached.add(said.get("refused"))
+        check(said.get("refused") == "NO_SUCH_PROJECT",
+              "and a project that is not there is refused, not guessed at")
 
         print("\n5. the target framework is never a literal")
         check(answer["targetFramework"] == NCR.TFM,
@@ -156,13 +186,15 @@ def main():
                   "%s may not reference %s" % (layer, ", ".join(refs)))
             check("text" not in said,
                   "and nothing was authored before the refusal")
-        allowed = NCR.author("Heron.X", "revit", references=["platform"])
+        allowed = NCR.author("Heron.X", "revit",
+                             references=["platform/Heron.Core"])
         check(allowed["authored"] is True,
               "while revit -> platform is allowed and authors")
 
         print("\n7. nothing is written")
         before = sorted(os.listdir(os.path.join(ROOT, "mcp")))
-        NCR.author("Heron.Reporting", "mcp", references=["platform"])
+        NCR.author("Heron.Reporting", "mcp",
+                   references=["platform/Heron.Core"])
         check(sorted(os.listdir(os.path.join(ROOT, "mcp"))) == before,
               "the folder it names is untouched")
         check(answer["written"] is False, "`written` is false")
@@ -186,7 +218,7 @@ def main():
         contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                          "HERON-DEV-NCR-020.yaml"))
         named = contract.get("failures") or []
-        check(len(named) == 8, "the contract declares 8 failures")
+        check(len(named) == 9, "the contract declares 9 failures")
         for failure in named:
             check(failure in logic, "the code names %s" % failure)
         unreached = sorted(set(named) - reached)
