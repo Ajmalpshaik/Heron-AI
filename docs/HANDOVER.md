@@ -126,7 +126,7 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 
 ### 2026-09-21 (later) — THE INSTALLER'S FIRST READING, AND TWO FOLDERS FINISHED
 
-**Section 5b rows 78 to 82. All five FIXED.** **`platform/` and `mcp/` are now read to the end** — the first two folders to come off the list. The whole of Stage 3 and Stage 4 landed in **#233** — 2,924
+**Section 5b rows 78 to 82. All five FIXED.** **`platform/`, `mcp/` and the repository root are now read to the end** — the first three buckets to come off the list. The whole of Stage 3 and Stage 4 landed in **#233** — 2,924
 lines across `platform/Heron.Installer/`, `platform/Heron.Installer.App/`, `tools/deploy-addin.ps1` and
 `tools/HeronRevit.ps1` — and **none of it had been read by anyone**. This session read all ten files
 word by word. Seven came back clean; three did not, and every one of the three is the kind a compile
@@ -200,7 +200,16 @@ the current file.
 **Numbers at the end of it**, all derived: **252 register rows, 32 open** (all five new rows are
 FIXED, so the open count did not move), **117 of 1,179 files read, 0 stale**, ten gates green, and
 `check-gaps` exit 0 with nothing on its UNFINISHED list. **What is left to read is now four folders
-and the root**: `brain` 537, `tests` 229, `tools` 132, `docs` 125, `revit` 33, root 6.
+and nothing else**: `brain` 537, `tests` 229, `tools` 132, `docs` 125, `revit` 33.
+
+**The root came off last, and one file in it was read to a deliberate boundary.**
+`HERON_AI_MASTER_ARCHITECTURE.md` is a research brief whose body is **unedited on purpose**
+([D-57](DECISIONS.md)) — its own banner says the disagreements are the useful part and an edited
+brief stops showing what was proposed. So the body cannot go stale the way a normal file does, and
+the only part making a claim about today is the banner. Every claim in it was checked and holds:
+D-57 exists, [32](32-master-architecture-reconciliation.md) carries the sections it points at, the
+*nine exist and four are stricter* line is 32 §2's own headline rather than a number invented here,
+and every section it cites is really in the file. The mark says what was not read and why.
 
 ### 2026-09-21 — EIGHTEEN ROWS FROM READING, TWO WRONG TURNS WITHDRAWN, AND A GATE THAT HAD NEVER RUN
 
