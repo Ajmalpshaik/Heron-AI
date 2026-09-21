@@ -103,6 +103,17 @@ namespace Heron.Revit.Addin
         // several at once throws a sharing violation, and the catch below would
         // swallow it - losing the line silently. For something Golden Rule 14
         // calls evidence, that is not acceptable.
+        //
+        // AND THE ANALYSIS WAS RIGHT WITH ITS SCOPE ONE SHORT. This lock is
+        // static, so it serialises the threads of ONE process - and
+        // addin-YYYYMMDD.log is one file per machine per day, which every
+        // Revit session on the machine appends to. A second Revit is a second
+        // process with its own LogLock that this one cannot see, and the
+        // sharing violation it describes was exactly what happened. The lock
+        // stays and HeronAppend adds what it cannot reach: FileShare.ReadWrite
+        // so the writers are not refused, a system-wide mutex so they take
+        // turns, and an answer when the line did not land.
+        // FRAGMENT-ISSUES section 5b, row 19.
         private static readonly object LogLock = new object();
 
         public Result OnStartup(UIControlledApplication application)
@@ -114,6 +125,15 @@ namespace Heron.Revit.Addin
                 // disagreed with HeronPaths - which is the exact drift the
                 // Path Manager exists to prevent (docs/06 section 2).
                 LogDirectory = HeronPaths.Logs;
+
+                // A LOST AUDIT LINE GOES SOMEWHERE. The kernel depends on
+                // nothing, so HeronAudit cannot call this logger - it offers
+                // a hook instead, and this is the one place that has both.
+                // The audit trail is evidence and is never pruned; the
+                // verbose log is disposable and rotated, which is exactly
+                // where the note about a hole belongs.
+                // FRAGMENT-ISSUES section 5b, row 5.
+                HeronAudit.ReportLoss = Log;
 
                 var config = HeronConfig.Load();
                 PruneLogs(config.GetInt("log.retainDays", 14));
@@ -180,7 +200,23 @@ namespace Heron.Revit.Addin
             {
                 // Never take Revit down. A failed add-in should be visible and
                 // inert, not fatal.
-                TaskDialog.Show("Heron", "Heron failed to start:\n\n" + ex.Message);
+                //
+                // WHAT HAPPENED, THEN WHAT TO DO NEXT - and the second half
+                // used to be missing. This showed ex.Message on its own, so a
+                // null reference inside BuildRibbon read as "Object reference
+                // not set to an instance of an object." to a BIM modeller.
+                // The conventions carry the worked example for this exact
+                // dialog, and LogDirectory is assigned on the first line of
+                // this method, before anything that can realistically fail,
+                // so the path is always there to name. Revit's own words are
+                // kept and ATTRIBUTED rather than presented as Heron's, which
+                // is the pattern RevitWrite already uses.
+                // FRAGMENT-ISSUES section 5b, row 20.
+                TaskDialog.Show("Heron",
+                    "Heron did not start, so its ribbon will be missing or unusable. " +
+                    "Revit itself is fine and your model is untouched.\n\n" +
+                    "The log that says why is in " + (LogDirectory ?? HeronPaths.Logs) + "\n\n" +
+                    "Windows said: " + ex.Message);
                 return Result.Failed;
             }
         }
@@ -471,12 +507,12 @@ namespace Heron.Revit.Addin
             {
                 lock (LogLock)
                 {
-                    File.AppendAllText(
+                    HeronAppend.Line(
                         CurrentLogPath(),
                         // UtcNow, not Now: the "u" format stamps a trailing Z, so local time
                         // here would label every line UTC while being hours out locally. UTC
                         // also matches startedAt in the discovery file, so the two line up.
-                        string.Format("{0:u}  {1}{2}", DateTime.UtcNow, message, Environment.NewLine));
+                        string.Format("{0:u}  {1}", DateTime.UtcNow, message));
                 }
             }
             catch (IOException) { }

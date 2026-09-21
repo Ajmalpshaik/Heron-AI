@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Heron.Core;
 
 namespace Heron.Kernel.TestHost
@@ -70,6 +71,7 @@ namespace Heron.Kernel.TestHost
             Identity();
             Stop();
             AtomicWrite();
+            Append();
             Config();
 
             Console.WriteLine();
@@ -284,12 +286,120 @@ namespace Heron.Kernel.TestHost
         }
 
         // ------------------------------------------------------------------
+        // HeronAppend - rows 5 and 19. The defect they record is a SECOND
+        // PROCESS, which cannot be spawned from here - but the thing that
+        // made the second process fatal can be reproduced exactly: a file
+        // held open the way File.AppendAllText holds it.
+        // ------------------------------------------------------------------
+        private static void Append()
+        {
+            Console.WriteLine();
+            Console.WriteLine("6. HeronAppend - a second writer is not a lost line");
+
+            var folder = Path.Combine(Path.GetTempPath(),
+                                      "heron-append-" + Guid.NewGuid().ToString("N").Substring(0, 8));
+            Directory.CreateDirectory(folder);
+            var file = Path.Combine(folder, "audit-209901.jsonl");
+            try
+            {
+                Check(HeronAppend.Line(file, "{\"first\": 1}"),
+                      "the first line is written, and it says so");
+                Check(File.ReadAllText(file).Trim() == "{\"first\": 1}",
+                      "with the contents given, and a newline after it");
+
+                // THE DEFECT, REPRODUCED - ON WINDOWS. File.AppendAllText
+                // opens with FileShare.Read, so while one writer holds the
+                // file NOBODY else may write, which is what a second Revit
+                // is.
+                //
+                // AND IT IS A WINDOWS FACT, WHICH THIS FOUND BY TRYING IT.
+                // Rows 5 and 19 measured the sharing violation on .NET, and
+                // the measurement stands - on Windows, where FileShare is
+                // enforced by the operating system. On Linux the same code
+                // appends happily, because .NET's sharing flags are not
+                // enforced between processes there. Revit is Windows-only so
+                // the defect was real where it matters; saying WHERE it was
+                // checked is the difference between a test and a claim.
+                var onWindows = Environment.OSVersion.Platform == PlatformID.Win32NT;
+                using (var theOldWay = new FileStream(file, FileMode.Append, FileAccess.Write,
+                                                      FileShare.Read))
+                {
+                    var refused = false;
+                    try { File.AppendAllText(file, "{\"lost\": true}" + Environment.NewLine); }
+                    catch (IOException) { refused = true; }
+                    if (onWindows)
+                    {
+                        Check(refused,
+                              "a FileShare.Read holder refuses the next writer outright - "
+                              + "which is the line that used to vanish");
+                    }
+                    else
+                    {
+                        Console.WriteLine("  n/a   the FileShare.Read refusal is a Windows "
+                                          + "behaviour and cannot be reproduced here (it "
+                                          + (refused ? "refused" : "did not refuse") + ")");
+                    }
+                    GC.KeepAlive(theOldWay);
+                }
+
+                // AND THE REPAIR. Held the new way, a second writer gets in.
+                using (var other = new FileStream(file, FileMode.Append, FileAccess.Write,
+                                                  FileShare.ReadWrite))
+                {
+                    Check(HeronAppend.Line(file, "{\"second\": 2}"),
+                          "held open with FileShare.ReadWrite, the next writer gets in");
+                    GC.KeepAlive(other);
+                }
+
+                // AND IT SAYS SO WHEN IT CANNOT. An honest false is what lets
+                // HeronAudit report the hole rather than leaving one.
+                Check(!HeronAppend.Line(Path.Combine(file, "under-a-file.log"), "nowhere"),
+                      "a path that cannot be written answers false rather than throwing");
+                Check(!HeronAppend.Line(null, "nowhere") && !HeronAppend.Line("", "nowhere"),
+                      "and so does no path at all");
+
+                // NO TORN LINES. Ten threads, a hundred lines each: every one
+                // of the thousand is whole and on its own line. The mutex is
+                // what makes taking turns different from sharing the file.
+                var beforeThreads = File.ReadAllLines(file).Length;
+                var threads = new List<Thread>();
+                for (var t = 0; t < 10; t++)
+                {
+                    var mine = t;
+                    var thread = new Thread(delegate()
+                    {
+                        for (var i = 0; i < 100; i++)
+                            HeronAppend.Line(file, "thread-" + mine + "-line-" + i);
+                    });
+                    threads.Add(thread);
+                    thread.Start();
+                }
+                foreach (var thread in threads) thread.Join();
+
+                var lines = File.ReadAllLines(file);
+                var whole = 0;
+                foreach (var line in lines)
+                    if (line.StartsWith("thread-", StringComparison.Ordinal)
+                        && line.Split('-').Length == 4) whole++;
+                Check(whole == 1000,
+                      "1000 lines from 10 threads arrive whole and separate (" + whole + ")");
+                Check(lines.Length == beforeThreads + 1000,
+                      "and nothing else was lost or duplicated - " + (beforeThreads + 1000)
+                      + " lines in all (" + lines.Length + ")");
+            }
+            finally
+            {
+                try { Directory.Delete(folder, true); } catch (IOException) { }
+            }
+        }
+
+        // ------------------------------------------------------------------
         // HeronConfig.GetBool - row 8.
         // ------------------------------------------------------------------
         private static void Config()
         {
             Console.WriteLine();
-            Console.WriteLine("6. HeronConfig.GetBool - a value nobody can parse is a value nobody stated");
+            Console.WriteLine("7. HeronConfig.GetBool - a value nobody can parse is a value nobody stated");
 
             // ui.activityBanner is the key that matters: it is the only one
             // read with a TRUE fallback, because a Revit frozen with no

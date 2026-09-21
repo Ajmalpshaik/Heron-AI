@@ -145,9 +145,19 @@ the two line up when diagnosing.
 The log is evidence ([Golden Rule 14](../../../docs/14-golden-rules.md)). Never silently discard a
 skipped item: record what was skipped and why.
 
-**Take the lock.** Listener threads and the Revit thread all write. Appending from several at once
-throws a sharing violation, and a `catch` around it loses the line in silence — the one failure mode
-evidence cannot have.
+**Never append to a shared file by hand — call `HeronAppend.Line`.** This rule used to read *"take the
+lock"*, and that was one scope short. A `lock` serialises the threads of ONE process; `addin-<date>.log`
+is one file per machine per day and `audit-YYYYMM.jsonl` is one file per user, and **every Revit session
+runs its own add-in in its own process**. On Windows the second session's `File.AppendAllText` throws a
+sharing violation — `FileShare.Read` is what it opens with — and the `catch` around it loses the line in
+silence, which is the one failure mode evidence cannot have. Measured, not reasoned:
+[FRAGMENT-ISSUES §5b rows 5 and 19](../../../docs/FRAGMENT-ISSUES.md).
+
+`HeronAppend.Line` opens with `FileShare.ReadWrite`, takes a **named system-wide** mutex so two
+processes take turns rather than interleaving, retries briefly, and **returns whether the line landed**.
+Keep the in-process `lock` as well — it costs nothing and keeps your own threads off the system mutex.
+**Act on the `false`**: `HeronAudit` reports a lost line to the verbose log through its `ReportLoss`
+hook, because a hole in the evidence has to be evidence too.
 
 **One file per day**, named `addin-<yyyyMMdd>.log`, pruned by `log.retainDays`. A single file that grows
 for ever cannot be retained for fourteen days, so the setting would be a lie.
