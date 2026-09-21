@@ -249,8 +249,13 @@ did. It is not a compile and not a passing test.
 [12 — Security & Permissions](12-security-and-permissions.md) for approval and data scope ·
 [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md) for the binding rules.
 
-**Declared support and tested releases are not the same list.** The compile gate covers 2020–2027; a
-real Revit has been used on 2020 and 2024.
+**Declared support and tested releases are not the same list**, and there are two tested lists rather
+than one. The compile gate covers **2020–2027**, on every push. The **add-in has been deployed, loaded
+and had its tab checked on 2020, 2024 and 2027** — [`A12` and `A13`](NEEDS-CHECKING.md), 2026-09-19, on
+all three releases installed on the owner's PC. **Fragments have been proven on 2020 and 2024 only**:
+a proof is a recorded run against a named model, and none names 2027. This line said *"a real Revit has
+been used on 2020 and 2024"* until 2026-09-21, which was true of the second list and understated the
+first ([row 5b-62](FRAGMENT-ISSUES.md)).
 
 ### Developer
 
