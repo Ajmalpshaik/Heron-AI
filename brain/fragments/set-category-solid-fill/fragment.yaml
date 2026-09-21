@@ -1,0 +1,111 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-107
+semantic-identity: "wash a whole category with a solid colour in one view"
+kind: action
+domain: revit.views
+capability: SET_CATEGORY_SOLID_FILL
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  SET_CATEGORY_GRAPHICS with the fill patterns filled in. It takes the same
+  settings object - colours, halftone, line weights - and stamps Revit's solid
+  fill pattern onto the surface and the cut before applying it to the category.
+
+  WHY THIS IS A SEPARATE FRAGMENT RATHER THAN TWO MORE KEYS IN THE PARSER.
+  `OneOverride` in RevitFragment.cs sets nine things and deliberately not the
+  patterns, because a pattern is an ELEMENT and naming one is a filter's job
+  rather than a string parse. That line is right and this fragment keeps it:
+  THE ELEMENT LOOKUP HAPPENS HERE, in fragment source, where a
+  FilteredElementCollector belongs. The parser still only ever sees strings,
+  and widening it would have cost a rebuilt add-in and a Revit restart.
+
+  WITHOUT THIS, A PATTERN COLOUR DOES NOTHING YOU CAN SEE. A surface colour
+  tints the pattern the material already carries; where the material carries
+  none, the colour is stored, reads back correctly, and paints nothing at all.
+  That is the quietest failure in the whole override cluster - REPORT_CATEGORY_
+  OVERRIDES says RGB(230,230,230) and the paper comes out blank.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: categories
+      type: IList<Category>
+      source: request
+    # The same object SET_CATEGORY_GRAPHICS takes, built by the same parser.
+    # This fragment ADDS the two pattern ids to it and changes nothing else,
+    # so every colour and weight the caller asked for survives.
+    - name: overrides
+      type: OverrideGraphicSettings
+      source: request
+  provides:
+    - name: overridden
+      role: result
+      type: int
+    - name: solidPattern
+      # WHICH pattern it found, by name. The evidence the wash will actually
+      # paint - "overridden 1" cannot tell you that on its own.
+      role: accounting
+      type: string
+    - name: notControllable
+      # Categories this view will not let be overridden. The evidence it
+      # looked and could not, never a thing it did (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND, so it must not count toward
+      # "did this come back empty" (D-52).
+      role: accounting
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `OverrideGraphicSettings.SetSurface
+  ForegroundPatternId`, `SetCutForegroundPatternId` and their `...Visible`
+  pairs have carried these names since 2019, so 2020 is already past the
+  rename from the old `SetProjectionFillPatternId` spelling.
+  `FillPattern.IsSolidFill`, `View.SetCategoryOverrides` and
+  `Category.get_AllowsVisibilityControl` are unchanged 2020 to 2027 - the
+  first is read off COLOR_BY_PARAMETER, which is proven on the same span.
+
+# ROUTING - the line between this and SET_CATEGORY_GRAPHICS is ONE QUESTION:
+# must the category READ as a colour, or only be tinted where it already
+# hatches?
+#
+#   "grey the architecture back"      -> SET_CATEGORY_GRAPHICS. Halftone and
+#                                        line colour need no pattern
+#   "wash the walls light grey so it
+#    prints"                          -> HERE. A colour with no pattern is
+#                                        stored and invisible
+#   "colour these by system"          -> COLOR_BY_PARAMETER, which finds the
+#                                        same solid fill and groups by a value
+#   "put this view back to normal"    -> RESET_VIEW_GRAPHICS
+#
+# THIS REPLACES RATHER THAN MERGES, inherited from SET_CATEGORY_GRAPHICS and
+# true for the same reason: `SetCategoryOverrides` takes the whole object. To
+# keep what a category already had, read `view.GetCategoryOverrides(id)` first
+# and hand THAT in as `overrides`.
+
+utterances:
+  - wash the category in a solid colour
+  - make the walls solid grey so it prints
+  - solid fill the whole category
+  - the colour is set but nothing shows on paper
+  - give this category a colour wash
+  - fill the category solid, not just the lines

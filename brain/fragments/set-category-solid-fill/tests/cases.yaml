@@ -1,0 +1,43 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      Walls, with surface-colour=230,230,230 and cut-colour=230,230,230, on a
+      plan where the wall material carries NO surface pattern
+    expect: >
+      the walls come out washed light grey. This is the case that separates
+      this fragment from SET_CATEGORY_GRAPHICS, which stores the same colour
+      and paints nothing - LOOK AT IT, do not read it back, because both
+      fragments read back identically
+
+  - given: >
+      the same call with projection-line-colour=255,0,0 alongside the greys
+    expect: >
+      red outlines AND a grey wash. The colours the caller parsed must all
+      survive the pattern being stamped on - this fragment adds to the
+      settings object, it does not rebuild it
+
+  - given: the same override applied, then A NEW WALL DRAWN in that view
+    expect: >
+      THE NEW WALL IS WASHED TOO, for the same reason the category version of
+      everything is preferred: nothing was ever stuck to an id
+
+negative:
+  - given: a model whose solid fill pattern has been PURGED
+    expect: >
+      `refused` carries the sentence, `solidPattern` reads "none found",
+      `overridden` is 0 AND NOTHING IS WRITTEN. Writing the colours anyway is
+      the failure this fragment exists to prevent, so a partial success here
+      would be worse than the refusal
+
+  - given: a view whose TEMPLATE controls graphics
+    expect: >
+      the category names in `refused`, nothing changed, no exception
+
+  - given: a category that cannot be controlled in this view
+    expect: its NAME in `notControllable` - by name, never as a count
+
+second_route:
+  - Visibility/Graphics on the view, opened by hand - Pattern must read
+    "Solid fill" and not "<No Override>", which is the whole point
+  - a second view of the same model, which must be unaffected
