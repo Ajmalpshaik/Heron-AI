@@ -138,6 +138,13 @@ ships every file inside the repository alongside a setup file, so it **downloads
 ([S7](00-structure.md), [R-30](01-requirements.md)). The question that remains is only about **route 3**,
 the standalone installer, for a user who never clones anything.
 
+**AND THAT NARROWING IS WITHDRAWN, THE SAME DAY.** See
+[Q-PE-12](#q-pe-12--route-2-says-the-files-are-already-in-the-repo-they-are-not): `bin/` is gitignored
+and **zero** `.dll` files are tracked, so *"every file inside the repository"* does not include the
+built plugin. Route 2 downloads nothing because there is nothing there to install. **The paragraph
+above is kept as written** — it records the reasoning at the time, and what was wrong with it was the
+file set, not the logic.
+
 **Blocks:** nothing. [R-15](01-requirements.md) is marked LATER on purpose.
 
 ---
@@ -293,6 +300,92 @@ difference between knowing and expecting.
 startup, so a product installed while Revit runs is not seen until it is restarted. That is why the
 installer waits for Revit to close ([R-38a](01-requirements.md)) and it does not change the answer
 above: hiding what is **already loaded** is live; loading something **new** is not.
+
+---
+
+### Q-PE-12 — Route 2 says "the files are already in the repo". They are not.
+
+**Waiting on:** the owner. **Raised 2026-09-21**, reading the plan against the repository.
+
+[R-30](01-requirements.md) says *"Route 2 downloads nothing. The files are already in the repo, so it
+works with no internet"*, and [Q-PE-5](#q-pe-5--is-there-an-offline-installer) was **narrowed** on that
+sentence — route 2 was recorded as already solving the offline case for anyone who took the repo.
+
+**Measured:** `.gitignore` excludes `bin/` and `obj/`, and `git ls-files` finds **zero** tracked `.dll`.
+A repository download carries **source code and no built plugin at all**. Route 2 as written installs
+nothing, and the narrowing of Q-PE-5 rests on a file set that does not exist.
+
+**So something has to decide what route 2's handover actually contains**, and the options differ in
+who pays for them:
+
+| | What it costs |
+|---|---|
+| A release **zip** carrying the built products beside a setup file | eight releases of assemblies in one download; needs a build step in the release pipeline |
+| Committing built DLLs to the repository | refused everywhere else in this repository, and it would make every build a diff |
+| Route 2 simply **needs a build**, and offline means "offline once built" | honest, but then it is not an answer to Q-PE-5 at all |
+
+**Blocks:** [Stage 6](02-implementation.md), and it un-narrows [Q-PE-5](#q-pe-5--is-there-an-offline-installer).
+
+---
+
+### Q-PE-13 — How does the BRAIN reach a user's PC? Nothing installs it.
+
+**Waiting on:** the owner. **Raised 2026-09-21**, from the owner's own question — *"it will install only
+the Revit plugin, not the brain?"*
+
+**All ten stages install `products`**, and a product is a Revit add-in: a folder, an `.addin`, an
+assembly. The **brain** is none of those. The 395 fragments live in `brain/fragments/`, the MCP server
+is `mcp/server/heron_mcp_server.py`, and [`docs/07`](../../../07-installation-and-update.md) puts the
+knowledge store in `%APPDATA%\Heron` as **the user's own data that must survive every update**.
+
+**The consequence is not cosmetic.** `heron-bridge` is the only `SHIPPED` product, and it is one end of
+a named pipe — the other end is that Python server. So a modeller who installs the AI Bridge and
+nothing else gets a **Heron tab whose Connect button opens a pipe nobody answers**. The flagship
+product installs correctly and does nothing.
+
+**Three shapes, and they are not equivalent:**
+
+| | |
+|---|---|
+| The brain **ships with the install** | then every update must be prevented from overwriting what the user has learned — the exact split [D-17](../../../DECISIONS.md) exists to protect |
+| The brain **seeds itself on first run** | needs a source to seed from, which is the same question one level down |
+| The user **starts empty** | honest, but 395 proven fragments are the product, and a Heron that knows nothing is not the one being sold |
+
+**Blocks:** [Stage 5](02-implementation.md) and [Stage 8](02-implementation.md)'s *Done when* — *"a
+modeller installs it unaided and reports the tab appearing"* is satisfiable today while the tab does
+nothing.
+
+---
+
+### Q-PE-14 — The brain and the project folder want Claude Code opened in two different places
+
+**Waiting on:** the owner. **Raised 2026-09-21.**
+
+[`docs/07`](../../../07-installation-and-update.md) states the rule plainly: *"Opening a different
+folder should change **which project** Heron is working on — not which Heron is running, and not what
+it has learned."*
+
+**Measured:** `.mcp.json` lives in the repository root and starts the server with a **relative** path,
+`mcp/server/heron_mcp_server.py`. Claude Code reads that file from the folder it is opened in. So:
+
+| Open Claude Code in | What happens |
+|---|---|
+| `D:\Heron-AI` | Heron loads — and Heron's own repository is now the "project" |
+| `D:\Jobs\Tower-A` | no `.mcp.json`, so **no Heron at all** |
+
+Today "which Heron is running" and "which project" are **the same folder**, which is the one thing that
+sentence forbids. It has not bitten because every session so far has been inside the repository.
+
+**The usual answer is a user-scope registration with an absolute path**, so the server is found from any
+folder. **Nothing in this repository documents one** — that is an absence found by searching, not a
+statement that it cannot be done.
+
+**And it is not only the owner's problem.** Whatever answers [Q-PE-13](#q-pe-13--how-does-the-brain-reach-a-users-pc-nothing-installs-it)
+has to put the brain somewhere, and *this* question decides how anything finds it afterwards. The two
+are best answered together.
+
+**Blocks:** nothing built yet. It blocks the first real use of Heron on a job folder, which is a date
+rather than a stage.
 
 ---
 
