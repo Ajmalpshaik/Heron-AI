@@ -1306,7 +1306,7 @@ namespace Heron.Revit.Addin
                     var want = piece.Trim();
                     if (want.Length == 0) continue;
 
-                    if (actual.IndexOf(want, StringComparison.OrdinalIgnoreCase) < 0)
+                    if (!SuppliedCarries(actual, want))
                     {
                         return Json.Error("chain_inputs_differ",
                             "This request expects '" + wantedBy + "' to have run with "
@@ -1321,6 +1321,40 @@ namespace Heron.Revit.Addin
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Whether what the producer RAN WITH carries exactly this pair.
+        ///
+        /// A SEGMENT, NOT A SUBSTRING, and the difference is the whole check.
+        /// This was `actual.IndexOf(want, OrdinalIgnoreCase) >= 0`, and a
+        /// substring search PASSES the case this refusal exists to stop:
+        /// `DescribeSupplied` renders "categories=Pipes; view=Level 10", so
+        /// an expectation of `categories=Pipe` is found inside
+        /// `categories=Pipes`, and `view=Level 1` inside `view=Level 10`.
+        /// Those are different sets of elements - which is this refusal's own
+        /// closing sentence. It was loose in the other direction too:
+        /// `s=Pipes` is a substring of `categories=Pipes`, so a truncated
+        /// NAME passed as well.
+        ///
+        /// SPLITTING ON ';' IS WHAT THE OTHER SIDE ALREADY DOES. The caller's
+        /// `wantedInputs` is split the same way before it gets here, so a
+        /// value containing a semicolon is already two expectations rather
+        /// than one - the two sides now agree about that rather than
+        /// disagreeing quietly. `DescribeSupplied` does not escape a
+        /// semicolon in a value either; that is a rendering limit of the
+        /// chain and is the same on both sides.
+        ///
+        /// FRAGMENT-ISSUES section 5b.
+        /// </summary>
+        private static bool SuppliedCarries(string actual, string want)
+        {
+            foreach (var piece in (actual ?? "").Split(';'))
+            {
+                if (string.Equals(piece.Trim(), want, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
         }
 
         private static Chain ChainFor(string client, bool create)

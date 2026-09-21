@@ -272,8 +272,22 @@ def main():
     # happen on this branch's own evidence. FRAGMENT-ISSUES section 5b.
     folder = tempfile.mkdtemp(prefix="heron-gate-")
     record = os.path.join(folder, "record")
-    every = {"check-docs": "PASS", "check-metadata": "PASS",
-             "check-structure": "PASS", "tests": "PASS", "check-gaps": "PASS"}
+
+    # EVERY GATE THE TOOL COULD EVER OWE, read from the tool rather than
+    # typed. The first version of this listed the five a medium-risk change
+    # owes, and then passed or failed depending on WHAT WAS IN THE WORKING
+    # TREE: a diff touching revit/ raises the revit-version signal, which
+    # owes check-compile and check-api-surface, and those were not in the
+    # record - so the suite went red on the next branch to edit an add-in
+    # file, for a reason that has nothing to do with what it is testing.
+    # Caught by that happening. A test whose verdict depends on the diff it
+    # happens to be run beside is not testing the thing it names.
+    possible = set(CHANGE.ALWAYS)
+    for owed in CHANGE.BY_RISK.values():
+        possible |= set(owed)
+    for owed in CHANGE.BY_SIGNAL.values():
+        possible |= set(owed)
+    every = dict((name, "PASS") for name in sorted(possible))
 
     def verdict(gates):
         io.open(record, "w", encoding="utf-8").write(json.dumps({
