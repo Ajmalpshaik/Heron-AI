@@ -216,9 +216,15 @@ That Revit accepts the GUIDs. Only a real Revit does that — Stage 2.
 > another add-in made, **S3 stands as designed**, and **R-34 is deliverable**: the tools and the AI
 > connector stay separate products.
 >
-> `AA1` to `AA8` PASS. **`AA9` is NOT RUN** — it needs the repository downloaded as a zip through a
-> browser, which is what puts the Windows mark on the files, so `Unblock-File` in `deploy-addin.ps1`
-> **still has never run**. Rows and evidence: [NEEDS-CHECKING](../../../NEEDS-CHECKING.md), Group AA.
+> `AA1` to `AA8` PASS. **`AA9` FAILED, and not in the way it predicted.** The zip was downloaded in a
+> browser and all 2130 extracted files carry the internet mark, so the condition was real — but
+> PowerShell **refused to run `deploy-addin.ps1` at all**, before Revit was involved: a `RemoteSigned`
+> execution policy will not run a downloaded unsigned script. **`Unblock-File` lives inside that script
+> and so cannot clear its own mark.** The installer is unaffected — it launches PowerShell with
+> `-ExecutionPolicy Bypass` — and run that way the downloaded copy installed and Revit loaded it.
+> **The guard R-37 exists for is still unproven**: a source build produces an unmarked assembly, so
+> only a release asset carrying built DLLs can exercise it, which is Stage 5.
+> Rows and evidence: [NEEDS-CHECKING](../../../NEEDS-CHECKING.md), Group AA.
 > Screenshots: [`docs/proof/`](../../../proof/).
 
 ### What exists now

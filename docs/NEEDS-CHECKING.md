@@ -1973,10 +1973,12 @@ why this stage exists.
 **Nobody may mark Stage 2 done from a compile, from this file, or from the tests.** The word for what
 exists today is **BUILT**.
 
-### Group AA was RUN on the owner's PC - 2026-09-21. EIGHT ROWS PASS, AA9 IS NOT RUN
+### Group AA was RUN on the owner's PC - 2026-09-21. EIGHT ROWS PASS, AA9 FAILS
 
 **Stage 2 is PROVEN.** The paragraphs above are left exactly as they were written before the run,
 because the bet had to be visible when the answer arrived - and the answer is that **the bet paid**.
+`AA9` is about the download mark rather than the ribbon, so it does not touch that verdict - but it
+failed, and what it found is worse than what it was looking for.
 
 **Where it was run.** Windows 11, two 1920x1080 screens at **100% scaling**, Revit **2024.3** and Revit
 **2020.2.9**. Model `test projject.rvt`, the scratch model earlier fragment work used. Revit was closed
@@ -1992,7 +1994,7 @@ before every deploy command. `HERON_CLIENT_ID=ajmal-pc` on every bridge call.
 | **AA6** | **PASS** | With Revit open the deploy **refused**, naming the release **and the process**: *"Cannot install for Revit 2024: Revit 2024 is open (process 14536). Close it and run this again - a loaded assembly cannot be replaced, so doing this now would half-finish and look like it worked."* `Addins\2024` held 9 entries before and 9 after; no `Heron.Doc` folder and no manifest were created |
 | **AA7** | **PASS** | Run as `.\tools\deploy-addin.ps1 -RevitVersion 2024` with **no `-Product` at all**, which is how it was run before the switch existed. The default resolved to the same four values it always had, and the new runtime guard spoke: *"built for .NET Framework 4.8, which is what Revit 2024 needs"*. In Revit: tab, panel, and all three buttons - connect, disconnect (icon tracks state), `Bridge Status`, and `Changes` with its confirmation on the ON direction only. `ping` answered `pong <- Revit 2024, session 32928, add-in 0.1.0.0, protocol 2`. **The regression from generalising the script did not happen.** [tab](proof/AA7-heron-tab-ai-bridge-connected.png), [status](proof/AA7-bridge-status-window.png), [confirmation](proof/AA7-changes-confirmation.png) |
 | **AA8** | **PASS** | **Rollback was made provable rather than assumed.** Deploying the same build twice would restore an identical folder, so two marker files were planted in the install first. The replace then **removed** them (22 files, neither marker) - which is **R-38 proved by doing it**: replace, never copy over. The backup kept all **24** files including both markers, at the **new** path `install-backup\2024\Heron`, and `-Rollback` put all 24 back, naming what it was restoring first. Revit then started on the rolled-back install and the bridge answered. **The pre-change backup case was also run for real**: Revit 2027 still had a backup at the old path, and `-Rollback` there refused cleanly - *"Nothing to roll back to for Revit 2027"* plus the two commands to deploy from source - and changed nothing (15 files before and after). [proof](proof/AA8-rolled-back-addin-works.png) |
-| **AA9** | **NOT RUN** | It needs the repository downloaded as a **zip through a browser**, which is what puts the Windows mark on the files, and that download is the owner's to make rather than this session's. `Unblock-File` is in the script and **still has never run**. A build made on this machine carries no mark, so nothing here exercised it |
+| **AA9** | **FAIL - AND NOT THE FAILURE THIS ROW PREDICTED** | The owner downloaded the repository as a zip from GitHub in a browser. **All 2130 extracted files carry `ZoneId=3`**, so the condition was real. `dotnet build` succeeded. Then `.\tools\deploy-addin.ps1` **was refused by PowerShell before Revit was ever involved**: *"cannot be loaded. The file ... is not digitally signed. You cannot run this script on the current system."* His `CurrentUser` execution policy is **`RemoteSigned`**, which refuses any *downloaded* unsigned script. **`Unblock-File` is INSIDE that script, so it cannot clear its own mark** - and the row's predicted symptom, Revit saying only that it cannot run the external application, never arrived because nothing got as far as Revit. See the two sections below for what this does and does not mean |
 
 **What else this run established, none of it asked for by a row.**
 
@@ -2012,6 +2014,48 @@ before every deploy command. `HERON_CLIENT_ID=ajmal-pc` on every bridge call.
   then suspected a double-toggle. Both were wrong: **the owner was pressing the ribbon button himself
   at the same time.** Recorded because the log line reads *"Connected from the ribbon"* either way, and
   a second pair of hands on the machine is invisible to it.
+
+#### What AA9 actually found: the execution policy, not the download mark
+
+**A DOWNLOADED COPY OF HERON CANNOT BE INSTALLED BY HAND.** Not on this machine and not on any machine
+left at the Windows default for a developer. `Get-ExecutionPolicy -List` gives `CurrentUser =
+RemoteSigned`, which runs a script written locally and **refuses one that came from the internet unless
+it is signed**. Heron's is not signed. The refusal is a `SecurityError`, before a single line executes.
+
+**THE FIX FOR THE DOWNLOAD MARK CANNOT REACH ITSELF.** `Unblock-File` was added to
+`deploy-addin.ps1` on 2026-09-21 to clear the mark off the files Revit loads - R-37. It sits *inside*
+the script that is itself refused for carrying that mark. A person who downloads the zip has no way to
+run the thing that would fix the problem, and the message they get names signing rather than the zone.
+
+**THE INSTALLER IS NOT AFFECTED, AND THAT IS NOT LUCK.**
+`platform/Heron.Installer/WindowsAdapters.cs` launches `powershell.exe` with `-NoProfile
+-ExecutionPolicy Bypass`, and the comment beside it already says why. **Checked by running the deploy
+from the downloaded copy exactly the way the installer invokes it** - it deployed, Revit loaded it, the
+`Heron Doc` tab appeared and its button ran. **Proved it was the downloaded build and not a leftover
+from `AA1`**, which is the obvious thing to get wrong here: the deployed assembly hashed
+`AE35E790...` and so did the zip's build output, while the repo's own build of the same source hashed
+`A66D0EF1...`. Different file, and the repo copy had been uninstalled hours earlier by `AA4`.
+
+**So the damage is bounded to the by-hand route** - which is the route every one of these rows uses,
+and the route the README gives.
+
+#### And the thing AA9 set out to prove is STILL NOT PROVEN
+
+**A SOURCE ZIP CANNOT CREATE THE CONDITION R-37 GUARDS AGAINST.** The mark is on the *sources*:
+`Heron.Doc.csproj` carries `ZoneId=3`. The assembly `dotnet build` produces from them is a **brand new
+file and carries no mark at all** - measured, not assumed. So `Unblock-File` had nothing to clear, the
+deployed files came out unmarked either way, and **the guard was never exercised**.
+
+The case R-37 exists for is a zip that already contains **built DLLs** - a release asset, which is
+[Stage 5](work-notes/plans/plugin-extension/02-implementation.md). Until one exists, `Unblock-File`
+has still never done its job, and no run on this machine can make it.
+
+**What this row is owed, restated.** Two separate things, and they were one sentence before this run:
+
+| | |
+|---|---|
+| **The execution policy wall** | Real, reproduced, and it blocks the documented way to install Heron. Not fixed here |
+| **The download mark on an assembly** | Still unproven, and unprovable until a release asset exists |
 
 ---
 
