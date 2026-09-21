@@ -408,27 +408,32 @@ reliably *installed*. [S9](00-structure.md).
 
 ### Do
 
-1. **Answer [Q-PE-11](03-open-questions.md) first.** Can a ribbon panel be hidden while Revit is
-   running, on every release from 2020 to 2027? **The whole design of this stage depends on it**, and it
-   needs a machine with a .NET SDK, which this container has not got.
+1. **[Q-PE-11](03-open-questions.md) is answered — panels yes, tabs no.** `RibbonPanel.Visible` is
+   read-write official API and works live. Hiding a tab needs unsupported `AdWindows.dll` and **Heron
+   will not do it** ([R-43a, R-43b](01-requirements.md)). One confirmation is still owed on a machine
+   with a .NET SDK: that `RibbonPanel.Visible` is present in **all eight** releases —
+   `tools/check-api-surface.py` answers it, and the evidence says it long predates 2020.
 2. A **Settings panel** on the `Heron` tab, installed whenever any Heron product is
    ([R-42](01-requirements.md)).
-3. A window listing every installed tab and panel, each with a tick
-   ([R-43](01-requirements.md)) — its list read from **the manifest**, never typed into the window
-   ([R-46](01-requirements.md)).
+3. A window listing every installed **panel**, each with a tick ([R-43](01-requirements.md)) — grouped
+   under its tab for reading, but **the tab itself is not tickable** ([R-43a](01-requirements.md)). The
+   list is read from **the manifest**, never typed into the window ([R-46](01-requirements.md)).
 4. The choice saved under `%APPDATA%\Heron` ([R-44](01-requirements.md)), so it survives every install
    and replace.
 5. Each product's ribbon build **reads that choice** and builds only what is on. A hidden panel is
    **still installed** ([R-45](01-requirements.md)) — un-hiding needs no installer and no download.
-6. If the answer to step 1 is *no*, the window **says a restart is needed, on the spot**. It never ticks
-   the box and does nothing visible.
+6. **No restart message is needed** — the change is live ([R-43c](01-requirements.md)). If a panel ever
+   fails to hide, the window says so plainly rather than ticking the box and doing nothing visible.
 7. The window is a tool window and its code-behind **never touches the Revit API directly** — the
    `ExternalEvent` pattern, per
    [`revit-ribbon-and-windows`](../../../../.claude/skills/revit-ribbon-and-windows/SKILL.md).
 
 ### Done when
 
-- Every panel can be hidden and brought back, and a screenshot records both states.
+- Every panel can be hidden and brought back **without restarting Revit**, and a screen recording shows
+  it happening live.
+- **No tab is ever hidden**, and `grep -ri "AdWindows\|Autodesk.Windows" revit/` finds nothing
+  ([R-43b](01-requirements.md)).
 - Hiding a panel, closing Revit and reopening it: **still hidden**. The choice is persistent, not a
   session toggle.
 - Running the installer again — including a replace — leaves the choices **untouched**

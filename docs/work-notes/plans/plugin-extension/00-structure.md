@@ -246,9 +246,19 @@ settings is a decision about the afternoon.
 a user's hidden-panel choices survive every update. If they lived beside the product they would be wiped
 by the next Install, and the user would blame the update for a tidy ribbon going untidy.
 
-**The one thing nobody has checked**, and the whole behaviour of the panel turns on it: whether a Revit
-ribbon panel can be hidden **while Revit is running**, or whether the choice only takes effect at the
-next start. That is [Q-PE-11](03-open-questions.md), and it is written as unchecked rather than guessed.
+**Checked 2026-09-21, and the answer splits in a way that decides the design** ([Q-PE-11](03-open-questions.md)):
+
+| | Live, no restart? | |
+|---|---|---|
+| **A panel** | **Yes** | `RibbonPanel.Visible` — read-write, **official Revit API** |
+| **A whole tab** | — | needs `AdWindows.dll`, which **Autodesk does not support** |
+
+**So the Settings panel hides PANELS and never tabs**, and Heron takes no dependency on the unsupported
+internal API ([R-43a, R-43b](01-requirements.md)). A tidier ribbon is not worth a tool that breaks on an
+Autodesk update nobody warned about.
+
+**The API draws the line in the same place this decision already did.** A tab is a product — to remove
+it, uninstall it. A panel is a view choice — tick it off and it goes, immediately.
 
 **The three tabs this applies to, today:** `Heron`, `Heron Doc`, `Heron MEP`. The owner confirmed on
 2026-09-21 that these are the three for now and more will be named later — so the Settings panel must

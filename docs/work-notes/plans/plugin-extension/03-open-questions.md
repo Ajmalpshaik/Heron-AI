@@ -22,7 +22,7 @@ paraphrase of a decision is how a decision quietly changes.
 
 ## 2. Open questions
 
-**Two were answered on 2026-09-21 and are struck through below. Three more were raised the same day. Nine remain.**
+**Three answered on 2026-09-21 and struck through below. Three raised the same day. Eight remain.**
 
 ### Q-PE-1 — What is "Heron Tools"? — ~~half answered 2026-09-21~~, content still open
 
@@ -231,25 +231,56 @@ the engine does not care who called it.
 
 ---
 
-### Q-PE-11 — Can a ribbon panel be hidden while Revit is running?
+### ~~Q-PE-11 — Can a ribbon panel be hidden while Revit is running?~~ — ANSWERED 2026-09-21
 
-**Waiting on:** a check against the Revit API. **Nobody has checked, and the whole behaviour of the
-Settings panel turns on the answer.**
+**A PANEL: yes, officially, live, no restart. A TAB: not with any supported API.** They are different
+answers and the Settings panel has to be designed around that.
 
-| If a panel **can** be hidden live | If it **cannot** |
-|---|---|
-| Tick the box, the panel goes, no restart | The setting is saved and applied at the next Revit start |
-| The Settings panel feels instant | The Settings panel must **say** a restart is needed, on the spot |
+The owner raised it on 2026-09-21 — *"While Revit is running, we can change the settings. Am I right?
+You can check pyRevit"* — and checked against the Revit API documentation rather than assumed.
 
-**Do not guess this.** A Settings panel that silently does nothing until a restart is worse than one
-that says so plainly — the user ticks, nothing happens, and they conclude the tool is broken.
+| | Hiding it live | API | Supported |
+|---|---|---|---|
+| **A panel** | **Yes** | `RibbonPanel.Visible`, read-write | **Official Revit API** |
+| **A whole tab** | possible | `Autodesk.Windows.RibbonTab.IsVisible`, from `AdWindows.dll` | **NO — Autodesk does not support it** |
 
-**How to answer it:** `tools/check-api-surface.py` with a .NET SDK present will say whether the member
-exists across 2020–2027, which is the answer that matters — a property present in 2025 and absent in
-2020 is not an answer, it is two answers. This container has no `dotnet`
-([`heron-ship`](../../../../.claude/skills/heron-ship/SKILL.md) §5), so it needs a machine that has one.
+**`RibbonPanel.Visible` is a read-write property of the official API** and long-standing — The Building
+Coder demonstrated hiding a panel with it years before Revit 2020. Set it false, the panel goes; set it
+true, it comes back. No restart, no reload.
 
-**Blocks:** [Stage 9](02-implementation.md). Blocks nothing before it.
+**Hiding a whole tab has no official route.** It needs the internal `Autodesk.Windows` namespace, and
+Autodesk states plainly that the Revit API does not support use of that functionality and that
+`AdWindows.dll` is not supported — so anything odd it causes cannot be supported either.
+
+### What this decides for Heron
+
+**The Settings panel hides PANELS. It does not hide TABS.** → [R-43](01-requirements.md)
+
+**Heron does not take a dependency on `AdWindows.dll`.** An unsupported internal API can change in any
+Revit release, and Heron promises 2020 through 2027 and every future one
+([S4](00-structure.md), [16](../../../16-version-support-strategy.md)). A tidier ribbon is not worth a
+tool that breaks on an Autodesk update nobody warned about.
+
+**A user who wants a whole tab gone uninstalls that product**, which is what the installer is for. That
+is [S9](00-structure.md)'s own line, arriving from the API rather than from the design:
+
+> Install decides what is **on disk**. Settings decides what is **on screen**.
+
+A tab is a product. A panel is a view choice. The API happens to draw the line in the same place.
+
+### The one thing still worth checking on a machine with a .NET SDK
+
+Whether `RibbonPanel.Visible` is present in **all eight** releases, 2020 to 2027.
+[`tools/check-api-surface.py`](../../../../tools/check-api-surface.py) answers it. The evidence says it
+long predates 2020, so this is a confirmation rather than a doubt — but it is cheap and it is the
+difference between knowing and expecting.
+
+### And a separate fact that is NOT this question
+
+**Installing a new product still needs a Revit restart.** Revit reads `.addin` manifests only at
+startup, so a product installed while Revit runs is not seen until it is restarted. That is why the
+installer waits for Revit to close ([R-38a](01-requirements.md)) and it does not change the answer
+above: hiding what is **already loaded** is live; loading something **new** is not.
 
 ---
 

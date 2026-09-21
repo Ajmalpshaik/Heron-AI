@@ -205,7 +205,11 @@ logic, not re-implement it** — two copies of a deploy rule is two rules that d
 | # | Requirement | Source | Status |
 |---|---|---|---|
 | R-42 | The `Heron` tab carries a **Settings panel**, installed whenever any Heron product is | Owner, 2026-09-21; [S9](00-structure.md) | MUST |
-| R-43 | From it the user turns **tabs and panels on and off** — hiding what is installed, not removing it | Owner, 2026-09-21 | MUST |
+| R-43 | From it the user turns **panels** on and off — hiding what is installed, not removing it | Owner, 2026-09-21 | MUST |
+| R-43a | **Panels only. Tabs are never hidden.** `RibbonPanel.Visible` is official API; hiding a tab needs `AdWindows.dll`, which **Autodesk does not support** | [Q-PE-11](03-open-questions.md), verified 2026-09-21 | MUST |
+| R-43b | Heron takes **no dependency on `Autodesk.Windows` / `AdWindows.dll`** anywhere. An unsupported internal API can change in any release, and Heron promises 2020 → 2027 and beyond | [16](../../../16-version-support-strategy.md) | MUST |
+| R-43c | Hiding and un-hiding a panel takes effect **immediately, with no Revit restart** | [Q-PE-11](03-open-questions.md) — `RibbonPanel.Visible` is read-write and live | MUST |
+| R-43d | A user who wants a **whole tab** gone **uninstalls that product**. That is the installer's job, not the Settings panel's | [S9](00-structure.md) — a tab is a product, a panel is a view choice | MUST |
 | R-44 | The choice is **saved under `%APPDATA%\Heron`** and survives every install, update and replace | [S9](00-structure.md); [R-20](#installing) | MUST |
 | R-45 | Hiding a panel **never uninstalls it**. Un-hiding needs no installer and no download | [S9](00-structure.md) — install decides disk, settings decides screen | MUST |
 | R-46 | The Settings panel reads its list from **the same manifest the installer uses**, never a list written into the window | [Stage 1](02-implementation.md); a second list is a second thing to keep in step | MUST |
