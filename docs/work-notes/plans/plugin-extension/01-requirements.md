@@ -3,7 +3,9 @@
 > **Type:** Operational work note. **Not specification.** Where a sentence here disagrees with the
 > [Constitution](../../../../HERON_CONSTITUTION.md), the [Golden Rules](../../../14-golden-rules.md) or
 > [DECISIONS.md](../../../DECISIONS.md), **those win and this note is out of date.**
-> **Status:** **Active — nothing built from it yet.** Opened 2026-09-20. **Owner:** Ajmal PS.
+> **Status:** **Active.** Nothing in section 5 is DONE yet. What exists is the product manifest
+> ([R-3](#5-the-requirements), [Stage 1](02-implementation.md)) and two unproven shape proofs
+> ([Stage 2](02-implementation.md)). Opened 2026-09-20. **Owner:** Ajmal PS.
 > **Read [`00-structure.md`](00-structure.md) first.**
 
 ---

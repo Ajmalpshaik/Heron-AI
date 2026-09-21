@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Heron Doc - STAGE 2 SHAPE PROOF. Not a product.
+
+    See revit/Heron.Doc/HeronDocApplication.cs for what it is for, and
+    docs/work-notes/plans/plugin-extension/02-implementation.md Stage 2.
+
+    DELETED when Stage 2 closes.
+
+    DELIBERATELY MINIMAL, and that is the design rather than laziness. It
+    references NO Heron project - not Heron.Core, not Heron.Bridge. A shape
+    proof that drags in the bridge proves less, because a failure would leave
+    nobody able to say which half broke.
+
+    Multi-targeted exactly the way Heron.Revit.Addin.csproj is: one property
+    picks the Revit generation and Directory.Build.props maps it to a runtime.
+
+        dotnet build revit/Heron.Doc/Heron.Doc.csproj -p:RevitVersion=2024
+
+    Revit API assemblies are Autodesk's and are NOT redistributable
+    (docs/07 section 4). Private=false keeps them out of the output - Revit
+    supplies them at runtime.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.Doc</RootNamespace>
+    <AssemblyName>Heron.Doc</AssemblyName>
+
+    <!--
+      No UseWPF. This carries one ribbon button and no window, so the WPF
+      assemblies would be weight with nothing using them - and on net472 and
+      net48 they are a different reference set again.
+    -->
+  </PropertyGroup>
+
+  <!-- Option 1: NuGet, when RevitApiDir is not supplied. -->
+  <ItemGroup Condition="'$(RevitApiDir)' == ''">
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitVersion).*" ExcludeAssets="runtime" />
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitVersion).*" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <!-- Option 2: a local Revit install. -->
+  <ItemGroup Condition="'$(RevitApiDir)' != ''">
+    <Reference Include="RevitAPI">
+      <HintPath>$(RevitApiDir)\RevitAPI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>$(RevitApiDir)\RevitAPIUI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Heron.Doc.addin" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

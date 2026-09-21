@@ -106,6 +106,12 @@ PROJECTS = [
     "platform/Heron.Core/Heron.Core.csproj",
     "revit/Heron.Bridge/Heron.Bridge.csproj",
     "revit/Heron.Revit.Addin/Heron.Revit.Addin.csproj",
+    # STAGE 2 SHAPE PROOFS, deleted when that stage closes. Listed here so
+    # they are held to the same eight releases as everything else: a proof
+    # that only builds on 2024 proves the shape on 2024 (docs/work-notes/
+    # plans/plugin-extension/02-implementation.md, Stage 2).
+    "revit/Heron.Doc/Heron.Doc.csproj",
+    "revit/Heron.Tools/Heron.Tools.csproj",
     "tests/Heron.Banner.TestHost/Heron.Banner.TestHost.csproj",
     "tests/Heron.BindingNote.TestHost/Heron.BindingNote.TestHost.csproj",
     "tests/Heron.Bridge.TestHost/Heron.Bridge.TestHost.csproj",

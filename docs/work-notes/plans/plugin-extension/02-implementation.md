@@ -3,7 +3,8 @@
 > **Type:** Operational work note. **Not specification.** Where a sentence here disagrees with the
 > [Constitution](../../../../HERON_CONSTITUTION.md), the [Golden Rules](../../../14-golden-rules.md) or
 > [DECISIONS.md](../../../DECISIONS.md), **those win and this note is out of date.**
-> **Status:** **Active — nothing built yet. Every stage below is NOT STARTED.** Opened 2026-09-20.
+> **Status:** **Active.** Stage 0 and Stage 1 are DONE. Stage 2 is **BUILT AND UNPROVEN** and needs
+> a Windows machine with Revit. Stages 3 to 9 are NOT STARTED. Opened 2026-09-20.
 > **Owner:** Ajmal PS.
 > **Read [`00-structure.md`](00-structure.md) and [`01-requirements.md`](01-requirements.md) first.**
 
@@ -52,11 +53,24 @@ Everything else can be written and checked here.
 
 ## Stage 0 — Record the decisions
 
-**Status: NOT STARTED**
+**Status: DONE — 2026-09-21. [D-87 to D-95](../../../DECISIONS.md), all nine.**
 
-Six structural decisions were taken in conversation on 2026-09-20 and currently live **only in
+Nine structural decisions were taken in conversation on 2026-09-20 and 2026-09-21 and lived **only in
 [`00-structure.md`](00-structure.md)**. A decision that lives in a work note disappears when the work
-note is deleted.
+note is deleted. They are now in [DECISIONS.md](../../../DECISIONS.md), which is append-only and never
+deleted.
+
+**Nine were written, not six.** The list below says *"S1 to S6"* because it was written on 2026-09-20,
+before S7, S8 and S9 existed. Ajmal asked on 2026-09-21 for all nine. Six would have left the three
+newest decisions — including the Settings panel, which the whole of Stage 9 rests on — in a folder that
+gets deleted at closure.
+
+**S7 was split, and that is recorded rather than smoothed over.** It carries two claims: *the product
+list is a manifest* (structural, nothing later works without it → **D-93**) and *there are three front
+doors onto one engine* (Stage 6, not built, not designed in detail, and carrying an unresolved security
+question in [Q-PE-10](03-open-questions.md)). The second is **not recorded yet**. Writing an unbuilt
+route into the permanent register as a settled decision is the exact move rule 2 of
+[this folder](README.md) forbids.
 
 ### Do
 
@@ -71,6 +85,22 @@ note is deleted.
 `grep -c '^## D-' docs/DECISIONS.md` has risen by the number written, and each new decision names the
 owner instruction and its date.
 
+**Evidence, 2026-09-21:**
+
+```text
+grep -c '^## D-' docs/DECISIONS.md     88  before  ->  97  after      (+9)
+highest decision before                D-86  (derived, not assumed:
+    grep -oE '^#+ *D-[0-9]+' docs/DECISIONS.md | grep -oE '[0-9]+' | sort -n | tail -1)
+written                                D-87 .. D-95
+python tools/generate-decision-summary.py   added 9 missing row(s)
+python tools/check-docs.py                  BROKEN LOCAL LINKS: 0
+                                            D-87..D-95 all resolve
+```
+
+Each of the nine names the owner instruction it came from and its date, and each is cross-linked both
+ways — the decision points back at its `S` section, and [`00-structure.md §3`](00-structure.md) carries
+a table pointing forward at the decision.
+
 ### Cannot prove
 
 Nothing technical. This is bookkeeping — but it is the bookkeeping that stops the next AI session
@@ -80,7 +110,9 @@ inventing a different structure.
 
 ## Stage 1 — The product manifest
 
-**Status: NOT STARTED**
+**Status: DONE — 2026-09-21.** [`platform/heron-products.json`](../../../../platform/heron-products.json),
+checked by [`tools/check-products.py`](../../../../tools/check-products.py), which has been **made to
+fail on purpose and did**.
 
 **The file that makes future expansion real.** Without it, adding *Heron Structure* means rebuilding the
 installer, which is exactly what [R-3](01-requirements.md) forbids.
@@ -121,6 +153,46 @@ installer, which is exactly what [R-3](01-requirements.md) forbids.
 - The checker passes on it, **and fails** on a hand-made copy with a duplicated `addInId`. Both results
   recorded. A checker that has never failed has never been tested.
 
+**Evidence, 2026-09-21. Both results, as the row above demands.**
+
+```text
+python tools/check-products.py                          EXIT 0
+    Products:  5  (2 shipped, 2 proving, 1 planned)
+    Releases built:  2020..2027   (brain/heron_dotnet.py, DERIVED not typed)
+
+python tools/check-products.py --file <copy with heron-doc given
+                                       the AI Bridge's GUID>     EXIT 1
+    DUPLICATE addInId: heron-bridge and heron-doc both claim
+    7A1F4C62-9D3E-4B18-8E52-1C0A6F2D5B41. Revit keys add-ins by this
+    GUID, so installing both is a load failure and neither tab appears
+
+python tests/test_products_manifest.py                  EXIT 0, 36 checks
+    16 different faults, each broken on a copy, each refused BY NAME
+```
+
+**The format is JSON, and the reason is evidence rather than taste.** The installer and the Settings
+panel both have to read this file on Windows, inside Revit, on all eight releases. Heron already parses
+JSON there with no package at all — [`revit/Heron.Bridge/Json.cs`](../../../../revit/Heron.Bridge/Json.cs),
+hand-written precisely so nothing is loaded into Revit's assembly context. YAML would need a NuGet
+package on every one of the eight targets. The five metadata fields are carried as **keys in the
+document**, the way a `fragment.yaml` carries them, because JSON has no comments.
+
+**Three things were decided here that the plan did not name, and each is reversible:**
+
+| | Decided | Why |
+|---|---|---|
+| **A `state` field** | `SHIPPED` · `PROVING` · `PLANNED` | Without it the manifest either lies — offering products whose files do not exist — or is useless to Stage 4, which needs the `Heron` tab's two ticks to be real rows. **`PROVING` was added because the checker asked for it**: it refused a `PLANNED` row once Stage 2's files appeared, and a third state was the honest answer |
+| **GUIDs allocated now** for `heron-tools`, `heron-doc`, `heron-mep` | in the manifest, not later | A GUID must be unique for ever and a duplicate is fatal. Allocating them from one file is what stops two sessions generating the same one |
+| **Heading-ness is derived**, never a field | an entry is a heading exactly when another entry names it in `partOf` | D-93 says the same field drives the indentation and nothing is special-cased. A `kind` field would be a second thing to keep in step |
+
+**`requires` is empty everywhere, on purpose.** [Q-PE-2](03-open-questions.md) — whether Doc and MEP
+work without the AI connector — has not been ruled on. An empty list says *not decided*; a filled one
+would be a guess wearing a decision's clothes.
+
+**What Stage 3 inherits as a known gap.** The checker can verify that a product agrees with the
+`.addin` it ships, because that file is in the repository. It **cannot** check a release asset, because
+there is no release. That half of *"refuses a missing asset"* arrives with Stage 5.
+
 ### Cannot prove
 
 That Revit accepts the GUIDs. Only a real Revit does that — Stage 2.
@@ -129,7 +201,34 @@ That Revit accepts the GUIDs. Only a real Revit does that — Stage 2.
 
 ## Stage 2 — Prove the shape with a second tab
 
-**Status: NOT STARTED**
+**Status: BUILT AND UNPROVEN — 2026-09-21. NOT DONE.**
+
+> **This stage needs Ajmal's Windows machine and cannot be finished without it.**
+> The code exists, it compiles on all eight releases, and everything decidable in source has been
+> checked. **Nothing here has seen a ribbon.** A compile proves the API agrees; it does not prove a tab
+> appears. Until three screenshots exist, this stage is **BUILT**, and the word **PROVEN** must not be
+> used about it.
+
+### What exists now
+
+| | |
+|---|---|
+| [`revit/Heron.Doc/`](../../../../revit/Heron.Doc/) | the SECOND tab — `Heron Doc`, one panel, one button that shows a message |
+| [`revit/Heron.Tools/`](../../../../revit/Heron.Tools/) | the SECOND PIECE of the FIRST tab — a `Tools` panel on the tab named `Heron` |
+| [`tools/deploy-stage2-proof.ps1`](../../../../tools/deploy-stage2-proof.ps1) | puts them into Revit and takes them out again |
+| [`tests/test_ribbon_tab_sharing.py`](../../../../tests/test_ribbon_tab_sharing.py) | the half a machine with no Revit can answer |
+
+**Both are throwaways and both say so in their own headers.** They are `PROVING` in the product
+manifest — the state meaning *the files exist and no user may be offered them* — and the whole of both
+projects is deleted when the real Heron Doc and Heron tools are built.
+
+**`tools/deploy-addin.ps1` cannot deploy them, and it was left alone.** Every path in it names
+`Heron.Revit.Addin` — the project folder, the DLL, the manifest, the rollback. That script is proven,
+including its rollback (2026-09-19), and widening a proven script to carry a throwaway is how a working
+thing breaks. So Stage 2 got its own small script instead, which installs nothing a user gets, has no
+product list and no rollback, refuses to touch `Heron.addin` or `Heron.Revit.Addin.dll` by name, and is
+deleted with the rest of the stage. **This is recorded as a finding for Stage 3**, where R-31's one
+engine is built: the real engine has to drive a deploy that knows more than one product.
 
 **The cheapest way to find out the whole plan works.** Before any Doc or MEP tool is written, build a
 second product that does almost nothing, and see whether **two Heron tabs can live in one Revit**.
@@ -169,6 +268,48 @@ Whichever piece loads first has to create the tab and the other has to join it; 
 `CreateRibbonTab` throws when the tab already exists, which `BuildRibbon()` already catches. Load order
 is Revit's to choose, so **neither piece may assume it is first**.
 
+### Where it actually stands — the four states, kept apart
+
+| | |
+|---|---|
+| **PASS** | Compiles. `tools/check-compile.py` — **all 9 projects on all 8 releases, 2020 to 2027, 0 warnings**, with the two new ones included. That is the API agreeing and **nothing more** |
+| **PASS** | `tests/test_ribbon_tab_sharing.py` — 26 checks. The two Heron pieces name the same tab character for character, **neither assumes it loaded first**, the panels have different names, Heron Doc is its own tab, three manifests carry three different GUIDs, and nothing under `revit/` touches `Autodesk.Windows` |
+| **NEEDS REAL REVIT** | **(a)** two Heron tabs side by side · **(b)** all three combinations — AI Bridge only, tools only, both — as ONE `Heron` tab · **(c)** deleting the second product's two files takes its tab and leaves the first untouched |
+| **NOT RUN** | The deploy script has never executed. It is PowerShell for Windows and this container is Linux, so not one line of it has run anywhere |
+
+**Tools-only is still the case expected to break first**, and nothing done here changes that. What has
+been done is remove every way it could break *silently*: the tab strings are compared by a test rather
+than by care, and both pieces catch `Autodesk.Revit.Exceptions.ArgumentException` around
+`CreateRibbonTab` — checked by its **full** name, because `System.ArgumentException` is a different type
+and catching that one would catch nothing Revit throws.
+
+### How to finish it — on the machine with Revit on it
+
+```powershell
+dotnet build revit\Heron.Doc\Heron.Doc.csproj      -p:RevitVersion=2024
+dotnet build revit\Heron.Tools\Heron.Tools.csproj  -p:RevitVersion=2024
+
+# (b) BOTH - one Heron tab with two panels, plus a second Heron Doc tab
+.\tools\deploy-stage2-proof.ps1 -RevitVersion 2024
+#    start Revit, SCREENSHOT
+
+# (b) TOOLS ONLY - the case that breaks first
+.\tools\deploy-addin.ps1 -RevitVersion 2024 -Remove
+#    start Revit, SCREENSHOT: a Heron tab WITH NO AI Bridge panel
+
+# (b) AI BRIDGE ONLY - what exists today
+.\tools\deploy-stage2-proof.ps1 -RevitVersion 2024 -Product Tools -Remove
+.\tools\deploy-addin.ps1 -RevitVersion 2024
+#    start Revit, SCREENSHOT
+
+# (c) the uninstall story, before any uninstaller exists
+.\tools\deploy-stage2-proof.ps1 -RevitVersion 2024 -Remove
+#    start Revit: Heron Doc gone, Heron tab and its three buttons untouched
+```
+
+**Three screenshots, one per combination**, recorded in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md).
+**The failure to watch for is two tabs both called `Heron`.** On screen that looks almost right.
+
 ### Cannot prove
 
 That a real tool works. The button does nothing on purpose — this stage is about the **shape**, and
@@ -176,6 +317,8 @@ mixing a real tool into it would leave both unproven when it failed.
 
 > **If this stage fails, stop.** Everything after it assumes separate add-ins can coexist. Find out here,
 > at the cost of one dummy button, not after the window is built.
+>
+> **It has not been found out yet.** Stage 3 must not begin until the three screenshots exist.
 
 ---
 
@@ -481,9 +624,9 @@ Update this table as stages complete. **Do not mark a stage done without its evi
 
 | Stage | What | Status | Evidence |
 |---|---|---|---|
-| 0 | Record the decisions | NOT STARTED | — |
-| 1 | Product manifest | NOT STARTED | — |
-| 2 | Second tab | NOT STARTED | — |
+| 0 | Record the decisions | **DONE** 2026-09-21 | [D-87 to D-95](../../../DECISIONS.md); `grep -c '^## D-'` 88 -> 97; `check-docs` 0 broken links |
+| 1 | Product manifest | **DONE** 2026-09-21 | `platform/heron-products.json`; `check-products.py` PASSES on it and **FAILS exit 1** on a duplicated `addInId`; `tests/test_products_manifest.py` 36 checks, 16 faults each refused by name |
+| 2 | Second tab | **BUILT AND UNPROVEN** 2026-09-21 | Compiles on all 8 releases, 0 warnings; `tests/test_ribbon_tab_sharing.py` 26 checks pass. **NEEDS REAL REVIT** - no ribbon has been seen, no screenshot exists |
 | 3 | Installer core | NOT STARTED | — |
 | 4 | The window | NOT STARTED | — |
 | 5 | GitHub download | NOT STARTED | — |

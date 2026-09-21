@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Heron Doc - STAGE 2 SHAPE PROOF. Not a product.
+
+  This manifest exists to answer one question and no other: can a SECOND
+  Heron tab live in the same Revit as the first? It carries one panel and one
+  button, and the button does nothing but say it was pressed.
+
+  DELETE THIS WHOLE PROJECT when Stage 2 closes and the real Heron Doc is
+  built. Until then it must never be offered to a user - see the PROVING
+  state in platform/heron-products.json.
+
+  Its AddInId is ITS OWN and is allocated in that manifest. Revit keys add-ins
+  by this GUID: sharing one with Heron.addin would be a load failure, and
+  NEITHER tab would appear (D-88).
+
+  The Assembly path is rewritten by tools/deploy-addin.ps1 at deploy time.
+
+  ONLY THE ELEMENTS BELOW. Revit 2026 added a settings element that CRASHES
+  2025 and older, and Heron ships one manifest to all eight releases - so it
+  is not here, and its name is not written here either, because
+  tools/check-package.py greps the raw text rather than the parsed tree.
+-->
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>Heron Doc</Name>
+    <Assembly>Heron.Doc.dll</Assembly>
+    <AddInId>DA03C073-C76C-4AF8-96FA-0802727B6220</AddInId>
+    <FullClassName>Heron.Doc.HeronDocApplication</FullClassName>
+    <VendorId>AJPS</VendorId>
+    <VendorDescription>Ajmal PS - Heron AI</VendorDescription>
+  </AddIn>
+</RevitAddIns>

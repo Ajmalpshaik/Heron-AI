@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Heron Tools - STAGE 2 SHAPE PROOF. Not a product.
+
+  This is the HARD half of Stage 2, and the half that breaks first.
+
+  It builds into the tab named "Heron" - the SAME tab Heron.addin builds. Two
+  separately installed add-ins, one tab. Revit decides which loads first and
+  never tells anybody, so NEITHER piece may assume it is the one that creates
+  the tab (S3 / D-89, R-35).
+
+  Three installs must all work:
+      AI Bridge only      the Heron tab, AI Bridge panel only - today
+      Tools only          the Heron tab EXISTS, with no AI Bridge panel
+      Both                ONE Heron tab carrying both panels - never two
+
+  DELETE THIS WHOLE PROJECT when Stage 2 closes. Until then it must never be
+  offered to a user - see the PROVING state in platform/heron-products.json.
+
+  The Assembly path is rewritten by tools/deploy-addin.ps1 at deploy time.
+
+  ONLY THE ELEMENTS BELOW. Revit 2026 added a settings element that CRASHES
+  2025 and older. It is not here, and its name is not written here either -
+  tools/check-package.py greps the raw text rather than the parsed tree.
+-->
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>Heron Tools</Name>
+    <Assembly>Heron.Tools.dll</Assembly>
+    <AddInId>876D9C3C-2EF6-4336-BCE0-3A6AE34D23B3</AddInId>
+    <FullClassName>Heron.Tools.HeronToolsApplication</FullClassName>
+    <VendorId>AJPS</VendorId>
+    <VendorDescription>Ajmal PS - Heron AI</VendorDescription>
+  </AddIn>
+</RevitAddIns>
