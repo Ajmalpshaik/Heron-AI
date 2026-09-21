@@ -34,6 +34,7 @@ applies — and so that an AI picking this up **reads facts instead of inventing
 | [`05-phases.md`](05-phases.md) | **Where this folder sits.** The installer is Phase 1 of three. Phase 2 outlined, Phase 3 not told yet |
 | [`06-porting-method.md`](06-porting-method.md) | **How one AJ Tools tool is brought across**, and why widening the fragment is the deliverable. Nothing taken yet |
 | [`07-debugging-engine.md`](07-debugging-engine.md) | **The debugging engine survey.** Two-thirds of it already exists; Heron repairs situations, not code, and that is the gap |
+| [`08-lessons-from-the-brain.md`](08-lessons-from-the-brain.md) | **What the earlier brain already learned.** Eight lessons; three Heron already has, and one answers an open question |
 
 ## The three rules of this folder
 

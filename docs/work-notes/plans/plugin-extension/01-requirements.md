@@ -237,6 +237,15 @@ Each row cites the lesson it came from in [`04-lessons-from-aj-tools.md`](04-les
 | R-40 | A product ships **one payload folder per Revit release**, carrying that release's build **and everything the runtime needs beside it** | [L4](04-lessons-from-aj-tools.md) — .NET 8+ fails on a missing dependency manifest | MUST |
 | R-41 | Each product installs into **its own folder**, never a shared one. Two products carrying different versions of the same helper assembly must not overwrite each other | [L5](04-lessons-from-aj-tools.md) — **corrects §4** | MUST |
 
+### How the engine behaves when it finds something
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| R-51 | **Adding** something that did not exist — a fragment, a test, a case — needs **no permission**. It is done, and **reported in the same reply** | [B1](08-lessons-from-the-brain.md); the owner's own standing rule | MUST |
+| R-52 | **Changing or deleting** something that already exists **asks first** | [B1](08-lessons-from-the-brain.md); [Golden Rule 13](../../../14-golden-rules.md) | MUST |
+| R-53 | The report is **not optional and not deferred.** Same reply, saying what was done and why | [B1](08-lessons-from-the-brain.md) — an engine that improves things silently cannot be checked | MUST |
+| R-54 | A `PROVEN` or `PRODUCTION` fragment, and any **agent**, is **proposed every time** whatever R-51 says | [Golden Rule 13](../../../14-golden-rules.md); [docs/09 §6](../../../09-skills-and-fragments.md) | MUST |
+
 ### Shipping it
 
 | # | Requirement | Source | Status |

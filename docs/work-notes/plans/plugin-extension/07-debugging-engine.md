@@ -182,10 +182,29 @@ manual re-proof.
 
 ## 7. Open questions
 
-### Q-DE-1 — May the engine apply a fix to a `DRAFT` fragment without asking?
+### ~~Q-DE-1 — May the engine apply a fix to a `DRAFT` fragment without asking?~~ — ANSWERED 2026-09-21
 
-§4 says the rules allow it. **Whether the owner wants it is a different question**, and it is his.
-`PROVEN` and `PRODUCTION` are settled — those always propose.
+**By the owner's own earlier brain, which already runs this rule** ([B1](08-lessons-from-the-brain.md)):
+
+> *save it, then tell the user what was saved and why **in the same reply — don't ask permission first,
+> but always say what happened**. Deleting or replacing something that already exists still needs the
+> user's explicit OK.*
+
+**The line is not `DRAFT` versus `PROVEN`. It is ADD versus CHANGE:**
+
+| | |
+|---|---|
+| The engine **adds** something that did not exist — a new fragment, a new test, a new case | **Do it, and report it in the same reply** |
+| The engine **changes or deletes** something that does exist | **Ask first** |
+
+**Status still narrows the second row**, because [Golden Rule 13](../../../14-golden-rules.md) and
+[docs/09 §6](../../../09-skills-and-fragments.md) are unchanged: a `DRAFT` fragment's body may be
+repaired on the owner's standing OK; a `PROVEN` or `PRODUCTION` one, or an agent, is proposed every time.
+
+**What this adds that Rule 13 did not say**, and it is the part that decides how the engine feels to
+use: *report it in the same reply*, and *never ask permission for a pure addition*. A rule that only
+says "propose" produces an assistant that asks before doing anything, which is how a helper turns into a
+form to fill in. → [R-51, R-52](01-requirements.md)
 
 ### Q-DE-2 — What may the engine change? — ANSWERED 2026-09-21
 
@@ -217,7 +236,7 @@ parts where a wrong answer breaks Heron itself rather than one fragment.
 isolation before it is allowed near real work.
 
 **What is genuinely open inside this answer:** whether a `DRAFT` fragment fix applies silently or still
-shows the owner what changed. That is [Q-DE-1](#q-de-1--may-the-engine-apply-a-fix-to-a-draft-fragment-without-asking).
+shows the owner what changed. That is [Q-DE-1](#q-de-1--may-the-engine-apply-a-fix-to-a-draft-fragment-without-asking--answered-2026-09-21).
 
 ### Q-DE-3 — Where does the user report the error from?
 
