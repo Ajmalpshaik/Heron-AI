@@ -22,6 +22,16 @@ positive:
       THE NEW WALL IS WASHED TOO, for the same reason the category version of
       everything is preferred: nothing was ever stuck to an id
 
+  - given: >
+      a NON-CUTTABLE category - Mechanical Equipment, Furniture, anything
+      whose Cut columns are greyed out in Visibility/Graphics
+    expect: >
+      the surface half lands, `overridden` counts it, and its NAME comes back
+      in `notCuttable`. Revit accepts a cut pattern on a category it never
+      cuts and silently draws nothing with it, so the only way anybody finds
+      out is if this says so. NOT a refusal - the override is real and the
+      surface does wash
+
 negative:
   - given: a model whose solid fill pattern has been PURGED
     expect: >
