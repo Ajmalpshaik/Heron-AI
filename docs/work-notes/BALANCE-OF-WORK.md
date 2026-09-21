@@ -7,7 +7,7 @@
 
 # The balance of work
 
-> **GENERATED 2026-09-21 03:50 by `python tools/balance-of-work.py --write`.**
+> **GENERATED 2026-09-21 05:57 by `python tools/balance-of-work.py --write`.**
 > **If that stamp is not today, this page is history and not a work list.** Every figure
 > below was read back out of the tool that owns it, and each row names the command that
 > derives it. Nothing here is typed by hand, so where this page and a register disagree,
@@ -32,7 +32,7 @@ business here. When every row does, delete the file and the tool with it.
 | 3b | — and **deferred by a decision**, which is neither left nor done | **2** | `python tools/agent-count.py` |
 | 4 | **Agent proofs drafted but unsigned** | **0** | `ls brain/agent-proof-drafts/*.yaml` |
 | 5 | **Proving-register rows still open** | **130** of **187** | `python tools/owner-queue.py` |
-| 6 | **Heron's own defects still open** | **32** of **204** | `python tools/open-defects.py` |
+| 6 | **Heron's own defects still open** | **32** of **216** | `python tools/open-defects.py` |
 | 7 | **Questions unanswered** | **0** | `python tools/check-docs.py` |
 | 8 | **Proposals awaiting the owner** | **21** of **22** | `python tools/owner-queue.py` |
 | 9 | **Signatures gone stale — proved, then the code moved under them** | **2** | `python tools/check-signatures.py` |
