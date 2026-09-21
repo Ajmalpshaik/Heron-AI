@@ -99,6 +99,14 @@ def main():
         "NEVER HAPPENED - corrected 2026-09-18",
         "OPEN, and recorded rather than fixed - the fragments are not this "
         "session's to touch. Found 2026-09-19",
+        # ROW 75 AS IT STANDS. A DATED DENIAL IS NOT A DATED FIX, and this
+        # one was reported as a row arguing with itself for a day while the
+        # tool's own docstring claimed it had no false hits. The whole value
+        # of that report is that it is short enough to read every time.
+        "OPEN - THE LOSS IS VISIBLE NOW AND THE WRONG BINDING IS NOT "
+        "FIXED, 2026-09-20. The state still says OPEN because the repair "
+        "this row names is not built",
+        "OPEN. The chain was NEVER FIXED, 2026-09-18 - recorded only",
     ]
     for cell in passing:
         check(OD.SETTLED.search(cell) is None,

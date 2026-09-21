@@ -593,16 +593,6 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
-        /// Compile once, keep it. Returns null on success, or the refusal.
-        ///
-        /// A COMPILE FAILURE HERE IS NOT THE SAME AS A FAILURE IN THE GATE.
-        /// tools/check-fragments-compile.py builds against the reference
-        /// assemblies for a release; this builds against the assemblies Revit
-        /// has actually loaded. When those two disagree, this one is right -
-        /// and the disagreement is worth reporting rather than smoothing over,
-        /// because it means the gate is checking something the model is not.
-        /// </summary>
-        /// <summary>
         /// Runs the arrangement steps that have to change the model, each in
         /// its own transaction inside the caller's group. Null when they all
         /// ran; a refusal to hand straight back when one did not.
@@ -753,6 +743,23 @@ namespace Heron.Revit.Addin
             return Json.ReadObjectArray("{\"needs\":" + needsText + "}", "needs");
         }
 
+        /// <summary>
+        /// Compile once, keep it. Returns null on success, or the refusal.
+        ///
+        /// A COMPILE FAILURE HERE IS NOT THE SAME AS A FAILURE IN THE GATE.
+        /// tools/check-fragments-compile.py builds against the reference
+        /// assemblies for a release; this builds against the assemblies Revit
+        /// has actually loaded. When those two disagree, this one is right -
+        /// and the disagreement is worth reporting rather than smoothing over,
+        /// because it means the gate is checking something the model is not.
+        ///
+        /// THIS PARAGRAPH SPENT ITS LIFE ABOVE THE WRONG METHOD. It sat as a
+        /// second, adjacent summary in front of RunSetupSteps, which C#
+        /// accepts - the last one wins - so it compiled clean while Compile
+        /// itself had no documentation at all and RunSetupSteps was headed by
+        /// a paragraph about compiling. Nothing catches that; it was found by
+        /// reading the file. FRAGMENT-ISSUES section 5b.
+        /// </summary>
         private static string Compile(string source, int prologueLines, out Script<object> script)
         {
             script = null;
@@ -1306,7 +1313,7 @@ namespace Heron.Revit.Addin
                     var want = piece.Trim();
                     if (want.Length == 0) continue;
 
-                    if (actual.IndexOf(want, StringComparison.OrdinalIgnoreCase) < 0)
+                    if (!SuppliedCarries(actual, want))
                     {
                         return Json.Error("chain_inputs_differ",
                             "This request expects '" + wantedBy + "' to have run with "
@@ -1321,6 +1328,40 @@ namespace Heron.Revit.Addin
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Whether what the producer RAN WITH carries exactly this pair.
+        ///
+        /// A SEGMENT, NOT A SUBSTRING, and the difference is the whole check.
+        /// This was `actual.IndexOf(want, OrdinalIgnoreCase) >= 0`, and a
+        /// substring search PASSES the case this refusal exists to stop:
+        /// `DescribeSupplied` renders "categories=Pipes; view=Level 10", so
+        /// an expectation of `categories=Pipe` is found inside
+        /// `categories=Pipes`, and `view=Level 1` inside `view=Level 10`.
+        /// Those are different sets of elements - which is this refusal's own
+        /// closing sentence. It was loose in the other direction too:
+        /// `s=Pipes` is a substring of `categories=Pipes`, so a truncated
+        /// NAME passed as well.
+        ///
+        /// SPLITTING ON ';' IS WHAT THE OTHER SIDE ALREADY DOES. The caller's
+        /// `wantedInputs` is split the same way before it gets here, so a
+        /// value containing a semicolon is already two expectations rather
+        /// than one - the two sides now agree about that rather than
+        /// disagreeing quietly. `DescribeSupplied` does not escape a
+        /// semicolon in a value either; that is a rendering limit of the
+        /// chain and is the same on both sides.
+        ///
+        /// FRAGMENT-ISSUES section 5b.
+        /// </summary>
+        private static bool SuppliedCarries(string actual, string want)
+        {
+            foreach (var piece in (actual ?? "").Split(';'))
+            {
+                if (string.Equals(piece.Trim(), want, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
         }
 
         private static Chain ChainFor(string client, bool create)

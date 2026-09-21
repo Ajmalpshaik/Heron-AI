@@ -86,18 +86,28 @@ Run it after adding, removing or re-tiering any agent.
 python tools/agent-count.py
 ```
 
-The register: every department with **TOTAL · BUILT · HOST · LEFT · T1 LEFT**, the tier split, and
+The register: every department with **TOTAL · BUILT · HOST · DEFER · LEFT · T1 LEFT**, the tier split, and
 where Phase 0/1 actually stands. `recount-agent-registry.py` keeps the registry honest about *itself*;
 `check-metadata.py` audits it file by file. Neither answers *what proportion of each department is
 built*, which is the question asked before deciding what to build next, and which was being answered by
 adding up columns by hand.
 
-**Three states, not two — and that is the point.** An agent is BUILT, LEFT, or **HOST**: delegated to
-Claude Code on purpose by [D-01](../docs/DECISIONS.md). Collapsing HOST into LEFT produces a to-do list
+**Four states, not two — and that is the point.** An agent is BUILT, LEFT, **HOST** (delegated to
+Claude Code on purpose by [D-01](../docs/DECISIONS.md)) or **DEFERRED** (a decision says it cannot be
+built yet, and names itself). Collapsing HOST into LEFT produces a to-do list
 with four items that will never be done, and on 2026-09-07 it did exactly that — a build-state summary
 read *"Phase 0/1 is four agents short"* and recommended building the **Orchestrator**, which
 [docs/02 §7](../docs/02-architecture-overview.md) settles as the host's. Phase 0/1's agent list is
 complete: **45 built, 4 host-provided, 0 outstanding.**
+
+**DEFERRED was the same mistake one step along, and it was live until 2026-09-21.** `HERON-DOC-REL-005`
+needs releases to write notes about and there are none; `HERON-DOC-CHG-008` needs two versions to write a
+change log between and 683 files say `Heron-Since: 0.1.0`. [D-77](../docs/DECISIONS.md) settled both on
+2026-09-16 and this tool went on printing **2 left** — so [the balance-of-work page](../docs/work-notes/BALANCE-OF-WORK.md),
+which is what a person reads to know what remains, carried two items nobody could do. A number that
+cannot reach zero stops being read. The state is **derived from the registry row** — the word `DEFERRED`
+and a decision id in the same sentence — and a row that says DEFERRED without naming a decision stays
+**LEFT**, because *"later"* with nobody's name on it is how a to-do list becomes a wish.
 
 `HOST_PROVIDED` is **imported from `check-metadata.py`**, not repeated here. Two copies of that list is
 the drift this folder exists to prevent.

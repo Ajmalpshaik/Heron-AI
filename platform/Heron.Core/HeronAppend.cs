@@ -77,9 +77,20 @@ namespace Heron.Core
                 gate = Gate(path);
                 held = Take(gate);
 
+                // ONLY BUSY IS WORTH ANOTHER GO. `Write` told the two apart
+                // in its own comments from the first day - "busy: worth
+                // another attempt" against "permissions: retrying changes
+                // nothing" - and then returned the same `false` for both, so
+                // this loop slept 20, 40, 60 and 80 ms on a path that was
+                // never going to succeed, per line, on every line. Not a
+                // correctness fault; it is a comment that described a
+                // distinction the code did not make, in a file whose whole
+                // subject is telling two failures apart.
                 for (var attempt = 0; attempt < Attempts; attempt++)
                 {
-                    if (Write(path, bytes)) return true;
+                    bool worthRetrying;
+                    if (Write(path, bytes, out worthRetrying)) return true;
+                    if (!worthRetrying) return false;
                     Thread.Sleep(PauseMs * (attempt + 1));
                 }
                 return false;
@@ -104,8 +115,20 @@ namespace Heron.Core
             }
         }
 
-        private static bool Write(string path, byte[] bytes)
+        /// <summary>
+        /// One append. True when it landed; `worthRetrying` says whether a
+        /// second go could answer differently.
+        ///
+        /// THE DISTINCTION WAS IN THE COMMENTS AND NOT IN THE RETURN. A busy
+        /// file is the whole reason this class exists and clears in
+        /// milliseconds; a permission or a path nobody can write to will
+        /// answer the same way five times over. Both came back as a bare
+        /// `false`, so the caller slept through 200 ms of guaranteed failure
+        /// for every line it tried to write. FRAGMENT-ISSUES section 5b.
+        /// </summary>
+        private static bool Write(string path, byte[] bytes, out bool worthRetrying)
         {
+            worthRetrying = false;
             try
             {
                 var folder = Path.GetDirectoryName(path);
@@ -125,7 +148,8 @@ namespace Heron.Core
             }
             catch (IOException)
             {
-                return false;                  // busy: worth another attempt
+                worthRetrying = true;          // busy: worth another attempt
+                return false;
             }
             catch (UnauthorizedAccessException)
             {

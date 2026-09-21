@@ -49,16 +49,31 @@ namespace Heron.Core
     /// never connected is invisible, because autoConnect defaults to false.
     /// Nothing reaches a model the user did not offer up.
     ///
-    /// The write path deserves the same treatment for a stronger reason. The
-    /// first version of it was written on a machine with no Revit, so it has
-    /// never compiled, never loaded and never moved anything. Code in that
-    /// state must not be one sentence away from a real project. Turning it on
-    /// is a deliberate act by someone who has read it:
+    /// The write path deserves the same treatment, and the REASON has changed
+    /// while the default has not. This paragraph said the path "has never
+    /// compiled, never loaded and never moved anything" and told the reader
+    /// to delete it once the path was proven against a real model. It has
+    /// been: NEEDS-CHECKING B8, 2026-09-07, Revit 2024 - three ducts moved up
+    /// 200 mm, the first time Heron changed a model - and the add-in compiles
+    /// on 2020 through 2027 in CI. The sentence outlived the day it was true
+    /// by a fortnight, which is the same expiry Explain() below records about
+    /// the message a USER reads; this is the one a MAINTAINER reads, and it
+    /// was left behind when that one was corrected.
+    ///
+    /// WHAT HAS NOT CHANGED IS WHY THE DEFAULT IS OFF, and it never expires:
+    /// changing somebody's model is their decision. The instruction to delete
+    /// this paragraph is withdrawn with it - a paragraph whose removal is
+    /// conditional on a measurement is a paragraph that goes stale the day
+    /// the measurement lands, which is exactly what happened here. Turning
+    /// writing on is a deliberate act by someone who has read it:
     ///
     ///     write.enabled = true      in %APPDATA%\Heron\config\heron.config
     ///
-    /// Delete this paragraph when the write path has been proven against a
-    /// real model - but change the default only then, and only on purpose.
+    /// WHAT IS STILL NOT PROVEN IS THE DISTANCE. D3 in NEEDS-CHECKING: move
+    /// them, then MEASURE one. Nobody has put a tape on what it did, and
+    /// that - not the compile, and not the run - is what would catch a unit
+    /// error. FRAGMENT-ISSUES section 5b, the never-compiled sentence's last
+    /// copy.
     /// </summary>
     public static class HeronPermissions
     {

@@ -740,6 +740,7 @@ def cmd_count(pid=None):
     live, starting, _, mismatched = discover()
     if not live and starting:
         print("Revit is still starting - its bridge is not answering yet. Try again shortly.")
+        report_mismatched(mismatched)
         return 1
     if not live:
         print("No Revit is connected. Press Heron on the ribbon to connect first.")
@@ -752,8 +753,45 @@ def cmd_count(pid=None):
             print("No connected Revit with session %s." % pid)
             return 1
 
+    # LOOKING MUST NEVER BE THE ACT OF CLAIMING, and this loop was written
+    # before there was a lease to claim. `count_elements` is NOT exempt from
+    # it - only `ping` and `info` are, and `BridgeServer.cs` says why: "asking
+    # who has this must not be the act of claiming it". So `count` with no
+    # session named asked every connected Revit and took every one of them for
+    # five minutes: a modeller running it to see what is open would refuse the
+    # two chats that were about to use the other two Revits.
+    #
+    # heron_mcp_server's `revit_health` carries this comment and this fix,
+    # made one commit after the lease was built. THIS HALF WAS MISSED, and it
+    # is the half a person runs by hand.
+    #
+    # `lease_state` and `availability` both ask `info`, which is exempt, so
+    # finding out who holds a Revit costs nothing. NAMING A SESSION IS STILL
+    # THE DELIBERATE ACT - `count <pid>` narrows `live` above and asks that
+    # one whatever its lease says, because somebody who typed the session id
+    # has decided.
+    #
+    # THE DECISION IS THE FLAG, NOT THE SENTENCE. The first version of this
+    # read `"another chat" in availability(bridge)` - a guard that a reworded
+    # phrase turns off silently, which is the shape this sweep keeps finding.
+    # `availability` is still used, for the words a person reads.
+    #
+    # AND `in_use is None` - the add-in did not say - cannot reach here:
+    # `discover()` puts a bridge on another protocol in `mismatched`, never in
+    # `live`, so everything in this loop reports the lease. If that ever
+    # changes, an unknown lease falls through to being counted, which is the
+    # WRONG direction - it is written down here rather than guarded, because
+    # guarding a case that cannot happen is how a guard goes untested.
     failures = 0
     for bridge in live:
+        if pid is None:
+            in_use, mine, _seconds = lease_state(bridge)
+            if in_use and not mine:
+                print("Revit %s, session %s - %s   (not counted: counting would "
+                      "take it)" % (bridge.revit_version, bridge.pid,
+                                    availability(bridge)))
+                continue
+
         reply = bridge.request("count_elements")
 
         if reply is None:
@@ -1149,6 +1187,7 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
     live, starting, _, mismatched = discover()
     if not live and starting:
         print("Revit is still starting - its bridge is not answering yet. Try again shortly.")
+        report_mismatched(mismatched)
         return 1
     if not live:
         print("No Revit is connected. Press Heron on the ribbon to connect first.")
@@ -1187,7 +1226,7 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
             args["apply"] = "true"
 
         reply = bridge.request("run_fragment_write" if writing else "run_fragment_read",
-                               op_args=args, response_timeout=180.0)
+                               op_args=args, response_timeout=heron_config.fragment_timeout())
 
         if reply is None:
             print("No reply from Revit %s (session %s)." % (bridge.revit_version, bridge.pid))
@@ -1305,6 +1344,7 @@ def cmd_prove(names, in_document=None, values=None, session=None):
     live, starting, _, mismatched = discover()
     if not live and starting:
         print("Revit is still starting - its bridge is not answering yet. Try again shortly.")
+        report_mismatched(mismatched)
         return 1
     if not live:
         print("No Revit is connected. Press Heron on the ribbon to connect first.")
@@ -1373,7 +1413,7 @@ def cmd_prove(names, in_document=None, values=None, session=None):
 
         reply = bridge.request("run_fragment_read",
                                op_args=args,
-                               response_timeout=180.0)
+                               response_timeout=heron_config.fragment_timeout())
 
         if reply is None:
             print("%-30s NO REPLY" % name)
@@ -1606,6 +1646,7 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     live, starting, _, mismatched = discover()
     if not live and starting:
         print("Revit is still starting - its bridge is not answering yet.")
+        report_mismatched(mismatched)
         return 1
     if not live:
         print("No Revit is connected. Press Heron on the ribbon to connect first.")
@@ -1817,7 +1858,7 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
             if document:
                 step_args["document"] = document
             reply = bridge.request("run_fragment_read", op_args=step_args,
-                                   response_timeout=180.0)
+                                   response_timeout=heron_config.fragment_timeout())
             if reply is None or not reply.get("ok"):
                 print("  setup: %s did not run - %s"
                       % (step, (reply or {}).get("message", "no reply")[:70]))
@@ -1874,7 +1915,7 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
         # what this line looked like for one commit, and it read as intermittent
         # worksharing behaviour rather than as a wrong operation name.
         reply = bridge.request("run_fragment_write" if writing else "run_fragment_read",
-                               op_args=args, response_timeout=180.0)
+                               op_args=args, response_timeout=heron_config.fragment_timeout())
         if reply is None:
             record = {"phase": phase, "ok": False, "error": "no_reply",
                       "message": "Revit did not answer", "arranged": arranged}
@@ -2154,6 +2195,7 @@ def cmd_release():
     live, starting, _, mismatched = discover()
     if not live and starting:
         print("Revit is still starting - its bridge is not answering yet.")
+        report_mismatched(mismatched)
         return 1
     if not live:
         print("No Revit is connected.")

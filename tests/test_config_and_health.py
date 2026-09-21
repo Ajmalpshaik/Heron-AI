@@ -118,6 +118,53 @@ def main():
               % (operation, server, client))
 
     print()
+    print("BUG 2 AGAIN, ONE LAYER ALONG - a fragment run waits longer, still by derivation")
+    # FIVE CALL SITES TYPED `response_timeout=180.0` BY HAND: the write path in
+    # heron_mcp_server.py and four fragment runs in heron_bridge_client.py. A
+    # fragment is compiled by Roslyn inside Revit before it runs, so a longer
+    # wait is right - but a LITERAL longer wait is only beyond the add-in's
+    # deadline by coincidence, which is what the block above exists to refuse.
+    # At revit.operationTimeoutSeconds = 300 the add-in waited 300 and this
+    # side gave up at 180, two minutes early, reporting "no answer" for a
+    # write it had sent idempotent=False and therefore could never ask about
+    # again. FRAGMENT-ISSUES section 5b.
+    for operation in (1, 10, 60, 120, 179, 180, 181, 300, 3000):
+        values = dict(cfg.DEFAULTS)
+        values["revit.operationTimeoutSeconds"] = str(operation)
+        fragment = cfg.fragment_timeout(values)
+        server = cfg.operation_timeout(values)
+        check(fragment > server,
+              "operationTimeout=%s -> add-in %g, fragment wait %g (must be higher)"
+              % (operation, server, fragment))
+    check(cfg.fragment_timeout(dict(cfg.DEFAULTS)) == 180.0,
+          "and at the defaults it is still exactly the 180 those five sites chose")
+    check(cfg.fragment_timeout(dict(cfg.DEFAULTS))
+          >= cfg.response_timeout(dict(cfg.DEFAULTS)),
+          "never shorter than an ordinary request's wait either")
+
+    print()
+    print("And no fragment run carries the literal back")
+    # THE ONLY THING THAT CATCHES THE SIXTH ONE. A helper nobody uses is not a
+    # fix, and the next fragment-running call site will be written by copying
+    # one of these five.
+    literals = []
+    for where in ("mcp/client/heron_bridge_client.py",
+                  "mcp/server/heron_mcp_server.py"):
+        body = io.open(os.path.join(ROOT, where), encoding="utf-8").read()
+        for number, line in enumerate(body.split("\n"), 1):
+            if re.search(r"response_timeout\s*=\s*\d", line) and "def " not in line:
+                literals.append("%s:%d" % (where, number))
+    # heron_bridge_client's own `release` sends a 10-second wait on a request
+    # the add-in answers without touching Revit, and that one is deliberate.
+    allowed = [one for one in literals if "release" in
+               io.open(os.path.join(ROOT, one.split(":")[0]),
+                       encoding="utf-8").read().split("\n")[int(one.split(":")[1]) - 1]]
+    check(sorted(set(literals) - set(allowed)) == [],
+          "no fragment run hard-codes its own deadline%s"
+          % ("" if not (set(literals) - set(allowed)) else
+             " <- %s" % ", ".join(sorted(set(literals) - set(allowed)))))
+
+    print()
     print("And the default is unchanged, so nothing proven in Steps 1-5 moves")
     check(cfg.response_timeout(dict(cfg.DEFAULTS)) == 90.0,
           "with defaults the client deadline is still exactly 90.0")

@@ -185,6 +185,40 @@ def response_timeout(values=None):
     return operation_timeout(values) + CLIENT_MARGIN_S
 
 
+# A FRAGMENT RUN IS NOT AN ORDINARY REQUEST. Roslyn compiles the source
+# inside Revit before a line of it runs, so the five places that send one
+# each wrote a longer wait by hand rather than using the derived figure.
+# The number is theirs; what was missing is the floor being a FLOOR.
+FRAGMENT_FLOOR_S = 180.0
+
+
+def fragment_timeout(values=None):
+    """
+    How long to wait for a FRAGMENT to come back. Never below the add-in's.
+
+    Same rule as response_timeout, for the same reason: the far side is the
+    one that gets to answer, because only it knows whether Revit took the
+    request, started it, or never saw it.
+
+    THE FIVE CALL SITES EACH TYPED `response_timeout=180.0` INSTEAD. At the
+    default settings the add-in waits 60, so 180 is comfortably beyond it and
+    the ordering held BY COINCIDENCE - the same coincidence
+    tests/test_config_and_health.py records as BUG 2 and asserts against at
+    every value rather than at the default. Set
+    `revit.operationTimeoutSeconds` to 180 or more - which is what a person
+    does when a model is slow, and a slow model is exactly when a fragment
+    run is slow - and the literal is now BELOW the add-in's own deadline.
+    This side gives up first and reports "no answer" for a request Revit is
+    still working on. MEASURED: at 300 the add-in waits 300 and the literal
+    gave up at 180, two minutes early. On the write path that is worse than
+    a wrong sentence: the request is sent `idempotent=False`, so a lost
+    answer cannot be asked again and nobody can say from here whether the
+    model changed.
+    """
+    values = load() if values is None else values
+    return max(FRAGMENT_FLOOR_S, response_timeout(values))
+
+
 def writing_enabled(values=None):
     """Whether the add-in will permit a change to the model (D-19)."""
     values = load() if values is None else values

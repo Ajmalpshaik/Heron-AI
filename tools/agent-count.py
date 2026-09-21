@@ -17,11 +17,27 @@ unimplemented. This tool asks the other question - the one nobody could answer
 without adding up columns by hand: **what proportion of each department is
 built, and what is left.**
 
-Three states, not two. An agent is BUILT (a source file claims it), HOST
-(delegated to Claude Code on purpose, D-01) or LEFT. Collapsing HOST into LEFT
+FOUR states, not two. An agent is BUILT (a source file claims it), HOST
+(delegated to Claude Code on purpose, D-01), DEFERRED (a decision says it
+cannot be built yet and names itself) or LEFT. Collapsing HOST into LEFT
 produces a to-do list with four items on it that will never be done, which is
 how this repository's own build-state page came to recommend building the
 Orchestrator - an agent docs/02 section 7 settles as the host's.
+
+DEFERRED IS THE SAME MISTAKE ONE STEP ALONG, and it was live here until
+2026-09-21. `HERON-DOC-REL-005` needs releases to write notes about and there
+are none; `HERON-DOC-CHG-008` needs two versions to write a change log between
+and 683 files say `Heron-Since: 0.1.0`. D-77 settled both in writing on
+2026-09-16, and this tool went on reporting `2 left` - so the balance-of-work
+page, which is what a person reads to know what remains, has carried two items
+nobody can do since the day they were deliberately not done. A number that
+cannot go to zero stops being read.
+
+IT IS DERIVED, NOT LISTED HERE. The registry row says DEFERRED and names the
+decision, and that sentence is the only copy of the fact. An agent whose row
+says DEFERRED without naming a decision is NOT counted as deferred - it is
+left, and loudly, because "we will do it later" with nobody's name on it is
+how a to-do list becomes a wish.
 
 `HOST_PROVIDED` is NOT redefined here. It is imported from check-metadata.py,
 because two copies of that list is exactly the drift this repository keeps
@@ -118,8 +134,25 @@ def registry():
             risk=None if risk in ("—", "-", "") else risk,
             step=None if step in ("—", "-", "") else step,
             dept=dept or "(no department)",
+            # DEFERRED, AND ONLY WITH A DECISION'S NAME ON IT. The "Does"
+            # cell is the register's own prose and the only copy of this
+            # fact; `deferred` holds the decision id, which is what gets
+            # printed, so a reader can go and disagree with it.
+            deferred=_deferred(cols[3]),
         )
     return agents, headings, stated_totals
+
+
+# "**DEFERRED 2026-09-16 by [D-77](DECISIONS.md)**" - the word, then a
+# decision id within the same sentence. Without the id this does not match,
+# which is the point: see the docstring.
+DEFERRED = re.compile(r"\bDEFERRED\b[^.]{0,60}?\[(D-\d+)\]")
+
+
+def _deferred(cell):
+    """The decision deferring this agent, or None. Never a bare promise."""
+    found = DEFERRED.search(cell or "")
+    return found.group(1) if found else None
 
 
 def built():
@@ -236,14 +269,22 @@ def main():
             d["built"] += 1
             if a["tier"] == "T1":
                 d["t1built"] += 1
+        elif a["deferred"]:
+            # NOT BUILT AND NOT OUTSTANDING. Counted apart so LEFT stays a
+            # list somebody can finish, and printed by name below so the
+            # deferral stays arguable rather than disappearing.
+            d["defer"] += 1
+            if a["tier"] == "T1":
+                d["t1defer"] += 1
 
     rows = sorted(
         depts.items(),
         key=lambda kv: (-(kv[1]["built"] / float(kv[1]["total"])), -kv[1]["total"]))
 
     widest = max(len(d) for d in depts)
-    header = "%-*s %6s %6s %5s %6s %8s" % (widest, "DEPARTMENT", "TOTAL",
-                                           "BUILT", "HOST", "LEFT", "T1 LEFT")
+    header = "%-*s %6s %6s %5s %6s %6s %8s" % (widest, "DEPARTMENT", "TOTAL",
+                                               "BUILT", "HOST", "DEFER",
+                                               "LEFT", "T1 LEFT")
     w("\nHERON AGENT REGISTER   %s\n" % REGISTRY)
     w("%s\n" % ("=" * len(header)))
     w("%s\n" % header)
@@ -251,19 +292,19 @@ def main():
 
     grand = collections.Counter()
     for name, c in rows:
-        left = c["total"] - c["built"] - c["host"]
-        t1left = c["T1"] - c["t1built"]
+        left = c["total"] - c["built"] - c["host"] - c["defer"]
+        t1left = c["T1"] - c["t1built"] - c["t1defer"]
         grand.update(dict(total=c["total"], built=c["built"], host=c["host"],
-                          left=left, t1left=t1left,
+                          defer=c["defer"], left=left, t1left=t1left,
                           T1=c["T1"], T2=c["T2"], T3=c["T3"]))
-        w("%-*s %6d %6d %5s %6d %8d\n" % (
+        w("%-*s %6d %6d %5s %6s %6d %8d\n" % (
             widest, name, c["total"], c["built"],
-            c["host"] or "-", left, t1left))
+            c["host"] or "-", c["defer"] or "-", left, t1left))
 
     w("%s\n" % ("-" * len(header)))
-    w("%-*s %6d %6d %5d %6d %8d\n" % (
+    w("%-*s %6d %6d %5d %6d %6d %8d\n" % (
         widest, "TOTAL", grand["total"], grand["built"],
-        grand["host"], grand["left"], grand["t1left"]))
+        grand["host"], grand["defer"], grand["left"], grand["t1left"]))
 
     # --- tiers ------------------------------------------------------------
     tier_built = collections.Counter()
@@ -281,11 +322,14 @@ def main():
     assigned = [aid for aid, a in agents.items() if a["step"] and a["step"].isdigit()]
     p_built = [a for a in assigned if a in claims and a not in hosts]
     p_host = [a for a in assigned if a in hosts]
-    p_left = [a for a in assigned if a not in claims and a not in hosts]
+    p_defer = [a for a in assigned
+               if a not in claims and a not in hosts and agents[a]["deferred"]]
+    p_left = [a for a in assigned if a not in claims and a not in hosts
+              and not agents[a]["deferred"]]
 
     w("\nPHASE 0/1  (the %d agents carrying a build step)\n" % len(assigned))
-    w("  %d built - %d provided by the host - %d outstanding\n"
-      % (len(p_built), len(p_host), len(p_left)))
+    w("  %d built - %d provided by the host - %d deferred - %d outstanding\n"
+      % (len(p_built), len(p_host), len(p_defer), len(p_left)))
     if p_left:
         for aid in sorted(p_left, key=lambda a: (int(agents[a]["step"]), a)):
             w("    step %-2s %-3s %-26s %s\n" % (agents[aid]["step"], agents[aid]["tier"],
@@ -294,6 +338,22 @@ def main():
         w("  Delegated on purpose (docs/02 section 7, D-01) - never built here:\n")
         for aid in sorted(p_host):
             w("    %-26s %s\n" % (aid, hosts[aid]))
+
+    # --- deferred ---------------------------------------------------------
+    # PRINTED BY NAME, WITH THE DECISION, because a deferral that stops being
+    # visible stops being arguable - and these are the rows most likely to
+    # have gone stale, since what they are waiting for is a release and a
+    # second version, both of which will arrive without anyone re-reading
+    # this file.
+    deferred = sorted(aid for aid, a in agents.items()
+                      if a["deferred"] and aid not in claims and aid not in hosts)
+    if deferred:
+        w("\nDEFERRED BY A DECISION  (not built, and not outstanding)\n")
+        for aid in deferred:
+            w("  %-26s %-4s %s\n"
+              % (aid, agents[aid]["deferred"], agents[aid]["name"]))
+        w("  Each names the decision deferring it. When what it is waiting "
+          "for exists,\n  the decision is what has to change first.\n")
 
     # --- the gates --------------------------------------------------------
     # 1. Every department heading must match the rows beneath it.
@@ -362,8 +422,13 @@ def main():
         w("\n")
         return 1
 
-    w("Register reconciles: %d agents, %d built, %d host-provided, %d left.\n"
-      % (grand["total"], grand["built"], grand["host"], grand["left"]))
+    # THE SHAPE OF THIS LINE IS READ BY tools/balance-of-work.py, which takes
+    # `%d agents` and `%d left` off it. `deferred` sits between them and is
+    # named, so the page a person reads to know what remains says both.
+    w("Register reconciles: %d agents, %d built, %d host-provided, "
+      "%d deferred, %d left.\n"
+      % (grand["total"], grand["built"], grand["host"], grand["defer"],
+         grand["left"]))
     return 0
 
 

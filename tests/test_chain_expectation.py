@@ -146,6 +146,42 @@ def main():
           "equal rather than by dictionary order")
 
     # ------------------------------------------------------------------
+    # A SEGMENT, NOT A SUBSTRING - added 2026-09-21.
+    #
+    # The comparison was `actual.IndexOf(want, OrdinalIgnoreCase) >= 0` over
+    # the whole rendered string, which PASSES the case this refusal exists to
+    # stop. MEASURED in real C#, not argued: against "categories=Pipes", the
+    # substring search answers TRUE for `categories=Pipe`, for `s=Pipes`, and
+    # (against "view=Level 10") for `view=Level 1`. Three of the four cases
+    # it is for, and every one of them is "a different set of elements",
+    # which is the refusal's own closing sentence. FRAGMENT-ISSUES section 5b.
+    check("SuppliedCarries(actual, want)" in fragment,
+          "the input check asks a NAMED comparison rather than searching the "
+          "rendered string for the expectation")
+
+    # THE METHOD BODY, NOT THE FILE. `SuppliedCarries`'s own docstring quotes
+    # the line it replaced, which is exactly what a reader coming to this in
+    # a year needs - and a whole-file search for it reported the fixed code
+    # as broken. Watched doing it.
+    disagrees = fragment[fragment.index("private static string ChainDisagrees("):]
+    disagrees = disagrees[:disagrees.index("\n        }\n")]
+    check("IndexOf(want" not in disagrees,
+          "and the substring search is gone from the check itself - it passed "
+          "`categories=Pipe` against `categories=Pipes`, and `view=Level 1` "
+          "against `Level 10`")
+
+    carries = fragment[fragment.index("private static bool SuppliedCarries("):]
+    carries = carries[:carries.index("\n        }")]
+    check('.Split(\';\')' in carries,
+          "SuppliedCarries splits the rendered pairs the same way the WANT "
+          "side is already split, so the two sides agree about a semicolon")
+    check("string.Equals(piece.Trim(), want" in carries,
+          "and compares a whole segment for EQUALITY, which is what makes "
+          "`categories=Pipe` stop being a match for `categories=Pipes`")
+    check("OrdinalIgnoreCase" in carries,
+          "still ignoring case, because that half was never the defect")
+
+    # ------------------------------------------------------------------
     # REACHABLE FROM BOTH DOORS, or it is a feature nobody can use.
     # ------------------------------------------------------------------
     check('"--expect-from"' in client,

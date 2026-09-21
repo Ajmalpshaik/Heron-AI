@@ -38,6 +38,13 @@ WHAT IT PROVES
      unclaimed in this working tree.
 
   5. NO GIT IS NOT A FINDING. An installed Heron is not a checkout.
+
+  6. DEFERRED IS NOT LEFT, AND A BARE PROMISE IS NOT DEFERRED. Added
+     2026-09-21. The two agents D-77 deferred on 2026-09-16 were counted
+     as outstanding for five days, so the balance-of-work page carried
+     `2 of 250` with no way of ever reaching zero. The state is derived
+     from the registry row - the word plus a decision id - and a row
+     saying DEFERRED with nobody's name on it stays LEFT, loudly.
 """
 
 import io
@@ -150,6 +157,34 @@ def main():
         check("return None" in flat,
               "returning None rather than an empty map, so 'no answer' and "
               "'nothing claimed' cannot be confused")
+
+        print("\n6. Deferred is a state of its own, and it is derived")
+        agents, _headings, _totals = AC.registry()
+        deferred = sorted(aid for aid, a in agents.items() if a["deferred"])
+        check(len(deferred) == 2,
+              "the registry declares %d deferred agent(s): %s"
+              % (len(deferred), ", ".join(deferred) or "none"))
+        for aid in deferred:
+            check(agents[aid]["deferred"].startswith("D-"),
+                  "%s names the decision deferring it (%s)"
+                  % (aid, agents[aid]["deferred"]))
+        # THE WORD ALONE IS NOT ENOUGH, which is the half that keeps this
+        # from becoming a way of emptying the list. A promise with nobody's
+        # name on it is still work.
+        check(AC._deferred("**DEFERRED 2026-09-16 by [D-77](DECISIONS.md)**")
+              == "D-77",
+              "the word plus a decision id is a deferral")
+        check(AC._deferred("DEFERRED until we have time") is None,
+              "and the word on its own is NOT - it stays LEFT")
+        check(AC._deferred("Built 2026-09-15. See [D-77](DECISIONS.md)")
+              is None,
+              "and a decision named without the word is not one either")
+        # NONE OF THEM IS ALSO BUILT. A deferred agent that some file claims
+        # would be counted twice, and the built branch wins - so this asserts
+        # the two states cannot overlap in the register as it stands.
+        claims = AC.built()
+        check(not [a for a in deferred if a in claims],
+              "no deferred agent is claimed by a source file as well")
 
         print()
         if FAILURES:

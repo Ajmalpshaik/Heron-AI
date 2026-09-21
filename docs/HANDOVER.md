@@ -2407,12 +2407,24 @@ more than one that changes what working code means.**
 
 ### It is proved over the library, and that proves less than it sounds
 
-`tests/Heron.StackGuard.TestHost` runs the rewriter over **all 372 fragments**: 836 checks, line
+`tests/Heron.StackGuard.TestHost` runs the rewriter over **every fragment in the library**: line
 counts unchanged (so error line numbers still point at `fragment.cs`), no new diagnostic introduced,
-and all 91 lambda-carrying fragments guarded. It links `HeronStackGuard.cs` **by source** rather than
+and every lambda-carrying fragment guarded. On 2026-09-16 that was **372 fragments and 836 checks**;
+on 2026-09-21 it is **395 fragments, 882 checks and 91 carrying a guard**, which is the host counting
+rather than this page claiming. It links `HeronStackGuard.cs` **by source** rather than
 referencing the add-in, because that file touches no Autodesk type - the same mocked-boundary trick
 `Heron.Bridge.TestHost` uses, and it keeps **one** copy of the rewriter. Two halves written to check
 each other is how [row 96](FRAGMENT-ISSUES.md) happened.
+
+**AND FOR FIVE DAYS NOTHING RAN IT.** The host was added to `heron_dotnet.PROJECTS` so that it
+COMPILES on all eight releases - this page calls that "the 'a gate nobody runs' shape caught before
+it could set" - and the half it caught was the compiling half. No suite built it and no suite
+executed it, so 882 checks sat outside every count of *every test passes*, and the paragraph above
+went on describing a library of 372. `tests/test_stack_guard.py` is the missing runner, written in
+the same shape as `test_kernel.py`: it works out the newest framework an installed SDK can build and
+an installed runtime can run, builds the host with `HeronTfm` overridden to a plain `net10.0`
+(`RevitVersion=2024` maps to `net48`, which needs Mono), runs it, and **exits 3 where there is no
+.NET - which is not a pass**. See [row 170](FRAGMENT-ISSUES.md).
 
 **None of that says the catch works.** No test here can tell you what the CLR does when the stack
 actually runs out. That is **[J9](NEEDS-CHECKING.md)**, and it needs Revit.

@@ -40,6 +40,7 @@ They are different questions, and the second one still has to be asked.
 import io
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -144,6 +145,89 @@ def run():
         bridge_client.bridge_process_is_running = original_running
         shutil.rmtree(folder, ignore_errors=True)
 
+    # FINDING A MISMATCH IS HALF THE JOB; SAYING SO IS THE OTHER HALF.
+    #
+    # Added 2026-09-21. `discover()` has separated mismatched bridges since the
+    # defect above, and `report_mismatched` exists to print the one sentence
+    # that helps - "restart that Revit to finish updating". Five of the seven
+    # commands called it on the NO-REVIT branch and not on the STILL-STARTING
+    # one, which is the branch where it matters most: one Revit booting and
+    # another stuck on an old add-in reads as "wait a moment", and the wait
+    # never ends, because the second one needs restarting and nothing said so.
+    # `cmd_list` and `cmd_ping` had it on both and are the proof it was meant
+    # on both. FRAGMENT-ISSUES section 5b.
+    source = io.open(os.path.join(ROOT, "mcp", "client",
+                                  "heron_bridge_client.py"),
+                     encoding="utf-8").read().split("\n")
+    where = None
+    silent = []
+    seen = 0
+    for number, line in enumerate(source):
+        if re.match(r"^def cmd_", line):
+            where = line.split("(")[0][4:]
+        if "not live and starting" not in line:
+            continue
+        seen += 1
+        # Everything up to the branch's own `return`.
+        said = False
+        for ahead in source[number:number + 12]:
+            if "report_mismatched" in ahead:
+                said = True
+                break
+            if re.match(r"\s+return ", ahead) and ahead is not source[number]:
+                break
+        if not said:
+            silent.append("%s (line %d)" % (where, number + 1))
+    if seen < 7:
+        failures.append("only %d still-starting branch(es) found - this check "
+                        "has stopped looking at what it thinks it is" % seen)
+    if silent:
+        failures.append("a still-starting branch does not report a protocol "
+                        "mismatch: %s" % ", ".join(silent))
+
+    # AND LOOKING IS STILL NOT CLAIMING. Added 2026-09-21, beside the check
+    # above for the same reason: both are about what the seven commands do
+    # with what `discover()` handed them.
+    #
+    # `BridgeServer.cs` exempts exactly two operations from the lease, and
+    # says why - "asking who has this must not be the act of claiming it".
+    # `count_elements` is not one of them, and `cmd_count` with no session
+    # named asked it of every connected Revit, taking all of them for five
+    # minutes. THE EXEMPT LIST IS DERIVED FROM THE C#, not typed here, so a
+    # third exemption added there makes this check say so rather than quietly
+    # go on describing two.
+    server = io.open(os.path.join(ROOT, "revit", "Heron.Bridge",
+                                  "BridgeServer.cs"), encoding="utf-8").read()
+    gate = server[server.index("PING AND INFO NEED NO LEASE"):]
+    gate = gate[:gate.index("HANDING IT BACK")]
+    exempt = set(re.findall(r'op == "(\w+)"', gate))
+    if exempt != {"ping", "info"}:
+        failures.append("the bridge now exempts %s from the lease, not just "
+                        "ping and info - every loop over `live` in the client "
+                        "has to be read again" % ", ".join(sorted(exempt)))
+
+    counter = source[[j for j, l in enumerate(source)
+                      if re.match(r"^def cmd_count", l)][0]:]
+    counter = "\n".join(counter[:counter.index("def fragment_risk(path):")]
+                         if "def fragment_risk(path):" in counter else counter[:120])
+    # THE CALL, NOT THE WORD. The comment explaining this very rule names
+    # `count_elements` several lines above the call, so matching the bare word
+    # reported the fixed code as broken - measured by watching it do exactly
+    # that.
+    call = 'bridge.request("count_elements")'
+    asked = counter.index(call) if call in counter else -1
+    # THE FLAG, which is what the code decides on - `availability()` builds
+    # the sentence a person reads and a reworded sentence must not be able to
+    # turn the guard off.
+    looked = counter.index("lease_state(") if "lease_state(" in counter else -1
+    if asked < 0:
+        failures.append("cmd_count no longer asks count_elements - this check "
+                        "has stopped looking at what it thinks it is")
+    elif looked < 0 or looked > asked:
+        failures.append("cmd_count asks count_elements of every connected "
+                        "Revit without asking who holds it first, so running "
+                        "it takes every Revit the user has open")
+
     print("Bridge discovery")
     if failures:
         for line in failures:
@@ -154,6 +238,10 @@ def run():
     print("  PASS  a dead bridge on another protocol is pruned, not reported")
     print("  PASS  a LIVE bridge on another protocol is still reported")
     print("  PASS  cannot-tell is never treated as dead")
+    print("  PASS  all %d still-starting branches report a protocol mismatch"
+          % seen)
+    print("  PASS  %s are the only lease-exempt ops, and counting asks who "
+          "holds a Revit first" % " and ".join(sorted(exempt)))
     print("\nDiscovery tells a dead session from a mismatched one.")
     return 0
 

@@ -41,8 +41,17 @@ bash hook would simply not run there.
 
   2. A HOOK THAT DIES IS READ AS PERMISSION. Any unexpected exit with no
      decision on stdout is treated as non-blocking and the edit proceeds. So
-     every path out of here prints a decision, and an unexpected failure
-     prints a DENY.
+     an unexpected failure here prints a DENY rather than dying quietly.
+
+     AN ALLOW PRINTS NOTHING, AND THAT IS NOT THE SAME HOLE. Silence is what
+     the host reads as "no objection", which is the outcome an allow wants -
+     so the only thing the trap above costs is that a CRASH must not look
+     like one. tests/test_heron_guard.py pins both halves: a crash prints a
+     deny, and an edit this hook has nothing to say about is "allowed
+     silently". This paragraph said "every path out of here prints a
+     decision" until 2026-09-21, which the allow path has never done - a
+     small thing to be wrong about in the one file whose subject is a hook
+     that looks like it works and refuses nothing.
 
   3. POLARITY IS A DECISION, NOT A DEFAULT. This is deny-tier and fails
      CLOSED, because "a boundary that fails open is not a boundary". gstack's
