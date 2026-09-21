@@ -21,7 +21,7 @@ Eight versions today, growing by one every year:
 | 2024 | .NET Framework 4.8 | **64-bit** | `ElementId.IntegerValue` → `ElementId.Value` |
 | 2025 | **.NET 8** | 64-bit | **Runtime break** |
 | 2026 | .NET 8 | 64-bit | |
-| 2027 | **.NET 10** | 64-bit | **Third runtime.** Reported by a shipping project ([26 sec.3](26-prior-art-revit-mcp.md)); confirm against the SDK |
+| 2027 | **.NET 10** | 64-bit | **Third runtime.** **Confirmed** — `brain/heron_dotnet.py` pins `2027: 10`, `Directory.Build.props` maps it, CI compiles 2027 with the .NET 10 SDK on every push, and a real Revit 2027 loaded the add-in on 2026-09-19 ([`A12`](NEEDS-CHECKING.md)). This cell said *"Reported by a shipping project ([26 sec.3](26-prior-art-revit-mcp.md)); confirm against the SDK"* until 2026-09-21 — an open action that had closed twice over ([row 5b-62](FRAGMENT-ISSUES.md)) |
 
 *Runtime versions must be verified against the installed SDKs before being locked in — see spec §24.*
 

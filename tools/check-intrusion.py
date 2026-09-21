@@ -103,6 +103,22 @@ def main(argv):
     import heron_fragment as FRAG
     import heron_retrieve as RETRIEVE
 
+    # NO STORE, NO CHECK - AND SAY SO IN ONE LINE RATHER THAN A TRACEBACK.
+    # With no %APPDATA% and no HERON_KNOWLEDGE there is nowhere to keep a
+    # knowledge store, and heron_scope raises ValueError from four frames
+    # down. Until 2026-09-21 that arrived as an unhandled traceback and exit
+    # 1, while .github/workflows/gates.yml said of this tool and its pair
+    # that they "say so rather than failing when there is none" - measured on
+    # Linux with the variable unset, they did not say so and they did fail.
+    # EXIT 2, which is the code this repository uses for "the tool could not
+    # do its job": nothing was checked, so it is NOT a pass. Row 5b-71.
+    if SCOPE.knowledge_dir() is None:
+        sys.stderr.write(
+            "COULD NOT RUN: no %APPDATA% and no HERON_KNOWLEDGE, so there is\n"
+            "nowhere to keep a knowledge store. Set HERON_KNOWLEDGE to a\n"
+            "folder - an empty one is enough - and run this again.\n")
+        return 2
+
     on_disk = len([
         name for name in os.listdir(FRAGMENTS)
         if os.path.exists(os.path.join(FRAGMENTS, name, "fragment.yaml"))

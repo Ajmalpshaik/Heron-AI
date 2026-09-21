@@ -11,7 +11,7 @@ The Revit validation gate checklist - the checks that FIRE, and the ones that mu
 
     python tests/test_revit_gate.py
 
-A checklist over 360 fragments is only worth running if a check that raises 114
+A checklist over the whole library is only worth running if a check that raises 114
 rows and a check that raises 1 are both correct. The 1 is the finding; the 114
 is the shape of the library. A check that raises 310 - as the links question did
 in its first form - is neither, and this file holds the cases that keep them

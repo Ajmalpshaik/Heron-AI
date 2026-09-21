@@ -64,10 +64,10 @@ WHAT IT REFUSES TO DO, AND WHY EACH ONE IS HERE
   rank within 0.003 of each other and reach nothing like the same fact. The rule
   rule was tried, measured and dropped - see section 2, which records why. It
   offers the bridge's own operations instead, and otherwise says so plainly.
-- **Never marks a fragment it could not run.** 279 of the 349 fragments need a
-  value only a person's sentence carries (a category, a name, a distance), and
-  there is no route for those. They are listed, per fragment, with the value
-  they are waiting for.
+- **Never marks a fragment it could not run.** Measured off disk on 2026-09-06,
+  279 of the 349 fragments there were then need a value only a person's sentence
+  carries (a category, a name, a distance), and there is no route for those.
+  They are listed, per fragment, with the value they are waiting for.
 - **Never touches the write path.** `run_fragment_read` opens no transaction. A
   fragment at anything other than `risk: READ` is out of scope until Phase 1 is
   proven, and `plan` will not schedule one.

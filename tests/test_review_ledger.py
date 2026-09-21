@@ -156,6 +156,33 @@ def main():
     check(SUBJECT not in st["clean"] and SUBJECT not in st["stale"],
           "which is a third state, not a quiet pass")
 
+    print("\n6. a refusal says so with its exit code, not only on stdout")
+    # A REFUSAL THAT EXITS 0 IS INDISTINGUISHABLE FROM A MARK THAT LANDED.
+    # Every refusal in cmd_mark is right - each was added on purpose, and the
+    # row check after a Codex review on PR #219 - but all of them returned
+    # None, and main() did `cmd_mark(...)` then `return 0`. So the tool
+    # printed "Nothing was recorded" and told every caller fine. It cost
+    # twice in one sitting, both silent, because a shell line ending
+    # `&& echo marked` duly printed "marked". Row 5b-63.
+    check(RL.COULD_NOT not in (0, None),
+          "the refusal code is a named non-zero: COULD_NOT is %r"
+          % (RL.COULD_NOT,))
+    quiet = io.StringIO()
+    held, sys.stdout = sys.stdout, quiet
+    try:
+        bad_verdict = RL.cmd_mark(SUBJECT, "probably", "")
+        outside = RL.cmd_mark("nowhere/at/all.py", "clean", "")
+        no_row = RL.cmd_mark(SUBJECT, "issue", "no row id in here at all")
+    finally:
+        sys.stdout = held
+    check(bad_verdict == RL.COULD_NOT, "a verdict that is not clean or issue")
+    check(outside == RL.COULD_NOT, "a path outside the sweep's scope")
+    check(no_row == RL.COULD_NOT,
+          "and a --note naming no row - the one that cost twice")
+    check("Nothing was recorded" in quiet.getvalue()
+          or "must name at least one row" in quiet.getvalue(),
+          "each still says on stdout what it would not do")
+
     try:
         os.remove(RL.LEDGER)
         os.rmdir(scratch)

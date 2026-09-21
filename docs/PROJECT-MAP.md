@@ -110,7 +110,7 @@ the [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) hook refuses the edi
 | [`tests/`](../tests/README.md) | The suites, the golden library, the .NET test host | [`tests/README.md`](../tests/README.md) — **read the exit codes section first** |
 | `docs/` | Permanent specification, architecture, decisions and registers | [README.md](README.md) |
 | [`docs/work-notes/`](work-notes/README.md) | Temporary operational work — what is going on right now | [work-notes/README.md](work-notes/README.md) |
-| `.claude/` | House rules as skills, and four prototype agents. **The only skills tree** | [`.claude/skills/README.md`](../.claude/skills/README.md) |
+| `.claude/` | House rules as skills, and four prototype agents. **The only tree of HOUSE RULES** — `brain/skills/` above is Heron's own skills, the jobs it does for a modeller, and the two share a word and nothing else | [`.claude/skills/README.md`](../.claude/skills/README.md) |
 | `.codex/` | The same four agents for a second host, pointing at the same skills | `.codex/config.toml` |
 
 ---
@@ -127,7 +127,7 @@ the [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) hook refuses the edi
 | Understand **why** a design is the way it is | [DECISIONS.md](DECISIONS.md) | Then the numbered document for that area |
 | Find out **what is not proven yet** | `python tools/check-gaps.py` | [NEEDS-CHECKING.md](NEEDS-CHECKING.md). Never read a count out of prose |
 | **Continue unfinished work** | [HANDOVER.md](HANDOVER.md) | [work-notes/](work-notes/README.md) for anything active |
-| Know **what to run before pushing** | [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) skill | It names the four gates that must pass, how to state a change's intent and capture its evidence, and the checks that need a machine this container has not got |
+| Know **what to run before pushing** | [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) skill | It names the four gates you run before pushing - and the **nine** CI's job of that name actually decides on - how to state a change's intent and capture its evidence, and the checks that need a machine this container has not got |
 
 ---
 
@@ -221,12 +221,20 @@ Do **not** pick whichever makes the cleanup easier, and do not close a policy co
 [01 — Vision & Principles](01-vision-and-principles.md) → the [README](../README.md) status section →
 [NEEDS-CHECKING.md](NEEDS-CHECKING.md).
 
-What matters to you: **read and write are different things, and they are proven to different depths.**
-Reading is proven far more widely — **106 `READ` fragments carry a proof against 63 `MODIFY`** — and
-`write.enabled` still defaults to `false` whatever the fragment says.
+What matters to you: **read and write are different things, and what keeps you safe is the switch,
+not the library.** `write.enabled` defaults to **`false`** whatever the fragment says, and stays there
+until the write path has been through the register — `D3`, a tape measure on the three ducts it moved
+on 2026-09-07, is still owed.
 
-A fragment marked `DRAFT` **has never met a model.** 185 of 360 at the last count. Derive both rather
-than believing any of those numbers, including these:
+**This paragraph said *"reading is proven far more widely — 106 `READ` fragments carry a proof against
+63 `MODIFY`"* until 2026-09-21, and it was true the day it was written.** The library moved to 145
+against 166 and the sentence stayed, so it had become the opposite of true — in the paragraph written
+for the person deciding whether to trust Heron near their model. It said *185 of 360* are `DRAFT` in
+the same breath. `tools/check-docs.py` can see the *carry a proof* wording now
+([row 5b-61](FRAGMENT-ISSUES.md)).
+
+A fragment marked `DRAFT` **has never met a model.** Derive every one of these rather than believing
+any number typed here:
 
 ```bash
 grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c
@@ -241,8 +249,13 @@ did. It is not a compile and not a passing test.
 [12 — Security & Permissions](12-security-and-permissions.md) for approval and data scope ·
 [HERON_CONSTITUTION.md](../HERON_CONSTITUTION.md) for the binding rules.
 
-**Declared support and tested releases are not the same list.** The compile gate covers 2020–2027; a
-real Revit has been used on 2020 and 2024.
+**Declared support and tested releases are not the same list**, and there are two tested lists rather
+than one. The compile gate covers **2020–2027**, on every push. The **add-in has been deployed, loaded
+and had its tab checked on 2020, 2024 and 2027** — [`A12` and `A13`](NEEDS-CHECKING.md), 2026-09-19, on
+all three releases installed on the owner's PC. **Fragments have been proven on 2020 and 2024 only**:
+a proof is a recorded run against a named model, and none names 2027. This line said *"a real Revit has
+been used on 2020 and 2024"* until 2026-09-21, which was true of the second list and understated the
+first ([row 5b-62](FRAGMENT-ISSUES.md)).
 
 ### Developer
 

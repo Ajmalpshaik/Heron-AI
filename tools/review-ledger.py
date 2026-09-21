@@ -88,6 +88,12 @@ LEDGER_TRACKED = "docs/REVIEW-LEDGER.tsv"
 REGISTER = os.path.join(ROOT, "docs", "FRAGMENT-ISSUES.md")
 
 COLUMNS = ["when", "who", "path", "blob", "verdict", "note"]
+# WHAT A REFUSAL EXITS WITH. Not 1: nothing FAILED - the tool declined to
+# write a mark it could not stand behind, which is the third state this
+# repository names everywhere else (check-package.py and change-evidence.py
+# both state it: 2 = the tool could not do its job). Row 5b-63.
+COULD_NOT = 2
+
 VERDICTS = ("clean", "issue")
 
 # Out of scope. Word by word means nothing for these.
@@ -388,10 +394,26 @@ def who():
 
 
 def cmd_mark(path, verdict, note):
+    """
+    Record one file as read. Returns 0 when a mark was written, COULD_NOT
+    when it refused.
+
+    A REFUSAL THAT EXITS 0 IS INDISTINGUISHABLE FROM A MARK THAT LANDED,
+    which is this repository's standing shape one layer down. Every refusal
+    below is right and was added on purpose - a mark whose row nobody has
+    verified is worse than no mark - but they all returned None, and main()
+    did `cmd_mark(...); return 0`, so the tool said "could not" on stdout
+    and "fine" to every caller.
+
+    It cost twice on 2026-09-21, both silent: a note reading "5b-50's other
+    half" put an apostrophe where the row check wanted a delimiter, and the
+    session only noticed because it listed the ledger afterwards and the
+    count had not moved. FRAGMENT-ISSUES row 5b-63.
+    """
     path = path.replace("\\", "/").strip()
     if verdict not in VERDICTS:
         out("Verdict must be one of: %s" % ", ".join(VERDICTS))
-        return
+        return COULD_NOT
     scope = in_scope()
     if path not in scope:
         out("%s is not in the sweep." % path)
@@ -399,13 +421,13 @@ def cmd_mark(path, verdict, note):
             out("brain yaml keeps its own gates - it is deliberately out of scope.")
         elif not os.path.exists(os.path.join(ROOT, path)):
             out("No such tracked file. Check the spelling, forward slashes.")
-        return
+        return COULD_NOT
     if verdict == "issue":
         if not note:
             out("An issue needs --note with its row number in FRAGMENT-ISSUES.md 5b.")
             out("Write the defect there FIRST, then mark the file with its row.")
             out("A file marked `issue` with no row is a finding nobody can find.")
-            return
+            return COULD_NOT
 
         # AND THE ROW HAS TO EXIST. Requiring the note to be non-empty was not
         # the same as requiring it to POINT anywhere: `--note 5b-999`, or a
@@ -418,24 +440,24 @@ def cmd_mark(path, verdict, note):
             out("Could not read section 5b of docs/FRAGMENT-ISSUES.md, so the")
             out("row in --note cannot be checked. Refusing rather than writing")
             out("a mark whose reference nobody has verified.")
-            return
+            return COULD_NOT
         cited = [c for c in re.split(r"[,\s]+", note) if c.strip()]
         missing = [c for c in cited if _row_id(c) and _row_id(c) not in wanted]
         if not any(_row_id(c) for c in cited):
             out("--note must name at least one row in section 5b, like 5b-3.")
             out("Got: %s" % note)
-            return
+            return COULD_NOT
         if missing:
             out("No such row in FRAGMENT-ISSUES.md section 5b: %s"
                 % ", ".join(missing))
             out("Section 5b has %d row(s): %s"
                 % (len(wanted), ", ".join("5b-%d" % n for n in sorted(wanted))))
             out("Write the defect there FIRST. Nothing was recorded.")
-            return
+            return COULD_NOT
 
     sha = blobs([path]).get(path)
     if not sha:
-        return
+        return COULD_NOT
     row = [datetime.date.today().isoformat(), who(), path, sha, verdict,
            (note or "").replace("\t", " ").strip()]
 
@@ -450,6 +472,7 @@ def cmd_mark(path, verdict, note):
     if verdict == "issue":
         out("  defect row: FRAGMENT-ISSUES.md 5b -> %s" % note)
     out("  If this file changes, the mark goes stale by itself.")
+    return 0
 
 
 def main():
@@ -463,8 +486,7 @@ def main():
     a = ap.parse_args()
 
     if a.mark:
-        cmd_mark(a.mark[0], a.mark[1], a.note)
-        return 0
+        return cmd_mark(a.mark[0], a.mark[1], a.note)
     if a.history:
         cmd_history(a.history.replace("\\", "/").strip())
         return 0

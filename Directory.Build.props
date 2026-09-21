@@ -8,8 +8,13 @@
         dotnet build -p:RevitVersion=2024
 
     The multi-targeting machinery is here from the first commit because it is
-    cheap now and ruinous to retrofit (D-05, docs/16). Step 1 proves ONE
-    version; the structure already supports the rest.
+    cheap now and ruinous to retrofit (D-05, docs/16), and it is no longer a
+    structure waiting to be used: tools/check-compile.py builds EVERY release
+    in the table below, CI runs it on every push - the job is named "The C#
+    compiles, 2020 to 2027" - and a real Revit has loaded the add-in on three
+    of them (docs/NEEDS-CHECKING.md A12). This said "Step 1 proves ONE
+    version; the structure already supports the rest" until 2026-09-21, which
+    was true at Step 1 and has been out of date since (row 5b-68).
 
     Runtime per Revit generation - see docs/16-version-support-strategy.md:
         2020            net472

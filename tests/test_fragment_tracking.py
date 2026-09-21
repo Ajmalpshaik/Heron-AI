@@ -49,8 +49,10 @@ RULE - the subprocess, the filesystem section, and the draft itself. They were
 added to bisect this and they earn their place anyway: a machine that cannot
 spawn a subprocess should not report that D-53 is broken.
 
-Nothing was ever added to `gates.yml`'s known-failure list, which would have
-said this is an environment we ACCEPT rather than one we did not understand.
+Nothing was ever added to `gates.yml`'s excuse list, which would have said
+this is an environment we ACCEPT rather than one we did not understand. (That
+list was called the known-failure list when this was written; row 5b-49 made it
+a known-NOT-RUNNABLE one, and the choice it describes is the same either way.)
 
 THE OLD NOTE FOLLOWS, because the reasoning it records is still the reasoning
 that applies the day somebody has to choose again - and its closing line,

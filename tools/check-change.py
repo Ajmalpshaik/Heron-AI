@@ -603,19 +603,29 @@ def main(argv=None):
     failed = sorted(g for g, r in ran.items()
                     if isinstance(r, dict) and r.get("result") == "FAIL")
 
-    # A GATE THAT WAS ALREADY FAILING IS NOT THIS CHANGE, and saying otherwise
-    # would make the verdict useless on any machine missing an optional
-    # dependency: two suites here exit 1 for want of the MCP SDK, so the tests
-    # gate reads FAIL on a plain container whatever anybody changed.
+    # A GATE THAT WAS ALREADY FAILING IS NOT THIS CHANGE, and saying
+    # otherwise would make the verdict useless on a machine where something
+    # was already red for a reason nobody here caused - a broken install, a
+    # half-written file left by another session, a gate red on the base
+    # branch too.
+    #
+    # THE EXAMPLE THIS USED TO GIVE WAS THE ONE CASE IT IS NOT NEEDED FOR.
+    # It said "two suites here exit 1 for want of the MCP SDK, so the tests
+    # gate reads FAIL on a plain container whatever anybody changed."
+    # Measured 2026-09-21 with the SDK made unimportable: both exit 3, and
+    # change-evidence reads 3 as could-not-run, so the tests gate says PASS.
+    # The mechanism below is right; its justification was false in both
+    # halves. FRAGMENT-ISSUES row 5b-60.
     #
     # It is only safe to say that when somebody MEASURED the before state -
     # which is what `compared_to` means. With no comparison there is no way to
     # tell a pre-existing failure from a new one, and the tool says the
     # cautious thing instead of the convenient one.
     #
-    # This is the same mechanism .github/workflows/gates.yml already uses: it
-    # compares the SET of failing suites against a known-failure list rather
-    # than counting them.
+    # This is the same mechanism .github/workflows/gates.yml already uses:
+    # it compares a SET against a named list rather than counting anything.
+    # (Since row 5b-49 that list names the suites which CANNOT RUN there, and
+    # its failure set must be empty.)
     if compared:
         blocking = [g for g in failed if g in regressed_gates]
         pre_existing = [g for g in failed if g not in regressed_gates]

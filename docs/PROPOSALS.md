@@ -1406,6 +1406,58 @@ module's object, by identity.
 
 ---
 
+### 🟡 F23. D-84 took a word out of two places; it is still in the three that bind
+
+**Found by:** reading `HERON_CONSTITUTION.md` word by word on 2026-09-21.
+**Status:** open. One decision, three sentences, no code changes.
+
+```bash
+grep -n 'sandbox' HERON_CONSTITUTION.md docs/14-golden-rules.md README.md
+```
+
+[D-84](DECISIONS.md) chose **keep what exists, build no subprocess, and take the word out**, because
+`heron_sandbox` runs a new agent as ordinary Python in the supervising process: *"an agent that
+cooperates is held. One that does not can call `open()`, import the bridge, reach into globals or
+delete files, and nothing is in its way. That is most of the value and none of the guarantee, and the
+word sandbox implies otherwise."* Its consequence line says **"there is now nowhere in the repository
+that claims otherwise."**
+
+[Row 5b-52](FRAGMENT-ISSUES.md) took it out of the module, the register row, `DISCLAIMER.md` and
+`SECURITY.md`. These three are left, and they are the ones with authority:
+
+| where | what it says today |
+|---|---|
+| [Constitution](../HERON_CONSTITUTION.md) **Article 11** | *"Generated or newly imported code runs in a **sandbox** or against a detached copy first."* |
+| [Golden Rule 18](14-golden-rules.md) | *"New code runs in a **sandbox** or against a detached copy."* |
+| [`README.md`](../README.md) **Decided** | *"Generated code — Hybrid: **scripting sandbox** while testing, compiled C# for production."* |
+
+**The Constitution matters most of the three**, and not because it is the most read. Its own
+Enforcement section says the Articles *"are assembled into an agent's instructions from this file"* —
+so Article 11 is not a page somebody might see, it is text injected into a running agent, telling it a
+containment exists that D-84 recorded as not built.
+
+**Why an agent did not simply fix it.** The Constitution's Amendment section reads *"Articles are never
+weakened silently, and **never by an agent**"*, and Golden Rule 18 is the owner's on the same footing.
+`AGENTS.md` names the answer for this exact case: record both, name the governing decision, name the
+observed evidence, name who resolves it — and leave the conflict open rather than closing it whichever
+way makes the task easier.
+
+**Nothing about the behaviour would change, and no requirement moves.** The first run really does shut
+the Revit door and the production scopes, write down every attempt, and mark the run so it can never
+count as evidence. Only the word naming that mechanism promises more than it does. Drafted so it is a
+yes or a no rather than a writing job:
+
+| where | proposed |
+|---|---|
+| **Article 11** | *"Untested code never touches a live model. Generated or newly imported code runs **watched — every door shut and every attempt recorded — or** against a detached copy first. Watched is not contained ([D-84](DECISIONS.md))."* |
+| **Golden Rule 18** | *"New code runs **watched, not contained** — or against a detached copy. Promotion to live comes after it passes."* |
+| **README Decided** | *"Generated code — Hybrid: **watched first run** while testing, compiled C# for production."* |
+
+A **no** is a real answer too, and it is recorded rather than argued with: it would mean the word stays
+and D-84's consequence line is the sentence to correct instead.
+
+---
+
 ## F23 — four of the five remaining Documentation agents have no distinct source, or no distinct job
 
 Found while building [`HERON-DOC-SKL-003`](../tools/generate-skill-catalog.py) and

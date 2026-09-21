@@ -15,8 +15,9 @@ WHAT IT PROVES
   1. THE SCHEME IS heron_fragment's OWN OBJECT, compared by identity,
      and the module holds no copy of the nine areas.
 
-  2. IT MEASURES THE REAL 360 FRAGMENTS, and every one of them names a
-     declared area.
+  2. IT MEASURES EVERY FRAGMENT ON DISK, and every one of them names a
+     declared area. The number is not typed here - it was 360 until the
+     library passed it (docs/FRAGMENT-ISSUES row 5b-66).
 
   3. `splits_to_fall` IS ARITHMETIC, checked on numbers whose answer can
      be worked out by hand - including the two edges, not the largest

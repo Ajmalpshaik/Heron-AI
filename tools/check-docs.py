@@ -567,7 +567,15 @@ else:
     # and quotation rules are applied to the sentence rather than the line.
     # Sentence, not paragraph: a table is one paragraph, and one historical
     # row in it would switch the check off for every row beside it.
-    BREAK = re.compile(r'(?<=[.!?])\s+|\s*\|\s*')
+    #
+    # THE TERMINATOR IS OFTEN NOT THE LAST CHARACTER. This prose ends
+    # sentences with `.**`, `."` and `.)` constantly, and a lookbehind of
+    # exactly one character does not break there - so a sentence ran on into
+    # the next one and a history word in the FIRST excused a stale claim in
+    # the SECOND. That is row 5b-55's own failure one size smaller: found
+    # 2026-09-21 building tests/test_library_total.py, which carries the same
+    # splitter (row 5b-67).
+    BREAK = re.compile(r'[.!?][*_"\'\u2019)\]]*\s+|\s*\|\s*')
 
     def sentences(text):
         """(first line, sentence, whole block, offset in block) each."""
@@ -643,6 +651,46 @@ else:
                     if int(m.group(2)) != total:
                         drift.append((p, i, 'of the %s' % m.group(2),
                                       '%d (ls brain/fragments)' % total))
+
+    # ---------- THE SAME RISK CLAIM, IN A THIRD WORDING ----------
+    #
+    # The risk gate above matches "N RISK fragments are PROVEN" and its
+    # trailing "against N RISK". docs/PROJECT-MAP.md said "106 READ
+    # fragments CARRY A PROOF against 63 MODIFY" - the same fact, three
+    # words outside both - and it was TRUE WHEN IT WAS WRITTEN. The library
+    # moved to 145 against 166, which makes the sentence it supports
+    # ("reading is proven far more widely") the opposite of true, in the
+    # paragraph written for a BIM modeller deciding whether to trust this
+    # near their model. Row 5b-61.
+    #
+    # Measured before adding: this pattern fires on exactly that one line in
+    # the repository and on nothing correct.
+    if by_risk:
+        CARRY = re.compile(r'(\d+)\s+`?([A-Z]{4,8})`?\s+fragments?\s+carry'
+                           r'(?:ing)?\s+a\s+proof'
+                           r'(?:\s+against\s+(\d+)\s+`?([A-Z]{4,8})`?)?')
+        for p in md:
+            if '/work-notes/' in p or '/handover-archive/' in p:
+                continue
+            for i, one, block, off in sentences(allsrc.get(p, '')):
+                if HISTORY.search(one):
+                    continue
+                for m in CARRY.finditer(one):
+                    if not a_claim(block, off + m.start()):
+                        continue
+                    pairs = [(m.group(1), m.group(2))]
+                    if m.group(3):
+                        pairs.append((m.group(3), m.group(4)))
+                    for said, risk in pairs:
+                        real = by_risk.get(('PROVEN', risk))
+                        if real is None:
+                            continue
+                        if int(said) != real:
+                            drift.append((p, i, '%s %s carry a proof'
+                                          % (said, risk),
+                                          '%d PROVEN %s (grep risk: and '
+                                          'heron-status: in brain/fragments)'
+                                          % (real, risk)))
 
     # ---------- THE WRITE PATH, ANSWERED BY THE REGISTER RATHER THAN BY A
     # ---------- SENTENCE
