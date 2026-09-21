@@ -124,6 +124,29 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-21 (end of session) — A FOURTH MODULE WITH NOTHING WRONG WITH IT
+
+**`brain/heron_registry.py` read word by word. No defect.** That is the result rather than an absence
+of one, and it is worth saying: four live-path modules read today, three had a defect and this one did
+not.
+
+**One thing was checked and discarded.** Its header regex accepts only `//` and `#` comments, so the
+eight `.md` files carrying `<!-- Heron-Agent: -->` read as unidentified. **Correct and deliberate**:
+`tools/check-metadata.py` uses the *identical* regex at line 129 and scans
+`SOURCE_EXT = (.cs, .py, .ps1)` only, so a markdown header is outside the gate's scope by design, and
+this agent agrees with the gate rather than inventing a second rule.
+
+**A second was checked and discarded in `brain/heron_contract.py`**, which is otherwise **not yet
+read**. Its docstring quotes the register as *"across **249** agents"* while its own `main()` prints
+*"the **250** agents in the register"*, and `docs/28` says 250 in four places and 249 in exactly one
+— the `HERON-AHR-CON-017` row itself. **That is almost certainly deliberate**: the same file writes
+*"the 146 agents that need no Revit … all 145 others declare themselves to it"* two lines apart, so
+*N and N−1 others* is this author's own idiom and 249 reads as *the other 249*. Unclear, not wrong.
+**Not written up as a row**, because a suspicion recorded as a defect is worse than one discarded.
+
+**Where the live-path reading stands: 4 of 53 done.** `heron_contract` (447 lines, partly read) and
+`heron_classify` are the obvious next two.
+
 ### 2026-09-21 (last) — THREE LIVE-PATH BRAIN MODULES, AND THE SAME SHAPE TWICE
 
 **[Row 5b-86](FRAGMENT-ISSUES.md). FIXED, and it is [5b-84](FRAGMENT-ISSUES.md)'s shape one module
