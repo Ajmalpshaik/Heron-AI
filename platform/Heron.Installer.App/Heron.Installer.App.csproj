@@ -1,0 +1,78 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The installer WINDOW, and nothing else.
+
+    docs/work-notes/plans/plugin-extension/02-implementation.md, Stage 4.
+
+    WHY THIS IS A SECOND PROJECT and not a window added to Heron.Installer.
+    A WPF window needs net8.0-windows and the WindowsDesktop runtime, which
+    this repository is developed without - so an engine that carried a window
+    could not be RUN here, and every decision it makes would stop being
+    testable. Heron.Installer stays net8.0 and pure; this is the only thing
+    that needs the owner's machine.
+
+    SO THERE IS NO DECIDING IN HERE. What to show, what may be ticked, what
+    is greyed out and what the grey says all come from InstallerScreen, which
+    is tested by tests\Heron.Installer.TestHost against a fake Revit. This
+    project draws what it is handed. A rule that appears in here rather than
+    there is a rule nobody can check.
+
+    NO XAML, which is the house shape: revit\Heron.Revit.Addin builds its
+    windows in C# too - HeronBridgeStatusWindow.cs and HeronChangesWindow.cs.
+    One less file that says a different thing from the code beside it.
+
+    NOT a Revit add-in. It never loads into Revit.exe.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Heron.Installer.App</RootNamespace>
+    <!--
+      HeronInstaller.exe, not Heron.Installer.exe. The library beside it is
+      already called Heron.Installer, and two files a dot apart is a thing
+      somebody eventually double-clicks the wrong one of. This is the name a
+      modeller sees in their Downloads folder.
+    -->
+    <AssemblyName>HeronInstaller</AssemblyName>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+
+    <!--
+      Release-independent, like the engine: it installs FOR a Revit release
+      without ever loading into one, so it is built once rather than eight
+      times.
+    -->
+    <HeronTfm>net8.0-windows</HeronTfm>
+
+    <!--
+      A .NET 8 executable on a machine that only has a later runtime would
+      otherwise refuse to start with a message about a missing framework. The
+      target user is a modeller on a laptop they do not administer, so
+      "install this other thing first" is the failure to avoid. The same flag
+      is already on tools\api-surface\ApiSurface.csproj for the same reason.
+    -->
+    <RollForward>LatestMajor</RollForward>
+
+    <!--
+      SET HERE RATHER THAN BY WHOEVER BUILDS IT. tools/check-compile.py passes
+      this flag for the Revit releases whose runtime is windows-suffixed, which
+      is the right rule for every other project: theirs changes with the
+      release. This one is windows-suffixed on all eight, because a window is,
+      so it would go unbuilt on 2020 to 2024 and nobody would see it fail.
+
+      It restores the Windows targeting packs from NuGet, and is a no-op on
+      Windows where the SDK already has them - docs/30-compiling-away-from-
+      windows.md, whose point is that the flag exists for the machine that is
+      NOT Windows.
+    -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Heron.Installer\Heron.Installer.csproj" />
+  </ItemGroup>
+
+</Project>

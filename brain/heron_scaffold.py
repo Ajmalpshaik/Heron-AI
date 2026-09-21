@@ -180,8 +180,30 @@ def author(name, layer, references=None, why=None, root=None):
                        "ninth is not invented here."
                        % (layer, ", ".join(sorted(table)))}
 
-    wanted = [str(one).strip().lower() for one in (references or [])
-              if str(one).strip()]
+    # A REFERENCE MAY NAME A LAYER, OR ONE PROJECT INSIDE IT.
+    #
+    # It was layers only until 2026-09-21, and that was fine while every
+    # layer held at most one project. platform/ gained a second one that day
+    # - Heron.Core and Heron.Installer - and WHICH_PROJECT below started
+    # refusing every reference to it, correctly (D-33 does not guess) and
+    # with no way out: the refusal asked the caller to say which, and the
+    # caller had no way to say it. A refusal that names a choice the API
+    # cannot express is a dead end, not a guard.
+    #
+    # So "platform" still means the layer, and "platform/Heron.Core" means
+    # that one project. The LAYER half is what check-structure.py's table is
+    # about, so that is what is checked against `allowed` either way.
+    wanted, picked = [], {}
+    for one in (references or []):
+        one = str(one).strip()
+        if not one:
+            continue
+        part, _slash, pick = one.replace("\\", "/").partition("/")
+        part = part.strip().lower()
+        wanted.append(part)
+        if pick.strip():
+            picked[part] = pick.strip()
+
     allowed = set(table[layer])
     forbidden = [one for one in wanted if one not in allowed]
     if forbidden:
@@ -195,15 +217,30 @@ def author(name, layer, references=None, why=None, root=None):
     # EVERY REFERENCE HAS TO RESOLVE TO A PROJECT THAT EXISTS. D-48's
     # table is about imports in BOTH languages; a C# ProjectReference can
     # only point at a C# project, and brain/ is Python.
-    resolved, missing, several = {}, [], []
+    resolved, missing, several, unknown = {}, [], [], []
     for one in wanted:
         found = projects_in(one, root)
+        pick = picked.get(one)
+        if pick:
+            wantedfile = pick if pick.endswith(".csproj") else pick + ".csproj"
+            narrowed = [p for p in found if os.path.basename(p) == wantedfile]
+            if not narrowed:
+                unknown.append((one, pick, found))
+                continue
+            found = narrowed
         if not found:
             missing.append(one)
         elif len(found) > 1:
             several.append((one, found))
         else:
             resolved[one] = found[0]
+    if unknown:
+        part, pick, found = unknown[0]
+        return {"authored": False, "refused": "NO_SUCH_PROJECT",
+                "why": "%s holds no project called %s. What is there: %s."
+                       % (part, pick,
+                          ", ".join(os.path.basename(p) for p in found)
+                          or "nothing")}
     if missing:
         return {"authored": False, "refused": "NO_PROJECT_IN_LAYER",
                 "why": "%s holds no .csproj, so a C# project cannot "
@@ -217,8 +254,10 @@ def author(name, layer, references=None, why=None, root=None):
         return {"authored": False, "refused": "WHICH_PROJECT",
                 "why": "%s holds more than one project: %s. Which one is a "
                        "choice, and picking the first would be a guess "
-                       "(D-33)."
-                       % (several[0][0], ", ".join(several[0][1]))}
+                       "(D-33). Name the one you mean instead - %s."
+                       % (several[0][0], ", ".join(several[0][1]),
+                          "%s/%s" % (several[0][0],
+                                     os.path.basename(several[0][1][0])[:-len(".csproj")]))}
 
     shape = _shape()
     if not shape or not shape.get("sdk"):

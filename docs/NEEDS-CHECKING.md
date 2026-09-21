@@ -1920,26 +1920,48 @@ passes 26 checks on what is decidable in source. **Neither has been seen in a Re
 below are answered the stage is BUILT, not PROVEN.** A compile proves the API agrees. It does not prove
 a tab appears.
 
-**Stage 3 must not begin until AA1, AA2 and AA3 have passed.** The plan says so in as many words: if
-this fails, the cost of finding out is one dummy button; finding out after the installer window is
-built costs the installer window.
+**Stage 3 was not to begin until AA1, AA2 and AA3 had passed, AND IT DID - 2026-09-21.** The plan says
+so in as many words: if this fails, the cost of finding out is one dummy button; finding out after the
+installer window is built costs the installer window. **The owner chose to build Stage 3 anyway**, and
+the reason this sentence is here rather than quietly edited is that the bet has to be visible when the
+answer arrives.
 
-Build and deploy with:
+**What it costs if AA2 fails.** Nothing in the install engine changes - it decides which product goes to
+which release and never touches a ribbon. What changes is [S3](work-notes/plans/plugin-extension/00-structure.md):
+a `Heron` tab that two add-ins can build between them. If that is not how Revit behaves, the tools piece
+and the AI Bridge piece have to become **one** add-in with a switch, `heron-tools` stops being a separate
+product, and the product list, the window and R-34 all follow it. **The engine survives; the shape does
+not.** That is the bet, written down before the run.
+
+**Close Revit before every command below.** Each one refuses while it is open and names the release it
+found - that refusal is row `AA6`.
 
 ```powershell
 dotnet build revit\Heron.Doc\Heron.Doc.csproj      -p:RevitVersion=2024
 dotnet build revit\Heron.Tools\Heron.Tools.csproj  -p:RevitVersion=2024
-.\tools\deploy-stage2-proof.ps1 -RevitVersion 2024
+.\tools\deploy-addin.ps1 -RevitVersion 2024 -Product heron-doc
+.\tools\deploy-addin.ps1 -RevitVersion 2024 -Product heron-tools
 ```
+
+**The script these commands use changed on 2026-09-21**, after this group was written. Stage 2 first had
+a throwaway deploy script of its own, because `deploy-addin.ps1` could deploy only the AI Bridge. Stage 3
+had to teach that one script every product - [R-31](work-notes/plans/plugin-extension/01-requirements.md)
+allows one engine - which left the throwaway as a second copy of the same rule, so the throwaway was
+deleted. **Rows AA7 to AA9 below are the cost of that**, and they are on the same Revit session as the
+rest: `deploy-addin.ps1` has not been run since it was changed, and its rollback proof of 2026-09-19
+(`Group Z`) is **STALE for the current file**.
 
 | ID | Do this | Pass looks like |
 |---|---|---|
 | **AA1** | Deploy **both** proofs with the AI Bridge add-in also installed. Start Revit. **Screenshot.** | **TWO tabs**: `Heron` and `Heron Doc`. The `Heron` tab carries **both** an `AI Bridge` panel and a `Tools` panel - **ONE tab, two panels**. **The failure to watch for is two tabs both reading `Heron`**, which on screen looks almost right: that would mean `CreateRibbonTab` made a second one instead of finding the first, and R-35 is broken. The `Heron` tab's **three existing buttons must still work** - press each one |
-| **AA2** | **TOOLS ONLY.** `.\tools\deploy-addin.ps1 -RevitVersion 2024 -Remove`, leaving only the Tools proof. Start Revit. **Screenshot.** | A `Heron` tab **exists**, carrying the `Tools` panel and **NO `AI Bridge` panel**. **THIS IS THE CASE EXPECTED TO BREAK FIRST** and the one [R-34](work-notes/plans/plugin-extension/01-requirements.md) promises - a site modeller who wants Heron's tools and refuses the AI. If **no tab appears at all**, the tools piece assumed it loaded second and something has to create the tab. A FAIL here is worth as much as a pass: it is the answer Stage 2 was built to get |
-| **AA3** | **AI BRIDGE ONLY.** Remove the Tools proof, reinstall the add-in. Start Revit. **Screenshot.** | The `Heron` tab exactly as it is today - one `AI Bridge` panel, three buttons, no `Tools` panel. This is the control case: it proves the proofs left nothing behind |
-| **AA4** | `.\tools\deploy-stage2-proof.ps1 -RevitVersion 2024 -Remove`, then start Revit | **`Heron Doc` is gone and `Heron` is untouched.** This is the uninstall story proved before any uninstaller exists. Check the Addins folder afterwards: no `Heron.Doc` folder, no `Heron.Doc.addin`, and **no `.old` anything** - [R-38c](work-notes/plans/plugin-extension/01-requirements.md) |
+| **AA2** | **TOOLS ONLY.** `.\tools\deploy-addin.ps1 -RevitVersion 2024 -Product heron-bridge -Remove`, leaving only the Tools proof. Start Revit. **Screenshot.** | A `Heron` tab **exists**, carrying the `Tools` panel and **NO `AI Bridge` panel**. **THIS IS THE CASE EXPECTED TO BREAK FIRST** and the one [R-34](work-notes/plans/plugin-extension/01-requirements.md) promises - a site modeller who wants Heron's tools and refuses the AI. If **no tab appears at all**, the tools piece assumed it loaded second and something has to create the tab. A FAIL here is worth as much as a pass: it is the answer Stage 2 was built to get |
+| **AA3** | **AI BRIDGE ONLY.** `-Product heron-tools -Remove`, then `-Product heron-bridge` to reinstall the add-in. Start Revit. **Screenshot.** | The `Heron` tab exactly as it is today - one `AI Bridge` panel, three buttons, no `Tools` panel. This is the control case: it proves the proofs left nothing behind |
+| **AA4** | `.\tools\deploy-addin.ps1 -RevitVersion 2024 -Product heron-doc -Remove`, then start Revit | **`Heron Doc` is gone and `Heron` is untouched.** This is the uninstall story proved before any uninstaller exists. Check the Addins folder afterwards: no `Heron.Doc` folder, no `Heron.Doc.addin`, and **no `.old` anything** - [R-38c](work-notes/plans/plugin-extension/01-requirements.md) |
 | **AA5** | Do AA1 on **2020** as well as on a modern release | 2020 is `net472` and 2027 is `net10.0-windows`. The ribbon API is the same across both, but this has never been run, and `Z9` is the precedent for checking rather than assuming |
-| **AA6** | Run `.\tools\deploy-stage2-proof.ps1` **with Revit open** | It refuses, names the release that is open, and **changes nothing**. It uses the same detection `deploy-addin.ps1` uses rather than a second copy of that rule. **Not one line of that script has ever run** - it is PowerShell and this container is Linux |
+| **AA6** | Run `.\tools\deploy-addin.ps1 -RevitVersion 2024 -Product heron-doc` **with Revit open** | It refuses, names the release that is open, and **changes nothing**. Revit holds every assembly it has loaded, so a copy over one fails; the script waits for a person rather than renaming the folder aside - [R-38a](work-notes/plans/plugin-extension/01-requirements.md) |
+| **AA7** | **THE ONE THAT MATTERS MOST.** `.\tools\deploy-addin.ps1 -RevitVersion 2024 -Product heron-bridge` with **no other argument**, exactly as it has been run since Step 1. Start Revit | The `Heron` tab, the `AI Bridge` panel, **and all three buttons working** - connect, disconnect, and the bridge answering `python mcp\client\heron_bridge_client.py ping`. **This is the regression check for generalising the script.** Every path in it used to say `Heron.Revit.Addin`; they now come from `platform/heron-products.json`. `tests/test_deploy_script.py` proves the default **resolves** to the same four values, which is a text check - **this is the run** |
+| **AA8** | After AA7, run it again to force a replace, then `.\tools\deploy-addin.ps1 -RevitVersion 2024 -Product heron-bridge -Rollback`. Start Revit | The add-in comes back and works. **The backup path CHANGED on 2026-09-21** - it is now `%LOCALAPPDATA%\Heron\install-backup\2024\Heron` rather than `...\2024`, so **a backup made before that date will not be found** and the script says so rather than restoring nothing. The rollback proof in `Group Z` was made against the old path and does **not** cover this |
+| **AA9** | Download this repository as a **zip** from GitHub, extract it, build, and deploy `heron-doc` from the extracted copy | It installs and the tab appears. This is [R-37](work-notes/plans/plugin-extension/01-requirements.md), the download mark: Windows stamps anything that came through a browser, and a stamped assembly makes Revit refuse the add-in with a message naming nothing useful. `Unblock-File` was added to `deploy-addin.ps1` on 2026-09-21 and **has never run**. A FAIL here looks like Revit saying only that it cannot run the external application |
 
 **What a FAIL on AA2 would mean, written down before the run so the answer is not argued afterwards.**
 Both pieces call `CreateRibbonTab` inside a `try` and catch `Autodesk.Revit.Exceptions.ArgumentException`,
@@ -1950,3 +1972,53 @@ why this stage exists.
 
 **Nobody may mark Stage 2 done from a compile, from this file, or from the tests.** The word for what
 exists today is **BUILT**.
+
+---
+
+## Group AB - Stages 3 and 4 of the installer: the engine, and the window nobody has seen 2026-09-21
+
+**Everything the installer DECIDES is tested. Nothing it DOES has run.** 79 checks pass against a fake
+Revit and a fake disk; all 13 projects compile on all eight releases with 0 warnings. **No file has been
+written, no Revit has been looked for, no PowerShell has executed and no window has been drawn.** A
+compile proves the API agrees. It does not prove an install.
+
+**Three pieces have never run one line**, and all three are the pieces that touch Windows:
+
+| | |
+|---|---|
+| `PowerShellRevitEnvironment` | asks `tools/HeronRevit.ps1` which Revit is installed, which is open, and where its add-ins go |
+| `DeployScriptDeployer` | runs `tools/deploy-addin.ps1` |
+| `InstalledProductsOnDisk` | looks in the Addins folder to answer whether a product is already there |
+
+**And `tools/deploy-addin.ps1` itself has changed since it was last proved.** Its rollback proof of
+2026-09-19 (`Group Z`) is **STALE for the current file** - `AA7` and `AA8` above are that debt, and they
+come first: an engine driving a deploy script that does not work proves nothing about the engine.
+
+Build the window and run it with:
+
+```powershell
+dotnet build platform\Heron.Installer.App -p:EnableWindowsTargeting=true
+.\platform\Heron.Installer.App\bin\x64\Debug\HeronInstaller.exe
+```
+
+**`AA7` and `AA8` above come first.** They prove the deploy script still works after being generalised,
+and the window does nothing but drive that script - so a FAIL there makes every row below unreadable.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **AB1** | Run `HeronInstaller.exe`. Look at it | **A window appears** and can be read. The Revit releases on the PC are listed as tick boxes, all ticked. `Heron` carries **two ticks under it** - the AI Bridge and the tools - and every other tab is one tick, whole tab. **Screenshot.** The failure to watch for is text cut off or wrapped into nonsense at a display scaling nobody tested |
+| **AB2** | Look at the rows that **cannot** be ticked | Each is greyed **and the sentence saying why is printed under it**, not hidden in a tooltip - [R-10](work-notes/plans/plugin-extension/01-requirements.md). Today that is the two Stage 2 throwaways (*"Not ready yet..."*) and Heron MEP (*"Not built yet..."*). **Neither sentence may use the words SHIPPED, PROVING or PLANNED** - those are this repository's vocabulary, not a modeller's |
+| **AB3** | **THE ONE THAT MATTERS MOST.** Add a product to `platform\heron-products.json` by hand - a new id, a new `addInId`, `state` SHIPPED - and **reopen the window without rebuilding anything** | **The new row is there.** This is [R-3](work-notes/plans/plugin-extension/01-requirements.md) and it is the reason the whole design is shaped this way: adding Heron Structure next year must be a line in a file. If this fails, the installer has a product list written inside it and the design has not been built. Undo the edit afterwards |
+| **AB4** | Install the AI Bridge, then **reopen the window** | Its row reads **`Installed`** rather than `--`, and **stays tickable**. Then delete its folder from `%APPDATA%\Autodesk\Revit\Addins\2024\` by hand and reopen again: it reads `--`. The state is read from the disk every time, never remembered - [R-2](work-notes/plans/plugin-extension/01-requirements.md) |
+| **AB5** | **Leave Revit open**, tick a product, press Install | The window **does not freeze**, and it says which Revit is open and that it will carry on by itself. **Close Revit without touching the window.** The install then continues on its own and reports per product per release - [R-38a](work-notes/plans/plugin-extension/01-requirements.md). **Nothing must have been changed before Revit was closed** |
+| **AB6** | Tick **the tools only, without the AI Bridge**, and install | The tools install and **no bridge does** - [R-34](work-notes/plans/plugin-extension/01-requirements.md), a site modeller who wants Heron's tools and refuses the AI. This depends on `AA2` passing first: if two add-ins cannot build one tab, this row is asking about a shape that does not exist |
+| **AB7** | Press Install with **nothing ticked**, and again with **no Revit version ticked** | It says which of the two it is and changes nothing. Neither is an error and neither is silence |
+
+**What a FAIL on AB3 means, written down before the run.** Every rule about what is offered lives in
+`platform/Heron.Installer/InstallerScreen.cs` and is tested there; the window is supposed to hold
+nothing but layout. `tests/test_installer_window.py` fails if a product id appears in the window's
+source. So a FAIL here is not a typo - it would mean the manifest is not being re-read, and the fix is
+in how the window is opened rather than in what it draws.
+
+**Nobody may mark Stage 3 or Stage 4 done from a compile, from this file, or from the tests.** The word
+for what exists today is **BUILT**.

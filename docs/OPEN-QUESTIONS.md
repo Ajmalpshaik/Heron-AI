@@ -19,7 +19,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 57 answered · 0 open · nothing blocking any phase**
+**Progress: 57 answered · 1 open · nothing blocking any phase**
 
 **The count moved 1 → 3 on 2026-09-12 without anybody asking anything new.** `Q-54` and `Q-55` were
 raised on 2026-09-10 and 2026-09-11 and had been living in a work note — `Q-D` and `Q-E` in
@@ -319,6 +319,45 @@ so a job spanning two models **cannot** be one Ctrl+Z, and no design makes it on
 [Golden Rule 16](14-golden-rules.md) is therefore restated rather than broken: **one undo per document**,
 and Heron must say so before it starts — *"this touches two models; undoing in Podium will not undo Tower
 A."* Saying it afterwards would be the failure Rule 16 exists to prevent.
+
+---
+
+### 🔵 Q-58 — How does a PowerShell script ask `HeronPaths` where something lives? *(found 2026-09-21)*
+
+[`platform/README.md`](../platform/README.md) rule 3 says
+[`HeronPaths`](../platform/Heron.Core/HeronPaths.cs) is **the only thing that builds a Heron path**, and
+[`docs/PROJECT-MAP.md`](PROJECT-MAP.md) repeats it. [`tools/deploy-addin.ps1`](../tools/deploy-addin.ps1)
+builds two anyway — the Revit `Addins` folder and `%LOCALAPPDATA%\Heron\install-backup\` — and has
+done since the rollback was added on 2026-09-19. **A `.ps1` cannot call a C# class**, so the rule as
+written cannot be obeyed by the one script that installs Heron.
+
+**Both sides, as they stand.** The rule is right: two places that build a path are two places that can
+disagree about where the add-in lives, and a rollback that looks in the wrong folder restores nothing.
+The script is also right: it is what runs before any Heron assembly exists on the machine, so it cannot
+depend on one.
+
+**Found while building Stage 3** of
+[the installer plan](work-notes/plans/plugin-extension/02-implementation.md), which asked for every path
+to go through `HeronPaths`. The install engine itself builds **no** Heron path, so the stage's own
+requirement is met; this is the layer underneath it.
+
+**One thing that looked like a third copy was stopped, which is how this was found.** Stage 4's window
+has to know whether a product is already installed, which needs the Revit `Addins` folder. It built the
+path in C#; [`tools/check-structure.py`](../tools/check-structure.py) **refused the edit** - the rule is
+enforced, not merely written. Referencing `HeronPaths` instead was tried and undone: `Heron.Core`
+follows the Revit release and the installer is release-independent, so the reference would pin the
+installer to whichever release happened to be building. The path now has **one owner** -
+`Get-RevitAddinsFolder` in [`tools/HeronRevit.ps1`](../tools/HeronRevit.ps1) - and both
+`deploy-addin.ps1` and the installer ask it. **So there is one copy, not two, and it is in PowerShell.**
+
+**What is still open is which language should own it.** The rule says C#; the only thing that can run
+before any Heron assembly exists on the machine is PowerShell. The shapes are a small `heron-paths`
+command the script calls, a generated `.ps1` of path constants that `HeronPaths` owns, or an amendment
+saying PowerShell is an accepted second builder with a named test that the two agree - `check-structure`
+already exempts `tools/`, and `mcp/client/heron_bridge_client.py` is already a second path owner for the
+same reason, so the amendment would be writing down something half-true already. Which one is a decision
+about the platform boundary. **Ajmal resolves it**, and until then the disagreement is recorded rather
+than closed whichever way makes a task easier.
 
 ---
 

@@ -71,10 +71,17 @@ ADDIN_SRC = "revit"
 # typo for a real field - in which case the real field is silently missing -
 # or a setting somebody expects to do something, and nothing reads it.
 FIELDS = ("id", "name", "description", "tab", "addin", "assembly", "addInId",
-          "revit", "requires", "version", "partOf", "state")
+          "folder", "revit", "requires", "version", "partOf", "state")
 
-# The three an entry needs to install itself. A heading carries none of them.
-INSTALLABLE = ("addin", "assembly", "addInId")
+# The four an entry needs to install itself. A heading carries none of them.
+#
+# `folder` is where the files land under Addins\<version>\, and it is NOT
+# derivable from the assembly name: heron-bridge's assembly is
+# Heron.Revit.Addin.dll and its folder is Heron. That is the live layout on
+# every machine Heron is installed on, written by deploy-addin.ps1 since Step
+# 1, so deriving it would move an existing install and orphan the copy Revit
+# is already loading.
+INSTALLABLE = ("addin", "assembly", "addInId", "folder")
 
 # SHIPPED   the files exist and a user may be offered this
 # PROVING   the files exist, they build, and they are a SHAPE PROOF carrying
@@ -94,6 +101,10 @@ STATES = ("SHIPPED", "PROVING", "PLANNED")
 ON_DISK = ("SHIPPED", "PROVING")
 
 ID = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
+
+# A single folder name, not a path. A separator here would write outside the
+# release folder, and `..` would write outside Addins altogether.
+FOLDER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 GUID = re.compile(r"^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-"
                   r"[0-9A-F]{4}-[0-9A-F]{12}$")
 
@@ -195,6 +206,14 @@ def check_one(p, index, known, supported, version, problems):
     if not isinstance(p["id"], str) or not ID.match(p["id"]):
         problems.append("%s: id must be lower case, hyphenated, e.g. heron-doc"
                         % where)
+
+    folder = p["folder"]
+    if folder is not None and (not isinstance(folder, str)
+                               or not FOLDER.match(folder)
+                               or folder in (".", "..")):
+        problems.append(
+            "%s: folder '%s' is not a plain folder name. A separator or a '..' "
+            "here would write outside the Revit Addins folder" % (where, folder))
 
     for field in ("name", "description", "tab", "version"):
         if not isinstance(p[field], str) or not p[field].strip():
@@ -299,6 +318,29 @@ def check_shape(products, problems):
             problems.append(
                 "%s is SHIPPED but the tab it joins, %s, is %s"
                 % (pid, parent["id"], parent.get("state")))
+
+
+def check_folders(products, problems):
+    """
+    One product, one folder - R-41, and it is AJ Tools' lesson L5.
+
+    Two products installing into one folder means each carries its own
+    dependencies into the same place, and two different versions of the same
+    helper assembly overwrite each other. The loser fails at runtime looking
+    like a bug in whichever product loaded second.
+    """
+    seen = {}
+    for p in products:
+        folder, pid = p.get("folder"), p.get("id", "?")
+        if not isinstance(folder, str):
+            continue
+        if folder.lower() in seen:
+            problems.append(
+                "SHARED folder: %s and %s both install into '%s'. Each product "
+                "carries its own dependencies, so they would overwrite each "
+                "other" % (seen[folder.lower()], pid, folder))
+        else:
+            seen[folder.lower()] = pid
 
 
 def check_guids(products, problems):
@@ -444,6 +486,7 @@ def main():
 
     good = [p for p in products if isinstance(p, dict)]
     check_shape(good, problems)
+    check_folders(good, problems)
     guids = check_guids(good, problems)
     assets = check_assets(good, problems)
 

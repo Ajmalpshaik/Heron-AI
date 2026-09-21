@@ -7,7 +7,8 @@
 
 <#
 .SYNOPSIS
-    Environment detection - which Revit is installed, and which is open.
+    Environment detection - which Revit is installed, which is open, and
+    where its add-ins go.
 
 .DESCRIPTION
     Dot-source this rather than repeating the checks. Two scripts asking the
@@ -53,6 +54,35 @@ function Get-InstalledRevit {
         Where-Object { $_.Name -match '^Revit (\d{4})$' -and (Test-Path (Join-Path $_.FullName "Revit.exe")) } |
         ForEach-Object { $_.Name.Substring(6) } |
         Sort-Object)
+}
+
+function Get-RevitAddinsFolder {
+    <#
+    .SYNOPSIS
+        Where Revit scans for add-in manifests, for one release.
+    .DESCRIPTION
+        PER USER, never all-user. docs/07 section 5: the target is a BIM
+        modeller on a locked-down corporate machine, so Heron promises an
+        install that needs no administrator. ProgramData and Program Files
+        are the paths that break that promise, and Revit 2027 moved the
+        all-user location from one to the other - which is why naming them is
+        not enough on its own and neither ever appears here.
+
+        THIS IS THE ONLY PLACE THE PATH IS SPELLED. deploy-addin.ps1 used to
+        build it itself and the installer was about to build a third copy in
+        C# on 2026-09-21; tools/check-structure.py refused that one, and this
+        function is where both now come from. The folder belongs to Autodesk
+        rather than to Heron - other vendors' add-ins sit in it - so nothing
+        may ever treat it as Heron's to clear.
+
+        NOT CREATED. A release nobody has installed has no Addins folder, and
+        making one would leave a folder behind and answer no question.
+    .PARAMETER RevitVersion
+        The four-digit release, as a string.
+    #>
+    param([Parameter(Mandatory = $true)][string] $RevitVersion)
+
+    return (Join-Path $env:APPDATA "Autodesk\Revit\Addins\$RevitVersion")
 }
 
 function Get-RunningRevit {
