@@ -131,6 +131,23 @@ class Queue(object):
                            "that is one nobody will dare to drop."}
 
         if len(self._items) >= self.limit:
+            # THE EMPTY CASE IS REAL AND IT USED TO CRASH. A limit of 0 or
+            # below makes this branch fire on the FIRST add, with nothing
+            # in the queue - and `max()` over an empty sequence raises
+            # ValueError, out of a module whose own docstring says an item
+            # that cannot be queued is REFUSED WITH A REASON and that an
+            # empty queue is "reported as data rather than raised".
+            # Measured 2026-09-21: Queue(limit=0).add(...) raised
+            # `ValueError: max() arg is an empty sequence`. Row 5b-86, and
+            # it is row 5b-84's shape one module later.
+            if not self._items:
+                return {"refused": "QUEUE_FULL",
+                        "why": "this queue's limit is %d, so it holds nothing "
+                               "and accepts nothing. That is what was asked "
+                               "for rather than a fault - a limit is a "
+                               "caller's statement about its own memory - but "
+                               "nothing will ever be queued until it is "
+                               "raised." % self.limit}
             lowest = max(item["priority"] for item in self._items)
             return {"refused": "QUEUE_FULL",
                     "why": "%d items is the limit. The lowest priority held "
