@@ -28,10 +28,13 @@
 // Found 2026-09-08 by the owner doing exactly that: he placed 'Heat Recovery
 // Unit Summary' on a sheet, selected it, and this fragment answered
 // skippedNotSchedules 1. A view cannot be selected as an element - opening the
-// schedule selects its ROWS - and nothing in the 349 fragments provides a
-// ViewSchedule to chain from. So the cast below refused the only input that
-// could ever reach it, and the fragment was correct in isolation and unusable
-// in practice.
+// schedule selects its ROWS - and NOTHING IN THE LIBRARY DECLARES A
+// ViewSchedule to chain from. That was written of 349 fragments and
+// re-measured on 2026-09-21 against 395: still none, so the finding stands
+// and the count was the only part of it that could go stale
+// (docs/FRAGMENT-ISSUES row 5b-66). So the cast below refused the only
+// input that could ever reach it, and the fragment was correct in isolation
+// and unusable in practice.
 //
 // The placement carries the id of the schedule it draws, so it is resolved
 // here rather than refused. `skippedNotSchedules` now means what it says: the

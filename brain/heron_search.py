@@ -677,7 +677,7 @@ def _fingerprint_of(store, fragment_id):
     The hash of one fragment's implementation, loading ONE folder.
 
     MEASURED, not assumed. The first version called FRAG.load_all() here, which
-    reads all 360 fragment files to use one of them: remember() took 1,522 ms.
+    reads EVERY fragment file to use one of them: remember() took 1,522 ms.
     The store already knows this fragment's folder, and loading that one folder
     costs 3.6 ms with the hash itself at 0.2 - so remember() now takes 5.5 ms,
     277 times less, on a path a modeller is waiting on.

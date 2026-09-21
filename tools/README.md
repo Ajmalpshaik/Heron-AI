@@ -1619,8 +1619,11 @@ python tools/review-ledger.py --stale               # marks that no longer apply
 python tools/review-ledger.py --history <path>      # what one file has been through
 ```
 
-Reads [`docs/REVIEW-LEDGER.tsv`](../docs/REVIEW-LEDGER.tsv). Always exits 0 - it reports, it does not
-gate.
+Reads [`docs/REVIEW-LEDGER.tsv`](../docs/REVIEW-LEDGER.tsv). **The reporting commands always exit 0** -
+they report, they do not gate. **`--mark` is the exception and exits 2 when it refuses**, because a
+refusal that exits 0 is indistinguishable from a mark that landed, and that cost two silent misses on
+2026-09-21 ([row 5b-63](../docs/FRAGMENT-ISSUES.md)). This line read *"Always exits 0"* until that day,
+and it was true when it was written - which is why it was looked for rather than waited for.
 
 **The `check-*.py` gates check rules. None of them records that a file was READ.** So a second
 session had no way to know the first had already read a file, and the only honest thing it could do

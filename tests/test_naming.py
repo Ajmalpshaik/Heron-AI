@@ -16,9 +16,11 @@ WHAT IT PROVES
      object, compared by identity, and the code holds no literal of its
      own for a fragment id, an area or a capability.
 
-  2. THE DERIVATION IS CHECKED AGAINST ALL 360 FRAGMENTS ON DISK, and
-     the agent's answer agrees with every one of them. A rule proved on
-     one example is a worked example.
+  2. THE DERIVATION IS CHECKED AGAINST EVERY FRAGMENT ON DISK, and the
+     agent's answer agrees with every one of them. A rule proved on one
+     example is a worked example. The count is not typed here: this line
+     said 360 while the run below printed 395, one line apart
+     (docs/FRAGMENT-ISSUES row 5b-66).
 
   3. EVERY AGENT ID IN docs/28 PASSES, read out of the register.
 
@@ -104,7 +106,10 @@ def main():
     check("registry_agents" in code,
           "and reads docs/28 through heron_fragment.registry_agents()")
 
-    print("\n2. The derivation, against all 360 fragments on disk")
+    # THE HEADING SAID 360 WHILE THE LINE UNDER IT PRINTED 395. A report
+    # that names its own sample size must derive it, and this one already
+    # had the number - it just printed a typed one first. Row 5b-66.
+    print("\n2. The derivation, against every fragment on disk")
     folder = os.path.join(ROOT, "brain", "fragments")
     seen, agreed, capless = 0, 0, 0
     for entry in sorted(os.listdir(folder)):

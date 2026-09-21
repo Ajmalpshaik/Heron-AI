@@ -25,7 +25,7 @@ namespace Heron.Revit.Addin
     /// type nested in an internal one are not reachable from outside the
     /// declaring assembly, so every fragment failed on its first line - the
     /// one naming `doc`. Nothing on the build side could see it: the add-in
-    /// compiled clean, and so did all 343 fragments against the gate's own
+    /// compiled clean, and so did EVERY fragment against the gate's own
     /// wrapper, because that wrapper puts them in the SAME assembly.
     ///
     /// That is the exact failure D-28 warned the compile gate could not cover,

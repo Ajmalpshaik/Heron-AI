@@ -121,7 +121,7 @@ place will be followed by whoever reads it next.
 | Where did the last session stop? | [`docs/HANDOVER.md`](docs/HANDOVER.md) |
 | What work is active right now? | [`docs/work-notes/`](docs/work-notes/README.md) |
 | Which folder owns this? | [`docs/PROJECT-MAP.md`](docs/PROJECT-MAP.md) |
-| Is there a house rule for this? | [`.claude/skills/`](.claude/skills/README.md) — the **only** skills tree |
+| Is there a house rule for this? | [`.claude/skills/`](.claude/skills/README.md) — the only tree of **house rules**. `brain/skills/` is a different thing: what Heron *does* for a modeller |
 
 ---
 

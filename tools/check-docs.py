@@ -567,7 +567,15 @@ else:
     # and quotation rules are applied to the sentence rather than the line.
     # Sentence, not paragraph: a table is one paragraph, and one historical
     # row in it would switch the check off for every row beside it.
-    BREAK = re.compile(r'(?<=[.!?])\s+|\s*\|\s*')
+    #
+    # THE TERMINATOR IS OFTEN NOT THE LAST CHARACTER. This prose ends
+    # sentences with `.**`, `."` and `.)` constantly, and a lookbehind of
+    # exactly one character does not break there - so a sentence ran on into
+    # the next one and a history word in the FIRST excused a stale claim in
+    # the SECOND. That is row 5b-55's own failure one size smaller: found
+    # 2026-09-21 building tests/test_library_total.py, which carries the same
+    # splitter (row 5b-67).
+    BREAK = re.compile(r'[.!?][*_"\'\u2019)\]]*\s+|\s*\|\s*')
 
     def sentences(text):
         """(first line, sentence, whole block, offset in block) each."""

@@ -7,7 +7,7 @@
 
 # The balance of work
 
-> **GENERATED 2026-09-21 05:57 by `python tools/balance-of-work.py --write`.**
+> **GENERATED 2026-09-21 09:45 by `python tools/balance-of-work.py --write`.**
 > **If that stamp is not today, this page is history and not a work list.** Every figure
 > below was read back out of the tool that owns it, and each row names the command that
 > derives it. Nothing here is typed by hand, so where this page and a register disagree,
@@ -32,11 +32,11 @@ business here. When every row does, delete the file and the tool with it.
 | 3b | — and **deferred by a decision**, which is neither left nor done | **2** | `python tools/agent-count.py` |
 | 4 | **Agent proofs drafted but unsigned** | **0** | `ls brain/agent-proof-drafts/*.yaml` |
 | 5 | **Proving-register rows still open** | **130** of **187** | `python tools/owner-queue.py` |
-| 6 | **Heron's own defects still open** | **32** of **216** | `python tools/open-defects.py` |
+| 6 | **Heron's own defects still open** | **32** of **238** | `python tools/open-defects.py` |
 | 7 | **Questions unanswered** | **0** | `python tools/check-docs.py` |
-| 8 | **Proposals awaiting the owner** | **21** of **22** | `python tools/owner-queue.py` |
+| 8 | **Proposals awaiting the owner** | **22** of **23** | `python tools/owner-queue.py` |
 | 9 | **Signatures gone stale — proved, then the code moved under them** | **2** | `python tools/check-signatures.py` |
-| 10 | **Everything waiting on the owner personally**, across three registers | **151** | `python tools/owner-queue.py` |
+| 10 | **Everything waiting on the owner personally**, across three registers | **152** | `python tools/owner-queue.py` |
 
 > **ROWS 1a TO 1c ARE ABOUT THIS CHECKOUT, NOT ABOUT THE PROJECT.** They count what has never
 > been run *here*, and `brain/proof-drafts/runs/` is gitignored, so every worktree starts almost
@@ -58,7 +58,7 @@ Every drift this repository has caught was visible in a list and invisible in a 
 > A row can still say OPEN after a later row has closed it — four did on 2026-09-16, and no
 > pattern finds them. Reading beats grepping here.
 
-**Proposals still open** (`docs/PROPOSALS.md`): F1, F2, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21, F22
+**Proposals still open** (`docs/PROPOSALS.md`): F1, F2, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21, F22, F23
 
 ## Work notes still open, and what each is waiting for
 
