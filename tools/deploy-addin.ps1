@@ -195,16 +195,38 @@ function Save-PreviousInstall {
     #>
     if (-not (Test-Path $addinDir)) { return }
 
-    if (Test-Path $backupDir) { Remove-Item $backupDir -Recurse -Force }
-    New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
+    # BUILT ASIDE FIRST, AND THE OLD ONE IS NOT TOUCHED UNTIL IT IS WHOLE.
+    #
+    # It used to delete the previous backup and then copy into the empty
+    # folder, which spends the only way back BEFORE the second one exists. A
+    # copy that dies halfway - a full disk, a file something still has open,
+    # a laptop lid closed - then leaves PART of an install where a whole one
+    # was, with nothing anywhere saying so. Found 2026-09-21 by reading; it
+    # is the shape of row 5b-31, here in the one script that is Heron's only
+    # way back.
+    #
+    # NOT CALLED ATOMIC. The swap at the end is a rename inside one folder,
+    # which is quick, and the copy that used to sit in that window is not.
+    # That is the whole of the claim.
+    $staging = "$backupDir.incomplete"
+    if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
+    New-Item -ItemType Directory -Force -Path $staging | Out-Null
 
-    Copy-Item $addinDir -Destination $backupAddinDir -Recurse -Force
-    if (Test-Path $manifest) { Copy-Item $manifest -Destination $backupManifest -Force }
+    # NAMED APART from $backupAddinDir and friends on purpose. Assigning those
+    # here would make function-local copies that shadow the script's, which
+    # works and reads like a bug - and -Rollback and every message below still
+    # want the real ones.
+    $stagedAddinDir = Join-Path $staging $productFolder
+    $stagedManifest = Join-Path $staging $productAddin
+    $stagedRecord   = Join-Path $staging "replaced.json"
+
+    Copy-Item $addinDir -Destination $stagedAddinDir -Recurse -Force
+    if (Test-Path $manifest) { Copy-Item $manifest -Destination $stagedManifest -Force }
 
     # What it was, so a rollback can say what it is putting back rather than
     # just doing it. A restore nobody can read back is the same evidence as
     # no restore - the shape brain/heron_update.py already refuses.
-    $replacedDll = Join-Path $backupAddinDir $productAssembly
+    $replacedDll = Join-Path $stagedAddinDir $productAssembly
     $record = [ordered]@{
         revitVersion = $RevitVersion
         replacedAt   = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
@@ -214,9 +236,15 @@ function Save-PreviousInstall {
         sha256       = if (Test-Path $replacedDll) {
                            (Get-FileHash $replacedDll -Algorithm SHA256).Hash
                        } else { $null }
-        fileCount    = @(Get-ChildItem $backupAddinDir -Recurse -File).Count
+        fileCount    = @(Get-ChildItem $stagedAddinDir -Recurse -File).Count
     }
-    $record | ConvertTo-Json | Set-Content -Path $backupRecord -Encoding UTF8
+    $record | ConvertTo-Json | Set-Content -Path $stagedRecord -Encoding UTF8
+
+    # THE SWAP, and replaced.json above is what makes it safe to do now: it
+    # is written last, so by this line the staged copy is complete. -Rollback
+    # reads that file as the completion mark and refuses a folder without it.
+    if (Test-Path $backupDir) { Remove-Item $backupDir -Recurse -Force }
+    Move-Item $staging -Destination $backupDir -Force
 
     Write-Host "  kept the install being replaced in $backupDir"
 }
@@ -226,11 +254,30 @@ if ($Rollback) {
         throw "Nothing to roll back to for Revit $RevitVersion. $backupDir holds no previous install of '$productName' - this script keeps one only from the moment it has replaced something, and it is machine-local, so a new profile or a cleared cache starts empty. Build and deploy from source instead:`n  dotnet build $productProjPath -c $Configuration -p:RevitVersion=$RevitVersion`n  .\tools\deploy-addin.ps1 -RevitVersion $RevitVersion -Product $Product"
     }
 
-    if (Test-Path $backupRecord) {
-        $was = Get-Content $backupRecord -Raw | ConvertFrom-Json
-        Write-Host "Rolling back Revit $RevitVersion to the install replaced at $($was.replacedAt)"
-        Write-Host "  assembly $($was.assembly), $($was.fileCount) file(s)"
+    # replaced.json IS THE COMPLETION MARK, not a nicety for the message.
+    # Save-PreviousInstall writes it after the copy and nowhere else, so a
+    # backup folder without it is one whose copy did not finish. This used to
+    # treat a missing record as merely nothing to print and restore anyway -
+    # and a restored HALF of an install passes both checks below, because the
+    # main assembly is the first thing copied. Revit then refuses the add-in
+    # and names nothing, which is the one symptom every other guard in this
+    # script exists to keep away from a modeller.
+    if (-not (Test-Path $backupRecord)) {
+        throw "The backup at $backupDir is not complete - it holds no replaced.json, and that file is written only once the copy has finished. Putting back part of an install would leave Revit refusing to load '$productName' with nothing to say why, so nothing was changed. Build and deploy from source instead:`n  dotnet build $productProjPath -c $Configuration -p:RevitVersion=$RevitVersion`n  .\tools\deploy-addin.ps1 -RevitVersion $RevitVersion -Product $Product"
     }
+
+    $was = Get-Content $backupRecord -Raw | ConvertFrom-Json
+
+    # AND THE COUNT IT RECORDED, against what is actually there. The record
+    # being present says the copy reached the end; this says nothing has been
+    # removed from the folder since.
+    $haveNow = @(Get-ChildItem $backupAddinDir -Recurse -File -ErrorAction SilentlyContinue).Count
+    if ($null -ne $was.fileCount -and $haveNow -ne [int]$was.fileCount) {
+        throw "The backup at $backupDir holds $haveNow file(s) and its own record says $($was.fileCount) were kept, so something has changed it since. Rather than put back an install that is not the one it claims to be, nothing was changed. Build and deploy from source instead:`n  dotnet build $productProjPath -c $Configuration -p:RevitVersion=$RevitVersion`n  .\tools\deploy-addin.ps1 -RevitVersion $RevitVersion -Product $Product"
+    }
+
+    Write-Host "Rolling back Revit $RevitVersion to the install replaced at $($was.replacedAt)"
+    Write-Host "  assembly $($was.assembly), $($was.fileCount) file(s)"
 
     if (Test-Path $addinDir) { Remove-Item $addinDir -Recurse -Force }
     Copy-Item $backupAddinDir -Destination $addinDir -Recurse -Force

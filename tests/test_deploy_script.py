@@ -222,6 +222,51 @@ def main():
           "backup is explained rather than surprising")
 
     print()
+    print("The backup is built aside, and a half-written one is refused")
+
+    # THE ORDER IS THE RULE. Until 2026-09-21 the previous backup was deleted
+    # and the new one copied into the empty folder, so a copy that died
+    # halfway left PART of an install where a whole one had been - and
+    # -Rollback restored it, because it only ever looked for the folder.
+    # Row 5b-79. Both halves are pinned here because neither can be run.
+    staged = text.find("$staging = \"$backupDir.incomplete\"")
+    copied = text.find("Copy-Item $addinDir -Destination $stagedAddinDir")
+    wrote = text.find("Set-Content -Path $stagedRecord")
+    swapped = text.find("Move-Item $staging -Destination $backupDir")
+
+    check(staged > 0 and copied > staged,
+          "the copy goes to a staging folder, not straight over the backup")
+    check(wrote > copied > 0,
+          "replaced.json is written after the copy, so it marks a finished one")
+    check(swapped > wrote > 0,
+          "and only then does the old backup go - the one way back is never "
+          "spent before the second one exists")
+    check("Remove-Item $backupDir -Recurse -Force" not in
+          text[:copied if copied > 0 else len(text)],
+          "nothing deletes the backup folder before the copy has run")
+    check("not called atomic" in text.lower(),
+          "and it does not claim to be atomic, because a rename is not a "
+          "transaction")
+
+    check("it holds no replaced.json" in text,
+          "-Rollback refuses a backup with no completion mark rather than "
+          "putting back half an install")
+    check("something has changed it since" in text,
+          "and refuses one whose file count no longer matches its own record")
+    # BOTH ENDS HAVE TO BE FOUND. str.find gives -1 for a string that is not
+    # there, and -1 is less than every real position - so an ordering check
+    # written with two bare find() calls passes LOUDEST when the guard it is
+    # checking has been deleted. This suite's own first draft did exactly
+    # that on 2026-09-21: the guard was commented out and the check stayed
+    # green. Row 5b-79 records it, and it is why every position below is
+    # asserted to exist first.
+    refusal = text.find("if (-not (Test-Path $backupRecord))")
+    restore = text.find("Copy-Item $backupAddinDir -Destination $addinDir")
+    check(refusal > 0 and restore > 0 and refusal < restore,
+          "both refusals come BEFORE the live install is touched, so a "
+          "refused rollback changes nothing")
+
+    print()
     if FAILURES:
         print("FAILED (%d)" % len(FAILURES))
         for f in FAILURES:

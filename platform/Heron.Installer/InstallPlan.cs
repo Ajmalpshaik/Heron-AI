@@ -30,7 +30,13 @@ namespace Heron.Installer
         /// <summary>Revit is on the machine, but the user did not tick it.</summary>
         ReleaseNotChosen,
 
-        /// <summary>The release is not installed on this PC at all.</summary>
+        /// <summary>
+        /// The release is not installed on this PC at all - AND the product
+        /// supports it, so installing that Revit really would make this work.
+        /// A release the product does not support is ReleaseNotSupported
+        /// whether or not it is on the machine, because telling somebody to
+        /// install a Revit that will not help is worse than saying nothing.
+        /// </summary>
         ReleaseNotInstalled,
     }
 
@@ -155,20 +161,31 @@ namespace Heron.Installer
 
                 foreach (var release in wanted)
                 {
+                    // WHAT THE PRODUCT SUPPORTS IS ASKED FIRST, AND THE ORDER
+                    // IS THE WHOLE POINT. When a release is BOTH unsupported
+                    // and absent, "install Revit 2026 first" is an instruction
+                    // that cannot work - the product would still not run on it.
+                    // Asked the other way round until 2026-09-21, and the test
+                    // that covered it pinned exactly that sentence. Row 5b-80.
+                    //
+                    // InstallerScreen.WhyNotOffered already draws this same
+                    // distinction, in its own words: STATE FIRST, because it is
+                    // the stronger reason. Two places deciding the same kind of
+                    // thing, and only one of them had it right.
+                    if (!product.SupportsRevit(release))
+                    {
+                        skipped.Add(Skip(id, release, SkipReason.ReleaseNotSupported,
+                            "'" + product.Name + "' does not support Revit " + release +
+                            ". It supports " + Join(product.Revit) + "."));
+                        continue;
+                    }
+
                     if (!present.Contains(release))
                     {
                         skipped.Add(Skip(id, release, SkipReason.ReleaseNotInstalled,
                             "Revit " + release + " is not installed on this PC, so " +
                             "'" + product.Name + "' has nowhere to go. Install Revit " +
                             release + " first, or untick it."));
-                        continue;
-                    }
-
-                    if (!product.SupportsRevit(release))
-                    {
-                        skipped.Add(Skip(id, release, SkipReason.ReleaseNotSupported,
-                            "'" + product.Name + "' does not support Revit " + release +
-                            ". It supports " + Join(product.Revit) + "."));
                         continue;
                     }
 
