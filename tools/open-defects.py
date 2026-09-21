@@ -90,8 +90,21 @@ ROW = re.compile(r"^\|\s*\*{0,2}(\d+)\*{0,2}\s*\|")
 
 # A DATED CLAIM IN CAPITALS, not the word in passing. `[^.]` keeps it inside
 # one sentence, so "7 of 14 fixed" followed three sentences later by a date
-# is not a hit - measured against every row in the register: no false ones.
-SETTLED = re.compile(r"\b(FIXED|CLOSED)\b[^.]{0,40}?\d{4}-\d{2}-\d{2}")
+# is not a hit - measured against every row in the register.
+#
+# AND NOT A DATED **DENIAL**, which is the same sentence with one word in
+# front of it. Row 75's state reads *"THE WRONG BINDING IS NOT FIXED,
+# 2026-09-20"* - a row saying in writing that it is still open, and when it
+# was last looked at. From 2026-09-20 this tool reported that row as arguing
+# with itself while the paragraph above went on claiming no false hits, so
+# the one question it printed was the one a reader had to learn to ignore -
+# and a question nobody answers is the thing this detector exists not to be.
+# MEASURED rather than imagined: every FIXED/CLOSED-plus-date in the register
+# was printed with the 34 characters in front of it, and exactly one is a
+# denial. `not` and `never` are both spelled out in either case, because the
+# next one will be written by somebody else.
+SETTLED = re.compile(r"(?<!NOT )(?<!not )(?<!NEVER )(?<!never )"
+                     r"\b(FIXED|CLOSED)\b[^.]{0,40}?\d{4}-\d{2}-\d{2}")
 
 # A CELL BOUNDARY IS AN UNESCAPED PIPE. Markdown lets a table cell hold a
 # literal pipe as `\|`, and a plain split("|") chops the cell there - so the

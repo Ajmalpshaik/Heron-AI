@@ -188,6 +188,13 @@ def collect():
     agents = run(["tools/agent-count.py"])
     d["agents_left"] = grab(agents, r"Register reconciles:.*?(\d+) left")
     d["agents_total"] = grab(agents, r"Register reconciles:\s*(\d+) agents")
+    # DEFERRED IS NOT ZERO AND IT IS NOT LEFT. Until 2026-09-21 the two
+    # agents D-77 deferred were counted as left, so this page said `2 of 250`
+    # and would have said it forever - a to-do list whose last two items
+    # nobody can do is a page people stop opening. Shown BESIDE the count
+    # rather than folded into it, for the same reason the host-provided four
+    # are named in agent-count's own output.
+    d["agents_defer"] = grab(agents, r"Register reconciles:.*?(\d+) deferred")
 
     owner = run(["tools/owner-queue.py"])
     d["owner_items"] = grab(owner, r"(\d+) item\(s\) waiting on the owner")
@@ -287,6 +294,8 @@ def render(d):
       % (n(skills_draft), n(skills_total)))
     w("| 3 | **Agents left to build** | %s of %s | `python tools/agent-count.py` |"
       % (n(d["agents_left"]), n(d["agents_total"])))
+    w("| 3b | — and **deferred by a decision**, which is neither left nor done | %s | `python tools/agent-count.py` |"
+      % n(d["agents_defer"]))
     w("| 4 | **Agent proofs drafted but unsigned** | %s | `ls brain/agent-proof-drafts/*.yaml` |"
       % n(len(d["agent_drafts"]) if d["agent_drafts"] is not None else None))
     w("| 5 | **Proving-register rows still open** | %s of %s | `python tools/owner-queue.py` |"
@@ -376,6 +385,8 @@ def to_console(d):
         ("  of those, structurally blocked", d["jobs_blocked"], ""),
         ("skills never proved", d["skills"].get("DRAFT"), "of %s" % sum(d["skills"].values()) if d["skills"] else ""),
         ("agents left to build", d["agents_left"], "of %s" % d["agents_total"] if d["agents_total"] else ""),
+        ("  deferred by a decision", d["agents_defer"],
+         "<- not left, and not done" if d["agents_defer"] else ""),
         ("agent proofs unsigned",
          len(d["agent_drafts"]) if d["agent_drafts"] is not None else None, ""),
         ("proving-register rows open", rows_left, "of %s" % d["rows"] if d["rows"] else ""),

@@ -34,19 +34,30 @@ to Revit and KEEPS what it did, with no preview in front of it: the owner's
 ribbon switch is what stands in its way, and nothing else. Writing is switched
 off entirely until write.enabled is set - see HeronPermissions.
 
-    ================== revit_change: NOT PROVEN ==================
-    Written 2026-09-15 at the owner's instruction. It has never
-    been run against a real Revit, and `apply` has never been
-    sent by anything: every recorded proof ran the change and
-    rolled it back. The first real call will be the first time
-    Heron keeps anything.
-    ==============================================================
+    ============ revit_change: RUN, AND E16 STILL OPEN ============
+    Written 2026-09-15 at the owner's instruction and run the SAME
+    DAY: `CREATE_LEVEL ran in Project1`, kept. This banner said it
+    had "never been run against a real Revit, and `apply` has never
+    been sent by anything" until 2026-09-21 - six days after the run
+    that disproved both halves, and `"apply": "true"` is sent from
+    this file. What that run FOUND is the part still open:
+    NEEDS-CHECKING E12, where the same tool also wrote a level into
+    the model it was NOT pointed at, because ProjectKey comes from
+    the template and is one string for every project made from it.
+    The fix is in. The re-run that would prove it is E16, and E16
+    is open.
+    ===============================================================
 
-    ===================== NOT PROVEN =====================
-    The Step 6 half was written on a machine with no Revit.
-    The add-in code behind revit_apply_move has never been
-    compiled or run. See HANDOVER section 6.
-    ======================================================
+    =========== revit_apply_move: RUN, NOT MEASURED ===========
+    This said "the add-in code behind revit_apply_move has never
+    been compiled or run" until 2026-09-21. It compiles on Revit
+    2020 through 2027 in CI, and NEEDS-CHECKING B8 moved 3 ducts
+    up 200 mm on 2026-09-07 - the first time Heron changed a Revit
+    model. The document recording that quotes this very sentence
+    and answers: "It has now, and this is what it found."
+    WHAT IS STILL NOT PROVEN IS THE DISTANCE. D3 - move them, then
+    MEASURE one. Nobody has put a tape on what it did.
+    ===========================================================
 
 The answer is written for a person, not for a machine to parse. The host reads
 it aloud, so it says what is true and what to do next - never a status code.
@@ -917,8 +928,14 @@ def revit_change(capability: str, values: str = "",
         args.pop("chain", None)
         args["expectChain"] = expect_from.strip()
 
+    # NOT A LITERAL. `fragment_timeout` is derived from the add-in's own
+    # deadline and floored at the 180 this line used to carry, so raising
+    # revit.operationTimeoutSeconds for a slow model cannot make THIS side
+    # give up first - which on a request sent idempotent=False would report
+    # "no answer" for a write nobody can ask about again.
     reply = session.request("run_fragment_write", op_args=args,
-                            idempotent=False, response_timeout=180.0)
+                            idempotent=False,
+                            response_timeout=configuration.fragment_timeout())
     session.close()
 
     # `writes` comes from the registry rather than a literal True, so a write
@@ -1008,8 +1025,22 @@ def revit_use_this_model() -> str:
     reply = session.request("count_elements")
     session.close()
 
-    if reply is None or not reply.get("ok"):
-        return "Heron could not read which model is open, so it has not moved the pin."
+    if reply is None:
+        return ("Revit %s (session %s) did not answer, so the pin has not moved."
+                % (session.revit_version, session.pid))
+
+    if not reply.get("ok"):
+        # THE ADD-IN'S OWN SENTENCE, KEPT. `revit_busy` and `no_document`
+        # already say what to do - dismiss the dialog, open a model - and
+        # every other tool in this file passes that through. This one
+        # replaced it with "Heron could not read which model is open", which
+        # is true and sends the reader nowhere: the one thing they came here
+        # to do is switch models, and the reason they cannot was thrown away.
+        # What is ADDED is the half the add-in cannot know - that the pin
+        # stayed where it was, so the next request still goes to the old one.
+        return "%s The pin has not moved." % (
+            reply.get("message") or reply.get("error")
+            or "The request was refused.")
 
     approval.clear()      # whatever was pending described the OLD model
     title = pinned.repin(reply)

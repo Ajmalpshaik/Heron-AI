@@ -583,7 +583,23 @@ def main(argv=None):
         compared = bool(evidence.get("compared_to"))
         regressed_gates = set((evidence.get("regressed") or {}).get("gates") or [])
 
-    unmet = [g for g in owed if g not in ran]
+    # A GATE THAT DID NOT RUN DID NOT RUN, and until 2026-09-21 this line read
+    # `g not in ran` - so a gate the record carries as **NOT RUN** satisfied
+    # the obligation and the change was told "every gate it owes was run".
+    #
+    # THIS TOOL IS THE ONE THAT ASKS WHETHER THE HOMEWORK WAS DONE, and
+    # change-evidence.py keeps three states apart precisely so that it can be
+    # asked: PASS, FAIL and NOT RUN, with `exit: null` on the third. Reading
+    # the presence of the KEY rather than its VALUE collapsed two of them.
+    # Found by watching it happen: a capture whose `--tests` argument matched
+    # no suite recorded `tests: NOT RUN`, and this printed PASS - "scope
+    # matches the declared intent and every gate it owes was run".
+    #
+    # It is the repository's own standing lesson one layer up: a guard that
+    # fails open and says nothing is indistinguishable from a guard that
+    # passed. FRAGMENT-ISSUES section 5b.
+    unmet = [g for g in owed
+             if (ran.get(g) or {}).get("result") not in ("PASS", "FAIL")]
     failed = sorted(g for g, r in ran.items()
                     if isinstance(r, dict) and r.get("result") == "FAIL")
 
@@ -659,7 +675,14 @@ def main(argv=None):
         "files": rows,
         "signals": raised,
         "gates_owed": owed,
-        "gates_run": sorted(ran),
+        # THE ONES THAT ACTUALLY RAN, which is what the line printing this
+        # says. It listed every key in the record, so a gate recorded as
+        # NOT RUN appeared under "Gates actually run" - the second half of the
+        # same defect as `unmet` above, and the half a reader sees.
+        "gates_run": sorted(g for g, r in ran.items()
+                            if (r or {}).get("result") in ("PASS", "FAIL")),
+        "gates_not_run": sorted(g for g, r in ran.items()
+                                if (r or {}).get("result") not in ("PASS", "FAIL")),
         "gates_failed": failed,
         "gates_failing_before_too": pre_existing,
         "gates_unmet": unmet,
@@ -714,8 +737,10 @@ def report(result):
     w("Gates this change owes: %s\n" % ", ".join(result["gates_owed"]))
     if result["gates_run"]:
         w("Gates actually run:     %s\n" % ", ".join(result["gates_run"]))
+    if result.get("gates_not_run"):
+        w("In the record, NOT RUN: %s\n" % ", ".join(result["gates_not_run"]))
     if result["gates_unmet"]:
-        w("Not shown:              %s\n" % ", ".join(result["gates_unmet"]))
+        w("Owed and not run:       %s\n" % ", ".join(result["gates_unmet"]))
     if result.get("gates_failing_before_too"):
         w("Failing before too:     %s\n"
           % ", ".join(result["gates_failing_before_too"]))

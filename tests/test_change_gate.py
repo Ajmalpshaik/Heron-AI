@@ -19,6 +19,8 @@ is believed. So the checks below are mostly about what the gate REFUSES:
     BLOCKED, not best-effort
   - a change with no evidence is not a PASS
   - a suite that COULD NOT RUN does not count as one that passed
+  - a GATE that could not run does not count as one that ran, which is the
+    same rule one level up and was NOT true until 2026-09-21
   - two unknowns are not a match
 
     python tests/test_change_gate.py
@@ -28,6 +30,7 @@ import importlib.util
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -259,6 +262,55 @@ def main():
               "cautious thing")
     finally:
         os.unlink(handle.name)
+
+    print()
+    print("A gate recorded as NOT RUN has not been run")
+    # change-evidence keeps three states apart - PASS, FAIL and NOT RUN - and
+    # check-change asked only whether the gate's NAME was in the record. So a
+    # capture whose --tests matched no suite recorded `tests: NOT RUN` and the
+    # verdict was PASS, "every gate it owes was run". Found by watching it
+    # happen on this branch's own evidence. FRAGMENT-ISSUES section 5b.
+    folder = tempfile.mkdtemp(prefix="heron-gate-")
+    record = os.path.join(folder, "record")
+    every = {"check-docs": "PASS", "check-metadata": "PASS",
+             "check-structure": "PASS", "tests": "PASS", "check-gaps": "PASS"}
+
+    def verdict(gates):
+        io.open(record, "w", encoding="utf-8").write(json.dumps({
+            "commit": "0" * 12, "gates": dict(
+                (name, {"result": state, "exit": 0 if state == "PASS" else None,
+                        "source": "derived", "detail": ""})
+                for name, state in gates.items()),
+            "tests": {}, "counts": {},
+        }))
+        out = subprocess.run(
+            [sys.executable, os.path.join(ROOT, "tools", "check-change.py"),
+             "--intent", "anything", "--area",
+             ",".join(sorted(CHANGE.layering().PARTS) +
+                      sorted(CHANGE.layering().SUPPORT)),
+             "--risk", "medium", "--evidence", record],
+            capture_output=True, text=True, cwd=ROOT)
+        return out.stdout
+
+    said = verdict(every)
+    check("Owed and not run" not in said,
+          "with every owed gate PASS, nothing is reported as owed and not run")
+
+    said = verdict(dict(every, tests="NOT RUN"))
+    check("REVISE" in said and "tests" in said,
+          "and with the tests gate NOT RUN the verdict is REVISE, naming it")
+    check("Owed and not run:       tests" in said,
+          "said in as many words, rather than left to be worked out")
+    check("Gates actually run:" not in said.split("In the record, NOT RUN")[0]
+          or "tests" not in said.split("Gates actually run:")[1].split("\n")[0],
+          "and it is NOT listed under 'Gates actually run', which is the half "
+          "a reader sees")
+
+    said = verdict(dict(every, tests="FAIL"))
+    check("REVISE" in said,
+          "a gate that RAN and failed is still REVISE - this fix must not "
+          "have quietly turned a failure into a missing gate")
+    shutil.rmtree(folder, ignore_errors=True)
 
     print()
     print("The gate refuses to call an unevidenced change a pass")
