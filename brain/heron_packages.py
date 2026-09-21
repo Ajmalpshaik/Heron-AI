@@ -70,7 +70,7 @@ IT INSTALLS NOTHING AND REMOVES NOTHING
 -----------------------------------------
 It returns the order, and the list of what may go. Somebody else does it,
 in a process started on purpose - the line HERON-OPS-HEA-006 draws, for
-the reason Q-56 is still open.
+the reason D-84 recorded: nothing here contains a process Heron starts.
 """
 
 import os
@@ -278,7 +278,8 @@ def plan(wanted, catalogue=None, register=None, approvers=None,
         "unjudged": [
             "NOTHING WAS INSTALLED. This is an order and a set of passes; "
             "somebody else does it, in a process started on purpose - the "
-            "line HERON-OPS-HEA-006 draws, for the reason Q-56 is open.",
+            "line HERON-OPS-HEA-006 draws, for the reason D-84 recorded: "
+            "nothing here contains a process Heron starts.",
             "%s"
             % ("no Revit version was given, so the per-package release lists "
                "were checked for SHAPE and not against anything. A package "

@@ -53,13 +53,13 @@ possibilities named.
 "GUARANTEES THE CANDIDATE CAN MODIFY NOTHING" IS NOT THIS AGENT'S TO GIVE
 --------------------------------------------------------------------------
 The register says the harness guarantees it. Nothing in this repository
-can: Q-56 is open about what actually contains an agent while it runs, and
-the Agent Sandbox watches rather than contains. So this agent does what it
+can: D-84 settled what actually contains an agent while it runs - nothing
+does - and HERON-AHR-SBX-016 watches rather than contains. So this agent does what it
 honestly can - it states the constraints that apply to a shadow run and
 REFUSES to authorise one whose constraints nothing is enforcing. It starts
 no process and executes neither side. A harness that also ran the
-candidate would be answering Q-56 by accident, which is the same line
-HERON-OPS-HEA-006 draws.
+candidate would be building the containment D-84 declined, which is the
+same line HERON-OPS-HEA-006 draws.
 
 THE CONSTRAINTS COMPOSE, THEY DO NOT COMPETE
 ----------------------------------------------
@@ -165,7 +165,7 @@ def constraints(tier=None, risk=None):
                    % ("1 rule applies" if len(found) == 1
                       else "%d rules apply" % len(found)),
             "unjudged": [
-                "NOTHING HERE ENFORCES THESE. Q-56 is open about what "
+                "NOTHING HERE ENFORCES THESE. D-84 settled what "
                 "actually contains an agent while it runs, and the Agent "
                 "Sandbox watches rather than contains. This states the "
                 "constraints and judges the results; it starts no process "

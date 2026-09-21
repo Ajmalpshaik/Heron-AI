@@ -29,7 +29,7 @@ WHAT IT PROVES
 
   5. NOTHING IS EXECUTED AND NOTHING IS DELETED. The command comes back as
      text. An agent with MODIFY that also spawned processes would be
-     answering Q-56 by accident.
+     building the containment D-84 declined to build.
 
   6. TRIAGE RETURNS TWO LISTS, so a caller never gets one it must sort.
 
@@ -139,8 +139,9 @@ def main():
           "the command comes back as text")
     check("returned rather than run" in answer["why"],
           "and says it was not run")
-    check("Q-56" in answer["why"],
-          "citing the open question that makes running it a decision")
+    check("D-84" in answer["why"],
+          "citing the decision that makes running it somebody else's, "
+          "rather than a question answered on 2026-09-20 (row 5b-56)")
 
     print()
     print("6. Triage returns two lists")

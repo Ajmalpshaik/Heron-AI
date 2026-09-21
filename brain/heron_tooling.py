@@ -65,9 +65,10 @@ IT RUNS NOTHING, INSTALLS NOTHING AND REGISTERS NOTHING
 ---------------------------------------------------------
 It says which of the seven steps are satisfied and what each one needs.
 Executing any of them is somebody else's, in a process started on purpose
-- the line HERON-OPS-HEA-006 draws, for the reason Q-56 is open. An agent
-that ran `--version` to find out what was installed would be answering
-Q-56 by accident, and detection is exactly where that would feel harmless.
+- the line HERON-OPS-HEA-006 draws, for the reason D-84 recorded: nothing
+here contains a process Heron starts. An agent that ran `--version` to find
+out what was installed would be building the containment that decision
+declined, and detection is exactly where that would feel harmless.
 """
 
 import os
@@ -236,7 +237,7 @@ def review(tool, permitted=None, origin=None, detected=None):
         "unjudged": [
             "NOTHING WAS RUN, INSTALLED OR REGISTERED. This says which of "
             "the register row's seven steps are satisfied; doing them is "
-            "somebody else's, in a process started on purpose (Q-56).",
+            "somebody else's, in a process started on purpose (D-84).",
             "the detection was handed in. This agent did not run `%s "
             "--version` to find out, because running a program to ask what "
             "it is IS running it." % name,

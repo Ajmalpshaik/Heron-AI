@@ -2,7 +2,7 @@
 #
 # NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
 # status (the module's Heron-Status header owns it). The register gives this
-# agent READ, and it executes neither side - see `unjudged` and Q-56.
+# agent READ, and it executes neither side - see `unjudged` and D-84.
 
 agent: HERON-OPS-SHD-012
 version: 1.0.0
@@ -88,7 +88,7 @@ output:
   unjudged:
     type: list
     description: >
-      Always non-empty. That nothing here enforces the constraints (Q-56),
+      Always non-empty. That nothing here enforces the constraints (D-84),
       that the agreements are not evidence, and that where the candidate
       goes next belongs to the deployment ladder.
 

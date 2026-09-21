@@ -47,13 +47,15 @@ IT RUNS NOTHING. Q-56
 Generating code and then executing it is the point at which the sandbox's
 containment would have to be real, and it is not. HERON-AHR-SBX-016 says so
 at the top of its own file: it restrains a cooperating agent and it does not
-contain a hostile one. Q-56 in docs/OPEN-QUESTIONS.md is that question, open
-and waiting on the owner.
+contain a hostile one. Q-56 asked what would, and D-84 ANSWERED IT on
+2026-09-20 - keep what exists, build no separate process, and take the
+word "sandbox" out. So containment is not coming, and this is permanent rather
+than provisional.
 
 Nothing here imports the sandbox, executes, evaluates or compiles anything.
 The Builder produces text. Running it is a separate decision that somebody
-has to take deliberately, which is the correct shape for it whichever way
-Q-56 is answered.
+has to take deliberately, which is the correct shape for it now that D-84
+has settled that nothing here will contain it.
 
 THE HEADER CLAIMS NOTHING
 --------------------------
@@ -261,7 +263,8 @@ def build(contract, built_by, name=None, layer="brain", write=False,
         "import or compile it. Running a newly generated agent is where a "
         "sandbox's containment would have to be real, and HERON-AHR-SBX-016 "
         "says at the top of its own file that it restrains a cooperating "
-        "agent and does not contain a hostile one - Q-56, open.",
+        "agent and does not contain a hostile one - Q-56, answered as "
+        "D-84: nothing more than today.",
         "the implementation is a STUB. It raises NotImplementedError, its "
         "header claims no agent and reads DISCOVERED, so the built count "
         "does not move for work nobody has done.",
