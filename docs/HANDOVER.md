@@ -181,12 +181,23 @@ wrong earlier the same day**, by my own hand. `mcp/README.md` said **three tools
 three reads like a narrow door somebody could still reason about. Both numbers deleted rather than
 corrected, with the command that derives them in their place and the old figure kept and dated.
 
-**Three sweeps came back empty, and that is worth as much as the rows.** The pipe-deadlock shape of
+**Six sweeps came back empty, and that is worth as much as the rows.** The pipe-deadlock shape of
 5b-78 exists in **one** place: `WindowsAdapters.cs` is the only C# in the repository redirecting
 standard error, and the three Python sites that take both pipes all handle them concurrently
 (`subprocess.run`, `communicate()`, and a daemon drain thread). **No suite has all its assertions
 inside a loop.** And no gate or suite can pass by discovering nothing — the two candidates both have
-another check that fires first. Reported as one place, not a class.
+another check that fires first.
+
+Three more on the second pass, all against defect shapes this register already
+knows. **Every config key is declared**: `HeronConfig.Defaults` holds eight, all eight are read
+somewhere, and nothing reads a ninth - the nine that looked undeclared are capability names in the
+`revit.<domain>` namespace, plus a deliberate typo in `tests/test_config_and_health.py` that exists
+to prove an undeclared key is refused. That is [row 5b-29](FRAGMENT-ISSUES.md)'s shape, checked and
+absent. **The delete-before-write shape of [rows 5b-31 and 5b-79](FRAGMENT-ISSUES.md) is not a class
+in Python**: one site in `brain/`, `mcp/` and `tools/` matches it, and it is
+`check-fragments-compile.py` clearing its own generated build folder, which is gitignored and
+rebuildable. **And the review ledger - the sweep's own memory - is opened `"a"`**, so a crash
+mid-write can lose the last line and never the file. Reported as one place, not a class.
 
 **WHAT NEEDS WINDOWS — NONE OF IT WAS TOUCHED, AND TWO ROWS WERE ADDED TO IT.** `AA10` (the
 half-written backup: delete `replaced.json` by hand and confirm rollback refuses and changes nothing)
