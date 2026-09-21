@@ -222,6 +222,47 @@ This sentence counted to four until 2026-09-21. It does not count any more, for 
 above gives - **the number changes every time a suite learns to say "could not run", and the exit code
 says which kind of failure you are looking at without anybody maintaining a total.**
 
+## 2a. A fix is not proved until its test has been seen to FAIL
+
+Adding a check that passes on the fixed code proves nothing: a check that asserts `True` passes too.
+**Run the new checks against the code as it stood** — `git stash push -- <the files you changed>`, run
+the suite, `git stash pop` — and read the failures. If none go red, the check is not testing the fix.
+
+This caught a false green on 2026-09-21: an ordering check written as `text.find(a) < text.find(b)`
+passed **loudest** when the guard it was checking had been deleted, because `str.find` returns `-1`
+for a string that is not there.
+
+### And the check must FAIL, not CRASH
+
+**A check written against a name or a signature the old module may not have will raise instead of
+failing**, and one traceback replaces every failure the section had to report — including the sections
+after it, which never run at all.
+
+It happened **four times on 2026-09-21 alone**, twice after the lesson had been written down:
+
+| what the check named | what it raised | what was lost |
+|---|---|---|
+| `PATHS.UNCLASSIFIED` | `AttributeError` | 13 failures became 1 traceback ([5b-85](../../../docs/FRAGMENT-ISSUES.md)) |
+| `CLS.JSON_STARTS` | `AttributeError` | 20 became 1 ([5b-88](../../../docs/FRAGMENT-ISSUES.md)) |
+| `origin_allowed(a, b)` | `TypeError` | 13, and sections 4–8 never ran ([5b-89](../../../docs/FRAGMENT-ISSUES.md)) |
+| `RL.PART` | `AttributeError` | 6, and the same ([5b-90](../../../docs/FRAGMENT-ISSUES.md)) |
+
+**So ask before you call**, and make the absence itself one clean failure:
+
+```python
+word = getattr(MODULE, "NEW_NAME", None)
+check(word is not None, "the module has a word for this at all")
+if word is None:
+    word = "whatever the fix will call it"   # so the checks below still RUN and FAIL
+```
+
+For a **signature** rather than a name, `FN.__code__.co_argcount` answers without calling, and works
+on both Pythons. For a keyword the old function may not take, catch `TypeError` around that one call
+and treat it as the failure it is — never let it end the section.
+
+**The rule in one line: a section that cannot run is worth less than a section that fails, because
+failures say how many and where, and a traceback says only that something went wrong.**
+
 ## 3. The reports — a finding is a question, not a failure
 
 These **exit 0 whatever they find**. Read them; do not treat a hit as a break.

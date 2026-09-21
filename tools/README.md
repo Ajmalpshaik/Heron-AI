@@ -1615,6 +1615,7 @@ python tools/review-ledger.py                       # the balance
 python tools/review-ledger.py --next 20             # what to read next
 python tools/review-ledger.py --mark <path> clean
 python tools/review-ledger.py --mark <path> issue --note 5b-3
+python tools/review-ledger.py --mark <path> clean --part --note "what is left"
 python tools/review-ledger.py --stale               # marks that no longer apply
 python tools/review-ledger.py --history <path>      # what one file has been through
 ```
@@ -1653,6 +1654,21 @@ alone. `--mark ... issue` **refuses without a `--note`** carrying the 5b row, be
 
 **The ledger is append-only.** Rows are never rewritten or removed; the newest row for a path counts
 and the ones behind it are that file's history, which `--history` prints.
+
+**How much was read is a SEPARATE column from what was found**, because they are separate facts and
+nineteen files are both at once. `--part` records that only some of a file was read; the file keeps
+its verdict, stays in the `--next` queue marked `PART`, and is counted apart from the files read word
+by word. **`--part` refuses without a `--note`** saying which part, for the same reason `issue` refuses
+without a row: a part-read mark nobody can resume is *worse* than no mark, because it takes the file
+out of the never-opened queue and puts nothing in its place.
+
+> **This column was added on 2026-09-21, and the reason is the number it corrected.** Thirty files
+> carried `PARTIAL READ and said so` in their **note** - honest prose, in a column nothing counted -
+> so the headline read *142 files read* when **113** had been read word by word, and `AGENTS.md`
+> sends people to that number for exactly this question. A count derived from prose is guessed, not
+> derived ([row 5b-90](../docs/FRAGMENT-ISSUES.md)). **Nothing was rewritten**: each of the 29 still
+> in scope got a NEW row, naming whose read it was, and `--history` keeps the chain. A row written
+> before the column has six cells and means `full`, which is what it claimed at the time.
 
 ## `new-agent.py` - scaffold the next agent from its row in the register
 

@@ -36,6 +36,11 @@ WHAT IT PROVES
      rows and the last one is the answer. If an older row could win, a fixed
      file would go on reporting its old defect for ever.
 
+  7. HOW MUCH WAS READ IS NOT THE SAME FACT AS WHAT WAS FOUND. A file can
+     be read in part AND carry a defect row - 19 of the 29 are - so `scope`
+     is its own column, six-cell rows from before it mean `full`, and a
+     scope nobody defined is malformed rather than assumed safe.
+
   4. SCOPE IS BY EXTENSION UNDER brain/, NOT BY THE FOLDER. `brain/**.yaml`
      keeps its own gates (the owner's decision, 2026-09-20), but the fragment
      C# beside it is live code that is sent on every call, and excluding the
@@ -92,8 +97,13 @@ def write_ledger(rows):
             handle.write(u"\t".join(row) + u"\n")
 
 
-def row(path, blob, verdict="clean", note="", when="2026-09-20", who="test"):
-    return [when, who, path, blob, verdict, note]
+def row(path, blob, verdict="clean", note="", when="2026-09-20", who="test",
+        scope=None):
+    """One ledger row. `scope=None` writes the SIX-cell shape on purpose -
+    that is every row written before the column existed, and the tool has to
+    go on reading it."""
+    cells = [when, who, path, blob, verdict, note]
+    return cells if scope is None else cells + [scope]
 
 
 def main():
@@ -182,6 +192,69 @@ def main():
     check("Nothing was recorded" in quiet.getvalue()
           or "must name at least one row" in quiet.getvalue(),
           "each still says on stdout what it would not do")
+
+    print("\n7. how much was read is NOT the same fact as what was found")
+    # ROW 5b-90. Thirty files carried "PARTIAL READ and said so" in a note
+    # nothing counted, and NINETEEN of them also carried a defect row - so
+    # the two cannot share the verdict column, and the headline said 142
+    # files had been read when 113 had.
+    # ASK BEFORE YOU CALL. Naming RL.PART directly raises AttributeError
+    # against a tool without the column, and every check below - and every
+    # section after it - is lost to one traceback. This is the FOURTH time
+    # in one day; see .claude/skills/heron-ship and rows 5b-85, 5b-88, 5b-89.
+    part_word = getattr(RL, "PART", None)
+    check(part_word is not None,
+          "the tool has a word for a file that was only partly read")
+    if part_word is None:
+        part_word = "part"      # so the checks below still RUN and FAIL
+    write_ledger([row(SUBJECT, real, "clean", "read the top half", "2026-09-21",
+                      "test", part_word)])
+    st = RL.state()
+    check([p for p, _ in st.get("part", [])] == [SUBJECT],
+          "a part-read file is named as part-read")
+    check(SUBJECT in st["clean"],
+          "and STILL carries its verdict - the two facts are separate")
+    resumable = RL.state().get("part") or [()]
+    check(SUBJECT in resumable[0],
+          "the note travels with it, so the next session can resume")
+
+    write_ledger([row(SUBJECT, real, "issue", "5b-90", "2026-09-21", "test",
+                      part_word)])
+    st = RL.state()
+    check([p for p, _ in st.get("part", [])] == [SUBJECT]
+          and SUBJECT in [q for q, _ in st["found"]],
+          "a file can be part-read AND have a defect - 19 of the 29 are")
+
+    # SIX CELLS IS NOT MALFORMED. Every row written before this column
+    # existed has six, and it meant the whole file - which is what it said
+    # at the time. Reading them as anything else would rewrite history that
+    # section 3 above says is never rewritten.
+    write_ledger([row(SUBJECT, real, "clean", "an old row")])
+    st = RL.state()
+    check(not st["bad"], "a six-cell row from before the column is not malformed")
+    check(st.get("part", []) == [], "and means the whole file was read")
+
+    # AND A WORD NOBODY DEFINED IS MALFORMED, the same rule the verdict
+    # column already has - a new scope must never fall through to `full`.
+    write_ledger([row(SUBJECT, real, "clean", "x", "2026-09-21", "test",
+                      "halfish")])
+    st = RL.state()
+    check(len(st["bad"]) == 1, "a scope nobody defined is reported, not assumed")
+    check(SUBJECT in st["unchecked"],
+          "and the file goes back in the queue rather than reading as done")
+
+    quiet = io.StringIO()
+    held, sys.stdout = sys.stdout, quiet
+    try:
+        try:
+            silent = RL.cmd_mark(SUBJECT, "clean", "", part=True)
+        except TypeError:
+            silent = None       # a tool that cannot be TOLD is not a refusal
+    finally:
+        sys.stdout = held
+    check(silent == RL.COULD_NOT,
+          "--part with no --note is refused: a part-read mark nobody can "
+          "resume is worse than no mark")
 
     try:
         os.remove(RL.LEDGER)
