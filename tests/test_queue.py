@@ -214,6 +214,37 @@ def main():
           % ("" if not unreached else ": %s" % ", ".join(unreached)))
 
     print()
+    print("A limit of nothing REFUSES, it does not raise")
+    #
+    # A limit of 0 or below makes the QUEUE_FULL branch fire on the FIRST
+    # add, with nothing in the queue - and the message it built asked for
+    # max() over an empty sequence. Measured 2026-09-21: it raised
+    # `ValueError: max() arg is an empty sequence`, out of a module whose
+    # own docstring says an item that cannot be queued is REFUSED WITH A
+    # REASON and that an empty queue is "reported as data rather than
+    # raised". Row 5b-86, and row 5b-84's shape one module later.
+    for limit in (0, -1):
+        try:
+            answer = QUE.Queue(limit=limit).add("work", 3, "me", "because")
+        except Exception as e:                                # noqa: BLE001
+            answer = e
+        check(isinstance(answer, dict) and answer.get("refused") == "QUEUE_FULL",
+              "Queue(limit=%d) refuses with QUEUE_FULL rather than raising"
+              % limit)
+        check(isinstance(answer, dict)
+              and "holds nothing" in answer.get("why", ""),
+              "and says the limit is why, not that something should be "
+              "dropped - there is nothing in it to drop")
+
+    # The full-queue message is unchanged, and still names what is held.
+    full = QUE.Queue(limit=1)
+    full.add("first", 6, "me", "because")
+    answer = full.add("second", 3, "me", "because")
+    check(answer.get("refused") == "QUEUE_FULL"
+          and "lowest priority held" in answer.get("why", ""),
+          "and a queue that really is full still names what is in it")
+
+    print()
     if FAILURES:
         print("FAILED  %d check(s)" % len(FAILURES))
         for line in FAILURES:

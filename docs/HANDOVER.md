@@ -124,7 +124,28 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
-### 2026-09-21 (last) — TWO LIVE-PATH BRAIN MODULES, AND TWO SUITES THAT PINNED THE DEFECT
+### 2026-09-21 (last) — THREE LIVE-PATH BRAIN MODULES, AND THE SAME SHAPE TWICE
+
+**[Row 5b-86](FRAGMENT-ISSUES.md). FIXED, and it is [5b-84](FRAGMENT-ISSUES.md)'s shape one module
+later.** `brain/heron_queue.py` built its `QUEUE_FULL` message from `max()` over its own items — and
+with a limit of 0 or below that branch fires on the **first** `add()`, with nothing in the queue.
+Measured: `Queue(limit=0).add(...)` raised **`ValueError: max() arg is an empty sequence`**, out of a
+module whose docstring says twice that an item which cannot be queued is *refused with a reason* and
+that an empty queue is *"reported as data rather than raised"*. A limit is a caller's statement about
+its own memory — the file itself calls `DEFAULT_LIMIT` *"a default, not a law"* — so zero is a thing a
+caller may say, and the answer should be a sentence. **4 checks go red** against the old module; the
+genuinely-full case stays green in both, which is how the pair proves the change was narrow.
+
+**THE SWEEP FOR THAT SHAPE IS FINISHED, AND IT IS NOT A CLASS.** An AST walk over `brain`, `mcp` and
+`tools` finds **28** calls to `max()`/`min()` over one argument with no `default=`. Three are safe by
+construction. A crude guard-detector flagged 16 as unguarded and **was wrong about 15 of them** — it
+cannot read `X if cond else Y`, `not x or`, a dict truthiness test, an `if` clause in a comprehension
+(Python evaluates it BEFORE the element), or a preceding `cited[0]` that would raise first. **All 13
+it could not clear were then read one by one, and every one is guarded.**
+
+**So `heron_queue` was the single instance**, and the reason is worth keeping: its guard was on the
+LIMIT rather than on the collection, so the collection could still be empty when the message was
+built. That is the shape to look for, not `max()` itself.
 
 **[Row 5b-85](FRAGMENT-ISSUES.md). FIXED, and no class was invented.** `brain/heron_paths.py` — the
 module that tells product from data from derived, so an update cannot destroy a modeller's fragment
