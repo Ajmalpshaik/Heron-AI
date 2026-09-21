@@ -10,8 +10,9 @@
 
 ## What's here
 
-**Two projects since 2026-09-21** — `Heron.Core`, and `Heron.Installer`, which this folder's own
-*What will be here* has listed since it was written.
+**Three projects since 2026-09-21** — `Heron.Core`, and the installer, which this folder's own
+*What will be here* has listed since it was written. The installer is two projects on purpose: the
+engine is release-independent and runs anywhere, the window needs Windows.
 
 ### `Heron.Core`
 
@@ -52,6 +53,26 @@ ever loading into one.
 
 > **Everything it DECIDES is tested; nothing it DOES has run.** 38 checks pass against a fake Revit and
 > a fake deployer. No file has been written and no PowerShell has executed — that needs Windows.
+
+### `Heron.Installer.App` — BUILT, NOT SEEN
+
+The installer **window** — `HeronInstaller.exe`, Stage 4. One window, one list, two buttons.
+
+**It decides nothing.** Which products appear, which may be ticked, what a tick installs, what is greyed
+out and what the grey says all come from
+[`InstallerScreen`](Heron.Installer/InstallerScreen.cs) in the project above, which is tested against a
+fake Revit and a fake disk. This project draws what it is handed.
+
+**That split is not tidiness.** A WPF window needs `net8.0-windows` and the WindowsDesktop runtime, and
+this repository is developed without either — so a rule written inside the window is a rule nothing can
+check. [`tests/test_installer_window.py`](../tests/test_installer_window.py) is what holds the line: it
+fails if the window names a product, asks a product anything, or grows an Update or Repair button.
+
+**No XAML.** [`revit/Heron.Revit.Addin`](../revit/Heron.Revit.Addin/) builds its windows in C# too.
+
+> **No pixel has been drawn.** It compiles on all eight releases with 0 warnings. Whether the window
+> appears, is readable, and installs anything is owed on a Windows PC — `AB1` to `AB7` in
+> [NEEDS-CHECKING](../docs/NEEDS-CHECKING.md).
 
 ## What will be here
 

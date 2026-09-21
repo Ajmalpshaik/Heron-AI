@@ -60,6 +60,20 @@ namespace Heron.Installer
 
         /// <summary>Every Revit open right now. Empty when none are.</summary>
         IReadOnlyList<RunningRevit> RunningRevits();
+
+        /// <summary>
+        /// Where Revit scans for add-in manifests, for one release, or null
+        /// when it could not be found out.
+        ///
+        /// ASKED, NOT BUILT. platform/README.md rule 3 says nothing but
+        /// HeronPaths may build a Heron path, and tools/check-structure.py
+        /// refuses a special folder resolved anywhere else. Heron.Core
+        /// follows the Revit release and this assembly does not, so the
+        /// answer comes from tools\HeronRevit.ps1 - which has to know the
+        /// path anyway, because it runs before any Heron assembly exists on
+        /// the machine. Q-58 is the open question about those two rules.
+        /// </summary>
+        string AddinsFolder(string release);
     }
 
     /// <summary>The outcome of deploying one product for one release.</summary>

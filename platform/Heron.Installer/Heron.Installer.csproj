@@ -21,9 +21,24 @@
     Windows sit behind IRevitEnvironment and IProductDeployer and are the only
     parts that need the owner's machine.
 
-    net8.0, NOT net8.0-windows. The engine never touches a Windows API
-    directly - it shells out for that - and a plain target is what lets its
-    tests run on the machine this repository is developed on.
+    net8.0, NOT net8.0-windows, and NOT referencing Heron.Core.
+
+    THE ENGINE IS RELEASE-INDEPENDENT and Heron.Core is not. Heron.Core
+    follows HeronTfm, so it is net472 for Revit 2020 and net8.0-windows for
+    2025; referencing it would pin this to whichever release happened to be
+    building. It was tried on 2026-09-21, for HeronPaths, and the coupling is
+    the reason it was undone rather than the MSBuild error it produced.
+
+    WHAT IT WANTED HeronPaths FOR - the Revit Addins folder, to answer
+    whether a product is already installed - now comes from
+    tools\HeronRevit.ps1 through IRevitEnvironment. That script has to know
+    the path anyway, because it runs before any Heron assembly exists on the
+    machine, so asking it removes a copy of the rule rather than adding one.
+
+    NO UseWPF here, ever. The moment this needs a window it stops being
+    runnable on the machine it is developed on, and every decision it makes
+    stops being testable. The window is platform\Heron.Installer.App and
+    holds no decisions at all.
 
     NOT a Revit add-in. It never loads into Revit.exe, so it may use
     System.Text.Json freely - the reason revit\Heron.Bridge\Json.cs is

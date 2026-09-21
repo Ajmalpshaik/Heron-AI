@@ -144,7 +144,9 @@ $productAssembly = $chosen.assembly
 $productProject  = $productAssembly -replace '\.dll$', ''
 $productProjPath = "revit\$productProject\$productProject.csproj"
 
-$target   = Join-Path $env:APPDATA "Autodesk\Revit\Addins\$RevitVersion"
+# ONE OWNER FOR THIS PATH - HeronRevit.ps1, dot-sourced above. It was spelled
+# here until 2026-09-21, and the installer was about to spell it a third time.
+$target   = Get-RevitAddinsFolder -RevitVersion $RevitVersion
 $addinDir = Join-Path $target $productFolder
 $manifest = Join-Path $target $productAddin
 

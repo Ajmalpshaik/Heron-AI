@@ -110,6 +110,11 @@ PROJECTS = [
     # refuses a .csproj on disk that nothing builds, and a project nothing
     # builds is a project nobody notices breaking.
     "platform/Heron.Installer/Heron.Installer.csproj",
+    # The installer WINDOW - Stage 4. Also release-independent, and separate
+    # from the engine above because WPF needs net8.0-windows: an engine that
+    # carried a window could not be RUN on the machine this is developed on,
+    # and every decision it makes would stop being testable.
+    "platform/Heron.Installer.App/Heron.Installer.App.csproj",
     "revit/Heron.Bridge/Heron.Bridge.csproj",
     "revit/Heron.Revit.Addin/Heron.Revit.Addin.csproj",
     # STAGE 2 SHAPE PROOFS, deleted when that stage closes. Listed here so

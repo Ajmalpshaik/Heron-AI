@@ -341,11 +341,23 @@ depend on one.
 to go through `HeronPaths`. The install engine itself builds **no** Heron path, so the stage's own
 requirement is met; this is the layer underneath it.
 
-**Not resolved here, and deliberately not.** The shapes are a small `heron-paths` command the script
-calls, a generated `.ps1` of path constants that `HeronPaths` owns, or an amendment saying PowerShell is
-an accepted second builder with a named test that the two agree. Which one is a decision about the
-platform boundary. **Ajmal resolves it**, and until then the disagreement is recorded rather than closed
-whichever way makes a task easier.
+**One thing that looked like a third copy was stopped, which is how this was found.** Stage 4's window
+has to know whether a product is already installed, which needs the Revit `Addins` folder. It built the
+path in C#; [`tools/check-structure.py`](../tools/check-structure.py) **refused the edit** - the rule is
+enforced, not merely written. Referencing `HeronPaths` instead was tried and undone: `Heron.Core`
+follows the Revit release and the installer is release-independent, so the reference would pin the
+installer to whichever release happened to be building. The path now has **one owner** -
+`Get-RevitAddinsFolder` in [`tools/HeronRevit.ps1`](../tools/HeronRevit.ps1) - and both
+`deploy-addin.ps1` and the installer ask it. **So there is one copy, not two, and it is in PowerShell.**
+
+**What is still open is which language should own it.** The rule says C#; the only thing that can run
+before any Heron assembly exists on the machine is PowerShell. The shapes are a small `heron-paths`
+command the script calls, a generated `.ps1` of path constants that `HeronPaths` owns, or an amendment
+saying PowerShell is an accepted second builder with a named test that the two agree - `check-structure`
+already exempts `tools/`, and `mcp/client/heron_bridge_client.py` is already a second path owner for the
+same reason, so the amendment would be writing down something half-true already. Which one is a decision
+about the platform boundary. **Ajmal resolves it**, and until then the disagreement is recorded rather
+than closed whichever way makes a task easier.
 
 ---
 

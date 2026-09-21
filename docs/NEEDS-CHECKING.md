@@ -1972,3 +1972,53 @@ why this stage exists.
 
 **Nobody may mark Stage 2 done from a compile, from this file, or from the tests.** The word for what
 exists today is **BUILT**.
+
+---
+
+## Group AB - Stages 3 and 4 of the installer: the engine, and the window nobody has seen 2026-09-21
+
+**Everything the installer DECIDES is tested. Nothing it DOES has run.** 79 checks pass against a fake
+Revit and a fake disk; all 13 projects compile on all eight releases with 0 warnings. **No file has been
+written, no Revit has been looked for, no PowerShell has executed and no window has been drawn.** A
+compile proves the API agrees. It does not prove an install.
+
+**Three pieces have never run one line**, and all three are the pieces that touch Windows:
+
+| | |
+|---|---|
+| `PowerShellRevitEnvironment` | asks `tools/HeronRevit.ps1` which Revit is installed, which is open, and where its add-ins go |
+| `DeployScriptDeployer` | runs `tools/deploy-addin.ps1` |
+| `InstalledProductsOnDisk` | looks in the Addins folder to answer whether a product is already there |
+
+**And `tools/deploy-addin.ps1` itself has changed since it was last proved.** Its rollback proof of
+2026-09-19 (`Group Z`) is **STALE for the current file** - `AA7` and `AA8` above are that debt, and they
+come first: an engine driving a deploy script that does not work proves nothing about the engine.
+
+Build the window and run it with:
+
+```powershell
+dotnet build platform\Heron.Installer.App -p:EnableWindowsTargeting=true
+.\platform\Heron.Installer.App\bin\x64\Debug\HeronInstaller.exe
+```
+
+**`AA7` and `AA8` above come first.** They prove the deploy script still works after being generalised,
+and the window does nothing but drive that script - so a FAIL there makes every row below unreadable.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **AB1** | Run `HeronInstaller.exe`. Look at it | **A window appears** and can be read. The Revit releases on the PC are listed as tick boxes, all ticked. `Heron` carries **two ticks under it** - the AI Bridge and the tools - and every other tab is one tick, whole tab. **Screenshot.** The failure to watch for is text cut off or wrapped into nonsense at a display scaling nobody tested |
+| **AB2** | Look at the rows that **cannot** be ticked | Each is greyed **and the sentence saying why is printed under it**, not hidden in a tooltip - [R-10](work-notes/plans/plugin-extension/01-requirements.md). Today that is the two Stage 2 throwaways (*"Not ready yet..."*) and Heron MEP (*"Not built yet..."*). **Neither sentence may use the words SHIPPED, PROVING or PLANNED** - those are this repository's vocabulary, not a modeller's |
+| **AB3** | **THE ONE THAT MATTERS MOST.** Add a product to `platform\heron-products.json` by hand - a new id, a new `addInId`, `state` SHIPPED - and **reopen the window without rebuilding anything** | **The new row is there.** This is [R-3](work-notes/plans/plugin-extension/01-requirements.md) and it is the reason the whole design is shaped this way: adding Heron Structure next year must be a line in a file. If this fails, the installer has a product list written inside it and the design has not been built. Undo the edit afterwards |
+| **AB4** | Install the AI Bridge, then **reopen the window** | Its row reads **`Installed`** rather than `--`, and **stays tickable**. Then delete its folder from `%APPDATA%\Autodesk\Revit\Addins\2024\` by hand and reopen again: it reads `--`. The state is read from the disk every time, never remembered - [R-2](work-notes/plans/plugin-extension/01-requirements.md) |
+| **AB5** | **Leave Revit open**, tick a product, press Install | The window **does not freeze**, and it says which Revit is open and that it will carry on by itself. **Close Revit without touching the window.** The install then continues on its own and reports per product per release - [R-38a](work-notes/plans/plugin-extension/01-requirements.md). **Nothing must have been changed before Revit was closed** |
+| **AB6** | Tick **the tools only, without the AI Bridge**, and install | The tools install and **no bridge does** - [R-34](work-notes/plans/plugin-extension/01-requirements.md), a site modeller who wants Heron's tools and refuses the AI. This depends on `AA2` passing first: if two add-ins cannot build one tab, this row is asking about a shape that does not exist |
+| **AB7** | Press Install with **nothing ticked**, and again with **no Revit version ticked** | It says which of the two it is and changes nothing. Neither is an error and neither is silence |
+
+**What a FAIL on AB3 means, written down before the run.** Every rule about what is offered lives in
+`platform/Heron.Installer/InstallerScreen.cs` and is tested there; the window is supposed to hold
+nothing but layout. `tests/test_installer_window.py` fails if a product id appears in the window's
+source. So a FAIL here is not a typo - it would mean the manifest is not being re-read, and the fix is
+in how the window is opened rather than in what it draws.
+
+**Nobody may mark Stage 3 or Stage 4 done from a compile, from this file, or from the tests.** The word
+for what exists today is **BUILT**.

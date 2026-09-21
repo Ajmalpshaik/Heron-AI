@@ -462,7 +462,46 @@ about whether the copy works.
 
 ## Stage 4 — The window
 
-**Status: NOT STARTED**
+**Status: BUILT AND UNPROVEN — 2026-09-21. NOT DONE.**
+
+> **No pixel has been drawn.** It is WPF and this container is Linux. It compiles on all eight releases
+> with 0 warnings, and everything it would SHOW is tested against a fake Revit — but whether the window
+> appears, is readable, and installs anything is owed on the owner's PC: `AB1` to `AB7` in
+> [NEEDS-CHECKING](../../../NEEDS-CHECKING.md).
+
+### What exists now
+
+| | |
+|---|---|
+| [`platform/Heron.Installer/InstallerScreen.cs`](../../../../platform/Heron.Installer/InstallerScreen.cs) | **everything the window shows, decided with no window.** Which rows, which may be ticked, what a tick installs, what is greyed and what the grey says |
+| [`platform/Heron.Installer.App/`](../../../../platform/Heron.Installer.App/) | the WPF window — `HeronInstaller.exe`. It draws what it is handed and **decides nothing** |
+| [`tests/test_installer_window.py`](../../../../tests/test_installer_window.py) | the checks a machine with no Windows can make on a window |
+
+**The split is the point.** A window cannot be run here, so a rule written inside one cannot be checked
+by anything. Every rule lives in `InstallerScreen`, where the test host runs it against a fake Revit and
+a fake disk — **79 checks**, up from 38 — and the window is left with layout. `tests/test_installer_window.py`
+is what holds that line: it fails if the window starts asking a product anything, if a product is named
+in it, or if an Update or Repair button appears.
+
+**`HeronInstaller.exe`, not `Heron.Installer.exe`.** The library beside it is already called
+`Heron.Installer`, and two files a dot apart is a thing somebody eventually double-clicks the wrong one
+of.
+
+### What Stage 4 changed underneath itself
+
+**The window needed the Revit `Addins` folder**, to answer whether a product is already installed
+([R-2](01-requirements.md)). It built the path in C# and
+[`tools/check-structure.py`](../../../../tools/check-structure.py) **refused the edit** — only
+`HeronPaths` may resolve a special folder. Referencing `HeronPaths` was then tried and undone:
+[`Heron.Core`](../../../../platform/Heron.Core/HeronPaths.cs) follows the Revit release and the
+installer is release-independent, so the reference would pin the installer to whichever release happened
+to be building.
+
+So the path got **one owner**: `Get-RevitAddinsFolder` in
+[`tools/HeronRevit.ps1`](../../../../tools/HeronRevit.ps1). `deploy-addin.ps1` had been spelling it
+itself and now asks; the installer asks through `IRevitEnvironment`. **One copy where there were nearly
+three** — and the rule it still disagrees with is [Q-58](../../../OPEN-QUESTIONS.md), which is recorded
+rather than closed.
 
 ### Do
 
@@ -493,10 +532,28 @@ about whether the copy works.
 - Pressing Install on an already-installed product **replaces** it and the window says it did, rather
   than reporting a fresh install that did not happen.
 
+### Where it actually stands — the four states, kept apart
+
+| | |
+|---|---|
+| **PASS** | Compiles. `tools/check-compile.py` — **all 13 projects on all 8 releases, 0 warnings**, the window included |
+| **PASS** | `tests/test_installer_engine.py` — **79 checks** against a fake Revit and a fake disk. Every row comes from the product list; the tab opens into two ticks; either piece on its own installs; a product that cannot be installed here is greyed **with the reason**; an installed one stays tickable and says Install replaces it; a greyed row installs nothing **even if its tick arrives set** |
+| **PASS** | `tests/test_installer_window.py` — the window holds no rules, names no product, has **no Update and no Repair button**, prints the grey reason rather than hiding it in a tooltip, builds the *Close Revit first* line **above** the Install button, and waits off the window's thread |
+| **NOT RUN** | **Nothing has been drawn.** And `InstalledProductsOnDisk`, the third Windows adapter, has never executed a line either |
+| **NEEDS REAL REVIT** | Every line under *Done when* above, and `AB1` to `AB7` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) |
+
+**The most important one is not a screenshot.** *Done when* asks that adding a product to the manifest
+makes it appear in the window **with the installer not rebuilt**. That is [R-3](01-requirements.md), it
+is the whole reason the design is shaped this way, and it is `AB3`.
+
 ### Cannot prove
 
 That it survives a real site laptop — locked-down policies, no internet, odd display scaling. That is
 Stage 7.
+
+**And anything at all about how it looks.** No window has been opened. Text on a screen can be too
+small, cut off, or wrapped into nonsense at a scaling factor nobody tested, and none of that shows up in
+a compile.
 
 ---
 
@@ -716,7 +773,7 @@ Update this table as stages complete. **Do not mark a stage done without its evi
 | 1 | Product manifest | **DONE** 2026-09-21 | `platform/heron-products.json`; `check-products.py` PASSES on it and **FAILS exit 1** on a duplicated `addInId`; `tests/test_products_manifest.py` 36 checks, 16 faults each refused by name |
 | 2 | Second tab | **BUILT AND UNPROVEN** 2026-09-21 | Compiles on all 8 releases, 0 warnings; `tests/test_ribbon_tab_sharing.py` 26 checks pass. **NEEDS REAL REVIT** - no ribbon has been seen, no screenshot exists |
 | 3 | Installer core | **BUILT AND UNPROVEN** 2026-09-21 | `platform/Heron.Installer/` builds; `tests/test_installer_engine.py` 38 checks pass against a fake Revit; `deploy-addin.ps1` generalised to every product and `tests/test_deploy_script.py` passes. **NOT RUN** - both Windows adapters and the deploy script itself have never executed |
-| 4 | The window | NOT STARTED | — |
+| 4 | The window | **BUILT AND UNPROVEN** 2026-09-21 | `platform/Heron.Installer.App/` compiles on all 8 releases, 0 warnings; `tests/test_installer_engine.py` 79 checks and `tests/test_installer_window.py` pass. **NOT RUN** - no window has been drawn |
 | 5 | GitHub download | NOT STARTED | — |
 | 6 | Routes 1 and 2 | NOT STARTED | — |
 | 7 | Uninstall / update / rollback | NOT STARTED | — |

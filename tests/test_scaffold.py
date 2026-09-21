@@ -125,12 +125,19 @@ def main():
               "and the reason says brain is Python: %r" % said["why"][:44])
         check(NCR.projects_in("brain") == [],
               "brain really holds no .csproj")
-        check(NCR.projects_in("platform") == [
-            os.path.join("platform", "Heron.Core", "Heron.Core.csproj"),
-            os.path.join("platform", "Heron.Installer",
-                         "Heron.Installer.csproj")],
-              "while platform holds two since 2026-09-21: %s"
-              % NCR.projects_in("platform"))
+        # THE COUNT, NOT THE LIST. This pinned the exact list until
+        # 2026-09-21 and broke twice in one day as the installer grew - a
+        # check that fails every time a project is added is a check people
+        # learn to edit. What the cases below actually need is that platform
+        # holds MORE THAN ONE, so the bare layer name is refused, and that
+        # the one they name is in there.
+        platform_projects = NCR.projects_in("platform")
+        check(len(platform_projects) > 1,
+              "platform holds more than one project since 2026-09-21: %s"
+              % ", ".join(platform_projects))
+        check(os.path.join("platform", "Heron.Core", "Heron.Core.csproj")
+              in platform_projects,
+              "and Heron.Core is one of them, which is the one named above")
 
         print("\n4. a layer with several projects is asked about")
         said = NCR.author("Heron.X", "tests", references=["revit"])

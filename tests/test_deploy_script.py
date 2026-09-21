@@ -186,6 +186,22 @@ def main():
           "writing a manifest pointing one folder up")
 
     print()
+    print("The Addins path has ONE owner, and it is not this file")
+    module = io.open(os.path.join(ROOT, "tools", "HeronRevit.ps1"),
+                     encoding="utf-8").read()
+    check("function Get-RevitAddinsFolder" in module,
+          "HeronRevit.ps1 owns it")
+    check("$target   = Get-RevitAddinsFolder -RevitVersion $RevitVersion" in text,
+          "and this script asks rather than spelling it again")
+    check('Join-Path $env:APPDATA "Autodesk' not in code,
+          "so the path appears nowhere in this script's own logic")
+    # A function used before it is dot-sourced is a runtime failure on the
+    # first line that matters, and nothing here can run PowerShell to find out.
+    check(text.index('. (Join-Path $PSScriptRoot "HeronRevit.ps1")')
+          < text.index("$target   = Get-RevitAddinsFolder"),
+          "and the module is dot-sourced BEFORE the function is called")
+
+    print()
     print("The download mark is cleared, which it was not before 2026-09-21")
     # R-37. It lived only in the Stage 2 proof script until that script was
     # deleted for being a second copy of the deploy rule. Deleting a file that

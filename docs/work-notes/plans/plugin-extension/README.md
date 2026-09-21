@@ -3,9 +3,10 @@
 > **Type:** Operational work note. **Not specification.** Where a sentence here disagrees with the
 > [Constitution](../../../../HERON_CONSTITUTION.md), the [Golden Rules](../../../14-golden-rules.md) or
 > [DECISIONS.md](../../../DECISIONS.md), **those win and this note is out of date.**
-> **Status:** **Active.** Stage 0 and Stage 1 are **DONE**; Stage 2 and Stage 3 are **BUILT AND
-> UNPROVEN** and both need a Windows machine with Revit ([Group AA](../../../NEEDS-CHECKING.md)).
-> Stages 4 to 9 are NOT STARTED. Opened 2026-09-20.
+> **Status:** **Active.** Stage 0 and Stage 1 are **DONE**; Stages 2, 3 and 4 are **BUILT AND
+> UNPROVEN** and all three need a Windows machine with Revit
+> ([Group AA](../../../NEEDS-CHECKING.md) and [Group AB](../../../NEEDS-CHECKING.md)).
+> Stages 5 to 9 are NOT STARTED. Opened 2026-09-20.
 > **Owner:** Ajmal PS.
 
 ---

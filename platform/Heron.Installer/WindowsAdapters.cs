@@ -127,13 +127,26 @@ namespace Heron.Installer
 
         public IReadOnlyList<string> InstalledReleases()
         {
-            var answer = Ask();
+            var answer = Standing();
             return answer == null ? new string[0] : answer.Installed;
+        }
+
+        public string AddinsFolder(string release)
+        {
+            if (string.IsNullOrEmpty(release)) return null;
+
+            var answer = Standing();
+            if (answer == null || answer.Addins == null) return null;
+
+            string folder;
+            return answer.Addins.TryGetValue(release, out folder) ? folder : null;
         }
 
         public IReadOnlyList<RunningRevit> RunningRevits()
         {
-            var answer = Ask();
+            // FRESH, EVERY TIME. See Standing() above - this is what the
+            // engine's wait loops on.
+            var answer = Look();
 
             // COULD NOT ASK IS NOT "NOTHING IS OPEN". If the question failed,
             // reporting an empty list would let an install proceed over a
@@ -150,18 +163,52 @@ namespace Heron.Installer
         {
             public string[] Installed = new string[0];
             public RunningRevit[] Running = new RunningRevit[0];
+            public Dictionary<string, string> Addins = new Dictionary<string, string>(StringComparer.Ordinal);
         }
 
-        private Answer Ask()
+        /// <summary>
+        /// WHAT DOES NOT CHANGE WHILE THE WINDOW IS OPEN, asked once.
+        ///
+        /// Which Revits are installed, and where each one's add-ins go. Every
+        /// row of the product list wants the second of those, and starting a
+        /// PowerShell process per row would make the window take seconds to
+        /// appear on a machine with three Revits.
+        ///
+        /// WHAT IS OPEN RIGHT NOW IS NEVER REMEMBERED. It is the one thing
+        /// that changes by the second, and it is the thing the engine loops
+        /// on: R-38a says the install carries on by itself once the user
+        /// closes Revit, and a cached "still open" would wait for ever while
+        /// the user stared at a closed Revit. RunningRevits() below looks
+        /// every single time, and that is the reason.
+        /// </summary>
+        private Answer _standing;
+
+        private Answer Standing()
+        {
+            if (_standing == null) _standing = Look();
+            return _standing;
+        }
+
+        private Answer Look()
         {
             var script = Path.Combine(_repoRoot, "tools", "HeronRevit.ps1");
 
             // Dot-source the real thing and hand back its answer as JSON. No
             // second implementation of either question - that is the whole
             // point of this class.
+            // ONE CALL FOR ALL THREE QUESTIONS. Starting PowerShell costs
+            // the best part of a second, and a window that asks three times
+            // is a window that takes three seconds to appear.
+            //
+            // The Addins folder is asked for HERE rather than built in C#:
+            // this assembly may not resolve a special folder, and that script
+            // has to know the path anyway. See IRevitEnvironment.AddinsFolder.
             var command =
                 ". '" + script.Replace("'", "''") + "'; " +
-                "@{ installed = @(Get-InstalledRevit); running = @(Get-RunningRevit) } " +
+                "$found = @(Get-InstalledRevit); " +
+                "$where = @{}; " +
+                "foreach ($r in $found) { $where[$r] = (Get-RevitAddinsFolder -RevitVersion $r) }; " +
+                "@{ installed = $found; running = @(Get-RunningRevit); addins = $where } " +
                 "| ConvertTo-Json -Depth 4 -Compress";
 
             var run = PowerShellRunner.Run(new[] { "-Command", command }, 60);
@@ -180,6 +227,15 @@ namespace Heron.Installer
                     JsonElement running;
                     if (doc.RootElement.TryGetProperty("running", out running))
                         answer.Running = Runners(running);
+
+                    JsonElement addins;
+                    if (doc.RootElement.TryGetProperty("addins", out addins)
+                        && addins.ValueKind == JsonValueKind.Object)
+                    {
+                        foreach (var entry in addins.EnumerateObject())
+                            if (entry.Value.ValueKind == JsonValueKind.String)
+                                answer.Addins[entry.Name] = entry.Value.GetString();
+                    }
 
                     return answer;
                 }
@@ -223,6 +279,56 @@ namespace Heron.Installer
                 revit.ProcessId = pid.GetInt32();
 
             return revit;
+        }
+    }
+
+    /// <summary>
+    /// Whether a product's files are where Revit looks, for one release.
+    ///
+    /// R-2 wants the window to show each product's REAL state rather than a
+    /// remembered one: a folder deleted by hand, or a Revit uninstalled, must
+    /// read as not installed the next time this window opens. So it is a look
+    /// at the disk and never a record Heron kept.
+    ///
+    /// IT DOES NOT BUILD THE PATH. HeronPaths.RevitAddins does, because
+    /// platform/README.md rule 3 says nothing else may - and this file tried
+    /// to on 2026-09-21 and tools/check-structure.py refused it, which is the
+    /// rule working rather than a rule being quoted.
+    /// tools\deploy-addin.ps1 still spells the same path in PowerShell,
+    /// which a .ps1 cannot avoid; that is Q-58 and is recorded, not closed.
+    ///
+    /// NOT RUN on Windows. The path is built from APPDATA, which resolves
+    /// anywhere, but nobody has yet looked at whether it matches what Revit
+    /// actually scans on a real machine - AB4 in docs/NEEDS-CHECKING.md.
+    /// </summary>
+    public sealed class InstalledProductsOnDisk : IInstalledProducts
+    {
+        private readonly IRevitEnvironment _revit;
+
+        public InstalledProductsOnDisk(IRevitEnvironment revit)
+        {
+            if (revit == null) throw new ArgumentNullException("revit");
+            _revit = revit;
+        }
+
+        public bool IsInstalled(HeronProduct product, string release)
+        {
+            if (product == null || string.IsNullOrEmpty(product.Folder)) return false;
+            if (string.IsNullOrEmpty(product.Assembly)) return false;
+            if (string.IsNullOrEmpty(release)) return false;
+
+            // BOTH, not either. A manifest with no folder beside it is a Revit
+            // that finds nothing; a folder with no manifest is a folder Revit
+            // never looks in. Reporting Installed for half of that sends
+            // somebody hunting for a tab that was never going to appear.
+            // NOT BUILT HERE. Asked for, and a folder that could not be
+            // found out reads as not installed rather than as a guess.
+            var addins = _revit.AddinsFolder(release);
+            if (string.IsNullOrEmpty(addins)) return false;
+            var manifest = Path.Combine(addins, product.Addin ?? "");
+            var assembly = Path.Combine(addins, product.Folder, product.Assembly);
+
+            return File.Exists(manifest) && File.Exists(assembly);
         }
     }
 

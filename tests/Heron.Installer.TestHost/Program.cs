@@ -59,6 +59,20 @@ namespace Heron.Installer.TestHost
 
             public IReadOnlyList<string> InstalledReleases() { return _installed; }
 
+            /// <summary>
+            /// A believable answer with no Windows in it. The real one comes
+            /// from tools\HeronRevit.ps1; what the engine and the screen do
+            /// with it is the same either way, and a release this fake does
+            /// not have answers null, which is what a machine without that
+            /// Revit does.
+            /// </summary>
+            public string AddinsFolder(string release)
+            {
+                return _installed.Contains(release)
+                    ? "/fake/Addins/" + release
+                    : null;
+            }
+
             public IReadOnlyList<RunningRevit> RunningRevits()
             {
                 var index = Math.Min(_call, _sequence.Length - 1);
@@ -126,6 +140,67 @@ namespace Heron.Installer.TestHost
               ""partOf"": null, ""state"": ""PROVING"" }
           ]
         }";
+
+        // A SECOND FIXTURE, for the screen rather than the engine. It carries
+        // one more shape than the one above: a product that does not exist
+        // yet. The window has to say something different about "being tested"
+        // and "not built", and the engine never sees either.
+        private const string ScreenFixture = @"{
+          ""products"": [
+            { ""id"": ""tab-a"", ""name"": ""Tab A"", ""description"": ""the first tab"",
+              ""tab"": ""Tab A"", ""addin"": null, ""assembly"": null, ""addInId"": null,
+              ""folder"": null, ""revit"": [""2024"",""2025""], ""requires"": [],
+              ""version"": ""0.1.0"", ""partOf"": null, ""state"": ""SHIPPED"" },
+            { ""id"": ""piece-one"", ""name"": ""Piece One"", ""description"": ""the connector"",
+              ""tab"": ""Tab A"", ""addin"": ""One.addin"", ""assembly"": ""One.dll"",
+              ""folder"": ""One"", ""addInId"": ""11111111-1111-1111-1111-111111111111"",
+              ""revit"": [""2024"",""2025""], ""requires"": [], ""version"": ""0.1.0"",
+              ""partOf"": ""tab-a"", ""state"": ""SHIPPED"" },
+            { ""id"": ""piece-two"", ""name"": ""Piece Two"", ""description"": ""the tools"",
+              ""tab"": ""Tab A"", ""addin"": ""Two.addin"", ""assembly"": ""Two.dll"",
+              ""folder"": ""Two"", ""addInId"": ""22222222-2222-2222-2222-222222222222"",
+              ""revit"": [""2024""], ""requires"": [], ""version"": ""0.1.0"",
+              ""partOf"": ""tab-a"", ""state"": ""SHIPPED"" },
+            { ""id"": ""tab-b"", ""name"": ""Tab B"", ""description"": ""being tested"",
+              ""tab"": ""Tab B"", ""addin"": ""B.addin"", ""assembly"": ""B.dll"",
+              ""folder"": ""B"", ""addInId"": ""33333333-3333-3333-3333-333333333333"",
+              ""revit"": [""2024"",""2025""], ""requires"": [], ""version"": ""0.1.0"",
+              ""partOf"": null, ""state"": ""PROVING"" },
+            { ""id"": ""tab-c"", ""name"": ""Tab C"", ""description"": ""not built yet"",
+              ""tab"": ""Tab C"", ""addin"": ""C.addin"", ""assembly"": ""C.dll"",
+              ""folder"": ""C"", ""addInId"": ""44444444-4444-4444-4444-444444444444"",
+              ""revit"": [""2024"",""2025""], ""requires"": [], ""version"": ""0.1.0"",
+              ""partOf"": null, ""state"": ""PLANNED"" }
+          ]
+        }";
+
+        /// <summary>Named product-and-release pairs, and nothing else.</summary>
+        private sealed class FakeInstalled : IInstalledProducts
+        {
+            private readonly List<string> _pairs;
+
+            public FakeInstalled(params string[] pairs)
+            {
+                _pairs = new List<string>(pairs);
+            }
+
+            public bool IsInstalled(HeronProduct product, string release)
+            {
+                return _pairs.Contains(product.Id + "@" + release);
+            }
+        }
+
+        private static bool Has(IReadOnlyList<string> list, string item)
+        {
+            foreach (var one in list) if (one == item) return true;
+            return false;
+        }
+
+        private static ProductRow RowFor(InstallerScreen screen, string id)
+        {
+            foreach (var row in screen.Products) if (row.Id == id) return row;
+            return null;
+        }
 
         private static SkippedStep SkipFor(InstallPlan plan, string id, string release)
         {
@@ -317,6 +392,138 @@ namespace Heron.Installer.TestHost
             Check(nothing.Results.Count == 0 && !nothing.Abandoned,
                   "an empty choice installs nothing and reports no failure");
 
+            // ================================================== STAGE 4
+            var screenManifest = ProductManifest.Parse(ScreenFixture);
+
+            Console.WriteLine();
+            Console.WriteLine("THE WINDOW'S LIST IS THE FILE - R-3, the point of the whole design");
+            var screen = InstallerScreen.Build(screenManifest, new[] { "2024", "2025" },
+                                               null, null);
+            Check(screen.Products.Count == screenManifest.Products.Count,
+                  "every product in the list has a row, and no row has any other source");
+            Check(RowFor(screen, "tab-c") != null,
+                  "including one added to the file and never mentioned in code");
+
+            Console.WriteLine();
+            Console.WriteLine("The tab built by two pieces opens into two ticks - R-33, R-36");
+            var tabRow = RowFor(screen, "tab-a");
+            Check(tabRow != null && tabRow.IsHeading,
+                  "the tab is a heading, DERIVED from partOf and never a field");
+            Check(!RowFor(screen, "tab-b").IsHeading,
+                  "and a tab nothing is part of is one tick, whole tab");
+            Check(screen.Products[1].IsPiece && screen.Products[2].IsPiece,
+                  "its pieces are drawn under it, indented");
+            Check(screen.Products[0] == tabRow,
+                  "and the heading comes first, not wherever the file listed it");
+
+            Console.WriteLine();
+            Console.WriteLine("Ticking the tab installs its pieces, because a tab installs nothing");
+            Check(tabRow.Installs.Count == 2, "the heading's tick carries both pieces");
+            var rolled = screen.ToInstall(new[] { "tab-a" });
+            Check(rolled.Count == 2 && Has(rolled, "piece-one") && Has(rolled, "piece-two"),
+                  "and the engine is handed the pieces, never the heading");
+            var toolsOnly = screen.ToInstall(new[] { "piece-two" });
+            Check(toolsOnly.Count == 1 && toolsOnly[0] == "piece-two",
+                  "ONE PIECE WITHOUT THE OTHER IS A SUPPORTED INSTALL - R-34");
+
+            Console.WriteLine();
+            Console.WriteLine("A product that cannot be installed is GREYED WITH THE REASON - R-10");
+            var provingRow = RowFor(screen, "tab-b");
+            Check(!provingRow.CanBeTicked, "one being tested cannot be ticked");
+            Check(Names(provingRow.WhyNot, "not ready", "does nothing"),
+                  "and the row says why, in words a modeller uses: " + provingRow.WhyNot);
+            var planned = RowFor(screen, "tab-c");
+            Check(!planned.CanBeTicked, "one that does not exist yet cannot be ticked either");
+            Check(Names(planned.WhyNot, "not built yet"),
+                  "and it is told apart from the one being tested: " + planned.WhyNot);
+            Check(!Names(provingRow.WhyNot, "PROVING") && !Names(planned.WhyNot, "PLANNED"),
+                  "neither sentence uses this repository's own vocabulary");
+            Check(screen.ToInstall(new[] { "tab-b", "tab-c" }).Count == 0,
+                  "and a greyed row installs nothing even if its tick arrives set");
+
+            Console.WriteLine();
+            Console.WriteLine("A product that does not run on the Revit found here says SO");
+            var only2025 = InstallerScreen.Build(screenManifest, new[] { "2025" }, null, null);
+            var narrow = RowFor(only2025, "piece-two");
+            Check(!narrow.CanBeTicked, "the piece that stops at 2024 is greyed on a 2025-only PC");
+            Check(Names(narrow.WhyNot, "2025", "2024"),
+                  "and the reason names both what is here and what it supports: " + narrow.WhyNot);
+            Check(RowFor(only2025, "tab-a").Installs.Count == 1,
+                  "so the tab's tick carries only the piece that can be installed");
+
+            Console.WriteLine();
+            Console.WriteLine("Install replaces, and the window says so BEFORE it is pressed - R-23a");
+            var some = InstallerScreen.Build(screenManifest, new[] { "2024", "2025" }, null,
+                                             new FakeInstalled("piece-one@2024", "piece-one@2025"));
+            Check(RowFor(some, "piece-one").State == "Installed",
+                  "an installed piece reads Installed");
+            Check(Names(RowFor(some, "piece-one").IfYouInstallAgain,
+                        "replaces", "no separate Update"),
+                  "and it says what Install will do, because there is no Update button");
+            Check(RowFor(some, "piece-two").State == "--",
+                  "one that is not there reads --, not a guess");
+            Check(RowFor(some, "piece-one").CanBeTicked,
+                  "AND IT STAYS TICKABLE - an install is how you replace it");
+
+            Console.WriteLine();
+            Console.WriteLine("Installed for some releases is not Installed");
+            var partly = InstallerScreen.Build(screenManifest, new[] { "2024", "2025" }, null,
+                                               new FakeInstalled("piece-one@2024"));
+            Check(Names(RowFor(partly, "piece-one").State, "Installed for Revit 2024"),
+                  "it names the release, rather than rounding up to Installed: "
+                  + RowFor(partly, "piece-one").State);
+
+            Console.WriteLine();
+            Console.WriteLine("Every Revit found is offered, and ticked to begin with - R-8");
+            Check(screen.Releases.Count == 2, "both releases on the PC are offered");
+            Check(screen.ChosenReleases().Count == 2, "and both start ticked");
+            Check(screen.Releases[0].Release == "2024",
+                  "in order, so the list does not shuffle between runs");
+
+            Console.WriteLine();
+            Console.WriteLine("No Revit at all is a sentence, not an empty window");
+            var bare = InstallerScreen.Build(screenManifest, new string[0], null, null);
+            Check(bare.Releases.Count == 0 && !bare.AnythingToOffer, "nothing can be offered");
+            Check(Names(bare.NothingFound, "No Revit was found", "Install Revit first"),
+                  "and it says so, and what to do: " + bare.NothingFound);
+
+            Console.WriteLine();
+            Console.WriteLine("Close Revit first is said BEFORE Install, not after it fails");
+            Check(Names(screen.CloseRevitFirst, "Close Revit before installing"),
+                  "the line is there with no Revit open at all");
+            var busy = InstallerScreen.Build(screenManifest, new[] { "2024" },
+                                             Open("2024"), null);
+            Check(Names(busy.CloseRevitFirst, "2024", "open right now"),
+                  "and it names the release when one is open: " + busy.CloseRevitFirst);
+            var murkyScreen = InstallerScreen.Build(screenManifest, new[] { "2024" },
+                                                    Unknown(), null);
+            Check(Names(murkyScreen.CloseRevitFirst, "A Revit is open"),
+                  "a Revit whose release cannot be read still says a Revit is open");
+
+            Console.WriteLine();
+            Console.WriteLine("The Addins folder is ASKED FOR, never built here");
+            var asked = new FakeRevit(new[] { "2024" });
+            Check(asked.AddinsFolder("2024") != null,
+                  "a release that is installed has a folder");
+            Check(asked.AddinsFolder("2026") == null,
+                  "and one that is not installed has none, rather than a made-up path");
+            var onDisk = new InstalledProductsOnDisk(asked);
+            var aPiece = screenManifest.Find("piece-one");
+            Check(!onDisk.IsInstalled(aPiece, "2026"),
+                  "a folder that could not be found out reads as NOT installed");
+            Check(!onDisk.IsInstalled(aPiece, "2024"),
+                  "and a folder with nothing in it reads as not installed too");
+
+            Console.WriteLine();
+            Console.WriteLine("The install location is per user, and says why that matters");
+            Check(Names(InstallerScreen.InstallLocation, "APPDATA"),
+                  "it is under %APPDATA%");
+            Check(!Names(InstallerScreen.InstallLocation, "ProgramData")
+                  && !Names(InstallerScreen.InstallLocation, "Program Files"),
+                  "and nowhere that needs an administrator");
+            Check(Names(InstallerScreen.InstallLocationNote, "no administrator"),
+                  "and the window says so, which is the promise being kept");
+
             Console.WriteLine();
             if (Failures.Count > 0)
             {
@@ -329,8 +536,14 @@ namespace Heron.Installer.TestHost
             Console.WriteLine("says why every time, it waits for Revit rather than working around");
             Console.WriteLine("it, and one product failing never takes the others with it.");
             Console.WriteLine();
+            Console.WriteLine("The window offers what the FILE says and nothing it was built");
+            Console.WriteLine("with. A tab opens into its pieces, either one on its own is a");
+            Console.WriteLine("supported install, and a product that cannot be installed here is");
+            Console.WriteLine("greyed with the reason on the row rather than quietly dropped.");
+            Console.WriteLine();
             Console.WriteLine("IT HAS INSTALLED NOTHING. No file was written, no Revit was looked");
-            Console.WriteLine("for, no PowerShell ran. That needs Windows and is not proved here.");
+            Console.WriteLine("for, no PowerShell ran, AND NO WINDOW WAS DRAWN. That needs Windows");
+            Console.WriteLine("and is not proved here.");
             return 0;
         }
     }
