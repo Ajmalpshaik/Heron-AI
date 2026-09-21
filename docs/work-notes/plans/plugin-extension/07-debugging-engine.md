@@ -14,8 +14,26 @@
 > automatically: it runs fragments into the library, studies it, runs that specific part, finds the
 > issues, and automatically fixes them … I think we already have it. You can check, find it."*
 
-**Answer: about two-thirds of it exists, and the missing third is the part that matters most.** Every
-piece below was read on 2026-09-21; none of it was assumed.
+**Clarified the same day, and it widens the scope:**
+
+> *"While running, checking, or fixing the tools, if we find an issue, it will be fixed accordingly.
+> **The fragments, tools, agents, and everything else can be fixed.** Day by day, our tool will become
+> stronger."*
+
+**Three things in that sentence, and each changes something:**
+
+1. **It is driven through the AI**, not a menu of canned repairs.
+2. **The scope is everything** — fragments, the ported tools, the agents themselves. Not fragments
+   alone, which is what §7 had recommended before he said this. See [Q-DE-2](#q-de-2--what-may-the-engine-change--answered-2026-09-21).
+3. **The trigger is ordinary use** — *while running, checking, or fixing*. Not a separate debugging
+   session somebody has to remember to start.
+
+**"Day by day, our tool will become stronger" is the point of the whole thing**, and it is worth writing
+down as the measure: if a month of use does not leave the library measurably better than it started,
+the engine is not working, whatever else it does.
+
+**Answer to the original question: about two-thirds of it exists, and the missing third is the part that
+matters most.** Every piece below was read on 2026-09-21; none of it was assumed.
 
 ---
 
@@ -169,16 +187,63 @@ manual re-proof.
 §4 says the rules allow it. **Whether the owner wants it is a different question**, and it is his.
 `PROVEN` and `PRODUCTION` are settled — those always propose.
 
-### Q-DE-2 — Does the engine ever touch C# outside `brain/fragments/`?
+### Q-DE-2 — What may the engine change? — ANSWERED 2026-09-21
 
-A fragment body is one thing. The add-in, the bridge and the kernel are another, and Golden Rule 13
-calls those *"its own core"*. **Recommended: fragments only, to begin with.** Nothing is lost by
-starting narrow, and the blast radius of a wrong answer is one fragment rather than Revit.
+**Everything.** The owner: *"The fragments, tools, agents, and everything else can be fixed."*
+
+That overrules the "fragments only, to begin with" this note had recommended, and it is the right call —
+an engine that can only repair a third of what breaks leaves the other two thirds to be done by hand,
+and the hand is his.
+
+**But the SCOPE being everything does not make the PERMISSION the same everywhere**, and Golden Rule 13
+is where the difference sits:
+
+> *Heron may **propose** changes to its own core. **It may not apply them.***
+
+| What broke | May the engine apply its own fix? |
+|---|---|
+| A fragment at `DRAFT` | **Yes** — unproven either way, and a proof is owed before it is trusted |
+| A fragment at `PROVEN` / `PRODUCTION` | **Proposes.** A person says yes ([docs/09 §6](../../../09-skills-and-fragments.md)) |
+| A **ported tool's** own code | same rule as the fragment it wraps — it is Phase 2 code, not the kernel |
+| An **agent**, the add-in, the bridge, the kernel | **Proposes only.** This is *"its own core"* in Rule 13's own words |
+
+**This is not a smaller version of what he asked for.** Every one of those still gets diagnosed,
+repaired and tested by the engine — the only difference is who presses the last button, and only for the
+parts where a wrong answer breaks Heron itself rather than one fragment.
+
+**And the split is already how Heron is built**, which is why it costs nothing: `heron_evolve`,
+`heron_split` and `heron_healing` all **propose and never apply**, and
+[`heron_sandbox.py`](../../../../brain/heron_sandbox.py) exists precisely so a new agent runs in
+isolation before it is allowed near real work.
+
+**What is genuinely open inside this answer:** whether a `DRAFT` fragment fix applies silently or still
+shows the owner what changed. That is [Q-DE-1](#q-de-1--may-the-engine-apply-a-fix-to-a-draft-fragment-without-asking).
 
 ### Q-DE-3 — Where does the user report the error from?
 
 The Claude Code chat, a Heron ribbon button, or the Settings panel. Ties to
 [Q-PE-1](03-open-questions.md) and to whatever Phase 3 says about the in-Revit surface.
+
+---
+
+### Q-DE-4 — What counts as "stronger", and how would anybody know?
+
+**Raised 2026-09-21 from his own sentence** — *"day by day, our tool will become stronger"*.
+
+That is the measure of success for the whole engine, and it is currently a feeling rather than a number.
+Heron can already derive the candidates:
+
+```bash
+grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c   # PROVEN vs DRAFT
+python tools/check-gaps.py                                                  # unfinished vs waiting
+```
+
+**The honest complication, and it is [06 §5](06-porting-method.md)'s:** widening a fragment marks its
+proof `STALE`, so a productive week can *lower* the proven count. A measure that only counts `PROVEN`
+would call the best week the worst one.
+
+**Not proposed as a decision** — recorded so that when somebody asks "is this working", the answer is
+derived rather than felt.
 
 ---
 

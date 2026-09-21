@@ -57,6 +57,12 @@ routes must fail together. If they do not, they are three engines wearing one na
 > the AI and it will fix it automatically. There is also new tool creation: I can chat and create
 > things. We need to bring that exact same idea and setup from there over to here."*
 
+**`Ajmalpshaik/AJ-AI-Brain` has NOT been read.** `AJ-Tools-Installer` was read on 2026-09-21
+([04](04-lessons-from-aj-tools.md)) and that is all. The brain repository is where the chat-to-fix and
+chat-to-create behaviour actually lives, so **it is the next thing to read**, and nothing about how
+those two work should be designed before it is. Recorded here so an unread repository is not later
+mistaken for a studied one.
+
 Two capabilities to bring across from AJ AI / AJ AI Brain:
 
 | | What it does |

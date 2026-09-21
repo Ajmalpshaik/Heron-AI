@@ -22,7 +22,14 @@ paraphrase of a decision is how a decision quietly changes.
 
 ## 2. Open questions
 
-**Three answered on 2026-09-21 and struck through below. Three raised the same day. Eight remain.**
+**Two answered outright on 2026-09-21 and struck through below; Q-PE-1 half answered and Q-PE-5 narrowed the same day; three raised. 9 rows remain open here, plus four in [`07-debugging-engine.md`](07-debugging-engine.md).**
+
+Derive both rather than trusting this line:
+
+```bash
+grep -c '^### Q-PE' docs/work-notes/plans/plugin-extension/03-open-questions.md
+grep -c '^### Q-DE' docs/work-notes/plans/plugin-extension/07-debugging-engine.md
+```
 
 ### Q-PE-1 — What is "Heron Tools"? — ~~half answered 2026-09-21~~, content still open
 
@@ -117,9 +124,9 @@ blocks GitHub blocks the installer, and the users are contractors.
 ([Stage 1](02-implementation.md)) already leaves room — the same manifest read from a local folder
 instead of a release.
 
-**NARROWED 2026-09-21 — route B already solves it for anyone who took the repo.** The owner's route B
+**NARROWED 2026-09-21 — route 2 already solves it for anyone who took the repo.** The owner's route 2
 ships every file inside the repository alongside a setup file, so it **downloads nothing**
-([S7](00-structure.md), [R-30](01-requirements.md)). The question that remains is only about **route C**,
+([S7](00-structure.md), [R-30](01-requirements.md)). The question that remains is only about **route 3**,
 the standalone installer, for a user who never clones anything.
 
 **Blocks:** nothing. [R-15](01-requirements.md) is marked LATER on purpose.

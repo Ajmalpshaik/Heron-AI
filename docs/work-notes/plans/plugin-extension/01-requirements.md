@@ -27,7 +27,7 @@ does not belong here.**
 ## 2a. Three ways in, one engine
 
 There are **three routes**, and they are not three installers — they are three front doors onto one
-engine ([S7](00-structure.md)). Only route C shows a window.
+engine ([S7](00-structure.md)). Only route 3 shows a window.
 
 | | Route | The user does | Files come from |
 |---|---|---|---|
@@ -35,8 +35,8 @@ engine ([S7](00-structure.md)). Only route C shows a window.
 | **B** | **Repo download** | sets the project location, runs the setup file | **already in the repo** — no download |
 | **C** | **Manual installer** | double-clicks it, ticks, presses Install | a signed GitHub release |
 
-Everything in §3 and §4 below describes **route C**, because it is the only one with a window. Routes A
-and B reach the same engine with their choices already decided, so every rule in §5 binds all three.
+Everything in §3 and §4 below describes **route 3**, because it is the only one with a window. Routes 1
+and 2 reach the same engine with their choices already decided, so every rule in §5 binds all three.
 
 ---
 
@@ -185,9 +185,10 @@ logic, not re-implement it** — two copies of a deploy rule is two rules that d
 
 | # | Requirement | Source | Status |
 |---|---|---|---|
-| R-28 | **Route A — cloud.** A new person gives the repository and everything installs with no further input | Owner, 2026-09-21 | MUST |
-| R-29 | **Route B — repo download.** The repo carries every file **and** a setup file; the user sets the project location, runs it, and it configures itself | Owner, 2026-09-21 | MUST |
-| R-30 | **Route B downloads nothing.** The files are already in the repo, so it works with no internet | Follows R-29; and it is the answer to [Q-PE-5](03-open-questions.md) for anyone who took the repo | MUST |
+| R-28 | **Route 1 — natural language.** The user says *"install this repo"* and **the AI** installs everything, **then asks which panels they want** | Owner, 2026-09-21 | MUST |
+| R-28a | Route 1 **asks after installing, not before.** A conversation can install first and narrow later; that ordering is the design, not an accident | Owner, 2026-09-21: *"From there, it will ask the user which panels they need"* | MUST |
+| R-29 | **Route 2 — repo handed over.** The user downloads the repo and gives it to **the AI** in-product, which installs from the files it was given | Owner, 2026-09-21 | MUST |
+| R-30 | **Route 2 downloads nothing.** The files are already in the repo, so it works with no internet | Follows R-29; and it answers [Q-PE-5](03-open-questions.md) for anyone who took the repo | MUST |
 | R-31 | All three routes drive **one engine**. No install rule exists in more than one place | [S7](00-structure.md); a rule in three installers is three rules and two go stale | MUST |
 | R-32 | Routes A and B are **not silent**. Each reports what it installed, into which Revit versions, and what it skipped | [`docs/14`](../../../14-golden-rules.md) — an automatic install that says nothing cannot be checked | MUST |
 
@@ -199,6 +200,8 @@ logic, not re-implement it** — two copies of a deploy rule is two rules that d
 | R-34 | Ticking **tools without the connector** is a supported install. No AI is installed, and the tools work | Owner, 2026-09-21 | MUST |
 | R-35 | Both pieces build into the **same `Heron` tab**, and neither may assume it is loaded first | Revit's `CreateRibbonTab` throws when the tab exists; `HeronApplication.BuildRibbon()` already catches it | MUST |
 | R-36 | `Heron Doc`, `Heron MEP` and every future tab have **one tick each** — no sub-choice | [S3](00-structure.md) | MUST |
+| R-36a | **Install All** is one control that ticks every product at once. It is **not a separate concept** — the same window, everything ticked | Owner, 2026-09-20 ("Install All / Custom Install") | MUST |
+| R-36b | **Custom Install** is the same window with the user choosing. There is no second screen and no second code path | Owner, 2026-09-20; follows R-36a | MUST |
 
 ### The Settings panel
 

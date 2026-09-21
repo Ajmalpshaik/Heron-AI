@@ -302,7 +302,7 @@ Whether a particular contractor's firewall allows it. That is found on site, and
 
 **Status: NOT STARTED**
 
-Stages 3 to 5 build **route C** — the installer with a window. [S7](00-structure.md) says there are
+Stages 3 to 5 build **route 3** — the installer with a window. [S7](00-structure.md) says there are
 three front doors and one engine, so this is where the other two are hung on it.
 
 **If this stage ends up re-implementing any install rule, it has failed**, however well it works. A rule
@@ -312,7 +312,7 @@ that lives in three places is three rules, and two of them go stale.
 
 1. **Route 2 — the repo handed to the AI** ([R-29](01-requirements.md)). The user downloads the repo and
    gives it to the AI in-product; the AI installs from the files it was given.
-2. **Route B downloads nothing** ([R-30](01-requirements.md)). Its files are already in the repo, so it
+2. **Route 2 downloads nothing** ([R-30](01-requirements.md)). Its files are already in the repo, so it
    must take the local path through the engine rather than the release path. This is the offline install
    that [Q-PE-5](03-open-questions.md) wanted, arriving as a side effect.
 3. **Route 1 — natural language** ([R-28](01-requirements.md)). The user says *"install this repo"* and
@@ -337,8 +337,8 @@ that lives in three places is three rules, and two of them go stale.
 
 ### Cannot prove
 
-Whether the cloud plan itself is right. Route A can only install what it is told to install; what it is
-told comes from a cloud design that is outside this folder.
+Whether the AI asks the right question. Route 1 installs everything and then asks which panels are
+wanted; whether that question is the right one to ask is a matter for a modeller using it, not a test.
 
 ---
 

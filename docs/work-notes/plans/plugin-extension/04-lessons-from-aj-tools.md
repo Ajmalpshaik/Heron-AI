@@ -38,7 +38,7 @@ AJ Tools' installer clears that mark on every file — **before** it copies, and
 copies. Its comment ties the marker directly to the Revit error it produces.
 
 **Heron's plan had nothing about this at all.** It would have hit every user who downloaded a release —
-which, under [S5](00-structure.md), is every route-C user there is. → **[R-37](01-requirements.md)**
+which, under [S5](00-structure.md), is every route-3 user there is. → **[R-37](01-requirements.md)**
 
 ### L2 — Revit holds its DLLs open — and the owner rejected AJ Tools' answer to it
 

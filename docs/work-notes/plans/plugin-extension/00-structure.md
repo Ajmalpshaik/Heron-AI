@@ -164,9 +164,9 @@ reach, cannot explain and cannot audit.
 
 ### S7 — Three ways in, and two of them are the AI
 
-**Restated 2026-09-21, and it changes what was written on 2026-09-20.** That version called route A
-"cloud" and route B "a setup file you run". The owner's fuller account makes both of them **the AI
-doing the installing**, and only route C a window.
+**Restated 2026-09-21, and it changes what was written on 2026-09-20.** That version called route 1
+"cloud" and route 2 "a setup file you run". The owner's fuller account makes both of them **the AI
+doing the installing**, and only route 3 a window.
 
 | | Route | What the user does | Who installs |
 |---|---|---|---|
