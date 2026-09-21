@@ -221,8 +221,23 @@ def check_tools():
     #
     # The list is typed rather than derived on purpose: these four are the
     # ones a non-zero exit from means YOUR CHANGE, which is a judgement the
-    # ship checklist makes and this file follows. The other checkers in CI
-    # are reports, and a report's finding is a question for a person.
+    # ship checklist makes and this file follows.
+    #
+    # WHAT THIS SAID UNTIL 2026-09-21, AND IT WAS FALSE: "the other checkers
+    # in CI are reports, and a report's finding is a question for a person."
+    # gates.yml's job named "The gates that must pass" runs NINE commands
+    # under bash -e - these four plus check-signatures, check-licence,
+    # check-narrow-errors, check-routing and check-intrusion - so a non-zero
+    # from any of them fails the pull request exactly as these four do.
+    # Measured: check-routing exited 2 on a head whose four were all green.
+    #
+    # THE FIVE ARE STILL NOT SWEPT HERE, AND THAT IS A CHOICE RATHER THAN AN
+    # OVERSIGHT THIS TIME. check-routing and check-intrusion need a knowledge
+    # store and rebuild one when it is stale, which is minutes rather than
+    # tenths of a second, and this sweep is already long enough that people
+    # skip it. Adding them needs the same four-state care the tests got - a
+    # store that is absent is not a gap in the code - and that is its own
+    # change. FRAGMENT-ISSUES row 5b-70.
     for name in ("check-docs.py", "check-metadata.py", "check-structure.py",
                  "check-package.py"):
         proc = subprocess.run([sys.executable, os.path.join(ROOT, "tools", name)],

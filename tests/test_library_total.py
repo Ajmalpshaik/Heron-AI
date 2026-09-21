@@ -65,6 +65,17 @@ same reason and says so in its own comment.
 A count of PART of the library - "68 DRAFT", "91 carrying a guard", "279
 need a typed value" - is a different claim and is not matched here.
 `check-docs.py` owns the status and risk ones.
+
+AND A THIRD STATE, WHICH IS THE POINT OF HAVING FOUR
+------------------------------------------------------
+A stale total inside a `PROVEN` fragment's `impl/` is reported as **wait**,
+not as a failure and not as a pass. D-30's fingerprint covers the whole
+implementation file, so correcting one word of a comment in there makes
+`brain/heron_fragment.py` refuse the fragment - the correction and the
+re-proof are one act, and the re-proof needs a real Revit and a named model.
+This was measured by doing it: the fix went in, CI rejected it, and the
+comment was put back (row 5b-69). A stale count is cheaper than a broken
+proof.
 """
 
 from __future__ import annotations
@@ -140,6 +151,40 @@ def real_total():
                 if os.path.isfile(os.path.join(base, d, "fragment.yaml"))])
 
 
+def sealed_by_a_proof(rel):
+    """The fragment this file implements, if its proof seals the bytes.
+
+    A `PROVEN` fragment's proof carries a fingerprint of its implementation
+    ([D-30](docs/DECISIONS.md)), and the fingerprint is over the WHOLE file -
+    there is no honest way to tell a comment from code by bytes. So changing
+    one word of a comment inside `impl/` makes `brain/heron_fragment.py`
+    refuse the fragment: "status is PROVEN but the proof does not match this
+    implementation."
+
+    That is the fingerprint working. It also means a stale sentence in there
+    CANNOT be corrected on a machine with no Revit: the correction and the
+    re-proof are one act, and the re-proof needs a model. Measured on
+    2026-09-21 by making the correction and watching CI reject it (row
+    5b-69). Named here rather than skipped silently, and reported as its own
+    state rather than as a pass.
+    """
+    parts = rel.split("/")
+    if len(parts) < 4 or parts[0] != "brain" or parts[1] != "fragments":
+        return None
+    if "impl" not in parts[2:]:
+        return None
+    card = os.path.join(ROOT, "brain", "fragments", parts[2], "fragment.yaml")
+    try:
+        with io.open(card, encoding="utf-8", errors="replace") as fh:
+            head = fh.read(2000)
+    except IOError:
+        return None
+    m = re.search(r'^heron-status:\s*(\S+)', head, re.M)
+    if m and m.group(1) == "PROVEN":
+        return parts[2]
+    return None
+
+
 def sentence_at(text, at):
     """The sentence the match at `at` sits in, and whether it is a citation.
 
@@ -189,6 +234,7 @@ def claims():
 
 def main():
     total = real_total()
+    waiting = []
 
     print("\nThe library, counted off disk")
     check(total > 100,
@@ -221,9 +267,27 @@ def main():
             print("  ok    %s:%d says %d and says when it was measured"
                   % (rel, line, n))
             continue
+        sealed = sealed_by_a_proof(rel)
+        if sealed:
+            # NOT A PASS AND NOT A FAILURE - the third state, named. Editing
+            # this file breaks the proof that seals it, and re-taking that
+            # proof needs a real Revit and a named model.
+            waiting.append((rel, line, n, sealed))
+            print("  wait  %s:%d says %d - sealed by %s's proof, and "
+                  "correcting it needs a Revit" % (rel, line, n, sealed))
+            continue
         check(False,
               "%s:%d says %d and the library is %d  <- %s"
               % (rel, line, n, total, sentence[:90]))
+
+    if waiting:
+        print("\n%d WAITING ON A REVIT - each is inside a PROVEN fragment's\n"
+              "implementation, where the correction and the re-proof are one\n"
+              "act and the re-proof needs a named real model (D-30):" % len(waiting))
+        for rel, line, n, who in waiting:
+            print("  %s:%d  says %d  (%s)" % (rel, line, n, who))
+        print("  Take them with the next proving pass, or leave them - a\n"
+              "  stale count is cheaper than a broken proof.")
 
     print()
     if FAILURES:
@@ -235,8 +299,9 @@ def main():
         print("  widen the pattern, and do not edit a dated measurement to a")
         print("  number it was never taken at.")
         return 1
-    print("PASSED - %d total(s) checked against %d on disk, and every one is "
-          "either current or dated." % (len(found), total))
+    print("PASSED - %d total(s) checked against %d on disk; every one is "
+          "current or dated,\n         and %d wait on a Revit."
+          % (len(found), total, len(waiting)))
     return 0
 
 

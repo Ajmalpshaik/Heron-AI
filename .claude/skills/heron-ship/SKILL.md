@@ -1,6 +1,6 @@
 ---
 name: heron-ship
-description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates that must pass, the reports whose findings are questions, the checker whose exit code follows the unfinished list, and the six checks that need a tool this container has not got.
+description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the nine CI actually decides on, the reports whose findings are questions, the checker whose exit code follows the unfinished list, and the six checks that need a tool this container has not got.
 allowed-tools:
   - Bash
   - Read
@@ -95,6 +95,29 @@ machine can run Heron at all. Run it after a fresh clone, after touching `requir
 `requirements-optional.txt`, and when a suite fails for a reason that smells like an absent import. A
 missing **optional** package exits 0 on purpose: silent degradation is the designed behaviour, and a
 checker that failed on one would be arguing with the requirement that allows it.
+
+### THESE FOUR ARE NOT WHAT DECIDES THE PULL REQUEST. NINE DO.
+
+`.github/workflows/gates.yml` has a job named **"The gates that must pass"**, and it runs **nine**
+commands under `bash -e` — so a non-zero exit from **any** of them turns the PR red. The four above
+are four of the nine. The other five are:
+
+```bash
+python tools/check-signatures.py       # a proof whose code moved under it
+python tools/check-licence.py          # a licence header, and what may not be redistributed
+python tools/check-narrow-errors.py    # a bare except is a swallowed cause
+HERON_KNOWLEDGE=$(mktemp -d) python tools/check-routing.py    # every capability still reachable
+HERON_KNOWLEDGE=$(mktemp -d) python tools/check-intrusion.py  # one fragment crowding out another
+```
+
+**This was measured the expensive way on 2026-09-21** ([row 5b-70](../../../docs/FRAGMENT-ISSUES.md)):
+all four gates green locally, pushed, and `check-routing` exited **2** because a comment edited inside
+a `PROVEN` fragment's `impl/` broke D-30's fingerprint. Nothing a contributor is told to run would have
+caught it.
+
+**The two with `HERON_KNOWLEDGE` need somewhere to put a knowledge store** and exit **2** saying so
+when there is none — an empty folder is enough, and CI makes one. On Windows `%APPDATA%` already
+answers, so the variable is only needed here.
 
 ## 2. The tests
 

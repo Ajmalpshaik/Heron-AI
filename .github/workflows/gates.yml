@@ -141,9 +141,18 @@ jobs:
       - name: check-package
         run: python tools/check-package.py
 
-      # These two need somewhere to put a knowledge store, and say so rather
-      # than failing when there is none: "No %APPDATA% and no HERON_KNOWLEDGE".
-      # An empty directory is enough for them to run, so CI gives them one.
+      # These two need somewhere to put a knowledge store. An empty
+      # directory is enough for them to run, so CI gives them one.
+      #
+      # THEY ALSO GATE THIS JOB, AND THEY ARE NOT ON ANY "FOUR THAT MUST
+      # PASS" LIST. check-routing exited 2 on a PR whose four documented
+      # gates were all green locally - the four are what you run before
+      # pushing, and these nine are what decides the PR (row 5b-70).
+      #
+      # This comment said they "say so rather than failing when there is
+      # none". Measured on Linux with the variable unset on 2026-09-21: they
+      # raised an unhandled ValueError and exited 1. They now print one line
+      # and exit 2, the code for "could not do its job" (row 5b-71).
       - name: check-routing and check-intrusion
         env:
           HERON_KNOWLEDGE: ${{ runner.temp }}/heron-kb
