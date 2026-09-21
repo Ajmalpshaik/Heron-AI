@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -70,6 +70,42 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<string>
+
+proof:
+  date: '2026-09-22'
+  by: Ajmal PS
+  model: Project1 (3,432 elements), Revit 2024, session 43984
+  positive_case: >
+    run on view '1 - Mech' with categories=Walls and
+    overrides=projection-line-colour=255,0,0; cut-line-colour=255,0,0;
+    surface-colour=230,230,230; cut-colour=230,230,230. returned
+    notControllable 0 item(s), overridden 1, refused 0 item(s), solidPattern
+    <Solid fill>. LOOKED AT, AND THAT IS DELIBERATE: the walls went from a red
+    outline with nothing inside it to a red outline with a light grey wash.
+    The read-back is NOT the evidence here and must not be used as it -
+    REPORT_CATEGORY_OVERRIDES reports the same four colours whether or not a
+    pattern was ever stamped, which is the exact failure this fragment exists
+    to catch. Both halves were run on this model an hour apart and read back
+    identically; only the screen told them apart
+  negative_case: >
+    run on '2 - Mech Copy 1' - a duplicate of '2 - Mech' carrying the
+    'Architectural Plan' view template - with categories=Walls and
+    overrides=surface-colour=230,230,230; cut-colour=230,230,230. Chosen
+    because a view template holds the graphics, so the fragment must decline
+    rather than report success. returned notControllable 0 item(s),
+    overridden 0, refused 1 item(s) [Walls], solidPattern <Solid fill>.
+    NOTHING WAS WRITTEN and no exception was raised - the category came back
+    NAMED, which is an answer somebody can act on
+  second_route: >
+    NOT ESTABLISHED. The by-hand read that would settle it is one dialog away
+    - Visibility/Graphics on '1 - Mech', where the Pattern field read
+    '<No Override>' before this fragment existed and should now read
+    'Solid fill' - and it has not been done since the write. D-30 asks for a
+    second route 'where one exists'; one plainly exists here, so this is a
+    gap rather than an absence. The OTHER negative D-30 would want is a model
+    whose solid fill pattern has been PURGED, which is the case the
+    implementation refuses on and which no model to hand can produce
+  fingerprint: 51c6e979a64a1251
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
