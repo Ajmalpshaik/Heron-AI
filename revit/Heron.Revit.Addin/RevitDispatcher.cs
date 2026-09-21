@@ -90,9 +90,21 @@ namespace Heron.Revit.Addin
         /// Two things keep it honest. Revit pushes every document switch
         /// in through NoteActiveModel as it happens, and every finished
         /// job overwrites it with the model the work actually reported.
-        /// It is read and written from several threads, so it moves with
-        /// Volatile rather than a plain assignment.
+        /// It is read and written from several threads, so every access
+        /// goes through _modelLock.
+        ///
+        /// IT USED TO MOVE WITH Volatile AND ONE Interlocked.CompareExchange,
+        /// and that one comparison was the defect: CompareExchange on a
+        /// reference type matches by REFERENCE, never by value, while
+        /// ForgetActiveModel's own docstring says it compares the names. The
+        /// two strings are always distinct instances in practice and one
+        /// provably so - the name written at line 320 below is parsed out of
+        /// JSON, a fresh allocation every time - so after any job has run,
+        /// the clear could not fire at all. A lock is what makes a
+        /// read-compare-write atomic AND by value; a second Interlocked form
+        /// would not. FRAGMENT-ISSUES section 5b, row 18.
         /// </summary>
+        private readonly object _modelLock = new object();
         private string _activeModel;
 
         private ExternalEvent _event;
@@ -145,7 +157,7 @@ namespace Heron.Revit.Addin
         /// </summary>
         public void NoteActiveModel(string title)
         {
-            Volatile.Write(ref _activeModel, string.IsNullOrEmpty(title) ? null : title);
+            lock (_modelLock) { _activeModel = string.IsNullOrEmpty(title) ? null : title; }
         }
 
         /// <summary>
@@ -168,7 +180,14 @@ namespace Heron.Revit.Addin
         {
             if (string.IsNullOrEmpty(title)) return;
 
-            Interlocked.CompareExchange(ref _activeModel, null, title);
+            // BY VALUE. The same API is used correctly forty lines below -
+            // TakeBannerEnd compares an int, where CompareExchange means
+            // exactly what it reads as. On a string it does not.
+            lock (_modelLock)
+            {
+                if (string.Equals(_activeModel, title, StringComparison.Ordinal))
+                    _activeModel = null;
+            }
         }
 
         /// <summary>
@@ -210,7 +229,8 @@ namespace Heron.Revit.Addin
             // picking the job up is corrected when the banner settles
             // rather than left standing.
             var op = Json.ReadString(request, "op");
-            var model = Volatile.Read(ref _activeModel);
+            string model;
+            lock (_modelLock) { model = _activeModel; }
             _banner.Begin(DescribeJob(op, request), HeronOperationRegistry.Writes(op), model);
 
             lock (_queueLock) { _queue.Enqueue(job); }
@@ -317,7 +337,7 @@ namespace Heron.Revit.Addin
                     // fresh name to announce.
                     document = Json.ReadString(response, "document");
                     if (!string.IsNullOrEmpty(document))
-                        Volatile.Write(ref _activeModel, document);
+                        lock (_modelLock) { _activeModel = document; }
 
                     // THE HONEST END OF THE WORK, and the reason End is not
                     // called back in Dispatch: this is the moment Revit is

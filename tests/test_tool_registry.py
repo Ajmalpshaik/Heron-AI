@@ -182,6 +182,44 @@ def main():
           "RevitWrite names no literal risk level - it reads the registry")
 
     print()
+    print("Everything answered OUTSIDE the gate is a named, READ-risk allow-list")
+    # FRAGMENT-ISSUES section 5b, row 14. RevitOperations.Gate heads itself
+    # with "Every operation, one place, BEFORE any routing. This is what makes
+    # docs/12 section 71 true." BridgeServer answers ping, info and release
+    # itself and returns, before the lease claim and before RequestHandler -
+    # which is the only route to RevitOperations.Run, and therefore to Gate.
+    #
+    # ALL THREE ARE CORRECT AND THE REASON THEY SIT THERE IS GOOD: none
+    # touches a model, all three are declared Read, and they must precede the
+    # lease because "claiming in order to release would renew the very thing
+    # being given up". Nothing is wrong. What was wrong is that there is a
+    # second, unguarded place to add an operation, with a worked precedent of
+    # three and a stated rationale a future author can honestly follow - and
+    # Gate's own justification is "for the sake of the operation nobody has
+    # written yet".
+    #
+    # So the allow-list is named here rather than in a comment: a fourth `if`
+    # added beside them fails this, and a reviewer is asked whether it really
+    # belongs outside the gate.
+    OUTSIDE_THE_GATE = set(["ping", "info", "release"])
+    bridge_cs = io.open(os.path.join(ROOT, "revit", "Heron.Bridge", "BridgeServer.cs"),
+                        encoding="utf-8").read()
+    answered_in_bridge = set(re.findall(r'op\s*==\s*"([A-Za-z_][A-Za-z0-9_]*)"', bridge_cs))
+    unexpected = sorted(answered_in_bridge - OUTSIDE_THE_GATE)
+    check(not unexpected,
+          "BridgeServer answers only %s outside the gate%s"
+          % (", ".join(sorted(OUTSIDE_THE_GATE)),
+             "" if not unexpected else " - and also " + ", ".join(unexpected)))
+    missing = sorted(OUTSIDE_THE_GATE - answered_in_bridge)
+    check(not missing,
+          "and the list is not stale - every name on it is still answered there%s"
+          % ("" if not missing else " (%s is not)" % ", ".join(missing)))
+    for op in sorted(OUTSIDE_THE_GATE):
+        check(declared_cs.get(op) == "READ",
+              "'%s' skips the gate and is declared READ, which the gate would "
+              "have permitted anyway" % op)
+
+    print()
     if FAILURES:
         print("FAILED")
         for f in FAILURES:

@@ -18,17 +18,23 @@ namespace Heron.Revit.Addin
     /// <summary>
     /// The first code in Heron that can change a model.
     ///
-    /// ============================ NEVER RUN ============================
-    /// Written on a machine with no Revit. It COMPILES - Revit 2020 through
-    /// 2024, 0 warnings, since 2026-08-28 - and that is the whole of what is
-    /// known about it. It has never been loaded into Revit and has never
-    /// moved anything.
+    /// ===================== RUN, BUT NOT MEASURED =======================
+    /// IT HAS RUN. NEEDS-CHECKING.md records it against a real model:
+    /// preview_move returned an approval token, move_elements accepted it,
+    /// and the reply was ok: true, moved: 3, blocked: 0, skipped: 0,
+    /// warnings: 0, under a single undo entry reading "Heron: move ducts up
+    /// 200 mm". This banner said "never loaded into Revit and has never
+    /// moved anything" until 2026-09-21, long after that run - and a warning
+    /// a reader can disprove in a minute discredits the half of it that
+    /// still matters. FRAGMENT-ISSUES section 5b, row 9.
     ///
-    /// Compiling proves the API surface agrees. It does not prove that a duct
-    /// moves 200 millimetres rather than 200 feet, and this file is where that
-    /// would happen. Do not point it at a real project until NEEDS-CHECKING.md
-    /// group D has passed - D3 in particular, which is "move them, then MEASURE
-    /// one". HeronPermissions keeps it switched off until then.
+    /// THE HALF THAT STILL MATTERS, UNCHANGED: nobody has put a tape measure
+    /// on the result. Compiling proves the API surface agrees and a reply of
+    /// moved: 3 proves Revit accepted the call; neither proves a duct moved
+    /// 200 millimetres rather than 200 feet, and this file is where that
+    /// would happen. D3 in NEEDS-CHECKING.md - "move them, then MEASURE one"
+    /// - is not struck through. HeronPermissions keeps writing switched off
+    /// until somebody does.
     /// ===================================================================
     ///
     /// It is deliberately shaped to REFUSE rather than to guess. Every check
@@ -292,9 +298,32 @@ namespace Heron.Revit.Addin
             if (!now.SetEquals(preview.Ids))
             {
                 lock (PreviewLock) { _pending = null; }
+
+                // SAY WHAT THE SET CHECK ACTUALLY FOUND, not two counts.
+                // This used to report "it described 247 ducts and there are
+                // now 247", which is the exact case the Preview class says a
+                // count cannot see - one deleted while another was drawn.
+                // A modeller reading a refusal whose reason is two identical
+                // numbers concludes Heron is broken, at the moment it is
+                // protecting them correctly.
+                // FRAGMENT-ISSUES section 5b, row 11.
+                var appeared = 0;
+                foreach (var id in now) if (!preview.Ids.Contains(id)) appeared++;
+                var gone = 0;
+                foreach (var id in preview.Ids) if (!now.Contains(id)) gone++;
+
+                var what = new List<string>(2);
+                if (gone > 0)
+                    what.Add(gone == 1 ? "one of them is gone"
+                                       : gone.ToString(CultureInfo.InvariantCulture) + " of them are gone");
+                if (appeared > 0)
+                    what.Add(appeared == 1 ? "one new one has appeared"
+                                           : appeared.ToString(CultureInfo.InvariantCulture) + " new ones have appeared");
+
                 return Json.Error("model_moved_on",
-                    "The model changed since that preview - it described " + preview.Ids.Count +
-                    " " + preview.Category + " and there are now " + now.Count +
+                    "The model changed since that preview. It described " +
+                    preview.Ids.Count.ToString(CultureInfo.InvariantCulture) + " " +
+                    preview.Category + ", and " + string.Join(", and ", what.ToArray()) +
                     ". Nothing was changed. Ask again to see the current picture.");
             }
 
@@ -313,6 +342,10 @@ namespace Heron.Revit.Addin
             // Filled in by Verify. Declared out here because the answer has to
             // outlive the transaction that produced it.
             int reallyMoved = 0, partly = 0, blocked = 0, unverified = 0;
+
+            // WHICH ones, not just how many. Filled in by Verify alongside
+            // the counts, and read by the audit record below.
+            var verdicts = new Verdicts();
 
             // GOLDEN RULE 16. ONE group, named, so the whole thing is a single
             // entry in Revit's undo stack whatever happened inside it. The
@@ -346,7 +379,8 @@ namespace Heron.Revit.Addin
                         doc.Regenerate();
 
                         Verify(doc, movable, before, up,
-                               out reallyMoved, out partly, out blocked, out unverified);
+                               out reallyMoved, out partly, out blocked, out unverified,
+                               verdicts);
 
                         if (transaction.Commit() != TransactionStatus.Committed)
                         {
@@ -398,7 +432,13 @@ namespace Heron.Revit.Addin
             // meaningful inside one open document, and the log outlives the
             // session. A UniqueId identifies the element across saves, and
             // across the central file.
-            HeronAudit.Record(workflow, "move_elements", true, new[]
+            // WHICH ONES MOVED, and - only when they differ - which ones did
+            // not. In the ordinary case every attempted element moved, so
+            // `elements` is exactly what it always was and nothing is added.
+            // When it is not the ordinary case, the record says so by name
+            // rather than leaving a reader to infer it from five counts.
+            // FRAGMENT-ISSUES section 5b, row 12.
+            var record = new List<KeyValuePair<string, string>>
             {
                 new KeyValuePair<string, string>("document", doc.Title),
                 new KeyValuePair<string, string>("documentId", preview.DocumentKey),
@@ -414,9 +454,26 @@ namespace Heron.Revit.Addin
                 new KeyValuePair<string, string>("millimetres", preview.MillimetresUp.ToString("0.###", CultureInfo.InvariantCulture)),
                 new KeyValuePair<string, string>("warnings", handler.Count.ToString(CultureInfo.InvariantCulture)),
                 new KeyValuePair<string, string>("undoEntry", name),
-                new KeyValuePair<string, string>("elements", UniqueIds(doc, movable)),
+                new KeyValuePair<string, string>("elements", UniqueIds(doc, verdicts.Moved)),
                 new KeyValuePair<string, string>("skippedElements", UniqueIds(doc, skipped)),
-            });
+            };
+
+            if (verdicts.Moved.Count != movable.Count)
+            {
+                record.Add(new KeyValuePair<string, string>(
+                    "attemptedElements", UniqueIds(doc, movable)));
+                if (verdicts.Partly.Count > 0)
+                    record.Add(new KeyValuePair<string, string>(
+                        "partlyElements", UniqueIds(doc, verdicts.Partly)));
+                if (verdicts.Blocked.Count > 0)
+                    record.Add(new KeyValuePair<string, string>(
+                        "blockedElements", UniqueIds(doc, verdicts.Blocked)));
+                if (verdicts.Unverified.Count > 0)
+                    record.Add(new KeyValuePair<string, string>(
+                        "unverifiedElements", UniqueIds(doc, verdicts.Unverified)));
+            }
+
+            HeronAudit.Record(workflow, "move_elements", true, record);
 
             return Json.Ok(
                 Json.Num("moved", reallyMoved),
@@ -608,10 +665,26 @@ namespace Heron.Revit.Addin
         /// report, not a failure - and rolling back the ones that DID move
         /// because one did not would be its own surprise.
         /// </summary>
+        /// <summary>
+        /// What Verify found, element by element - the answer it has always
+        /// worked out and used to discard.
+        ///
+        /// Four lists rather than a dictionary because the audit writes them
+        /// as four lists, and because every element lands in exactly one.
+        /// </summary>
+        private sealed class Verdicts
+        {
+            public readonly List<ElementId> Moved = new List<ElementId>();
+            public readonly List<ElementId> Partly = new List<ElementId>();
+            public readonly List<ElementId> Blocked = new List<ElementId>();
+            public readonly List<ElementId> Unverified = new List<ElementId>();
+        }
+
         private static void Verify(Document doc, IList<ElementId> ids,
                                    Dictionary<ElementId, XYZ> before, XYZ asked,
                                    out int moved, out int partly,
-                                   out int blocked, out int unverified)
+                                   out int blocked, out int unverified,
+                                   Verdicts verdicts)
         {
             moved = 0; partly = 0; blocked = 0; unverified = 0;
 
@@ -630,12 +703,25 @@ namespace Heron.Revit.Addin
                 var now = ProbePoint(doc.GetElement(id));
                 XYZ was;
 
-                if (askedForNothing) { moved++; continue; }
-                if (now == null || !before.TryGetValue(id, out was)) { unverified++; continue; }
+                // EVERY BRANCH ALSO KEEPS THE ID. It used to keep only the
+                // count, and the audit then wrote the list of ids it had
+                // ATTEMPTED under a comment promising which ones MOVED. The
+                // counts in that record are scrupulous about the difference -
+                // moved, attempted, partly, blocked and unverified are five
+                // fields precisely because "an audit that says moved 5 when 5
+                // did not budge is worse than no audit" - and the id list
+                // then threw the same distinction away, in the one record
+                // that exists to answer "WHICH ducts did it move?".
+                // FRAGMENT-ISSUES section 5b, row 12.
+                if (askedForNothing) { moved++; verdicts.Moved.Add(id); continue; }
+                if (now == null || !before.TryGetValue(id, out was))
+                {
+                    unverified++; verdicts.Unverified.Add(id); continue;
+                }
 
-                if (now.DistanceTo(was) < tolerance) blocked++;
-                else if (now.DistanceTo(was + asked) > tolerance) partly++;
-                else moved++;
+                if (now.DistanceTo(was) < tolerance) { blocked++; verdicts.Blocked.Add(id); }
+                else if (now.DistanceTo(was + asked) > tolerance) { partly++; verdicts.Partly.Add(id); }
+                else { moved++; verdicts.Moved.Add(id); }
             }
         }
 
@@ -788,9 +874,26 @@ namespace Heron.Revit.Addin
             // but falling back to the path is cheaper than a null reference
             // inside a refusal that exists to keep the user safe.
             var info = doc.ProjectInformation;
-            var identity = info == null ? "no-project-info" : info.UniqueId;
 
-            return identity + "|" + (doc.PathName ?? "") + "|" + doc.Title;
+            // IDENTITY ALONE, BECAUSE THAT IS WHAT IDENTITY IS FOR. This used
+            // to append the path and the title, which took back the one
+            // property the docstring above claims: a Save As inside the
+            // two-minute preview window changed the key, IsStillOpen then
+            // found no match, and the user was told their model "has been
+            // closed since that preview" while it sat open in front of them
+            // under a new name. The title and the path are carried on the
+            // Preview separately, for the wording, so nothing is lost here.
+            // FRAGMENT-ISSUES section 5b, row 13.
+            if (info != null) return info.UniqueId;
+
+            // ProjectInformation is present in every project document. A
+            // family document has none, and Heron does not write to those -
+            // but falling back to the path is cheaper than a null reference
+            // inside a refusal that exists to keep the user safe. The path is
+            // all there is here, so this one key IS location, and two unsaved
+            // family documents can collide. Said out loud rather than hidden:
+            // it is the branch Heron never takes.
+            return "no-project-info|" + (doc.PathName ?? "") + "|" + doc.Title;
         }
 
         /// <summary>

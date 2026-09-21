@@ -419,7 +419,20 @@ namespace Heron.Bridge
 
         // ----------------------------------------------------------- escaping
 
-        private static string Escape(string value)
+        /// <summary>
+        /// One escaper for the whole assembly.
+        ///
+        /// INTERNAL RATHER THAN PRIVATE SINCE 2026-09-21. BridgeIdentity, in
+        /// this same assembly and this same namespace, carried its own copy
+        /// that handled only the backslash and the double quote - so a
+        /// newline or a control character in any value would have written a
+        /// discovery file that is not JSON, and the discovery file is what
+        /// every client reads to find Revit. Nothing untrusted reaches it
+        /// today, and that was checked; the defect is the second definition,
+        /// which is the same drift HeronPermissions warns about in its own
+        /// words. FRAGMENT-ISSUES section 5b, row 21.
+        /// </summary>
+        internal static string Escape(string value)
         {
             if (string.IsNullOrEmpty(value)) return string.Empty;
 
