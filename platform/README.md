@@ -51,8 +51,15 @@ references — it sits at the bottom of the stack like everything in this folder
 It pins `net8.0` rather than following the Revit release, because it installs **for** a release without
 ever loading into one.
 
-> **Everything it DECIDES is tested; nothing it DOES has run.** 38 checks pass against a fake Revit and
-> a fake deployer. No file has been written and no PowerShell has executed — that needs Windows.
+> **Everything it DECIDES is tested; nothing it DOES has run.** No file has been written and no
+> PowerShell has executed — that needs Windows. **How many checks that is, derive it** rather than
+> reading a number here:
+>
+> ```bash
+> dotnet run --project tests/Heron.Installer.TestHost -c Release | grep -c '^  ok '
+> ```
+>
+> This line typed **38** until 2026-09-21 and nothing measurable matched it — row 5b-81.
 
 ### `Heron.Installer.App` — BUILT, NOT SEEN
 
@@ -71,8 +78,9 @@ fails if the window names a product, asks a product anything, or grows an Update
 **No XAML.** [`revit/Heron.Revit.Addin`](../revit/Heron.Revit.Addin/) builds its windows in C# too.
 
 > **No pixel has been drawn.** It compiles on all eight releases with 0 warnings. Whether the window
-> appears, is readable, and installs anything is owed on a Windows PC — `AB1` to `AB7` in
-> [NEEDS-CHECKING](../docs/NEEDS-CHECKING.md).
+> appears, is readable, and installs anything is owed on a Windows PC — **Group `AB`** in
+> [NEEDS-CHECKING](../docs/NEEDS-CHECKING.md). **The group is named rather than its range**, because
+> `AB8` was added on 2026-09-21 and this line still said `AB1` to `AB7` an hour later.
 
 ## What will be here
 

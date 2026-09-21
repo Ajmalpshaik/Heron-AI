@@ -47,7 +47,27 @@ namespace Heron.Installer
         internal sealed class Result
         {
             public int ExitCode;
+
+            /// <summary>
+            /// What the script said on BOTH streams, for a sentence to a
+            /// person. Never parse this - see StandardOutput.
+            /// </summary>
             public string Output;
+
+            /// <summary>
+            /// The standard output stream ALONE.
+            ///
+            /// KEPT APART BECAUSE ONE BUFFER CANNOT SERVE BOTH READERS.
+            /// DeployScriptDeployer wants the transcript, the way the user
+            /// would have seen it. PowerShellRevitEnvironment.Look() parses
+            /// its answer as JSON, and a single line on standard error -
+            /// which deploy-addin.ps1 guarantees on any failure, because it
+            /// sets $ErrorActionPreference = "Stop" - lands in the middle of
+            /// that JSON and makes it unreadable. The window then says no
+            /// Revit was found on a PC that has three.
+            /// </summary>
+            public string StandardOutput;
+
             public bool Started;
         }
 
@@ -74,7 +94,8 @@ namespace Heron.Installer
             foreach (var a in arguments) start.ArgumentList.Add(a);
 
             var result = new Result();
-            var text = new StringBuilder();
+            var outText = new StringBuilder();
+            var errText = new StringBuilder();
 
             try
             {
@@ -83,16 +104,53 @@ namespace Heron.Installer
                     if (process == null) return result;
                     result.Started = true;
 
-                    text.Append(process.StandardOutput.ReadToEnd());
-                    text.Append(process.StandardError.ReadToEnd());
+                    // BOTH STREAMS ARE READ AT ONCE, AND THAT IS NOT A STYLE
+                    // CHOICE. Reading one to the end and then the other
+                    // deadlocks: a pipe holds a few kilobytes, and a child
+                    // that fills the one nobody is reading blocks there and
+                    // never closes the other, so the read never returns.
+                    //
+                    // The timeout below does NOT save it, because the thread
+                    // is stuck inside the read and has not reached the wait.
+                    // MEASURED on 2026-09-21, same pattern, same runtime:
+                    // 8 KB on standard error returned in 0.0s; 200 KB never
+                    // returned at all and a 10-second ceiling never fired.
+                    // See FRAGMENT-ISSUES row 5b-78.
+                    //
+                    // deploy-addin.ps1 is the caller that reaches it: 578
+                    // lines, $ErrorActionPreference = "Stop", and a Revit
+                    // that refuses a file produces a PowerShell error record
+                    // on standard error while Write-Host is still filling
+                    // standard output. That is an installer window hung with
+                    // no ceiling, on the one path where something went wrong.
+                    process.OutputDataReceived += delegate (object s, DataReceivedEventArgs e)
+                    {
+                        if (e.Data != null) outText.AppendLine(e.Data);
+                    };
+                    process.ErrorDataReceived += delegate (object s, DataReceivedEventArgs e)
+                    {
+                        if (e.Data != null) errText.AppendLine(e.Data);
+                    };
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
 
                     if (!process.WaitForExit(Math.Max(1, timeoutSeconds) * 1000))
                     {
                         try { process.Kill(true); } catch { /* already gone */ }
                         result.ExitCode = -1;
-                        result.Output = text + "\nIt did not finish in time.";
+                        result.StandardOutput = outText.ToString();
+                        result.Output = Both(outText, errText) + "\nIt did not finish in time.";
                         return result;
                     }
+
+                    // THE SECOND WAIT IS REQUIRED, not belt and braces. The
+                    // one that takes a timeout returns as soon as the process
+                    // is gone, which can be before the reader has handed over
+                    // the last of what it read; the one that takes none waits
+                    // for the streams as well. Without it the tail of the
+                    // answer goes missing at random - and a JSON answer with
+                    // its tail missing does not parse.
+                    process.WaitForExit();
 
                     result.ExitCode = process.ExitCode;
                 }
@@ -105,8 +163,14 @@ namespace Heron.Installer
                 return result;
             }
 
-            result.Output = text.ToString();
+            result.StandardOutput = outText.ToString();
+            result.Output = Both(outText, errText);
             return result;
+        }
+
+        private static string Both(StringBuilder outText, StringBuilder errText)
+        {
+            return outText.ToString() + errText.ToString();
         }
     }
 
@@ -216,7 +280,7 @@ namespace Heron.Installer
 
             try
             {
-                using (var doc = JsonDocument.Parse(run.Output))
+                using (var doc = JsonDocument.Parse(run.StandardOutput))
                 {
                     var answer = new Answer();
 

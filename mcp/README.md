@@ -15,7 +15,7 @@
 |---|---|
 | `client/` | Bridge discovery and the pipe client. Finds connected Revits, verifies each answers |
 | `server/` | The MCP server — Step 3 |
-| [`server/heron_brain.py`](server/heron_brain.py) | **The one place this side reaches `brain/`** — Step 14. Three tools stand on it: what Heron knows how to do, who provides a capability, and which capability a sentence needs |
+| [`server/heron_brain.py`](server/heron_brain.py) | **The one place this side reaches `brain/`** — Step 14. It started with three tools on it — what Heron knows how to do, who provides a capability, and which capability a sentence needs — and there are more now. **Derive how many** rather than reading a figure here: `grep -c 'brain\.' server/heron_mcp_server.py` counts the calls, and the tools are the `@server.tool()` functions around them. It said *three* until 2026-09-21, when it was ten — row 5b-82 |
 
 ## Rules for this folder
 

@@ -283,18 +283,46 @@ namespace Heron.Installer.TestHost
                   "leaving exactly the one pair that can really be installed");
 
             Console.WriteLine();
-            Console.WriteLine("A release that is ticked but not on the PC, and one that is not ticked");
+            Console.WriteLine("A release ticked but not on the PC, one the product cannot use,");
+            Console.WriteLine("and one on the PC nobody ticked - told apart, in one plan");
+            //
+            // piece-one supports 2024 and 2025. This PC has 2024 and 2027.
+            // Ticked: 2024, 2025, 2026. So one of each case falls out, and
+            // 2026 is the one that used to come back wrong.
             var mixed = InstallPlan.Build(manifest, new[] { "piece-one" },
-                                          new[] { "2024", "2026" },
-                                          new[] { "2024", "2025" });
-            var absent = SkipFor(mixed, "piece-one", "2026");
+                                          new[] { "2024", "2025", "2026" },
+                                          new[] { "2024", "2027" });
+
+            var absent = SkipFor(mixed, "piece-one", "2025");
             Check(absent != null && absent.Reason == SkipReason.ReleaseNotInstalled,
                   "ticking a Revit that is not installed is skipped, not attempted");
-            var untouched = SkipFor(mixed, null, "2025");
+            Check(Names(absent.Explanation, "Install Revit 2025 first"),
+                  "and it says to install that Revit, which here really would help");
+
+            // THE CASE THAT USED TO GIVE ADVICE THAT CANNOT WORK. 2026 is
+            // neither on this PC nor supported by the product, and until
+            // 2026-09-21 the plan answered "Revit 2026 is not installed on
+            // this PC ... Install Revit 2026 first" - which would change
+            // nothing, because piece-one does not run on 2026 either. The
+            // old version of THIS suite pinned that sentence. Row 5b-80.
+            var neither = SkipFor(mixed, "piece-one", "2026");
+            Check(neither != null && neither.Reason == SkipReason.ReleaseNotSupported,
+                  "a release that is BOTH absent and unsupported reads as "
+                  + "unsupported - the stronger reason, and the only honest one");
+            Check(Names(neither.Explanation, "does not support Revit 2026", "2024, 2025"),
+                  "and it names what the product DOES support instead of "
+                  + "telling somebody to install a Revit that will not help");
+            Check(!Names(neither.Explanation, "Install Revit 2026 first"),
+                  "so the instruction that cannot work is not given at all");
+
+            var untouched = SkipFor(mixed, null, "2027");
             Check(untouched != null && untouched.Reason == SkipReason.ReleaseNotChosen,
                   "a Revit on the PC that was NOT ticked is reported too");
             Check(Names(untouched.Explanation, "not ticked"),
                   "so nobody opens it next week wondering where Heron went");
+
+            Check(mixed.Steps.Count == 1 && mixed.Steps[0].ToString() == "piece-one for Revit 2024",
+                  "and exactly one pair survives all three");
 
             Console.WriteLine();
             Console.WriteLine("It WAITS for Revit, it does not work around it - R-38a");
