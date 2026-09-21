@@ -17,7 +17,10 @@ Used carelessly, it can damage a model you are about to deliver.
 - **Never use it for the first time on a live deliverable.** Try it on a test model.
 - **Verify every change before issuing.** Heron shows you what it did — check it.
 - **Use the preview.** Heron will tell you what an operation will affect before it runs. Read it.
-- **Know how to undo.** Every Heron change is a single entry in Revit's undo stack, by design.
+- **Know how to undo.** Every Heron change is a single entry in Revit's undo stack **for one
+  document**, by design ([Golden Rule 16](docs/14-golden-rules.md)). Revit's own API cannot span two,
+  so a job touching two models can never be one Ctrl+Z - nothing in Heron writes to two today, and a
+  job that would will say so before it starts.
 
 ## On worksharing / central models
 
@@ -27,12 +30,30 @@ Used carelessly, it can damage a model you are about to deliver.
 
 ## What Heron sends where
 
-Heron uses AI models to understand what you ask for. Depending on how it is configured, some of what
-you ask — and some model context — may be sent to an AI provider for processing.
+Heron uses AI models to understand what you ask for. **Heron's replies are the conversation**, so what
+it says about your model reaches the AI provider by design. That is not a setting, and there is no
+switch that turns it off.
 
-**If you work under a confidentiality agreement, check your project's configuration before use.**
-Heron supports a local-only mode for restricted projects. If you are unsure whether your project
-permits cloud AI processing, ask before you use it, not after.
+**The model file never leaves your machine.** A `.rvt`, an `.rfa`, a family or a project template is
+never uploaded — [D-26](docs/DECISIONS.md), and it is the line the owner drew in his own words: not
+*nothing may travel*, but *the file may not travel*. Embeddings are computed locally
+([D-24](docs/DECISIONS.md)), and a Heron tool answers a question rather than returning the model.
+
+**Everything else about the work travels.** Project names, file names, element counts, sizes,
+parameter values, engineering reasoning and generated code go to the provider like anything else you
+would type to an assistant. **Identifiers are not redacted first** — [Q-40](docs/OPEN-QUESTIONS.md)
+asked whether they should be, and the answer was no.
+
+**There is no local-only mode, and there is no per-project configuration to check.**
+[12 §4](docs/12-security-and-permissions.md) set out three positions — cloud only, local only, hybrid
+per project — and the decision took **none of them**; it drew the line at the file instead. Every
+setting Heron understands is declared in one place, `Defaults` in
+[`HeronConfig.cs`](platform/Heron.Core/HeronConfig.cs), and not one of them is about what may leave
+the machine. **This section promised a local-only mode until 2026-09-21, and there has never been
+one** ([row 5b-53](docs/FRAGMENT-ISSUES.md)).
+
+**So a confidentiality agreement is a decision about the project, not a setting to change.** Ask
+before you use Heron on it, not after.
 
 See [docs/12-security-and-permissions.md](docs/12-security-and-permissions.md).
 
@@ -61,11 +82,23 @@ process, or your obligations under the project's information requirements.
 
 ## On AI-generated code
 
-Heron can generate new automation. Generated code is tested in a sandbox and reviewed before it is
-allowed near a live model, and requires human approval before it becomes production capability.
+Heron can generate new automation. A newly built agent's first run is **watched, not contained**: it
+is handed a world whose Revit door and production scopes are shut, every attempt to open one is
+written down, and the run is marked so it can never count as evidence toward promotion. Human
+approval is still required before anything becomes production capability, and nothing generated has
+ever run near a model.
 
-That process reduces risk. It does not eliminate it. Treat newly generated tools with the same
-scepticism you would give a script a colleague wrote yesterday.
+**That is most of the value and none of the guarantee, and saying so is deliberate.** The agent runs
+as ordinary Python in the supervising process. One that cooperates is held; one that calls `open()`,
+imports the bridge or reaches into globals is not stopped by anything. Building the wall means a
+separate process with the ambient capabilities removed, and that is **not built** —
+[D-84](docs/DECISIONS.md) chose *keep what exists, build no subprocess, and take the word out*, for
+exactly this reason. **This section said *"tested in a sandbox"* until 2026-09-21, which is the
+promise that decision withdrew** ([row 5b-52](docs/FRAGMENT-ISSUES.md)).
+
+What it does catch is the honest accident — a new agent reaching for Revit because nobody told it not
+to — and that is most of them. Treat newly generated tools with the same scepticism you would give a
+script a colleague wrote yesterday.
 
 ---
 
