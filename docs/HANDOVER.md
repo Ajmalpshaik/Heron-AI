@@ -124,6 +124,40 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-21 — A POINTER TO A FILE THAT DOES NOT EXIST, AND IT IS THE DOCUMENTED DEAD END
+
+**[Row 5b-99](FRAGMENT-ISSUES.md). FIXED.** Found reading
+[#242](https://github.com/Ajmalpshaik/Heron-AI/pull/242) — *one build folder per Revit release* — which
+landed while this branch was open and turned three ledger marks STALE. **Reading it was the point; the
+stale marks are what made me do it.**
+
+`tools/deploy-addin.ps1` said *"that is the whole point of **Directory.Build.targets**"*. **There is no
+`Directory.Build.targets` in this repository.** Only `Directory.Build.props` — which the same script
+names correctly **five other times, one of them five lines earlier**.
+
+**And the file it should have named says in capitals why the other is wrong**: *"IT MUST BE SET HERE,
+IN .props, AND NOT IN A .targets FILE"*, with the measurement — setting `OutputPath` from a `.targets`
+file left `OutDir` **and** `ProjectDepsFilePath` pointing at the flat folder, so the build wrote its
+assemblies to one place and its `deps.json` to another and **Revit 2027 would not load**. That
+paragraph ends *"Both dead ends are written into the comment so the next person does not walk them
+again."* **The one wrong pointer, added in the same commit, sends that next person down one of them**
+— and finding nothing there, they cannot tell a typo from a file somebody forgot to commit.
+
+**The check is derived rather than pinned to a name.** `tests/test_deploy_script.py` collects every
+`Directory.Build.<something>` the script mentions and asserts each one **exists**. **Shown to fail: 1
+check**, and it names the file.
+
+**The rest of #242 was read and is sound.** The split is by **Revit release, not target framework** —
+2021 to 2024 all build `net48` but `DefineConstants` makes them different builds, and a per-framework
+split would let a 2021 build install into 2024 in silence, which is `A12`'s class of defect. The
+flat-layout fallback is safe because the runtime guard reads the assembly. **The comment recording
+that four installs failed in a row before this was fixed is the best part of that commit** and is
+untouched.
+
+> **A stale mark is a reading queue, and it is a good one.** Three files went stale because somebody
+> else changed them; reading why produced a row. When `--stale` is not empty, that is the work, not an
+> annoyance to clear.
+
 ### 2026-09-21 (later still) — ONE FILE THAT STATES A FACT AND THEN DISPROVES IT
 
 **[Row 5b-98](FRAGMENT-ISSUES.md). FIXED.** `brain/heron_context.py`, the **eleventh** live-path brain
@@ -169,10 +203,9 @@ I wrote into `heron-ship` §2a this morning, and still had to learn again in the
 tables, the three exceptions, `assemble` and `_standard_parts`; the `Untrusted` screen, `Part`,
 `Context`, `_generation_parts`, the tier splitters and `report` are **not** read).
 
-**Three marks went STALE and are owed a read**: `.gitignore`, `Directory.Build.props` and
-`tools/deploy-addin.ps1`, all changed by
-[#242](https://github.com/Ajmalpshaik/Heron-AI/pull/242) — *one build folder per Revit release*, which
-landed while this branch was open and has **not** been read.
+**Three marks went STALE** — `.gitignore`, `Directory.Build.props` and `tools/deploy-addin.ps1`, all
+changed by [#242](https://github.com/Ajmalpshaik/Heron-AI/pull/242). **Read and cleared in the same
+sitting; see [row 5b-99](FRAGMENT-ISSUES.md) below.**
 
 ### 2026-09-21 (after the real-Revit run) — TWO THINGS #235 PROVED THAT NOTHING WAS HOLDING
 

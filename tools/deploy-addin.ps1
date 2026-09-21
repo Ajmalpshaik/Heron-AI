@@ -330,7 +330,8 @@ if ($Remove) {
 # build detail this script should not have to know.
 #
 # THE RELEASE IS PART OF THE PATH SINCE 2026-09-21, and that is the whole
-# point of Directory.Build.targets: each release builds into its own folder,
+# point of the OutputPath block in Directory.Build.props: each release builds
+# into its own folder,
 # so 2020, 2024 and 2027 can all be on disk at once and one press of Install
 # can deploy every one of them. Before that they overwrote each other and only
 # the last built could be installed - the owner hit it four times in a row.
