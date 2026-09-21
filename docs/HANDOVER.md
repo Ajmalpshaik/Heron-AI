@@ -124,6 +124,53 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-21 — PICKING THE TARGET BY MEASUREMENT, AND TRACING INSTEAD OF GREPPING
+
+**[Row 5b-101](FRAGMENT-ISSUES.md). FIXED.** Two methods changed here and both are worth keeping.
+
+**THE TARGET WAS CHOSEN BY MEASUREMENT, NOT BY ORDER.** For every module transitively reachable from
+`mcp/`, count the distinct suites that import it against its public surface. `brain/heron_ground.py`
+came out thinnest by a distance — **1,115 lines, 12 public functions, 2 suites** — and that is where
+the row was. **Re-run that measurement rather than reading `brain/` alphabetically**; the command is
+in the row's own commit.
+
+**AND THE FINDING WAS FOUND BY TRACING, NOT BY GREPPING.** `cited_ids(draft)` pulls the chunk ids a
+draft cites so the MCP seam can look each up **by id** — which that file calls *"the one lookup whose
+answer cannot depend on a score"*. A marker it misses is a real clause never carried, and the citation
+then resolves to nothing.
+
+`sys.settrace` over all four suites that import the module: **33 of its functions execute in
+`test_review_findings` alone, and `cited_ids` is not one of them in any of the four.** Its only
+coverage asserted the **string** `"cited_ids"` appears in `heron_brain`'s source — **[row
+5b-100](FRAGMENT-ISSUES.md)'s shape exactly, one module along.**
+
+**MY OWN MEASUREMENT WAS WRONG TWICE BEFORE THE TRACE.**
+
+| attempt | said | truth |
+|---|---|---|
+| count call sites | **6 of 12** public functions uncalled | — |
+| trace execution | — | **1 of 12** |
+| first scan | the suite called **nothing** | it kept only the LAST `import heron_ground` alias, and a bare one at line 245 overwrote the `as G` at line 90 |
+
+**Shape is not behaviour, and a call site is not an execution.** `check()` reaches almost every
+function internally, so counting names who call it overstates the gap by six. The trace is twenty
+lines and settles it:
+
+```python
+def tracer(frame, event, arg):
+    if event == "call" and frame.f_code.co_filename == target:
+        ran.add(frame.f_code.co_name)
+sys.settrace(tracer); runpy.run_path("tests/<suite>.py", run_name="__main__")
+```
+
+**Use it before writing a row about coverage.** Rows [5b-86](FRAGMENT-ISSUES.md),
+[5b-92](FRAGMENT-ISSUES.md) and [5b-95](FRAGMENT-ISSUES.md) were all a scan being wrong about a shape;
+this is the first time in the session the trace was run instead, and it changed the answer.
+
+**Shown to fail against two realistic regressions**, not invented ones: tightening `cited_ids` to
+hex-only ids — the obvious *tidy this up* edit — **4 red**; a neater `[^\]]*` regex that forgets the
+whitespace rule, **2 red**.
+
 ### 2026-09-21 — heron_retrieve: A NEGATIVE RESULT, AND A FINDING NOT WRITTEN
 
 **Started `brain/heron_retrieve.py` (1,329 lines, never read) and it is the first live-path module
