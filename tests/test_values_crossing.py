@@ -36,21 +36,46 @@ it. That needs a model - see the fragment-proving skill and D-30.
     python tests/test_values_crossing.py
 """
 
+import io
 import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 
-try:
-    import heron_mcp_server as server
-except BaseException as exc:                                 # noqa: BLE001
-    # BaseException rather than ImportError on purpose: an MCP SDK that is
-    # importable but panicking raises out of pyo3, which ImportError misses.
-    print("COULD_NOT_RUN - the MCP server module would not import here.")
-    print("  %s: %s" % (type(exc).__name__, exc))
-    print("  pip install --user mcp  (and --upgrade cryptography cffi if it panics)")
-    sys.exit(3)
+# IT READS THE FUNCTION RATHER THAN IMPORTING THE MODULE, and that is the
+# difference between a suite CI runs and one it excuses. `import
+# heron_mcp_server` needs the MCP SDK, which gates.yml leaves out on purpose -
+# so an importing version of this suite exits 3 on CI, lands in "could not run",
+# and has to be added to the not-runnable list to stay green. A suite on that
+# list never runs where it matters, which for a regression guard is the same as
+# not existing. Measured the expensive way on 2026-09-22: the first version of
+# this file turned main red for exactly that reason.
+#
+# Reading the source as text is the technique test_tool_registry.py already
+# uses to compare the C# registry against the Python one, and for the same
+# reason: the thing under test cannot be imported here.
+
+
+def packer():
+    """`_values_array` lifted out of the server, or None if it has moved."""
+    try:
+        text = io.open(SERVER, encoding="utf-8").read()
+    except OSError:
+        return None
+    nl = chr(10)
+    opens = nl + "def _values_array(values):"
+    closes = nl + "    return out" + nl
+    start = text.find(opens)
+    if start < 0:
+        return None
+    end = text.find(closes, start)
+    if end < 0:
+        return None
+    namespace = {}
+    exec(text[start + 1:end + len(closes)], namespace)        # noqa: S102
+    return namespace.get("_values_array")
+
 
 FAILURES = []
 
@@ -69,7 +94,7 @@ def main():
 
     # ASK BEFORE CALLING, so a renamed helper is one clean failure rather than
     # an AttributeError that replaces every check below it with a traceback.
-    pack = getattr(server, "_values_array", None)
+    pack = packer()
     check(pack is not None, "the server still has a helper that packs `values`")
     if pack is None:
         print()
