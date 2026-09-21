@@ -76,14 +76,32 @@ So the request text crosses verbatim, and compression - when somebody builds
 it - may operate on the RETRIEVED parts and must never touch `request`. That
 constraint is asserted in tests/test_context.py rather than promised here.
 
-A PATH WHOSE SOURCE DOES NOT EXIST IS REFUSED BY NAME
-------------------------------------------------------
+A PATH WHOSE SOURCE DOES NOT EXIST IS REFUSED BY NAME, AND THE REFUSAL NARROWS
+-------------------------------------------------------------------------------
 STANDARDS asks for "the specific standard clauses cited, not the whole
-standard". A scope store holds `fragments` and `meta` and no clause table -
-read from heron_scope, not assumed. So that path raises and says which source
-is missing, rather than returning a packet that is silently three-quarters of
-what it claims to be. Degrading quietly is how a caller comes to trust a
-smaller answer than it asked for.
+standard", and a path that cannot cite refuses rather than returning a packet
+that is silently three-quarters of what it claims to be. Degrading quietly is
+how a caller comes to trust a smaller answer than it asked for.
+
+WHAT THIS PARAGRAPH USED TO SAY, AND WHY IT NO LONGER DOES. It said "a scope
+store holds `fragments` and `meta` and no clause table - so that path raises".
+That was true when it was written and the store outgrew it: `heron_ingest`
+creates `documents` and `chunks` in the same store, and a scope store now holds
+FOUR tables - measured, not assumed. `_standard_parts` had already followed
+R-45 and narrowed; this header had not, and the two docstrings in this one file
+disagreed.
+
+THE FOUR STATES, which is what R-45 is actually about:
+
+    nothing ingested        refuse, and say the store is empty
+    ingested, not indexed   refuse, and say the searchable text is not built
+    indexed, no match       refuse, and say nothing indexed COVERS this
+    a match                 carry the clauses, each with its citation
+
+The refusal NARROWS as the store fills and must never SOFTEN into an answer -
+and, just as much, must STOP once there is a clause to cite. All four states
+are reachable without Revit and without an optional dependency, and
+tests/test_context.py s9 walks three of them end to end. Row 5b-98.
 """
 
 import os

@@ -489,6 +489,95 @@ def main():
             check(CONTEXT.REQUEST in CONTEXT.BUDGET[CONTEXT.CACHED],
                   "every path carries the request - there is no path that "
                   "forwards a question without the question")
+
+            print()
+            print("9. R-45: the STANDARDS refusal NARROWS, and then stops")
+            # LAST ON PURPOSE - it ingests and indexes, which changes the
+            # store for anything after it.
+            #
+            # Section 3 proves the refusal on an EMPTY store, and until now
+            # that was the ONLY one proved. R-45 is about what happens as the
+            # store fills: the refusal must narrow to "nothing indexed covers
+            # this" and must NOT soften into an answer - and, just as much,
+            # must STOP once there is a clause to cite. A break that refused
+            # for ever would have passed every check in this suite.
+            #
+            # All three states are reachable on Linux with no optional
+            # dependency. Measured 2026-09-21. Row 5b-98.
+            import heron_ingest as INGEST
+            import heron_embed as EMBED
+
+            paper = os.path.join(home, "qcs-21.md")
+            io.open(paper, "w", encoding="utf-8").write(
+                u"# QCS 2014 Section 21\n\nClause 21.3.4: ductwork shall be "
+                u"insulated to a minimum of 30 mm where it passes through "
+                u"unconditioned space.\n")
+
+            INGEST.ensure_tables(store)
+            INGEST.ingest(store, paper, added_by="tests/test_context.py",
+                          source_trust="company")
+
+            # INGESTED, NOT INDEXED - a different nothing from an empty store,
+            # and the module's own comment records that this branch once told
+            # it as the wrong one.
+            raised = None
+            try:
+                CONTEXT.assemble(store, "duct insulation",
+                                 path=CONTEXT.STANDARDS)
+            except CONTEXT.SourceMissing as why:
+                raised = str(why)
+            check(raised is not None,
+                  "a document ingested but not indexed STILL refuses")
+            # THE PHRASE HAS TO BE THE BRANCH'S OWN. "NOT INDEXED" alone
+            # passed when this branch was disabled entirely, because the
+            # fallback refusal appends answer.note and the note says
+            # "ingested and NOT INDEXED" too. A check that matches the note
+            # is not checking the branch. Measured while proving this
+            # section: the softening regression stayed GREEN until this was
+            # tightened. Row 5b-98.
+            said = (raised or "").upper()
+            check("INGESTED BUT NOT INDEXED" in said,
+                  "and it is the INGESTED-BUT-NOT-INDEXED refusal, in those "
+                  "words, not a neighbouring one that mentions indexing")
+            check("NO DOCUMENT IS INDEXED" not in said,
+                  "not the empty-store one, which is a different nothing and "
+                  "was once told as this one")
+            check("NOTHING INDEXED COVERS THIS" not in said,
+                  "and not the nothing-matched one either, which would say "
+                  "the search ran when it never did")
+
+            # AND NOW IT STOPS REFUSING, which is the half nothing held.
+            SEARCH.index_chunks(store)
+            EMBED.index_chunks(store)
+            # CAUGHT, NOT LET OUT. The regression this step exists for is a
+            # refusal that never stops - and a refusal is an EXCEPTION here,
+            # so calling assemble bare would end the run on a traceback and
+            # report none of the checks below. .claude/skills/heron-ship s2a.
+            packet, still_refusing = None, None
+            try:
+                packet = CONTEXT.assemble(store, "duct insulation",
+                                          path=CONTEXT.STANDARDS)
+            except CONTEXT.SourceMissing as why:
+                still_refusing = str(why)
+            check(still_refusing is None,
+                  "with the chunks indexed, the STANDARDS path ANSWERS "
+                  "rather than refusing%s"
+                  % ("" if still_refusing is None
+                     else " - it still said: %s" % still_refusing[:90]))
+            check(packet is not None and packet.path == CONTEXT.STANDARDS,
+                  "and what comes back is a STANDARDS packet")
+            kinds = [part.kind for part in (packet.parts if packet else [])]
+            check(CONTEXT.STANDARD in kinds,
+                  "and the packet carries a STANDARD part (%s)"
+                  % ", ".join(sorted(set(kinds))))
+            for part in (packet.parts if packet else []):
+                check(part.kind in CONTEXT.BUDGET[CONTEXT.STANDARDS],
+                      "%s is inside the STANDARDS budget" % part.kind)
+            cited = [part for part in (packet.parts if packet else [])
+                     if part.kind == CONTEXT.STANDARD]
+            check(cited and all(part.source for part in cited),
+                  "and every clause carries a citation - docs/05 s8 calls an "
+                  "uncited standards answer a bug, not a weak answer")
         finally:
             store.close()
     finally:
