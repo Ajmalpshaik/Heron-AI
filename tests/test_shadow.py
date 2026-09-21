@@ -242,8 +242,10 @@ def main():
               == "SHADOW_BEHAVIOUR_UNDEFINED",
               "%r / %r matches no row and is refused" % (tier, risk))
     answer = rules(tier="T1", risk="READ")
-    check(any("Q-56" in note for note in answer["unjudged"]),
-          "and the answer says nothing here ENFORCES the constraints")
+    check(any("D-84" in note for note in answer["unjudged"]),
+          "and the answer says nothing here ENFORCES the constraints, "
+          "citing the decision that settled it rather than a closed "
+          "question called open (row 5b-56)")
     check(any("not this agent's to give" in note
               for note in answer["unjudged"]),
           "naming the register's 'guarantees' as a claim it cannot make")

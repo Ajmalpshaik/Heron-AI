@@ -72,9 +72,10 @@ output:
   unjudged:
     type: list
     description: >
-      Always non-empty, and always states that NOTHING WAS RUN - Q-56 is
-      open, and generating code then executing it is exactly where the
-      sandbox's containment would have to be real.
+      Always non-empty, and always states that NOTHING WAS RUN - D-84
+      settled that nothing contains a new agent while it runs, and
+      generating code then executing it is exactly where containment
+      would have to be real.
   why:
     type: string
     description: What was planned or written, in a sentence.

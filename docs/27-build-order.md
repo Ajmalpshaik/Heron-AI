@@ -147,9 +147,12 @@ that already assumes it can just write.
 
 ## ⛔ Gate — Phase 1 ends here, and it ends UNPROVEN
 
-Step 6 is written, compiles on all eight Revit releases, and has **never loaded into Revit**. Phase 1's
-own definition of done — *one Ctrl+Z puts it back, a failure leaves the model untouched* — has not been
-witnessed. [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) is that debt, in full.
+Step 6 is written, compiles on all eight Revit releases, and **has run once**: three ducts moved up
+200 mm in Revit 2024 on 2026-09-07, with the banner going amber for about 300 ms
+([B8](NEEDS-CHECKING.md)). Phase 1's own definition of done — *one Ctrl+Z puts it back, a failure
+leaves the model untouched* — **has still not been witnessed**, and neither has a tape measure on those
+three ducts (`D3`). [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) is that debt, in full. This paragraph said
+*"has never loaded into Revit"* until 2026-09-21 ([row 5b-54](FRAGMENT-ISSUES.md)).
 
 **Phase 2 starts anyway, on the owner's instruction (2026-08-28):** *"checking in Revit is not possible
 within 1 week, so keep the checking process as a document and start Phase 2."* The register is therefore

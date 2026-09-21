@@ -64,6 +64,23 @@ Icons load from a `Resources` folder deployed beside the assembly. Normalise the
 a ribbon image from its DPI, not its pixels, so an icon exported at 72 or 144 renders at the wrong size
 while looking perfectly correct in any image viewer.
 
+**A SPLIT BUTTON EATS A STATE INDICATOR UNLESS YOU TURN ONE THING OFF.** Putting the toggle and its
+detail view in one `SplitButtonData` is right — connecting and asking about the connection are the same
+subject at two depths — but a split button **promotes whatever was last picked from its list to the
+top**. When the top button's picture IS the state, one look at the detail view replaces the state
+indicator with something that has no state, **and it never comes back**:
+
+```csharp
+var group = panel.AddItem(new SplitButtonData("HeronBridge", "Heron")) as SplitButton;
+BridgeButton = group.AddPushButton(toggle);   // AddPushButton hands back the live button
+group.AddPushButton(status);
+group.IsSynchronizedWithCurrentItem = false;  // or the picture stops being the state
+```
+
+Note that a split button's children are added with `AddPushButton`, which returns the live button —
+`panel.AddItem` is for a button that stands on its own, and both routes have to hand something back,
+because there is still no way to look a button up later.
+
 ### When the button does not appear
 
 Work down this list; it is ordered by how often each is the real cause.

@@ -63,11 +63,14 @@ millimetres or 200 feet.
 had met a model. Both have now happened.** The add-in is deployed in Revit 2024 and D-28's executor
 compiles a fragment's C# inside Revit's own process against the assemblies Revit has actually loaded.
 **327 of the 395 fragments are `PROVEN`, re-derived 2026-09-21** — each on a recorded proof against a named
-model, with a negative case and a staleness fingerprint ([D-30](docs/DECISIONS.md)). **The other 66 have
-still never met a model**, and twenty-three of those were written on 2026-09-18 to close recorded gaps,
-so they are new rather than neglected. That count read **79** until 2026-09-20 — 395 − 329 is 66, so the
-two halves of one sentence disagreed by thirteen. Exactly the failure the next paragraph warns about,
-sitting directly above the warning.
+model, with a negative case and a staleness fingerprint ([D-30](docs/DECISIONS.md)).
+**68 of the 395 fragments are `DRAFT`** — Heron's word for *has never met a model* — and twenty-three of
+those were written on 2026-09-18 to close recorded gaps, so they are new rather than neglected.
+That second half read **79** until 2026-09-20 and **66** until 2026-09-21, both times because the
+`PROVEN` half was re-derived and the sentence beside it was not: the two halves of one sentence
+disagreed by thirteen, and then by two. Exactly the failure the next paragraph warns about, twice,
+sitting directly above the warning. It is now written in the one form `tools/check-docs.py` can
+verify, so the third time is a red build rather than a reader's problem.
 
 **Do not trust those two numbers — derive them.** They move hourly while a proving session runs, and this
 line read *"16 of 349"* for two days after neither half was true:
@@ -94,7 +97,7 @@ machine.
 | Step 4 — the first BIM answer | ✅ **Proven.** *"select all ducts"* — 4 found and highlighted on screen in both Revits, plus the audit trail |
 | Step 5 — more than one Revit | ✅ **Proven.** Refused to guess between two, took "1", and **stopped** when that Revit closed rather than using the other |
 | ⛔ **Phase 0 ends here** | Everything above is **read-only**. Nothing can change a model |
-| Step 6 — the first write | ⚠️ **Built and compiled. Never run.** The rails came first as the [build order](docs/27-build-order.md) requires — one `TransactionGroup`, preview, re-count, document pinning, permission gate, emergency stop, then the move. The chat half is tested, and a compiler has now read every line on **all eight releases, zero warnings** — which cost one 2020-only defect to discover. It has still **never loaded into Revit and has never moved anything.** Writing stays off until it has ([D-19](docs/DECISIONS.md), [`NEEDS-CHECKING.md`](docs/NEEDS-CHECKING.md)) |
+| Step 6 — the first write | ⚠️ **Run once, and nobody has measured the result.** The rails came first as the [build order](docs/27-build-order.md) requires — one `TransactionGroup`, preview, re-count, document pinning, permission gate, emergency stop, then the move. A compiler has read every line on **all eight releases, zero warnings** — which cost one 2020-only defect to discover. And on **2026-09-07** it moved **three ducts up 200 mm** in Revit 2024, the first time Heron changed a model: the banner went amber for about 300 ms, found by scanning all 918 captured frames ([B8](docs/NEEDS-CHECKING.md)). **What is still owed is a tape measure on those ducts** — `D3`, not struck through — so `write.enabled` stays `false` ([D-19](docs/DECISIONS.md)). This row said *"never loaded into Revit and has never moved anything"* until 2026-09-21, a fortnight after it did ([row 5b-54](docs/FRAGMENT-ISSUES.md)) |
 | ⛔ **Phase 1 ends here, unproven** | `write.enabled` defaults to **`false`** and stays there until a real Revit has been through the register. Heron can no longer be read-only by construction, so it is read-only by default instead — a real weakening, made deliberately and written down rather than smoothed over |
 | Steps 7–14 — Phase 2 | ✅ **Built in full, and almost none of it proven.** The fragment store, one knowledge store per scope, exact-word search, local offline embeddings, the two fused behind a hard Revit-version filter, the capability registry, the dependency graph, and ten skills that name capabilities rather than fragments. **All ten skills are `DRAFT`. 68 of the 395 fragments are `DRAFT` and 327 are `PROVEN` as of 2026-09-21** — derive both with the `grep` above rather than reading them here — a fragment re-authored from an earlier library arrives here unproven whatever it was there ([D-44](docs/DECISIONS.md)), and that rule is enforced in code rather than remembered |
 | The brain, reachable | ✅ Three read-only MCP tools resolve a request through a **capability**, never a fragment id. **Resolving is not running** — and nothing could run a fragment at all until D-28's executor landed on 2026-09-06. It runs one **READ-ONLY**: it opens no transaction, so Revit itself refuses any model change. Running a fragment that WRITES **is a separate operation, and it now exists** — `run_fragment_write`, `MODIFY` in the registry, wrapping the run in a `TransactionGroup` that is assimilated only on `apply=true` and rolled back otherwise, so a preview is the run itself undone ([D-55](docs/DECISIONS.md)). **166 `MODIFY` fragments are `PROVEN`**, so that path has met a real model. `write.enabled` still defaults to `false` |

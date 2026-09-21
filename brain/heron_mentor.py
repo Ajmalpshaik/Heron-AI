@@ -207,8 +207,8 @@ def pair(student_id, capability, mentor_id=None, records=None):
         "from HERON-AHR-WFP-015, which its own author says cannot tell two "
         "descriptions of one job from two jobs described alike.",
         "nothing has been RUN. This pairs and compares; running the student "
-        "is HERON-AHR-SBX-016's job, and what that sandbox does and does not "
-        "contain is stated at the top of its own file (Q-56).",
+        "is HERON-AHR-SBX-016's job: it is WATCHED, NOT CONTAINED, which is "
+        "what D-84 settled and what the top of its own file says.",
     ]
     return {"pairing": pairing, "unjudged": unjudged,
             "why": "%s is in SHADOW and paired with %s for '%s'. %d "

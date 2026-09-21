@@ -102,8 +102,13 @@ def main():
               "the source contains no %s" % call)
     answer = ask()
     check(any("NOTHING WAS RUN" in note for note in answer["unjudged"]),
-          "and every answer says so, naming Q-56")
-    check("Q-56" in source, "which is recorded as the open question it is")
+          "and every answer says so, naming the decision behind it")
+    # D-84, not Q-56. The question was answered on 2026-09-20 - keep what
+    # exists, build no separate process, take the word out - and this file
+    # asserted the source called it OPEN for a day after that (row 5b-56).
+    check("D-84" in source,
+          "and the source cites the decision that settled it, not the "
+          "question as though it were still open")
 
     print()
     print("2. It writes no test, and says which one is owed")

@@ -7,14 +7,26 @@
 # See docs/29-metadata-standard.md
 
 """
-The Agent Sandbox - where a new agent runs before it is allowed near real work.
+WATCHED, NOT CONTAINED - where a new agent's first run is observed.
 
     python brain/heron_sandbox.py     an agent that tries three forbidden things
+
+THE NAME IS THE DELIVERABLE, AND D-84 IS WHY
+----------------------------------------------
+This file was called the Agent Sandbox until 2026-09-20. D-84 took the word
+out and put "watched, not contained" in its place - not because anything here
+is broken, but because what is built RESTRAINS A COOPERATING AGENT AND DOES
+NOT CONTAIN A HOSTILE ONE, and the word sandbox implies otherwise. The
+decision says it plainly: "shipping the behaviour without the rename would
+deliver the opposite of what was decided."
 
 WHAT THE REGISTER ASKS FOR
 ---------------------------
 "Runs a newly built agent in isolation - never against a live model, never able
 to write production knowledge - before it is allowed anywhere near real work."
+
+**"In isolation" is the half this cannot keep**, and the register row says so
+now as well.
 
 Two prohibitions, and they are not the same kind of thing. A live model can be
 damaged in a way that costs somebody a day; production knowledge can be
@@ -46,10 +58,11 @@ that calls `open()`, imports the bridge, or reaches into globals is not
 stopped by anything here. Every rule in this module is a door in a wall that
 has no other side yet.
 
-That is a real gap in something with "sandbox" in its name, so it is written
-at the top of the file rather than left to be discovered, and it is
-`Q-56` in OPEN-QUESTIONS. Closing it means running the agent in a separate
-process with the ambient capabilities removed - which is a different piece of
+That gap is written at the top of the file rather than left to be discovered.
+`Q-56` in OPEN-QUESTIONS asked what actually contains an agent while it runs,
+and `D-84` ANSWERED IT ON 2026-09-20: keep what exists, build no subprocess,
+and take the word out. Closing it for real would mean running the agent in a
+separate process with the ambient capabilities removed - a different piece of
 work from this one, and not something to half-do inside a module that would
 then look finished.
 

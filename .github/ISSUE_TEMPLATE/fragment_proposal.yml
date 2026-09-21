@@ -10,7 +10,7 @@ body:
         **Skill** = what the user can ask for, in BIM language.
         **Fragment** = how it is done — a reusable implementation unit shared across many skills.
 
-        **Search existing fragments before proposing.** Golden Rule 4: reuse before generating.
+        **Search existing fragments before proposing.** Golden Rule 3: reuse proven knowledge before creating new.
 
   - type: dropdown
     id: type

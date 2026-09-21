@@ -39,8 +39,8 @@ output:
     type: string
     description: >
       The generator that rebuilds it. Returned, never executed: a
-      generator belongs in a process somebody started on purpose, and Q-56
-      is open about what contains one this agent starts.
+      generator belongs in a process somebody started on purpose, and D-84
+      settled that nothing contains one this agent starts.
   from:
     type: list
     description: What it is derived FROM, checked to exist before repairing.

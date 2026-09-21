@@ -44,6 +44,16 @@ SUPPORT = {
     "tools": "scripts that keep the repository honest",
     ".github": "issue templates and CI",
     ".claude": "project skills that ship with the repository",
+    # A FOLDER THIS TABLE CANNOT NAME IS A FOLDER THE CHANGE GATE CANNOT
+    # JUDGE. `.codex/` has been tracked since 2026-09-06 - PROJECT-MAP calls
+    # it "the same four agents for a second host, pointing at the same
+    # skills" - and it was in neither table, so check-change.py put every
+    # file in it under `unrelated` and returned SPLIT. SPLIT is reported
+    # first, so it MASKED whatever the real verdict was: the first change
+    # ever made to that folder came back SPLIT rather than REVISE for having
+    # no evidence. Found by row 5b-51's own commit. Same kind as .claude -
+    # host configuration that ships with the repository and touches nothing.
+    ".codex": "the same agents and MCP server, for a second host",
 }
 
 # ------------------------------------------------------------------ layering

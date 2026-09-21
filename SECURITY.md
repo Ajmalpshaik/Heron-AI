@@ -38,7 +38,7 @@ Beyond the usual categories, these are specific to what Heron does:
 | **Data leakage** | Project data, model content or audit logs leaving the machine when they should not |
 | **Supply chain** | A community package, fragment or skill that executes unexpected code |
 | **Transport** | Anything that lets another process on the machine drive the Revit add-in |
-| **Sandbox escape** | Generated code reaching a live model before it has been approved |
+| **Escaping the first-run guard** | Generated code reaching a live model before it has been approved. The guard **watches rather than contains** ([D-84](docs/DECISIONS.md)) — report anything that gets past what it does hold |
 
 ---
 

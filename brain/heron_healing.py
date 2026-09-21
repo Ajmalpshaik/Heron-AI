@@ -55,9 +55,10 @@ IT NEVER DELETES, AND IT RUNS NOTHING ITSELF
 `repair()` returns the command that rebuilds - it does not execute it. A
 generated file is rewritten by its generator, in a process somebody started
 on purpose, and this agent is the thing that says WHICH generator and WHY,
-not the thing that runs it. Q-56 is still open about what contains a
-process Heron starts; until it is answered, an agent with MODIFY that also
-spawned things would be answering it by accident.
+not the thing that runs it. Q-56 asked what contains a process Heron
+starts, and D-84 answered it: nothing does, and no separate process is
+being built. So an agent with MODIFY that also spawned things would be building
+the containment that decision declined.
 """
 
 import os
@@ -179,8 +180,8 @@ def repair(artefact, root=None):
             "from": found["from"],
             "why": "%s is derived: %s rebuilds it from %s. The command is "
                    "returned rather than run - a generator belongs in a "
-                   "process somebody started on purpose, and Q-56 is open "
-                   "about what contains one this agent starts."
+                   "process somebody started on purpose, and D-84 settled "
+                   "that nothing contains one this agent starts."
                    % (artefact, found["rebuilt_by"], ", ".join(found["from"]))}
 
 
