@@ -21,10 +21,10 @@ applies — and so that an AI picking this up **reads facts instead of inventing
 
 | | |
 |---|---|
-| [`00-structure.md`](00-structure.md) | **What shape this is.** The six structural decisions. **Read first — structure decides the requirements** |
+| [`00-structure.md`](00-structure.md) | **What shape this is.** The eight structural decisions. **Read first — structure decides the requirements** |
 | [`01-requirements.md`](01-requirements.md) | **What the installer must do.** One row per requirement, each with a source |
-| [`02-implementation.md`](02-implementation.md) | **How it gets built.** Eight stages, and what proves each one |
-| [`03-open-questions.md`](03-open-questions.md) | **What is not decided**, and the parking space for new ideas |
+| [`02-implementation.md`](02-implementation.md) | **How it gets built.** Nine stages, and what proves each one |
+| [`03-open-questions.md`](03-open-questions.md) | **What is not decided**, and the parking space for new ideas. Two were answered on 2026-09-21 |
 
 ## The three rules of this folder
 

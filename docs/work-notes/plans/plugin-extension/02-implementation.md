@@ -11,7 +11,7 @@
 
 ## 1. How to use this note
 
-Eight stages, in order. **Each one proves something the next stage depends on.**
+Nine stages, in order. **Each one proves something the next stage depends on.**
 
 Every stage has:
 
@@ -42,8 +42,9 @@ a stage being marked done on a compile alone:
 - Stage 2 — a tab appearing in Revit
 - Stage 3 — files landing in the Addins folder
 - Stage 4 — the window drawing and behaving
-- Stage 6 — an uninstall leaving the user's data intact
-- Stage 7 — the signed installer running past SmartScreen
+- Stage 6 — routes A and B installing on a real machine
+- Stage 7 — an uninstall leaving the user's data intact
+- Stage 8 — the signed installer running past SmartScreen
 
 Everything else can be written and checked here.
 
@@ -102,10 +103,17 @@ installer, which is exactly what [R-3](01-requirements.md) forbids.
    | `revit` | Which releases it supports, from 2020 to 2027 |
    | `requires` | Other product ids it needs, or empty. **See [Q-PE-2](03-open-questions.md) — do not fill this in for Doc and MEP until the owner rules** |
    | `version` | The release it came from |
+   | `partOf` | The tab this piece joins, when it is **not** a tab of its own. Only the `Heron` tab has two pieces today ([S3](00-structure.md)) — `heron-bridge` and `heron-tools` both carry `partOf: heron` |
+
+   **`partOf` is what keeps the window honest.** Without it the installer cannot know that two ticks
+   belong under one heading, and the `Heron` tab's two pieces would show as two unrelated products.
+   With it, the same field drives the window's indentation and nothing is special-cased in the code.
 3. Ship the manifest **as a release asset**, so the installer reads the list of products from the same
    release it downloads them from.
 4. Add a checker — the shape of [`tools/check-package.py`](../../../../tools/check-package.py) — that
    refuses a manifest with a duplicate `addInId`, a missing asset, or an unsupported Revit version.
+5. The checker also refuses a `partOf` naming a product that is not in the manifest, and a `requires`
+   that points at a product not in it. Both are typos that would otherwise surface as a missing tab.
 
 ### Done when
 
@@ -145,6 +153,22 @@ second product that does almost nothing, and see whether **two Heron tabs can li
 - After the delete, **`Heron Doc` is gone and `Heron` is untouched.** This is the uninstall story proved
   before any uninstaller exists.
 
+**And the second half of the same stage, added 2026-09-21 — two pieces into ONE tab.**
+[S3](00-structure.md) lets the `Heron` tab be built by the AI Bridge piece, the tools piece, or both. So
+build a throwaway `Heron.Tools` that adds one panel with one dummy button to the tab named `Heron`, and
+prove all three combinations:
+
+| Installed | Expected |
+|---|---|
+| AI Bridge only | `Heron` tab, AI Bridge panel only — what exists today |
+| Tools only | `Heron` tab exists **with no AI Bridge panel**, tools panel present |
+| Both | one `Heron` tab carrying both panels — **not two tabs with the same name** |
+
+**Tools-only is the case that will break first**, and it is the one [R-34](01-requirements.md) promises.
+Whichever piece loads first has to create the tab and the other has to join it; Revit's
+`CreateRibbonTab` throws when the tab already exists, which `BuildRibbon()` already catches. Load order
+is Revit's to choose, so **neither piece may assume it is first**.
+
 ### Cannot prove
 
 That a real tool works. The button does nothing on purpose — this stage is about the **shape**, and
@@ -172,6 +196,9 @@ like one.
    PC. Detect from the machine, never from a guess.
 4. Implement the refusal when Revit is running ([R-17](01-requirements.md)), **naming the version**.
 5. Per-product results ([R-19](01-requirements.md)): one product failing does not stop the rest.
+5a. **Replace, not merge** ([R-23a, R-23b](01-requirements.md)). Detect an existing install, back it up,
+   **remove its files, then copy the new ones**. A copy over the top leaves whatever the new version no
+   longer ships — a stale DLL Revit may still load, or an `.addin` naming a class that is gone.
 6. Every path through [`HeronPaths`](../../../../platform/Heron.Core/HeronPaths.cs). **Nothing else
    builds a Heron path** — that is the rule in [`platform/README.md`](../../../../platform/README.md).
 
@@ -181,6 +208,9 @@ like one.
   tabs appear on restart.
 - Running it with Revit **open** refuses, and the message names which Revit.
 - A deliberately broken product in the list fails **alone**, and the report says which and why.
+- Installing over an existing version **replaces** it: a file that version 1 shipped and version 2 does
+  not is **gone** from the Addins folder afterwards. Plant one and check; this is the step that fails
+  silently if it is written as a copy.
 - `%APPDATA%\Heron` is **byte-for-byte unchanged** across an install ([R-20](01-requirements.md)).
   Compare before and after; do not assume.
 
@@ -200,6 +230,11 @@ Anything about the window, and anything about downloading — the files are loca
 2. **The product list is drawn from the manifest.** If the list is written in the window's code, the
    stage has failed its purpose even if it looks correct.
 3. Show each product's real state — Installed / Not installed / Update available ([R-2](01-requirements.md)).
+3a. **The `Heron` tab opens into two ticks**, driven by `partOf` in the manifest and not by code
+   ([R-33](01-requirements.md)). Every other tab is one tick ([R-36](01-requirements.md)).
+3b. **No Update or Repair button.** Install replaces whatever is there ([R-23a](01-requirements.md)), and
+   the window says so plainly on a product already installed rather than leaving the user to guess
+   whether they are about to duplicate it.
 4. Show detected Revit versions as tick boxes ([R-8](01-requirements.md)).
 5. Grey out a product that does not support a ticked version, **with the reason on it**
    ([R-10](01-requirements.md)).
@@ -213,6 +248,10 @@ Anything about the window, and anything about downloading — the files are loca
   Revits after restart.
 - Adding a product to the manifest makes it appear in the window **with the installer not rebuilt**.
   This is [R-3](01-requirements.md) and it is the single most important test in this stage.
+- Ticking **All tools without the AI Bridge connector** installs the tools and no bridge, and the
+  `Heron` tab appears with the tools panel and no AI Bridge panel ([R-34](01-requirements.md)).
+- Pressing Install on an already-installed product **replaces** it and the window says it did, rather
+  than reporting a fresh install that did not happen.
 
 ### Cannot prove
 
@@ -250,7 +289,49 @@ Whether a particular contractor's firewall allows it. That is found on site, and
 
 ---
 
-## Stage 6 — Uninstall, update, and a rollback that has been tested
+## Stage 6 — Routes A and B, onto the same engine
+
+**Status: NOT STARTED**
+
+Stages 3 to 5 build **route C** — the installer with a window. [S7](00-structure.md) says there are
+three front doors and one engine, so this is where the other two are hung on it.
+
+**If this stage ends up re-implementing any install rule, it has failed**, however well it works. A rule
+that lives in three places is three rules, and two of them go stale.
+
+### Do
+
+1. **Route B — repo download** ([R-29](01-requirements.md)). A setup file in the repository: the user
+   sets the project location, runs it, and it configures everything.
+2. **Route B downloads nothing** ([R-30](01-requirements.md)). Its files are already in the repo, so it
+   must take the local path through the engine rather than the release path. This is the offline install
+   that [Q-PE-5](03-open-questions.md) wanted, arriving as a side effect.
+3. **Route A — cloud** ([R-28](01-requirements.md)). A new person gives the repository and everything
+   installs with no further input. Which products and which Revit versions come from the cloud plan
+   rather than from tick boxes.
+4. **Both report** ([R-32](01-requirements.md)) — what was installed, into which Revit versions, what was
+   skipped and why. An automatic install that says nothing cannot be checked by the person it happened
+   to.
+5. Neither route may ask for administrator rights, and neither may touch `%APPDATA%\Heron`
+   ([R-16](01-requirements.md), [R-20](01-requirements.md)).
+
+### Done when
+
+- Route B installs on a machine **with networking off**, from a fresh clone, and the tabs appear.
+- Route A installs for a new person with no input past handing over the repository.
+- **The engine is one engine:** a rule changed once — the refusal while Revit is open is the cheapest to
+  test — changes behaviour in **all three** routes. Break it deliberately and watch all three fail;
+  that is the only proof that they share it.
+- Each route prints a report naming products, versions, and skips.
+
+### Cannot prove
+
+Whether the cloud plan itself is right. Route A can only install what it is told to install; what it is
+told comes from a cloud design that is outside this folder.
+
+---
+
+## Stage 7 — Uninstall, update, and a rollback that has been tested
 
 **Status: NOT STARTED**
 
@@ -280,7 +361,7 @@ stage.
 
 ---
 
-## Stage 7 — Sign it, and ship it
+## Stage 8 — Sign it, and ship it
 
 **Status: NOT STARTED**
 
@@ -318,8 +399,9 @@ Stage 2  second tab     -> CHEAPEST POSSIBLE PROOF that the whole plan works
 Stage 3  engine         -> install works before anything is drawn
 Stage 4  window         -> a face on a working engine
 Stage 5  download       -> the network, last of the mechanics
-Stage 6  uninstall      -> the way back, before real users arrive
-Stage 7  sign and ship  -> the locked-down laptop is the real exam
+Stage 6  routes A and B -> the other two front doors, onto the SAME engine
+Stage 7  uninstall      -> the way back, before real users arrive
+Stage 8  sign and ship  -> the locked-down laptop is the real exam
 ```
 
 **Stage 2 is the one to do first after the paperwork.** It costs a dummy button and it answers the
@@ -343,5 +425,6 @@ Update this table as stages complete. **Do not mark a stage done without its evi
 | 3 | Installer core | NOT STARTED | — |
 | 4 | The window | NOT STARTED | — |
 | 5 | GitHub download | NOT STARTED | — |
-| 6 | Uninstall / update / rollback | NOT STARTED | — |
-| 7 | Sign and ship | NOT STARTED | — |
+| 6 | Routes A and B | NOT STARTED | — |
+| 7 | Uninstall / update / rollback | NOT STARTED | — |
+| 8 | Sign and ship | NOT STARTED | — |

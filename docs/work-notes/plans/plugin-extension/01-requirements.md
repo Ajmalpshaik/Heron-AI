@@ -24,6 +24,20 @@ does not belong here.**
 > Install, and those tabs are in Revit the next time it starts — **with no administrator rights and no
 > help from IT**.
 
+## 2a. Three ways in, one engine
+
+There are **three routes**, and they are not three installers — they are three front doors onto one
+engine ([S7](00-structure.md)). Only route C shows a window.
+
+| | Route | The user does | Files come from |
+|---|---|---|---|
+| **A** | **Cloud** | gives the repository; it installs itself | the cloud plan |
+| **B** | **Repo download** | sets the project location, runs the setup file | **already in the repo** — no download |
+| **C** | **Manual installer** | double-clicks it, ticks, presses Install | a signed GitHub release |
+
+Everything in §3 and §4 below describes **route C**, because it is the only one with a window. Routes A
+and B reach the same engine with their choices already decided, so every rule in §5 binds all three.
+
 ---
 
 ## 3. What the user sees
@@ -40,7 +54,9 @@ One window. One list. Two buttons.
 |    [ ] Revit 2026                                            |
 |                                                              |
 |  Products                                                    |
-|    [x] Heron              AI bridge and brain     Installed  |
+|    [x] Heron                                      Installed  |
+|          [x] AI Bridge connector                  Installed  |
+|          [ ] All tools                            --         |
 |    [ ] Heron Doc          Annotation and sheets   --         |
 |    [ ] Heron MEP          Ducts, pipes, sizing    --         |
 |                                                              |
@@ -57,6 +73,13 @@ One window. One list. Two buttons.
 line in a manifest and a release asset — **never a rebuild of the installer**. That is the whole point
 of the design; see [R-3](#5-the-requirements).
 
+**The `Heron` tab is the only one that opens into two ticks** — the AI Bridge connector and the tools,
+either or both ([S3](00-structure.md)). Every other tab is one tick, whole tab. Ticking the tools
+without the connector is a **supported install**, not a degraded one.
+
+**An already-installed piece shows `Installed` and stays tickable.** Pressing Install on it replaces it
+([S8](00-structure.md)) — there is no separate Update or Repair button.
+
 ---
 
 ## 4. What Install actually does
@@ -65,13 +88,19 @@ For each ticked product, for each ticked Revit version:
 
 ```text
 1.  Check Revit is closed                      -> refuse, with the version named, if not
-2.  Fetch the product from the GitHub release  -> verify the download before using it
-3.  Back up whatever is already there          -> so Rollback has something to restore
-4.  Copy  <Product>.addin  +  <Product>.dll    -> into %APPDATA%\...\Addins\<version>\
-5.  Rewrite the <Assembly> line in the manifest -> to the real deployed path
-6.  Verify the files landed and parse          -> the checks tools/check-package.py already makes
-7.  Report, per product, per version           -> installed / skipped / failed and WHY
+2.  Fetch the product                          -> route C downloads and verifies; route B has it already
+3.  Detect an existing install                 -> and say in the report that it is being replaced
+4.  Back up whatever is already there          -> so Rollback has something to restore
+5.  REMOVE the old files, then copy the new    -> replace, never merge two versions in one folder
+6.  Copy  <Product>.addin  +  <Product>.dll    -> into %APPDATA%\...\Addins\<version>\
+7.  Rewrite the <Assembly> line in the manifest -> to the real deployed path
+8.  Verify the files landed and parse          -> the checks tools/check-package.py already makes
+9.  Report, per product, per version           -> installed / replaced / skipped / failed and WHY
 ```
+
+**Step 5 is the one to get right.** Copying new files over old ones without removing them first leaves
+whatever the new version no longer ships — a stale DLL Revit may still load, or an orphaned `.addin`
+that makes Revit report a class it cannot find. Replace means **remove, then copy**.
 
 Steps 1, 3, 4, 5 and the refusal in step 1 **already exist** in
 [`tools/deploy-addin.ps1`](../../../../tools/deploy-addin.ps1). The installer should **drive that
@@ -131,7 +160,28 @@ logic, not re-implement it** — two copies of a deploy rule is two rules that d
 | R-21 | **Uninstall** is the same window — untick a product and apply | Owner, 2026-09-20 (one main window) | MUST |
 | R-22 | Uninstall removes the product's files **and nothing else**. The user's data survives | [`HeronPaths.IsSafeToDelete`](../../../../platform/Heron.Core/HeronPaths.cs) | MUST |
 | R-23 | **Update** replaces a product in place and keeps the user's settings | [`docs/07 §7`](../../../07-installation-and-update.md) | MUST |
+| R-23a | There is **no separate Update or Repair button**. Install detects an existing version and replaces it | Owner, 2026-09-21; [S8](00-structure.md) | MUST |
+| R-23b | Replacing **removes the old files first, then copies** — never a copy over the top | Follows R-23a; a stale DLL left behind is one Revit may still load | MUST |
 | R-24 | Rollback is **tested**, not merely implemented | [`docs/07 §7`](../../../07-installation-and-update.md) rule 5; `brain/heron_update.py` refuses a release without `rollback_tested` | MUST |
+
+### The three routes
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| R-28 | **Route A — cloud.** A new person gives the repository and everything installs with no further input | Owner, 2026-09-21 | MUST |
+| R-29 | **Route B — repo download.** The repo carries every file **and** a setup file; the user sets the project location, runs it, and it configures itself | Owner, 2026-09-21 | MUST |
+| R-30 | **Route B downloads nothing.** The files are already in the repo, so it works with no internet | Follows R-29; and it is the answer to [Q-PE-5](03-open-questions.md) for anyone who took the repo | MUST |
+| R-31 | All three routes drive **one engine**. No install rule exists in more than one place | [S7](00-structure.md); a rule in three installers is three rules and two go stale | MUST |
+| R-32 | Routes A and B are **not silent**. Each reports what it installed, into which Revit versions, and what it skipped | [`docs/14`](../../../14-golden-rules.md) — an automatic install that says nothing cannot be checked | MUST |
+
+### The Heron tab
+
+| # | Requirement | Source | Status |
+|---|---|---|---|
+| R-33 | The `Heron` tab offers **two ticks** — AI Bridge connector, and all tools. Either, or both | Owner, 2026-09-21; [S3](00-structure.md) | MUST |
+| R-34 | Ticking **tools without the connector** is a supported install. No AI is installed, and the tools work | Owner, 2026-09-21 | MUST |
+| R-35 | Both pieces build into the **same `Heron` tab**, and neither may assume it is loaded first | Revit's `CreateRibbonTab` throws when the tab exists; `HeronApplication.BuildRibbon()` already catches it | MUST |
+| R-36 | `Heron Doc`, `Heron MEP` and every future tab have **one tick each** — no sub-choice | [S3](00-structure.md) | MUST |
 
 ### Shipping it
 

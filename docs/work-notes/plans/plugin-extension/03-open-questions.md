@@ -22,42 +22,47 @@ paraphrase of a decision is how a decision quietly changes.
 
 ## 2. Open questions
 
-### Q-PE-1 — What is "Heron Tools"?
+**Two were answered on 2026-09-21 and are struck through below. Six remain.**
 
-**Waiting on:** the owner. He said on 2026-09-20: *"This is our planning, I will explain it, wait."*
+### Q-PE-1 — What is "Heron Tools"? — ~~half answered 2026-09-21~~, content still open
 
-**Why it is open:** the name appeared in the installer brief as a product with **Install All** and
-**Custom Install**, but **nothing in the repository is called Heron Tools.** What exists is:
+**ANSWERED, the part that decides the build.** Owner, 2026-09-21: *"If they select the tools, it will
+install all tools along with the Heron panel … For the Heron tab specifically, they can choose either
+or both options: all tools and the AI connector."*
 
-- 395 fragments and 10 skills — **brain content**, driven by the AI, no ribbon buttons
-- 3 ribbon buttons on the `Heron` tab, all of them bridge controls
+So **Heron Tools are ribbon tools, not brain content**, they live on the **`Heron` tab** beside the AI
+Bridge panel, and they **install independently of the AI connector**. That settles the three-way
+ambiguity this question was opened for, and it is written into
+[S3](00-structure.md) and [R-33](01-requirements.md).
 
-So it could mean ribbon tools, brain content, or both, and those are three different builds.
+**STILL OPEN: which tools.** Nothing has been said about what the buttons are, how many panels they sit
+in, or which of the 327 `PROVEN` fragments they call. Nothing in the repository is called Heron Tools
+yet, so there is nothing to read.
 
-**Blocks:** nothing structural. The installer can be built and proved with only the `Heron` product.
+**Blocks:** building the tools. Blocks nothing in the installer — the installer needs the *slot*, and
+the slot is now defined.
 
 ---
 
-### Q-PE-2 — Do Heron Doc and Heron MEP need the AI Connector?
+### ~~Q-PE-2 — Do Heron Doc and Heron MEP need the AI Connector?~~ — ANSWERED 2026-09-21
 
-**Waiting on:** the owner. He said on 2026-09-20: *"Heron AI Connector is just one tool in this Heron,
-that is MCP part with brain and everything. If someone can run alone also. If need to set up this AI
-connector and use the brain also. We need to discuss these things, I will explain you."*
+**No. The AI connector is optional everywhere, and the tools work without it.**
 
-**Why it matters, in one line each:**
+> Owner, 2026-09-21: *"If they do not tick the AI connector, it will not be installed."*
 
-| If Doc and MEP run **alone** | If they **require** the Connector |
-|---|---|
-| A modeller can install Heron Doc and use it with no AI, no brain, no Claude Code | Every user must set up the AI side before any button works |
-| Buttons must hold their own logic, or call fragment bodies directly without the bridge | Buttons can ask the brain, and get the AI's judgement |
-| Much wider audience — it is an ordinary Revit plugin | Much smaller audience, much more powerful |
+This is the **third shape** the question offered — the tools stand alone, and the connector is a
+separate tick a user may take or leave. It is the widest-audience answer: a modeller can install
+`Heron MEP` and use it as an ordinary Revit plugin, with no AI, no brain and no Claude Code.
 
-**A third shape exists and is worth considering:** the tools work alone, **and do more when the
-Connector is installed**. The button works either way; with the Connector present it can also explain
-itself, ask a question back, or take a sentence instead of a dialog.
+**Consequence for the build, and it is not small.** A tool's button cannot assume the bridge is there.
+Every button must work with the connector absent, and may only offer the AI as **extra** when it is
+present. A button that errors without the bridge would make the connector required in practice while
+the installer says it is optional.
 
-**Blocks:** the `requires` field in the product manifest ([Stage 1](02-implementation.md)). Leave it
-empty until this is answered — an invented dependency is very hard to remove later.
+**What this does NOT settle:** whether a tool does *more* when the connector is present, and what that
+extra is. That is a design question for when the tools exist, not an install question.
+
+Recorded in [S3](00-structure.md), [R-33](01-requirements.md) and [R-34](01-requirements.md).
 
 ---
 
@@ -111,6 +116,11 @@ blocks GitHub blocks the installer, and the users are contractors.
 **Recorded so it is not rediscovered as a surprise.** If it bites, the product-manifest design
 ([Stage 1](02-implementation.md)) already leaves room — the same manifest read from a local folder
 instead of a release.
+
+**NARROWED 2026-09-21 — route B already solves it for anyone who took the repo.** The owner's route B
+ships every file inside the repository alongside a setup file, so it **downloads nothing**
+([S7](00-structure.md), [R-30](01-requirements.md)). The question that remains is only about **route C**,
+the standalone installer, for a user who never clones anything.
 
 **Blocks:** nothing. [R-15](01-requirements.md) is marked LATER on purpose.
 
