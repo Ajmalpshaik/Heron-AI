@@ -46,7 +46,7 @@ Windows, where a bash hook simply would not run.
 | | |
 |---|---|
 | **The decision is nested** under `hookSpecificOutput` | A `permissionDecision` at the top level is ignored — *"silently no-ops the block"*. A hook that looks like it works and refuses nothing |
-| **A crash denies** | An unexpected exit with nothing on stdout is read as **permission**, so a failure here prints a **deny** rather than dying quietly. An ALLOW still prints nothing — silence is what the host reads as *no objection*, which is what an allow wants, and `tests/test_heron_guard.py` pins both halves. This row said *every path out of the hook prints a decision* until 2026-09-21, four paragraphs above the line that says an allowed edit prints nothing at all |
+| **A crash denies** | An unexpected exit with nothing on stdout is read as **permission**, so a failure prints a **deny** rather than dying quietly. An **allow prints nothing** — silence is what the host reads as *no objection*, which is what an allow wants. `tests/test_heron_guard.py` pins both halves |
 | **Deny-tier, fails closed** | *"A boundary that fails open is not a boundary."* gstack's `careful` is ask-tier and fails the other way, deliberately |
 | **`HERON_GUARD=off` turns it off** | Not optional for a fail-closed hook. One bad edit away from a repository nobody can work in, and the person who needs the hatch is the one whose tooling is already broken |
 
