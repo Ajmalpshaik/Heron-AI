@@ -124,6 +124,42 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-21 (latest) — NINETY BRAIN MODULES NOBODY CALLS, AND THE FIRST OPEN ROW IN 5b
+
+**[Row 5b-83](FRAGMENT-ISSUES.md). OPEN, and open on purpose.** Nothing was changed and no module was
+wired to anything.
+
+**Measured**: `python tools/module-reach.py` — new, and shipped with the row so the number is a
+command rather than a cell. Of **145 modules in `brain/`**: **53** are reachable from `mcp/` or from
+another brain module, **2** are reached only by a tool, **90 are imported by nothing but their own
+test**, and **0** by nothing at all.
+
+**Why that is a row.** [`mcp/README.md`](../mcp/README.md) describes the state before
+`heron_brain.py` was built, in its own words: the transport-only rule *"was being kept by **having no
+route at all**: eight brain modules, seven fragments and ten skills, imported by nothing but their
+own tests, and therefore **unreachable from any conversation**"*. One named seam was built so the
+rule could hold without that, and it works — [row 5b-82](FRAGMENT-ISSUES.md) measured ten MCP tools
+standing on it. **The number that seam was built to fix has gone from eight to ninety.** And nothing
+dispatches dynamically, so the count is not an artefact of the method: the three `importlib` uses
+outside tests each load one named file.
+
+**WHAT IS DELIBERATELY NOT CLAIMED: THAT ANY OF IT IS WRONG.** An agent may be a vocabulary for who
+owns what rather than a runtime actor, and a library waiting for its caller is not dead code.
+Settling that needs [18](18-agent-operating-system.md) and [28](28-agent-registry.md) read properly
+and **neither has been**. [Row 5b-75](FRAGMENT-ISSUES.md) is what it costs to decide a question like
+this on half the sources — four modules changed to match a document whose own header called itself a
+proposal, all four reverted.
+
+**Three questions for the sitting**, in the order that decides the rest. **(1)** Is a brain module
+meant to be reachable at runtime at all, or is `brain/` a library the fragment and capability layers
+draw on? **(2)** If they are meant to be reachable, what is the route — a runner, the way
+[row 141](FRAGMENT-ISSUES.md) says skills have none, or more seams like `heron_brain.py`? **(3)**
+Which of the ninety are load-bearing today, because `heron_safemode` and `heron_rollback` being
+uncalled means something different from `heron_onboarding` being uncalled.
+
+**253 register rows, 33 open** — the count moved for the first time in this session, and it moved
+because this one cannot be settled by reading.
+
 ### 2026-09-21 (later) — THE INSTALLER'S FIRST READING, AND TWO FOLDERS FINISHED
 
 **Section 5b rows 78 to 82. All five FIXED.** **`platform/`, `mcp/` and the repository root are now read to the end** — the first three buckets to come off the list. The whole of Stage 3 and Stage 4 landed in **#233** — 2,924
