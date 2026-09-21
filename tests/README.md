@@ -12,7 +12,7 @@ This is local orientation only. The testing *model* — the eight levels, what e
 |---|---|
 | `test_*.py` | The suites. One file per subject, each runnable on its own, each printing what it checked rather than a dot |
 | [`golden/cases.py`](golden/cases.py) | **The Golden Test Library** — a permanent record of what Heron has been *proven* to do, run again after every major change ([docs/13 §2b](../docs/13-testing-and-quality.md)) |
-| `Heron.Bridge.TestHost/` | A tiny C# host that stands in for the Revit add-in so the named-pipe round trip can be tested **without Revit**. It has to be built before `test_bridge_roundtrip.py` can say anything |
+| `Heron.*.TestHost/` | The C# hosts that link Heron's own C# **by source** and run it with no Revit, no Windows and no model. Five of them: `Bridge` stands in for the add-in so the named-pipe round trip can be tested, and has to be built before `test_bridge_roundtrip.py` can say anything; `Kernel`, `StackGuard`, `Banner` and `BindingNote` each have a runner in this folder. **This row named only `Bridge` until 2026-09-21**, in the table headed *what is here* — and `StackGuard` was the one that compiled every day and ran on no day ([row 170](../docs/FRAGMENT-ISSUES.md)). Derive them: `ls -d tests/Heron.*.TestHost` |
 
 Derive the count; do not read one here:
 
@@ -36,18 +36,30 @@ This is the part that is easy to get wrong, and it is written down nowhere else.
 and `tools/check-gaps.py` reads it as *waiting for a machine* rather than counting it green. A suite
 that cannot run must never be allowed to look like one that ran.
 
-Not every suite that needs something exits 3 — `test_bridge_roundtrip.py` and `test_served_claims.py`
-exit 1 when their dependency is missing. So **an exit code alone does not tell you whether a failure
-is yours.** Read the output.
+**Every suite that cannot run now says so with 3.** This paragraph named `test_bridge_roundtrip.py`
+and `test_served_claims.py` as exiting 1 instead, until 2026-09-21; both return 3, and the first one
+carries the reason in its own source — *"EXIT 3, NOT 1, AND THE DIFFERENCE IS THE WHOLE OF
+FRAGMENT-ISSUES ROW 162"*. The exception was written before that row fixed it and outlived it by a
+week ([row 5b-57](../docs/FRAGMENT-ISSUES.md)).
 
-## `check-gaps.py` runs 40 of the 41, on purpose
+That matters more than a tidy sentence: **CI now splits on the exit code**, so a suite that came back
+1 where 3 was expected would be a failure rather than a skip. Read the output anyway — an exit code
+says *whether* something ran, never *why* it broke.
 
-It skips `test_bridge_roundtrip.py`, with the reason in its own source: that suite needs the compiled
-test host, its absence is a build step rather than a gap in the code, and `check-compile.py` covers the
-compiling.
+## `check-gaps.py` runs every suite on disk
 
-So **"41 suites" and "what `check-gaps` ran" are two different numbers by design.** Anyone reconciling
-one against the other should expect the difference of one and not go looking for a lost suite.
+It skips none. **This section said it ran *"40 of the 41"* and skipped `test_bridge_roundtrip.py`
+until 2026-09-21, and told a reader reconciling the two numbers to expect a difference of one — the
+difference is zero, so anyone who followed that went looking for a lost suite that does not exist**
+([row 5b-57](../docs/FRAGMENT-ISSUES.md)). The skip was real once; it stopped being real when that
+suite learned to say *could not run* instead of failing.
+
+Derive both rather than reading either here:
+
+```bash
+ls tests/test_*.py | wc -l     # suites on disk
+python tools/check-gaps.py     # what it ran, sorted into unfinished vs waiting
+```
 
 ## Before you change a test
 
