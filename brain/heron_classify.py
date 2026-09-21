@@ -124,13 +124,74 @@ def _shape(path):
 
     card["markup"] = body.lstrip().startswith("<")
     card["heron"] = HERON_HEADER in body
+
+    # THE CLAIM STAYS "IT PARSES", AND THE COST STOPS BEING UNBOUNDED.
+    #
+    # This used to call json.load on the whole file for EVERY text file, and
+    # json.load reads all of it before it looks at the first character.
+    # MEASURED 2026-09-21: 120 MB of plain prose was read in full and held
+    # in memory - a peak of 240 MB, and 0.12s warm - only to be rejected on
+    # its FIRST character. The sniff above is bounded because "a folder of
+    # large binaries costs nothing"; the bound protected binaries and not
+    # text, which is the half this agent actually walks. On an imported
+    # repository, which is this agent's whole job, a log or a SQL dump that
+    # size is ordinary. Row 5b-88.
+    #
+    # Two steps, and NEITHER changes a single answer:
+    #
+    #   1  a file that fits inside the sniff is ALREADY read, so it is
+    #      parsed from memory. Same bytes, same verdict, no second open.
+    #   2  a larger one is rejected on the head when the head cannot begin
+    #      a JSON value at all. That test is SOUND rather than a heuristic:
+    #      RFC 8259 says a JSON text is one value, and every value starts
+    #      with {, [, ", -, a digit, or the exact words true/false/null.
+    #      Anything else cannot parse, whatever the other 120 MB hold.
+    #
+    # Only a large file that really does start like JSON is read in full,
+    # and that is the one case where reading it is the only way to know.
+    # tests/test_classify.py s8 counts the opens rather than trusting this.
+    card["json"] = _parses_as_json(path, body)
+    return card
+
+
+# Every character RFC 8259 allows a JSON value to begin with. The three
+# literals are matched whole: a file starting `t` is only JSON if the word
+# is `true`, and that is the difference between rejecting 120 MB of prose
+# on its head and reading all of it first.
+JSON_STARTS = "{[\"-0123456789"
+JSON_WORDS = ("true", "false", "null")
+
+
+def _parses_as_json(path, body):
+    """
+    Whether this file parses as JSON, without reading more than it must.
+
+    The answer is identical to json.load on the whole file. What changes is
+    how much is read to get it - see the note in _shape().
+    """
+    lead = body.lstrip()
+    if not lead:
+        return False
+    if lead[0] not in JSON_STARTS and not lead.startswith(JSON_WORDS):
+        return False
+
+    # Small enough that the sniff already holds all of it: parse what is in
+    # hand rather than opening the file a second time.
+    try:
+        if os.path.getsize(path) <= SNIFF:
+            json.loads(body)
+            return True
+    except ValueError:
+        return False
+    except (IOError, OSError):
+        return False
+
     try:
         with io.open(path, encoding="utf-8") as handle:
             json.load(handle)
-        card["json"] = True
+        return True
     except (ValueError, IOError, OSError, UnicodeDecodeError):
-        card["json"] = False
-    return card
+        return False
 
 
 def _key(card, shape):

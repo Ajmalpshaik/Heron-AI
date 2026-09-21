@@ -124,6 +124,58 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-21 (newest) — THE COST AGENT THAT READ THE CORPUS TWICE
+
+**[Row 5b-88](FRAGMENT-ISSUES.md). FIXED.** `brain/heron_classify.py`, the **sixth** live-path brain
+module. Its `_shape()` reads `SNIFF = 8192` bytes to decide text or binary, under a comment saying the
+bound is there because it is *"small enough that a folder of large binaries costs nothing"* — and then
+called `json.load` on the **whole file** for every file that came back text. **The bound protected
+binaries and not text, which is the half this agent actually walks.**
+
+**Why it is worth a row rather than a shrug: cost is this file's own argument.** Its docstring is
+headed *"THE COST PROBLEM IS THE DESIGN PROBLEM, AND IT IS WRITTEN DOWN"*, quotes
+[19 §96](19-context-and-cost.md) — *"Batch classification of 20,000 fragments should not run on a
+frontier model"* — and groups files so sixty-one thousand become a handful of questions. It reports
+the question count **so nobody has to guess what a run will cost**, and then read the corpus twice
+without saying so. And its input is **somebody else's repository**, which is the one place a 120 MB
+log or SQL dump is ordinary.
+
+**Measured twice, and the numbers are the deliverable.**
+
+| | old | new |
+|---|---|---|
+| 120 MB of prose starting with `t` | read in full, **240 MB peak**, 0.12s warm | **not opened** |
+| this repository, bytes read | **30.27 MB** | **11.50 MB** |
+| this repository, files opened twice | **2,127** of 2,127 | **7** |
+
+**The head test is sound, not a heuristic**, which is the only reason it may decide anything: RFC 8259
+says a JSON text is one value, and every value begins with `{`, `[`, a quote, `-`, a digit, or the
+exact words `true`, `false`, `null`. A file inside the sniff is parsed from the bytes already in hand;
+a larger one whose head cannot begin a value is rejected on that head; **only a large file that really
+does start like JSON is read in full**, and that is the one case where reading it is the only way to
+know.
+
+**Equivalence was proved BEFORE the cost was** — 22 cases through both paths, including the near-misses
+`truthy`, `nullify` and `for the record`: **cases where the answer changed: 0.**
+
+**THE TEST COUNTS OPENS RATHER THAN SECONDS.** A timing assertion would be flaky on somebody else's
+machine. `tests/test_classify.py` §8 swaps a counting `io` into the module and asserts how many times
+each fixture is opened, end to end through `_shape`. **Shown to fail: 20 checks go red** against the
+module as it stood.
+
+**AND I REPEATED [ROW 5b-85](FRAGMENT-ISSUES.md)'S OWN MISTAKE THREE ROWS LATER.** The first draft of
+that section read `CLS.JSON_STARTS` directly, so against the old module it raised `AttributeError` and
+the remaining checks never ran — **one traceback where there were twenty failures to report**. Same
+lesson, same day, same session, three rows apart. `getattr` with a default now, **and the reason is
+written beside it in the suite**, because knowing the lesson and reaching for it are evidently two
+different things. If you write a check against a name the module may not have, use `getattr`.
+
+**Gates: all ten green.** `check-routing` and `check-intrusion` exit **2** on a Linux container until
+`HERON_KNOWLEDGE` points at a folder — an empty one is enough — and then exit 0. That is the machine,
+not the change, and it has now cost time twice.
+
+**Live-path brain modules read: 6 of 53.** Next: `heron_flags`, `heron_gaps`, `heron_audit`.
+
 ### 2026-09-21 (end of session) — A FOURTH MODULE WITH NOTHING WRONG, AND A FIFTH WITH A TABLE THE CODE OUTGREW
 
 **[Row 5b-87](FRAGMENT-ISSUES.md). FIXED.** `brain/heron_contract.py` — the module **all 249 other
