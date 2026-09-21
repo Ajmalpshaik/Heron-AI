@@ -223,7 +223,7 @@ def survey(manifests, known=None):
                                        "believing it ran Heron's, and "
                                        "there is no safe way to show it."
                                        % (server, name,
-                                          "is one of Heron's own %d"
+                                          "is one of Heron's own %d tools"
                                           % len(ours) if name in ours else
                                           "is in Heron's namespace '%s' - "
                                           "not one of its %d tools, which "
@@ -254,7 +254,6 @@ def survey(manifests, known=None):
                           "says": _claims(entry),
                           "declared_here": False})
 
-    landed = len(found) + len(refused)
     seen = sorted(set(one["server"] for one in found))
     return {
         "registered": False, "found": found, "refused_names": refused,
