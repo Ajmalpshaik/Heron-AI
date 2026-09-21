@@ -141,6 +141,21 @@ jobs:
       - name: check-package
         run: python tools/check-package.py
 
+      # THE PRODUCT MANIFEST, WHICH NOTHING COMPILES AND NOTHING RAN.
+      # platform/heron-products.json says of itself "Checked by
+      # tools/check-products.py. Run it after every edit to this file" - and
+      # until 2026-09-21 no job here ran it and neither did check-gaps, so
+      # the instruction was addressed to whoever happened to remember. It is
+      # a GATE, not a report: it returns 1 on a finding, and the findings it
+      # names are the ones nothing else can see. Its own words: a duplicate
+      # addInId is "a LOAD FAILURE, not a warning, and nothing in source ever
+      # looks wrong"; a stale revit list once meant the installer "SILENTLY
+      # installed nothing at all on three releases while the document
+      # advertised them. Nothing failed. It just skipped."
+      # FRAGMENT-ISSUES row 5b-77.
+      - name: check-products
+        run: python tools/check-products.py
+
       # These two need somewhere to put a knowledge store. An empty
       # directory is enough for them to run, so CI gives them one.
       #

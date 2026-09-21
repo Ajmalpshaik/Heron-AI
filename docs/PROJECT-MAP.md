@@ -127,7 +127,7 @@ the [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) hook refuses the edi
 | Understand **why** a design is the way it is | [DECISIONS.md](DECISIONS.md) | Then the numbered document for that area |
 | Find out **what is not proven yet** | `python tools/check-gaps.py` | [NEEDS-CHECKING.md](NEEDS-CHECKING.md). Never read a count out of prose |
 | **Continue unfinished work** | [HANDOVER.md](HANDOVER.md) | [work-notes/](work-notes/README.md) for anything active |
-| Know **what to run before pushing** | [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) skill | It names the four gates you run before pushing - and the **nine** CI's job of that name actually decides on - how to state a change's intent and capture its evidence, and the checks that need a machine this container has not got |
+| Know **what to run before pushing** | [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) skill | It names the four gates you run before pushing - and the **ten** CI's job of that name actually decides on - how to state a change's intent and capture its evidence, and the checks that need a machine this container has not got |
 
 ---
 
