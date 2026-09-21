@@ -124,16 +124,57 @@ exactly like damage on the day it happens.
 Using the widened tool **is** the re-proving. The work that invalidates the proofs is the same work that
 regenerates them.
 
-### The one gap between his sentence and Heron's rule
+### A `DRAFT` fragment may be used, and using it is how it stops being one
 
-*"The tool works, so the fragment works"* is strong evidence. It is **not yet a proof in Heron's sense**
-— [D-30](../../../DECISIONS.md) wants a **named model, a positive case, a negative case, and a
-fingerprint**, which is what [`fragment-proving`](../../../../.claude/skills/fragment-proving/SKILL.md)
-and [`tools/batch-prove.py`](../../../../tools/batch-prove.py) exist to record.
+> Owner, 2026-09-21: *"Draft fragments — you can use them for creating tools. Once these draft fragments
+> are used and tested, and they are working, it means they are proven. Am I right? … while creating new
+> tools, if you see something we can create from those new fragments, you can use those too."*
 
-**The gap is small and closeable:** when the tool proves the fragment on a real model, record that
-session as the proof rather than leaving it as a memory. Otherwise the library keeps saying `DRAFT`
-about fragments the owner personally watched work, and the status stops meaning anything.
+**Nothing blocks it.** Checked 2026-09-21: there is **no status filter anywhere in the resolution path**
+— `heron_brain.py`, the capability registry and the matcher never ask whether a fragment is `PROVEN`
+before offering it. So the 68 `DRAFT` fragments are **68 more building blocks available today**, and no
+rule has to change for that.
+
+**`DRAFT` does not mean broken. It means nobody has watched it.** Wiring one into a tool is exactly the
+watching it has been waiting for.
+
+### But "it worked" is not a proof, and [D-30](../../../DECISIONS.md) exists because of that precise mistake
+
+This is the half of *"am I right?"* that has to be answered honestly, and the reason is not procedural.
+D-30's own context records the defect it was written from:
+
+> *"the level chain never tried `RBS_START_LEVEL_PARAM`, so setting a level filter matched **zero**
+> ducts **and reported success**. A fragment that succeeds while doing nothing passes ten runs. It
+> passes a thousand."*
+
+**A fragment that does nothing looks exactly like a fragment that works.** The tool runs, no error
+appears, and the only thing that separates the two is whether anybody checked the *number*.
+
+So a proof needs three things, and the second is the one that does the work:
+
+| | | |
+|---|---|---|
+| 1 | **Positive case** | it returns what it should — *this is what using the tool already gives you* |
+| 2 | **Negative case** | it returns **nothing** where nothing is correct. **D-30: *"a proof without it is not a proof"*** |
+| 3 | A second route to the same answer, where one exists | two mechanisms agreeing, or a number checkable by eye |
+
+Plus a named model, a date, and a name — *"whoever ran it records it, under their name, not a tick"*.
+
+### What that means in practice, and it costs one extra click
+
+**Using the tool gives case 1 for free.** Case 2 is one more run, deliberately arranged to find nothing.
+
+Taking the owner's own colour example: run the tool on a view that **has** the category — that is case 1.
+Run it on a view that has **none of it** — and it must report zero and change nothing. That is case 2,
+and it is the run that would have caught the level-filter defect above.
+
+**Then it is genuinely `PROVEN`**, in Heron's terms and not only in the sense of having been seen to
+work. [`fragment-proving`](../../../../.claude/skills/fragment-proving/SKILL.md) and
+[`tools/batch-prove.py`](../../../../tools/batch-prove.py) record it.
+
+**Record it as it happens.** Otherwise the library keeps saying `DRAFT` about fragments the owner
+personally watched work, and the status stops meaning anything to anybody — including to the debugging
+engine ([07](07-debugging-engine.md)), which reads that status to decide what it may fix by itself.
 
 ---
 
@@ -162,6 +203,9 @@ and he is the one who knows what the tool is for.
 | Decided | |
 |---|---|
 | One tool at a time, only when named | §1 |
+| **`DRAFT` fragments may be used in tools** — nothing blocks it, and using them is how they get proven | §5, owner 2026-09-21 |
+| **A new fragment written during one port is available to the next** — reuse, not duplication | Owner, 2026-09-21 |
+| **"It worked" is case 1 of 3.** The negative case is still owed | §5, [D-30](../../../DECISIONS.md) |
 | Cut only what is demonstrably replaced | §2 |
 | Disagreement means the fragment is narrow | §3 |
 | Missing logic goes in the fragment, never the tool | §4 |
