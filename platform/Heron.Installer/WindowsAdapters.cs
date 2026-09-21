@@ -567,14 +567,34 @@ namespace Heron.Installer
     {
         private readonly string _repoRoot;
         private readonly string _configuration;
+        private readonly IProductFiles _files;
 
-        public DeployScriptDeployer(string repoRoot) : this(repoRoot, "Release") { }
+        public DeployScriptDeployer(string repoRoot) : this(repoRoot, "Release", null) { }
 
         public DeployScriptDeployer(string repoRoot, string configuration)
+            : this(repoRoot, configuration, null)
+        {
+        }
+
+        /// <param name="files">
+        /// Where the built files come from, or null to let the script find a
+        /// build on this PC as it always has.
+        ///
+        /// THE ONLY DIFFERENCE BETWEEN THE TWO ROUTES IS THIS ARGUMENT. A
+        /// build made here and a verified download are the same thing by the
+        /// time they reach the script, which keeps one copy rule rather than
+        /// two - R-31. Everything the script guards, it still guards: the
+        /// runtime check reads the assembly in whichever folder it was given,
+        /// so a downloaded 2024 asset named for 2020 is refused exactly as a
+        /// local 2024 build would be. A download is not trusted for having
+        /// been downloaded.
+        /// </param>
+        public DeployScriptDeployer(string repoRoot, string configuration, IProductFiles files)
         {
             if (string.IsNullOrEmpty(repoRoot)) throw new ArgumentNullException("repoRoot");
             _repoRoot = repoRoot;
             _configuration = string.IsNullOrEmpty(configuration) ? "Release" : configuration;
+            _files = files;
         }
 
         /// <summary>
@@ -605,13 +625,37 @@ namespace Heron.Installer
                     "fetch them again.");
             }
 
-            var run = PowerShellRunner.Run(new[]
+            // FETCHED BEFORE REVIT IS TOUCHED. The engine has already waited
+            // for Revit to close by this point, and a download that fails
+            // here changes nothing - the script is not started at all.
+            var arguments = new List<string>
             {
                 "-File", script,
                 "-RevitVersion", release,
                 "-Product", product.Id,
                 "-Configuration", _configuration,
-            }, 600);
+            };
+
+            if (_files != null)
+            {
+                string why;
+                var folder = _files.Folder(product, release, out why);
+                if (folder == null)
+                {
+                    // THE SOURCE'S OWN SENTENCE, unchanged. It already names
+                    // the cause - offline, blocked, missing from the release,
+                    // did not arrive whole - and wrapping it in "could not be
+                    // installed" would bury the half worth reading.
+                    return DeployOutcome.Failed(
+                        "'" + product.Name + "' was not installed for Revit " + release +
+                        ". " + (why ?? "The files could not be obtained."));
+                }
+
+                arguments.Add("-FromFolder");
+                arguments.Add(folder);
+            }
+
+            var run = PowerShellRunner.Run(arguments, 600);
 
             if (!run.Started)
             {

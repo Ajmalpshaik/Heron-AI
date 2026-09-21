@@ -67,6 +67,13 @@ WAS_PROJECT = "Heron.Revit.Addin"
 FAILURES = []
 
 
+def code_of_cs(text):
+    """The C# with its comments taken out, so a comment cannot pass a check."""
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+    return "\n".join(line for line in text.split("\n")
+                      if not line.lstrip().startswith("//"))
+
+
 def check(condition, what):
     print("  %s  %s" % ("ok  " if condition else "FAIL", what))
     if not condition:
@@ -376,11 +383,19 @@ def main():
     check('Where-Object { $_.FullName -like "*\\$RevitVersion\\*" }' in code,
           "and the script's release pattern still has its separators, which "
           "is what makes 2020 not match 2020-old")
-    check("deployer.Configuration" in io.open(
-              os.path.join(ROOT, "platform", "Heron.Installer.App", "Program.cs"),
-              encoding="utf-8").read(),
-          "and the window takes the configuration FROM the deployer rather "
-          "than writing Release out a second time")
+    # ASKED OF THE RULE, NOT OF A VARIABLE NAME. The first version of this
+    # check looked for the literal `deployer.Configuration`, and renaming that
+    # variable to `localDeployer` turned it red against a correct file. What
+    # matters is that the window READS the configuration from a deployer and
+    # never writes the word out itself - a second copy of "Release" is how the
+    # two come to disagree, and that has cost a round trip once already.
+    entry = code_of_cs(io.open(
+        os.path.join(ROOT, "platform", "Heron.Installer.App", "Program.cs"),
+        encoding="utf-8").read())
+    check(".Configuration" in entry,
+          "the window takes the configuration FROM a deployer")
+    check('"Release"' not in entry and '"Debug"' not in entry,
+          "and never writes a configuration name of its own")
 
     print()
     print("The one flag that makes a downloaded Heron installable - D-96")

@@ -623,7 +623,42 @@ a compile.
 
 ## Stage 5 — Fetch from the GitHub release
 
-**Status: NOT STARTED**
+**Status: BUILT, NOT PROVEN — 2026-09-21. Nothing has been published and no release exists.**
+
+> **THE STAGE HAD NOTHING TO TALK TO, and that was the first thing to fix.** This repository had
+> **no releases at all** and nothing that could make one, so *"the installer reads the manifest from a
+> named release"* was a sentence about a thing that did not exist.
+> [`tools/build-release-assets.py`](../../../../tools/build-release-assets.py) and
+> [`.github/workflows/release.yml`](../../../../.github/workflows/release.yml) are that missing half:
+> one zip per product per Revit release, the product list beside them, and `checksums.txt` over all of
+> it written **last** as the completion mark.
+>
+> **RAN FOR REAL HERE: 24 assets, 54 MB, exit 0** — and verified at the binary level rather than from
+> the success line, `TargetFrameworkAttribute` read out of six zipped assemblies. 2020 `net472`, 2021
+> and 2024 `net48`, 2025 and 2026 .NET 8, 2027 .NET 10. All correct, no Autodesk assembly in any zip.
+>
+> **THE DOWNLOAD PATH IS GENUINELY EXERCISED, which is unusual here.** Three of the four adapters that
+> reach outside the installer assembly need Windows and can only be read.
+> [`ReleaseDownload`](../../../../platform/Heron.Installer/ReleaseDownload.cs) is not one of them — it
+> is `HttpClient` and `System.IO.Compression` — so the test host drives it against **a real HTTP server
+> on a real port with real zip bytes**, and every refusal below is one that actually happened.
+>
+> **NOT PROVEN, AND THE WORD IS NOT USED.** No release has been published, so nothing has ever been
+> downloaded from GitHub. `AC1` to `AC5` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) are that debt.
+
+### What exists now
+
+| | |
+|---|---|
+| [`tools/build-release-assets.py`](../../../../tools/build-release-assets.py) | builds every deployable product for every release and lays out the assets. **Release configuration, and not a flag** — there is one right answer and a flag would let somebody pick the wrong one |
+| [`.github/workflows/release.yml`](../../../../.github/workflows/release.yml) | tag-triggered. It calls the tool and repeats none of its rules. Publishes a **draft**, because Stage 8 has not happened and nothing is signed |
+| [`ReleaseAssets.cs`](../../../../platform/Heron.Installer/ReleaseAssets.cs) | what an asset is called, how checksums are read, and the sentence for every failure. **Pure** — no socket, no file, no process |
+| [`ReleaseDownload.cs`](../../../../platform/Heron.Installer/ReleaseDownload.cs) | fetches, **verifies in memory before a byte is written**, unpacks, and refuses a zip that would write outside its folder |
+| `-FromFolder` in [`deploy-addin.ps1`](../../../../tools/deploy-addin.ps1) | a verified download is handed to the **same proven copy rule** a local build uses — R-31, and every guard still runs on it |
+
+**A build on this PC still wins.** The window downloads only when **nothing at all** has been built
+here. Downloading on top of a half-built checkout would install a published version over the one the
+developer just compiled.
 
 ### Do
 
@@ -643,10 +678,26 @@ a compile.
   the file did not verify.
 - With networking off, the message says it cannot reach GitHub — not "error".
 
+### Where it actually stands — the four states, kept apart
+
+| | |
+|---|---|
+| **PASS** | `tools/build-release-assets.py` ran for real: **24 assets, 54 MB, checksums over 25 files, exit 0**. Runtimes read out of the zipped bytes for six releases and all correct |
+| **PASS** | `tests/test_release_assets.py` — no product is named, the configuration cannot be got wrong, the project folder is derived the same way in all three places that ask, a `PLANNED` product with no source is skipped **out loud** and one past `PLANNED` **fails**, Autodesk's assemblies never travel, `checksums.txt` is written last |
+| **PASS** | The download path, **run against a live local server**: verified and unpacked; a changed file refused **with nothing written to disk**; a file missing from `checksums.txt` refused; a release with no checksums refused; 404, 403 and a dead host each producing their own sentence; a zip that would escape its folder refused whole |
+| **NOT RUN** | **The workflow.** It is YAML for GitHub's runner and this is not one. **Nothing has been published and no release exists** |
+| **NEEDS REAL REVIT** | Every line under *Done when* above, and `AC1` to `AC5` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) |
+
+**The one thing this cannot close on its own** is [Q-PE-13](03-open-questions.md): the assets carry the
+**Revit plugin**, and nothing carries the **brain**. A modeller who installs from a release gets a tab
+whose Connect button opens a pipe nobody answers. Stage 5 is not what makes Heron usable by somebody
+else — it is one of the two halves.
+
 ### Cannot prove
 
 Whether a particular contractor's firewall allows it. That is found on site, and it is why
-[Q-PE-5](03-open-questions.md) stays open.
+[Q-PE-5](03-open-questions.md) stays open. The installer now at least **says** it is the firewall
+rather than saying "error", which is the part that can be built.
 
 ---
 

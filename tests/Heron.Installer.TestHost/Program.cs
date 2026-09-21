@@ -736,6 +736,13 @@ namespace Heron.Installer.TestHost
                 try { Directory.Delete(sandbox, true); } catch (IOException) { }
             }
 
+            // ================================================== STAGE 5
+            // DRIVEN AGAINST A REAL SERVER ON A REAL PORT. See
+            // ReleaseDownloadChecks - it is the one adapter reaching outside
+            // this assembly that does not need Windows, so it is exercised
+            // rather than read.
+            ReleaseDownloadChecks.Run(Check, Names);
+
             Console.WriteLine();
             Console.WriteLine("The install location is per user, and says why that matters");
             Check(Names(InstallerScreen.InstallLocation, "APPDATA"),

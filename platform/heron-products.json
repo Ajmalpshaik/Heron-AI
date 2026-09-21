@@ -1,4 +1,4 @@
-{
+﻿{
   "heron-agent": "HERON-INS-PKG-012, HERON-INS-ORC-001",
   "heron-step": 18,
   "heron-status": "DRAFT",
@@ -7,6 +7,17 @@
 
   "schema": "heron-products/1",
   "manifestVersion": "0.1.0",
+
+  "sourceNote": [
+    "WHERE A RELEASE IS FETCHED FROM - Stage 5. The installer downloads each ticked product's",
+    "asset from this repository's releases. It is DATA and not a constant in the installer's code,",
+    "for the same reason the product list is: a repository that is renamed or moved is then a line",
+    "here rather than a rebuild. Nothing is executed from it - R-13 - it only ever becomes a URL."
+  ],
+  "source": {
+    "owner": "Ajmalpshaik",
+    "repo": "Heron-AI"
+  },
 
   "readThisFirst": [
     "THE LIST OF HERON PRODUCTS. Read as DATA and never executed - R-13, D-91, Golden Rule 19.",
