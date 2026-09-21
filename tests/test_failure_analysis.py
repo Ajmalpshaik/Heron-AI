@@ -27,7 +27,9 @@ one property, asserted from several directions:
     python tests/test_failure_analysis.py
 """
 
+import io
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -160,6 +162,56 @@ def main():
     check("twice" in said.lower(),
           "and adds the part the far side cannot know - that repeating could do it twice")
     check(explain(None) is None, "success explains to nothing")
+
+    print()
+    print("EVERY CODE THE ADD-IN CAN PRODUCE IS CLASSIFIED")
+    # A GATE, NOT A REPORT, and the reason is what the gap costs. An
+    # unclassified code on a write falls to the fail-closed default and is
+    # reported as an UNKNOWN outcome - "look at the model before trying
+    # again, repeating it could do the work twice". For `compile_failed`, or
+    # a caller who left a value out, that is frightening and false: nothing
+    # ran. EIGHTEEN codes were missing on 2026-09-21, and the file's own
+    # comments record the same gap being found twice before, one code at a
+    # time (FRAGMENT-ISSUES section 5b, row 28).
+    #
+    # Read from the C# rather than from a list here, because a list here
+    # would be the third copy of the same set and would go stale the same
+    # way. The pattern is the one the add-in uses everywhere: Json.Error with
+    # a literal code.
+    produced = set()
+    for base in (os.path.join(ROOT, "revit"),):
+        for folder, _, names in os.walk(base):
+            if os.sep + "bin" in folder or os.sep + "obj" in folder:
+                continue
+            for name in names:
+                if not name.endswith(".cs"):
+                    continue
+                text = io.open(os.path.join(folder, name), encoding="utf-8",
+                               errors="replace").read()
+                produced.update(re.findall(r'Json\.Error\(\s*"([a-z_]+)"', text))
+    check(len(produced) > 30,
+          "found %d error codes in the add-in's C#" % len(produced))
+
+    # handler_failed is deliberately absent and the file says why: it is
+    # raised when an exception escapes from anywhere, so only the
+    # writes-aware default can answer it correctly on both paths.
+    DELIBERATELY_OPEN = set(["handler_failed"])
+    missing = sorted(produced - set(fa._KNOWN) - DELIBERATELY_OPEN)
+    check(not missing,
+          "every one of them is classified, or named as deliberately open%s"
+          % ("" if not missing else " - MISSING: " + ", ".join(missing)))
+    for code in sorted(DELIBERATELY_OPEN):
+        check(code not in fa._KNOWN,
+              "'%s' is still left to the fail-closed default on purpose" % code)
+
+    # And the other direction, which is how a code that was RENAMED in the
+    # C# shows up: a row here for something nothing can produce any more.
+    # unknown_outcome is the client's own, not the add-in's.
+    CLIENT_SIDE = set(["unknown_outcome"])
+    orphans = sorted(set(fa._KNOWN) - produced - CLIENT_SIDE)
+    check(not orphans,
+          "and no row classifies a code the add-in cannot produce%s"
+          % ("" if not orphans else " - ORPHANED: " + ", ".join(orphans)))
 
     print()
     if FAILURES:

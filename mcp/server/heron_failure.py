@@ -123,7 +123,14 @@ _KNOWN = {
     "nothing_to_move":   (REFUSED, STOP, "there is nothing there to move"),
     "write_disabled":    (REFUSED, FIX_FIRST,
                           "Heron's ability to change the model is switched off"),
-    "stopped":           (REFUSED, FIX_FIRST, "the Emergency Stop is on"),
+    # NOT "the Emergency Stop is on". That ribbon button was removed on
+    # 2026-09-06 (D-46) and nothing a user can press sets this flag, so
+    # naming it sends a worried reader hunting the ribbon for something that
+    # is not there - the same defect FRAGMENT-ISSUES section 5b row 2 fixed
+    # in the add-in's own wording, in a second file nobody had looked at.
+    "stopped":           (REFUSED, FIX_FIRST,
+                          "Heron has been stopped and will not send anything to Revit "
+                          "until whoever stopped it lets it work again"),
 
     # --- the approval was stale, so it was refused before touching anything -
     "no_preview":        (REFUSED, START_OVER, "there was nothing waiting to be approved"),
@@ -166,6 +173,84 @@ _KNOWN = {
                           "it ran, failed, and was rolled back completely"),
     "operation_failed":  (ROLLED_BACK, FIX_FIRST,
                           "the operation threw; nothing was committed"),
+
+    # --- the executor's own refusals, all of them above the transaction ----
+    #
+    # EIGHTEEN CODES THE ADD-IN CAN PRODUCE WERE IN NO TABLE AT ALL, and the
+    # fail-closed default below turned every one of them into an UNKNOWN
+    # outcome on the write path - "look at the model before trying again,
+    # repeating it could do the work twice". For a fragment that did not
+    # COMPILE, or one whose caller left a value out, that message is
+    # frightening and it is false: nothing ran. The two comments above about
+    # `no_such_document` record the same gap happening twice already, one
+    # code at a time. A gate in tests/test_failure_analysis.py now compares
+    # this table against every Json.Error code in revit/, so the next one
+    # cannot arrive unnoticed. FRAGMENT-ISSUES section 5b, row 28.
+    "no_source":         (REFUSED, FIX_FIRST,
+                          "no fragment source was sent - this operation runs the C# it is "
+                          "given and does not read the library itself"),
+    "setup_no_source":   (REFUSED, FIX_FIRST,
+                          "a setup step was sent with no source, so the arrangement could "
+                          "not be made and nothing was run"),
+    "script_options":    (REFUSED, STOP,
+                          "the script host could not be set up - nothing ran, and nothing "
+                          "a caller changes will help"),
+    "compile_failed":    (REFUSED, FIX_FIRST,
+                          "the fragment did not compile against the assemblies this Revit "
+                          "has loaded, so it never ran"),
+    "bad_contract":      (REFUSED, FIX_FIRST,
+                          "the contract that crossed the wire is not usable - a fault in "
+                          "fragment.yaml or in the client that read it, not in the model"),
+    "bad_request_value": (REFUSED, FIX_FIRST,
+                          "a value the caller supplied could not be used"),
+    "needs_request_values": (REFUSED, FIX_FIRST,
+                          "the fragment needs values the CALLER supplies - a view, a "
+                          "category, a name, a distance - and they were not given"),
+    "needs_unbound":     (REFUSED, FIX_FIRST,
+                          "something the fragment needs was never supplied, and running "
+                          "anyway would report 0 and read as 'nothing to find'"),
+    "not_implemented":   (REFUSED, STOP,
+                          "the operation is declared and not built yet"),
+    "worksets_unreadable": (REFUSED, FIX_FIRST,
+                          "Revit would not list the worksets - nothing was changed"),
+
+    # --- the chain: what an earlier fragment left, or did not ---------------
+    "chain_empty":       (REFUSED, FIX_FIRST,
+                          "nothing is carried for this chat on that model - the fragment "
+                          "it expects has not run, ran against another model, or the chain "
+                          "was reset. Nothing was bound and no fragment ran"),
+    "chain_mismatch":    (REFUSED, START_OVER,
+                          "what is carried was left by a different fragment, and binding it "
+                          "anyway is how a job acts on elements nobody chose"),
+    "chain_inputs_differ": (REFUSED, START_OVER,
+                          "the right fragment left these, running with different inputs"),
+    "chain_contradiction": (REFUSED, FIX_FIRST,
+                          "the request both resets the chain and expects to consume from "
+                          "it, so it could only fail"),
+
+    # --- the line itself, refused before anything read it -------------------
+    "request_too_long":  (NEVER_RAN, FIX_FIRST,
+                          "the request was longer than the bridge will read on one line, so "
+                          "it was refused before it was parsed and before the token was "
+                          "checked - nothing reached Revit"),
+
+    # --- it ran, and was put back -------------------------------------------
+    "fragment_threw":    (ROLLED_BACK, FIX_FIRST,
+                          "the fragment threw while running; on the writing path the "
+                          "transaction and the group are both rolled back before this is "
+                          "returned, so the model is as it was"),
+    "setup_failed":      (ROLLED_BACK, FIX_FIRST,
+                          "an arrangement step could not be given what it needs, so nothing "
+                          "was run and the model is as it was"),
+
+    # `handler_failed` IS DELIBERATELY ABSENT, and that is the one judgement
+    # in this table that a row would get wrong. It is raised in BridgeServer
+    # when an exception escapes Dispatch - from anywhere, at any depth - so
+    # whether the model was touched depends entirely on what threw. A static
+    # row can only say one thing; the fail-closed default below says the
+    # right thing TWICE, because it reads `writes`: UNKNOWN and "look at the
+    # model" for a change, a plain refusal for a read. Naming it here would
+    # make one of those two answers wrong.
 
     # --- the one that cannot be resolved from here -------------------------
     "unknown_outcome":   (UNKNOWN, LOOK_AT_THE_MODEL,
