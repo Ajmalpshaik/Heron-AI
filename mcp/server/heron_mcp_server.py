@@ -759,9 +759,33 @@ def _values_array(values):
     D-54: caller values cross as TEXT and are typed on the far side, where the
     model is. A view NAME is not a view until something looks it up, and only
     Revit can do that.
+
+    A NEWLINE SEPARATES VALUES AND A SEMICOLON DOES NOT, which is the whole
+    repair here. This line used to run every semicolon through a replace into
+    a line break before splitting, so a value whose own text carries
+    semicolons was torn into pieces.
+
+    THAT IS EXACTLY WHAT `overrides` IS. OneOverride in RevitFragment.cs
+    documents the separator it expects - "SEMICOLONS BETWEEN SETTINGS,
+    because a colour is already three comma-separated numbers and a comma
+    cannot do both jobs" - so the two sides disagreed about what a semicolon
+    meant, and this side won:
+
+        overrides=cut-line-colour=255,0,0; projection-line-colour=255,0,0
+
+    arrived as `overrides` carrying ONLY `cut-line-colour=255,0,0`, plus a
+    second value named `projection-line-colour` that matches no declared need
+    and is dropped without a word. The caller is told the whole thing was
+    applied. Found on 2026-09-22 against a real model: walls asked to go red
+    stayed white through four separate writes, because the only setting that
+    survived was whichever happened to be written first - and in a floor plan
+    that was the projection colour, which a CUT wall never draws.
+
+    The tool's own docstring has always said one "name=value" per line. This
+    makes the code agree with it.
     """
     out = []
-    for piece in (values or "").replace(";", "\n").splitlines():
+    for piece in (values or "").splitlines():
         piece = piece.strip()
         if not piece or "=" not in piece:
             continue
