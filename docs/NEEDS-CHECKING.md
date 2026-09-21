@@ -2312,6 +2312,7 @@ rule needs looking at again.
 | **PASS** | `tests/test_deploy_script.py` and `tests/test_installer_window.py` |
 | **PASS** | `tools/check-compile.py` — **all 13 projects on all eight releases, 2020 to 2027, 0 warnings**, the window included |
 | **PASS** | **Every suite: 219 ran, 216 passed, 0 failed, 0 hung.** The 3 waiting are exactly the three `gates.yml` names as not runnable on a plain runner, and that list is unchanged |
+| **PASS** | **And CI agreed, on a clean runner** — [#251](https://github.com/Ajmalpshaik/Heron-AI/pull/251), head `ca0e13a`, 2026-09-21: all five jobs green, no merge conflict, no review thread. That is the same ten gates, the same eight-release compile and the same sweep, run somewhere that has never had this container's `dotnet` installed by hand |
 | **PASS** | **The checks were seen to FAIL, which is what makes them checks** — [heron-ship §2a](../.claude/skills/heron-ship/SKILL.md). Counted below |
 | **NOT RUN** | **No window has been drawn and no PowerShell has executed.** `BuildsOnDisk` is the only one of the four Windows adapters that runs here at all, and what it proves is its path arithmetic, not that the folder it names is the one MSBuild wrote to on Ajmal's PC |
 | **NEEDS REAL REVIT** | `AA11`, `AA12`, `AB9` and `AB10` below. **Screenshots are owed for `AB9` and `AB10` and cannot be taken here** — this is Linux and the window is WPF |
