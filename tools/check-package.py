@@ -91,10 +91,23 @@ def releases():
     """
     The supported list, read from check-compile.py rather than repeated.
 
-    It is already stated twice in this folder - check-compile.py and
-    check-api-surface.py each declare their own ALL_VERSIONS. A third copy
-    would make it three. Recorded rather than fixed here, because merging
-    those two is a change to two working gates and belongs in its own review.
+    THIS PARAGRAPH UNDERCOUNTED, AND THE CORRECTION IS THE POINT. It said
+    the list was "stated twice in this folder - check-compile.py and
+    check-api-surface.py each declare their own ALL_VERSIONS". Two things
+    were wrong with that. check-compile does NOT declare one: its
+    ALL_VERSIONS IS heron_dotnet.RELEASES, by identity, and
+    tests/test_dotnet.py asserts it. And the count was scoped to tools/,
+    where the declarations are not: brain/heron_fragment.py,
+    brain/heron_packages.py and mcp/server/heron_register.py each type the
+    same eight years as REVIT_VERSIONS.
+
+    So it was FIVE declarations, one home and four copies, and nothing
+    compared four of them - under Golden Rule 4, "never break a working
+    Revit version". Merging them is still a change to working modules and
+    still belongs in its own review; what exists now is
+    tests/test_supported_releases.py, which FINDS every declaration rather
+    than listing them and requires each to be RELEASES. FRAGMENT-ISSUES row
+    5b-59.
     """
     path = os.path.join(ROOT, "tools", "check-compile.py")
     spec = importlib.util.spec_from_file_location("heron_check_compile", path)
