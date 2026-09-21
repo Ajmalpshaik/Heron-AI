@@ -87,6 +87,22 @@ namespace Heron.Installer
             // run is Heron's own, shipped beside this assembly; it does not
             // widen what anything else may run, and nothing downloaded is
             // executed to decide what to install (R-13, Golden Rule 19).
+            //
+            // AND SINCE D-96 THAT SECOND FLAG IS LOAD-BEARING, NOT A
+            // CONVENIENCE. AA9 was run on a real machine on 2026-09-21: a
+            // Heron downloaded as a zip carries ZoneId=3 on all 2130 files,
+            // and PowerShell at the Windows default of RemoteSigned refuses
+            // an unsigned downloaded script BEFORE its first line runs - so
+            // deploy-addin.ps1 cannot clear its own mark. Signing was
+            // considered and refused (a yearly certificate that silently
+            // breaks every install the day it lapses). The ruling was that
+            // the installer is the only supported route for a downloaded
+            // copy, which makes THIS LINE the thing that makes that route
+            // work. Remove it and every downloaded install breaks, on every
+            // machine left at the Windows default.
+            //
+            // tests/test_deploy_script.py holds it, because nothing else
+            // did and the ruling is one day old. Row 5b-96.
             start.ArgumentList.Add("-NoProfile");
             start.ArgumentList.Add("-NonInteractive");
             start.ArgumentList.Add("-ExecutionPolicy");

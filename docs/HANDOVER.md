@@ -124,6 +124,48 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-21 (after the real-Revit run) — TWO THINGS #235 PROVED THAT NOTHING WAS HOLDING
+
+**Main moved while this branch was open.** [#235](https://github.com/Ajmalpshaik/Heron-AI/pull/235)
+landed — Groups AA and AB run on the owner's PC against Revit 2024.3 and 2020.2.9, **14 pass, AA9
+fails**, 23 proof screenshots. The eight rows of PR #241 were squashed on top of it. Checked file by
+file: nothing of either side was lost.
+
+**[Row 5b-96](FRAGMENT-ISSUES.md). FIXED. Two halves, and the first is mine.**
+
+[Row 5b-79](FRAGMENT-ISSUES.md) moved the backup path and I wrote beside it *"No old backup is deleted
+or moved."* **On a real machine that is false for `heron-bridge`**: its `productFolder` is `Heron`, so
+its new `backupDir` is `install-backup\<version>\Heron` — **exactly where the old layout put the
+backed-up folder**. The first new deploy writes over it. True for every other product, which is why
+reasoning missed it and a machine did not. The note says what the machine saw now, and **keeps the old
+sentence as a quote with its history**. The code was deliberately not changed: tidying the orphans
+means reaching into a path this script no longer owns, which is the worse risk the paragraph names.
+
+The second half is what `AA9` actually found: a downloaded Heron carries `ZoneId=3` on **all 2130
+files**, and `RemoteSigned` refuses an unsigned downloaded script **before its first line runs** — so
+`Unblock-File`, which lives *inside* `deploy-addin.ps1`, cannot clear the mark that stops
+`deploy-addin.ps1` running. [D-96](DECISIONS.md) ruled the same day: **the installer is the only
+supported route**. **That made `-ExecutionPolicy Bypass` in `WindowsAdapters.cs` load-bearing** — and
+it appears in exactly one place in the repository with **nothing under `tests/` mentioning it**. Its
+comment argued the flag was *safe* and said nothing about the install breaking without it.
+
+**[Row 5b-97](FRAGMENT-ISSUES.md). FIXED. The same shape, same run.** `AB1` failed on a real machine
+and was fixed the same day — a wrapping `TextBlock` instead of a bare string that clipped *"...that
+exist"* with no ellipsis. **The fix is right; nothing held it.** Not one mention of `TextBlock`,
+`TextWrapping` or `AB1` in `tests/test_installer_window.py`. Reverting would compile, pass every gate
+and every suite, and clip again where nobody is watching.
+
+**The lesson under both, worth more than either row.** A row in `NEEDS-CHECKING` that FAILS on the
+owner's PC and gets fixed the same day leaves **a fix with a screenshot behind it and nothing on this
+side**. The visual half genuinely needs Windows; **the structural half almost never does**. When the
+next real-Revit run comes back, ask of every fix it produced: *what text fact would go red if somebody
+undid this?* — and write that down before moving on.
+
+**Three drafting mistakes in 5b-97's short section, all the same kind**: a check that does not look
+where the thing it is about actually is. `"AB1" in window` was true against the unfixed file too;
+`find("TextWrapping")` returned the first one in the file, above the tick box, because every other
+block already wrapped. **A check that is true either way is not a check.**
+
 ### 2026-09-21 (closing) — SIX PROMISES NOBODY WROTE DOWN, AND A SWEEP THAT WAS WRONG 28 TIMES
 
 **[Row 5b-95](FRAGMENT-ISSUES.md). OPEN — for a sitting, and the question is one sentence long.**
