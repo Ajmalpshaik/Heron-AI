@@ -161,8 +161,20 @@ this time.
 > When a module's docstring argues hard for something, ask what would go red if it stopped being true.
 > That question has been worth more than any scan.
 
-**Live-path brain modules: 11 of 53**, `heron_context` still PART — `Part`, `Context`,
-`_generation_parts`, the tier splitters and `report` are read in outline only.
+**`heron_context.py` is now read end to end**, and the rest of it is clean. Three things were checked
+and found sound rather than assumed:
+
+- **`FULL_ONLY` and `TooDeep` are both enforced in `Context.add` and already tested** — the request
+  and the situation cannot be carried shallower, and a part arriving deeper than the cap raises.
+- **`ctx.refused` reaches BOTH surfaces**: the MCP reply as `not_carried`, and `report()`'s *NOT
+  CARRIED, and why* section. Nothing the budget allowed is dropped in silence.
+- **`_at_depth` cannot produce a plausible zero.** Measured across four splitter shapes: when nothing
+  shallower can be derived it carries the whole thing and does **not** mark it cut, because nothing
+  was; and an **empty** tier is carried *and marked* `0 of N characters, N not carried`, so a part
+  with no content says so rather than reading as complete.
+
+**Live-path brain modules: 12 of 53.** Next: `heron_retrieve`, which `_standard_parts` stands on and
+which this session has now exercised hard.
 
 ### 2026-09-21 — A POINTER TO A FILE THAT DOES NOT EXIST, AND IT IS THE DOCUMENTED DEAD END
 
