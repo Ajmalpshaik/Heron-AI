@@ -145,6 +145,26 @@ def main():
                                                "checked_by": "x"}}))
     check("mcp-configured" in answer["unchecked"],
           "and a state outside the four reads as UNCHECKED, not as a pass")
+    # AND IT DOES NOT SAY "NOTHING CHECKED THIS", because something did.
+    # Both fail safe to UNCHECKED, which is the behaviour above and is
+    # right; the sentence beside it has to tell the two apart, or the
+    # report merges "nobody looked" with "I cannot read what they said" -
+    # the merge this agent's own docstring forbids one line up.
+    said = [entry["why"] for entry in answer["steps"]
+            if entry["step"] == "mcp-configured"][0]
+    check("PROBABLY FINE" in said and "nothing checked this" not in said,
+          "and the reason names the word it could not read, rather than "
+          "reporting it as nobody having looked")
+
+    print()
+    print("3b. Step 16 is PRODUCED, not reported on")
+    # It was accepted as a valid step name and then silently dropped -
+    # VERIFIED_BY_CHECKS stops at fifteen. Accepting something and ignoring
+    # it is the soft failure every other refusal here exists to prevent.
+    answer = look(checks(**{"user-told": {"state": "HEALTHY",
+                                          "checked_by": "x"}}))
+    check(answer.get("refused") == "NOT_CHECKED_BY_A_CHECK",
+          "a check handed in for step 16 is refused, not quietly dropped")
 
     print()
     print("4. A step verified by the thing that performed it")
