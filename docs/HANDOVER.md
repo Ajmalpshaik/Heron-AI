@@ -124,6 +124,62 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — ONE HOP WAS BEING READ AS REACH
+
+**[Row 5b-126](FRAGMENT-ISSUES.md), FIXED.** `tools/module-reach.py` read end to end — 177 lines,
+never opened before. The **fifth** of the six unheld tools.
+
+It exists to re-measure `mcp/README.md`'s own sentence: modules *"imported by nothing but their own
+tests, and therefore **UNREACHABLE FROM ANY CONVERSATION**"*. It sorts every module in `brain/` into
+four buckets **by who imports it**, and [row 5b-83](FRAGMENT-ISSUES.md) carries the number it
+prints.
+
+**It counted one hop.** A module imported by a neighbour landed in the first bucket — *reached by
+mcp/ or another brain module* — whether or not that neighbour was itself reached by anything.
+
+**Measured by following the imports instead:**
+
+| | |
+|---|---|
+| modules in `brain/` | **145** |
+| the first bucket holds | **53** |
+| reachable from `mcp/` at all | **17** |
+| reached only by neighbours nothing reaches | **36** — closed loops inside `brain/` |
+
+So the count of modules **no conversation can arrive at is 128**, not the 90 in bucket three, and the
+figure a reader takes as *reached* overstates it by more than a factor of three.
+
+### Fixed by widening what it reports, not by changing a bucket
+
+A new `reached_from()` walks the import graph, and the report prints *reachable from mcp/ by
+following imports* **beside** the four buckets, with a line naming how many of the first are closed
+loops. `--list` names them too.
+
+**Neither number stands in for the other.** The buckets say *who imports a module*; the walk says
+*whether a conversation can arrive at it*. Both are worth having, and it still exits 0 whatever it
+finds — it is a report.
+
+**[Row 5b-83](FRAGMENT-ISSUES.md) is still OPEN and still the owner's.** A pointer sentence was
+added to it naming the sharper measurement and saying in terms that **the question did not move**.
+That is [PROJECT-MAP §D](PROJECT-MAP.md)'s *record both*, not an answer.
+
+**`tests/test_module_reach.py`**: **one red** against the module as found, with every bucket check
+green before and after — which is what makes this an addition rather than a correction. Both halves
+shown to have teeth: removing the walk reds the line that asks for it, and making the walk stop
+after one hop reds the count.
+
+### Three things checked and found right, rather than assumed
+
+| | |
+|---|---|
+| package-path imports | **None anywhere.** `from brain.heron_x import y` would be missed by the head-of-the-dotted-name reading, and no file does it |
+| `platform/` and `revit/` left out of the searched roots | They hold **no Python at all**, so it costs nothing |
+| `.claude` | Its one Python file imports **no** brain module, so a module reached only by a hook — which would land in the first bucket under a label naming mcp and brain — does not exist today |
+
+All three are **shapes rather than defects**, and none is a row.
+
+**One of the six unheld tools remains**: `measure-graph` — 394 lines, and a report.
+
 ### 2026-09-22 — A GENERATOR KEPT ITS OWN PLACEHOLDER AS IF A PERSON HAD WRITTEN IT
 
 **[Row 5b-124](FRAGMENT-ISSUES.md), FIXED. [Row 5b-125](FRAGMENT-ISSUES.md) raised, and it is the
