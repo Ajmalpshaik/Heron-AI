@@ -66,6 +66,7 @@ change is a value that can be read before it is applied.
 """
 
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -136,9 +137,22 @@ def _secret_shaped(key, value):
     for marker, what in SECRET_SHAPED:
         if marker.lower() in text.lower():
             return marker, what
-    lowered = str(key).lower().replace("_", "-")
+    if not text.strip():
+        return None
+    # THE NAME IS A WORD, NOT A RUN OF LETTERS. This was `word in lowered`
+    # over the whole dotted path with nothing anchoring it, so any path
+    # carrying those letters anywhere in it was refused as a credential -
+    # measured, `company-standards.keywords`, `update-policies.turnkey` and
+    # `model-routing.monkey` all were. The sentence they got is not a
+    # conservative reading of somebody's file, it is an untrue one about it:
+    # "a key named '...', which says the value is a credential". A trailing
+    # `s` still counts, so `secrets` and `tokens` are caught exactly as they
+    # were - the refusals this check exists for are all word-shaped, and
+    # every one of them is held by a check that was green before this
+    # narrowing. Row 5b-117.
+    words = set(re.split(r"[^a-z0-9]+", str(key).lower()))
     for word in SECRET_NAMED:
-        if word in lowered and text.strip():
+        if word in words or (word + "s") in words:
             return word, "a key named '%s', which says the value is a " \
                          "credential whatever it looks like" % key
     return None

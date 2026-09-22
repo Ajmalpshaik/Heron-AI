@@ -124,6 +124,60 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — "A KEY NAMED company-standards.keywords, WHICH SAYS THE VALUE IS A CREDENTIAL"
+
+**[Row 5b-117](FRAGMENT-ISSUES.md), FIXED.** `brain/heron_configuration.py` read end to end — 348
+lines, 2 public functions, **one suite**, nothing imports it.
+
+Article 17 says a secret never goes in a settings file, so `split()` refuses a value that looks like a
+credential **and** a key whose NAME says it is one. The name test was **`word in lowered`** over the
+whole dotted path, with nothing anchoring it — so any path carrying those letters **anywhere** was
+refused.
+
+**Measured, on settings a practice would really write:**
+
+| the setting | what it gets |
+|---|---|
+| `company-standards: {keywords: [duct]}` | **`SECRET_IN_CONFIGURATION`** |
+| `update-policies: {turnkey: true}` | **`SECRET_IN_CONFIGURATION`** |
+| `model-routing: {monkey: no}` | **`SECRET_IN_CONFIGURATION`** |
+
+And the refusal is not merely cautious — **it asserts something untrue about the reader's own file**:
+
+> a key named `'company-standards.keywords[0]'`, **which says the value is a credential whatever it
+> looks like**
+
+with a proposal to put the word **duct** in the credential store and keep the handle.
+
+**A refusal on a security boundary is allowed to be cautious. It is not allowed to name evidence it
+does not have** — and this file already knows the difference: its `unjudged` list spells out exactly
+what the MACHINE check does and does not catch (*"it narrows the leak; it does not close it"*) and
+says nothing at all about the secret check's false side.
+
+The name is matched as a **word** now — the path is split on every non-alphanumeric character, and a
+segment has to **be** one of the names, or one with a trailing `s`. **`secrets`, `tokens`,
+`passwords` and `credentials` are still caught**, which is the half that makes this a narrowing rather
+than a hole opened for three examples. `public-key-pinning` **stays refused**, deliberately: *key* is
+a word in it, and the rule this agent states is that a key named for a credential is refused whatever
+its value looks like.
+
+```bash
+python tests/test_configuration.py     # section 5b, 3 red against the module as found
+```
+
+**The twelve checks that nothing was loosened were green BEFORE the fix** — every spelling of a
+credential name the suite already had, plus the plurals, asserted refused both before and after. That
+is what made it safe to make.
+
+**The four true positives it exists for all still fire**, measured in the same run: a pasted `sk-`
+key, a key named only by its name, a Windows path in a portable setting, and a key outside docs/21
+§9's list.
+
+**One thing checked and dismissed**: the refusal returns on the **first** problem rather than naming
+every one, so a caller fixing three settings makes three round trips — `heron_safemode` names all of
+them in `could_not`. Here the refusal **is** the product, on a boundary where the first one is enough
+to stop the write: a difference of shape rather than a defect.
+
 ### 2026-09-22 — SAFE MODE SWEPT A FLAG TO A STATE NOTHING CAN READ
 
 **[Row 5b-116](FRAGMENT-ISSUES.md), FIXED.** `brain/heron_safemode.py` is read end to end — 370
