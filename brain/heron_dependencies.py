@@ -159,6 +159,27 @@ def review(dependencies, importable=None):
                                "path with nobody told - PROPOSALS F7, and "
                                "requirements-optional.txt already asks for "
                                "this field." % (name, "; ".join(missing))}
+        # A PACKAGE NAMED TWICE WITH TWO KINDS IS NOT RESOLVED QUIETLY.
+        # This was `entries[name] = ...` and the LAST entry won, so the
+        # list's ORDER decided whether a missing package stops Heron or is
+        # mentioned in passing - measured, required-then-optional gave 0
+        # required missing and 1 degraded, and the reverse gave the
+        # opposite. That is the same defaulting this function refuses one
+        # branch above, arriving by another route: a dependency with NO
+        # kind is refused so that nobody picks one for it, and a
+        # dependency with TWO had one picked. Row 5b-121.
+        if name in entries and entries[name]["kind"] != kind:
+            return {"refused": "KIND_DISAGREES", "package": name,
+                    "why": "%s is listed as both %s and %s, and the two get "
+                           "opposite treatment. Defaulting to optional "
+                           "turns a failure into silence; letting the "
+                           "order of a list decide it is the same thing "
+                           "with nobody's name on it."
+                           % (name, entries[name]["kind"], kind),
+                    "proposal": "say which it is, once. A package that is "
+                               "required in one place and optional in "
+                               "another is two different claims about what "
+                               "happens when it is absent."}
         entries[name] = dict(entry, kind=kind)
 
     here, how = _installed(importable, sorted(entries))

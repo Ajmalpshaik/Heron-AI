@@ -264,6 +264,44 @@ def main():
           "including the one PROPOSALS F7 is about, said out loud")
 
     print()
+    print("3b. A package named twice with two kinds is not resolved quietly")
+    # ROW 5b-121. `entries[name] = ...` let the LAST entry win, so a package
+    # listed twice with conflicting kinds was decided by list order and
+    # nothing said so. Measured before the fix:
+    #
+    #   required then optional  -> 0 required missing, 1 degraded
+    #   optional then required  -> 1 required missing, 0 degraded
+    #
+    # This module refuses a dependency with NO kind precisely so that
+    # nobody picks one for it - "defaulting to optional turns a failure
+    # into silence, which is worse" - and then picked one for a dependency
+    # that arrived with two. Last-write-wins is a default by another name.
+    both = [{"name": "model2vec", "kind": "required",
+             "uses": "the trained encoder"},
+            {"name": "model2vec", "kind": "optional",
+             "uses": "the trained encoder",
+             "lost": "retrieval falls back to character n-grams"}]
+    answer = look(both, importable=lambda names: [])
+    check(answer.get("refused") == "KIND_DISAGREES",
+          "required-then-optional is refused rather than resolved")
+    check(str(answer.get("package")) == "model2vec",
+          "and the refusal names the package")
+    answer = look(list(reversed(both)), importable=lambda names: [])
+    check(answer.get("refused") == "KIND_DISAGREES",
+          "and so is optional-then-required - the order must not decide")
+    # AN EXACT REPEAT IS ONE DEPENDENCY, NAMED TWICE - which is what
+    # heron_brain_init and heron_rag_init already say about a store and an
+    # index. Nothing to disagree about, so nothing to refuse.
+    same = [dict(both[1]), dict(both[1])]
+    answer = look(same, importable=lambda names: [])
+    check(answer.get("refused") is None,
+          "the same package twice with the SAME kind is not a conflict")
+    check(len(answer.get("degraded") or []) == 1,
+          "it is one dependency, named twice")
+    check(answer["why"].startswith("0 of 1 importable"),
+          "and the count a reader sees says one: %r" % answer["why"][:18])
+
+    print()
     print("9. Every failure the contract declares is named and reached")
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-INS-DEP-005.yaml"))
