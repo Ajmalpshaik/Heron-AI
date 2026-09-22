@@ -289,7 +289,7 @@ be `Response B` and a position bias would become a systematic bias. **Anonymise 
 
 **Swarm coordination and consensus** ([`ruflo`](https://github.com/ruvnet/ruflo)) answers *"which of my
 disagreeing replicas is right"*. Heron has **one Revit, one pipe, one queue, one handler**
-([D-09](DECISIONS.md)) and **14 MCP tools against their 314**.
+([D-09](DECISIONS.md)) and **a few dozen MCP tools against their 314** - `python mcp/server/heron_tools.py` lists Heron's. The number is not typed here, because the one that was went stale within a fortnight.
 
 ### 2.15 BUILT - compare the finished diff against what the change said it was for
 

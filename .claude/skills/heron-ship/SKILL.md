@@ -59,7 +59,7 @@ Fast, and they fail loudest. Run these first — a broken link or a missing head
 before the tests than after.
 
 ```bash
-python tools/check-docs.py        # ~1.2 s
+python tools/check-docs.py        # ~4 s on a quiet container (2026-09-23); far longer on a busy PC
 python tools/check-metadata.py    # ~0.1 s
 python tools/check-structure.py   # ~0.2 s
 python tools/check-package.py     # ~0.1 s
@@ -69,8 +69,12 @@ python tools/check-package.py     # ~0.1 s
 knowledge store.
 
 - **`check-docs`** — broken links, and **every count that can be derived**: open questions, test suites,
-  tools. It fails on a *stated* number that disagrees with a *derived* one. When it says `DRIFT`, the
-  sentence is wrong, not the code.
+  the MCP tool total. It fails on a *stated* number that disagrees with a *derived* one. When it says
+  `DRIFT`, the sentence is wrong, not the code. **Since 2026-09-23 it also fails** on a file in `tools/`
+  or a skill folder its README never names, and on a control character, double-encoded text or a
+  merge-conflict marker in any tracked file — **except** inside a PROVEN fragment's `impl/`, which it
+  reports as *waiting* because the fix makes the proof stale. With no git it says that section did
+  **not run**, which is not a pass.
 - **`check-structure`** — the layering, and the adapter boundary: the Revit vendor namespace only inside
   `revit/` or `tools/`. **It greps file text, so a comment counts.**
   [`heron-guard`](../heron-guard/SKILL.md) now refuses that one at edit time; this still catches

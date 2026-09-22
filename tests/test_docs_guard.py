@@ -45,6 +45,20 @@ WHAT IT PROVES
      These two rows were folded as the GUARDING half ONLY, and D-77 says
      so; this is what makes that limitation a fact rather than a promise.
 
+  6. A TOOL AND A SKILL NO README NAMES ARE CAUGHT - a shell script as well
+     as a .py, because three of the nine tools found unnamed on 2026-09-22
+     were not Python - and so is an MCP tool total that disagrees with
+     len(heron_tools.TOOLS), while another project's count and a quotation
+     are left alone.
+
+  7. TEXT HYGIENE READS WHAT GIT TRACKS: a planted control character, a dash
+     double-encoded through the Windows code page, and merge-conflict
+     markers are each named. With no git - the plain copy in 2 - it says
+     NOT RUN rather than passing on nothing read.
+
+  8. A HIT INSIDE A PROVEN FRAGMENT'S impl/ WAITS for its re-proof rather
+     than failing the run, because fixing it makes the proof stale (D-30).
+
 WHAT IT DOES NOT PROVE
   That the README is WRITTEN by anybody. Nothing generates it, and after
   D-77 nothing is scheduled to. The rows are closed on the guarding half
@@ -109,6 +123,32 @@ def run_guard(where):
     return done.returncode, done.stdout.decode("utf-8", "replace")
 
 
+def section(out, title):
+    """One numbered section of the guard's output, up to the next one."""
+    after = out.split(title, 1)
+    if len(after) < 2:
+        return ""
+    return after[1].split("\n=== ", 1)[0]
+
+
+def proven_impl_file(tree):
+    """A file inside some PROVEN fragment's impl/, in the copy, or None."""
+    fragments = os.path.join(tree, "brain", "fragments")
+    for name in sorted(os.listdir(fragments)):
+        card = os.path.join(fragments, name, "fragment.yaml")
+        if not os.path.isfile(card):
+            continue
+        if not re.search(r"^heron-status:\s*PROVEN\b",
+                         io.open(card, encoding="utf-8").read(), re.M):
+            continue
+        for dirpath, _dirs, files in os.walk(os.path.join(fragments, name,
+                                                           "impl")):
+            for one in sorted(files):
+                if one.endswith(".cs"):
+                    return os.path.join(dirpath, one)
+    return None
+
+
 def fingerprint(where):
     """Every markdown file's bytes, so a write of any kind is visible."""
     prints = {}
@@ -146,10 +186,14 @@ def main():
 
         print("\n2. the guard passes on the tree as it stands")
         before = fingerprint(tree)
-        code, _out = run_guard(tree)
+        code, clean = run_guard(tree)
         check(code == 0,
               "a clean copy of this repository passes, so a failure below "
               "is the planted error and not the weather")
+        hygiene = section(clean, "11. TEXT HYGIENE")
+        check("NOT RUN" in hygiene,
+              "the copy has no git, and the text-hygiene section says it did "
+              "NOT RUN rather than passing on nothing read")
 
         print("\n5. and it wrote nothing while doing it")
         # Asserted HERE, against the clean run, because a guard is at its
@@ -196,9 +240,91 @@ def main():
               "and not only the README")
         io.open(arch, "w", encoding="utf-8").write(kept)
 
+        print("\n6. a tool and a skill no README names, and an MCP tool total "
+              "nobody derived, are caught")
+        stray_tool = os.path.join(tree, "tools", "stray-helper.sh")
+        io.open(stray_tool, "w", encoding="utf-8").write("echo stray\n")
+        stray_skill = os.path.join(tree, ".claude", "skills", "stray-skill")
+        os.makedirs(stray_skill)
+        io.open(os.path.join(stray_skill, "SKILL.md"), "w",
+                encoding="utf-8").write("# stray\n")
+        mcp_doc = os.path.join(tree, "docs", "04-heron-mcp.md")
+        kept = io.open(mcp_doc, encoding="utf-8").read()
+        io.open(mcp_doc, "w", encoding="utf-8").write(
+            kept + "\n\nHeron has 99 MCP tools.\n\n"
+                   "Their 314 MCP tools are somebody else's count.\n\n"
+                   'Its README says "learn 314 MCP tools" and means its own.\n')
+        code, out = run_guard(tree)
+        named = section(out, "10. EVERY TOOL")
+        check(code != 0, "the guard fails")
+        check("tools/stray-helper.sh" in named,
+              "and names the tool - a shell script too, not only a .py")
+        check(".claude/skills/stray-skill" in named, "and the skill folder")
+        drift = [l for l in out.splitlines() if "DRIFT" in l and "MCP" in l]
+        check(any("04-heron-mcp.md" in l and "99 MCP tools" in l
+                  for l in drift),
+              "and the MCP tool total a sentence typed wrong")
+        check(not any("314" in l for l in drift),
+              "but not another project's count, nor a quotation of one")
+        os.remove(stray_tool)
+        shutil.rmtree(stray_skill)
+        io.open(mcp_doc, "w", encoding="utf-8").write(kept)
+
+        print("\n7. text hygiene over what git tracks")
+        made = subprocess.run(["git", "init", "-q"], cwd=tree,
+                              capture_output=True)
+        added = subprocess.run(["git", "add", "-A"], cwd=tree,
+                               capture_output=True)
+        check(made.returncode == 0 and added.returncode == 0,
+              "the copy is made a git tree, so there is something to track")
+        kept = io.open(arch, encoding="utf-8").read()
+        # Built, never typed: this file is tracked, so it is read by the very
+        # section it tests, and a literal control character here would be
+        # found here.
+        backspace = chr(8)
+        em_dash_misread = u"—".encode("utf-8").decode("cp1252")
+        io.open(arch, "w", encoding="utf-8").write(
+            kept + "\n\nA planted" + backspace + " character.\n\n"
+                   "A planted " + em_dash_misread + " dash read twice.\n")
+        conflict = os.path.join(tree, "docs", "planted-conflict.md")
+        io.open(conflict, "w", encoding="utf-8").write(
+            "\n".join(["<" * 7 + " ours", "one", "=" * 7, "two",
+                       ">" * 7 + " theirs", ""]))
+        subprocess.run(["git", "add", "-A"], cwd=tree, capture_output=True)
+        code, out = run_guard(tree)
+        hygiene = section(out, "11. TEXT HYGIENE")
+        check(code != 0, "the guard fails")
+        check("06-heron-platform.md" in hygiene and "U+0008" in hygiene,
+              "and names the control character and where it is")
+        check("double-encoded" in hygiene and "EM DASH" in hygiene,
+              "and the double-encoded dash, by the character it meant")
+        check("planted-conflict.md" in hygiene
+              and "merge-conflict marker" in hygiene,
+              "and the merge-conflict markers")
+        io.open(arch, "w", encoding="utf-8").write(kept)
+        os.remove(conflict)
+        subprocess.run(["git", "add", "-A"], cwd=tree, capture_output=True)
+
+        print("\n8. a hit inside a PROVEN fragment's impl/ waits for its "
+              "re-proof rather than failing")
+        target = proven_impl_file(tree)
+        check(target is not None, "a PROVEN fragment with an impl/ is there")
+        if target:
+            kept = io.open(target, encoding="utf-8").read()
+            io.open(target, "w", encoding="utf-8").write(
+                kept + "\n// " + chr(12) + "\n")
+            code, out = run_guard(tree)
+            hygiene = section(out, "11. TEXT HYGIENE")
+            check("WAITING" in hygiene and "U+000C" in hygiene,
+                  "it is reported as WAITING - fixing it would make the "
+                  "proof stale (D-30), so it goes with the re-proof")
+            check("0 finding(s) that fail, 1 waiting" in hygiene,
+                  "and it is not counted as a failure")
+            io.open(target, "w", encoding="utf-8").write(kept)
+
         code, _out = run_guard(tree)
         check(code == 0,
-              "and with both planted errors removed it passes again - so "
+              "and with every planted error removed it passes again - so "
               "each finding was the plant and nothing else")
     finally:
         shutil.rmtree(home, ignore_errors=True)
