@@ -45,6 +45,17 @@ who is not the declared one. A file with no marker at all is reported as
 UNMARKED rather than as clean - "no evidence of a problem" and "evidence of no
 problem" are different findings and a tool that merges them is the tool
 scientific-agent-skills already has.
+
+TWO WAYS IT MERGED THEM, both measured 2026-09-22 and both fixed here. A bare
+`mit` was matched case-insensitively, so an imported unit whose only occurrence
+was the German word - `gemessen mit dem Werkzeug` - came back CLEAN while the
+same file without it came back UNMARKED. And an unmarked list longer than forty
+printed forty, said `..and 5 more (--all)`, and `--all` printed the same forty,
+so those five could not be seen at all. NEITHER WAS A LIVE FAILURE: all 406
+units declare `source: OFFICIAL`, no file carries the word `mit`, and the tool
+reports 406 clean. Both were in the branch the first IMPORTED unit lands on,
+which is the future docs/09's COMMUNITY PACKAGES plans for and the whole reason
+this tool exists.
 """
 
 import io
@@ -74,9 +85,17 @@ COPYRIGHT = re.compile(
     r"|(?:\(c\)|©)\s*\d{4}(?:\s*-\s*\d{4})?)"
     r"[,\s]*([^\n\r.;]{2,60})", re.I)
 LICENCE_NAME = re.compile(
-    r"\b(apache[- ]?2\.0|apache license|mit license|mit\b|bsd[- ]?\d?"
+    r"\b(apache[- ]?2\.0|apache license|mit license|bsd[- ]?\d?"
     r"|isc\b|gpl[- ]?\d?|agpl[- ]?\d?|lgpl[- ]?\d?|mpl[- ]?\d?"
     r"|cc0|unlicense|proprietary)\b", re.I)
+# A BARE `mit` IS CASE-SENSITIVE, and the rest of the list is not. It was in
+# the pattern above until 2026-09-22, matched with re.I, and `gemessen mit dem
+# Werkzeug` in an imported unit's prose came back CLEAN - measured. The same
+# file without that word comes back UNMARKED, correctly, which is the whole
+# distinction this tool's docstring says it exists to keep. Heron reads
+# standards and a standard is not always in English. The licence is written
+# MIT; the German word is not, and `MIT License` is matched above either way.
+MIT_BARE = re.compile(r"\bMIT\b")
 
 # Copyright holders that are Heron's own. A marker naming one of these is not
 # somebody else's work arriving.
@@ -148,6 +167,8 @@ def inspect(folder):
             reserved.append(repo_relative(path))
         for match in LICENCE_NAME.findall(body):
             licences.add(match.lower().strip())
+        if MIT_BARE.search(body):
+            licences.add("mit")
         for match in COPYRIGHT.findall(body):
             who = match.strip(" ,-\t").strip()
             # A holder is a name, and a name has letters. "Copyright 2026"
@@ -257,10 +278,15 @@ def main(argv):
         out("by the repository's own LICENSE; these are the ones that are\n")
         out("not covered by it and say nothing else either.\n")
         out("-" * 70 + "\n")
-        for kind, name, why in unmarked[:40]:
+        # R-82 - FLAGGED, NEVER TRUNCATED. The message named `--all` as the
+        # way to see the rest and `--all` printed the same forty, so five
+        # units could not be seen by any documented means. Measured
+        # 2026-09-22.
+        shown = unmarked if show_all else unmarked[:40]
+        for kind, name, why in shown:
             out("  %-9s %-34s %s\n" % (kind, name, why))
-        if len(unmarked) > 40:
-            out("  ..and %d more (--all)\n" % (len(unmarked) - 40))
+        if len(shown) < len(unmarked):
+            out("  ..and %d more (--all)\n" % (len(unmarked) - len(shown)))
         out("\n")
 
     out("%d unit(s) checked: %d clean, %d finding(s), %d unmarked.\n"
