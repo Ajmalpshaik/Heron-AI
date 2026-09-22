@@ -233,6 +233,38 @@ def main():
           "and that the detection was handed in, not performed")
 
     print()
+    print("7b. The KINDS list decides, and a spelling never does")
+    # ROW 5b-118. `kind` was compared against the single literal
+    # "mcp-server", and KINDS - declared at module level with a comment
+    # explaining what each kind is - was referenced nowhere. Measured:
+    # kind="mcp_server" with NO tools enumerated came back READY, saying
+    #
+    #   "registers as a mcp_server and brings no tools Heron calls"
+    #
+    # which is the one sentence the guard exists to make impossible. ONE
+    # UNDERSCORE turned off Golden Rule 19's reading - and this module says
+    # of that reading, in its docstring and again in its own answer, that
+    # it FAILS CLOSED. It failed open, on every spelling but one.
+    for spelling in ("mcp_server", "mcpserver", "mcp server", "banana", ""):
+        answer = ask(server(kind=spelling, tools=[]))
+        check(answer.get("refused") == "KIND_NOT_DECLARED",
+              "kind %r is not one of KINDS, so it is refused" % spelling)
+        check(not answer.get("ready"),
+              "and %r never comes back ready 'bringing no tools'" % spelling)
+    # CASE IS STILL FINE: it is lowered before the comparison, so this is a
+    # spelling of the DECLARED kind rather than a different kind.
+    answer = ask(server(kind="MCP-Server", tools=[]))
+    check(answer.get("refused") == "TOOLS_NOT_ENUMERATED",
+          "while MCP-Server IS the declared kind in another case, and still "
+          "has to enumerate its tools")
+    # AND NOTHING DECLARED WAS LOST - each of these was green before the
+    # fix and has to stay green after it.
+    for declared in EXT.KINDS:
+        answer = ask(server(kind=declared))
+        check(answer.get("ready") is True,
+              "a declared kind %r is still accepted" % declared)
+
+    print()
     print("8. Every failure the contract declares is named and reached")
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-INS-EXT-011.yaml"))
