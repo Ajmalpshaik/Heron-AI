@@ -124,6 +124,61 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — A TRAILING SLASH AND THE INSTALL PLANS TO REBUILD YOUR PROJECT MEMORY
+
+**[Row 5b-119](FRAGMENT-ISSUES.md), FIXED.** `brain/heron_brain_init.py` read end to end — 264 lines,
+2 public functions, **one suite**, nothing outside its own suite calls it.
+
+Its opening line is *"the one install step that can destroy what it finds"*, and it states its
+dangerous case three times: *"not a failed initialisation. It is a SUCCESSFUL one, on a machine that
+already had stores … an empty knowledge base looks exactly like a fresh install, and the modeller
+whose year of project memory it replaced finds out weeks later."*
+
+**Everything turns on one line** — `if path in here`, where `here` is
+`set(str(path).strip() for path in existing)`: **the caller's spelling, compared character for
+character** against the path `heron_scope` computed.
+
+**Measured on a real store:**
+
+| what the caller hands in | plan |
+|---|---|
+| the exact path | **0 to create, 1 kept** ✓ |
+| the same path with a **trailing separator** | **1 to create, 0 kept** |
+| the same path with a redundant **`.`** segment | **1 to create, 0 kept** |
+
+and `os.path.normpath` says both of those name the same file.
+
+**The module states its own limits carefully everywhere else** — its `unjudged` warns that a caller
+passing a **stale** list *"gets a plan to overwrite stores this agent was never told about"*. It said
+nothing about a list that is current and merely **spelled differently**, which is the easier mistake
+and the one a caller cannot see.
+
+Both sides go through one `_same_file()` now — `os.path.normcase(os.path.normpath(...))`. **The
+direction is safe by construction**: normalising can only make *more* paths match, and a match means
+the store is **kept** rather than created over.
+
+```bash
+python tests/test_brain_init.py     # section 1b, 3 red against the module as found
+```
+
+**The four checks around them were green BEFORE the fix**, and are what make this a fix rather than a
+loosening: the exact path is still recognised, both alternative spellings are asserted by `normpath`
+to name the same file *before* being asked for, and a bare filename is still **not** matched.
+
+**`normcase` is there for Windows**, where two spellings differing only in case name one file — and
+on POSIX it does nothing. **That half is reasoned rather than measured**, because this container has
+no Windows, and it is written down that way rather than claimed.
+
+**A relative path is still not matched, and the answer says so now** instead of leaving it to be
+found: resolving one needs a working directory, and choosing which would be this agent guessing where
+a caller meant — the thing it exists not to do.
+
+**What is right here is the interesting part**: it does **not** look at the disk. `existing` is handed
+in, because *looking and then acting on what it saw* is the shape of the mistake it exists to prevent.
+The scope list, the paths, the meanings and the schema version are all `heron_scope`'s own. Two scopes
+resolving to one file is refused **before** anything reaches disk. And the same store asked for twice
+is one store, not a conflict.
+
 ### 2026-09-22 — ONE UNDERSCORE TURNED OFF THE GOLDEN RULE 19 GUARD ON AN MCP SERVER
 
 **[Row 5b-118](FRAGMENT-ISSUES.md), FIXED.** `brain/heron_tooling.py` read end to end — 319 lines, 2

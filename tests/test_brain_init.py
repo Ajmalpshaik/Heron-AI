@@ -194,6 +194,48 @@ def main():
           "and why it does not look for itself")
 
     print()
+    print("1b. The same file spelled differently is the same file")
+    # ROW 5b-119. `existing` is compared with raw string equality, so a
+    # store that IS there but whose path the caller spelled any other way
+    # came back on the CREATE list - which is this agent's own dangerous
+    # case: "not a failed initialisation, a SUCCESSFUL one on a machine
+    # that already had stores". Measured before the fix, on a real path:
+    #
+    #   the exact path                 0 create, 1 keep
+    #   with a trailing separator      1 create, 0 keep
+    #   with a redundant '.' segment   1 create, 0 keep
+    #
+    # and os.path.normpath says the last two name the same file.
+    fresh = ask()
+    real = fresh["create"][0]["path"]
+    one = [fresh["create"][0]]
+
+    def spelled(path):
+        answer = ask([{"scope": one[0]["scope"],
+                       "project": one[0]["project"]}], existing=[path])
+        return len(answer.get("create") or []), len(answer.get("keep") or [])
+
+    check(spelled(real) == (0, 1),
+          "the exact path is recognised and the store is left alone")
+    for label, given in (
+            ("a trailing separator", real + os.sep),
+            ("a redundant '.' segment",
+             os.path.join(os.path.dirname(real), ".",
+                          os.path.basename(real)))):
+        check(os.path.normpath(given) == os.path.normpath(real),
+              "%s names the same file" % label)
+        check(spelled(given) == (0, 1),
+              "and %s is recognised, not planned for creation" % label)
+    # AND WHAT IS STILL NOT MATCHED IS SAID OUT LOUD rather than left to be
+    # discovered: a RELATIVE path cannot be resolved without guessing which
+    # working directory the caller meant, and guessing is what this agent
+    # exists not to do.
+    check(spelled(os.path.basename(real)) == (1, 0),
+          "a bare filename is still not matched - it names no directory")
+    check(any("relative" in note.lower() for note in fresh["unjudged"]),
+          "and the answer says so, rather than leaving it to be found")
+
+    print()
     print("7. Every failure the contract declares is named and reached")
     # NOWHERE_TO_PUT_IT - no knowledge directory at all.
     keep = os.environ.pop("HERON_KNOWLEDGE")
