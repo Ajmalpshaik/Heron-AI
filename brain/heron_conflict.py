@@ -637,17 +637,43 @@ def _rank(by_number):
         return (len(HIERARCHY), value.label, value.document or "")
 
 
+class MissingFlagValue(Exception):
+    """A flag that takes a value was given none. Refused, never defaulted."""
+
+
+def _value_after(argv, name):
+    """(the value, argv with the flag and its value removed). Never guesses.
+
+    A FLAG PRESENT WITH NO VALUE IS AN ERROR AND NOT AN ABSENT FLAG. Either
+    flag last on the line read `argv[i + 1]` and came back as
+    `IndexError: list index out of range` - a Python traceback as the answer
+    to a typo, on the two flags this module's own docstring shows. The house
+    answer was already written for the same stage, in
+    `heron_research._flag`: refuse by name, say what is missing, exit 2.
+
+    A value that looks like another flag is refused too, for the reason
+    `heron_ingest._flag` gives: `--scopes --project Tower` would otherwise
+    search the scope called "--project".
+    """
+    i = argv.index(name)
+    value = argv[i + 1] if i + 1 < len(argv) else None
+    if value is None or value.startswith("--"):
+        raise MissingFlagValue("%s needs a value and was given none." % name)
+    return value, argv[:i] + argv[i + 2:]
+
+
 def main(argv):
     scopes = None
     project = None
-    if "--scopes" in argv:
-        i = argv.index("--scopes")
-        scopes = [s.strip().lower() for s in argv[i + 1].split(",") if s.strip()]
-        argv = argv[:i] + argv[i + 2:]
-    if "--project" in argv:
-        i = argv.index("--project")
-        project = argv[i + 1]
-        argv = argv[:i] + argv[i + 2:]
+    try:
+        if "--scopes" in argv:
+            named, argv = _value_after(argv, "--scopes")
+            scopes = [s.strip().lower() for s in named.split(",") if s.strip()]
+        if "--project" in argv:
+            project, argv = _value_after(argv, "--project")
+    except MissingFlagValue as why:
+        print("  %s" % why)
+        return 2
 
     unknown = [a for a in argv if a.startswith("-")]
     if unknown:

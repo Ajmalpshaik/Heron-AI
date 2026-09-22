@@ -170,6 +170,15 @@ def main(argv):
     revit = None
     if "--revit" in argv:
         i = argv.index("--revit")
+        # EXIT 2 AND A SENTENCE, NOT A TRACEBACK - the same rule the comment
+        # below states for a missing knowledge store, applied to the flag
+        # above it. `--revit` last on the line read `argv[i + 1]` and came
+        # back as `IndexError: list index out of range`, which is exactly
+        # what row 5b-71 was written to stop one statement lower down.
+        if i + 1 >= len(argv) or argv[i + 1].startswith("-"):
+            sys.stderr.write("--revit needs a release, e.g. --revit 2024. "
+                             "Nothing was checked.\n")
+            return 2
         revit = argv[i + 1]
 
     import heron_scope as SCOPE
