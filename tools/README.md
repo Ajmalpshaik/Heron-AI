@@ -356,13 +356,15 @@ tool does not decide whether redistribution is lawful and **automated coverage i
 clearance**.
 
 One portability note, because it cost a session once: `inspect()` must not assume the path it is given
-shares a drive with the repository. It uses a local `repo_relative()` that falls back to the absolute
-path when there is no relative form — the same rule
-[`brain/heron_fragment.py`](../brain/heron_fragment.py) owns — because
-`os.path.relpath` raises `ValueError` across drives on Windows, and the test builds its fixture in
-`tempfile.mkdtemp()`. Repository on `D:`, `TEMP` on `C:`, and the gate dies. Repeated rather than
-imported on purpose: importing it costs PyYAML, and this is the tool you run on a bare machine to read
-the licence of something *before* trusting it enough to install anything for it.
+shares a drive with the repository. Its `repo_relative()` falls back to the absolute path when there is
+no relative form, because `os.path.relpath` raises `ValueError` across drives on Windows, and the test
+builds its fixture in `tempfile.mkdtemp()`. Repository on `D:`, `TEMP` on `C:`, and the gate dies.
+**The rule is [`brain/heron_relpath.py`](../brain/heron_relpath.py)'s, asked rather than copied.** Until
+2026-09-22 this tool repeated it on purpose, because it then lived in `heron_fragment`, and importing
+that costs PyYAML - and this is the tool you run on a bare machine to read the licence of something
+*before* trusting it enough to install anything for it. `heron_relpath` imports nothing but `os`, and
+[`tests/test_relpath.py`](../tests/test_relpath.py) runs this tool with PyYAML blocked
+([row 5b-152](../docs/FRAGMENT-ISSUES.md)).
 
 ## `heron-backup.py` — the user's own data, and getting it back
 

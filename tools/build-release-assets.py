@@ -86,6 +86,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_dotnet as NET                                     # noqa: E402
+# NOT heron_fragment: .github/workflows/release.yml installs no PyYAML before
+# it runs this, and heron_relpath imports nothing but `os`.
+import heron_relpath as RELPATH                                # noqa: E402
 
 MANIFEST = os.path.join(ROOT, "platform", "heron-products.json")
 
@@ -445,8 +448,12 @@ def main():
 
     lines = checksums(out_dir)
     print()
+    # RELPATH, NOT os.path.relpath. `--out` may name another drive, and on
+    # Windows the raw call raised HERE - after every asset was packed and
+    # checksums.txt, the completion mark, written - so a finished release
+    # exited 1 with a traceback (row 5b-152).
     print("%d asset(s) and the product list in %s"
-          % (len(lines) - 1, os.path.relpath(out_dir, ROOT)))
+          % (len(lines) - 1, RELPATH.relpath(out_dir, ROOT)))
     print("checksums.txt covers %d file(s)" % len(lines))
     print()
     print("NOTHING HAS BEEN PUBLISHED, and nothing has been installed. This")

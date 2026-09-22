@@ -73,6 +73,10 @@ OUT = os.path.join(TOOL_DIR, "changes.json")
 
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
+# For short() and nothing else. heron_relpath, NOT heron_fragment: this tool
+# answers NOT RUN without importing heron_fragment and the PyYAML it needs.
+import heron_relpath as RELPATH                                  # noqa: E402
+
 
 def short(path):
     """`path` as the repository spells it, for a message - never a raised error.
@@ -90,12 +94,14 @@ def short(path):
     the one branch whose whole job is to fail cleanly.
 
     An absolute path is a worse message. It is never a worse outcome.
+
+    THE RULE IS brain/heron_relpath's, and this only binds ROOT, read at the
+    call. Until row 5b-152 (2026-09-22) this carried its own try/except - a
+    copy, made because heron_fragment, where the rule then lived, costs
+    PyYAML and this tool answers NOT RUN without it. heron_relpath imports
+    nothing but `os`, so the copy went.
     """
-    try:
-        return os.path.relpath(path, ROOT)
-    except ValueError:
-        # Different drives on Windows: nothing to shorten against.
-        return path
+    return RELPATH.relpath(path, ROOT)
 
 
 def releases():
