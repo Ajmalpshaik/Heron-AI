@@ -64,7 +64,7 @@ def main():
     print("1. Every open ID-shaped row is reported")
     # Derived here, not borrowed from the tool - a check that reuses the
     # thing it is checking proves the two agree and nothing else.
-    every = re.findall(r"(?m)^\|\s*(~~)?\*\*([A-Z]\d+[a-z]?)\*\*", src)
+    every = re.findall(r"(?m)^\|\s*(~~)?\*\*([A-Z]+\d+[a-z]?)\*\*", src)
     should = [rid for struck, rid in every if not struck]
     check(should, "the file has %d open ID-shaped rows" % len(should))
     missing = sorted(set(should) - set(reported))
@@ -77,8 +77,8 @@ def main():
     print()
     print("2. Every group letter in the file is represented")
     # THE CHECK THAT WOULD HAVE CAUGHT THE ORIGINAL BUG.
-    letters = sorted(set(rid[0] for rid in should))
-    seen = sorted(set(rid[0] for rid in reported if rid != "!!"))
+    letters = sorted(set(re.match("[A-Z]+", rid).group(0) for rid in should))
+    seen = sorted(set(re.match("[A-Z]+", rid).group(0) for rid in reported if rid != "!!"))
     check(len(letters) > 2,
           "there are %d group letters open: %s" % (len(letters),
                                                    ", ".join(letters)))
@@ -109,12 +109,12 @@ def main():
     print("5. The guard fires when the pattern goes narrow again")
     tool = io.open(os.path.join(ROOT, "tools", "owner-queue.py"),
                    encoding="utf-8").read()
-    check(r"[A-Z]\d+[a-z]?" in tool,
-          "the pattern is [A-Z], not a single letter class")
+    check(r"[A-Z]+\d+[a-z]?" in tool,
+          "the pattern is [A-Z]+, so a group of two letters - AA, AB - is seen too")
     check("shaped" in tool and "cannot see them" in tool,
           "and the tool counts what it SHOULD have matched, separately")
     # Prove the guard by narrowing the pattern the way it used to be.
-    narrowed = tool.replace(r'^\|\s*(~~)?\*\*([A-Z]\d+[a-z]?)\*\*',
+    narrowed = tool.replace(r'^\|\s*(~~)?\*\*([A-Z]+\d+[a-z]?)\*\*',
                             r'^\|\s*(~~)?\*\*([AR]\d+[a-z]?)\*\*')
     check(narrowed != tool, "narrowing it back to [AR] is a real change...")
     spec2 = importlib.util.spec_from_loader("narrowed", loader=None)
@@ -128,6 +128,26 @@ def main():
     check("!!" in again,
           "AND THE GUARD CATCHES IT - the narrowed tool reports its own "
           "blindness instead of a short list that looks complete")
+
+    print()
+    print("6. The guard fires when the pattern goes back to ONE letter")
+    # FRAGMENT-ISSUES row 5b-156: one letter hid every two-letter group -
+    # AA, AB and on - from the owner's queue, and a self-check that shared
+    # the pattern agreed with it. The guard now counts with the wider
+    # pattern, so the old narrowing is exactly what it must catch.
+    one = tool.replace(r'^\|\s*(~~)?\*\*([A-Z]+\d+[a-z]?)\*\*',
+                       r'^\|\s*(~~)?\*\*([A-Z]\d+[a-z]?)\*\*')
+    check(one != tool, "narrowing it to one letter is a real change...")
+    spec3 = importlib.util.spec_from_loader("one_letter", loader=None)
+    single = importlib.util.module_from_spec(spec3)
+    single.__dict__["__file__"] = os.path.join(ROOT, "tools", "owner-queue.py")
+    exec(compile(one, "owner-queue.py", "exec"), single.__dict__)
+    thin = [r[0] for r in single.needs_checking()]
+    check(len(thin) < len(reported)
+          and not any(re.match("[A-Z][A-Z]", r) for r in thin if r != "!!"),
+          "...it loses every two-letter group (%d rows against %d)" % (len(thin), len(reported)))
+    check("!!" in thin,
+          "AND THE GUARD CATCHES IT - it counts with the wider pattern")
 
     print()
     if FAILURES:

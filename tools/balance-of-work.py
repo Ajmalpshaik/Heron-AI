@@ -122,7 +122,11 @@ def register_rows():
     text = read("docs/NEEDS-CHECKING.md")
     if not text:
         return None, None
-    rows = re.findall(r"^\| (~~)?\*\*([A-Z]\d+[a-z]?)\*\*(~~)?\s*\|", text, re.M)
+    # ONE LETTER OR MORE - [A-Z]+, not [A-Z]. One letter hid every two-letter
+    # group - AA, AB and on - until 2026-09-23: checks waiting on the owner that
+    # never reached him, in owner-queue.py, check-gaps.py and balance-of-work.py
+    # alike. FRAGMENT-ISSUES row 5b-156.
+    rows = re.findall(r"^\| (~~)?\*\*([A-Z]+\d+[a-z]?)\*\*(~~)?\s*\|", text, re.M)
     done = sum(1 for r in rows if r[0] and r[2])
     return len(rows), done
 
