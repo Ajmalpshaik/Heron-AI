@@ -33,6 +33,11 @@ nothing*.
 4. **A standard only when quoted.** Call something a breach only when `heron_standards` returns the
    clause for it. Quote the clause, and run `heron_check` on your wording before reporting it. Anything
    else is a state worth knowing, never an error.
+5. **A check no list tool covers, only when the request names it.** Find the capability with
+   `heron_lookup`, see what it takes with `heron_resolve`, then run it once with `revit_read`. It runs
+   only capabilities that read, and it cannot change the model. Its answer ends by saying how far the
+   capability is proven: report anything but *PROVEN, and its code has not changed since* as unproven,
+   in the tool's own words.
 
 Call one tool at a time. Revit answers one request at a time, and the modeller may be working in it.
 

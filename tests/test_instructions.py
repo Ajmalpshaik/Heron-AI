@@ -37,6 +37,22 @@ WHAT IT PROVES
      included agent.read for one commit and inherited exactly that sentence.
      The case that catches it lives in the registry; this asserts the registry
      still carries that case, because the case is the guard.
+
+  8. EVERY CHAT IS GIVEN `host.chat`, AND IT STAYS SHORT. The MCP server
+     hands the host the registry's HOST instruction - read here through the
+     same seam the server uses, heron_brain.host_instructions - with its
+     house rules guarded by cases and Article 9 arriving WITH its one
+     recorded exception, D-99. It is read in every chat, so it has a budget.
+
+  9. THE CONSTITUTION'S ENFORCEMENT TABLE SAYS WHAT THE REGISTRY DOES. Its
+     third column said "yes" on every row while nothing handed an Article to
+     a running AI. Every Article it lists is now classified - every chat,
+     assembled but not given, or no - and each class is checked against what
+     the instructions actually assemble, so the table cannot drift back.
+
+ 10. AN ARTICLE NEVER CARRIES AWAY THE RULE THAT CLOSES ITS SECTION. The last
+     rule of each Article used to end in the Constitution's `---` separator,
+     and that line reached every chat's instructions.
 """
 
 import io
@@ -45,8 +61,25 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 
 import heron_instructions as INS                              # noqa: E402
+
+CONSTITUTION = os.path.join(ROOT, "HERON_CONSTITUTION.md")
+SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
+
+# WHAT EVERY CHAT PAYS FOR, whatever it asks - docs/19: "if a context
+# assembly exceeds its budget, that is a bug in retrieval, not a reason to
+# raise the budget". host.chat assembled to 620 words the day it was written;
+# the budget leaves room for an Article or two and not for a second
+# Constitution. Raising it is a decision, and the reason goes here.
+HOST_BUDGET_WORDS = 800
+
+# The three words the Enforcement table's third column may use, and what
+# each one claims.
+EVERY_CHAT = "every chat"
+NOT_GIVEN = "assembled, not given"
+NOWHERE = "no"
 
 FAILURES = []
 
@@ -65,6 +98,107 @@ def raises(call, kind):
     except Exception:                                        # noqa: BLE001
         return False
     return False
+
+
+def enforcement_rows():
+    """
+    [(articles in the first column, {class: articles} from the third)] out of
+    the Constitution's Enforcement table, read as text.
+
+    A cell the three words do not describe comes back under its own text, so
+    a stray "yes" is reported by name rather than skipped.
+    """
+    rows, inside = [], False
+    with io.open(CONSTITUTION, encoding="utf-8") as fh:
+        for line in fh:
+            if line.startswith("## "):
+                inside = line.strip() == "## Enforcement"
+                continue
+            if not inside or not line.startswith("| ") or line.startswith("| Article"):
+                continue
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) < 3:
+                continue
+            listed = [a.strip() for a in cells[0].split(",") if a.strip()]
+            claims = {}
+            for part in cells[-1].split("\u00b7"):
+                label, _, numbers = part.partition(":")
+                label = label.strip()
+                claims.setdefault(label, []).extend(
+                    n.strip() for n in numbers.split(",") if n.strip())
+            rows.append((listed, claims))
+    return rows
+
+
+def host_and_table(rules, known):
+    print()
+    print("8. Every chat is given host.chat, and it stays short")
+    host = getattr(INS, "HOST", None)
+    check(host is not None, "the registry names the instruction every chat is given")
+    check(host in known, "and it is an instruction on disk (%s)" % host)
+    # A SECTION THAT CANNOT RUN IS WORTH LESS THAN ONE THAT FAILS (heron-ship
+    # 2a). With no host instruction nothing reaches a chat, and the table
+    # below is still checked against exactly that.
+    text, used = INS.compose(host) if host in known else ("", [])
+    try:
+        import heron_brain as BRAIN
+        given = BRAIN.host_instructions()
+    except Exception as why:                                 # noqa: BLE001
+        given = "(%s: %s)" % (type(why).__name__, why)
+    check(given == text,
+          "the seam the MCP server uses hands over exactly what the registry "
+          "assembles")
+    server = io.open(SERVER, encoding="utf-8").read()
+    check('instructions=_host_instructions()' in server
+          and "brain.host_instructions()" in server,
+          "and the server is built with it as its instructions")
+    words = len(text.split())
+    check(0 < words <= HOST_BUDGET_WORDS,
+          "it is %d words - something, and within the %d every chat pays for"
+          % (words, HOST_BUDGET_WORDS))
+    guards = [c for c in (known.get(host) or {}).get("cases") or []]
+    said = " ".join(" ".join(c.get("must-contain") or []) for c in guards)
+    for rule in ("Revit's own Undo", "Never make a second change to reverse",
+                 "Never call a model, a system or a design",
+                 "ask the modeller what it means"):
+        check(rule in said and rule in text,
+              "a case guards, and the text says: %s" % rule)
+    check("9" in used and "D-99" in rules.get("9", ""),
+          "Article 9 arrives assembled, carrying its one recorded exception")
+    check("You are one agent inside Heron" not in text,
+          "and no internal agent's brief is mixed into it")
+
+    print()
+    print("9. The Enforcement table says what the registry does")
+    chat = set(used)
+    others = set()
+    for key in known:
+        if key != host:
+            others.update(INS.compose(key)[1])
+    others -= chat
+    rows = enforcement_rows()
+    check(len(rows) >= 8, "the table's rows were read - %d" % len(rows))
+    everywhere = set()
+    for listed, claims in rows:
+        where = ", ".join(listed)
+        classified = [a for numbers in claims.values() for a in numbers]
+        everywhere.update(listed)
+        stray = sorted(set(claims) - set([EVERY_CHAT, NOT_GIVEN, NOWHERE]))
+        check(not stray, "row %s says only what the three words mean%s"
+              % (where, "" if not stray else " - it also says %r" % stray))
+        check(sorted(classified) == sorted(listed),
+              "row %s classifies each of its Articles exactly once" % where)
+        for number in listed:
+            truth = (EVERY_CHAT if number in chat
+                     else NOT_GIVEN if number in others else NOWHERE)
+            said = [label for label, numbers in claims.items() if number in numbers]
+            check(said == [truth],
+                  "Article %s: the table says %s, the registry says %s"
+                  % (number, said or "nothing", truth))
+    check(everywhere == set(rules),
+          "and every one of the Constitution's %d Articles has a row%s"
+          % (len(rules), "" if everywhere == set(rules) else
+             " - missing: %s" % ", ".join(sorted(set(rules) - everywhere))))
 
 
 def main():
@@ -236,6 +370,16 @@ def main():
           "agent.modify still asserts it is NOT told it may only read")
     check("Your permission stops at reading" not in text,
           "and the assembled text does not contain it")
+
+    host_and_table(rules, known)
+
+    print()
+    print("10. An article never carries away the rule that closes its section")
+    trailing = sorted(n for n, body in rules.items()
+                      if body.rstrip().endswith("---"))
+    check(not trailing,
+          "no article's text ends in the Constitution's section separator%s"
+          % ("" if not trailing else " - it does in: %s" % ", ".join(trailing)))
 
     print()
     if FAILURES:

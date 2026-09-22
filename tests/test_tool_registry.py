@@ -80,6 +80,71 @@ def csharp_handlers():
     return handled
 
 
+def labels(declared_cs):
+    """
+    THE SAFETY LABELS A HOST IS GIVEN ARE THE REGISTRY'S, AND NO OTHER.
+
+    MCP lets a server mark a tool read-only, destructive or idempotent, and a
+    host may call a read-only tool without asking. So a label is a claim about
+    what a tool can change - the same claim this file already holds the two
+    languages to - and a write labelled read-only is the one wrong answer that
+    matters. The labels are therefore DERIVED from heron_tools.TOOLS, never
+    typed at a tool, and this holds both halves: what the derivation says, and
+    that the server has nowhere else to type one.
+    """
+    print()
+    print("The safety labels a host is given are the registry's risk")
+    annotations = getattr(tools, "annotations", None)
+    check(annotations is not None,
+          "heron_tools derives the labels - annotations() exists")
+    if annotations is None:
+        return
+
+    for tool in sorted(tools.TOOLS):
+        risk = tools.risk_of(tool)
+        label = annotations(tool)
+        op = tools.operation_of(tool)
+        if risk <= tools.ANALYZE:
+            ok = label == {"readOnlyHint": True, "destructiveHint": False,
+                           "idempotentHint": True}
+            what = "read-only"
+        elif tools.writes(tool):
+            ok = label == {"readOnlyHint": False, "destructiveHint": True,
+                           "idempotentHint": False}
+            what = "destructive and not idempotent"
+        else:
+            ok = (label["readOnlyHint"] is False
+                  and label["destructiveHint"] is False)
+            what = "neither read-only nor destructive"
+        # AND THE ADD-IN AGREES. A tool's risk already equals its operation's
+        # (checked above); a label derived from one is therefore the label
+        # the other implies, and this says so for the tool in hand.
+        theirs = declared_cs.get(op) if op else None
+        agrees = (theirs is None
+                  or (label["readOnlyHint"] == (theirs in ("READ", "ANALYZE", "SUGGEST"))
+                      and label["destructiveHint"] == (theirs in ("MODIFY", "PUBLISH", "ADMIN"))))
+        check(ok and agrees,
+              "%s is %s - labelled %s" % (tool, tools.NAMES[risk], what)
+              + ("" if agrees else "  <- the add-in's %s says otherwise" % theirs))
+
+    check(annotations("revit_delete_everything") ==
+          {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False},
+          "an undeclared tool gets the worst label on every count - which is "
+          "also what a host assumes of a tool with none")
+
+    server = io.open(os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py"),
+                     encoding="utf-8").read()
+    typed = re.findall(r"@server\.tool\((?!\))", server)
+    check(not typed,
+          "every tool is registered as a bare @server.tool() - no label, and no "
+          "argument that could carry one, is typed at a tool")
+    check("class _Labelled(_Server)" in server
+          and "tools.annotations(" in server
+          and "server = _Labelled(" in server,
+          "and the server registers every tool through _Labelled, which reads "
+          "the label off the registry as the tool registers")
+
+
 def main():
     declared_cs = csharp_registry()
     handled = csharp_handlers()
@@ -129,9 +194,11 @@ def main():
     writers = sorted(t for t in tools.TOOLS if tools.writes(t))
     # revit_change was added 2026-09-15 at the owner's explicit instruction,
     # and typing it here is the deliberate act this test exists to require. It
-    # is the first writer with NO preview in front of it: the owner's ribbon
-    # switch (write.enabled, read by HeronPermissions inside the add-in) is
-    # the only thing between it and the model. A THIRD writer still fails here.
+    # is the first writer with NO preview in front of it - since 2026-09-23 a
+    # recorded exception to Article 9, D-99, which names what stands in for
+    # the preview: the owner's ribbon switch (write.enabled, read by
+    # HeronPermissions inside the add-in), the refusal of anything above
+    # Modify, one undo entry and the pin. A THIRD writer still fails here.
     check(writers == ["revit_apply_move", "revit_change"],
           "the writing tools are exactly revit_apply_move and revit_change "
           "- found: %s" % (writers or "none"))
@@ -218,6 +285,8 @@ def main():
         check(declared_cs.get(op) == "READ",
               "'%s' skips the gate and is declared READ, which the gate would "
               "have permitted anyway" % op)
+
+    labels(declared_cs)
 
     print()
     if FAILURES:
