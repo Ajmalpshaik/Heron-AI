@@ -6821,7 +6821,7 @@ seven were green in CI forever and could only ever go red where somebody actuall
 | `test_config_and_health` | the same - **4 of 4** findings in worktrees | [#287](https://github.com/Ajmalpshaik/Heron-AI/pull/287) |
 | `test_change_gate` | its verdicts read the working tree, and `.agents/` was in it | [#288](https://github.com/Ajmalpshaik/Heron-AI/pull/288) |
 | `test_check_dependencies` | assumed `model2vec` is absent; it is installed here | [#288](https://github.com/Ajmalpshaik/Heron-AI/pull/288) |
-| `test_decision_summary` | did not fail, it CRASHED - a tick printed to a cp1252 console | [#288](https://github.com/Ajmalpshaik/Heron-AI/pull/288) |
+| `test_decision_summary` | did not fail, it CRASHED - a tick printed with the output redirected, which Windows encodes in cp1252 (a console never shows it) | [#288](https://github.com/Ajmalpshaik/Heron-AI/pull/288) |
 
 **Nothing under `revit/` changed.** No add-in rebuild, no redeploy, no Revit restart: every change was a
 suite or `tools/api-changes.py`.
