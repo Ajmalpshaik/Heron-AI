@@ -124,6 +124,581 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — check-metadata IS SOUND, AND THE SUITE PROVING IT CAUGHT ITSELF FIRST
+
+**A NEGATIVE RESULT.** `tools/check-metadata.py` read end to end — 310 lines, never opened before,
+and **nothing is wrong with it**. No register row. It is the **third** of the seven unread CI
+gates, and one of the four AGENTS.md tells you to run before claiming anything.
+
+**Four things checked by measuring rather than by reading, and all four hold:**
+
+| | |
+|---|---|
+| `CURRENT_STEP = 6` **is not stale** — the thing its own comment warns about, after it was left at 2 while steps 3 to 5 were finished | every step number in the registry is **6 or less**, and steps one to six are each fully implemented or delegated |
+| no registry row is silently skipped for having too few columns | measured — **zero** |
+| the source roots are complete | **no** `.cs`, `.py` or `.ps1` outside them carries a Heron header |
+| `platform/heron-products.json` is a **third** place a version is stated, and `check_version_agreement` compares only two | not unchecked — **`check-products.py` compares it against `Directory.Build.props` itself.** One gate owns one question, and a row here would have been a finding made by grepping instead of tracing |
+
+### The parts worth knowing
+
+**Fragments are deliberately not scanned.** A `Heron-Status` in the `.cs` beside `status:` in the
+`.yaml` is this repository's most-repeated failure with a new face on it — **one place per fact**.
+
+**`HOST_PROVIDED` is nine agents the host performs** under [D-01](DECISIONS.md) and
+[D-80](DECISIONS.md), **listed rather than deleted** so the audit stays honest in both directions:
+an agent with no file is either delegated on purpose or work still to do, and silence would make
+those two look alike. A delegation naming an id **not** in the registry is itself a problem,
+because an exemption covering nothing is the shape a rename leaves behind.
+
+The unimplemented list is printed and is **not** an error — it is the to-do list for finishing a
+step. And `check_phase_counts` fails when the claim **disappears** as well as when it disagrees,
+which is the rarer half and the one that turns a check into a check that passes for the wrong
+reason.
+
+### The suite caught itself first
+
+**`tests/test_check_metadata.py`** was shown to have teeth by breaking the tool four ways:
+
+| what was broken | red |
+|---|---|
+| `Heron-Since` dropped from `FIELDS` | **2** |
+| the missing-Phase-claim branch removed | **1** |
+| fragments scanned like Heron's own source | **1** |
+| a version disagreement no longer reported | **1** |
+
+**The first of those found a weakness in the suite rather than in the tool.** The field loop read
+`tool.FIELDS`, so dropping a field from that list made the suite **stop asking about it** — it was
+testing the tool against its own opinion. It names the five docs/29 fields itself now, and asserts
+the tool asks for exactly those. That is why a suite is proved by breaking the thing it guards and
+not by watching it pass.
+
+**One thing recorded rather than fixed**: `REGISTRY` and `SOURCE_ROOTS` are **relative** paths,
+unlike every other tool's `__file__` root — but `main()` refuses with *"FAIL could not read"* and
+exit 1 when the registry is not there, so running from the wrong directory fails loudly rather
+than auditing nothing.
+
+**Four CI gates remain unopened**: `check-fragments-compile`, `check-products`, `check-intrusion`,
+`check-signatures`.
+
+### 2026-09-22 — A GERMAN WORD COUNTED AS A LICENCE
+
+**[Row 5b-129](FRAGMENT-ISSUES.md), FIXED.** `tools/check-licence.py` read end to end — 288
+lines, never opened before. The **second** of the seven unread CI gates, taken next because a
+defect in it is the one that ships somebody else's rights with Heron.
+
+It answers **Q-53** as [D-66](DECISIONS.md), and its own docstring states the rule it must never
+break:
+
+> A file with no marker at all is reported as UNMARKED rather than as clean — *"no evidence of a
+> problem"* and *"evidence of no problem"* are different findings, and a tool that merges them is
+> the tool `scientific-agent-skills` already has.
+
+**Two ways it merged them**, both measured on trees written for the purpose.
+
+**One.** `LICENCE_NAME` matched a bare `mit` case-insensitively:
+
+| the imported unit's only marker | the answer |
+|---|---|
+| `note: gemessen mit dem Werkzeug` | **1 clean** |
+| the same file without that word | **1 unmarked**, correctly |
+
+Heron reads standards, and a standard is not always in English.
+
+**Two.** An unmarked list longer than forty printed forty and said `..and 5 more (--all)` — and
+**`--all` printed the same forty**. Five units could not be seen by any documented means.
+
+**Not an R-82 breach, and not claimed as one** — [rows 5b-100 and
+5b-111](FRAGMENT-ISSUES.md) both recorded that distinction, and R-82 is about the scanner's
+*window* rather than a report's margin. The defect here is on the tool's own terms: it names a
+remedy, and the remedy does nothing.
+
+**Neither is a live failure today, and saying so is part of the finding**: all 406 units declare
+`source: OFFICIAL`, no file carries the word `mit`, and the tool reports 406 clean. Both holes are
+in the branch the first **imported** unit lands on — the future
+[docs/09](09-skills-and-fragments.md)'s COMMUNITY PACKAGES plans for, and the whole
+reason this tool exists.
+
+### What it does now
+
+A bare `MIT` is matched **case-sensitively**, in its own pattern beside the case-insensitive list:
+the licence is written in capitals and the German word is not, and `MIT License` was already
+matched either way. Both real forms still work and both are checked. `--all` prints the whole
+unmarked list, and the *and N more* line is derived from what was actually shown rather than from
+a second copy of the number forty.
+
+**The gate reads the same on the repository**: 406 units, 406 clean, 0 findings, 0 unmarked.
+
+**`tests/test_check_licence.py`**: **3 red** against the module as found, with everything around
+them green before and after — all three findings it exists to make, both ways of being unmarked,
+and the two false positives an earlier round already took out of it (a C# cast read as a copyright
+holder, and a year with no name after it).
+
+### The docstring is one of the best in the repository
+
+It names the live example behind Q-53 — `K-Dense-AI/scientific-agent-skills`, MIT on the landing
+page, **four of its 163 skills carrying "All rights reserved"**, and their own skill scanner never
+looking at a licence — and states the one rule it encodes: **read the files, not the landing
+page**.
+
+And the parts that are right are argued rather than assumed: `COPYRIGHT` requires a **year** beside
+the marker, because the first version reported a C# cast and *"a licence tool that cries wolf is a
+tool somebody turns off"*; a holder must contain three letters, so `Copyright 2026` with nothing
+after it is a marker with no holder in it; `repo_relative` falls back to an absolute path because
+`os.path.relpath` **raises** across Windows drives; that duplication of `heron_fragment`'s rule is
+argued rather than accidental, since importing it would cost PyYAML on the bare machine where you
+check the licence of something you just downloaded; and `.claude/skills` is deliberately out of
+`units()`, because Q-53 is about what Heron's *users* redistribute and scanning the toolbox
+alongside the cargo would bury the finding.
+
+**One thing recorded rather than fixed**: `--all` is the only flag and an unknown one is ignored in
+silence — the same shape as rows [5b-112](FRAGMENT-ISSUES.md) and [5b-127](FRAGMENT-ISSUES.md) —
+but here it costs only a missing CLEAN section and cannot move the exit code.
+
+**Five CI gates remain unopened**: `check-fragments-compile`, `check-products`, `check-metadata`,
+`check-intrusion`, `check-signatures`.
+
+### 2026-09-22 — SEVEN CI GATES HAVE NEVER BEEN OPENED, AND THE FIRST COULD BE SATISFIED BY A COMMENT
+
+**[Row 5b-128](FRAGMENT-ISSUES.md), FIXED.** `tools/check-narrow-errors.py` read end to end —
+130 lines, never opened before, and **one of the ten gates a pull request has to pass**.
+
+**The next target was measured, not chosen.** All seventeen brain modules a conversation can
+actually reach are now read end to end, so the sweep moved to `tools/`. Of the **12 tools CI runs
+directly, 7 had never been opened**:
+
+| |
+|---|
+| `check-fragments-compile` 400 · `check-products` 527 · `check-metadata` 310 |
+| `check-licence` 288 · `check-intrusion` 213 · `check-signatures` 155 · `check-narrow-errors` 130 |
+
+These decide whether a change is allowed into the repository at all. `check-narrow-errors` was
+taken first because [row 5b-110](FRAGMENT-ISSUES.md) is OPEN on whether it should be widened.
+
+### A gate a comment could satisfy
+
+It looks for D-52's commonest shape — an `except sqlite3.OperationalError` that swallows a locked,
+malformed or out-of-date store and reports it as an empty one. It **reads text rather than an AST
+on purpose**, and the reason is good: the rule is about what a maintainer sees beside the handler.
+
+**But the narrowing test searched the handler's raw text for the word `raise`.** Measured, on
+modules written for the purpose:
+
+| the handler swallowed, and carried | |
+|---|---|
+| `# deliberately do not raise here` | **passed the gate** |
+| `log("nothing to raise")` | **passed the gate** |
+| `note = "we could raise"` | **passed the gate** |
+
+A handler that says in words it will not re-raise, and then does not, is the clearest possible case
+of the thing this gate exists to catch, and it was the one shape it could not see.
+
+A `_code()` takes comment text and string contents out of each line before the search now, tracking
+quotes so a `#` inside a string does not cut the line short and skipping an escaped character so a
+quote inside a string does not end it early. **The gate is still green on the repository**, so the
+fix flags no correct code.
+
+**Also fixed, smaller**: the comment above `WINDOW` said **five** while the value said **twelve** —
+a typed number gone stale, in the file whose whole argument is that a shape is something a command
+should look for.
+
+**`tests/test_narrow_errors.py`**: **3 red** against the module as found, all three about comments,
+with the checks either side green before and after — the bare swallow still reported, both
+narrowing forms still accepted, a `raise` in the *next* handler still not rescuing this one, and a
+`ValueError` handler still left alone.
+
+### One thing measured and deliberately not fixed
+
+A handler written as a **tuple** — `except (AttributeError, sqlite3.OperationalError):` — is
+invisible to the pattern. There is exactly one in the repository, `heron_embed._try_vec_extension`,
+and it is **correct**: both types there mean the sqlite extension is unavailable, it answers a
+boolean rather than a store's contents, and the fallback gives the same answers. **Widening today
+would flag right code**, which is the same shape as the question [row 5b-110](FRAGMENT-ISSUES.md)
+already asks. Recorded in the docstring and added to that row rather than settled here.
+
+**Six CI gates remain unopened.** By size and by what a defect in each would cost, the next is
+`check-metadata` or `check-licence` — the first enforces the five-field header on every source
+file, the second is the one that keeps a redistributed Revit assembly out.
+
+### 2026-09-22 — ALL SIX TOOLS NO SUITE NAMED ARE NOW HELD
+
+**[Row 5b-127](FRAGMENT-ISSUES.md), FIXED.** `tools/measure-graph.py` read end to end — 394 lines,
+never opened before. **The last of the six.**
+
+It answers **Q-52** by running it, and the numbers it prints are in [docs/33 §5.16](33-external-repository-research.md). Its settings were read by
+hand out of `argv`, with an `in` test and an index.
+
+**Measured by running it:**
+
+| what was typed | what happened |
+|---|---|
+| `--wieght 0.05 --sedes 1` | the **full measurement ran**, printed `settings weight=0.30 seeds=5`, exited **0** |
+| `--weight` | `IndexError: list index out of range` |
+| `--weight abc` | `ValueError: could not convert string to float` |
+| `--seeds 2.5` | `ValueError: invalid literal for int()` |
+| `--sweep --weight 0.1` | the weight silently ignored — the sweep has its own list of six |
+
+**A number recorded against a setting nobody asked for is worse than no number, because it is
+quoted afterwards** — and the whole point of this tool is that Q-52 was *run* rather than argued.
+It is the same defect [rows 5b-112 and 5b-114](FRAGMENT-ISSUES.md) fixed in `brain/`, in a tool,
+where the cost is a recorded figure.
+
+`settings_from()` now reads every flag **before the store is opened** and refuses with **2**,
+naming what the tool does take — the house refusal `heron_company` and the rest already give.
+
+### The rest of the file is a negative result, and the suite records it as one
+
+All green **before the fix and after it**: the four query shapes and the two they decline to
+repeat; `rank_of` returning `None` rather than a large rank for an answer that never came back;
+the tally dividing MRR by everything asked, misses included; the empty-ranking path keeping its
+two-value shape; and the fusion leaving the order alone at weight 0 while lifting a neighbour two
+seeds reach.
+
+**The suite never runs the measurement.** That opens the knowledge store, re-indexes it and asks
+396 fragments four ways — minutes, and it writes outside the repository — so `main()` is called
+only with argv it must refuse.
+
+### The best thing in the file is its honesty, and it is worth knowing
+
+The prediction is written down **before** the run: *"for a query whose right answer is ALREADY
+first, a third stream can only leave it there or push it down … a tool that can only report good
+news is not a measurement."* The answer key is the library's own `semantic-identity`, and the
+docstring says plainly that it is **real and easy**, so three degraded query shapes are measured
+beside the exact one. `--sweep` tries six settings, so a loss is an answer rather than a setting.
+And one of the four *READ IT AS* endings is **"a TRADE, not a win"**, which hands the judgement to
+the owner.
+
+**Two Codex findings from PR #44 are still fixed and still explained in place**: the empty-ranking
+return shape, and the answer key obeying the same version wall as retrieval.
+
+### Run again on this container, and it reproduces
+
+Lexical backend, 396 fragments. At `weight=0.30 seeds=5` the graph costs **10.6 points of P@1** on
+the exact shape. At the gentlest setting asked for, `--weight 0.05 --seeds 3`, it still costs
+**1.2** and returns nothing — *"the graph cost something and returned nothing"*. That is docs/33's
+recorded finding **reproduced rather than assumed**.
+
+**Not a D-30 proof**, and the tool says so itself: it measures whether the fragment whose own
+sentence was typed comes back first, which is a proxy, and nothing here has met a real model.
+
+### The sweep of the six, finished
+
+| tool | outcome |
+|---|---|
+| `check-dependencies` | **sound** — a negative result, plus the guard it was missing |
+| `resign-machine-proofs` | [5b-122](FRAGMENT-ISSUES.md) |
+| `recount-agent-registry` | [5b-123](FRAGMENT-ISSUES.md) |
+| `generate-decision-summary` | [5b-124](FRAGMENT-ISSUES.md) fixed, [5b-125](FRAGMENT-ISSUES.md) for the owner |
+| `module-reach` | [5b-126](FRAGMENT-ISSUES.md) |
+| `measure-graph` | [5b-127](FRAGMENT-ISSUES.md) |
+
+**Next by the same measurement**: `tools/` is 47 tools and the six unheld ones are done, so the
+next target is whichever tool the ledger shows as unread or stale — `python tools/review-ledger.py
+--next 5`.
+
+### 2026-09-22 — ONE HOP WAS BEING READ AS REACH
+
+**[Row 5b-126](FRAGMENT-ISSUES.md), FIXED.** `tools/module-reach.py` read end to end — 177 lines,
+never opened before. The **fifth** of the six unheld tools.
+
+It exists to re-measure `mcp/README.md`'s own sentence: modules *"imported by nothing but their own
+tests, and therefore **UNREACHABLE FROM ANY CONVERSATION**"*. It sorts every module in `brain/` into
+four buckets **by who imports it**, and [row 5b-83](FRAGMENT-ISSUES.md) carries the number it
+prints.
+
+**It counted one hop.** A module imported by a neighbour landed in the first bucket — *reached by
+mcp/ or another brain module* — whether or not that neighbour was itself reached by anything.
+
+**Measured by following the imports instead:**
+
+| | |
+|---|---|
+| modules in `brain/` | **145** |
+| the first bucket holds | **53** |
+| reachable from `mcp/` at all | **17** |
+| reached only by neighbours nothing reaches | **36** — closed loops inside `brain/` |
+
+So the count of modules **no conversation can arrive at is 128**, not the 90 in bucket three, and the
+figure a reader takes as *reached* overstates it by more than a factor of three.
+
+### Fixed by widening what it reports, not by changing a bucket
+
+A new `reached_from()` walks the import graph, and the report prints *reachable from mcp/ by
+following imports* **beside** the four buckets, with a line naming how many of the first are closed
+loops. `--list` names them too.
+
+**Neither number stands in for the other.** The buckets say *who imports a module*; the walk says
+*whether a conversation can arrive at it*. Both are worth having, and it still exits 0 whatever it
+finds — it is a report.
+
+**[Row 5b-83](FRAGMENT-ISSUES.md) is still OPEN and still the owner's.** A pointer sentence was
+added to it naming the sharper measurement and saying in terms that **the question did not move**.
+That is [PROJECT-MAP §D](PROJECT-MAP.md)'s *record both*, not an answer.
+
+**`tests/test_module_reach.py`**: **one red** against the module as found, with every bucket check
+green before and after — which is what makes this an addition rather than a correction. Both halves
+shown to have teeth: removing the walk reds the line that asks for it, and making the walk stop
+after one hop reds the count.
+
+### Three things checked and found right, rather than assumed
+
+| | |
+|---|---|
+| package-path imports | **None anywhere.** `from brain.heron_x import y` would be missed by the head-of-the-dotted-name reading, and no file does it |
+| `platform/` and `revit/` left out of the searched roots | They hold **no Python at all**, so it costs nothing |
+| `.claude` | Its one Python file imports **no** brain module, so a module reached only by a hook — which would land in the first bucket under a label naming mcp and brain — does not exist today |
+
+All three are **shapes rather than defects**, and none is a row.
+
+**One of the six unheld tools remains**: `measure-graph` — 394 lines, and a report.
+
+### 2026-09-22 — A GENERATOR KEPT ITS OWN PLACEHOLDER AS IF A PERSON HAD WRITTEN IT
+
+**[Row 5b-124](FRAGMENT-ISSUES.md), FIXED. [Row 5b-125](FRAGMENT-ISSUES.md) raised, and it is the
+owner's.** `tools/generate-decision-summary.py` read end to end — 167 lines, never opened before.
+The **fourth** of the six unheld tools, and the one that writes into
+[`DECISIONS.md`](DECISIONS.md).
+
+It rebuilds the Status summary table and **keeps an existing status cell verbatim**. That is right,
+and it is the best idea in the file: *"read back 2026-09-06"* records a conversation, not a fact on
+disk, and a generator that discarded those would lose the record of every read-back the owner has
+ever done.
+
+**But a decision that states no `**Status:**` line gets `• status not stated` derived for it, and
+that cell was then preserved like any other.**
+
+**Measured**, on a copy so the real document was never touched — give D-72 a
+`**Status:** Accepted · **Date:** 2026-09-14` line and:
+
+```
+  --check exit 0 | Status summary is current: 97 decision(s), none missing.
+  D-72 cell afterwards: '• status not stated'
+```
+
+The one thing this tool exists to prevent — the table falling behind the decisions, silently — it
+does on its own placeholder. **Seven of the 97 decisions carry no `**Status:**` line**, so the
+trigger is not hypothetical.
+
+### What it does now
+
+There is **one spelling of the placeholder**, used both to write it and to recognise it, and a cell
+matching it is **re-derived rather than kept**. A cell a *person* wrote is untouched — including the
+six hand-filled ones on D-75 to D-80, which do not match. A decision that still states nothing still
+reads `• status not stated`, so nothing is invented. `--check` names what caught up as well as what
+was missing.
+
+The note the generator writes into `DECISIONS.md` said *"a status cell is kept verbatim once written
+… it only fills in rows that do not exist yet"*, which the fix would have made untrue, so it is
+rewritten in the same change. **That is the only line of `DECISIONS.md` this touches.**
+
+**`tests/test_decision_summary.py`**: **3 red** against the module as found, every one failing
+rather than crashing, and the checks either side of them green before and after — a curated cell
+surviving, and a decision that states nothing still saying so. That is what makes this a *narrowing*
+of what counts as curation rather than a loosening of the rule.
+
+### Three things checked and found right, rather than assumed
+
+| | |
+|---|---|
+| *"`--check` is what CI runs"* | **True, traced not grepped.** `check-docs.py` section 8 runs it as a subprocess and sets `failed` on a non-zero return, and check-docs is a CI gate. A false claim was nearly raised here before tracing it |
+| the six-line window after each heading | **Wide enough** — measured, **zero** of the 97 decisions carry their `**Status:**` line further down |
+| one status begins with a tick, not a word | The mark map falls through to the bullet and would double the mark — but it is D-00, its cell is curated, and no run derives it. **A shape, not a defect**, so it is not in the register |
+
+**One check was caught green for the wrong reason and narrowed** before the fix went in: the
+baseline table was typed by hand, which the generator calls stale on sight because of the note it
+writes, so the case meant to show the freeze was passing on the wrong staleness. The baseline is the
+tool's own output now.
+
+### What is left, and it is one line of typing
+
+**[Row 5b-125](FRAGMENT-ISSUES.md) is the owner's.** D-72's cell is that placeholder today, and
+after the fix no run will change it, because D-72 still states nothing of its own. Its body is not
+ambiguous — dated 2026-09-14, a `### Decision` heading, superseding a paragraph of D-67 by name, and
+the four types it released are in the library. But **a status cell is a claim about what he
+decided**, which is D-30's shape exactly, so it is recorded rather than written. Either line settles
+it: a `**Status:**` line in D-72's own block, or the cell typed by hand the way D-75 to D-80's were.
+
+**Two of the six unheld tools remain**: `measure-graph`, `module-reach`. Both are **reports**, not
+writers.
+
+### 2026-09-22 — THE TOOL THAT EXISTS SO NOBODY TYPES A NUMBER HAD A TYPED NUMBER IN IT
+
+**[Row 5b-123](FRAGMENT-ISSUES.md), FIXED — and one wrong number in a governing document
+corrected with it.** `tools/recount-agent-registry.py` read end to end — 98 lines, never opened
+before. The **third** of the six unheld tools. Its one job is AGENTS.md's second Never — *never
+type a number a command can derive* — for [`28-agent-registry.md`](28-agent-registry.md).
+
+**Two things measured by running it**, on a copy so the real document was never touched.
+
+**One.** Six of its seven prose substitutions are `\d+` regexes. The seventh was
+`s.replace('across 244 agents', ...)` — a **literal** — so it worked exactly once. Run against the
+registry as it stands, it printed `TOTAL=250`, printed `verify: all departments reconcile`, exited
+**0**, and left **`across 249 agents`** in the file. A stated count, wrong by one, in the document
+this tool owns, frozen since the total left 244.
+
+**Two.** Given a registry whose table has gained one column:
+
+```
+  summary table rebuilt (21 departments)
+  TOTAL=0  T1=0 T2=0 T3=0  departments=21
+  verify: all departments reconcile
+exit=0
+```
+
+It wrote **`Totals: 0 agents · 0 T1 · 0 T2 · 0 T3`** and a summary table of zeros over a document
+still listing 250 rows. The tier is read from **column four of the split row**, so every row landed
+in a bucket that was not T1, T2 or T3 — [D-52](DECISIONS.md), the plausible zero.
+
+**Its `verify` could see neither**, because it recounts rows per department against headings the
+same pass had just written from the same counter, and looks at no other figure in the file.
+
+### What it does now
+
+- the seventh substitution is a `\d+` regex like the other six;
+- a tier that is not `T1`, `T2` or `T3` is **refused before anything is written**, and so is a
+  registry with no agent rows, or one whose tier count and row count disagree;
+- the whole document is **rebuilt in memory and read back** by a new `disagreements()`, which
+  checks department headings, the totals line, the summary table's Total row and every
+  `across N agents` against the rows underneath them. Anything still disagreeing means **nothing
+  is written**, and the exit code says so — it was 0 whatever happened before;
+- the path comes from `__file__`, and `main()` plus `sys.exit(main())` mean importing it no longer
+  rewrites the registry.
+
+**`tests/test_recount_registry.py`** is the first suite this tool has ever had, and each half was
+shown to have teeth on its own:
+
+| what was broken | red |
+|---|---|
+| the module as found — no `main()`, no absolute path, will not load safely | **3** |
+| the frozen literal put back | **7** |
+| all three tier guards removed — the run that writes `0 agents` and exits 0 | **3** |
+
+**One check was caught green for the wrong reason and narrowed before the fix went in**: the moved
+column was first inserted in *front* of the id, which stops a row being a row at all and was
+refused by a different branch entirely.
+
+**What is not changed, and is recorded rather than fixed**: there is still no `--check` that
+reports without writing, so this cannot be a CI gate — PROPOSALS F6, and the owner's.
+
+**Three of the six unheld tools remain**: `measure-graph`, `module-reach`,
+`generate-decision-summary`.
+
+### 2026-09-22 — A NAME WITH A COLON IN IT DESTROYS THE PROOF IT WAS SIGNING
+
+**[Row 5b-122](FRAGMENT-ISSUES.md), FIXED.** `tools/resign-machine-proofs.py` read end to end —
+110 lines, never opened before. It is the **second** of the six unheld tools, and it was taken next
+because it is the only one of the six that **writes into `brain/fragments/`** — the library
+[Golden Rule 4](14-golden-rules.md) says a record is never destroyed in.
+
+Its `by:` and `date:` lines were built by string substitution — `"  by: %s" % args.by.strip()`.
+
+**Measured on a fragment tree written for the purpose**, with `tool.FRAGMENTS` pointed at a temp
+folder so the real library was never touched:
+
+| what was typed | what it left behind |
+|---|---|
+| `--by "Ajmal: PS"` | a `fragment.yaml` that **no longer parses** |
+| `--by "Ajmal #2"` | one that parses and is signed **`Ajmal`** — the rest is a YAML comment |
+| `--by "   "` | `by:` **empty** — an unsigned proof, the one thing D-30 exists to prevent |
+| a date with a quote in it | one that **no longer parses** |
+| a name containing a newline | a key at the **top level** of the fragment |
+
+**All five printed `signed` and exited 0.** Nobody is attacking this tool — it is run by hand, by
+the one person whose name goes in — and these are the shapes an ordinary name has.
+
+### The guard was next door the whole time
+
+`heron_validate.py accept` writes the same field and does it with two things this had neither of:
+it **refuses a blank `--by`** in one line, and it writes, **re-reads the file, and restores the
+original** if anything moved. Both are here now — one step earlier, so nothing is ever
+half-written:
+
+- the name and the date go through **`yaml.safe_dump`**, so what needs quoting is quoted and a
+  value spanning lines lands indented under its key rather than at the top level;
+- every fragment is **built in memory and read back before any of them is written**. If the text
+  would not parse, would not carry a proof block, or the name that comes back is not the name that
+  was typed, **nothing is written at all** and the tool names the fragment that would have been
+  damaged. A run that fails on the ninth of sixteen no longer leaves eight rewritten;
+- `re.sub` takes a **lambda**, not a replacement string, because a backslash in a name is not an
+  escape.
+
+**`tests/test_resign_signature.py`** is the first suite this tool has ever had: **14 checks red
+against the module as found**, all green after, and every one **fails rather than crashes**.
+
+**Its work is already done** — `--list` against the real library answers *"No proof is signed by a
+machine"*. So this guards a tool that fires rarely and writes to the one place that must not be
+damaged.
+
+**One thing measured and deliberately not fixed**, recorded in the row instead: `MACHINE` matches
+its five words **anywhere** in the `by:` field, so a proof signed by a person who *also* names the
+machine that gathered the evidence would be reported as machine-signed and rewritten. No such
+proof exists in the library today, and inventing one to fix it would widen the change.
+
+**Four of the six unheld tools remain**: `measure-graph`, `module-reach`,
+`generate-decision-summary`, `recount-agent-registry`.
+
+### 2026-09-22 — SIX TOOLS ARE HELD BY NO SUITE AT ALL, AND ONE OF THEM NOW HAS ONE
+
+**A NEGATIVE RESULT plus the guard it was missing.** `tools/check-dependencies.py` is read end to end
+— 262 lines, never opened before — and **nothing is wrong with it**. No register row.
+
+**The part-read brain queue emptied, so `tools/` was re-measured**: 47 tools, and **six are named by
+no suite at all**:
+
+| |
+|---|
+| `measure-graph.py` · `check-dependencies.py` · `module-reach.py` |
+| `generate-decision-summary.py` · `resign-machine-proofs.py` · `recount-agent-registry.py` |
+
+`check-dependencies` was taken first because **R-72 makes four specific claims about it and nothing
+re-checked any of them**:
+
+> It exits 1 **only** on a missing REQUIRED package … It also fails on a malformed manifest entry,
+> **proved by introducing both shapes and watching it exit 1**. Size is never typed.
+
+**All seven behaviours measured by running it**, on manifests written for the purpose:
+
+| the manifest | exit |
+|---|---|
+| well formed, one optional absent | **0**, *"that is not a fault"* |
+| a missing REQUIRED package | **1**, *"Heron will not run"* |
+| a requirement with no comment above it | **1** |
+| a comment with two fields | **1** |
+| a comment with four fields | **1** |
+| a blank line between comment and requirement | **1** |
+| the manifest file does not exist | **1**, *"does not exist"* |
+
+And the size claim holds: `announced_size` reads **`500 MB to 2 GB - mostly torch, not the weights`**
+out of `heron_rerank.announcement()`; that string appears **nowhere** in the tool's own source; and
+nothing is invented for a package no code announces.
+
+### What was missing was the guard, not the behaviour
+
+*"Proved by introducing both shapes and watching it exit 1"* was done **once, by hand, on
+2026-09-11**. That is a measurement, not a guard — the tool can drift away from it on any afternoon
+and nothing says so.
+
+**`tests/test_check_dependencies.py` is the first suite this tool has ever had**, and it has teeth —
+shown to catch three breaks:
+
+| what was broken | red |
+|---|---|
+| a broken manifest no longer exits 1 | **5** |
+| an absent OPTIONAL package exits 1 | **1** |
+| the size typed into the tool instead of read | **1** |
+
+**Every case builds its own manifests.** A suite reading the real `requirements.txt` would be
+asserting what happens to be installed on the machine running it — a different question, and one that
+changes without anybody editing anything.
+
+**One limit stated rather than left to be discovered**: nothing here proves the manifests are
+**right** — that the import name beside a pip name is the one the package installs — and a typo there
+would report an installed package as MISSING. `check-dependencies` trusts the manifest by design, and
+the suite says so.
+
+**Also checked**: the work note `improvement-gate-execution-record.md` records that this tool *"has no
+section in tools/README.md"*. **That has since been fixed** — the section is at line 1404 — so the
+finding is closed rather than open. It is still **not in CI**, which is PROPOSALS F6 and the owner's.
+
 ### 2026-09-22 — A PACKAGE THAT IS BOTH REQUIRED AND OPTIONAL, SETTLED BY TYPING ORDER
 
 **[Row 5b-121](FRAGMENT-ISSUES.md), FIXED.** `brain/heron_dependencies.py` read end to end — 359

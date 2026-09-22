@@ -34,6 +34,20 @@ may be a library that the fragment and capability layers draw on, with the
 this prints buckets and exits 0 whatever it finds - a report, in this
 repository's sense: a finding here is a question for a person.
 
+ONE HOP IS NOT REACH, SO BOTH NUMBERS ARE PRINTED
+-------------------------------------------------
+The four buckets count ONE hop: a module imported by another brain module
+lands in the first bucket whether or not that neighbour is itself reached by
+anything. That is honest as far as it goes, and it is not the sentence
+mcp/README.md makes. Measured 2026-09-22 on this repository: the first
+bucket held 53, and only 17 of the 145 modules were reachable from `mcp/` by
+FOLLOWING imports. Thirty-six were reached only by neighbours that are
+themselves unreachable from any conversation - closed loops inside `brain/`.
+
+So the walk is printed beside the buckets rather than instead of them.
+Neither number stands in for the other: the buckets say who imports a
+module, the walk says whether a conversation can get to it.
+
 WHAT IT CANNOT SEE
 ------------------
 A module reached by anything other than an `import` or a `from ... import`.
@@ -113,6 +127,31 @@ def where(rel):
     return top if top in SEARCHED else "other"
 
 
+def reached_from(top, names, found):
+    """Every brain module a file under `top` can get to by following imports.
+
+    ONE HOP IS NOT REACH. `found` says who imports each module; walking it
+    says whether anything under `top` can arrive at a module at all, however
+    many brain modules it goes through on the way. A module imported only by
+    a neighbour that nothing reaches is not reached.
+    """
+    by_file = collections.defaultdict(set)      # importing file -> modules
+    for name, who in found.items():
+        for rel in who:
+            by_file[rel.replace(os.sep, "/")].add(name)
+
+    seen = set()
+    queue = [name for rel, mods in by_file.items() if where(rel) == top
+             for name in mods]
+    while queue:
+        name = queue.pop()
+        if name in seen:
+            continue
+        seen.add(name)
+        queue.extend(by_file.get(names[name], ()))
+    return seen
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Who imports each module in brain/, and who does not.")
@@ -156,6 +195,23 @@ def main():
         if args.list:
             for name in buckets[label]:
                 print("        %s" % name)
+
+    # THE SAME QUESTION, ASKED THE WAY mcp/README.md ASKS IT. The buckets
+    # above count one hop; this follows the imports. Printed beside them, not
+    # instead of them - the buckets say who imports a module, this says
+    # whether a conversation can arrive at it.
+    reach = reached_from("mcp", names, found)
+    print()
+    print("  %-42s %d" % ("reachable from mcp/ by following imports",
+                          len(reach)))
+    if args.list:
+        for name in sorted(reach):
+            print("        %s" % name)
+    gap = len(buckets[labels[0]]) - len(reach)
+    if gap > 0:
+        print("\n  %d of the %d in the first bucket are reached only by "
+              "neighbours\n  that nothing reaches - closed loops inside "
+              "brain/." % (gap, len(buckets[labels[0]])))
 
     if unparsed:
         print("\n  %d file(s) could not be parsed and count as nothing:"
