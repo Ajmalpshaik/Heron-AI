@@ -62,6 +62,13 @@ to hold the number that was true that morning, and flagging them trains the
 reader to ignore the checker. `check-docs.py` draws the same line for the
 same reason and says so in its own comment.
 
+`docs/fragment-issues-archive/` is skipped whole too. It holds rows moved
+VERBATIM out of `docs/FRAGMENT-ISSUES.md`, which is in `RECORDS`, so a dated
+total that was a record in the register must not turn into a claim because
+its row moved folder. Four lines did exactly that on 2026-09-22, the day the
+folder was made - "134 fragments", "the 372 fragments", "all 360 fragments" -
+each true on the day its row was written.
+
 A count of PART of the library - "68 DRAFT", "91 carrying a guard", "279
 need a typed value" - is a different claim and is not matched here.
 `check-docs.py` owns the status and risk ones.
@@ -127,7 +134,8 @@ SEARCH = (".py", ".md", ".cs", ".yaml", ".yml", ".toml")
 # only ever go red on a machine running several sessions at once, which is
 # the normal way of working here rather than the exception.
 SKIP_FOLDERS = ("__pycache__", ".git", "worktrees", "bin", "obj", ".vs",
-                "node_modules", "handover-archive", "work-notes")
+                "node_modules", "handover-archive", "work-notes",
+                "fragment-issues-archive")
 
 # DATED REGISTERS. A row in one of these describes the day it was written -
 # docs/FRAGMENT-ISSUES.md says so in its own header - so a total inside one
