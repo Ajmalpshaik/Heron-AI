@@ -115,6 +115,11 @@ PROJECTS = [
     # carried a window could not be RUN on the machine this is developed on,
     # and every decision it makes would stop being testable.
     "platform/Heron.Installer.App/Heron.Installer.App.csproj",
+    # The command line door - Stage 6, and the answer to Q-PE-16. Routes 1 and
+    # 2 are the AI installing, and a window cannot be called by one. Release-
+    # independent like the two above, and net8.0 rather than net8.0-windows
+    # because it draws nothing.
+    "platform/Heron.Installer.Cli/Heron.Installer.Cli.csproj",
     "revit/Heron.Bridge/Heron.Bridge.csproj",
     "revit/Heron.Revit.Addin/Heron.Revit.Addin.csproj",
     # STAGE 2 SHAPE PROOFS, deleted when that stage closes. Listed here so

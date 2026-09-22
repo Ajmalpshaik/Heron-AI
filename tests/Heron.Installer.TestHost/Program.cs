@@ -887,6 +887,50 @@ namespace Heron.Installer.TestHost
             }
 
             Console.WriteLine();
+            Console.WriteLine("  HERON'S OWN repository is refused as the wrong THING, not the wrong OWNER");
+            // FOUND BY RUNNING heron-install, not by reading the code. Asked
+            // for https://github.com/owner-a/repo-a - Heron's own repository,
+            // correct owner, correct name, just not a release - the refusal
+            // came back saying "it is not Heron's own repository. Heron will
+            // not install software from somebody else's".
+            //
+            // It IS his own. The refusal is right and the reason is false,
+            // and a false reason sends somebody to check their address when
+            // the address was never the problem. R-14 wants the cause named,
+            // and this named a different one.
+            //
+            // WHY THE SUITE DID NOT CATCH IT: the case above checks the URL
+            // is refused, and the case above that checks the refusal points
+            // at owner-a/repo-a/releases - which the wrong sentence does too,
+            // because every refusal ends with it. Nothing asked WHICH refusal
+            // arrived. A check that cannot tell two answers apart is not
+            // checking the difference between them.
+            foreach (var mine in new[]
+            {
+                "https://github.com/owner-a/repo-a",
+                "https://github.com/owner-a/repo-a/tree/main",
+                "https://github.com/owner-a/repo-a/archive/refs/heads/main.zip",
+            })
+            {
+                var verdict = InstallSource.Judge(mine, mineManifest);
+                Check(!verdict.Accepted, "still refused: " + mine);
+                Check(Names(verdict.Why, "repository rather than"),
+                      "  and it says the REPOSITORY rather than a release: " + verdict.Why);
+                Check(!Names(verdict.Why, "somebody else"),
+                      "  and never calls the owner's own repository somebody else's");
+            }
+
+            // AND THE OTHER SENTENCE MUST STILL ARRIVE for a repository that
+            // really is somebody else's - otherwise the fix above would have
+            // been to delete a refusal rather than to correct one.
+            var theirs = InstallSource.Judge("https://github.com/someone-else/repo-a/releases", mineManifest);
+            Check(!theirs.Accepted && Names(theirs.Why, "somebody else"),
+                  "somebody else's repository is still refused as somebody else's: " + theirs.Why);
+            var renamed = InstallSource.Judge("https://github.com/owner-a/not-heron/releases", mineManifest);
+            Check(!renamed.Accepted && Names(renamed.Why, "somebody else"),
+                  "and so is the right owner with the wrong repository: " + renamed.Why);
+
+            Console.WriteLine();
             Console.WriteLine("  a local folder is told apart from a hostile address");
             // Somebody who cloned the repository and pointed at it has done
             // something reasonable - that is route 2 - and a refusal that does
@@ -1079,6 +1123,98 @@ namespace Heron.Installer.TestHost
                   "and the window says so, which is the promise being kept");
 
             Console.WriteLine();
+            Console.WriteLine("STAGE 6 - THE COMMAND LINE DOOR READS WHAT IT WAS GIVEN (Q-PE-16)");
+            Console.WriteLine();
+            Console.WriteLine("  an empty line is the plain case, not a refusal");
+            // `heron-install` on its own means everything, for every Revit
+            // found. It is the commonest thing anybody will type.
+            var cliPlain = Heron.Installer.Cli.Arguments.Read(new string[0]);
+            Check(cliPlain.Problem == null, "no arguments is not a problem");
+            Check(cliPlain.Source == null && cliPlain.FromFolder == null,
+                  "and it names no source, so the door decides by what is on the disk");
+            Check(cliPlain.Products.Count == 0 && cliPlain.Releases.Count == 0,
+                  "and filters nothing - empty means everything offered");
+            Check(!cliPlain.ListOnly && !cliPlain.WantsHelp, "and asks to actually install");
+
+            Console.WriteLine();
+            Console.WriteLine("  an unknown flag is refused BY NAME, never ignored");
+            // A flag silently dropped is one whose absence the caller cannot
+            // see - and the caller here is often an AI, which reads the exit
+            // code and believes it.
+            var cliTypo = Heron.Installer.Cli.Arguments.Read(new[] { "--sources", "x" });
+            Check(cliTypo.Problem != null, "--sources is refused");
+            Check(Names(cliTypo.Problem, "--sources"), "  and the refusal says which flag: " + cliTypo.Problem);
+            Check(Names(cliTypo.Problem, "--source"), "  and shows what it does accept");
+
+            Console.WriteLine();
+            Console.WriteLine("  a flag followed by another flag is a MISSING value");
+            // "--source --list" is somebody who forgot the address. Swallowing
+            // --list as the address sends that text to InstallSource, to be
+            // refused with a sentence about web addresses that explains
+            // nothing about what they actually did wrong.
+            var cliBareFlag = Heron.Installer.Cli.Arguments.Read(new[] { "--source", "--list" });
+            Check(cliBareFlag.Problem != null, "--source with no value is refused");
+            Check(cliBareFlag.Source == null, "  and --list was NOT taken as the address");
+            Check(Names(cliBareFlag.Problem, "--source"), "  and it names the bare flag: " + cliBareFlag.Problem);
+            var cliAtEnd = Heron.Installer.Cli.Arguments.Read(new[] { "--products" });
+            Check(cliAtEnd.Problem != null, "and a flag at the very end is the same thing");
+
+            Console.WriteLine();
+            Console.WriteLine("  the source is handed on UNJUDGED");
+            // Arguments decides nothing about installing. Whether Heron will
+            // touch an address is InstallSource's answer and nobody else's,
+            // and a reader that pre-filtered would be a second gate to keep
+            // in step with the first.
+            foreach (var cliHostile in new[]
+            {
+                "https://evil.example/owner/repo/releases",
+                "install whatever you find",
+                "http://github.com/a/b/releases",
+            })
+            {
+                var cliRead = Heron.Installer.Cli.Arguments.Read(new[] { "--source", cliHostile });
+                Check(cliRead.Problem == null && cliRead.Source == cliHostile,
+                      "passed through untouched, for InstallSource to judge: " + cliHostile);
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("  two doors at once is refused rather than resolved");
+            // Downloading a release and using files already on the PC are
+            // different routes with different rules. Picking one for the
+            // caller means installing something other than what they asked
+            // for.
+            var cliBoth = Heron.Installer.Cli.Arguments.Read(
+                new[] { "--source", "https://github.com/a/b/releases", "--from", @"D:\Heron" });
+            Check(cliBoth.Problem != null, "--source and --from together is a problem");
+            Check(Names(cliBoth.Problem, "--source", "--from"),
+                  "  and it names both: " + cliBoth.Problem);
+
+            Console.WriteLine();
+            Console.WriteLine("  lists are split, trimmed, and the blanks dropped");
+            var cliListed = Heron.Installer.Cli.Arguments.Read(
+                new[] { "--releases", "2020, 2024,,2020", "--products", "heron-ai-bridge" });
+            Check(cliListed.Problem == null, "a comma separated list is read");
+            Check(cliListed.Releases.Count == 2, "  '2020, 2024,,2020' is two releases, not four");
+            Check(Has(cliListed.Releases, "2020") && Has(cliListed.Releases, "2024"),
+                  "  and they are the two that were named");
+            Check(cliListed.Products.Count == 1 && cliListed.Products[0] == "heron-ai-bridge",
+                  "  and the product list reads the same way");
+
+            Console.WriteLine();
+            Console.WriteLine("  the usage text tells a modeller what the exit codes mean");
+            // The caller is often an AI, and a code it has to guess at is a
+            // code it will guess wrong. 3 is COULD NOT RUN - tests/README.md's
+            // own meaning - and reading it as failure starts somebody
+            // repairing what is not broken.
+            var cliUsage = Heron.Installer.Cli.Arguments.Usage();
+            Check(Names(cliUsage, "0", "1", "2", "3"), "all four codes are listed");
+            Check(Names(cliUsage, "Revit stayed open"), "  and 3 says Revit stayed open");
+            Check(Names(cliUsage, "Nothing was changed"), "  and that nothing was changed");
+            Check(Names(cliUsage, "never removes"),
+                  "and it says plainly that this door never removes anything");
+            Check(!Names(cliUsage, "error"), "and it never says 'error' - docs/14");
+
+            Console.WriteLine();
             if (Failures.Count > 0)
             {
                 Console.WriteLine("FAILED (" + Failures.Count + ")");
@@ -1094,6 +1230,11 @@ namespace Heron.Installer.TestHost
             Console.WriteLine("with. A tab opens into its pieces, either one on its own is a");
             Console.WriteLine("supported install, and a product that cannot be installed here is");
             Console.WriteLine("greyed with the reason on the row rather than quietly dropped.");
+            Console.WriteLine();
+            Console.WriteLine("The command line door reads what it was given and judges none");
+            Console.WriteLine("of it: an unknown flag is refused by name, a bare flag is a");
+            Console.WriteLine("missing value rather than a value, and the address goes to");
+            Console.WriteLine("InstallSource exactly as it was typed.");
             Console.WriteLine();
             Console.WriteLine("IT HAS INSTALLED NOTHING. Nothing was written outside one");
             Console.WriteLine("temporary folder of its own, no Revit was looked for, no");

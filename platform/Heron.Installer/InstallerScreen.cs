@@ -256,6 +256,51 @@ namespace Heron.Installer
         }
 
         /// <summary>
+        /// Whether anything at all has been built here, for any release.
+        ///
+        /// WHICH ROUTE A DOOR IS ON, DECIDED BY WHAT IS ON THE DISK. On a
+        /// checkout with builds in it the deploy script finds them exactly as
+        /// it always has and nothing is downloaded - that is the developer,
+        /// and it is also the offline install. With no build for any release
+        /// the files have to come from somewhere, and the only somewhere is
+        /// the published release, which is the case a modeller who downloaded
+        /// one exe is in.
+        ///
+        /// ONE BUILD IS ENOUGH to say this is a checkout somebody works in.
+        /// The deploy script's own refusal covers the releases that are
+        /// missing, by name and with the command that fixes them. Downloading
+        /// on top of a half-built checkout would install a published version
+        /// over the one the developer just compiled, which is the opposite of
+        /// what they asked for.
+        ///
+        /// IT LIVES HERE BECAUSE TWO DOORS NEED IT. It was a private method
+        /// in the window's Program.cs while the window was the only door;
+        /// Heron.Installer.Cli is the second, and a rule copied into both is
+        /// a rule that will disagree with itself. Moved rather than copied -
+        /// R-31, and the same reason the deploy script is not rewritten in C#.
+        /// </summary>
+        /// <param name="manifest">The product list, read as data.</param>
+        /// <param name="releases">The Revit releases to look for builds for.</param>
+        /// <param name="builds">
+        /// What is on the disk. Null is answered FALSE, not true: a door that
+        /// cannot find out what is built has not found a build.
+        /// </param>
+        public static bool AnythingBuilt(ProductManifest manifest,
+                                         IEnumerable<string> releases,
+                                         IProductBuilds builds)
+        {
+            if (manifest == null || releases == null || builds == null) return false;
+
+            foreach (var product in manifest.Products)
+            {
+                if (product.IsHeading || !product.MayBeOffered) continue;
+                foreach (var release in releases)
+                    if (builds.HasBuild(product, release)) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
         /// The product ids to hand the engine, for a set of ticked rows.
         ///
         /// A HEADING'S TICK BECOMES ITS PIECES. The engine installs products

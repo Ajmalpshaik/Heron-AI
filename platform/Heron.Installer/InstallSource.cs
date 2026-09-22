@@ -167,9 +167,28 @@ namespace Heron.Installer
                           "never do. Heron installs from its own release: " + mine);
             }
 
-            // /<owner>/<repo>/releases/...  and the first two must be Heron's.
+            // /<owner>/<repo>/releases/...
+            //
+            // WHOSE IT IS, AND WHAT IT IS, ARE TWO QUESTIONS AND THEY NEED
+            // TWO CHECKS. This was one, and it needed three path segments to
+            // answer either - so https://github.com/<owner>/<repo>, which is
+            // the owner's OWN repository with nothing after it, has only two
+            // and fell into the wrong half. It was refused, correctly, with
+            // the sentence "it is not Heron's own repository. Heron will not
+            // install software from somebody else's" - about his own
+            // repository.
+            //
+            // The refusal was right and the reason was false, which is worse
+            // than a blunt no: it sends somebody to check an address that was
+            // never the problem. R-14 wants the CAUSE named.
+            //
+            // FOUND BY RUNNING heron-install, not by reading this. The suite
+            // already asked that this URL be refused, and that the refusal
+            // point at the releases page - and the wrong sentence does both,
+            // because every refusal ends with that page. Nothing asked WHICH
+            // refusal came back.
             var parts = url.AbsolutePath.Trim('/').Split('/');
-            if (parts.Length < 3
+            if (parts.Length < 2
                 || !string.Equals(parts[0], manifest.SourceOwner, StringComparison.OrdinalIgnoreCase)
                 || !string.Equals(parts[1], manifest.SourceRepo, StringComparison.OrdinalIgnoreCase))
             {
@@ -184,7 +203,12 @@ namespace Heron.Installer
             // have changed a minute ago - which is the thing docs/07 section
             // 1a refused: "not whatever the default branch happens to say
             // today".
-            if (!string.Equals(parts[2], "releases", StringComparison.OrdinalIgnoreCase))
+            //
+            // A BARE REPOSITORY ADDRESS REACHES HERE NOW, with nothing at
+            // parts[2] to compare, and that is this branch's case rather than
+            // the one above.
+            if (parts.Length < 3
+                || !string.Equals(parts[2], "releases", StringComparison.OrdinalIgnoreCase))
             {
                 return No("That points at Heron's repository rather than at a release of it. " +
                           "Heron installs a published, versioned release - source code from a " +

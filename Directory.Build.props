@@ -92,6 +92,7 @@
     <HeronReleaseIndependent Condition="
         '$(MSBuildProjectName)' == 'Heron.Installer'          OR
         '$(MSBuildProjectName)' == 'Heron.Installer.App'      OR
+        '$(MSBuildProjectName)' == 'Heron.Installer.Cli'      OR
         '$(MSBuildProjectName)' == 'Heron.Installer.TestHost' OR
         '$(MSBuildProjectName)' == 'ApiSurface'">true</HeronReleaseIndependent>
 

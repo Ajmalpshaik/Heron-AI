@@ -703,7 +703,7 @@ rather than saying "error", which is the part that can be built.
 
 ## Stage 6 — Routes 1 and 2, onto the same engine
 
-**Status: PARTLY BUILT — 2026-09-22. The security gate is built and proven; the door is not.**
+**Status: BUILT, NOT PROVEN — 2026-09-22. Route 1 has a door. Route 2 still has none, and says so.**
 
 > **THE GATE FIRST, because it is the only part that is a security rule.** Item 3 says *"read
 > [Q-PE-10](03-open-questions.md) before building this one — whether route 1 may act on any
@@ -719,11 +719,36 @@ rather than saying "error", which is the part that can be built.
 > **would** be accepted. It **opens no socket** — `R-50` is true by construction rather than by
 > discipline.
 >
-> **AND THE DOOR IT GUARDS DOES NOT EXIST.** Routes 1 and 2 are the **AI** installing, and there is
-> nothing for the AI to call: route 3 is a `WinExe` a person double-clicks.
-> [Q-PE-16](03-open-questions.md) holds the four options and names the one to avoid — driving
-> `deploy-addin.ps1` directly, which works today, looks like progress, and skips the engine entirely.
-> **Stage 6's own opening line calls that failure.**
+> **AND THEN THE DOOR IT GUARDS WAS BUILT — 2026-09-22, the owner having chosen between the four.**
+> [`platform/Heron.Installer.Cli/`](../../../../platform/Heron.Installer.Cli/), built as
+> **`heron-install`**: a command beside the window, reaching the **same**
+> `InstallSource` → `InstallerScreen` → `InstallPlan` → `InstallEngine`. Not an MCP tool, not the
+> window driven headless, and **not `deploy-addin.ps1`** — the one this stage's own opening line
+> calls failure. [Q-PE-16](03-open-questions.md) has the reasoning and what building it found.
+>
+> **IT INSTALLS, AND IT NEVER REMOVES.** `R-21` makes unticking mean uninstall, and unticking is a
+> gesture a person makes in a window having been asked to confirm. Nothing on a command line can mean
+> it: a product left out of `--products` was not unticked, it was **not mentioned**. So
+> `InstallEngine.Install` is called and `Apply` never is.
+>
+> **AND THE GATE RUNS BEFORE ANYTHING ON THE PC IS TOUCHED.** Judging a source is pure string work, so
+> a hostile address is refused on a machine with no Revit at all, and **no PowerShell has run by the
+> time it is.** The first draft had it the other way round, copying the window's order — and the window
+> has no untrusted input at that point, which is this door's whole reason for existing.
+>
+> **ONE RULE WAS MOVED RATHER THAN COPIED.** `AnythingBuilt` — whether this is a checkout with builds
+> in it, or a machine that has to download — was a private method in the window's `Program.cs` while
+> the window was the only door. It is now `InstallerScreen.AnythingBuilt`, called by both. R-31, and
+> the same reason `deploy-addin.ps1` was never rewritten in C#.
+>
+> **AND BUILDING THE DOOR FOUND A DEFECT IN THE GATE THAT WAS ALREADY MERGED.** Asked for
+> `https://github.com/<owner>/<repo>` — the owner's **own** repository, just not a release — the
+> refusal said *"it is not Heron's own repository … somebody else's"*. One check was answering two
+> questions and needed three path segments to answer either, so a bare repository address fell into
+> the wrong half. **The refusal was right and the reason was false.** Split in two. The suite had
+> passed because it asked only that the address be refused and that the refusal name the releases
+> page — which the wrong sentence does too, since every refusal ends with it. It now asks **which**
+> refusal arrived.
 
 ### Where it actually stands — the four states, kept apart
 
@@ -731,9 +756,11 @@ rather than saying "error", which is the part that can be built.
 |---|---|
 | **PASS** | The source gate, against a fixture naming its own owner and repository: four accepted shapes, **eighteen refused**, every refusal naming Heron's own release, a local folder told apart from a hostile address, and a manifest that does not know its own source refusing everything rather than guessing |
 | **PASS** | **Every guard was seen to fail**, each catching the one attack it is for — counted below |
-| **NOT STARTED** | Items 1, 2 and 3's door — [Q-PE-16](03-open-questions.md) |
-| **NOT STARTED** | Route 2, which needs [Q-PE-12](03-open-questions.md) as well |
-| **NEEDS REAL REVIT** | Every line under *Done when*, once a door exists |
+| **PASS** | The command line door's argument reader, run for real: an unknown flag refused **by name**, a bare flag read as a **missing value** rather than a value, the address handed to `InstallSource` **unjudged**, two doors at once refused rather than resolved |
+| **PASS** | **Fifteen breaks seen to fail** — eight on the reader, seven on the door — counted below |
+| **BUILT, NOT PROVEN** | Items 1 and 2, route 1's door. It has never installed anything into a Revit |
+| **NOT STARTED** | Route 2, which needs [Q-PE-12](03-open-questions.md). `--from` refuses and **says that**, rather than failing in a way that looks like a bug |
+| **NEEDS REAL REVIT** | Every line under *Done when* — `AE1` to `AE6` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) |
 
 **Seen to fail, one break per guard:**
 
@@ -755,6 +782,36 @@ added, and then it went red.
 `Uri.TryCreate` turns `D:\Heron-AI` into a `file:` address quite happily, so somebody pointing at their
 own clone was told *"Heron will only fetch over https, and that address is file"* — true, and useless.
 It now names the other door.
+
+**And the door's own fifteen, in two groups.**
+
+| the reader, broken | what the check caught |
+|---|---|
+| an unknown flag ignored | `--sources x` accepted in silence |
+| a bare flag swallows the next one | `--source --list` sends `--list` to the gate |
+| two doors at once quietly resolved | `--source` and `--from` together |
+| blanks and duplicates kept | `2020, 2024,,2020` read as four releases |
+| list entries not trimmed | `" 2024"` is not `2024` |
+| the exit codes dropped from the usage | a caller guessing what `3` means |
+| *"it never removes"* dropped | the one promise that door makes |
+| the reader judging the source itself | **two gates to keep in step instead of one** |
+
+| the door, broken | what the check caught |
+|---|---|
+| the gate moved after PowerShell | a refusal that ran something first |
+| `Apply` called with removals | a command line that can uninstall |
+| `"Release"` typed out again | the configuration disagreeing with the deployer's |
+| the reader calling `InstallSource` | as above, from the other side |
+| a product named in the door | `R-3` broken — adding one stops being a line in a file |
+| `Heron.Core` referenced | a release-independent thing pinned to one release |
+| renamed to `HeronInstall` | **two letters from `HeronInstaller.exe`**, one of which confirms nothing |
+
+**Three of this suite's own checks were wrong before they were right**, and all three the same way:
+they searched a whole file for a word, so the doc comment *explaining* a rule broke the check *for*
+it — `Arguments.cs` saying "InstallSource decides", the `.csproj` saying "NOT referencing
+`Heron.Core`", both saying never to print the word "Error". **A check that a word is absent is not a
+check that a rule is kept.** They read code with the commentary stripped now. This branch had already
+made that mistake once, testing a variable name instead of a rule.
 
 Stages 3 to 5 build **route 3** — the installer with a window. [S7](00-structure.md) says there are
 three front doors and one engine, so this is where the other two are hung on it.
@@ -982,7 +1039,7 @@ Update this table as stages complete. **Do not mark a stage done without its evi
 | 3 | Installer core | **PROVEN** 2026-09-21 | Run on the owner's PC — the AI Bridge was installed into Revit 2024 and Revit loaded it, and the engine refused correctly while Revit was open. [Stage 3](#stage-3--the-installer-core-with-no-window-at-all) · [Group AB](../../../NEEDS-CHECKING.md) |
 | 4 | The window | **PROVEN** 2026-09-21 for `AB1`-`AB8`, except `AB6` | Run on the owner's PC. **One rule added after that run is NOT proven** — greyed release ticks, `AB9` and `AB10`. [Stage 4](#stage-4--the-window) · [Group AB](../../../NEEDS-CHECKING.md) |
 | 5 | GitHub download | **BUILT, NOT PROVEN** 2026-09-21 | The builder ran here — 24 assets, verified at the binary level. **No release exists and nothing has ever been fetched from GitHub.** [Stage 5](#stage-5--fetch-from-the-github-release) · `AC1`-`AC5` |
-| 6 | Routes 1 and 2 | **PARTLY BUILT** 2026-09-22 | The security gate is built and proven; **the door is not** — there is nothing for the AI to call, [Q-PE-16](03-open-questions.md). [Stage 6](#stage-6--routes-1-and-2-onto-the-same-engine) |
+| 6 | Routes 1 and 2 | **BUILT, NOT PROVEN** 2026-09-22 | Route 1 has a door — `heron-install`, [Q-PE-16](03-open-questions.md) answered. Route 2 still needs [Q-PE-12](03-open-questions.md) and refuses by saying so. **Nothing has been installed into a Revit.** [Stage 6](#stage-6--routes-1-and-2-onto-the-same-engine) · `AE1`-`AE6` |
 | 7 | Uninstall / update / rollback | **BUILT, NOT PROVEN** 2026-09-22 | Item 5 is **NOT MET** and says why, [Q-PE-15](03-open-questions.md). **Nothing has been deleted from a real Addins folder.** [Stage 7](#stage-7--uninstall-update-and-a-rollback-that-has-been-tested) · `AD1`-`AD4` |
 | 8 | Sign and ship | NOT STARTED | — |
 | 9 | The Settings panel | NOT STARTED | — |

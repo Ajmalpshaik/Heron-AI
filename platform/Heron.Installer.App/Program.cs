@@ -73,7 +73,7 @@ namespace Heron.Installer.App
             var localBuilds = new BuildsOnDisk(root, localDeployer.Configuration);
 
             var releases = revit.InstalledReleases();
-            var download = AnythingBuilt(manifest, releases, localBuilds)
+            var download = InstallerScreen.AnythingBuilt(manifest, releases, localBuilds)
                 ? null
                 : Downloader(manifest, root);
 
@@ -129,29 +129,6 @@ namespace Heron.Installer.App
             });
             worker.IsBackground = true;
             worker.Start();
-        }
-
-        /// <summary>
-        /// Whether anything at all has been built here, for any release.
-        ///
-        /// ONE BUILD IS ENOUGH to say this is a checkout somebody works in,
-        /// and the deploy script's own refusal covers the releases that are
-        /// missing - by name, with the command that fixes them. Downloading
-        /// on top of a half-built checkout would install a published version
-        /// over the one the developer just compiled, which is the opposite of
-        /// what they asked for.
-        /// </summary>
-        private static bool AnythingBuilt(ProductManifest manifest,
-                                          IReadOnlyList<string> releases,
-                                          IProductBuilds builds)
-        {
-            foreach (var product in manifest.Products)
-            {
-                if (product.IsHeading || !product.MayBeOffered) continue;
-                foreach (var release in releases)
-                    if (builds.HasBuild(product, release)) return true;
-            }
-            return false;
         }
 
         /// <summary>

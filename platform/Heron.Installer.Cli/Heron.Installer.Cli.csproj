@@ -1,0 +1,84 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The door routes 1 and 2 knock on. Stage 6, and the answer to
+    docs/work-notes/plans/plugin-extension/03-open-questions.md Q-PE-16.
+
+    WHY THIS EXISTS AT ALL. S7 says three front doors and one engine.
+    Heron.Installer.App is door three - a WinExe a person double-clicks.
+    Routes 1 and 2 are the AI installing, and until this project there was
+    nothing for the AI to call: a window needs a hand, a mouse and eyes.
+    The gate on route 1 was built and proven with nothing on the other side
+    of it.
+
+    WHY NOT ONE OF THE OTHER THREE OPTIONS Q-PE-16 listed.
+      - An MCP tool: mcp/ rule 1 is "transport only. No BIM logic, no
+        knowledge, no decisions", and it is Python while the engine is C#, so
+        it would shell out to something like this anyway.
+      - Driving HeronInstaller.exe headless: it is a WinExe, so it either
+        draws a window nobody asked for or needs a mode that makes it not a
+        window.
+      - Driving tools\deploy-addin.ps1 directly: Stage 6's opening line calls
+        that FAILURE - "if this stage ends up re-implementing any install
+        rule, it has failed" - because it skips InstallPlan and InstallEngine
+        entirely. It works today, which is what makes it the easy mistake.
+
+    NO DECIDING IN HERE, for the same reason the window holds none. What may
+    be installed is InstallerScreen's answer, what to install is InstallPlan's
+    and InstallEngine's, and whether a named source may be used at all is
+    InstallSource's. A rule that appears in this project is a rule outside
+    everything that tests it.
+
+    net8.0, NOT net8.0-windows, and NOT referencing Heron.Core - the same two
+    rules the engine beside it keeps, and for the same reasons. It has no
+    window, so it is runnable and testable on the machine this is developed
+    on; and Heron.Core follows the Revit release, so referencing it would pin
+    a release-independent thing to whichever release happened to be building.
+
+    NOT a Revit add-in. It never loads into Revit.exe.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Heron.Installer.Cli</RootNamespace>
+
+    <!--
+      heron-install, lower case and hyphenated, and the name is a safety
+      decision rather than a style one.
+
+      The window beside this is HeronInstaller.exe, and its own .csproj says
+      why: "two files a dot apart is a thing somebody eventually double-clicks
+      the wrong one of". HeronInstall.exe next to HeronInstaller.exe would be
+      two letters apart, which is worse - and one of them draws a window while
+      the other does the whole install with no confirmation to read.
+
+      So this one is shaped like a command instead of like an application. It
+      is never the file in a Downloads folder; it is the thing the AI calls,
+      and it reads as such at a glance.
+    -->
+    <AssemblyName>heron-install</AssemblyName>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+
+    <!--
+      Release-independent, like the engine and the window: it installs FOR a
+      Revit release without ever loading into one, so it is built once rather
+      than eight times. The list that decides this is in Directory.Build.props,
+      because a .csproj is read too late to be seen.
+    -->
+    <HeronTfm>net8.0</HeronTfm>
+
+    <!--
+      A .NET 8 executable on a machine carrying only a later runtime would
+      otherwise refuse to start, naming a framework the user has never heard
+      of. Same flag, same reason, as Heron.Installer.App and ApiSurface.
+    -->
+    <RollForward>LatestMajor</RollForward>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Heron.Installer\Heron.Installer.csproj" />
+  </ItemGroup>
+
+</Project>

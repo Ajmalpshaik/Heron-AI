@@ -420,9 +420,50 @@ uninstall that leaves no trace is the operation you most want a trace of.
 
 ---
 
-### Q-PE-16 — Where does the door routes 1 and 2 knock on actually live?
+### ~~Q-PE-16 — Where does the door routes 1 and 2 knock on actually live?~~ — ANSWERED 2026-09-22
 
-**Waiting on:** the owner. **Raised 2026-09-22**, building Stage 6.
+**A command beside the window, not a window driven headless and not the script.**
+[`platform/Heron.Installer.Cli/`](../../../../platform/Heron.Installer.Cli/), built as
+**`heron-install`**, reaching the same `InstallSource` → `InstallerScreen` → `InstallPlan` →
+`InstallEngine` that the window reaches. It is the first option of the four below.
+
+> Owner, 2026-09-22, having been shown the four: *"This is the first part: I can install it through
+> Windows. I just download, double-click, and install … But if I type the 'heron install' from GitHub
+> like that, it will install from there also. That is the second type of installation."*
+
+**Three things that came out of building it, none of which the options above had predicted:**
+
+1. **The name is a safety decision.** `heron-install`, lower case and hyphenated, because
+   `HeronInstall.exe` beside `HeronInstaller.exe` is two letters apart — and the window's own
+   `.csproj` already warns that *"two files a dot apart is a thing somebody eventually double-clicks
+   the wrong one of"*. One of these draws a window to read; the other installs with nothing to confirm.
+2. **It installs and never removes.** `R-21` makes unticking mean uninstall, and unticking is a gesture
+   a person makes in a window having been asked to confirm. **Nothing on a command line can mean it** —
+   a product left out of `--products` was not unticked, it was not mentioned. So `InstallEngine.Install`
+   is called and `Apply` never is, and somebody wanting something gone uses the window.
+3. **The gate runs before anything on the PC is touched.** Judging a source is pure string work, so a
+   hostile address is refused on a machine with no Revit at all, and **no PowerShell has run by the
+   time it is**. The first draft had it the other way round, copying the window's order — and the
+   window has no untrusted input at that point, which is this door's whole reason for existing.
+
+**And building it found a defect in the gate that was already merged.** Asked for
+`https://github.com/<owner>/<repo>` — the owner's *own* repository, just not a release — the refusal
+came back saying *"it is not Heron's own repository. Heron will not install software from somebody
+else's"*. It is his own. One check was answering two questions and needed three path segments to answer
+either, so a bare repository address fell into the wrong half. **The refusal was right and the reason
+was false**, which is worse than a blunt no: it sends somebody to check an address that was never the
+problem. Split into two checks, and the suite now asks *which* refusal arrived rather than only that
+one did — which is why it had passed.
+
+**Route 2 is still blocked on [Q-PE-12](#q-pe-12--route-2-says-the-files-are-already-in-the-repo-they-are-not),**
+and `--from` says so in as many words rather than failing in a way that looks like a bug. The owner
+asked for that question to come after route 1 is finished.
+
+---
+
+**The four options as they stood, kept because the reasoning is the record:**
+
+**Waiting on:** ~~the owner~~. **Raised 2026-09-22**, building Stage 6. **Answered 2026-09-22.**
 
 [S7](00-structure.md) says three front doors and one engine. Route 3 is
 [`Heron.Installer.App`](../../../../platform/Heron.Installer.App/) — a `WinExe` a person
@@ -447,8 +488,8 @@ today and calling it looks like progress.
 [Q-PE-12](#q-pe-12--route-2-says-the-files-are-already-in-the-repo-they-are-not): its files are not in
 a repository download at all. So route 1 needs only this question answered; route 2 needs both.
 
-**Blocks:** [Stage 6](02-implementation.md) items 1, 2 and 3. Not item 4 or 5, which are properties of
-whatever door is built.
+**Blocked:** [Stage 6](02-implementation.md) items 1, 2 and 3. Not item 4 or 5, which are properties of
+whatever door is built. **Unblocked 2026-09-22.**
 
 ---
 
