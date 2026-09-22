@@ -571,11 +571,43 @@ def one(fid, entries, out=None):
     return 2
 
 
+def _stood_note(counts, total):
+    """What stood in place of a look, for a question nothing flagged.
+
+    Empty when something WAS worth a look - the count says it. Otherwise the
+    verdict that covered the library, so a reader can tell "checked and clean"
+    from "never checked".
+    """
+    others = dict((v, n) for v, n in (counts or {}).items() if v != LOOK)
+    if not others:
+        return ""
+    if len(others) == 1:
+        only = list(others)[0]
+        return "   %s for all %d" % (only, total)
+    return "   " + ", ".join("%s %d" % (v, n) for v, n in sorted(others.items()))
+
+
 def sweep(entries, show=None, out=None):
     write = (out or sys.stdout).write
     findings = {}
+    # EVERY VERDICT, NOT JUST THE ONES WORTH A LOOK. The summary below is
+    # fourteen rows of one number, and a row reading 0 used to mean three
+    # different things at once - measured 2026-09-22 across 396 fragments:
+    #
+    #   Q11  ANSWERED for all 396    the unit check ran and found nothing
+    #   Q9   NEEDS A RUN for all 396 nothing was checked at all
+    #   Q13  BY DESIGN for all 396   and this file's own docstring says it
+    #                                CANNOT decide that question
+    #
+    # One presentation, three meanings, in the tool whose docstring insists
+    # the four verdicts "describe EVIDENCE, not lifecycle". AGENTS.md is
+    # blunter: separate the four states and never merge them. So the row
+    # carries the verdict that stood when no fragment was worth a look.
+    stood = {}
     for entry in entries:
         for i, (verdict, detail) in enumerate(ask(*entry), 1):
+            stood.setdefault(i, {})[verdict] = stood.setdefault(
+                i, {}).get(verdict, 0) + 1
             if verdict == LOOK:
                 findings.setdefault(i, []).append((entry[0], entry[1], detail))
 
@@ -585,10 +617,16 @@ def sweep(entries, show=None, out=None):
           % (len(entries), len(QUESTIONS)))
     write("architecture document's section 14, in its order.\n\n")
 
-    labels = {LOOK: "worth a look"}
+    write("%-62s %4s\n" % ("", "look"))
     for i, question in enumerate(QUESTIONS, 1):
         got = findings.get(i, [])
-        write("%2d. %-58s %4d\n" % (i, question[:58], len(got)))
+        write("%2d. %-58s %4d%s\n"
+              % (i, question[:58], len(got), _stood_note(stood.get(i), len(entries))))
+    write("\n")
+    write("A 0 with a verdict beside it is what stood INSTEAD of a look:\n")
+    write("  ANSWERED     read and nothing was found\n")
+    write("  BY DESIGN    the architecture answers it; there is nothing to find\n")
+    write("  NEEDS A RUN  nothing was checked - only a real model can say\n")
     write("\n")
 
     # Small lists are printed in full; a big one is a spread rather than a

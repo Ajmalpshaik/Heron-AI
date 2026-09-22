@@ -124,6 +124,64 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — ELEVEN OF FOURTEEN REPORT `0`, AND THAT ZERO MEANS THREE THINGS
+
+**[Row 5b-148](FRAGMENT-ISSUES.md), FIXED.** `tools/check-revit-gate.py` read end to end — 651 lines,
+a checker CI does not run.
+
+It asks the master architecture document's fourteen questions of every fragment and gives each one of
+**four** verdicts, and its docstring is emphatic about why there are four: they *"describe EVIDENCE,
+not lifecycle — docs/24's two axes are untouched and this adds no third vocabulary"*.
+
+**Then `sweep()` collected only the `LOOK` verdicts and threw the rest away.** The summary a reader
+actually reads was fourteen rows of a single number.
+
+**Measured by tallying every verdict across all 396 fragments** — eleven of the fourteen read `0`:
+
+| row | reads | actually means |
+|---|---|---|
+| Q11 units | `0` | **ANSWERED for all 396** — the check ran and found nothing |
+| Q9 element ids | `0` | **NEEDS A RUN for all 396** — nothing was checked at all |
+| Q13 could it modify the model | `0` | **BY DESIGN for all 396** — and this file's own docstring says it **cannot** decide that question; D-28's executor answers it |
+
+**One presentation, three meanings**, in the tool whose whole argument is that the four verdicts are
+different. AGENTS.md is blunter: *"Separate the four states and never merge them: PASS · FAIL · NOT RUN
+(say why) · NEEDS REAL REVIT."* A question nobody asked reading as a zero is that rule broken in the
+tool's own headline.
+
+**A leftover says it used to know**: `labels = {LOOK: "worth a look"}` sat two lines above, assigned
+and never used.
+
+#### The fix
+
+`sweep()` tallies every verdict, and a row with no looks carries the verdict that stood instead, under
+a three-line legend. **Nothing else changed** — the fourteen questions, their order, the four verdicts
+and every judgement in `ask()` are untouched, and it still exits 0 because a finding here is a question
+for a person.
+
+#### The first draft of the case passed for the wrong reason
+
+It sat inside the block where the library is a **temp fixture**, so `entries` was empty, every row had
+no verdict to report, and the check read as a defect in the tool. Moved to the section that loads the
+real library. `tests/test_revit_gate.py` already owned this tool — five claims — and was **extended,
+not duplicated**: **2 red** against the module as found. Teeth two ways: the note dropped from the row
+(2 red), and the note kept but no longer naming which verdict stood (2 red).
+
+#### Traced and not raised
+
+Every remedy the report names **works**: `--list links` prints 68 names and `--list reporting` 65,
+measured. The `> 20` spread threshold is a display choice with the count still printed beside it. An
+unknown `--list` key is ignored in silence — the shape of rows 5b-112, 5b-127, 5b-129 and 5b-132 — but
+here the output names the right key on the very line that sends you looking.
+
+**And the docstring is one of the best in the repository**: it records a failed design honestly
+(`.Create(` flagged three READ fragments and all three were wrong; narrowing to calls taking `doc`
+found zero and missed 76 MODIFY fragments) and concludes *"the write surface is the API, and no word
+list is the API"* — then says the executor answers question 13 better than any text search could, and
+declines to compete.
+
+---
+
 ### 2026-09-22 — THE API PAGE'S ONE FINDING WAS FALSE, AND TWO DOCSTRINGS TYPED A STALE COUNT
 
 **[Rows 5b-146 and 5b-147](FRAGMENT-ISSUES.md), both FIXED.** Three generators read end to end —

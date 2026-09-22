@@ -423,6 +423,35 @@ def main():
         print("        Q%-3d %4d worth a look" % (i, counts[i]))
     check(len(entries) > 100,
           "the whole library was read, not a corner of it (%d)" % len(entries))
+
+    print()
+    print("5b. A ZERO THAT WAS CHECKED AND A ZERO THAT WAS NOT")
+    print("-" * 66)
+    print("    The summary is fourteen rows of one number, and eleven")
+    print("    of them read 0 on this library. Measured 2026-09-22:")
+    print("    Q11 is ANSWERED for all 396 - the unit check ran and")
+    print("    found nothing; Q9 is NEEDS A RUN for all 396 - nothing")
+    print("    was checked at all; Q13 is BY DESIGN, and this tool's")
+    print("    own docstring says it CANNOT decide that question. One")
+    print("    presentation, three meanings. AGENTS.md: separate the")
+    print("    four states and never merge them.")
+    said = io.StringIO()
+    tool.sweep(tool.library()[0], out=said)
+    page = said.getvalue()
+    head = [line for line in page.splitlines()
+            if line.strip().startswith(("9.", "11.", "13."))]
+    check(len(head) == 3,
+          "the summary has a row for questions 9, 11 and 13, and it has "
+          "%d" % len(head))
+    for line, want in ((head[0], tool.NEEDS_RUN),
+                       (head[2], tool.BY_DESIGN)):
+        check(want.lower() in line.lower(),
+              "a question nothing looked at says %r on its own row, and "
+              "the row reads %r" % (want, line.strip()[:78]))
+    check(tool.NEEDS_RUN.lower() not in head[1].lower()
+          and tool.BY_DESIGN.lower() not in head[1].lower(),
+          "while a question that WAS checked and found nothing does not "
+          "borrow either word - Q11 reads %r" % head[1].strip()[:78])
     # D-48: a broken fragment costs one fragment and is NAMED. The first
     # version of library() parsed the yaml itself and skipped a malformed one
     # in silence, so a report that counts fragments would have been short by
