@@ -19,6 +19,11 @@ adding Heron Structure next year is a line in a file rather than a rebuild of
 the installer. The price of that is a file nothing compiles: a typo in it
 reaches a modeller's machine untouched by every other gate in this folder.
 
+A TRAILING NEWLINE WALKED PAST ALL THREE FORMAT PATTERNS until 2026-09-22,
+because in Python `$` also matches just before a final newline. `\Z` matches
+the end and nothing else. The GUID was caught downstream anyway - the .addin
+comparison is exact - and the id and the folder were not.
+
 Three of the mistakes it can carry are silent until Revit refuses to start:
 
     a duplicate addInId      Revit keys add-ins by that GUID. Two manifests
@@ -100,13 +105,20 @@ STATES = ("SHIPPED", "PROVING", "PLANNED")
 # The two states whose files must be on disk, and must agree with the row.
 ON_DISK = ("SHIPPED", "PROVING")
 
-ID = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
+# \Z AND NOT $, IN ALL THREE. In Python `$` also matches just before a final
+# newline, so every one of these accepted a value ending in one - measured
+# 2026-09-22: 'Heron\n' was a folder name, 'heron-doc\n' was an id, and
+# '7A1F...5B41\n' was a GUID. JSON carries a newline in a string quite
+# happily, and this is the file nothing compiles, so a value that walks past
+# a format check here reaches a machine untouched. \Z matches the end and
+# nothing else.
+ID = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*\Z")
 
 # A single folder name, not a path. A separator here would write outside the
 # release folder, and `..` would write outside Addins altogether.
-FOLDER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+FOLDER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*\Z")
 GUID = re.compile(r"^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-"
-                  r"[0-9A-F]{4}-[0-9A-F]{12}$")
+                  r"[0-9A-F]{4}-[0-9A-F]{12}\Z")
 
 META = {"heron-agent": str, "heron-step": int, "heron-status": str,
         "heron-since": str, "heron-layer": str}
