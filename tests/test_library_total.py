@@ -112,8 +112,22 @@ BREAK = re.compile(r'[.!?][*_"\'\u2019)\]]*\s+|\s*\|\s*')
 
 SEARCH = (".py", ".md", ".cs", ".yaml", ".yml", ".toml")
 
-SKIP_FOLDERS = ("__pycache__", ".git", "bin", "obj", ".vs", "node_modules",
-                "handover-archive", "work-notes")
+# `worktrees` BY NAME, which is what check-docs.py skips and what
+# test_docs_guard.py and test_metadata_guard.py already carry for the same
+# reason. `.claude/worktrees/<name>/` is a full second checkout another
+# session is working in, at whatever commit it started from, so every
+# whole-library total typed in one of those copies is stale BY DESIGN - and
+# this suite was reading them as claims about today's library.
+#
+# Measured 2026-09-22: 140 failures, and ALL 140 were inside a worktree. Not
+# one was in this tree. The suite was not finding anything wrong with the
+# repository at all - it was reading another session's past.
+#
+# CI clones once and has no worktrees, so it is green there forever. This can
+# only ever go red on a machine running several sessions at once, which is
+# the normal way of working here rather than the exception.
+SKIP_FOLDERS = ("__pycache__", ".git", "worktrees", "bin", "obj", ".vs",
+                "node_modules", "handover-archive", "work-notes")
 
 # DATED REGISTERS. A row in one of these describes the day it was written -
 # docs/FRAGMENT-ISSUES.md says so in its own header - so a total inside one

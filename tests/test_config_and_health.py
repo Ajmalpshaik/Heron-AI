@@ -85,8 +85,18 @@ def csharp_keys_read():
 
 HOST_ID = re.compile(r'HERON_CLIENT_ID"?\s*[:=]\s*"([^"]+)"')
 
-SKIP_FOLDERS = (".git", "__pycache__", "node_modules", "build", "obj", "bin",
-                "packages")
+# `worktrees` BY NAME - test_docs_guard.py carries the same entry for the
+# same reason, and check-docs.py skips the path. `.claude/worktrees/<name>/`
+# is another session's full checkout, and the `.codex/config.toml` inside it
+# pins whatever HERON_CLIENT_ID that session was started with. This suite was
+# reading those as host doors in THIS tree.
+#
+# Measured 2026-09-22: 4 failures, all 4 inside a worktree, none here. A
+# worktree is not committed, so CI never sees one and this is green there
+# forever - which makes it worse, not better: a suite red locally and green
+# in CI is one people learn to skip past.
+SKIP_FOLDERS = (".git", "worktrees", "__pycache__", "node_modules", "build",
+                "obj", "bin", "packages")
 
 
 def host_configs():
