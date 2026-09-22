@@ -11,6 +11,14 @@ Does adding the composition graph as a third retrieval stream help? Measure it.
 
     python tools/measure-graph.py
     python tools/measure-graph.py --weight 0.3 --seeds 5
+    python tools/measure-graph.py --sweep          six settings, not one
+    python tools/measure-graph.py --revit 2024     with the version wall
+
+A SETTING THIS TOOL DOES NOT HAVE IS REFUSED. Measured 2026-09-22:
+`--wieght 0.05 --sedes 1` ran the whole measurement at weight=0.30 seeds=5,
+printed those as the settings and exited 0, while `--weight` on its own and
+`--weight abc` each died in a traceback. A number recorded against a setting
+nobody asked for is worse than no number, because it is quoted afterwards.
 
 Q-52, run rather than argued. docs/33 s5.16: `gbrain` reports +31.4 points P@5
 from a graph stream over its graph-disabled variant, on a corpus of prose about
@@ -86,6 +94,71 @@ import heron_graph as GRAPH                                    # noqa: E402
 
 POOL = 20
 LIMIT = 5
+
+# Every flag this tool has, and what each one takes. A settings reader that
+# walks a list it does not own is how `--wieght 0.05` ran the whole
+# measurement at 0.30 and printed 0.30 as the setting - measured 2026-09-22.
+FLAGS = {
+    "--weight": "a number - the graph stream's share of the fusion",
+    "--seeds": "a whole number - how many top hits seed the graph",
+    "--revit": "a release, e.g. 2024 - the version wall retrieval applies",
+    "--sweep": None,                       # takes no value
+}
+
+
+def settings_from(argv):
+    """(weight, seeds, revit, sweep, why it was refused or None).
+
+    READ BEFORE ANYTHING IS OPENED, so a setting this tool does not have is
+    a refusal rather than a number recorded against a default nobody asked
+    for. A number quoted afterwards for the wrong setting is worse than no
+    number at all.
+    """
+    weight, seeds, revit, sweep = 0.3, 5, None, False
+    named = set()
+    rest = list(argv)
+    i = 0
+    while i < len(rest):
+        word = rest[i]
+        if word not in FLAGS:
+            if word.startswith("-"):
+                why = "not a flag this tool has: %s" % word
+            else:
+                why = "this tool takes flags, not a bare word: %s" % word
+            return None, None, None, None, why
+        named.add(word)
+        if FLAGS[word] is None:
+            sweep = True
+            i += 1
+            continue
+        if i + 1 >= len(rest):
+            return None, None, None, None, ("%s needs a value - %s"
+                                            % (word, FLAGS[word]))
+        value = rest[i + 1]
+        if word == "--weight":
+            try:
+                weight = float(value)
+            except ValueError:
+                return None, None, None, None, ("--weight needs %s, and %s is "
+                                                "not one" % (FLAGS[word], value))
+        elif word == "--seeds":
+            try:
+                seeds = int(value)
+            except ValueError:
+                return None, None, None, None, ("--seeds needs %s, and %s is "
+                                                "not one" % (FLAGS[word], value))
+        else:
+            revit = value
+        i += 2
+
+    # THE SWEEP HAS ITS OWN LIST, so asking for both means one of the two was
+    # going to be ignored - which is the defect this reader exists to close.
+    both = named & {"--weight", "--seeds"}
+    if sweep and both:
+        return None, None, None, None, (
+            "--sweep tries its own six settings, so %s would be ignored. Ask "
+            "for one or the other" % " and ".join(sorted(both)))
+    return weight, seeds, revit, sweep, None
 
 
 # ---------------------------------------------------------------------------
@@ -221,15 +294,11 @@ class Tally(object):
 
 
 def main(argv):
-    weight = 0.3
-    seeds = 5
-    revit = None
-    if "--weight" in argv:
-        weight = float(argv[argv.index("--weight") + 1])
-    if "--seeds" in argv:
-        seeds = int(argv[argv.index("--seeds") + 1])
-    if "--revit" in argv:
-        revit = argv[argv.index("--revit") + 1]
+    weight, seeds, revit, sweep, problem = settings_from(argv)
+    if problem:
+        print("  %s" % problem)
+        print("  it takes: %s" % ", ".join(sorted(FLAGS)))
+        return 2
 
     store = SCOPE.open_scope(SCOPE.GLOBAL)
     try:
@@ -287,7 +356,7 @@ def main(argv):
         # baseline is computed once per query and reused for every setting,
         # so the arms differ only in the graph.
         settings = [(weight, seeds)]
-        if "--sweep" in argv:
+        if sweep:
             settings = [(0.05, 3), (0.10, 3), (0.30, 3),
                         (0.05, 1), (0.10, 5), (0.30, 5)]
 
