@@ -18,7 +18,10 @@ fragment metadata."* This is that, and the parallel to
 
 WHY IT WAS WORTH BUILDING
 -------------------------
-349 fragments, and no way to read them. `heron_capabilities` answers *what can
+The library had 349 fragments the day this was written and no way to read
+them - `ls brain/fragments/*/fragment.yaml | wc -l` says what it holds now,
+and this page prints the figure it actually read rather than a second copy
+of it. `heron_capabilities` answers *what can
 Heron do* at the level of jobs and capabilities, which is the right answer to
 that question and not this one. Nothing showed the library itself - what each
 fragment is, what it needs, what it leaves behind, what it is allowed to
@@ -45,8 +48,16 @@ names. The catalogue separates them, because that difference is what the proof
 queue is actually made of.
 
 It states what it does NOT know, in the same breath. A fragment being in here
-is not a claim that it works - 349 are catalogued and most have never met a
-model.
+is not a claim that it works - most of them have never met a model, and the
+line this page prints when it runs says how many there are and how many carry
+a proof.
+
+THAT SENTENCE USED TO TYPE THE NUMBER, AND THE NUMBER WENT STALE. It said
+"349 are catalogued" in the present tense while the library held 396, in the
+one file whose own argument is that *a generated artefact cannot lie about
+its source*. The page never did; its docstring did. AGENTS.md has the rule
+and the reason: three READMEs in this repository once carried a fragment
+count wrong by more than a hundred.
 """
 
 import io
