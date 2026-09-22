@@ -30,7 +30,11 @@ WHAT THIS PROVES
      happens - a bad payload, no git, a fetch that fails.
   3. A FETCH THAT CANNOT FINISH IS CUT OFF, and the comparison still happens
      against origin/main as last fetched, and says so.
-  4. THE WIRING. .claude/settings.json runs the session line at every
+  4. THE DIARY. Each decision is one line in a log found through Heron's own
+     path helpers - never inside this repository, bounded in size, and never
+     a reason for a hook to fail when it cannot be written. A call the hook
+     had nothing to decide about writes nothing.
+  5. THE WIRING. .claude/settings.json runs the session line at every
      session start and the main-moved hook for the right tools, with the
      matcher anchored so update_pull_request_branch is not mistaken for
      update_pull_request, and the exact commands it gives run under bash.
@@ -59,6 +63,7 @@ SKILL = os.path.join(ROOT, ".claude", "skills", "heron-session")
 BIN = os.path.join(SKILL, "bin")
 MOVED = os.path.join(BIN, "main_moved.py")
 LINE = os.path.join(BIN, "session_line.py")
+DIARY = os.path.join(BIN, "hook_log.py")
 SETTINGS = os.path.join(ROOT, ".claude", "settings.json")
 
 sys.path.insert(0, BIN)
@@ -167,6 +172,28 @@ def fragment(where, name, status):
         handle.write("id: %s\nheron-status: %s\nrisk: READ\n" % (name, status))
 
 
+def diary_lines(folder):
+    """Every line in the diary kept in `folder`, parsed."""
+    path = os.path.join(folder, "heron-hooks.jsonl")
+    if not os.path.isfile(path):
+        return []
+    with io.open(path, encoding="utf-8") as handle:
+        return [json.loads(line) for line in handle if line.strip()]
+
+
+def diary_path(env):
+    """(file, how) - hook_log.path() as a fresh process with `env` sees it."""
+    got = subprocess.run(
+        [sys.executable, "-c",
+         "import json, sys; sys.path.insert(0, %r); import hook_log; "
+         "print(json.dumps(hook_log.path()))" % BIN],
+        capture_output=True, text=True, encoding="utf-8", env=env, timeout=60)
+    try:
+        return tuple(json.loads(got.stdout))
+    except ValueError:
+        return None, "hook_log.path() did not answer: %s" % got.stderr.strip()
+
+
 def world(home):
     """A throwaway origin, a seed that pushes to it, and a working clone."""
     origin = os.path.join(home, "origin.git")
@@ -207,7 +234,8 @@ def main():
             print("  %s" % line)
         return 1
     print("PASSED - the session line and the main-moved advice say what is")
-    print("true, and neither ever blocks.")
+    print("true, neither ever blocks, and each decision is one diary line")
+    print("outside this repository.")
     print()
     print("It does not prove the host runs it, or that Git Bash on Windows")
     print("expands the command the same way. That needs the owner's PC.")
@@ -216,7 +244,12 @@ def main():
 
 def run_all(home):
     origin, seed, work = world(home)
-    env = clean_env()
+    # Heron's log folder is resolved from the per-user local folder, so a
+    # throwaway one keeps every diary line this suite causes inside `home`.
+    local = os.path.join(home, "local")
+    os.makedirs(local)
+    logs = os.path.join(local, "Heron", "logs")
+    env = clean_env(LOCALAPPDATA=local)
     plain = os.path.join(home, "plain")
     os.makedirs(plain)
 
@@ -354,8 +387,11 @@ def run_all(home):
                          "tool_input": {"file_path": "x",
                                         "content": "gh pr merge"}})):
         payload = dict(payload, cwd=work, session_id="s-3")
+        before = len(diary_lines(logs))
         parsed, raw, code = hook(MOVED, payload, env)
-        check(code == 0 and raw == "", "%s: silent" % label)
+        check(code == 0 and raw == "" and len(diary_lines(logs)) == before,
+              "%s: silent, and no diary line - there was nothing to decide"
+              % label)
 
     parsed, raw, code = hook(MOVED, "this is not json", env)
     check(code == 0 and raw == "",
@@ -402,12 +438,90 @@ def run_all(home):
 
     git(work, "fetch", "-q", "origin")
     git(work, "merge", "-q", "--no-edit", "origin/main")
+    before = len(diary_lines(logs))
     parsed, raw, code = hook(MOVED, merge, env)
     check(code == 0 and raw == "",
           "once main is merged in there is nothing to say, and it says nothing")
+    after = diary_lines(logs)
+    check(len(after) == before + 1 and after[-1:] != []
+          and after[-1].get("decision") == "up-to-date",
+          "but the diary records that it checked: up-to-date")
 
     print()
-    print("3. The wiring - .claude/settings.json runs both, for the right calls")
+    print("4. The diary - one line per decision, outside the repository")
+    print("-" * 72)
+    entries = diary_lines(logs)
+    hooks = set(e.get("hook") for e in entries)
+    check("heron-session-line" in hooks and "heron-main-moved" in hooks,
+          "both hooks wrote to the diary in Heron's log folder (%d lines)"
+          % len(entries))
+    check(bool(entries) and all(
+        set(e) >= set(["when", "hook", "decision", "said", "session"])
+        for e in entries),
+          "every line says when, which hook, what it decided and said, and "
+          "in which session")
+    check(any(e.get("decision") == "advised" and "#901" in e.get("said", "")
+              and e.get("session") == "s-2" for e in entries),
+          "an advised merge is recorded with what it said and its session")
+    check(any(e.get("hook") == "heron-session-line"
+              and e.get("decision") == "said" for e in entries)
+          and any(e.get("hook") == "heron-session-line"
+                  and e.get("decision") == "silent" for e in entries),
+          "the session line records both what it said and when it was silent")
+    check(os.path.commonpath([os.path.realpath(logs),
+                              os.path.realpath(ROOT)]) != os.path.realpath(ROOT),
+          "and the folder is outside this repository: %s" % logs)
+
+    kb = os.path.join(home, "kb")
+    os.makedirs(kb)
+    target, how = diary_path(clean_env(HERON_KNOWLEDGE=kb))
+    check(target == os.path.join(kb, "heron-hooks.jsonl"),
+          "with no per-user local folder (Linux), the knowledge folder is "
+          "used instead - found through %s" % how)
+    target, how = diary_path(clean_env())
+    check(target is None and "relative" in (how or ""),
+          "with neither, there is NO diary - and the reason names the "
+          "relative path that would have landed in the working folder")
+    target, how = diary_path(clean_env(
+        LOCALAPPDATA=os.path.join(ROOT, "tests"),
+        HERON_KNOWLEDGE=os.path.join(ROOT, "docs")))
+    check(target is None and "inside this repository" in (how or ""),
+          "a folder INSIDE this repository is refused, whichever helper "
+          "offered it")
+
+    blocked = os.path.join(home, "a-file-not-a-folder")
+    with io.open(blocked, "w", encoding="utf-8") as handle:
+        handle.write("x")
+    parsed, raw, code = hook(MOVED, dict(merge, tool_input={
+        "command": "gh pr merge 13"}), clean_env(LOCALAPPDATA=blocked))
+    check(code == 0 and no_decision(parsed),
+          "a diary that cannot be written costs the hook nothing")
+
+    try:
+        import hook_log as LOG
+    except ImportError as exc:
+        check(False, "hook_log.py can be imported (%s)" % exc)
+        LOG = None
+    if LOG is not None:
+        check(LOG.KEEP_BYTES <= 2000000,
+              "the diary is bounded: %d bytes, then it becomes the one older "
+              "copy" % LOG.KEEP_BYTES)
+        rotate = os.path.join(home, "rotate")
+        folder = os.path.join(rotate, "Heron", "logs")
+        os.makedirs(folder)
+        big = os.path.join(folder, "heron-hooks.jsonl")
+        line = json.dumps({"when": "2026-01-01T00:00:00Z", "hook": "old",
+                           "decision": "x", "said": "", "session": ""})
+        with io.open(big, "w", encoding="utf-8") as handle:
+            handle.write((line + "\n") * (LOG.KEEP_BYTES // len(line) + 2))
+        hook(LINE, start, clean_env(LOCALAPPDATA=rotate))
+        check(os.path.isfile(os.path.join(folder, "heron-hooks.1.jsonl"))
+              and os.path.getsize(big) < 2000,
+              "past the limit the file becomes the older copy and a new one "
+              "starts")
+
+    print()
+    print("5. The wiring - .claude/settings.json runs both, for the right calls")
     print("-" * 72)
     starts = [one for _m, one in commands("SessionStart")
               if "session_line.py" in one.get("command", "")]

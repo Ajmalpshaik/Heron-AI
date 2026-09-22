@@ -36,6 +36,9 @@ WHAT THIS PROVES, and every one of these is a way a hook becomes decoration:
      loaded the skill had no guard. The settings entry is checked, the
      frontmatter is checked to declare nothing (two copies would run twice),
      and the exact command the settings give is run under bash.
+  7. EVERY DECISION IS WRITTEN DOWN, AND THE DIARY CANNOT CHANGE ONE. A deny,
+     an allow and a crash are one line each in the hooks' diary; a diary that
+     cannot be written leaves every decision exactly as it was.
 
 WHAT IT DOES NOT PROVE. That the host actually runs the hook. That needs a
 host - one real session on the owner's PC refusing a forbidden edit is the
@@ -43,6 +46,7 @@ proof still owed - and this runs the command the host would run, the same
 limit tests/test_mcp_serves.py has against the MCP SDK.
 """
 
+import atexit
 import io
 import json
 import os
@@ -50,6 +54,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILL = os.path.join(ROOT, ".claude", "skills", "heron-guard")
@@ -67,9 +72,18 @@ def check(condition, what):
         FAILURES.append(what)
 
 
+# EVERY RUN BELOW WOULD OTHERWISE WRITE TO THE REAL DIARY ON THIS MACHINE,
+# and this suite's deliberate refusals would then read, in
+# tools/hook-report.py, as the guard refusing real edits. So each run is
+# pointed at a throwaway log folder unless a section chooses its own.
+QUIET = tempfile.mkdtemp(prefix="heron-guard-test-")
+atexit.register(shutil.rmtree, QUIET, True)
+
+
 def run(payload, env=None):
     """(stdout, exit code) from the hook as the host would run it."""
     where = dict(os.environ)
+    where.update({"LOCALAPPDATA": QUIET, "HERON_KNOWLEDGE": ""})
     where.update(env or {})
     got = subprocess.run([sys.executable, HOOK],
                          input=payload if isinstance(payload, str)
@@ -244,13 +258,58 @@ def main():
                 "file_path": "brain/x.py",
                 "content": "using %s.DB;" % vendor}}),
             capture_output=True, text=True,
-            env=dict(os.environ, CLAUDE_PROJECT_DIR=ROOT))
+            env=dict(os.environ, CLAUDE_PROJECT_DIR=ROOT,
+                     LOCALAPPDATA=QUIET, HERON_KNOWLEDGE=""))
         check(verdict_of(got.stdout.strip()) == "deny",
               "the exact command settings.json gives, run under bash, REFUSES "
               "the forbidden edit")
     else:
         print("  note  the settings command was not run: no bash here, or "
               "Windows - a real session on the PC proves that half")
+
+    print()
+    print("8. Every decision is one line in the hooks' diary - and cannot change one")
+    print("-" * 70)
+    # The diary is kept in Heron's log folder, resolved from the per-user
+    # local folder, so a throwaway one keeps this inside a temporary folder.
+    home = tempfile.mkdtemp(prefix="heron-guard-diary-")
+    try:
+        diary = os.path.join(home, "Heron", "logs", "heron-hooks.jsonl")
+        steer = {"LOCALAPPDATA": home, "HERON_KNOWLEDGE": ""}
+        forbidden = {"session_id": "g-1", "tool_input": {
+            "file_path": "brain/x.py", "content": "using %s.DB;" % vendor}}
+        harmless = {"session_id": "g-1", "tool_input": {
+            "file_path": "brain/x.py", "content": "import os"}}
+        denied, _ = run(forbidden, env=steer)
+        allowed, _ = run(harmless, env=steer)
+        crashed, _ = run("this is not json", env=steer)
+        lines = []
+        if os.path.isfile(diary):
+            lines = [json.loads(l) for l in io.open(diary, encoding="utf-8")
+                     if l.strip()]
+        check([l.get("decision") for l in lines] == ["deny", "allow", "crash"],
+              "a deny, an allow and a crash are three lines, in order: %s"
+              % [l.get("decision") for l in lines])
+        check(all(l.get("hook") == "heron-guard" for l in lines) and lines,
+              "each one names the guard")
+        check(lines[:1] and "vendor namespace" in lines[0].get("said", "")
+              and lines[0].get("session") == "g-1",
+              "the deny keeps what it said and the session it said it in")
+        check(verdict_of(denied) == "deny" and allowed == ""
+              and verdict_of(crashed) == "deny",
+              "and writing them changed no decision")
+
+        blocked = os.path.join(home, "a-file-not-a-folder")
+        io.open(blocked, "w", encoding="utf-8").write("x")
+        steer = {"LOCALAPPDATA": blocked, "HERON_KNOWLEDGE": ""}
+        denied, code = run(forbidden, env=steer)
+        allowed, _ = run(harmless, env=steer)
+        check(verdict_of(denied) == "deny" and code == 0 and allowed == "",
+              "a diary that cannot be written is a missing line - the deny "
+              "is still a deny and the allow still silent, never a crash "
+              "that trap 2 would turn into a refusal")
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
 
     print()
     if FAILURES:

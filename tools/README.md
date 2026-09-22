@@ -1830,3 +1830,29 @@ the rule exists to forbid, written into the field meant to prevent it.
 `heron_validate.py accept` cannot fix them: it reads a draft from `brain/proof-drafts/` and none of the
 sixteen has one. **It changes the one field that is wrong and leaves every other line exactly as
 recorded, and it DOES NOT judge the evidence** - that was checked separately.
+
+## `hook-report.py` - how often each hook decided something, and what it said
+
+```bash
+python tools/hook-report.py                 # the diary this machine keeps
+python tools/hook-report.py --days 7        # only the last week
+python tools/hook-report.py --log FILE      # another diary file
+```
+
+Every hook in [`.claude/settings.json`](../.claude/settings.json) - the
+[guard](../.claude/skills/heron-guard/SKILL.md), the session line and the "has main moved?" advice of
+[`heron-session`](../.claude/skills/heron-session/SKILL.md) - appends one line per decision to a diary
+outside this repository, found through Heron's own path helpers and never a typed path. This counts it:
+per hook, how many decisions in how many sessions, each kind of decision, **how often it spoke at all**,
+and the things it said most.
+
+**A hook that only nags is switched off, and a hook that never fires is not there** - and from inside one
+session nobody can tell which. On 2026-09-22 the guard turned out to have been running only in sessions
+that had loaded its skill; a diary with a guard line in every session is what "runs everywhere" looks
+like when it is true.
+
+**A report, not a gate: it exits 0 whatever it finds.** A torn line - the file is appended to by
+several processes - is counted and shown, never fatal, and the one older copy kept after a rotation is
+read too. No diary on this machine is an answer, with the reason, not a crash.
+[`tests/test_hook_report.py`](../tests/test_hook_report.py) holds it to a diary written with known
+contents.

@@ -33,6 +33,12 @@ skill's copy of a hook separate from the settings' copy, so declaring it in both
 [`tests/test_heron_guard.py`](../../../tests/test_heron_guard.py) holds both halves, and runs the exact
 command `settings.json` gives.
 
+**Every decision is written down** — each allow, deny, crash and switched-off edit is one line in the
+hooks' diary outside this repository ([`heron-session`](../heron-session/SKILL.md) says where, and why
+it is never a typed path). `python tools/hook-report.py` then shows from evidence that the guard runs in
+every session and how often it refuses. The line is written after the decision is printed, and a diary
+that cannot be written is a missing line — never a refusal.
+
 **A hook the host cancels at its timeout decides nothing, and the edit goes ahead** — the host's rule,
 not this hook's, and one more reason `check-structure.py` still runs before every push.
 

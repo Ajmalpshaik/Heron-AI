@@ -342,7 +342,15 @@ These **exit 0 whatever they find**. Read them; do not treat a hit as a break.
 python tools/check-reachable.py    # ~0.5 s  built, and no production code calls it
 python tools/check-revit-gate.py   # ~1.7 s  the fourteen Revit questions, as a list
 python tools/agent-count.py        # ~0.05 s the register reconciles
+python tools/hook-report.py        # how often each hook in .claude/settings.json decided, and what it said
 ```
+
+**The hooks are not on this page's list of things to run, because nobody runs them** — since
+2026-09-23 [`.claude/settings.json`](../../settings.json) runs [`heron-guard`](../heron-guard/SKILL.md)
+before every edit and [`heron-session`](../heron-session/SKILL.md) at every session start and before a
+merge or a "ready". If the session-start line says the branch is behind `origin/main`, bring main in
+before anything on this page: a gate run on a stale base answers a question nobody asked.
+`hook-report.py` is how you find out whether they are firing at all.
 
 `check-revit-gate`'s two standing hits are **linked documents** and **rollback / refusal reporting** —
 [`Q-46`](../../../docs/OPEN-QUESTIONS.md) and [`Q-48`](../../../docs/OPEN-QUESTIONS.md), open and

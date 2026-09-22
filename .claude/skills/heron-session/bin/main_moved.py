@@ -124,6 +124,16 @@ def action_of(payload):
     return None
 
 
+def diary(decision, said, session):
+    """One line in the hooks' log (hook_log.py). Never raises."""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import hook_log
+        hook_log.record(HOOK, decision, said, session)
+    except Exception:                               # noqa: BLE001 - a diary, not a gate
+        pass
+
+
 def run(argv, where, seconds):
     """(exit code, stdout) - or (None, why) when it could not run or timed out."""
     import subprocess
@@ -199,25 +209,30 @@ def advice_for(payload, action):
 
 
 def main():
+    session, decision, said, text = "", None, "", None
     try:
         raw = sys.stdin.read()
         payload = json.loads(raw) if raw.strip() else {}
         if not isinstance(payload, dict):
             return 0
+        session = payload.get("session_id") or ""
         action = action_of(payload)
         if action is None:
             # Not a merge and not a "ready": the overwhelming majority of
-            # tool calls, and nothing to say about any of them.
+            # tool calls. No output, and no diary line - it decided nothing.
             return 0
-        _decision, text = advice_for(payload, action)
-    except Exception:                               # noqa: BLE001 - advice only
-        return 0
+        decision, text = advice_for(payload, action)
+        said = text or ""
+    except Exception as exc:                        # noqa: BLE001 - advice only
+        decision, said, text = "error", type(exc).__name__, None
     if text:
         print(json.dumps({
             "hookSpecificOutput": {"hookEventName": "PreToolUse",
                                    "additionalContext": text},
             "systemMessage": text,
         }, ensure_ascii=True))
+        sys.stdout.flush()
+    diary(decision, said, session)
     return 0
 
 

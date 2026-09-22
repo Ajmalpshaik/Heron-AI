@@ -143,9 +143,12 @@ def line_for(payload):
 
 
 def main():
+    session = ""
     try:
         raw = sys.stdin.read()
         payload = json.loads(raw) if raw.strip() else {}
+        if isinstance(payload, dict):
+            session = payload.get("session_id") or ""
         text = line_for(payload)
     except Exception:                               # noqa: BLE001 - silent by design
         text = None
@@ -155,6 +158,13 @@ def main():
                                    "additionalContext": text},
             "systemMessage": text,
         }, ensure_ascii=True))
+        sys.stdout.flush()
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import hook_log
+        hook_log.record(HOOK, "said" if text else "silent", text or "", session)
+    except Exception:                               # noqa: BLE001 - a diary, not a gate
+        pass
     return 0
 
 

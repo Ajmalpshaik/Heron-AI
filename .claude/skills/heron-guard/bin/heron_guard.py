@@ -30,6 +30,16 @@ the host runs a skill's copy of a hook SEPARATELY from the settings' copy, so
 declaring it in both places would run it twice. tests/test_heron_guard.py
 holds both halves.
 
+EVERY DECISION IS WRITTEN DOWN, AND THE DIARY CANNOT CHANGE ONE
+---------------------------------------------------------------
+Each allow, deny, crash and switched-off edit appends one line to the hooks'
+log outside this repository (.claude/skills/heron-session/bin/hook_log.py
+says where, and why it is never a typed path), so tools/hook-report.py can
+show from evidence that the guard runs in every session and how often it
+refuses. The line is written AFTER the decision is printed, and a diary that
+cannot be written is a missing line - never a refusal, and never a crash that
+trap 2 below would have to turn into one.
+
 WHY THIS EXISTS AND WHY IT IS NOT check-structure.py
 -----------------------------------------------------
 It IS check-structure.py's rule. The difference is WHEN.
@@ -116,7 +126,7 @@ ALLOWED = ("revit", "tools")
 
 
 def decision(verdict, reason):
-    """The only way anything leaves this file. Trap 1: nested, or ignored."""
+    """The only thing this file ever prints. Trap 1: nested, or ignored."""
     return {
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
@@ -191,33 +201,57 @@ def check(payload, root):
     )
 
 
+def diary(verdict, said, session):
+    """One line in the hooks' log. Never raises, and never changes a decision.
+
+    Called only after the decision has been printed. Everything here is
+    inside one guard, because a failure to write a diary line is not a reason
+    for trap 2 to refuse an edit.
+    """
+    try:
+        sys.path.insert(0, os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "..", "..", "heron-session", "bin"))
+        import hook_log
+        hook_log.record("heron-guard", verdict, said, session)
+    except Exception:                             # noqa: BLE001 - a diary, not a gate
+        pass
+
+
 def main():
     if os.environ.get("HERON_GUARD", "").lower() in ("off", "0", "false"):
+        diary("off", "HERON_GUARD is set to switch the guard off", "")
         return 0
 
     root = os.path.abspath(
         os.path.join(os.path.dirname(os.path.abspath(__file__)),
                      "..", "..", "..", ".."))
+    session = ""
     try:
         raw = sys.stdin.read()
         payload = json.loads(raw) if raw.strip() else {}
+        if isinstance(payload, dict):
+            session = payload.get("session_id") or ""
         verdict, reason = check(payload, root)
     except Exception as exc:                      # noqa: BLE001 - trap 2
         # TRAP 2: an unexpected death with nothing on stdout is read as
         # PERMISSION, and this hook is deny-tier. So a failure here refuses
         # the edit and says how to get moving again, rather than quietly
         # becoming an allow.
-        print(json.dumps(decision(
-            "deny",
-            "The Heron boundary hook failed (%s: %s) and it is deny-tier, so "
-            "it refuses rather than letting an unchecked edit through. Set "
-            "HERON_GUARD=off to disable it, or fix "
-            ".claude/skills/heron-guard/bin/heron_guard.py."
-            % (type(exc).__name__, exc))))
+        reason = ("The Heron boundary hook failed (%s: %s) and it is "
+                  "deny-tier, so it refuses rather than letting an unchecked "
+                  "edit through. Set HERON_GUARD=off to disable it, or fix "
+                  ".claude/skills/heron-guard/bin/heron_guard.py."
+                  % (type(exc).__name__, exc))
+        print(json.dumps(decision("deny", reason)))
+        sys.stdout.flush()
+        diary("crash", reason, session)
         return 0
 
     if verdict == "deny":
         print(json.dumps(decision("deny", reason)))
+        sys.stdout.flush()
+    diary(verdict, reason, session)
     return 0
 
 
