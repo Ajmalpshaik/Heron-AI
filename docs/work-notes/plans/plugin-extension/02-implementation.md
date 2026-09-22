@@ -3,10 +3,10 @@
 > **Type:** Operational work note. **Not specification.** Where a sentence here disagrees with the
 > [Constitution](../../../../HERON_CONSTITUTION.md), the [Golden Rules](../../../14-golden-rules.md) or
 > [DECISIONS.md](../../../DECISIONS.md), **those win and this note is out of date.**
-> **Status:** **Active.** Stage 0 and Stage 1 are DONE. **Stages 2, 3 and 4 were RUN on the owner's PC
-> on 2026-09-21 and are PROVEN** — Revit 2024.3 and Revit 2020.2.9, fourteen rows passed, one failed and
-> was fixed the same day, and two are owed (`AA9` needs a browser download, `AB6` is blocked until
-> `heron-tools` is a real product). Stages 5 to 9 are NOT STARTED. Opened 2026-09-20.
+> **Status:** **Active.** Opened 2026-09-20. **[§4 Progress](#4-progress) is the only copy of the
+> stage-by-stage status.** This header used to carry a second copy and it went stale inside a day — it
+> still read *"Stages 5 to 9 are NOT STARTED"* while three of them were built further down this same
+> file. Two copies of a status is how one of them goes wrong.
 > **Owner:** Ajmal PS.
 > **Read [`00-structure.md`](00-structure.md) and [`01-requirements.md`](01-requirements.md) first.**
 
@@ -978,11 +978,11 @@ Update this table as stages complete. **Do not mark a stage done without its evi
 |---|---|---|---|
 | 0 | Record the decisions | **DONE** 2026-09-21 | [D-87 to D-95](../../../DECISIONS.md); `grep -c '^## D-'` 88 -> 97; `check-docs` 0 broken links |
 | 1 | Product manifest | **DONE** 2026-09-21 | `platform/heron-products.json`; `check-products.py` PASSES on it and **FAILS exit 1** on a duplicated `addInId`; `tests/test_products_manifest.py` 36 checks, 16 faults each refused by name |
-| 2 | Second tab | **BUILT AND UNPROVEN** 2026-09-21 | Compiles on all 8 releases, 0 warnings; `tests/test_ribbon_tab_sharing.py` 26 checks pass. **NEEDS REAL REVIT** - no ribbon has been seen, no screenshot exists |
-| 3 | Installer core | **BUILT AND UNPROVEN** 2026-09-21 | `platform/Heron.Installer/` builds; `tests/test_installer_engine.py` 38 checks pass against a fake Revit; `deploy-addin.ps1` generalised to every product and `tests/test_deploy_script.py` passes. **NOT RUN** - both Windows adapters and the deploy script itself have never executed |
-| 4 | The window | **BUILT AND UNPROVEN** 2026-09-21 | `platform/Heron.Installer.App/` compiles on all 8 releases, 0 warnings; `tests/test_installer_engine.py` 79 checks and `tests/test_installer_window.py` pass. **NOT RUN** - no window has been drawn |
-| 5 | GitHub download | NOT STARTED | — |
-| 6 | Routes 1 and 2 | NOT STARTED | — |
-| 7 | Uninstall / update / rollback | NOT STARTED | — |
+| 2 | Second tab | **PROVEN** 2026-09-21, except `AA9` | Run on the owner's PC — Revit 2024.3 and 2020.2.9, two Heron tabs in one Revit, and `AA2` did not break. [Stage 2](#stage-2--prove-the-shape-with-a-second-tab) · [Group AA](../../../NEEDS-CHECKING.md) |
+| 3 | Installer core | **PROVEN** 2026-09-21 | Run on the owner's PC — the AI Bridge was installed into Revit 2024 and Revit loaded it, and the engine refused correctly while Revit was open. [Stage 3](#stage-3--the-installer-core-with-no-window-at-all) · [Group AB](../../../NEEDS-CHECKING.md) |
+| 4 | The window | **PROVEN** 2026-09-21 for `AB1`-`AB8`, except `AB6` | Run on the owner's PC. **One rule added after that run is NOT proven** — greyed release ticks, `AB9` and `AB10`. [Stage 4](#stage-4--the-window) · [Group AB](../../../NEEDS-CHECKING.md) |
+| 5 | GitHub download | **BUILT, NOT PROVEN** 2026-09-21 | The builder ran here — 24 assets, verified at the binary level. **No release exists and nothing has ever been fetched from GitHub.** [Stage 5](#stage-5--fetch-from-the-github-release) · `AC1`-`AC5` |
+| 6 | Routes 1 and 2 | **PARTLY BUILT** 2026-09-22 | The security gate is built and proven; **the door is not** — there is nothing for the AI to call, [Q-PE-16](03-open-questions.md). [Stage 6](#stage-6--routes-1-and-2-onto-the-same-engine) |
+| 7 | Uninstall / update / rollback | **BUILT, NOT PROVEN** 2026-09-22 | Item 5 is **NOT MET** and says why, [Q-PE-15](03-open-questions.md). **Nothing has been deleted from a real Addins folder.** [Stage 7](#stage-7--uninstall-update-and-a-rollback-that-has-been-tested) · `AD1`-`AD4` |
 | 8 | Sign and ship | NOT STARTED | — |
 | 9 | The Settings panel | NOT STARTED | — |

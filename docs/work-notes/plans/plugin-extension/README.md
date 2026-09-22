@@ -3,10 +3,12 @@
 > **Type:** Operational work note. **Not specification.** Where a sentence here disagrees with the
 > [Constitution](../../../../HERON_CONSTITUTION.md), the [Golden Rules](../../../14-golden-rules.md) or
 > [DECISIONS.md](../../../DECISIONS.md), **those win and this note is out of date.**
-> **Status:** **Active.** Stage 0 and Stage 1 are **DONE**; Stages 2, 3 and 4 are **BUILT AND
-> UNPROVEN** and all three need a Windows machine with Revit
-> ([Group AA](../../../NEEDS-CHECKING.md) and [Group AB](../../../NEEDS-CHECKING.md)).
-> Stages 5 to 9 are NOT STARTED. Opened 2026-09-20.
+> **Status:** **Active.** Opened 2026-09-20. **The stage-by-stage status lives in
+> [`02-implementation.md` §4](02-implementation.md#4-progress) and nowhere else.** This block used to
+> carry its own copy, and that copy went stale — it still called Stages 2, 3 and 4 *"BUILT AND
+> UNPROVEN"* after the owner had run them on his PC, and still called Stages 5 to 9 *"NOT STARTED"*
+> after three of them were built. **A status written twice is a status wrong once.** What is still owed
+> on a Windows machine with Revit is in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md), groups AA to AD.
 > **Owner:** Ajmal PS.
 
 ---
@@ -39,7 +41,7 @@ applies — and so that an AI picking this up **reads facts instead of inventing
 | [`00-structure.md`](00-structure.md) | **What shape this is.** The nine structural decisions. **Read first — structure decides the requirements** |
 | [`01-requirements.md`](01-requirements.md) | **What the installer must do.** One row per requirement, each with a source |
 | [`02-implementation.md`](02-implementation.md) | **How it gets built.** Ten stages, and what proves each one |
-| [`03-open-questions.md`](03-open-questions.md) | **What is not decided**, and the parking space for new ideas. Nine open, two answered on 2026-09-21 |
+| [`03-open-questions.md`](03-open-questions.md) | **What is not decided**, and the parking space for new ideas. Counted, never typed: `grep -c '^### Q-PE-' 03-open-questions.md` is the open ones, `grep -c '^### ~~Q-PE-'` the answered |
 | [`04-lessons-from-aj-tools.md`](04-lessons-from-aj-tools.md) | **What AJ Tools' installer already learned the hard way.** Eight lessons, three of which corrected a row written the day before |
 | [`05-phases.md`](05-phases.md) | **Where this folder sits.** The installer is Phase 1 of three. Phase 2 outlined, Phase 3 not told yet |
 | [`06-porting-method.md`](06-porting-method.md) | **How one AJ Tools tool is brought across**, and why widening the fragment is the deliverable. Nothing taken yet |
