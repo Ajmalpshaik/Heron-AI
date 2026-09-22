@@ -124,6 +124,55 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — THE SAME SHAPE ONE STEP LATER, WHERE IT ONLY COSTS SECONDS
+
+**[Row 5b-120](FRAGMENT-ISSUES.md), FIXED.** `brain/heron_rag_init.py` read end to end — 245 lines,
+2 public functions, **one suite**, nothing imports it.
+
+`plan()` normalises the scopes it is asked about — `str(entry).strip().lower()` — then looks the
+`indexes` dict up with that normalised key **against whatever the caller happened to type**, while
+nothing deduplicates the scope list.
+
+**Measured:**
+
+| | |
+|---|---|
+| `plan(["global", "global"])` | **2 to build**, for one index |
+| `indexes={"GLOBAL": …}` | **`no index yet`**, about an index that is there |
+| `indexes={" global": …}` | **`no index yet`** |
+
+**`HERON-INS-BRN-007` is one install step earlier and answers both**, in its own words: *"THE SAME
+STORE ASKED FOR TWICE IS ONE STORE, requested twice — not a conflict and not two creates. A plan that
+listed it twice would have an installer create it, then create it again over what it just made."*
+
+**The damage here is bounded, and that is exactly why it was worth reading twice.** An index is
+**derived**, so a needless rebuild costs seconds rather than a year of project memory —
+[row 5b-119](FRAGMENT-ISSUES.md) is the same shape one step earlier, where it costs the memory. **What
+is wrong here is the REPORT**: a count that says two about one index, and a reason — *"no index yet"*
+— that is simply untrue about the machine it describes.
+
+Both of `heron_brain_init`'s answers are **borrowed rather than invented**, which is this
+repository's rule about a second copy applied to a behaviour instead of a constant.
+
+```bash
+python tests/test_rag_init.py      # section 6b, 4 red against the module as found
+```
+
+**Nothing about the rebuild rule moved**: an index built by another backend is still rebuilt, one
+recording no backend is still rebuilt, and rebuilding is still the right answer here and the wrong
+one one step earlier.
+
+**The central idea is right, and it is the one worth knowing**: steps 11 and 12 are adjacent and have
+**opposite** answers to *may I rebuild this?* — and the answer comes from which **class** the artefact
+is in, not from a policy either agent applies. Rebuild the knowledge store and a year of memory is
+gone; refuse to rebuild the index and Heron stays on a stale one forever.
+
+**And the trap is handled**: an index is only meaningful to the backend that built it, so the backend
+is **recorded**; an index whose recorded backend is not the one configured now is rebuilt rather than
+read; and an index recording **no** backend is in the same position, because nobody can say what built
+it. Which backend is active is **asked for**, never read here — a value a caller states is a caller
+that can make Heron record an index as built by something that never ran.
+
 ### 2026-09-22 — A TRAILING SLASH AND THE INSTALL PLANS TO REBUILD YOUR PROJECT MEMORY
 
 **[Row 5b-119](FRAGMENT-ISSUES.md), FIXED.** `brain/heron_brain_init.py` read end to end — 264 lines,

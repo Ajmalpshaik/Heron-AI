@@ -114,8 +114,21 @@ def plan(scopes, indexes=None, backend=None, origin=None, approval=None):
                             "active. It depends on what is installed, and "
                             "only the running interpreter knows."}
 
-    indexes = indexes if isinstance(indexes, dict) else {}
+    # THE CALLER'S SPELLING OF AN INDEX KEY IS THE SAME INDEX. `scopes` is
+    # normalised and this dict was not, so indexes={"GLOBAL": ...} read as
+    # "no index yet" about an index that is there - a false reason on the
+    # line a reader acts on. Row 5b-120.
+    indexes = dict((str(key).strip().lower(), value)
+                   for key, value in (indexes or {}).items()) \
+        if isinstance(indexes, dict) else {}
     build, rebuild, keep = [], [], []
+
+    # ONE SCOPE ASKED FOR TWICE IS ONE INDEX, requested twice - which is
+    # heron_brain_init's own answer one install step earlier, in its own
+    # words: "not a conflict and not two creates. A plan that listed it
+    # twice would have an installer create it, then create it again over
+    # what it just made." Measured here as "2 to build" about one index.
+    done = set()
 
     for entry in scopes:
         scope = str(entry).strip().lower()
@@ -125,6 +138,10 @@ def plan(scopes, indexes=None, backend=None, origin=None, approval=None):
                     "why": "%r is not a knowledge scope. Known: %s. The list "
                            "is heron_scope's own." % (entry,
                                                       ", ".join(SCOPE.SCOPES))}
+
+        if scope in done:
+            continue
+        done.add(scope)
 
         found = indexes.get(scope)
         if found is None:
