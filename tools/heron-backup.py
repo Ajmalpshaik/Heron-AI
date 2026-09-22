@@ -178,9 +178,15 @@ def survey(root):
     return kept, skipped
 
 
-def take(destination=None, label=None):
-    """Copy the data class. Returns the manifest, or None with a reason printed."""
-    root = data_root()
+def take(destination=None, label=None, source=None):
+    """Copy the data class. Returns the manifest, or None with a reason printed.
+
+    `source` IS THE FOLDER BEING COPIED, and it defaults to the data root
+    because that is what a backup is. It exists because `restore` needs a
+    safety copy of WHAT IT IS ABOUT TO OVERWRITE, which is the data root only
+    when the restore goes there - see restore().
+    """
+    root = source or data_root()
     if not root or not os.path.isdir(root):
         w("There is no %s to back up. Heron has not written anything yet.\n"
           % (root or "data folder"))
@@ -212,7 +218,13 @@ def take(destination=None, label=None):
         "files": files,
         "excluded": skipped,
         "note": ("Backs up the DATA class only. The derived index is excluded "
-                 "on purpose and is rebuilt on first use - docs/21 s8."),
+                 "on purpose and is rebuilt on first use - docs/21 s8. "
+                 "A RESTORE FROM THIS COPIES THESE FILES BACK AND REMOVES "
+                 "NOTHING: anything in the folder that this backup does not "
+                 "hold is left exactly where it is. That is the safe "
+                 "direction for an append-only audit log, and it means the "
+                 "folder after a restore is this backup MERGED over what was "
+                 "there, not a copy of it."),
     }
     io.open(os.path.join(target, MANIFEST), "w", encoding="utf-8").write(
         json.dumps(manifest, indent=2, sort_keys=True))
@@ -295,8 +307,34 @@ def restore(path, into=None, confirm=False):
     if os.path.isdir(target) and any(
             os.path.exists(os.path.join(target, e["path"].replace("/", os.sep)))
             for e in manifest["files"]):
-        safety = take(label="before-restore-" +
-                      datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+        # OF `target`, NOT OF THE DATA ROOT. Measured 2026-09-22 restoring
+        # into a folder that is not the data root: it copied the data root -
+        # a folder that was never at risk - destroyed the other one, and
+        # printed "The state it replaced was copied to ... first", which was
+        # false. Not reachable from the command line, where only `drill`
+        # passes `into` and its landing is always fresh; a reassurance that
+        # can be false is worth fixing before it is reachable.
+        #
+        # MICROSECONDS IN THE LABEL. Two restores inside one second gave the
+        # second one "A backup called X already exists. Nothing was written."
+        # and it carried on regardless.
+        try:
+            safety = take(source=target,
+                          label="before-restore-" +
+                          datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
+        except (IOError, OSError) as why:
+            safety = None
+            w("The safety copy could not be written: %s\n" % why)
+
+        # AND A SAFETY COPY IT COULD NOT TAKE STOPS THE RESTORE. This
+        # function's own docstring says the thing it destroys is the only
+        # copy of what was on the machine a second ago; carrying on without
+        # the copy destroys exactly that. Refusing loses nothing - the backup
+        # is still there and the restore can be run again.
+        if safety is None:
+            return [], ["refusing to restore: the safety copy of %s could "
+                        "not be taken, and restoring would overwrite it with "
+                        "no way back. Nothing was changed." % target]
 
     restored = []
     for entry in manifest["files"]:
@@ -324,6 +362,18 @@ def drill():
     import tempfile
     w("DRILL - back up, restore into scratch, compare\n")
     w("=" * 58 + "\n")
+
+    # NOTHING TO DRILL IS NOT A FAILED DRILL. docs/21 s8 asks for a PERIODIC
+    # AUTOMATED drill, and on a machine where Heron has written nothing yet
+    # this exited 1 - the code a broken restore path uses. That is the third
+    # state, and tests/README.md gives it 3.
+    root = data_root()
+    if not root or not os.path.isdir(root):
+        w("NOT RUN - there is no %s, so there is nothing to back up and "
+          "nothing\n" % (root or "data folder"))
+        w("to restore. Heron has not written anything yet. The restore path "
+          "is not\nclaimed to work and is not claimed to be broken.\n")
+        return 3
 
     scratch = tempfile.mkdtemp(prefix="heron-drill-")
     try:
@@ -442,6 +492,9 @@ def main(argv):
         if problems:
             return 1
         w("Restored %d file(s) from %s.\n" % (len(restored), wanted)),
+        w("Nothing was REMOVED: a file in the folder that this backup does "
+          "not hold\nis still there. The folder is this backup merged over "
+          "what was there.\n")
         w("The derived index was not restored - Heron rebuilds it on first use.\n")
         return 0
 

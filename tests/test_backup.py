@@ -29,6 +29,21 @@ WHAT IT PROVES
   6. Restore takes a SAFETY COPY of what it is about to overwrite, because the
      thing it destroys is the only record of the machine a second ago.
   7. Nothing touches the real %APPDATA% - every case runs in a temp folder.
+  8. A RESTORE IS A MERGE AND SAYS SO. A file in the data folder that the
+     backup never held is LEFT WHERE IT IS - which is the safe direction for
+     an append-only audit log, and the opposite of what "Restored 2 file(s)"
+     leads a person to believe when they are restoring BECAUSE the folder is
+     wrong. Measured 2026-09-22; the behaviour is right and the sentence was
+     missing.
+  9. THE SAFETY COPY IS TAKEN FROM WHAT IS ABOUT TO BE OVERWRITTEN. Measured
+     2026-09-22 restoring into a folder that is not the data root: it copied
+     the data root instead - a folder that was never at risk - destroyed the
+     other one, and printed "The state it replaced was copied to ... first",
+     which was false. Not reachable from the command line, where only `drill`
+     passes `into` and its landing is always fresh.
+ 10. A DRILL WITH NOTHING TO DRILL IS NOT A FAILED DRILL. docs/21 s8 asks for
+     a PERIODIC AUTOMATED drill, and on a machine where Heron has written
+     nothing yet it exited 1 - the code a broken restore path uses.
 
 WHAT IT DOES NOT PROVE. That a real disaster is survivable. The default backup
 sits beside what it protects; it survives a deleted audit folder and an
@@ -165,6 +180,116 @@ def main():
         check(code == 0, "the drill passes")
         check("came back byte for byte" in quiet.getvalue(),
               "and says the comparison it actually made")
+
+        print()
+        print("8. A RESTORE IS A MERGE, AND THE TOOL SAYS SO")
+        print("   A file the backup never held is left where it is. That is")
+        print("   the safe direction for an append-only audit log - and a")
+        print("   person restoring BECAUSE the folder is wrong needs telling.")
+        stray = put(data, "audit/never-backed-up.jsonl", u"not in any backup\n")
+        fresh = tool.take(label="merge-case")
+        put(data, "audit/appeared-after.jsonl", u"arrived later still\n")
+        quiet, keep_out = io.StringIO(), sys.stdout
+        sys.stdout = quiet
+        try:
+            restored, problems = tool.restore(fresh["at"], confirm=True)
+        finally:
+            sys.stdout = keep_out
+        check(not problems, "the restore runs")
+        check(os.path.exists(os.path.join(data, "audit", "appeared-after.jsonl")),
+              "a file the backup never held is STILL THERE afterwards")
+        check(os.path.exists(stray), "and one it did hold is back")
+        note = (tool.read_manifest(fresh["at"]) or {}).get("note", "")
+        said = quiet.getvalue()
+        check("left" in note.lower() or "not remove" in note.lower()
+              or "merge" in note.lower(),
+              "the manifest says a restore does not remove what it does not "
+              "hold, and it says %r" % note[:110])
+
+        print()
+        print("9. THE SAFETY COPY IS OF WHAT IS ABOUT TO BE OVERWRITTEN")
+        print("   Not reachable from the command line today - only `drill`")
+        print("   passes `into`, and its landing is always fresh. It prints a")
+        print("   reassurance either way, so it must not be a false one.")
+        elsewhere = os.path.join(work, "elsewhere")
+        put(elsewhere, "audit/never-backed-up.jsonl", u"THE FOLDER AT RISK\n")
+        # CLEAR THE SAFETY COPY CASE 8 TOOK. The label is a timestamp to the
+        # SECOND, so a second restore inside the same second collides with it
+        # - which is case 11's subject and must not confuse this one.
+        for name in list(os.listdir(store)):
+            if name.startswith("before-restore-"):
+                shutil.rmtree(os.path.join(store, name), ignore_errors=True)
+        before = set(os.listdir(store))
+        quiet, keep_out = io.StringIO(), sys.stdout
+        sys.stdout = quiet
+        try:
+            tool.restore(fresh["at"], into=elsewhere, confirm=True)
+        finally:
+            sys.stdout = keep_out
+        added = sorted(set(os.listdir(store)) - before)
+        rescued = ""
+        for name in added:
+            for base, _d, files in os.walk(os.path.join(store, name)):
+                for one in files:
+                    if one != tool.MANIFEST:
+                        rescued += io.open(os.path.join(base, one),
+                                           encoding="utf-8").read()
+        check(added, "a safety copy is taken, and it took %r" % (added,))
+        check("THE FOLDER AT RISK" in rescued,
+              "and it holds what was about to be destroyed, not the data root "
+              "- it holds %r" % rescued[:80])
+
+        print()
+        print("11. A SAFETY COPY IT COULD NOT TAKE STOPS THE RESTORE")
+        print("    restore()'s own docstring: 'the thing it destroys is the")
+        print("    only copy of what was on the machine a second ago'. If the")
+        print("    copy fails, carrying on destroys exactly that.")
+        blocked = os.path.join(work, "blocked")
+        put(blocked, "audit/never-backed-up.jsonl", u"MUST SURVIVE\n")
+        # A backup folder that is a FILE: nothing can be written under it, so
+        # the safety copy cannot be taken for any reason the tool can fix.
+        os.environ["HERON_BACKUP"] = os.path.join(work, "a-file-not-a-folder")
+        io.open(os.environ["HERON_BACKUP"], "w", encoding="utf-8").write(u"x")
+        quiet, keep_out = io.StringIO(), sys.stdout
+        sys.stdout = quiet
+        try:
+            try:
+                restored, problems = tool.restore(fresh["at"], into=blocked,
+                                                  confirm=True)
+            except BaseException as why:            # noqa: BLE001
+                restored, problems = ["RAISED %s" % type(why).__name__], []
+        finally:
+            sys.stdout = keep_out
+            os.environ["HERON_BACKUP"] = store
+        survived = io.open(os.path.join(blocked, "audit",
+                                        "never-backed-up.jsonl"),
+                           encoding="utf-8").read()
+        check(problems and not restored,
+              "the restore refuses rather than proceeding, and it answered "
+              "%r / %r" % (restored, problems))
+        check("MUST SURVIVE" in survived,
+              "and what it would have destroyed is untouched - it holds %r"
+              % survived.strip())
+
+        print()
+        print("10. A DRILL WITH NOTHING TO DRILL IS NOT A FAILED DRILL")
+        print("    docs/21 s8 asks for a PERIODIC AUTOMATED drill. On a")
+        print("    machine where Heron has written nothing, exit 1 reads as a")
+        print("    broken restore path.")
+        os.environ["HERON_DATA"] = os.path.join(work, "nothing-here")
+        quiet, keep_out = io.StringIO(), sys.stdout
+        sys.stdout = quiet
+        try:
+            code = tool.drill()
+        finally:
+            sys.stdout = keep_out
+            os.environ["HERON_DATA"] = data
+        said = quiet.getvalue()
+        check(code == 3,
+              "nothing to drill answers 3 - could not run - and it answered "
+              "%r" % code)
+        check("NOT RUN" in said,
+              "saying NOT RUN in those words, and it said %r" % said[-90:])
 
     finally:
         for k, v in kept.items():
