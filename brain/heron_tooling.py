@@ -107,6 +107,32 @@ def review(tool, permitted=None, origin=None, detected=None):
                        "not an idle one, it is a call somebody got wrong."}
     name = str(tool["name"]).strip()
     kind = str(tool.get("kind") or "").strip().lower()
+    # THE KINDS LIST IS THE ONE THAT DECIDES, AND IT DECIDED NOTHING.
+    # `kind` was compared against the literal "mcp-server" at the register
+    # step and KINDS was referenced nowhere - so kind="mcp_server", one
+    # underscore, walked past the tools-enumerated guard and came back
+    # READY saying the server "brings no tools Heron calls". That is the
+    # one sentence the guard exists to make impossible, and this agent
+    # says twice - in its docstring and in its own answer - that its
+    # reading of Golden Rule 19 is the one that FAILS CLOSED. It failed
+    # open on every spelling but one, and on a kind nobody declared at
+    # all. Row 5b-118.
+    if kind not in KINDS:
+        return {"ready": False, "refused": "KIND_NOT_DECLARED",
+                "step": "detect",
+                "why": "%s is %s, and the kinds are %s. A kind this agent "
+                       "does not recognise is not sorted to the nearest "
+                       "one: `mcp-server` is the kind that brings a TOOL "
+                       "SURFACE, and any other spelling of it walks past "
+                       "the check that its tools were named in advance."
+                       % (name,
+                          "a %r" % str(tool.get("kind")) if kind
+                          else "of no stated kind",
+                          ", ".join(KINDS)),
+                "proposal": "name the kind as one of %s. If it is an MCP "
+                            "server, say so - that is the one that has to "
+                            "list its tools before it is registered."
+                            % ", ".join(KINDS)}
     said = []
 
     # 1. DETECT - which is executing something, so it is permitted first.
@@ -210,8 +236,7 @@ def review(tool, permitted=None, origin=None, detected=None):
                              ", ".join(str(one) for one in tools))))
     else:
         said.append(_said("register", "%s registers as a %s and brings no "
-                                      "tools Heron calls"
-                          % (name, kind or "tool of unstated kind")))
+                                      "tools Heron calls" % (name, kind)))
 
 
     # NEVER SILENT, ENFORCED, AND LAST - so it covers every line rather

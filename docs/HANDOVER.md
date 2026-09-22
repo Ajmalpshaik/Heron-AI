@@ -124,6 +124,68 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — ONE UNDERSCORE TURNED OFF THE GOLDEN RULE 19 GUARD ON AN MCP SERVER
+
+**[Row 5b-118](FRAGMENT-ISSUES.md), FIXED.** `brain/heron_tooling.py` read end to end — 319 lines, 2
+public functions, **one suite**, nothing imports it.
+
+Registering an additional MCP server means Heron will call tools it did not write, chosen by
+descriptions it did not write, so this agent refuses a server that does not enumerate its tools in
+advance. **The check is `if kind == "mcp-server"`, a single literal** — and
+`KINDS = ("cli", "utility", "mcp-server")`, declared at module level under a comment explaining what
+each kind is, **is referenced nowhere.**
+
+**Measured, with no tools enumerated and everything else in order:**
+
+| `kind` | verdict |
+|---|---|
+| `mcp-server` | **`TOOLS_NOT_ENUMERATED`** ✓ |
+| `MCP-Server` | **`TOOLS_NOT_ENUMERATED`** ✓ |
+| `mcp_server` | **`ready: True`** |
+| `mcpserver` | **`ready: True`** |
+| `mcp server` | **`ready: True`** |
+| `banana` | **`ready: True`** |
+| *(absent)* | **`ready: True`** |
+
+each under the line:
+
+> some-mcp registers as a mcp_server and **brings no tools Heron calls**
+
+That is the one sentence the guard exists to make impossible. And `mcp_server` is not an exotic typo —
+**it is how this repository spells its own `heron_mcp_server.py`.**
+
+**The module claims the opposite, twice.** Its docstring: *"That is this agent's reading of Golden
+Rule 19 … and it is the reading that **fails closed**"*, and its own answer repeats it in `unjudged`:
+*"The readings all fail closed."* **It failed open on every spelling but one.**
+
+**And the suite holds that claim as a string.** `tests/test_tooling.py` asserts
+`any("fail closed" in note ...)` over the answer's own prose — which checks the sentence is **said**,
+not that it is **true**. [Rows 5b-100](FRAGMENT-ISSUES.md) and 5b-101's shape, here holding a claim
+that was false.
+
+A `kind` outside `KINDS` is refused with a new **`KIND_NOT_DECLARED`** before any of the seven steps
+run. **`KINDS` is now the thing that decides**, which is what it was written to be. Case still passes
+— `kind` is lowered first, so `MCP-Server` is a spelling of the declared kind and still has to
+enumerate its tools.
+
+```bash
+python tests/test_tooling.py      # section 7b, 10 red against the module as found
+```
+
+**The four checks that nothing declared was lost were green BEFORE the fix** — all three of `KINDS`
+accepted, and `MCP-Server` still refused for the right reason.
+
+**One line of dead text went with it**: the register step's fallback `kind or "tool of unstated kind"`
+cannot be reached now that the kind is one of three, and a branch nothing can take is the shape rows
+5b-96, 5b-97 and 5b-100 are all about.
+
+**What is right here is worth knowing**, because it is unusual: detection is treated as **execution**
+and needs its own permission — running a program to ask what it is **is** running it, a distinction
+`HERON-INS-DEP-005` does not need because its detection is an import; permission must name **this**
+tool, never be a blanket one; `verify` is a separate step from `install`, because a package manager
+exiting 0 says a download finished; and **NEVER SILENT is enforced last**, over every line rather than
+only the ones written before the check.
+
 ### 2026-09-22 — "A KEY NAMED company-standards.keywords, WHICH SAYS THE VALUE IS A CREDENTIAL"
 
 **[Row 5b-117](FRAGMENT-ISSUES.md), FIXED.** `brain/heron_configuration.py` read end to end — 348
