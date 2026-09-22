@@ -333,6 +333,48 @@ def how_to_type(declared):
         return ('the KIND first, then the value - "length 2700" (MILLIMETRES), '
                 '"number 4.5", "integer 3", "text Level 2" or "yesno true"')
 
+    # THE ONES THAT CANNOT BE TYPED AT ALL, answered BEFORE any separator is
+    # offered. Until 2026-09-22 `IList<Reference>` fell through to the list
+    # rule below and was told "comma separated" - a syntax for a value Revit
+    # refuses by name, so the hint sent somebody to type something that could
+    # never bind. Arc and IFCVersion said nothing, which reads to a caller
+    # exactly like "any text". receivable() in tools/generate-jobs.py holds the
+    # refusals, and tests/test_how_to_type.py fails if a refused type is ever
+    # handed a way to type it.
+    if re.search(r"\bReference>?$", wanted):
+        return ('CANNOT BE TYPED - a Reference is a FACE, picked with the mouse '
+                'on a particular element. No text names one')
+    if wanted == "Arc":
+        return ('CANNOT BE TYPED - FromRequest has no rule for an Arc; a curve '
+                'list takes straight lines only')
+    if wanted == "IFCVersion":
+        # REFUSED ON PURPOSE, and the reason is worth carrying to the blank:
+        # FromRequest's own comment says its members differ per release.
+        return ('CANNOT BE TYPED - refused on purpose: its values differ per '
+                'Revit release, and a name that resolves on one release and not '
+                'another is worse than refusing on both')
+
+    # A COLOUR IS BUILT, LIKE THE THREE ABOVE, and a LIST of them is split on
+    # SEMICOLONS inside Revit - each colour already spends its commas on its
+    # three numbers. The generic list rule below says "comma separated", which
+    # for colours is the one syntax that is guaranteed to be refused.
+    if re.search(r"<Color>$", wanted):
+        return ('colours separated by SEMICOLONS, each three numbers 0-255 - '
+                '"255,0,0; 0,0,255"')
+    if wanted == "Color":
+        return 'three numbers 0-255, comma separated - "255,0,0" is red'
+
+    # A TABLE BY NAME - NamedValues, split on SEMICOLONS into name=value. The
+    # generic list rule below matched the `<` and said "comma separated", so
+    # both request-sourced dictionaries in the library were handed a syntax
+    # NamedValues refuses. The examples are NamedValues' own, from the refusal
+    # it prints, so the hint and the refusal cannot disagree about the shape.
+    if re.search(r"^I?Dictionary<string,double>$", wanted, re.IGNORECASE):
+        return ('name=value, SEMICOLONS between - '
+                '"Walls=150; Structural Framing=50"')
+    if re.search(r"^I?Dictionary<string,string>$", wanted, re.IGNORECASE):
+        return 'name=value, SEMICOLONS between - "view=*-Mech*; sheet=A-*"'
+
     if "IList<IList<XYZ>>" in wanted or "List<List<XYZ>>" in wanted             or "IList<List<XYZ>>" in wanted or "List<IList<XYZ>>" in wanted:
         # PAIRS, AND THE PIPE IS THE HALF THAT IS EASY TO MISS. Falling through
         # to the plain point hint below would say "separated by semicolons",
@@ -381,6 +423,43 @@ def how_to_type(declared):
         return ('an electrical panel by its PANEL NAME - "LP-1", the one on the '
                 'panel schedule, not the family type. Leave it blank to create '
                 'the circuit unassigned')
+
+    # AN ID IS THE THING, NOT A NUMBER - OneIdNamed's own heading. A caller
+    # holding an id would type the number, which appears in no dialog a
+    # modeller opens and is refused. The field's NAME decides the kind:
+    # `levelId` searches levels, `sheetId` sheets. `\bElement\b` below never
+    # reached this, because "ElementId" has no word break after "Element".
+    if re.search(r"\bElementId>?$", wanted):
+        if "<" in wanted:
+            return ('NAMES, never numbers, comma separated - or the word '
+                    '`selected` for everything selected in Revit')
+        return ('the NAME of the thing, never its number - "Level 1" for a '
+                'levelId. The field\'s own name says which kind')
+
+    # THREE CLASSES THE NAME RULE BELOW MISSES FOR THE SAME REASON - "View3D",
+    # "ViewDuplicateOption" and "SpatialElement" carry no word break after
+    # "View" or before "Element", so each got an empty hint.
+    if wanted == "View3D":
+        return ('a 3D view BY NAME - "{3D}". A plan or a section is refused: '
+                'the fragment casts a ray through the view')
+    if wanted == "SpatialElement":
+        # A ROOM'S NAME IS ITS OWN, unlike an ordinary instance's, which is
+        # its type's - FromRequest's comment on this branch.
+        return 'a room or space by its NAME - "Office 101"'
+    if wanted == "ViewDuplicateOption":
+        return 'Duplicate, WithDetailing or AsDependent'
+
+    # PLAIN VALUES, and only the half of them that misleads. A modeller types
+    # the unit: "250mm" is refused by int.TryParse and double.TryParse alike,
+    # with FromRequest's own words - "Type digits only - 250, not 250mm". And
+    # bool.TryParse takes true or false, never yes or no.
+    if wanted in ("int", "Int32"):
+        return "digits only - 250, not 250mm"
+    if wanted in ("double", "Double"):
+        return "digits only - 250 or 250.5, not 250mm"
+    if wanted in ("bool", "Boolean"):
+        return "true or false"
+
     if "<" in wanted:
         hints.append("comma separated")
     if re.search(r"\b(View|Category|BuiltInCategory|Level)\b", wanted):
@@ -395,6 +474,24 @@ def how_to_type(declared):
         # largely goes away. What is left worth saying is how to write it.
         hints.append('by name, as Revit writes it')
     return ", ".join(hints)
+
+
+# WHERE SILENCE IS THE ANSWER, written down so it is a decision rather than an
+# omission. how_to_type returns "" for these on purpose, and nothing else.
+#
+# tests/test_how_to_type.py requires every type a caller supplies anywhere in
+# the library to have a hint OR to be named here. So a type added next month
+# with no hint fails a test instead of printing a blank line - and a blank
+# beside a blank reads exactly like "nothing to know", which for `double` was
+# wrong 102 times over until 2026-09-22.
+NO_HINT_ON_PURPOSE = {
+    "string": "any text, and the type already says so",
+    "String": "the same, spelled the way .NET spells it",
+    "Material": "found by its name, which is what the type already says",
+    "RevitLinkInstance": ("found by the element's name. How a link instance's "
+                          "name actually reads has not been measured, and a "
+                          "guessed hint is worse than none"),
+}
 
 
 # THE AGENT REGISTRY, read from docs rather than copied here.
