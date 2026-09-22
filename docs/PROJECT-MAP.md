@@ -110,8 +110,8 @@ the [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) hook refuses the edi
 | [`tests/`](../tests/README.md) | The suites, the golden library, the .NET test host | [`tests/README.md`](../tests/README.md) — **read the exit codes section first** |
 | `docs/` | Permanent specification, architecture, decisions and registers | [README.md](README.md) |
 | [`docs/work-notes/`](work-notes/README.md) | Temporary operational work — what is going on right now | [work-notes/README.md](work-notes/README.md) |
-| `.claude/` | House rules as skills, and four prototype agents. **The only tree of HOUSE RULES** — `brain/skills/` above is Heron's own skills, the jobs it does for a modeller, and the two share a word and nothing else | [`.claude/skills/README.md`](../.claude/skills/README.md) |
-| `.codex/` | The same four agents for a second host, pointing at the same skills | `.codex/config.toml` |
+| `.claude/` | House rules as skills, and the prototype agents that keep them. **The only tree of HOUSE RULES** — `brain/skills/` above is Heron's own skills, the jobs it does for a modeller, and the two share a word and nothing else. **`agents/heron-*.md` are not house rules**: they are Heron's own background agents, the *subagents* [D-01](DECISIONS.md) says Heron supplies, and they live here because this is the folder the host reads them from. The first is `heron-model-auditor`. A background agent carries a read-only tool list, held by `tests/test_agent_tools.py` | [`.claude/skills/README.md`](../.claude/skills/README.md) |
+| `.codex/` | The same agents for a second host, pointing at the same skills. **A `.codex` copy carries no tool list**, so there the read-only rule is an instruction in the agent's text, not a restriction | `.codex/config.toml` |
 
 ---
 

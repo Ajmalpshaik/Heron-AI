@@ -43,6 +43,13 @@ specified in [the registry](../../docs/28-agent-registry.md):
 | `skill-maintainer` | Correcting one that has drifted from the code | `HERON-FRG-EVO-005`, `HERON-FRG-UPD-008` |
 | `skill-recorder` | Capturing what a session learned, before it is lost | `HERON-LRN-EXT-003` |
 
+The same folder also holds `heron-*.md` files, and they are **a different kind of thing**: not house
+rules for whoever works on Heron, but Heron's own background agents for a modeller - the first is
+`heron-model-auditor`, which audits the open model with Heron's read tools while the modeller keeps
+working. They sit here only because this is where the host reads agents from.
+[PROJECT-MAP](../../docs/PROJECT-MAP.md) says where they fit; `tests/test_agent_tools.py` holds what
+they may call.
+
 Finding and selecting a skill is **retrieval** - the read half, and part of RAG. Creating, updating and
 recording one is the **knowledge lifecycle** - the write half, and not RAG. The vector index belongs to
 the read half only, and is deliberately not built yet: with this few skills, matching on the frontmatter

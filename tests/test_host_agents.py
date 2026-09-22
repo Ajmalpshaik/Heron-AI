@@ -7,14 +7,15 @@
 # See docs/29-metadata-standard.md
 
 """
-The four agents exist twice, once per host, and nothing regenerates one.
+The agents exist twice, once per host, and nothing regenerates one.
 
     python tests/test_host_agents.py
 
-`.claude/agents/<name>.md` and `.codex/agents/<name>.toml` are the SAME four
-agents for two hosts - PROJECT-MAP says so: "the same four agents for a
-second host, pointing at the same skills". Neither is generated from the
-other, and until this suite existed nothing compared them.
+`.claude/agents/<name>.md` and `.codex/agents/<name>.toml` are the SAME
+agents for two hosts - PROJECT-MAP says so: "the same agents for a second
+host, pointing at the same skills". Neither is generated from the other, and
+until this suite existed nothing compared them. There were four when it was
+written; count the folder rather than this sentence.
 
 WHY THAT IS WORTH A SUITE RATHER THAN A HABIT
 -----------------------------------------------
@@ -105,7 +106,7 @@ def from_toml(text):
 
 
 def main():
-    print("\nThe same four agents, for two hosts")
+    print("\nThe same agents, for two hosts")
 
     for folder, what in ((CLAUDE, ".claude/agents"), (CODEX, ".codex/agents")):
         if not os.path.isdir(folder):
