@@ -11,6 +11,16 @@
             "statusMessage": "Checking the adapter boundary..."
           }
         ]
+      },
+      {
+        "matcher": "^Bash$|^mcp__.+__(merge_pull_request|update_pull_request|enable_pr_auto_merge)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/skills/heron-session/bin/main_moved.py\"",
+            "timeout": 60
+          }
+        ]
       }
     ]
   }
