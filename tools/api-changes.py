@@ -60,6 +60,7 @@ is not done here, so the answer does not claim it.
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
 
@@ -70,15 +71,70 @@ SURFACE = os.path.join(TOOL_DIR, ".surface")
 READER = os.path.join(TOOL_DIR, "bin", "Debug", "ApiSurface.dll")
 OUT = os.path.join(TOOL_DIR, "changes.json")
 
-# tools/check-api-surface.py owns which releases are supported and how
-# they are fetched. Bound rather than retyped so one list stays one list.
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 
 def releases():
-    """The supported releases, from the agent that owns the list."""
+    """The supported releases, read from `brain/heron_fragment` and not typed.
+
+    NAMED PRECISELY, because the comment that used to sit here named the
+    wrong owner: it said `tools/check-api-surface.py` owns the list and that
+    this file is "bound rather than retyped so one list stays one list". It
+    is bound to `heron_fragment.REVIT_VERSIONS`, and measured 2026-09-22
+    check-api-surface.py types its OWN `ALL_VERSIONS`, so there are three
+    lists - that one, this module's source, and `heron_dotnet.RELEASES`.
+
+    All three agree today; what was wrong was a sentence telling the next
+    reader that a binding exists where it does not. AJ Tools' L3 is why the
+    list is read at all: a hardcoded version list silently installed nothing
+    on three releases while the document advertised them.
+    """
     import heron_fragment as FRAG
     return list(FRAG.REVIT_VERSIONS)
+
+
+def cannot_answer(years):
+    """Why this machine cannot produce the digest, or None.
+
+    ASKED AFTER THE ARGUMENT QUESTIONS AND BEFORE ANY DUMP, which is the
+    order `tools/check-fragments-compile.py` settled on for the same reason:
+    "two releases are needed" is answerable with no SDK at all and must keep
+    its own exit code.
+
+    MEASURED 2026-09-22 on a container with no cached assemblies and no .NET
+    SDK: `api-changes.py 2025 2026` raised `OSError` out of `surface_of` and
+    exited **1** - the code a real failure uses - with the explanation buried
+    in a traceback. A traceback is none of AGENTS.md's four states, and this
+    is the third state: NOT RUN. Row 5b-133 found the same shape in
+    check-fragments-compile and its remedy is exit 3.
+
+    A release whose surface is already dumped needs neither the assemblies
+    nor the SDK, so the work needed is worked out first and the tools are
+    asked about only if some remains.
+    """
+    todo = [year for year in years
+            if not (os.path.isfile(os.path.join(SURFACE, "%s.txt" % year))
+                    and os.path.getsize(
+                        os.path.join(SURFACE, "%s.txt" % year)) > 0)]
+    if not todo:
+        return None
+
+    bare = [year for year in todo
+            if not (os.path.isdir(os.path.join(CACHE, year))
+                    and os.listdir(os.path.join(CACHE, year)))]
+    if bare:
+        return ("the reference assemblies for %s are not cached, so no "
+                "surface can be read for them. Run `python "
+                "tools/check-api-surface.py %s` first - it fetches them."
+                % (", ".join(bare), " ".join(bare)))
+    if shutil.which("dotnet") is None:
+        return ("there is no `dotnet` on PATH, so the surface reader cannot "
+                "be run and nothing is claimed about what %s changed"
+                % ", ".join(todo))
+    if not os.path.isfile(READER):
+        return ("%s is not built, so no surface can be dumped. Run `dotnet "
+                "build tools/api-surface`." % os.path.relpath(READER, ROOT))
+    return None
 
 
 def surface_of(year):
@@ -139,6 +195,14 @@ def main(argv):
                          % ", ".join(years))
         return 2
 
+    blocked = cannot_answer(years)
+    if blocked:
+        sys.stdout.write("NOT RUN - %s\n" % blocked)
+        sys.stdout.write(
+            "Nothing was written, and nothing is claimed about what these "
+            "releases changed.\n")
+        return 3
+
     found = changes(years)
 
     # A TARGETED RUN REFRESHES, IT DOES NOT REPLACE. `api-changes.py 2025
@@ -154,10 +218,32 @@ def main(argv):
     keep = []
     refreshed = set((one["from"], one["to"]) for one in found)
     if os.path.isfile(OUT):
+        # A DIGEST THAT CANNOT BE READ IS NOT AN EMPTY ONE (D-52), and
+        # treating it as empty put this defect back through a different door.
+        # MEASURED 2026-09-22 on the seven-transition digest truncated
+        # mid-file: `api-changes.py 2025 2026` wrote a digest holding ONE
+        # transition, exit 0, and said nothing - which is exactly what the
+        # block above says was fixed on 2026-09-15.
         try:
             existing = json.loads(io.open(OUT, encoding="utf-8").read())
-        except ValueError:
-            existing = {}
+        except ValueError as why:
+            sys.stdout.write(
+                "REFUSING TO WRITE: %s exists and does not parse (%s).\n"
+                % (os.path.relpath(OUT, ROOT), why))
+            sys.stdout.write(
+                "Overwriting it would silently drop every transition this "
+                "run did not recompute. Fix or delete the file, then run "
+                "again.\n")
+            return 1
+        if not isinstance(existing, dict):
+            sys.stdout.write(
+                "REFUSING TO WRITE: %s parses but is a %s, not a digest.\n"
+                % (os.path.relpath(OUT, ROOT), type(existing).__name__))
+            sys.stdout.write(
+                "Overwriting it would silently drop every transition this "
+                "run did not recompute. Fix or delete the file, then run "
+                "again.\n")
+            return 1
         for one in existing.get("transitions") or []:
             if (one.get("from"), one.get("to")) not in refreshed:
                 keep.append(one)
