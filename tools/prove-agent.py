@@ -286,10 +286,13 @@ def write_draft(agent_id, draft):
             "refusing to write a draft inside revit/. This tool has no write "
             "path into the add-in, and that is what makes 'it never promotes "
             "an agent' a guarantee rather than a promise.")
-    if not os.path.isdir(DRAFTS):
-        os.makedirs(DRAFTS)
     body = dict(DRAFT_HEADER)
     body.update(draft)
+    wrong = unwritable(body)
+    if wrong:
+        raise ValueError(wrong)
+    if not os.path.isdir(DRAFTS):
+        os.makedirs(DRAFTS)
     with io.open(path, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(as_yaml(body))
     return path
@@ -329,9 +332,26 @@ def read_yaml(path):
     """Read back what as_yaml wrote. Flat keys only, which is all this uses."""
     if not os.path.isfile(path):
         return None
+    return parse_yaml(io.open(path, encoding="utf-8"))
+
+
+def parse_yaml(lines):
+    """The reading rules, applied to any lines.
+
+    SPLIT OUT SO A WRITE CAN BE CHECKED BEFORE IT HAPPENS. `unwritable` below
+    renders a body and reads it straight back through this, in memory, so a
+    value that will not survive the round trip is caught while both copies
+    still exist.
+
+    A LINE IT DOES NOT RECOGNISE IS SKIPPED, AND THAT IS WHY THE CHECK IS
+    NEEDED. The skip is right for a file a person has annotated; it is
+    dangerous only because `as_yaml` can PRODUCE such a line - a value
+    carrying a line break writes a second line that is not a key, so the
+    value comes back truncated and nothing anywhere says so.
+    """
     body = {}
     key = None
-    for line in io.open(path, encoding="utf-8"):
+    for line in lines:
         line = line.rstrip("\n")
         if line.startswith("  - ") and key:
             body.setdefault(key, [])
@@ -351,6 +371,51 @@ def unquoted(text):
     if len(text) >= 2 and text[0] == "'" and text[-1] == "'":
         return text[1:-1].replace("''", "'")
     return text
+
+
+def _as_read(value):
+    """What `value` looks like once as_yaml has written it and read_yaml read it."""
+    if isinstance(value, list):
+        return [str(one) for one in value]
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return str(value)
+    return str(value)
+
+
+def unwritable(body):
+    """The first field that would not survive being written and read back.
+
+    IN MEMORY, AND BEFORE ANYTHING IS WRITTEN OR DELETED. `quoted` escapes
+    the apostrophe that single-quoted YAML needs and nothing else, so a value
+    carrying a LINE BREAK writes a second line that `parse_yaml` does not
+    recognise - and a line it does not recognise is skipped.
+
+    MEASURED 2026-09-22, signing a real draft with `--by "Ajmal<newline>PS"`:
+    the tool printed `signed by Ajmal / PS`, exited 0, wrote `by: 'Ajmal` into
+    the proof, AND DELETED THE DRAFT. The signature is the scarcest input this
+    library has; that run spent one on a record that cannot be made again
+    without two Revit sessions and the two models they had open.
+
+    Worse, the second line can be a KEY. `--by "Ajmal<newline>heron-status:
+    PROVEN"` put `PROVEN'` into the proof's own status, three lines below
+    where `cmd_accept` had deliberately set DRAFT and printed *"Promoting it
+    is a separate, deliberate act."*
+
+    Nothing here guesses at an escape. A value this writer cannot represent
+    is refused by name, which is the honest half of a small writer.
+    """
+    back = parse_yaml(as_yaml(body).split("\n"))
+    for key, value in body.items():
+        if back.get(key) != _as_read(value):
+            return ("%r cannot be written to this file as given. It goes in "
+                    "as %r and reads back as %r - so the record would not say "
+                    "what you typed. Nothing was written."
+                    % (key, value, back.get(key)))
+    return None
 
 
 # --------------------------------------------------------------------------
@@ -816,11 +881,35 @@ def cmd_accept(args):
     body["date"] = datetime.date.today().isoformat()
     body["heron-status"] = "DRAFT"          # promotion stays a separate act
 
+    # REFUSE BEFORE ANYTHING MOVES. The draft below is deleted on the way
+    # out, so a write that quietly mangles a field would take the evidence
+    # with it - and a signature is not something a person can simply give
+    # again, because the two models it was given against have moved on.
+    wrong = unwritable(body)
+    if wrong:
+        w("%s\n" % wrong)
+        w("The draft is untouched. Sign it again with a name this file can "
+          "write.\n")
+        return 1
+
     if not os.path.isdir(PROOFS):
         os.makedirs(PROOFS)
     with io.open(proof_path(args.agent), "w", encoding="utf-8",
                  newline="\n") as fh:
         fh.write(as_yaml(body))
+
+    # AND READ THE FILE ON DISK BACK BEFORE DESTROYING THE OTHER COPY. The
+    # guard above rules out what this writer cannot represent; this rules out
+    # everything else - a short write, a full disk, an encoding the platform
+    # would not take.
+    back = read_yaml(proof_path(args.agent))
+    if not back or back.get("by") != body["by"]:
+        w("The proof was written but does not read back as signed by %r.\n"
+          % body["by"])
+        w("The draft is untouched, so nothing is lost. Look at %s.\n"
+          % os.path.relpath(proof_path(args.agent), ROOT).replace(os.sep, "/"))
+        return 1
+
     os.remove(draft_path(args.agent))
 
     w("\nRecorded %s\n"
