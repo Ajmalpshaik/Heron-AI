@@ -64,6 +64,13 @@ place D-47 landed from the other direction. Register item A7, the trained
 embedding backend, is the thing that would separate them, and it has never run
 here.
 
+AND THE BRANCH BELOW USED TO BREAK THAT RULE ITSELF
+---------------------------------------------------
+The strong-correlation branch quoted the hand probe's 0.234 back as what
+"it measured" - the remembered composite the paragraph above forbids, at
+the one moment a reader needs the right baseline. Fixed 2026-09-22; it
+quotes this tool's own 0.313, with the corpus it came from.
+
 WHY IT IS NOT A GATE
 --------------------
 Exits 0 whatever it finds, for the same reason check-routing.py does. A gate
@@ -77,6 +84,39 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 FRAGMENTS = os.path.join(ROOT, "brain", "fragments")
+
+
+# Every flag this tool has, and what it takes.
+FLAGS = {"--top": "a whole number - how many rows to print"}
+
+
+def settings_from(argv):
+    """(top, why it was refused or None).
+
+    READ BEFORE THE STORE IS OPENED. This tool retrieves for every utterance
+    in the library - 2,227 of them across 396 fragments, measured
+    2026-09-22, and minutes of work. A flag it does not have must cost
+    nothing, and it must not be ignored in silence: a row count nobody asked
+    for is a report about a setting nobody chose.
+    """
+    top = 12
+    rest = list(argv)
+    i = 0
+    while i < len(rest):
+        word = rest[i]
+        if word not in FLAGS:
+            if word.startswith("-"):
+                return None, "not a flag this tool has: %s" % word
+            return None, "this tool takes flags, not a bare word: %s" % word
+        if i + 1 >= len(rest):
+            return None, "%s needs a value - %s" % (word, FLAGS[word])
+        try:
+            top = int(rest[i + 1])
+        except ValueError:
+            return None, ("--top needs %s, and %s is not one"
+                          % (FLAGS[word], rest[i + 1]))
+        i += 2
+    return top, None
 
 
 def correlation(xs, ys):
@@ -93,9 +133,11 @@ def correlation(xs, ys):
 
 
 def main(argv):
-    top = 12
-    if "--top" in argv:
-        top = int(argv[argv.index("--top") + 1])
+    top, problem = settings_from(argv)
+    if problem:
+        sys.stderr.write("%s\n" % problem)
+        sys.stderr.write("it takes: %s\n" % ", ".join(sorted(FLAGS)))
+        return 2
 
     import heron_scope as SCOPE
     import heron_search as SEARCH
@@ -194,10 +236,18 @@ def main(argv):
             print("  layer, not the fragments - A7 is what would separate them.")
         else:
             print()
-            print("  STRONG ENOUGH TO ACT ON, and that is a CHANGE: it measured")
-            print("  0.234 on 2026-08-31 and the conclusion drawn then was that")
-            print("  length does not drive intrusion. Re-read that conclusion")
-            print("  before trusting it - the library has moved underneath it.")
+            # THIS TOOL'S OWN FIGURE, and the docstring twenty lines up says
+            # why that matters: an earlier hand probe the same day gave 0.234
+            # over a different corpus, and quoting THAT here - which this
+            # branch did until 2026-09-22 - is exactly the remembered
+            # composite the docstring forbids, at the one moment a reader
+            # needs the right baseline.
+            print("  STRONG ENOUGH TO ACT ON, and that is a CHANGE: this tool")
+            print("  measured 0.313 the first time it ran, on 2026-08-31, over")
+            print("  330 utterances from 59 fragments - and the conclusion")
+            print("  drawn then was that length does not drive intrusion.")
+            print("  Re-read that conclusion before trusting it: the library")
+            print("  has moved underneath it.")
 
         print()
         print("An intrusion is not a defect. A shortlist is MEANT to hold more")

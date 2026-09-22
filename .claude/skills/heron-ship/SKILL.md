@@ -263,6 +263,34 @@ and treat it as the failure it is — never let it end the section.
 **The rule in one line: a section that cannot run is worth less than a section that fails, because
 failures say how many and where, and a traceback says only that something went wrong.**
 
+### And clear `__pycache__` between the break and the restore
+
+A suite that loads a tool with `importlib.util.spec_from_file_location` leaves a `.pyc` behind, and
+**CPython validates that cache against the source's mtime at one-second resolution**. So a break and
+its restore inside the same second, with the **same file size**, can be served the stale bytecode —
+and the run you are reading is not the code on disk.
+
+Measured 2026-09-22 while proving `tests/test_check_intrusion.py` had teeth. The break was
+`0.0` → `1.0` in one return, restored by copying the saved file back:
+
+```
+tools/__pycache__/check-intrusion.cpython-311.pyc   09:49:36.754
+tools/check-intrusion.py                            09:49:36.760
+```
+
+Six milliseconds apart, identical length, so the cache was taken as current. The restored run went
+**red on the broken behaviour with the correct source on disk**, and `inspect.getsource` printed the
+correct source while the loaded function returned the broken answer.
+
+**The dangerous direction is the other one**: a break served stale GOOD bytecode reads as *no red*,
+and a break that produces no red is exactly what you would report as "the suite does not cover
+this". `git stash push` / `git stash pop` is safer because it changes the file, but a same-length
+edit is not safe even then. So:
+
+```bash
+rm -rf tools/__pycache__ brain/__pycache__      # between every break and every restore
+```
+
 ## 3. The reports — a finding is a question, not a failure
 
 These **exit 0 whatever they find**. Read them; do not treat a hit as a break.
