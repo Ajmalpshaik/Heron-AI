@@ -141,8 +141,16 @@ def live_work_notes():
 
     A linked row is live; a struck row has been retired. The index ships its
     own completeness check, so this is a derived list, not a remembered one.
+
+    NONE MEANS THE INDEX COULD NOT BE READ, and [] means it listed nothing.
+    `register_rows` and `proposals_open` beside it both refuse that collapse
+    and this one did not: a renamed or deleted index answered [], which the
+    page printed as "lists no live note" - a page reporting no outstanding
+    work because its source had gone.
     """
     text = read("docs/work-notes/README.md")
+    if not text:
+        return None
     live = re.findall(r"^\| \[`([^`]+)`\]\([^)]+\) \| \*\*([^*]+)\*\*", text, re.M)
     # This page is a work note listed in that same index. Listing itself as
     # outstanding work would be true and useless.
@@ -244,13 +252,38 @@ def n(v):
     return "**not derived**" if v in (None, "") else "**%s**" % v
 
 
+def counted(tally, key):
+    """A key absent from a tally that READ something is a real zero.
+
+    THE SAME COLLAPSE, A THIRD TIME. Row 4 printed "not derived" on a board
+    where every agent proof had in fact been signed, because an empty list is
+    falsy; row 9 printed it on a clean signature board, because the heading it
+    greps for is only printed when something IS stale. Both are fixed above,
+    both are commented where they happened, and both were found on the day
+    their count first reached zero.
+
+    Rows 1 and 2 are the same shape and the worst place for it: `statuses()`
+    tallies only the statuses it FINDS, so the day the last DRAFT fragment is
+    proved, "the largest single body of work left" stops reading `0 of 396`
+    and starts reading `not derived of 396` - and this page tells its reader
+    in terms that not derived does NOT mean zero. The one day the answer is
+    finished, the page cannot say so.
+
+    An empty tally is still None. Nothing was read, and that is the only
+    honest blank here.
+    """
+    if not tally:
+        return None
+    return tally.get(key, 0)
+
+
 def render(d):
     stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
     frag = d["frag"]
-    draft = frag.get("DRAFT")
+    draft = counted(frag, "DRAFT")
     proven = frag.get("PROVEN")
     total = sum(frag.values()) if frag else None
-    skills_draft = d["skills"].get("DRAFT")
+    skills_draft = counted(d["skills"], "DRAFT")
     skills_total = sum(d["skills"].values()) if d["skills"] else None
     rows_left = (d["rows"] - d["rows_done"]) if d["rows"] is not None else None
 
@@ -352,7 +385,10 @@ def render(d):
     w("has moved somewhere permanent and the note itself has gone. These have not reached that point,")
     w("and the reason is the second column — read it before deleting one.")
     w("")
-    if d["notes"]:
+    if d["notes"] is None:
+        w("***Not derived** — `docs/work-notes/README.md` could not be read, so this list is")
+        w("missing rather than empty.*")
+    elif d["notes"]:
         w("| Note | Why it is still here |")
         w("|---|---|")
         for name, state in d["notes"]:
@@ -379,11 +415,11 @@ def to_console(d):
     line = "=" * 62
     out = [line, "THE BALANCE OF WORK   %s" % datetime.now().strftime("%Y-%m-%d %H:%M"), line, ""]
     pairs = [
-        ("fragments never in front of a model", frag.get("DRAFT"), "of %s" % sum(frag.values()) if frag else ""),
+        ("fragments never in front of a model", counted(frag, "DRAFT"), "of %s" % sum(frag.values()) if frag else ""),
         ("  never run IN THIS CHECKOUT", d["jobs_norun"], "<- worktree-local"),
         ("  of those, arrangeable right now", d["jobs_ready"], ""),
         ("  of those, structurally blocked", d["jobs_blocked"], ""),
-        ("skills never proved", d["skills"].get("DRAFT"), "of %s" % sum(d["skills"].values()) if d["skills"] else ""),
+        ("skills never proved", counted(d["skills"], "DRAFT"), "of %s" % sum(d["skills"].values()) if d["skills"] else ""),
         ("agents left to build", d["agents_left"], "of %s" % d["agents_total"] if d["agents_total"] else ""),
         ("  deferred by a decision", d["agents_defer"],
          "<- not left, and not done" if d["agents_defer"] else ""),
