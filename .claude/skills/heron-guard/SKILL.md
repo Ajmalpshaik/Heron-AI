@@ -65,6 +65,7 @@ Windows, where a bash hook simply would not run.
 | **The decision is nested** under `hookSpecificOutput` | A `permissionDecision` at the top level is ignored — *"silently no-ops the block"*. A hook that looks like it works and refuses nothing |
 | **A crash denies** | An unexpected exit with nothing on stdout is read as **permission**, so a failure prints a **deny** rather than dying quietly. An **allow prints nothing** — silence is what the host reads as *no objection*, which is what an allow wants. `tests/test_heron_guard.py` pins both halves |
 | **Deny-tier, fails closed** | *"A boundary that fails open is not a boundary."* gstack's `careful` is ask-tier and fails the other way, deliberately |
+| **The payload is read as UTF-8 bytes** | Because a crash refuses, anything that crashes the hook for a reason unrelated to the boundary refuses a good edit. On Windows a piped stdin is decoded in the ANSI code page, which has no character for five byte values UTF-8 uses constantly — **an edit carrying Arabic was refused for that**, found 2026-09-23. `tests/test_heron_guard.py` section 4a sends Arabic under that code page |
 | **`HERON_GUARD=off` turns it off** | Not optional for a fail-closed hook. One bad edit away from a repository nobody can work in, and the person who needs the hatch is the one whose tooling is already broken |
 
 **The pattern is a second copy of `check-structure.py`'s, and

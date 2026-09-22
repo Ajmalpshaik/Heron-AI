@@ -24,6 +24,10 @@ WHAT THIS PROVES, and every one of these is a way a hook becomes decoration:
      `permissionDecision` is ignored by the host - the block silently no-ops.
   3. A CRASH DENIES. An unexpected exit with nothing on stdout is read as
      PERMISSION. Asserted by feeding it input that cannot parse.
+  3a. A CRASH THAT IS NOBODY'S FAULT MUST NOT HAPPEN, because 3 turns it into
+     a refusal. On Windows a piped stdin is decoded in the ANSI code page, and
+     an edit carrying Arabic crashed the hook and was refused - found
+     2026-09-23. Sent here as raw UTF-8 under that code page.
   4. THE PATTERN MATCHES check-structure.py's, CHARACTER FOR CHARACTER. The
      hook cannot import that script - it runs its whole sweep at import - so
      the rule exists twice and this is what keeps the copies honest. Same
@@ -90,6 +94,23 @@ def run(payload, env=None):
                          else json.dumps(payload),
                          capture_output=True, text=True, env=where)
     return got.stdout.strip(), got.returncode
+
+
+def run_utf8(payload, env=None):
+    """(stdout, exit code) with the payload sent as RAW UTF-8 bytes.
+
+    The host sends JSON exactly like this - non-ASCII characters as they are,
+    not escaped - and json.dumps escapes them by default, which would hide
+    the very thing section 4a exists to test.
+    """
+    where = dict(os.environ)
+    where.update({"LOCALAPPDATA": QUIET, "HERON_KNOWLEDGE": ""})
+    where.update(env or {})
+    got = subprocess.run([sys.executable, HOOK],
+                         input=json.dumps(payload, ensure_ascii=False)
+                         .encode("utf-8"),
+                         capture_output=True, env=where)
+    return got.stdout.decode("utf-8", "replace").strip(), got.returncode
 
 
 def verdict_of(out):
@@ -169,6 +190,28 @@ def main():
     check("HERON_GUARD=off" in out,
           "and the refusal says how to get moving again - the person who "
           "needs the hatch is the one whose tooling is already broken")
+
+    print()
+    print("4a. Text a Windows code page cannot read is JUDGED, not crashed on")
+    # Windows decodes a piped stdin in the ANSI code page, and cp1252 has no
+    # character for five byte values that UTF-8 uses all the time - Arabic
+    # among them. Read that way, an edit carrying one crashed the hook, and a
+    # fail-closed hook turns its own crash into a refusal: every such edit
+    # refused, in every session. PYTHONIOENCODING stands in for Windows here.
+    arabic = u"في"
+    out, code = run_utf8({"tool_input": {"file_path": "docs/x.md",
+                                         "content": u"a note " + arabic}},
+                         env={"PYTHONIOENCODING": "cp1252"})
+    check(out == "" and code == 0,
+          "a harmless edit carrying Arabic is ALLOWED under the Windows code "
+          "page, not refused by a crash: %s" % (out[:80] or "silent"))
+    out, _ = run_utf8({"tool_input": {"file_path": "brain/x.py",
+                                      "content": u"using %s.DB; // %s"
+                                      % (vendor, arabic)}},
+                      env={"PYTHONIOENCODING": "cp1252"})
+    check(verdict_of(out) == "deny" and "adapter boundary" in out,
+          "and a forbidden one carrying Arabic is refused for the BOUNDARY, "
+          "not for a crash")
 
     print()
     print("5. The escape hatch works")

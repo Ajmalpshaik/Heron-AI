@@ -83,9 +83,14 @@ def check(condition, what):
 
 
 def clean_env(**extra):
-    """This process's environment without the variables that steer a hook."""
+    """This process's environment without the variables that steer a hook.
+
+    APPDATA goes too: on Windows the knowledge folder is found through it, so
+    leaving it would make "no folder at all" impossible to set up there.
+    """
     env = dict(os.environ)
-    for name in ("LOCALAPPDATA", "HERON_KNOWLEDGE", "CLAUDE_PROJECT_DIR"):
+    for name in ("LOCALAPPDATA", "APPDATA", "HERON_KNOWLEDGE",
+                 "CLAUDE_PROJECT_DIR"):
         env.pop(name, None)
     env.update(extra)
     return env
@@ -99,6 +104,22 @@ def hook(script, payload, env):
                          capture_output=True, text=True, encoding="utf-8",
                          env=env, timeout=120)
     raw = got.stdout.strip()
+    try:
+        parsed = json.loads(raw) if raw else None
+    except ValueError:
+        parsed = "NOT JSON"
+    return parsed, raw, got.returncode
+
+
+def hook_utf8(script, payload, env):
+    """hook(), with the payload sent as RAW UTF-8 bytes, the way the host sends
+    it - json.dumps would escape every non-ASCII character and hide the case.
+    """
+    got = subprocess.run([sys.executable, script],
+                         input=json.dumps(payload, ensure_ascii=False)
+                         .encode("utf-8"),
+                         capture_output=True, env=env, timeout=120)
+    raw = got.stdout.decode("utf-8", "replace").strip()
     try:
         parsed = json.loads(raw) if raw else None
     except ValueError:
@@ -392,6 +413,16 @@ def run_all(home):
         check(code == 0 and raw == "" and len(diary_lines(logs)) == before,
               "%s: silent, and no diary line - there was nothing to decide"
               % label)
+
+    # Windows decodes a piped stdin in the ANSI code page, which has no
+    # character for five byte values UTF-8 uses - Arabic among them.
+    # PYTHONIOENCODING stands in for Windows.
+    parsed, raw, code = hook_utf8(MOVED, dict(merge, tool_input={
+        "command": u"gh pr merge 12 --subject '\u0641\u064a'"}),
+        dict(env, PYTHONIOENCODING="cp1252"))
+    check(code == 0 and "#901" in context_of(parsed),
+          "a merge whose command carries Arabic is still advised under the "
+          "Windows code page, not lost to a decoding crash")
 
     parsed, raw, code = hook(MOVED, "this is not json", env)
     check(code == 0 and raw == "",

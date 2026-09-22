@@ -84,6 +84,16 @@ bash hook would simply not run there.
      CLOSED, because "a boundary that fails open is not a boundary". gstack's
      `careful` is ask-tier and fails the other way, deliberately.
 
+AND A FOURTH, FOUND 2026-09-23: A CRASH THAT IS NOBODY'S FAULT
+-------------------------------------------------------------
+Trap 2 makes a crash refuse. So anything that crashes this hook for a reason
+unrelated to the boundary refuses an edit that was fine - and on Windows a
+piped stdin is decoded in the ANSI code page, which has no character for five
+byte values UTF-8 uses constantly. An edit carrying Arabic was refused for
+that, in every session. The payload is read as bytes and decoded as UTF-8
+now (read_payload), and tests/test_heron_guard.py section 4a sends Arabic
+under that code page.
+
 AND ONE ESCAPE HATCH, WHICH IS NOT OPTIONAL FOR A FAIL-CLOSED HOOK
 -------------------------------------------------------------------
 `HERON_GUARD=off` disables it. A hook that fails closed and cannot be turned
@@ -201,6 +211,21 @@ def check(payload, root):
     )
 
 
+def read_payload():
+    """The host's JSON, read as UTF-8 whatever this console's code page is.
+
+    The host writes UTF-8. On Windows a piped stdin is decoded in the ANSI
+    code page instead, and cp1252 has no character for five byte values UTF-8
+    uses all the time - Arabic among them - so reading text would crash on
+    them. Reading the bytes and decoding them here cannot.
+    """
+    stream = getattr(sys.stdin, "buffer", sys.stdin)
+    raw = stream.read()
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8", "replace")
+    return json.loads(raw) if raw.strip() else {}
+
+
 def diary(verdict, said, session):
     """One line in the hooks' log. Never raises, and never changes a decision.
 
@@ -228,8 +253,7 @@ def main():
                      "..", "..", "..", ".."))
     session = ""
     try:
-        raw = sys.stdin.read()
-        payload = json.loads(raw) if raw.strip() else {}
+        payload = read_payload()
         if isinstance(payload, dict):
             session = payload.get("session_id") or ""
         verdict, reason = check(payload, root)

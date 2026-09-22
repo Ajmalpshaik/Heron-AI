@@ -92,7 +92,7 @@ def main():
 
 def run_all(home):
     env = dict(os.environ)
-    for name in ("LOCALAPPDATA", "HERON_KNOWLEDGE"):
+    for name in ("LOCALAPPDATA", "APPDATA", "HERON_KNOWLEDGE"):
         env.pop(name, None)
     env["LOCALAPPDATA"] = home
     logs = os.path.join(home, "Heron", "logs")
@@ -160,7 +160,9 @@ def run_all(home):
     check(code == 0 and "does not exist yet" in out,
           "a machine where no hook has decided anything yet says so, exit 0")
     bare = dict(env)
+    # APPDATA too: on Windows the knowledge folder is found through it.
     bare.pop("LOCALAPPDATA", None)
+    bare.pop("APPDATA", None)
     code, out = report([], bare)
     check(code == 0 and "No hook log on this machine" in out,
           "a machine with no log folder at all says why, and still exits 0")

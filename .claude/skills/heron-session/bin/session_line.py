@@ -142,11 +142,25 @@ def line_for(payload):
     return "Heron: " + ". ".join(parts) + "."
 
 
+def read_payload():
+    """The host's JSON, read as UTF-8 whatever this console's code page is.
+
+    The host writes UTF-8. On Windows a piped stdin is decoded in the ANSI
+    code page instead, and cp1252 has no character for five byte values UTF-8
+    uses all the time - Arabic among them - so reading text would crash on
+    them. Reading the bytes and decoding them here cannot.
+    """
+    stream = getattr(sys.stdin, "buffer", sys.stdin)
+    raw = stream.read()
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8", "replace")
+    return json.loads(raw) if raw.strip() else {}
+
+
 def main():
     session = ""
     try:
-        raw = sys.stdin.read()
-        payload = json.loads(raw) if raw.strip() else {}
+        payload = read_payload()
         if isinstance(payload, dict):
             session = payload.get("session_id") or ""
         text = line_for(payload)
