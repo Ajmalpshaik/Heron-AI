@@ -96,13 +96,28 @@ HOST_PROJECT = os.path.join("tests", "Heron.Bridge.TestHost")
 # Windows can run. Off Windows the same sources are built for net8.0 instead,
 # which produces a .dll the installed runtime launches.
 #
-# They cannot share a directory. AppendTargetFrameworkToOutputPath is false
-# repo-wide, so every target framework writes to the SAME bin/x64/Debug - and
-# `tools/check-compile.py`, which builds this project once per Revit version,
-# would leave whichever it did last. That is not hypothetical: it happened the
-# first time the two were run in one sitting, and this file went from 32 passes
-# to "not found". The POSIX host therefore gets its own folder and the two
-# never meet.
+# They cannot share a directory. Directory.Build.props writes every build to
+# bin/x64/<Configuration>/<RevitVersion>/, which keeps the eight Revit releases
+# apart but NOT the two platforms: a POSIX build of 2024 and a Windows build of
+# 2024 would both claim bin/x64/Debug/2024. `tools/check-compile.py` builds this
+# project once per Revit version, so whichever ran last would win. That is not
+# hypothetical: it happened the first time the two were run in one sitting, and
+# this file went from 32 passes to "not found". The POSIX host therefore gets
+# its own folder, via the explicit -p:OutputPath in BUILD_HINT below, and the
+# two never meet.
+#
+# THE VERSION SEGMENT IS NOT OPTIONAL - fixed 2026-09-22.
+#
+# _WIN_DIR read bin/x64/Debug, flat, from before OutputPath grew its
+# $(RevitVersion) segment. Every build after that change landed in
+# bin/x64/<Configuration>/2024 while this file kept launching whatever was left
+# in the flat folder - a Heron.Bridge.dll from 2026-09-16, predating the
+# request-too-long ceiling. The two checks covering that ceiling went red, and
+# rebuilding could not clear them in EITHER configuration, because neither
+# Debug nor Release writes where this was looking. It read as a transport
+# defect for two sessions. A path that names the configuration but not the
+# version is half a path.
+#
 # THE POSIX TARGET FRAMEWORK IS DETECTED, NOT HARDWIRED - fixed 2026-09-02.
 #
 # It said net8.0. That was true of the machine it was written on and false of
@@ -145,7 +160,7 @@ def _posix_tfm():
 
 POSIX_TFM = _posix_tfm()
 
-_WIN_DIR = os.path.join(HOST_PROJECT, "bin", "x64", "Debug")
+_WIN_DIR = os.path.join(HOST_PROJECT, "bin", "x64", "Debug", REVIT_VERSION)
 _POSIX_DIR = os.path.join(HOST_PROJECT, "bin", "x64", "Debug-%s" % POSIX_TFM)
 
 HOST_EXE = os.path.join(_WIN_DIR, "Heron.Bridge.TestHost.exe")
