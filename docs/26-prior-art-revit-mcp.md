@@ -189,3 +189,91 @@ quickly, and not worth being precious about.
 - [PiggyAndrew/revit_mcp](https://github.com/piggyandrew/revit_mcp)
 - [oakplank/RevitMCP](https://github.com/oakplank/RevitMCP)
 - [mcp-server-for-revit-python](https://github.com/mcp-servers-for-revit/mcp-server-for-revit-python)
+
+---
+
+# 8 — Re-check, 2026-09-22: the field moved, and two of the three gaps are now occupied
+
+> Carried out at the owner's request, four weeks after §1–§7. **§4 and §7 above are now partly stale —
+> read this section before relying on them.** Each row is what the project's own documentation states
+> about itself, and adoption figures are recorded because they say what the claims are worth.
+
+## 8.1 Autodesk now ships its own MCP server
+
+| Fact | Source |
+|---|---|
+| **Revit 2027 ships a Public MCP Server (Tech Preview)**, a separate addon downloaded under a Revit 2027 entitlement | [Autodesk AEC blog, 2026-06-17](https://www.autodesk.com/blogs/aec/2026/06/17/revit-public-mcp-server/) |
+| What it does: find elements, check parameters and counts, **bulk parameter edits**, view snapshots, list sessions, open views, select and zoom, export views | [Revit 2027 help](https://help.autodesk.com/cloudhelp/2027/ENU/Revit-WhatsNew/files/GUID-97697CBF-0E11-484E-96E5-4277E3E8D61F.htm) |
+| What it does **not** do: create or modify elements. Autodesk states those arrive later through a **dedicated write server**, read and write kept separate on purpose | Autodesk AEC blog, as above |
+| **Autodesk Assistant** (Tech Preview) — product help, model queries, task automation, inside Revit, Autodesk account required | [Revit 2027 help](https://help.autodesk.com/cloudhelp/2027/ENU/Revit-WhatsNew/files/GUID-68D8FE6D-C5B0-4503-AE27-02C715BAC25B.htm) |
+
+**[NOTE]** Third-party write-ups describe the standalone addon as *seven read-only tools*; Autodesk's own
+page describes bulk parameter editing through the Assistant. The two are not the same surface. What is
+not in dispute: **element creation and modification are not shipped, and are announced as coming.**
+
+**Consequence for Heron.** The tool layer is not merely table stakes ([§7](#7-honest-summary)) — it is on
+a published path to becoming a free Autodesk component. Growing Heron's tool or fragment count toward
+*coverage* is building the part the vendor is commoditising. The version span is the exception:
+Autodesk's is **2027 only**.
+
+## 8.2 Open source closed the write-safety gap
+
+[§4 Gap 2](#gap-2--none-of-them-has-write-safety) said no surveyed project had write safety. That is no
+longer true.
+
+| Project | Revit | Tools | Write safety | Multi-Revit | Adoption |
+|---|---|---|---|---|---|
+| [Al-Qublawi/AB.RevitMcp](https://github.com/Al-Qublawi/AB.RevitMcp) | **2020–2026** | 78 (24 read / 48 write / 6 destructive) | `TransactionGroup` assimilated to **one undo step**; **dry-run executes for real then rolls back and reports the blast radius**; destructive tools need literal `confirm: true`; schema validated twice; **no eval escape hatch** | **named pipes**, ACL'd to the Windows user; simultaneous instances not addressed | MIT, 2 stars, 10 commits |
+| [KenLP/RevitMCPServer](https://github.com/KenLP/RevitMCPServer) | 2025–2027 | 94 | `dryRun: true` on **every** write tool; batch folds N steps into **one atomic undo**, rollback on first failure | **auto-assigned port per Revit *version*** — side-by-side releases, not two of one release | MIT, 10 stars, live-Revit smoke suite plus golden fixtures |
+| [LuDattilo/revit-mcp-server](https://github.com/LuDattilo/revit-mcp-server) | 2023–2027 | 124 | standard transactions, **not** grouped into one undo | — | — |
+
+**What survives of Gap 1.** Nobody matches per-PID pipes plus a discovery directory, session binding and
+a lease ([25](25-multi-session-and-binding.md)). KenLP covers **two versions** open at once, which is the
+common case. Heron covers **two of the same version**, which is the comparison-and-borrowing case
+([25 §6a–6b](25-multi-session-and-binding.md)). The advantage is real, and narrower than §4 claimed.
+
+**What does not survive.** "No rollback mechanism documented in any project surveyed" is out of date. Two
+projects document single-undo grouping and dry-run preview — the substance of
+[Golden Rules 16–21](14-golden-rules.md) — one of them across **2020–2026**, under MIT.
+
+## 8.3 The knowledge layer has a funded commercial occupant
+
+[§7](#7-honest-summary) point 3 claimed everything above the tool layer was unoccupied. Against open
+source, still true. Against the market, no.
+
+[**SWAPP.AI**](https://swapp.ai/) states it is *"grounded in your firm's own standards, QA rules, and
+production history — inside Revit and ArchiCAD"*, builds a persistent model of a firm's standards from
+its existing projects, and turns each correction into memory for the next project. That is Heron's
+[10 §5a](10-memory-and-knowledge.md) thesis, as a product, in two authoring tools.
+
+Adjacent: EvolveLab Glyph (documentation automation), [ArchiLabs](https://archilabs.ai/posts/revit-ai)
+(natural-language automation recipes), Kestrel Labs (in-Revit code compliance), and Autodesk's own free
+Model Checker (rule-based checksets).
+
+## 8.4 What is left that no one else has
+
+1. **Proof discipline.** [D-30](DECISIONS.md): every fragment recorded against a **named model**, with a
+   **negative case** and a **staleness fingerprint** — 328 of 396 at this date. The surveyed projects
+   ship *runtime* safety (dry-run, transaction grouping). None ships *evidence that the operation was
+   ever correct*, kept and re-derivable. A dry-run tells a user what is about to happen; a proof tells
+   them it has been right before. Those are different products.
+2. **Revit 2020–2027 with a write path.** Autodesk: 2027. KenLP: 2025+. AB.RevitMcp: 2020–2026, no 2027.
+   Heron spans all eight releases. This window closes as firms upgrade — a head start, not a moat.
+3. **Two Revits of the same version** ([25](25-multi-session-and-binding.md)).
+
+## 8.5 Revised recommendation
+
+| Decision | Revised position |
+|---|---|
+| Grow fragment count toward coverage | **Stop counting it as progress.** It is the commoditised layer, and 68 fragments have still never met a model |
+| Write safety | **Read [AB.RevitMcp](https://github.com/Al-Qublawi/AB.RevitMcp)'s `TransactionGroup` and dry-run design against Heron's own write path** before assuming Heron's is better. Study it; do not take its code ([31](31-studying-the-existing-libraries.md)) |
+| Autodesk's write server | **Plan to sit on top of it for 2027**, not against it. Heron's own bridge keeps 2020–2026, where Autodesk will not be |
+| Where remaining effort goes | **Proof, standards and the signed audit trail** — and a wedge SWAPP does not hold: **MEP, and Qatar/QCS/Ashghal practice** |
+
+## 8.6 Sources for this section
+
+- [Autodesk — Introducing the Revit Public MCP Server, 2026-06-17](https://www.autodesk.com/blogs/aec/2026/06/17/revit-public-mcp-server/)
+- [Autodesk Revit 2027 help — Revit Public MCP Server (Tech Preview)](https://help.autodesk.com/cloudhelp/2027/ENU/Revit-WhatsNew/files/GUID-97697CBF-0E11-484E-96E5-4277E3E8D61F.htm)
+- [Autodesk Revit 2027 help — Autodesk Assistant (Tech Preview)](https://help.autodesk.com/cloudhelp/2027/ENU/Revit-WhatsNew/files/GUID-68D8FE6D-C5B0-4503-AE27-02C715BAC25B.htm)
+- [Al-Qublawi/AB.RevitMcp](https://github.com/Al-Qublawi/AB.RevitMcp) · [KenLP/RevitMCPServer](https://github.com/KenLP/RevitMCPServer) · [LuDattilo/revit-mcp-server](https://github.com/LuDattilo/revit-mcp-server)
+- [SWAPP.AI](https://swapp.ai/) · [ArchiLabs — Revit 2027 AI review](https://archilabs.ai/posts/revit-2027-ai-review-whats-real-what-still-isnt) · [BIMsmith — what the built-in MCP server does in practice](https://blog.bimsmith.com/Revit-2027-What-the-Built-In-MCP-Server-Actually-Does-in-Practice)
