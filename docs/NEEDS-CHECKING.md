@@ -1012,9 +1012,9 @@ this group.** Before the fix, on `Project1` (3,420 elements), Revit 2024, sessio
 
 | Row | What the model showed | What it meant |
 |---|---|---|
-| **N2** | `Mechanical Supply Air 1 - 0 element(s)`, while both ducts' own `System Name` read that system | `MEPSystem.Elements` is terminals only, in Autodesk's own words. **A defect** - [FRAGMENT-ISSUES](FRAGMENT-ISSUES.md) row 171 |
-| **N9** | `onNoSystem 3`, equal to `mepElementsExamined 3` - as it was, 34 and 34 and 16 and 16, in the 2026-09-19 proof | The equality this row warned about, and N2 is what settled it |
-| **N5** | `withAnOpenConnector 0` on a run with two open ends; the `find-dead-ends` fragment walked the same two ducts and found both | `IsJoined` counted each duct's reference to its own system as a join. **A defect** - row 172 |
+| N2 | `Mechanical Supply Air 1 - 0 element(s)`, while both ducts' own `System Name` read that system | `MEPSystem.Elements` is terminals only, in Autodesk's own words. **A defect** - [FRAGMENT-ISSUES](FRAGMENT-ISSUES.md) row 171 |
+| N9 | `onNoSystem 3`, equal to `mepElementsExamined 3` - as it was, 34 and 34 and 16 and 16, in the 2026-09-19 proof | The equality this row warned about, and N2 is what settled it |
+| N5 | `withAnOpenConnector 0` on a run with two open ends; the `find-dead-ends` fragment walked the same two ducts and found both | `IsJoined` counted each duct's reference to its own system as a join. **A defect** - row 172 |
 
 **After the fix** - fingerprint `7ad8b6c5570fce82`, built and deployed for 2020, 2024 and 2027 - on
 `test projject` (Revit 2024, session 45408, 3,565 elements) and `PIPE` (Revit 2020, session 12684,
@@ -1022,10 +1022,10 @@ this group.** Before the fix, on `Project1` (3,420 elements), Revit 2024, sessio
 
 | Row | Result |
 |---|---|
-| **N2** | **PASS for the run, by a second route.** Every system's `elements` equals the number of elements whose own `System Name` names it: all nine on `PIPE` (37 in all, from 25 pipes and 12 fittings - Hydronic Supply 2 is 6 and 4, and says 10), all ten on `test projject` (one duct or pipe each). **The System Browser half is NOT done**: neither model has a terminal or base equipment on a system, so `components` is 0 throughout and has not been held against anything yet |
-| **N4** | **PASS.** `test projject` holds ten single ducts and pipes joined to nothing, and all ten are listed in `connectedToNothing` with category and level. Each is ALSO on a system Revit made for it alone - Mechanical Supply Air 1 to 8, Hydronic Supply 1 and 2 - which is exactly why the old rule could not see them |
-| **N5** | **PASS.** `PIPE`: `withAnOpenConnector 19`, and `find-dead-ends` over the same 37 pipes and fittings counted 19 elements with an open end - the same unit, by a different mechanism: it asks each connector's own `IsConnected`, where this agent walks `AllRefs`. The totals agree; the two lists were not compared element by element |
-| **N9** | **Premise withdrawn** - see below. On `test projject`, `onNoSystem 6` against `connectedToNothingCount 16`: the six equipment units are both, and the ten ducts and pipes only the second. `read-mep-system`, run separately, puts the same six on no system and the ten on one each |
+| N2 | **PASS for the run, by a second route.** Every system's `elements` equals the number of elements whose own `System Name` names it: all nine on `PIPE` (37 in all, from 25 pipes and 12 fittings - Hydronic Supply 2 is 6 and 4, and says 10), all ten on `test projject` (one duct or pipe each). **The System Browser half is NOT done**: neither model has a terminal or base equipment on a system, so `components` is 0 throughout and has not been held against anything yet |
+| N4 | **PASS.** `test projject` holds ten single ducts and pipes joined to nothing, and all ten are listed in `connectedToNothing` with category and level. Each is ALSO on a system Revit made for it alone - Mechanical Supply Air 1 to 8, Hydronic Supply 1 and 2 - which is exactly why the old rule could not see them |
+| N5 | **PASS.** `PIPE`: `withAnOpenConnector 19`, and `find-dead-ends` over the same 37 pipes and fittings counted 19 elements with an open end - the same unit, by a different mechanism: it asks each connector's own `IsConnected`, where this agent walks `AllRefs`. The totals agree; the two lists were not compared element by element |
+| N9 | **Premise withdrawn** - see below. On `test projject`, `onNoSystem 6` against `connectedToNothingCount 16`: the six equipment units are both, and the ten ducts and pipes only the second. `read-mep-system`, run separately, puts the same six on no system and the ten on one each |
 
 **What the fix changes under these rows, so they are read right from here on:**
 
