@@ -177,9 +177,25 @@ def _target(entry, since):
         undone += 1
     if not undone:
         return None, None, "nothing moved this flag since %s" % since
+    # A FLAG THAT DID NOT EXIST AT THE MOMENT HAS NO STATE TO GO BACK TO.
+    # heron_flags records `was` as the state the change moved AWAY from, so
+    # the FIRST change to a flag carries was="" - there was nothing before
+    # it. Swept on that, this wrote state "" into the table, which is not one
+    # of heron_flags.STATES: set_flag REFUSES it with NOT_A_FLAG_STATE, and
+    # read() answers NOT_A_FLAG_STATE with runs=False, so the component is
+    # off forever and nothing says why - which is the failure read()'s own
+    # comment exists to prevent. It is asked of the flag agent's own
+    # vocabulary rather than compared against a second copy of it. Row 5b-116.
+    if FLG.meaning(target) is None:
+        return None, "NO_STATE_THEN", (
+            "this flag did not exist at %s - the earliest change since then "
+            "records %r as the state it moved away from, and that is not a "
+            "state anything can read. It is left exactly as it is: sweeping "
+            "it to nothing would switch its component off forever with "
+            "nothing saying why." % (since, target))
     return target, None, ("%d change%s since %s, back to %s"
                           % (undone, "" if undone == 1 else "s", since,
-                             target or "(unset)"))
+                             target))
 
 
 def enter(flags, since=None, components=None, origin=None, approval=None):
