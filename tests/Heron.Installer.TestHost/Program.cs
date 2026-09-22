@@ -86,17 +86,43 @@ namespace Heron.Installer.TestHost
         private sealed class FakeDeployer : IProductDeployer
         {
             private readonly Func<HeronProduct, string, DeployOutcome> _behaviour;
+            private readonly Func<HeronProduct, string, DeployOutcome> _removal;
             public readonly List<string> Deployed = new List<string>();
 
+            /// <summary>
+            /// Everything this was asked to do, IN ORDER and with the verb.
+            ///
+            /// The order is a rule rather than a detail - removals happen
+            /// before installs, so a run that takes one product off and puts
+            /// another on cannot leave both.
+            /// </summary>
+            public readonly List<string> Did = new List<string>();
+
             public FakeDeployer(Func<HeronProduct, string, DeployOutcome> behaviour)
+                : this(behaviour, null)
+            {
+            }
+
+            public FakeDeployer(Func<HeronProduct, string, DeployOutcome> behaviour,
+                                Func<HeronProduct, string, DeployOutcome> removal)
             {
                 _behaviour = behaviour;
+                _removal = removal;
             }
 
             public DeployOutcome Deploy(HeronProduct product, string release)
             {
                 Deployed.Add(product.Id + "@" + release);
+                Did.Add("install " + product.Id + "@" + release);
                 return _behaviour(product, release);
+            }
+
+            public DeployOutcome Remove(HeronProduct product, string release)
+            {
+                Did.Add("remove " + product.Id + "@" + release);
+                return _removal != null
+                    ? _removal(product, release)
+                    : DeployOutcome.Ok("'" + product.Name + "' removed from Revit " + release + ".");
             }
         }
 
@@ -735,6 +761,147 @@ namespace Heron.Installer.TestHost
             {
                 try { Directory.Delete(sandbox, true); } catch (IOException) { }
             }
+
+            // ================================================== STAGE 7
+            Console.WriteLine();
+            Console.WriteLine("WHAT IS INSTALLED STARTS TICKED - the safety property R-21 needs");
+            // R-21 says unticking a product uninstalls it. Every product row
+            // used to start EMPTY, so a user who opened this window and
+            // pressed Install without touching anything would have unticked
+            // everything they had - and the press meant to install would have
+            // removed the lot.
+            var here = InstallerScreen.Build(screenManifest, new[] { "2024" }, null,
+                                             new FakeInstalled("piece-one@2024"), null);
+            Check(RowFor(here, "piece-one").Chosen,
+                  "a product that is on the machine starts ticked");
+            Check(!RowFor(here, "piece-two").Chosen,
+                  "and one that is not does not");
+            Check(!RowFor(here, "tab-b").Chosen,
+                  "a greyed row is never ticked - it cannot be installed, so it "
+                  + "cannot be 'kept' either");
+
+            Console.WriteLine();
+            Console.WriteLine("UNTICKING SOMETHING INSTALLED IS AN UNINSTALL - R-21");
+            var both = InstallerScreen.Build(screenManifest, new[] { "2024", "2025" }, null,
+                                             new FakeInstalled("piece-one@2024", "piece-one@2025",
+                                                               "piece-two@2024"), null);
+            var dropped = both.ToRemove(new[] { "piece-two" });
+            Check(dropped.Count == 2,
+                  "the product left unticked comes off every release it is on");
+            Check(dropped[0].Product.Id == "piece-one" && dropped[1].Product.Id == "piece-one",
+                  "and it is the unticked one, not the ticked one");
+            Check(both.ToRemove(new[] { "piece-one", "piece-two" }).Count == 0,
+                  "nothing is removed while everything is still ticked");
+            Check(both.ToRemove(new[] { "piece-one" }).Count == 1,
+                  "and unticking the other takes only that one off");
+
+            Console.WriteLine();
+            Console.WriteLine("A PRODUCT THAT WAS NEVER THERE HAS NOTHING TO REMOVE");
+            var never = InstallerScreen.Build(screenManifest, new[] { "2024" }, null, null, null);
+            Check(never.ToRemove(new string[0]).Count == 0,
+                  "an empty window removes nothing, whatever is unticked");
+
+            Console.WriteLine();
+            Console.WriteLine("A HEADING REMOVES NOTHING OF ITS OWN - D-93");
+            // It installs nothing of its own either. Its pieces are rows in
+            // the same list and are asked about on their own account, so
+            // counting the heading too would delete each piece twice.
+            var headingOff = both.ToRemove(new string[0]);
+            foreach (var step in headingOff)
+                Check(step.Product.Id != "tab-a",
+                      "the tab itself is not in the removal list: " + step.Product.Id);
+            Check(headingOff.Count == 3,
+                  "three pairs come off - two for one piece, one for the other - "
+                  + "and the heading adds none: " + headingOff.Count);
+
+            Console.WriteLine();
+            Console.WriteLine("THE CONFIRMATION NAMES EVERY PRODUCT AND EVERY RELEASE");
+            // A safety gate, not an information message. "3 items will be
+            // removed" is a number somebody clicks past.
+            var ask = InstallerScreen.WhatWillBeRemoved(dropped);
+            Check(Names(ask, "REMOVE", "Piece One", "2024", "2025"),
+                  "it says what goes and from where: " + ask);
+            Check(Names(ask, "not touched"),
+                  "and that the user's own data survives - R-22, which is the "
+                  + "thing somebody about to uninstall is actually worried about");
+            Check(Names(ask, "Restart Revit"),
+                  "and that Revit has to be restarted, because a loaded assembly "
+                  + "goes on being loaded until it is");
+            Check(!Names(ask, "error"), "and it never says 'error' - docs/14");
+            Check(InstallerScreen.WhatWillBeRemoved(never.ToRemove(new string[0])) == null,
+                  "AND THERE IS NO DIALOG WHEN NOTHING IS BEING REMOVED - a "
+                  + "confirmation people meet every time is one they stop reading");
+            Check(InstallerScreen.WhatWillBeRemoved(null) == null,
+                  "nor when there is no list at all");
+
+            Console.WriteLine();
+            Console.WriteLine("REMOVALS HAPPEN BEFORE INSTALLS, and that order is a rule");
+            // THE REMOVAL LISTS BELOW COME FROM A SCREEN, not from steps built
+            // by hand. InstallStep's fields are internal on purpose - a step
+            // is something the plan or the screen decided, never something a
+            // caller fabricates - and asking the screen here means these
+            // checks exercise the path the window actually takes.
+            // A run that takes one product off and puts another on should
+            // leave the machine with the second. Doing the delete last means
+            // a failure part way through leaves BOTH.
+            var order = new FakeDeployer((p, r) => DeployOutcome.Ok("installed"));
+            var onMachine = InstallerScreen.Build(manifest, new[] { "2024" }, null,
+                                                  new FakeInstalled("piece-two@2024"), null);
+            var ordered = new InstallEngine(new FakeRevit(new[] { "2024" }), order)
+                .Apply(manifest, new[] { "piece-one" }, new[] { "2024" },
+                       onMachine.ToRemove(new[] { "piece-one" }));
+            Check(order.Did.Count == 2, "both halves ran");
+            Check(order.Did[0] == "remove piece-two@2024",
+                  "the removal is first: " + order.Did[0]);
+            Check(order.Did[1] == "install piece-one@2024",
+                  "and the install second: " + order.Did[1]);
+            Check(ordered.Removed == 1 && ordered.Installed == 1,
+                  "and the report counts them apart - one removed, one installed");
+
+            Console.WriteLine();
+            Console.WriteLine("AN UNINSTALL WAITS FOR REVIT TOO - R-38a");
+            // Revit holds a loaded assembly whether it is about to be
+            // replaced or deleted, so a release being uninstalled is a
+            // release this run touches.
+            var closing7 = new FakeRevit(new[] { "2024" }, Open("2024"), Open("2024"), Open());
+            var waited7 = new List<string>();
+            var removeOnly = new FakeDeployer((p, r) => DeployOutcome.Ok("x"));
+            var engine7 = new InstallEngine(closing7, removeOnly)
+            { OnWaiting = m => waited7.Add(m), Pause = () => { } };
+            var oneOn = InstallerScreen.Build(manifest, new[] { "2024" }, null,
+                                              new FakeInstalled("piece-one@2024"), null);
+            var report7 = engine7.Apply(manifest, new string[0], new string[0],
+                                        oneOn.ToRemove(new string[0]));
+            Check(waited7.Count == 2,
+                  "it waited while Revit 2024 was open, with nothing to install at all");
+            Check(removeOnly.Did.Count == 1 && removeOnly.Did[0] == "remove piece-one@2024",
+                  "and removed only once Revit had closed");
+            Check(report7.Removed == 1, "and says so");
+
+            Console.WriteLine();
+            Console.WriteLine("ONE REMOVAL FAILING DOES NOT STOP THE REST - R-19");
+            var stubborn = new FakeDeployer(
+                (p, r) => DeployOutcome.Ok("installed"),
+                (p, r) => p.Id == "piece-one"
+                    ? DeployOutcome.Failed("'" + p.Name + "' could not be removed - a file is in use.")
+                    : DeployOutcome.Ok("'" + p.Name + "' removed from Revit " + r + "."));
+            var twoOn = InstallerScreen.Build(manifest, new[] { "2024" }, null,
+                                              new FakeInstalled("piece-one@2024", "piece-two@2024"),
+                                              null);
+            var partly7 = new InstallEngine(new FakeRevit(new[] { "2024" }), stubborn)
+                .Apply(manifest, new string[0], new string[0], twoOn.ToRemove(new string[0]));
+            Check(partly7.Results.Count == 2, "both were attempted");
+            Check(partly7.Removed == 1 && partly7.Failed == 1, "one came off and one did not");
+            Check(stubborn.Did.Count == 2,
+                  "the second was tried even though the first failed");
+
+            Console.WriteLine();
+            Console.WriteLine("NOTHING TICKED AND NOTHING INSTALLED IS NOT A FAILURE");
+            var idle7 = new InstallEngine(new FakeRevit(new[] { "2024" }),
+                                          new FakeDeployer((p, r) => DeployOutcome.Ok("x")))
+                .Apply(manifest, new string[0], new[] { "2024" }, null);
+            Check(idle7.Results.Count == 0 && !idle7.Abandoned,
+                  "an empty apply does nothing and reports no failure");
 
             // ================================================== STAGE 5
             // DRIVEN AGAINST A REAL SERVER ON A REAL PORT. See

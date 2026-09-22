@@ -80,6 +80,32 @@ namespace Heron.Installer
         public string State { get; internal set; }
 
         /// <summary>
+        /// The releases this product's files are actually on this PC for.
+        ///
+        /// KEPT AS A LIST RATHER THAN ROLLED INTO `State`, because uninstall
+        /// needs to know WHICH ones - R-21 removes a product from the releases
+        /// it is on, and "Installed for Revit 2024" is a sentence rather than
+        /// an answer.
+        /// </summary>
+        public IReadOnlyList<string> InstalledFor { get; internal set; }
+
+        /// <summary>
+        /// Whether this row starts TICKED, and it is a safety property rather
+        /// than a convenience.
+        ///
+        /// R-21 SAYS UNTICKING A PRODUCT UNINSTALLS IT. Every product row
+        /// used to start empty, so a user who opened this window and pressed
+        /// Install without touching anything would have been unticking
+        /// everything they had - and the press that was meant to install
+        /// would have removed the lot.
+        ///
+        /// So what is installed starts ticked. Unticking is then something a
+        /// person did on purpose, which is the only ground on which a delete
+        /// may be offered at all.
+        /// </summary>
+        public bool Chosen { get; internal set; }
+
+        /// <summary>
         /// Said on a row that is already installed, BEFORE Install is pressed
         /// - R-23a and Stage 4 item 3b. There is no Update button and no
         /// Repair button, so this is the only place a user is told what
@@ -153,6 +179,16 @@ namespace Heron.Installer
         public IReadOnlyList<ProductRow> Products { get; private set; }
 
         /// <summary>
+        /// The product list this screen was built from.
+        ///
+        /// KEPT so ToRemove can hand the engine a real product rather than an
+        /// id it would have to look up again. A row is what is drawn; a
+        /// HeronProduct is what gets installed or removed, and turning one
+        /// into the other twice in two places is how they come to disagree.
+        /// </summary>
+        private ProductManifest _manifest;
+
+        /// <summary>
         /// Said BEFORE Install is pressed, never after it fails - Stage 4
         /// item 6. Closing Revit is the one thing the user has to do, and the
         /// one thing they will not think of unless they are told.
@@ -201,6 +237,7 @@ namespace Heron.Installer
             if (manifest == null) throw new ArgumentNullException("manifest");
 
             var screen = new InstallerScreen();
+            screen._manifest = manifest;
             var releases = Sorted(installedReleases);
 
             var choices = new List<ReleaseChoice>();
@@ -384,7 +421,16 @@ namespace Heron.Installer
                 Installs = ids,
                 CanBeTicked = ids.Count > 0,
                 State = StateOf(offerable, releases, installed),
+                InstalledFor = Present(offerable, releases, installed),
             };
+
+            // A HEADING IS TICKED WHEN EVERY PIECE UNDER IT IS. Ticked while
+            // one piece was missing would read as "all of this is here", and
+            // the roll-up below would then carry that piece into an install
+            // the user did not ask for.
+            row.Chosen = row.CanBeTicked
+                         && row.InstalledFor.Count > 0
+                         && row.InstalledFor.Count == releases.Count;
 
             if (!row.CanBeTicked)
                 row.WhyNot = "None of the pieces of the " + heading.Name +
@@ -410,7 +456,10 @@ namespace Heron.Installer
                 Installs = new[] { product.Id },
                 CanBeTicked = CanOffer(product, releases),
                 State = StateOf(new[] { product }, releases, installed),
+                InstalledFor = Present(new[] { product }, releases, installed),
             };
+
+            row.Chosen = row.CanBeTicked && row.InstalledFor.Count > 0;
 
             if (!row.CanBeTicked) row.WhyNot = WhyNotOffered(product, releases);
             row.IfYouInstallAgain = Replaces(row.State);
@@ -457,6 +506,124 @@ namespace Heron.Installer
 
             return "'" + product.Name + "' does not run on the Revit found here (" +
                    Join(releases) + "). It supports " + supports + ".";
+        }
+
+        /// <summary>
+        /// Which of the releases on this PC these products are all present on.
+        ///
+        /// ALL OF THEM, NOT ANY. A heading is installed for a release only
+        /// when every piece under it is, for the same reason its tick is only
+        /// set then.
+        /// </summary>
+        private static IReadOnlyList<string> Present(IList<HeronProduct> products,
+                                                     IList<string> releases,
+                                                     IInstalledProducts installed)
+        {
+            var found = new List<string>();
+            if (installed == null || products.Count == 0) return found;
+
+            foreach (var release in releases)
+            {
+                var all = true;
+                foreach (var product in products)
+                {
+                    if (!product.SupportsRevit(release)) { all = false; break; }
+                    if (!installed.IsInstalled(product, release)) { all = false; break; }
+                }
+                if (all) found.Add(release);
+            }
+
+            return found;
+        }
+
+        /// <summary>
+        /// What an apply would REMOVE - R-21, uninstall is the same window.
+        ///
+        /// A product that is on this PC and is no longer ticked. Nothing else
+        /// qualifies: a row that was never installed has nothing to remove,
+        /// and a row that is still ticked is being kept or replaced.
+        ///
+        /// THE RELEASES ARE THE ONES IT IS ACTUALLY ON, not the ones ticked
+        /// at the top of the window. Unticking a product means "I do not want
+        /// this", not "I do not want this on the releases I happen to have
+        /// highlighted" - and removing it from two of three Revits would
+        /// leave a state nobody asked for and nothing would say so.
+        /// </summary>
+        public IReadOnlyList<InstallStep> ToRemove(IEnumerable<string> tickedRowIds)
+        {
+            var going = new List<InstallStep>();
+            var ticked = tickedRowIds == null
+                ? new List<string>()
+                : new List<string>(tickedRowIds);
+
+            foreach (var row in Products)
+            {
+                // A HEADING REMOVES NOTHING OF ITS OWN, exactly as it installs
+                // nothing of its own - D-93. Its pieces are rows in this same
+                // list and are asked about on their own account.
+                if (row.IsHeading) continue;
+                if (ticked.Contains(row.Id)) continue;
+                if (row.InstalledFor == null) continue;
+
+                var product = _manifest.Find(row.Id);
+                if (product == null) continue;
+
+                foreach (var release in row.InstalledFor)
+                    going.Add(new InstallStep { Product = product, Release = release });
+            }
+
+            return going;
+        }
+
+        /// <summary>
+        /// What to ask before anything is deleted, or null when nothing is.
+        ///
+        /// A SAFETY GATE, NOT AN INFORMATION MESSAGE. The house rule is that
+        /// anything which deletes must confirm first and say what will happen
+        /// and to how much - and this is one of the very few dialogs Heron is
+        /// allowed to show at all.
+        ///
+        /// IT NAMES EVERY PRODUCT AND EVERY RELEASE, rather than counting
+        /// them. "3 items will be removed" is a number somebody clicks past;
+        /// "'AI Bridge connector' from Revit 2020, 2024 and 2027" is a list
+        /// they can check against what they meant to do.
+        ///
+        /// AND IT SAYS WHAT SURVIVES. R-22: the product's files go and the
+        /// user's own data does not. Somebody about to uninstall is somebody
+        /// worried about losing work, and the sentence that answers that has
+        /// to be in front of them at the moment they decide.
+        /// </summary>
+        public static string WhatWillBeRemoved(IEnumerable<InstallStep> removals)
+        {
+            if (removals == null) return null;
+
+            var byProduct = new List<string>();
+            var names = new List<string>();
+            var releasesOf = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+
+            foreach (var step in removals)
+            {
+                if (step == null || step.Product == null) continue;
+                var name = step.Product.Name ?? step.Product.Id;
+                if (!releasesOf.ContainsKey(name))
+                {
+                    releasesOf[name] = new List<string>();
+                    names.Add(name);
+                }
+                if (!releasesOf[name].Contains(step.Release)) releasesOf[name].Add(step.Release);
+            }
+
+            if (names.Count == 0) return null;
+
+            foreach (var name in names)
+                byProduct.Add("'" + name + "' from Revit " + Join(releasesOf[name]));
+
+            return "This will REMOVE " + string.Join("; ", byProduct.ToArray()) + "." +
+                   Environment.NewLine + Environment.NewLine +
+                   "Restart Revit afterwards to unload it." +
+                   Environment.NewLine + Environment.NewLine +
+                   "Your own Heron data is not touched - settings, the audit log and " +
+                   "anything Heron has learned all stay where they are.";
         }
 
         private static string StateOf(IList<HeronProduct> products,

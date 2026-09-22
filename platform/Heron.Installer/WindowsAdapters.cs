@@ -676,6 +676,50 @@ namespace Heron.Installer
                 "'" + product.Name + "' installed for Revit " + release + ".");
         }
 
+        public DeployOutcome Remove(HeronProduct product, string release)
+        {
+            if (product == null) throw new ArgumentNullException("product");
+
+            var script = Path.Combine(_repoRoot, "tools", "deploy-addin.ps1");
+            if (!File.Exists(script))
+            {
+                return DeployOutcome.Failed(
+                    "'" + product.Name + "' could not be removed: the deploy script " +
+                    "is missing from " + script + ". Nothing was changed.");
+            }
+
+            // NOTHING IS DOWNLOADED TO DELETE SOMETHING. -Remove needs no
+            // build and no asset - it reads the product list for the folder
+            // name and takes that folder out. Fetching first would make an
+            // uninstall depend on a network, which is the one operation a
+            // user reaches for when things are already going wrong.
+            var run = PowerShellRunner.Run(new[]
+            {
+                "-File", script,
+                "-RevitVersion", release,
+                "-Product", product.Id,
+                "-Remove",
+            }, 600);
+
+            if (!run.Started)
+            {
+                return DeployOutcome.Failed(
+                    "'" + product.Name + "' could not be removed: Windows PowerShell " +
+                    "would not start. Nothing was changed. (" + run.Output + ")");
+            }
+
+            if (run.ExitCode != 0)
+            {
+                return DeployOutcome.Failed(
+                    "'" + product.Name + "' was not removed from Revit " + release +
+                    ". " + LastMeaningfulLine(run.Output));
+            }
+
+            return DeployOutcome.Ok(
+                "'" + product.Name + "' removed from Revit " + release +
+                ". Restart Revit to unload it.");
+        }
+
         /// <summary>
         /// The script's own last complaint, which is the sentence written for
         /// a person. Handing back the whole transcript would bury it.

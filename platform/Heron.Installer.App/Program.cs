@@ -93,9 +93,10 @@ namespace Heron.Installer.App
 
             var window = new InstallerWindow(screen, VersionOf(manifest));
             window.InstallPressed += delegate (IReadOnlyList<string> products,
-                                               IReadOnlyList<string> releases)
+                                               IReadOnlyList<string> releases,
+                                               IReadOnlyList<InstallStep> removals)
             {
-                Install(window, manifest, revit, deployer, products, releases);
+                Install(window, manifest, revit, deployer, products, releases, removals);
             };
 
             return new Application().Run(window);
@@ -111,7 +112,8 @@ namespace Heron.Installer.App
                                     IRevitEnvironment revit,
                                     IProductDeployer deployer,
                                     IReadOnlyList<string> products,
-                                    IReadOnlyList<string> releases)
+                                    IReadOnlyList<string> releases,
+                                    IReadOnlyList<InstallStep> removals)
         {
             var engine = new InstallEngine(revit, deployer);
             engine.Pause = delegate { Thread.Sleep(1000); };
@@ -122,7 +124,7 @@ namespace Heron.Installer.App
 
             var worker = new Thread(delegate ()
             {
-                var report = engine.Install(manifest, products, releases);
+                var report = engine.Apply(manifest, products, releases, removals);
                 window.Dispatcher.Invoke(delegate { window.Report(report); });
             });
             worker.IsBackground = true;

@@ -389,6 +389,37 @@ rather than a stage.
 
 ---
 
+### Q-PE-15 — R-27 wants an audit line from a thing that may not reference the audit log
+
+**Waiting on:** the owner. **Raised 2026-09-22**, building Stage 7.
+
+[R-27](01-requirements.md) says every install, uninstall and update writes an **audit line**, through
+[`HeronAudit`](../../../../platform/Heron.Core/HeronAudit.cs).
+
+**The installer cannot reference `Heron.Core`, and that is deliberate.**
+[`Heron.Installer.csproj`](../../../../platform/Heron.Installer/Heron.Installer.csproj) says so in its
+own comment: *"net8.0, NOT net8.0-windows, and NOT referencing Heron.Core — the engine is
+release-independent and Heron.Core is not."* Referencing it would pin the installer to whichever Revit
+release happened to be building, which is exactly what [Stage 4](02-implementation.md) already tried
+and undid once for `HeronPaths`.
+
+**So R-27 is written against a route that does not exist**, and nothing had noticed because nothing had
+tried to write an audit line from the installer before.
+
+| | What it costs |
+|---|---|
+| The installer writes the line **itself**, in the same format | a second writer of one log, and the format then lives in two places |
+| `deploy-addin.ps1` writes it, since it already runs per operation and is release-independent | a third language writing the log, but the script is already the one thing that touches every install |
+| A small release-independent audit assembly both can reference | a new project, and the honest answer if the log matters |
+| R-27 stays **SHOULD** and is not met by the installer | truthful, and the reason is recorded here |
+
+**It is a SHOULD, not a MUST**, which is why Stage 7 was built without it rather than stopping. But an
+uninstall that leaves no trace is the operation you most want a trace of.
+
+**Blocks:** nothing. It leaves [Stage 7](02-implementation.md) item 5 unmet and says so.
+
+---
+
 ## 3. Brainstorm parking
 
 > Nothing here is agreed. Add freely. An idea that keeps mattering becomes a question in §2.

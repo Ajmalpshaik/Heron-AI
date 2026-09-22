@@ -109,5 +109,18 @@ namespace Heron.Installer
     public interface IProductDeployer
     {
         DeployOutcome Deploy(HeronProduct product, string release);
+
+        /// <summary>
+        /// Take one product's files out of one Revit - R-21.
+        ///
+        /// THE SAME SCRIPT, THE SAME RULES. tools\deploy-addin.ps1 -Remove is
+        /// what deletes, and it has been proven on a real machine: it refuses
+        /// while Revit is open, it backs up first so -Rollback has somewhere
+        /// to go, and it deletes this product's folder under this release and
+        /// nothing else. A second delete rule written in C# would be one of
+        /// two, and R-22 says the user's data survives - which is a promise
+        /// worth keeping in one place only.
+        /// </summary>
+        DeployOutcome Remove(HeronProduct product, string release);
     }
 }

@@ -747,7 +747,29 @@ wanted; whether that question is the right one to ask is a matter for a modeller
 
 ## Stage 7 — Uninstall, update, and a rollback that has been tested
 
-**Status: NOT STARTED**
+**Status: BUILT, NOT PROVEN — 2026-09-22. Item 5 is NOT MET and says why.**
+
+> **UNINSTALL IS THE SAME WINDOW, and the hard part was not the deleting.** `tools/deploy-addin.ps1`
+> already had `-Remove`, proven on a real machine by `AA4`. What Stage 7 adds is the window driving it
+> — and the safety property without which `R-21` is a disaster.
+>
+> **EVERY PRODUCT ROW USED TO START EMPTY.** If unticking a product uninstalls it, then a user who
+> opened this window and pressed Install **without touching anything** would have unticked everything
+> they had, and the press meant to install would have **removed the lot**. So what is installed now
+> starts **ticked**, and unticking is something a person did on purpose — the only ground on which a
+> delete may be offered at all.
+>
+> **AND IT CONFIRMS, NAMING WHAT GOES.** *"This will REMOVE 'AI Bridge connector' from Revit 2020, 2024
+> and 2027"*, with the reminder that Revit needs restarting and that **the user's own Heron data is not
+> touched** — `R-22`, and the thing somebody about to uninstall is actually worried about. The dialog
+> **defaults to No**: a delete must not be one stray Enter away. Saying no changes nothing at all.
+>
+> **REMOVALS RUN BEFORE INSTALLS**, because a run that takes one product off and puts another on should
+> leave the machine with the second. Doing the delete last means a failure part way through leaves
+> **both**.
+>
+> **NOT PROVEN.** No window has been drawn and nothing has been deleted from a real Addins folder.
+> `AD1` to `AD4` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) are that debt.
 
 ### Do
 
@@ -760,6 +782,25 @@ wanted; whether that question is the right one to ask is a matter for a modeller
    `rollback_tested`.
 5. Audit line per operation ([R-27](01-requirements.md)) through
    [`HeronAudit`](../../../../platform/Heron.Core/HeronAudit.cs).
+   **NOT MET, and it cannot be met this way** — the installer may not reference `Heron.Core`, which its
+   own `.csproj` says in as many words: the engine is release-independent and `Heron.Core` is not.
+   R-27 is written against a route that does not exist. [Q-PE-15](03-open-questions.md) holds the four
+   ways out; it is a SHOULD, so Stage 7 was built without it rather than stopping.
+
+### Where it actually stands — the four states, kept apart
+
+| | |
+|---|---|
+| **PASS** | The uninstall decisions, against a fake Revit and a fake disk: an installed product **starts ticked**; unticking removes it from **every release it is on** and not from the ones merely highlighted; a heading removes nothing of its own; removals run **before** installs; an uninstall **waits for Revit** exactly as an install does; one removal failing does not stop the rest |
+| **PASS** | The confirmation names every product and every release, says data survives, says to restart Revit, never says "error", and **does not appear at all when nothing is being removed** — a dialog people meet every time is one they stop reading |
+| **PASS** | `tests/test_installer_window.py` — the window confirms **before** handing the work off, the dialog defaults to **No**, what comes off is the screen's decision, and there are still exactly **two** buttons |
+| **NOT RUN** | **Nothing has been deleted from a real Addins folder**, and no window has been drawn. `DeployScriptDeployer.Remove` has never executed a line |
+| **NOT MET** | Item 5, the audit line — [Q-PE-15](03-open-questions.md) |
+| **NEEDS REAL REVIT** | Every line under *Done when* below, and `AD1` to `AD4` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) |
+
+**Rollback is not in the window, and that is on purpose.** [R-23a](01-requirements.md) allows no third
+button, and `-Rollback` is one command in a script a person runs deliberately after an update has gone
+wrong. It was **proven on a real machine** by `AA8` on 2026-09-21, which is what item 4 asks for.
 
 ### Done when
 

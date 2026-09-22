@@ -263,6 +263,40 @@ def main():
           "and it is added to the page above the button, not after a failure")
 
     print()
+    print("UNINSTALL IS THE SAME WINDOW, AND IT CONFIRMS FIRST - R-21, R-22")
+    # The house rule: anything that deletes must confirm first, stating what
+    # will happen and to how much. It is one of the very few dialogs Heron is
+    # allowed to show at all, and it is a safety gate rather than an
+    # information message.
+    check("WhatWillBeRemoved" in window_code,
+          "the window asks the screen what would be removed")
+    check("MessageBox.Show" in window_code,
+          "and confirms before anything is deleted")
+    confirm_at = window_code.find("InstallerScreen.WhatWillBeRemoved")
+    raise_at = window_code.find("handler(products, releases, removals)")
+    check(confirm_at != -1, "the confirmation is built at all")
+    check(raise_at != -1, "and the install is still raised as an event")
+    check(confirm_at != -1 and raise_at != -1 and confirm_at < raise_at,
+          "and the question comes BEFORE the work is handed off, so saying no "
+          "stops it rather than undoing it")
+    check("MessageBoxResult.No" in window_code,
+          "the dialog DEFAULTS TO NO - a delete must not be one stray Enter away")
+    check("_screen.ToRemove" in window_code,
+          "and what comes off is the screen's decision, not the window's")
+    # THE SAFETY PROPERTY WITHOUT WHICH R-21 IS A DISASTER. Rows used to start
+    # empty; if unticking removes, then opening the window and pressing
+    # Install would have removed everything.
+    check("IsChecked = row.Chosen" in window_code,
+          "an installed product starts TICKED, so unticking it is deliberate")
+    check("Chosen" in screen_code and "InstalledFor" in screen_code,
+          "and whether it starts ticked is decided by the screen, where it can "
+          "be tested")
+    # The button still says Install and there are still two of them - R-23a
+    # is not loosened by adding an uninstall path.
+    check(window.count("new Button") == 2,
+          "there are still exactly two buttons, not a third for Remove")
+
+    print()
     print("A tab's tick moves its pieces, and it is wired AFTER the list exists")
     check("Follow(" in window_code, "the tab and its pieces are tied together")
     # A heading is drawn before its pieces, so wiring it inside the drawing
