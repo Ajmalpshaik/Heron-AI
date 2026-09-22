@@ -1017,6 +1017,21 @@ def main(argv):
         print('  python brain/heron_search.py "select all ducts"')
         return 2
 
+    # A FLAG THIS TOOL DOES NOT HAVE BECAME PART OF THE QUESTION. Every
+    # argument is joined into the sentence that is asked, so
+    # `heron_search.py "how thick is duct insulation" --top 5` printed
+    # "Asked:  how thick is duct insulation --top 5" and answered it - a typo
+    # searched for, and its miss reported as a measured result rather than as
+    # a typo. That is heron_retrieve.main's recorded reason for refusing
+    # unknown flags by name, one module along. REFUSED BEFORE THE STORE IS
+    # OPENED, so a typo costs nothing. Row 5b-112.
+    unknown = [word for word in argv if word.startswith("-")]
+    if unknown:
+        print("  not a flag this tool has: %s" % " ".join(unknown))
+        print('  python brain/heron_search.py "select all ducts"')
+        print("  this tool takes a question and no flags at all")
+        return 2
+
     store = SCOPE.open_scope(SCOPE.GLOBAL)
     try:
         # UNPACKED, because `index()` returns a PAIR now. It returned a bare

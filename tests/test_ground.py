@@ -33,6 +33,7 @@ WHAT ELSE IT PROVES
      count with no denominator is not a measurement.
 """
 
+import io
 import os
 import shutil
 import sys
@@ -458,6 +459,55 @@ def main():
         shutil.rmtree(home, ignore_errors=True)
         shutil.rmtree(papers, ignore_errors=True)
         os.environ.pop("HERON_KNOWLEDGE", None)
+    print()
+
+    print("12. A flag this tool does not have is refused, not dropped")
+    # ROW 5b-112. main() takes --draft and --question and IGNORES everything
+    # else, so a typo'd flag was dropped without a word and the check ran on
+    # as though nothing had been typed. Measured before the fix:
+    #
+    #   heron_ground.py --draft <file> --question "duct insulation" --rebuild
+    #     -> the flag vanished, the store was opened, and the answer came
+    #        back about the question alone
+    #
+    # EXIT 2 IS GREEN EITHER WAY HERE, which is why it is not the check: an
+    # empty store already refuses with 2. What separates the two is WHAT IS
+    # SAID - the flag named, and the store never reached.
+    typo_home = tempfile.mkdtemp(prefix="heron-ground-typo-")
+    was = os.environ.get("HERON_KNOWLEDGE")
+    os.environ["HERON_KNOWLEDGE"] = typo_home
+    draft = os.path.join(typo_home, "draft.txt")
+    try:
+        with open(draft, "w", encoding="utf-8") as handle:
+            handle.write("Ducts shall be insulated to 25mm [9.1.1]\n")
+        said = io.StringIO()
+        try:
+            import contextlib
+            with contextlib.redirect_stdout(said):
+                code = G.main(["--draft", draft,
+                               "--question", "duct insulation", "--rebuild"])
+        except BaseException as raised:      # noqa: BLE001 - that IS the check
+            code = None
+            check(False, "an unknown flag is refused rather than raising %s"
+                         % type(raised).__name__)
+        if code is not None:
+            spoke = said.getvalue()
+            check(code == 2, "it exits 2 - true before this rule as well, "
+                             "which is why the next three are the check")
+            check("--rebuild" in spoke,
+                  "the flag is NAMED rather than dropped in silence")
+            check("not a flag this tool has" in spoke,
+                  "in the house words, the ones heron_retrieve, heron_conflict "
+                  "and heron_research all use")
+            check("NO DOCUMENT IS INDEXED" not in spoke,
+                  "and the store is never opened - a typo costs nothing, "
+                  "which is what row 5b-104 asked of the same shape")
+    finally:
+        shutil.rmtree(typo_home, ignore_errors=True)
+        if was is None:
+            os.environ.pop("HERON_KNOWLEDGE", None)
+        else:
+            os.environ["HERON_KNOWLEDGE"] = was
     print()
 
     if FAILURES:

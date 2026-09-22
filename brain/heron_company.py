@@ -469,6 +469,22 @@ def main(argv):
         words.append(argv[i])
         i += 1
 
+    # AND A FLAG THIS TOOL DOES NOT HAVE IS REFUSED BY NAME, which is what the
+    # comment above this loop has claimed all along. Only --subject and
+    # --stage were ever stopped, so `--scope project` went straight into the
+    # question and the answer read "the company standard has no answer to
+    # 'how thick is duct insulation --scope project'" at exit 0 - the miss
+    # reported as a measurement, which is the one thing that comment exists to
+    # prevent. Row 5b-104 closed this door for the two flags it has and left
+    # it open for every other. heron_retrieve has refused unknown flags by
+    # name since 2026-08-30, in these words. Row 5b-112.
+    unknown = [word for word in words if word.startswith("-")]
+    if unknown:
+        print("\n  not a flag this tool has: %s" % " ".join(unknown))
+        print('  python brain/heron_company.py "how thick is duct insulation"')
+        print("  the flags are --subject and --stage, and each takes a value")
+        return 2
+
     picked, refusal = resolve(subject, stage)
     if refusal is not None:
         print("\n%s  %s" % (refusal["refused"], refusal["why"]))

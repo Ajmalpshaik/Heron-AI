@@ -1080,6 +1080,21 @@ def main(argv):
         draft_path = argv[i + 1] if i + 1 < len(argv) else None
         del argv[i:i + 2]
 
+    # A FLAG THIS TOOL DOES NOT HAVE WAS DROPPED WITHOUT A WORD, and the check
+    # then ran on as though nothing had been typed. Measured before this:
+    # `--draft <file> --question "duct insulation" --rebuild` lost the flag,
+    # opened the store and answered the question alone. heron_retrieve.main
+    # states the reason this is refused rather than ignored - a typo silently
+    # searched for "reads as a measured result rather than a typo" - and
+    # heron_conflict and heron_research answer in the same words. REFUSED
+    # BEFORE THE BRAIN IMPORTS, so a typo costs nothing. Row 5b-112.
+    unknown = [word for word in argv if word.startswith("-")]
+    if unknown:
+        print("  not a flag this tool has: %s" % " ".join(unknown))
+        print('  python brain/heron_ground.py --draft <file> --question "..."')
+        print("  the flags are --draft and --question, and each takes a value")
+        return 2
+
     if not draft_path or not question:
         print('  python brain/heron_ground.py --draft <file> --question "..."')
         print("  the draft is checked against the clauses the question")
