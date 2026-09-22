@@ -242,7 +242,9 @@ async def exercise(server):
         label = getattr(tool, "annotations", None)
         got = (label.model_dump(by_alias=True, exclude_none=True)
                if label is not None else {})
-        # Only the three hints the registry derives are compared; a title,
+        # The hints are compared and nothing else: the three the registry
+        # derives, and openWorldHint, which it deliberately leaves unset - so
+        # one appearing from anywhere else is a label nobody derived. A title,
         # if the SDK adds one, says nothing about what the tool can change.
         got = dict((k, v) for k, v in got.items()
                    if k in ("readOnlyHint", "destructiveHint", "idempotentHint",

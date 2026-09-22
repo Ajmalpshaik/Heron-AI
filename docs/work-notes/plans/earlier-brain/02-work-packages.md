@@ -11,7 +11,7 @@
 | Package | Builds | Runs in | Wave | Needs first | State |
 |---|---|---|---|---|---|
 | **C1** | Guards and checks that run in every session | cloud | 1 | — | not started |
-| **C2** | The MCP server: a read-only door, rules for every chat, safety labels, the preview decision | cloud | 1 | owner decision **D1** | built, draft PR, waiting for the owner - D1 answered **B** (keep changing at once), recorded as [D-99](../../../DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so); PC proofs are [NEEDS-CHECKING Group AE](../../../NEEDS-CHECKING.md) |
+| **C2** | The MCP server: a read-only door, rules for every chat, safety labels, the preview decision | cloud | 1 | owner decision **D1** | built, draft PR [#307](https://github.com/Ajmalpshaik/Heron-AI/pull/307), waiting for the owner - D1 answered **B** (keep changing at once), recorded as [D-99](../../../DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so); PC proofs are [NEEDS-CHECKING Group AE](../../../NEEDS-CHECKING.md) |
 | **C3** | Add-in safety (Revit failure handling, "changed in central?") and an API signature lookup | cloud, then PC | 1 | — | not started |
 | **C4** | Revit traps written into the fragments they affect | cloud, then PC | 1 | — | not started |
 | **C5** | The owner's words and standards — knowledge, not language | cloud, then PC | 2 | C2 merged | not started |
