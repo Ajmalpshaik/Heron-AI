@@ -124,6 +124,57 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — THE SCAFFOLDER WROTE `Heron-Step: banana` AND EXITED 0
+
+**[Row 5b-144](FRAGMENT-ISSUES.md), FIXED.** `tools/new-agent.py` read end to end — 410 lines.
+
+It puts three things into a header: the part's layer, the module name, and the step. **`--part` is
+checked against a list, `--module` against a pattern, and `--step` was not checked at all.** Measured:
+
+```
+new-agent.py HERON-DEV-ARC-003 --step banana
+  ->  "written" three times, exit 0
+  ->  # Heron-Step:   banana   in the module AND the test
+```
+
+Its own docstring is why that matters:
+
+> *"Done by hand 146 times that is 146 chances to mistype a layer, invent a field, or copy a header from
+> a file in a different part — and **check-metadata.py finds the mistake after the work, not before
+> it**."*
+
+**And `check-metadata` would not name it**, traced rather than assumed: line 235 asks only that the
+five fields are *present*, and the step arithmetic at lines 188 and 276 is guarded by `.isdigit()` — so
+a file whose step is not a number is quietly left out of the counts rather than reported.
+
+#### The suite had never asserted anything it writes
+
+`tests/test_new_agent.py` already owned this tool and **every one of its cases was a refusal**. It says
+so itself: *"EVERY CASE BELOW WRITES NOTHING … this runs inside the real repository, because the
+register and the module list are what it is asserting against."* Extended rather than duplicated, with
+the write cases pointed at a temp tree and `NA.ROOT`/`NA.register` put back afterwards — and a final
+check that the real repository is untouched.
+
+#### A negative result made permanent, and it is the valuable half
+
+The module template argues at length that the stub must **not** claim the agent, because
+`agent-count.py` reads any commented `Heron-Agent` line in the first 40 lines *including one quoted
+inside a docstring* — so an example of the line would raise the built count for work nobody has done.
+**Nothing checked that the template obeys its own argument.** Measured: both templates declare exactly
+`Heron-Agent:  none`, and the agent id appears only in prose. It is asserted now, on both files.
+
+| Break | Red |
+|---|---|
+| **the module as found** | **5** |
+| the stub claiming the agent in its header | 2 |
+| the layer no longer following the part | 1 |
+| a stub claiming DRAFT rather than DISCOVERED | 1 |
+| writing one file at a time instead of all-three-or-none | 1 |
+
+**Nothing was written into the repository** — checked with `git status` after the run.
+
+---
+
 ### 2026-09-22 — THE RESTORE CARRIED ON AFTER A SAFETY COPY IT COULD NOT TAKE
 
 **[Row 5b-143](FRAGMENT-ISSUES.md), FIXED.** `tools/heron-backup.py` read end to end — 454 lines, the

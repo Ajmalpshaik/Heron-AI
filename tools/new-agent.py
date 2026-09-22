@@ -301,6 +301,26 @@ def main(argv):
         print("--part must be one of: %s" % ", ".join(PARTS))
         return 2
 
+    # THE THIRD OF THE THREE THINGS THIS TOOL PUTS IN A HEADER, and the only
+    # one nothing checked. `--part` is checked against a list above and
+    # `--module` against a pattern below; `--step` went straight into the
+    # template. MEASURED 2026-09-22: `--step banana` wrote
+    # `# Heron-Step:   banana` into the module AND the test, printed "written"
+    # three times, and exited 0 - in the tool whose own docstring says the
+    # reason it exists is that "check-metadata.py finds the mistake after the
+    # work, not before it".
+    #
+    # AND check-metadata WOULD NOT NAME IT. It asks that the five fields are
+    # PRESENT, and its step arithmetic is guarded by `.isdigit()`, so a file
+    # with a step that is not a number is quietly left out of the counts
+    # rather than reported.
+    if not str(step).isdigit():
+        print("--step must be a number: got '%s'" % step)
+        print("It goes straight into the Heron-Step header of two files, and")
+        print("check-metadata.py only asks that the field is THERE - a step")
+        print("that is not a number is left out of its counts in silence.")
+        return 2
+
     agents, claims = register()
 
     if agent not in agents:

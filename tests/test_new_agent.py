@@ -27,6 +27,31 @@ WHAT IT PROVES
   5. NOTHING IS WRITTEN BY ANY OF THEM. Checked by listing the tree
      before and after, not by reading the code.
 
+  6. A --step THAT IS NOT A NUMBER IS REFUSED. `--part` is checked against
+     a list and `--module` against a pattern; `--step` was not checked at
+     all, and it is the third of the three things this tool puts in a
+     header. Measured 2026-09-22: `--step banana` wrote
+     `# Heron-Step:   banana` into the module AND the test, printed
+     "written" three times and exited 0 - in the tool whose stated reason
+     for existing is that "check-metadata.py finds the mistake AFTER the
+     work, not before it". check-metadata asks only that the five fields
+     are PRESENT, and its step arithmetic is guarded by `.isdigit()`, so
+     such a file is quietly left out of the counts rather than named.
+
+  7. WHAT IT WRITES WHEN IT DOES WRITE. Claims 1 to 5 are all refusals, so
+     nothing asserted anything about the three files themselves. These
+     cases build a tree in a temp folder and point the tool at it - the
+     refusals above run against the REAL register on purpose, and a write
+     case must not.
+
+  8. THE STUB DOES NOT CLAIM THE AGENT. The module's own docstring argues
+     at length that it must not, because agent-count.py reads any commented
+     Heron-Agent line in the first 40 lines of a file - including one quoted
+     inside a docstring - so an EXAMPLE of the line would raise the built
+     count for work nobody has done. Nothing checked that the template it
+     writes actually obeys its own argument. A negative result, made
+     permanent.
+
 WHY IT EXISTS - PROPOSALS F41
 ------------------------------
 The scaffolder had no suite at all. It derived heron_regression_test.py
@@ -44,7 +69,10 @@ first write, which is the property claim 5 exists to keep true.
 import importlib.util
 import io
 import os
+import re
+import shutil
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -208,6 +236,85 @@ def main():
     check(after == before,
           "the tree is unchanged: %s" % (sorted(after - before) or "nothing "
                                          "added"))
+
+    # ------------------------------------------------------------------
+    # 6, 7 and 8 POINT THE TOOL AT A TREE OF ITS OWN. Everything above runs
+    # against the real register because the refusals are ABOUT the real
+    # register. A case that writes must not, so ROOT and register() are
+    # pointed elsewhere and put back.
+    # ------------------------------------------------------------------
+    home = tempfile.mkdtemp(prefix="heron-new-agent-")
+    was_root, was_register = NA.ROOT, NA.register
+    try:
+        for folder in ("brain/agents", "brain", "tests", "docs"):
+            full = os.path.join(home, *folder.split("/"))
+            if not os.path.isdir(full):
+                os.makedirs(full)
+        NA.ROOT = home
+        NA.register = lambda: (
+            {"HERON-DEV-ARC-003": {"name": "Architecture Agent",
+                                   "dept": "Development", "tier": "T2"}}, {})
+
+        def wrote():
+            return sorted(os.path.relpath(os.path.join(b, f), home)
+                          .replace(os.sep, "/")
+                          for b, _d, fs in os.walk(home) for f in fs)
+
+        print("\n6. a --step that is not a number is refused")
+        code, said = run(["HERON-DEV-ARC-003", "--step", "banana"])
+        check(code == 2, "a non-numeric --step exits 2, and it exited %r" % code)
+        check(not wrote(),
+              "and nothing is written - it wrote %r" % (wrote(),))
+        check("step" in said.lower(),
+              "and it says which option, like --part and --module do")
+
+        print("\n7. what it writes when it does write")
+        code, said = run(["HERON-DEV-ARC-003", "--step", "15"])
+        made = wrote()
+        check(code == 0, "a good command exits 0, and it exited %r" % code)
+        check(made == ["brain/agents/HERON-DEV-ARC-003.yaml",
+                       "brain/heron_architecture.py",
+                       "tests/test_architecture.py"],
+              "all three files and nothing else - it wrote %r" % (made,))
+        module = io.open(os.path.join(home, "brain", "heron_architecture.py"),
+                         encoding="utf-8").read()
+        header = module.splitlines()[:8]
+        check(any(one.strip() == "# Heron-Step:   15" for one in header),
+              "the step is the one that was asked for")
+        check(any(one.strip() == "# Heron-Layer:  brain" for one in header),
+              "and the layer is the one the part maps to")
+        check(any(one.strip() == "# Heron-Status: DISCOVERED" for one in header),
+              "and the status is DISCOVERED - identity assigned, nothing "
+              "proven")
+
+        print("\n8. the stub does not claim the agent")
+        for where, text in (("module", module),
+                            ("test", io.open(os.path.join(
+                                home, "tests", "test_architecture.py"),
+                                encoding="utf-8").read())):
+            first = text.splitlines()[:40]
+            claimed = [one for one in first
+                       if re.match(r"^\s*#\s*Heron-Agent\s*:", one)]
+            check(claimed == ["# Heron-Agent:  none"],
+                  "the %s declares exactly `Heron-Agent: none`, and it "
+                  "declares %r" % (where, claimed))
+            check(not any(re.match(r"^\s*#\s*Heron-Agent\s*:\s*HERON-", one)
+                          for one in first),
+                  "and no line in its first 40 reads as a claim on the %s - "
+                  "agent-count.py would count it" % where)
+
+        print("\n9. a second run over its own output refuses, all three or none")
+        code, said = run(["HERON-DEV-ARC-003", "--step", "15"])
+        check(code == 1, "the second run exits 1, and it exited %r" % code)
+        check(wrote() == made, "and the tree is exactly as it was")
+        check("Nothing was written" in said,
+              "and it says so rather than reporting a partial success")
+    finally:
+        NA.ROOT, NA.register = was_root, was_register
+        shutil.rmtree(home, ignore_errors=True)
+
+    check(snapshot() == before,
+          "and the real repository is still untouched after all of it")
 
     print("\n%d checked, %d failed" % (len(CHECKED), len(FAILURES)))
     if FAILURES:
