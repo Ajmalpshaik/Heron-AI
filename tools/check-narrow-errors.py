@@ -45,7 +45,29 @@ the ALTER TABLE migrations) followed by a `raise`. It does not care which
 wording, only that the handler distinguishes the normal case from a fault.
 
 It reads text rather than an AST on purpose: the rule is about what a person
-maintaining this file will see beside the handler.
+maintaining this file will see beside the handler. THAT DOES NOT MEAN IT
+READS COMMENTS. Until 2026-09-22 the narrowing test searched the handler's
+RAW text for the word `raise`, so a handler that said in words it would not
+re-raise satisfied the gate:
+
+    # deliberately do not raise here     satisfied it
+    log("nothing to raise")              satisfied it
+    note = "we could raise"              satisfied it
+
+all three measured. Comment text and string contents are removed before the
+search now, so the word has to be code.
+
+WHAT IT STILL CANNOT SEE
+------------------------
+A handler written as a TUPLE - `except (AttributeError,
+sqlite3.OperationalError):` - because the pattern below expects the name
+straight after `except`. Measured 2026-09-22: the one tuple handler in this
+repository is `heron_embed._try_vec_extension`, and it is CORRECT - both
+types there mean the sqlite extension is unavailable, it answers a boolean
+rather than a store's contents, and the fallback gives the same answers. So
+widening the pattern today would flag right code, and what to do about that
+is part of the question row 5b-110 already asks. Recorded rather than
+guessed at.
 """
 
 from __future__ import print_function
@@ -58,13 +80,47 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOOKED_AT = ("brain", "mcp", "tools")
 
-# A handler has this many lines to narrow itself before this complains. Five is
-# room for a comment and the two lines that do the work, and not room to hide a
-# second behaviour.
+# A handler has this many lines to narrow itself before this complains. Room
+# for a comment and the two lines that do the work, and not room to hide a
+# second behaviour. The sentence here said FIVE while the value said twelve
+# until 2026-09-22, which is the repository's own cardinal sin in the file
+# that exists to catch a shape.
 WINDOW = 12
 
 CATCHES = re.compile(r"^\s*except\s+(?:sqlite3\.)?OperationalError\b")
 NARROWS = re.compile(r"not\s+in\s+str\(\s*\w+\s*\)|\.args\[0\]|raise\b")
+
+
+def _code(line):
+    """`line` with comment text and string contents taken out.
+
+    A COMMENT IS NOT A NARROWING, and neither is a message. Quotes are
+    tracked so a `#` inside a string does not cut the line short, and an
+    escaped character is skipped so a quote inside a string does not end it
+    early. A string that spans lines is not tracked across them - the worst
+    that costs is the behaviour this had before, which is that some text
+    survives.
+    """
+    out, quote, skip = [], None, False
+    for ch in line:
+        if skip:
+            skip = False
+            continue
+        if quote:
+            if ch == "\\":
+                skip = True
+            elif ch == quote:
+                quote = None
+                out.append(ch)
+            continue
+        if ch in "\"'":
+            quote = ch
+            out.append(ch)
+            continue
+        if ch == "#":
+            break
+        out.append(ch)
+    return "".join(out)
 
 
 def findings():
@@ -82,7 +138,6 @@ def findings():
                 for i, line in enumerate(lines):
                     if not CATCHES.match(line):
                         continue
-                    window = "\n".join(lines[i:i + WINDOW])
                     # Stop at the end of the handler: a `raise` belonging to
                     # the NEXT block is not this one narrowing itself.
                     indent = len(line) - len(line.lstrip())
@@ -90,7 +145,7 @@ def findings():
                     for later in lines[i + 1:i + WINDOW]:
                         if later.strip() and (len(later) - len(later.lstrip())) <= indent:
                             break
-                        kept.append(later)
+                        kept.append(_code(later))
                     window = "\n".join(kept)
                     if not NARROWS.search(window):
                         out.append((os.path.relpath(path, ROOT), i + 1,
