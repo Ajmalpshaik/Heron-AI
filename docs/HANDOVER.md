@@ -124,6 +124,74 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — `heron_mcp_server.py` IS NO LONGER STALE, AND THE DIFF WAS 26 LINES
+
+**A STALE mark is not a re-read of the file. It is a re-read of what MOVED**, and the cheapest way to
+find that is the blob the mark was taken at:
+
+```bash
+git cat-file -p <blob from docs/REVIEW-LEDGER.tsv> > /tmp/old.py && diff -u /tmp/old.py <the file>
+```
+
+For this 3,516-line file the answer was **26 lines** — the `_values_array` repair of 2026-09-22, where
+a semicolon stopped starting a new value. Read word by word and **sound**.
+
+**Checked rather than taken on trust:** no other semicolon split exists on the value path anywhere in
+`mcp/` or `brain/`; the C# side's `OneOverride` comment is the one it now agrees with; and
+`tests/test_values_crossing.py` holds the rule in nine checks that all pass — a value carrying
+semicolons stays **one** value, a newline still separates two, and the name ends at the **first**
+equals sign.
+
+#### One thing checked and dismissed, and the add-in is why
+
+A supplied value whose name matches no declared need is never read — `supplied` is a dictionary the
+needs are looked up *from*. That looks like a silent drop on a **write** path, which would be the worst
+kind. **It is not.**
+
+- `DescribeSupplied` renders **every** supplied `name=value` back as `ranWith`, so a caller sees what
+  they actually sent.
+- `BindNeeds` refuses a declared need nobody supplied, by name, with `needs_unbound` — *"Running
+  anyway would report 0 results, which reads as 'there was nothing to find' rather than 'nobody was
+  asked'."*
+
+So a typo in a value name means the **real** need goes unsupplied and the run **refuses**. It cannot
+report success on a write that used a default the caller never chose.
+
+### 2026-09-22 — A SKILL MAY NOT NAME A FRAGMENT, AND `isupper()` WAS NEVER THAT RULE
+
+**[Row 5b-106](FRAGMENT-ISSUES.md). FIXED.**
+
+`brain/heron_skill.py` states its central rule in capitals — *"A SKILL NAMES CAPABILITIES, NEVER
+FRAGMENTS ... So a fragment can be improved, replaced, split into three or retired, and not one skill
+is edited"* — and `validate()` carried the matching refusal word for word. **The test behind that
+sentence was `capability.isupper()`, and `'FRG-ELE-001'.isupper()` is `True`.**
+
+So `needs: [FRG-ELE-001]` validated **clean**, and `main()` then listed it under **CAPABILITY GAPS** —
+the list that tool calls *"what to build next, in the order real work asks for it - not a guess"*.
+**Naming a fragment produced an instruction to go and build a capability called `FRG-ELE-001`.**
+
+**The pattern is the fragment side's own, imported rather than written again.**
+`heron_fragment.CAPABILITY_PATTERN` is `^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$`, and `heron_skill` already
+imports that module — so the two halves cannot come to disagree about what a capability name looks
+like, which is how a rule ends up enforced in one place and not the other.
+
+**Measured against every real name rather than an example, before the rule was tightened:**
+
+| | |
+|---|---|
+| capabilities in the library it accepts | **396 of 396** |
+| fragment ids it accepts | **0 of 396** — every one carries hyphens |
+| requirements the ten skills already declare that it refuses | **none**, of 22 distinct |
+
+**Shown to FAIL**: `tests/test_skills.py` §8, **1 red** against the module as found — and the four
+checks that nothing legitimate is refused were **green before the fix**, which is what made it safe to
+make rather than a hope.
+
+> **SECTION 2 OF THAT SUITE COULD NOT HAVE CAUGHT IT, and it is [row 5b-102](FRAGMENT-ISSUES.md)'s
+> shape a third time.** It asserts `all(c.isupper() ...)` over the **real** skills, so every case ever
+> put through the check was a genuine capability out of the real library, and nothing ever handed it
+> the thing the rule exists to refuse. **The input set was the gap, not the checker.** §8 hands it one.
+
 ### 2026-09-22 — THE FIFTH AND SIXTH COPIES OF THE PLAUSIBLE ZERO, IN THE SEAM ITSELF
 
 **[Row 5b-109](FRAGMENT-ISSUES.md). FIXED, both of them** — and **the gate built for that shape could

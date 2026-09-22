@@ -195,6 +195,66 @@ def main():
         shutil.rmtree(room, ignore_errors=True)
 
     print()
+    print("8. A FRAGMENT ID IS REFUSED AS A CAPABILITY NAME")
+    # ROW 5b-106. The module states its central rule in capitals - "A SKILL
+    # NAMES CAPABILITIES, NEVER FRAGMENTS ... So a fragment can be improved,
+    # replaced, split into three or retired, and not one skill is edited" -
+    # and validate() carried the matching refusal word for word. The test
+    # behind that sentence was `capability.isupper()`, and a fragment id
+    # passes it: 'FRG-ELE-001'.isupper() is True.
+    #
+    # SECTION 2 ABOVE COULD NOT CATCH IT EITHER, and that is the same shape as
+    # row 5b-102: every case ever put through the check is a real capability
+    # out of the real library, so nothing ever handed it the thing it exists
+    # to refuse. This hands it one.
+    check("FRG-ELE-001".isupper(),
+          "a fragment id IS upper case - which is why isupper() could never "
+          "have been the test, and why this section exists")
+
+    import copy as _copy
+    _real = sorted(SKILL.load_all()[0].values(), key=lambda s_: s_.id)[0]
+
+    def _needing(what):
+        data = _copy.deepcopy(_real.data)
+        data["needs"] = [what]
+        return SKILL.validate(SKILL.Skill(data, _real.path))
+
+    def _refused(what):
+        return any("needs must be" in p for p in _needing(what))
+
+    check(_refused("FRG-ELE-001"),
+          "a fragment id in `needs` is refused - it validated CLEAN, and "
+          "main() then listed it under CAPABILITY GAPS, which that tool calls "
+          "'what to build next, in the order real work asks for it - not a "
+          "guess'. So naming a fragment produced an instruction to go and "
+          "build a capability called FRG-ELE-001")
+    check(_refused("frg-ele-001") and _refused(123),
+          "and the two it already caught - a lowercase name and a non-string "
+          "- are caught still")
+
+    # AND NOTHING THAT IS A REAL CAPABILITY IS REFUSED. Measured before the
+    # rule was tightened: 0 of the fragment ids match ^[A-Z][A-Z0-9_]*$
+    # because every one carries hyphens, and every capability does match.
+    _frags, _ = FRAG.load_all()
+    _caps = sorted(set(f.data.get("capability") for f in _frags.values()
+                       if f.data.get("capability")))
+    _wrongly = [c for c in _caps if _refused(c)]
+    check(not _wrongly,
+          "while every capability the library actually provides is accepted - "
+          "checked against all %d of them, not against an example%s"
+          % (len(_caps),
+             "" if not _wrongly else ": " + ", ".join(_wrongly[:5])))
+
+    _declared = sorted(set(c for s_ in SKILL.load_all()[0].values()
+                           for c in s_.needs()))
+    _broken = [c for c in _declared if _refused(c)]
+    check(not _broken,
+          "and so is every requirement the %d skill(s) already declare - %d "
+          "distinct, and the rule refuses none of them%s"
+          % (len(SKILL.load_all()[0]), len(_declared),
+             "" if not _broken else ": " + ", ".join(_broken[:5])))
+
+    print()
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:
