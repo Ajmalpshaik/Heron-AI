@@ -45,8 +45,31 @@ DISPATCH, AND THE THREE WAYS A TEXT CHECK GETS THIS WRONG
 ----------------------------------------------------------
 A CLI subcommand is called by name rather than by a `foo()` in the source, so a
 naive check calls every one of them dead. The precise test is a **dict literal
-whose value is the function** (`{"accept": accept}`) or a **getattr with a
-literal name**. Both are structures; neither can be produced by prose.
+whose value is the function** or a **getattr with a literal name**. Both are
+structures; neither can be produced by prose.
+
+WHAT IS RECORDED IS THE FUNCTION, NEVER THE KEY. `hits()` asks whether a
+FUNCTION NAME is dispatched, so the value's identifier is what goes in. Until
+2026-09-22 the key went in instead, and the two are the same only in the
+example a reader writes. Measured across this repository: thirteen dict
+entries have a module-level function of their own file as the value, and in
+EVERY ONE the key differs - `"accept": cmd_accept` in prove-agent.py,
+`"header_disagreements": disagreements` in heron_agents.py, `".md": _read_text`
+in heron_ingest.py. The rule never once suppressed the thing it was written to
+suppress.
+
+AND THE VALUE MUST BE A FUNCTION OF THAT FILE, not merely a name. `{"check":
+name, "passed": True}` is a RESULT, and the result dict is the commonest shape
+in brain/. Matching any `{str: Name}` put 636 words into the suppression list -
+`count`, `report`, `review`, `version`, `read`, `evidence` - of which 52 were
+public production function names, each one permanently invisible to this
+report. An imported function used as a dict value needs no rule here: a bare
+name the file imported is already counted a reference below.
+
+THE GETATTR NAME IS THE SECOND ARGUMENT, always. `args[-1]` is the DEFAULT of
+the three-argument form, and 183 of the 191 getattr calls in these areas have
+three arguments - so `''`, `'?'`, `'2024'` and `'.txt'` were being recorded as
+dispatched names while the real ones were missed.
 
 That precision was arrived at by getting it wrong three times in one night, and
 all three failures are the same failure:
@@ -204,6 +227,11 @@ def survey():
                 for alias in node.names:
                     imported.add(alias.asname or alias.name)
 
+        # Module-level functions OF THIS FILE. A dict value naming one is
+        # dispatch; a dict value naming a parameter or a local is a result.
+        own = set(node.name for node in tree.body
+                  if isinstance(node, ast.FunctionDef))
+
         for node in ast.walk(tree):
             if isinstance(node, ast.Call):
                 fn = node.func
@@ -211,10 +239,13 @@ def survey():
                         else fn.id if isinstance(fn, ast.Name) else None)
                 if name:
                     calls[name].add(rel)
-                if (name == "getattr" and node.args
-                        and isinstance(node.args[-1], ast.Constant)
-                        and isinstance(node.args[-1].value, str)):
-                    dispatched[node.args[-1].value].add(rel)
+                if (name == "getattr" and len(node.args) >= 2
+                        and isinstance(node.args[1], ast.Constant)
+                        and isinstance(node.args[1].value, str)):
+                    # args[1], NEVER args[-1]: the three-argument form ends
+                    # with the DEFAULT, and that is the form almost every call
+                    # in this repository uses.
+                    dispatched[node.args[1].value].add(rel)
             elif isinstance(node, ast.Attribute) and isinstance(node.ctx, ast.Load):
                 # `SEARCH.remember` without calling it - handed to a thread,
                 # stored in a table, passed as a callback. A use, not a call.
@@ -232,8 +263,11 @@ def survey():
                 for key, value in zip(node.keys, node.values):
                     if (isinstance(key, ast.Constant)
                             and isinstance(key.value, str)
-                            and isinstance(value, ast.Name)):
-                        dispatched[key.value].add(rel)
+                            and isinstance(value, ast.Name)
+                            and value.id in own):
+                        # THE VALUE, not the key: the key is what the user
+                        # types and the value is what gets called.
+                        dispatched[value.id].add(rel)
 
     return definitions, calls, referenced, dispatched, decorated, unreadable
 

@@ -17,9 +17,15 @@ healthy. Getting it wrong in the strict direction reports every CLI subcommand
 as dead and gets switched off. Both failures are silent, so the cases are here.
 
 WHAT IT PROVES
-  1. A dict literal `{"accept": accept}` IS dispatch, and a `getattr(m, "x")`
-     IS dispatch. Every CLI subcommand in this repository is reached one of
-     those two ways, and a check that missed them would call them all dead.
+  1. A dict literal `{"go": run_it}` IS dispatch, and a `getattr(m, "x")` IS
+     dispatch. Every CLI subcommand in this repository is reached one of those
+     two ways, and a check that missed them would call them all dead. What is
+     recorded is the FUNCTION and not the key, and the getattr name is the
+     SECOND argument and not the last - case 2b, which the tool failed twice
+     over until 2026-09-22.
+  1b. A RESULT DICT IS NOT DISPATCH. `{"check": name, "passed": True}` is the
+     commonest shape in brain/, and reading it as dispatch hid 52 of the 400
+     public production function names from this report for good.
   2. A STRING LITERAL ON ITS OWN IS NOT DISPATCH, and this is the case that
      motivated the whole file. The first version treated any `"remember"` as
      dispatch; tools/measure-routes.py contains one, inside the `ast`
@@ -102,6 +108,51 @@ def main():
               "{'accept': accept} is dispatch - a dict literal whose value is "
               "the function")
         check("restamp" not in got, "getattr(m, 'restamp') is dispatch too")
+
+        print()
+        print("2b. It is the VALUE that is dispatched, not the key - and the")
+        print("    value has to be a function")
+        print("-" * 66)
+        # Case 2 above uses {'accept': accept}, where the key and the function
+        # name are the same word. NO DISPATCH TABLE IN THIS REPOSITORY IS
+        # SHAPED THAT WAY - measured, all thirteen: "accept": cmd_accept,
+        # "header_disagreements": disagreements, ".md": _read_text. So case 2
+        # passed on a coincidence the real tree does not supply.
+        write(work, "brain/table.py",
+              "def run_it(a):\n    return a\n"
+              "WHAT = {'go': run_it}\n")
+        write(work, "brain/result.py",
+              "def shape(count):\n    return {'widget': count}\n")
+        write(work, "brain/widget.py", "def widget(a):\n    return a\n")
+        write(work, "brain/cli3.py", "def restamp2(a):\n    return a\n")
+        write(work, "brain/dyn3.py",
+              "import cli3\ndef pick():\n"
+              "    return getattr(cli3, 'restamp2', None)\n")
+        got = names(tool)
+        check("run_it" not in got,
+              "{'go': run_it} suppresses run_it, the function - storing the "
+              "key 'go' instead suppresses nothing, because hits() asks by "
+              "function name")
+        check("widget" in got,
+              "{'widget': count} is a RESULT, not dispatch - a value that is "
+              "a parameter names no function, and matching any {str: Name} "
+              "put 636 words in the suppression list, 52 of them production "
+              "function names")
+        check("restamp2" not in got,
+              "getattr(m, 'restamp2', None) is dispatch too - the name is the "
+              "SECOND argument, and 183 of this tree's 191 getattr calls have "
+              "a third")
+        # And the value has to be a function OF THAT FILE. Taking any Name
+        # moves the leak from the key to the value rather than closing it:
+        # measured, 37 public production names still get in that way, `want`
+        # among them - which this tool's own comment calls Q-47's whole
+        # subject.
+        write(work, "brain/wanted2.py", "def want2(a):\n    return a\n")
+        write(work, "brain/localdict.py",
+              "def shape2():\n    want2 = 3\n    return {'how_many': want2}\n")
+        check("want2" in names(tool),
+              "a LOCAL VARIABLE as a dict value names no function - taking "
+              "any Name leaks 37 production names into the suppression list")
 
         print()
         print("3. A bare string literal is NOT dispatch - the case that")
