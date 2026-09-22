@@ -124,6 +124,99 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — SESSION CLOSED. THE READING SWEEP THROUGH `tools/`, AND WHERE IT STOPPED
+
+**Read this entry first if you are picking the sweep back up.** It is the close of a long Linux-only
+session — no Windows, no Revit, no fragment proving. Every number below is derived, and the command
+that derives it is beside it.
+
+#### Where the sweep stands
+
+```bash
+python tools/review-ledger.py            # how much of the repository has been read
+python tools/open-defects.py             # what is still open, by id
+python tools/check-gaps.py               # what is genuinely unfinished
+```
+
+`tools/` is the folder that got the attention. **Ten of its 47 `.py` files had never been opened at
+the start of this session; seven remain**, and every one of them is a big file:
+
+| left to read | lines | why it is worth a sitting |
+|---|---|---|
+| `generate-jobs.py` | 1157 | the biggest, and three other tools import `write_threshold()` from it |
+| `prove-skill.py` | 950 | writes proof records — the thing D-30 is about |
+| `batch-prove.py` | 735 | same, in bulk |
+| `prove-tracking.py` | 633 | same family |
+| `measure-brain.py` | 435 | a measurer, so its own numbers are the risk |
+| `generate-agent-map.py` | 400 | CI runs it with the name in a loop variable |
+| `measure-routes.py` | 365 | already named in two tools' docstrings as having been fooled by its own prose |
+
+**Read them in that order reversed — smallest first** — because the three proving tools are the ones a
+wrong reading costs most, and by the time you reach them you will have the pattern.
+
+#### The four rules that earned their keep, and the cost of each
+
+1. **Trace, don't grep. A call site is not an execution.** Row 5b-149 was found by *running* the tool's
+   own `survey()` over the tree and printing what it actually held — 636 names — not by reading the
+   code and reasoning about it. A scan over source text was wrong 28 times out of 28 on one earlier
+   sweep.
+2. **A fix is not proved until its test has been seen to FAIL — and it must FAIL, not CRASH.** An
+   `AttributeError` proves nothing. Guard every new name with `getattr(MODULE, "NAME", None)`;
+   [`heron-ship` §2a](../.claude/skills/heron-ship/SKILL.md) has it.
+3. **Shape is not behaviour.** Three separate findings this session were traced, measured, and **not
+   raised**, because they fire nowhere today: `check-reachable`'s name-only `decorated` set, its
+   invisibility to `ast.AsyncFunctionDef`, and `check-declared-questions`' `told`/`s_told` count. Each
+   is written down as not-a-finding so the next reader does not "discover" it.
+4. **A negative result is a result.** `tools/owner-queue.py` was read end to end and is sound; it is
+   marked `clean` in the ledger with what was checked, so nobody reads it again.
+
+#### The one I nearly got wrong, and how it was caught
+
+`tools/check-api-surface.py` types its own `ALL_VERSIONS`, which reads exactly like the third copy of
+the supported-release list. **It is not.** `tests/test_supported_releases.py` finds all five
+declarations and pins each against `heron_dotnet.RELEASES`, naming this one by file and line — and
+**PROPOSALS.md F2 already holds the merge question for the owner**. Binding it would have pre-empted
+his decision and deleted a guarded duplication that has a written reason.
+
+**The rule that caught it: run the suite before calling a duplication unguarded.** A typed list is not
+evidence of anything until you have asked what holds it.
+
+#### What is recorded and deliberately NOT fixed
+
+Rows **5b-150** and **5b-151** are open findings with the file left alone, which is
+[§5b](FRAGMENT-ISSUES.md)'s own rule: *the sweep records, it does not repair.* Both remedies are
+named in the rows and neither needs design work:
+
+- **5b-150** `check-api-surface.py` — every way it cannot answer exits **1**, the same code a genuinely
+  missing Revit API member uses. Measured here with no `dotnet` on PATH: a traceback. It is the
+  **fourth** tool this session with no third state, after rows 133, 142 and 143, whose remedy is
+  settled — a `cannot_answer()` asked after the argument check and before any build, printing NOT RUN
+  and exiting **3**. **The failing case is the default one on a Linux box**, so the fix proves itself
+  here.
+- **5b-151** `check-declared-questions.py` — ten fragment rows print an absolute container path while
+  the skill rows two blocks below print a relative one. The rest of that tool was traced and is sound;
+  the row says exactly what was checked so it is not re-read.
+
+Neither has a suite touching `main()`, which is why both survived. **That is the pattern worth
+carrying forward: in this repository the report block is where the untested code is.**
+
+#### What is waiting on the owner and cannot move here
+
+```bash
+python tools/owner-queue.py          # the list, derived from the registers
+```
+
+Rows needing a decision only he can make: **5b-83, 5b-95, 5b-145** — and 5b-145 is the sharpest, because
+it is a *definition*, not a bug: `agent-count.py` counts a test suite's header as BUILT while
+`generate-contract-reference.py` says in capitals that **a suite is not the agent**. If a suite-only
+claim is not a build, then *"0 of 250 agents left"* is wrong by three. **Do not resolve it.**
+
+Everything in [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md) needs his PC, and most of it needs Revit open.
+`check-gaps.py` reports **UNFINISHED — nothing**: everything buildable on a Linux container is built,
+and the whole remaining list is waiting on a machine, a dependency or a person.
+
+---
+
 ### 2026-09-22 — IT SUPPRESSED 52 PRODUCTION FUNCTIONS AND NOT ONE REAL DISPATCH
 
 **[Row 5b-149](FRAGMENT-ISSUES.md), FIXED.** `tools/check-reachable.py` read end to end — 334 lines,
