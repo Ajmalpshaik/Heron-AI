@@ -46,6 +46,25 @@ contract drift check, and it is the half worth more than the syntax: a snippet
 that compiles while breaking its promise is exactly the fragment that composes
 into something broken later, far from here.
 
+NO COMPILER ON THIS MACHINE IS "NOT RUN", AND NOT RUN IS NOT A FAILURE
+-----------------------------------------------------------------------
+It shells out to `dotnet build`. Measured 2026-09-22 on a container with no
+.NET SDK: `FileNotFoundError: [Errno 2] No such file or directory: 'dotnet'`
+and exit 1 - a traceback, which is none of AGENTS.md's four states, at the
+same exit code as "a fragment does not compile". A reader, or a script,
+could not tell a broken library from a machine with no compiler on it.
+
+`.github/workflows/gates.yml` already knew, and worked around it rather than
+fixing it: the step lives in a different job, and the comment beside it says
+"it shells out to `dotnet build` with no guard: the gates runner has no SDK
+and it would fail there for the wrong reason".
+
+So the SDK is looked for first, and its absence exits 3 - the same code
+tests/README.md gives a suite that could not run for want of an optional
+dependency, and it is NOT a pass. `load_fragments()` already did this for
+PyYAML one function down; this is the same courtesy for the larger
+dependency.
+
 WHAT IT STILL CANNOT DO
 -----------------------
 It proves the API surface agrees. It says NOTHING about behaviour - whether the
@@ -194,6 +213,20 @@ def record(versions, outcomes, fragments):
         # Never fail the compile because the record could not be written. The
         # compile result is the answer; this file is a convenience for later.
         return None
+
+
+def no_compiler():
+    """Why the compiler cannot be reached, or None if it can.
+
+    ASKED BEFORE ANYTHING IS GENERATED, so "there is no SDK here" never
+    arrives as a traceback from the middle of a build and never shares an
+    exit code with "a fragment does not compile". Those are two different
+    answers and AGENTS.md keeps four states apart for exactly this reason.
+    """
+    if shutil.which("dotnet") is None:
+        return ("there is no `dotnet` on PATH, so nothing was compiled and "
+                "nothing is claimed about whether the fragments do")
+    return None
 
 
 def load_fragments():
@@ -356,6 +389,20 @@ def main():
         print("No fragment claims Revit %s. Declared: %s"
               % (", ".join(unknown), ", ".join(declared)))
         return 2
+
+    # LAST, AND ON PURPOSE. Everything above can be answered without an SDK -
+    # an empty library and a release nobody claims are argument questions, and
+    # a machine with no compiler should still get those answers.
+    missing = no_compiler()
+    if missing:
+        print("NOT RUN - %s." % missing)
+        print()
+        print("This needs the .NET SDK: https://dotnet.microsoft.com/download")
+        print("NOT RUN is not a pass and it is not a failure. Exit 3 says so,")
+        print("which is the code tests/README.md gives a suite that could not")
+        print("run - exit 1 here means a fragment does NOT compile, and the")
+        print("two must never be read as the same answer.")
+        return 3
 
     print("%d fragment implementation(s) across %d release(s)."
           % (len(fragments), len(versions)))
