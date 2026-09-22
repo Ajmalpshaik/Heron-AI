@@ -69,6 +69,13 @@ on building fragments."* [§9a](#9a-continuing-the-library-build--the-recipe-so-
 holds the whole recipe — where the sources are, the eight steps per fragment, the commands, and the
 rules that must not be broken. It is written so a session can start from it without asking anything.
 
+**To carry the LINUX BALANCE work on in a fresh session, say:** *"Read the LINUX BALANCE track entry
+in HANDOVER.md and carry on."* [§10a](#10a-the-linux-balance-track--what-a-session-with-no-revit-does)
+holds the whole brief — the standing agreement, how to choose what to read next by measurement rather
+than by folder order, and where each method rule already lives. **It exists so the owner does not have
+to paste a long prompt at the start of every session.** It is the reading sweep and the defect register,
+and it is the only track that needs neither a Revit nor a Windows machine.
+
 If a session ever tells you something that disagrees with `python tools/check-gaps.py`, **believe the
 tool.** It is computed from disk every time; this file is typed by hand.
 
@@ -5617,6 +5624,67 @@ times now**, something believed to be waiting on a machine was waiting on somebo
 newest was `A8`, filed under *needs Windows* when what it needed was `pip install mcp` — and trying it
 found that Heron's MCP server would not have started at all on a machine installing today. `D3` is
 still the line that matters most: move the ducts 200 mm, then measure one.*
+
+---
+
+## 10a. The LINUX BALANCE track — what a session with no Revit does
+
+**This section exists so the owner does not have to paste a long prompt every time.** Saying *"Read the
+LINUX BALANCE track entry in HANDOVER.md and carry on"* is the whole instruction. Everything below was
+the standing agreement across the sessions of 2026-09-20 and 2026-09-21, written down rather than
+retyped.
+
+### The standing agreement
+
+> Do only work that can be done **without Windows, without Revit, and without fragment proving.** The
+> owner is a BIM modeller, not a programmer — **decide what to do next and get on with it.** Don't
+> block. If something genuinely needs his PC or his decision, write it where it belongs, say so, and
+> move to the next thing. When a chunk gets big: commit, push, open a **draft** PR, drive CI to green,
+> merge, carry on.
+
+**Other sessions work on this repository at the same time.** Fetch before you start and before you
+push, and never touch a branch that is not yours. [§9b](#9b-three-sessions-at-once--the-protocol-that-stops-them-colliding)
+is the protocol.
+
+### Where the balance is — derive all three, they move within hours
+
+| | command |
+|---|---|
+| **The reading sweep** — the main Linux work left, and where nearly every real finding has come from | `python tools/review-ledger.py` |
+| **Open defects**, including the ones that need the owner rather than a Revit | `python tools/open-defects.py` — **read the ids, not the count** |
+| **What is genuinely unfinished** versus merely waiting | `python tools/check-gaps.py` — and read `code=$?` on its own line |
+
+The ledger also reports **STALE** — files read once and edited since. **Clear those first: a stale mark
+is a lie about what has been read.**
+
+### How to choose what to read next — by MEASUREMENT, not by folder order
+
+For every module transitively reachable from `mcp/`, count the **distinct suites that reach it** against
+its **public surface**, and take the thinnest-held. Reading `brain/` alphabetically finds what happens
+to be first; this finds what is least held. Rows [5b-101](FRAGMENT-ISSUES.md) and
+[5b-83](FRAGMENT-ISSUES.md) were both found that way, and the sessions that read in folder order found
+less per hour.
+
+### The method rules live elsewhere — read them there, they are not repeated here
+
+| rule | where it lives |
+|---|---|
+| **A fix is not proved until its test has been seen to FAIL** — and it must FAIL, not CRASH | [`heron-ship` §2a](../.claude/skills/heron-ship/SKILL.md) |
+| **Trace, don't grep** — a call site is not an execution; and point the tracer at the suites that REACH a module, not only those that name it | the two 2026-09-21 entries in this file, and [row 5b-101](FRAGMENT-ISSUES.md) |
+| **Shape is not behaviour** — a scan over source text was wrong 28 times out of 28 on one sweep | [rows 5b-86, 5b-92, 5b-95](FRAGMENT-ISSUES.md) |
+| What to run before pushing, and which failures are the machine | [`heron-ship`](../.claude/skills/heron-ship/SKILL.md) |
+
+**A negative result is a result.** Read a module and find it sound? Write that in this file, the way
+`heron_retrieve` and the finished trace sweep are written, so nobody reads it again. **Never manufacture
+a finding out of a shape to have something to show** — [row 5b-95](FRAGMENT-ISSUES.md) is what that
+costs.
+
+### One container trap that cost a session real time
+
+**Never wait on a background job with `until ! pgrep -f NAME`.** The waiter's own command line contains
+`NAME`, so `pgrep -f` matches the waiter itself and the loop never exits — four of them were still
+spinning at the end of 2026-09-21, long after the jobs they watched had finished. Poll the output file
+for its exit line instead.
 
 ---
 
