@@ -81,6 +81,42 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
+> ## THE INSTALLER IS BUILT AND MERGED. NOTHING OF IT HAS RUN ON A REVIT — 2026-09-22
+>
+> Merged as [#253](https://github.com/Ajmalpshaik/Heron-AI/pull/253). Stages 5, 6 and 7, plus the
+> shape the owner asked for the same day: **one download carries the built plugin AND the brain**, both
+> doors install **offline**, and the internet is used only to ask **whether a newer version exists**.
+> `R-51` to `R-56`. `Q-PE-5`, `12`, `13`, `14` and `16` answered; `R-30` corrected — it had claimed
+> files that were never in the repository.
+>
+> **AND THAT IS ALL BUILT, NOT PROVEN.** Ten gates green, 243 suites green, 49 deliberate breaks all
+> seen to fail — and **not one line of it has run against a real Revit.** No Heron tab has appeared
+> because of this code. No checksum has refused a real file. [`D-30`](DECISIONS.md) does not accept a
+> green suite as a proof, and neither should the next session.
+>
+> **THE NEXT STEP IS PROVING, NOT BUILDING**, and the prompt for it is written and waiting:
+> **[PROMPT D](work-notes/plans/plugin-extension/PROMPTS-remaining-work.md)** — paste it into a fresh
+> session on the owner's Windows PC. It runs `AE1`–`AE6` and `AF1`–`AF5` from
+> [`NEEDS-CHECKING.md`](NEEDS-CHECKING.md), keeps PASS / FAIL / NOT RUN apart, and **stops** if either
+> of the two that matter fails:
+>
+> | | |
+> |---|---|
+> | **`AE3`** | Revit closed, install, open Revit 2024. **No Heron tab means nothing else matters.** |
+> | **`AF4`** | Change one character in `checksums.txt` and install. **If it installs anyway, the whole verification story is wrong** — and that story is what makes handing a folder to somebody on a USB stick safe. |
+>
+> **DO NOT BUILD ON TOP OF THE INSTALLER UNTIL PROMPT D HAS BEEN RUN.** Everything after it assumes a
+> tab that has never been seen.
+>
+> **Waiting on the owner, and nobody else may decide them:**
+>
+> - **No release has ever been published** — zero, verified. `AC1`–`AC5` and `AF6` cannot run until
+>   one exists, and publishing is his call.
+> - **Stage 8, signing** — parked at his request; he said he would give an alternative.
+> - **Stage 9**, and with it [`R-52`](work-notes/plans/plugin-extension/01-requirements.md)'s *"ask
+>   where to keep it"*, which `heron-install` does **not** do. Recorded rather than left to be found.
+
+
 > **UPDATED 2026-09-15.** The rows below were rewritten that day against derived numbers. Several had
 > been stale for a week — the agent row said 71 when it was 211, the test row said 41 suites when it
 > was 188. **Derive every number before trusting it**; each row names the command.

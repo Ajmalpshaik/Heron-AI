@@ -2,6 +2,19 @@
 
 **Written 2026-09-21**, the day the installer first installed three Revit releases in one press.
 
+> ## A, B and C are DONE — 2026-09-22, merged as [#253](https://github.com/Ajmalpshaik/Heron-AI/pull/253)
+>
+> All three shipped, and the owner then asked for a fourth thing that none of them had: **one download
+> carrying the plugin AND the brain, working offline afterwards, with the internet used only to ask
+> whether a newer version exists.** That is `R-51` to `R-56`, and it is built too.
+>
+> **PROMPT D below is what is left**, and it is not building — it is **proving**. Nothing in any of
+> this has ever run against a real Revit. Every claim so far is *"compiles, and the suites pass on
+> Linux"*, which the Constitution does not accept as proof.
+>
+> **Run D on the owner's Windows PC when he has time.** Nothing else is waiting on it, and nothing
+> else should be built on top of it until it has been run.
+
 Three prompts, each **self-contained** — paste one into a fresh session that knows nothing about this
 work. They are written to be handed out one at a time, not all at once: see **Order and collisions**
 below before starting two.
@@ -267,3 +280,151 @@ what is missing. A user with Revit 2022 must get a working 2022 build.
 
 Whether a particular contractor's firewall allows it. That is found on site, and it is why `Q-PE-5`
 stays open.
+
+---
+
+# PROMPT D — Prove it on a real Revit, or find out it does not work
+
+**Where:** Ajmal's **Windows PC**, with Revit 2020, 2024 and 2027. **Not** the cloud — every row here
+needs a real Revit, which is the entire point of them.
+
+**When:** any time. Nothing is blocked waiting for it, and nothing should be built on top of the
+installer until it has been run.
+
+## Why this prompt exists
+
+The installer is merged and every gate is green. **That proves the code is self-consistent and nothing
+else.** `D-30` is explicit: a proof is a recorded run against a **named real model**, and there has not
+been one. The Heron tab has never appeared on a machine because of this code. The checksum refusal has
+never refused a real file.
+
+**The two rows below are worth more than the other nine put together**, and if either fails the rest of
+the run is pointless:
+
+| | |
+|---|---|
+| **`AE3`** | Revit closed, install, open Revit 2024. **If no Heron tab appears, nothing else matters.** |
+| **`AF4`** | Change one character in `checksums.txt` and install. **If it installs anyway, the whole file-verification story is wrong** — and that story is what makes route 2 safe to hand to somebody on a USB stick. |
+
+## Paste this into a fresh session on the Windows PC
+
+```
+ROLE
+Act as a senior Revit add-in engineer, QA checker, and evidence auditor working
+on the Heron AI repository. I am not a coder - I am a BIM modeller. Explain
+everything in plain language, and never assume I will read code to understand
+what happened.
+
+CONTEXT
+Heron's installer was built and merged, but NOTHING has ever run against a real
+Revit. Every claim so far is "compiles and passes tests on Linux", which is not
+proof. This machine is my Windows PC with Revit 2020, 2024 and 2027 installed.
+
+The tests to run are already written down as rows in docs/NEEDS-CHECKING.md:
+AE1 to AE6 and AF1 to AF5. Read those rows first - they say exactly what to do
+and exactly what counts as proof. Do not invent your own test steps.
+
+FIRST, BUILD THE FILES
+Run:  python tools\build-release-assets.py
+This makes a `dist` folder. The AF rows need it.
+
+GOAL
+Run AE1 to AE6 and AF1 to AF5 on this real machine, record honestly what
+happened, and write the results back into docs/NEEDS-CHECKING.md.
+
+MAIN TASK
+1. Read the AE and AF rows in docs/NEEDS-CHECKING.md before running anything.
+2. CLOSE REVIT before every install command. If a command refuses because Revit
+   is open, that refusal is itself a test result - record it, do not work
+   around it.
+3. Run the rows in this order: AE1, AE3, AE2, AE4, AE5, AE6, AF1, AF2, AF3,
+   AF4, AF5.
+4. After each row, write down the exact command, the exact output, and the exit
+   code. Not a summary - the real text.
+5. Take a screenshot where the row asks for one. Save into docs\proof\ with the
+   row id in the filename, for example AE3-heron-tab.png.
+6. Write each result into docs/NEEDS-CHECKING.md with the row id, the date, and
+   what was actually seen.
+
+THE TWO ROWS THAT MATTER MOST - STOP IF EITHER FAILS
+- AE3: Revit closed, install, then open Revit 2024. The Heron tab must appear.
+  If there is no tab, STOP. Do not run the rest. Report what happened.
+- AF4: change one character inside checksums.txt, then install from that folder.
+  It MUST refuse. If it installs anyway, STOP IMMEDIATELY and report it - that
+  would mean the whole file-verification story is wrong.
+
+FOUR STATES, NEVER MIXED
+Record every row as exactly one of:
+- PASS          - it was run and it did what the row says
+- FAIL          - it was run and it did not
+- NOT RUN       - and say why it could not be run
+- NEEDS RELEASE - it needs a published GitHub release, which does not exist yet
+
+"It compiled" is not PASS. "No error appeared" is not PASS. Only the thing the
+row asks for is PASS.
+
+SAFETY RULES
+- Do not guess. Do not assume missing information.
+- NEVER edit a test, a gate, or a row to make something pass. A red result is
+  an answer, not a problem to remove.
+- Do not change any source code to fix a failure without telling me first and
+  waiting for my yes.
+- Do not touch %APPDATA%\Heron - that is my own data.
+- If something is unclear, mark it NEEDS_REVIEW rather than deciding for me.
+
+VERIFICATION RULES
+- Never claim a row passed without showing the command you ran and the output
+  you saw.
+- Check the Revit tab with your own eyes or a screenshot, not from the
+  installer's success message.
+- If a row cannot be run, say NOT RUN and why. Do not skip it silently.
+- Do not write the word PROVEN anywhere until I have confirmed the result.
+
+WHAT NOT TO CHANGE
+- Do not change the test rows themselves.
+- Do not change installer source code without my permission.
+- Do not publish a GitHub release. That is my decision.
+- Do not delete anything from docs\proof\.
+
+OUTPUT FORMAT
+Give me a simple table:
+
+| Row | PASS / FAIL / NOT RUN | What I actually saw |
+
+Then, for every FAIL, a short plain-language explanation of what went wrong and
+the smallest fix you would suggest - but do not apply it yet.
+
+FINAL REPORT REQUIRED
+1. What you understood
+2. What you ran
+3. Which rows passed
+4. Which rows failed, and what you saw
+5. Which rows could not be run, and why
+6. What you wrote into docs/NEEDS-CHECKING.md
+7. Screenshots saved, by filename
+8. Anything that needs my decision
+9. What you did NOT change
+10. Next recommended step
+
+IMPORTANT RULES
+- Close Revit before every deploy command.
+- Report failures the moment they happen. Do not save them for the end.
+- Tell me in plain BIM-modeller language, not developer language.
+- One honest FAIL is worth more to me than ten passes you were not sure about.
+```
+
+## What this prompt deliberately does NOT do
+
+- **It does not publish a release.** That is the owner's decision, and `AC1` to `AC5` and `AF6` wait on
+  it. Until one exists those rows are **NOT RUN**, which is not a failure and not a pass.
+- **It does not fix anything.** A failure is reported and diagnosed; the fix is a separate decision, so
+  that a bad fix cannot quietly become the reason a row passed.
+- **It does not touch Stage 8 or Stage 9.** Signing is parked at the owner's request, and `R-52`'s
+  *"ask where to keep it"* is the window's job.
+
+## Done when
+
+- Every row from `AE1` to `AE6` and `AF1` to `AF5` carries **PASS**, **FAIL** or **NOT RUN with a
+  reason** in [`docs/NEEDS-CHECKING.md`](../../../NEEDS-CHECKING.md) — **none left blank**.
+- The screenshots the rows ask for are in `docs/proof/` with the row id in each filename.
+- **The word PROVEN appears only where the owner has confirmed it**, and nowhere else.
