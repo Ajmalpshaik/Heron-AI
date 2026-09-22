@@ -76,6 +76,7 @@ from __future__ import annotations
 
 import os
 import re
+import sqlite3
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -157,6 +158,28 @@ def names_the_standard(title, standard):
     return False
 
 
+def _nothing_claimed(standard, per_scope, elsewhere, unreadable):
+    """Why nothing was claimed - and a FAULT is never reported as an absence.
+
+    "Heron has no copy of ISO 19650 indexed" is the most useful sentence this
+    agent has when it is true, and the worst one it could write when it is
+    not: it is confident, it is specific, and a reader acts on it by going to
+    find the document they already loaded. A store that answered the search
+    and then failed on the words has to say so instead.
+    """
+    where = ", ".join(card["label"] for card in per_scope) or "any scope"
+    if unreadable:
+        return ("%d CLAUSE(S) MATCHED AND THEIR WORDS COULD NOT BE READ, so "
+                "this is NOT 'no copy indexed' - the store answered the "
+                "search and then failed on the text: %s. Nothing is claimed, "
+                "and the reason is a fault rather than an absence."
+                % (len(unreadable),
+                   "; ".join(sorted(set(one["why"] for one in unreadable)))))
+    return ("HERON HAS NO COPY OF %s indexed in %s. %d other document(s) "
+            "matched the question and none of them IS the standard, so "
+            "there is no claim to make." % (standard, where, len(elsewhere)))
+
+
 def cite(question, standard=None, scopes=None, project=None,
          project_name=None, limit=5):
     """
@@ -179,7 +202,7 @@ def cite(question, standard=None, scopes=None, project=None,
     asked = librarian(question, scopes=scopes, project=project,
                       project_name=project_name, limit=limit)
 
-    from_it, elsewhere, per_scope = [], [], []
+    from_it, elsewhere, per_scope, unreadable = [], [], [], []
     for one in asked:
         card = {"scope": one.scope, "label": one.label,
                 "skipped": one.skipped,
@@ -200,12 +223,29 @@ def cite(question, standard=None, scopes=None, project=None,
             continue
         try:
             for hit in one.answer.candidates:
+                # A READ THAT FAILED IS NOT A CLAUSE THAT IS NOT THERE.
+                # This was `except Exception: row = None` and then the
+                # `continue` below, so a locked or malformed store dropped
+                # the clause without a word and the answer went out saying
+                # HERON HAS NO COPY OF <standard> indexed - a confident,
+                # specific, FALSE sentence about a store that has it, in the
+                # module whose headline rule is NO SOURCE, NO CLAIM. D-52's
+                # plausible zero. Row 5b-114.
                 try:
                     row = store.execute(
                         "SELECT text FROM chunks WHERE id = ?",
                         (hit["id"],)).fetchone()
-                except Exception:
-                    row = None
+                except sqlite3.DatabaseError as why:
+                    unreadable.append({
+                        "scope": one.scope, "label": one.label,
+                        "document": hit.get("document"),
+                        "locator": hit.get("locator"),
+                        "why": "%s: %s" % (type(why).__name__, why)})
+                    continue
+                # A chunk that is genuinely absent, or genuinely empty, is
+                # still skipped: that is a fact about the store's contents
+                # rather than a fault reading it, and the two must not be
+                # reported as one thing.
                 if row is None or not row["text"]:
                     continue
                 clause = {
@@ -241,6 +281,7 @@ def cite(question, standard=None, scopes=None, project=None,
         "of": len(from_it),
         "clauses": from_it,
         "elsewhere": elsewhere,
+        "unreadable": unreadable,
         "scopes": per_scope,
         "sources": sorted(set(card["document"] for card in from_it
                               if card["document"])),
@@ -261,13 +302,8 @@ def cite(question, standard=None, scopes=None, project=None,
                    "%d other document(s) matched the question and are not "
                    "the standard." % len(elsewhere) if elsewhere
                    else "Nothing else matched.")
-                if from_it else
-                "HERON HAS NO COPY OF %s indexed in %s. %d other document(s) "
-                "matched the question and none of them IS the standard, so "
-                "there is no claim to make."
-                % (standard,
-                   ", ".join(card["label"] for card in per_scope) or "any scope",
-                   len(elsewhere))),
+                if from_it else _nothing_claimed(standard, per_scope,
+                                                 elsewhere, unreadable)),
         "unjudged": [
             "NO SOURCE, NO CLAIM. %s Every word of every clause above was "
             "copied out of an indexed chunk - there is no path through this "
@@ -313,8 +349,36 @@ def main(argv):
     standard = "ISO 19650"
     if "--standard" in argv:
         at = argv.index("--standard")
+        # A FLAG WITH NO VALUE IS A TYPO, NOT AN ABSENT FLAG. `--standard`
+        # last on the line answered with `IndexError: list index out of
+        # range` at exit 1 - a Python traceback as the answer to a typo,
+        # which is exactly what row 5b-104 fixed in four other command
+        # lines. THIS SITE WAS MISSED BY THAT SCAN because it reads
+        # `argv[at + 1]` and the grep was for `argv[i + 1]`: row 5b-95's
+        # lesson, that a scan over source text is not a measurement.
+        # Row 5b-115.
+        if at + 1 >= len(argv) or argv[at + 1].startswith("-"):
+            print("\n  --standard needs a value, e.g. --standard "
+                  "\"ISO 19650\". Which standard is never guessed - D-33, "
+                  "and picking one would be choosing whose rules somebody "
+                  "is about to follow.")
+            return 2
         standard = argv[at + 1]
         argv = argv[:at] + argv[at + 2:]
+
+    # AND A FLAG THIS TOOL DOES NOT HAVE IS REFUSED, NEVER SEARCHED FOR.
+    # Everything left over becomes the question, so `--top 5` was asked as
+    # part of it and the answer came back at exit 0 about a question nobody
+    # wrote. Row 5b-112's shape, one module along, and heron_retrieve has
+    # refused unknown flags in these words since 2026-08-30.
+    unknown = [word for word in argv if word.startswith("-")]
+    if unknown:
+        print("\n  not a flag this tool has: %s" % " ".join(unknown))
+        print('  python brain/heron_iso.py "what does it call the CDE" '
+              '--standard "ISO 19650"')
+        print("  the only flag is --standard, and it takes a value")
+        return 2
+
     if argv:
         question = " ".join(argv)
 

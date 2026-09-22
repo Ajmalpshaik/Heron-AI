@@ -202,6 +202,107 @@ def main():
               "and every one was reached above%s"
               % ("" if not unreached else ": %s" % ", ".join(unreached)))
         check(len(answer["unjudged"]) == 6, "six things are left unjudged")
+
+        print("\n8. a read that failed is not a clause that is not there")
+        # ROW 5b-114, and it is one of the three brain/mcp/tools sites row
+        # 5b-110 asked to be READ before that gate is widened. The clause
+        # text is fetched in a second pass, and that read was wrapped in a
+        # bare `except Exception: row = None` followed by
+        # `if row is None or not row["text"]: continue` - so a clause the
+        # store could not read was SILENTLY DROPPED. Measured on a store
+        # holding a real ISO 19650 document: healthy, 3 clauses; with only
+        # that one query raising `database is locked`, 0 clauses and
+        #
+        #   HERON HAS NO COPY OF ISO 19650 indexed in company.
+        #
+        # A confident, specific, FALSE sentence - D-52's plausible zero - in
+        # the module whose headline rule is "NO SOURCE, NO CLAIM ... there is
+        # no path through this agent that writes a sentence about a standard".
+        import sqlite3 as _sqlite3
+
+        TEXT_QUERY = "SELECT text FROM chunks WHERE id = ?"
+        real_open = ISO.SCOPE.open_scope
+
+        class Locked(object):
+            """The same store, with ONLY the clause-text read failing.
+
+            The shortlist is therefore identical - this separates "could not
+            read the words" from "found nothing", which is the whole point.
+            """
+
+            def __init__(self, inner):
+                self._inner = inner
+
+            def execute(self, sql, *args, **kwargs):
+                if str(sql).strip() == TEXT_QUERY:
+                    raise _sqlite3.OperationalError("database is locked")
+                return self._inner.execute(sql, *args, **kwargs)
+
+            def __getattr__(self, name):
+                return getattr(self._inner, name)
+
+        healthy = ISO.cite(QUESTION, standard="ISO 19650", scopes=only)
+        check(healthy["claimed"] is True and healthy["of"] > 0,
+              "the same store answers with %d clause(s) while it can be read"
+              % healthy["of"])
+
+        ISO.SCOPE.open_scope = (lambda scope, project=None:
+                                Locked(real_open(scope, project)))
+        locked = None
+        try:
+            locked = ISO.cite(QUESTION, standard="ISO 19650", scopes=only)
+        except BaseException as raised:  # noqa: BLE001 - that IS the check
+            check(False, "a failed clause read is reported rather than "
+                         "raising %s" % type(raised).__name__)
+        finally:
+            ISO.SCOPE.open_scope = real_open
+
+        if locked is not None:
+            check("HAS NO COPY" not in locked["why"],
+                  "it does not say Heron has no copy of a standard it HAS: "
+                  "%r" % locked["why"][:56])
+            check(bool(locked.get("unreadable")),
+                  "the clauses it could not read are carried, not dropped")
+            check("could not be read" in locked["why"].lower(),
+                  "and the sentence a reader sees says a read failed")
+
+        print("\n9. the command line: a typo is never the answer")
+        # ROW 5b-115, and it is rows 5b-104 and 5b-112 in a FIFTH site.
+        # Measured by running it:
+        #
+        #   heron_iso.py --standard          -> IndexError, exit 1
+        #   heron_iso.py "..." --standard "ISO 19650" --top 5
+        #                                    -> --top 5 went into the
+        #                                       question, exit 0
+        #
+        # 5b-104's scan missed this one because it reads `argv[at + 1]` and
+        # the grep was for `argv[i + 1]` - row 5b-95's lesson, that a scan
+        # over source text is not a measurement.
+        import contextlib as _ctx
+
+        for argv, what in ((["--standard"], "a flag with no value"),
+                           (["what does it call the CDE", "--standard",
+                             "ISO 19650", "--top", "5"], "an unknown flag")):
+            said = io.StringIO()
+            code = None
+            try:
+                with _ctx.redirect_stdout(said):
+                    code = ISO.main(list(argv))
+            except BaseException as raised:  # noqa: BLE001 - that IS the check
+                check(False, "%s is refused rather than raising %s"
+                             % (what, type(raised).__name__))
+            if code is not None:
+                spoke = said.getvalue()
+                check(code == 2, "%s exits 2" % what)
+                check("--standard" in spoke or "--top" in spoke,
+                      "and the flag is NAMED in the refusal")
+                # NOT "HAS NO COPY", which was green for the wrong reason:
+                # this suite's store HAS a standard in it by now, so the
+                # unknown-flag run answered with clauses instead. The line
+                # only the ANSWER path prints is what separates the two.
+                check("scopes asked, separately" not in spoke,
+                      "nothing was searched at all - no answer was printed "
+                      "for %s" % what)
     finally:
         if was is None:
             os.environ.pop("HERON_KNOWLEDGE", None)
