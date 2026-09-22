@@ -146,8 +146,13 @@ namespace Heron.Installer
                 why = null;
                 return ProductManifest.Parse(StripBom(bytes));
             }
-            catch (Exception e)
+            catch (InvalidDataException e)
             {
+                // NARROWED TO WHAT Parse ACTUALLY THROWS - D-52. It turns bad
+                // JSON and a missing products array into InvalidDataException
+                // with a sentence already written for a person, so catching
+                // wider here would swallow a fault in this file as if the
+                // download were damaged.
                 why = "The product list in that release could not be read - it is damaged. " +
                       "Fetch the release again, or pick a different version. Nothing was installed. (" +
                       e.Message + ")";
@@ -184,10 +189,31 @@ namespace Heron.Installer
                 Directory.CreateDirectory(into);
                 Unpack(bytes, into);
             }
-            catch (Exception e)
+            catch (InvalidDataException e)
             {
+                // NAMED SEPARATELY, AND THAT IS NOT TIDINESS.
+                // System.IO.InvalidDataException derives from SystemException,
+                // NOT from IOException - despite the namespace. The first
+                // draft of this catch said "a kind of IOException" in a
+                // comment and caught only IOException, so the zip-escape
+                // refusal below went straight past it and killed the process.
+                // The suite found it on the next run, which is the one case
+                // this guard exists for.
                 why = "'" + name + "' arrived whole but could not be unpacked (" + e.Message +
                       "). Nothing was installed.";
+                return null;
+            }
+            catch (IOException e)
+            {
+                // A disk that is full, or a file something else has open.
+                why = "'" + name + "' arrived whole but could not be unpacked (" + e.Message +
+                      "). Nothing was installed.";
+                return null;
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                why = "'" + name + "' arrived whole, but Heron is not allowed to write to the folder it " +
+                      "unpacks into (" + e.Message + "). Nothing was installed.";
                 return null;
             }
 

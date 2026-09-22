@@ -77,8 +77,21 @@ namespace Heron.Installer.TestHost
                 while (_listener.IsListening)
                 {
                     HttpListenerContext context;
-                    try { context = _listener.GetContext(); }
-                    catch { return; }
+                    try
+                    {
+                        context = _listener.GetContext();
+                    }
+                    catch (HttpListenerException)
+                    {
+                        // Stop() was called while this thread was blocked in
+                        // GetContext. That is how this loop is meant to end.
+                        return;
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        // Close() won the race with Stop(). Same ending.
+                        return;
+                    }
 
                     var name = Path.GetFileName(context.Request.Url.AbsolutePath);
                     byte[] body;
@@ -106,8 +119,16 @@ namespace Heron.Installer.TestHost
 
             public void Dispose()
             {
-                try { _listener.Stop(); } catch { }
-                try { _listener.Close(); } catch { }
+                // NARROWED RATHER THAN BARE - D-52, and the suite that
+                // measures this repository's handlers caught the first draft
+                // of this file writing three of them. A bare catch here would
+                // swallow a real fault in the one place a test server going
+                // wrong looks exactly like a download going wrong.
+                try { _listener.Stop(); }
+                catch (ObjectDisposedException) { /* already closed */ }
+
+                try { _listener.Close(); }
+                catch (ObjectDisposedException) { /* already closed */ }
             }
         }
 
@@ -157,8 +178,11 @@ namespace Heron.Installer.TestHost
             {
                 release = new FakeRelease(port);
             }
-            catch (Exception e)
+            catch (HttpListenerException e)
             {
+                // THE PORT IS TAKEN, or this account may not listen on it.
+                // Narrowed, because anything else thrown here is a fault in
+                // this file and should not be reported as a busy port.
                 check(false, "a local server could be started on port " + port +
                              " - it could not, so NOTHING in this section ran (" +
                              e.Message + ")");
