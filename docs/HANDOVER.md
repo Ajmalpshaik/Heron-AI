@@ -124,6 +124,49 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — EVERY LIVE-PATH BRAIN MODULE HAS NOW BEEN OPENED
+
+**Derive it, do not read it here:** `python tools/review-ledger.py --next 120` and look for the
+seventeen. As this was written the queue listed **two** of them — `heron_ground` and `heron_retrieve`,
+both PART — and **none unopened**.
+
+The set is the one [row 5b-101](FRAGMENT-ISSUES.md)'s method names: every module reachable from `mcp/`
+with public module-level functions, classes excluded. `brain/heron_fragment.py` was the last one
+nobody had opened — **1,153 lines, 15 public functions, 106 suites, the thickest-held of the
+seventeen** — and it is **clean**.
+
+| | |
+|---|---|
+| read in full | **15** |
+| read in part | **2** — `heron_ground`, `heron_retrieve` |
+| never opened | **0** |
+
+**That does not mean `brain/` is read.** It is 53 modules; the other 36 are not on the path a
+modeller's request takes, which is the distinction the last session's sweep turned on and the reason
+this subset was worth finishing first.
+
+#### `brain/heron_fragment.py` — and a near miss dismissed, which is the fourth this session
+
+`can_promote()` guards its **target** argument and not the fragment's own status, so
+`STATUSES.index(frag.status)` raises `ValueError` on a status that is not a lifecycle state — a
+contract violation in a function whose docstring promises `(allowed, reason)`.
+
+**It is a shape and not a behaviour, and no row was written.** `tools/check-signatures.py` is the only
+gate that calls it, and it **skips every fragment whose status is not `DRAFT` before the call** — so
+`can_promote` is only ever handed a valid one. An empty or `None` status falls back to `DISCOVERED`
+and returns a pair correctly, and `validate()` catches an invalid status with a good message on the
+path that actually runs.
+
+> **Four times this session a measurement stopped a row being written**: `heron_search`'s four
+> functions named by no suite (all reached internally), `heron_search`'s two defaulted arguments (both
+> passed at every call site), the `argv[i + 1]` scan that was wrong about two of six, and this. **Shape
+> is not behaviour**, and the cost of checking is minutes against a row somebody has to disbelieve
+> later.
+
+The library validates clean today — **396 well-formed, 328 PROVEN, 68 DRAFT, exit 0** — and the two
+listed `STALE` are DRAFT signatures, which is `check-signatures`' business rather than a `validate()`
+problem.
+
 ### 2026-09-22 — FOUR COMMAND LINES ANSWERED A TYPO WITH A TRACEBACK, AND ONE ANSWERED IT
 
 **[Row 5b-104](FRAGMENT-ISSUES.md). FIXED.** And `brain/heron_search.py` read end to end with
