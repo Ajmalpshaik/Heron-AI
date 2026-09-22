@@ -3227,15 +3227,25 @@ def _parameter_coverage(reply, where, kind):
                  "the same fault: NOT SET is data nobody entered, BLANK is "
                  "usually a space somebody typed.")
 
-    clashes = [row.get("name") for row in rows
-               if row.get("sameNameOnOneElement", 1) > 1]
+    # COUNT THE NAMES, NOT THE ROWS. A name ambiguous on the instance AND on
+    # the type is two rows and one name - the add-in's own `reads` note says
+    # "the same name can appear twice, once as each" - so counting rows said
+    # "2 parameter name(s)" beside a list of one, and the reader goes looking
+    # for a second name that was never there. And a list that stops at five
+    # says so, for the reason the notListed block above states out loud: a
+    # truncated answer that does not say what it dropped is the one a reader
+    # trusts by mistake.
+    clashes = sorted(set(row.get("name") for row in rows
+                         if row.get("sameNameOnOneElement", 1) > 1))
     if clashes:
+        rest = len(clashes) - len(clashes[:5])
         lines.append("")
         lines.append("%d parameter name(s) answer to TWO different parameters on a "
-                     "single element here — %s. Asking by those names would hit "
+                     "single element here — %s%s. Asking by those names would hit "
                      "whichever Revit returned first, so they are not safe to ask "
                      "by on this model."
-                     % (len(clashes), ", ".join(sorted(set(clashes))[:5])))
+                     % (len(clashes), ", ".join(clashes[:5]),
+                        "" if not rest else ", and %d more" % rest))
 
     return "\n".join(lines)
 
