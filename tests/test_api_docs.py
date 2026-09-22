@@ -128,6 +128,21 @@ def main():
     # positive and it is the right direction: naming a parameter that
     # is arguably documented costs a reader one glance, and missing one
     # that is not hides the gap this page exists to find.
+    # A PARAMETER NAMED IN CAPITALS IS STILL NAMED. Measured 2026-09-22:
+    # the page's one live finding was `revit_change: nothing explains
+    # capability`, and that tool's docstring explains it in the sentence
+    # "Ask for the CAPABILITY, never a fragment id" - the house style for
+    # emphasis. A page with one finding, and that finding wrong, is the
+    # "135 findings that are all wrong" failure at small scale: it teaches
+    # the reader to skip the row, which is where the real ones are.
+    check(tool.explains("Ask for the CAPABILITY, never a fragment id",
+                        "capability"),
+          "a parameter written in CAPITALS for emphasis is still explained")
+    check(tool.explains("the DEPTH to walk to", "depth"),
+          "and so is one capitalised mid-sentence")
+    check(not tool.explains("it reads the file FULLY", "full"),
+          "but the word boundary still holds whatever the case")
+
     check(not tool.explains("requests are queued", "request"),
           "'requests' alone does NOT explain `request` - strict, and "
           "erring towards naming one parameter too many")

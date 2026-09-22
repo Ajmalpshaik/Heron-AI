@@ -20,7 +20,9 @@ run time. So that is what this reads.
 IT PARSES, IT DOES NOT IMPORT
 -------------------------------
 Importing `heron_mcp_server` needs the MCP SDK installed and defines
-eighteen tools as a side effect of asking what they are. A documentation
+every tool as a side effect of asking what they are - `grep -c
+'^@server.tool()' mcp/server/heron_mcp_server.py` says how many, and this
+page prints the figure it actually read. A documentation
 tool that only works on a machine which can already run the server is
 useless exactly where documentation is wanted - on a reviewer's laptop,
 in CI, on a checkout with no dependencies. `ast` needs nothing.
@@ -34,8 +36,11 @@ registry, and it is the whole thing an API reference exists to close -
 so every parameter is checked against its own tool's docstring, on a
 word boundary, and the ones nothing explains are named.
 
-Two were unexplained the first time this ran, against eighteen tools
-that all have docstrings.
+Two were unexplained the first time this ran, against the eighteen tools
+there were that day, all of which had docstrings. That sentence is a dated
+measurement and stays as it is; the count of tools TODAY is the one this
+page prints, and typing it here would be a second copy that goes stale -
+which the line above used to be.
 
 RISK AND OPERATION ARE ASKED FOR, NOT COPIED
 ----------------------------------------------
@@ -91,8 +96,24 @@ def explains(doc, name):
     and it is the right direction to be wrong in: naming a parameter
     that is arguably documented costs a reader one glance, and missing
     one that is not hides exactly what this page is for.
+
+    BUT NOT CASE-SENSITIVELY, AND THAT WAS A FALSE FINDING RATHER THAN A
+    STRICT ONE. Measured 2026-09-22: the page's one live finding was
+    `revit_change: nothing explains capability`, and that tool's docstring
+    explains it in the sentence *"Ask for the CAPABILITY, never a fragment
+    id: heron_lookup turns the user's own words..."* - capitals being this
+    repository's house style for emphasis. A parameter named in capitals
+    is still named.
+
+    The word boundary is what does the work and it is untouched: `full` is
+    still not explained by "FULLY". What changed is only that the case of
+    the letters no longer decides it - and a page carrying one finding,
+    with that finding wrong, teaches the reader to skip the row, which is
+    the failure `generate-contract-reference.py` records as "a page of 135
+    findings that are all wrong is worse than no page".
     """
-    return bool(re.search(r"\b%s\b" % re.escape(name), doc or ""))
+    return bool(re.search(r"\b%s\b" % re.escape(name), doc or "",
+                          re.IGNORECASE))
 
 
 def signature(node):

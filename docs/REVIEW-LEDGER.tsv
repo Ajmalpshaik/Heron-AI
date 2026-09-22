@@ -321,3 +321,6 @@ when	who	path	blob	verdict	note
 2026-09-22	Claude	tools/heron-backup.py	d34215de52b9708359047cb6bbc6f4023ea81155	issue	5b-143	full
 2026-09-22	Claude	tools/new-agent.py	af9bada31f2054fa576d741d0e2d096b9564a995	issue	5b-144	full
 2026-09-22	Claude	tools/generate-contract-reference.py	b52672afae658dd3ab6c6328120b65c5fe39b987	clean	sound; what it reports is raised as 5b-145	full
+2026-09-22	Claude	tools/generate-skill-catalog.py	a801dd512fbea178222b0111634514632dcedb0b	clean	sound; it concludes and its suite covers both halves	full
+2026-09-22	Claude	tools/generate-fragment-catalog.py	baaa59b7a820927b5b7241a94c23526eb40c903b	issue	5b-146	full
+2026-09-22	Claude	tools/generate-api-docs.py	2df5b5470bff33a1632cf43fbe3c8e2506e070b5	issue	5b-146, 5b-147	full
