@@ -124,6 +124,108 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — "HERON HAS NO COPY OF ISO 19650" ABOUT A STORE THAT HAS IT
+
+**[Row 5b-114](FRAGMENT-ISSUES.md) and [row 5b-115](FRAGMENT-ISSUES.md), both FIXED.
+[Row 5b-110](FRAGMENT-ISSUES.md) now has its answer** — its three sites have been read, and they are
+not one thing. `brain/heron_iso.py` and `brain/heron_company.py` are both read end to end.
+
+`heron_iso.cite()` gets a shortlist from the Librarian, reopens the store and reads each clause's
+words in a second pass. That read was `except Exception: row = None` followed by a `continue` — **so a
+clause the store could not read was dropped in silence.**
+
+**Measured end to end** on a real store holding a real ISO 19650 document, with **only that one query**
+raising `database is locked`, so the shortlist is identical either way:
+
+| | claimed | clauses | the sentence a reader gets |
+|---|---|---|---|
+| healthy | **True** | **3** | 3 clauses of ISO 19650 across 1 scope |
+| locked | **False** | **0** | **"HERON HAS NO COPY OF ISO 19650 indexed in company."** |
+
+**Nothing anywhere in that answer said a read had failed** — `skipped` was `None`, `route` was still
+`documents`, and no `unjudged` line mentioned it. Measured by searching the whole payload for the
+words. **That is D-52's plausible zero at its worst**: confident, specific, and acted on by going to
+look for a document that is already loaded — **in the module whose headline rule is *"NO SOURCE, NO
+CLAIM … there is no path through this agent that writes a sentence about a standard."***
+
+The read is narrowed to `sqlite3.DatabaseError` and **records** on an `unreadable` list carried in the
+answer. A genuinely absent or genuinely empty chunk is still skipped, because that is a fact about the
+store's contents rather than a fault reading it.
+
+### What row 5b-110 asked for: one defect in three, and the row stays open for a better reason
+
+| site | what it does |
+|---|---|
+| `brain/heron_iso.py` 207 | **swallowed**, and produced a false sentence → row 5b-114 |
+| `brain/heron_company.py` 328 | same handler, **does not swallow** — the `None` goes to an `unreadable` list the answer names |
+| `tools/check-skill-routing.py` 203 | already narrowed inside; its outer handler **records** `counts_error` |
+
+**So widening `check-narrow-errors` to every `except Exception` around a `.execute` would flag the two
+that are RIGHT.** What separates them is not the handler — it is the four lines after it, whether the
+failure is named or becomes a count. That tool reads TEXT on purpose, and *does this handler swallow?*
+is not a question a text scan has been shown to answer. **That is the remaining question, and it is a
+tooling decision rather than a defect.**
+
+### And row 5b-115 — the grep that found four command lines could not see the fifth
+
+```bash
+python brain/heron_iso.py --standard          # IndexError: list index out of range, exit 1
+```
+
+**Row 5b-104's scan was a grep for the literal `argv[i + 1]`, and this file reads `argv[at + 1]`.**
+One variable name. **Re-run as an AST walk** over `brain/`, `mcp/` and `tools/` — every
+`<list>[<name> + 1]` read, whatever the names are — **it finds 27 where the grep found 8.**
+
+**And shape is still not behaviour, so all of the remainder were RUN**: `heron_unit_test` guards its
+`--timeout` with `except (IndexError, ValueError)`; `heron_bridge_client`'s `--session` falls through
+to a positional and ends at the usage text, exit 2; the nine fixed by 5b-104 and 5b-112 all refuse by
+name; and three of the twenty-seven are not command-line reads at all. **The grep found neither the
+one that was wrong nor the fact that it was alone.**
+
+**One thing measured and recorded rather than fixed**: `brain/heron_devperf.py --baseline` with no
+value refuses at exit 2 and calls it **`unknown option '--baseline'`** — a known option given no
+value, so a person goes to check the spelling of a flag that is spelled correctly. It refuses, names
+the flag, and neither crashes nor searches; the wording is the whole of it.
+
+### 2026-09-22 — `heron_retrieve.py` READ END TO END AND NOTHING IS WRONG WITH IT
+
+**A NEGATIVE RESULT, written down so nobody reads it a third time.** 1,339 lines, completing the two
+part-reads of 2026-09-21 and 2026-09-22. **No register row came out of it, and that is the finding.**
+
+**Every live-path module on the `mcp/` side has now been read in full.** The measurement that picked
+targets — suites reaching a module against its public surface — has nothing part-read left on it.
+
+**Derived claims checked by RUNNING them**, not by reading:
+
+| the file says | measured |
+|---|---|
+| one rank of fusion is `1/(K+1) - 1/(K+2)` at K=60 | **0.00026441** |
+| the quality nudge spans *"about six tenths of one rank"* | **0.605** |
+| status *"settles a dead heat and cannot move a fragment past one the routes ranked higher"* | largest nudge **0.454** of a rank |
+| `OFFERABLE` excludes `DEPRECATED` and `ARCHIVED` | it does |
+
+### Three things checked and dismissed, because a near miss is worth writing down
+
+**1. `librarian()` wraps `SCOPE.open_scope` in a bare `except Exception`** — which is
+[row 5b-109](FRAGMENT-ISSUES.md)'s second half **by shape**. It is not the same defect: it does not
+swallow. It records `skipped="could not be opened: …"`, and that field is carried all the way out —
+printed by `heron_research` as `NOT ASKED - …`, returned by `heron_iso`, and present in **both** of
+`heron_brain`'s payloads. **Traced to the seam rather than assumed.**
+
+**2. `find_documents()` builds its `Contest` with a literal pool of `20`** while `find()` passes the
+same variable it searched with. Two copies of one number, in the one function whose job is an honest
+report — and this file argues against exactly that twice, *"BORROWED, NOT RE-TYPED"* and *"ONE
+MEASUREMENT, NOT TWO"*. **Both are 20 today and nothing calls `documents()` with another pool, so no
+sentence is wrong.** A hazard, not a defect, and a row here would be a finding made from a shape.
+
+**3. `_until_filled_fragments` and `_until_filled_pairs` are byte-identical bodies** differing only by
+`kind=EMBED.CHUNK`. Duplication, no behaviour difference.
+
+**And one thing that looks like a gap and is right**: the `chunk_text` count in `find_documents` is
+**not** wrapped, while the two queries around it narrow on *no such table*. That is correct — the
+narrowing exists so a broken store cannot read as an empty one, and leaving this one bare lets a real
+fault surface, which is what **D-52** asks for.
+
 ### 2026-09-22 — A TYPO BECAME THE QUESTION ON THREE COMMAND LINES, AND `heron_ground.py` IS FINISHED
 
 **[Row 5b-112](FRAGMENT-ISSUES.md), FIXED. [Row 5b-113](FRAGMENT-ISSUES.md), OPEN.**
