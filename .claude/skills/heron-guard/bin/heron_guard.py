@@ -9,9 +9,26 @@
 """
 The adapter boundary, checked BEFORE the edit lands rather than after.
 
-A PreToolUse hook. It reads one proposed Write or Edit from stdin and refuses
-it if the new text would put the Revit vendor namespace outside `revit/` -
-docs/16 section 4, the boundary that keeps the core testable without Revit.
+A PreToolUse hook, wired from .claude/settings.json so it runs in EVERY
+session. It reads one proposed Write or Edit from stdin and refuses it if the
+new text would put the Revit vendor namespace outside `revit/` - docs/16
+section 4, the boundary that keeps the core testable without Revit.
+
+WIRED FROM SETTINGS, NOT FROM THE SKILL - CORRECTED 2026-09-23
+--------------------------------------------------------------
+Until then the hook was declared in the heron-guard skill's own frontmatter,
+which is where gstack keeps its guards. A hook declared there is registered
+only when the skill is INVOKED, so in every session that never loaded
+heron-guard this file never ran. Proven 2026-09-22 by hand: this script
+refused a forbidden edit piped into it, and the same edit made through the
+editor in a normal session went straight through. A guard that runs only
+when somebody remembers to load it is the gate-somebody-has-to-remember this
+file was written to replace, one level up.
+
+So .claude/settings.json wires it now, and the frontmatter declares nothing:
+the host runs a skill's copy of a hook SEPARATELY from the settings' copy, so
+declaring it in both places would run it twice. tests/test_heron_guard.py
+holds both halves.
 
 WHY THIS EXISTS AND WHY IT IS NOT check-structure.py
 -----------------------------------------------------

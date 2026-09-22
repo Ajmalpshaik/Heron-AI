@@ -30,22 +30,31 @@ WHAT THIS PROVES, and every one of these is a way a hook becomes decoration:
      answer tests/test_fragment_imports.py gives for the executor's imports.
   5. THE ESCAPE HATCH WORKS. A fail-closed hook that cannot be turned off is
      one bad edit from a repository nobody can work in.
+  6. IT IS WIRED FROM .claude/settings.json, AND ONLY FROM THERE. Until
+     2026-09-23 the skill's frontmatter declared it, and a hook declared there
+     is registered only when the skill is invoked - so a session that never
+     loaded the skill had no guard. The settings entry is checked, the
+     frontmatter is checked to declare nothing (two copies would run twice),
+     and the exact command the settings give is run under bash.
 
 WHAT IT DOES NOT PROVE. That the host actually runs the hook. That needs a
-host, and this is a text-level check of the file the host would run - the
-same limit tests/test_mcp_serves.py has against the MCP SDK.
+host - one real session on the owner's PC refusing a forbidden edit is the
+proof still owed - and this runs the command the host would run, the same
+limit tests/test_mcp_serves.py has against the MCP SDK.
 """
 
 import io
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILL = os.path.join(ROOT, ".claude", "skills", "heron-guard")
 HOOK = os.path.join(SKILL, "bin", "heron_guard.py")
+SETTINGS = os.path.join(ROOT, ".claude", "settings.json")
 
 sys.path.insert(0, os.path.join(SKILL, "bin"))
 
@@ -182,16 +191,66 @@ def main():
               "and it exempts the same two folders check-structure.py does")
 
     print()
-    print("7. The skill declares the hook the host would run")
+    print("7. It is wired from .claude/settings.json - every session, once")
     print("-" * 70)
+    # Until 2026-09-23 this section asserted the OPPOSITE: that the skill's
+    # frontmatter declared the hook. A hook declared there is registered only
+    # when the skill is invoked, so every session that never loaded the skill
+    # ran without the guard - proven by hand on 2026-09-22. Settings are read
+    # in every session; a skill's copy of a hook runs SEPARATELY from the
+    # settings' copy, so declaring it in both would run it twice.
+    settings = {}
+    try:
+        settings = json.loads(io.open(SETTINGS, encoding="utf-8").read())
+    except (IOError, OSError, ValueError) as exc:
+        check(False, ".claude/settings.json exists and parses (%s)"
+              % type(exc).__name__)
+    wired = [(group.get("matcher", ""), one)
+             for group in ((settings.get("hooks") or {}).get("PreToolUse") or [])
+             for one in group.get("hooks") or []
+             if "heron_guard.py" in one.get("command", "")]
+    check(len(wired) == 1,
+          "settings.json wires the guard exactly once, on PreToolUse")
+    matcher, entry = wired[0] if wired else ("", {})
+    # A matcher of letters, digits and '|' is a list of exact tool names to
+    # the host, not a regular expression - so this is the whole list.
+    check(sorted(matcher.split("|")) == ["Edit", "MultiEdit", "Write"],
+          "for exactly the three tools that can put text in a file: %s"
+          % matcher)
+    command = entry.get("command", "")
+    check(entry.get("type") == "command" and "$CLAUDE_PROJECT_DIR" in command
+          and ".claude/skills/heron-guard/bin/heron_guard.py" in command,
+          "as a command found from $CLAUDE_PROJECT_DIR, so it runs whatever "
+          "folder the session is in: %s" % command)
+
     card = io.open(os.path.join(SKILL, "SKILL.md"), encoding="utf-8").read()
-    check("PreToolUse:" in card, "SKILL.md declares a PreToolUse hook")
-    check("Write|Edit|MultiEdit" in card,
-          "matching the three tools that can put text in a file")
-    check("heron_guard.py" in card, "and pointing at this hook")
+    front = card.split("\n---", 1)[0] if card.startswith("---") else ""
+    check(front != "" and not re.search(r"^hooks\s*:", front, re.M),
+          "and the skill's frontmatter declares NO hook - a second copy "
+          "would run the guard twice")
+    check("settings.json" in card,
+          "the skill says where the hook is wired now")
     check("not part of what a modeller installs" in card,
           "and it says plainly that this is for DEVELOPING Heron - hooks are "
           "the host's mechanism (D-01) and nothing here reaches a model")
+
+    # The exact command, run the way the host runs it. Not on Windows: there
+    # `bash` on PATH may be WSL rather than Git Bash, and a real session on
+    # the owner's PC is the proof of that half.
+    if os.name != "nt" and shutil.which("bash") and command:
+        got = subprocess.run(
+            ["bash", "-c", command],
+            input=json.dumps({"tool_input": {
+                "file_path": "brain/x.py",
+                "content": "using %s.DB;" % vendor}}),
+            capture_output=True, text=True,
+            env=dict(os.environ, CLAUDE_PROJECT_DIR=ROOT))
+        check(verdict_of(got.stdout.strip()) == "deny",
+              "the exact command settings.json gives, run under bash, REFUSES "
+              "the forbidden edit")
+    else:
+        print("  note  the settings command was not run: no bash here, or "
+              "Windows - a real session on the PC proves that half")
 
     print()
     if FAILURES:

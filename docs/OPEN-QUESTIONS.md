@@ -873,6 +873,14 @@ same day.
 mechanism, [D-01](DECISIONS.md) gives the host orchestration, and nothing in it reaches a model, a
 fragment, or a user.
 
+**2026-09-23 — the wiring moved from shape 4 to shape 3, and the answer stands.** A hook declared in a
+skill's frontmatter is registered only when the skill is invoked, so the guard ran only in sessions that
+had loaded `heron-guard` — proven on 2026-09-22, when the script refused a forbidden edit piped into it
+by hand and the same edit made through the editor in a normal session went through. It is wired from a
+committed [`.claude/settings.json`](../.claude/settings.json) now, which every session reads, and the
+skill declares no hook so it runs once. *Yes, the gates run automatically* is unchanged; only where the
+hook is declared did.
+
 ---
 
 ### ✅ Q-48 — Should a fragment that READS look inside loaded links? → **Yes, when the modeller asks for it** *(asked and answered 2026-09-09)*

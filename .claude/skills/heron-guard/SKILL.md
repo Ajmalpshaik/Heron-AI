@@ -1,15 +1,8 @@
 ---
 name: heron-guard
-description: Refuses an edit that would put the Revit vendor namespace outside revit/, at the moment the edit is proposed rather than when somebody remembers to run the gate. Deny-tier, fails closed, and disabled with HERON_GUARD=off. This is for developing Heron and is not part of what a modeller installs.
+description: Refuses an edit that would put the Revit vendor namespace outside revit/, at the moment the edit is proposed rather than when somebody remembers to run the gate. Wired from .claude/settings.json so it runs in every session. Deny-tier, fails closed, and disabled with HERON_GUARD=off. This is for developing Heron and is not part of what a modeller installs.
 allowed-tools:
   - Read
-hooks:
-  PreToolUse:
-    - matcher: "Write|Edit|MultiEdit"
-      hooks:
-        - type: command
-          command: "python .claude/skills/heron-guard/bin/heron_guard.py"
-          statusMessage: "Checking the adapter boundary..."
 ---
 
 # Heron Guard — the adapter boundary, before the edit lands
@@ -24,6 +17,24 @@ instead of when somebody remembers to run the sweep.
 the day it matters. On 2026-09-09 the author of `brain/heron_context.py` broke that exact boundary
 **while writing a comment explaining it** — quoting the namespace in order to say the file did not
 contain it — and found out only because the sweep happened to be run afterwards.
+
+## Where it is wired — `.claude/settings.json`, and not this file
+
+**Corrected 2026-09-23.** This skill used to declare the hook in its own frontmatter, gstack's shape
+([Q-49](../../../docs/OPEN-QUESTIONS.md)). **A hook declared there is registered only when the skill is
+invoked**, so in every session that never loaded `heron-guard` the boundary was not guarded at all.
+Proven 2026-09-22 by hand: the script refused a forbidden edit piped into it, and the same edit made
+through the editor in a normal session went straight through.
+
+So [`.claude/settings.json`](../../settings.json) wires it now, for `Write|Edit|MultiEdit`, as
+`python "$CLAUDE_PROJECT_DIR/.claude/skills/heron-guard/bin/heron_guard.py"` — every session, whether
+or not anybody reads this page. **The frontmatter declares nothing, on purpose:** the host keeps a
+skill's copy of a hook separate from the settings' copy, so declaring it in both would run it twice.
+[`tests/test_heron_guard.py`](../../../tests/test_heron_guard.py) holds both halves, and runs the exact
+command `settings.json` gives.
+
+**A hook the host cancels at its timeout decides nothing, and the edit goes ahead** — the host's rule,
+not this hook's, and one more reason `check-structure.py` still runs before every push.
 
 ## What it does not do
 

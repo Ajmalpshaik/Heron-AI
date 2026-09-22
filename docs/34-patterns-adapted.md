@@ -159,6 +159,17 @@ frontmatter**, so the guard installs with the capability and the two cannot drif
 **Built as [`.claude/skills/heron-guard/`](../.claude/skills/heron-guard/SKILL.md)** — one hook, one
 rule: the Revit vendor namespace outside `revit/` is refused **at the moment the edit is proposed**.
 
+**Corrected 2026-09-23: the frontmatter was the wrong home, and the hook is wired from
+[`.claude/settings.json`](../.claude/settings.json) now.** A hook declared in a skill's frontmatter is
+registered only when that skill is invoked, so in every session that never loaded `heron-guard` the
+boundary was not guarded at all — proven on 2026-09-22, when the script refused a forbidden edit piped
+into it by hand and the same edit made through the editor in a normal session went through. Settings
+are read in every session. The skill still documents the guard and **declares no hook**: the host runs a
+skill's copy of a hook separately from the settings' copy, so both would run it twice.
+`tests/test_heron_guard.py` holds both halves and runs the exact command the settings give. *"Installs
+with the capability"* was the right goal and the wrong mechanism — the capability is loaded on demand,
+and a boundary cannot be.
+
 **One rule and not five, deliberately.** A hook with false positives is a hook somebody turns off, and
 then the boundary is gone along with the noise. The full sweep still owns everything else.
 
