@@ -484,74 +484,128 @@ class Cited(object):
         return "<cited %s %s>" % (self.verdict, self.text[:40])
 
 
+# THE EDITION HAS TO BELONG TO THE DOCUMENT, and scanning the whole sentence
+# for a year meant any year satisfied the contract:
+#
+#     "Install by 2026 per ISO 19650 clause 5.1"
+#        -> well-formed, edition 2026
+#
+# ISO 19650 gave no edition at all; a delivery date was read as one, and the
+# citation still cannot be looked up. So the year is searched for in the
+# document reference and the few characters that follow it - "ISO
+# 19650-2:2018", "QCS 2014", "BS EN 12845:2015" - and nowhere else. Found by a
+# review 2026-09-11.
+def _edition_at(flat, document):
+    """The year sitting on this document reference, or None."""
+    if not document:
+        return None
+    at = flat.find(document)
+    span = flat[at:at + len(document) + 8] if at >= 0 else document
+    found = _EDITION.search(span)
+    return found.group(0) if found else None
+
+
+# THE LOCATOR BELONGS TO THE DOCUMENT, the same way the edition does - and the
+# round that bound the edition left this half alone. Searched across the whole
+# sentence:
+#
+#     "ISO 19650:2018 requires X in the workflow described in Section 2"
+#        -> well-formed, locator "Section 2"
+#
+# Section 2 is a section of the ANSWER, not of ISO 19650, so the citation was
+# reported as something a person could look up when no locator within that
+# document had been given at all. A locator that belongs to a citation follows
+# it closely: a comma, a "clause", at most a word or two. Found by a review
+# 2026-09-11.
+def _locator_at(flat, document):
+    """The clause, section or table number belonging to this document, or None."""
+    for found in _LOCATOR.finditer(flat):
+        if document and not _follows(flat, document, found.start()):
+            continue
+        return found.group(0)
+    # A BARE DOTTED NUMBER COUNTS ONLY WHEN A DOCUMENT WAS NAMED, and that
+    # condition is the whole of why this is a separate pattern. "5.1.4" in
+    # "ISO 19650-2:2018, 5.1.4" is a clause; "5.1.4" in "a fall of 1.5 to 2.5"
+    # is a measurement. heron_graph learned the same lesson from the other side
+    # and a review had to point it out twice.
+    for found in _BARE_LOCATOR.finditer(flat):
+        if not document or not _follows(flat, document, found.start()):
+            continue
+        return found.group(0)
+    return None
+
+
+def _named_document(flat):
+    """The proper name a citation hangs on, when no issuing body is named.
+
+    THE FIRST PROPER NAME IN THE SENTENCE IS NOT THE DOCUMENT, and taking it
+    was this function's whole content until 2026-09-21. Every case that had
+    ever been put through it - here and in tests/test_review_findings.py s64 -
+    put the document FIRST:
+
+        "Acme Engineering BIM Standard 2026, clause 3.1 requires 30mm."
+
+    A real answer writes the subject first, and on a BIM platform the subject
+    is very often two capitalised words, because a Revit category name is:
+
+        "Fire Dampers shall be rated per Acme Engineering BIM Standard 2026,
+         clause 3.1."
+            -> document "Fire Dampers", VAGUE,
+               missing the edition and the clause sitting in the same sentence
+
+    That is worse than noise. The verdict is wrong AND the report names as
+    absent the two parts the reader can see, so the only action it offers -
+    go back and add an edition and a clause - is already done.
+
+    So the document is the name the citation's other parts ATTACH to, by the
+    same two rules the parts are read with: the edition sits on the reference,
+    the locator follows it within _LOCATOR_GAP words. The first candidate that
+    carries either wins.
+
+    WHEN NOTHING CARRIES EITHER, THE FIRST IS STILL TAKEN. There is nothing to
+    choose between them then, and this function picks between candidates
+    rather than inventing a part - a sentence that was VAGUE before is VAGUE
+    after.
+
+    THE VAGUE-SOURCE LIST IS COMPARED ON THE NAME WITH ITS SENTENCE PUNCTUATION
+    OFF. It stripped " ,;:-" and not ".", so a phrase that ENDS a sentence kept
+    its full stop and escaped the list by one character:
+
+        "Ductwork shall be insulated to 25mm per Industry Practice."
+            -> document "Industry Practice.", missing only the edition and the
+               clause
+
+    _NOT_A_DOCUMENT exists for exactly that phrase, and the report told the
+    reader the source was named.
+    """
+    names = []
+    for maybe in _NAMED.finditer(flat):
+        name = maybe.group(0).strip(" ,;:-.")
+        if name.lower() in _NOT_A_DOCUMENT:
+            continue
+        names.append(name)
+    for name in names:
+        if _edition_at(flat, name) or _locator_at(flat, name):
+            return name
+    return names[0] if names else None
+
+
 def citation(text):
     """The citation in one sentence, or None. Reports parts, never guesses them."""
     if not text:
         return None
     flat = " ".join(str(text).split())
 
-    document = None
     found = _DOCUMENT.search(flat)
     if found:
         document = found.group(0).strip(" ,;:-")
     else:
         # No issuing body named. A proper name will do, and for a company or
         # project document it is the only thing there is.
-        for maybe in _NAMED.finditer(flat):
-            name = maybe.group(0).strip(" ,;:-")
-            if name.lower() in _NOT_A_DOCUMENT:
-                continue
-            document = name
-            break
+        document = _named_document(flat)
 
-    # THE EDITION HAS TO BELONG TO THE DOCUMENT, and scanning the whole
-    # sentence for a year meant any year satisfied the contract:
-    #
-    #     "Install by 2026 per ISO 19650 clause 5.1"
-    #        -> well-formed, edition 2026
-    #
-    # ISO 19650 gave no edition at all; a delivery date was read as one, and
-    # the citation still cannot be looked up. So the year is searched for in
-    # the document reference and the few characters that follow it -
-    # "ISO 19650-2:2018", "QCS 2014", "BS EN 12845:2015" - and nowhere else.
-    # Found by a review 2026-09-11.
-    edition = None
-    if document:
-        at = flat.find(document)
-        span = flat[at:at + len(document) + 8] if at >= 0 else document
-        found = _EDITION.search(span)
-        if found:
-            edition = found.group(0)
-
-    # THE LOCATOR BELONGS TO THE DOCUMENT, the same way the edition does - and
-    # the round that bound the edition left this half alone. Searched across
-    # the whole sentence:
-    #
-    #     "ISO 19650:2018 requires X in the workflow described in Section 2"
-    #        -> well-formed, locator "Section 2"
-    #
-    # Section 2 is a section of the ANSWER, not of ISO 19650, so the citation
-    # was reported as something a person could look up when no locator within
-    # that document had been given at all. A locator that belongs to a
-    # citation follows it closely: a comma, a "clause", at most a word or two.
-    # Found by a review 2026-09-11.
-    locator = None
-    for found in _LOCATOR.finditer(flat):
-        if document and not _follows(flat, document, found.start()):
-            continue
-        locator = found.group(0)
-        break
-    if locator is None:
-        # A BARE DOTTED NUMBER COUNTS ONLY WHEN A DOCUMENT WAS NAMED, and that
-        # condition is the whole of why this is a separate pattern. "5.1.4" in
-        # "ISO 19650-2:2018, 5.1.4" is a clause; "5.1.4" in "a fall of 1.5 to
-        # 2.5" is a measurement. heron_graph learned the same lesson from the
-        # other side and a review had to point it out twice.
-        for found in _BARE_LOCATOR.finditer(flat):
-            if not document or not _follows(flat, document, found.start()):
-                continue
-            locator = found.group(0)
-            break
+    edition = _edition_at(flat, document)
+    locator = _locator_at(flat, document)
 
     lowered = flat.lower()
     vague_words = [phrase for phrase in _NOT_A_DOCUMENT if phrase in lowered]
