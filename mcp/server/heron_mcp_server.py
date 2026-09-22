@@ -3149,24 +3149,114 @@ def revit_annotation() -> str:
     return "\n".join(lines)
 
 
+def _systems_answer(reply, where):
+    """The words for one `list_systems` reply.
+
+    Lifted out of revit_systems so it can be read without the MCP SDK -
+    tests/test_systems_answer.py checks the wording against what the add-in
+    actually counts, which is where it went wrong before.
+
+    UNTIL 2026-09-22 a system's count was its TERMINALS ONLY, and every duct,
+    pipe and fitting was reported on no system. The add-in now sends the run
+    (`network`) and the terminals and base equipment (`components`) apart, and
+    both are printed, so each can be held against Revit on its own.
+    """
+    systems = reply.get("systems") or []
+    loose = reply.get("connectedToNothing") or []
+    examined = reply.get("mepElementsExamined", 0)
+
+    if not systems and not examined:
+        return ("%s has no duct or pipe systems and no MEP elements at all. "
+                "That is a statement about this model, not an empty answer — "
+                "an architectural or structural file has neither." % where)
+
+    lines = ["%s: %d system(s), %s MEP element(s) examined."
+             % (where, len(systems), "{:,}".format(examined)), ""]
+
+    # AN ADD-IN OLDER THAN THE FIX SENDS NO `network`, and what it counts is
+    # terminals only. Printing that zero as if it were the answer IS the
+    # defect, so an old add-in is named rather than believed.
+    split = bool(systems) and all("network" in s for s in systems)
+
+    for system in systems:
+        count = "%s element(s)" % "{:,}".format(system.get("elements", 0))
+        if split:
+            count += " — %s in the run, %s terminal(s) and equipment" % (
+                "{:,}".format(system.get("network", 0)),
+                "{:,}".format(system.get("components", 0)))
+        lines.append("  %-4s  %-30s %s%s"
+                     % (system.get("kind") or "?",
+                        system.get("name"),
+                        count,
+                        "" if not system.get("systemType")
+                        else "   [%s]" % system.get("systemType")))
+
+    if systems and not split:
+        lines.append("")
+        lines.append("THIS REVIT IS RUNNING A HERON ADD-IN OLDER THAN 2026-09-22. Each count "
+                     "above is that system's TERMINALS ONLY, and every duct, pipe and fitting "
+                     "reads as on no system below. Deploy the current add-in and restart "
+                     "Revit before trusting either number.")
+
+    off_system = reply.get("onNoSystem", 0)
+    if off_system:
+        lines.append("")
+        lines.append("%s MEP element(s) are on no duct or pipe system — no system holds "
+                     "them in its run, among its terminals or as its base equipment. "
+                     "Electrical circuits are not read here, so anything electrical is "
+                     "counted in this number." % "{:,}".format(off_system))
+    elif split and examined:
+        lines.append("")
+        lines.append("Every one of the %s MEP element(s) examined is held by a duct or "
+                     "pipe system." % "{:,}".format(examined))
+
+    open_ended = reply.get("withAnOpenConnector", 0)
+    if open_ended:
+        lines.append("")
+        lines.append("%s element(s) have at least one open connector. That is NORMAL — "
+                     "the end of every run is one — and is a count rather than a list "
+                     "for that reason." % "{:,}".format(open_ended))
+
+    if loose:
+        lines.append("")
+        lines.append("%d element(s) are CONNECTED TO NOTHING — no joined connector in any "
+                     "direction, so nothing is attached to them at all. Whether each one "
+                     "is on a system is a separate count, above:" % len(loose))
+        for one in loose[:20]:
+            lines.append("    %-22s %-26s %s"
+                         % (one.get("category") or "?",
+                            one.get("name"),
+                            one.get("level") or "no level"))
+        if len(loose) > 20:
+            lines.append("    ... and %d more." % (len(loose) - 20))
+    else:
+        lines.append("")
+        lines.append("Every MEP element that reports a connector has at least one joined. "
+                     "Nothing is floating unattached.")
+
+    return "\n".join(lines)
+
+
 @server.tool()
 def revit_systems() -> str:
     """
-    List the duct and pipe systems in the open Revit model, and the MEP
-    elements that are connected to nothing.
+    List the duct and pipe systems in the open Revit model - each with its
+    run (ducts or pipes and their fittings) and its terminals and equipment -
+    the MEP elements no system holds, and the ones connected to nothing.
 
     Use whenever the user mentions a system, a riser, flow, sizing, a system
     browser, or says that something "is not on a system" or that a schedule or
     a calculation is coming up short. Also use it before trusting any MEP
     total: a duct that LOOKS joined on screen and is not connected carries no
-    flow, appears on no system, and is missing from every number downstream
-    without anything saying so.
+    flow, is not on the system it looks part of, and is missing from every
+    number downstream without anything saying so.
 
     AN OPEN CONNECTOR IS NOT A FAULT and this does not report it as one — the
     end of every run is open, and a stub waiting for coordination is open on
     purpose. What it singles out is the element with NO joined connector in
-    any direction, which is on no system by definition and is the group worth
-    a person's eye.
+    any direction — the group worth a person's eye. Whether an element is ON a
+    system is counted separately, from what each system holds, and is never
+    inferred from whether it is joined.
 
     It reads only. Nothing is connected, renamed or put on a system.
     """
@@ -3190,59 +3280,7 @@ def revit_systems() -> str:
 
     where = "%s (Revit %s, session %s)" % (reply.get("document"),
                                            session.revit_version, session.pid)
-    systems = reply.get("systems") or []
-    loose = reply.get("connectedToNothing") or []
-    examined = reply.get("mepElementsExamined", 0)
-
-    if not systems and not examined:
-        return ("%s has no duct or pipe systems and no MEP elements at all. "
-                "That is a statement about this model, not an empty answer — "
-                "an architectural or structural file has neither." % where)
-
-    lines = ["%s: %d system(s), %s MEP element(s) examined."
-             % (where, len(systems), "{:,}".format(examined)), ""]
-
-    for system in systems:
-        lines.append("  %-4s  %-30s %s element(s)%s"
-                     % (system.get("kind") or "?",
-                        system.get("name"),
-                        "{:,}".format(system.get("elements", 0)),
-                        "" if not system.get("systemType")
-                        else "   [%s]" % system.get("systemType")))
-
-    off_system = reply.get("onNoSystem", 0)
-    if off_system:
-        lines.append("")
-        lines.append("%s MEP element(s) are on NO SYSTEM. That is the wider group — an "
-                     "element can be joined to its neighbour and still sit on no system, "
-                     "which is what a half-built run looks like."
-                     % "{:,}".format(off_system))
-
-    open_ended = reply.get("withAnOpenConnector", 0)
-    if open_ended:
-        lines.append("")
-        lines.append("%s element(s) have at least one open connector. That is NORMAL — "
-                     "the end of every run is one — and is a count rather than a list "
-                     "for that reason." % "{:,}".format(open_ended))
-
-    if loose:
-        lines.append("")
-        lines.append("%d element(s) are CONNECTED TO NOTHING. These are on no system, "
-                     "carry no flow, and are missing from every total downstream:"
-                     % len(loose))
-        for one in loose[:20]:
-            lines.append("    %-22s %-26s %s"
-                         % (one.get("category") or "?",
-                            one.get("name"),
-                            one.get("level") or "no level"))
-        if len(loose) > 20:
-            lines.append("    ... and %d more." % (len(loose) - 20))
-    else:
-        lines.append("")
-        lines.append("Every MEP element that reports a connector has at least one joined. "
-                     "Nothing is floating unattached.")
-
-    return "\n".join(lines)
+    return _systems_answer(reply, where)
 
 
 @server.tool()
