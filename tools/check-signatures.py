@@ -10,7 +10,8 @@
 Is anybody's signature sitting unused?
 
     python tools/check-signatures.py           # findings only
-    python tools/check-signatures.py --all     # including what is fine
+    python tools/check-signatures.py --all     # and say so when nothing is
+                                               # being wasted
 
 Exit 1 when a signature is being wasted, 0 otherwise.
 
@@ -53,6 +54,18 @@ hide both:
 That split is D-52's rule in another costume: a count of things correctly
 refused is never evidence of something found.
 
+A FRAGMENT IT COULD NOT READ IS NAMED, NOT DROPPED
+--------------------------------------------------
+`load_all()` returns its problems and they were discarded. Measured
+2026-09-22 on a library of three, one of them a `fragment.yaml` that will not
+parse: the answer was `Signatures in the library: 1`, exit 0, the broken one
+never named, and nothing anywhere saying a fragment could not be read.
+
+IF THE ONE IT CANNOT READ IS THE ONE CARRYING AN UNUSED SIGNATURE, this gate
+says nothing is waiting and the owner signs it again - which is the failure
+this tool exists to prevent, one level up. So the problems are printed, the
+count says how many fragments it is over, and the gate does not pass.
+
 WHAT IT CANNOT DO
 -----------------
 It does not judge the proof. `can_promote` does that, and this asks it rather
@@ -73,7 +86,10 @@ import heron_fragment as F                                   # noqa: E402
 
 
 def findings():
-    """(unused, stale, held, signed_total). Every fragment signed, not promoted.
+    """(unused, stale, held, signed_total, read, unreadable).
+
+    Every fragment signed and not promoted, and every one that could not be
+    read at all.
 
     `held` IS A THIRD ANSWER AND IT WAS MISSING. This file's own header says a
     fragment "signed and meant to WAIT" has to carry that intent as a caveat -
@@ -88,7 +104,11 @@ def findings():
     """
     unused, stale, held, signed = [], [], [], 0
 
-    folders, _problems = F.load_all()
+    # THE PROBLEMS ARE THE ANSWER'S OTHER HALF. Discarding them made a
+    # signature in an unreadable fragment invisible, and a count that is
+    # quietly over fewer fragments than the library holds is D-52's
+    # plausible zero wearing this tool's own face.
+    folders, unreadable = F.load_all()
     for _id, frag in sorted(folders.items()):
         proof = getattr(frag, "proof", None) or {}
         by = (proof.get("by") or "").strip()
@@ -106,15 +126,27 @@ def findings():
         else:
             (unused if allowed else stale).append(row)
 
-    return unused, stale, held, signed
+    return unused, stale, held, signed, len(folders), list(unreadable or [])
 
 
 def main(argv):
     show_all = "--all" in argv
-    unused, stale, held, signed = findings()
+    unused, stale, held, signed, read, unreadable = findings()
 
-    print("Signatures in the library: %d" % signed)
+    print("Signatures in the library: %d, across %d fragment(s) read"
+          % (signed, read))
     print("")
+
+    if unreadable:
+        print("COULD NOT BE READ (%d) - so the count above is over fewer"
+              % len(unreadable))
+        print("fragments than the library holds. A signature inside one of")
+        print("these is invisible to this gate, and invisible is how a")
+        print("signature gets spent twice.")
+        print("")
+        for line in unreadable:
+            print("  %s" % line)
+        print("")
 
     if unused:
         print("UNUSED - signed, nothing blocking, still DRAFT (%d)" % len(unused))
@@ -142,13 +174,13 @@ def main(argv):
             print("  %-32s %s, %s" % (name, by, date))
         print("")
 
-    if not unused and not stale:
+    if not unused and not stale and not unreadable:
         print("No signature is waiting. Every one is either promoted or")
         print("correctly held.")
     elif show_all and not unused:
         print("Nothing is being wasted.")
 
-    return 1 if unused else 0
+    return 1 if (unused or unreadable) else 0
 
 
 if __name__ == "__main__":

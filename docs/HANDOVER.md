@@ -124,6 +124,72 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — THE GATE GUARDING THE OWNER'S SIGNATURE DROPPED A FRAGMENT AND SAID NOTHING
+
+**[Row 5b-130](FRAGMENT-ISSUES.md), FIXED. [Row 5b-131](FRAGMENT-ISSUES.md) raised, and it is
+the owner's.** `tools/check-signatures.py` read end to end — 155 lines, never opened before. The
+**fourth** of the seven unread CI gates.
+
+It guards the scarcest input this library has. It exists because **thirteen fragments the owner
+had already signed were sitting at DRAFT** on 2026-09-13, so the next proving round offered them
+to him to prove **again** — his own complaint, in his own words, and *the worst possible thing to
+be right about*.
+
+**`findings()` called `F.load_all()` and discarded the problems it returns.** Measured, on a
+library of three built by copying real fragments, one of them a `fragment.yaml` that will not
+parse:
+
+```
+  Signatures in the library: 1
+  exit 0
+```
+
+The broken fragment is never named, and nothing anywhere says one could not be read. **If the one
+it cannot read is the one carrying an unused signature, this gate says nothing is waiting and the
+owner signs it again** — the exact failure it was built to prevent, one level up, and D-52's
+plausible zero wearing this tool's own face.
+
+The problems are printed under **COULD NOT BE READ** now, naming each. The headline reads
+`Signatures in the library: 331, across 396 fragment(s) read`, so the two numbers sit together and
+neither stands alone, and **the gate does not pass** while a fragment cannot be read.
+
+**Also fixed, smaller**: its usage line documented `--all` as *"including what is fine"*, and
+`--all` adds exactly one sentence and lists nothing — measured by diffing the two runs. The line
+says what it does.
+
+### The three-way split is right, and it is the good part
+
+**UNUSED** fails the gate. **STALE** does not, because re-proving is D-30 working rather than a
+fault. **HELD** does not either, because a fragment signed and meant to wait carries `proof-held:`
+in its own file **with the reason**, so a reader sees why and the tool can tell a hold from a
+forgotten promotion. That third answer was added after `create-roof` was reported as an oversight
+on 2026-09-19 and was not one. It also asks `can_promote` rather than re-deriving the answer, so a
+rule added there is honoured here for free.
+
+### One fixture fault caught while writing the suite, and it is worth knowing
+
+**Every copied fragment reads STALE on arrival.** `fingerprint()` hashes the file's **path** as
+well as its content, and a fragment read from outside the repository comes back with `..` segments
+— which `heron_fragment` states in terms, naming the store's own tests as the case. The copies are
+re-stamped against themselves now, so the cases about waste are about waste; the one case that is
+about an unreadable file mutates *after* the re-stamp.
+
+### What is left, and it is the owner's
+
+**[Row 5b-131](FRAGMENT-ISSUES.md).** A machine's name in `by:` is counted as a signature by the
+gate that counts signatures — measured with `Claude Opus 5, at Ajmal PS's PC`. D-30 says the
+machine gathers evidence and a **person** signs, and `resign-machine-proofs.py` exists because
+sixteen fragments carried that exact string.
+
+**Not a live failure** — zero fragments are machine-signed today — but nothing in CI runs that
+tool, so nothing would notice the first one. **The question is where the answer lives**, not what
+it is: a constant in `heron_fragment`, an import sideways from a hand-run tool, or a CI step that
+runs `resign-machine-proofs --list`. The suite **prints that measurement rather than asserting
+it**, on purpose: asserting today's behaviour would lock in the thing the row is open about.
+
+**Three CI gates remain unopened**: `check-products` (527), `check-fragments-compile` (400),
+`check-intrusion` (213).
+
 ### 2026-09-22 — check-metadata IS SOUND, AND THE SUITE PROVING IT CAUGHT ITSELF FIRST
 
 **A NEGATIVE RESULT.** `tools/check-metadata.py` read end to end — 310 lines, never opened before,
