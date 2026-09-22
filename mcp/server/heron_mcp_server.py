@@ -86,6 +86,7 @@ import heron_tools as tools                         # noqa: E402
 import heron_config as configuration                # noqa: E402
 import heron_health as health                       # noqa: E402
 import heron_brain as brain                         # noqa: E402
+import heron_needs as needs                         # noqa: E402
 # THE SDK RENAMED THIS CLASS, AND AN UNPINNED INSTALL GETS THE NEW ONE.
 # `pip install --user mcp` - which is what tools/HeronRevit.ps1 tells a user to
 # run - resolved to 1.x when this server was written and resolves to 2.x now.
@@ -1311,9 +1312,42 @@ def heron_resolve(capability: str) -> str:
              "  area       %s" % found["domain"],
              "  Revit      %s   (releases EVERY provider supports, not any)"
              % (", ".join(found["revit"]) or "none in common"),
-             "  best state %s" % found["status"],
-             "",
-             "  %d provider(s), most trusted first:" % len(found["providers"])]
+             "  best state %s" % found["status"]]
+
+    # WHAT TO TYPE, BEFORE TYPING IT WRONG. The best provider's contract
+    # already declares every caller-supplied value; until this block existed
+    # none of it reached the caller, so a capability's first use cost one
+    # refusal per layer - names, then a view's spelling, then the separator,
+    # then the vocabulary. Read from the BEST provider only: they answer one
+    # capability and a reader picking between two input shapes is a worse
+    # answer than the four refusals this replaces.
+    takes, unreadable = [], None
+    if found["providers"]:
+        try:
+            takes = needs.block(found["providers"][0].get("folder"))
+        except Exception as why:                      # noqa: BLE001
+            # A contract that cannot be read must not take the answer with
+            # it - risk, releases and proven state are what this tool was
+            # for before the block existed, and they are still correct.
+            #
+            # BUT IT MUST NOT GO QUIET EITHER. A missing block reads exactly
+            # like "nothing to type", which is a legitimate answer for 77 of
+            # the 396 fragments, so a silent failure here sends the caller
+            # back to the guessing this whole block was written to end.
+            unreadable = "%s: %s" % (type(why).__name__, why)
+    if takes:
+        lines.append("")
+        lines.extend(takes)
+    elif unreadable:
+        lines.append("")
+        lines.append("  takes  NOT KNOWN - this fragment's contract could "
+                     "not be read (%s)." % unreadable)
+        lines.append("         That is not the same as needing nothing "
+                     "typed. Read brain/fragments/<name>/fragment.yaml.")
+
+    lines.append("")
+    lines.append("  %d provider(s), most trusted first:"
+                 % len(found["providers"]))
     for p in found["providers"]:
         lines.append("    %-14s %-11s %s" % (p["id"], p["status"], p["kind"]))
 

@@ -463,8 +463,18 @@ def resolve(capability, revit=None):
             "status": got.status,
             "revit": got.revit,
             "asked_for_revit": revit,
+            # `folder` carries so the answer can read what the fragment
+            # DECLARES it needs typed. The contract was always on disk and
+            # never crossed to the side that had to write the values, so the
+            # only way to learn a capability's inputs was to call it wrong -
+            # four refusals for SET_CATEGORY_GRAPHICS on 2026-09-22, each
+            # revealing one layer. `.get` rather than `[...]`: a row from an
+            # older store predates the column, and a missing contract must
+            # degrade to saying nothing rather than to an exception on an
+            # answer that is otherwise complete.
             "providers": [{"id": r["id"], "status": r["status"],
-                           "kind": r["kind"], "risk": r["risk"]}
+                           "kind": r["kind"], "risk": r["risk"],
+                           "folder": r.get("folder")}
                           for r in got.rows],
         }
 
