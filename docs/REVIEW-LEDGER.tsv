@@ -320,3 +320,4 @@ when	who	path	blob	verdict	note
 2026-09-22	Claude	tools/api-changes.py	04e6f141d1f04e3993e75a5299e6f6158fef3a74	issue	5b-142	full
 2026-09-22	Claude	tools/heron-backup.py	d34215de52b9708359047cb6bbc6f4023ea81155	issue	5b-143	full
 2026-09-22	Claude	tools/new-agent.py	af9bada31f2054fa576d741d0e2d096b9564a995	issue	5b-144	full
+2026-09-22	Claude	tools/generate-contract-reference.py	b52672afae658dd3ab6c6328120b65c5fe39b987	clean	sound; what it reports is raised as 5b-145	full
