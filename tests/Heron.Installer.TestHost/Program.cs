@@ -762,6 +762,164 @@ namespace Heron.Installer.TestHost
                 try { Directory.Delete(sandbox, true); } catch (IOException) { }
             }
 
+            // ================================================== STAGE 6
+            Console.WriteLine();
+            Console.WriteLine("ROUTE 1 REFUSES ANY SOURCE BUT HERON'S OWN RELEASE - R-48, R-49");
+            //
+            // ENFORCED, NOT EXPECTED. docs/07 section 1a refused the shape
+            // "point an AI at a URL and let it execute whatever it finds
+            // there" in as many words - it is the exact shape of a supply
+            // chain attack, and Golden Rule 19 says no text Heron reads may
+            // raise its own permission level. A rule nothing enforces is one
+            // the first user breaks by accident.
+            //
+            // WHO HERON IS COMES FROM THE MANIFEST, so this fixture names a
+            // source of its own and no real owner appears in the checks.
+            var mineManifest = ProductManifest.Parse(@"{
+              ""source"": { ""owner"": ""owner-a"", ""repo"": ""repo-a"" },
+              ""products"": [
+                { ""id"": ""piece-one"", ""name"": ""Piece One"", ""description"": ""d"",
+                  ""tab"": ""Tab A"", ""addin"": ""One.addin"", ""assembly"": ""One.dll"",
+                  ""folder"": ""One"", ""addInId"": ""11111111-1111-1111-1111-111111111111"",
+                  ""revit"": [""2024""], ""requires"": [], ""version"": ""0.1.0"",
+                  ""partOf"": null, ""state"": ""SHIPPED"" }
+              ]
+            }");
+            Check(mineManifest.KnowsItsSource,
+                  "the manifest says which repository publishes Heron's releases");
+            Check(mineManifest.SourceOwner == "owner-a" && mineManifest.SourceRepo == "repo-a",
+                  "and it is read as data rather than written into the code");
+
+            Console.WriteLine();
+            Console.WriteLine("  what IS accepted");
+            foreach (var good in new[]
+            {
+                "https://github.com/owner-a/repo-a/releases",
+                "https://github.com/owner-a/repo-a/releases/latest",
+                "https://GitHub.com/Owner-A/Repo-A/releases/latest",
+                "  https://github.com/owner-a/repo-a/releases/latest  ",
+            })
+            {
+                var verdict = InstallSource.Judge(good, mineManifest);
+                Check(verdict.Accepted, "accepted: " + good.Trim() +
+                                        (verdict.Accepted ? "" : " - " + verdict.Why));
+                Check(verdict.Accepted && verdict.Tag == null,
+                      "  and with no tag it means the newest published release");
+                Check(verdict.Accepted && verdict.AssetsUrl != null
+                      && verdict.AssetsUrl.Contains("releases/latest/download"),
+                      "  and the assets URL is BUILT here, never taken from what was typed");
+            }
+
+            var tagged = InstallSource.Judge(
+                "https://github.com/owner-a/repo-a/releases/tag/v0.1.0", mineManifest);
+            Check(tagged.Accepted && tagged.Tag == "v0.1.0",
+                  "a named release keeps its tag: " + (tagged.Tag ?? tagged.Why));
+            Check(tagged.Accepted && tagged.AssetsUrl.EndsWith("/releases/download/v0.1.0"),
+                  "and the assets URL points at that one: " + tagged.AssetsUrl);
+
+            Console.WriteLine();
+            Console.WriteLine("  and what is REFUSED - each one a real trick, not a typo");
+            foreach (var bad in new[]
+            {
+                // somebody else's repository, on the right host
+                "https://github.com/someone-else/repo-a/releases/latest",
+                "https://github.com/owner-a/other-repo/releases/latest",
+                // A NAME THAT ONLY STARTS THE SAME. "owner-a-evil" contains
+                // the real owner, and a `StartsWith` check would pass it.
+                "https://github.com/owner-a-evil/repo-a/releases/latest",
+                "https://github.com/not-owner-a/repo-a/releases/latest",
+                // A HOST THAT ONLY ENDS THE SAME, and one that only contains
+                // it. Either passes a sloppy string test.
+                "https://github.com.evil.example/owner-a/repo-a/releases/latest",
+                "https://evil-github.com/owner-a/repo-a/releases/latest",
+                "https://github.evil.example/owner-a/repo-a/releases/latest",
+                // THE NAME BEFORE THE @ IS NOT THE HOST. This reads as
+                // GitHub to a person and resolves to evil.example.
+                "https://github.com@evil.example/owner-a/repo-a/releases/latest",
+                "https://github.com:pass@evil.example/owner-a/repo-a/releases",
+                // AND THE ONE CASE ONLY THE USER-INFO GUARD CATCHES. Here the
+                // host really IS github.com, so the host check passes it -
+                // deleting that guard was measured as breaking NOTHING until
+                // this line existed, which made it a guard nobody could tell
+                // was gone. No legitimate Heron link carries a name before
+                // the @, and its only use in the wild is to mislead a reader.
+                "https://evil@github.com/owner-a/repo-a/releases/latest",
+                // not https - what arrives is whatever the network sent
+                "http://github.com/owner-a/repo-a/releases/latest",
+                "ftp://github.com/owner-a/repo-a/releases/latest",
+                // the REPOSITORY rather than a release of it - R-48
+                "https://github.com/owner-a/repo-a",
+                "https://github.com/owner-a/repo-a/tree/main",
+                "https://github.com/owner-a/repo-a/archive/refs/heads/main.zip",
+                // not an address at all
+                "install this repo",
+                "",
+                "   ",
+                // a port of its own
+                "https://github.com:8443/owner-a/repo-a/releases/latest",
+            })
+            {
+                var verdict = InstallSource.Judge(bad, mineManifest);
+                Check(!verdict.Accepted, "refused: " + (bad.Trim().Length == 0 ? "(nothing)" : bad));
+                Check(!verdict.Accepted && !string.IsNullOrEmpty(verdict.Why),
+                      "  and it says why rather than only saying no");
+                Check(!verdict.Accepted && verdict.AssetsUrl == null,
+                      "  and hands back no address at all, so nothing downstream can use one");
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("  every refusal names what WOULD be accepted");
+            // A refusal that only says no leaves somebody guessing, and the
+            // guess they make is usually to try harder rather than to try the
+            // right thing.
+            foreach (var bad in new[]
+            {
+                "https://github.com/someone-else/repo-a/releases/latest",
+                "http://github.com/owner-a/repo-a/releases/latest",
+                "https://github.com/owner-a/repo-a",
+                "install this repo",
+            })
+            {
+                var why = InstallSource.Judge(bad, mineManifest).Why;
+                Check(Names(why, "owner-a/repo-a/releases"),
+                      "the refusal for " + bad + " points at Heron's own release");
+                Check(!Names(why, "error"), "  and never says 'error' - docs/14");
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("  a local folder is told apart from a hostile address");
+            // Somebody who cloned the repository and pointed at it has done
+            // something reasonable - that is route 2 - and a refusal that does
+            // not say which door to use is a dead end.
+            var local = InstallSource.Judge(@"D:\Heron-AI", mineManifest);
+            Check(!local.Accepted, "a folder is not route 1");
+            Check(Names(local.Why, "folder on this PC", "install"),
+                  "and it points at the other door instead of just refusing: " + local.Why);
+            var unc = InstallSource.Judge(@"\\server\share\Heron-AI", mineManifest);
+            Check(!unc.Accepted && Names(unc.Why, "folder on this PC"),
+                  "and a network share reads the same way: " + unc.Why);
+
+            Console.WriteLine();
+            Console.WriteLine("  a manifest that does not know its own source refuses EVERYTHING");
+            // Inventing a repository name here would be the installer deciding
+            // where to get software from, which is the one decision it must
+            // never make.
+            var anon = ProductManifest.Parse(@"{ ""products"": [] }");
+            var guess = InstallSource.Judge("https://github.com/owner-a/repo-a/releases", anon);
+            Check(!guess.Accepted, "with no source in the manifest, nothing is accepted");
+            Check(Names(guess.Why, "does not know"),
+                  "and it says so rather than guessing a repository: " + guess.Why);
+
+            Console.WriteLine();
+            Console.WriteLine("  it opens no socket and reads no repository - R-50");
+            // Judge takes a string and the product list. It cannot fetch
+            // anything, which is what makes "the manifest is read from the
+            // release, after the source has been accepted" true by
+            // construction rather than by discipline.
+            Check(InstallSource.Judge("https://github.com/owner-a/repo-a/releases", mineManifest)
+                      .Accepted,
+                  "the same answer comes back with no network of any kind");
+
             // ================================================== STAGE 7
             Console.WriteLine();
             Console.WriteLine("WHAT IS INSTALLED STARTS TICKED - the safety property R-21 needs");

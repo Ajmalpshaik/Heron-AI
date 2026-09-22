@@ -703,7 +703,58 @@ rather than saying "error", which is the part that can be built.
 
 ## Stage 6 — Routes 1 and 2, onto the same engine
 
-**Status: NOT STARTED**
+**Status: PARTLY BUILT — 2026-09-22. The security gate is built and proven; the door is not.**
+
+> **THE GATE FIRST, because it is the only part that is a security rule.** Item 3 says *"read
+> [Q-PE-10](03-open-questions.md) before building this one — whether route 1 may act on any
+> repository, or only Heron's own signed release, is unresolved and it is a security question."*
+> **Q-PE-10 was answered on 2026-09-21**: *"install this"* means Heron's own signed release and
+> **never an arbitrary repository**.
+>
+> [`InstallSource`](../../../../platform/Heron.Installer/InstallSource.cs) enforces that —
+> `R-49` says **enforced, not expected**, *"a rule nothing enforces is one the first user breaks by
+> accident"*. It refuses somebody else's repository, a host that merely **ends** or **contains**
+> `github.com`, an owner that merely **starts** the same, a name before the `@`, plain `http`, a port
+> of its own, and Heron's **repository** rather than a release of it. Every refusal names what
+> **would** be accepted. It **opens no socket** — `R-50` is true by construction rather than by
+> discipline.
+>
+> **AND THE DOOR IT GUARDS DOES NOT EXIST.** Routes 1 and 2 are the **AI** installing, and there is
+> nothing for the AI to call: route 3 is a `WinExe` a person double-clicks.
+> [Q-PE-16](03-open-questions.md) holds the four options and names the one to avoid — driving
+> `deploy-addin.ps1` directly, which works today, looks like progress, and skips the engine entirely.
+> **Stage 6's own opening line calls that failure.**
+
+### Where it actually stands — the four states, kept apart
+
+| | |
+|---|---|
+| **PASS** | The source gate, against a fixture naming its own owner and repository: four accepted shapes, **eighteen refused**, every refusal naming Heron's own release, a local folder told apart from a hostile address, and a manifest that does not know its own source refusing everything rather than guessing |
+| **PASS** | **Every guard was seen to fail**, each catching the one attack it is for — counted below |
+| **NOT STARTED** | Items 1, 2 and 3's door — [Q-PE-16](03-open-questions.md) |
+| **NOT STARTED** | Route 2, which needs [Q-PE-12](03-open-questions.md) as well |
+| **NEEDS REAL REVIT** | Every line under *Done when*, once a door exists |
+
+**Seen to fail, one break per guard:**
+
+| what was loosened | what slipped through |
+|---|---|
+| host compared with `EndsWith` | `evil-github.com` |
+| host compared with `Contains` | `github.com.evil.example` |
+| owner compared with `StartsWith` | `owner-a-evil` |
+| `http` allowed | `http://` and `ftp://` |
+| the name-before-`@` guard removed | `https://evil@github.com/...` |
+| `releases` no longer required | the repository, and `archive/refs/heads/main.zip` |
+
+**The fifth one is why that list is worth reading.** Deleting the user-info guard broke **nothing** at
+first: every address tried had a hostile host as well, which the host check caught. It was a guard
+nobody could tell was gone. The case only it catches — where the host really **is** `github.com` — was
+added, and then it went red.
+
+**And one refusal was measured wrong before it was right.** A Windows path is a **valid absolute URI**:
+`Uri.TryCreate` turns `D:\Heron-AI` into a `file:` address quite happily, so somebody pointing at their
+own clone was told *"Heron will only fetch over https, and that address is file"* — true, and useless.
+It now names the other door.
 
 Stages 3 to 5 build **route 3** — the installer with a window. [S7](00-structure.md) says there are
 three front doors and one engine, so this is where the other two are hung on it.

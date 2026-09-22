@@ -420,6 +420,38 @@ uninstall that leaves no trace is the operation you most want a trace of.
 
 ---
 
+### Q-PE-16 — Where does the door routes 1 and 2 knock on actually live?
+
+**Waiting on:** the owner. **Raised 2026-09-22**, building Stage 6.
+
+[S7](00-structure.md) says three front doors and one engine. Route 3 is
+[`Heron.Installer.App`](../../../../platform/Heron.Installer.App/) — a `WinExe` a person
+double-clicks. Routes 1 and 2 are **the AI** installing, and there is nothing for the AI to call.
+
+**The gate on route 1 is built and proven** —
+[`InstallSource`](../../../../platform/Heron.Installer/InstallSource.cs) refuses any source but
+Heron's own release ([R-48](01-requirements.md), [R-49](01-requirements.md)), and reads no repository to
+decide what to install ([R-50](01-requirements.md)). **What is missing is the thing that calls it.**
+
+| | What it costs |
+|---|---|
+| A **console entry point** beside the window — `--source <url>` or `--from <folder>` | a new release-independent project, a line in `Directory.Build.props` and in `brain/heron_dotnet.py`. Both routes then reach the same engine through one door, which is what S7 asks for |
+| An **MCP tool** in [`mcp/`](../../../../mcp/README.md) | it is where the AI already reaches Heron — but that folder's own rule 1 is *"transport only. No BIM logic, no knowledge, no decisions"*, and it is Python while the engine is C#, so it would shell out to something anyway |
+| The AI drives **`HeronInstaller.exe`** with arguments | no new project, but the window is a `WinExe`: driven headless it either draws a window nobody asked for or needs a mode that makes it not a window |
+| The AI drives **`deploy-addin.ps1`** directly | it already installs one product for one release — but then routes 1 and 2 skip `InstallPlan` and `InstallEngine` entirely, and Stage 6's own opening line says that is **failure**: *"if this stage ends up re-implementing any install rule, it has failed"* |
+
+**The fourth is the one to avoid**, and it is also the easiest to fall into, because the script works
+today and calling it looks like progress.
+
+**Route 2 has a second, separate blocker** —
+[Q-PE-12](#q-pe-12--route-2-says-the-files-are-already-in-the-repo-they-are-not): its files are not in
+a repository download at all. So route 1 needs only this question answered; route 2 needs both.
+
+**Blocks:** [Stage 6](02-implementation.md) items 1, 2 and 3. Not item 4 or 5, which are properties of
+whatever door is built.
+
+---
+
 ## 3. Brainstorm parking
 
 > Nothing here is agreed. Add freely. An idea that keeps mattering becomes a question in §2.
