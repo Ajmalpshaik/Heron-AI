@@ -1267,15 +1267,104 @@ def heron_capabilities() -> str:
     return "\n".join(lines)
 
 
+def _contract_lines(capability):
+    """
+    What the CALLER has to type to run this capability, and how to write each.
+
+    THE GAP THIS CLOSES. `heron_resolve` named the capability, its risk, its
+    releases and its provider - everything except the one thing a caller needs
+    next. Working out that SET_CATEGORY_GRAPHICS wants `view`, `categories`
+    and `overrides`, and that an override is written "cut-line-colour=255,0,0",
+    took eighteen source lookups through fragment.yaml and the add-in's own
+    parser on 2026-09-22. Every one of those answers was already on disk.
+
+    docs/FRAGMENT-ISSUES.md states it in one sentence: "every fragment that
+    takes a NAME needs a way to discover the names. A caller who cannot
+    discover a value cannot supply one, and D-54 made supplying them possible
+    without making them findable." This is the discovering half.
+
+    IT READS THE FILES rather than the index - the same reasoning as
+    _fragment_for, which it calls. A contract is a fact about a file.
+
+    IT RETURNS NOTHING RATHER THAN GUESSING when the contract cannot be read
+    with certainty. A short needs list is worse than none: the caller fills in
+    what they were shown, and the one that was missing reads afterwards as a
+    fragment that ignored them.
+    """
+    folder, _status = _fragment_for(capability)
+    if folder is None:
+        return []
+
+    needs = bridge.fragment_needs(os.path.join(_repo_root(), "brain",
+                                               "fragments", folder,
+                                               "fragment.yaml"))
+    if needs is None:
+        return ["", "  Its contract could not be read with certainty, so what "
+                    "it needs is not listed here rather than listed short."]
+
+    # HOW TO WRITE EACH TYPE is read from the brain, where tools/generate-jobs.py
+    # reads it too. One copy: two would drift, and the drift would be invisible
+    # - the tool and this server each confidently right about a different syntax.
+    brain_path = os.path.join(_repo_root(), "brain")
+    if brain_path not in sys.path:
+        sys.path.insert(0, brain_path)
+    try:
+        import heron_fragment as HF
+    except Exception:
+        return []
+
+    asked, elsewhere = [], 0
+    for need in needs:
+        name = (need or {}).get("name") or ""
+        kind = (need or {}).get("type") or ""
+        if HF.need_source(need) == "request":
+            asked.append((name, kind, HF.how_to_type(kind)))
+        else:
+            elsewhere += 1
+
+    if not asked:
+        return ["", "  It asks you for nothing - every value comes from the "
+                    "model, the selection, or the fragment before it."]
+
+    wide = max(len(n) for n, _k, _h in asked)
+    wide_kind = max(len(k) for _n, k, _h in asked)
+
+    out = ["", '  YOU SUPPLY THESE %d value(s), one "name=value" per LINE:'
+                % len(asked)]
+    for name, kind, hint in asked:
+        row = "    %-*s  %-*s" % (wide, name, wide_kind, kind)
+        out.append(row + ("   " + hint if hint else ""))
+
+    # THE SEPARATOR, SAID ONCE AND HERE. A semicolon inside a value belongs to
+    # that value. Walls asked to go red stayed white through four writes on
+    # 2026-09-22 because a value got split on one, and the caller was told the
+    # whole thing had been applied. Naming the inputs without naming the
+    # separator leaves somebody one line away from that same afternoon.
+    out.append("")
+    out.append("  A NEWLINE separates one value from the next. A SEMICOLON "
+               "does not - it belongs to the value it sits inside.")
+    if elsewhere:
+        out.append("  %d other need(s) come from the model, the selection or "
+                   "the fragment before it. You do not supply those."
+                   % elsewhere)
+    return out
+
+
 @server.tool()
 def heron_resolve(capability: str) -> str:
     """
-    Ask who can do one named capability - for example FILTER_ELEMENTS_BY_CATEGORY.
+    Ask who can do one named capability - and WHAT TO TYPE to run it.
 
     Use after heron_capabilities or heron_lookup has named one, to see what
-    would carry it out, at what risk, and on which Revit releases. Ask for the
-    capability, never for a fragment id: which fragment serves it is Heron's
-    to decide and can change without any plan changing.
+    would carry it out, at what risk, on which Revit releases, and which
+    values you have to supply. Ask for the capability, never for a fragment
+    id: which fragment serves it is Heron's to decide and can change without
+    any plan changing.
+
+    CALL THIS BEFORE revit_change RATHER THAN READING THE FRAGMENT. It names
+    every value the caller supplies, with its type and how to write one -
+    which is the question that otherwise sends somebody into fragment.yaml
+    and the add-in's parser. It touches nothing and needs no Revit.
     """
     revit, how = _revit_version()
 
@@ -1322,6 +1411,8 @@ def heron_resolve(capability: str) -> str:
         lines.append("No Revit is connected, so the version filter did not "
                      "run and this is every provider rather than the ones "
                      "that would work on your release.")
+
+    lines.extend(_contract_lines(capability))
 
     lines.append("")
     lines.append(_cannot_run())

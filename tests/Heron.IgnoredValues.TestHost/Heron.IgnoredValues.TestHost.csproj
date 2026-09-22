@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proves the ignored-values wording WITHOUT Revit.
+
+    The same source-linking pattern Heron.BindingNote.TestHost,
+    Heron.StackGuard.TestHost and Heron.Banner.TestHost already use, and for
+    the reason those project files state: HeronIgnoredValues.cs touches no
+    Autodesk type - it compares two collections of names - so it is linked
+    here BY SOURCE rather than through a project reference. Referencing
+    Heron.Revit.Addin would drag in RevitAPI.dll and make the one testable
+    piece untestable on any machine without Revit.
+
+    Linking the source has the second property those files name too: there is
+    exactly ONE copy of the rule. A second implementation written to test the
+    first is how `binds:` came to be honoured by the Python half and ignored
+    by the C# executor (FRAGMENT-ISSUES row 96).
+
+    Why it exists at all: BindNeeds walked only the needs it expected, so a
+    supplied name matching none of them was read by nothing and reported by
+    nothing, and the caller was told the whole thing had been applied. The
+    wording here is the ONLY thing that now breaks that silence, and a
+    compiler cannot catch a regression in it.
+
+        Run it with `dotnet run`, pointed at this folder, passing
+        -p:RevitVersion=2024. (XML comments cannot carry a double
+        hyphen, so the flag is spelled out rather than shown.)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.IgnoredValues.TestHost</RootNamespace>
+    <AssemblyName>Heron.IgnoredValues.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronIgnoredValues.cs"
+             Link="HeronIgnoredValues.cs" />
+  </ItemGroup>
+
+</Project>
