@@ -703,7 +703,7 @@ rather than saying "error", which is the part that can be built.
 
 ## Stage 6 — Routes 1 and 2, onto the same engine
 
-**Status: BUILT, NOT PROVEN — 2026-09-22. Route 1 has a door. Route 2 still has none, and says so.**
+**Status: BUILT, NOT PROVEN — 2026-09-22. Both routes have a door, and both work offline.**
 
 > **THE GATE FIRST, because it is the only part that is a security rule.** Item 3 says *"read
 > [Q-PE-10](03-open-questions.md) before building this one — whether route 1 may act on any
@@ -759,7 +759,8 @@ rather than saying "error", which is the part that can be built.
 | **PASS** | The command line door's argument reader, run for real: an unknown flag refused **by name**, a bare flag read as a **missing value** rather than a value, the address handed to `InstallSource` **unjudged**, two doors at once refused rather than resolved |
 | **PASS** | **Fifteen breaks seen to fail** — eight on the reader, seven on the door — counted below |
 | **BUILT, NOT PROVEN** | Items 1 and 2, route 1's door. It has never installed anything into a Revit |
-| **NOT STARTED** | Route 2, which needs [Q-PE-12](03-open-questions.md). `--from` refuses and **says that**, rather than failing in a way that looks like a bug |
+| **BUILT, NOT PROVEN** | Route 2. [Q-PE-12](03-open-questions.md) was answered the same day, so `--from <folder>` installs rather than refusing — and checks the same checksums a download does, because a folder on a stick got here the same way a download did |
+| **BUILT, NOT PROVEN** | The update check — [R-54](01-requirements.md) to [R-56](01-requirements.md). It reads **only** the product list, never the 54 MB of assemblies, runs **after** the install so it is news rather than a gate, and **never changes the exit code** |
 | **NEEDS REAL REVIT** | Every line under *Done when* — `AE1` to `AE6` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) |
 
 **Seen to fail, one break per guard:**
@@ -805,6 +806,34 @@ It now names the other door.
 | a product named in the door | `R-3` broken — adding one stops being a line in a file |
 | `Heron.Core` referenced | a release-independent thing pinned to one release |
 | renamed to `HeronInstall` | **two letters from `HeronInstaller.exe`**, one of which confirms nothing |
+
+**AND THEN THE OWNER ASKED FOR THE WHOLE SHAPE, 2026-09-22.** One download carrying the plugin **and**
+the brain ([R-51](01-requirements.md)), asking where to keep it ([R-52](01-requirements.md)), working
+offline after ([R-53](01-requirements.md)), and the internet used only to ask whether a newer release
+exists ([R-54](01-requirements.md)–[R-56](01-requirements.md)). That answered
+[Q-PE-5, 12, 13 and 14](03-open-questions.md) in one go.
+
+| what it took | |
+|---|---|
+| **The release carries the brain** | `heron-project.zip` — brain, skills, MCP, docs. **Ran it: 1673 entries, and zero from `tests/`, `revit/`, `tools/` or `.git/`** |
+| **Route 2 installs** | `ProductFolder` — `ReleaseDownload` minus the wire. Same checksum rule, same unpack guard |
+| **`Unpack` moved, not copied** | A zip on a USB stick climbs out of a folder exactly as well as one off the wire, so the zip-slip guard is one method with two callers — R-31, the **third** rule this branch moved rather than duplicated |
+| **The update check** | Reads the product list alone. Never the assemblies |
+
+**WHAT THE CHECKSUM CANNOT DO IS WRITTEN INTO THE CODE**, not left to be assumed: it catches **damage**,
+not a determined tamperer. Anybody who can rewrite a zip in that folder can rewrite `checksums.txt`
+beside it, and both will then agree. **What closes that is a signature — Stage 8, not built.** Until it
+is, route 2 is exactly as safe as the person who handed the folder over. A limit nobody wrote down is
+one somebody relies on.
+
+**AND `test_csharp` WENT RED A FOURTH TIME**, on the update check's one broad `catch (Exception)`. The
+first draft argued for it — *the install is finished, so any fault in fetching news must lose to the
+install having worked*. **Reading `ReleaseDownload` showed the argument was false as well as
+over-broad:** `Manifest(out why)` does not throw for a network failure, because `Get()` maps every one
+of them to a `FetchProblem` and returns a sentence. There was nothing for a broad catch to protect
+against **except a fault in Heron's own code** — which D-52 says must surface rather than be flattened.
+Narrowed to the two the workspace folder can really raise. **The code was fixed and the comment
+corrected; the suite was not touched.**
 
 **Three of this suite's own checks were wrong before they were right**, and all three the same way:
 they searched a whole file for a word, so the doc comment *explaining* a rule broke the check *for*
@@ -1039,7 +1068,7 @@ Update this table as stages complete. **Do not mark a stage done without its evi
 | 3 | Installer core | **PROVEN** 2026-09-21 | Run on the owner's PC — the AI Bridge was installed into Revit 2024 and Revit loaded it, and the engine refused correctly while Revit was open. [Stage 3](#stage-3--the-installer-core-with-no-window-at-all) · [Group AB](../../../NEEDS-CHECKING.md) |
 | 4 | The window | **PROVEN** 2026-09-21 for `AB1`-`AB8`, except `AB6` | Run on the owner's PC. **One rule added after that run is NOT proven** — greyed release ticks, `AB9` and `AB10`. [Stage 4](#stage-4--the-window) · [Group AB](../../../NEEDS-CHECKING.md) |
 | 5 | GitHub download | **BUILT, NOT PROVEN** 2026-09-21 | The builder ran here — 24 assets, verified at the binary level. **No release exists and nothing has ever been fetched from GitHub.** [Stage 5](#stage-5--fetch-from-the-github-release) · `AC1`-`AC5` |
-| 6 | Routes 1 and 2 | **BUILT, NOT PROVEN** 2026-09-22 | Route 1 has a door — `heron-install`, [Q-PE-16](03-open-questions.md) answered. Route 2 still needs [Q-PE-12](03-open-questions.md) and refuses by saying so. **Nothing has been installed into a Revit.** [Stage 6](#stage-6--routes-1-and-2-onto-the-same-engine) · `AE1`-`AE6` |
+| 6 | Routes 1 and 2 | **BUILT, NOT PROVEN** 2026-09-22 | **Both** routes have a door — `heron-install`, with `--source` and `--from`. [Q-PE-16](03-open-questions.md) and [Q-PE-12](03-open-questions.md) both answered, and the update check with them. **Nothing has been installed into a Revit.** [Stage 6](#stage-6--routes-1-and-2-onto-the-same-engine) · `AE1`-`AE6` |
 | 7 | Uninstall / update / rollback | **BUILT, NOT PROVEN** 2026-09-22 | Item 5 is **NOT MET** and says why, [Q-PE-15](03-open-questions.md). **Nothing has been deleted from a real Addins folder.** [Stage 7](#stage-7--uninstall-update-and-a-rollback-that-has-been-tested) · `AD1`-`AD4` |
 | 8 | Sign and ship | NOT STARTED | — |
 | 9 | The Settings panel | NOT STARTED | — |

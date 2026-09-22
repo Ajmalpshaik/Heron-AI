@@ -1330,6 +1330,87 @@ namespace Heron.Installer.TestHost
             Check(!Names(cliUsage, "error"), "and it never says 'error' - docs/14");
 
             Console.WriteLine();
+            Console.WriteLine("IS THERE A NEWER VERSION? - R-54, R-55, R-56");
+            Console.WriteLine();
+            Console.WriteLine("  the ordinary answers");
+            // The owner's reason, 2026-09-22: somebody who downloaded days ago
+            // would otherwise never hear that a newer release exists.
+            var newer = UpdateCheck.Compare("0.1.0", "0.2.0");
+            Check(newer.State == UpdateState.NewerAvailable, "0.1.0 -> 0.2.0 is an update");
+            Check(Names(newer.Say, "0.1.0", "0.2.0"),
+                  "  and it says both versions, not just that there is one: " + newer.Say);
+            Check(Names(newer.Say, "Nothing has been updated"),
+                  "  and it says plainly that nothing happened - R-55, offered not applied");
+
+            var same = UpdateCheck.Compare("0.2.0", "0.2.0");
+            Check(same.State == UpdateState.UpToDate, "the same version is up to date");
+
+            Check(UpdateCheck.Compare("1.2", "1.2.0").State == UpdateState.UpToDate,
+                  "1.2 and 1.2.0 are the same thing - a short version is padded");
+            Check(UpdateCheck.Compare("1.2", "1.2.1").State == UpdateState.NewerAvailable,
+                  "and 1.2 is older than 1.2.1");
+            Check(UpdateCheck.Compare("v0.1.0", "0.2.0").State == UpdateState.NewerAvailable,
+                  "a leading v is a tag's habit, not a different version");
+            Check(UpdateCheck.Compare("0.9.0", "0.10.0").State == UpdateState.NewerAvailable,
+                  "0.10.0 is NEWER than 0.9.0 - compared as numbers, never as text");
+
+            Console.WriteLine();
+            Console.WriteLine("  AHEAD is not up to date, and saying so would be the comfortable lie");
+            // A developer with a build newer than anything published. Telling
+            // them they are current hides that they are about to install over
+            // their own work.
+            var ahead = UpdateCheck.Compare("0.3.0", "0.2.0");
+            Check(ahead.State == UpdateState.Ahead, "0.3.0 against a published 0.2.0 is ahead");
+            Check(!Names(ahead.Say, "newest published version"),
+                  "and it is NOT reported as up to date");
+            Check(Names(ahead.Say, "built rather than downloaded"),
+                  "and it says what that usually means: " + ahead.Say);
+
+            Console.WriteLine();
+            Console.WriteLine("  CANNOT TELL is an answer, and it never reads as up to date");
+            // The direction to be wrong in is the one that does not hide a
+            // newer release from somebody.
+            foreach (var pair in new[]
+            {
+                new[] { "0.1.0-rc1", "0.2.0" },   // a release candidate is not 0.1.0
+                new[] { "banana", "0.2.0" },
+                new[] { "0.1.0", "" },
+                new[] { null, "0.2.0" },
+            })
+            {
+                var cannot = UpdateCheck.Compare(pair[0], pair[1]);
+                Check(cannot.State == UpdateState.CannotTell,
+                      "'" + (pair[0] ?? "(null)") + "' against '" + pair[1] + "' cannot be compared");
+                Check(cannot.State == UpdateState.CannotTell && !Names(cannot.Say, "up to date"),
+                      "  and it does not claim to be up to date");
+                Check(cannot.State == UpdateState.CannotTell && Names(cannot.Say, "installing works either way"),
+                      "  and it says the install is unaffected");
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("  the version comes from the manifest, and it is the HIGHEST one");
+            // Q-PE-8 - whether products share a version or carry their own - is
+            // still open, so this has to be right either way.
+            var versions = ProductManifest.Parse(@"{""products"":[
+                {""id"":""a"",""name"":""A"",""addin"":""A.addin"",""assembly"":""A.dll"",
+                 ""addInId"":""11111111-1111-1111-1111-111111111111"",""folder"":""A"",""version"":""0.1.0""},
+                {""id"":""b"",""name"":""B"",""addin"":""B.addin"",""assembly"":""B.dll"",
+                 ""addInId"":""22222222-2222-2222-2222-222222222222"",""folder"":""B"",""version"":""0.4.0""},
+                {""id"":""c"",""name"":""C"",""addin"":""C.addin"",""assembly"":""C.dll"",
+                 ""addInId"":""33333333-3333-3333-3333-333333333333"",""folder"":""C"",""version"":""0.2.0""}]}");
+            Check(UpdateCheck.HighestVersion(versions) == "0.4.0",
+                  "the highest, not the first: 0.4.0 out of 0.1.0, 0.4.0, 0.2.0");
+
+            var noVersions = ProductManifest.Parse(@"{""products"":[
+                {""id"":""a"",""name"":""A"",""addin"":""A.addin"",""assembly"":""A.dll"",
+                 ""addInId"":""11111111-1111-1111-1111-111111111111"",""folder"":""A""}]}");
+            Check(UpdateCheck.HighestVersion(noVersions) == null,
+                  "and a manifest carrying no version at all answers null rather than guessing");
+            Check(UpdateCheck.Compare(UpdateCheck.HighestVersion(noVersions), "0.2.0").State
+                      == UpdateState.CannotTell,
+                  "which Compare then reports as cannot tell, not as an update");
+
+            Console.WriteLine();
             if (Failures.Count > 0)
             {
                 Console.WriteLine("FAILED (" + Failures.Count + ")");

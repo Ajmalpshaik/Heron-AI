@@ -66,6 +66,16 @@ namespace Heron.Installer.Cli
         /// </summary>
         private const int CouldNotRun = 3;
 
+        /// <summary>
+        /// How long the update check may take before it gives up.
+        ///
+        /// SHORT, BECAUSE IT IS NEWS RATHER THAN WORK. The install is already
+        /// done by the time this runs; a blocked corporate network that never
+        /// answers must cost seconds, not a minute of somebody watching a
+        /// finished install appear to hang.
+        /// </summary>
+        private const int UpdateCheckSeconds = 10;
+
         private static int Main(string[] args)
         {
             var asked = Arguments.Read(args);
@@ -275,8 +285,100 @@ namespace Heron.Installer.Cli
             Console.Out.WriteLine();
             Console.Out.WriteLine(Told(report, manifest));
 
+            // AFTERWARDS, NEVER BEFORE - R-55, and the ordering is the rule
+            // rather than a preference. An update notice printed first reads
+            // as a condition of installing, and somebody mid-delivery would
+            // take it to mean they should update before carrying on. It is
+            // news, not a gate: what they asked for has already happened by
+            // the time they read it.
+            //
+            // AND IT NEVER CHANGES THE EXIT CODE. A newer release existing is
+            // not a failure of this run - a caller that treated it as one
+            // would start repairing an install that worked.
+            SayIfNewer(asked, manifest, files);
+
             if (report.Abandoned) return CouldNotRun;
             return report.Failed > 0 ? SomethingFailed : Done;
+        }
+
+        /// <summary>
+        /// Say whether a newer release is published - R-54, R-55, R-56.
+        ///
+        /// IT READS A VERSION. IT DOES NOT DOWNLOAD HERON TO FIND OUT, which
+        /// is R-54 in the owner's own words: *"no need to download again"*.
+        /// Only heron-products.json is fetched - a few kilobytes beside 54 MB
+        /// of assemblies - and only its version is used.
+        ///
+        /// IT CANNOT FAIL THE RUN, AND IT CANNOT HANG IT. Offline is the
+        /// ordinary case for the machine this was built for (R-53), so a check
+        /// that could not reach GitHub says one line and stops. Every
+        /// failure is swallowed here ON PURPOSE: the install already happened,
+        /// and news about a later version must never be able to turn a
+        /// successful install into a failed one.
+        ///
+        /// SKIPPED WHEN --source WAS USED, because that run just fetched the
+        /// newest release. Asking whether the newest is newer than itself is
+        /// a network call for an answer already on the screen.
+        /// </summary>
+        private static void SayIfNewer(Arguments asked, ProductManifest manifest, IProductFiles files)
+        {
+            if (asked.NoCheck) return;
+            if (asked.Source != null) return;
+            if (manifest == null || !manifest.KnowsItsSource) return;
+
+            var here = UpdateCheck.HighestVersion(manifest);
+
+            try
+            {
+                // A SHORT CEILING. Nobody waits a minute to be told there is
+                // nothing new, and a blocked corporate network does not answer
+                // at all - it just stops replying, which is the case this
+                // number exists for.
+                using (var look = new ReleaseDownload(
+                    ReleaseDownload.LatestUrlFor(manifest.SourceOwner, manifest.SourceRepo),
+                    Workspace(), UpdateCheckSeconds))
+                {
+                    string why;
+                    var published = look.Manifest(out why);
+                    if (published == null)
+                    {
+                        Console.Out.WriteLine("Could not check for a newer version: " + why);
+                        return;
+                    }
+
+                    var verdict = UpdateCheck.Compare(here, UpdateCheck.HighestVersion(published));
+                    Console.Out.WriteLine(verdict.Say);
+                }
+            }
+            // NARROW, AND THE FIRST DRAFT WAS WRONG ABOUT WHY.
+            //
+            // It caught Exception and argued for it: the install is finished,
+            // so any fault in fetching news must lose to the install having
+            // worked. tests/test_csharp.py went red on the handler balance -
+            // the fourth time on this branch - and reading ReleaseDownload
+            // showed the argument was false as well as over-broad.
+            //
+            // Manifest(out why) does not throw for a network failure. Get()
+            // maps every one of them to a FetchProblem and returns null with a
+            // sentence, and Parse's bad JSON is caught inside it. So there is
+            // nothing here for a broad catch to be protecting against EXCEPT a
+            // fault in Heron's own code - and D-52's point is that a fault
+            // flattened into a tidy line is a fault nobody ever fixes.
+            //
+            // What can genuinely reach here is the workspace folder: a disk
+            // that is full, or one this user may not write to. Those two are
+            // caught. Anything else surfaces with its stack, which is worth
+            // more than a sentence - the files are already installed by then.
+            catch (IOException e)
+            {
+                Console.Out.WriteLine("Could not check for a newer version (" + e.Message +
+                                      "). What was installed is unaffected.");
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                Console.Out.WriteLine("Could not check for a newer version (" + e.Message +
+                                      "). What was installed is unaffected.");
+            }
         }
 
         /// <summary>

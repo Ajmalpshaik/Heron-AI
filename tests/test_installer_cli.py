@@ -206,8 +206,15 @@ def main():
     check("InstallSource.Judge" not in code(ARGS),
           "Arguments never calls the gate - it hands the text on for the gate "
           "to judge, so there is only ever one gate to keep in step")
+    # AND NOT IN ITS HELP TEXT EITHER, which is not pedantry: this caught a
+    # real one. "--no-check  Do not ask GitHub whether a newer version exists"
+    # hard-codes where releases live into a sentence a user reads, and where
+    # they live is DATA - the manifest's `source` block, so a repository that
+    # is renamed is a line in a file. It is the same defect as the tab name
+    # above, found the same way. The wording is "check online" now.
     check("github" not in code(ARGS).lower(),
-          "and never mentions GitHub, so it cannot grow an opinion about hosts")
+          "the reader never names a host - not in code, and not in the help "
+          "text a user reads")
     check("File." not in code(ARGS) and "Directory." not in code(ARGS),
           "and it opens no file")
     check("Process" not in code(ARGS) and "Http" not in code(ARGS),
@@ -220,6 +227,42 @@ def main():
     check("Q-PE-12" in entry or "not been decided" in entry,
           "and --from says plainly that route 2 is not decided yet, rather "
           "than failing in a way that looks like a bug")
+
+    print()
+    print("  the update check is news, not a gate - R-54, R-55")
+    # The owner's reason: somebody who downloaded days ago would otherwise
+    # never hear a newer release exists. But the install is what they asked
+    # for, and news about a later version must never be able to change
+    # whether that succeeded.
+    door = code(ENTRY)
+    check(door.index("SayIfNewer(asked") > door.index("engine.Install("),
+          "it runs AFTER the install, so it reads as news rather than as a "
+          "condition of installing")
+    check(door.index("SayIfNewer(asked") < door.index("if (report.Abandoned)"),
+          "and before the exit code is worked out, so the news is printed "
+          "whatever that code turns out to be")
+    check("return SomethingFailed" not in
+          door[door.index("private static void SayIfNewer"):],
+          "the check itself returns no exit code at all - a newer release is "
+          "not a failure of this run")
+    check("asked.Source != null) return" in door,
+          "and it is skipped after --source, which just fetched the newest - "
+          "asking whether the newest is newer than itself is a network call "
+          "for an answer already on the screen")
+    check("asked.NoCheck" in door and "--no-check" in code(ARGS),
+          "and --no-check turns it off for a machine that must touch no network")
+
+    # IT READS A VERSION. IT DOES NOT DOWNLOAD HERON TO FIND OUT - R-54 in the
+    # owner's own words: "no need to download again".
+    after = door[door.index("private static void SayIfNewer"):]
+    after = after[:after.index("/// <summary>", 10)] if "/// <summary>" in after[10:] else after
+    check(".Manifest(out why)" in after,
+          "it fetches only the product list - a few kilobytes")
+    check(".Folder(" not in after,
+          "and never a product's files, which is the 54 MB it must not fetch")
+    check("UpdateCheckSeconds" in door,
+          "and it gives up quickly, because a blocked network does not answer "
+          "at all and the install is already finished")
 
     print()
     print("  release-independent, and nowhere near Revit")

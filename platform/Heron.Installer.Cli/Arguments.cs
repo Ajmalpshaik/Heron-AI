@@ -60,6 +60,17 @@ namespace Heron.Installer.Cli
         public bool ListOnly { get; private set; }
 
         /// <summary>
+        /// Do not check online whether a newer release exists.
+        ///
+        /// R-54 has the check happen on an ordinary run, because somebody who
+        /// downloaded days ago would otherwise never hear about an update.
+        /// This turns it off for the cases where asking is wrong rather than
+        /// merely slow: a machine that must touch no network at all, and a
+        /// scripted install that should behave the same every time.
+        /// </summary>
+        public bool NoCheck { get; private set; }
+
+        /// <summary>
         /// Why the line cannot be acted on, or null when it can.
         ///
         /// Plain English, and it says what to do next - docs/14. "Error" is
@@ -93,6 +104,10 @@ namespace Heron.Installer.Cli
 
                     case "--list":
                         read.ListOnly = true;
+                        break;
+
+                    case "--no-check":
+                        read.NoCheck = true;
                         break;
 
                     case "--source":
@@ -217,10 +232,15 @@ namespace Heron.Installer.Cli
                 "  --products <a,b>    Only these. Default: everything offered." + n +
                 "  --releases <a,b>    Only these Revit releases. Default: all found." + n +
                 "  --list              Say what would happen and change nothing." + n +
+                "  --no-check          Do not check online whether a newer version exists." + n +
                 "  --help              This." + n +
                 n +
                 "Close Revit before installing. If it is open, heron-install says which" + n +
                 "one and waits for it." + n +
+                n +
+                "With internet it also says whether a newer version is published. It only" + n +
+                "reads the version to do that - it never downloads Heron again to find out," + n +
+                "and it never updates anything by itself." + n +
                 n +
                 "It installs. It never removes anything - use the installer window for" + n +
                 "that, where unticking is something a person did on purpose." + n +
