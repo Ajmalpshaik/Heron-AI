@@ -6,111 +6,122 @@
 # See docs/29-metadata-standard.md
 
 """
-A supplied value that nothing read is NAMED, and a clean run stays silent.
+A caller value nothing declares is NAMED on the MCP path, not just the CLI.
 
     python tests/test_ignored_values.py
 
 WHAT WENT WRONG
 ---------------
-`RevitFragment.BindNeeds` walks the needs it EXPECTS and looks each one up in
-what the caller supplied. It never walked the other way. So a supplied name
-matching no need was read by nothing, reported by nothing, and the reply said
-the whole thing had been applied - `categoryName` for `categories` is one
-character wrong and a clean success.
+`undeclared_values` has caught this since FRAGMENT-ISSUES row 71, and it is
+wired into the command line: `fragment set-category-graphics --set
+categoryName=Walls` prints "IGNORED 'categoryName'" before Revit is touched.
 
-It is the same silence that let a value split on a semicolon go out as a
-success on 2026-09-22: walls asked to go red stayed white through four writes,
-and every reply said it had worked.
+`revit_change` never called it. So the SAME typo through the MCP path - the
+one an assistant and its user actually use - was accepted, dropped, and
+reported as a clean success. Measured on 2026-09-22 against Project1: the
+capability ran, reported `overridden 1`, and said nothing at all about the
+`categoryName=Walls` that reached nothing.
 
-WHY A TEST HOST AND NOT A PYTHON ASSERTION
-------------------------------------------
-The wording lives in C#, in `HeronIgnoredValues.cs`, and it is the ONLY thing
-that now breaks that silence. `tests/Heron.IgnoredValues.TestHost` links it BY
-SOURCE - the same pattern `Heron.BindingNote.TestHost` uses - so there is one
-copy of the rule and no Revit is needed to prove it.
+WHY THE CHECK IS NOT IN THE ADD-IN
+----------------------------------
+`undeclared_values`' own docstring settles it: the contract is read on this
+side, before anything is sent, so catching a typo in C# would mean a round
+trip to learn about it. A C# copy was written and removed on the same day for
+that reason - and because a second implementation of one rule is how `binds:`
+came to be honoured by the Python half and ignored by the executor.
 
-THE DOTNET-FINDING IS NOT REPEATED HERE. `tests/test_binding_note.py` already
-worked out which target framework this machine can build, and a second copy
-would be a second thing to keep in step. It is imported.
-
-THE SEAM CHECK IS THE ONE THING THE HOST CANNOT MAKE. `Describe` takes three
-collections of strings, so passing them in the wrong order COMPILES and the
-message comes out confidently backwards - the same hazard `test_binding_note`
-guards for its own two arguments. The production call is read here.
+SO THIS SUITE CHECKS TWO THINGS, AND THE SECOND IS THE ONE THAT WOULD ROT.
+The helper's behaviour, and that `revit_change` actually CALLS it and PRINTS
+what it returns. A helper nobody calls is exactly the state this fixes.
 """
 
 import io
 import os
-import re
-import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-HOST = os.path.join(ROOT, "tests", "Heron.IgnoredValues.TestHost")
-CALLER = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitFragment.cs")
+SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
+sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 
-sys.path.insert(0, os.path.join(ROOT, "tests"))
-import test_binding_note as SHARED                              # noqa: E402
+import heron_bridge_client as CLIENT                            # noqa: E402
+
+FAILURES = []
 
 
-def crosses_the_seam():
-    """The production call passes supplied, then consumed, then askable.
+def check(condition, what):
+    if condition:
+        print("  ok    %s" % what)
+    else:
+        print("  FAIL  %s" % what)
+        FAILURES.append(what)
 
-    All three are collections of strings. Swapped, this compiles and reports
-    the names it DID read as the ones nothing read - a sentence that is wrong
-    in the confident direction, which is exactly the shape row 75 had.
-    """
-    try:
-        with io.open(CALLER, "r", encoding="utf-8") as fh:
-            text = fh.read()
-    except (IOError, OSError) as why:
-        return False, "could not read %s: %s" % (CALLER, why)
 
-    found = re.search(r"HeronIgnoredValues\.Describe\(([^)]*)\)", text)
-    if not found:
-        return False, "nothing in RevitFragment.cs calls HeronIgnoredValues.Describe"
+NEEDS = [{"name": "view", "type": "View", "source": "request"},
+         {"name": "categories", "type": "IList<Category>", "source": "request"},
+         {"name": "overrides", "type": "OverrideGraphicSettings",
+          "source": "request"},
+         {"name": "doc", "type": "Document", "source": "ambient"}]
 
-    args = [a.strip() for a in found.group(1).split(",")]
-    if args != ["supplied.Keys", "Consumed", "Askable"]:
-        return False, ("the call passes %s - it must pass supplied.Keys, "
-                       "Consumed, Askable in that order" % ", ".join(args))
-    return True, "supplied.Keys, Consumed, Askable"
+
+def values(*names):
+    return [{"name": n, "value": "x"} for n in names]
 
 
 def main():
-    tfm = SHARED._tfm()
-    if tfm is None:
-        print("NOT RUN - no .NET SDK this host can build with.")
-        return 3
+    print("1. The helper itself")
+    typo, takes = CLIENT.undeclared_values(
+        values("view", "categories", "overrides", "categoryName"), NEEDS)
+    check(typo == ["categoryName"],
+          "a name the contract does not declare is returned - got %r" % (typo,))
+    check(any(t.startswith("categories (") for t in takes),
+          "and what it DOES take comes back with it")
+    check(not any(t.startswith("doc (") for t in takes),
+          "an ambient need is not offered - it is not the caller's to set")
 
-    out_dir = "bin/x64/Debug-%s/" % tfm
-    built = subprocess.run(
-        ["dotnet", "build", HOST, "-p:RevitVersion=2024",
-         "-p:HeronTfm=%s" % tfm, "-p:OutputPath=%s" % out_dir],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    if built.returncode != 0:
-        print("FAILED - the test host did not build for %s." % tfm)
-        said = (built.stdout or b"").decode("utf-8", "replace").strip()
-        for line in said.splitlines()[-25:]:
-            print("    %s" % line)
-        return 1
+    clean, _ = CLIENT.undeclared_values(
+        values("view", "categories", "overrides"), NEEDS)
+    check(clean == [], "a clean call returns nothing to say")
 
-    dll = os.path.join(HOST, out_dir, "Heron.IgnoredValues.TestHost.dll")
-    if not os.path.exists(dll):
-        print("FAILED - built, and %s is not there." % dll)
-        return 1
+    none_given, _ = CLIENT.undeclared_values([], NEEDS)
+    check(none_given == [], "no values at all returns nothing to say")
 
-    # The host prints its own checks; they are the output of this suite.
-    ran = subprocess.call(["dotnet", dll])
-    if ran != 0:
-        return ran
-
-    # LAST, so a failure here is never confused with the wording's own.
-    ok, said = crosses_the_seam()
     print()
-    print("  %s  the production call passes them in order - %s"
-          % ("ok  " if ok else "FAIL", said))
-    return 0 if ok else 1
+    print("2. revit_change calls it, and prints what it returns")
+    try:
+        text = io.open(SERVER, encoding="utf-8").read()
+    except OSError as why:
+        print("  FAIL  could not read %s: %s" % (SERVER, why))
+        return 1
+
+    start = text.find(chr(10) + "def revit_change(")
+    check(start > 0, "revit_change is still in the server")
+    if start < 0:
+        return 1
+    body = text[start:]
+    end = body.find(chr(10) + "@server.tool()")
+    if end > 0:
+        body = body[:end]
+
+    check("undeclared_values(" in body,
+          "revit_change CALLS undeclared_values rather than carrying a copy")
+    check("IGNORED" in body,
+          "and the reply says IGNORED, so a dropped value leaves a trace")
+    check("It takes:" in body,
+          "and names what the capability does take, so the fix is one line away")
+
+    # THE HELPER IS THE CLIENT'S, AND A COPY HERE WOULD DRIFT. Row 71's rule
+    # has one home; this asserts the server did not grow a second one.
+    check("def undeclared_values" not in text,
+          "the server did not reimplement the rule")
+
+    print()
+    if FAILURES:
+        print("FAILED - %d check(s):" % len(FAILURES))
+        for f in FAILURES:
+            print("  - %s" % f)
+        return 1
+    print("PASSED - the MCP path names what it drops, using the one copy of the rule.")
+    return 0
 
 
 if __name__ == "__main__":

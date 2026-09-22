@@ -131,7 +131,6 @@ PROJECTS = [
     "tests/Heron.Banner.TestHost/Heron.Banner.TestHost.csproj",
     "tests/Heron.BindingNote.TestHost/Heron.BindingNote.TestHost.csproj",
     "tests/Heron.Bridge.TestHost/Heron.Bridge.TestHost.csproj",
-    "tests/Heron.IgnoredValues.TestHost/Heron.IgnoredValues.TestHost.csproj",
     "tests/Heron.Installer.TestHost/Heron.Installer.TestHost.csproj",
     "tests/Heron.Kernel.TestHost/Heron.Kernel.TestHost.csproj",
     "tests/Heron.StackGuard.TestHost/Heron.StackGuard.TestHost.csproj",

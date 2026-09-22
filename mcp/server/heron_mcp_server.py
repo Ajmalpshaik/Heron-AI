@@ -851,6 +851,26 @@ def revit_change(capability: str, values: str = "",
         return ("'%s' could not be read with certainty - its contract is unclear, "
                 "so nothing has been sent to Revit." % capability)
 
+    # A NAME NOTHING DECLARES IS DROPPED, AND SAYING SO IS THE WHOLE FIX.
+    #
+    # `undeclared_values` has done this on the command line since row 71, and
+    # THIS path never called it. So `fragment ... --set categoryName=Walls`
+    # printed "IGNORED 'categoryName'" and the same typo through revit_change
+    # ran clean, changed nothing by that name, and reported success. The tool
+    # people actually use was the one without the check.
+    #
+    # IT IS CALLED, NOT REIMPLEMENTED. Row 71's rule lives in one function; a
+    # second copy here is how `binds:` came to be honoured by the Python half
+    # and ignored by the C# executor. The add-in is deliberately not where this
+    # goes either - `undeclared_values` says why: the contract is already read
+    # on this side, while Revit is still untouched, so catching a typo there
+    # would cost a round trip to learn about it.
+    #
+    # IT NAMES, IT DOES NOT REFUSE - row 71's own words. Refusing would break a
+    # caller relying on today's behaviour, and the confusing part was never the
+    # drop, it was the silence.
+    undeclared, takeable = bridge.undeclared_values(_values_array(values), needs)
+
     try:
         session = binding.resolve()
     except NotBound as unbound:
@@ -990,6 +1010,23 @@ def revit_change(capability: str, values: str = "",
     bound = reply.get("bound")
     if bound:
         lines.append("  inputs: %s" % bound)
+
+    # AND WHAT NOTHING READ. The other half of the line above: that one says
+    # where each input came from, and without this one a value that reached
+    # nothing leaves no trace at all. It is printed with the RESULT rather
+    # than before it, because the dangerous case is not the refusal - it is
+    # the clean success that changed nothing by the name you typed.
+    if undeclared:
+        lines.append("")
+        lines.append("  IGNORED: '%s' - %s not %s this capability takes, so %s dropped."
+                     % ("', '".join(undeclared),
+                        "is" if len(undeclared) == 1 else "are",
+                        "a value" if len(undeclared) == 1 else "values",
+                        "it was" if len(undeclared) == 1 else "they were"))
+        lines.append("  It takes: %s"
+                     % (", ".join(takeable) if takeable else "no caller values at all"))
+        lines.append("  A mistyped name and an invented one look the same here, so "
+                     "check the spelling before trusting what this run did.")
 
     # WHAT IT ACTUALLY DID, AND IT USED TO BE PRINTED NOWHERE.
     #

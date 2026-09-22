@@ -341,12 +341,6 @@ namespace Heron.Revit.Addin
             // side can look one up, and only this side can tell that two
             // views answer to the same name.
             var supplied = new Dictionary<string, string>(StringComparer.Ordinal);
-
-            // EMPTIED PER REQUEST, not per bind - a chained run binds several
-            // times against one supplied dictionary. See Consumed.
-            Consumed = new HashSet<string>(StringComparer.Ordinal);
-            Askable = new HashSet<string>(StringComparer.Ordinal);
-            Ignored = null;
             var givenValues = Json.ReadObjectArray(request, "values");
             if (givenValues != null)
             {
@@ -592,12 +586,6 @@ namespace Heron.Revit.Addin
             if (threw != null) return threw;
 
             Remember(name, state, target, bound, client, globals.__heron, ranWith);
-
-            // AFTER EVERY STEP HAS BOUND, AND ONLY HERE. The setup steps and
-            // the fragment share one supplied dictionary, so this is the first
-            // moment at which "nothing read it" is true rather than premature.
-            Ignored = IgnoredValues(supplied);
-
             var answer = Report(name, state, target, uidoc, app.ActiveUIDocument, bound,
                                 globals.__heron);
 
@@ -939,11 +927,6 @@ namespace Heron.Revit.Addin
             // broken when it was never consulted.
             if (!string.IsNullOrEmpty(Note)) parts.Add(Json.Str("bound", Note));
 
-            // AND WHAT NOTHING READ. The other half of the same question: the
-            // line above says where each input came from, and without this one
-            // a value that came from nowhere leaves no trace at all.
-            if (!string.IsNullOrEmpty(Ignored)) parts.Add(Json.Str("ignored", Ignored));
-
             var left = new List<string>();
 
             foreach (var variable in state.Variables)
@@ -1191,52 +1174,6 @@ namespace Heron.Revit.Addin
         /// operation arrives on the Revit API thread, one at a time.
         /// </summary>
         private static string Note;
-
-        /// <summary>
-        /// Which of the caller's own values something actually READ, and which
-        /// request-sourced names were on offer, for this one request.
-        ///
-        /// WHY THIS EXISTS. BindNeeds walks the needs it EXPECTS and looks each
-        /// one up in what the caller supplied. It never walks the other way, so
-        /// a supplied name matching no need was read by nothing, reported by
-        /// nothing, and the caller was told the whole thing had been applied.
-        /// A misspelt `categoryName` for `categories` is the common shape, and
-        /// on 2026-09-22 the same silence let a value split on a semicolon go
-        /// out as a success.
-        ///
-        /// ACROSS THE WHOLE REQUEST, NOT ONE BIND. Every setup step gets the
-        /// SAME supplied dictionary - see the two BindNeeds call sites - so a
-        /// value this fragment ignores may be exactly what its arrangement step
-        /// consumes. Judging per-bind would cry wolf on every chained run, and a
-        /// warning that is usually wrong is one nobody reads.
-        ///
-        /// Single-threaded by construction, the same as Note: every operation
-        /// arrives on the Revit API thread, one at a time.
-        /// </summary>
-        private static HashSet<string> Consumed;
-        private static HashSet<string> Askable;
-
-        /// <summary>
-        /// What the caller supplied that nothing read, phrased for the person
-        /// who typed it. Null when everything landed. Set once per request,
-        /// after every step has bound, and read by Report.
-        /// </summary>
-        private static string Ignored;
-
-        /// <summary>
-        /// The caller's values that no step read - named, with what this run
-        /// does take, because a name nothing reads is nearly always a name
-        /// spelt one character wrong.
-        ///
-        /// THE WORDING LIVES IN HeronIgnoredValues.cs so it can be proved
-        /// without Revit - see that file. This is the half that knows which
-        /// request it belongs to.
-        /// </summary>
-        private static string IgnoredValues(Dictionary<string, string> supplied)
-        {
-            if (supplied == null) return null;
-            return HeronIgnoredValues.Describe(supplied.Keys, Consumed, Askable);
-        }
 
         /// <summary>
         /// What the LAST fragment left behind, so the next one can consume it.
@@ -1612,23 +1549,12 @@ namespace Heron.Revit.Addin
                 // against the wrong category and reports success.
                 if (source == "request")
                 {
-                    // ON OFFER, whether or not it was filled. A caller who
-                    // misspelt one needs to be told what the right name was,
-                    // and by the time Report runs the needs are out of scope.
-                    if (Askable != null) Askable.Add(name);
-
                     string givenText;
                     if (supplied == null || !supplied.TryGetValue(name, out givenText))
                     {
                         fromRequest.Add(name + " (" + type + ")");
                         continue;
                     }
-
-                    // READ. Recorded before the conversion rather than after:
-                    // a value that was found and then refused was still read,
-                    // and reporting it as ignored on top of its own refusal
-                    // would point at the wrong mistake.
-                    if (Consumed != null) Consumed.Add(name);
 
                     // A VALUE THAT CANNOT BECOME ITS DECLARED TYPE STOPS THE
                     // RUN. It is the caller's mistake and it is fixable at the
