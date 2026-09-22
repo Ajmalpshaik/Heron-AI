@@ -335,6 +335,42 @@ def main():
                       "and the flag is NAMED in a refusal rather than joined "
                       "to the question and looked up")
 
+        print("\n10. AND A FLAG THIS TOOL DOES NOT HAVE IS REFUSED TOO")
+        # ROW 5b-112. The comment above that same loop states the rule in the
+        # present tense - "THE FLAGS STOP THE QUESTION, AND AN UNKNOWN ONE IS
+        # REFUSED" - and only the two flags it HAS were ever stopped.
+        # Measured by running it, before the fix:
+        #
+        #   heron_company.py "how thick is duct insulation" --scope project
+        #     -> the company standard has no answer to
+        #        'how thick is duct insulation --scope project', exit 0
+        #
+        # Row 5b-104 closed this door for --subject and --stage and left it
+        # open for every other flag, which is the half-a-finding shape this
+        # register keeps recording. heron_retrieve has refused unknown flags
+        # by name since 2026-08-30 and says why.
+        said = _io.StringIO()
+        try:
+            with _ctx.redirect_stdout(said):
+                code = CMP.main(["how thick is duct insulation",
+                                 "--scope", "project"])
+        except BaseException as raised:      # noqa: BLE001 - that IS the check
+            code = None
+            check(False, "an unknown flag is refused rather than raising %s"
+                         % type(raised).__name__)
+        if code is not None:
+            spoke = said.getvalue()
+            check(code == 2,
+                  "an unknown flag exits 2 rather than answering, because an "
+                  "honest empty answer to a question nobody asked reads as a "
+                  "measurement")
+            check("duct insulation --scope" not in spoke,
+                  "and it never becomes part of the question")
+            check("not a flag this tool has" in spoke and "--scope" in spoke,
+                  "and it is refused in the house words - heron_retrieve, "
+                  "heron_conflict and heron_research all say `not a flag "
+                  "this tool has` and exit 2")
+
     finally:
         if was is None:
             os.environ.pop("HERON_KNOWLEDGE", None)

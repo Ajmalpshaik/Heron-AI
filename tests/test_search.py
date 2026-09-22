@@ -413,6 +413,55 @@ def main():
         shutil.rmtree(room, ignore_errors=True)
 
     print()
+    print("A flag this tool does not have is refused, not searched for")
+    # ROW 5b-112. main() joins EVERY argument into the sentence it asks, so a
+    # flag went into the question and its miss was reported as a result.
+    # Measured before the fix:
+    #
+    #   heron_search.py "how thick is duct insulation" --top 5
+    #     -> Asked:  how thick is duct insulation --top 5        exit 0
+    #
+    # That is word for word the reason heron_retrieve.main gives for refusing
+    # unknown flags by name, written down in that file since 2026-08-30.
+    #
+    # A REAL STORE IS ARRANGED FIRST, and the reason is worth the four lines:
+    # the first version of this ran after HERON_KNOWLEDGE had been popped, so
+    # it went red with a ValueError out of open_scope and proved nothing about
+    # the flag. A check that CRASHES is not a check that fails - heron-ship
+    # section 2a.
+    typo_home = tempfile.mkdtemp(prefix="heron-search-typo-")
+    was = os.environ.get("HERON_KNOWLEDGE")
+    os.environ["HERON_KNOWLEDGE"] = typo_home
+    try:
+        SCOPE.rebuild()
+        said = io.StringIO()
+        try:
+            import contextlib
+            with contextlib.redirect_stdout(said):
+                code = SEARCH.main(["how thick is duct insulation",
+                                    "--top", "5"])
+        except BaseException as raised:      # noqa: BLE001 - that IS the check
+            code = None
+            check(False, "an unknown flag is refused rather than raising %s"
+                         % type(raised).__name__)
+        if code is not None:
+            spoke = said.getvalue()
+            check(code == 2, "an unknown flag exits 2 rather than answering")
+            check("duct insulation --top" not in spoke,
+                  "and it never becomes part of the question that is asked")
+            check("not a flag this tool has" in spoke and "--top" in spoke,
+                  "it is refused in the house words, the ones heron_retrieve "
+                  "has used since 2026-08-30")
+            check("indexed in the global scope" not in spoke,
+                  "and the store is never opened - a typo costs nothing")
+    finally:
+        shutil.rmtree(typo_home, ignore_errors=True)
+        if was is None:
+            os.environ.pop("HERON_KNOWLEDGE", None)
+        else:
+            os.environ["HERON_KNOWLEDGE"] = was
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:
