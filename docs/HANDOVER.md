@@ -167,6 +167,42 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — THE RELPATH CRASH: TWO MORE CALLS FIXED, AND THE RULE MOVED WHERE EVERY TOOL CAN IMPORT IT
+
+A Windows session - repository on `D:`, `TEMP` on `C:` - working the brief the session below wrote.
+That brief's reproduction was already green when this started: #286 had fixed `tools/api-changes.py`.
+As the entry below asks, PR #296 was checked against #286 and #288 before it went for merging.
+
+#### What was done - PR #296
+
+- **Every `os.path.relpath` call in `tools/`, `brain/` and `mcp/` traced to where its path comes from.**
+  58 calls: 53 safe and left alone (joined onto `ROOT`, or walked from under it), 3 copies of the one
+  helper, and 2 reachable and unguarded - `prove-skill.py --jobs` and `build-release-assets.py --out`,
+  both raising AFTER their work was done. [Row 5b-152](FRAGMENT-ISSUES.md) holds the audit.
+- **The rule moved to [`brain/heron_relpath.py`](../brain/heron_relpath.py)**, which imports nothing but
+  `os`. Its old home, `heron_fragment`, needs PyYAML, and three tools must run without it - which is why
+  the copies kept appearing. `heron_fragment`, `api-changes.py` and `check-licence.py` now ask it.
+- **[`tests/test_relpath.py`](../tests/test_relpath.py) forces the two-drive condition**, so it fails on
+  CI's single mount too - 11 checks red against the unfixed tools, all green with the fix.
+
+#### Checked against #286, #288 and #294
+
+- **#286 is kept, not duplicated.** Its `short()` stays and now asks `heron_relpath`;
+  `tests/test_api_digest.py` passes 30 of 30.
+- **#288 touched none of these files.** Its two suites were the only reds in the before-sweep, measured on
+  both sides, and they pass on `main`.
+- **#294 was merged into the branch and tested with it**: its suite, both relpath suites and five gates
+  exit 0.
+
+#### What is left
+
+- **One item: a gate.** Nothing refuses a NEW raw `os.path.relpath` outside `heron_relpath`, and a new
+  call is how every one of these arrived. It changes CI's gate list and `tests/test_tag.py`, which pins
+  that list - its own piece of work.
+- **For the owner: nothing**, once #296 is merged.
+
+---
+
 ### 2026-09-22 — FOUR HINTS TOLD A CALLER TO TYPE WHAT REVIT REFUSES, AND FOURTEEN SAID NOTHING
 
 A Windows session with Revit 2024 open on `Project1`. It started as modelling work — Walls in `1 - Mech`
