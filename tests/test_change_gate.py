@@ -56,6 +56,29 @@ def load(name, filename):
 
 
 CHANGE = load("heron_check_change", "check-change.py")
+
+# THE VERDICT MUST NOT DEPEND ON WHAT IS SITTING IN THE WORKING TREE.
+#
+# The comment under 'A gate recorded as NOT RUN' already learned half of this:
+# the gates a change owes are read from the tool rather than typed, because a
+# diff touching revit/ raises a signal and the suite went red beside a branch
+# that had nothing to do with it. THE SCOPE HALF WAS STILL LIVE.
+# check-change.py reads the working tree, so ONE untracked file in no declared
+# part - a scratch folder, an editor artefact, `.agents/` on the owner's PC -
+# turns every verdict below into SPLIT before the evidence is ever weighed,
+# and the checks fail for a reason that has nothing to do with the gate.
+#
+# Measured 2026-09-22: with `.agents/` present, four failures. With that one
+# folder moved aside and nothing else touched, the suite passed. CI clones
+# into a clean tree, so it is green there forever and this only ever appears
+# on a machine somebody actually works in.
+#
+# `HEAD..HEAD` is an EMPTY range: no file is in scope, so nothing can be out
+# of it, and the evidence record - which is what these checks are ABOUT - is
+# the only thing left to decide the verdict. The two calls that check argument
+# handling exit 2 before any diff is read, so they neither need this nor have
+# it.
+ISOLATED = ["--range", "HEAD..HEAD"]
 EVIDENCE = load("heron_change_evidence", "change-evidence.py")
 
 
@@ -263,7 +286,7 @@ def main():
                               "--intent", "anything", "--area",
                               ",".join(sorted(CHANGE.layering().PARTS) +
                                        sorted(CHANGE.layering().SUPPORT)),
-                              "--risk", "low", "--evidence", handle.name],
+                              "--risk", "low", "--evidence", handle.name] + ISOLATED,
                              capture_output=True, text=True, cwd=ROOT)
         check("Failing before too:     tests" in out.stdout,
               "a gate failing on BOTH sides is named as pre-existing")
@@ -278,7 +301,7 @@ def main():
                               "--intent", "anything", "--area",
                               ",".join(sorted(CHANGE.layering().PARTS) +
                                        sorted(CHANGE.layering().SUPPORT)),
-                              "--risk", "low", "--evidence", handle.name],
+                              "--risk", "low", "--evidence", handle.name] + ISOLATED,
                              capture_output=True, text=True, cwd=ROOT)
         check("was run and failed" in out.stdout,
               "with NO before-measurement the same record blocks - nothing can "
@@ -326,7 +349,7 @@ def main():
              "--intent", "anything", "--area",
              ",".join(sorted(CHANGE.layering().PARTS) +
                       sorted(CHANGE.layering().SUPPORT)),
-             "--risk", "medium", "--evidence", record],
+             "--risk", "medium", "--evidence", record] + ISOLATED,
             capture_output=True, text=True, cwd=ROOT)
         return out.stdout
 
@@ -356,7 +379,7 @@ def main():
                           "--intent", "anything", "--area",
                           ",".join(sorted(CHANGE.layering().PARTS) +
                                    sorted(CHANGE.layering().SUPPORT)),
-                          "--risk", "low"],
+                          "--risk", "low"] + ISOLATED,
                          capture_output=True, text=True, cwd=ROOT)
     check(out.returncode == 1 and "no evidence record" in out.stdout,
           "with every part declared, so nothing can be out of scope, the verdict "
