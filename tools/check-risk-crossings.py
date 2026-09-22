@@ -142,8 +142,14 @@ def _md5(path):
 # and `zoom-to-elements` change what a VIEW shows - real, visible, and undone
 # by Reset Temporary Hide/Isolate. That is not the failure this tool exists to
 # catch, which is a question answered by a change to the MODEL.
-CHANGES_THE_MODEL = ("MODIFY", "PUBLISH", "ADMIN")
-CHANGES_A_VIEW = ("EXECUTE",)
+# IMPORTED FOR THE REASON THE BLOCK ABOVE GIVES ABOUT THE FINGERPRINT. These
+# two tuples decide this tool's whole verdict, and an identical pair sat in
+# check-skill-routing.py - the second copy of one rule, in the file that says
+# "two copies of one rule is how one of them goes stale" three functions
+# earlier. They were identical when this was written, which is exactly when a
+# duplicate is cheapest to remove.
+CHANGES_THE_MODEL = _ROUTING.CHANGES_THE_MODEL
+CHANGES_A_VIEW = _ROUTING.CHANGES_A_VIEW
 
 
 # Ordinary things a modeller asks. Questions FIRST, then the imperatives that
@@ -321,6 +327,64 @@ QUESTIONS = [
 ]
 
 
+def read_that_lost(found, winner):
+    """The first safe capability sitting behind `winner`, or None.
+
+    THE WHOLE JUDGEMENT THIS TOOL MAKES, and it was inline in `main()` where
+    nothing could reach it without a store - and a count taken from the store
+    is a SAMPLE rather than a measurement (row 116), so a test that opened one
+    would be asserting today's index. Extracted with no change to what it
+    decides.
+
+    Safe means neither a write nor a view change: ANALYZE is safe because
+    docs/12 s2 gives it side effects "none", and EXECUTE is not, because a
+    view change is real and visible even though Reset Temporary Hide/Isolate
+    undoes it. The winner itself is excluded - "was a READ right there and
+    BEATEN" is the question.
+    """
+    for one in found.get("candidates") or []:
+        risk = (one.get("risk") or "").upper()
+        if risk in CHANGES_THE_MODEL or risk in CHANGES_A_VIEW:
+            continue
+        if one.get("capability") == winner:
+            continue
+        return one.get("capability")
+    return None
+
+
+def denominator_lines(asked, by_identity):
+    """How many of the questions RANKING actually decided, as lines.
+
+    THE HEADLINE WAS THE SIZE OF THE LIST, NOT THE SIZE OF THE QUESTION. A
+    sentence a fragment declares is answered by the IDENTITY route at that
+    fragment's own declared risk - fixed, not ranked - so it cannot be a
+    crossing here, and this file's docstring says so in terms: *a question a
+    fragment already declares is worth less here, not more.*
+
+    The ten skill sentences added on 2026-09-19 were chosen because each was
+    "declared by NO fragment - measured, not judged". MEASURED AGAIN
+    2026-09-22 against the live store: 26 of 78 now come back by identity, so
+    that criterion has gone stale under the list, and `questions asked: 78`
+    with a zero beside it read stronger than the 52 the zero was really over.
+
+    Returned as lines rather than printed for the same reason
+    `fingerprint_lines` is: a test can read them without a store, and a tool
+    that wraps this output can place them.
+    """
+    left = asked - by_identity
+    return [
+        "  asked                %d" % asked,
+        "  answered by IDENTITY %d - a fragment declares these, so the answer"
+        % by_identity,
+        "                         is fixed rather than ranked and CANNOT be a",
+        "                         crossing here.",
+        "  left to RANKING      %d - and ranking is the thing that answers a"
+        % left,
+        "                         question with a write. THIS is the number a",
+        "                         zero below is a zero out of.",
+    ]
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--revit", default="2020")
@@ -342,6 +406,7 @@ def main():
     index = _index_fingerprint()
 
     crossings, allowed, unresolved = [], [], []
+    by_identity = 0
 
     for question in QUESTIONS:
         try:
@@ -355,6 +420,13 @@ def main():
             unresolved.append((question, "no capability"))
             continue
 
+        # COUNTED BEFORE THE RISK TEST SKIPS IT. An identity answer is nearly
+        # always a READ, so it leaves by the `continue` below and would be
+        # invisible to any tally taken afterwards - which is how the size of
+        # the list came to stand in for the size of the question.
+        if (found.get("route") or "") == "identity":
+            by_identity += 1
+
         risk = (found.get("risk") or "").upper()
         if risk not in CHANGES_THE_MODEL and risk not in CHANGES_A_VIEW:
             continue
@@ -362,18 +434,19 @@ def main():
         # THE DISCRIMINATOR, AND THE WHOLE JUDGEMENT THIS TOOL MAKES: was a
         # READ right there and beaten? If nothing read-only was close, the
         # request probably WAS asking for the change.
-        reads = [c["capability"] for c in found.get("candidates") or []
-                 if (c.get("risk") or "").upper() not in CHANGES_THE_MODEL
-                 and (c.get("risk") or "").upper() not in CHANGES_A_VIEW
-                 and c["capability"] != capability]
+        beaten = read_that_lost(found, capability)
 
-        row = (question, capability, risk, reads[0] if reads else None)
-        if reads and risk in CHANGES_THE_MODEL:
+        row = (question, capability, risk, beaten)
+        if beaten and risk in CHANGES_THE_MODEL:
             crossings.append(row)
         else:
             allowed.append(row)
 
     print("Revit %s   questions asked: %d" % (args.revit, len(QUESTIONS)))
+    print("")
+    print("HOW MANY OF THEM RANKING ACTUALLY DECIDED:")
+    for line in denominator_lines(len(QUESTIONS), by_identity):
+        print(line)
     print("")
     print("THE INDEX THIS RAN AGAINST - compare it before comparing counts:")
     for line in _ROUTING.fingerprint_lines(index):
