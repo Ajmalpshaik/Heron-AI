@@ -17,6 +17,10 @@ tests the guard: JSON piped into the script exactly as the host would pipe it,
 and the answer read back off stdout.
 
 WHAT THIS PROVES
+  0. THE SESSION LINE says where the branch stands against origin/main and
+     how many fragments are PROVEN and DRAFT, both DERIVED; it does NOT fetch;
+     it is silent, exit 0, when there is nothing it can derive; and it is
+     fast on this repository.
   1. "HAS MAIN MOVED?" fires on a merge and a "ready" - by gh, by gh api, and
      by the GitHub MCP tools - fetches origin/main, and names the commits the
      branch does not have. It stays silent for everything else, including
@@ -26,9 +30,10 @@ WHAT THIS PROVES
      happens - a bad payload, no git, a fetch that fails.
   3. A FETCH THAT CANNOT FINISH IS CUT OFF, and the comparison still happens
      against origin/main as last fetched, and says so.
-  4. THE WIRING. .claude/settings.json runs it for the right tools, with the
+  4. THE WIRING. .claude/settings.json runs the session line at every
+     session start and the main-moved hook for the right tools, with the
      matcher anchored so update_pull_request_branch is not mistaken for
-     update_pull_request, and the exact command it gives runs under bash.
+     update_pull_request, and the exact commands it gives run under bash.
 
 Every repository here is a throwaway with its own local `origin`, so nothing
 in this suite ever needs the network.
@@ -38,6 +43,7 @@ Windows expands the command the way bash does here. Both need a real session
 on the owner's PC - the same limit test_heron_guard.py states.
 """
 
+import glob
 import io
 import json
 import os
@@ -52,6 +58,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILL = os.path.join(ROOT, ".claude", "skills", "heron-session")
 BIN = os.path.join(SKILL, "bin")
 MOVED = os.path.join(BIN, "main_moved.py")
+LINE = os.path.join(BIN, "session_line.py")
 SETTINGS = os.path.join(ROOT, ".claude", "settings.json")
 
 sys.path.insert(0, BIN)
@@ -152,6 +159,14 @@ def commands(event):
     return found
 
 
+def fragment(where, name, status):
+    folder = os.path.join(where, "brain", "fragments", name)
+    os.makedirs(folder)
+    with io.open(os.path.join(folder, "fragment.yaml"), "w",
+                 encoding="utf-8") as handle:
+        handle.write("id: %s\nheron-status: %s\nrisk: READ\n" % (name, status))
+
+
 def world(home):
     """A throwaway origin, a seed that pushes to it, and a working clone."""
     origin = os.path.join(home, "origin.git")
@@ -167,6 +182,10 @@ def world(home):
     git(home, "clone", "-q", origin, work)
     configure(work)
     git(work, "checkout", "-q", "-b", "claude/some-work")
+    fragment(work, "alpha", "PROVEN")
+    fragment(work, "beta", "PROVEN")
+    fragment(work, "gamma", "DRAFT")
+    git(work, "add", "brain")
     commit(work, "Work on the branch")
     return origin, seed, work
 
@@ -187,7 +206,8 @@ def main():
         for line in FAILURES:
             print("  %s" % line)
         return 1
-    print("PASSED - the main-moved advice says what is true and never blocks.")
+    print("PASSED - the session line and the main-moved advice say what is")
+    print("true, and neither ever blocks.")
     print()
     print("It does not prove the host runs it, or that Git Bash on Windows")
     print("expands the command the same way. That needs the owner's PC.")
@@ -201,10 +221,63 @@ def run_all(home):
     os.makedirs(plain)
 
     print()
-    print("1. Has main moved? - fires on a merge or a 'ready', and only then")
+    print("0. The session line - derived, not fetched, silent when it cannot say")
     print("-" * 72)
+    start = {"session_id": "s-1", "hook_event_name": "SessionStart",
+             "source": "startup", "cwd": work}
+    parsed, raw, code = hook(LINE, start, env)
+    text = context_of(parsed)
+    check(code == 0, "it exits 0")
+    check(isinstance(parsed, dict) and (parsed.get("hookSpecificOutput") or {})
+          .get("hookEventName") == "SessionStart",
+          "the line is nested under hookSpecificOutput, naming SessionStart")
+    check("claude/some-work" in text, "it names the branch: %s" % text)
+    check("0 behind and 1 ahead of origin/main" in text,
+          "and where it stands against origin/main, derived by git")
+    check("(as last fetched)" in text,
+          "and says the comparison is with origin/main AS LAST FETCHED")
+    check("2 PROVEN, 1 DRAFT of 3" in text,
+          "and the fragment counts, read from each fragment's own card")
+    check(isinstance(parsed, dict) and parsed.get("systemMessage") == text,
+          "the person is shown the same line the AI is given")
+    check(no_decision(parsed), "and it decides nothing")
+    check(raw.isascii() if hasattr(raw, "isascii") else True,
+          "every character of the output is ASCII")
+
     commit(seed, "Somebody else merged first (#901)")
     git(seed, "push", "-q", "origin", "main")
+    parsed, raw, code = hook(LINE, start, env)
+    check("0 behind" in context_of(parsed),
+          "main moving on the far side is NOT seen - the line never fetches, "
+          "which is why it says 'as last fetched'")
+
+    parsed, raw, code = hook(LINE, dict(start, cwd=plain), env)
+    check(code == 0 and raw == "",
+          "in a folder with no git and no fragments it prints NOTHING and "
+          "exits 0 - silent on failure")
+    parsed, raw, code = hook(LINE, "this is not json", env)
+    check(code == 0 and raw == "",
+          "a payload that will not parse is silence too, not a traceback")
+
+    proven = 0
+    for card in glob.glob(os.path.join(ROOT, "brain", "fragments", "*",
+                                       "fragment.yaml")):
+        with io.open(card, encoding="utf-8") as handle:
+            if re.search(r"^heron-status:\s*PROVEN\b", handle.read(), re.M):
+                proven += 1
+    t0 = time.time()
+    parsed, raw, code = hook(LINE, {"cwd": ROOT, "session_id": "s-real"}, env)
+    took = time.time() - t0
+    check("%d PROVEN" % proven in context_of(parsed),
+          "on this repository it states the PROVEN count grep derives (%d)"
+          % proven)
+    check(took < 5.0,
+          "and it is fast: %.2f s on this repository, well inside the "
+          "settings' timeout" % took)
+
+    print()
+    print("1. Has main moved? - fires on a merge or a 'ready', and only then")
+    print("-" * 72)
 
     merge = {"session_id": "s-2", "hook_event_name": "PreToolUse",
              "tool_name": "Bash", "cwd": work,
@@ -334,8 +407,20 @@ def run_all(home):
           "once main is merged in there is nothing to say, and it says nothing")
 
     print()
-    print("3. The wiring - .claude/settings.json runs it for the right calls")
+    print("3. The wiring - .claude/settings.json runs both, for the right calls")
     print("-" * 72)
+    starts = [one for _m, one in commands("SessionStart")
+              if "session_line.py" in one.get("command", "")]
+    check(len(starts) == 1 and "$CLAUDE_PROJECT_DIR" in starts[0].get(
+        "command", ""),
+          "SessionStart runs session_line.py, found from $CLAUDE_PROJECT_DIR")
+    if starts and os.name != "nt" and shutil.which("bash"):
+        got = subprocess.run(["bash", "-c", starts[0]["command"]],
+                             input=json.dumps(start), capture_output=True,
+                             text=True, encoding="utf-8",
+                             env=dict(env, CLAUDE_PROJECT_DIR=ROOT), timeout=120)
+        check(got.returncode == 0 and "claude/some-work" in got.stdout,
+              "and the exact command it gives prints the line under bash")
     pre = [(m, one) for m, one in commands("PreToolUse")
            if "main_moved.py" in one.get("command", "")]
     check(len(pre) == 1, "PreToolUse runs main_moved.py exactly once")
