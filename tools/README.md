@@ -1622,6 +1622,53 @@ a row whose Status still reads OPEN after a LATER row closed it. Four were that 
 
 ---
 
+## `archive-fragment-issues.py` - move finished defect rows out of the live register
+
+```bash
+python tools/archive-fragment-issues.py            # what would move - writes nothing
+python tools/archive-fragment-issues.py --write    # move it
+```
+
+Moves the **finished** rows of sections **5 and 5b** of [`docs/FRAGMENT-ISSUES.md`](../docs/FRAGMENT-ISSUES.md)
+into [`docs/fragment-issues-archive/`](../docs/fragment-issues-archive/README.md), and leaves each one a single
+line in the register: **the same number**, a one-line title, the opening of its state, and a link to its full
+text. Exits **0** when the plan is clean or was written, **1** when a safety check refused and nothing was
+written, **2** when the register could not be read at all.
+
+It exists because on 2026-09-22 the register was **1,123,145 bytes** — more than a session can hold at
+once — and those two sections were 83% of it. A session sent to the queue could not read the queue.
+**Nobody did anything wrong**: every session closed its rows in place, which is what the register asks. What
+was missing was the step that moves a finished row out of the way, and a step that has to be remembered is
+the one that falls behind. [`docs/handover-archive/`](../docs/handover-archive/README.md) is the same answer for
+session notes.
+
+**When in doubt, a row stays.** A row moves only when
+[`open-defects.py`](#open-defectspy---how-many-of-herons-own-defects-are-still-open) would not count it open,
+its state **begins** with a closing word (FIXED, CLOSED, WITHDRAWN, NOT A DEFECT and a few more), the opening of
+that state does not qualify the claim (PARTLY, MOSTLY, EXCEPT and a few more), and **nothing anywhere in the
+state says something is still owed** — STILL OPEN, NOT FIXED, NOT YET, AWAITING, OWNER'S CALL, REOPENED and
+the rest of the tool's list. A row here is closed in place, so what is left is usually written at the END of a
+long state. The first version of this tool read only the opening, and on 2026-09-22 it would have moved
+59 rows carrying those words further down — two of them saying NOT YET RUN IN REVIT.
+*"Proved, awaiting signature"* stays. So does anything the rule does not recognise.
+
+**It refuses rather than guesses, and it borrows `open-defects.py`'s own row pattern, cell splitter and section
+headings** instead of keeping its own — two tools that each decided those would sooner or later disagree
+about a row. Before a byte is written it runs `open-defects.py` **on the rewritten text** and requires the same
+rows with the same open answer, proves every re-pointed link reaches the file it reached before, and refuses
+if the archive already holds a row the register still carries in full.
+
+**Each archive file holds one fixed band of row numbers**, so *row 107* is in `proving-defects-101-125.md` and
+*row 5b-62* in `reading-defects-5b-051-075.md` without an index. The band width is part of every link the tool
+writes, which is why it is a constant. [`tests/test_archive_fragment_issues.py`](../tests/test_archive_fragment_issues.py)
+proves the tool on a register it builds for itself, never on the real one — which changes daily, and would
+fail the suite for the tool being right.
+
+**Run it again whenever rows close.** A moved row is recognised by its link, so a second run moves only what
+has closed since the first.
+
+---
+
 ## `review-ledger.py` - which files have been read, word by word
 
 ```bash
