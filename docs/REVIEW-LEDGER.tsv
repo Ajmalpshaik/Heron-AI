@@ -324,3 +324,4 @@ when	who	path	blob	verdict	note
 2026-09-22	Claude	tools/generate-skill-catalog.py	a801dd512fbea178222b0111634514632dcedb0b	clean	sound; it concludes and its suite covers both halves	full
 2026-09-22	Claude	tools/generate-fragment-catalog.py	baaa59b7a820927b5b7241a94c23526eb40c903b	issue	5b-146	full
 2026-09-22	Claude	tools/generate-api-docs.py	2df5b5470bff33a1632cf43fbe3c8e2506e070b5	issue	5b-146, 5b-147	full
+2026-09-22	Claude	tools/check-revit-gate.py	c15369cabe252539d00887e88f6e7e600f8be327	issue	5b-148	full
