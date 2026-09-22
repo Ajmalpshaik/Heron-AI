@@ -130,6 +130,30 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 session — no Windows, no Revit, no fragment proving. Every number below is derived, and the command
 that derives it is beside it.
 
+> ### DEFERRED BY THE OWNER, 2026-09-22 — THIS IS NOT UNFINISHED WORK
+>
+> **Everything named below as "next" is deliberately left for later.** The owner decided at the close
+> of this session that none of it has to be done now, and said plainly that later is better. **Nothing
+> here is blocked, half-done, or waiting on a fix that went wrong** — it is measured, written down and
+> parked on purpose.
+>
+> **What is parked:**
+>
+> - **Rows 5b-150 and 5b-151** — the two findings recorded and not repaired. They stay `OPEN` in
+>   [`FRAGMENT-ISSUES.md`](FRAGMENT-ISSUES.md) because the defects are real and still there. **Open
+>   means the defect exists, not that somebody is mid-way through it.**
+> - **The seven `tools/` files never opened** — the table further down. The sweep stops here by
+>   choice, not because it ran into something.
+>
+> **What this means for the next session:** do not treat any of it as a rescue. There is no broken
+> state to recover, no red build, no branch left dangling. Pick it up when the owner asks for it, in
+> the order below, and if he asks for something else instead, that comes first.
+>
+> **Why it is written here rather than left implicit.** A decision to defer that nobody records reads
+> exactly like work somebody forgot — and the next session either re-derives it or, worse, rushes it.
+> [D-54](DECISIONS.md)'s lesson is that a sentence describing a state has to be corrected when the
+> state changes: **when this work is picked up, delete this block.**
+
 #### Where the sweep stands
 
 ```bash
