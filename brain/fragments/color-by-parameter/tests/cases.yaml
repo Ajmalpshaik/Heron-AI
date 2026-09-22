@@ -11,7 +11,29 @@ positive:
       drawing comparable with the one issued last week, and it is why the start
       hue is fixed rather than random
 
+  - given: INSULATED ducts coloured on "System Name" in a plan that shows the insulation
+    expect: >
+      each duct's insulation and lining in ITS DUCT'S colour, `wrapsFollowed`
+      counting them, and a legend line saying so. LOOK at it in the plan and in
+      a 3D view: the duct must still read inside its coloured jacket. If the
+      wrap's fill hides the run in plan, record it for the owner rather than
+      choosing a fix here
+
 negative:
+  - given: >
+      insulated ducts coloured on "Type", with their insulation handed in too
+    expect: >
+      the insulation in its DUCT'S colour and NOT a group of its own. A legend
+      with a row for an insulation type is the defect: colouring by type would
+      otherwise give the jacket a different colour from the run inside it
+
+  - given: an insulation element handed in WITHOUT the duct it wraps
+    expect: >
+      grouped on its own value like anything else, and the duct NOT coloured.
+      The rule runs one way, run to wrap - this fragment colours what it is
+      given
+
+
   - given: TWELVE distinct system names in one view
     expect: >
       twelve visibly different colours, none repeating. This is the FIRST case

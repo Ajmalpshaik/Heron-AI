@@ -78,6 +78,26 @@ compatibility-note: >
   2020 to 2027. Points arrive in Revit's internal feet - this fragment does no
   unit arithmetic at all, which is what keeps it clear of the 2021 units move.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# Another tool, on a real model and mostly on Revit 2020, placed 18 units
+# through the API and all 18 landed at level 0: the family's DEFAULT
+# ELEVATION - the height Revit uses when a person places the same family by
+# hand - was ignored. This fragment places at the points it is given, on the
+# level it is given, and never reads that parameter. So a list of plan points
+# with no height can put ceiling-mounted units on the floor, and `placed`
+# still counts every one of them.
+#
+# The same shape was MEASURED HERE on 2026-09-22 with a door: placed, counted,
+# and unhosted (FRAGMENT-ISSUES, "A drawing set and a house plan", item 1).
+# A count of what was placed is not a check of where it went.
+#
+# Not reproduced here for the elevation. A NOTE ONLY - the fragment is PROVEN.
+# The height has to arrive in the points, and it is asked for, never taken
+# from a default (D-33); the skills that place terminals and sprinklers are to
+# carry this as a precondition. After a placement, read the elevation back
+# rather than trusting `placed`. NEEDS-CHECKING AD4.
+
 # ROUTING - repeated in LOAD_FAMILY and CHANGE_ELEMENT_TYPE.
 #
 #   "place a diffuser"           -> here

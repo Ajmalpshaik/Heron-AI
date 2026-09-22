@@ -11,6 +11,15 @@ positive:
       in `served`, NOT in deadEnds. Reporting a finished run as a fault is how
       a QA sweep gets switched off, and then the real dead ends go unfound too
 
+  - given: >
+      on a Revit 2024 model, a pipe run ending at a water heater or a pump in
+      the PLUMBING EQUIPMENT category
+    expect: >
+      in `served`, NOT in deadEnds. Until 2026-09-23 the list of categories
+      that serve a run did not know Plumbing Equipment existed, so this run
+      came back a dead end. The same run on a Revit 2020 model has no such
+      category to be in, and its equipment sits in Mechanical Equipment
+
 negative:
   - given: >
       A DUCT ENDING AT A FITTING, WHICH ENDS AT ANOTHER FITTING, WHICH ENDS AT

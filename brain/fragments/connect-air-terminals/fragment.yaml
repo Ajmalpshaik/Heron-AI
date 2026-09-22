@@ -28,10 +28,13 @@ purpose: >
   cuts a fitting INTO the side of a duct. A terminal sitting under a duct
   correctly does not pair in the other fragment, and correctly does tap here.
 
-  **It connects and moves nothing.** Revit taps the duct at the point nearest
-  the terminal's connector, so a terminal nowhere near the duct gives either a
-  refusal or an absurdly long tap. The distance allowed is asked for, and it is
-  the guard against both.
+  **Nothing here moves a terminal, and Revit may.** Revit taps the duct at the
+  point nearest the terminal's connector, so a terminal nowhere near the duct
+  gives either a refusal or an absurdly long tap. The distance allowed is asked
+  for, and it is the guard against both. The same call has been seen elsewhere
+  lifting a terminal to meet its duct, so every terminal's position is read
+  before and after and any change is reported in `moved` - how far is
+  acceptable is not decided here.
 
   **Nearest is measured to the terminal's CONNECTOR, not to its insertion
   point.** A ceiling diffuser's connector is on top of it, and that is the end
@@ -88,6 +91,18 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<string>
+    - name: moved
+      # Every terminal handed in whose point or facing changed while this ran,
+      # with how far in millimetres and on which axis. A tap that dragged a
+      # diffuser out of its ceiling still counts in `connected`, so this is
+      # the only place that says so. No distance is called acceptable here.
+      role: result
+      type: IList<string>
+    - name: notMeasured
+      # Terminals whose position could not be read before or after, so
+      # whether they moved is NOT known. Never counted as unmoved (D-52).
+      role: accounting
+      type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -99,6 +114,21 @@ compatibility-note: >
   present 2020 through 2027 - read off the reference assemblies at both ends
   rather than remembered. It lives in the mechanical namespace, which the
   wrapper already carries.
+
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# Another tool, on real models and mostly on Revit 2020, saw this same Revit
+# call LIFT an air terminal 625 mm to meet the duct. Until that day this card
+# said "It connects and moves nothing" and the code said "NOTHING IS MOVED".
+# Nothing in this repository has reproduced the lift yet.
+#
+# What is done about it: every terminal handed in has its point and its
+# facing read before any call and again after, and every change is listed in
+# `moved` with the distance on each axis. What is NOT done: no distance is
+# called acceptable, because nobody has given that number - it is the owner's
+# question, and until it is answered every movement is reported and none is
+# refused. NEEDS-CHECKING AD1 is the check on a real model: one terminal that
+# should move and one that should not.
 
 # ROUTING - repeated in CONNECT_OPEN_ENDS and PLACE_MEP_FITTING.
 #

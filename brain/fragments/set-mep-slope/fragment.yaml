@@ -152,6 +152,22 @@ compatibility-note: >
 # nothing here claims to know whether Revit stores that slope as a ratio or as
 # an angle - reflection over an assembly shows a property type, never a unit.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# Another tool, on real models and mostly on Revit 2020, saw a rewritten run
+# curve DELETE the takeoffs on that run and leave their branches orphaned -
+# while the terminal at the end of each branch still read as connected,
+# because it is joined to its own branch and the branch no longer reaches the
+# main. This fragment rewrites the run's curve, and its guard -
+# `bothEndsConnected` - asks only about the two ENDS. A takeoff part way along
+# the run is not an end, so a run with branches tapped into its side reads as
+# free to slope.
+#
+# Not reproduced here. A NOTE ONLY - the fragment is PROVEN, and teaching the
+# guard about side taps would change its code and make the proof stale. Until
+# then, do not re-slope a run with takeoffs on it without looking at each one
+# afterwards. NEEDS-CHECKING AD3.
+
 # ROUTING - repeated in MEASURE_MEP_SLOPE and ALIGN_MEP_ELEVATION.
 #
 #   "give it a fall of 1 in 100"     -> here

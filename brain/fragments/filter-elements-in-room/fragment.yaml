@@ -84,6 +84,23 @@ compatibility-note: >
   and `LocationCurve` are unchanged 2020 to 2027, and no ElementId is built
   from an integer.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# "Is it in the room" is a VOLUME test, and this fragment asks exactly that -
+# `IsPointInRoom` at the element's own point. Another tool, on real models and
+# mostly on Revit 2020, found a device in the ceiling void to be OUTSIDE its
+# room's volume. The purpose says an element above the ceiling "can be
+# genuinely inside" - true only where the room's volume reaches up into the
+# void. Where the room stops at the ceiling, the same element is outside and
+# this fragment leaves it out, and the positive case "a duct above the ceiling
+# of the room - it IS inside" depends on which of the two the room is.
+#
+# COUNT_BY_SPATIAL_CONTAINER tests at the room's own height and would count
+# that element IN; CHECK_ROOM_MEP_COMPLETENESS asks the volume question like
+# this one while its purpose says the opposite. FRAGMENT-ISSUES 5b-163 records
+# the disagreement; NEEDS-CHECKING AD5 settles it with evidence. A note only:
+# this fragment is PROVEN and its code is unchanged.
+
 # ROUTING - repeated in READ_ROOM_GEOMETRY and COUNT_ELEMENTS.
 #
 #   "which elements are in this room"  -> here

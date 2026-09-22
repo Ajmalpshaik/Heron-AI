@@ -63,6 +63,18 @@ compatibility-note: >
   present 2020 through 2027, compiled at both ends. The target is excluded by
   comparing ElementId to ElementId, never by reading either as a number.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# Another tool, on real models and mostly on Revit 2020, found this shape SLOW
+# on a large model. The solid-intersection filter is a SLOW filter - it opens
+# each element's geometry - and here it is applied to every element in the
+# document, with the category list, a QUICK filter, added after it. A
+# bounding-box filter around the target, or the category filter placed first,
+# would narrow the set before any geometry is opened. Whether Revit reorders
+# the two by itself is not known here, and the time has not been measured
+# here. A note only: the fragment is DRAFT and nothing was changed.
+# NEEDS-CHECKING AD9 asks for the time on a large model.
+
 # ROUTING - repeated in FIND_CLASHES, TRACE_CONNECTIVITY and SELECT_IN_REGION.
 #
 #   "what is clashing with this"     -> here

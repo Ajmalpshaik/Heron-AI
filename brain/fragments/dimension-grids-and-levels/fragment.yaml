@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -125,14 +125,38 @@ runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  One implementation for every release. `Grid.Curve`, `Level.Elevation`, the
-  `Reference(Element)` constructor, `ReferenceArray`, `View.ViewDirection`,
+  One implementation for every release. `Grid.Curve`, `Level.ProjectElevation`,
+  the `Reference(Element)` constructor, `ReferenceArray`, `View.ViewDirection`,
   `View.Origin` and `Document.Create.NewDimension(View, Line, ReferenceArray)`
-  are unchanged 2020 to 2027.
+  are unchanged 2020 to 2027 (`Level.ProjectElevation` read off the reference
+  assemblies on 2026-09-23; this note named `Level.Elevation` until then).
 
   Millimetres become feet by dividing by 304.8 (D-20) and no units API is
   touched, so nothing here meets the 2021 move to ForgeTypeId. Ids are carried
   as `ElementId` and none is read as a number.
+
+# BACK TO DRAFT ON 2026-09-23, AND THE PROOF ABOVE IS KEPT AS THE RECORD OF
+# WHAT WAS RUN.
+#
+# The proof was taken on the code as it stood. The code then changed: a
+# level's position along the string is now its ProjectElevation, not its
+# Elevation. Autodesk's API reference gives ProjectElevation as measured from
+# the project origin whatever the level type's Elevation Base is set to, and
+# Elevation as measured from that Elevation Base - so Elevation put the
+# dimension LINE, which is built in model coordinates, off by the survey or
+# base-point offset, and with two level types on different bases it could
+# refuse a real string as "would measure zero". Revit measures the dimension
+# from the references either way, so the NUMBERS on the string were never
+# affected; where the line sat and the zero check were. Nothing the proof
+# recorded is contradicted - its model may well have had the two equal - but
+# it describes code that no longer runs, so its fingerprint no longer matches,
+# and it must NOT be re-stamped: re-taking it on a named model is the only
+# thing that makes this PROVEN again (D-30). NEEDS-CHECKING AD8 says what to
+# arrange. FRAGMENT-ISSUES 5b-167.
+#
+# Two fragments elsewhere describe the two elevations the OPPOSITE way round
+# (LIST_LEVELS and CREATE_LEVEL). Recorded, not changed here: FRAGMENT-ISSUES
+# 5b-168.
 
 # ROUTING - repeated in CREATE_DIMENSION, DIMENSION_MEP_RUNS and
 # DIMENSION_ROOMS.

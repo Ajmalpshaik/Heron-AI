@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -107,10 +107,35 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `ConnectorManager`,
   `Connector.IsConnected` and `Connector.AllRefs` are unchanged 2020 to 2027.
-  `stubLength` arrives in Revit's internal feet, and no units API is touched -
-  D-20 keeps the millimetre conversion at the edge where the user is. What
-  counts as served is decided by CATEGORY rather than by a type test, so one
-  code path covers terminals, fixtures and equipment.
+  `stubLength` arrives in millimetres and is divided by 304.8 in the code
+  (D-71) - no units API is touched. (This note said "internal feet" until
+  2026-09-23, while the code and its own proof - 1000 in, 3.28 feet used -
+  said millimetres.) What counts as served is decided by CATEGORY rather than
+  by a type test, so one code path covers terminals, fixtures and equipment.
+  Plumbing Equipment is a category only from the 2023.1 API on, so it is
+  looked up by NAME at run time and added only where the release has it -
+  the spelled-out member would not compile on 2020 to 2022.
+
+# BACK TO DRAFT ON 2026-09-23, AND THE PROOF ABOVE IS KEPT AS THE RECORD OF
+# WHAT WAS RUN.
+#
+# The proof was taken on the code as it stood. The code then changed: Plumbing
+# Equipment - new as a category from the 2023.1 API - now counts as SERVED, so
+# a run ending at a water heater or a pump is no longer reported as a dead end
+# on the releases that have it. Nothing the proof recorded is contradicted,
+# but it describes code that no longer runs, so its fingerprint no longer
+# matches, and it must NOT be re-stamped: re-taking it on a named model is the
+# only thing that makes this PROVEN again (D-30). NEEDS-CHECKING AD6 says what
+# to arrange. FRAGMENT-ISSUES 5b-165.
+#
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Another tool's check,
+# mostly on Revit 2020 models, decided "served" by a few category names and
+# missed the categories added since. Plumbing Equipment is the one this
+# change adds, and it was verified against the reference assemblies. Four more
+# categories arrived after 2020 that could end a run - Fire Protection, Food
+# Service Equipment, Medical Equipment and Mechanical Control Devices - and
+# whether a run ending at each is served is NOT decided here; a run ending at
+# one still reads as a dead end.
 
 # ROUTING - the same rows are in the fragments named here.
 #

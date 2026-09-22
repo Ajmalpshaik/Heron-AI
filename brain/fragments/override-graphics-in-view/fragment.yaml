@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -45,6 +45,13 @@ contract:
       # (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: wrapsFollowed
+      # Insulation and lining given the same look as the run they wrap, where
+      # the view shows them. Without them a red duct sits inside a jacket of
+      # the old colour, so these are part of what it drew - the same output
+      # HIGHLIGHT_VS_REST gives.
+      role: result
+      type: int
 
 proof:
   date: '2026-09-15'
@@ -77,7 +84,45 @@ compatibility-note: >
   calls became surface-pattern calls, foreground and background split - and any
   fragment that built the settings would need a branch per release. Taking the
   settings as an input puts that churn at the caller, and leaves this fragment
-  holding only `View.SetElementOverrides`, which is unchanged 2020 to 2027.
+  holding only `View.SetElementOverrides`, which is unchanged 2020 to 2027 -
+  and, since 2026-09-23, `InsulationLiningBase.GetInsulationIds` and
+  `GetLiningIds` and a view-scoped `FilteredElementCollector`, all present
+  2020 through 2027, read off the reference assemblies that day.
+
+# BACK TO DRAFT ON 2026-09-23, AND THE PROOF ABOVE IS KEPT AS THE RECORD OF
+# WHAT WAS RUN.
+#
+# The proof was taken on the code as it stood. The code then changed to follow
+# the INSULATION RULE: every element it overrides passes the same settings to
+# its own insulation and lining in the view. Nothing the proof recorded is
+# contradicted, but it describes code that no longer runs, so its fingerprint
+# no longer matches, and it must NOT be re-stamped: re-taking it on a named
+# model is the only thing that makes this PROVEN again (D-30). NEEDS-CHECKING
+# AD7 says what to arrange. FRAGMENT-ISSUES 5b-166.
+#
+# THE RULE, AND WHERE IT COMES FROM. Insulation and lining take the look of
+# the run they wrap - the owner's standing rule ("when you colour ducts or
+# duct accessories, colour their insulation too"), which HIGHLIGHT_VS_REST has
+# followed since it was written. Here it runs ONE WAY, run to wrap, so a look
+# given to the insulation alone never drags the duct with it.
+#
+# WHAT THIS CHANGES FOR A GRAYOUT, SAID PLAINLY. The owner's grayout standard
+# gives insulation a look of its own - a quiet grey dashed wrapper - while the
+# services come forward in black. Bringing the services forward through this
+# fragment now brings their insulation forward too, and an element override
+# beats a category override. So a grayout that wants the grey wrapper applies
+# it to the insulation AFTER the services, through this fragment - not before,
+# and not by category, or the wrapper comes out black. Whoever builds the
+# grayout's steps owns that order.
+#
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Another tool, mostly on
+# Revit 2020, saw a CATEGORY override drop the surface fill on ducts, pipes,
+# air terminals, sprinklers, cable tray and conduit, and found that
+# `IsCuttable` predicts only the cut half of what lands. This fragment sets
+# ELEMENT overrides, and whether those keep a fill on the same categories is
+# not known here. FRAGMENT-ISSUES row 175 measured the category half on Ducts
+# in Revit 2024. Read back what stuck rather than reporting what was sent.
+# NEEDS-CHECKING AD7.
 
 # Three sentences were removed on 2026-08-30, found by tools/check-routing.py.
 #

@@ -128,6 +128,27 @@ compatibility-note: >
 # detector" and "every toilet needs extract" are both true of a toilet, and a
 # first-match-wins rule table would silently drop the second.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# "Is it in the room" is a VOLUME test in Revit, and another tool, on real
+# models and mostly on Revit 2020, found a device in the ceiling void to be
+# OUTSIDE its room's volume. The purpose above says a device "in the ceiling
+# void above the room still counts". The code asks `room.IsPointInRoom` at
+# the device's own insertion point - the volume test - so where the room's
+# volume stops at the ceiling, that device is NOT counted and the room reads
+# as short of it. THE PURPOSE AND THE CODE DISAGREE, and the purpose is NOT
+# corrected here: which is right on a real model is to be measured, not
+# argued. COUNT_BY_SPATIAL_CONTAINER counts the same diffuser IN the room,
+# because it tests at the room's own height; FILTER_ELEMENTS_IN_ROOM agrees
+# with the code here. FRAGMENT-ISSUES 5b-163; NEEDS-CHECKING AD5.
+#
+# AND THE SIGNED PROOF NEVER REACHED THE ROOM TEST. Its positive handed in 8
+# DUCTS as the devices. A duct has a location CURVE and this code counts only
+# a location POINT, so no duct was tested against any room - every room was
+# short of ducts whatever the model held. The proof is left as the record of
+# that day (its fingerprint covers the code, which is unchanged); what it did
+# and did not exercise is written beside it in 5b-163. A note only.
+
 # ROUTING - repeated in FILTER_ELEMENTS_IN_ROOM and PLACE_ROOMS.
 #
 #   "which rooms have no mep in them" -> here

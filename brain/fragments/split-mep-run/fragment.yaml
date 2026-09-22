@@ -115,6 +115,27 @@ compatibility-note: >
   code. The distance arrives in millimetres and is divided by 304.8 -
   arithmetic, per D-20.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# Two things another tool saw on real models, mostly on Revit 2020:
+#
+#   1. Rewriting a run's curve DELETED the takeoffs on it and left their
+#      branches orphaned - while the terminal at the end of each branch still
+#      read as connected, because it is joined to its own branch and the
+#      branch no longer reaches the main. A break rewrites the original run's
+#      curve, so this fragment is one of the edits that can do it.
+#   2. Two halves joined back PLAIN - connector to connector, nothing between
+#      - later MERGED into one duct again. A UNION FITTING between them kept
+#      them two. Version 2 joins the halves plain (`ConnectTo`), which is the
+#      joint that was seen to merge.
+#
+# Neither has been reproduced here. A NOTE ONLY: the fragment is PROVEN, and
+# joining with a union instead would change its code and make the proof
+# stale, so that change is left for a decision rather than made in passing.
+# Until then, after a split: check each takeoff on the run is still there,
+# and check the two halves are still two after the next edit to either.
+# NEEDS-CHECKING AD3.
+
 # ROUTING - repeated in CREATE_DUCT and OFFSET_ELEMENTS.
 #
 #   "split this duct"            -> here

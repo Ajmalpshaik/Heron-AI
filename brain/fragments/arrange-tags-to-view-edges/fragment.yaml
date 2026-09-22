@@ -120,6 +120,18 @@ compatibility-note: >
   own branch because they share no base with independent tags that carries a
   head position.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# Another tool, on real models and mostly on Revit 2020, found that a ROOM TAG
+# moved out of its room needs a LEADER: without one Revit flags the tag as
+# outside its room, and on the sheet the tag reads as belonging to whatever
+# room it now sits over. This fragment parks room tags (`SpatialElementTag`)
+# at the view's edges along with element tags - outside their rooms by design
+# - and does not switch a room tag's leader on. Not reproduced here. A note
+# only: the fragment is PROVEN, and a change to its code would make the proof
+# stale. After parking room tags, check each one still points at its room.
+# NEEDS-CHECKING AD9.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "park the tags at the sides"         -> here
