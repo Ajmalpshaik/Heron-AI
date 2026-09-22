@@ -124,6 +124,69 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — SIX TOOLS ARE HELD BY NO SUITE AT ALL, AND ONE OF THEM NOW HAS ONE
+
+**A NEGATIVE RESULT plus the guard it was missing.** `tools/check-dependencies.py` is read end to end
+— 262 lines, never opened before — and **nothing is wrong with it**. No register row.
+
+**The part-read brain queue emptied, so `tools/` was re-measured**: 47 tools, and **six are named by
+no suite at all**:
+
+| |
+|---|
+| `measure-graph.py` · `check-dependencies.py` · `module-reach.py` |
+| `generate-decision-summary.py` · `resign-machine-proofs.py` · `recount-agent-registry.py` |
+
+`check-dependencies` was taken first because **R-72 makes four specific claims about it and nothing
+re-checked any of them**:
+
+> It exits 1 **only** on a missing REQUIRED package … It also fails on a malformed manifest entry,
+> **proved by introducing both shapes and watching it exit 1**. Size is never typed.
+
+**All seven behaviours measured by running it**, on manifests written for the purpose:
+
+| the manifest | exit |
+|---|---|
+| well formed, one optional absent | **0**, *"that is not a fault"* |
+| a missing REQUIRED package | **1**, *"Heron will not run"* |
+| a requirement with no comment above it | **1** |
+| a comment with two fields | **1** |
+| a comment with four fields | **1** |
+| a blank line between comment and requirement | **1** |
+| the manifest file does not exist | **1**, *"does not exist"* |
+
+And the size claim holds: `announced_size` reads **`500 MB to 2 GB - mostly torch, not the weights`**
+out of `heron_rerank.announcement()`; that string appears **nowhere** in the tool's own source; and
+nothing is invented for a package no code announces.
+
+### What was missing was the guard, not the behaviour
+
+*"Proved by introducing both shapes and watching it exit 1"* was done **once, by hand, on
+2026-09-11**. That is a measurement, not a guard — the tool can drift away from it on any afternoon
+and nothing says so.
+
+**`tests/test_check_dependencies.py` is the first suite this tool has ever had**, and it has teeth —
+shown to catch three breaks:
+
+| what was broken | red |
+|---|---|
+| a broken manifest no longer exits 1 | **5** |
+| an absent OPTIONAL package exits 1 | **1** |
+| the size typed into the tool instead of read | **1** |
+
+**Every case builds its own manifests.** A suite reading the real `requirements.txt` would be
+asserting what happens to be installed on the machine running it — a different question, and one that
+changes without anybody editing anything.
+
+**One limit stated rather than left to be discovered**: nothing here proves the manifests are
+**right** — that the import name beside a pip name is the one the package installs — and a typo there
+would report an installed package as MISSING. `check-dependencies` trusts the manifest by design, and
+the suite says so.
+
+**Also checked**: the work note `improvement-gate-execution-record.md` records that this tool *"has no
+section in tools/README.md"*. **That has since been fixed** — the section is at line 1404 — so the
+finding is closed rather than open. It is still **not in CI**, which is PROPOSALS F6 and the owner's.
+
 ### 2026-09-22 — A PACKAGE THAT IS BOTH REQUIRED AND OPTIONAL, SETTLED BY TYPING ORDER
 
 **[Row 5b-121](FRAGMENT-ISSUES.md), FIXED.** `brain/heron_dependencies.py` read end to end — 359
