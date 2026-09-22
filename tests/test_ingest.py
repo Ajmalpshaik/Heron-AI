@@ -44,9 +44,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 # THIS TEST PRINTS TEXT THAT CAME OUT OF A DOCUMENT, and a document's text is
-# arbitrary Unicode - it is the user's file, not ours. On Windows a bare
-# console is cp1252 and printing one character it cannot encode raises
-# UnicodeEncodeError, which kills the run where it stands.
+# arbitrary Unicode - it is the user's file, not ours. On Windows, output
+# redirected to a file or a pipe is encoded in the ANSI code page - cp1252 on
+# the owner's PC - and printing one character it cannot encode raises
+# UnicodeEncodeError, which kills the run where it stands. A console never
+# shows it: Python writes to one through the Unicode console API.
 #
 # That is what happened here: heading_path joins its parts with U+2192 (an
 # arrow), check() printed it, and the suite died mid-file at section 5 with
@@ -59,9 +61,20 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 # PRINTING A DOCUMENT'S CONTENT MUST NOT KILL THE PROCESS; the separator is
 # not the subject.
 #
-# errors="replace" rather than plain UTF-8: a console that cannot show the
-# character then prints a substitute instead of mojibake, and the check still
-# reports its own verdict, which is the thing being read.
+# UTF-8 IS WHAT STOPS THE CRASH, NOT errors="replace". UTF-8 can encode every
+# character, so a redirected run writes the arrow as its own three bytes and
+# substitutes nothing - which is what tools/check-gaps.py expects, since it
+# decodes a suite's output as UTF-8. errors="replace" is for the one thing
+# UTF-8 cannot hold, a lone surrogate such as a file name Python could not
+# decode: UTF-8 alone dies on that with "surrogates not allowed", and the
+# pair prints "?" and carries on.
+#
+# Until 2026-09-22 this comment said a bare CONSOLE was cp1252, and that
+# errors="replace" printed a substitute instead of mojibake. Both were
+# measured that day on the owner's PC and neither holds: a console printed
+# the arrow, the same line redirected to a file died, and with this block a
+# redirected run of this suite carries its three arrows intact and not one
+# substituted "?".
 for _stream in (sys.stdout, sys.stderr):
     try:
         _stream.reconfigure(encoding="utf-8", errors="replace")
