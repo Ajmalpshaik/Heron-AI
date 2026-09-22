@@ -764,6 +764,54 @@ and this row is a reason to run it rather than a substitute for it.
 
 ---
 
+## The owner's own questions — `tools/score-routing.py`
+
+**Every section above measures sentences somebody wrote for the library.** `check-routing.py` asks each
+fragment its own declared words back, which this file rightly calls a near-circular lower bound, and
+`check-risk-crossings.py` asks ordinary sentences a session wrote. **None of it was ever asked the way
+the owner asks.**
+
+This is. [`tests/data/owner-questions.yaml`](../tests/data/owner-questions.yaml) holds 79 questions
+from his own log of real work, 2026-08-13 to 2026-08-27, each with the capability, skill or tool that
+should answer it. The answers were chosen from the capability list **before the search had seen any of
+the questions**, and he confirmed the whole table on 2026-09-23. The tool asks every question through
+`heron_brain.lookup`, the function `heron_lookup` calls, and a recorded run appends one row here:
+
+```bash
+python tools/score-routing.py            # score, and say what moved since the last comparable row
+python tools/score-routing.py --record   # ...and append the row
+```
+
+**How to read a row.**
+
+- **Answer key** fingerprints the questions and their answers together. Two rows are compared only
+  when it, the backend and the Revit filter all match. The fragment count may differ, because a new
+  fragment taking one of his questions is exactly the drop this exists to catch.
+- **1st, 2nd-3rd, 4th-5th, Not found** count the **capability rows only**, by where the right answer
+  sat in the shortlist `heron_lookup` shows: the winner, then the others that came close, each
+  capability once. The four add up to the number of capability rows in the key.
+- **Exact (right)** counts answers that came by an exact declared phrase, which tests a declaration
+  rather than the search, and in brackets how many of those were the right answer.
+- **Handed a change** counts rows whose right answer changes nothing in the model and whose search
+  answer does ([D-86](../docs/DECISIONS.md)). The write line is read from the operation registry.
+- **Skill rows**: a skill is never indexed, so a skill row can only be met by one of the steps it
+  declares. It is kept out of the four columns because counting a skill's first step, nearly always
+  a category filter, would flatter the headline.
+- **Per question** is one character per question, in the key's order: `1`–`5` its place and `-` not in
+  the shortlist; for a tool or gap row `w` landed on a change, `.` on anything else and `0` on nothing;
+  `?` not scored.
+
+**What may never answer a bad row:** rewording a question, changing an answer to match what the search
+returns, or adding or weakening an utterance to win it — [row 113](../docs/FRAGMENT-ISSUES.md)'s
+forbidden move and [D-34](../docs/DECISIONS.md)'s. An answer changes only on the owner's word, in the
+key, with the day he gave it.
+
+| Date | Fragments | Backend | Revit | Answer key | 1st | 2nd-3rd | 4th-5th | Not found | Exact (right) | Handed a change | Skill rows, a step in the top 3 | Per question |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-09-23 | 396 | `lexical` | any | `88c7eadd` | 18 | 8 | 3 | 35 | 1 (0) | 4 | 5 of 7 | `1-1-1---21-1-11.-112---2-w------2-15-1-1---11--24311--122w1w14---w1---w1w-w2--1` |
+
+---
+
 ## How to add a line
 
 Run the measurement, do not estimate it:
