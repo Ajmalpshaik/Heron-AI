@@ -122,7 +122,20 @@ actually flows on a sheet-production day.
 
 ---
 
-### Q-PE-5 — Is there an offline installer?
+### ~~Q-PE-5 — Is there an offline installer?~~ — ANSWERED 2026-09-22
+
+**Yes, and it is the only installer.** Answered by the same decision as
+[Q-PE-12](#q-pe-12--route-2-says-the-files-are-already-in-the-repo-they-are-not--answered-2026-09-22):
+one download carries the built plugin **and** the brain, the user says where to keep it, and after
+that **nothing needs the internet** - [R-51](01-requirements.md), [R-52](01-requirements.md),
+[R-53](01-requirements.md).
+
+> Owner, 2026-09-22: *"even he dont have internet he can still use the tools that we will develop...
+> there is no need internet, only need for if there is update or not"*
+
+**THE CONTRACTOR FIREWALL BELOW IS NO LONGER A RISK TO THE INSTALL, only to the update check** -
+which is [R-54](01-requirements.md), and a check that cannot reach GitHub simply says so and
+installs anyway. That is the whole point of splitting the two.
 
 **Waiting on:** evidence from a real site, not a decision today.
 
@@ -139,13 +152,14 @@ ships every file inside the repository alongside a setup file, so it **downloads
 the standalone installer, for a user who never clones anything.
 
 **AND THAT NARROWING IS WITHDRAWN, THE SAME DAY.** See
-[Q-PE-12](#q-pe-12--route-2-says-the-files-are-already-in-the-repo-they-are-not): `bin/` is gitignored
+[Q-PE-12](#q-pe-12--route-2-says-the-files-are-already-in-the-repo-they-are-not--answered-2026-09-22): `bin/` is gitignored
 and **zero** `.dll` files are tracked, so *"every file inside the repository"* does not include the
 built plugin. Route 2 downloads nothing because there is nothing there to install. **The paragraph
 above is kept as written** — it records the reasoning at the time, and what was wrong with it was the
 file set, not the logic.
 
-**Blocks:** nothing. [R-15](01-requirements.md) is marked LATER on purpose.
+**Blocked:** nothing. [R-15](01-requirements.md) was marked LATER on purpose. **It is a MUST as of
+2026-09-22**, which is what this question was waiting for.
 
 ---
 
@@ -303,12 +317,52 @@ above: hiding what is **already loaded** is live; loading something **new** is n
 
 ---
 
-### Q-PE-12 — Route 2 says "the files are already in the repo". They are not.
+### ~~Q-PE-12 — Route 2 says "the files are already in the repo". They are not.~~ — ANSWERED 2026-09-22
+**ANSWERED TOGETHER WITH [Q-PE-13](#q-pe-13--how-does-the-brain-reach-a-users-pc-nothing-installs-it--answered-2026-09-22)
+AND [Q-PE-14](#q-pe-14--the-brain-and-the-project-folder-want-claude-code-opened-in-two-different-places--answered-2026-09-22),
+because one shape answers all three.**
+
+**ONE DOWNLOAD CARRIES EVERYTHING, AND IT ASKS WHERE TO PUT IT.** The owner walked through what each
+kind of user does, 2026-09-22:
+
+> *"If someone downloads it, they need to have everything. If he needs to install that Revit plugin,
+> just click the installer and it installs. If he has internet, this will check only if there is an
+> update or not - no need to download again. Even if he doesn't have internet he can still use the
+> tools... it will ask where you need to keep, and it will keep the downloaded folder and plugin
+> there, so he can use the AI functions also."*
+
+| was asked | answer |
+|---|---|
+| **Q-PE-12** what route 2's handover contains | The **[R-51](01-requirements.md) folder** - the built plugin for every supported release, **and** the brain, skills and MCP server. It is the first of the three options below, and it is now what route 1 fetches too |
+| **Q-PE-13** how the brain reaches a PC | **In the same download.** The Connect button stops opening a pipe nobody answers, because the thing that answers it arrives beside the plugin |
+| **Q-PE-14** where the project folder lives | **The user says.** The installer asks, and what they answer is the folder Claude Code is opened in afterwards - [R-52](01-requirements.md) |
+
+**ROUTE 3 IS THE SAME SHAPE.** Double-click, it installs, no internet. Internet only ever answers one
+question: *is there a newer release?* - [R-54](01-requirements.md), offered and never applied
+([R-55](01-requirements.md)).
+
+**AND THE LINK IN THE OWNER'S OWN EXAMPLE IS REFUSED, CORRECTLY.** He wrote
+`heron-install --source https://github.com/<owner>/<repo>`, which is the **repository**, and
+[R-48](01-requirements.md) - his own decision on 2026-09-21 - says *"the signed release... never an
+arbitrary repository"*. The gate refuses it and names the releases page instead. **The rule is not
+bent. The release is made to carry what he wanted the repository to carry**, which is what makes both
+true at once rather than trading one for the other.
+
+**WHAT THIS DOES NOT DECIDE, and it is small:** whether the folder carries the *whole* repository or
+only what a user needs to run it - brain, skills, MCP and docs, but not `tests/`, `tools/` or the C#
+source. Raised with the owner on 2026-09-22 and left for later on purpose: shipping more than needed
+is recoverable, shipping less is not, so the first cut errs wide.
+
+---
+
+**The reasoning as it stood, kept because it is the record:**
+
+
 
 **Waiting on:** the owner. **Raised 2026-09-21**, reading the plan against the repository.
 
 [R-30](01-requirements.md) says *"Route 2 downloads nothing. The files are already in the repo, so it
-works with no internet"*, and [Q-PE-5](#q-pe-5--is-there-an-offline-installer) was **narrowed** on that
+works with no internet"*, and [Q-PE-5](#q-pe-5--is-there-an-offline-installer--answered-2026-09-22) was **narrowed** on that
 sentence — route 2 was recorded as already solving the offline case for anyone who took the repo.
 
 **Measured:** `.gitignore` excludes `bin/` and `obj/`, and `git ls-files` finds **zero** tracked `.dll`.
@@ -324,11 +378,17 @@ who pays for them:
 | Committing built DLLs to the repository | refused everywhere else in this repository, and it would make every build a diff |
 | Route 2 simply **needs a build**, and offline means "offline once built" | honest, but then it is not an answer to Q-PE-5 at all |
 
-**Blocks:** [Stage 6](02-implementation.md), and it un-narrows [Q-PE-5](#q-pe-5--is-there-an-offline-installer).
+**Blocked:** [Stage 6](02-implementation.md), and it un-narrowed [Q-PE-5](#q-pe-5--is-there-an-offline-installer--answered-2026-09-22). **Unblocked 2026-09-22** - and [R-15](01-requirements.md) is a MUST now rather than a LATER, which is what Q-PE-5 was waiting on.
 
 ---
 
-### Q-PE-13 — How does the BRAIN reach a user's PC? Nothing installs it.
+### ~~Q-PE-13 — How does the BRAIN reach a user's PC? Nothing installs it.~~ — ANSWERED 2026-09-22
+**Answered with [Q-PE-12](#q-pe-12--route-2-says-the-files-are-already-in-the-repo-they-are-not--answered-2026-09-22) on 2026-09-22 - one download carries everything, and it asks where to put it.**
+
+---
+
+**The reasoning as it stood, kept because it is the record:**
+
 
 **Waiting on:** the owner. **Raised 2026-09-21**, from the owner's own question — *"it will install only
 the Revit plugin, not the brain?"*
@@ -357,7 +417,13 @@ nothing.
 
 ---
 
-### Q-PE-14 — The brain and the project folder want Claude Code opened in two different places
+### ~~Q-PE-14 — The brain and the project folder want Claude Code opened in two different places~~ — ANSWERED 2026-09-22
+**Answered with [Q-PE-12](#q-pe-12--route-2-says-the-files-are-already-in-the-repo-they-are-not--answered-2026-09-22) on 2026-09-22 - one download carries everything, and it asks where to put it.**
+
+---
+
+**The reasoning as it stood, kept because it is the record:**
+
 
 **Waiting on:** the owner. **Raised 2026-09-21.**
 
@@ -380,7 +446,7 @@ sentence forbids. It has not bitten because every session so far has been inside
 folder. **Nothing in this repository documents one** — that is an absence found by searching, not a
 statement that it cannot be done.
 
-**And it is not only the owner's problem.** Whatever answers [Q-PE-13](#q-pe-13--how-does-the-brain-reach-a-users-pc-nothing-installs-it)
+**And it is not only the owner's problem.** Whatever answers [Q-PE-13](#q-pe-13--how-does-the-brain-reach-a-users-pc-nothing-installs-it--answered-2026-09-22)
 has to put the brain somewhere, and *this* question decides how anything finds it afterwards. The two
 are best answered together.
 
@@ -455,7 +521,7 @@ was false**, which is worse than a blunt no: it sends somebody to check an addre
 problem. Split into two checks, and the suite now asks *which* refusal arrived rather than only that
 one did — which is why it had passed.
 
-**Route 2 is still blocked on [Q-PE-12](#q-pe-12--route-2-says-the-files-are-already-in-the-repo-they-are-not),**
+**Route 2 is still blocked on [Q-PE-12](#q-pe-12--route-2-says-the-files-are-already-in-the-repo-they-are-not--answered-2026-09-22),**
 and `--from` says so in as many words rather than failing in a way that looks like a bug. The owner
 asked for that question to come after route 1 is finished.
 
@@ -485,7 +551,7 @@ decide what to install ([R-50](01-requirements.md)). **What is missing is the th
 today and calling it looks like progress.
 
 **Route 2 has a second, separate blocker** —
-[Q-PE-12](#q-pe-12--route-2-says-the-files-are-already-in-the-repo-they-are-not): its files are not in
+[Q-PE-12](#q-pe-12--route-2-says-the-files-are-already-in-the-repo-they-are-not--answered-2026-09-22): its files are not in
 a repository download at all. So route 1 needs only this question answered; route 2 needs both.
 
 **Blocked:** [Stage 6](02-implementation.md) items 1, 2 and 3. Not item 4 or 5, which are properties of

@@ -160,7 +160,13 @@ logic, not re-implement it** — two copies of a deploy rule is two rules that d
 | R-12 | A download is **verified before it is used** — a corrupt or wrong file must never reach the Addins folder | [`docs/12`](../../../12-security-and-permissions.md) | MUST |
 | R-13 | The installer **never executes what it downloads** in order to decide what to install | [Golden Rule 19](../../../14-golden-rules.md) — nothing Heron reads may raise its own permission level | MUST |
 | R-14 | If the download fails, the installer says **why** — offline, blocked, release missing — not "error" | [`docs/14`](../../../14-golden-rules.md) | MUST |
-| R-15 | Offline install from bundled files | [Q-PE-5](03-open-questions.md) | LATER |
+| R-15 | Offline install from bundled files | [Q-PE-5](03-open-questions.md) | **MUST** — Owner, 2026-09-22: *"even he dont have internet he can still use the tools"* |
+| R-51 | **One download carries everything a user needs** — the built plugin for every supported Revit release **and** the brain, skills and MCP server beside it. Not the plugin alone | Owner, 2026-09-22; answers [Q-PE-12](03-open-questions.md) and [Q-PE-13](03-open-questions.md) | MUST |
+| R-52 | The installer **asks where to keep** that folder and never chooses for the user. What they answer is the project folder the AI is later opened in | Owner, 2026-09-22: *"it will ask where you need to keep"*; answers [Q-PE-14](03-open-questions.md) | MUST |
+| R-53 | **After that download, nothing needs the internet.** Installing, re-installing and every tool work offline | Owner, 2026-09-22; and it is what makes R-15 true rather than aspirational | MUST |
+| R-54 | With internet, the installer **checks whether a newer release exists and says so**. It does **not** fetch the plugin again to find out | Owner, 2026-09-22: *"it will check only if there is update or not, no need to download again"* | MUST |
+| R-55 | An update found is **offered, never applied**. One click to take it, and *"not now"* means not asked again | Owner, 2026-09-22: *"it will tell to update and one click need to update"*; [`brain/heron_update.py`](../../../../brain/heron_update.py) rules 1 and 7 | MUST |
+| R-56 | The reason R-54 exists: somebody who downloaded **days ago** would otherwise never learn a newer release was published | Owner, 2026-09-22: *"if someone downloaded this repo some days before and we made update, that time he will not receive update"* | MUST |
 
 ### Installing
 
@@ -190,7 +196,7 @@ logic, not re-implement it** — two copies of a deploy rule is two rules that d
 | R-28 | **Route 1 — natural language.** The user says *"install this repo"* and **the AI** installs everything, **then asks which panels they want** | Owner, 2026-09-21 | MUST |
 | R-28a | Route 1 **asks after installing, not before.** A conversation can install first and narrow later; that ordering is the design, not an accident | Owner, 2026-09-21: *"From there, it will ask the user which panels they need"* | MUST |
 | R-29 | **Route 2 — repo handed over.** The user downloads the repo and gives it to **the AI** in-product, which installs from the files it was given | Owner, 2026-09-21 | MUST |
-| R-30 | **Route 2 downloads nothing.** The files are already in the repo, so it works with no internet | Follows R-29; and it answers [Q-PE-5](03-open-questions.md) for anyone who took the repo | MUST |
+| R-30 | ~~**Route 2 downloads nothing.** The files are already in the repo, so it works with no internet~~ **CORRECTED 2026-09-22 — the second half was never true.** `.gitignore` excludes `bin/` and `obj/` and `git ls-files` finds **zero** tracked `.dll`, so a repository download carries source and **no built plugin at all**. Route 2 downloads nothing and works with no internet, and what it is handed is the **R-51 folder**, not a copy of the repository | Follows R-29; [Q-PE-12](03-open-questions.md) | MUST |
 | R-48 | *"Install this"* means **Heron's own official installation link** — the signed release, the same link Heron publishes. **Never an arbitrary repository** | Owner, 2026-09-21; [Q-PE-10](03-open-questions.md) | MUST |
 | R-49 | Route 1 **checks the source and refuses** anything that is not Heron's own release, in a sentence saying why. **Enforced, not expected** | [`docs/07 §1a`](../../../07-installation-and-update.md); [Golden Rule 19](../../../14-golden-rules.md) — a rule nothing enforces is one the first user breaks by accident | MUST |
 | R-50 | The AI **never reads a repository's contents to decide what to install.** The manifest is read as data, from the release, after the source has been accepted | [Golden Rule 19](../../../14-golden-rules.md); and [R-13](#getting-the-files) | MUST |
