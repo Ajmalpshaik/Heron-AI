@@ -186,6 +186,39 @@ def main():
           "and the answer says so")
 
     print()
+    print("6b. One scope asked for twice is one index, and the caller's")
+    print("    spelling of an index key is the same index")
+    # ROW 5b-120. `scopes` is normalised - str(entry).strip().lower() - and
+    # the `indexes` dict is looked up with that normalised key against
+    # whatever the caller happened to type. Nothing deduplicates either.
+    # Measured before the fix:
+    #
+    #   plan(["global", "global"])              -> 2 to build, for ONE index
+    #   indexes={"GLOBAL": {...}}               -> "no index yet"
+    #   indexes={" global": {...}}              -> "no index yet"
+    #
+    # heron_brain_init, ONE INSTALL STEP EARLIER, handles both and says
+    # why: "the SAME store asked for twice is one store, requested twice -
+    # not a conflict and not two creates. A plan that listed it twice would
+    # have an installer create it, then create it again over what it just
+    # made."
+    twice = ask(["global", "global"])
+    check(len(twice["build"]) == 1,
+          "the same scope twice is ONE index to build, and it says %d"
+          % len(twice["build"]))
+    check(twice["why"].startswith("1 to build"),
+          "and the count a reader sees says one: %r" % twice["why"][:18])
+
+    current = {"backend": EMBED.LEXICAL}
+    for label, key in (("exactly as the scope is named", "global"),
+                       ("in upper case", "GLOBAL"),
+                       ("with a space in front", " global")):
+        answer = ask(["global"], indexes={key: current})
+        check(bool(answer["keep"]) and not answer["build"],
+              "an index whose key is written %s is found, not called "
+              "'no index yet'" % label)
+
+    print()
     print("7. Every failure the contract declares is named and reached")
     for empty in ([], None, ""):
         check(ask(empty).get("refused") == "NOTHING_TO_INDEX",
