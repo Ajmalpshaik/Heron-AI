@@ -327,12 +327,33 @@ def _md5(path):
 
 
 def skills():
-    """Every skill as (id, risk, [utterances], {needs}), loaded through the
-    brain's own loader rather than by re-reading YAML.
+    """(loaded, problems, unrated). Every skill through the brain's own loader.
 
     Using `heron_skill.load_all` and not a private parse is deliberate: a skill
     this tool could read but Heron could not would be judged as reachable when
     it is not there at all.
+
+    UNRATED IS THE THIRD ANSWER AND IT WAS MISSING. `load_all` answers whether
+    a file could be READ; `heron_skill.validate` answers whether it is a
+    SKILL, and it is a separate function that `load_all` does not call. So a
+    skill whose `risk:` is absent or misspelt loads cleanly and is routed -
+    and every risk branch in `classify` then falls through for it, because
+    `rung()` answers -1 for anything off the ladder and `ASKS_A_QUESTION` does
+    not hold.
+
+    MEASURED 2026-09-22: `classify("", "ADMIN", ...)` and
+    `classify("Modifies", "MODIFY", ...)` both answer `miss`. The report's
+    only heading about skills it did not route says "SKILLS THAT WOULD NOT
+    LOAD", which such a skill is not one of - so the reader is shown
+    `CROSSINGS: 0` for a skill whose risk nothing knows. That is D-52's
+    plausible zero wearing this tool's own face, in the one tool whose whole
+    subject is two declarations disagreeing.
+
+    Not a live failure: all ten skills declare a risk on the ladder, and
+    `tests/test_skills.py` calls `validate()`. What was missing is this tool
+    saying so about the verdicts it is the only one making. They are still
+    ROUTED - the reach and miss lists are true for them - and named here so
+    the risk lists are read knowing who is not in them.
     """
     import heron_skill as SKILL
 
@@ -340,15 +361,19 @@ def skills():
     # yields the ids as strings and every attribute read then fails - which is
     # how this was found, and is worth a line rather than a silent `.values()`.
     found, problems = SKILL.load_all()
-    out = []
+    out, unrated = [], []
     for skill in found.values():
+        sid = skill.data.get("id") or os.path.basename(skill.path)
+        risk = (skill.data.get("risk") or "").upper()
+        if risk not in LADDER:
+            unrated.append((sid, skill.data.get("risk")))
         out.append((
-            skill.data.get("id") or os.path.basename(skill.path),
-            (skill.data.get("risk") or "").upper(),
+            sid,
+            risk,
             list(skill.data.get("utterances") or []),
             set(skill.needs() or []),
         ))
-    return out, problems
+    return out, problems, unrated
 
 
 def declared_by_fragments():
@@ -513,12 +538,28 @@ def main():
                         help="print the skills and their words, run nothing")
     args = parser.parse_args()
 
-    loaded, problems = skills()
+    loaded, problems, unrated = skills()
     if problems:
         print("SKILLS THAT WOULD NOT LOAD (%d) - these are not routed below:"
               % len(problems))
         for why in problems:
             print("  %s" % why)
+        print("")
+
+    if unrated:
+        # ROUTED, BUT EVERY RISK VERDICT BELOW IS VOID FOR THEM. Said here
+        # rather than left to the lists, because a skill missing from the
+        # crossings list looks exactly like a skill that has none.
+        print("SKILLS WHOSE DECLARED RISK IS NOT ON THE LADDER (%d) - they ARE"
+              % len(unrated))
+        print("routed, and their reach and miss lines below are true; but a")
+        print("crossing is decided by comparing two declared risks, and one of")
+        print("the two is missing, so NONE of the risk lists can speak for")
+        print("them. A zero there is silence, not a clean answer (D-52).")
+        for sid, said in unrated:
+            print("  %-18s risk %r" % (sid, said))
+        print("  Run `python brain/heron_skill.py` - its validate() names the")
+        print("  file and the field.")
         print("")
 
     if not loaded:
