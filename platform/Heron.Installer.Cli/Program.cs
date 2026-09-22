@@ -267,7 +267,7 @@ namespace Heron.Installer.Cli
             var report = engine.Install(manifest, products, forReleases);
 
             Console.Out.WriteLine();
-            Console.Out.WriteLine(Told(report));
+            Console.Out.WriteLine(Told(report, manifest));
 
             if (report.Abandoned) return CouldNotRun;
             return report.Failed > 0 ? SomethingFailed : Done;
@@ -501,7 +501,7 @@ namespace Heron.Installer.Cli
         /// caller with nothing to act on; every failure names its product,
         /// its release and what the deployer said.
         /// </summary>
-        private static string Told(InstallReport report)
+        private static string Told(InstallReport report, ProductManifest manifest)
         {
             var n = Environment.NewLine;
             var said = "";
@@ -532,9 +532,58 @@ namespace Heron.Installer.Cli
                     report.Skipped.Count + " skipped.";
 
             if (report.Failed == 0 && report.Installed > 0)
-                said += n + "Start Revit and look for the Heron tab.";
+            {
+                var tabs = TabsFor(report, manifest);
+                said += n + (tabs == null
+                    ? "Start Revit to see it."
+                    : "Start Revit and look for " + tabs + ".");
+            }
 
             return said;
+        }
+
+        /// <summary>
+        /// The ribbon tabs the products that installed will appear on, READ
+        /// FROM THE MANIFEST, or null when it does not say.
+        ///
+        /// THE FIRST DRAFT TYPED "the Heron tab", AND THAT IS A KNOWN BUG IN
+        /// THIS REPOSITORY RATHER THAN A STYLE POINT. D-85 renamed the tab on
+        /// 2026-09-20 - "Heron AI" to "Heron" - and its own consequences
+        /// section counted EIGHT printed strings that had to move with it. One
+        /// did not: tools/setup.ps1 line 183 went on sending every new user to
+        /// a tab that does not exist, for two days, until row 5b-138 caught it
+        /// (#273). A typed tab name is a ninth string waiting to do the same.
+        ///
+        /// SO IT IS NOT TYPED. `tab` is a field on every product in
+        /// heron-products.json and HeronProduct.Tab already reads it, so
+        /// renaming a tab stays a line in a file - R-3, the same rule that
+        /// keeps product names out of this door.
+        ///
+        /// AND IT IS MORE USE THIS WAY. Install Heron Doc and it says Heron
+        /// Doc, rather than sending somebody to a tab their install did not
+        /// create.
+        ///
+        /// NULL WHEN THE MANIFEST DOES NOT SAY, and the caller then names no
+        /// tab at all. Guessing one is how this bug happens; saying "start
+        /// Revit" and nothing more is merely less helpful.
+        /// </summary>
+        private static string TabsFor(InstallReport report, ProductManifest manifest)
+        {
+            var tabs = new List<string>();
+            foreach (var result in report.Results)
+            {
+                if (!result.Succeeded || result.Removed) continue;
+                foreach (var product in manifest.Products)
+                {
+                    if (product.Id != result.ProductId) continue;
+                    if (string.IsNullOrEmpty(product.Tab)) continue;
+                    if (!tabs.Contains(product.Tab)) tabs.Add(product.Tab);
+                }
+            }
+
+            if (tabs.Count == 0) return null;
+            if (tabs.Count == 1) return "the " + tabs[0] + " tab";
+            return "these tabs: " + string.Join(", ", tabs.ToArray());
         }
 
         private static string[] Array(IReadOnlyList<string> from)

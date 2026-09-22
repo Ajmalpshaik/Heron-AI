@@ -38,6 +38,7 @@ rows are in docs/NEEDS-CHECKING.md.
 """
 
 import io
+import json
 import os
 import re
 import sys
@@ -49,6 +50,7 @@ ARGS = os.path.join(CLI, "Arguments.cs")
 PROJ = os.path.join(CLI, "Heron.Installer.Cli.csproj")
 APP_PROJ = os.path.join(ROOT, "platform", "Heron.Installer.App",
                         "Heron.Installer.App.csproj")
+MANIFEST = os.path.join(ROOT, "platform", "heron-products.json")
 
 FAILURES = []
 
@@ -139,10 +141,51 @@ def main():
     print("  it names no product and no Revit release - R-3")
     # Adding a product is a line in heron-products.json. A door that names
     # one is a door that needs recompiling to ship it.
+    # CODE, NOT COMMENTARY - the same lesson three checks in this suite
+    # already learned. "2026" went red the moment a comment cited D-85's date
+    # of 2026-09-20, which is a date rather than a Revit release. A comment
+    # explaining a rule must not be able to break the check for it.
+    door = code(ENTRY)
     for named in ("heron-ai-bridge", "heron-doc", "heron-tools", "heron-mep",
                   "2020", "2024", "2025", "2026", "2027"):
-        check(named not in entry,
+        check(named not in door,
               "'%s' appears nowhere in the door" % named)
+
+    print()
+    print("  the ribbon tab is read from the manifest, never typed")
+    # D-85 renamed the tab on 2026-09-20 and counted EIGHT printed strings
+    # that had to move with it. One did not - tools/setup.ps1 line 183 sent
+    # every new user to a tab that does not exist for two days, until row
+    # 5b-138 caught it (#273). A typed tab name here would be a ninth string
+    # waiting to do the same.
+    # AND THESE THREE WERE WORTHLESS FIRST, WHICH IS WHY THEY READ AS THEY DO.
+    # The first pair were: "product.Tab is in the file" and '"Heron tab" is
+    # not'. Typing the tab name straight back into the printed line broke
+    # NEITHER - the TabsFor method stayed in the file unused, so the first
+    # still matched, and the second looked for a quoted string that could
+    # never occur. Both breaks stayed GREEN.
+    #
+    # A guard that cannot be shown to fire is a comment. This branch had
+    # already learned that once, on the user-info check in InstallSource.
+    door = code(ENTRY)
+    tabs = sorted(set(p.get("tab") for p in
+                      json.loads(read(MANIFEST).lstrip("\ufeff"))["products"]
+                      if p.get("tab")))
+    check(len(tabs) > 0,
+          "the manifest carries tab names for the door to read: %s"
+          % ", ".join(tabs))
+    check(door.count("TabsFor(") >= 2,
+          "TabsFor is DEFINED AND CALLED - a method left in the file while "
+          "the printed line goes back to a typed name is the break that "
+          "stayed green")
+    typed = [t for t in tabs if ("%s tab" % t) in door]
+    check(not typed,
+          "and no tab name is typed beside the word tab%s"
+          % ("" if not typed else " - found: " + ", ".join(typed)))
+    check("Heron AI" not in door,
+          "and the name D-85 retired in 2026 appears nowhere - that exact "
+          "string sat in setup.ps1 for two days sending users to a tab that "
+          "does not exist")
 
     print()
     print("  the configuration is asked for, never typed")
