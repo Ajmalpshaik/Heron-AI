@@ -124,6 +124,69 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — A PACKAGE THAT IS BOTH REQUIRED AND OPTIONAL, SETTLED BY TYPING ORDER
+
+**[Row 5b-121](FRAGMENT-ISSUES.md), FIXED.** `brain/heron_dependencies.py` read end to end — 359
+lines, 3 public functions, two suites. **The part-read queue is now empty**: all six of those brain
+modules are read in full.
+
+`review()` builds `entries[name] = dict(entry, kind=kind)`, so the **last** entry with a given name
+wins.
+
+**Measured, with nothing importable:**
+
+| the list | the verdict |
+|---|---|
+| `[required, optional]` for one package | **0 required missing, 1 running degraded** |
+| the same two, **reversed** | **1 required missing, 0 degraded** |
+
+Same input, opposite verdicts, decided by which one was typed second — and nothing in the answer says
+a choice was made.
+
+**The module argues against exactly this, twice, and refuses it in the lines immediately above.** Its
+docstring: *"The two get opposite treatment … so reading the wrong one is not a small error. A
+dependency arriving without a kind is **REFUSED rather than defaulted**, in either direction:
+defaulting to required turns a normal install into a failure, and **defaulting to optional turns a
+failure into silence, which is worse**."*
+
+**It refuses a dependency with NO kind so that nobody picks one for it — and then picked one for a
+dependency that arrived with TWO.** Last-write-wins is a default by another name, and the direction it
+picks is whichever the list happened to end with.
+
+**And the count disagrees with the input**: the answer reads *"0 of 1 importable"* about a list of
+two entries — [rows 5b-111](FRAGMENT-ISSUES.md) and 5b-120's shape, a third time.
+
+A name already seen with a **different** kind is refused with a new **`KIND_DISAGREES`**. **An exact
+repeat is still one dependency, named twice** — the same answer `heron_brain_init` gives about a store
+and row 5b-120 gives about an index, because there is nothing to disagree about.
+
+```bash
+python tests/test_dependencies.py      # section 3b, 3 red against the module as found
+```
+
+**The three checks that an exact repeat is not a conflict were green BEFORE the fix**, which is what
+makes this a refusal of a **contradiction** rather than of a duplicate.
+
+**What is right here is what the agent exists for**: what is installed is **asked** through a reader
+rather than stated, and with no reader, a non-callable, a raising reader or one answering the wrong
+type it refuses `CANNOT_SEE_WHAT_IS_INSTALLED` rather than reporting a healthy system nobody looked
+at; an optional dependency that does not say what is **lost** without it is refused, because
+PROPOSALS F7 is the gap between that sentence existing in a file and reaching a person; installing is
+a **second** decision, per package, and the consent must name the package; and every answer says that
+`pip install` is **not** the gate a Heron package goes through — no register, no approver, no hash —
+so the quieter route does not look like the safer one.
+
+### Where the sweep goes next
+
+**The part-read queue is empty.** The measurement that picked targets — suites reaching a module
+against its public surface — is spent on `brain/`. Re-measure before choosing: **`tools/` is the
+strongest candidate**, because those are what decide whether a change is allowed through at all, and
+[rows 5b-90](FRAGMENT-ISSUES.md), 5b-92 and 5b-104 all came out of that folder.
+
+**Still hold the installer-session STALE files** — `CONTRIBUTING.md`, `README.md`, `docs/32`,
+`docs/33`, `docs/README.md`, the installer C#, `deploy-addin.ps1`, `test_deploy_script.py`,
+`test_installer_window.py` — until **PR #253** merges. Reading them now only makes them stale again.
+
 ### 2026-09-22 — THE SAME SHAPE ONE STEP LATER, WHERE IT ONLY COSTS SECONDS
 
 **[Row 5b-120](FRAGMENT-ISSUES.md), FIXED.** `brain/heron_rag_init.py` read end to end — 245 lines,
