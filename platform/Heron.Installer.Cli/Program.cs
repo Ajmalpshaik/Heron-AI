@@ -128,30 +128,28 @@ namespace Heron.Installer.Cli
                 return Refused;
             }
 
-            // ROUTE 2 IS NOT DECIDED YET, AND SAYING SO IS THE POINT.
+            // ROUTE 2 - HERON'S FILES ALREADY ON THIS PC, AND NO INTERNET.
             //
-            // Q-PE-12: R-30 says route 2 downloads nothing because "the files
-            // are already in the repo" - and they are not. .gitignore excludes
-            // bin/ and obj/, and `git ls-files` finds zero tracked .dll, so a
-            // repository download carries source and no built plugin at all.
-            // What the handover folder actually contains is the owner's to
-            // decide.
+            // Q-PE-12 was answered on 2026-09-22: what a person is handed is
+            // the folder the release builder produces, carrying the built
+            // plugin AND the brain (R-51). R-30's old second half - "the files
+            // are already in the repo" - was never true, and a copy of the
+            // repository is still not this.
             //
-            // THE FLAG EXISTS ANYWAY, because InstallSource already tells
-            // somebody who pointed at a folder to "install from the folder
-            // instead". A door that message names and that does not exist is
-            // worse than a refusal that says which question is open.
+            // REFUSED EARLY, AND BY NAME. Whether that folder is a Heron
+            // handover at all is two file names, so it is answered before any
+            // Revit is looked for - somebody who pointed at the parent folder
+            // should be told so on a PC with no Revit on it.
+            ProductFolder handover = null;
             if (asked.FromFolder != null)
             {
-                Console.Error.WriteLine(
-                    "Installing from a folder is not built yet, so heron-install will not " +
-                    "pretend to do it." + Environment.NewLine +
-                    "What such a folder should contain has not been decided - the repository " +
-                    "holds source code and no built plugin, so there is nothing in a copy of " +
-                    "it to install." + Environment.NewLine +
-                    "Until then: use --source to install Heron's published release, or the " +
-                    "installer window on a PC that has the builds.");
-                return Refused;
+                var notAFolder = ProductFolder.WhyNotAHeronFolder(asked.FromFolder);
+                if (notAFolder != null)
+                {
+                    Console.Error.WriteLine(notAFolder);
+                    return Refused;
+                }
+                handover = new ProductFolder(asked.FromFolder, Workspace());
             }
 
             // THE GATE RUNS BEFORE ANYTHING IS TOUCHED, and the order is the
@@ -191,16 +189,24 @@ namespace Heron.Installer.Cli
             var localBuilds = new BuildsOnDisk(root, localDeployer.Configuration);
 
             string why;
-            var download = Fetcher(verdict, manifest, localBuilds, releases, out why);
-            if (why != null)
+            IProductFiles files = handover;
+            if (files != null)
             {
-                Console.Error.WriteLine(why);
-                return Refused;
+                Console.Out.WriteLine("Installing from " + handover.Path + ". Nothing will be downloaded.");
+            }
+            else
+            {
+                files = Fetcher(verdict, manifest, localBuilds, releases, out why);
+                if (why != null)
+                {
+                    Console.Error.WriteLine(why);
+                    return Refused;
+                }
             }
 
-            var deployer = download == null
+            var deployer = files == null
                 ? localDeployer
-                : new DeployScriptDeployer(root, localDeployer.Configuration, download);
+                : new DeployScriptDeployer(root, localDeployer.Configuration, files);
 
             // AND THE GREYING FOLLOWS THE ROUTE, as it does in the window: a
             // release with no local build is greyed only when there is nothing
@@ -209,7 +215,7 @@ namespace Heron.Installer.Cli
                                                releases,
                                                revit.RunningRevits(),
                                                new InstalledProductsOnDisk(revit),
-                                               download == null ? localBuilds : null);
+                                               files == null ? localBuilds : null);
 
             if (screen.NothingFound != null)
             {
@@ -236,7 +242,7 @@ namespace Heron.Installer.Cli
                 return Refused;
             }
 
-            Console.Out.WriteLine(Listing(screen, products, forReleases, download != null));
+            Console.Out.WriteLine(Listing(screen, products, forReleases, files, handover));
 
             if (asked.ListOnly)
             {
@@ -472,7 +478,8 @@ namespace Heron.Installer.Cli
         private static string Listing(InstallerScreen screen,
                                       IReadOnlyList<string> products,
                                       IReadOnlyList<string> releases,
-                                      bool downloading)
+                                      IProductFiles files,
+                                      ProductFolder handover)
         {
             var n = Environment.NewLine;
             var said = "Installing into Revit " + string.Join(", ", Array(releases)) + ":" + n;
@@ -487,10 +494,21 @@ namespace Heron.Installer.Cli
 
             said += n + "Into " + InstallerScreen.InstallLocation + "  " +
                     InstallerScreen.InstallLocationNote + n;
-            said += downloading
-                ? "Files come from Heron's published release, and each one is checked " +
-                  "against its published checksum before anything is written."
-                : "Files come from what is built on this PC.";
+            if (handover != null)
+            {
+                said += "Files come from " + handover.Path + ", and each one is checked against " +
+                        "the checksum published beside it before anything is written. " +
+                        "Nothing is downloaded.";
+            }
+            else if (files != null)
+            {
+                said += "Files come from Heron's published release, and each one is checked " +
+                        "against its published checksum before anything is written.";
+            }
+            else
+            {
+                said += "Files come from what is built on this PC.";
+            }
             return said;
         }
 

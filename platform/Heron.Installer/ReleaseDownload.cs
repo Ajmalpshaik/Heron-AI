@@ -187,7 +187,7 @@ namespace Heron.Installer
             {
                 if (Directory.Exists(into)) Directory.Delete(into, true);
                 Directory.CreateDirectory(into);
-                Unpack(bytes, into);
+                ReleaseAssets.Unpack(bytes, into);
             }
             catch (InvalidDataException e)
             {
@@ -235,33 +235,6 @@ namespace Heron.Installer
         /// be unpacked at all, and taking the other 74 entries from it would
         /// be deciding that most of a suspect archive is fine.
         /// </summary>
-        private static void Unpack(byte[] bytes, string into)
-        {
-            var root = Path.GetFullPath(into);
-            if (!root.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
-                root += Path.DirectorySeparatorChar;
-
-            using (var stream = new MemoryStream(bytes, false))
-            using (var zip = new ZipArchive(stream, ZipArchiveMode.Read))
-            {
-                foreach (var entry in zip.Entries)
-                {
-                    if (string.IsNullOrEmpty(entry.Name)) continue;   // a folder
-
-                    var target = Path.GetFullPath(Path.Combine(root, entry.FullName));
-                    if (!target.StartsWith(root, StringComparison.Ordinal))
-                    {
-                        throw new InvalidDataException(
-                            "it holds a file that would be written outside the folder it is " +
-                            "being unpacked into (" + entry.FullName + ")");
-                    }
-
-                    var folder = Path.GetDirectoryName(target);
-                    if (!string.IsNullOrEmpty(folder)) Directory.CreateDirectory(folder);
-                    entry.ExtractToFile(target, true);
-                }
-            }
-        }
 
         /// <summary>
         /// checksums.txt, fetched once.

@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using Heron.Installer;
 
 namespace Heron.Installer.TestHost
@@ -1121,6 +1122,120 @@ namespace Heron.Installer.TestHost
                   "and nowhere that needs an administrator");
             Check(Names(InstallerScreen.InstallLocationNote, "no administrator"),
                   "and the window says so, which is the promise being kept");
+
+            Console.WriteLine();
+            Console.WriteLine("ROUTE 2 - A FOLDER ON THIS PC, CHECKED EXACTLY LIKE A DOWNLOAD");
+            // R-15 and R-53, answered 2026-09-22: after one download nothing
+            // needs the internet. What a person is handed is the folder the
+            // release builder makes, on a stick or a share.
+            //
+            // A FOLDER IS NOT TRUSTED FOR BEING LOCAL. It got here because
+            // somebody handed it over, which is exactly how a download gets
+            // here. Being local removes the network, not the question of
+            // whether the bytes are what the publisher published.
+            var hand = Path.Combine(Path.GetTempPath(), "heron-hand-" + Guid.NewGuid().ToString("N"));
+            var work = Path.Combine(Path.GetTempPath(), "heron-work-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                Directory.CreateDirectory(hand);
+                Directory.CreateDirectory(work);
+
+                Console.WriteLine();
+                Console.WriteLine("  a folder that is not a handover is refused, and the sentence says which");
+                Check(Names(ProductFolder.WhyNotAHeronFolder(Path.Combine(hand, "nope")), "no folder at"),
+                      "a path that is not there");
+                Check(Names(ProductFolder.WhyNotAHeronFolder(hand), "heron-products.json", "point at that one"),
+                      "a folder with no product list - and it names the commonest mistake, "
+                      + "pointing at the parent");
+
+                File.WriteAllText(Path.Combine(hand, "heron-products.json"), "{\"products\":[]}");
+                Check(Names(ProductFolder.WhyNotAHeronFolder(hand), "checksums.txt", "did not finish"),
+                      "a folder with a product list but no checksums - written last, so its "
+                      + "absence means the copy stopped half way");
+
+                // A REAL ASSET, MADE HERE. Nothing below reads a fixture: the
+                // zip is built, hashed, and handed to the same
+                // ReleaseAssets.WhyNotTrusted a download goes through.
+                var product = new HeronProduct { Id = "piece-one", Name = "One", Assembly = "One.dll" };
+                var assetName = ReleaseAssets.NameFor(product, "2024");
+                var zipPath = Path.Combine(hand, assetName);
+                using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+                {
+                    var entry = zip.CreateEntry("One.dll");
+                    using (var writer = new StreamWriter(entry.Open()))
+                        writer.Write("not a real assembly, and it does not need to be");
+                }
+                var good = ReleaseAssets.DigestOf(File.ReadAllBytes(zipPath));
+                File.WriteAllText(Path.Combine(hand, "checksums.txt"), good + "  " + assetName + "\n");
+
+                Check(ProductFolder.WhyNotAHeronFolder(hand) == null,
+                      "and a folder with both is accepted as a handover");
+
+                Console.WriteLine();
+                Console.WriteLine("  a good folder unpacks, and NOTHING was downloaded");
+                string why;
+                var unpacked = new ProductFolder(hand, work).Folder(product, "2024", out why);
+                Check(unpacked != null && why == null, "the asset came back: " + (why ?? "ok"));
+                Check(unpacked != null && File.Exists(Path.Combine(unpacked, "One.dll")),
+                      "and One.dll is really on the disk where it said");
+
+                Console.WriteLine();
+                Console.WriteLine("  A TAMPERED ZIP IS REFUSED, and this is the whole safety property");
+                // Somebody swapped the file on the stick. The checksum beside
+                // it still says what the publisher published, so it no longer
+                // matches - and nothing is written.
+                using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Update))
+                {
+                    var entry = zip.CreateEntry("evil.dll");
+                    using (var writer = new StreamWriter(entry.Open()))
+                        writer.Write("this was not in the release");
+                }
+                var after = new ProductFolder(hand, work).Folder(product, "2024", out why);
+                Check(after == null, "a zip that changed under the checksum installs nothing");
+                Check(Names(why, "did not arrive whole"),
+                      "and it says the file does not match what was published: " + why);
+
+                Console.WriteLine();
+                Console.WriteLine("  an asset the checksums do not list is refused too");
+                var stranger = new HeronProduct { Id = "piece-two", Name = "Two", Assembly = "Two.dll" };
+                var strangerName = ReleaseAssets.NameFor(stranger, "2024");
+                using (var zip = ZipFile.Open(Path.Combine(hand, strangerName), ZipArchiveMode.Create))
+                {
+                    var entry = zip.CreateEntry("Two.dll");
+                    using (var writer = new StreamWriter(entry.Open())) writer.Write("dropped in");
+                }
+                var unlisted = new ProductFolder(hand, work).Folder(stranger, "2024", out why);
+                Check(unlisted == null && Names(why, "not listed"),
+                      "a file nobody published is not installed because it is sitting there: " + why);
+
+                Console.WriteLine();
+                Console.WriteLine("  a release this folder does not carry says so, and names the way out");
+                var missing = new ProductFolder(hand, work).Folder(product, "2027", out why);
+                Check(missing == null, "a release the folder has no asset for installs nothing");
+                Check(Names(why, "not in", "whole folder"),
+                      "and it says the folder is partial rather than blaming the product: " + why);
+
+                Console.WriteLine();
+                Console.WriteLine("  checksums.txt unreadable FAILS CLOSED, never open");
+                // An empty checksum list must refuse everything. Reading it as
+                // "nothing to check, carry on" is how a damaged handover
+                // installs whatever it likes.
+                var noSums = Path.Combine(Path.GetTempPath(), "heron-nosum-" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(noSums);
+                File.Copy(Path.Combine(hand, "heron-products.json"), Path.Combine(noSums, "heron-products.json"));
+                File.Copy(zipPath, Path.Combine(noSums, assetName));
+                Directory.CreateDirectory(Path.Combine(noSums, "checksums.txt"));   // a folder, not a file
+                var closed = new ProductFolder(noSums, work).Folder(product, "2024", out why);
+                Check(closed == null, "an unreadable checksums.txt installs nothing at all");
+                Check(Names(why, "no way to tell"),
+                      "and it says it cannot tell rather than assuming: " + why);
+                Directory.Delete(noSums, true);
+            }
+            finally
+            {
+                try { Directory.Delete(hand, true); } catch (IOException) { }
+                try { Directory.Delete(work, true); } catch (IOException) { }
+            }
 
             Console.WriteLine();
             Console.WriteLine("STAGE 6 - THE COMMAND LINE DOOR READS WHAT IT WAS GIVEN (Q-PE-16)");

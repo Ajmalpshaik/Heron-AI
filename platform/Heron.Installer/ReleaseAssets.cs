@@ -6,6 +6,8 @@
 // See docs/29-metadata-standard.md
 
 using System;
+using System.IO.Compression;
+using System.IO;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Security.Cryptography;
@@ -175,6 +177,55 @@ namespace Heron.Installer
                 if (!hex) return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// Unpack a verified archive into a folder, refusing any entry that
+        /// would escape it.
+        ///
+        /// THE ZIP-SLIP GUARD, AND IT REFUSES THE WHOLE ARCHIVE. One entry
+        /// whose path climbs out with ../ means the archive is not what it
+        /// claims, so nothing from it is trusted - not the entries already on
+        /// disk, which sit in a folder the caller owns and deletes, and not
+        /// the ones after it.
+        ///
+        /// IT LIVES HERE BECAUSE TWO DOORS NEED IT. It was private to
+        /// ReleaseDownload while a download was the only way files arrived.
+        /// ProductFolder is the second, and route 2's folder is EXACTLY as
+        /// untrusted as a download - it reached the PC on a USB stick somebody
+        /// else handed over, and a zip on a stick can climb out of a folder
+        /// exactly as well as one off the wire. A guard copied into both is a
+        /// guard that will disagree with itself. Moved rather than copied -
+        /// R-31, the same reason InstallerScreen.AnythingBuilt moved.
+        /// </summary>
+        /// <param name="bytes">The archive, already checked against its checksum.</param>
+        /// <param name="into">A folder the caller owns and may delete.</param>
+        public static void Unpack(byte[] bytes, string into)
+        {
+            var root = Path.GetFullPath(into);
+            if (!root.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                root += Path.DirectorySeparatorChar;
+
+            using (var stream = new MemoryStream(bytes, false))
+            using (var zip = new ZipArchive(stream, ZipArchiveMode.Read))
+            {
+                foreach (var entry in zip.Entries)
+                {
+                    if (string.IsNullOrEmpty(entry.Name)) continue;   // a folder
+
+                    var target = Path.GetFullPath(Path.Combine(root, entry.FullName));
+                    if (!target.StartsWith(root, StringComparison.Ordinal))
+                    {
+                        throw new InvalidDataException(
+                            "it holds a file that would be written outside the folder it is " +
+                            "being unpacked into (" + entry.FullName + ")");
+                    }
+
+                    var folder = Path.GetDirectoryName(target);
+                    if (!string.IsNullOrEmpty(folder)) Directory.CreateDirectory(folder);
+                    entry.ExtractToFile(target, true);
+                }
+            }
         }
     }
 
