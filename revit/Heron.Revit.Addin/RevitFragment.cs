@@ -1212,16 +1212,20 @@ namespace Heron.Revit.Addin
             /// a severity that cannot be read becomes -1, which is not a warning,
             /// so it rolls back. The words and the element count are only ever
             /// description - a message whose text cannot be read is still judged.
+            ///
+            /// BARE CATCHES, the guarded-read idiom this file uses everywhere
+            /// else (`try { title = target.Title; } catch { }`): none of the
+            /// three needs the exception, only the fallback.
             /// </summary>
             private static HeronFailureNote.Posted Read(FailureMessageAccessor message)
             {
                 int severity;
                 try { severity = (int)message.GetSeverity(); }
-                catch (Exception) { severity = -1; }
+                catch { severity = -1; }
 
                 string text = null;
                 try { text = message.GetDescriptionText(); }
-                catch (Exception) { }
+                catch { }
 
                 var elements = 0;
                 try
@@ -1229,7 +1233,7 @@ namespace Heron.Revit.Addin
                     var ids = message.GetFailingElementIds();
                     elements = ids == null ? 0 : ids.Count;
                 }
-                catch (Exception) { }
+                catch { }
 
                 return new HeronFailureNote.Posted(severity, text, elements);
             }
