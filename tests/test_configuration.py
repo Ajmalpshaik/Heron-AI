@@ -200,6 +200,39 @@ def main():
           "there is nothing there to leak")
 
     print()
+    print("5b. A word that CONTAINS a secret word is not a secret")
+    # ROW 5b-117. The named-key test was `word in lowered` over the whole
+    # dotted path, unanchored - so any path carrying those letters anywhere
+    # in it was refused as a credential, and the refusal said so in as many
+    # words: "a key named '...', which says the value is a credential
+    # whatever it looks like". Measured before the fix:
+    #
+    #   company-standards.keywords[0]   -> SECRET_IN_CONFIGURATION
+    #   model-routing.monkey            -> SECRET_IN_CONFIGURATION
+    #
+    # Both are portable settings a practice would really write, and the
+    # sentence they get is not merely conservative - it is untrue about
+    # their own file, and its proposal is to put the word "duct" in a
+    # credential store.
+    for label, block in (
+            ("keywords", {"company-standards": {"keywords": ["duct"]}}),
+            ("monkey", {"model-routing": {"monkey": "no"}}),
+            ("turnkey", {"update-policies": {"turnkey": True}})):
+        answer = ask(settings(**block))
+        check(answer.get("refused") != "SECRET_IN_CONFIGURATION",
+              "'%s' is not a key named for a credential" % label)
+    # AND NOTHING LEGITIMATE WAS LOOSENED. Every one of these was green
+    # BEFORE the fix and has to stay green after it - which is what makes
+    # the three above safe to allow rather than a hole opened for them.
+    for key in ("api-key", "api_key", "apikey", "token", "tokens",
+                "secret", "secrets", "password", "passwords", "passwd",
+                "credential", "credentials"):
+        answer = ask(settings(**{"ai-provider": {"name": "anthropic",
+                                                 key: "hunter2"}}))
+        check(answer.get("refused") == "SECRET_IN_CONFIGURATION",
+              "a nested key named '%s' is still refused" % key)
+
+    print()
     print("6. It is ADMIN both ways")
     for origin in ("a document Heron read", "a community package", None,
                    "", "the installer"):
