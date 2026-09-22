@@ -79,6 +79,25 @@ GOOD_REQUIRED = "# yaml | reading yaml | nothing in brain/ runs\nPyYAML\n"
 GOOD_OPTIONAL = ("# model2vec | the trained encoder | "
                  "retrieval falls back to character n-grams\nmodel2vec\n")
 
+# A PACKAGE THAT CANNOT BE INSTALLED, so the missing-optional path is
+# reachable on EVERY machine - fixed 2026-09-22.
+#
+# Section 1 used GOOD_OPTIONAL, which names model2vec, and then asserted that
+# the report says it is absent. On a machine where model2vec IS installed -
+# the owner's PC - check-dependencies correctly reported it present and said
+# nothing about installing it, and three checks failed the tool for being
+# RIGHT. The same shape as section 6 of tests/test_api_digest.py: a suite that
+# asserts against whatever machine it happens to find is red on exactly the
+# machines best equipped to run it, and green elsewhere only by luck.
+#
+# Section 2 already had the answer sitting beside it - it names
+# no_such_module_xyz to reach the missing-REQUIRED path. This is that same
+# trick for the optional half, and the third field is kept word for word
+# because what is lost is what the check below reads.
+ABSENT_OPTIONAL = ("# heron_no_such_encoder | the trained encoder | "
+                   "retrieval falls back to character n-grams\n"
+                   "heron-no-such-encoder\n")
+
 
 def main():
     print(__doc__.strip().splitlines()[0])
@@ -119,12 +138,12 @@ def main():
             return code, said.getvalue()
 
         print("1. A missing OPTIONAL package is the normal case (R-42)")
-        code, spoke = run()
+        code, spoke = run(optional=ABSENT_OPTIONAL)
         check(code == 0,
               "an absent optional package exits 0, and it exits %r" % code)
         check("not a fault" in spoke,
               "and the report says so rather than only being quiet")
-        check("pip install --user model2vec" in spoke,
+        check("pip install --user heron-no-such-encoder" in spoke,
               "and gives the line that installs it")
         check("retrieval falls back to character n-grams" in spoke,
               "and says what is lost without it - which is the whole "
