@@ -218,26 +218,51 @@ def main():
 
     print()
     print("6. A MACHINE THAT CANNOT ANSWER SAYS SO, AND DOES NOT TRACEBACK")
-    print("   Measured on this container: no cached assemblies, no .NET SDK.")
-    print("   `api-changes.py 2025 2026` raised OSError and exited 1 - the")
-    print("   same code as a real failure, and a traceback is none of")
-    print("   AGENTS.md's four states. Row 5b-133 is the precedent and its")
-    print("   remedy is exit 3, NOT RUN.")
+    print("   `api-changes.py 2025 2026` with nothing cached raised OSError")
+    print("   and exited 1 - the same code as a real failure, and a traceback")
+    print("   is none of AGENTS.md's four states. Row 5b-133 is the precedent")
+    print("   and its remedy is exit 3, NOT RUN.")
+    print()
+    print("   THE CONDITION IS FORCED, NOT ASSUMED - fixed 2026-09-22.")
+    print("   This read 'Measured on this container: no cached assemblies, no")
+    print("   .NET SDK' and asserted the refusal against whatever the machine")
+    print("   happened to be. On a machine that CAN answer - the owner's PC,")
+    print("   a runner with the assemblies cached - cannot_answer() correctly")
+    print("   returned None and main() correctly returned 0, and four checks")
+    print("   failed the tool for being right. Worse, main() then ran the real")
+    print("   comparison and wrote the COMMITTED tools/api-surface/changes.json")
+    print("   as a side effect of a test. Empty CACHE and SURFACE folders make")
+    print("   the refusal reachable on EVERY machine, and OUT goes to a temp")
+    print("   file so committed evidence is never under the pen.")
     blocked = getattr(tool, "cannot_answer", None)
     check(callable(blocked),
           "there is a cannot_answer() to ask before any dump is attempted")
     if callable(blocked):
-        why = blocked(["2025", "2026"])
-        check(why, "on this machine it answers with a reason, and it said %r"
-                   % (why if why is None else str(why)[:70],))
-        code, said = spoken(tool.main, ["2025", "2026"])
-        check(code == 3,
-              "and main() returns 3 - could not run - rather than 1 or a "
-              "traceback; it returned %r" % code)
-        check("NOT RUN" in said,
-              "saying NOT RUN in those words, and it said %r" % said[:90])
-        check("check-api-surface" in said,
-              "and naming what to run to fix it")
+        denied = tempfile.mkdtemp(prefix="heron-api-blocked-")
+        was = tool.CACHE, tool.SURFACE, tool.OUT
+        try:
+            tool.CACHE = os.path.join(denied, "cache")
+            tool.SURFACE = os.path.join(denied, "surface")
+            os.makedirs(tool.CACHE)
+            os.makedirs(tool.SURFACE)
+            tool.OUT = os.path.join(denied, "changes.json")
+
+            why = blocked(["2025", "2026"])
+            check(why, "with nothing cached it answers with a reason, and it "
+                       "said %r" % (why if why is None else str(why)[:70],))
+            code, said = spoken(tool.main, ["2025", "2026"])
+            check(code == 3,
+                  "and main() returns 3 - could not run - rather than 1 or a "
+                  "traceback; it returned %r" % code)
+            check("NOT RUN" in said,
+                  "saying NOT RUN in those words, and it said %r" % said[:90])
+            check("check-api-surface" in said,
+                  "and naming what to run to fix it")
+            check(not os.path.isfile(tool.OUT),
+                  "and it wrote no digest at all, having run nothing")
+        finally:
+            tool.CACHE, tool.SURFACE, tool.OUT = was
+            shutil.rmtree(denied, ignore_errors=True)
 
     print()
     print("7. The arithmetic, which needs nothing external")

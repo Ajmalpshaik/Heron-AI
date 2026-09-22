@@ -74,6 +74,30 @@ OUT = os.path.join(TOOL_DIR, "changes.json")
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 
+def short(path):
+    """`path` as the repository spells it, for a message - never a raised error.
+
+    EVERY USE OF THIS IS DISPLAY: a refusal naming the file it refused, or
+    the closing line saying what was written. `os.path.relpath` RAISES
+    `ValueError` on Windows when the two paths are on different drives - the
+    repository on D: and a redirected OUT under the temp directory on C: is
+    the shape that found it - so formatting the path could take down the very
+    refusal it was being formatted for, turning a clean exit 1 into a
+    traceback. AGENTS.md has four states and a traceback is none of them.
+
+    CI can never see this. Linux has one mount, so relpath always answers
+    there, and the two calls guarded here sit in the REFUSING TO WRITE path -
+    the one branch whose whole job is to fail cleanly.
+
+    An absolute path is a worse message. It is never a worse outcome.
+    """
+    try:
+        return os.path.relpath(path, ROOT)
+    except ValueError:
+        # Different drives on Windows: nothing to shorten against.
+        return path
+
+
 def releases():
     """The supported releases, read from `brain/heron_fragment` and not typed.
 
@@ -133,7 +157,7 @@ def cannot_answer(years):
                 % ", ".join(todo))
     if not os.path.isfile(READER):
         return ("%s is not built, so no surface can be dumped. Run `dotnet "
-                "build tools/api-surface`." % os.path.relpath(READER, ROOT))
+                "build tools/api-surface`." % short(READER))
     return None
 
 
@@ -152,7 +176,7 @@ def surface_of(year):
     if not os.path.isfile(READER):
         raise IOError(
             "NO_READER: %s is not built. Run `dotnet build tools/api-surface`."
-            % os.path.relpath(READER, ROOT))
+            % short(READER))
 
     os.makedirs(SURFACE, exist_ok=True)
     result = subprocess.run(
@@ -229,7 +253,7 @@ def main(argv):
         except ValueError as why:
             sys.stdout.write(
                 "REFUSING TO WRITE: %s exists and does not parse (%s).\n"
-                % (os.path.relpath(OUT, ROOT), why))
+                % (short(OUT), why))
             sys.stdout.write(
                 "Overwriting it would silently drop every transition this "
                 "run did not recompute. Fix or delete the file, then run "
@@ -238,7 +262,7 @@ def main(argv):
         if not isinstance(existing, dict):
             sys.stdout.write(
                 "REFUSING TO WRITE: %s parses but is a %s, not a digest.\n"
-                % (os.path.relpath(OUT, ROOT), type(existing).__name__))
+                % (short(OUT), type(existing).__name__))
             sys.stdout.write(
                 "Overwriting it would silently drop every transition this "
                 "run did not recompute. Fix or delete the file, then run "
@@ -285,7 +309,7 @@ def main(argv):
                             "" if (one["from"], one["to"]) in refreshed
                             else "   (kept, not recomputed)"))
     sys.stdout.write("wrote %s (%d KB)\n"
-                     % (os.path.relpath(OUT, ROOT),
+                     % (short(OUT),
                         os.path.getsize(OUT) // 1024))
     return 0
 
