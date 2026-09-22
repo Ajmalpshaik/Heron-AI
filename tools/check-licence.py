@@ -64,6 +64,11 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "brain"))
+
+# For repo_relative() and nothing else, and it imports nothing but `os` - so
+# this still runs on a bare machine, which is the point of it.
+import heron_relpath as RELPATH                                 # noqa: E402
 
 # Heron ships under Apache 2.0 (D-08). These are the licences whose terms let
 # Heron's users redistribute the file with Heron. The list is short and adding
@@ -134,16 +139,16 @@ def repo_relative(path):
     Windows os.path.relpath RAISES across drives rather than merely returning
     something useless. Reporting a file this walked is not worth a crash.
 
-    brain/heron_fragment.py owns this answer and this is the same rule, not a
-    different one. It is repeated here rather than imported because importing
-    it costs PyYAML, and this is the tool you run on a bare machine to read the
-    licence of something you just downloaded, before you trust it enough to
-    install anything for it.
+    THE RULE IS brain/heron_relpath's, and this asks it. Until 2026-09-22 this
+    repeated the rule rather than importing it, because it then lived in
+    heron_fragment and importing that costs PyYAML - and this is the tool you
+    run on a bare machine to read the licence of something you just
+    downloaded, before you trust it enough to install anything for it.
+    heron_relpath imports nothing but `os`, so the reason for the copy is gone
+    and the promise is kept: tests/test_relpath.py runs this with PyYAML
+    blocked (row 5b-152).
     """
-    try:
-        return os.path.relpath(path, ROOT)
-    except ValueError:
-        return os.path.abspath(path)
+    return RELPATH.relpath(path, ROOT)
 
 
 def files_of(path):

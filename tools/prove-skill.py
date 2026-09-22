@@ -113,6 +113,7 @@ sys.path.insert(0, os.path.join(ROOT, "mcp", "client"))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_fragment as HF                                     # noqa: E402
+import heron_relpath as RELPATH                                 # noqa: E402
 import heron_skill as SKILL                                     # noqa: E402
 
 
@@ -917,7 +918,11 @@ def main():
             yaml.safe_load(text)
             with io.open(path, "w", encoding="utf-8") as handle:
                 handle.write(text)
-            written[plan.id] = os.path.relpath(path, ROOT)
+            # RELPATH, NOT os.path.relpath. `--jobs` may name another drive,
+            # and on Windows the raw call raised here, after the first file
+            # was written - one job on disk, the rest never written, and a
+            # traceback (row 5b-152).
+            written[plan.id] = RELPATH.relpath(path, ROOT)
 
     print("BY SKILL - and the verdict is never PROVEN from here:")
     print("")

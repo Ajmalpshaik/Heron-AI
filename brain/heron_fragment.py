@@ -60,6 +60,11 @@ except ImportError:                                          # pragma: no cover
         "machine with nothing on it. This layer is not that layer.\n")
     raise
 
+# For repo_relative() and nothing else. The rule it answers with lives in
+# heron_relpath, which imports nothing but `os` - so a caller that cannot
+# afford this module's PyYAML can ask it too, instead of writing a copy.
+import heron_relpath as RELPATH
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRAGMENTS_DIR = os.path.join(ROOT, "brain", "fragments")
 
@@ -74,11 +79,13 @@ def repo_relative(path):
     returning something useless. Callers that join the result back onto ROOT
     still open the right file, because os.path.join discards everything before
     an absolute component.
+
+    THE RULE ITSELF IS heron_relpath's, and this asks it. It lived here until
+    2026-09-22, and every caller that could not afford this module's PyYAML
+    import wrote its own copy instead - FRAGMENT-ISSUES row 5b-152. ROOT is
+    read at the call, so a suite that points it elsewhere is still obeyed.
     """
-    try:
-        return os.path.relpath(path, ROOT)
-    except ValueError:
-        return os.path.abspath(path)
+    return RELPATH.relpath(path, ROOT)
 
 
 # D-29. A fragment is a COMPOSABLE PIECE, not a whole answer: a filter says
