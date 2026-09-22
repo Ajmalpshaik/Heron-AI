@@ -76,6 +76,20 @@ def _wanted(entry):
     return str(entry).strip().lower(), ""
 
 
+def _same_file(path):
+    """One spelling of a path, so two spellings of one file compare equal.
+
+    THE COMPARISON THAT DECIDES WHETHER A STORE IS LEFT ALONE WAS RAW
+    STRING EQUALITY. A caller who wrote the path with a trailing separator,
+    or with a redundant "." in it, got a plan to CREATE a store that is
+    already there - which is this agent's own dangerous case reached
+    through the one line that guards it. `normcase` is here because
+    Heron's platform is Windows, where two spellings differing only in
+    case name one file; on POSIX it does nothing. Row 5b-119.
+    """
+    return os.path.normcase(os.path.normpath(str(path).strip()))
+
+
 def plan(wanted, existing=None, origin=None, approval=None):
     """
     {create, keep, why} - or a refusal. Nothing is created.
@@ -107,7 +121,8 @@ def plan(wanted, existing=None, origin=None, approval=None):
                        "failed initialisation - it is a SUCCESSFUL one on a "
                        "machine that already had stores."}
 
-    here = set(str(path).strip() for path in (existing or []))
+    here = set(_same_file(path) for path in (existing or [])
+               if str(path).strip())
     create, keep, seen = [], [], {}
 
     for entry in wanted:
@@ -164,7 +179,7 @@ def plan(wanted, existing=None, origin=None, approval=None):
         seen[path] = (scope, project)
 
         # THE DANGEROUS CASE IS A SUCCESSFUL RE-INITIALISATION.
-        if path in here:
+        if _same_file(path) in here:
             keep.append({"scope": scope, "project": project or None,
                          "path": path,
                          "why": "already there, and left alone. An empty "
@@ -196,6 +211,12 @@ def plan(wanted, existing=None, origin=None, approval=None):
             "the scopes, their meanings, their paths and the schema version "
             "are heron_scope's own. A second copy of any of them is a "
             "second copy to disagree with.",
+            "A RELATIVE PATH IN `existing` IS NOT MATCHED. Two spellings "
+            "of one file compare equal - a trailing separator, a redundant "
+            "\".\", and on Windows a difference of case - but resolving a "
+            "relative path needs a working directory, and choosing one "
+            "would be this agent guessing where a caller meant. Hand in "
+            "the paths as they are on disk.",
         ],
     }
 
