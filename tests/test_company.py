@@ -301,6 +301,40 @@ def main():
               "and every one was reached above%s"
               % ("" if not unreached else ": %s" % ", ".join(unreached)))
         check(len(answer["unjudged"]) == 5, "five things are left unjudged")
+        print("\n9. A FLAG WITH NO VALUE IS REFUSED, NOT SEARCHED FOR")
+        # ROW 5b-104, AND THIS ONE DID NOT CRASH - IT ANSWERED. The loop that
+        # takes the flags is guarded with `and i + 1 < len(argv)`, so a flag
+        # last on the line stopped matching and fell through to
+        # `words.append` - which is word for word the failure the comment
+        # above it says it prevents: "a --subject swallowed into the question
+        # would search for the word --subject". Measured by running it:
+        #
+        #   heron_company.py "how thick is duct insulation" --subject
+        #     -> searched for 'how thick is duct insulation --subject', exit 0
+        #
+        # An honest empty answer about a question nobody asked is worse than
+        # a refusal, because it reads as a measurement.
+        import io as _io
+        import contextlib as _ctx
+
+        for flag in ("--subject", "--stage"):
+            said = _io.StringIO()
+            try:
+                with _ctx.redirect_stdout(said):
+                    code = CMP.main(["how thick is duct insulation", flag])
+            except BaseException as raised:      # noqa: BLE001 - that IS the check
+                code = None
+                check(False, "%s with no value is refused rather than "
+                             "raising %s" % (flag, type(raised).__name__))
+            if code is not None:
+                check(code == 2,
+                      "%s with no value exits 2 - nothing was searched, so it "
+                      "must not come back as an answer" % flag)
+                check(flag not in said.getvalue().split("searched for")[-1]
+                      or "needs a value" in said.getvalue(),
+                      "and the flag is NAMED in a refusal rather than joined "
+                      "to the question and looked up")
+
     finally:
         if was is None:
             os.environ.pop("HERON_KNOWLEDGE", None)

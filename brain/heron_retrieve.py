@@ -1217,6 +1217,15 @@ def main(argv):
     revit = None
     if "--revit" in argv:
         i = argv.index("--revit")
+        # A FLAG WITH NO VALUE IS A TYPO, NOT AN ABSENT FLAG, and the refusal
+        # three lines down already says so about every OTHER flag. This one
+        # read `argv[i + 1]` and answered `--revit` last on the line with
+        # `IndexError: list index out of range` - the traceback that comment
+        # exists to prevent, on the only flag this tool has.
+        if i + 1 >= len(argv) or argv[i + 1].startswith("-"):
+            print("  --revit needs a release, e.g. --revit 2024.")
+            print('  python brain/heron_retrieve.py "show me every duct" --revit 2024')
+            return 2
         revit = argv[i + 1]
         argv = argv[:i] + argv[i + 2:]
 

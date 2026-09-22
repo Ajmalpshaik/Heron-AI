@@ -176,8 +176,28 @@ def validate(skill):
             "%s: a skill needs at least TWO utterances. One is a name; two is "
             "the beginning of knowing how somebody actually asks" % where)
 
+    # THE RULE THIS FILE STATES IN CAPITALS, AND `isupper()` WAS NOT IT.
+    #
+    # "A SKILL NAMES CAPABILITIES, NEVER FRAGMENTS" is the whole reason a
+    # fragment can be improved, replaced, split into three or retired with no
+    # skill edited - and the test behind the refusal below was
+    # `capability.isupper()`, which `FRG-ELE-001` passes. So `needs:
+    # [FRG-ELE-001]` validated CLEAN, and `main()` then listed it under
+    # CAPABILITY GAPS - the list it calls "what to build next, in the order
+    # real work asks for it - not a guess". Naming a fragment produced an
+    # instruction to go and build a capability called FRG-ELE-001.
+    # FRAGMENT-ISSUES row 5b-106.
+    #
+    # THE PATTERN IS THE FRAGMENT SIDE'S OWN, imported rather than written
+    # again here, so the two halves cannot come to disagree about what a
+    # capability name looks like - which is how a rule ends up enforced in one
+    # place and not the other. Measured before it was tightened: it accepts
+    # 396 of 396 capabilities in the library and 0 of 396 fragment ids, every
+    # one of which carries hyphens, and it refuses none of the requirements
+    # the ten skills already declare.
     for capability in skill.needs():
-        if not isinstance(capability, str) or not capability.isupper():
+        if (not isinstance(capability, str)
+                or not FRAG.CAPABILITY_PATTERN.match(capability)):
             problems.append(
                 "%s: needs must be CAPABILITY names in SCREAMING_SNAKE, not %r. "
                 "A skill that names a fragment defeats the registry"

@@ -446,11 +446,25 @@ def main(argv):
     subject = stage = None
     words, i = [], 0
     while i < len(argv):
-        if argv[i] == "--subject" and i + 1 < len(argv):
-            subject, i = argv[i + 1], i + 2
-            continue
-        if argv[i] == "--stage" and i + 1 < len(argv):
-            stage, i = argv[i + 1], i + 2
+        if argv[i] in ("--subject", "--stage"):
+            # A FLAG WITH NO VALUE FELL THROUGH INTO THE QUESTION, which is
+            # the exact failure the comment above says this loop prevents.
+            # The guard was `and i + 1 < len(argv)`, so `--subject` last on
+            # the line stopped matching and reached `words.append` - measured,
+            # `heron_company.py "how thick is duct insulation" --subject`
+            # searched for `'how thick is duct insulation --subject'` and
+            # exited 0. A guard that cannot take the value has to REFUSE it,
+            # not hand it to the search. Row 5b-104.
+            if i + 1 >= len(argv) or argv[i + 1].startswith("--"):
+                print("\n  %s needs a value and was given none. Nothing was "
+                      "searched - a flag with no value is a typo, and "
+                      "searching for the flag itself would report the miss "
+                      "as an honest empty answer." % argv[i])
+                return 2
+            if argv[i] == "--subject":
+                subject, i = argv[i + 1], i + 2
+            else:
+                stage, i = argv[i + 1], i + 2
             continue
         words.append(argv[i])
         i += 1

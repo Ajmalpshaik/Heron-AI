@@ -259,6 +259,59 @@ def main():
               "that has read the question and the clauses together" % banned)
     print()
 
+    print("10. THE DOCUMENT IS THE NAME THE CITATION HANGS ON")
+    # BOTH HALVES OF THIS SECTION ARE ABOUT WHICH TEXT IS TAKEN AS THE
+    # DOCUMENT, and both were invisible because every earlier case in this
+    # file puts the document FIRST in the sentence. Section 64 of
+    # tests/test_review_findings.py does the same. A real answer does not:
+    # "Fire Dampers shall be rated per <standard>" is the ordinary shape, and
+    # a Revit category name is two capitalised words, which is exactly what
+    # _NAMED looks for.
+    hung = R.citation("Fire Dampers shall be rated per Acme Engineering BIM "
+                      "Standard 2026, clause 3.1.")
+    check(hung.verdict == R.WELL_FORMED,
+          "a company standard is still well-formed when a capitalised SUBJECT "
+          "comes before it - the first proper name in the sentence won, so a "
+          "citation carrying its edition and its clause was reported VAGUE "
+          "and the report named as missing the two parts sitting in the same "
+          "sentence a reader is looking at")
+    check(hung.document == "Acme Engineering BIM Standard"
+          and hung.edition == "2026" and hung.locator == "clause 3.1",
+          "and the three parts are read off the document the edition and the "
+          "clause attach to, not off the sentence's subject")
+    spec = R.citation("Air Terminals must be scheduled per Tower B Project "
+                      "Specification 2025 section 4.2.")
+    check(spec.verdict == R.WELL_FORMED,
+          "and the same holds for a project specification - the two documents "
+          "_NAMED was added for are the two this shape hides")
+
+    # THE FALLBACK IS TODAY'S BEHAVIOUR AND STAYS. When no candidate carries
+    # an edition or a locator there is nothing to choose between them, so the
+    # first is still taken. Nothing becomes well-formed that was not.
+    plain = R.citation("Mechanical Equipment shall be tagged as per the "
+                       "standard.")
+    check(plain.verdict == R.VAGUE,
+          "while a sentence where no name carries an edition or a locator is "
+          "unchanged - this picks between candidates and never invents a part")
+
+    # A VAGUE PHRASE AT THE END OF A SENTENCE KEEPS ITS FULL STOP, and the
+    # comparison against _NOT_A_DOCUMENT is made on the stripped name - which
+    # stripped " ,;:-" and not ".". So "Industry Practice." was accepted as a
+    # document, and the report told the reader the source was named and only
+    # the edition and clause were missing. The fix a person would take from
+    # that is to put a year and a clause number on "industry practice".
+    stop = R.citation("Ductwork shall be insulated to 25mm per Industry "
+                      "Practice.")
+    check("the document" in stop.missing,
+          "'Industry Practice' ending a sentence names no document - a "
+          "trailing full stop is not what makes a phrase a source, and this "
+          "is the list's own entry escaping the list by one character")
+    check(stop.verdict == R.VAGUE,
+          "and the verdict stays VAGUE either way - what was wrong was WHICH "
+          "parts the report said were missing, which is the only thing a "
+          "person can act on")
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:

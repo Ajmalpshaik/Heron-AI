@@ -433,6 +433,44 @@ def main():
           "and the brain has the seam it is served through")
     print()
 
+    print("12. A FLAG WITH NO VALUE IS REFUSED, NOT A TRACEBACK")
+    # ROW 5b-104. Either flag last on the line read argv[i + 1] and came back
+    # as IndexError: list index out of range - a Python traceback as the
+    # answer to a typo, on the two flags this module's own docstring shows.
+    # Measured by RUNNING it, which is also how the other three sites in that
+    # row were separated from the two the scan was wrong about.
+    import io as _io
+    import contextlib as _ctx
+
+    for flag in ("--scopes", "--project"):
+        said = _io.StringIO()
+        try:
+            with _ctx.redirect_stdout(said):
+                code = C.main(["how thick is duct insulation", flag])
+        except BaseException as raised:          # noqa: BLE001 - that IS the check
+            code, said = None, None
+            check(False, "%s with no value refuses rather than raising %s"
+                         % (flag, type(raised).__name__))
+            continue
+        check(code == 2,
+              "%s with no value exits 2 - the code this repository uses for "
+              "'the tool could not do its job', so nothing reads as a result"
+              % flag)
+        check(flag in said.getvalue() and "given none" in said.getvalue(),
+              "and it NAMES the flag rather than printing a stack - "
+              "heron_research._flag is the house answer, written for this "
+              "same stage" )
+
+    # A VALUE THAT IS ANOTHER FLAG IS NOT A VALUE. Without this
+    # `--scopes --project Tower` searches the scope called "--project",
+    # which is heron_ingest._flag's recorded reason for the same guard.
+    said = _io.StringIO()
+    with _ctx.redirect_stdout(said):
+        code = C.main(["a question", "--scopes", "--project", "Tower"])
+    check(code == 2 and "given none" in said.getvalue(),
+          "and a flag standing where a value should be is refused too")
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:

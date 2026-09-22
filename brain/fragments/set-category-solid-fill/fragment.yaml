@@ -1,0 +1,176 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 14
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-107
+semantic-identity: "wash a whole category with a solid colour in one view"
+kind: action
+domain: revit.views
+capability: SET_CATEGORY_SOLID_FILL
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  SET_CATEGORY_GRAPHICS with the fill patterns filled in. It takes the same
+  settings object - colours, halftone, line weights - and stamps Revit's solid
+  fill pattern onto the surface and the cut before applying it to the category.
+
+  WHY THIS IS A SEPARATE FRAGMENT RATHER THAN TWO MORE KEYS IN THE PARSER.
+  `OneOverride` in RevitFragment.cs sets nine things and deliberately not the
+  patterns, because a pattern is an ELEMENT and naming one is a filter's job
+  rather than a string parse. That line is right and this fragment keeps it:
+  THE ELEMENT LOOKUP HAPPENS HERE, in fragment source, where a
+  FilteredElementCollector belongs. The parser still only ever sees strings,
+  and widening it would have cost a rebuilt add-in and a Revit restart.
+
+  WITHOUT THIS, A PATTERN COLOUR DOES NOTHING YOU CAN SEE. A surface colour
+  tints the pattern the material already carries; where the material carries
+  none, the colour is stored, reads back correctly, and paints nothing at all.
+  That is the quietest failure in the whole override cluster - REPORT_CATEGORY_
+  OVERRIDES says RGB(230,230,230) and the paper comes out blank.
+
+  AND NOT EVERY CATEGORY CAN BE CUT. Furniture, most equipment in plan and
+  every annotation category are not cuttable, and Revit does not object when
+  you set a cut pattern on one - it stores it, reads it back faithfully, and
+  draws nothing with it. So the cut half is applied only where `IsCuttable`
+  says it means something, and the categories that could not take it come back
+  NAMED in `notCuttable`. They are still overridden and still counted: the
+  surface half lands, and a plan of furniture shows its surface anyway.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: categories
+      type: IList<Category>
+      source: request
+    # The same object SET_CATEGORY_GRAPHICS takes, built by the same parser.
+    # This fragment ADDS the two pattern ids to it and changes nothing else,
+    # so every colour and weight the caller asked for survives.
+    - name: overrides
+      type: OverrideGraphicSettings
+      source: request
+  provides:
+    - name: overridden
+      role: result
+      type: int
+    - name: solidPattern
+      # WHICH pattern it found, by name. The evidence the wash will actually
+      # paint - "overridden 1" cannot tell you that on its own.
+      role: accounting
+      type: string
+    - name: notCuttable
+      # Categories whose CUT half was left alone because Revit never cuts
+      # them. NOT a refusal and NOT a skip - these ARE overridden and DO
+      # count toward `overridden`. It is a note on what landed, so that a
+      # cut colour that draws nothing is a sentence rather than a mystery.
+      role: accounting
+      type: IList<string>
+    - name: notControllable
+      # Categories this view will not let be overridden. The evidence it
+      # looked and could not, never a thing it did (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND, so it must not count toward
+      # "did this come back empty" (D-52).
+      role: accounting
+      type: IList<string>
+
+proof:
+  date: '2026-09-22'
+  by: Ajmal PS
+  model: Project1 (3,432 elements), Revit 2024, session 43984
+  positive_case: >
+    run on view '1 - Mech' with categories=Walls and
+    overrides=projection-line-colour=255,0,0; cut-line-colour=255,0,0;
+    surface-colour=230,230,230; cut-colour=230,230,230. returned
+    notControllable 0 item(s), notCuttable 0 item(s), overridden 1, refused 0
+    item(s), solidPattern <Solid fill>. LOOKED AT, AND THAT IS DELIBERATE: the
+    walls went from a red outline with nothing inside it to a red outline with
+    a light grey wash. The read-back is NOT the evidence here and must not be
+    used as it - REPORT_CATEGORY_OVERRIDES reports the same four colours
+    whether or not a pattern was ever stamped, which is the exact failure this
+    fragment exists to catch. Both halves of the cluster were run on this model
+    an hour apart and read back identically; only the screen told them apart
+  positive_case_2: >
+    THE PER-CATEGORY DECISION, run as one call so that it cannot be a
+    coincidence: view '2 - Mech Copy 1', categories=Walls, Mechanical
+    Equipment, overrides=surface-colour=230,230,230; cut-colour=230,230,230.
+    returned overridden 2, notCuttable 1 item(s) [Mechanical Equipment],
+    refused 0 item(s). BOTH were overridden and only the one Revit never cuts
+    came back named - Walls is absent from that list in the same call that
+    named Mechanical Equipment, so the test is of the CATEGORY and not of the
+    request. Added after Ajmal PS pointed out that cut lines and patterns
+    cannot be set on every category and that Revit does not say so
+  negative_case: >
+    run on '2 - Mech Copy 1' while it carried the 'Architectural Plan' view
+    template, with categories=Walls and overrides=surface-colour=230,230,230;
+    cut-colour=230,230,230. Chosen because a view template holds the graphics,
+    so the fragment must decline rather than report success. returned
+    notControllable 0 item(s), notCuttable 0 item(s), overridden 0, refused 1
+    item(s) [Walls], solidPattern <Solid fill>. NOTHING WAS WRITTEN and no
+    exception was raised - the category came back NAMED, which is an answer
+    somebody can act on
+  second_route: >
+    NOT ESTABLISHED. The by-hand read that would settle it is one dialog away
+    - Visibility/Graphics on '1 - Mech', where the Pattern field read
+    '<No Override>' before this fragment existed and should now read
+    'Solid fill' - and it has not been done since the write. D-30 asks for a
+    second route 'where one exists'; one plainly exists here, so this is a gap
+    rather than an absence. The OTHER negative D-30 would want is a model whose
+    solid fill pattern has been PURGED, which is the case the implementation
+    refuses on and which no model to hand can produce
+  fingerprint: 0144109dbd31ea68
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `OverrideGraphicSettings.SetSurface
+  ForegroundPatternId`, `SetCutForegroundPatternId` and their `...Visible`
+  pairs have carried these names since 2019, so 2020 is already past the
+  rename from the old `SetProjectionFillPatternId` spelling.
+  `FillPattern.IsSolidFill`, `View.SetCategoryOverrides` and
+  `Category.get_AllowsVisibilityControl` are unchanged 2020 to 2027 - the
+  first is read off COLOR_BY_PARAMETER, which is proven on the same span.
+  `Category.IsCuttable` and the OverrideGraphicSettings COPY CONSTRUCTOR are
+  both unchanged across the same span. The copy is what makes the per-category
+  decision possible without stamping and un-stamping one shared object round
+  the loop.
+
+# ROUTING - the line between this and SET_CATEGORY_GRAPHICS is ONE QUESTION:
+# must the category READ as a colour, or only be tinted where it already
+# hatches?
+#
+#   "grey the architecture back"      -> SET_CATEGORY_GRAPHICS. Halftone and
+#                                        line colour need no pattern
+#   "wash the walls light grey so it
+#    prints"                          -> HERE. A colour with no pattern is
+#                                        stored and invisible
+#   "colour these by system"          -> COLOR_BY_PARAMETER, which finds the
+#                                        same solid fill and groups by a value
+#   "put this view back to normal"    -> RESET_VIEW_GRAPHICS
+#
+# THIS REPLACES RATHER THAN MERGES, inherited from SET_CATEGORY_GRAPHICS and
+# true for the same reason: `SetCategoryOverrides` takes the whole object. To
+# keep what a category already had, read `view.GetCategoryOverrides(id)` first
+# and hand THAT in as `overrides`.
+
+utterances:
+  - wash the category in a solid colour
+  - make the walls solid grey so it prints
+  - solid fill the whole category
+  - the colour is set but nothing shows on paper
+  - give this category a colour wash
+  - fill the category solid, not just the lines

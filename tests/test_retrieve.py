@@ -366,6 +366,55 @@ def main():
         os.environ.pop("HERON_KNOWLEDGE", None)
 
     print()
+    print("8. --revit WITH NO VALUE IS REFUSED, NOT A TRACEBACK")
+    # ROW 5b-104. The refusal three lines below the flag already said every
+    # UNKNOWN flag is named rather than searched for - "--rebuild was silently
+    # searched for, matched nothing, and printed 'nothing matched', which
+    # reads as a measured result rather than a typo". The only flag this tool
+    # HAS read argv[i + 1] with no guard, so `--revit` last on the line was
+    # `IndexError: list index out of range` and exit 1. Measured by running
+    # it, and nothing here opens a store: the refusal comes first.
+    import io as _io
+    import contextlib as _ctx
+
+    said = _io.StringIO()
+    try:
+        with _ctx.redirect_stdout(said):
+            code = R.main(["show me every duct", "--revit"])
+    except BaseException as raised:              # noqa: BLE001 - that IS the check
+        code = None
+        check(False, "--revit with no value refuses rather than raising %s"
+                     % type(raised).__name__)
+    if code is not None:
+        check(code == 2,
+              "--revit with no value exits 2 - nothing was searched, so it "
+              "must not read as a search that found nothing")
+        check("--revit" in said.getvalue(),
+              "and it names the flag and shows the line that works, which is "
+              "what the refusal below it already did for every other flag")
+
+    # GUARDED THE SAME WAY, AND IT HAD TO BE. Against the module as found
+    # this call does not raise on the FLAG - it takes "--rebuild" as the
+    # release and walks on into open_scope(), which raises because the block
+    # above has already removed HERON_KNOWLEDGE. A check that ends the suite
+    # in a traceback has proved nothing (heron-ship s2a), so the failure is
+    # recorded as a failure.
+    said = _io.StringIO()
+    try:
+        with _ctx.redirect_stdout(said):
+            code = R.main(["a question", "--revit", "--rebuild"])
+    except BaseException as raised:              # noqa: BLE001 - that IS the check
+        code = None
+        check(False, "a flag standing where a release should be is refused "
+                     "before anything else happens, and instead %s came out "
+                     "of what followed" % type(raised).__name__)
+    if code is not None:
+        check(code == 2,
+              "and a flag standing where a release should be is refused too - "
+              "otherwise Heron filters the library to the Revit release called "
+              "'--rebuild' and reports the empty result as a measurement")
+    print()
+
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:
