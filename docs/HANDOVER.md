@@ -124,6 +124,65 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — SAFE MODE SWEPT A FLAG TO A STATE NOTHING CAN READ
+
+**[Row 5b-116](FRAGMENT-ISSUES.md), FIXED.** `brain/heron_safemode.py` is read end to end — 370
+lines, 2 public functions, **one suite**, and nothing in `brain/` or `mcp/` imports it. That is why it
+was picked: thinnest-held of the six part-read brain modules, and the highest cost if it is wrong.
+
+Safe Mode restores every flag to the state it held at a moment the person names. `_target()` walks the
+recorded changes backwards and returns the `was` of the earliest one at or after that moment.
+
+**`heron_flags` records `was` as the state a change moved AWAY from — so the FIRST change to a flag
+carries `was: ''`.** There was no state before it.
+
+**Measured by running the real `set_flag`, not inferred:**
+
+| a flag declared as | its first change records |
+|---|---|
+| `{}` | **`was=''`** |
+| `None` | **`was=''`** |
+| `{"state": "ON"}` | `was='ON'` |
+
+**So a flag created after the named moment was swept to `state: ''`** — and `''` is not one of
+`heron_flags.STATES`, which is `('OFF', 'ON', 'TEST')`.
+
+**The flag agent itself refuses that state.** `set_flag` answers `NOT_A_FLAG_STATE`; `read()` answers
+`NOT_A_FLAG_STATE` with **`runs: False`** — and `read()`'s own comment calls that the failure it
+exists to prevent: *"a typo answered silently leaves a component switched off forever and nothing ever
+says why."*
+
+**And `could_not` named nothing**, against this module's rule stated twice in its own docstring — what
+it cannot judge is *"named and left alone"*, because *"the failure of the alternative is silent."* It
+was neither: the flag was changed, and to nothing.
+
+### The suite already asked for this and could not catch it
+
+Section 1 asserts `FLG.meaning(state) is not None` over **every swept flag**. The fixture `table()`
+holds no flag that was created after the moment — so **nothing ever handed the check the thing the
+rule exists to refuse.** [Rows 5b-102](FRAGMENT-ISSUES.md), 5b-106 and 5b-109 are that shape exactly,
+and this is the fourth.
+
+`_target()` refuses with a new **`NO_STATE_THEN`** and leaves the flag alone, which is the answer this
+file already gives `NO_HISTORY` for the same reason. **The test is the flag agent's own vocabulary,
+not a second copy** — `FLG.meaning(target) is None`. **The flag is not removed**: Golden Rule 4, a
+record is never destroyed.
+
+```bash
+python tests/test_safemode.py      # section 8b, 4 red against the module as found
+```
+
+**It had to go in at 8b rather than at the end**, because section 8's last check asserts every
+declared failure was **reached** — a new refusal exercised after it reads as unreached. **Confirmed
+the hard way rather than assumed**: the fix was reverted, the suite re-run to see the same four go red
+at the new position, and restored.
+
+**One thing checked and dismissed**: `_moment` accepts both `T` and a space as the date/time separator
+and compares as text, so two changes at the same instant in different spellings would sort wrongly.
+`heron_flags` writes whatever the approval's `at` says, so the shape comes from the caller — but **no
+mixed-format table exists anywhere in the repository**, and a row about it would be a finding made
+from a shape rather than from a measurement.
+
 ### 2026-09-22 — "HERON HAS NO COPY OF ISO 19650" ABOUT A STORE THAT HAS IT
 
 **[Row 5b-114](FRAGMENT-ISSUES.md) and [row 5b-115](FRAGMENT-ISSUES.md), both FIXED.

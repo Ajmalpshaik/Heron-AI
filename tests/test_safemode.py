@@ -300,6 +300,39 @@ def main():
     check("which side of it a change falls" in ask(table(),
                                                    since="yesterday")["why"],
           "and says why the shape of it matters")
+    print()
+    print("8b. A flag that did not exist at the moment is named, not swept")
+    # ROW 5b-116. heron_flags.set_flag records `was` as
+    # str(entry.get("state") or "").strip().upper(), so the FIRST change to a
+    # flag carries was="" - there was no state before it. _target walks back
+    # to that change and returns "" as the state to restore, and enter()
+    # wrote it: state "", which is not one of OFF, ON, TEST.
+    #
+    # Measured before the fix: set_flag REFUSES that state with
+    # NOT_A_FLAG_STATE, and read() answers refused=NOT_A_FLAG_STATE,
+    # runs=False - so the component is off forever, which read()'s own
+    # comment calls the thing it exists to prevent. And could_not named
+    # nothing, against this module's twice-stated rule that what it cannot
+    # judge is named and left alone.
+    #
+    # SECTION 1 ALREADY ASKS FOR THIS and could not catch it: it asserts
+    # FLG.meaning(state) is not None over answer["swept"], and table() has
+    # no flag that was created after the moment - so nothing ever handed the
+    # check the thing the rule exists to refuse.
+    born = dict(table(), NewGuard={"state": "OFF", "changes": [
+        change("OFF", "", "2026-09-14T10:00Z")]})
+    answer = ask(born)
+    left = dict((e.get("flag") or e.get("component"), e["refused"])
+                for e in answer["could_not"])
+    check(left.get("NewGuard") == "NO_STATE_THEN",
+          "a flag created after the moment is NAMED rather than swept")
+    check(answer["flags"]["NewGuard"]["state"] == "OFF",
+          "and really is left alone, not moved to a state nobody can read")
+    check(not any(e["flag"] == "NewGuard" for e in answer["swept"]),
+          "so it never reaches the swept list at all")
+    check(all(FLG.meaning(e["to"]) is not None for e in answer["swept"]),
+          "and nothing is swept to a state heron_flags would refuse to write")
+
     contract = CON.load(os.path.join(ROOT, "brain", "agents",
                                      "HERON-OPS-SAF-008.yaml"))
     named = contract.get("failures") or []
