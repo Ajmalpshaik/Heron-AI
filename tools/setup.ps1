@@ -180,7 +180,7 @@ if ($succeeded.Count -gt 0) {
     Write-Host ""
     Write-Host "  Then:"
     Write-Host "    1. Start Revit"
-    Write-Host "    2. Ribbon -> Heron AI -> Heron   (click to connect, again to disconnect)"
+    Write-Host "    2. Ribbon -> Heron -> AI Bridge -> Heron   (click to connect, again to disconnect)"
     Write-Host "    3. Back here, run:"
     Write-Host "         python mcp\client\heron_bridge_client.py ping" -ForegroundColor White
     Write-Host ""
