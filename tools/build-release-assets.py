@@ -229,6 +229,81 @@ def pack(product, release, out_dir):
     return path
 
 
+# WHAT A USER'S FOLDER HOLDS, AND WHAT IT DELIBERATELY DOES NOT - R-51.
+#
+# The owner's decision on 2026-09-22: one download carries the built plugin AND
+# the brain, so the Connect button stops opening a pipe nobody answers
+# (Q-PE-13). What the user keeps is the folder Claude Code is opened in
+# afterwards (Q-PE-14, R-52).
+#
+# IT IS NOT A COPY OF THE REPOSITORY. tests/ is 171 MB and revit/ is 315 MB of
+# source and build output; neither does anything on a modeller's PC. tools/ is
+# how Heron is DEVELOPED, and .claude/ is house rules for working ON Heron
+# rather than anything Heron does for a modeller - brain/skills/ is that, and
+# it is included.
+#
+# The first cut errs WIDE on purpose: docs/ is 5.8 MB and the AI reads it.
+# Shipping more than needed is recoverable; shipping less is a user whose
+# question has no answer on their disk.
+WORKSPACE_KEEP = [
+    "brain",                        # fragments, skills, agents - the knowledge
+    "mcp",                          # the server .mcp.json starts
+    "docs",                         # what the AI reads to answer
+    ".mcp.json",                    # Claude Code reads this from the folder it opens
+    "README.md",
+    os.path.join("platform", "heron-products.json"),   # the installer's own list
+]
+
+# NEVER, wherever they appear. __pycache__ is a build artefact that differs
+# between machines, and .git is the whole history - neither belongs in a
+# handover folder, and .git would carry every deleted file ever committed.
+WORKSPACE_NEVER = ("__pycache__", ".git", "bin", "obj")
+
+WORKSPACE_NAME = "heron-project.zip"
+
+
+def workspace(out_dir):
+    """
+    Zip what the user keeps beside the plugin. Returns the asset's path.
+
+    NAMED heron-project.zip BECAUSE docs/07 AND Q-PE-14 ALREADY CALL IT THE
+    PROJECT FOLDER, and a second word for one thing is how two words drift
+    apart. Recorded once, because it is a real risk and not a comfortable one:
+    to a Revit modeller "project" means the .rvt they have open, and this is
+    not that. If it confuses the first user it is a rename, not a redesign.
+    """
+    path = os.path.join(out_dir, WORKSPACE_NAME)
+
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zf:
+        for keep in WORKSPACE_KEEP:
+            full = os.path.join(ROOT, keep)
+
+            if os.path.isfile(full):
+                zf.write(full, keep)
+                continue
+
+            if not os.path.isdir(full):
+                # SAID, NEVER SKIPPED IN SILENCE. A folder that was renamed and
+                # not renamed here would otherwise ship a workspace missing the
+                # brain, and the first anybody knew would be a Connect button
+                # that still answers nothing.
+                raise IOError(
+                    "R-51 says the download carries the brain, and '%s' is not "
+                    "in this repository. Either it moved and WORKSPACE_KEEP did "
+                    "not, or it was deleted. Publishing without it would ship a "
+                    "workspace that cannot answer anything." % keep)
+
+            for base, dirs, files in os.walk(full):
+                dirs[:] = [d for d in dirs if d not in WORKSPACE_NEVER]
+                for name in sorted(files):
+                    if name.endswith(".pyc"):
+                        continue
+                    one = os.path.join(base, name)
+                    zf.write(one, os.path.relpath(one, ROOT))
+
+    return path
+
+
 def checksums(out_dir):
     """
     SHA-256 of every asset, for R-12.
@@ -340,6 +415,15 @@ def main():
             continue
         path = pack(product, release, out_dir)
         print("    %s  %d bytes" % (os.path.basename(path), os.path.getsize(path)))
+
+    # THE BRAIN, ONCE, BESIDE THE EIGHT RELEASES OF PLUGIN - R-51. It follows
+    # no Revit release, so it is packed once rather than eight times, and it is
+    # packed BEFORE the checksums because checksums.txt is the completion mark
+    # for the whole folder.
+    if not failed:
+        print("  packing the workspace - brain, skills, MCP and docs")
+        made = workspace(out_dir)
+        print("    %s  %d bytes" % (os.path.basename(made), os.path.getsize(made)))
 
     if failed:
         print()

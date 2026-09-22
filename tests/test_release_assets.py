@@ -39,7 +39,10 @@ import io
 import json
 import os
 import re
+import shutil
 import sys
+import tempfile
+import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
@@ -273,6 +276,81 @@ def main():
     check(not invented,
           "no step here looks like a gate: %s"
           % (", ".join(invented) if invented else "none does"))
+
+    print()
+    print("THE DOWNLOAD CARRIES THE BRAIN, NOT ONLY THE PLUGIN - R-51")
+    # The owner's decision, 2026-09-22, answering Q-PE-12/13/14 at once: one
+    # download holds the built plugin AND the brain, so the Connect button
+    # stops opening a pipe nobody answers.
+    #
+    # RUN FOR REAL, not read. The zip is built into a temporary folder and
+    # opened, because a list of folder names in a constant proves nothing
+    # about what ends up inside - and what ends up inside is the whole claim.
+    workspace = getattr(BRA, "workspace", None)
+    keep = getattr(BRA, "WORKSPACE_KEEP", None)
+    check(workspace is not None and keep is not None,
+          "the builder can pack a workspace at all")
+
+    if workspace is not None:
+        made = tempfile.mkdtemp(prefix="heron-workspace-")
+        try:
+            path = workspace(made)
+            with zipfile.ZipFile(path) as zf:
+                names = zf.namelist()
+
+            check(len(names) > 500,
+                  "the workspace is not nearly empty: %d entries" % len(names))
+
+            # THE BRAIN, BY NAME. Q-PE-13 was "nothing installs the brain";
+            # this is the line that makes it false.
+            for needed in (".mcp.json",
+                           "platform/heron-products.json",
+                           "mcp/server/heron_mcp_server.py"):
+                check(needed in names, "it carries %s" % needed)
+            for folder in ("brain/fragments/", "brain/skills/", "docs/"):
+                check(any(n.startswith(folder) for n in names),
+                      "it carries %s" % folder)
+
+            # AND WHAT IT MUST NOT CARRY. tests/ is 171 MB and revit/ is 315 MB
+            # of source; .git is every file ever deleted; __pycache__ differs
+            # between machines. None of it does anything on a modeller's PC.
+            for never in ("tests/", "revit/", "tools/", ".git/"):
+                offenders = [n for n in names if n.startswith(never)]
+                check(not offenders,
+                      "and nothing from %s%s" % (never, "" if not offenders
+                                                 else " - found %d" % len(offenders)))
+            junk = [n for n in names if "__pycache__" in n or n.endswith(".pyc")]
+            check(not junk, "and no __pycache__ or .pyc%s"
+                  % ("" if not junk else " - found %d" % len(junk)))
+        finally:
+            shutil.rmtree(made, ignore_errors=True)
+
+    # A FOLDER THAT MOVED MUST STOP THE RELEASE, not quietly ship a workspace
+    # with no brain in it. The first anybody would know is a Connect button
+    # that still answers nothing.
+    was = BRA.WORKSPACE_KEEP
+    try:
+        BRA.WORKSPACE_KEEP = was + ["brain-renamed-yesterday"]
+        made = tempfile.mkdtemp(prefix="heron-workspace-")
+        try:
+            refused = False
+            try:
+                workspace(made)
+            except IOError as e:
+                refused = "R-51" in str(e) and "brain-renamed-yesterday" in str(e)
+            check(refused,
+                  "a folder named in WORKSPACE_KEEP that is not there stops the "
+                  "release, and the refusal names it")
+        finally:
+            shutil.rmtree(made, ignore_errors=True)
+    finally:
+        BRA.WORKSPACE_KEEP = was
+
+    check("heron-project.zip" in tool,
+          "and the workspace has a name of its own beside the product zips")
+    check("if not failed" in tool,
+          "it is packed only when every product built - a workspace beside a "
+          "half-built release is a download that installs nothing")
 
     print()
     if FAILURES:
