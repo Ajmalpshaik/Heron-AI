@@ -48,6 +48,10 @@ WHAT IT PROVES
      puts brain/ at sys.path[0], so a shared name is silently shadowed - the
      import succeeds, binds the wrong module and fails one layer later. It
      happened on 2026-09-22 to a module called heron_contract.
+  7. The two guards closed PR #289 carried and nothing on main held: the
+     override hint names every setting the add-in's own refusal lists (read
+     out of RevitFragment.cs, not retyped), and heron_resolve reports an
+     unreadable contract rather than printing it as nothing to type.
 
 WHAT IT CANNOT DO
   It does not prove a hint is TRUE beyond the strings it reads out of the C#.
@@ -226,6 +230,41 @@ def main():
             shared = sorted(roots[one] & roots[two])
             check(not shared, "%s and %s share no module name%s"
                   % (one, two, "" if not shared else " - " + ", ".join(shared)))
+
+    # --- 7. the two guards PR #289 carried, kept when it closed --------------
+    #
+    # #289 was closed as a duplicate of #284, and these were the two checks it
+    # had that nothing on main held. Carried here so closing it lost nothing.
+    print()
+    print("The override hint names every setting the add-in accepts")
+    # THE HINT THAT COST FOUR REFUSALS. On 2026-09-22 the nine settings were
+    # learned one refusal at a time; a trimmed hint would send the next caller
+    # straight back there. The list is read out of the add-in's own refusal,
+    # never retyped, so a tenth setting added in C# goes red here first.
+    start = csharp.find("is not a graphic override Heron can set. It takes")
+    end = csharp.find("separated with", start)
+    region = csharp[start:end] if start >= 0 and end > start else ""
+    flat = re.sub(r'"\s*\+\s*"', "", region).split("It takes", 1)[-1]
+    settings = [s.strip(' -"') for s in re.split(r",|\band\b", flat)
+                if s.strip(' -"')]
+    check(len(settings) >= 5,
+          "the add-in's refusal lists its override settings: %s" % settings)
+    override = HF.how_to_type("OverrideGraphicSettings")
+    for setting in settings:
+        check(setting in override,
+              "the OverrideGraphicSettings hint names %s" % setting)
+
+    print()
+    print("heron_resolve says so when it cannot read a contract")
+    # A needs list that cannot be read must not print as an empty one: 77
+    # fragments legitimately need nothing typed, so silence is already an
+    # answer and a failure rendered as silence sends the caller back to
+    # guessing. Read as TEXT, because importing the server needs the MCP SDK.
+    server = io.open(os.path.join(ROOT, "mcp", "server",
+                                  "heron_mcp_server.py"),
+                     encoding="utf-8").read()
+    check("rather than listed short" in server,
+          "an unreadable contract is reported, not printed as 'nothing to type'")
 
     print()
     if FAILURES:

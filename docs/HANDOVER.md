@@ -210,12 +210,18 @@ The other 40 types already had a right hint. Four were name-rule misses — `Vie
 `Element`, so the `\b` patterns walked past all four.
 
 ```bash
-python tests/test_how_to_type.py      # 36 clauses; 21 of them fail against main before this change
+python tests/test_how_to_type.py      # all pass; against main's hints before this change, 21 fail
 ```
 
 Seen to fail against `main`'s `heron_fragment.py` — **21 clean failures, no traceback**, each naming
 a fragment that asks for the type. `NO_HINT_ON_PURPOSE` is read through `getattr`, which is why it
 fails rather than crashes.
+
+**Closing #289 lost nothing.** Its code stays reachable at `refs/pull/289/head` (`51f6ccb`). The two
+checks it had that nothing on `main` held are carried into the same suite: the override hint must name
+every setting the add-in's own refusal lists, read out of `RevitFragment.cs` rather than retyped; and
+`heron_resolve` must report an unreadable contract rather than print it as nothing to type. Both were
+seen to go red on a trimmed hint and a changed wording.
 
 #### Two traps worth knowing before touching `mcp/`
 
