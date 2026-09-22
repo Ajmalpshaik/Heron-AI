@@ -124,6 +124,81 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — A SKILL WHOSE RISK IS NOT A RISK IS EXEMPT FROM EVERY RISK CHECK
+
+**[Row 5b-140](FRAGMENT-ISSUES.md), FIXED.** `tools/check-skill-routing.py` read end to end — 770
+lines, and **no suite loads it**.
+
+`classify()` decides a crossing by comparing two declared risks. `rung()` answers **-1** for anything
+off the ladder and `ASKS_A_QUESTION` does not hold, so **every risk branch falls through**:
+
+```
+classify("",         "ADMIN",  ...)  ->  miss
+classify("Modifies", "MODIFY", ...)  ->  miss
+```
+
+And such a skill **is** routed. `heron_skill.load_all()` handles a file it could not parse and a file
+with no id, but **does not call `heron_skill.validate()`** — validation is a separate function.
+Measured on a fixture: a skill with no `risk:` and one with `risk: Modifies` both came back in `found`
+with **zero problems reported**. The report's only heading about skills it did not route says *"SKILLS
+THAT WOULD NOT LOAD"*, which such a skill is not one of — so the reader is shown **`CROSSINGS: 0`** for
+a skill whose risk nothing knows.
+
+**Not a live failure, and that is part of the finding.** All ten skills declare a risk on the ladder,
+and `tests/test_skills.py` calls `validate()`, so CI would name such a file. What was missing is this
+tool saying so about the verdicts **it is the only one making**. `skills()` answers
+`(loaded, problems, unrated)` now, and the report names them.
+
+#### A correction to this session's own measurement
+
+**Two pull requests carried it, so it is written down here.** This tool was called *"named by a suite
+only in prose"*. That was **wrong**: `classify`, `unsettled`, `words_moved`, `fingerprint_lines` and
+`NOTHING_FOUND` are all exercised by `tests/test_skill_proving.py` and `tests/test_skill_catalog.py`,
+**through `prove-skill.py` and `generate-skill-catalog.py`, which import them** — a second hop the
+first scan did not follow.
+
+**Re-measured counting that hop, exactly two never-read tools are run by nothing at all** — not
+directly, not through another tool, not by CI:
+
+| tool | lines |
+|---|---|
+| `check-risk-crossings.py` | 440 |
+| `api-changes.py` | 208 |
+
+What nothing touched *here* is the tool's **own** half — `skills`, `without_the_store`,
+`declared_by_fragments`, `margin`, `rung` — and that is what the new suite is. It deliberately does
+**not** re-assert the five verdicts `test_skill_proving.py` already pins: two copies of a judgement is
+the thing this tool's own docstring argues against.
+
+#### Traced and not raised
+
+`--revit` is not validated, but an unsupported release is **not** the [row 5b-127](FRAGMENT-ISSUES.md)
+shape. Measured at `2019` and at `banana`: all 43 utterances land in a loudly printed
+**NOT RESOLVED (43)** with every other list at zero, and the release used is the first line of the
+report. Argparse also refuses an unknown flag here, unlike rows 5b-112, 5b-127, 5b-129 and 5b-132.
+
+**Left for whoever reads `prove-skill.py`:** `classify` is **imported** by it, so the same silence is
+in its proof path. Changing `classify`'s five return values from inside a tool that has not been read
+would be widening someone else's contract, so the report was made honest instead.
+
+| Break | Red |
+|---|---|
+| **`skills()` back to two answers** (the module as found) | **1** |
+| `rung()` answering 0 instead of -1 for an unknown risk | 2 |
+| an OUT counted as inside the skill's plan | 1 |
+| counts that could not be read reported as zero | 1 |
+| one sentence claimed by two skills no longer reported | 1 |
+
+#### Four things measured and found right
+
+The identity/ranking split is read from disk so it cannot wobble between runs (row 116); an OUT is a
+guaranteed disagreement and is marked as one; `margin` reports the two routes' **ranks** rather than
+inventing a scalar the seam does not carry — which is why row 109's *"2.4 ranks clear"* is not
+reproducible here and was taken by hand; and a store whose counts could not be read says so under D-52
+instead of reading as empty.
+
+---
+
 ### 2026-09-22 — A SIGNATURE THE PROOF TOOL COULD NOT WRITE WAS RECORDED AS SIGNED
 
 **[Row 5b-139](FRAGMENT-ISSUES.md), FIXED.** `tools/prove-agent.py` read end to end — 934 lines, **and
