@@ -124,6 +124,63 @@ front of all 135 DRAFT READ fragments** — see [the verification pass](handover
 | Bindable inputs | **CLOSED 2026-09-09.** PART 6 bound what the selection and the previous fragment could give; the caller's half — a category, a name, a distance — arrives as text now and is resolved inside Revit (D-54). It was the largest unlock left: **287 of 360 fragments** declare such a need, 675 needs between them. **Widened again 2026-09-09**: an element TYPE by name, nine narrower classes (`WallType`, `Phase`, `FilterElement` and the rest), and **a point in millimetres** ([D-67](DECISIONS.md)) — which took the arrangeable library from 6 to 40. **Widened again 2026-09-14** ([D-72](DECISIONS.md)): pairs of points (a PIPE between them), `OverrideGraphicSettings`, `ForgeTypeId`, `ParameterValue`, and the word `selected` for a LIST of element ids - six more fragments arrangeable. **What is still refused is now ONE thing and it is not a missing rule: `IList<Reference>`, a FACE.** A face is picked with a mouse and no text names one, so `place-family-on-face` needs Revit's own picking rather than a parser. Derive the rest with `python tools/generate-jobs.py` |
 | Branches | **`main` only** after PR #142 merged on 2026-09-15 (211 agents, the fragment compile, the full Revit API surface). **`main` only, and it is the only branch that exists.** **Sixteen PRs were merged on 2026-09-09** (#44–#61) and every branch behind them is deleted — the role-declaration stack, the silence-illegal fixes, the job generator, and the proving track. **Start from `main`**; nothing is parked outside it. The sha is not written here - `git log --oneline -1 origin/main` - because it moved twice while this row was being read |
 
+### 2026-09-22 — THREE AGENTS ARE COUNTED AS BUILT BY A TEST SUITE'S HEADER
+
+**[Row 5b-145](FRAGMENT-ISSUES.md) RAISED — OPEN, and it is the owner's.**
+`tools/generate-contract-reference.py` read end to end — 718 lines — and **the tool is SOUND**. It is
+marked `clean` in the ledger. What follows is what it correctly **reports**, on every run, and nothing
+records.
+
+#### The disagreement, measured
+
+| tool | what it says |
+|---|---|
+| `generate-contract-reference.py` | *"**A SUITE IS NOT THE AGENT.** tests/ files carry the same `Heron-Agent` header — which is right, it is how a suite says what it proves — … It is just not read for what the agent does."* |
+| `agent-count.py`, **which owns the count** | lists `"tests"` in `SOURCE_ROOTS` and makes no distinction — any file claiming an agent makes it **BUILT** |
+
+**The three**, confirmed by calling `agent-count.built()` directly:
+
+| agent | only claimant |
+|---|---|
+| `HERON-DEV-INT-012` | `tests/test_bridge_roundtrip.py` |
+| `HERON-RAG-DUP-012` | `tests/test_maintenance.py` |
+| `HERON-RAG-RIX-011` | `tests/test_maintenance.py` |
+
+**What it moves.** `agent-count` reports `0 outstanding`, `docs/28` publishes **Totals: 250 agents**,
+and `balance-of-work` row 3 reads **0 of 250 agents left to build**. If a suite-only claim is not a
+build, that zero is wrong by three.
+
+**One of the three is already yours and is not new**: `DEV-INT-012` is in `DECISIONS.md`'s F27 table,
+which closes two of four and says *"the other two are unchanged and are the owner's"*. **The other two
+are recorded nowhere as a defect** — the RAG plan notes say `RAG-RIX-011` is *"Re-index on change. The
+hashing exists; **nothing fires it**"*, both marked for Stage 6.
+
+**This is [row 5b-95](FRAGMENT-ISSUES.md)'s shape a second time.** That row exists because this same
+page *"already reports these on every run and nothing records them, so they are re-discovered and never
+closed"*. This is the other half of the same page's output, and it had the same fate.
+
+**Raised, not fixed, and it is a definition.** Does a claim by a suite alone count as built? Changing
+`agent-count`'s `SOURCE_ROOTS` would move a figure in `docs/28`, in `agent-count`'s own reconciliation
+and in the balance page. **You write the sentence; the two tools then follow it.**
+
+#### What was measured and found right, so nobody re-reads it
+
+- The page's claim table **agrees exactly with `agent-count`** — 239 each, nothing in one and not the
+  other, in either direction. That is the tool's own standard, since its comment says agent-count owns
+  the count.
+- `claims()` reads the first **2000 characters** where `agent-count` reads the first **40 lines**. Not
+  a live difference: the latest any `Heron-Agent` line starts in a claiming file is **47 characters
+  in**, a margin of 1953.
+- No file carries two `Heron-Agent` lines inside that window, so `dict(HEADER.findall(...))` keeping
+  the last one cannot bite today.
+- `tests/test_contract_reference.py` already holds the conclusion properly — six claims, both
+  directions, the docstring distinction, and that every finding on the page is real.
+
+**Run into a scratch path**, never over the committed page: 127 contracts, 1460 fields, 659 declared
+refusals, 112 built without a contract, exit 0.
+
+---
+
 ### 2026-09-22 — THE SCAFFOLDER WROTE `Heron-Step: banana` AND EXITED 0
 
 **[Row 5b-144](FRAGMENT-ISSUES.md), FIXED.** `tools/new-agent.py` read end to end — 410 lines.
