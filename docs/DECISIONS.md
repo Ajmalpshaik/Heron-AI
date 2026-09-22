@@ -62,9 +62,11 @@ an edit.
 > 2026-09-12, by which time it stopped at **D-50** while the file had reached **D-70** — twenty
 > decisions missing from the index of decisions, with nothing able to notice.
 >
-> **A status cell is kept verbatim once written.** *"read back 2026-09-06"* records a
-> conversation, not a fact on disk, so the generator never overwrites one — it only fills in
-> rows that do not exist yet.
+> **A status cell a person wrote is kept verbatim.** *"read back 2026-09-06"* records a
+> conversation, not a fact on disk, so the generator never overwrites one — it fills in rows
+> that do not exist yet, and it re-derives its OWN placeholder, which records nothing anybody
+> said. A decision that states no status still reads *"status not stated"*; one that has
+> since been given a status catches up.
 
 | # | Decision | Status |
 |---|---|---|

@@ -30,6 +30,16 @@ This is the difference between generating a file and overwriting one. A
 generator that discarded those dates would lose the record of every read-back
 the owner has ever done, and it would look like tidying.
 
+BUT ITS OWN PLACEHOLDER IS NOT CURATION, AND WAS KEPT AS IF IT WERE. A
+decision that states no status gets `• status not stated` derived for it,
+and that cell was then preserved like any other. Measured 2026-09-22: give
+D-72 a `**Status:**` line and `--check` still answered "Status summary is
+current: 97 decision(s), none missing" and exited 0, while the table read
+`• status not stated`. Seven of the 97 decisions carry no `**Status:**`
+line, and D-72's cell is that placeholder, frozen. A cell this tool wrote
+itself records nothing anybody said, so it is re-derived rather than kept -
+and a decision that still states nothing still reads that it does.
+
 USAGE
 -----
     python tools/generate-decision-summary.py            rewrite in place
@@ -49,6 +59,13 @@ HEADING = re.compile(r"^## (D-\d+)\s+—\s+(.+?)\s*$")
 STATUS = re.compile(r"^\*\*Status:\*\*\s*(.+?)\s*(?:·|$)")
 DATE = re.compile(r"\*\*Date:\*\*\s*([0-9]{4}-[0-9]{2}-[0-9]{2})")
 ROW = re.compile(r"^\|\s*\[(D-\d+)\]\([^)]*\)\s*\|(.*)\|(.*)\|\s*$")
+
+# ONE SPELLING, used both to write the placeholder and to recognise it again.
+# Two copies of it is how one of them goes stale and the other stops matching.
+BULLET = "•"
+NOTHING_STATED = "status not stated"
+PLACEHOLDER = re.compile(r"^%s\s*%s(?:\s*·\s*\d{4}-\d{2}-\d{2})?$"
+                         % (re.escape(BULLET), re.escape(NOTHING_STATED)))
 
 
 def w(s):
@@ -88,8 +105,9 @@ def main():
             if d and not date:
                 date = d.group(1)
         mark = {"Accepted": "✅", "Proposed": "⏳", "Fulfilled": "✔",
-                "Superseded": "↩"}.get(status.split()[0] if status else "", "•")
-        derived = "%s %s" % (mark, status or "status not stated")
+                "Superseded": "↩"}.get(status.split()[0] if status else "",
+                                        BULLET)
+        derived = "%s %s" % (mark, status or NOTHING_STATED)
         if date:
             derived += " · %s" % date
         decisions.append((m.group(1), m.group(2), derived))
@@ -126,20 +144,31 @@ def main():
         "> 2026-09-12, by which time it stopped at **D-50** while the file had reached **D-70** — twenty",
         "> decisions missing from the index of decisions, with nothing able to notice.",
         ">",
-        "> **A status cell is kept verbatim once written.** *\"read back 2026-09-06\"* records a",
-        "> conversation, not a fact on disk, so the generator never overwrites one — it only fills in",
-        "> rows that do not exist yet.",
+        "> **A status cell a person wrote is kept verbatim.** *\"read back 2026-09-06\"* records a",
+        "> conversation, not a fact on disk, so the generator never overwrites one — it fills in rows",
+        "> that do not exist yet, and it re-derives its OWN placeholder, which records nothing anybody",
+        "> said. A decision that states no status still reads *\"status not stated\"*; one that has",
+        "> since been given a status catches up.",
         "",
         "| # | Decision | Status |",
         "|---|---|---|",
     ]
-    added = []
+    added, caught_up = [], []
     for ident, title, derived in decisions:
         anchor = anchor_of("%s — %s" % (ident, title))
         status = existing.get(ident)
         if status is None:
             status = derived
             added.append(ident)
+        elif PLACEHOLDER.match(status):
+            # NOT CURATION. This cell is one this tool wrote because the
+            # decision stated nothing, so it records nothing anybody said.
+            # Keeping it means a decision that has SINCE been given a status
+            # never reaches the table, and --check goes on calling the table
+            # current - which is the one thing this tool exists to prevent.
+            if derived != status:
+                caught_up.append(ident)
+            status = derived
         table.append("| [%s](#%s) | %s | %s |" % (ident, anchor, title, status))
     table.append("")
 
@@ -153,6 +182,9 @@ def main():
         w("STALE: the Status summary does not match the decisions.\n")
         if added:
             w("  missing from the table: %s\n" % ", ".join(added))
+        if caught_up:
+            w("  now state a status the table never picked up: %s\n"
+              % ", ".join(caught_up))
         w("  Fix: python tools/generate-decision-summary.py\n")
         return 1
 
@@ -160,6 +192,9 @@ def main():
     w("Rewrote the Status summary: %d decision(s).\n" % len(decisions))
     if added:
         w("  added %d missing row(s): %s\n" % (len(added), ", ".join(added)))
+    if caught_up:
+        w("  caught %d placeholder(s) up with the decision: %s\n"
+          % (len(caught_up), ", ".join(caught_up)))
     return 0
 
 
