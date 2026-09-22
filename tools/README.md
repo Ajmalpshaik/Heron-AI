@@ -339,6 +339,38 @@ member. A checker that finds nothing is evidence about the checker until it has 
 
 ---
 
+## `api-surface --members` — what one call looks like on every release
+
+```bash
+python tools/check-api-surface.py            # once, to fetch every release into the cache
+dotnet run --project tools/api-surface -- --members WorksharingUtils
+dotnet run --project tools/api-surface -- --members ElementId.IntegerValue
+dotnet run --project tools/api-surface -- --members Duct --inherited
+```
+
+The two tools above read Revit's API **by name**, and both say what that cannot see: a member whose
+parameters, return type or setter changed, and an `[Obsolete]` mark, which is an attribute and not a
+name. This reads exactly those, for one type at a time — every public member as each cached release
+declares it, with the releases that have it **exactly** as written. A member re-signed between two
+releases is two lines, each with its own years; an obsolete one carries its message and the years it
+was marked. `ElementId.IntegerValue` reads as present 2020–2025 and marked obsolete 2024–2025 — the
+two years of warning a name-only reader cannot see.
+
+Its own file is [`api-surface/Members.cs`](api-surface/Members.cs). It reads the cache
+`check-api-surface.py` fills — no Revit, no network — and names every release it read, so one that was
+never fetched is visibly absent rather than read as having nothing. A named indexed property such as
+`Element.BoundingBox[View]` is printed with how C# calls it (`get_BoundingBox(...)`), because it is not
+an indexer. A signature naming a type this machine cannot resolve — WPF's, off Windows, for the ribbon
+images in `RevitAPIUI` — is still listed, with the assembly it needs, never dropped.
+
+**Exit codes:** 0 found · 1 no such type in any release read (it prints the names it nearly
+matched) · 2 no name given, or a short name that means more than one type (it names each) · **3 NOT
+RUN** — nothing cached to read, which is never an answer about Revit. Proved against libraries
+[`tests/test_api_members.py`](../tests/test_api_members.py) builds for itself, so CI can check it
+without Autodesk's assemblies.
+
+---
+
 ## `check-licence.py` — what licence is on the knowledge Heron ships
 
 ```bash
@@ -561,6 +593,7 @@ Reading two assemblies finds a member that is gone. It does not find one still t
 different unit, or now throws where it returned null, or whose meaning changed — and it does not find a
 **deprecation**, because `[Obsolete]` is an attribute and this reads names. A member marked in 2024 and
 deleted in 2026 appears at 2025 → 2026 and nowhere earlier, two years after the warning existed.
+`api-surface --members` (above) reads that attribute, and the signature, for one type at a time.
 
 ---
 

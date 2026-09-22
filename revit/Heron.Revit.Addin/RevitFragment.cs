@@ -25,13 +25,32 @@ namespace Heron.Revit.Addin
     /// Runs a fragment's C# against the open model - D-28's in-process Roslyn
     /// executor, and the thing 343 DRAFT fragments have been waiting for.
     ///
-    /// READ ONLY, AND THAT IS A STRUCTURAL GUARANTEE RATHER THAN A PROMISE.
-    /// Nothing here opens a transaction. Revit refuses every model change made
-    /// outside one, so a fragment run through this path CANNOT alter the
-    /// model - the enforcement is Revit's, not a check of ours that could be
-    /// forgotten. The write path is a separate operation and belongs in its
-    /// own file beside RevitWrite.cs, so that everything able to change a
-    /// model stays in one place a reviewer can read end to end.
+    /// TWO PATHS THROUGH ONE METHOD, and only one of them can write.
+    ///
+    ///   run_fragment_read   opens NO transaction. Revit refuses every model
+    ///                       change made outside one, so a fragment run this
+    ///                       way CANNOT alter the model - the enforcement is
+    ///                       Revit's, not a check of ours that could be
+    ///                       forgotten.
+    ///   run_fragment_write  opens ONE TransactionGroup, so the whole job is
+    ///                       one undo, and inside it one Transaction for each
+    ///                       setup step that writes and one for the fragment.
+    ///
+    /// THIS PARAGRAPH SAID THE WHOLE FILE WAS READ ONLY until 2026-09-23 -
+    /// "Nothing here opens a transaction", and a write path that "belongs in
+    /// its own file beside RevitWrite.cs" - for as long as the write path had
+    /// been built into Run below. A reviewer trusting the summary would not
+    /// have looked for the transactions, and they were the half with no
+    /// failure handling.
+    ///
+    /// EVERY TRANSACTION THE WRITE PATH OPENS ANSWERS REVIT'S FAILURES ITSELF,
+    /// from 2026-09-23 - see Discipline. A warning is dismissed and reported;
+    /// anything else rolls the whole job back, quoted in Revit's words; and
+    /// Revit's own resolution, which for an error can be to DELETE the
+    /// elements it names, is never applied. RevitWrite, the move path, has had
+    /// that discipline from the start and this path had none. The rule itself
+    /// is in HeronFailureNote, proved without Revit by
+    /// tests/Heron.FailureNote.TestHost.
     ///
     /// WHAT A FRAGMENT FINDS IN SCOPE IS HeronFragmentGlobals, and it is a
     /// public TOP-LEVEL type for a reason found by running this rather than by
@@ -492,6 +511,13 @@ namespace Heron.Revit.Addin
             // for one - see SafeRollBack.
             var rolledBack = false;
 
+            // WHAT REVIT SAID WHILE THE JOB RAN - every setup step that writes
+            // and the fragment itself - and what Heron did about each. Filled
+            // by the preprocessor Discipline puts on every transaction below,
+            // read by the refusal and by the verdict. Empty on the read path,
+            // which opens no transaction for Revit to post anything to.
+            var said = new HeronFailureNote();
+
             if (!writing)
             {
                 threw = RunScript(script, globals, name, out state);
@@ -531,7 +557,7 @@ namespace Heron.Revit.Addin
                     // them in, and a setup step that writes has no business on
                     // a path whose whole guarantee is that Revit refuses it.
                     var setupError = RunSetupSteps(request, globals, target, uidoc,
-                                                   client, supplied, group, label);
+                                                   client, supplied, group, label, said);
                     if (setupError != null) return setupError;
 
                     // NOW the fragment can be given what the setup just made.
@@ -556,6 +582,12 @@ namespace Heron.Revit.Addin
                     using (var transaction = new Transaction(target, label))
                     {
                         transaction.Start();
+
+                        // BEFORE THE FRAGMENT RUNS, not before the commit: the
+                        // options belong to the transaction, and a fragment
+                        // that throws is rolled back through them too.
+                        Discipline(transaction, said, null);
+
                         threw = RunScript(script, globals, name, out state);
 
                         if (threw != null)
@@ -565,12 +597,25 @@ namespace Heron.Revit.Addin
                             return threw;
                         }
 
+                        // NOT COMMITTED MEANS DISCIPLINE ROLLED IT BACK, almost
+                        // always: Revit posted something that was not a plain
+                        // warning. `said` holds Revit's words for it, and the
+                        // refusal quotes them - "Revit did not accept the
+                        // change" was all this said until 2026-09-23, which
+                        // tells a modeller nothing they can act on.
+                        //
+                        // AND "THE MODEL IS EXACTLY AS IT WAS" IS SAID ONLY
+                        // WHEN REVIT REPORTED THE GROUP ROLLED BACK. It used to
+                        // be said unconditionally, on the strength of having
+                        // asked - the 2026-09-09 mistake WithVerdict was fixed
+                        // for, still standing on this branch. A write setup
+                        // step committed inside this group before the fragment
+                        // ran, so the group's rollback is what undoes it.
                         if (transaction.Commit() != TransactionStatus.Committed)
                         {
-                            SafeRollBack(group);
                             return Json.Error("operation_failed",
-                                "'" + name + "' ran but Revit did not accept the change, so "
-                                + "nothing was altered. The model is exactly as it was.");
+                                RefusedBy("'" + name + "' ran, and Revit would not keep it.",
+                                          said, SafeRollBack(group)));
                         }
                     }
 
@@ -589,7 +634,7 @@ namespace Heron.Revit.Addin
             var answer = Report(name, state, target, uidoc, app.ActiveUIDocument, bound,
                                 globals.__heron);
 
-            return writing ? WithVerdict(answer, apply, name, rolledBack) : answer;
+            return writing ? WithVerdict(answer, apply, name, rolledBack, said) : answer;
         }
 
         /// <summary>
@@ -621,7 +666,8 @@ namespace Heron.Revit.Addin
                                             string client,
                                             Dictionary<string, string> supplied,
                                             TransactionGroup group,
-                                            string label)
+                                            string label,
+                                            HeronFailureNote said)
         {
             var steps = Json.ReadObjectArray(request, "setup");
             if (steps == null || steps.Count == 0) return null;
@@ -699,6 +745,13 @@ namespace Heron.Revit.Addin
                 {
                     stepTransaction.Start();
 
+                    // THE SAME DISCIPLINE AS THE FRAGMENT'S OWN TRANSACTION, and
+                    // for the same reason: a setup step is C# that writes, and
+                    // an error in it left to Revit's own handling could delete
+                    // elements before the fragment under test ever ran. Named
+                    // for the step, so the reader can tell whose warning it was.
+                    Discipline(stepTransaction, said, stepName);
+
                     ScriptState<object> stepState;
                     var threw = RunScript(stepScript, globals, stepName, out stepState);
                     if (threw != null)
@@ -710,10 +763,10 @@ namespace Heron.Revit.Addin
 
                     if (stepTransaction.Commit() != TransactionStatus.Committed)
                     {
-                        SafeRollBack(group);
                         return Json.Error("setup_failed",
-                            "Revit did not accept the arrangement step '" + stepName
-                            + "', so nothing was run and the model is as it was.");
+                            RefusedBy("Revit would not keep the arrangement step '" + stepName
+                                      + "', so the fragment under test never ran.",
+                                      said, SafeRollBack(group)));
                     }
 
                     // WHAT IT LEFT, for the step after it and for the fragment
@@ -1062,6 +1115,149 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// Put a started transaction under Heron's failure rule, before anything
+        /// runs in it. EVERY Transaction this file opens goes through here -
+        /// tests/test_failure_note.py counts them - so none can reach Revit's
+        /// own failure handling.
+        ///
+        /// WHY IT MATTERS. When a transaction commits, Revit posts what went
+        /// wrong and asks the transaction's preprocessor first; with none, it
+        /// goes to Revit's own handling, and Revit's handling of an ERROR is a
+        /// resolution - one of which can be to DELETE the elements the error
+        /// names. Until 2026-09-23 no transaction here had a preprocessor, while
+        /// RevitWrite's move path always had one (earlier-brain plan, H4).
+        ///
+        /// SetClearAfterRollback, because Revit's own documentation of
+        /// ProceedWithRollBack says that without it "default failure processing
+        /// will continue, and failures may be delivered to the user even though
+        /// the transaction will be rolled back" - a dialog after the fact, in
+        /// front of whoever is at the machine, about a job that did not happen.
+        /// It covers the rollback of a fragment that THREW as well: whatever it
+        /// had posted is cleared with it, and the refusal says why it stopped.
+        /// </summary>
+        private static void Discipline(Transaction transaction, HeronFailureNote said, string step)
+        {
+            var options = transaction.GetFailureHandlingOptions();
+            options.SetFailuresPreprocessor(new FailureDiscipline(said, step));
+            options.SetClearAfterRollback(true);
+            transaction.SetFailureHandlingOptions(options);
+        }
+
+        /// <summary>
+        /// Reads what Revit posted at one commit and does what HeronFailureNote
+        /// decides: dismiss every warning, or roll the whole transaction back.
+        /// It NEVER returns Continue with anything left in the list and never
+        /// asks Revit to resolve anything, so Revit's own resolution never runs.
+        ///
+        /// FAILS CLOSED AT EVERY STEP IT CANNOT COMPLETE. A list it cannot read,
+        /// a severity it cannot read, a warning Revit will not let it dismiss -
+        /// each is a rollback with the reason recorded, because each is a
+        /// failure that would otherwise be left to Revit's handling, which is
+        /// the one thing this exists to prevent. Nothing is allowed to throw out
+        /// of here into Revit's failure processing.
+        /// </summary>
+        private sealed class FailureDiscipline : IFailuresPreprocessor
+        {
+            private readonly HeronFailureNote _said;
+            private readonly string _step;
+
+            public FailureDiscipline(HeronFailureNote said, string step)
+            {
+                _said = said;
+                _step = step;
+            }
+
+            public FailureProcessingResult PreprocessFailures(FailuresAccessor accessor)
+            {
+                try
+                {
+                    var messages = accessor.GetFailureMessages();
+
+                    // EVERY MESSAGE IS JUDGED BEFORE ANY WARNING IS TOUCHED -
+                    // the move path's order. A batch holding one error rolls
+                    // back whole, and its warnings are neither deleted nor
+                    // counted: nothing was kept for them to be about.
+                    var batch = new List<HeronFailureNote.Posted>(messages.Count);
+                    foreach (var message in messages) batch.Add(Read(message));
+
+                    if (_said.RollsBack(_step, batch, (int)FailureSeverity.Warning))
+                        return FailureProcessingResult.ProceedWithRollBack;
+
+                    // RollsBack answered false, so EVERY message is a warning.
+                    for (var i = 0; i < messages.Count; i++)
+                    {
+                        try
+                        {
+                            accessor.DeleteWarning(messages[i]);
+                        }
+                        catch (Exception failure)
+                        {
+                            _said.CouldNotDismiss(_step, batch[i].Text, batch[i].Elements,
+                                                  Innermost(failure).Message);
+                            return FailureProcessingResult.ProceedWithRollBack;
+                        }
+                    }
+
+                    return FailureProcessingResult.Continue;
+                }
+                catch (Exception failure)
+                {
+                    _said.Unreadable(_step, Innermost(failure).Message);
+                    return FailureProcessingResult.ProceedWithRollBack;
+                }
+            }
+
+            /// <summary>
+            /// One message, as numbers and words. The severity is read FIRST and
+            /// a severity that cannot be read becomes -1, which is not a warning,
+            /// so it rolls back. The words and the element count are only ever
+            /// description - a message whose text cannot be read is still judged.
+            /// </summary>
+            private static HeronFailureNote.Posted Read(FailureMessageAccessor message)
+            {
+                int severity;
+                try { severity = (int)message.GetSeverity(); }
+                catch (Exception) { severity = -1; }
+
+                string text = null;
+                try { text = message.GetDescriptionText(); }
+                catch (Exception) { }
+
+                var elements = 0;
+                try
+                {
+                    var ids = message.GetFailingElementIds();
+                    elements = ids == null ? 0 : ids.Count;
+                }
+                catch (Exception) { }
+
+                return new HeronFailureNote.Posted(severity, text, elements);
+            }
+        }
+
+        /// <summary>
+        /// A refusal after Revit would not keep a write: what stopped it, in
+        /// Revit's words, and what happened to the model - which is said only
+        /// as far as Revit confirmed it.
+        /// </summary>
+        private static string RefusedBy(string what, HeronFailureNote said, bool rolledBack)
+        {
+            var why = said.RefusedCount > 0
+                ? said.RefusedSentence()
+                : "Revit gave no reason Heron could read.";
+
+            var model = rolledBack
+                ? "Revit confirmed the rollback, so the model is exactly as it was."
+                : "Revit did NOT confirm the rollback, so THE MODEL MAY STILL HOLD PART OF THIS "
+                  + "JOB. Check what it would have changed before trusting anything here, and do "
+                  + "not save until you have.";
+
+            return what + " " + why + " Heron rolled the whole job back rather than let Revit "
+                 + "resolve it its own way - Revit's own fix for an error can be to delete the "
+                 + "elements it names. " + model;
+        }
+
+        /// <summary>
         /// Say, on the answer itself, whether the model was left changed.
         ///
         /// A WRITE THAT WAS ROLLED BACK LOOKS EXACTLY LIKE ONE THAT WAS KEPT -
@@ -1072,7 +1268,7 @@ namespace Heron.Revit.Addin
         /// distrust every number Heron has ever given them.
         /// </summary>
         private static string WithVerdict(string answer, bool applied, string name,
-                                          bool rolledBack)
+                                          bool rolledBack, HeronFailureNote said)
         {
             if (string.IsNullOrEmpty(answer) || !answer.EndsWith("}", StringComparison.Ordinal))
                 return answer;
@@ -1153,9 +1349,34 @@ namespace Heron.Revit.Addin
                         + "here, and do not save until you have.";
             }
 
+            // WHAT REVIT RAISED AND HERON DISMISSED, on the verdict itself -
+            // the one sentence the chat prints whole, so it reaches the
+            // modeller without the server having to learn a new field. Empty
+            // when nothing was raised, so a clean run reads exactly as it did.
+            var dismissed = said == null ? "" : said.DismissedSentence();
+            if (dismissed.Length > 0) verdict += " " + dismissed;
+
+            // AND EVERY ONE OF THEM, for anything reading the reply rather than
+            // the sentence: the sentence quotes a few kinds and counts the rest,
+            // and this is where "the rest" is. `warnings` is the move path's
+            // field name for the same count, so the two replies agree.
+            var listed = new List<string>();
+            if (said != null)
+            {
+                foreach (var one in said.Dismissed)
+                {
+                    listed.Add(Json.Obj(Json.Str("text", one.Text),
+                                        Json.Num("times", one.Times),
+                                        Json.Num("elements", one.Elements),
+                                        Json.Str("step", one.Step)));
+                }
+            }
+
             return answer.Substring(0, answer.Length - 1)
                  + "," + Json.Bool("applied", applied)
                  + "," + Json.Bool("rolledBack", rolledBack)
+                 + "," + Json.Num("warnings", said == null ? 0 : said.DismissedCount)
+                 + "," + Json.Arr("warningsDismissed", listed)
                  + "," + Json.Str("verdict", verdict) + "}";
         }
 

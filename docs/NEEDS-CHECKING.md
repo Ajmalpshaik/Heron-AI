@@ -879,6 +879,40 @@ deployed.
 | **E17** | Pin to a project, **close it** in Revit, then ask for a change | `no_such_document`, naming what IS open, and nothing written. Heron must not open a project by itself, and must not fall back to whatever is in front |
 | **E18** | Open **two** models both called `Project1` (one per Revit session, or a detached copy), pin one, ask for a change | `ambiguous_document` - it refuses rather than picking one. **Save one of them and repeat:** the paths now differ, so it must resolve cleanly and write into the right one |
 
+### E19-E24 - a fragment write answers Revit's failures itself, and a move skips what changed in central (2026-09-23)
+
+**Built in the cloud, compiled on all eight releases, and NEVER RUN IN REVIT.** Package C3 of the
+[earlier-brain plan](work-notes/plans/earlier-brain/02-work-packages.md).
+
+Until this change a fragment write - every capability `revit_change` runs - had **no Revit failure
+handling at all**: whatever Revit posted at commit went to Revit's own handling, and Revit's handling
+of an ERROR is a resolution, one of which can be to **delete the elements the error names**. Every
+transaction on that path now carries a preprocessor that dismisses and counts a WARNING, rolls the
+whole job back on ANYTHING else, and quotes Revit's words in the answer
+([`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs) `Discipline`, the rule in
+[`HeronFailureNote.cs`](../revit/Heron.Revit.Addin/HeronFailureNote.cs)). The move's pre-check
+([`RevitWrite.cs`](../revit/Heron.Revit.Addin/RevitWrite.cs) `Partition`) now also skips an element
+changed or deleted in central since this copy last reloaded, and says which reason applied.
+
+**What the cloud proved, and it is not these rows:** the rule itself, run 40 ways without Revit
+(`tests/test_failure_note.py`); that every transaction on the path is put under it before its script
+runs (the same suite, reading the code); that every Revit member called exists on 2020-2027
+(`tools/check-api-surface.py`). **Whether Revit then does what it is told is only answerable here.**
+
+**Every row runs on a DETACHED COPY first** ([Golden Rule 18](14-golden-rules.md)) - E21 and E22 exist
+to make Revit want to delete something - **and re-reads what was written afterwards**: an element
+count cannot see an edit ([FRAGMENT-ISSUES §1c](FRAGMENT-ISSUES.md)). E23 and E24 need a **workshared
+central with two local copies**.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **E19** | A write fragment arranged so Revit raises a **WARNING** at commit, run **with** apply - for example two elements of one category given the same Mark. **Confirm by hand first** that Revit shows it as a warning, not an error | **No dialog.** The change is kept; the verdict ends *"Revit raised N warning(s) while this ran, and Heron dismissed them..."* quoting Revit's words; the reply's `warnings` is N and `warningsDismissed` lists them; **one** Ctrl+Z undoes the whole job. A dialog appearing is a FAIL - it means Revit's handling was reached |
+| **E20** | E19 **without** apply | *"NOTHING WAS KEPT"*, the same warning sentence, no dialog - and the value E19 wrote is **not** in the model when re-read |
+| **E21** | A write fragment arranged so Revit raises an **ERROR** at commit. Candidate: lock a dimension between two grids, then move one grid - check by hand first that Revit calls it an error and offers a resolution (a *Remove Constraints* style button), which is exactly the resolution this must never apply | `operation_failed`, quoting Revit's error in its own words, and *"Revit confirmed the rollback"*. **Nothing deleted and nothing unlocked:** the element count, the grids' positions and the lock are all as before. No dialog. **A missing lock or a missing element is the failure this row exists for** |
+| **E22** | E21's write as a **setup step** in front of any fragment | `setup_failed`, naming the step and saying the fragment under test never ran; the model as before, re-read |
+| **E23** | Workshared: in copy **B** move one duct and Synchronise; in copy **A**, not reloaded, preview *"move ducts up 200 mm"*. Then delete a duct in B and Synchronise, and preview in A again | That duct is **skipped** with the reason: the add-in's `skipReasons` and `summary` say *"1 changed in central since this model last reloaded (Reload Latest, then ask again, to include it)"*, then *"1 deleted in central"*. **After Reload Latest in A** the changed duct is included. The chat's own line still says *"pinned, or owned by another user"* until FRAGMENT-ISSUES 5b-158 is fixed - read the reply, not only the chat |
+| **E24** | E23's preview on the largest workshared category to hand (a thousand elements or more), timed, and the same preview on a **detached, non-workshared** copy of the same model | **Record both times.** Revit's own documentation says `GetModelUpdatesStatus` returns a *"locally cached value"*, so it should not reach the central server and the two should be close; a workshared preview markedly slower says otherwise, and the plan asked for exactly this number |
+
 ## Group F — Steps 1-5 are no longer proven on this build
 
 **This group got more important on 2026-08-28, and it is not a leftover any more.**
