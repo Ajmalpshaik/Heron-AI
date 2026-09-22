@@ -1133,14 +1133,26 @@ shape.**
 **A hit is a candidate, not a defect**, and that has its own flag. Some are deliberate and written down
 — the Workflow Engine most clearly, where `HANDOVER.md` says *"nothing calls it yet, and that is
 deliberate"* because its customer is a later phase. Those are separated so the top of the report is only
-what nobody has explained. It found **12**, of which **5** were already recorded and one —
-[`Q-47`](../docs/OPEN-QUESTIONS.md), `heron_capability.want()` — was not.
+what nobody has explained.
+
+**How many, and which, is derived and not typed here** — `python tools/check-reachable.py --all`.
+When the check was first written on 2026-09-09 it found 12, of which 5 were already recorded and one —
+[`Q-47`](../docs/OPEN-QUESTIONS.md), `heron_capability.want()` — was not. **That sentence stood in the
+present tense until 2026-09-22 and both halves had gone**: Q-47 was answered on 2026-09-09, `want()`
+was wired up, and it is not reported at all any more. The tool has a section for exactly this failure
+in its own `RECORDED` list; its README did not.
 
 ### Why it parses instead of searching, learned three times in one night
 
 A CLI subcommand is reached by name, not by a `foo()` in the source, so a naive check calls every one of
-them dead. The precise test is a **dict literal whose value is the function** (`{"accept": accept}`) or
-a **`getattr` with a literal name** — structures, which prose cannot produce.
+them dead. The precise test is a **dict literal whose value is the function** or a **`getattr` with a
+literal name** — structures, which prose cannot produce.
+
+**What goes in is the FUNCTION, never the key, and the `getattr` name is the SECOND argument.** Both
+were wrong until 2026-09-22 ([row 5b-149](../docs/FRAGMENT-ISSUES.md)). Every real table in this
+repository is shaped `"accept": cmd_accept` — key and function are never the same word — so storing the
+key suppressed nothing, while matching any `{str: Name}` swallowed the result dict and hid 52 of the
+400 public production function names.
 
 That precision was arrived at by getting it wrong three times, and all three are the same failure:
 
@@ -1152,7 +1164,7 @@ That precision was arrived at by getting it wrong three times, and all three are
 
 Three heuristics, three times fooled by text *about* the thing rather than the thing.
 
-**It went 12 hits → 4, and the cuts were its own false positives.** It reported a **nested closure**
+**On 2026-09-09 it went 12 hits → 4, and the cuts were its own false positives.** It reported a **nested closure**
 (`heron_bridge_client.reader`, handed to `threading.Thread`) and a **class method**
 (`heron_health.worst`) as *"called by NOTHING AT ALL"* — neither is a module's public surface, and a
 method reached through an instance cannot be attributed by name at all. It now looks at module-level
