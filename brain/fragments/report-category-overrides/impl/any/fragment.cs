@@ -1,5 +1,5 @@
-// NOT STANDALONE. Assumes `doc` and `view` are in scope; leaves `findings` and
-// `overriddenCategories` behind.
+// NOT STANDALONE. Assumes `doc` and `view` are in scope; leaves `findings`,
+// `overriddenCategories` and `overrideList` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -17,9 +17,20 @@
 // ONLY THE CATEGORIES PRESENT IN THE VIEW are looked at. A model has hundreds; a
 // drawing shows a few dozen, and a category absent from the view cannot be why
 // it looks wrong.
+//
+// THE WHOLE ANSWER TRAVELS AS ONE STRING, `overrideList`. `findings` holds the
+// same lines as a list, and a reply shows a list as its first three entries,
+// each cut to sixty characters. Measured 2026-09-22 on Project1, straight after
+// SET_CATEGORY_SOLID_FILL: the Walls line arrived as "Walls: line RGB(0,255,0),
+// cut line RGB(0,255,0), surface RGB..." - the fill, the half that was asked
+// about, never arrived. A string is not cut.
 
 var findings = new List<string>();
 var overriddenCategories = new List<ElementId>();
+
+// Every overridden category, in full, joined. Empty when nothing is
+// overridden, so a clean view reads as nothing rather than as a sentence.
+var overrideList = "";
 
 if (!view.AreGraphicsOverridesAllowed())
 {
@@ -38,6 +49,7 @@ else
     }
 
     var checkedCount = 0;
+    var lines = new List<string>();
 
     foreach (var pair in present)
     {
@@ -77,16 +89,36 @@ else
             parts.Add("surface pattern " + (pattern == null ? "set" : pattern.Name));
         }
 
+        // THE CUT HALF OF THE FILL, read the same way as the surface half. It
+        // was never read: SET_CATEGORY_SOLID_FILL stamps a cut pattern on every
+        // cuttable category it touches and `cut-colour` tints it, and a
+        // category overridden only here read as not overridden at all.
+        var cutFill = settings.CutForegroundPatternColor;
+        if (cutFill != null && cutFill.IsValid)
+        {
+            parts.Add(string.Format("cut RGB({0},{1},{2})", cutFill.Red, cutFill.Green, cutFill.Blue));
+        }
+
+        if (settings.CutForegroundPatternId != ElementId.InvalidElementId)
+        {
+            var cutPattern = doc.GetElement(settings.CutForegroundPatternId);
+            parts.Add("cut pattern " + (cutPattern == null ? "set" : cutPattern.Name));
+        }
+
         if (settings.Transparency > 0) parts.Add(string.Format("{0}% transparent", settings.Transparency));
         if (settings.Halftone) parts.Add("halftone");
         if (settings.ProjectionLineWeight > 0) parts.Add("line weight " + settings.ProjectionLineWeight);
 
         if (parts.Count > 0)
         {
+            var line = string.Format("{0}: {1}", pair.Value, string.Join(", ", parts));
             overriddenCategories.Add(pair.Key);
-            findings.Add(string.Format("{0}: {1}", pair.Value, string.Join(", ", parts)));
+            findings.Add(line);
+            lines.Add(line);
         }
     }
+
+    overrideList = string.Join("  ||  ", lines);
 
     findings.Insert(0, string.Format("{0} of {1} category(ies) present in '{2}' carry an override. Only "
         + "categories WITH elements in this view were looked at - one absent from the drawing cannot be "

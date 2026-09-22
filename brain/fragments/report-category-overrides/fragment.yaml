@@ -51,24 +51,49 @@ contract:
     - name: overriddenCategories
       role: result
       type: IList<ElementId>
+    - name: overrideList
+      # EVERY OVERRIDDEN CATEGORY, EACH LINE IN FULL, JOINED - the answer this
+      # fragment exists to give, and the one to read when this is the read
+      # half of SET_CATEGORY_GRAPHICS or SET_CATEGORY_SOLID_FILL. A STRING
+      # because a reply shows a list as its first three entries, each cut to
+      # sixty characters, and a category's fill starts past the sixtieth once
+      # its line colours are set: measured 2026-09-22, the Walls line after a
+      # solid fill arrived as "Walls: line RGB(0,255,0), cut line
+      # RGB(0,255,0), surface RGB..." and so did the same colours with no
+      # pattern at all. `findings` carries the same lines and is kept - it is
+      # the prose every proof record quotes. Empty when nothing is overridden.
+      role: result
+      type: string
 
 proof:
-  date: '2026-09-08'
+  date: '2026-09-22'
   by: Ajmal PS
-  model: Snowdon Towers Sample Architectural (34,509 elements), Revit 2024, session 1680
-  positive_case: 'run as it would normally be run. returned findings 2 item(s) [1 of 42 category(ies)
-    present in ''L3_SD'' carry an override. ..., Furniture: halftone], overriddenCategories
-    1 item(s) [-2000080]. inputs came view as given. on Snowdon Towers Sample Architectural'
-  negative_case: run against 'Snowdon-scratch_ajmal.al' with view=Model Linking instead -
-    chosen because it should not contain what this fragment reports. returned findings 2 item(s)
-    [0 of 15 category(ies) present in 'Model Linking' carry an ov..., nothing is overridden
-    at CATEGORY level here. If something s...], overriddenCategories 0 item(s). inputs came
-    view as given. on Snowdon-scratch_ajmal.al
-  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
-    whether one exists here has not been settled, and a declared absence is not the same as
-    none
-  fingerprint: 8741a4654ec4ccfa
-
+  model: Project4 (3,276 elements), Revit 2024, session 37184
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    set-category-solid-fill with this phase''s own values - run inside a transaction, and
+    Revit reported the transaction group ROLLED BACK afterwards. returned findings 2 item(s)
+    [1 of 6 category(ies) present in ''Level 1'' carry an override...., Walls: line RGB(0,255,0),
+    cut line RGB(0,255,0), surface RGB...], overriddenCategories 1 item(s) [-2000011], overrideList
+    Walls: line RGB(0,255,0), cut line RGB(0,255,0), surface RGB(255,0,0), surface pattern
+    <Solid fill>, cut RGB(255,0,0), cut pattern <Solid fill>. inputs came view as given. on
+    Project4'
+  negative_case: 'run with view=FloorPlan: Level 1, categories=Ducts, overrides=projection-line-colour=0,255,0;
+    cut-line-colour=0,255,0; surface-colour=255,0,0; cut-colour=255,0,0 instead - chosen because
+    it should not contain what this fragment reports - the arrangement was re-made first by
+    running set-category-solid-fill with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned findings 2 item(s)
+    [0 of 6 category(ies) present in ''Level 1'' carry an override...., nothing is overridden
+    at CATEGORY level here. If something s...], overriddenCategories 0 item(s), overrideList
+    . inputs came view as given. on Project4'
+  second_route: 'NOT ESTABLISHED, and this run could not have had one. A second route exists
+    - Visibility/Graphics on the view, Model Categories tab, where Walls would read Solid
+    fill on the Projection/Surface AND the Cut pattern - but both legs stamped their fill
+    inside the proof''s own transaction group and rolled it back, so by the time a person
+    could open the dialog there was nothing on it to see. Rolled back on purpose: Project4
+    ''Level 1'' is the owner''s working plan. The read-back straight afterwards found 0 category
+    overrides on that view and the model unchanged at 3,276 elements. The by-hand read needs
+    a view where a fill can be KEPT, and is still owed'
+  fingerprint: 140301fac35c76c9
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -79,7 +104,10 @@ compatibility-note: >
   present 2020 through 2027 - read off the reference assemblies at both ends.
   The getters are the half of that class that did NOT move; its setters were
   renamed, which is why `OVERRIDE_GRAPHICS_IN_VIEW` refuses to build the object
-  and this can freely read one.
+  and this can freely read one. The CUT half of the fill,
+  `CutForegroundPatternId` and `CutForegroundPatternColor`, read since
+  2026-09-22, is two more getters on the same class - compiled on all eight
+  releases by tools/check-fragments-compile.py the day they were added.
 
 # ROUTING - repeated in READ_GRAPHIC_OVERRIDES, SET_CATEGORY_GRAPHICS and
 # DIAGNOSE_VISIBILITY.
