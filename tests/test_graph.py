@@ -263,7 +263,7 @@ def main():
             # whole library, which held only while every fragment was a filter
             # feeding an action. GET_ACTIVE_VIEW broke it by being legitimately
             # standalone: it is consumed by the HOST, which the graph does not
-            # model (D-46). Testing the thing under test survives the library
+            # model (D-98). Testing the thing under test survives the library
             # growing; testing a global property does not, and this is the
             # second assertion in this file to learn that.
             healed = [i for i, _w in G.orphans(store, loaded())]

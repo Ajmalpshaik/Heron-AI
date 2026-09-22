@@ -211,7 +211,7 @@ def orphans(store, fragments=None):
             # it produced a false orphan the moment a consumer needed two
             # different things from two different places - a takeoff needs a
             # group key from a parameter read and a quantity from a
-            # measurement, and both providers existed. D-46 recorded the
+            # measurement, and both providers existed. D-98 recorded the
             # limitation and said to lift it when a real composition needed it.
             #
             # It is also STRICTER, not looser: the message now names the need

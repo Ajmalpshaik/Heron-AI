@@ -1669,6 +1669,77 @@ has closed since the first.
 
 ---
 
+## `archive-handover.py` - one file per sitting, as the archive's own README asks
+
+```bash
+python tools/archive-handover.py            # what would move - writes nothing
+python tools/archive-handover.py --write    # move it
+```
+
+Moves every session note out of [`docs/HANDOVER.md`](../docs/HANDOVER.md) into
+[`docs/handover-archive/`](../docs/handover-archive/README.md), **one file per sitting**, and adds a row for each
+to that folder's README, newest first. What stays is what HANDOVER.md is for: the owner's quick start, the
+summary at the top of *Where this stands*, sections 1 to 10a, and a **Latest sittings** table linking the newest
+notes. Exits **0**, **1** when a check refused and nothing was written, **2** when the file could not be read.
+
+**The rule was written down twice and kept by neither.** The archive README says *"Do not write a new section
+into ../HANDOVER.md"*, and section 10a records the owner's own reason: *"if we keep everything by note that will
+be big."* On 2026-09-22 HANDOVER.md was 485,741 bytes, and that day alone had added 81 entries.
+
+A **sitting** is a dated `### YYYY-MM-DD` entry and the undated entries after it, so a note's parts travel
+together; below section 10a it runs to a `---` line. Words are unchanged. Every relative link is re-pointed one
+folder deeper and proved; a link to a heading that moved follows it to its new file; a link from another
+document into a moving heading **stops the run**, and so does a linked heading two sittings share. Lines inside a
+code block are never read as headings. The tool's own table is recognised and rewritten, never archived - the
+first version archived it on its second run, which the suite caught. [`tests/test_archive_handover.py`](../tests/test_archive_handover.py).
+
+**Run it whenever notes collect in HANDOVER.md.** A note written to the archive in the first place needs nothing.
+
+---
+
+## `archive-needs-checking.py` - move the done checks out of NEEDS-CHECKING.md
+
+```bash
+python tools/archive-needs-checking.py            # what would move - writes nothing
+python tools/archive-needs-checking.py --write    # move it
+```
+
+Moves every row of [`docs/NEEDS-CHECKING.md`](../docs/NEEDS-CHECKING.md) whose ID is struck through at both ends
+into [`docs/needs-checking-archive/`](../docs/needs-checking-archive/), one file per group, and leaves a line of
+the same shape - the struck ID, a title with a link, the opening of its result, as many cells as its table has.
+A struck row whose words still say something is owed - the list in `archive-fragment-issues.py`, plus
+*STILL WORTH* - stays in full.
+
+**It proves the register's three readers see the same file afterwards** -
+[`owner-queue.py`](#owner-queuepy--what-is-waiting-on-the-owner-derived-rather-than-typed), [`check-gaps.py`](#check-gapspy--what-is-unfinished-and-what-is-only-waiting)
+and [`balance-of-work.py`](balance-of-work.py) are each run on the rewritten
+text and must answer exactly as before - and that row B8's dated `PASSED`, which `check-docs.py` reads, survives.
+[`tests/test_archive_needs_checking.py`](../tests/test_archive_needs_checking.py).
+
+---
+
+## `split-decisions.py` - one file per decision, DECISIONS.md as the index
+
+```bash
+python tools/split-decisions.py            # what would change - writes nothing
+python tools/split-decisions.py --write    # change it
+```
+
+Gives every decision its own file, `docs/decisions/D-NN.md`, and keeps [`docs/DECISIONS.md`](../docs/DECISIONS.md)
+as the index: each decision's heading, its metadata lines (Status, Date and the rest), and a link to its full
+record. That is the standard shape of a decision log - an architecture decision record, one record per decision
+- and the log already kept every other rule of it: numbered, append-only, a status on each.
+
+**Exactly that stays, because tools read exactly that.** Every link to a decision - `DECISIONS.md#d-nn-...` - lands on a
+heading, and `check-docs.py` takes the set of defined decisions from them;
+[`generate-decision-summary.py`](#generate-decision-summarypy--the-decision-index-rebuilt-from-the-decisions)
+reads a decision's Status and Date from the lines under its heading, so its table is rebuilt unchanged.
+
+**To add a decision, write it into DECISIONS.md in full, as always, and run this.** It moves the new one into its
+file and leaves every decision already split alone. [`tests/test_split_decisions.py`](../tests/test_split_decisions.py).
+
+---
+
 ## `review-ledger.py` - which files have been read, word by word
 
 ```bash
