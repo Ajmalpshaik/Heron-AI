@@ -315,6 +315,45 @@ separate them. Numbers in
 
 ---
 
+## `score-routing.py` — the owner's own questions, against the answers he confirmed
+
+```bash
+python tools/score-routing.py            # score, and say what moved since the last comparable run
+python tools/score-routing.py --record   # ...and append the row to brain/retrieval-history.md
+python tools/score-routing.py --list     # the answer key; asks nothing
+```
+
+The two tools above ask sentences written **for** the library. This one asks the 79 questions the
+owner really typed on real work, kept in
+[`tests/data/owner-questions.yaml`](../tests/data/owner-questions.yaml). Each question carries the
+capability, skill or tool that should answer it, chosen from the capability list before the search had
+seen the question, and confirmed by him. It asks each one through `heron_brain.lookup`, the function
+`heron_lookup` calls. It takes about three minutes, because every lookup opens and checks the store.
+
+**It keeps four places apart:** first, in the top three, found but low (4th–5th of the shortlist
+`heron_lookup` shows) and not found. **An exact declared phrase is counted separately**, because it tests
+a declaration rather than the search. **Every question that lands on a write is listed** — a question
+handed a change when the right answer changes nothing ([D-86](../docs/DECISIONS.md)), a change asked for
+and a different change given, and a gap that landed on a change. A skill row can only be met by one of
+the steps the skill declares, since skills are not indexed, so skill rows are kept out of the headline.
+
+**Each recorded run is one row** in [`brain/retrieval-history.md`](../brain/retrieval-history.md). The
+row is stamped with the date, the fragment count, the backend and a fingerprint of the answer key, and
+carries one character per question. The next run names **which** questions moved, not only that a total
+did. Two runs are compared only when the answer key, the backend and the Revit filter match; the library
+may have grown between them, because a new fragment taking one of his questions is the drop it exists
+to catch.
+
+**It exits 0 whatever it finds**, like every routing check here, and exit 2 means nothing was scored.
+Whether a drop should stop a pull request is the owner's decision (D3 of the earlier-brain plan).
+**Nothing it reports is answered by rewording a question, changing an answer to match the search, or
+adding or weakening an utterance** — [row 113](../docs/FRAGMENT-ISSUES.md)'s forbidden move. It keeps its
+79 lookups out of the owner's audit trail by pointing `HERON_AUDIT` at a throwaway folder for the run.
+[`tests/test_score_routing.py`](../tests/test_score_routing.py) plants a drop, in the arithmetic and in a
+private store through the real search, and proves both are caught.
+
+---
+
 ## `check-api-surface.py` — the releases the compiler cannot reach
 
 ```bash
