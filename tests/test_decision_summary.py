@@ -57,21 +57,33 @@ TOOL = os.path.join(ROOT, "tools", "generate-decision-summary.py")
 # PRINTING A DOCUMENT'S CONTENT MUST NOT KILL THE PROCESS.
 #
 # The checks below quote cells out of the real decision table, and that table
-# carries a tick. On Windows the console codepage is cp1252, which has no
-# U+2705, so `print` raised UnicodeEncodeError from inside check() - and a
-# traceback is none of AGENTS.md's four states. Worse, it struck in the middle
-# of section 2, so every check after it never ran and the suite reported one
-# crash where it had findings to give.
+# carries a tick. On Windows, output redirected to a file or a pipe - every
+# sweep, and tools/check-gaps.py - is encoded in the ANSI code page, cp1252 on
+# the owner's PC, which has no U+2705, so `print` raised UnicodeEncodeError
+# from inside check() - and a traceback is none of AGENTS.md's four states.
+# Worse, it struck in the middle of section 2, so every check after it never
+# ran and the suite reported one crash where it had findings to give. A
+# console never shows it - Python writes to one through the Unicode console
+# API - so the same suite typed by hand passes.
 #
 # NOT fixed by replacing the tick with ASCII. The same crash returns the first
 # time a decision's status cell carries an arrow, a degree sign or a line of
 # Arabic, and the character is not the subject.
 #
-# errors="replace" rather than plain UTF-8: a console that cannot show the
-# character prints a substitute instead of mojibake, and the check still
-# reports its own verdict, which is the thing being read. Measured
-# 2026-09-22 - the same remedy tests/test_ingest.py and tools/check-docs.py
-# already carry.
+# UTF-8 IS WHAT STOPS THE CRASH, NOT errors="replace". UTF-8 can encode every
+# character, so a redirected run writes the tick as its own three bytes and
+# substitutes nothing - which is what tools/check-gaps.py expects, since it
+# decodes a suite's output as UTF-8. errors="replace" is for the one thing
+# UTF-8 cannot hold, a lone surrogate such as a file name Python could not
+# decode: UTF-8 alone dies on that with "surrogates not allowed", and the
+# pair prints "?" and carries on. The same remedy tests/test_ingest.py and
+# tools/check-docs.py carry.
+#
+# Until 2026-09-22 this comment said the CONSOLE was cp1252, and that
+# errors="replace" printed a substitute instead of mojibake. Both were
+# measured that day on the owner's PC and neither holds: a console printed
+# the tick, the same line redirected to a file died, and with this block a
+# redirected run of this suite carries the tick intact and not one "?".
 for _stream in (sys.stdout, sys.stderr):
     try:
         _stream.reconfigure(encoding="utf-8", errors="replace")

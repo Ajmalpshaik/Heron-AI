@@ -217,10 +217,53 @@ you are on Windows this is the first run that proves it: [NEEDS-CHECKING](../../
 so either way.** A suite that exits **3** is waiting on a dependency; one that exits **1** is a
 finding. If a waiting one starts passing, somebody installed something. If a failure appears only on
 your operating system, suspect a path assumption before you suspect your change: that is twice now.
+On Windows, suspect the output encoding as well — also twice now, and the subsection below tells it
+from your change in one re-run.
 
 This sentence counted to four until 2026-09-21. It does not count any more, for the reason the block
 above gives - **the number changes every time a suite learns to say "could not run", and the exit code
 says which kind of failure you are looking at without anybody maintaining a total.**
+
+### On Windows, a suite that dies only when its output is redirected is not your change
+
+**The loop above redirects every suite's output, and so do `check-gaps.py` and `change-evidence.py`.**
+On Windows that is the one condition in which Python encodes `print` in the ANSI code page — cp1252 on
+the owner's PC, which has no `✅`, `→` or `≥`. A console takes any character, because Python writes to
+one through the Unicode console API, and Linux CI is UTF-8, so neither can show it. The suite dies with
+`UnicodeEncodeError: 'charmap' codec can't encode character`, exits **1**, and reads exactly like a
+regression in whatever you were changing — and every section after the crash never runs, so it cannot
+even say how many checks it had.
+
+**Twice so far, and both times the character came out of a document, not out of the suite.**
+`test_ingest.py` printed a heading path joined with `→` ([NEEDS-CHECKING](../../../docs/NEEDS-CHECKING.md)
+`A14`), and `test_decision_summary.py` quotes cells out of `docs/DECISIONS.md`, one of which carries a
+tick.
+
+**One re-run tells the two apart:**
+
+```bash
+python tests/test_x.py >/dev/null 2>&1; echo $?                # 1
+PYTHONUTF8=1 python tests/test_x.py >/dev/null 2>&1; echo $?   # 0 — the encoding, not your change
+```
+
+**Fix it in the suite — never in the loop, and never by removing the character.** Setting `PYTHONUTF8`
+for a sweep leaves the crash waiting for the next person who redirects by hand, and a character that
+came out of a document comes back with the next arrow, degree sign or line of Arabic. The remedy is the
+module-level block `test_ingest.py`, `test_decision_summary.py` and `tools/check-docs.py` already carry:
+`sys.stdout` and `sys.stderr` reconfigured with `encoding="utf-8", errors="replace"`. **UTF-8 is what
+stops the crash** — the character arrives intact, which is what `check-gaps` expects, since it decodes a
+suite's output as UTF-8. `errors="replace"` is for a lone surrogate, the one thing UTF-8 cannot hold.
+
+**The reading side has the same trap, and it is quieter.** A suite that runs a child with `text=True`
+and no `encoding=` decodes what the child printed in cp1252 too. On Windows a byte cp1252 has no
+character for does not raise: the reader thread dies, `stdout` comes back `None`, and the exit code is
+untouched — so the suite fails one step later, on a `None` it did not expect. Pass `encoding="utf-8"`
+wherever a suite reads what a child printed. The same `PYTHONUTF8=1` re-run exposes it.
+
+Measured 2026-09-22 on the owner's PC: the same `print` of a tick and an arrow succeeded in a console
+and died redirected, both to a file and to `/dev/null`; `test_decision_summary.py` as it stood before its
+block exits **1** redirected and **0** with it; and a redirected run of every suite on disk found no other
+that dies this way.
 
 ## 2a. A fix is not proved until its test has been seen to FAIL
 
