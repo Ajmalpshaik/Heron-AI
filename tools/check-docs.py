@@ -715,6 +715,9 @@ else:
     # records the conditions the decision was taken under - "written on a
     # machine with no Revit, no Windows and no .NET SDK" - and rewriting that
     # is rewriting history rather than correcting a claim.
+    # docs/decisions/ is exempt for the same reason: since 2026-09-23 each
+    # decision's full record is its own file there, and DECISIONS.md is the
+    # index (tools/split-decisions.py). D-19's Context moved with D-19.
     b8 = re.search(r'^\|\s*~~\*\*B8\*\*~~.*$',
                    allsrc.get(os.path.join(root, 'docs',
                                            'NEEDS-CHECKING.md').replace(
@@ -728,7 +731,8 @@ else:
         for p in md:
             short = p[len(root):].lstrip('/') if p.startswith(root) else p
             if ('/work-notes/' in p or '/handover-archive/' in p
-                    or short == 'docs/DECISIONS.md'):
+                    or short == 'docs/DECISIONS.md'
+                    or short.startswith('docs/decisions/')):
                 continue
             for i, one, block, off in sentences(allsrc.get(p, '')):
                 if HISTORY.search(one):

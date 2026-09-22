@@ -49,7 +49,7 @@ readers, one source folder each, then a second agent per claim told to **refute*
 > printed twice in two documents — a total nobody adds up is not a check.
 
 Of the 398 files, **68 were never fragment work** — 44 `recipes/` (these become skills), 12 `context/`
-([D-46](DECISIONS.md)), 8 `commands/` (native Revit commands), 3 `examples/` and 1 `lib/`. That leaves
+([D-98](DECISIONS.md)), 8 `commands/` (native Revit commands), 3 `examples/` and 1 `lib/`. That leaves
 the 330 above. Ten claims were raised; one was refuted; **nine stand:**
 
 | Source | The job, and why nothing here covers it |
@@ -338,7 +338,7 @@ Where one read fragment is really two jobs joined:
 
 ## 4. What this is NOT
 
-> ### ⚠️ The scope rule in this section was REVISED on 2026-08-30 — see [D-45](DECISIONS.md)
+> ### ⚠️ The scope rule in this section was REVISED on 2026-08-30 — see [D-97](DECISIONS.md)
 >
 > This section used to say *"most of the 398 will correctly never be made"* and *"not a race to a
 > number"*, and Rule 0 above used to ask whether a job is one the owner actually does. **The owner
@@ -351,12 +351,12 @@ Where one read fragment is really two jobs joined:
 > duplication is still the thing to avoid; it no longer asks whether the job is one somebody has
 > requested.
 >
-> D-45 also carries a condition that belongs here: **a mechanism more than one fragment needs is written
+> D-97 also carries a condition that belongs here: **a mechanism more than one fragment needs is written
 > once and composed**, not copied. That is Rule 3 applied up front. It is what keeps a single
 > misunderstood mechanism from becoming eighty fixes on the first day at the machine.
 
 - **Not a migration.** There is no batch, no importer and no mapping file. Every fragment is a separate
-  decision — a separate act of understanding, which is what D-45 leaves untouched even as it asks for
+  decision — a separate act of understanding, which is what D-97 leaves untouched even as it asks for
   all of them.
 - **Not a race to a number.** *"Heron has 398 fragments"* would be a claim about a folder. Ten fragments
   that are proven, composable and used beat three hundred that are none of those.

@@ -46,6 +46,17 @@ import heron_contract as CON                                   # noqa: E402
 FAILURES = []
 
 
+def decision_log():
+    """DECISIONS.md and every record under docs/decisions/. Since 2026-09-23
+    each decision's full text is its own file and DECISIONS.md is the index
+    (tools/split-decisions.py), so what a decision says is in one of them."""
+    paths = [os.path.join(ROOT, "docs", "DECISIONS.md")]
+    folder = os.path.join(ROOT, "docs", "decisions")
+    if os.path.isdir(folder):
+        paths += [os.path.join(folder, n) for n in sorted(os.listdir(folder)) if n.endswith(".md")]
+    return " ".join(io.open(p, encoding="utf-8").read() for p in paths)
+
+
 def check(condition, what):
     print("  %-5s %s" % ("ok" if condition else "FAIL", what))
     if not condition:
@@ -72,8 +83,7 @@ def main():
     row = [line for line in register.splitlines() if "NAM-KEY-005" in line]
     check(len(row) == 1 and "synonyms" in row[0].lower(),
           "docs/28 gives this agent search terms and synonyms")
-    decisions = io.open(os.path.join(ROOT, "docs", "DECISIONS.md"),
-                        encoding="utf-8").read()
+    decisions = decision_log()
     flat = " ".join(decisions.split())
     check("No phrase list, no synonym table" in flat,
           "and D-34 says: no phrase list, no synonym table")

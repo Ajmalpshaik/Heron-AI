@@ -1284,7 +1284,7 @@ def feeders(consumer, fragments):
     supplies both, so every pairwise test failed and the fragment was reported
     as an orphan nothing could feed, which was false.
 
-    D-46 recorded that limitation and said to lift it when a real composition
+    D-98 recorded that limitation and said to lift it when a real composition
     needed it rather than on the strength of an invented one. A takeoff - how
     many metres of each size - is that composition, and it is a question a
     modeller asks rather than one designed to justify a change.
