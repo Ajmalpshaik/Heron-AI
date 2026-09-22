@@ -74,10 +74,10 @@ one line per call, and that trail is read as a record of real asking (D-62) -
 so HERON_AUDIT, the documented override, points at a throwaway folder for the
 length of the run. Nothing about the answer changes.
 
-It reports and exits 0 whatever it finds, like every routing check here.
+It reports and exits 0 whatever it finds, like every routing check here, and
+that is the owner's decision rather than a default: on 2026-09-23 he decided
+that a drop in this score is reported and never stops a pull request (D-100).
 Exit 2 means it could not do its job: nothing was scored, which is not a pass.
-Whether a drop should ever stop a pull request is the owner's decision (D3 of
-the earlier-brain plan), and it has not been taken.
 
 A NUMBER FROM HERE IS A SAMPLE OF ONE STORE
 -------------------------------------------
@@ -412,11 +412,14 @@ def last_comparable(rows, stamp):
 
 def _severity(kind, char):
     """How bad one character is for its kind of row; larger is worse."""
-    if char == ERROR:
-        return None
     if kind in PLACED:
-        return 99 if char == NOT_FOUND else int(char)
-    return 1 if char == LANDED_CHANGE else 0
+        if char == NOT_FOUND:
+            return 99
+        return int(char) if char.isdigit() else None
+    # A character this tool never writes - `?`, or a row somebody edited by
+    # hand - is UNREADABLE. Reading it as "no change" would call a hole in the
+    # record an improvement.
+    return {LANDED_CHANGE: 1, LANDED_OTHER: 0, LANDED_NOTHING: 0}.get(char)
 
 
 def moved(before, after, kinds):
@@ -451,18 +454,39 @@ def dropped(movements, before_row, summary):
         return False
 
 
+def exit_code(drop):
+    """0 whether or not the score dropped - the owner's decision, D-100.
+
+    On 2026-09-23 he decided that a drop in this score is REPORTED and never
+    stops a pull request, the same as every routing check here: a gate on a
+    routing number teaches people to buy the number back by rewording his
+    questions. `drop` is taken, and ignored, so the decision is written where
+    the exit code is made - changing this is changing his decision, and needs
+    a new one that supersedes D-100.
+    """
+    return 0
+
+
 def append_row(path, line):
-    """Add one row at the end of the table. False if the table is not there."""
-    with io.open(path, encoding="utf-8") as handle:
-        lines = handle.read().split("\n")
+    """Add one row at the end of the table. False if the table is not there.
+
+    THE FILE KEEPS ITS OWN LINE ENDINGS. A Windows checkout usually holds CRLF.
+    Read in universal-newline mode and written back with LF, one appended row
+    rewrote every line ending in the file - a whole-file change on the owner's
+    PC to record one run. Written back the way it came.
+    """
+    with io.open(path, encoding="utf-8", newline="") as handle:
+        raw = handle.read()
+    eol = "\r\n" if "\r\n" in raw else "\n"
+    lines = raw.replace("\r\n", "\n").split("\n")
     if TABLE_HEADER not in lines:
         return False
     at = lines.index(TABLE_HEADER) + 2
     while at < len(lines) and lines[at].startswith("|"):
         at += 1
     lines.insert(at, line)
-    with io.open(path, "w", encoding="utf-8", newline="\n") as handle:
-        handle.write("\n".join(lines))
+    with io.open(path, "w", encoding="utf-8", newline="") as handle:
+        handle.write(eol.join(lines))
     return True
 
 
@@ -754,9 +778,9 @@ def compare(history_path, stamp, codes, summary, kinds, rows):
                           60)))
     drop = dropped(moves, before, summary)
     if drop:
-        out("\n  THE SCORE DROPPED. Reported, not enforced: whether a drop "
-            "stops a pull request is\n  the owner's decision, and today it "
-            "does not.\n")
+        out("\n  THE SCORE DROPPED. Reported, never enforced - the owner "
+            "decided a drop here never\n  stops a pull request (D-100). Read "
+            "the questions above: each one is his.\n")
     return drop
 
 
@@ -892,7 +916,7 @@ def main(argv=None):
         print(line)
 
     report(results, summary, stamp, rows)
-    compare(args.history, stamp, codes, summary, kinds, rows)
+    drop = compare(args.history, stamp, codes, summary, kinds, rows)
 
     line = history_row(stamp, summary, codes)
     if args.record:
@@ -910,10 +934,10 @@ def main(argv=None):
     else:
         print("\nThe row --record would append:\n%s" % line)
 
-    print("\nExit 0 whatever this finds. A wrong answer here is a finding to "
-          "read, and never a reason\nto reword a question, change an answer "
-          "or weaken an utterance to buy it back.")
-    return 0
+    print("\nExit 0 whatever this finds (D-100). A wrong answer here is a "
+          "finding to read, and never\na reason to reword a question, change "
+          "an answer or weaken an utterance to buy it back.")
+    return exit_code(drop)
 
 
 if __name__ == "__main__":

@@ -33,8 +33,9 @@ HIS answer key is never derived from the search: section 1 checks it only
 against the library, and pins the wording of his questions.
 
 WHAT IT DOES NOT DO: it never runs the full 79 - that takes minutes and is the
-tool's job - and it never decides whether a drop should stop a pull request,
-which is the owner's decision.
+tool's job. Whether a drop stops a pull request is not this suite's call
+either: the owner decided it never does (D-100), and section 4 holds the
+tool to that.
 
 Exit 0 passed, 1 failed, 3 could not run for want of PyYAML.
 """
@@ -260,6 +261,27 @@ def main():
           "one more question handed a change is a drop even if no place moved")
     check([m[3] for m in tool.moved("1", "?", ["capability"])] == ["unreadable"],
           "a row that could not be scored is never read as a movement")
+    # A HAND-EDITED ROW MUST NOT TAKE THE COMPARISON DOWN. The per-question
+    # string comes back out of a markdown file a person can edit, so a
+    # character this tool never writes is unreadable - never a crash, and
+    # never read as "no change" on a tool or gap row.
+    try:
+        odd = [m[3] for m in tool.moved("1.w", "x?z", ["capability", "gap",
+                                                       "tool"])]
+    except (ValueError, KeyError, TypeError) as why:
+        odd = "raised %s" % type(why).__name__
+    check(odd == ["unreadable"] * 3,
+          "a character this tool never writes is unreadable, not a crash: %s"
+          % (odd,))
+
+    # D-100. The owner decided on 2026-09-23 that a drop is REPORTED and
+    # never stops a pull request. Asked by name first, so the check fails
+    # cleanly on a tool that has no word for it (heron-ship section 2a).
+    decided = getattr(tool, "exit_code", None)
+    check(callable(decided), "the exit code is made in one place, exit_code()")
+    if callable(decided):
+        check(decided(True) == 0 and decided(False) == 0,
+              "a drop exits 0 - reported, never a failure (D-100)")
 
     other = dict(stamp, backend="model")
     check(tool.last_comparable(parsed, other) is None,
@@ -296,6 +318,17 @@ def main():
         check(after.index("| new row |") == after.index(line) + 1
               and after[-1] == "text after the table",
               "right after the last row, and nothing after the table moves")
+        # A WINDOWS CHECKOUT HOLDS CRLF. The table must still be found, and
+        # the file must keep its own line endings when a row goes in.
+        windows = os.path.join(work, "windows.md")
+        with io.open(windows, "w", encoding="utf-8", newline="") as handle:
+            handle.write(table.replace("\n", "\r\n"))
+        check(tool.append_row(windows, "| crlf row |"),
+              "a CRLF file's table is found, and the row goes in")
+        with io.open(windows, "rb") as handle:
+            raw = handle.read()
+        check(b"| crlf row |\r\n" in raw and b"\n" not in raw.replace(
+            b"\r\n", b""), "and every line still ends CRLF")
         bare = os.path.join(work, "bare.md")
         with io.open(bare, "w", encoding="utf-8") as handle:
             handle.write("# nothing\n")

@@ -345,7 +345,8 @@ may have grown between them, because a new fragment taking one of his questions 
 to catch.
 
 **It exits 0 whatever it finds**, like every routing check here, and exit 2 means nothing was scored.
-Whether a drop should stop a pull request is the owner's decision (D3 of the earlier-brain plan).
+**A drop is reported and never stops a pull request** — the owner decided so on 2026-09-23
+([D-100](../docs/DECISIONS.md)), and `exit_code()` in the tool names the decision.
 **Nothing it reports is answered by rewording a question, changing an answer to match the search, or
 adding or weakening an utterance** — [row 113](../docs/FRAGMENT-ISSUES.md)'s forbidden move. It keeps its
 79 lookups out of the owner's audit trail by pointing `HERON_AUDIT` at a throwaway folder for the run.

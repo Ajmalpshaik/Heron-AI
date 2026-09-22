@@ -782,6 +782,9 @@ python tools/score-routing.py            # score, and say what moved since the l
 python tools/score-routing.py --record   # ...and append the row
 ```
 
+**A drop is reported, never a gate** — the owner's decision, [D-100](../docs/DECISIONS.md). The tool
+names every question that fell; reading them is a person's job.
+
 **How to read a row.**
 
 - **Answer key** fingerprints the questions and their answers together. Two rows are compared only
