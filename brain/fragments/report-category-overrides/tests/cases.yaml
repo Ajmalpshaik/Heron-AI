@@ -8,13 +8,28 @@ positive:
   - given: a category with a surface pattern set
     expect: the pattern named, not just "overridden"
 
+  - given: >
+      a cuttable category after SET_CATEGORY_SOLID_FILL - a solid fill stamped
+      on its surface AND its cut, and a colour on each
+    expect: >
+      both patterns named and both colours given, in `overrideList`. Read the
+      string, not `findings`: a list entry is cut at sixty characters, and the
+      fill starts past them once the line colours are set - which is how this
+      report once confirmed two line colours and nothing of the fill
+
+  - given: the same colours on the same category with NO pattern stamped
+    expect: >
+      the colours and no pattern named - so a stamped fill and a colour that
+      prints nothing read differently, which is the whole use of this as a
+      read-back
+
 negative:
   - given: a view with NOTHING overridden at category level
     expect: >
-      a plain zero, NOT every category in the view. THIS IS THE FIRST CASE TO
-      RUN. A pattern's own visibility flag reads TRUE with nothing set, so a
-      version built on that flag reports the entire model as overridden and the
-      report is worthless
+      a plain zero, NOT every category in the view, and `overrideList` empty.
+      THIS IS THE FIRST CASE TO RUN. A pattern's own visibility flag reads TRUE
+      with nothing set, so a version built on that flag reports the entire
+      model as overridden and the report is worthless
 
   - given: an element that is grey because of a per-element override
     expect: >
