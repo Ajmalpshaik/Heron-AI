@@ -41,6 +41,17 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\platform\Heron.Installer\Heron.Installer.csproj" />
+    <!--
+      The command line door's argument reader - Stage 6, Q-PE-16. Arguments is
+      pure string handling and is the UNTRUSTED INPUT on that door, exactly as
+      a pasted address is on route 1, so it is tested here rather than only on
+      a Windows machine nobody runs the suite on.
+
+      The rest of Heron.Installer.Cli is not reachable from here and is not
+      meant to be: Program touches PowerShell and a real Revit. What it holds
+      is wiring, and every rule it wires is in the engine above.
+    -->
+    <ProjectReference Include="..\..\platform\Heron.Installer.Cli\Heron.Installer.Cli.csproj" />
   </ItemGroup>
 
 </Project>

@@ -24,6 +24,15 @@
 .PARAMETER Configuration
     Build configuration. Default Debug.
 
+.PARAMETER FromFolder
+    Deploy from THIS folder rather than searching for a build.
+
+    For Stage 5: the installer downloads a release asset, verifies it against
+    the published checksum, extracts it, and hands the folder here. That keeps
+    one copy rule rather than two - R-31 - and every guard below still runs on
+    what is in the folder, the runtime check included. A downloaded asset for
+    the wrong release is refused exactly as a wrong local build is.
+
 .PARAMETER Remove
     Uninstall instead of installing.
 
@@ -90,6 +99,7 @@ param(
     [string] $RevitVersion = "2024",
     [string] $Configuration = "Debug",
     [string] $Product = "heron-bridge",
+    [string] $FromFolder = "",
     [switch] $Remove,
     [switch] $Rollback
 )
@@ -343,6 +353,30 @@ if ($Remove) {
 # install is a design telling you something, not a design working.
 $projDir  = Join-Path $repoRoot "revit\$productProject"
 
+# A FOLDER HANDED IN BEATS ANY SEARCH, and skips this whole block - Stage 5.
+#
+# The installer downloads a release asset, verifies it against the published
+# checksum, extracts it, and names the folder here. There is no build on the
+# machine to find and there does not need to be: what arrives is what a build
+# would have produced, and R-31 says the copy rule lives in one place, so it
+# is handed to this script rather than copied by a second one.
+#
+# EVERY GUARD BELOW STILL RUNS ON IT. The runtime check reads the assembly in
+# this folder exactly as it reads a local build's, so a 2024 asset named for
+# 2020 is refused here just as a 2024 build would be. Trusting a download
+# because it was downloaded is how the wrong file reaches the Addins folder -
+# R-12 says verified before use, and this is the second half of that.
+if ($FromFolder) {
+    if (-not (Test-Path $FromFolder)) {
+        throw "There is no folder at $FromFolder, so there is nothing to install for Revit $RevitVersion. Nothing was changed."
+    }
+    if (-not (Test-Path (Join-Path $FromFolder $productAssembly))) {
+        throw "$FromFolder holds no $productAssembly, so it is not a build of '$productName'. Rather than copy whatever is in there, nothing was changed."
+    }
+    $buildOut = (Resolve-Path $FromFolder).Path
+    Write-Host "  from $buildOut (handed in, not searched for)"
+}
+
 # READ ONCE, FILTERED TWICE. Every build of this product on disk, whatever
 # configuration it was made in - then the ones in the configuration asked for.
 # The wider list is what lets the refusal below say "there IS a build for this
@@ -351,16 +385,22 @@ $projDir  = Join-Path $repoRoot "revit\$productProject"
 # flow builds Debug, and nine correct Debug builds sitting in a folder the
 # window never opens read as "your change failed". Cost a full round trip on
 # 2026-09-21.
-$allBuilds = @(Get-ChildItem -Path (Join-Path $projDir "bin") -Recurse -Filter $productAssembly -ErrorAction SilentlyContinue)
-$candidates = @($allBuilds | Where-Object { $_.FullName -like "*$Configuration*" })
+$allBuilds = @()
+$candidates = @()
+if (-not $FromFolder) {
+    $allBuilds = @(Get-ChildItem -Path (Join-Path $projDir "bin") -Recurse -Filter $productAssembly -ErrorAction SilentlyContinue)
+    $candidates = @($allBuilds | Where-Object { $_.FullName -like "*$Configuration*" })
+}
 
 # The release folder, matched as a whole path segment. Without the separators
 # "2020" would also match a folder called "2020-old", and -like has no word
 # boundary of its own.
-$buildOut = $candidates |
-            Where-Object { $_.FullName -like "*\$RevitVersion\*" } |
-            Sort-Object LastWriteTime -Descending |
-            Select-Object -First 1 -ExpandProperty DirectoryName
+if (-not $FromFolder) {
+    $buildOut = $candidates |
+                Where-Object { $_.FullName -like "*\$RevitVersion\*" } |
+                Sort-Object LastWriteTime -Descending |
+                Select-Object -First 1 -ExpandProperty DirectoryName
+}
 
 # NO BUILD FOR THIS RELEASE IS A REFUSAL, NOT A SUBSTITUTION - 2026-09-21.
 #
@@ -410,7 +450,7 @@ if (-not $buildOut) {
 
     throw "There is no $Configuration build for Revit $RevitVersion under $projDir\bin, so there is nothing to install for that release.$alsoHere Heron will not put another release's build in its place: four of the eight releases share one .NET runtime, so a substitute can pass every check below and still be the wrong one. Build this release and run this again:`n  dotnet build $productProjPath -c $Configuration -p:RevitVersion=$RevitVersion"
 }
-Write-Host "  from $buildOut"
+if (-not $FromFolder) { Write-Host "  from $buildOut" }
 
 # THE BUILD OUTPUT USED TO BE SHARED BETWEEN ALL EIGHT RELEASES, and that is
 # why this guard exists. tools/check-compile.py builds 2020 through 2027, and

@@ -18,6 +18,17 @@ namespace Heron.Installer
         public string Release { get; internal set; }
         public bool Succeeded { get; internal set; }
         public string Message { get; internal set; }
+
+        /// <summary>
+        /// True when this line is a product that was TAKEN OFF the machine.
+        ///
+        /// TOLD APART IN THE REPORT, because "'AI Bridge' removed from Revit
+        /// 2024" and "'AI Bridge' installed for Revit 2024" are both
+        /// successes and a reader counting successes learns nothing. R-19
+        /// asks for a report per product per release; this is what makes one
+        /// of them readable.
+        /// </summary>
+        public bool Removed { get; internal set; }
     }
 
     /// <summary>
@@ -46,7 +57,18 @@ namespace Heron.Installer
             get
             {
                 var n = 0;
-                foreach (var r in _results) if (r.Succeeded) n++;
+                foreach (var r in _results) if (r.Succeeded && !r.Removed) n++;
+                return n;
+            }
+        }
+
+        /// <summary>How many products came off, and it is not a failure count.</summary>
+        public int Removed
+        {
+            get
+            {
+                var n = 0;
+                foreach (var r in _results) if (r.Succeeded && r.Removed) n++;
                 return n;
             }
         }
@@ -137,13 +159,41 @@ namespace Heron.Installer
                                      IEnumerable<string> productIds,
                                      IEnumerable<string> releases)
         {
+            return Apply(manifest, productIds, releases, null);
+        }
+
+        /// <summary>
+        /// Install what was ticked, and remove what was unticked - R-21.
+        ///
+        /// REMOVALS ARE DECIDED BY THE SCREEN, NOT HERE, and arrive already
+        /// worked out. InstallerScreen.ToRemove knows what is on the disk and
+        /// what the user left unticked; this performs that list. A second
+        /// place deciding what to delete is one place too many.
+        ///
+        /// THEY HAPPEN FIRST, and that ordering is deliberate. A run that
+        /// removes one product and installs another should leave the machine
+        /// with the second, and doing the delete last means a failure part
+        /// way through leaves BOTH - the state nobody asked for.
+        ///
+        /// AND THE WAIT COVERS BOTH. Revit holds a loaded assembly whether it
+        /// is about to be replaced or deleted, so a release being uninstalled
+        /// is a release this run touches and is waited for exactly the same.
+        /// </summary>
+        public InstallReport Apply(ProductManifest manifest,
+                                   IEnumerable<string> productIds,
+                                   IEnumerable<string> releases,
+                                   IEnumerable<InstallStep> removals)
+        {
             var installed = _revit.InstalledReleases();
             var plan = InstallPlan.Build(manifest, productIds, releases, installed);
+
+            var going = new List<InstallStep>();
+            if (removals != null) going.AddRange(removals);
 
             var report = new InstallReport();
             report._skipped.AddRange(plan.Skipped);
 
-            if (!plan.HasWork) return report;
+            if (!plan.HasWork && going.Count == 0) return report;
 
             // EVERY RELEASE THIS RUN TOUCHES, and only those. Revit 2024
             // being open says nothing about whether it is safe to install for
@@ -151,6 +201,8 @@ namespace Heron.Installer
             // needless obstacle on a machine with three installed.
             var touched = new List<string>();
             foreach (var step in plan.Steps)
+                if (!touched.Contains(step.Release)) touched.Add(step.Release);
+            foreach (var step in going)
                 if (!touched.Contains(step.Release)) touched.Add(step.Release);
 
             string blocked;
@@ -161,35 +213,54 @@ namespace Heron.Installer
                 return report;
             }
 
-            foreach (var step in plan.Steps)
-            {
-                DeployOutcome outcome;
-                try
-                {
-                    outcome = _deployer.Deploy(step.Product, step.Release);
-                }
-                catch (Exception e)
-                {
-                    // ONE PRODUCT FAILING DOES NOT STOP THE REST - R-19. A
-                    // modeller installing three products and hitting one bad
-                    // download should get the other two, and a line saying
-                    // which one did not arrive.
-                    outcome = DeployOutcome.Failed(
-                        "'" + step.Product.Name + "' could not be installed for Revit " +
-                        step.Release + ". " + e.Message);
-                }
-
-                report._results.Add(new InstallResult
-                {
-                    ProductId = step.Product.Id,
-                    ProductName = step.Product.Name,
-                    Release = step.Release,
-                    Succeeded = outcome != null && outcome.Succeeded,
-                    Message = outcome == null ? "Nothing was reported." : outcome.Message,
-                });
-            }
+            foreach (var step in going) report._results.Add(Perform(step, true));
+            foreach (var step in plan.Steps) report._results.Add(Perform(step, false));
 
             return report;
+        }
+
+        /// <summary>
+        /// Do one step, and turn whatever happens into a line of the report.
+        ///
+        /// ONE HANDLER FOR BOTH VERBS, and that is not only tidiness. An
+        /// install and a removal need exactly the same promise - R-19: one
+        /// product failing does not stop the rest, and the report says which
+        /// one did not arrive or did not go. Writing that twice was two
+        /// handlers doing one job, and the suite that measures this
+        /// repository's exception handlers is what pointed it out.
+        ///
+        /// THE CATCH IS BROAD ON PURPOSE. IProductDeployer is an interface
+        /// and an implementation may throw anything at all - the real one
+        /// starts a process. Narrowing here would let one unforeseen failure
+        /// take the whole run down, leaving a modeller with some products
+        /// installed, some not, and no report saying which.
+        /// </summary>
+        private InstallResult Perform(InstallStep step, bool removing)
+        {
+            DeployOutcome outcome;
+            try
+            {
+                outcome = removing
+                    ? _deployer.Remove(step.Product, step.Release)
+                    : _deployer.Deploy(step.Product, step.Release);
+            }
+            catch (Exception e)
+            {
+                outcome = DeployOutcome.Failed(
+                    "'" + step.Product.Name + "' could not be " +
+                    (removing ? "removed from" : "installed for") +
+                    " Revit " + step.Release + ". " + e.Message);
+            }
+
+            return new InstallResult
+            {
+                ProductId = step.Product.Id,
+                ProductName = step.Product.Name,
+                Release = step.Release,
+                Succeeded = outcome != null && outcome.Succeeded,
+                Message = outcome == null ? "Nothing was reported." : outcome.Message,
+                Removed = removing,
+            };
         }
 
         /// <summary>

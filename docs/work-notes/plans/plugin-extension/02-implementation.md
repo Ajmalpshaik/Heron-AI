@@ -3,10 +3,10 @@
 > **Type:** Operational work note. **Not specification.** Where a sentence here disagrees with the
 > [Constitution](../../../../HERON_CONSTITUTION.md), the [Golden Rules](../../../14-golden-rules.md) or
 > [DECISIONS.md](../../../DECISIONS.md), **those win and this note is out of date.**
-> **Status:** **Active.** Stage 0 and Stage 1 are DONE. **Stages 2, 3 and 4 were RUN on the owner's PC
-> on 2026-09-21 and are PROVEN** — Revit 2024.3 and Revit 2020.2.9, fourteen rows passed, one failed and
-> was fixed the same day, and two are owed (`AA9` needs a browser download, `AB6` is blocked until
-> `heron-tools` is a real product). Stages 5 to 9 are NOT STARTED. Opened 2026-09-20.
+> **Status:** **Active.** Opened 2026-09-20. **[§4 Progress](#4-progress) is the only copy of the
+> stage-by-stage status.** This header used to carry a second copy and it went stale inside a day — it
+> still read *"Stages 5 to 9 are NOT STARTED"* while three of them were built further down this same
+> file. Two copies of a status is how one of them goes wrong.
 > **Owner:** Ajmal PS.
 > **Read [`00-structure.md`](00-structure.md) and [`01-requirements.md`](01-requirements.md) first.**
 
@@ -623,7 +623,42 @@ a compile.
 
 ## Stage 5 — Fetch from the GitHub release
 
-**Status: NOT STARTED**
+**Status: BUILT, NOT PROVEN — 2026-09-21. Nothing has been published and no release exists.**
+
+> **THE STAGE HAD NOTHING TO TALK TO, and that was the first thing to fix.** This repository had
+> **no releases at all** and nothing that could make one, so *"the installer reads the manifest from a
+> named release"* was a sentence about a thing that did not exist.
+> [`tools/build-release-assets.py`](../../../../tools/build-release-assets.py) and
+> [`.github/workflows/release.yml`](../../../../.github/workflows/release.yml) are that missing half:
+> one zip per product per Revit release, the product list beside them, and `checksums.txt` over all of
+> it written **last** as the completion mark.
+>
+> **RAN FOR REAL HERE: 24 assets, 54 MB, exit 0** — and verified at the binary level rather than from
+> the success line, `TargetFrameworkAttribute` read out of six zipped assemblies. 2020 `net472`, 2021
+> and 2024 `net48`, 2025 and 2026 .NET 8, 2027 .NET 10. All correct, no Autodesk assembly in any zip.
+>
+> **THE DOWNLOAD PATH IS GENUINELY EXERCISED, which is unusual here.** Three of the four adapters that
+> reach outside the installer assembly need Windows and can only be read.
+> [`ReleaseDownload`](../../../../platform/Heron.Installer/ReleaseDownload.cs) is not one of them — it
+> is `HttpClient` and `System.IO.Compression` — so the test host drives it against **a real HTTP server
+> on a real port with real zip bytes**, and every refusal below is one that actually happened.
+>
+> **NOT PROVEN, AND THE WORD IS NOT USED.** No release has been published, so nothing has ever been
+> downloaded from GitHub. `AC1` to `AC5` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) are that debt.
+
+### What exists now
+
+| | |
+|---|---|
+| [`tools/build-release-assets.py`](../../../../tools/build-release-assets.py) | builds every deployable product for every release and lays out the assets. **Release configuration, and not a flag** — there is one right answer and a flag would let somebody pick the wrong one |
+| [`.github/workflows/release.yml`](../../../../.github/workflows/release.yml) | tag-triggered. It calls the tool and repeats none of its rules. Publishes a **draft**, because Stage 8 has not happened and nothing is signed |
+| [`ReleaseAssets.cs`](../../../../platform/Heron.Installer/ReleaseAssets.cs) | what an asset is called, how checksums are read, and the sentence for every failure. **Pure** — no socket, no file, no process |
+| [`ReleaseDownload.cs`](../../../../platform/Heron.Installer/ReleaseDownload.cs) | fetches, **verifies in memory before a byte is written**, unpacks, and refuses a zip that would write outside its folder |
+| `-FromFolder` in [`deploy-addin.ps1`](../../../../tools/deploy-addin.ps1) | a verified download is handed to the **same proven copy rule** a local build uses — R-31, and every guard still runs on it |
+
+**A build on this PC still wins.** The window downloads only when **nothing at all** has been built
+here. Downloading on top of a half-built checkout would install a published version over the one the
+developer just compiled.
 
 ### Do
 
@@ -643,16 +678,169 @@ a compile.
   the file did not verify.
 - With networking off, the message says it cannot reach GitHub — not "error".
 
+### Where it actually stands — the four states, kept apart
+
+| | |
+|---|---|
+| **PASS** | `tools/build-release-assets.py` ran for real: **24 assets, 54 MB, checksums over 25 files, exit 0**. Runtimes read out of the zipped bytes for six releases and all correct |
+| **PASS** | `tests/test_release_assets.py` — no product is named, the configuration cannot be got wrong, the project folder is derived the same way in all three places that ask, a `PLANNED` product with no source is skipped **out loud** and one past `PLANNED` **fails**, Autodesk's assemblies never travel, `checksums.txt` is written last |
+| **PASS** | The download path, **run against a live local server**: verified and unpacked; a changed file refused **with nothing written to disk**; a file missing from `checksums.txt` refused; a release with no checksums refused; 404, 403 and a dead host each producing their own sentence; a zip that would escape its folder refused whole |
+| **NOT RUN** | **The workflow.** It is YAML for GitHub's runner and this is not one. **Nothing has been published and no release exists** |
+| **NEEDS REAL REVIT** | Every line under *Done when* above, and `AC1` to `AC5` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) |
+
+**The one thing this cannot close on its own** is [Q-PE-13](03-open-questions.md): the assets carry the
+**Revit plugin**, and nothing carries the **brain**. A modeller who installs from a release gets a tab
+whose Connect button opens a pipe nobody answers. Stage 5 is not what makes Heron usable by somebody
+else — it is one of the two halves.
+
 ### Cannot prove
 
 Whether a particular contractor's firewall allows it. That is found on site, and it is why
-[Q-PE-5](03-open-questions.md) stays open.
+[Q-PE-5](03-open-questions.md) stays open. The installer now at least **says** it is the firewall
+rather than saying "error", which is the part that can be built.
 
 ---
 
 ## Stage 6 — Routes 1 and 2, onto the same engine
 
-**Status: NOT STARTED**
+**Status: BUILT, NOT PROVEN — 2026-09-22. Both routes have a door, and both work offline.**
+
+> **THE GATE FIRST, because it is the only part that is a security rule.** Item 3 says *"read
+> [Q-PE-10](03-open-questions.md) before building this one — whether route 1 may act on any
+> repository, or only Heron's own signed release, is unresolved and it is a security question."*
+> **Q-PE-10 was answered on 2026-09-21**: *"install this"* means Heron's own signed release and
+> **never an arbitrary repository**.
+>
+> [`InstallSource`](../../../../platform/Heron.Installer/InstallSource.cs) enforces that —
+> `R-49` says **enforced, not expected**, *"a rule nothing enforces is one the first user breaks by
+> accident"*. It refuses somebody else's repository, a host that merely **ends** or **contains**
+> `github.com`, an owner that merely **starts** the same, a name before the `@`, plain `http`, a port
+> of its own, and Heron's **repository** rather than a release of it. Every refusal names what
+> **would** be accepted. It **opens no socket** — `R-50` is true by construction rather than by
+> discipline.
+>
+> **AND THEN THE DOOR IT GUARDS WAS BUILT — 2026-09-22, the owner having chosen between the four.**
+> [`platform/Heron.Installer.Cli/`](../../../../platform/Heron.Installer.Cli/), built as
+> **`heron-install`**: a command beside the window, reaching the **same**
+> `InstallSource` → `InstallerScreen` → `InstallPlan` → `InstallEngine`. Not an MCP tool, not the
+> window driven headless, and **not `deploy-addin.ps1`** — the one this stage's own opening line
+> calls failure. [Q-PE-16](03-open-questions.md) has the reasoning and what building it found.
+>
+> **IT INSTALLS, AND IT NEVER REMOVES.** `R-21` makes unticking mean uninstall, and unticking is a
+> gesture a person makes in a window having been asked to confirm. Nothing on a command line can mean
+> it: a product left out of `--products` was not unticked, it was **not mentioned**. So
+> `InstallEngine.Install` is called and `Apply` never is.
+>
+> **AND THE GATE RUNS BEFORE ANYTHING ON THE PC IS TOUCHED.** Judging a source is pure string work, so
+> a hostile address is refused on a machine with no Revit at all, and **no PowerShell has run by the
+> time it is.** The first draft had it the other way round, copying the window's order — and the window
+> has no untrusted input at that point, which is this door's whole reason for existing.
+>
+> **ONE RULE WAS MOVED RATHER THAN COPIED.** `AnythingBuilt` — whether this is a checkout with builds
+> in it, or a machine that has to download — was a private method in the window's `Program.cs` while
+> the window was the only door. It is now `InstallerScreen.AnythingBuilt`, called by both. R-31, and
+> the same reason `deploy-addin.ps1` was never rewritten in C#.
+>
+> **AND BUILDING THE DOOR FOUND A DEFECT IN THE GATE THAT WAS ALREADY MERGED.** Asked for
+> `https://github.com/<owner>/<repo>` — the owner's **own** repository, just not a release — the
+> refusal said *"it is not Heron's own repository … somebody else's"*. One check was answering two
+> questions and needed three path segments to answer either, so a bare repository address fell into
+> the wrong half. **The refusal was right and the reason was false.** Split in two. The suite had
+> passed because it asked only that the address be refused and that the refusal name the releases
+> page — which the wrong sentence does too, since every refusal ends with it. It now asks **which**
+> refusal arrived.
+
+### Where it actually stands — the four states, kept apart
+
+| | |
+|---|---|
+| **PASS** | The source gate, against a fixture naming its own owner and repository: four accepted shapes, **eighteen refused**, every refusal naming Heron's own release, a local folder told apart from a hostile address, and a manifest that does not know its own source refusing everything rather than guessing |
+| **PASS** | **Every guard was seen to fail**, each catching the one attack it is for — counted below |
+| **PASS** | The command line door's argument reader, run for real: an unknown flag refused **by name**, a bare flag read as a **missing value** rather than a value, the address handed to `InstallSource` **unjudged**, two doors at once refused rather than resolved |
+| **PASS** | **Fifteen breaks seen to fail** — eight on the reader, seven on the door — counted below |
+| **BUILT, NOT PROVEN** | Items 1 and 2, route 1's door. It has never installed anything into a Revit |
+| **BUILT, NOT PROVEN** | Route 2. [Q-PE-12](03-open-questions.md) was answered the same day, so `--from <folder>` installs rather than refusing — and checks the same checksums a download does, because a folder on a stick got here the same way a download did |
+| **BUILT, NOT PROVEN** | The update check — [R-54](01-requirements.md) to [R-56](01-requirements.md). It reads **only** the product list, never the 54 MB of assemblies, runs **after** the install so it is news rather than a gate, and **never changes the exit code** |
+| **NEEDS REAL REVIT** | Every line under *Done when* — `AE1` to `AE6` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) |
+
+**Seen to fail, one break per guard:**
+
+| what was loosened | what slipped through |
+|---|---|
+| host compared with `EndsWith` | `evil-github.com` |
+| host compared with `Contains` | `github.com.evil.example` |
+| owner compared with `StartsWith` | `owner-a-evil` |
+| `http` allowed | `http://` and `ftp://` |
+| the name-before-`@` guard removed | `https://evil@github.com/...` |
+| `releases` no longer required | the repository, and `archive/refs/heads/main.zip` |
+
+**The fifth one is why that list is worth reading.** Deleting the user-info guard broke **nothing** at
+first: every address tried had a hostile host as well, which the host check caught. It was a guard
+nobody could tell was gone. The case only it catches — where the host really **is** `github.com` — was
+added, and then it went red.
+
+**And one refusal was measured wrong before it was right.** A Windows path is a **valid absolute URI**:
+`Uri.TryCreate` turns `D:\Heron-AI` into a `file:` address quite happily, so somebody pointing at their
+own clone was told *"Heron will only fetch over https, and that address is file"* — true, and useless.
+It now names the other door.
+
+**And the door's own fifteen, in two groups.**
+
+| the reader, broken | what the check caught |
+|---|---|
+| an unknown flag ignored | `--sources x` accepted in silence |
+| a bare flag swallows the next one | `--source --list` sends `--list` to the gate |
+| two doors at once quietly resolved | `--source` and `--from` together |
+| blanks and duplicates kept | `2020, 2024,,2020` read as four releases |
+| list entries not trimmed | `" 2024"` is not `2024` |
+| the exit codes dropped from the usage | a caller guessing what `3` means |
+| *"it never removes"* dropped | the one promise that door makes |
+| the reader judging the source itself | **two gates to keep in step instead of one** |
+
+| the door, broken | what the check caught |
+|---|---|
+| the gate moved after PowerShell | a refusal that ran something first |
+| `Apply` called with removals | a command line that can uninstall |
+| `"Release"` typed out again | the configuration disagreeing with the deployer's |
+| the reader calling `InstallSource` | as above, from the other side |
+| a product named in the door | `R-3` broken — adding one stops being a line in a file |
+| `Heron.Core` referenced | a release-independent thing pinned to one release |
+| renamed to `HeronInstall` | **two letters from `HeronInstaller.exe`**, one of which confirms nothing |
+
+**AND THEN THE OWNER ASKED FOR THE WHOLE SHAPE, 2026-09-22.** One download carrying the plugin **and**
+the brain ([R-51](01-requirements.md)), asking where to keep it ([R-52](01-requirements.md)), working
+offline after ([R-53](01-requirements.md)), and the internet used only to ask whether a newer release
+exists ([R-54](01-requirements.md)–[R-56](01-requirements.md)). That answered
+[Q-PE-5, 12, 13 and 14](03-open-questions.md) in one go.
+
+| what it took | |
+|---|---|
+| **The release carries the brain** | `heron-project.zip` — brain, skills, MCP, docs. **Ran it: 1673 entries, and zero from `tests/`, `revit/`, `tools/` or `.git/`** |
+| **Route 2 installs** | `ProductFolder` — `ReleaseDownload` minus the wire. Same checksum rule, same unpack guard |
+| **`Unpack` moved, not copied** | A zip on a USB stick climbs out of a folder exactly as well as one off the wire, so the zip-slip guard is one method with two callers — R-31, the **third** rule this branch moved rather than duplicated |
+| **The update check** | Reads the product list alone. Never the assemblies |
+
+**WHAT THE CHECKSUM CANNOT DO IS WRITTEN INTO THE CODE**, not left to be assumed: it catches **damage**,
+not a determined tamperer. Anybody who can rewrite a zip in that folder can rewrite `checksums.txt`
+beside it, and both will then agree. **What closes that is a signature — Stage 8, not built.** Until it
+is, route 2 is exactly as safe as the person who handed the folder over. A limit nobody wrote down is
+one somebody relies on.
+
+**AND `test_csharp` WENT RED A FOURTH TIME**, on the update check's one broad `catch (Exception)`. The
+first draft argued for it — *the install is finished, so any fault in fetching news must lose to the
+install having worked*. **Reading `ReleaseDownload` showed the argument was false as well as
+over-broad:** `Manifest(out why)` does not throw for a network failure, because `Get()` maps every one
+of them to a `FetchProblem` and returns a sentence. There was nothing for a broad catch to protect
+against **except a fault in Heron's own code** — which D-52 says must surface rather than be flattened.
+Narrowed to the two the workspace folder can really raise. **The code was fixed and the comment
+corrected; the suite was not touched.**
+
+**Three of this suite's own checks were wrong before they were right**, and all three the same way:
+they searched a whole file for a word, so the doc comment *explaining* a rule broke the check *for*
+it — `Arguments.cs` saying "InstallSource decides", the `.csproj` saying "NOT referencing
+`Heron.Core`", both saying never to print the word "Error". **A check that a word is absent is not a
+check that a rule is kept.** They read code with the commentary stripped now. This branch had already
+made that mistake once, testing a variable name instead of a rule.
 
 Stages 3 to 5 build **route 3** — the installer with a window. [S7](00-structure.md) says there are
 three front doors and one engine, so this is where the other two are hung on it.
@@ -696,7 +884,29 @@ wanted; whether that question is the right one to ask is a matter for a modeller
 
 ## Stage 7 — Uninstall, update, and a rollback that has been tested
 
-**Status: NOT STARTED**
+**Status: BUILT, NOT PROVEN — 2026-09-22. Item 5 is NOT MET and says why.**
+
+> **UNINSTALL IS THE SAME WINDOW, and the hard part was not the deleting.** `tools/deploy-addin.ps1`
+> already had `-Remove`, proven on a real machine by `AA4`. What Stage 7 adds is the window driving it
+> — and the safety property without which `R-21` is a disaster.
+>
+> **EVERY PRODUCT ROW USED TO START EMPTY.** If unticking a product uninstalls it, then a user who
+> opened this window and pressed Install **without touching anything** would have unticked everything
+> they had, and the press meant to install would have **removed the lot**. So what is installed now
+> starts **ticked**, and unticking is something a person did on purpose — the only ground on which a
+> delete may be offered at all.
+>
+> **AND IT CONFIRMS, NAMING WHAT GOES.** *"This will REMOVE 'AI Bridge connector' from Revit 2020, 2024
+> and 2027"*, with the reminder that Revit needs restarting and that **the user's own Heron data is not
+> touched** — `R-22`, and the thing somebody about to uninstall is actually worried about. The dialog
+> **defaults to No**: a delete must not be one stray Enter away. Saying no changes nothing at all.
+>
+> **REMOVALS RUN BEFORE INSTALLS**, because a run that takes one product off and puts another on should
+> leave the machine with the second. Doing the delete last means a failure part way through leaves
+> **both**.
+>
+> **NOT PROVEN.** No window has been drawn and nothing has been deleted from a real Addins folder.
+> `AD1` to `AD4` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) are that debt.
 
 ### Do
 
@@ -709,6 +919,25 @@ wanted; whether that question is the right one to ask is a matter for a modeller
    `rollback_tested`.
 5. Audit line per operation ([R-27](01-requirements.md)) through
    [`HeronAudit`](../../../../platform/Heron.Core/HeronAudit.cs).
+   **NOT MET, and it cannot be met this way** — the installer may not reference `Heron.Core`, which its
+   own `.csproj` says in as many words: the engine is release-independent and `Heron.Core` is not.
+   R-27 is written against a route that does not exist. [Q-PE-15](03-open-questions.md) holds the four
+   ways out; it is a SHOULD, so Stage 7 was built without it rather than stopping.
+
+### Where it actually stands — the four states, kept apart
+
+| | |
+|---|---|
+| **PASS** | The uninstall decisions, against a fake Revit and a fake disk: an installed product **starts ticked**; unticking removes it from **every release it is on** and not from the ones merely highlighted; a heading removes nothing of its own; removals run **before** installs; an uninstall **waits for Revit** exactly as an install does; one removal failing does not stop the rest |
+| **PASS** | The confirmation names every product and every release, says data survives, says to restart Revit, never says "error", and **does not appear at all when nothing is being removed** — a dialog people meet every time is one they stop reading |
+| **PASS** | `tests/test_installer_window.py` — the window confirms **before** handing the work off, the dialog defaults to **No**, what comes off is the screen's decision, and there are still exactly **two** buttons |
+| **NOT RUN** | **Nothing has been deleted from a real Addins folder**, and no window has been drawn. `DeployScriptDeployer.Remove` has never executed a line |
+| **NOT MET** | Item 5, the audit line — [Q-PE-15](03-open-questions.md) |
+| **NEEDS REAL REVIT** | Every line under *Done when* below, and `AD1` to `AD4` in [NEEDS-CHECKING](../../../NEEDS-CHECKING.md) |
+
+**Rollback is not in the window, and that is on purpose.** [R-23a](01-requirements.md) allows no third
+button, and `-Rollback` is one command in a script a person runs deliberately after an update has gone
+wrong. It was **proven on a real machine** by `AA8` on 2026-09-21, which is what item 4 asks for.
 
 ### Done when
 
@@ -835,11 +1064,11 @@ Update this table as stages complete. **Do not mark a stage done without its evi
 |---|---|---|---|
 | 0 | Record the decisions | **DONE** 2026-09-21 | [D-87 to D-95](../../../DECISIONS.md); `grep -c '^## D-'` 88 -> 97; `check-docs` 0 broken links |
 | 1 | Product manifest | **DONE** 2026-09-21 | `platform/heron-products.json`; `check-products.py` PASSES on it and **FAILS exit 1** on a duplicated `addInId`; `tests/test_products_manifest.py` 36 checks, 16 faults each refused by name |
-| 2 | Second tab | **BUILT AND UNPROVEN** 2026-09-21 | Compiles on all 8 releases, 0 warnings; `tests/test_ribbon_tab_sharing.py` 26 checks pass. **NEEDS REAL REVIT** - no ribbon has been seen, no screenshot exists |
-| 3 | Installer core | **BUILT AND UNPROVEN** 2026-09-21 | `platform/Heron.Installer/` builds; `tests/test_installer_engine.py` 38 checks pass against a fake Revit; `deploy-addin.ps1` generalised to every product and `tests/test_deploy_script.py` passes. **NOT RUN** - both Windows adapters and the deploy script itself have never executed |
-| 4 | The window | **BUILT AND UNPROVEN** 2026-09-21 | `platform/Heron.Installer.App/` compiles on all 8 releases, 0 warnings; `tests/test_installer_engine.py` 79 checks and `tests/test_installer_window.py` pass. **NOT RUN** - no window has been drawn |
-| 5 | GitHub download | NOT STARTED | — |
-| 6 | Routes 1 and 2 | NOT STARTED | — |
-| 7 | Uninstall / update / rollback | NOT STARTED | — |
+| 2 | Second tab | **PROVEN** 2026-09-21, except `AA9` | Run on the owner's PC — Revit 2024.3 and 2020.2.9, two Heron tabs in one Revit, and `AA2` did not break. [Stage 2](#stage-2--prove-the-shape-with-a-second-tab) · [Group AA](../../../NEEDS-CHECKING.md) |
+| 3 | Installer core | **PROVEN** 2026-09-21 | Run on the owner's PC — the AI Bridge was installed into Revit 2024 and Revit loaded it, and the engine refused correctly while Revit was open. [Stage 3](#stage-3--the-installer-core-with-no-window-at-all) · [Group AB](../../../NEEDS-CHECKING.md) |
+| 4 | The window | **PROVEN** 2026-09-21 for `AB1`-`AB8`, except `AB6` | Run on the owner's PC. **One rule added after that run is NOT proven** — greyed release ticks, `AB9` and `AB10`. [Stage 4](#stage-4--the-window) · [Group AB](../../../NEEDS-CHECKING.md) |
+| 5 | GitHub download | **BUILT, NOT PROVEN** 2026-09-21 | The builder ran here — 24 assets, verified at the binary level. **No release exists and nothing has ever been fetched from GitHub.** [Stage 5](#stage-5--fetch-from-the-github-release) · `AC1`-`AC5` |
+| 6 | Routes 1 and 2 | **BUILT, NOT PROVEN** 2026-09-22 | **Both** routes have a door — `heron-install`, with `--source` and `--from`. [Q-PE-16](03-open-questions.md) and [Q-PE-12](03-open-questions.md) both answered, and the update check with them. **Nothing has been installed into a Revit.** [Stage 6](#stage-6--routes-1-and-2-onto-the-same-engine) · `AE1`-`AE6` |
+| 7 | Uninstall / update / rollback | **BUILT, NOT PROVEN** 2026-09-22 | Item 5 is **NOT MET** and says why, [Q-PE-15](03-open-questions.md). **Nothing has been deleted from a real Addins folder.** [Stage 7](#stage-7--uninstall-update-and-a-rollback-that-has-been-tested) · `AD1`-`AD4` |
 | 8 | Sign and ship | NOT STARTED | — |
 | 9 | The Settings panel | NOT STARTED | — |

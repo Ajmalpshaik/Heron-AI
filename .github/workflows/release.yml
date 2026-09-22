@@ -1,0 +1,131 @@
+name: Release
+
+# WHAT THIS IS FOR, AND WHY IT DID NOT EXIST UNTIL NOW.
+#
+# Stage 5 of the installer plan says the installer reads the manifest FROM A
+# NAMED RELEASE and downloads each ticked product's asset. On 2026-09-21 this
+# repository had NO RELEASES AT ALL and nothing that could make one - so the
+# stage everybody was waiting on had nothing to talk to. This is the half that
+# produces what Stage 5 consumes.
+#
+# IT BUILDS NOTHING ITSELF. tools/build-release-assets.py owns every rule:
+# which products are deployable, which releases Heron supports, that the
+# configuration is Release, that Autodesk's assemblies are never
+# redistributed, and that checksums are written last as the completion mark.
+# A rule written in YAML is a rule no test can reach, and this file is the one
+# place in the repository that cannot be run locally.
+#
+# THIS IS NOT THE GATES FILE. brain/heron_tag.py and brain/heron_qa.py parse
+# .github/workflows/gates.yml to decide which checks block a release; they do
+# not read this one, and nothing here invents a gate. See the long comment at
+# the top of gates.yml before adding any step that says "python tools/check-".
+#
+# NOTHING HERE IS SIGNED. Stage 8 is code signing, it is deliberately last,
+# and until it is done a downloaded HeronInstaller.exe meets SmartScreen with
+# no publisher. That is a known and recorded state, not an oversight - R-25
+# and docs/NEEDS-CHECKING.md.
+
+on:
+  # A TAG, NOT A BRANCH. docs/07 section 1a refused "paste a link and let it
+  # run" and asked instead for one documented command that fetches a VERSIONED
+  # release artefact - "not whatever the default branch happens to say today".
+  # A tag is what makes that sentence true.
+  push:
+    tags:
+      - 'v*'
+
+  # So a release can be rehearsed without tagging anything. It uploads
+  # nothing unless a tag is given.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish to. Leave empty to build and check only.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write        # creating a release writes to the repository
+
+jobs:
+  assets:
+    name: Build every product for every Revit release
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      # The .NET 10 SDK, not the .NET 8 one, and for the reason
+      # docs/30-compiling-away-from-windows.md measured: the 8 SDK omits the
+      # WindowsDesktop MSBuild targets, so Revit 2025-2027 fail MSB4019. An
+      # SDK builds target frameworks older than itself, so the newest is the
+      # one to install.
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build and package
+        run: python tools/build-release-assets.py --out dist
+
+      # SAID ON THE JOB PAGE, because a list of assets is the one thing a
+      # person checks before trusting a release.
+      - name: Say what was built
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Release assets"
+            echo
+            if [ -f dist/checksums.txt ]; then
+              echo '```'
+              cat dist/checksums.txt
+              echo '```'
+            else
+              echo "**No checksums.txt, so nothing is publishable.** The build"
+              echo "did not finish - the log above names which product and"
+              echo "which Revit release."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # KEPT WHETHER OR NOT THIS PUBLISHES, so a workflow_dispatch rehearsal
+      # produces something a person can download and look at.
+      - name: Upload the assets as a workflow artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-assets
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+
+      # ONLY ON A TAG. A rehearsal builds and stops.
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.tag != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag != '' && inputs.tag || github.ref_name }}
+        shell: bash
+        run: |
+          # A DRAFT, AND THAT IS THE POINT. Stage 8 has not happened: nothing
+          # here is signed, and the window it installs cannot yet download
+          # anything. A draft is visible to the owner and to nobody else, so a
+          # release can be built and inspected long before it is one somebody
+          # could find and install. Publishing it is a person's decision.
+          gh release create "$TAG" \
+            --draft \
+            --title "$TAG" \
+            --notes "Built by .github/workflows/release.yml from ${GITHUB_SHA}.
+
+          Every deployable product, every Revit release Heron supports, built in
+          Release configuration. \`checksums.txt\` covers every file and is
+          written last, so a release carrying it is one whose build finished.
+
+          **Not signed.** Stage 8 is code signing and is deliberately last, so
+          Windows SmartScreen has no publisher to show. **Not yet installable
+          from here either** - the installer cannot download anything until
+          Stage 5 lands. This release exists so Stage 5 has something real to
+          be written against." \
+            dist/*

@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using Heron.Installer;
 
 namespace Heron.Installer.TestHost
@@ -86,17 +87,43 @@ namespace Heron.Installer.TestHost
         private sealed class FakeDeployer : IProductDeployer
         {
             private readonly Func<HeronProduct, string, DeployOutcome> _behaviour;
+            private readonly Func<HeronProduct, string, DeployOutcome> _removal;
             public readonly List<string> Deployed = new List<string>();
 
+            /// <summary>
+            /// Everything this was asked to do, IN ORDER and with the verb.
+            ///
+            /// The order is a rule rather than a detail - removals happen
+            /// before installs, so a run that takes one product off and puts
+            /// another on cannot leave both.
+            /// </summary>
+            public readonly List<string> Did = new List<string>();
+
             public FakeDeployer(Func<HeronProduct, string, DeployOutcome> behaviour)
+                : this(behaviour, null)
+            {
+            }
+
+            public FakeDeployer(Func<HeronProduct, string, DeployOutcome> behaviour,
+                                Func<HeronProduct, string, DeployOutcome> removal)
             {
                 _behaviour = behaviour;
+                _removal = removal;
             }
 
             public DeployOutcome Deploy(HeronProduct product, string release)
             {
                 Deployed.Add(product.Id + "@" + release);
+                Did.Add("install " + product.Id + "@" + release);
                 return _behaviour(product, release);
+            }
+
+            public DeployOutcome Remove(HeronProduct product, string release)
+            {
+                Did.Add("remove " + product.Id + "@" + release);
+                return _removal != null
+                    ? _removal(product, release)
+                    : DeployOutcome.Ok("'" + product.Name + "' removed from Revit " + release + ".");
             }
         }
 
@@ -736,6 +763,356 @@ namespace Heron.Installer.TestHost
                 try { Directory.Delete(sandbox, true); } catch (IOException) { }
             }
 
+            // ================================================== STAGE 6
+            Console.WriteLine();
+            Console.WriteLine("ROUTE 1 REFUSES ANY SOURCE BUT HERON'S OWN RELEASE - R-48, R-49");
+            //
+            // ENFORCED, NOT EXPECTED. docs/07 section 1a refused the shape
+            // "point an AI at a URL and let it execute whatever it finds
+            // there" in as many words - it is the exact shape of a supply
+            // chain attack, and Golden Rule 19 says no text Heron reads may
+            // raise its own permission level. A rule nothing enforces is one
+            // the first user breaks by accident.
+            //
+            // WHO HERON IS COMES FROM THE MANIFEST, so this fixture names a
+            // source of its own and no real owner appears in the checks.
+            var mineManifest = ProductManifest.Parse(@"{
+              ""source"": { ""owner"": ""owner-a"", ""repo"": ""repo-a"" },
+              ""products"": [
+                { ""id"": ""piece-one"", ""name"": ""Piece One"", ""description"": ""d"",
+                  ""tab"": ""Tab A"", ""addin"": ""One.addin"", ""assembly"": ""One.dll"",
+                  ""folder"": ""One"", ""addInId"": ""11111111-1111-1111-1111-111111111111"",
+                  ""revit"": [""2024""], ""requires"": [], ""version"": ""0.1.0"",
+                  ""partOf"": null, ""state"": ""SHIPPED"" }
+              ]
+            }");
+            Check(mineManifest.KnowsItsSource,
+                  "the manifest says which repository publishes Heron's releases");
+            Check(mineManifest.SourceOwner == "owner-a" && mineManifest.SourceRepo == "repo-a",
+                  "and it is read as data rather than written into the code");
+
+            Console.WriteLine();
+            Console.WriteLine("  what IS accepted");
+            foreach (var good in new[]
+            {
+                "https://github.com/owner-a/repo-a/releases",
+                "https://github.com/owner-a/repo-a/releases/latest",
+                "https://GitHub.com/Owner-A/Repo-A/releases/latest",
+                "  https://github.com/owner-a/repo-a/releases/latest  ",
+            })
+            {
+                var verdict = InstallSource.Judge(good, mineManifest);
+                Check(verdict.Accepted, "accepted: " + good.Trim() +
+                                        (verdict.Accepted ? "" : " - " + verdict.Why));
+                Check(verdict.Accepted && verdict.Tag == null,
+                      "  and with no tag it means the newest published release");
+                Check(verdict.Accepted && verdict.AssetsUrl != null
+                      && verdict.AssetsUrl.Contains("releases/latest/download"),
+                      "  and the assets URL is BUILT here, never taken from what was typed");
+            }
+
+            var tagged = InstallSource.Judge(
+                "https://github.com/owner-a/repo-a/releases/tag/v0.1.0", mineManifest);
+            Check(tagged.Accepted && tagged.Tag == "v0.1.0",
+                  "a named release keeps its tag: " + (tagged.Tag ?? tagged.Why));
+            Check(tagged.Accepted && tagged.AssetsUrl.EndsWith("/releases/download/v0.1.0"),
+                  "and the assets URL points at that one: " + tagged.AssetsUrl);
+
+            Console.WriteLine();
+            Console.WriteLine("  and what is REFUSED - each one a real trick, not a typo");
+            foreach (var bad in new[]
+            {
+                // somebody else's repository, on the right host
+                "https://github.com/someone-else/repo-a/releases/latest",
+                "https://github.com/owner-a/other-repo/releases/latest",
+                // A NAME THAT ONLY STARTS THE SAME. "owner-a-evil" contains
+                // the real owner, and a `StartsWith` check would pass it.
+                "https://github.com/owner-a-evil/repo-a/releases/latest",
+                "https://github.com/not-owner-a/repo-a/releases/latest",
+                // A HOST THAT ONLY ENDS THE SAME, and one that only contains
+                // it. Either passes a sloppy string test.
+                "https://github.com.evil.example/owner-a/repo-a/releases/latest",
+                "https://evil-github.com/owner-a/repo-a/releases/latest",
+                "https://github.evil.example/owner-a/repo-a/releases/latest",
+                // THE NAME BEFORE THE @ IS NOT THE HOST. This reads as
+                // GitHub to a person and resolves to evil.example.
+                "https://github.com@evil.example/owner-a/repo-a/releases/latest",
+                "https://github.com:pass@evil.example/owner-a/repo-a/releases",
+                // AND THE ONE CASE ONLY THE USER-INFO GUARD CATCHES. Here the
+                // host really IS github.com, so the host check passes it -
+                // deleting that guard was measured as breaking NOTHING until
+                // this line existed, which made it a guard nobody could tell
+                // was gone. No legitimate Heron link carries a name before
+                // the @, and its only use in the wild is to mislead a reader.
+                "https://evil@github.com/owner-a/repo-a/releases/latest",
+                // not https - what arrives is whatever the network sent
+                "http://github.com/owner-a/repo-a/releases/latest",
+                "ftp://github.com/owner-a/repo-a/releases/latest",
+                // the REPOSITORY rather than a release of it - R-48
+                "https://github.com/owner-a/repo-a",
+                "https://github.com/owner-a/repo-a/tree/main",
+                "https://github.com/owner-a/repo-a/archive/refs/heads/main.zip",
+                // not an address at all
+                "install this repo",
+                "",
+                "   ",
+                // a port of its own
+                "https://github.com:8443/owner-a/repo-a/releases/latest",
+            })
+            {
+                var verdict = InstallSource.Judge(bad, mineManifest);
+                Check(!verdict.Accepted, "refused: " + (bad.Trim().Length == 0 ? "(nothing)" : bad));
+                Check(!verdict.Accepted && !string.IsNullOrEmpty(verdict.Why),
+                      "  and it says why rather than only saying no");
+                Check(!verdict.Accepted && verdict.AssetsUrl == null,
+                      "  and hands back no address at all, so nothing downstream can use one");
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("  every refusal names what WOULD be accepted");
+            // A refusal that only says no leaves somebody guessing, and the
+            // guess they make is usually to try harder rather than to try the
+            // right thing.
+            foreach (var bad in new[]
+            {
+                "https://github.com/someone-else/repo-a/releases/latest",
+                "http://github.com/owner-a/repo-a/releases/latest",
+                "https://github.com/owner-a/repo-a",
+                "install this repo",
+            })
+            {
+                var why = InstallSource.Judge(bad, mineManifest).Why;
+                Check(Names(why, "owner-a/repo-a/releases"),
+                      "the refusal for " + bad + " points at Heron's own release");
+                Check(!Names(why, "error"), "  and never says 'error' - docs/14");
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("  HERON'S OWN repository is refused as the wrong THING, not the wrong OWNER");
+            // FOUND BY RUNNING heron-install, not by reading the code. Asked
+            // for https://github.com/owner-a/repo-a - Heron's own repository,
+            // correct owner, correct name, just not a release - the refusal
+            // came back saying "it is not Heron's own repository. Heron will
+            // not install software from somebody else's".
+            //
+            // It IS his own. The refusal is right and the reason is false,
+            // and a false reason sends somebody to check their address when
+            // the address was never the problem. R-14 wants the cause named,
+            // and this named a different one.
+            //
+            // WHY THE SUITE DID NOT CATCH IT: the case above checks the URL
+            // is refused, and the case above that checks the refusal points
+            // at owner-a/repo-a/releases - which the wrong sentence does too,
+            // because every refusal ends with it. Nothing asked WHICH refusal
+            // arrived. A check that cannot tell two answers apart is not
+            // checking the difference between them.
+            foreach (var mine in new[]
+            {
+                "https://github.com/owner-a/repo-a",
+                "https://github.com/owner-a/repo-a/tree/main",
+                "https://github.com/owner-a/repo-a/archive/refs/heads/main.zip",
+            })
+            {
+                var verdict = InstallSource.Judge(mine, mineManifest);
+                Check(!verdict.Accepted, "still refused: " + mine);
+                Check(Names(verdict.Why, "repository rather than"),
+                      "  and it says the REPOSITORY rather than a release: " + verdict.Why);
+                Check(!Names(verdict.Why, "somebody else"),
+                      "  and never calls the owner's own repository somebody else's");
+            }
+
+            // AND THE OTHER SENTENCE MUST STILL ARRIVE for a repository that
+            // really is somebody else's - otherwise the fix above would have
+            // been to delete a refusal rather than to correct one.
+            var theirs = InstallSource.Judge("https://github.com/someone-else/repo-a/releases", mineManifest);
+            Check(!theirs.Accepted && Names(theirs.Why, "somebody else"),
+                  "somebody else's repository is still refused as somebody else's: " + theirs.Why);
+            var renamed = InstallSource.Judge("https://github.com/owner-a/not-heron/releases", mineManifest);
+            Check(!renamed.Accepted && Names(renamed.Why, "somebody else"),
+                  "and so is the right owner with the wrong repository: " + renamed.Why);
+
+            Console.WriteLine();
+            Console.WriteLine("  a local folder is told apart from a hostile address");
+            // Somebody who cloned the repository and pointed at it has done
+            // something reasonable - that is route 2 - and a refusal that does
+            // not say which door to use is a dead end.
+            var local = InstallSource.Judge(@"D:\Heron-AI", mineManifest);
+            Check(!local.Accepted, "a folder is not route 1");
+            Check(Names(local.Why, "folder on this PC", "install"),
+                  "and it points at the other door instead of just refusing: " + local.Why);
+            var unc = InstallSource.Judge(@"\\server\share\Heron-AI", mineManifest);
+            Check(!unc.Accepted && Names(unc.Why, "folder on this PC"),
+                  "and a network share reads the same way: " + unc.Why);
+
+            Console.WriteLine();
+            Console.WriteLine("  a manifest that does not know its own source refuses EVERYTHING");
+            // Inventing a repository name here would be the installer deciding
+            // where to get software from, which is the one decision it must
+            // never make.
+            var anon = ProductManifest.Parse(@"{ ""products"": [] }");
+            var guess = InstallSource.Judge("https://github.com/owner-a/repo-a/releases", anon);
+            Check(!guess.Accepted, "with no source in the manifest, nothing is accepted");
+            Check(Names(guess.Why, "does not know"),
+                  "and it says so rather than guessing a repository: " + guess.Why);
+
+            Console.WriteLine();
+            Console.WriteLine("  it opens no socket and reads no repository - R-50");
+            // Judge takes a string and the product list. It cannot fetch
+            // anything, which is what makes "the manifest is read from the
+            // release, after the source has been accepted" true by
+            // construction rather than by discipline.
+            Check(InstallSource.Judge("https://github.com/owner-a/repo-a/releases", mineManifest)
+                      .Accepted,
+                  "the same answer comes back with no network of any kind");
+
+            // ================================================== STAGE 7
+            Console.WriteLine();
+            Console.WriteLine("WHAT IS INSTALLED STARTS TICKED - the safety property R-21 needs");
+            // R-21 says unticking a product uninstalls it. Every product row
+            // used to start EMPTY, so a user who opened this window and
+            // pressed Install without touching anything would have unticked
+            // everything they had - and the press meant to install would have
+            // removed the lot.
+            var here = InstallerScreen.Build(screenManifest, new[] { "2024" }, null,
+                                             new FakeInstalled("piece-one@2024"), null);
+            Check(RowFor(here, "piece-one").Chosen,
+                  "a product that is on the machine starts ticked");
+            Check(!RowFor(here, "piece-two").Chosen,
+                  "and one that is not does not");
+            Check(!RowFor(here, "tab-b").Chosen,
+                  "a greyed row is never ticked - it cannot be installed, so it "
+                  + "cannot be 'kept' either");
+
+            Console.WriteLine();
+            Console.WriteLine("UNTICKING SOMETHING INSTALLED IS AN UNINSTALL - R-21");
+            var both = InstallerScreen.Build(screenManifest, new[] { "2024", "2025" }, null,
+                                             new FakeInstalled("piece-one@2024", "piece-one@2025",
+                                                               "piece-two@2024"), null);
+            var dropped = both.ToRemove(new[] { "piece-two" });
+            Check(dropped.Count == 2,
+                  "the product left unticked comes off every release it is on");
+            Check(dropped[0].Product.Id == "piece-one" && dropped[1].Product.Id == "piece-one",
+                  "and it is the unticked one, not the ticked one");
+            Check(both.ToRemove(new[] { "piece-one", "piece-two" }).Count == 0,
+                  "nothing is removed while everything is still ticked");
+            Check(both.ToRemove(new[] { "piece-one" }).Count == 1,
+                  "and unticking the other takes only that one off");
+
+            Console.WriteLine();
+            Console.WriteLine("A PRODUCT THAT WAS NEVER THERE HAS NOTHING TO REMOVE");
+            var never = InstallerScreen.Build(screenManifest, new[] { "2024" }, null, null, null);
+            Check(never.ToRemove(new string[0]).Count == 0,
+                  "an empty window removes nothing, whatever is unticked");
+
+            Console.WriteLine();
+            Console.WriteLine("A HEADING REMOVES NOTHING OF ITS OWN - D-93");
+            // It installs nothing of its own either. Its pieces are rows in
+            // the same list and are asked about on their own account, so
+            // counting the heading too would delete each piece twice.
+            var headingOff = both.ToRemove(new string[0]);
+            foreach (var step in headingOff)
+                Check(step.Product.Id != "tab-a",
+                      "the tab itself is not in the removal list: " + step.Product.Id);
+            Check(headingOff.Count == 3,
+                  "three pairs come off - two for one piece, one for the other - "
+                  + "and the heading adds none: " + headingOff.Count);
+
+            Console.WriteLine();
+            Console.WriteLine("THE CONFIRMATION NAMES EVERY PRODUCT AND EVERY RELEASE");
+            // A safety gate, not an information message. "3 items will be
+            // removed" is a number somebody clicks past.
+            var ask = InstallerScreen.WhatWillBeRemoved(dropped);
+            Check(Names(ask, "REMOVE", "Piece One", "2024", "2025"),
+                  "it says what goes and from where: " + ask);
+            Check(Names(ask, "not touched"),
+                  "and that the user's own data survives - R-22, which is the "
+                  + "thing somebody about to uninstall is actually worried about");
+            Check(Names(ask, "Restart Revit"),
+                  "and that Revit has to be restarted, because a loaded assembly "
+                  + "goes on being loaded until it is");
+            Check(!Names(ask, "error"), "and it never says 'error' - docs/14");
+            Check(InstallerScreen.WhatWillBeRemoved(never.ToRemove(new string[0])) == null,
+                  "AND THERE IS NO DIALOG WHEN NOTHING IS BEING REMOVED - a "
+                  + "confirmation people meet every time is one they stop reading");
+            Check(InstallerScreen.WhatWillBeRemoved(null) == null,
+                  "nor when there is no list at all");
+
+            Console.WriteLine();
+            Console.WriteLine("REMOVALS HAPPEN BEFORE INSTALLS, and that order is a rule");
+            // THE REMOVAL LISTS BELOW COME FROM A SCREEN, not from steps built
+            // by hand. InstallStep's fields are internal on purpose - a step
+            // is something the plan or the screen decided, never something a
+            // caller fabricates - and asking the screen here means these
+            // checks exercise the path the window actually takes.
+            // A run that takes one product off and puts another on should
+            // leave the machine with the second. Doing the delete last means
+            // a failure part way through leaves BOTH.
+            var order = new FakeDeployer((p, r) => DeployOutcome.Ok("installed"));
+            var onMachine = InstallerScreen.Build(manifest, new[] { "2024" }, null,
+                                                  new FakeInstalled("piece-two@2024"), null);
+            var ordered = new InstallEngine(new FakeRevit(new[] { "2024" }), order)
+                .Apply(manifest, new[] { "piece-one" }, new[] { "2024" },
+                       onMachine.ToRemove(new[] { "piece-one" }));
+            Check(order.Did.Count == 2, "both halves ran");
+            Check(order.Did[0] == "remove piece-two@2024",
+                  "the removal is first: " + order.Did[0]);
+            Check(order.Did[1] == "install piece-one@2024",
+                  "and the install second: " + order.Did[1]);
+            Check(ordered.Removed == 1 && ordered.Installed == 1,
+                  "and the report counts them apart - one removed, one installed");
+
+            Console.WriteLine();
+            Console.WriteLine("AN UNINSTALL WAITS FOR REVIT TOO - R-38a");
+            // Revit holds a loaded assembly whether it is about to be
+            // replaced or deleted, so a release being uninstalled is a
+            // release this run touches.
+            var closing7 = new FakeRevit(new[] { "2024" }, Open("2024"), Open("2024"), Open());
+            var waited7 = new List<string>();
+            var removeOnly = new FakeDeployer((p, r) => DeployOutcome.Ok("x"));
+            var engine7 = new InstallEngine(closing7, removeOnly)
+            { OnWaiting = m => waited7.Add(m), Pause = () => { } };
+            var oneOn = InstallerScreen.Build(manifest, new[] { "2024" }, null,
+                                              new FakeInstalled("piece-one@2024"), null);
+            var report7 = engine7.Apply(manifest, new string[0], new string[0],
+                                        oneOn.ToRemove(new string[0]));
+            Check(waited7.Count == 2,
+                  "it waited while Revit 2024 was open, with nothing to install at all");
+            Check(removeOnly.Did.Count == 1 && removeOnly.Did[0] == "remove piece-one@2024",
+                  "and removed only once Revit had closed");
+            Check(report7.Removed == 1, "and says so");
+
+            Console.WriteLine();
+            Console.WriteLine("ONE REMOVAL FAILING DOES NOT STOP THE REST - R-19");
+            var stubborn = new FakeDeployer(
+                (p, r) => DeployOutcome.Ok("installed"),
+                (p, r) => p.Id == "piece-one"
+                    ? DeployOutcome.Failed("'" + p.Name + "' could not be removed - a file is in use.")
+                    : DeployOutcome.Ok("'" + p.Name + "' removed from Revit " + r + "."));
+            var twoOn = InstallerScreen.Build(manifest, new[] { "2024" }, null,
+                                              new FakeInstalled("piece-one@2024", "piece-two@2024"),
+                                              null);
+            var partly7 = new InstallEngine(new FakeRevit(new[] { "2024" }), stubborn)
+                .Apply(manifest, new string[0], new string[0], twoOn.ToRemove(new string[0]));
+            Check(partly7.Results.Count == 2, "both were attempted");
+            Check(partly7.Removed == 1 && partly7.Failed == 1, "one came off and one did not");
+            Check(stubborn.Did.Count == 2,
+                  "the second was tried even though the first failed");
+
+            Console.WriteLine();
+            Console.WriteLine("NOTHING TICKED AND NOTHING INSTALLED IS NOT A FAILURE");
+            var idle7 = new InstallEngine(new FakeRevit(new[] { "2024" }),
+                                          new FakeDeployer((p, r) => DeployOutcome.Ok("x")))
+                .Apply(manifest, new string[0], new[] { "2024" }, null);
+            Check(idle7.Results.Count == 0 && !idle7.Abandoned,
+                  "an empty apply does nothing and reports no failure");
+
+            // ================================================== STAGE 5
+            // DRIVEN AGAINST A REAL SERVER ON A REAL PORT. See
+            // ReleaseDownloadChecks - it is the one adapter reaching outside
+            // this assembly that does not need Windows, so it is exercised
+            // rather than read.
+            ReleaseDownloadChecks.Run(Check, Names);
+
             Console.WriteLine();
             Console.WriteLine("The install location is per user, and says why that matters");
             Check(Names(InstallerScreen.InstallLocation, "APPDATA"),
@@ -745,6 +1122,293 @@ namespace Heron.Installer.TestHost
                   "and nowhere that needs an administrator");
             Check(Names(InstallerScreen.InstallLocationNote, "no administrator"),
                   "and the window says so, which is the promise being kept");
+
+            Console.WriteLine();
+            Console.WriteLine("ROUTE 2 - A FOLDER ON THIS PC, CHECKED EXACTLY LIKE A DOWNLOAD");
+            // R-15 and R-53, answered 2026-09-22: after one download nothing
+            // needs the internet. What a person is handed is the folder the
+            // release builder makes, on a stick or a share.
+            //
+            // A FOLDER IS NOT TRUSTED FOR BEING LOCAL. It got here because
+            // somebody handed it over, which is exactly how a download gets
+            // here. Being local removes the network, not the question of
+            // whether the bytes are what the publisher published.
+            var hand = Path.Combine(Path.GetTempPath(), "heron-hand-" + Guid.NewGuid().ToString("N"));
+            var work = Path.Combine(Path.GetTempPath(), "heron-work-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                Directory.CreateDirectory(hand);
+                Directory.CreateDirectory(work);
+
+                Console.WriteLine();
+                Console.WriteLine("  a folder that is not a handover is refused, and the sentence says which");
+                Check(Names(ProductFolder.WhyNotAHeronFolder(Path.Combine(hand, "nope")), "no folder at"),
+                      "a path that is not there");
+                Check(Names(ProductFolder.WhyNotAHeronFolder(hand), "heron-products.json", "point at that one"),
+                      "a folder with no product list - and it names the commonest mistake, "
+                      + "pointing at the parent");
+
+                File.WriteAllText(Path.Combine(hand, "heron-products.json"), "{\"products\":[]}");
+                Check(Names(ProductFolder.WhyNotAHeronFolder(hand), "checksums.txt", "did not finish"),
+                      "a folder with a product list but no checksums - written last, so its "
+                      + "absence means the copy stopped half way");
+
+                // A REAL ASSET, MADE HERE. Nothing below reads a fixture: the
+                // zip is built, hashed, and handed to the same
+                // ReleaseAssets.WhyNotTrusted a download goes through.
+                var product = new HeronProduct { Id = "piece-one", Name = "One", Assembly = "One.dll" };
+                var assetName = ReleaseAssets.NameFor(product, "2024");
+                var zipPath = Path.Combine(hand, assetName);
+                using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+                {
+                    var entry = zip.CreateEntry("One.dll");
+                    using (var writer = new StreamWriter(entry.Open()))
+                        writer.Write("not a real assembly, and it does not need to be");
+                }
+                var good = ReleaseAssets.DigestOf(File.ReadAllBytes(zipPath));
+                File.WriteAllText(Path.Combine(hand, "checksums.txt"), good + "  " + assetName + "\n");
+
+                Check(ProductFolder.WhyNotAHeronFolder(hand) == null,
+                      "and a folder with both is accepted as a handover");
+
+                Console.WriteLine();
+                Console.WriteLine("  a good folder unpacks, and NOTHING was downloaded");
+                string why;
+                var unpacked = new ProductFolder(hand, work).Folder(product, "2024", out why);
+                Check(unpacked != null && why == null, "the asset came back: " + (why ?? "ok"));
+                Check(unpacked != null && File.Exists(Path.Combine(unpacked, "One.dll")),
+                      "and One.dll is really on the disk where it said");
+
+                Console.WriteLine();
+                Console.WriteLine("  A TAMPERED ZIP IS REFUSED, and this is the whole safety property");
+                // Somebody swapped the file on the stick. The checksum beside
+                // it still says what the publisher published, so it no longer
+                // matches - and nothing is written.
+                using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Update))
+                {
+                    var entry = zip.CreateEntry("evil.dll");
+                    using (var writer = new StreamWriter(entry.Open()))
+                        writer.Write("this was not in the release");
+                }
+                var after = new ProductFolder(hand, work).Folder(product, "2024", out why);
+                Check(after == null, "a zip that changed under the checksum installs nothing");
+                Check(Names(why, "did not arrive whole"),
+                      "and it says the file does not match what was published: " + why);
+
+                Console.WriteLine();
+                Console.WriteLine("  an asset the checksums do not list is refused too");
+                var stranger = new HeronProduct { Id = "piece-two", Name = "Two", Assembly = "Two.dll" };
+                var strangerName = ReleaseAssets.NameFor(stranger, "2024");
+                using (var zip = ZipFile.Open(Path.Combine(hand, strangerName), ZipArchiveMode.Create))
+                {
+                    var entry = zip.CreateEntry("Two.dll");
+                    using (var writer = new StreamWriter(entry.Open())) writer.Write("dropped in");
+                }
+                var unlisted = new ProductFolder(hand, work).Folder(stranger, "2024", out why);
+                Check(unlisted == null && Names(why, "not listed"),
+                      "a file nobody published is not installed because it is sitting there: " + why);
+
+                Console.WriteLine();
+                Console.WriteLine("  a release this folder does not carry says so, and names the way out");
+                var missing = new ProductFolder(hand, work).Folder(product, "2027", out why);
+                Check(missing == null, "a release the folder has no asset for installs nothing");
+                Check(Names(why, "not in", "whole folder"),
+                      "and it says the folder is partial rather than blaming the product: " + why);
+
+                Console.WriteLine();
+                Console.WriteLine("  checksums.txt unreadable FAILS CLOSED, never open");
+                // An empty checksum list must refuse everything. Reading it as
+                // "nothing to check, carry on" is how a damaged handover
+                // installs whatever it likes.
+                var noSums = Path.Combine(Path.GetTempPath(), "heron-nosum-" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(noSums);
+                File.Copy(Path.Combine(hand, "heron-products.json"), Path.Combine(noSums, "heron-products.json"));
+                File.Copy(zipPath, Path.Combine(noSums, assetName));
+                Directory.CreateDirectory(Path.Combine(noSums, "checksums.txt"));   // a folder, not a file
+                var closed = new ProductFolder(noSums, work).Folder(product, "2024", out why);
+                Check(closed == null, "an unreadable checksums.txt installs nothing at all");
+                Check(Names(why, "no way to tell"),
+                      "and it says it cannot tell rather than assuming: " + why);
+                Directory.Delete(noSums, true);
+            }
+            finally
+            {
+                try { Directory.Delete(hand, true); } catch (IOException) { }
+                try { Directory.Delete(work, true); } catch (IOException) { }
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("STAGE 6 - THE COMMAND LINE DOOR READS WHAT IT WAS GIVEN (Q-PE-16)");
+            Console.WriteLine();
+            Console.WriteLine("  an empty line is the plain case, not a refusal");
+            // `heron-install` on its own means everything, for every Revit
+            // found. It is the commonest thing anybody will type.
+            var cliPlain = Heron.Installer.Cli.Arguments.Read(new string[0]);
+            Check(cliPlain.Problem == null, "no arguments is not a problem");
+            Check(cliPlain.Source == null && cliPlain.FromFolder == null,
+                  "and it names no source, so the door decides by what is on the disk");
+            Check(cliPlain.Products.Count == 0 && cliPlain.Releases.Count == 0,
+                  "and filters nothing - empty means everything offered");
+            Check(!cliPlain.ListOnly && !cliPlain.WantsHelp, "and asks to actually install");
+
+            Console.WriteLine();
+            Console.WriteLine("  an unknown flag is refused BY NAME, never ignored");
+            // A flag silently dropped is one whose absence the caller cannot
+            // see - and the caller here is often an AI, which reads the exit
+            // code and believes it.
+            var cliTypo = Heron.Installer.Cli.Arguments.Read(new[] { "--sources", "x" });
+            Check(cliTypo.Problem != null, "--sources is refused");
+            Check(Names(cliTypo.Problem, "--sources"), "  and the refusal says which flag: " + cliTypo.Problem);
+            Check(Names(cliTypo.Problem, "--source"), "  and shows what it does accept");
+
+            Console.WriteLine();
+            Console.WriteLine("  a flag followed by another flag is a MISSING value");
+            // "--source --list" is somebody who forgot the address. Swallowing
+            // --list as the address sends that text to InstallSource, to be
+            // refused with a sentence about web addresses that explains
+            // nothing about what they actually did wrong.
+            var cliBareFlag = Heron.Installer.Cli.Arguments.Read(new[] { "--source", "--list" });
+            Check(cliBareFlag.Problem != null, "--source with no value is refused");
+            Check(cliBareFlag.Source == null, "  and --list was NOT taken as the address");
+            Check(Names(cliBareFlag.Problem, "--source"), "  and it names the bare flag: " + cliBareFlag.Problem);
+            var cliAtEnd = Heron.Installer.Cli.Arguments.Read(new[] { "--products" });
+            Check(cliAtEnd.Problem != null, "and a flag at the very end is the same thing");
+
+            Console.WriteLine();
+            Console.WriteLine("  the source is handed on UNJUDGED");
+            // Arguments decides nothing about installing. Whether Heron will
+            // touch an address is InstallSource's answer and nobody else's,
+            // and a reader that pre-filtered would be a second gate to keep
+            // in step with the first.
+            foreach (var cliHostile in new[]
+            {
+                "https://evil.example/owner/repo/releases",
+                "install whatever you find",
+                "http://github.com/a/b/releases",
+            })
+            {
+                var cliRead = Heron.Installer.Cli.Arguments.Read(new[] { "--source", cliHostile });
+                Check(cliRead.Problem == null && cliRead.Source == cliHostile,
+                      "passed through untouched, for InstallSource to judge: " + cliHostile);
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("  two doors at once is refused rather than resolved");
+            // Downloading a release and using files already on the PC are
+            // different routes with different rules. Picking one for the
+            // caller means installing something other than what they asked
+            // for.
+            var cliBoth = Heron.Installer.Cli.Arguments.Read(
+                new[] { "--source", "https://github.com/a/b/releases", "--from", @"D:\Heron" });
+            Check(cliBoth.Problem != null, "--source and --from together is a problem");
+            Check(Names(cliBoth.Problem, "--source", "--from"),
+                  "  and it names both: " + cliBoth.Problem);
+
+            Console.WriteLine();
+            Console.WriteLine("  lists are split, trimmed, and the blanks dropped");
+            var cliListed = Heron.Installer.Cli.Arguments.Read(
+                new[] { "--releases", "2020, 2024,,2020", "--products", "heron-ai-bridge" });
+            Check(cliListed.Problem == null, "a comma separated list is read");
+            Check(cliListed.Releases.Count == 2, "  '2020, 2024,,2020' is two releases, not four");
+            Check(Has(cliListed.Releases, "2020") && Has(cliListed.Releases, "2024"),
+                  "  and they are the two that were named");
+            Check(cliListed.Products.Count == 1 && cliListed.Products[0] == "heron-ai-bridge",
+                  "  and the product list reads the same way");
+
+            Console.WriteLine();
+            Console.WriteLine("  the usage text tells a modeller what the exit codes mean");
+            // The caller is often an AI, and a code it has to guess at is a
+            // code it will guess wrong. 3 is COULD NOT RUN - tests/README.md's
+            // own meaning - and reading it as failure starts somebody
+            // repairing what is not broken.
+            var cliUsage = Heron.Installer.Cli.Arguments.Usage();
+            Check(Names(cliUsage, "0", "1", "2", "3"), "all four codes are listed");
+            Check(Names(cliUsage, "Revit stayed open"), "  and 3 says Revit stayed open");
+            Check(Names(cliUsage, "Nothing was changed"), "  and that nothing was changed");
+            Check(Names(cliUsage, "never removes"),
+                  "and it says plainly that this door never removes anything");
+            Check(!Names(cliUsage, "error"), "and it never says 'error' - docs/14");
+
+            Console.WriteLine();
+            Console.WriteLine("IS THERE A NEWER VERSION? - R-54, R-55, R-56");
+            Console.WriteLine();
+            Console.WriteLine("  the ordinary answers");
+            // The owner's reason, 2026-09-22: somebody who downloaded days ago
+            // would otherwise never hear that a newer release exists.
+            var newer = UpdateCheck.Compare("0.1.0", "0.2.0");
+            Check(newer.State == UpdateState.NewerAvailable, "0.1.0 -> 0.2.0 is an update");
+            Check(Names(newer.Say, "0.1.0", "0.2.0"),
+                  "  and it says both versions, not just that there is one: " + newer.Say);
+            Check(Names(newer.Say, "Nothing has been updated"),
+                  "  and it says plainly that nothing happened - R-55, offered not applied");
+
+            var same = UpdateCheck.Compare("0.2.0", "0.2.0");
+            Check(same.State == UpdateState.UpToDate, "the same version is up to date");
+
+            Check(UpdateCheck.Compare("1.2", "1.2.0").State == UpdateState.UpToDate,
+                  "1.2 and 1.2.0 are the same thing - a short version is padded");
+            Check(UpdateCheck.Compare("1.2", "1.2.1").State == UpdateState.NewerAvailable,
+                  "and 1.2 is older than 1.2.1");
+            Check(UpdateCheck.Compare("v0.1.0", "0.2.0").State == UpdateState.NewerAvailable,
+                  "a leading v is a tag's habit, not a different version");
+            Check(UpdateCheck.Compare("0.9.0", "0.10.0").State == UpdateState.NewerAvailable,
+                  "0.10.0 is NEWER than 0.9.0 - compared as numbers, never as text");
+
+            Console.WriteLine();
+            Console.WriteLine("  AHEAD is not up to date, and saying so would be the comfortable lie");
+            // A developer with a build newer than anything published. Telling
+            // them they are current hides that they are about to install over
+            // their own work.
+            var ahead = UpdateCheck.Compare("0.3.0", "0.2.0");
+            Check(ahead.State == UpdateState.Ahead, "0.3.0 against a published 0.2.0 is ahead");
+            Check(!Names(ahead.Say, "newest published version"),
+                  "and it is NOT reported as up to date");
+            Check(Names(ahead.Say, "built rather than downloaded"),
+                  "and it says what that usually means: " + ahead.Say);
+
+            Console.WriteLine();
+            Console.WriteLine("  CANNOT TELL is an answer, and it never reads as up to date");
+            // The direction to be wrong in is the one that does not hide a
+            // newer release from somebody.
+            foreach (var pair in new[]
+            {
+                new[] { "0.1.0-rc1", "0.2.0" },   // a release candidate is not 0.1.0
+                new[] { "banana", "0.2.0" },
+                new[] { "0.1.0", "" },
+                new[] { null, "0.2.0" },
+            })
+            {
+                var cannot = UpdateCheck.Compare(pair[0], pair[1]);
+                Check(cannot.State == UpdateState.CannotTell,
+                      "'" + (pair[0] ?? "(null)") + "' against '" + pair[1] + "' cannot be compared");
+                Check(cannot.State == UpdateState.CannotTell && !Names(cannot.Say, "up to date"),
+                      "  and it does not claim to be up to date");
+                Check(cannot.State == UpdateState.CannotTell && Names(cannot.Say, "installing works either way"),
+                      "  and it says the install is unaffected");
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("  the version comes from the manifest, and it is the HIGHEST one");
+            // Q-PE-8 - whether products share a version or carry their own - is
+            // still open, so this has to be right either way.
+            var versions = ProductManifest.Parse(@"{""products"":[
+                {""id"":""a"",""name"":""A"",""addin"":""A.addin"",""assembly"":""A.dll"",
+                 ""addInId"":""11111111-1111-1111-1111-111111111111"",""folder"":""A"",""version"":""0.1.0""},
+                {""id"":""b"",""name"":""B"",""addin"":""B.addin"",""assembly"":""B.dll"",
+                 ""addInId"":""22222222-2222-2222-2222-222222222222"",""folder"":""B"",""version"":""0.4.0""},
+                {""id"":""c"",""name"":""C"",""addin"":""C.addin"",""assembly"":""C.dll"",
+                 ""addInId"":""33333333-3333-3333-3333-333333333333"",""folder"":""C"",""version"":""0.2.0""}]}");
+            Check(UpdateCheck.HighestVersion(versions) == "0.4.0",
+                  "the highest, not the first: 0.4.0 out of 0.1.0, 0.4.0, 0.2.0");
+
+            var noVersions = ProductManifest.Parse(@"{""products"":[
+                {""id"":""a"",""name"":""A"",""addin"":""A.addin"",""assembly"":""A.dll"",
+                 ""addInId"":""11111111-1111-1111-1111-111111111111"",""folder"":""A""}]}");
+            Check(UpdateCheck.HighestVersion(noVersions) == null,
+                  "and a manifest carrying no version at all answers null rather than guessing");
+            Check(UpdateCheck.Compare(UpdateCheck.HighestVersion(noVersions), "0.2.0").State
+                      == UpdateState.CannotTell,
+                  "which Compare then reports as cannot tell, not as an update");
 
             Console.WriteLine();
             if (Failures.Count > 0)
@@ -762,6 +1426,11 @@ namespace Heron.Installer.TestHost
             Console.WriteLine("with. A tab opens into its pieces, either one on its own is a");
             Console.WriteLine("supported install, and a product that cannot be installed here is");
             Console.WriteLine("greyed with the reason on the row rather than quietly dropped.");
+            Console.WriteLine();
+            Console.WriteLine("The command line door reads what it was given and judges none");
+            Console.WriteLine("of it: an unknown flag is refused by name, a bare flag is a");
+            Console.WriteLine("missing value rather than a value, and the address goes to");
+            Console.WriteLine("InstallSource exactly as it was typed.");
             Console.WriteLine();
             Console.WriteLine("IT HAS INSTALLED NOTHING. Nothing was written outside one");
             Console.WriteLine("temporary folder of its own, no Revit was looked for, no");

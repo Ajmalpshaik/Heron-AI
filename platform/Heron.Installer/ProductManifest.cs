@@ -81,6 +81,29 @@ namespace Heron.Installer
 
         public IReadOnlyList<HeronProduct> Products { get { return _products; } }
 
+        /// <summary>
+        /// Which GitHub repository publishes this product list's releases, or
+        /// null when the file does not say.
+        ///
+        /// DATA, NOT A CONSTANT IN CODE - Stage 5, and the same reasoning as
+        /// R-3. A repository that is renamed or moved is then a line in the
+        /// manifest rather than a rebuild of the installer. Nothing is
+        /// executed from it; it only ever becomes a URL.
+        /// </summary>
+        public string SourceOwner { get; private set; }
+
+        public string SourceRepo { get; private set; }
+
+        /// <summary>Whether this manifest says where to fetch a release.</summary>
+        public bool KnowsItsSource
+        {
+            get
+            {
+                return !string.IsNullOrEmpty(SourceOwner)
+                       && !string.IsNullOrEmpty(SourceRepo);
+            }
+        }
+
         public HeronProduct Find(string id)
         {
             foreach (var p in _products)
@@ -146,7 +169,20 @@ namespace Heron.Installer
                 foreach (var p in list)
                     p.IsHeading = p.Id != null && named.Contains(p.Id);
 
-                return new ProductManifest(list);
+                var manifest = new ProductManifest(list);
+
+                // ABSENT IS AN ANSWER, not a fault. A manifest with no source
+                // is one nothing can be downloaded from, and the installer
+                // says exactly that rather than guessing a repository name.
+                JsonElement source;
+                if (doc.RootElement.TryGetProperty("source", out source)
+                    && source.ValueKind == JsonValueKind.Object)
+                {
+                    manifest.SourceOwner = Str(source, "owner");
+                    manifest.SourceRepo = Str(source, "repo");
+                }
+
+                return manifest;
             }
         }
 

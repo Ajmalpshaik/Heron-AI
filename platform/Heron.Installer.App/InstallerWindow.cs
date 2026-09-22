@@ -36,8 +36,18 @@ namespace Heron.Installer.App
         private readonly Button _install;
         private readonly TextBlock _report;
 
-        /// <summary>Raised when Install is pressed. The window never installs.</summary>
-        public event Action<IReadOnlyList<string>, IReadOnlyList<string>> InstallPressed;
+        /// <summary>
+        /// Raised when Install is pressed, with what to install, where, and
+        /// what to REMOVE. The window never installs and never deletes.
+        ///
+        /// THE THIRD ARGUMENT IS WHY THIS SIGNATURE CHANGED - R-21. Uninstall
+        /// is this same window: a product that is on the machine and is no
+        /// longer ticked comes off. What that list contains is
+        /// InstallerScreen.ToRemove's decision, and it is confirmed with the
+        /// user before this event is raised at all.
+        /// </summary>
+        public event Action<IReadOnlyList<string>, IReadOnlyList<string>,
+                            IReadOnlyList<InstallStep>> InstallPressed;
 
         public InstallerWindow(InstallerScreen screen, string version)
         {
@@ -125,6 +135,8 @@ namespace Heron.Installer.App
             var lines = new List<string>();
             if (report.Abandoned) lines.Add(report.AbandonedBecause);
             foreach (var result in report.Results) lines.Add(result.Message);
+            if (report.Removed > 0)
+                lines.Add("Restart Revit so the removed products stop loading.");
             foreach (var skipped in report.Skipped) lines.Add(skipped.Explanation);
 
             _report.Text = lines.Count == 0
@@ -239,6 +251,13 @@ namespace Heron.Installer.App
                     },
                     IsEnabled = row.CanBeTicked,
 
+                    // WHAT IS ALREADY INSTALLED STARTS TICKED - R-21, and it
+                    // is a safety property rather than a convenience. Since
+                    // unticking a product uninstalls it, a window whose rows
+                    // all started empty would turn "open it and press
+                    // Install" into "remove everything I have".
+                    IsChecked = row.Chosen,
+
                     // THE REASON IS ON THE ROW - R-10. A greyed tick box with
                     // no explanation is the same silence as leaving it out.
                     ToolTip = row.WhyNot ?? row.IfYouInstallAgain,
@@ -345,21 +364,51 @@ namespace Heron.Installer.App
             }
 
             // RESOLVED BY THE SCREEN MODEL, not here: a heading's tick becomes
-            // its pieces and a greyed row installs nothing.
+            // its pieces, a greyed row installs nothing, and what comes OFF is
+            // worked out from what is on the disk rather than from this list.
             var products = _screen.ToInstall(ticked);
             var releases = _screen.ChosenReleases();
+            var removals = _screen.ToRemove(ticked);
 
-            if (products.Count == 0 || releases.Count == 0)
+            if (products.Count == 0 && removals.Count == 0)
             {
-                _report.Text = products.Count == 0
-                    ? "Nothing is ticked, so there is nothing to install."
-                    : "No Revit version is ticked, so there is nowhere to install to.";
+                _report.Text = "Nothing is ticked and nothing needs removing, so " +
+                               "there is nothing to do.";
                 return;
+            }
+
+            if (products.Count > 0 && releases.Count == 0)
+            {
+                _report.Text = "No Revit version is ticked, so there is nowhere to install to.";
+                return;
+            }
+
+            // THE ONE DIALOG HERON IS ALLOWED TO SHOW, and it is a safety
+            // gate rather than an information message: anything that deletes
+            // confirms first, naming what will go. The sentence is the screen
+            // model's, so what it says is checked where it can be run.
+            //
+            // NO IS A REAL ANSWER. Saying no changes nothing at all - not the
+            // ticks, not the install, not one file - because a person who
+            // steps back from a delete has not asked for the other half of
+            // the press either.
+            var confirm = InstallerScreen.WhatWillBeRemoved(removals);
+            if (confirm != null)
+            {
+                var answer = MessageBox.Show(confirm, "Heron Installer",
+                                             MessageBoxButton.YesNo,
+                                             MessageBoxImage.Warning,
+                                             MessageBoxResult.No);
+                if (answer != MessageBoxResult.Yes)
+                {
+                    _report.Text = "Nothing was changed.";
+                    return;
+                }
             }
 
             _install.IsEnabled = false;
             var handler = InstallPressed;
-            if (handler != null) handler(products, releases);
+            if (handler != null) handler(products, releases, removals);
         }
 
         // ------------------------------------------------------------ small
