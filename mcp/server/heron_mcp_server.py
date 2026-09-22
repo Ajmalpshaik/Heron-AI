@@ -31,7 +31,8 @@ TWO tools write, and the command marks them. revit_apply_move cannot run on
 its own - it applies a preview the user has already seen, once, and the add-in
 re-checks the model before it writes. revit_change carries a fragment straight
 to Revit and KEEPS what it did, with no preview in front of it: the owner's
-ribbon switch is what stands in its way, and nothing else. Writing is switched
+ribbon switch is what stands in its way - that, and since FRAGMENT-ISSUES row
+5b-155 the client's refusal of any fragment above Modify. Writing is switched
 off entirely until write.enabled is set - see HeronPermissions.
 
     ============ revit_change: RUN, AND E16 STILL OPEN ============
@@ -822,7 +823,9 @@ def revit_change(capability: str, values: str = "",
 
     It is REFUSED unless the owner has switched Changes ON in Revit's ribbon.
     That switch is read inside the add-in, never here - a client deciding its
-    own permission is not a permission.
+    own permission is not a permission. A capability that publishes or
+    administers - sync with central, save, export, create a workset - is
+    refused even then: Heron does not run those yet.
 
     One Ctrl+Z in Revit puts back whatever this did.
     """
@@ -833,6 +836,27 @@ def revit_change(capability: str, values: str = "",
                 "Heron does have." % (capability or ""))
 
     root = _repo_root()
+
+    # PUBLISH AND ADMIN STOP HERE, EXACTLY AS THEY DO ON THE COMMAND LINE.
+    #
+    # FRAGMENT-ISSUES row 9 closed this hole by making the CLIENT refuse to
+    # send a fragment above Modify - `risk_refusal`, called by `fragment`,
+    # `prove` and, since row 54, `validate`. The add-in cannot catch it:
+    # `run_fragment_write` is declared Modify, and row 9 records why the
+    # fragment's own risk is not sent over for the add-in to judge. This tool
+    # was written a week after that fix and never called it, so with Changes ON
+    # a chat could run SYNC_WITH_CENTRAL, CREATE_WORKSET, SAVE_DOCUMENT or
+    # UPGRADE_FAMILY_FILES - all out of reach in Phase 0 and Phase 1 according
+    # to HeronPermissions - while the same request typed at the command line
+    # was refused. Row 5b-155.
+    #
+    # CALLED, NOT REIMPLEMENTED, for the reason `undeclared_values` gives below.
+    # And FIRST, before any code is read or any session is bound, so a refusal
+    # costs nothing and touches nothing.
+    refusal = bridge.risk_refusal(root, folder)
+    if refusal:
+        return refusal
+
     source_path = os.path.join(root, "brain", "fragments", folder,
                                "impl", "any", "fragment.cs")
     if not os.path.isfile(source_path):
