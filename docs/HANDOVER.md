@@ -6671,3 +6671,80 @@ The owner asked for this in one table, and asked that it be given in this shape 
 **Safe on a live project today: 144 proven `READ` fragments** - that number read **114** in this file's
 own cold-start instructions until 2026-09-20, understating by thirty what the owner was allowed to use.
 Derive it, never read it: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml`.
+
+## Seven suites were red on the owner's PC, CI could see none of them, and all 244 pass now
+
+**2026-09-22.** It started as one failure - `tests/test_bridge_roundtrip.py` reporting *"an unbounded
+line returned {}"*, which reads like the request ceiling failing inside Revit's process. Chasing it
+properly turned up six more suites red on this machine and green in CI. **Every one is fixed, each in
+its own pull request, each proved by reverting the fix and watching the suite go red again - and a full
+sweep of `main` afterwards passed 244 of 244**, with nothing failing, nothing waiting and nothing timed
+out.
+
+**The shape is the finding.** CI is a clean Linux clone: no worktrees, no cached assemblies, no stray
+folders, a UTF-8 console. The owner's PC has all of those, and several sessions running at once. All
+seven were green in CI forever and could only ever go red where somebody actually works.
+
+| suite | what was wrong | fixed in |
+|---|---|---|
+| `test_bridge_roundtrip` | launched a host binary from 2026-09-16, older than the ceiling it was testing | [#285](https://github.com/Ajmalpshaik/Heron-AI/pull/285) |
+| `test_api_digest` | the tool's REFUSING TO WRITE path raised on a two-drive path, and the suite assumed a machine with no SDK | [#286](https://github.com/Ajmalpshaik/Heron-AI/pull/286) |
+| `test_library_total` | read other sessions' worktrees - **140 of 140** findings were there | [#287](https://github.com/Ajmalpshaik/Heron-AI/pull/287) |
+| `test_config_and_health` | the same - **4 of 4** findings in worktrees | [#287](https://github.com/Ajmalpshaik/Heron-AI/pull/287) |
+| `test_change_gate` | its verdicts read the working tree, and `.agents/` was in it | [#288](https://github.com/Ajmalpshaik/Heron-AI/pull/288) |
+| `test_check_dependencies` | assumed `model2vec` is absent; it is installed here | [#288](https://github.com/Ajmalpshaik/Heron-AI/pull/288) |
+| `test_decision_summary` | did not fail, it CRASHED - a tick printed to a cp1252 console | [#288](https://github.com/Ajmalpshaik/Heron-AI/pull/288) |
+
+**Nothing under `revit/` changed.** No add-in rebuild, no redeploy, no Revit restart: every change was a
+suite or `tools/api-changes.py`.
+
+### The bridge was never broken, and rebuilding could not have shown it
+
+`Directory.Build.props` writes every build to `bin/x64/<Configuration>/<RevitVersion>/`. The suite read
+a flat `bin/x64/Debug/`, where a binary from 2026-09-16 still sat. So a correct, successful rebuild **in
+either configuration** landed somewhere the suite never looked, and the failure survived it - which is
+what made it read as a transport defect for two sessions. Against that stale binary a
+2,000,000-character line, nearly twice the ceiling, was accepted and answered `pong`; against the
+current one it is refused. **Rebuilding is not the check. Where the build landed is.** The flat leftovers
+are still on disk, harmless now that nothing reads them.
+
+### A test rewrote committed evidence
+
+Section 6 of `test_api_digest` asserted *"this machine cannot answer"*. This machine can - so by the time
+it ran, with `OUT` already restored to the real `tools/api-surface/changes.json`, `main()` performed the
+full comparison and **rewrote the committed digest as a side effect of a test.** It came out
+byte-identical, which is luck and not design. The section now forces the condition with empty folders
+and writes to a temp file, so it is meaningful on every machine and cannot touch the committed digest.
+
+### `.agents/` came back, and this time the suite stopped caring
+
+*Two things about the machine, not the code*, above, records `.agents/skills/` returning once and being
+deleted to turn `test_change_gate` green. **It is back again**, untracked. It was **left alone** this
+time - deleting it is the owner's call - and instead the four calls in `test_change_gate` that weigh a
+verdict now pass `--range HEAD..HEAD`, so no untracked file can decide one. Proved both ways: with the
+folder moved aside the old suite passed, and the new suite passes with it present. The `.gitignore`
+tripwire for it is untouched - it exists to keep the hook script visible, and `git status` still shows
+the folder.
+
+### The rule the three assumption failures share
+
+`test_api_digest`, `test_check_dependencies` and `test_change_gate` each froze the bare machine they were
+written on into an assertion, and then failed the tool for giving the correct answer on a better
+equipped one. **Force the condition, never assume it** - point at empty folders, name a package that
+cannot exist, hand the subprocess an empty range. And before believing any failure from a suite that
+walks the repository, count how many of its findings sit under `.claude/worktrees/`: this time it was
+all of them.
+
+### What this leaves
+
+| | |
+|---|---|
+| Suites red on the owner's PC | **0 of 244**, swept on `main` 2026-09-22, 20:15 to 20:40 |
+| Pull requests open from this work | **0** - #285 to #288 are all merged |
+| `.agents/` | present again, untracked - **the owner's to delete or keep** |
+| Flat `tests/Heron.Bridge.TestHost/bin/x64/Debug/` leftovers | still on disk from 2026-09-16; nothing reads them now |
+| Anything to rebuild or redeploy | **nothing** |
+
+**One caution for the next sweep on this machine:** other sessions run suites at the same time - three
+were running alongside this sweep. Most suites use their own temp folders, but run a red one alone before
+reporting it, as *Two suites that looked red were the sweep, not the code* already says.
