@@ -919,12 +919,44 @@ def _provides_lines(provides):
     The add-in's `Report` has already summarised every value - a collection
     arrives as its count and its first three names - so nothing here can
     carry the model in bulk (D-26). Empty when the fragment left nothing.
+
+    A DICTIONARY ARRIVES AS ITS SIZE AND NOTHING ELSE, AND THE REPLY SAYS SO.
+    `RevitFragment.Describe` renders one as "3 entry(ies)" - no first three,
+    no "...", nothing to show anything was left behind - so a size read as
+    the whole answer. Measured 2026-09-23 in Project1, Revit 2024:
+    REPORT_CONNECTORS answered `connectorFacts 1 entry(ies)`, `connections 1
+    entry(ies)` and `openConnectors 1 entry(ies)`, and where each connector
+    sat and which way it faced never reached the chat. So every name that
+    held something is named on one NOT SENT line, and neither the modeller nor
+    the assistant takes a size for the contents. FRAGMENT-ISSUES 5b-195.
+
+    SAID HERE, NOT IN THE ADD-IN. The same "N entry(ies)" is what every proof
+    record carries and what heron_validate._as_count reads as a quantity, so
+    words added in `Describe` would change every proof taken after them - and
+    a change there costs a rebuild and a Revit restart on every release. It
+    is recognised by its exact shape, a whole number and that one word, so a
+    fragment's own sentence that happens to say "entry(ies)" is left alone.
     """
     if not isinstance(provides, dict) or not provides:
         return []
     width = max(len(str(name)) for name in provides)
-    return [""] + ["  %-*s  %s" % (width, name, provides[name])
-                   for name in sorted(provides)]
+    lines = [""] + ["  %-*s  %s" % (width, name, provides[name])
+                    for name in sorted(provides)]
+
+    held = []
+    for name in sorted(provides):
+        words = str(provides[name]).strip().split(" ")
+        if (len(words) == 2 and words[1] == "entry(ies)"
+                and words[0].isdigit() and int(words[0]) > 0):
+            held.append(str(name))
+    if held:
+        one = len(held) == 1
+        lines.append("  NOT SENT: what is in %s. Only how many entries %s "
+                     "reached this reply."
+                     % (held[0] if one else
+                        ", ".join(held[:-1]) + " and " + held[-1],
+                        "it holds" if one else "each holds"))
+    return lines
 
 
 def _aim_at_pin(args):

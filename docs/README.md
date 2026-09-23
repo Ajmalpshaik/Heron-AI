@@ -5,7 +5,7 @@
 > ([B8](NEEDS-CHECKING.md)), and what is still owed is a tape measure on the result — `D3`. **Phase 2
 > (Steps 7 to 14) is built and barely proven.** This line said both *"have never loaded into Revit"*
 > until 2026-09-21, a fortnight after the first write ([row 5b-54](FRAGMENT-ISSUES.md)).
-> **All ten skills are `DRAFT`; 323 of the 396 fragments are `PROVEN`
+> **All ten skills are `DRAFT`; 322 of the 396 fragments are `PROVEN`
 > as of 2026-09-23** — this line said *every fragment is `DRAFT`* long after that stopped being true, so
 > derive it: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 >
