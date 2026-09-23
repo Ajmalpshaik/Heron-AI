@@ -1,0 +1,45 @@
+positive:
+  - given: >
+      a new Generic Model family open in front, parameterNames "Width, Depth,
+      Height", kind Length, instance false, parameterGroup empty, on Revit 2020
+      AND again on 2024 - the two releases create by different calls
+    expect: >
+      all three added, each read back as a type length under Dimensions - and
+      LOOKED AT in the Family Types dialog, with the three rows showing 0
+
+  - given: the same request run a second time
+    expect: >
+      nothing added, all three in alreadyThere, and no second Width in Family
+      Types
+
+negative:
+  - given: >
+      parameterNames "Width" where the family already has an INSTANCE Width,
+      asked for as type
+    expect: >
+      left alone and SAID - the finding naming it as a different parameter
+      under a familiar name. Not silently reported as done
+
+  - given: kind "Lenght" (misspelt)
+    expect: >
+      refused listing the kinds it takes, and Family Types unchanged - no
+      parameter of some other kind added in its place
+
+  - given: parameterGroup "Dimension" where Revit calls it "Dimensions"
+    expect: >
+      refused with some of the real group names offered. Not the nearest
+      group taken
+
+  - given: >
+      three names where the THIRD holds a character Revit refuses in a name
+    expect: >
+      the call refused with Revit's words and NONE of the three in Family
+      Types afterwards - all or nothing, checked in the dialog
+
+  - given: a project in front
+    expect: notAFamily true and nothing added anywhere
+
+second_route:
+  - >
+      Family Types, New Parameter by hand for one of the same names, and its
+      kind, scope and group compared with what this reports for its twin

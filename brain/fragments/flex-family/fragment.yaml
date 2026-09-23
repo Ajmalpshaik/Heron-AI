@@ -1,0 +1,107 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-033
+semantic-identity: "flex the family through these sizes, read the geometry back, and put everything back"
+kind: action
+domain: revit.families
+capability: FLEX_FAMILY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  FLEXES the family open in the Family Editor: tries it at each set of sizes
+  given - "Width=900; Depth=500 | Width=400; Depth=700" - reads the geometry
+  back at every one, then puts every value back as it was and proves it did.
+  The test a modeller runs by typing new sizes into Family Types and watching
+  the family follow, with the watching done by measurement.
+
+  **IT MEASURES THE GEOMETRY, NOT THE PLANES.** Planes that move prove the
+  dimensions work, not that anything followed them - reported from an earlier
+  family build, where a box drawn without locks looked parametric right up to
+  its first flex. So each trial reads the solid's own extent - its size, where
+  its centre sits, where its base is - and every labelled dimension and every
+  connector tied to a parameter is compared with what that parameter holds.
+  When the labelled planes moved and the solid did not, that is said in
+  those words.
+
+  **EACH TRIAL STARTS FROM THE FAMILY AS IT WAS**, plus only the values that
+  trial names. Use sizes that are really different and not square - a square
+  trial alone hides a width and a depth swapped.
+
+  **IT CHANGES THE FAMILY AND CHANGES IT BACK, AND SAYS SO.** It writes values,
+  so it is a MODIFY: it is not a read and does not pretend to be one. Every
+  value it touched is written back afterwards and read back, and the solid is
+  measured again against how it started. If the family does not come back
+  exactly as it was, the call fails and nothing from it is kept.
+
+  **A TRIAL REVIT CANNOT SOLVE FAILS THE CALL** with Revit's words and nothing
+  kept - constraints that cannot be satisfied at some size are exactly what a
+  flex exists to find.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The trials. Within a trial, parameter=value pairs with SEMICOLONS
+    # between; between trials, a PIPE - "Width=900; Depth=500 | Width=400;
+    # Depth=700". Lengths in millimetres, angles in degrees.
+    - name: trials
+      type: string
+      source: request
+  provides:
+    - name: allHeld
+      # Every labelled dimension and every tied connector read its parameter
+      # in every trial, and the solid moved whenever its planes did. A
+      # statement about the checks this made, not a proof of anything else.
+      role: result
+      type: bool
+    - name: trialResults
+      # One line per trial: the sizes tried and what the geometry read.
+      role: result
+      type: IList<string>
+    - name: restored
+      # Every value put back and the solid measured the same as before the
+      # first trial.
+      role: result
+      type: bool
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was tried, in plain words. Empty when the flex ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyManager.Set / CurrentType / GetAssociatedFamilyParameter`,
+  `Dimension.FamilyLabel / Value`, `Element.get_BoundingBox(null)` and
+  `GenericForm.IsSolid` read the same 2020 through 2027 (api-surface, read
+  2026-09-24). A parameter's kind moved at 2022 and is read by reflection, the
+  same way SET_FAMILY_TYPE_VALUES reads it.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "flex the family"                         -> here
+#   "try it at 900 wide and put it back"      -> here
+#   "make it 900 wide"                        -> SET_FAMILY_TYPE_VALUES - kept
+#   "check the family meets our standard"     -> CHECK_FAMILY_STANDARDS
+
+utterances:
+  - flex the family
+  - flex this family at 900 by 500 and 400 by 700
+  - try the family at different sizes and put it back
+  - resize test the family and check the geometry follows
+  - try it at 900 wide and put it back

@@ -1,0 +1,36 @@
+positive:
+  - given: >
+      a new Generic Model family open in front, planes "Box Left=-300; Box
+      Right=300", axis left-right
+    expect: >
+      two planes made in the floor plan, read back at X = -300 and X = 300 mm -
+      and MEASURED in the Family Editor with a dimension to Center (Left/Right),
+      300 each side. Their names shown in Properties
+
+  - given: planes "Box Top=250", axis height
+    expect: >
+      one horizontal plane made in an elevation, at Z = 250 mm, measured there
+      from Ref. Level
+
+  - given: the first request run again unchanged
+    expect: both in alreadyThere, nothing made, no second Box Left
+
+negative:
+  - given: planes "Box Left=-400" where Box Left already sits at -300
+    expect: >
+      refused naming where the existing one is, and nothing made or moved -
+      checked by measuring Box Left again
+
+  - given: axis "sideways"
+    expect: refused listing left-right, front-back and height, nothing made
+
+  - given: planes "Box Left=-300; box left=300"
+    expect: refused as one name twice, nothing made
+
+  - given: a project in front
+    expect: notAFamily true and no plane made in the project
+
+second_route:
+  - >
+      Create, Reference Plane in the Family Editor by hand at the same distance,
+      and the two planes' positions compared by a dimension between them

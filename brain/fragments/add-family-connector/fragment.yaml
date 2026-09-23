@@ -1,0 +1,120 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-053
+semantic-identity: "put a duct, pipe or electrical connector on this face of the family, sized by its parameters"
+kind: action
+domain: revit.families
+capability: ADD_FAMILY_CONNECTOR
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Puts one MEP CONNECTOR on a face of the family open in the Family Editor -
+  the face lying on a named reference plane, "Neck Top" - for the system named,
+  and ties its size to the family's own parameters: a rectangular duct port to
+  Neck Width and Neck Depth, a round duct or a pipe to one diameter. The
+  connector sits at the centre of that face and points out of it.
+
+  **A NEW CONNECTOR DOES NOT TAKE ITS FACE'S SIZE.** It comes out at a generic
+  one foot, whatever face it is on - reported from an earlier family build, on
+  a 200 x 200 face and again on a 45 mm pipe stub. So a duct or pipe connector
+  is refused without the parameters that size it, and those are ASSOCIATED to
+  the connector's own width, height or diameter - so the port follows the
+  neck when the family is resized, instead of being right once. An electrical
+  connector has no size and takes none.
+
+  **THE FACE IS NAMED BY THE PLANE IT LIES ON.** A face cannot be typed, but
+  every face of a box built by EXTRUDE_BETWEEN_PLANES lies on a named plane.
+  Exactly one solid face must lie on the plane named; none, or more than one,
+  is refused with the count, because a connector on the wrong face points the
+  wrong way and nothing about it looks wrong in plan.
+
+  **THE SYSTEM DECIDES THE KIND.** "Supply Air" makes a duct connector,
+  "Domestic Cold Water" a pipe one, "Power Balanced" an electrical one - matched
+  to Revit's own system names, spaces ignored, never guessed. Revit has no steam
+  system; a steam connection is Other Pipe.
+
+  **THE SIZE IS READ BACK.** After the ties the connector's width, height or
+  diameter is read and compared with the parameters in the current type, and
+  both are reported. Flow direction, description and electrical load are left
+  at Revit's defaults and set in Properties.
+
+  **ALL OR NOTHING.** A connector that cannot be tied to its size is not left
+  behind at one foot: the call fails and nothing is kept.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The reference plane or level the face lies on - "Neck Top".
+    - name: facePlane
+      type: string
+      source: request
+    # The system, as Revit names it - "Supply Air", "Return Air", "Domestic
+    # Cold Water", "Sanitary", "Power Balanced".
+    - name: system
+      type: string
+      source: request
+    # The length parameters that size it, comma separated: two for a
+    # rectangular duct port (width first, then height), one for a round duct
+    # or a pipe (the diameter), none for an electrical connector.
+    - name: sizeParameters
+      type: string
+      source: request
+  provides:
+    - name: connector
+      # The connector as made, read back: its kind, system, shape and size,
+      # and which way it points.
+      role: result
+      type: string
+    - name: sizedBy
+      # Each tie made: the connector's own dimension and the parameter that now
+      # drives it.
+      role: result
+      type: IList<string>
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was made, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ConnectorElement.CreateDuctConnector(document, DuctSystemType,
+  ConnectorProfileType, planarFace)`, `CreatePipeConnector(document,
+  PipeSystemType, planarFace)`, `CreateElectricalConnector(document,
+  ElectricalSystemType, planarFace)`, `FamilyManager
+  .AssociateElementParameterToFamilyParameter` and the built-in parameters
+  CONNECTOR_WIDTH, CONNECTOR_HEIGHT and CONNECTOR_DIAMETER read the same 2020
+  through 2027 (api-surface, read 2026-09-24). The three system enums are read
+  by name at run time, so a system added in a later release is offered there
+  without a change here.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "put a supply air connector on the neck"     -> here
+#   "which connectors does this family have"     -> CHECK_EQUIPMENT_CONNECTORS
+#   "connect these ducts to the terminal"        -> CONNECT_AIR_TERMINALS, in a
+#                                                   project
+#   "report connector sizes in the model"        -> REPORT_CONNECTORS
+
+utterances:
+  - put a supply air duct connector on the neck top
+  - add a connector to this family sized by Neck Width and Neck Depth
+  - add a domestic cold water pipe connector on this face
+  - add an electrical connector to the family
+  - put a supply air connector on the neck

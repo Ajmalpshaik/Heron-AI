@@ -1,0 +1,91 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: family-creation
+name: Build a new parametric family
+domain: revit.families
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Builds a parametric component family in the Family Editor from an empty
+  template - the body of an air terminal with a neck and a duct connector, a
+  casing, any family made of boxes - so that it RESIZES correctly from its
+  parameters. The modeller opens the template (File, New, Family); Heron builds
+  inside it. A family is its method, so the steps are listed below in the
+  order they have to happen, and the order is not a preference: taking two of
+  them the other way round breaks the family in a way that looks fine until
+  somebody resizes it.
+
+  1. SET_FAMILY_CATEGORY first, when the template's category is not the one
+     wanted - a Generic Model that should be an Air Terminal. The category
+     brings its own built-in parameters, and everything after it builds on them.
+  2. ADD_FAMILY_PARAMETERS - the sizes the family is driven by, as TYPE lengths
+     when they describe the product.
+  3. SET_FAMILY_TYPE_VALUES - make the first type and write the real sizes into
+     it. BEFORE any dimension is labelled: a new length reads 0, and a label on
+     a 0 drives its planes onto each other.
+  4. SET_FAMILY_FORMULA where one size follows another - "Neck Width = Width -
+     100 mm". Names are written bare, spaces and all.
+  5. CREATE_REFERENCE_PLANES - the skeleton, at the positions the sizes put
+     them: left-right planes, front-back planes, height planes.
+  6. LABEL_FAMILY_DIMENSION for every size - with the family's centre plane for
+     left-right and front-back, so the box stays centred on its insertion point;
+     from Ref. Level for a height.
+  7. EXTRUDE_BETWEEN_PLANES for each box - the body on Ref. Level, a neck with
+     the body's top plane as its base. Every face is locked, which is the
+     difference between a family that follows its planes and one that only
+     looks as if it does.
+  8. ADD_FAMILY_CONNECTOR on the face its service leaves by, sized by the
+     parameters so the port follows the neck.
+  9. FLEX_FAMILY last, at sizes that are really different and not square - the
+     only step that PROVES the family follows. "The calls did not fail" is not
+     the proof; the geometry read back at another size is.
+
+  Every size, parameter name and type name is the modeller's, asked for and
+  never assumed (D-33). The family is saved by the modeller: Revit will not
+  save the document open in its window while Heron holds it.
+
+  NOT YET: void cuts (never shown to cut when made this way), round shapes (a
+  circle's size cannot be driven through the API on Revit 2020), materials,
+  subcategories and Is Reference (set in Properties), and nested families.
+
+# The words people say when they want a family made.
+utterances:
+  - build a new parametric family
+  - make an air terminal family with a duct connector
+  - create this family from these sizes
+  - make this family parametric and flex it
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+needs:
+  - SET_FAMILY_CATEGORY
+  - ADD_FAMILY_PARAMETERS
+  # Values BEFORE labels - see step 3.
+  - SET_FAMILY_TYPE_VALUES
+  - SET_FAMILY_FORMULA
+  - CREATE_REFERENCE_PLANES
+  - LABEL_FAMILY_DIMENSION
+  - EXTRUDE_BETWEEN_PLANES
+  - ADD_FAMILY_CONNECTOR
+  # The proof, and never skipped.
+  - FLEX_FAMILY
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - a family document is open in front in the Family Editor, started by the modeller from the template the job needs - Heron does not choose a template
+  - every size, parameter name and type name has been given for THIS request
+  - the family is not yet built - rebuilding one that already has labelled dimensions leaves the old labels behind to fight the new ones
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Each step is one entry in the Family Editor's undo list. Built 2026-09-24 on
+  the owner's instruction to bring family creation into Heron; every step is
+  DRAFT until it has been run on a real family with a negative case (D-30).

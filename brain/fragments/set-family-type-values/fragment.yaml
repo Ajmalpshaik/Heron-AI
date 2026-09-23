@@ -1,0 +1,125 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-023
+semantic-identity: "give this family type these parameter values, making the type if it is new"
+kind: action
+domain: revit.families
+capability: SET_FAMILY_TYPE_VALUES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Writes values into one TYPE of the family open in the Family Editor -
+  "600 x 600: Width 600, Depth 600, Height 250" - and makes that type first if
+  the family does not have it yet. What the Family Types dialog does when a
+  type is chosen, or added with New, and its rows are typed in.
+
+  **A NEW FAMILY HAS NO TYPE AT ALL**, and several family jobs cannot run
+  without one: a formula needs a current type to hold its result - reported
+  from an earlier family build, where the formula call failed with "There is no
+  valid family type" and took the parameters added beside it down too. So this
+  is the step that makes the first type, and SET_FAMILY_FORMULA refuses until
+  one exists.
+
+  **UNITS ARE THE PARAMETER'S OWN, written the way a modeller reads them.** A
+  length is millimetres, an angle degrees, a yes/no true or false, a number
+  and an integer as they are, text as typed. The parameter's kind is read from
+  the family, so "Width=600" needs no unit beside it - and "600mm" is refused,
+  because a unit typed into the value is how a length ends up a thousand times
+  wrong. A kind this does not write - a material, an area - is refused by name
+  rather than written as something else.
+
+  **A VALUE A FORMULA DRIVES IS REFUSED, NOT OVERWRITTEN.** Revit will not hold
+  a typed value against a formula, and clearing the formula is a different
+  decision - SET_FAMILY_FORMULA. A reporting parameter is refused for the same
+  reason: its value is read off the geometry.
+
+  **THIS MOVES GEOMETRY WHEREVER THE PARAMETERS DRIVE IT.** A value written into
+  a parameter that labels a dimension moves those planes, and everything
+  locked to them. That is a flex, and the report counts what each parameter
+  drives so it is never a surprise. Values go in BEFORE a dimension is labelled
+  with a parameter, not after - LABEL_FAMILY_DIMENSION refuses a label whose
+  parameter disagrees with the planes.
+
+  **ALL OR NOTHING.** Every name and value is checked before the first write;
+  if Revit then refuses one, the call fails and nothing from it is kept.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The family type to write into - made if the family does not have it.
+    - name: typeName
+      type: string
+      source: request
+    # Parameter=value pairs, SEMICOLONS between - "Width=600; Depth=600".
+    # Lengths in millimetres, angles in degrees, yes/no as true or false.
+    - name: values
+      type: IDictionary<string, string>
+      source: request
+  provides:
+    - name: typeUsed
+      # The type that was written into, read back as the family's current type.
+      role: result
+      type: string
+    - name: typeCreated
+      role: result
+      type: bool
+    - name: written
+      # One line per parameter: its value read back after the write, beside
+      # what it held before.
+      role: result
+      type: IList<string>
+    - name: drives
+      # How many labelled dimensions and associated element parameters the
+      # written parameters drive - what moved because of this.
+      role: result
+      type: int
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was written, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyManager.NewType`, `CurrentType`, the four `Set` overloads and
+  `FamilyType.AsDouble / AsInteger / AsString` read the same 2020 through 2027
+  (api-surface, read 2026-09-24). A parameter's KIND does not: it is
+  `Definition.ParameterType` up to 2022 and `Definition.GetDataType()` from 2022,
+  so it is read by reflection and compared with the SpecTypeId property, or the
+  enum name, of each kind this writes. Units are plain arithmetic at the edge -
+  millimetres divided by 304.8, degrees times pi over 180 - never a units API,
+  which is what breaks across 2021.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "make a 600 x 600 type"               -> here
+#   "put 600 into Width"                  -> here
+#   "add a Width parameter"               -> ADD_FAMILY_PARAMETERS
+#   "neck width is width minus 100"       -> SET_FAMILY_FORMULA
+#   "try it at 900 and put it back"       -> FLEX_FAMILY
+#   "set this parameter on those ducts"   -> WRITE_ELEMENT_PARAMETERS - elements
+#                                            in a project, not a family's types
+
+utterances:
+  - make a 600 by 600 type in this family
+  - set the family type values
+  - give the family type Width 600 and Depth 600
+  - create a new family type with these sizes
+  - make a 600 x 600 type
+  - put 600 into Width

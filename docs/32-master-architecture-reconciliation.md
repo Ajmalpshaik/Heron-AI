@@ -491,7 +491,7 @@ machine, and none of it can be done from here.
    fingerprint, against a real model. Two new tools, a new brain module and a new MCP tool have been
    built tonight and **not one of them has been near Revit.**
 
-**None of that competes with the proving pass.** 75 of the 398 fragments are `DRAFT`, that is the
+**None of that competes with the proving pass.** 84 of the 407 fragments are `DRAFT`, that is the
 project's critical path, and everything above runs on any machine at any time. They are different
 queues, and this document does not move anything to the front of the other one. This line said **218**
 until 2026-09-21, which was the figure on the day it was written.
