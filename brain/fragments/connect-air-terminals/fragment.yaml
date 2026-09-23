@@ -104,6 +104,45 @@ contract:
       role: accounting
       type: IList<ElementId>
 
+proof-held: >
+  waiting on the owner's tolerance decision - how far Revit may move a terminal
+  while connecting it before Heron calls it a problem - and on FRAGMENT-ISSUES
+  5b-187: on Revit 2024 this call lifted every terminal onto its duct's underside
+  (550, 101.6 and 550 mm), made no tap, and joined a supply diffuser to a return
+  duct, where the purpose above says Revit declines. The proof below records that
+  very run; the owner signed it and chose to hold it, 2026-09-23.
+
+proof:
+  date: '2026-09-23'
+  by: Ajmal PS
+  model: Heron-C3-test (3,436 elements), Revit 2024, session 3544
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    select-by-parameter-value, set-selection with this phase''s own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    alreadyConnected 0 item(s), called 3, connected 3, connectorOf Func`2, facingBefore 3
+    entry(ies), facingOf Func`2, findings 5 item(s) [925837 tapped into 925833, 598 mm away,
+    925838 tapped into 925833, 150 mm away, 925839 tapped into 925835, 598 mm away, ...],
+    furthestMm 550, maxDistance 3.28083989501312, maxDistanceMm 1000, moved 3 item(s) [925837:
+    moved 550.0 mm (x 0.0, y 0.0, z +550.0), 925838: moved 101.6 mm (x 0.0, y 0.0, z +101.6),
+    925839: moved 550.0 mm (x 0.0, y 0.0, z +550.0)], noDuctNear 0 item(s), notMeasured 0
+    item(s), pointBefore 3 entry(ies), pointOf Func`2, refused 0 item(s). inputs came elements
+    from the selection (3); ducts as given (2); maxDistanceMm as given. on Heron-C3-test'
+  negative_case: run with ducts=Ducts, maxDistanceMm=100 arranged with categories=Air Terminals,
+    includeTypeParameters=false, matchMode=equals, matchText=Level 1, parameterName=Level
+    instead - chosen because it should not contain what this fragment reports - the arrangement
+    was re-made first by running select-by-parameter-value, set-selection with this phase's
+    own values - run inside a transaction, and Revit reported the transaction group ROLLED
+    BACK afterwards. returned alreadyConnected 0 item(s), called 0, connected 0, connectorOf
+    Func`2, facingBefore 3 entry(ies), facingOf Func`2, findings 1 item(s) [0 terminal(s)
+    tapped in. 0 were already connected, 3 had no ...], furthestMm 0, maxDistance 0.328083989501312,
+    maxDistanceMm 100, moved 0 item(s), noDuctNear 3 item(s) [925837, 925838, 925839], notMeasured
+    0 item(s), pointBefore 3 entry(ies), pointOf Func`2, refused 0 item(s). inputs came elements
+    from the selection (3); ducts as given (2); maxDistanceMm as given. on Heron-C3-test
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 9455f0c5551fe947
+
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

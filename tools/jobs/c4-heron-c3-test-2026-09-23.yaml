@@ -1,0 +1,180 @@
+# C4 re-proofs on Heron-C3-test, 2026-09-23 - NEEDS-CHECKING Group AJ.
+#
+#     python tools/batch-prove.py tools/jobs/c4-heron-c3-test-2026-09-23.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/c4-heron-c3-test-2026-09-23.yaml
+#
+# THE MODEL IS A TEST PROJECT BUILT FOR THIS, not a sample: a new project from the
+# owner's template, saved as D:\Ajmal\Heron-Proving\Heron-C3-test.rvt, with every
+# arrangement below made through revit_change by PROVEN capabilities (and the
+# duct lining by hand). None of these values means anything in another model.
+#
+# WHAT IS IN IT, BY ROW (docs/needs-checking/group-aj.md):
+#   AJ1  duct 925833  Supply Air, Radius Elbows / Taps, 400 x 300, 10000..16000 at y 1000, centreline 3000 mm
+#        duct 925835  Return Air, same type and size,    17000..23000 at y 1000, centreline 3000 mm
+#        925837 / 925838 / 925839  M_Supply Diffuser at z 2300 / 2748 / 2300 under them (x 11500, 14000, 20000)
+#   AJ7  insulation 926470 / 926471 (Rigid Fiber Board 50) on both ducts, lining 926478 on the supply duct;
+#        schedule "AJ7 Duct Schedule" (a view that takes no graphic overrides)
+#   AJ6  duct at 2000 mm through the AJ5 room's west wall; model group 926493 of four M_Return Diffusers
+#   AJ5  room "AJ5 Room" (x 30000..36000, y 0..5000) and diffuser 926469 in its ceiling void
+#
+# EVERY JOB CARRIES ITS OWN ARRANGEMENT. `set:` and `setup-set:` merge key by key
+# over `defaults:`, so an arrangement written there would be handed to every
+# chain in the file; only `write:` is shared.
+
+model: Heron-C3-test (D:\Ajmal\Heron-Proving\Heron-C3-test.rvt), Revit 2024
+
+defaults:
+  # MODIFY fragments: both legs run inside a transaction and are ROLLED BACK.
+  write: true
+
+jobs:
+  # AJ1's arrangement, re-used for the D-30 proof the row asks for.
+  #
+  # POSITIVE: reach 1000 mm. Each neck is within 598 mm of its duct's centreline
+  # (the fragment's own "598 mm away" / "150 mm away" findings, 20:34 run).
+  #
+  # NEGATIVE: THE SAME THREE TERMINALS, reach 100 mm. The nearest neck is 150 mm
+  # from its duct's centreline, so every terminal is out of reach: nothing may
+  # be tapped, and with no call made nothing may be listed in `moved`. A
+  # fragment that tapped regardless of the reach, or fell back to something it
+  # was not given, shows here.
+  #
+  # KNOWN BEFORE THIS RUN (AJ1, kept run at 20:34, undone by one Ctrl+Z): Revit
+  # 2024 lifted all three onto the duct underside - 550, 101.6 and 550 mm - made
+  # no tap fitting, and joined the supply diffuser to the RETURN duct. The proof
+  # records what the fragment reports; whether that behaviour is acceptable is
+  # the owner's call, and the tolerance question is his.
+  #
+  # The chain's own values are kept apart from the fragment's (FRAGMENT-ISSUES
+  # row 149), and the negative leg needs its own copy: without one the client
+  # hands the chain the negative-set values, which carry no parameterName, and
+  # the leg never runs. The three are the only Air Terminals on Level 1 with
+  # "Level" = Level 1 at the time of this proof (20:42).
+  - fragment: connect-air-terminals
+    expect: connected
+    setup:
+      - select-by-parameter-value
+      - set-selection
+    setup-set:
+      parameterName: Level
+      matchText: Level 1
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Air Terminals
+    negative-setup-set:
+      parameterName: Level
+      matchText: Level 1
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Air Terminals
+    set:
+      ducts: Ducts
+      maxDistanceMm: 1000
+    negative-set:
+      ducts: Ducts
+      maxDistanceMm: 100
+
+  # AJ7. Every duct in the plan - the two AJ1 ducts and AJ6's duct through the
+  # wall, THREE when this ran (21:33) - coloured by System Name: Supply Air 1,
+  # Supply Air 2 and Return Air 1 are three values, so three colours, and the
+  # wraps on the AJ1 pair (two insulations, one lining) follow them.
+  #
+  # NEGATIVE: THE SAME DUCTS, a parameter nothing carries - the old proof's own
+  # negative (ZZZNOTHINGHERE, Snowdon-scratch, 2026-09-09). Nothing may be
+  # coloured and no wrap may follow.
+  - fragment: color-by-parameter
+    expect: coloured
+    setup:
+      - select-by-category-name
+      - set-selection
+    setup-set:
+      categoryName: Ducts
+      inViewOnly: "1 - Mech"
+    negative-setup-set:
+      categoryName: Ducts
+      inViewOnly: "1 - Mech"
+    set:
+      view: "1 - Mech"
+      parameterName: System Name
+      colourBand: vivid
+    negative-set:
+      view: "1 - Mech"
+      parameterName: ZZZNOTHINGHERE
+      colourBand: vivid
+
+  # AJ7. The same three ducts made halftone and half transparent in the plan.
+  #
+  # NEGATIVE: THE SAME DUCTS, aimed at "AJ7 Duct Schedule" - a schedule takes no
+  # graphic overrides, so every element must come back skipped and none
+  # overridden. The old proof's negative was a schedule too (Space Schedule).
+  - fragment: override-graphics-in-view
+    expect: overridden
+    setup:
+      - select-by-category-name
+      - set-selection
+    setup-set:
+      categoryName: Ducts
+      inViewOnly: "1 - Mech"
+    negative-setup-set:
+      categoryName: Ducts
+      inViewOnly: "1 - Mech"
+    set:
+      view: "1 - Mech"
+      overrides: "halftone=true; transparency=50"
+    negative-set:
+      view: "AJ7 Duct Schedule"
+      overrides: "halftone=true; transparency=50"
+
+  # AJ6. find-clashes is READ, but its second set is `against=selected`, so the
+  # chain puts the six walls into Revit's selection first and then builds the
+  # batch from the chain: --keep-chain makes the fragment take the chain's
+  # `elements` (the batch) while `selected` reads Revit's selection (the walls).
+  #
+  # POSITIVE: Ducts and Model Groups in the plan - the two AJ1 ducts (clear), the
+  # duct pushed through the AJ5 room's west wall (clashing) and group 926493
+  # (Revit's intersection test refuses a group: notChecked, never clear).
+  #
+  # NEGATIVE: Air Terminals in the plan instead - eight diffusers, none of them
+  # touching a wall. Nothing may clash.
+  - fragment: find-clashes
+    write: false
+    keep-chain: true
+    expect: clashing
+    setup:
+      - select-by-category-name
+      - set-selection
+      - select-by-categories
+    setup-set:
+      categoryName: Walls
+      categories: "Ducts, Model Groups"
+      inViewOnly: "1 - Mech"
+    negative-setup-set:
+      categoryName: Walls
+      categories: Air Terminals
+      inViewOnly: "1 - Mech"
+    set:
+      against: selected
+    negative-set:
+      against: selected
+
+  # 05-pc-proving section 3: one of the owner's three most-used jobs still DRAFT.
+  # The owner placed ONE room tag by hand in "AJ5 Room", deliberately off-centre:
+  # tag 926511 at (31562, 3752) in "1 - Mech", the room's middle about
+  # (33000, 2500) - no proven capability places a room tag (tag-elements makes
+  # an IndependentTag, and a room needs its own room-tag call).
+  #
+  # POSITIVE: the room tags in the plan - that one tag - must be centred.
+  #
+  # NEGATIVE: the ducts in the same plan instead - not room tags, so nothing may
+  # be centred and every one must be accounted for as notRoomTags.
+  - fragment: center-room-tags
+    expect: centred
+    setup:
+      - select-by-category-name
+      - set-selection
+    setup-set:
+      categoryName: Room Tags
+      inViewOnly: "1 - Mech"
+    negative-setup-set:
+      categoryName: Ducts
+      inViewOnly: "1 - Mech"
