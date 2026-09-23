@@ -70,6 +70,23 @@ Func<ReferencePlane, string> ownName = rp =>
     return string.IsNullOrEmpty(text) ? "" : text;
 };
 
+// TWO KINDS ARE THE SAME KIND WHATEVER VERSION THEIR IDS CARRY. A ForgeTypeId
+// names its version - "...:length-2.0.0" - and plain equality may compare it,
+// so a length a template made under an older version would read as some other
+// kind. NameEquals compares the name alone, from 2021; before that a kind is
+// an enum and plain equality is exact.
+Func<object, object, bool> sameKind = (first, second) =>
+{
+    if (first == null || second == null) return false;
+    var nameEquals = first.GetType().GetMethod("NameEquals", new[] { second.GetType() });
+    if (nameEquals != null)
+    {
+        try { return (bool)nameEquals.Invoke(first, new[] { second }); }
+        catch (Exception) { }
+    }
+    return first.Equals(second);
+};
+
 Func<FamilyParameter, bool> isLength = p =>
 {
     try
@@ -82,7 +99,7 @@ Func<FamilyParameter, bool> isLength = p =>
             var owner = revitAssembly.GetType(dbNamespace + ".SpecTypeId");
             var property = owner == null ? null : owner.GetProperty("Length", flags);
             var length = property == null ? null : property.GetValue(null);
-            return spec != null && length != null && spec.Equals(length);
+            return sameKind(spec, length);
         }
         var old = definition.GetType().GetProperty("ParameterType");
         var value = old == null ? null : old.GetValue(definition);

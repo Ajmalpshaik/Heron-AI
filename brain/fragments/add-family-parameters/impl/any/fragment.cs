@@ -40,6 +40,23 @@ var revitAssembly = typeof(Document).Assembly;
 // the structure check refuses the API namespace spelled inside a fragment.
 var dbNamespace = typeof(Document).Namespace;
 
+// TWO KINDS ARE THE SAME KIND WHATEVER VERSION THEIR IDS CARRY. A ForgeTypeId
+// names its version - "...:length-2.0.0" - and plain equality may compare it,
+// so a length a template made under an older version would read as some other
+// kind. NameEquals compares the name alone, from 2021; before that a kind is
+// an enum and plain equality is exact.
+Func<object, object, bool> sameKind = (first, second) =>
+{
+    if (first == null || second == null) return false;
+    var nameEquals = first.GetType().GetMethod("NameEquals", new[] { second.GetType() });
+    if (nameEquals != null)
+    {
+        try { return (bool)nameEquals.Invoke(first, new[] { second }); }
+        catch (Exception) { }
+    }
+    return first.Equals(second);
+};
+
 // THE KINDS. Each under its old enum name, and the SpecTypeId class and
 // property that replaced it. "Text" and "YesNo" are filed under nested classes
 // in the newer world.
@@ -190,7 +207,7 @@ Func<FamilyParameter, string> groupLabel = p =>
         }
         if (value == null) return "no group";
         foreach (var entry in groups)
-            if (entry.Value.Equals(value)) return entry.Key;
+            if (sameKind(entry.Value, value)) return entry.Key;
         return value.ToString();
     }
     catch (Exception)
@@ -310,8 +327,8 @@ if (refused == null)
 
         // A DIFFERENT PARAMETER UNDER A FAMILIAR NAME is the case worth a line
         // of its own. The next step would otherwise be built on it.
-        var sameKind = specOf(existing) != null && specOf(existing).Equals(specValue);
-        if (!sameKind || existing.IsInstance != instance)
+        var asked = sameKind(specOf(existing), specValue);
+        if (!asked || existing.IsInstance != instance)
         {
             findings.Add("\"" + name + "\" is ALREADY in this family as " + describe(existing)
                 + " - not the " + kindLabel(specValue) + ", " + (instance ? "instance" : "type")

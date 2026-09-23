@@ -34,6 +34,23 @@ var invariant = System.Globalization.CultureInfo.InvariantCulture;
 Func<double, string> mm = feet => Math.Round(feet * 304.8, 2).ToString(invariant);
 var tolerance = 0.01 / 304.8;
 
+// TWO KINDS ARE THE SAME KIND WHATEVER VERSION THEIR IDS CARRY. A ForgeTypeId
+// names its version - "...:length-2.0.0" - and plain equality may compare it,
+// so a length a template made under an older version would read as some other
+// kind. NameEquals compares the name alone, from 2021; before that a kind is
+// an enum and plain equality is exact.
+Func<object, object, bool> sameKind = (first, second) =>
+{
+    if (first == null || second == null) return false;
+    var nameEquals = first.GetType().GetMethod("NameEquals", new[] { second.GetType() });
+    if (nameEquals != null)
+    {
+        try { return (bool)nameEquals.Invoke(first, new[] { second }); }
+        catch (Exception) { }
+    }
+    return first.Equals(second);
+};
+
 Func<string, string, object> specNamed = (owner, property) =>
 {
     var type = revitAssembly.GetType(dbNamespace + "." + owner);
@@ -66,7 +83,7 @@ Func<FamilyParameter, string> kindOf = p =>
             var spec = getDataType.Invoke(definition, null);
             if (spec == null) return "unknown";
             foreach (var entry in kindsNew)
-                if (entry.Value != null && entry.Value.Equals(spec)) return entry.Key;
+                if (sameKind(entry.Value, spec)) return entry.Key;
             return spec.ToString();
         }
         var property = definition.GetType().GetProperty("ParameterType");
@@ -139,7 +156,7 @@ else
             var isNumber = double.TryParse(text, System.Globalization.NumberStyles.Float, invariant, out number);
             object value = null;
 
-            if (kindWord == "length" && isNumber && number > 0) value = number / 304.8;
+            if (kindWord == "length" && isNumber) value = number / 304.8;
             else if (kindWord == "angle" && isNumber) value = number * Math.PI / 180.0;
             else if (kindWord == "number" && isNumber) value = number;
             else if (kindWord == "integer" && isNumber && Math.Abs(number - Math.Round(number)) < 1e-9) value = (int)Math.Round(number);
@@ -153,7 +170,7 @@ else
             if (value == null)
             {
                 problems.Add("\"" + text + "\" cannot be tried for \"" + name + "\" (" + kindWord + ") - a "
-                    + "length is millimetres above zero, digits only; an angle degrees; a yes/no true or false.");
+                    + "length is millimetres, digits only; an angle degrees; a yes/no true or false.");
                 continue;
             }
 

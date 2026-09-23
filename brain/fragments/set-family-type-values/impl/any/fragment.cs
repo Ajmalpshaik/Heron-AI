@@ -37,6 +37,23 @@ var invariant = System.Globalization.CultureInfo.InvariantCulture;
 
 Func<double, string> mm = feet => Math.Round(feet * 304.8, 2).ToString(invariant);
 
+// TWO KINDS ARE THE SAME KIND WHATEVER VERSION THEIR IDS CARRY. A ForgeTypeId
+// names its version - "...:length-2.0.0" - and plain equality may compare it,
+// so a length a template made under an older version would read as some other
+// kind. NameEquals compares the name alone, from 2021; before that a kind is
+// an enum and plain equality is exact.
+Func<object, object, bool> sameKind = (first, second) =>
+{
+    if (first == null || second == null) return false;
+    var nameEquals = first.GetType().GetMethod("NameEquals", new[] { second.GetType() });
+    if (nameEquals != null)
+    {
+        try { return (bool)nameEquals.Invoke(first, new[] { second }); }
+        catch (Exception) { }
+    }
+    return first.Equals(second);
+};
+
 // A spec by its SpecTypeId class and property - null on a release without it.
 Func<string, string, object> specNamed = (owner, property) =>
 {
@@ -74,7 +91,7 @@ Func<FamilyParameter, string> kindOf = p =>
             var spec = getDataType.Invoke(definition, null);
             if (spec == null) return "unknown";
             foreach (var entry in kindsNew)
-                if (entry.Value != null && entry.Value.Equals(spec)) return entry.Key;
+                if (sameKind(entry.Value, spec)) return entry.Key;
             return spec.ToString();
         }
         var property = definition.GetType().GetProperty("ParameterType");
@@ -195,8 +212,9 @@ else
         switch (kindWord)
         {
             case "length":
+                // NOT REFUSED FOR BEING ZERO OR BELOW. An offset can be either, and a
+                // size Revit cannot take is refused by Revit, in its own words.
                 if (!isNumber) { problems.Add("\"" + text + "\" is not a number for the length \"" + name + "\" - millimetres, digits only: 600, not 600mm."); break; }
-                if (number <= 0) { problems.Add("\"" + name + "\" is a length and " + text + " is not above zero, which Revit refuses for a size."); break; }
                 planned.Add(Tuple.Create(p, kindWord, (object)(number / 304.8)));
                 break;
             case "angle":
