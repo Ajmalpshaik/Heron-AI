@@ -136,7 +136,11 @@ def needs_checking():
         # NEEDS-CHECKING.md records against itself - "a count that quietly
         # omits a whole group is worse than no count" - committed by the
         # one tool whose whole job is not to do it.
-        m = re.match(r"^\|\s*(~~)?\*\*([A-Z]\d+[a-z]?)\*\*", line)
+        # ONE LETTER OR MORE - [A-Z]+, not [A-Z]. One letter hid every two-letter
+        # group - AA, AB and on - until 2026-09-23: checks waiting on the owner that
+        # never reached him, in owner-queue.py, check-gaps.py and balance-of-work.py
+        # alike. FRAGMENT-ISSUES row 5b-156.
+        m = re.match(r"^\|\s*(~~)?\*\*([A-Z]+\d+[a-z]?)\*\*", line)
         if not m:
             continue
         if m.group(1):                      # struck through = closed
@@ -149,7 +153,7 @@ def needs_checking():
     # PROVE THE PATTERN SAW WHAT IS THERE. Counted independently of the
     # walk above, so a narrower pattern is reported rather than obeyed -
     # the lesson this file's own header records three times over.
-    shaped = len(re.findall(r"(?m)^\|\s*\*\*[A-Z]\d+[a-z]?\*\*", src))
+    shaped = len(re.findall(r"(?m)^\|\s*\*\*[A-Z]+\d+[a-z]?\*\*", src))
     if len(out) != shaped:
         out.append(("!!", "%d open rows are ID-shaped in NEEDS-CHECKING.md and "
                           "this tool matched %d. The pattern cannot see them "

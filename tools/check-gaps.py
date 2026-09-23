@@ -479,14 +479,18 @@ def check_register():
     print()
     print("THE REGISTER - what it says is left")
     text = read("docs/NEEDS-CHECKING.md")
-    rows = re.findall(r"^\| (~~)?\*\*([A-Z]\d+[a-z]?)\*\*(~~)?\s*\|(.*)$",
+    # ONE LETTER OR MORE - [A-Z]+, not [A-Z]. One letter hid every two-letter
+    # group - AA, AB and on - until 2026-09-23: checks waiting on the owner that
+    # never reached him, in owner-queue.py, check-gaps.py and balance-of-work.py
+    # alike. FRAGMENT-ISSUES row 5b-156.
+    rows = re.findall(r"^\| (~~)?\*\*([A-Z]+\d+[a-z]?)\*\*(~~)?\s*\|(.*)$",
                       text, re.M)
     done = [r for r in rows if r[0]]
     left = [r for r in rows if not r[0]]
     print("  %d row(s), %d done, %d left" % (len(rows), len(done), len(left)))
 
     for _s, item, _e, body in left:
-        group = item[0]
+        group = re.match("[A-Z]+", item).group(0)
         if group == "R":
             waiting("%s - a conversation at the PC" % item, "the owner")
         elif item in ("A4", "A6", "A8"):
