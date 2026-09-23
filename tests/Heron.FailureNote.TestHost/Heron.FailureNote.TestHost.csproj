@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Proves the fragment write path's failure rule WITHOUT Revit.
+
+    The same source-linking pattern Heron.BindingNote.TestHost and
+    Heron.StackGuard.TestHost already use, and for the reason their project
+    files state: HeronFailureNote.cs touches no Autodesk type - it judges
+    numbers and words - so it is linked here BY SOURCE rather than through a
+    project reference. Referencing Heron.Revit.Addin would drag in
+    RevitAPI.dll and make the one testable piece untestable on any machine
+    without Revit.
+
+    Linking the source keeps exactly ONE copy of the rule: which failures are
+    dismissed, which roll the job back, and what the modeller is told about
+    both. A second copy written to test the first is how two halves come to
+    agree on paper and not in a running model (FRAGMENT-ISSUES row 96).
+
+    Why it exists at all: until 2026-09-23 a fragment that wrote had no
+    failure handling, so every warning and error Revit posted went to Revit's
+    own handling - and Revit's resolution for an error can be to delete the
+    elements it names. Package C3 of the earlier-brain plan.
+
+        Run it with `dotnet run`, pointed at this folder, passing
+        -p:RevitVersion=2024. (XML comments cannot carry a double
+        hyphen, so the flag is spelled out rather than shown.)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.FailureNote.TestHost</RootNamespace>
+    <AssemblyName>Heron.FailureNote.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronFailureNote.cs"
+             Link="HeronFailureNote.cs" />
+  </ItemGroup>
+
+</Project>
