@@ -358,13 +358,29 @@ def test_an_element_is_a_type_and_a_list_of_them_is_still_refused():
     refused, why = GJ.receivable("Element", "host")
     check(not refused, "one particular element is still refused")
 
-    # The hint a person reads beside the blank names what to write. It no longer
-    # has to warn that an instance cannot be given: since row 13 an instance-
-    # meaning need is refused by `receivable` and never reaches a job file at
-    # all, so the warning would be addressed to a blank that cannot exist.
-    hint = GJ.how_to_type("Element")
-    check("TYPE" in hint, "the hint says a TYPE is wanted")
-    check("Basic Wall" in hint, "and shows the shape of the name to write")
+    # The hint a person reads beside the blank names what to write, and the
+    # need's NAME decides which hint, as it decides the refusal above. This
+    # asked for the hint with no name and expected a TYPE until 2026-09-23, on
+    # the reasoning that an instance-meaning need never reaches a job file.
+    # True for this tool, and false for heron_resolve and prove-skill.py,
+    # which printed that TYPE hint beside every plain `Element` in the library
+    # - FRAGMENT-ISSUES row 5b-190. Asked, not assumed, so the old one-argument
+    # function is one clean failure rather than a TypeError (heron-ship s2a).
+    takes_name = GJ.how_to_type.__code__.co_argcount >= 2
+    check(takes_name, "how_to_type is handed the need's name")
+
+    def hint_for(name):
+        return (GJ.how_to_type("Element", name) if takes_name
+                else GJ.how_to_type("Element"))
+
+    hint = hint_for("wallType")
+    check("TYPE" in hint, "a need named like a type is told a TYPE is wanted")
+    check("Basic Wall" in hint, "and shown the shape of the name to write")
+    for name in ("host", None):
+        hint = hint_for(name)
+        check("`selected`" in hint and "Basic Wall" not in hint,
+              "a need named %r is told `selected`, never a type name - the "
+              "add-in's refusal says the same" % (name,))
 
 
 def test_the_narrowed_declarations_resolve():
