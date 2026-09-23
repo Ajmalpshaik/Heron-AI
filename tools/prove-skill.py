@@ -421,12 +421,13 @@ def correct_the_hint(block, frag, plan):
     """Replace the hint on a need `generate-jobs.py` would never have emitted.
 
     THIS EXISTS BECAUSE EMITTING MORE THAN THE SIBLING DOES MEANS OWNING WHAT
-    IT SAYS. `how_to_type` writes *an element TYPE by name - "Basic Wall:
-    Generic - 200mm"* for anything declared `Element`, and its own comment
-    says why that is safe there: *"Only a `...Type` need reaches this hint
-    now - one meaning a particular element is refused above and never
-    emitted."* This file DOES emit those - see `by_hand` - so the hint arrives
-    at a reader for whom it is exactly wrong.
+    IT SAYS. Until 2026-09-23 `how_to_type` wrote *an element TYPE by name -
+    "Basic Wall: Generic - 200mm"* for anything declared `Element`, on a
+    comment saying a need meaning a particular element never reached it. This
+    file DOES emit those - see `by_hand` - so the hint arrived at a reader for
+    whom it was exactly wrong. Since FRAGMENT-ISSUES row 5b-190 `how_to_type`
+    is handed the need's name and says `selected` itself, so this now only
+    rewords a hint that is already right.
 
     And the way it would be wrong is the expensive way, measured 2026-09-10:
     a typed name handed to a need wanting one element resolves to a TYPE, the

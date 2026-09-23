@@ -347,16 +347,13 @@ ELEMENT_INSTANCE_REASON = (
     "typed by name)")
 
 
-def is_type_need_name(need_name):
-    """Does this need-name mean a TYPE to build with, not one element?
-
-    THE SAME RULE AS `IsTypeNeedName` IN RevitFragment.cs, AND IT HAS TO STAY
-    THE SAME RULE. This file decides whether to EMIT a job and Revit decides
-    whether to REFUSE it, so the two disagreeing shows up as a job that is
-    generated every time and then always declines - which is worse than either
-    behaviour alone, because the job file then looks like a worklist.
-    """
-    return (need_name or "").endswith("Type")
+# MOVED to brain/heron_fragment.py on 2026-09-23 so `how_to_type` can apply the
+# same rule - see the note there. THE SAME RULE AS `IsTypeNeedName` IN
+# RevitFragment.cs STILL: this file decides whether to EMIT a job and Revit
+# decides whether to REFUSE it, so the two disagreeing shows up as a job that
+# is generated every time and then always declines - which is worse than
+# either behaviour alone, because the job file then looks like a worklist.
+is_type_need_name = HF.is_type_need_name
 
 
 ADDIN_FRAGMENT = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitFragment.cs")
@@ -866,7 +863,9 @@ def job_block(frag, writes, supply):
         width = max([len(name) for name, _ in own] + [1])
 
         def value_line(name, kind):
-            hint = how_to_type(kind)
+            # The name as well as the type: a plain `Element` means a type or
+            # one particular element, and only the name says which.
+            hint = how_to_type(kind, name)
             return ("      %-*s %s   # %s%s"
                     % (width + 1, name + ":", quote(FILL_IN), kind,
                        " - " + hint if hint else ""))

@@ -286,7 +286,25 @@ ID_PATTERN = re.compile(r"^FRG-[A-Z]{2,5}-[0-9]{3}$")
 # A SECOND COPY WOULD DRIFT, and the drift would be invisible: the tool and
 # the server would each be confidently right about a different syntax.
 
-def how_to_type(declared):
+def is_type_need_name(need_name):
+    """Does this need-name mean a TYPE to build with, not one element?
+
+    THE SAME RULE AS `IsTypeNeedName` IN RevitFragment.cs, AND IT HAS TO STAY
+    THE SAME RULE. Both meanings are declared `Element`, so the name is all
+    there is to go on. Two readers ask it: tools/generate-jobs.py, deciding
+    whether to EMIT a job the add-in would refuse, and how_to_type, deciding
+    what a caller is TOLD to type. Either one disagreeing with the add-in is
+    a blank filled in one way and refused in another.
+
+    It lived in tools/generate-jobs.py until 2026-09-23 and moved here so
+    how_to_type could ask it too - one copy, for the reason how_to_type is one
+    copy. tests/test_how_to_type.py reads the add-in's rule out of the C# and
+    holds this one to it.
+    """
+    return (need_name or "").endswith("Type")
+
+
+def how_to_type(declared, need_name=None):
     """What a person needs to know to fill this one in, beyond its type.
 
     Derived from `FromRequest`'s own branches, and only where the type alone
@@ -307,11 +325,13 @@ def how_to_type(declared):
       tool will not guess at all: which view holds a small number of the thing
       is the judgement the whole file is arranged around.
 
-      AN `Element` IS AN ELEMENT TYPE and never a particular one in the model.
-      Both meanings are written `Element` in a contract, so a job may be emitted
-      for a fragment that turns out to want "that duct there" - and Revit says so
-      by name rather than binding the wrong thing. The hint is here so a person
-      meets that boundary while filling the blank in, not after a run.
+      AN `Element` IS ONE OF TWO THINGS, AND ONLY THE NEED'S NAME SAYS WHICH,
+      so pass it as `need_name`. A name ending in `Type` - `wallType` - is a
+      TYPE, typed by name. Anything else is ONE PARTICULAR element, which no
+      text can name: the add-in refuses a typed name and takes the word
+      `selected`, meaning the one element selected in Revit. With no name the
+      answer is the particular element, as it is in the add-in - a caller that
+      cannot show it means a type is not told to type one.
     """
     wanted = (declared or "").replace(" ", "")
     hints = []
@@ -416,6 +436,23 @@ def how_to_type(declared):
                 'This is the SECOND set, so `selected` is refused: the first '
                 'set is what is selected')
 
+    # ONE ELEMENT, AND THE NEED'S NAME DECIDES WHAT IT IS - the add-in's own
+    # rule, through is_type_need_name. A type to build with is typed by name;
+    # one particular element is refused by name in OneElement, because an
+    # instance has no name of its own, and binds only from the selection.
+    #
+    # UNTIL 2026-09-23 THIS WAS THE GENERIC NAME RULE AT THE BOTTOM, which
+    # never saw the need's name and told EVERY plain `Element` need to type a
+    # TYPE - on a comment claiming a particular-element need never reached
+    # it. heron_resolve reached it for all of them, and the add-in refuses
+    # exactly what that hint said to type. FRAGMENT-ISSUES row 5b-190.
+    if wanted == "Element":
+        if is_type_need_name(need_name):
+            return 'an element TYPE by name - "Basic Wall: Generic - 200mm"'
+        return ('ONE PARTICULAR element - SELECT IT IN REVIT and type '
+                '`selected`. Exactly one: none or several are refused, and so '
+                'is a typed name, because an instance has no name of its own')
+
     # A PANEL IS THE ONE INSTANCE WITH A NAME OF ITS OWN, and the hint has to
     # say WHICH name, because the wrong one is right there in the Properties
     # palette and resolves to nothing.
@@ -427,8 +464,8 @@ def how_to_type(declared):
     # AN ID IS THE THING, NOT A NUMBER - OneIdNamed's own heading. A caller
     # holding an id would type the number, which appears in no dialog a
     # modeller opens and is refused. The field's NAME decides the kind:
-    # `levelId` searches levels, `sheetId` sheets. `\bElement\b` below never
-    # reached this, because "ElementId" has no word break after "Element".
+    # `levelId` searches levels, `sheetId` sheets. The old `\bElement\b` rule
+    # never reached this, because "ElementId" has no word break after "Element".
     if re.search(r"\bElementId>?$", wanted):
         if "<" in wanted:
             return ('NAMES, never numbers, comma separated - or the word '
@@ -464,13 +501,13 @@ def how_to_type(declared):
         hints.append("comma separated")
     if re.search(r"\b(View|Category|BuiltInCategory|Level)\b", wanted):
         hints.append("resolved BY NAME in Revit; a name matching twice is refused")
-    if re.search(r"\bElement\b", wanted):
-        # Only a `...Type` need reaches this hint now - one meaning a
-        # particular element is refused above and never emitted.
-        hints.append('an element TYPE by name - "Basic Wall: Generic - 200mm"')
-    elif re.search(r"(Type|Symbol|Phase|FilterElement|HostObjAttributes)$", wanted):
+    # NO `Element` RULE DOWN HERE ANY MORE. A plain `Element` is answered
+    # above, where the need's name is in hand, and nothing that merely
+    # contains the word inherits a type hint by accident: a caller-supplied
+    # type left blank fails tests/test_how_to_type.py and has to be decided.
+    if re.search(r"(Type|Symbol|Phase|FilterElement|HostObjAttributes)$", wanted):
         # A narrowed declaration says which kind, so the search is confined to
-        # that kind and the ambiguity the bare `Element` hint warns about
+        # that kind and the ambiguity a bare `Element` type name carries
         # largely goes away. What is left worth saying is how to write it.
         hints.append('by name, as Revit writes it')
     return ", ".join(hints)
