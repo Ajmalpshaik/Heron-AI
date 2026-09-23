@@ -52,6 +52,12 @@ WHAT IT PROVES
      override hint names every setting the add-in's own refusal lists (read
      out of RevitFragment.cs, not retyped), and heron_resolve reports an
      unreadable contract rather than printing it as nothing to type.
+  8. A plain `Element` need is told what the add-in accepts for its NAME:
+     `selected` for one particular element, a type by name only where the
+     name ends the way IsTypeNeedName says a type's does - both read out of
+     RevitFragment.cs - checked for every such need in the library, through
+     heron_resolve's own contract block and generate-jobs' job lines, the two
+     places the hint is printed. FRAGMENT-ISSUES row 5b-190.
 
 WHAT IT CANNOT DO
   It does not prove a hint is TRUE beyond the strings it reads out of the C#.
@@ -114,6 +120,57 @@ def modules(*parts):
     where = os.path.join(ROOT, *parts)
     return set(f[:-3] for f in os.listdir(where)
                if f.endswith(".py") and not f.startswith("__"))
+
+
+def plain_element_needs(client):
+    """(folder, need name, capability) for every caller-supplied need declared
+    exactly `Element`. The capability is the folder in upper case, which is
+    the naming rule heron_fragment's validator enforces."""
+    found = []
+    fragments = os.path.join(ROOT, "brain", "fragments")
+    for name in sorted(os.listdir(fragments)):
+        needs = client.fragment_needs(
+            os.path.join(fragments, name, "fragment.yaml")) or []
+        for need in needs:
+            if (need.get("source") == "request"
+                    and (need.get("type") or "").replace(" ", "") == "Element"):
+                found.append((name, need.get("name"),
+                              name.upper().replace("-", "_")))
+    return found
+
+
+def method_body(csharp, signature):
+    """One method of RevitFragment.cs, from its signature to the next one.
+    Empty when the signature is missing, so a renamed method is a failed check
+    rather than a traceback that ends the suite."""
+    start = csharp.find(signature)
+    if start < 0:
+        return ""
+    end = csharp.find(chr(10) + "        private static", start + 1)
+    return csharp[start:end if end > start else len(csharp)]
+
+
+def lift(text, names, space):
+    """Top-level functions cut out of a module's source and defined in `space`.
+
+    heron_mcp_server needs the MCP SDK to import, and CI leaves the SDK out on
+    purpose - test_values_crossing.py says why a suite that imports it stops
+    guarding anything. So the functions are run from their source text, which
+    is still the code heron_resolve runs. None when one cannot be found.
+    """
+    ends = re.compile(chr(10) + r"(?=\S)")
+    pieces = []
+    for name in names:
+        start = text.find(chr(10) + "def %s(" % name)
+        if start < 0:
+            return None
+        end = ends.search(text, start + 1)
+        pieces.append(text[start + 1:end.start() + 1 if end else len(text)])
+    try:
+        exec("".join(pieces), space)                          # noqa: S102
+    except SyntaxError:
+        return None
+    return space
 
 
 def main():
@@ -265,6 +322,146 @@ def main():
                      encoding="utf-8").read()
     check("rather than listed short" in server,
           "an unreadable contract is reported, not printed as 'nothing to type'")
+
+    # --- 8. a plain `Element` need is told what the add-in accepts -----------
+    #
+    # FRAGMENT-ISSUES row 5b-190. A plain `Element` is a type to build with or
+    # one particular element, and only the need's NAME says which - so asked
+    # with the type alone, how_to_type told every plain `Element` need in the
+    # library to type a TYPE by name. Followed exactly on 2026-09-23 against
+    # Project1 (`exemplar=M_Supply Diffuser: ...`), and OneElement refused it
+    # and said to SELECT IT IN REVIT and pass `selected`. So each hint is held
+    # to the add-in's own answers, read out of the C#: which need names mean a
+    # type, which word means the selection, and what the refusal says to type.
+    print()
+    print("A plain `Element` need is told what the add-in accepts for it")
+
+    # ASKED, NOT ASSUMED - heron-ship s2a. The one-argument function this
+    # replaced is one clean failure here, and every check below still runs.
+    takes_name = HF.how_to_type.__code__.co_argcount >= 2
+    check(takes_name, "how_to_type is handed the need's name")
+
+    def hint_for(name):
+        return (HF.how_to_type("Element", name) if takes_name
+                else HF.how_to_type("Element"))
+
+    rule = re.search(r'EndsWith\("(\w+)",\s*StringComparison\.Ordinal\)',
+                     method_body(csharp, "private static bool IsTypeNeedName"))
+    check(rule is not None,
+          "IsTypeNeedName in RevitFragment.cs decides by the need-name's ending")
+    ending = rule.group(1) if rule else "Type"
+
+    def add_in_says_type(name):
+        return (name or "").endswith(ending)
+
+    ours = getattr(HF, "is_type_need_name", None)
+    check(ours is not None,
+          "heron_fragment carries the add-in's rule for a type-named need")
+
+    check('"selected"' in method_body(csharp,
+                                      "private static bool IsSelectionWord"),
+          "IsSelectionWord accepts `selected`, the word the hint names")
+    refusal = method_body(csharp, "private static object OneElement")
+    check("ONE PARTICULAR ELEMENT" in refusal
+          and re.search(r"pass\W+selected", refusal) is not None,
+          "and OneElement's refusal of a typed name says to pass `selected`")
+
+    plain = plain_element_needs(CLIENT)
+    check(plain, "the library declares plain `Element` needs to check")
+    probes = [name for _folder, name, _cap in plain] + [
+        "wallType", "Type", "type", "exemplar", "", None]
+    if ours is not None:
+        wrong = [name for name in probes if ours(name) != add_in_says_type(name)]
+        check(not wrong, "heron_fragment's type-name rule is the add-in's "
+                         "for every need name in the library%s"
+              % ("" if not wrong else " - DISAGREES: %s" % wrong))
+
+    for folder, name, _cap in plain:
+        hint = hint_for(name)
+        if add_in_says_type(name):
+            check("element TYPE by name" in hint,
+                  "%s's `%s` is named like a type and told to type one: %r"
+                  % (folder, name, hint))
+        else:
+            check("`selected`" in hint and "TYPE by name" not in hint,
+                  "%s's `%s` is told `selected`, never a type name: %r"
+                  % (folder, name, hint))
+    check("TYPE by name" not in hint_for(None),
+          "with no name the hint is the particular element's, as in the add-in")
+    check("element TYPE by name" in hint_for("wallType"),
+          "and a need named like `wallType` is still told to type a TYPE")
+
+    # THROUGH THE TWO PLACES THE HINT IS PRINTED, because the function was
+    # never the whole defect: heron_resolve asked it without the name. So a
+    # printer that forgets the name again goes red here, not in front of a
+    # modeller.
+    def element_row(lines, name):
+        row = [line for line in lines if line.split()[:2] == [name, "Element"]]
+        return row[0].strip() if row else "no row for it in %r" % lines
+
+    def contract_lines(space, capability):
+        try:
+            return space["_contract_lines"](capability)
+        except Exception as exc:                            # noqa: BLE001
+            return ["(it raised %s: %s)" % (type(exc).__name__, exc)]
+
+    space = lift(server, ["_fragment_for", "_contract_lines"],
+                 {"os": os, "io": io, "sys": sys, "bridge": CLIENT,
+                  "_repo_root": lambda: ROOT})
+    check(space is not None,
+          "heron_resolve's contract block can be lifted out of the server")
+    for folder, name, capability in (plain if space is not None else []):
+        row = element_row(contract_lines(space, capability), name)
+        check(add_in_says_type(name)
+              or ("`selected`" in row and "TYPE by name" not in row),
+              "heron_resolve %s prints `%s` as the add-in reads it: %s"
+              % (capability, name, row))
+
+    # A TYPE-NAMED `Element` IS THE CASE THE LIBRARY CANNOT SHOW - none is
+    # declared today - and it is the one where a printer that drops the name
+    # still goes wrong, because the safe default then says `selected` where a
+    # type name is wanted. So both printers are handed a made-up fragment
+    # holding one of each, through the same code they run for a real one.
+    class TwoElements(object):
+        slug = "two-elements"
+        data = {"risk": "READ"}
+
+        def needs(self):
+            return [{"name": "host", "type": "Element", "source": "request"},
+                    {"name": "wallType", "type": "Element",
+                     "source": "request"}]
+
+        def provides(self):
+            return []
+
+    class OneFragment(object):
+        """The bridge's needs reader, answering for the made-up fragment."""
+        @staticmethod
+        def fragment_needs(_path):
+            return TwoElements().needs()
+
+    alone = lift(server, ["_contract_lines"],
+                 {"os": os, "io": io, "sys": sys, "bridge": OneFragment,
+                  "_repo_root": lambda: ROOT,
+                  "_fragment_for": lambda _capability: ("two-elements",
+                                                        "DRAFT")})
+    lines = contract_lines(alone, "TWO_ELEMENTS") if alone is not None else []
+    typed, picked = element_row(lines, "wallType"), element_row(lines, "host")
+    check("element TYPE by name" in typed,
+          "heron_resolve hands the name through - `wallType` is told a "
+          "type name: %s" % typed)
+    check("`selected`" in picked and "TYPE by name" not in picked,
+          "and `host` is told `selected`: %s" % picked)
+
+    job = GJ.job_block(TwoElements(), False, {})
+    hosts = [line for line in job if line.strip().startswith("host:")]
+    types_ = [line for line in job if line.strip().startswith("wallType:")]
+    check(hosts and all("`selected`" in line and "TYPE by name" not in line
+                        for line in hosts),
+          "generate-jobs writes `selected` beside a particular element: %s"
+          % hosts)
+    check(types_ and all("Basic Wall" in line for line in types_),
+          "and a type name beside a type-named one: %s" % types_)
 
     print()
     if FAILURES:
