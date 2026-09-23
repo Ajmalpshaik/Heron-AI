@@ -8,8 +8,9 @@
 
 """
 tools/split-register.py gives every section of FRAGMENT-ISSUES.md its own file
-and the rows of sections 5 and 5b files of 25, and every reader of the
-register still reads exactly what it read.
+and the rows of sections 5 and 5b files of 25, and every section of
+PROPOSALS.md its own file - and every reader of each register still reads
+exactly what it read.
 
     python tests/test_split_register.py
 
@@ -43,7 +44,10 @@ WHAT IS PROVED
  10. CRLF in, CRLF out, and still byte for byte; a register mixing the two is
      not read at all;
  11. open-defects.py, review-ledger.py and archive-fragment-issues.py each
-     read the register through the one reader.
+     read the register through the one reader;
+ 12. PROPOSALS.md splits the same way - every section to its own file, two
+     sections written on one day to two files - and owner-queue.py and
+     balance-of-work.py read the same proposals from it, through the reader.
 """
 
 import contextlib
@@ -444,6 +448,99 @@ def run(work):
         check("register-text.py" in source or "OD.RT" in source,
               "%s reads it through tools/register-text.py" % filename)
         check("register_text(" in source, "and calls register_text()")
+
+    print()
+    print("12. PROPOSALS.md splits the same way, and its readers read the same proposals")
+    proposals_case(work)
+
+
+RED, YELLOW, DONE = chr(0x1F534), chr(0x1F7E1), chr(0x2705)
+
+
+def proposals_register():
+    return NL.join([
+        "# Proposals " + DASH + " Gaps, Additions & Ideas",
+        "",
+        "> | **Its numbers** | Derive the open ones: `python tools/owner-queue.py` |",
+        "",
+        "---",
+        "",
+        "## Part A " + DASH + " Gaps in Master Specification Part 1",
+        "",
+        "### " + RED + " A1. The threading constraint is not mentioned",
+        "",
+        "See [the first of Part F](#f1-should-it-be-a-tool).",
+        "",
+        "## Part F " + DASH + " Opened by building the Improvement Gate, 2026-09-12",
+        "",
+        "### " + YELLOW + " F1. Should it be a tool?",
+        "",
+        "Words, and [a decision](DECISIONS.md).",
+        "",
+        "### " + DONE + " F3. Closed already",
+        "",
+        "## F23 " + DASH + " four agents have no distinct source",
+        "",
+        "### " + YELLOW + " F23. The same, as a heading",
+        "",
+        "See [F27](#f27--five-rows-are-built).",
+        "",
+        "## F27 " + DASH + " five rows are built",
+        "",
+        "Built.",
+        "",
+        "## 2026-09-19 " + DASH + " what is left after twenty-three gaps were closed",
+        "",
+        "Left.",
+        "",
+        "## 2026-09-19 " + DASH + " rule (d) refuses four fragments, and only two deserve it",
+        "",
+        "Refused.",
+        "",
+    ])
+
+
+def proposals_readers_at(root):
+    oq = _load("owner_queue_at_root", "owner-queue.py")
+    bw = _load("balance_of_work_at_root", "balance-of-work.py")
+    oq.ROOT = root
+    bw.ROOT = root
+    return {"owner-queue": oq.proposals(), "balance-of-work": bw.proposals_open()}
+
+
+def proposals_case(work):
+    original = proposals_register()
+    one_file = make_root(work, original, "proposals-whole")
+    root = make_root(work, original, "proposals")
+    for base in (one_file, root):
+        put(os.path.join(base, "docs", "PROPOSALS.md"), original)
+    index = os.path.join(root, "docs", "PROPOSALS.md")
+    folder = os.path.join(root, "docs", "proposals")
+    today = proposals_readers_at(one_file)
+    p = SPLIT.plan("proposals", index, "2026-09-23", root)
+    check(p.fatal is None and not p.problems, "the plan is clean (%s)" % (p.fatal or "; ".join(p.problems) or "no problem"))
+    check(sorted(n for _, n in p.moving) == ["2026-09-19-rule-d-refuses-four-fragments.md",
+                                            "2026-09-19-what-is-left-after-twenty-three.md",
+                                            "f23.md", "f27.md", "part-a.md", "part-f.md"],
+          "every section moves; one named from its opening words, and two written on one day to two files")
+    check(SPLIT.write(p) == SPLIT.OK, "it writes")
+    check(RT.register_text(index) == original, "read back, it is the register byte for byte")
+    part_a = read(os.path.join(folder, "part-a.md"))
+    check("[the first of Part F](part-f.md#f1-should-it-be-a-tool)" in part_a,
+          "a link to a proposal in another section follows it")
+    check("[F27](f27.md#f27--five-rows-are-built)" in read(os.path.join(folder, "f23.md")),
+          "and so does one to another section's own heading")
+    check("[a decision](../DECISIONS.md)" in read(os.path.join(folder, "part-f.md")),
+          "a link one folder deeper: DECISIONS.md -> ../DECISIONS.md")
+    now = proposals_readers_at(root)
+    for key in sorted(today):
+        check(now[key] == today[key], "%s reads the same proposals from the split register" % key)
+    check([r[0] for r in now["owner-queue"]] == ["F1", "F23"],
+          "owner-queue still puts F1 and F23 in front of the owner, and not the closed F3")
+    for filename in ("owner-queue.py", "balance-of-work.py"):
+        source = read(os.path.join(ROOT, "tools", filename))
+        check("register-text.py" in source and "proposals_text()" in source,
+              "%s reads PROPOSALS.md through tools/register-text.py" % filename)
 
 
 if __name__ == "__main__":

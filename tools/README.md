@@ -1929,6 +1929,12 @@ heading that would leave the page.
 number belongs to. A new section written on the page is moved by the next run, and a run with nothing new moves
 nothing. [`tests/test_split_register.py`](../tests/test_split_register.py) builds its own register, never the real one.
 
+**PROPOSALS.md is split the same way** - `python tools/split-register.py proposals` - every section to its own file in
+[`docs/proposals/`](../docs/proposals/part-a.md), named from its opening words: `## F23 — ...` is `f23.md`, and a
+section headed only by a date takes its first five words as well, so two written on one day get two files.
+[`owner-queue.py`](#owner-queuepy--what-is-waiting-on-the-owner-derived-rather-than-typed) and `balance-of-work.py` read
+it through `register-text.py`, and the split was refused unless both read the same proposals from it.
+
 ## `register-text.py` - a split register read as one text
 
 ```bash
@@ -1937,7 +1943,8 @@ python tools/register-text.py docs/FRAGMENT-ISSUES.md | grep 5b-62    # search a
 ```
 
 The reader every tool of a register split by `split-register.py` goes through: `open-defects.py`,
-`review-ledger.py` and `archive-fragment-issues.py` for FRAGMENT-ISSUES. It puts each section's file back under
+`review-ledger.py` and `archive-fragment-issues.py` for FRAGMENT-ISSUES, `owner-queue.py` and `balance-of-work.py` for
+PROPOSALS. It puts each section's file back under
 its heading, and each band of rows back where the table was, with the links as they were written in the one file.
 Standard library only. **A missing file is not skipped** - a line naming a file that is not there, a section's
 file that does not open with its heading, or a rows file with no table stops it with `RegisterBroken` rather than
