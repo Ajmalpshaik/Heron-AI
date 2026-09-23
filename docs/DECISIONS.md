@@ -172,13 +172,16 @@ an edit.
 | [D-98](#d-98--a-context-fragment-is-consumed-by-the-host-not-by-another-fragment) | A context fragment is consumed by the host, not by another fragment | ⏳ Proposed · 2026-08-31 |
 | [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) | A change asked for in a chat is kept at once, with no preview, and Article 9 says so | ✅ Accepted · 2026-09-23 |
 | [D-100](#d-100--a-drop-in-the-score-of-the-owners-own-questions-is-reported-never-a-gate) | A drop in the score of the owner's own questions is reported, never a gate | ✅ Accepted · 2026-09-23 |
+| [D-101](#d-101--risk-is-part-of-routing-not-only-part-of-permission) | Risk is part of routing, not only part of permission | ⏳ Proposed · 2026-08-31 |
+| [D-102](#d-102--several-fragments-may-jointly-feed-one-and-the-orphan-check-asks-per-need) | Several fragments may jointly feed one, and the orphan check asks per need | ✅ Accepted · 2026-08-31 |
+| [D-103](#d-103--a-need-may-bind-to-a-provided-name-that-is-not-its-own) | A need may bind to a provided name that is not its own | ✅ Accepted · 2026-08-31 |
 
 ## Format
 
 Write a new decision here, in full, in this shape - then run `python tools/split-decisions.py --write`,
 which moves its record into `decisions/D-NN.md` and leaves its heading, its metadata lines and a link here.
-Decisions already split are left alone. **A number is used once**: D-45 and D-46 were each used twice before
-2026-09-23, and the first decisions under them are now D-97 and D-98.
+Decisions already split are left alone. **A number is used once**: D-45 to D-49 were each used twice before
+2026-09-23, and the first decisions under them are now D-97, D-98 and D-101 to D-103.
 
 ```markdown
 ## D-NN — Short title
@@ -510,6 +513,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Accepted · **Date:** 2026-09-06 · **Question:** [Q-41](OPEN-QUESTIONS.md)
 **Affects:** [25](25-multi-session-and-binding.md), [14 — Rule 16](14-golden-rules.md), [09](09-skills-and-fragments.md), [D-16](#d-16--the-session-list-is-built-live-and-the-revit-freeze-is-out-of-scope), [D-22](#d-22--a-second-chat-is-refused-not-allowed-to-take-over)
+**Numbering:** this number was used twice. D-47 was first *"Risk is part of routing, not only part of permission"*, which the merge `1f884ae` (2026-09-02) left out of the log - that decision is now [D-101](#d-101--risk-is-part-of-routing-not-only-part-of-permission). Commit `ec17e79` (2026-09-06) gave the number to this decision, so a citation of D-47 written before `ec17e79` means D-101.
 
 **Full record:** [`decisions/D-47.md`](decisions/D-47.md)
 
@@ -517,6 +521,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Accepted · **Date:** 2026-09-06 · **Extends:** [D-45](#d-45--heron-tracks-the-mcp-sdk-across-major-versions-the-way-it-tracks-revit-releases)
 **Affects:** [`brain/heron_fragment.py`](../brain/heron_fragment.py), [09](09-skills-and-fragments.md), [21](21-resilience-and-operations.md)
+**Numbering:** this number was used twice. D-48 was first *"Several fragments may jointly feed one, and the orphan check asks per need"*, which the merge `1f884ae` (2026-09-02) left out of the log - that decision is now [D-102](#d-102--several-fragments-may-jointly-feed-one-and-the-orphan-check-asks-per-need). Commit `ec17e79` (2026-09-06) gave the number to this decision, so a citation of D-48 written before `ec17e79` means D-102.
 
 **Full record:** [`decisions/D-48.md`](decisions/D-48.md)
 
@@ -524,6 +529,7 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Accepted · **Date:** 2026-09-06 · **Found during:** `A8`, on the owner's PC
 **Affects:** [`brain/heron_embed.py`](../brain/heron_embed.py), [`mcp/server/heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [05](05-heron-brain.md), [21](21-resilience-and-operations.md)
+**Numbering:** this number was used twice. D-49 was first *"A need may bind to a provided name that is not its own"*, which the merge `1f884ae` (2026-09-02) left out of the log - that decision is now [D-103](#d-103--a-need-may-bind-to-a-provided-name-that-is-not-its-own). Commit `2087022` (2026-09-06) gave the number to this decision, so a citation of D-49 written before `2087022` means D-103.
 
 **Full record:** [`decisions/D-49.md`](decisions/D-49.md)
 
@@ -844,3 +850,26 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`tools/score-routing.py`](../tools/score-routing.py), [`tests/test_score_routing.py`](../tests/test_score_routing.py), [`.github/workflows/gates.yml`](../.github/workflows/gates.yml), which does not run it
 
 **Full record:** [`decisions/D-100.md`](decisions/D-100.md)
+
+## D-101 — Risk is part of routing, not only part of permission
+
+**Status:** Proposed · **Date:** 2026-08-31 · **Touches:** [D-30](#d-30--a-fragment-is-promoted-by-one-recorded-proof-not-by-a-count-of-runs), the risk ladder in the Constitution, [`tools/check-routing.py`](../tools/check-routing.py)
+**Numbering:** restored 2026-09-23 under a new number, on the owner's instruction, word for word from commit `5c84302`. This decision was D-47 from 2026-08-31 until the merge `1f884ae` (2026-09-02) left it out of the log, and commit `ec17e79` (2026-09-06) gave the number to a different decision. A citation of D-47 written before `ec17e79` means this decision.
+
+**Full record:** [`decisions/D-101.md`](decisions/D-101.md)
+
+## D-102 — Several fragments may jointly feed one, and the orphan check asks per need
+
+**Status:** Accepted · **Date:** 2026-08-31 · **Closes:** the open question in [D-98](#d-98--a-context-fragment-is-consumed-by-the-host-not-by-another-fragment) ·
+**Touches:** [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer), Step 13's graph
+**Numbering:** restored 2026-09-23 under a new number, on the owner's instruction, word for word from commit `5c84302`, except that its references to the first D-46 and D-49 now say D-98 and D-103, the numbers those decisions have now. This decision was D-48 from 2026-08-31 until the merge `1f884ae` (2026-09-02) left it out of the log, and commit `ec17e79` (2026-09-06) gave the number to a different decision. A citation of D-48 written before `ec17e79` means this decision.
+
+**Full record:** [`decisions/D-102.md`](decisions/D-102.md)
+
+## D-103 — A need may bind to a provided name that is not its own
+
+**Status:** Accepted · **Date:** 2026-08-31 · **Closes:** the remainder left open by [D-102](#d-102--several-fragments-may-jointly-feed-one-and-the-orphan-check-asks-per-need) ·
+**Touches:** [D-29](#d-29--a-fragment-is-a-composable-piece-not-a-whole-answer), the contract validator
+**Numbering:** restored 2026-09-23 under a new number, on the owner's instruction, word for word from commit `5c84302`, except that its references to the first D-48 now say D-102, the number that decision has now. This decision was D-49 from 2026-08-31 until the merge `1f884ae` (2026-09-02) left it out of the log, and commit `2087022` (2026-09-06) gave the number to a different decision. A citation of D-49 written before `2087022` means this decision.
+
+**Full record:** [`decisions/D-103.md`](decisions/D-103.md)

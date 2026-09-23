@@ -372,7 +372,7 @@ Copy the message. Note which element, which view, which document. Then investiga
 | A count higher than what is standing on site | Nested families and insulation. An AHU with a nested fan, coil and filter is four instances and one unit — `GROUP_BY_ASSEMBLY` |
 | A painted finish reports zero area | Paint and geometry are two separate material sets and the area call needs the same flag it was listed with — `REPORT_MATERIAL_TAKEOFF` |
 | A ceiling-height answer says *"no ceiling"* for a room that plainly has one | The room's **Upper Limit**. A room's solid stops there, so a solid test intersects nothing. `MEASURE_CEILING_HEIGHT` avoids it by design |
-| You asked a **question** and the model **changed** | `python tools/check-routing.py` — the ladder-crossing list at the top. A read sentence can rank below a fragment that writes. [D-47](DECISIONS.md) |
+| You asked a **question** and the model **changed** | `python tools/check-routing.py` — the ladder-crossing list at the top. A read sentence can rank below a fragment that writes. [D-101](DECISIONS.md) |
 | A fragment "does not exist", or ranks nowhere | The store is **stale**, not the library broken. `check-routing.py` rebuilds when its count disagrees with disk and says so |
 | It hangs, with no error | **Two waits, not one.** *"Did Revit pick it up?"* and *"having started, did it finish?"* are different questions. §4 note 7 |
 | *"Access denied"* opening the bridge | `CreateNewInstance` on the pipe. §4 note 2 |
@@ -904,7 +904,7 @@ rest.
    python tools/check-routing.py
    python tools/check-intrusion.py     # optional; the shortlist view
    ```
-6. **Answer every ladder-crossing.** [D-47](DECISIONS.md) removes the option of leaving one alone:
+6. **Answer every ladder-crossing.** [D-101](DECISIONS.md) removes the option of leaving one alone:
    say which fragment should win, or say the sentence names a composition and belongs to a skill. Where
    two fragments fairly claim one sentence, **put the same cross-reference table in BOTH** — written
    one way it only routes whoever lands on the newer file.

@@ -237,7 +237,7 @@ def need_binds(entry):
     genuinely the user's choice, so the producer publishes the chosen one under
     a generic name. That answer does not work here. Nothing about "which set is
     the source" is a measurement or a user preference: it is a BINDING the host
-    makes when it runs the same filter twice for two roles, and D-48 named that
+    makes when it runs the same filter twice for two roles, and D-102 named that
     as the case still unsolved.
 
     So a need may declare `binds: elements`, meaning "fill me from a provide
