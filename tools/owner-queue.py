@@ -67,6 +67,30 @@ def read(rel):
         return fh.read()
 
 
+# THE REGISTER IS SEVERAL FILES SINCE 2026-09-23, AND IS STILL READ AS ONE.
+# tools/needs-checking-register.py puts every group's file back under its
+# heading in NEEDS-CHECKING.md, links as they were written, so this tool reads
+# exactly the text it read when the register was one file. It reads through
+# `read` above, so a suite that serves this tool a register is still obeyed.
+# A group file that is missing raises - a register that quietly drops a group
+# is the failure the register records against itself.
+def _register_reader():
+    import importlib.util
+    here = os.path.dirname(os.path.abspath(__file__))
+    spec = importlib.util.spec_from_file_location(
+        "needs_checking_register", os.path.join(here, "needs-checking-register.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+NCR = _register_reader()
+
+
+def needs_checking_text():
+    return NCR.register_text(ROOT, read)
+
+
 # What the owner has to have in front of him. The order is the order he can
 # actually act in: the things needing nothing come first.
 BUCKETS = [
@@ -120,7 +144,7 @@ def open_questions():
 def needs_checking():
     """Rows that are not struck through, carrying their Group's own wording
     about what the row needs - the heading already says it."""
-    src = read("docs/NEEDS-CHECKING.md")
+    src = needs_checking_text()
     if src is None:
         return []
     out, group = [], ""

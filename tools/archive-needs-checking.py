@@ -72,6 +72,11 @@ def _load(name, filename):
 
 
 AF = _load("archive_fragment_issues", "archive-fragment-issues.py")
+# SINCE 2026-09-23 THE REGISTER IS ONE FILE PER GROUP. It is read as one text
+# - NEEDS-CHECKING.md with every group read back into its place - and written
+# back through the same layout, so everything below still plans on one text.
+NCR = _load("needs_checking_register", "needs-checking-register.py")
+SPLIT = _load("split_needs_checking", "split-needs-checking.py")
 NL, CR, DASH = AF.NL, AF.CR, AF.DASH
 OK, REFUSED, COULD_NOT = AF.OK, AF.REFUSED, AF.COULD_NOT
 CELL = AF.OD.CELL
@@ -140,14 +145,21 @@ class Plan(object):
         self.before = ""
         self.after = ""
         self.already = 0
+        self.index_after = ""     # NEEDS-CHECKING.md as written
+        self.files_after = {}     # each group file as written
 
 
 def plan(register=REGISTER, archive=ARCHIVE, today=None):
     p = Plan(register, archive, today or datetime.date.today().isoformat())
     try:
-        p.before = AF._read(register)
+        p.before = NCR.register_text(os.path.dirname(os.path.dirname(register)))
+        if p.before is None:
+            raise IOError("there is no such file")
     except (IOError, OSError) as error:
         p.fatal = "could not read %s: %s" % (register, error)
+        return p
+    except NCR.RegisterBroken as broken:
+        p.fatal = str(broken)
         return p
     lines, p.eol = AF._split(p.before)
     if lines is None:
@@ -219,6 +231,12 @@ def plan(register=REGISTER, archive=ARCHIVE, today=None):
         for key in before:
             if before[key] != after[key]:
                 p.problems.append("%s would read the register differently afterwards" % key)
+    if p.moves and not p.problems:
+        p.index_after, p.files_after, trouble = SPLIT.layout_split(register, p.after, p.today)
+        p.problems.extend(trouble)
+        back = NCR.register_text(read=SPLIT._served(p.index_after, p.files_after))
+        if back != p.after:
+            p.problems.append("the register's files, written this way, would not read back as the new register")
     return p
 
 
@@ -285,7 +303,12 @@ def write(p):
         text = opening + NL.join(blocks)
         AF._put(path, text.replace(NL, p.eol))
     AF._put(os.path.join(p.archive, "README.md"), _readme(p).replace(NL, p.eol))
-    AF._put(p.register, p.after)
+    folder = os.path.join(os.path.dirname(p.register), NCR.FOLDER_NAME)
+    for name in sorted(p.files_after):
+        path = os.path.join(folder, name)
+        if not os.path.exists(path) or AF._read(path) != p.files_after[name]:
+            AF._put(path, p.files_after[name])
+    AF._put(p.register, p.index_after)
     return OK
 
 

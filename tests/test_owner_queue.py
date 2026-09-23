@@ -56,8 +56,15 @@ def check(condition, what):
 
 
 def main():
-    src = io.open(os.path.join(ROOT, "docs", "NEEDS-CHECKING.md"),
-                  encoding="utf-8").read()
+    # THE REGISTER IS ONE FILE PER GROUP SINCE 2026-09-23. Read here as the
+    # page and every group file side by side - NOT through
+    # tools/needs-checking-register.py, which the tool under test reads
+    # through, so the list below stays derived rather than borrowed.
+    folder = os.path.join(ROOT, "docs", "needs-checking")
+    paths = [os.path.join(ROOT, "docs", "NEEDS-CHECKING.md")] + sorted(
+        os.path.join(folder, n) for n in (os.listdir(folder) if os.path.isdir(folder) else [])
+        if n.endswith(".md"))
+    src = chr(10).join(io.open(path, encoding="utf-8").read() for path in paths)
     rows = QUEUE.needs_checking()
     reported = [r[0] for r in rows]
 
