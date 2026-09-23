@@ -1,15 +1,8 @@
 ---
 name: heron-guard
-description: Refuses an edit that would put the Revit vendor namespace outside revit/, at the moment the edit is proposed rather than when somebody remembers to run the gate. Deny-tier, fails closed, and disabled with HERON_GUARD=off. This is for developing Heron and is not part of what a modeller installs.
+description: Refuses an edit that would put the Revit vendor namespace outside revit/, at the moment the edit is proposed rather than when somebody remembers to run the gate. Wired from .claude/settings.json so it runs in every session. Deny-tier, fails closed, and disabled with HERON_GUARD=off. This is for developing Heron and is not part of what a modeller installs.
 allowed-tools:
   - Read
-hooks:
-  PreToolUse:
-    - matcher: "Write|Edit|MultiEdit"
-      hooks:
-        - type: command
-          command: "python .claude/skills/heron-guard/bin/heron_guard.py"
-          statusMessage: "Checking the adapter boundary..."
 ---
 
 # Heron Guard — the adapter boundary, before the edit lands
@@ -24,6 +17,30 @@ instead of when somebody remembers to run the sweep.
 the day it matters. On 2026-09-09 the author of `brain/heron_context.py` broke that exact boundary
 **while writing a comment explaining it** — quoting the namespace in order to say the file did not
 contain it — and found out only because the sweep happened to be run afterwards.
+
+## Where it is wired — `.claude/settings.json`, and not this file
+
+**Corrected 2026-09-23.** This skill used to declare the hook in its own frontmatter, gstack's shape
+([Q-49](../../../docs/OPEN-QUESTIONS.md)). **A hook declared there is registered only when the skill is
+invoked**, so in every session that never loaded `heron-guard` the boundary was not guarded at all.
+Proven 2026-09-22 by hand: the script refused a forbidden edit piped into it, and the same edit made
+through the editor in a normal session went straight through.
+
+So [`.claude/settings.json`](../../settings.json) wires it now, for `Write|Edit|MultiEdit`, as
+`python "$CLAUDE_PROJECT_DIR/.claude/skills/heron-guard/bin/heron_guard.py"` — every session, whether
+or not anybody reads this page. **The frontmatter declares nothing, on purpose:** the host keeps a
+skill's copy of a hook separate from the settings' copy, so declaring it in both would run it twice.
+[`tests/test_heron_guard.py`](../../../tests/test_heron_guard.py) holds both halves, and runs the exact
+command `settings.json` gives.
+
+**Every decision is written down** — each allow, deny, crash and switched-off edit is one line in the
+hooks' diary outside this repository ([`heron-session`](../heron-session/SKILL.md) says where, and why
+it is never a typed path). `python tools/hook-report.py` then shows from evidence that the guard runs in
+every session and how often it refuses. The line is written after the decision is printed, and a diary
+that cannot be written is a missing line — never a refusal.
+
+**A hook the host cancels at its timeout decides nothing, and the edit goes ahead** — the host's rule,
+not this hook's, and one more reason `check-structure.py` still runs before every push.
 
 ## What it does not do
 
@@ -48,6 +65,7 @@ Windows, where a bash hook simply would not run.
 | **The decision is nested** under `hookSpecificOutput` | A `permissionDecision` at the top level is ignored — *"silently no-ops the block"*. A hook that looks like it works and refuses nothing |
 | **A crash denies** | An unexpected exit with nothing on stdout is read as **permission**, so a failure prints a **deny** rather than dying quietly. An **allow prints nothing** — silence is what the host reads as *no objection*, which is what an allow wants. `tests/test_heron_guard.py` pins both halves |
 | **Deny-tier, fails closed** | *"A boundary that fails open is not a boundary."* gstack's `careful` is ask-tier and fails the other way, deliberately |
+| **The payload is read as UTF-8 bytes** | Because a crash refuses, anything that crashes the hook for a reason unrelated to the boundary refuses a good edit. On Windows a piped stdin is decoded in the ANSI code page, which has no character for five byte values UTF-8 uses constantly — **an edit carrying Arabic was refused for that**, found 2026-09-23. `tests/test_heron_guard.py` section 4a sends Arabic under that code page |
 | **`HERON_GUARD=off` turns it off** | Not optional for a fail-closed hook. One bad edit away from a repository nobody can work in, and the person who needs the hatch is the one whose tooling is already broken |
 
 **The pattern is a second copy of `check-structure.py`'s, and

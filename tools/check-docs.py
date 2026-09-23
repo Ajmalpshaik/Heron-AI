@@ -325,6 +325,22 @@ else:
 HISTORY = re.compile(r'(used to|it said|until 20\d\d|no longer|superseded'
                      r'|was wrong|had stood|had been|stopped saying)', re.I)
 
+
+# ASKED ONCE PER LINE, NOT ONCE PER CHECK. Every check below walks every line
+# of every markdown file and asks HISTORY first, so the same line was asked up
+# to eight times - measured 2026-09-23, most of this script's run time went to
+# regular-expression searches, on a script already taking 30-37 s on a busy
+# PC. The answer depends only on the text, so it is remembered.
+_HISTORY_SEEN = {}
+
+
+def is_history(text):
+    """HISTORY.search(text), remembered - True when the text is a record."""
+    hit = _HISTORY_SEEN.get(text)
+    if hit is None:
+        hit = _HISTORY_SEEN[text] = HISTORY.search(text) is not None
+    return hit
+
 out("\n=== 7. THE SAME CLAIM, EVERYWHERE IT IS MADE ===\n")
 drift = []
 if answered is None:
@@ -334,7 +350,7 @@ else:
     n_total = len(q_def)
     for p in md:
         for i, line in enumerate(allsrc.get(p, '').split('\n'), 1):
-            if HISTORY.search(line):
+            if is_history(line):
                 continue
 
             for m in re.finditer(r'(?<!Q-)\b(\d+)\s+of\s+(\d+)\s+questions?\s+answered', line):
@@ -360,7 +376,7 @@ else:
                           r'|awaiting confirmation', re.I)
         for p in md:
             for i, line in enumerate(allsrc.get(p, '').split('\n'), 1):
-                if HISTORY.search(line) or not pend.search(line):
+                if is_history(line) or not pend.search(line):
                     continue
                 if 'onstitution' in line or 'HERON_CONSTITUTION' in line:
                     drift.append((p, i, 'the Constitution is pending confirmation',
@@ -376,11 +392,15 @@ else:
     # "33 test suites" while four had been added in the same week by the same
     # hand, and the MCP tool count moved 13 -> 14 the day heron_context was
     # served. Deriving them costs one glob each.
+    #
+    # The MCP tool count is not a glob, and the row this list carried for it
+    # could never fire: it counted tools/*.py - the checkers - against the
+    # phrase "N tools mentions", which no sentence has ever used. It is
+    # derived from the server's own registry now, further down, under THE
+    # MCP TOOL TOTAL.
     countable = [
         (os.path.join(root, 'tests'), 'test_*.py',
          r'(\d+)\s+test\s+suites\b', 'test suites'),
-        (os.path.join(root, 'tools'), '*.py',
-         r"(\d+)\s+tools\s+mentions\b", 'tools'),
         # A TOTAL CLAIMED WITHOUT THE WORD "TEST", which is how the row above
         # missed two of them for five days. heron-ship said "all 163 suites
         # then pass" and "run the full 163" while there were 199 - measured
@@ -409,7 +429,7 @@ else:
             continue
         for p in md:
             for i, line in enumerate(allsrc.get(p, '').split('\n'), 1):
-                if HISTORY.search(line):
+                if is_history(line):
                     continue
                 for m in re.finditer(claim, line):
                     # A QUOTED TOTAL IS A CITATION, NOT A CLAIM. This file and
@@ -471,7 +491,7 @@ else:
             if '/work-notes/' in p:
                 continue
             for i, line in enumerate(allsrc.get(p, '').split('\n'), 1):
-                if HISTORY.search(line):
+                if is_history(line):
                     continue
                 hits = list(claim.finditer(line))
                 if not hits:
@@ -520,7 +540,7 @@ else:
             if '/work-notes/' in p:
                 continue
             for i, line in enumerate(allsrc.get(p, '').split('\n'), 1):
-                if HISTORY.search(line):
+                if is_history(line):
                     continue
                 hits = list(risk_claim.finditer(line))
                 if not hits:
@@ -577,8 +597,14 @@ else:
     # splitter (row 5b-67).
     BREAK = re.compile(r'[.!?][*_"\'\u2019)\]]*\s+|\s*\|\s*')
 
+    # Split once per file: four checks below read the same sentences, and
+    # the split depends only on the text.
+    _SENTENCES = {}
+
     def sentences(text):
         """(first line, sentence, whole block, offset in block) each."""
+        if text in _SENTENCES:
+            return _SENTENCES[text]
         found, start, held = [], 1, []
 
         def flush():
@@ -602,6 +628,7 @@ else:
                 held = []
         if held:
             flush()
+        _SENTENCES[text] = found
         return found
 
     def a_claim(block, at):
@@ -628,7 +655,7 @@ else:
             if '/work-notes/' in p or '/handover-archive/' in p:
                 continue
             for i, one, block, off in sentences(allsrc.get(p, '')):
-                if HISTORY.search(one):
+                if is_history(one):
                     continue
                 for m in MET.finditer(one):
                     if not a_claim(block, off + m.start()):
@@ -673,7 +700,7 @@ else:
             if '/work-notes/' in p or '/handover-archive/' in p:
                 continue
             for i, one, block, off in sentences(allsrc.get(p, '')):
-                if HISTORY.search(one):
+                if is_history(one):
                     continue
                 for m in CARRY.finditer(one):
                     if not a_claim(block, off + m.start()):
@@ -691,6 +718,59 @@ else:
                                           '%d PROVEN %s (grep risk: and '
                                           'heron-status: in brain/fragments)'
                                           % (real, risk)))
+
+    # ---------- THE MCP TOOL TOTAL, FROM THE REGISTRY ITSELF ----------
+    #
+    # The countable list above carried a row for this and it could not fire:
+    # it counted tools/*.py - the checkers, not the MCP tools - against the
+    # phrase "N tools mentions", which no sentence in the repository has ever
+    # used. Measured 2026-09-23: zero matches. Meanwhile docs/33 said "Heron
+    # has 14 MCP tools" and docs/34 "14 MCP tools against their 314", while
+    # the server's own registry held 34.
+    #
+    # THE TOTAL IS len(heron_tools.TOOLS), imported rather than re-derived:
+    # it is the table the server registers from and the add-in's registry is
+    # tested against, and a count reached here by any other route would be a
+    # second copy of the fact.
+    #
+    # ONE FORM, "N MCP tools", read by sentence like its neighbours, and only
+    # when the number is Heron's. A research document names other projects'
+    # totals in the same words - "their 314 MCP tools", "ruflo's 314 MCP
+    # tools" - and that is somebody else's count. A quotation is a citation
+    # and a history word excuses a record, exactly as above. The better
+    # sentence types no number at all: `python mcp/server/heron_tools.py`
+    # lists them.
+    try:
+        _server = os.path.abspath(os.path.join(root, 'mcp', 'server'))
+        if _server not in sys.path:
+            sys.path.insert(0, _server)
+        import heron_tools as _HERON_TOOLS
+        mcp_total = len(_HERON_TOOLS.TOOLS)
+    except Exception as _exc:                   # noqa: BLE001 - said below
+        mcp_total = None
+        out("  the MCP tool total could not be derived (%s) - no MCP tool "
+            "count was checked\n" % type(_exc).__name__)
+    if mcp_total is not None:
+        MCP_COUNT = re.compile(r"(?:\b(their|its)\s+"
+                               r"|\b([A-Za-z][\w.-]*)(?:'s|\u2019s)\s+)?"
+                               r"\b(\d+)\s+MCP\s+tools?\b", re.I)
+        for p in md:
+            if '/work-notes/' in p or '/handover-archive/' in p:
+                continue
+            for i, one, block, off in sentences(allsrc.get(p, '')):
+                if is_history(one):
+                    continue
+                for m in MCP_COUNT.finditer(one):
+                    if not a_claim(block, off + m.start(3)):
+                        continue
+                    if m.group(1) or (m.group(2)
+                                      and m.group(2).lower() != 'heron'):
+                        continue
+                    if int(m.group(3)) != mcp_total:
+                        drift.append((p, i, '%s MCP tools' % m.group(3),
+                                      '%d (len(heron_tools.TOOLS) in '
+                                      'mcp/server/heron_tools.py)'
+                                      % mcp_total))
 
     # ---------- THE WRITE PATH, ANSWERED BY THE REGISTER RATHER THAN BY A
     # ---------- SENTENCE
@@ -735,7 +815,7 @@ else:
                     or short.startswith('docs/decisions/')):
                 continue
             for i, one, block, off in sentences(allsrc.get(p, '')):
-                if HISTORY.search(one):
+                if is_history(one):
                     continue
                 for m in NEVER.finditer(one):
                     if not a_claim(block, off + m.start()):
@@ -827,6 +907,259 @@ else:
     for _line in (_r.stdout or '').rstrip('\n').split('\n'):
         out("  %s\n" % _line)
     if _r.returncode != 0:
+        failed = True
+
+# ---------- 10. every tool and every skill, named where it is described ----------
+#
+# tools/README.md has carried a one-line check for this since 2026-09-16 -
+# "every tool on disk that this page never names" - and nothing ran it. By
+# 2026-09-22 nine files in tools/ were described nowhere on the page, three of
+# them the scripts a cloud environment, a deploy and an install go through
+# (cloud-setup.sh, deploy-addin.ps1, HeronRevit.ps1). The one-liner looked at
+# *.py only, so those three were outside even the check nobody ran.
+#
+# ONE DIRECTION ON PURPOSE, for the reason that page gives: a name on the page
+# with no file behind it is a broken link, which section 1 already catches.
+# The direction that matters is ON DISK AND UNNAMED - a tool nobody can find
+# is a tool nobody runs.
+#
+# "Named" means the whole name, with a boundary on each side, so
+# check-routing.py is not found inside check-skill-routing.py. The DISK is
+# read rather than git, so a new tool is caught before it is ever committed.
+out("\n=== 10. EVERY TOOL AND EVERY SKILL NAMED IN ITS README ===\n")
+
+
+def named(text, name):
+    """True when `name` appears in `text` as a whole name."""
+    return re.search(r'(?<![\w.-])' + re.escape(name) + r'(?![\w-])',
+                     text) is not None
+
+
+def unnamed(folder, want_dirs):
+    """(how many were looked at, the names on disk its README never names)."""
+    where = os.path.join(root, folder)
+    page = os.path.join(where, 'README.md')
+    if not os.path.isdir(where) or not os.path.isfile(page):
+        return None, []
+    text = io.open(page, encoding='utf-8').read()
+    seen, missing = 0, []
+    for name in sorted(os.listdir(where)):
+        if name.startswith('.') or name in ('__pycache__', 'README.md'):
+            continue
+        if os.path.isdir(os.path.join(where, name)) != want_dirs:
+            continue
+        if name.endswith('.pyc'):
+            continue
+        seen += 1
+        if not named(text, name):
+            missing.append(name)
+    return seen, missing
+
+
+for _folder, _dirs, _what in (('tools', False, 'file'),
+                              ('.claude/skills', True, 'skill folder')):
+    _seen, _missing = unnamed(_folder, _dirs)
+    if _seen is None:
+        out("  %s/README.md not found - nothing to check\n" % _folder)
+        continue
+    for _name in _missing:
+        out("  NOT NAMED: %s/%s - on disk, and %s/README.md never names it\n"
+            % (_folder, _name, _folder))
+    if _missing:
+        failed = True
+    else:
+        out("  %s/: all %d of its %ss are named in its README\n"
+            % (_folder, _seen, _what))
+
+# ---------- 11. text hygiene, over every tracked file ----------
+#
+# Three faults no reader sees and every tool trips over:
+#
+#   * A CONTROL CHARACTER other than tab, CR and LF. Two sat in a row of the
+#     defect register - a backspace and a form feed, typed where the row meant
+#     to write their escapes - and rendered as nothing at all. A byte no diff
+#     shows and no grep expects.
+#   * DOUBLE-ENCODED TEXT: UTF-8 read in the Windows code page and written
+#     back, so one em dash arrives as three characters. Heron is written on
+#     Windows, where a redirected console encodes in that code page; the
+#     heron-ship skill records the two times it bit.
+#   * A MERGE-CONFLICT MARKER left in a file - rare, and the most expensive of
+#     the three, because the file still reads as prose.
+#
+# THE FORBIDDEN CHARACTERS ARE BUILT, NEVER TYPED. This file is tracked, so it
+# is read by the section it defines: a literal backspace in a pattern here
+# would be found here - the reason heron_guard.py builds the vendor namespace
+# from parts.
+#
+# OVER `git ls-files`, because what matters is what is committed; a build
+# folder or a scratch file on somebody's disk is not this repository. With no
+# git to ask - a copy of the tree, a download - it says NOT RUN and does not
+# fail the run. NOT RUN is its own state, and it is never a pass.
+#
+# A HIT INSIDE A PROVEN FRAGMENT'S impl/ WAITS rather than failing. The proof
+# is one hash over impl/ (D-30), so fixing the byte makes the proof stale and
+# owes a re-proof on a real model - the fix goes with that re-proof, and
+# failing every pull request until then would teach people to skip this.
+out("\n=== 11. TEXT HYGIENE ===\n")
+import subprocess
+import unicodedata
+
+_CONTROL = (''.join(chr(c) for c in range(32) if c not in (9, 10, 13))
+            + chr(127) + ''.join(chr(c) for c in range(0x80, 0xA0)))
+_CONTROL_RE = re.compile('[' + re.escape(_CONTROL) + ']')
+
+
+def _as_code_page(b):
+    """The character one byte becomes when read in the Windows code page.
+
+    Five bytes are undefined there; Windows reads those as the matching C1
+    control, and so does this.
+    """
+    try:
+        return bytes([b]).decode('cp1252')
+    except UnicodeDecodeError:
+        return chr(b)
+
+
+# A UTF-8 lead byte read in the code page is one of these, and wants this many
+# continuation bytes after it; a continuation byte read the same way is one of
+# _CONT's keys.
+_LEAD = dict((chr(c), 1 if c < 0xE0 else 2 if c < 0xF0 else 3)
+             for c in range(0xC2, 0xF5))
+_CONT = dict((_as_code_page(b), b) for b in range(0x80, 0xC0))
+_MOJI_RE = re.compile('[' + re.escape(''.join(_LEAD)) + ']['
+                      + re.escape(''.join(_CONT)) + ']')
+_MARK = dict((ch * 7, ch) for ch in '<>=|')
+
+
+def double_encoded(line):
+    """(column, the character it was meant to be) for the first hit, or None.
+
+    Only a run whose bytes put back together are valid UTF-8 counts: a lead
+    character followed by exactly the continuation characters it needs. A
+    French quotation or a price in pounds does not make that shape.
+    """
+    for m in _MOJI_RE.finditer(line):
+        at = m.start()
+        need = _LEAD[line[at]]
+        tail = line[at + 1:at + 1 + need]
+        if len(tail) != need or any(ch not in _CONT for ch in tail):
+            continue
+        try:
+            meant = bytes([ord(line[at])] + [_CONT[ch] for ch in tail]) \
+                .decode('utf-8')
+        except UnicodeDecodeError:
+            continue
+        return at, meant
+    return None
+
+
+def conflict_lines(lines):
+    """Line numbers of merge-conflict markers.
+
+    Seven '=' or '|' alone can be a heading's underline, so those count only
+    in a file that also has a '<<<<<<<' or '>>>>>>>' line.
+    """
+    found, strong = [], False
+    for n, line in enumerate(lines, 1):
+        head = line[:7]
+        if head not in _MARK or line[7:8] not in ('', ' ', '\r'):
+            continue
+        found.append(n)
+        strong = strong or _MARK[head] in '<>'
+    return found if strong else []
+
+
+_proven = {}
+
+
+def proven_fragment(path):
+    """The fragment's name when `path` is inside a PROVEN fragment's impl/."""
+    parts = path.split('/')
+    if len(parts) < 5 or parts[:2] != ['brain', 'fragments'] \
+            or parts[3] != 'impl':
+        return None
+    if parts[2] not in _proven:
+        card = os.path.join(root, 'brain', 'fragments', parts[2],
+                            'fragment.yaml')
+        try:
+            st = re.search(r'^heron-status:\s*(\S+)',
+                           io.open(card, encoding='utf-8').read(), re.M)
+        except (IOError, OSError):
+            st = None
+        _proven[parts[2]] = bool(st and st.group(1) == 'PROVEN')
+    return parts[2] if _proven[parts[2]] else None
+
+
+try:
+    _ls = subprocess.run(['git', 'ls-files', '-z'], cwd=root,
+                         capture_output=True, timeout=60)
+    if _ls.returncode == 0:
+        _tracked, _why = [n for n in _ls.stdout.decode(
+            'utf-8', 'surrogateescape').split('\0') if n], ''
+    else:
+        _tracked = None
+        _why = (_ls.stderr.decode('utf-8', 'replace').strip().splitlines()
+                or ['git ls-files exited %d' % _ls.returncode])[0]
+except (OSError, subprocess.SubprocessError) as _exc:
+    _tracked, _why = None, '%s: %s' % (type(_exc).__name__, _exc)
+
+if _tracked is None:
+    out("  NOT RUN: %s - this section reads what git tracks, and there is\n"
+        "  no git here to ask. Not a pass: nothing was read.\n" % _why)
+else:
+    _fail, _wait, _binary, _other = [], [], 0, 0
+    _conflict = '<' * 7, '>' * 7
+    for _name in _tracked:
+        try:
+            with io.open(os.path.join(root, _name), 'rb') as _handle:
+                _data = _handle.read()
+        except (IOError, OSError):
+            continue
+        if b'\0' in _data[:8000]:
+            _binary += 1
+            continue
+        try:
+            _text = _data.decode('utf-8')
+        except UnicodeDecodeError:
+            _other += 1
+            continue
+        _control = _CONTROL_RE.search(_text) is not None
+        _moji = not _data.isascii() and _MOJI_RE.search(_text) is not None
+        _marks = _conflict[0] in _text or _conflict[1] in _text
+        if not (_control or _moji or _marks):
+            continue
+        _lines = _text.split('\n')
+        _found = []
+        for _n, _line in enumerate(_lines, 1):
+            if _control:
+                for _ch in sorted(set(_CONTROL_RE.findall(_line))):
+                    _found.append((_n, 'a control character, U+%04X'
+                                   % ord(_ch)))
+            if _moji:
+                _hit = double_encoded(_line)
+                if _hit:
+                    _found.append((_n, 'double-encoded text: %s written as its '
+                                       'UTF-8 bytes read in the Windows code '
+                                       'page' % unicodedata.name(
+                                           _hit[1][0], 'U+%04X' % ord(_hit[1][0]))))
+        if _marks:
+            for _n in conflict_lines(_lines):
+                _found.append((_n, 'a merge-conflict marker'))
+        _fragment = proven_fragment(_name)
+        for _n, _what in sorted(_found):
+            (_wait if _fragment else _fail).append((_name, _n, _what, _fragment))
+    for _name, _n, _what, _ in _fail:
+        out("  %s:%d - %s\n" % (_name, _n, _what))
+    for _name, _n, _what, _fragment in _wait:
+        out("  WAITING: %s:%d - %s, inside PROVEN %s's impl/. Fixing it makes\n"
+            "  the proof stale (D-30), so it is fixed with the re-proof.\n"
+            % (_name, _n, _what, _fragment))
+    out("  %d tracked text file(s) read, %d binary and %d not UTF-8 skipped: "
+        "%d finding(s) that fail, %d waiting\n"
+        % (len(_tracked) - _binary - _other, _binary, _other, len(_fail),
+           len(_wait)))
+    if _fail:
         failed = True
 
 sys.exit(1 if failed else 0)

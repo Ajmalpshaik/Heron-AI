@@ -9,9 +9,36 @@
 """
 The adapter boundary, checked BEFORE the edit lands rather than after.
 
-A PreToolUse hook. It reads one proposed Write or Edit from stdin and refuses
-it if the new text would put the Revit vendor namespace outside `revit/` -
-docs/16 section 4, the boundary that keeps the core testable without Revit.
+A PreToolUse hook, wired from .claude/settings.json so it runs in EVERY
+session. It reads one proposed Write or Edit from stdin and refuses it if the
+new text would put the Revit vendor namespace outside `revit/` - docs/16
+section 4, the boundary that keeps the core testable without Revit.
+
+WIRED FROM SETTINGS, NOT FROM THE SKILL - CORRECTED 2026-09-23
+--------------------------------------------------------------
+Until then the hook was declared in the heron-guard skill's own frontmatter,
+which is where gstack keeps its guards. A hook declared there is registered
+only when the skill is INVOKED, so in every session that never loaded
+heron-guard this file never ran. Proven 2026-09-22 by hand: this script
+refused a forbidden edit piped into it, and the same edit made through the
+editor in a normal session went straight through. A guard that runs only
+when somebody remembers to load it is the gate-somebody-has-to-remember this
+file was written to replace, one level up.
+
+So .claude/settings.json wires it now, and the frontmatter declares nothing:
+the host runs a skill's copy of a hook SEPARATELY from the settings' copy, so
+declaring it in both places would run it twice. tests/test_heron_guard.py
+holds both halves.
+
+EVERY DECISION IS WRITTEN DOWN, AND THE DIARY CANNOT CHANGE ONE
+---------------------------------------------------------------
+Each allow, deny, crash and switched-off edit appends one line to the hooks'
+log outside this repository (.claude/skills/heron-session/bin/hook_log.py
+says where, and why it is never a typed path), so tools/hook-report.py can
+show from evidence that the guard runs in every session and how often it
+refuses. The line is written AFTER the decision is printed, and a diary that
+cannot be written is a missing line - never a refusal, and never a crash that
+trap 2 below would have to turn into one.
 
 WHY THIS EXISTS AND WHY IT IS NOT check-structure.py
 -----------------------------------------------------
@@ -57,6 +84,16 @@ bash hook would simply not run there.
      CLOSED, because "a boundary that fails open is not a boundary". gstack's
      `careful` is ask-tier and fails the other way, deliberately.
 
+AND A FOURTH, FOUND 2026-09-23: A CRASH THAT IS NOBODY'S FAULT
+-------------------------------------------------------------
+Trap 2 makes a crash refuse. So anything that crashes this hook for a reason
+unrelated to the boundary refuses an edit that was fine - and on Windows a
+piped stdin is decoded in the ANSI code page, which has no character for five
+byte values UTF-8 uses constantly. An edit carrying Arabic was refused for
+that, in every session. The payload is read as bytes and decoded as UTF-8
+now (read_payload), and tests/test_heron_guard.py section 4a sends Arabic
+under that code page.
+
 AND ONE ESCAPE HATCH, WHICH IS NOT OPTIONAL FOR A FAIL-CLOSED HOOK
 -------------------------------------------------------------------
 `HERON_GUARD=off` disables it. A hook that fails closed and cannot be turned
@@ -99,7 +136,7 @@ ALLOWED = ("revit", "tools")
 
 
 def decision(verdict, reason):
-    """The only way anything leaves this file. Trap 1: nested, or ignored."""
+    """The only thing this file ever prints. Trap 1: nested, or ignored."""
     return {
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
@@ -174,33 +211,71 @@ def check(payload, root):
     )
 
 
+def read_payload():
+    """The host's JSON, read as UTF-8 whatever this console's code page is.
+
+    The host writes UTF-8. On Windows a piped stdin is decoded in the ANSI
+    code page instead, and cp1252 has no character for five byte values UTF-8
+    uses all the time - Arabic among them - so reading text would crash on
+    them. Reading the bytes and decoding them here cannot.
+    """
+    stream = getattr(sys.stdin, "buffer", sys.stdin)
+    raw = stream.read()
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8", "replace")
+    return json.loads(raw) if raw.strip() else {}
+
+
+def diary(verdict, said, session):
+    """One line in the hooks' log. Never raises, and never changes a decision.
+
+    Called only after the decision has been printed. Everything here is
+    inside one guard, because a failure to write a diary line is not a reason
+    for trap 2 to refuse an edit.
+    """
+    try:
+        sys.path.insert(0, os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "..", "..", "heron-session", "bin"))
+        import hook_log
+        hook_log.record("heron-guard", verdict, said, session)
+    except Exception:                             # noqa: BLE001 - a diary, not a gate
+        pass
+
+
 def main():
     if os.environ.get("HERON_GUARD", "").lower() in ("off", "0", "false"):
+        diary("off", "HERON_GUARD is set to switch the guard off", "")
         return 0
 
     root = os.path.abspath(
         os.path.join(os.path.dirname(os.path.abspath(__file__)),
                      "..", "..", "..", ".."))
+    session = ""
     try:
-        raw = sys.stdin.read()
-        payload = json.loads(raw) if raw.strip() else {}
+        payload = read_payload()
+        if isinstance(payload, dict):
+            session = payload.get("session_id") or ""
         verdict, reason = check(payload, root)
     except Exception as exc:                      # noqa: BLE001 - trap 2
         # TRAP 2: an unexpected death with nothing on stdout is read as
         # PERMISSION, and this hook is deny-tier. So a failure here refuses
         # the edit and says how to get moving again, rather than quietly
         # becoming an allow.
-        print(json.dumps(decision(
-            "deny",
-            "The Heron boundary hook failed (%s: %s) and it is deny-tier, so "
-            "it refuses rather than letting an unchecked edit through. Set "
-            "HERON_GUARD=off to disable it, or fix "
-            ".claude/skills/heron-guard/bin/heron_guard.py."
-            % (type(exc).__name__, exc))))
+        reason = ("The Heron boundary hook failed (%s: %s) and it is "
+                  "deny-tier, so it refuses rather than letting an unchecked "
+                  "edit through. Set HERON_GUARD=off to disable it, or fix "
+                  ".claude/skills/heron-guard/bin/heron_guard.py."
+                  % (type(exc).__name__, exc))
+        print(json.dumps(decision("deny", reason)))
+        sys.stdout.flush()
+        diary("crash", reason, session)
         return 0
 
     if verdict == "deny":
         print(json.dumps(decision("deny", reason)))
+        sys.stdout.flush()
+    diary(verdict, reason, session)
     return 0
 
 

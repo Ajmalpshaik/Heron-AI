@@ -175,6 +175,7 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 
 | Date | Sitting |
 |---|---|
+| 2026-09-23 | [THE GUARD RAN ONLY WHERE ITS SKILL WAS LOADED, AND NOTHING SAID WHEN MAIN HAD MOVED](handover-archive/2026-09-23-the-guard-ran-only-where-its-skill-was-loaded-and-nothing.md) |
 | 2026-09-22 | [THE CATEGORY-OVERRIDE READ-BACK COULD NOT SHOW THE FILL](handover-archive/2026-09-22-the-category-override-read-back-could-not-show-the-fill.md) |
 | 2026-09-22 | [THE SYSTEMS CHECK COUNTED TERMINALS AND CALLED THEM THE SYSTEM](handover-archive/2026-09-22-the-systems-check-counted-terminals-and-called-them-the.md) |
 | 2026-09-22 | [THE RELPATH CRASH: TWO MORE CALLS FIXED, AND THE RULE MOVED WHERE EVERY TOOL CAN IMPORT IT](handover-archive/2026-09-22-the-relpath-crash-two-more-calls-fixed-and-the-rule-moved.md) |
@@ -186,7 +187,6 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 | 2026-09-22 | [THREE AGENTS ARE COUNTED AS BUILT BY A TEST SUITE'S HEADER](handover-archive/2026-09-22-three-agents-are-counted-as-built-by-a-test-suite-s-header.md) |
 | 2026-09-22 | [THE SCAFFOLDER WROTE `Heron-Step: banana` AND EXITED 0](handover-archive/2026-09-22-the-scaffolder-wrote-heron-step-banana-and-exited-0.md) |
 | 2026-09-22 | [THE RESTORE CARRIED ON AFTER A SAFETY COPY IT COULD NOT TAKE](handover-archive/2026-09-22-the-restore-carried-on-after-a-safety-copy-it-could-not-take.md) |
-| 2026-09-22 | [A DIGEST THAT WILL NOT PARSE WAS READ AS AN EMPTY ONE](handover-archive/2026-09-22-a-digest-that-will-not-parse-was-read-as-an-empty-one.md) |
 
 ## The session archive — what happened before today
 

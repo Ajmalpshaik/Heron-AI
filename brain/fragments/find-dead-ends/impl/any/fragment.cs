@@ -50,7 +50,7 @@ var terminalCategories = new List<BuiltInCategory>
 // than spelled BuiltInCategory.OST_PlumbingEquipment, because that spelling
 // does not compile on the older releases - and a version #if cannot stand in:
 // the add-in compiles fragments with no release symbols defined
-// (FRAGMENT-ISSUES 5b-169), so the #if branch would never be the one that ran.
+// (FRAGMENT-ISSUES 5b-181), so the #if branch would never be the one that ran.
 BuiltInCategory plumbingEquipment;
 if (Enum.TryParse("OST_PlumbingEquipment", out plumbingEquipment))
     terminalCategories.Add(plumbingEquipment);

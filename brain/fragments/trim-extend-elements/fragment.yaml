@@ -108,7 +108,7 @@ compatibility-note: >
 # Not reproduced here. A NOTE ONLY - the fragment is PROVEN, and a change to
 # its code would make the proof stale. After squaring off a run that carries
 # takeoffs, look at each takeoff before trusting the report, and do not take a
-# terminal reading "connected" as the answer. NEEDS-CHECKING AH3.
+# terminal reading "connected" as the answer. NEEDS-CHECKING AJ3.
 
 # ROUTING - repeated in PLACE_MEP_FITTING, MOVE_ELEMENTS and FILLET_LINES.
 #

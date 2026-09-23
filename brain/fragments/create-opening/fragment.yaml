@@ -83,7 +83,7 @@ compatibility-note: >
 #
 # A note only: the fragment is DRAFT and nothing was changed. Prove it on a
 # WALL first. If Revit refuses the wall, the purpose is wrong about walls and
-# the repair is the wall's own call. NEEDS-CHECKING AH9.
+# the repair is the wall's own call. NEEDS-CHECKING AJ9.
 
 # ROUTING - repeated in PROPOSE_MEP_OPENINGS and AUDIT_MEP_OPENINGS.
 #

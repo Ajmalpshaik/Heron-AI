@@ -83,7 +83,7 @@ compatibility-note: >
 # geometry is not generated - went into `clear`, and the header said that was
 # true. It was not: nothing was tested. Now it goes to `notChecked` with
 # Revit's reason, and an empty `against` counts nothing clear. The fragment is
-# DRAFT, so no proof moved. FRAGMENT-ISSUES 5b-164; NEEDS-CHECKING AH6.
+# DRAFT, so no proof moved. FRAGMENT-ISSUES 5b-176; NEEDS-CHECKING AJ6.
 
 # ROUTING - repeated in CHECK_OBSTRUCTIONS, and this pair is the sharpest
 # collision in the library because both are the word "clash".

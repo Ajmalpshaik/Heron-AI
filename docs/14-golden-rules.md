@@ -102,6 +102,9 @@ A `MODIFY` operation may run unattended only when it uses a `PRODUCTION` fragmen
 
 *Why:* this is the rule that lets a BIM manager approve Heron for live project use.
 
+**Broken once, on the record — [D-99](DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so).**
+A change the user asks for in a chat, through `revit_change`, is kept at once with no preview while the owner has Changes switched on. The owner chose it on 2026-09-23 with the preview offered and recommended; the decision names what stands in for the preview, and [Article 9](../HERON_CONSTITUTION.md) carries the same exception. Nothing else is excused by it.
+
 ### 18. Generated code never touches a live model on its first run.
 New code runs in a sandbox or against a detached copy. Promotion to live comes after it passes.
 

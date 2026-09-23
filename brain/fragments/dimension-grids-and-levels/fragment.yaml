@@ -151,12 +151,12 @@ compatibility-note: >
 # recorded is contradicted - its model may well have had the two equal - but
 # it describes code that no longer runs, so its fingerprint no longer matches,
 # and it must NOT be re-stamped: re-taking it on a named model is the only
-# thing that makes this PROVEN again (D-30). NEEDS-CHECKING AH8 says what to
-# arrange. FRAGMENT-ISSUES 5b-167.
+# thing that makes this PROVEN again (D-30). NEEDS-CHECKING AJ8 says what to
+# arrange. FRAGMENT-ISSUES 5b-179.
 #
 # Two fragments elsewhere describe the two elevations the OPPOSITE way round
 # (LIST_LEVELS and CREATE_LEVEL). Recorded, not changed here: FRAGMENT-ISSUES
-# 5b-168.
+# 5b-180.
 
 # ROUTING - repeated in CREATE_DIMENSION, DIMENSION_MEP_RUNS and
 # DIMENSION_ROOMS.

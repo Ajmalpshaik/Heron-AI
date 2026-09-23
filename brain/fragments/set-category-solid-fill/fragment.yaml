@@ -162,7 +162,7 @@ compatibility-note: >
 # dropped (FRAGMENT-ISSUES row 175, Revit 2024). Not reproduced here for this
 # fragment. Since PR #300, REPORT_CATEGORY_OVERRIDES reads the surface and cut
 # pattern and colour back in full, so what stuck can be read rather than
-# assumed - read it after this runs. NEEDS-CHECKING AH7.
+# assumed - read it after this runs. NEEDS-CHECKING AJ7.
 #
 # THE INSULATION RULE IS NOT APPLIED HERE, AND WHY. The owner's standing rule
 # is that insulation and lining take the colour of the run they wrap, and

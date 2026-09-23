@@ -33,6 +33,12 @@ came to be honoured by the Python half and ignored by the executor.
 SO THIS SUITE CHECKS TWO THINGS, AND THE SECOND IS THE ONE THAT WOULD ROT.
 The helper's behaviour, and that `revit_change` actually CALLS it and PRINTS
 what it returns. A helper nobody calls is exactly the state this fixes.
+
+TWO DOORS SINCE 2026-09-23, AND ONE SENTENCE. `revit_read` takes the same
+values and drops the same undeclared names, so it calls the same helper - and
+both print through `_ignored_lines`, so the words a user sees cannot drift
+between the door that reads and the door that writes. Section 2 now holds
+both doors to it, and the sentence to what it has always said.
 """
 
 import io
@@ -93,21 +99,30 @@ def main():
         print("  FAIL  could not read %s: %s" % (SERVER, why))
         return 1
 
-    start = text.find(chr(10) + "def revit_change(")
-    check(start > 0, "revit_change is still in the server")
-    if start < 0:
-        return 1
-    body = text[start:]
-    end = body.find(chr(10) + "@server.tool()")
-    if end > 0:
-        body = body[:end]
+    def body_of(name):
+        start = text.find(chr(10) + "def %s(" % name)
+        if start < 0:
+            return None
+        body = text[start:]
+        end = body.find(chr(10) + "@server.tool()")
+        return body[:end] if end > 0 else body
 
-    check("undeclared_values(" in body,
-          "revit_change CALLS undeclared_values rather than carrying a copy")
-    check("IGNORED" in body,
-          "and the reply says IGNORED, so a dropped value leaves a trace")
-    check("It takes:" in body,
+    said = body_of("_ignored_lines")
+    check(said is not None, "the one sentence both doors print is still in the server")
+    check(said is not None and "IGNORED" in said,
+          "and it says IGNORED, so a dropped value leaves a trace")
+    check(said is not None and "It takes:" in said,
           "and names what the capability does take, so the fix is one line away")
+
+    for door in ("revit_change", "revit_read"):
+        body = body_of(door)
+        check(body is not None, "%s is still in the server" % door)
+        if body is None:
+            continue
+        check("undeclared_values(" in body,
+              "%s CALLS undeclared_values rather than carrying a copy" % door)
+        check("_ignored_lines(undeclared, takeable)" in body,
+              "and PRINTS what it returns, through the one sentence")
 
     # THE HELPER IS THE CLIENT'S, AND A COPY HERE WOULD DRIFT. Row 71's rule
     # has one home; this asserts the server did not grow a second one.

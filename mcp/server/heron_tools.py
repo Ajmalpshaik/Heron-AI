@@ -137,7 +137,29 @@ TOOLS = {
     # ribbon switch - checked by HeronPermissions inside the add-in, not here.
     # The gate lives on the far side of the pipe on purpose: a client deciding
     # its own permission is not a permission.
+    #
+    # NO PREVIEW, AND THAT IS NOW A DECISION RATHER THAN A SILENCE. Article 9
+    # asks for one; the owner chose, on 2026-09-23, to keep the change at once
+    # and record the exception - D-99, which names what stands in for it.
     "revit_change":             (MODIFY,  "run_fragment_write"),
+
+    # THE READ-ONLY DOOR (package C2, 2026-09-23). The same executor as the
+    # row above, reached through `run_fragment_read`, which opens NO
+    # transaction - so Revit itself refuses any change the fragment attempts,
+    # and it runs with Changes OFF because the add-in's gate lets ANALYZE
+    # through without the switch.
+    #
+    # ANALYZE, because that is what `run_fragment_read` is declared in
+    # HeronOperationRegistry.cs, and a tool's risk must equal its operation's
+    # (tests/test_tool_registry.py). It is also the door's own ceiling: the
+    # tool refuses to send a fragment whose declared risk is above it, read
+    # from this row rather than from a second list.
+    #
+    # Until this row, every READ and ANALYZE fragment - most of them PROVEN -
+    # could be reached from a chat only through revit_change: with Changes
+    # ON, through the executor that opens a transaction. A question needed
+    # write permission.
+    "revit_read":               (ANALYZE, "run_fragment_read"),
 
     # The brain, reachable. These three read what Heron KNOWS - the skills, the
     # capability registry and the fragment library - and none of them sends
@@ -256,6 +278,117 @@ def writes(tool):
     says otherwise.
     """
     return risk_of(tool) >= MODIFY
+
+
+def level_named(name):
+    """
+    The level a risk WORD names - "READ", "modify" - or None.
+
+    For a fragment's own `risk:` line, which is a word on disk rather than a
+    tool in this table. None means "not a level", and a caller must treat it
+    as a refusal: a risk nobody can read is not a risk of zero.
+    """
+    wanted = (name or "").strip().upper()
+    for level, word in NAMES.items():
+        if word == wanted:
+            return level
+    return None
+
+
+def door_refusal(door, declared, capability):
+    """
+    Why one fragment may not go through one tool - or None when it may.
+
+    `door` is a tool in TOOLS. `declared` is the fragment's own `risk:` word
+    as the client's reader found it, or None when it could not be read.
+
+    THE CEILING IS THE DOOR'S OWN DECLARED RISK, read from this table rather
+    than typed a second time. revit_read is ANALYZE because the operation it
+    calls, `run_fragment_read`, is ANALYZE in the add-in - so a fragment
+    declared above ANALYZE does not go through it. That refuses EXECUTE as
+    well as MODIFY, and it has to: a fragment that only changes the SELECTION
+    needs no transaction, so the one guarantee the read door stands on - Revit
+    refuses a model change made outside one - would not cover it.
+
+    AN UNREADABLE RISK IS REFUSED, for the reason the client's `risk_refusal`
+    gives: "I could not tell" and "it is fine" must not collapse into one
+    answer on a path that runs code in somebody's model.
+
+    BE HONEST ABOUT WHAT THIS IS - the same caveat as that function's. It
+    stops a MISTAKE. The add-in never sees a fragment's own risk (FRAGMENT-
+    ISSUES row 9 records why it is not sent), so a caller that skipped this
+    server could put anything through run_fragment_read. What holds for every
+    caller is Revit's own refusal of a change made outside a transaction.
+
+    Pure - no file, no Revit, no SDK - so tests/test_read_door.py runs every
+    outcome, and runs it over every fragment in the library, where CI can.
+    """
+    level = level_named(declared)
+    if level is None:
+        return ("'%s' does not say what risk it carries in a form Heron can read, "
+                "so it will not be run. Nothing has been sent to Revit." % capability)
+
+    ceiling = risk_of(door)
+    if level <= ceiling:
+        return None
+
+    within = " and ".join(NAMES[n] for n in sorted(NAMES) if n <= ceiling)
+    if level <= MODIFY:
+        instead = ("A change belongs to revit_change, and that needs Changes "
+                   "switched on in Revit's ribbon.")
+    else:
+        instead = ("Heron does not run a capability that publishes or administers "
+                   "from a chat at all.")
+    return ("'%s' is declared %s, and %s runs nothing above %s - %s only. "
+            "Nothing has been sent to Revit. %s"
+            % (capability, NAMES[level], door, NAMES[ceiling], within, instead))
+
+
+# THE SAFETY LABELS MCP LETS A SERVER PUT ON A TOOL, in the protocol's own
+# spelling. A host reads them to decide what it may call without asking - and
+# a host that is told nothing assumes the worst: not read-only, destructive,
+# not idempotent. So an unlabelled tool is safe, and a WRONG label is the
+# only real danger: a write marked read-only is one a host may run unasked.
+#
+# THAT IS WHY THEY ARE DERIVED HERE AND NEVER TYPED AT A TOOL. The risk in
+# TOOLS is what the add-in's gate is checked against; a label typed beside a
+# decorator would be a second declaration of the same fact, free to drift.
+#
+#   read-only    below EXECUTE: READ, ANALYZE and SUGGEST change nothing -
+#                docs/12 section 1: observe, compute, propose
+#   destructive  MODIFY and above - the boundary docs/12 draws, and the one
+#                `writes()` already answers
+#   idempotent   everything that does not write. Asking a read twice costs
+#                nothing; asking a write twice can do the work twice, which is
+#                exactly why the bridge client sends writes idempotent=False
+#
+# `openWorldHint` is NOT set, and that is a decision: risk says what a tool
+# can change, not where it reaches, and this table has no column for the
+# second. The host's default for it stands rather than a claim nobody derived.
+#
+# THE LABELS ARE ADVICE TO THE HOST. The gate is the add-in's, on the far side
+# of the pipe, and nothing here moves it.
+CAUTIOUS = {"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False}
+
+
+def annotations(tool):
+    """
+    The MCP safety labels for one tool, read off its declared risk.
+
+    A tool nobody declared gets CAUTIOUS - the worst reading of every label,
+    which is also what a host assumes of a tool with none. That is not a
+    default risk (risk_of still refuses to invent one); it is the one label
+    that cannot let a host call something unasked.
+    """
+    try:
+        risk = risk_of(tool)
+    except NotDeclared:
+        return dict(CAUTIOUS)
+    return {
+        "readOnlyHint": risk < EXECUTE,
+        "destructiveHint": risk >= MODIFY,
+        "idempotentHint": not writes(tool),
+    }
 
 
 def describe():

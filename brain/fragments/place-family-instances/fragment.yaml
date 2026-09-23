@@ -96,7 +96,7 @@ compatibility-note: >
 # The height has to arrive in the points, and it is asked for, never taken
 # from a default (D-33); the skills that place terminals and sprinklers are to
 # carry this as a precondition. After a placement, read the elevation back
-# rather than trusting `placed`. NEEDS-CHECKING AH4.
+# rather than trusting `placed`. NEEDS-CHECKING AJ4.
 
 # ROUTING - repeated in LOAD_FAMILY and CHANGE_ELEMENT_TYPE.
 #

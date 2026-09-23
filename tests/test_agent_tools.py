@@ -39,6 +39,15 @@ WHAT IT PROVES
   4. THE NAMES IN (2) EXIST TOO, so the list of what changes things cannot
      rot into names the server no longer has.
   5. THE COMPARISON IS NOT EMPTY. At least one background agent is found.
+  6. EVERY HERON TOOL A BACKGROUND AGENT NAMES IS LABELLED READ-ONLY BY THE
+     REGISTRY - `heron_tools.annotations`, the labels the server hands the
+     host. CHANGES below is typed by hand and a new writing tool could be
+     left off it; the registry cannot forget a tool, because the server's
+     own suites fail on one it does not declare. The two checks catch
+     different mistakes, so both are kept: CHANGES also names three tools
+     the registry labels read-only - two that move the chat onto another
+     Revit or model, and the preview that leaves a move waiting - and no
+     label covers what those change.
 
 WHAT IT DOES NOT PROVE
   That an agent's report is right. That takes a run against a named model.
@@ -53,6 +62,10 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+
+import heron_tools as REGISTRY                                  # noqa: E402
+
 AGENTS = os.path.join(ROOT, ".claude", "agents")
 SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
 PREFIX = "mcp__heron__"
@@ -149,6 +162,15 @@ def main():
         if not named & set(CHANGES):
             check(True, "%s: names nothing that changes the model or the chat"
                   % filename)
+        # ASK BEFORE CALLING (heron-ship 2a): a registry with no labels is one
+        # clean failure here, not a traceback that hides the rest.
+        label = getattr(REGISTRY, "annotations", None)
+        labelled = sorted(n for n in named
+                          if label is None or not label(n)["readOnlyHint"])
+        check(label is not None and not labelled,
+              "%s: every Heron tool it names is labelled read-only by the "
+              "registry%s" % (filename, "" if not labelled else
+                              " - not: %s" % ", ".join(labelled)))
 
     print()
     if FAILURES:

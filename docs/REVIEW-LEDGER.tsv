@@ -330,17 +330,17 @@ when	who	path	blob	verdict	note
 2026-09-22	Claude	tools/check-declared-questions.py	7846c5573b11619d46ac1188cc8bc60bb6d927a1	issue	5b-151 OPEN - recorded, not repaired. Read end to end and otherwise SOUND: it does catch the case it was written for (SET_VIEW_SCALE with 'what scale is this view' is among the ten it reports), all three of its quotations from check-routing.py check out against that file today, generate-jobs has no import-time side effects, and 396 fragments, 10 skills and the ordinal-4 write line are all derived correctly. What is wrong is the report block: ten fragment rows print an absolute container path while the skill rows print a relative one, and the told/s_told count block disagrees with its own body - that second one does not fire today and the row says so.	full
 2026-09-22	Claude	tools/owner-queue.py	9fb9ac4fcaec49a67abd9d2ad5ac90ed12a6ca79	clean	Read end to end 2026-09-22 and SOUND - no register row. Traced rather than scanned: its DRAFT/PROVEN count covers all 396 fragments with none unaccounted for; its open-question rule finds the same 58 headings check-docs.py finds, none missed; every key classify() can return has a bucket, so nothing is silently dropped; and its NEEDS-CHECKING walk carries its own independent shape count that reports a narrower pattern rather than obeying it. The three stale-number failures its docstring records against itself are all genuinely fixed - the fragment figures are counted at run time, not typed. One shape, not raised: its heading rule needs an em dash where check-docs.py does not, so the two could disagree - measured, they do not, on any of the 58.	full
 2026-09-23	Claude	brain/fragments/read-graphic-overrides/impl/any/fragment.cs	86410183c7efaeae380ccb5976f3c11c3385212a	issue	5b-154	full
-2026-09-22	Claude	brain/fragments/check-room-mep-completeness/impl/any/fragment.cs	f74008fab914a0189e46010bc078ee2b7d5ec4d4	issue	5b-163	full
-2026-09-22	Claude	brain/fragments/count-by-spatial-container/impl/any/fragment.cs	e238d7b7b5663c934747ea65b0712e2883f3496c	issue	5b-163	full
-2026-09-22	Claude	brain/fragments/filter-elements-in-room/impl/any/fragment.cs	380cf0ff1748b72a2ace935be3709b778f21f427	issue	5b-163	full
-2026-09-22	Claude	brain/fragments/list-levels/impl/any/fragment.cs	4c7d2d903fbd1c6801deab4f0ebe2c433114dac9	issue	5b-168 - the header's description of the two elevations read; the body was not	part
-2026-09-22	Claude	brain/fragments/create-level/impl/any/fragment.cs	4ee4588c69ffd326d912fb7cdb887267e5796e10	issue	5b-168 - the header and the shift at line 48 read; the rest was not	part
-2026-09-22	Claude	revit/Heron.Revit.Addin/RevitFragment.cs	cd8d00d80566142071a1ae12d7a7d39601d34bd9	issue	5b-169 - Compile (around lines 763-840) read; the rest of the file was not	part
-2026-09-22	Claude	brain/fragments/connect-air-terminals/impl/any/fragment.cs	5fc6c10bc45e134f04ca048d566b6ed349c9604f	clean	5b-161 FIXED here	full
-2026-09-22	Claude	brain/fragments/auto-size-pipe/impl/any/fragment.cs	69b4aac7f96acbb7eba79da58d513c4f3870ce54	clean	5b-162 FIXED here	full
-2026-09-22	Claude	brain/fragments/find-clashes/impl/any/fragment.cs	16ff5f99d0f3ae7eea9c8d45e47d68e95fb306c8	clean	5b-164 FIXED here	full
-2026-09-22	Claude	brain/fragments/find-dead-ends/impl/any/fragment.cs	ed7e133f32381f26fa005bc3e85d2d94e57b86eb	clean	5b-165 FIXED here	full
-2026-09-22	Claude	brain/fragments/find-system-islands/impl/any/fragment.cs	520bf3a27a6cd6c2fab7d64abf0693781303f60c	clean	5b-165 FIXED here	full
-2026-09-22	Claude	brain/fragments/color-by-parameter/impl/any/fragment.cs	951ab64a06c37bede0c730a634d204d64ccca2a6	clean	5b-166 FIXED here	full
-2026-09-22	Claude	brain/fragments/override-graphics-in-view/impl/any/fragment.cs	5c638842759e64d01ee665c2dea0d0ffcb80cfd4	clean	5b-166 FIXED here	full
-2026-09-22	Claude	brain/fragments/dimension-grids-and-levels/impl/any/fragment.cs	6c2e1e0f3f9b37779854a4df98aa31c13f037fe9	clean	5b-167 FIXED here	full
+2026-09-22	Claude	brain/fragments/check-room-mep-completeness/impl/any/fragment.cs	f74008fab914a0189e46010bc078ee2b7d5ec4d4	issue	5b-175	full
+2026-09-22	Claude	brain/fragments/count-by-spatial-container/impl/any/fragment.cs	e238d7b7b5663c934747ea65b0712e2883f3496c	issue	5b-175	full
+2026-09-22	Claude	brain/fragments/filter-elements-in-room/impl/any/fragment.cs	380cf0ff1748b72a2ace935be3709b778f21f427	issue	5b-175	full
+2026-09-22	Claude	brain/fragments/list-levels/impl/any/fragment.cs	4c7d2d903fbd1c6801deab4f0ebe2c433114dac9	issue	5b-180 - the header's description of the two elevations read; the body was not	part
+2026-09-22	Claude	brain/fragments/create-level/impl/any/fragment.cs	4ee4588c69ffd326d912fb7cdb887267e5796e10	issue	5b-180 - the header and the shift at line 48 read; the rest was not	part
+2026-09-22	Claude	revit/Heron.Revit.Addin/RevitFragment.cs	cd8d00d80566142071a1ae12d7a7d39601d34bd9	issue	5b-181 - Compile (around lines 763-840) read; the rest of the file was not	part
+2026-09-22	Claude	brain/fragments/connect-air-terminals/impl/any/fragment.cs	5fc6c10bc45e134f04ca048d566b6ed349c9604f	clean	5b-173 FIXED here	full
+2026-09-22	Claude	brain/fragments/auto-size-pipe/impl/any/fragment.cs	69b4aac7f96acbb7eba79da58d513c4f3870ce54	clean	5b-174 FIXED here	full
+2026-09-22	Claude	brain/fragments/find-clashes/impl/any/fragment.cs	16ff5f99d0f3ae7eea9c8d45e47d68e95fb306c8	clean	5b-176 FIXED here	full
+2026-09-22	Claude	brain/fragments/find-dead-ends/impl/any/fragment.cs	80ad0c097d7b2f31f83cd4df4418f35f811bcea0	clean	5b-177 FIXED here	full
+2026-09-22	Claude	brain/fragments/find-system-islands/impl/any/fragment.cs	4b6f9ebc8c68e4bf6f8ae0deb16b646b216bd63f	clean	5b-177 FIXED here	full
+2026-09-22	Claude	brain/fragments/color-by-parameter/impl/any/fragment.cs	951ab64a06c37bede0c730a634d204d64ccca2a6	clean	5b-178 FIXED here	full
+2026-09-22	Claude	brain/fragments/override-graphics-in-view/impl/any/fragment.cs	5c638842759e64d01ee665c2dea0d0ffcb80cfd4	clean	5b-178 FIXED here	full
+2026-09-22	Claude	brain/fragments/dimension-grids-and-levels/impl/any/fragment.cs	6c2e1e0f3f9b37779854a4df98aa31c13f037fe9	clean	5b-179 FIXED here	full

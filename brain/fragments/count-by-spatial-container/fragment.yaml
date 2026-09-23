@@ -150,8 +150,8 @@ compatibility-note: >
 # test the element's own point against the room's volume, so where the room
 # stops at the ceiling they leave it out. Which answer a job wants is a
 # question about the job, and the three are to be settled with evidence, one
-# at a time - NOT by picking one here. FRAGMENT-ISSUES 5b-163 records the
-# disagreement; NEEDS-CHECKING AH5 is the check on a real model. A note only:
+# at a time - NOT by picking one here. FRAGMENT-ISSUES 5b-175 records the
+# disagreement; NEEDS-CHECKING AJ5 is the check on a real model. A note only:
 # this fragment is PROVEN and its code is unchanged.
 
 # ROUTING - the same rows are in the fragments named here.

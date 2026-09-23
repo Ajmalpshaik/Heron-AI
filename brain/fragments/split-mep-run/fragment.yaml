@@ -134,7 +134,7 @@ compatibility-note: >
 # stale, so that change is left for a decision rather than made in passing.
 # Until then, after a split: check each takeoff on the run is still there,
 # and check the two halves are still two after the next edit to either.
-# NEEDS-CHECKING AH3.
+# NEEDS-CHECKING AJ3.
 
 # ROUTING - repeated in CREATE_DUCT and OFFSET_ELEMENTS.
 #

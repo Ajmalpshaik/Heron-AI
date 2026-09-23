@@ -24,28 +24,46 @@ WHAT THIS PROVES, and every one of these is a way a hook becomes decoration:
      `permissionDecision` is ignored by the host - the block silently no-ops.
   3. A CRASH DENIES. An unexpected exit with nothing on stdout is read as
      PERMISSION. Asserted by feeding it input that cannot parse.
+  3a. A CRASH THAT IS NOBODY'S FAULT MUST NOT HAPPEN, because 3 turns it into
+     a refusal. On Windows a piped stdin is decoded in the ANSI code page, and
+     an edit carrying Arabic crashed the hook and was refused - found
+     2026-09-23. Sent here as raw UTF-8 under that code page.
   4. THE PATTERN MATCHES check-structure.py's, CHARACTER FOR CHARACTER. The
      hook cannot import that script - it runs its whole sweep at import - so
      the rule exists twice and this is what keeps the copies honest. Same
      answer tests/test_fragment_imports.py gives for the executor's imports.
   5. THE ESCAPE HATCH WORKS. A fail-closed hook that cannot be turned off is
      one bad edit from a repository nobody can work in.
+  6. IT IS WIRED FROM .claude/settings.json, AND ONLY FROM THERE. Until
+     2026-09-23 the skill's frontmatter declared it, and a hook declared there
+     is registered only when the skill is invoked - so a session that never
+     loaded the skill had no guard. The settings entry is checked, the
+     frontmatter is checked to declare nothing (two copies would run twice),
+     and the exact command the settings give is run under bash.
+  7. EVERY DECISION IS WRITTEN DOWN, AND THE DIARY CANNOT CHANGE ONE. A deny,
+     an allow and a crash are one line each in the hooks' diary; a diary that
+     cannot be written leaves every decision exactly as it was.
 
 WHAT IT DOES NOT PROVE. That the host actually runs the hook. That needs a
-host, and this is a text-level check of the file the host would run - the
-same limit tests/test_mcp_serves.py has against the MCP SDK.
+host - one real session on the owner's PC refusing a forbidden edit is the
+proof still owed - and this runs the command the host would run, the same
+limit tests/test_mcp_serves.py has against the MCP SDK.
 """
 
+import atexit
 import io
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILL = os.path.join(ROOT, ".claude", "skills", "heron-guard")
 HOOK = os.path.join(SKILL, "bin", "heron_guard.py")
+SETTINGS = os.path.join(ROOT, ".claude", "settings.json")
 
 sys.path.insert(0, os.path.join(SKILL, "bin"))
 
@@ -58,15 +76,41 @@ def check(condition, what):
         FAILURES.append(what)
 
 
+# EVERY RUN BELOW WOULD OTHERWISE WRITE TO THE REAL DIARY ON THIS MACHINE,
+# and this suite's deliberate refusals would then read, in
+# tools/hook-report.py, as the guard refusing real edits. So each run is
+# pointed at a throwaway log folder unless a section chooses its own.
+QUIET = tempfile.mkdtemp(prefix="heron-guard-test-")
+atexit.register(shutil.rmtree, QUIET, True)
+
+
 def run(payload, env=None):
     """(stdout, exit code) from the hook as the host would run it."""
     where = dict(os.environ)
+    where.update({"LOCALAPPDATA": QUIET, "HERON_KNOWLEDGE": ""})
     where.update(env or {})
     got = subprocess.run([sys.executable, HOOK],
                          input=payload if isinstance(payload, str)
                          else json.dumps(payload),
                          capture_output=True, text=True, env=where)
     return got.stdout.strip(), got.returncode
+
+
+def run_utf8(payload, env=None):
+    """(stdout, exit code) with the payload sent as RAW UTF-8 bytes.
+
+    The host sends JSON exactly like this - non-ASCII characters as they are,
+    not escaped - and json.dumps escapes them by default, which would hide
+    the very thing section 4a exists to test.
+    """
+    where = dict(os.environ)
+    where.update({"LOCALAPPDATA": QUIET, "HERON_KNOWLEDGE": ""})
+    where.update(env or {})
+    got = subprocess.run([sys.executable, HOOK],
+                         input=json.dumps(payload, ensure_ascii=False)
+                         .encode("utf-8"),
+                         capture_output=True, env=where)
+    return got.stdout.decode("utf-8", "replace").strip(), got.returncode
 
 
 def verdict_of(out):
@@ -148,6 +192,28 @@ def main():
           "needs the hatch is the one whose tooling is already broken")
 
     print()
+    print("4a. Text a Windows code page cannot read is JUDGED, not crashed on")
+    # Windows decodes a piped stdin in the ANSI code page, and cp1252 has no
+    # character for five byte values that UTF-8 uses all the time - Arabic
+    # among them. Read that way, an edit carrying one crashed the hook, and a
+    # fail-closed hook turns its own crash into a refusal: every such edit
+    # refused, in every session. PYTHONIOENCODING stands in for Windows here.
+    arabic = u"في"
+    out, code = run_utf8({"tool_input": {"file_path": "docs/x.md",
+                                         "content": u"a note " + arabic}},
+                         env={"PYTHONIOENCODING": "cp1252"})
+    check(out == "" and code == 0,
+          "a harmless edit carrying Arabic is ALLOWED under the Windows code "
+          "page, not refused by a crash: %s" % (out[:80] or "silent"))
+    out, _ = run_utf8({"tool_input": {"file_path": "brain/x.py",
+                                      "content": u"using %s.DB; // %s"
+                                      % (vendor, arabic)}},
+                      env={"PYTHONIOENCODING": "cp1252"})
+    check(verdict_of(out) == "deny" and "adapter boundary" in out,
+          "and a forbidden one carrying Arabic is refused for the BOUNDARY, "
+          "not for a crash")
+
+    print()
     print("5. The escape hatch works")
     out, _ = run({"tool_input": {"file_path": "brain/x.py",
                                  "content": "using %s.DB;" % vendor}},
@@ -182,16 +248,111 @@ def main():
               "and it exempts the same two folders check-structure.py does")
 
     print()
-    print("7. The skill declares the hook the host would run")
+    print("7. It is wired from .claude/settings.json - every session, once")
     print("-" * 70)
+    # Until 2026-09-23 this section asserted the OPPOSITE: that the skill's
+    # frontmatter declared the hook. A hook declared there is registered only
+    # when the skill is invoked, so every session that never loaded the skill
+    # ran without the guard - proven by hand on 2026-09-22. Settings are read
+    # in every session; a skill's copy of a hook runs SEPARATELY from the
+    # settings' copy, so declaring it in both would run it twice.
+    settings = {}
+    try:
+        settings = json.loads(io.open(SETTINGS, encoding="utf-8").read())
+    except (IOError, OSError, ValueError) as exc:
+        check(False, ".claude/settings.json exists and parses (%s)"
+              % type(exc).__name__)
+    wired = [(group.get("matcher", ""), one)
+             for group in ((settings.get("hooks") or {}).get("PreToolUse") or [])
+             for one in group.get("hooks") or []
+             if "heron_guard.py" in one.get("command", "")]
+    check(len(wired) == 1,
+          "settings.json wires the guard exactly once, on PreToolUse")
+    matcher, entry = wired[0] if wired else ("", {})
+    # A matcher of letters, digits and '|' is a list of exact tool names to
+    # the host, not a regular expression - so this is the whole list.
+    check(sorted(matcher.split("|")) == ["Edit", "MultiEdit", "Write"],
+          "for exactly the three tools that can put text in a file: %s"
+          % matcher)
+    command = entry.get("command", "")
+    check(entry.get("type") == "command" and "$CLAUDE_PROJECT_DIR" in command
+          and ".claude/skills/heron-guard/bin/heron_guard.py" in command,
+          "as a command found from $CLAUDE_PROJECT_DIR, so it runs whatever "
+          "folder the session is in: %s" % command)
+
     card = io.open(os.path.join(SKILL, "SKILL.md"), encoding="utf-8").read()
-    check("PreToolUse:" in card, "SKILL.md declares a PreToolUse hook")
-    check("Write|Edit|MultiEdit" in card,
-          "matching the three tools that can put text in a file")
-    check("heron_guard.py" in card, "and pointing at this hook")
+    front = card.split("\n---", 1)[0] if card.startswith("---") else ""
+    check(front != "" and not re.search(r"^hooks\s*:", front, re.M),
+          "and the skill's frontmatter declares NO hook - a second copy "
+          "would run the guard twice")
+    check("settings.json" in card,
+          "the skill says where the hook is wired now")
     check("not part of what a modeller installs" in card,
           "and it says plainly that this is for DEVELOPING Heron - hooks are "
           "the host's mechanism (D-01) and nothing here reaches a model")
+
+    # The exact command, run the way the host runs it. Not on Windows: there
+    # `bash` on PATH may be WSL rather than Git Bash, and a real session on
+    # the owner's PC is the proof of that half.
+    if os.name != "nt" and shutil.which("bash") and command:
+        got = subprocess.run(
+            ["bash", "-c", command],
+            input=json.dumps({"tool_input": {
+                "file_path": "brain/x.py",
+                "content": "using %s.DB;" % vendor}}),
+            capture_output=True, text=True,
+            env=dict(os.environ, CLAUDE_PROJECT_DIR=ROOT,
+                     LOCALAPPDATA=QUIET, HERON_KNOWLEDGE=""))
+        check(verdict_of(got.stdout.strip()) == "deny",
+              "the exact command settings.json gives, run under bash, REFUSES "
+              "the forbidden edit")
+    else:
+        print("  note  the settings command was not run: no bash here, or "
+              "Windows - a real session on the PC proves that half")
+
+    print()
+    print("8. Every decision is one line in the hooks' diary - and cannot change one")
+    print("-" * 70)
+    # The diary is kept in Heron's log folder, resolved from the per-user
+    # local folder, so a throwaway one keeps this inside a temporary folder.
+    home = tempfile.mkdtemp(prefix="heron-guard-diary-")
+    try:
+        diary = os.path.join(home, "Heron", "logs", "heron-hooks.jsonl")
+        steer = {"LOCALAPPDATA": home, "HERON_KNOWLEDGE": ""}
+        forbidden = {"session_id": "g-1", "tool_input": {
+            "file_path": "brain/x.py", "content": "using %s.DB;" % vendor}}
+        harmless = {"session_id": "g-1", "tool_input": {
+            "file_path": "brain/x.py", "content": "import os"}}
+        denied, _ = run(forbidden, env=steer)
+        allowed, _ = run(harmless, env=steer)
+        crashed, _ = run("this is not json", env=steer)
+        lines = []
+        if os.path.isfile(diary):
+            lines = [json.loads(l) for l in io.open(diary, encoding="utf-8")
+                     if l.strip()]
+        check([l.get("decision") for l in lines] == ["deny", "allow", "crash"],
+              "a deny, an allow and a crash are three lines, in order: %s"
+              % [l.get("decision") for l in lines])
+        check(all(l.get("hook") == "heron-guard" for l in lines) and lines,
+              "each one names the guard")
+        check(lines[:1] and "vendor namespace" in lines[0].get("said", "")
+              and lines[0].get("session") == "g-1",
+              "the deny keeps what it said and the session it said it in")
+        check(verdict_of(denied) == "deny" and allowed == ""
+              and verdict_of(crashed) == "deny",
+              "and writing them changed no decision")
+
+        blocked = os.path.join(home, "a-file-not-a-folder")
+        io.open(blocked, "w", encoding="utf-8").write("x")
+        steer = {"LOCALAPPDATA": blocked, "HERON_KNOWLEDGE": ""}
+        denied, code = run(forbidden, env=steer)
+        allowed, _ = run(harmless, env=steer)
+        check(verdict_of(denied) == "deny" and code == 0 and allowed == "",
+              "a diary that cannot be written is a missing line - the deny "
+              "is still a deny and the allow still silent, never a crash "
+              "that trap 2 would turn into a refusal")
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
 
     print()
     if FAILURES:
