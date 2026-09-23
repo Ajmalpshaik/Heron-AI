@@ -1,0 +1,452 @@
+# THE OWNER'S OWN QUESTIONS, AND THE ANSWER EACH ONE SHOULD GET.
+#
+# Read by tools/score-routing.py, which asks every question through the same
+# function heron_lookup uses and scores where this answer comes back. Held
+# honest by tests/test_score_routing.py.
+#
+# WHY THIS EXISTS. Every routing number Heron had was measured on sentences
+# somebody wrote FOR the library - check-routing.py asks each fragment its own
+# declared words back, which brain/retrieval-history.md calls a near-circular
+# lower bound. None was ever measured on how the owner actually asks.
+#
+# WHERE THE QUESTIONS CAME FROM. The owner's own question log from real Revit
+# work, 2026-08-13 to 2026-08-27, kept on his PC and never in git. The ones
+# that are real Revit work and make sense on their own were carried here -
+# with every client, project, family vendor, person, path and link removed,
+# and the spelling corrected, as he asked on 2026-09-23. His vocabulary and his
+# way of asking are kept. They are his words: they are never reworded.
+#
+# WHERE THE ANSWERS CAME FROM. Proposed from Heron's own capability list -
+# brain/fragments, brain/skills and the tools in mcp/server/heron_tools.py -
+# and NEVER from what the search returns: the search had not been asked any
+# of these questions when the answers were chosen. The owner was shown the
+# whole table at once and confirmed it on 2026-09-23: "all ok".
+#
+# THE RULE THE ANSWERS FOLLOW, as he was told it:
+#   capability  the step that gives him what he asked for - the count, the
+#               isolate, the colour. Where he asks to find or select, the step
+#               that finds.
+#   skill       a whole job made of several steps, which a skill owns
+#   tool        one of Heron's own commands answers it, not a capability
+#   gap         nothing in Heron does the job today. `note` says what exists;
+#               it is never an answer
+#
+# WHAT MAY NEVER HAPPEN TO THIS FILE (FRAGMENT-ISSUES row 113, D-34, D-86):
+#   * a question reworded to suit the search
+#   * an answer changed to match what the search returns
+#   * an utterance added to a fragment, or weakened, to win a row
+# An answer changes only on the owner's word, recorded under `corrections`
+# with the day he gave it. The scorer fingerprints the questions and answers
+# together, so a run after any change says it is not comparable with the runs
+# before it rather than reading the change as a movement.
+
+confirmed:
+  by: "Ajmal PS"
+  date: "2026-09-23"
+  said: "all ok"
+
+# {n, was, now, date, said} - one entry per answer the owner corrects, in order.
+corrections: []
+
+questions:
+  - n: 1
+    asked: "2026-08-13"
+    question: "How many diffusers do I need in this room?"
+    kind: skill
+    answer: terminal-layout
+  - n: 2
+    asked: "2026-08-13"
+    question: "How many VCDs are there, and what sizes are they?"
+    kind: capability
+    answer: GROUP_AND_COUNT
+  - n: 3
+    asked: "2026-08-13"
+    question: "How many VCDs are there in the model?"
+    kind: capability
+    answer: COUNT_ELEMENTS
+  - n: 4
+    asked: "2026-08-13"
+    question: "Isolate only the VCDs, not all the duct accessories."
+    kind: capability
+    answer: ISOLATE_ELEMENTS
+  - n: 5
+    asked: "2026-08-13"
+    question: "Isolate only the VCD with the biggest width."
+    kind: capability
+    answer: ISOLATE_ELEMENTS
+  - n: 6
+    asked: "2026-08-13"
+    question: "Bring back all the VCDs with the bigger counts — I think it is the 200x200 size."
+    kind: capability
+    answer: ISOLATE_ELEMENTS
+  - n: 7
+    asked: "2026-08-13"
+    question: "What is the biggest duct size?"
+    kind: capability
+    answer: GROUP_AND_COUNT
+  - n: 8
+    asked: "2026-08-13"
+    question: "What is the biggest space?"
+    kind: capability
+    answer: REPORT_ROOM_SPACE_DATA
+  - n: 9
+    asked: "2026-08-13"
+    question: "How many air terminals are in the biggest space?"
+    kind: capability
+    answer: COUNT_BY_SPATIAL_CONTAINER
+  - n: 10
+    asked: "2026-08-13"
+    question: "Isolate all the VCDs."
+    kind: capability
+    answer: ISOLATE_ELEMENTS
+  - n: 11
+    asked: "2026-08-14"
+    question: "Check all the ducts and make a visual report by width."
+    kind: capability
+    answer: GROUP_AND_COUNT
+  - n: 12
+    asked: "2026-08-14"
+    question: "Colour the ducts by size and show it as a chart."
+    kind: capability
+    answer: COLOR_BY_PARAMETER
+  - n: 13
+    asked: "2026-08-14"
+    question: "Change the 250x250 ducts to RGB(185,193,186) in the view \"1 - Mech\" and leave every other size as it is."
+    kind: capability
+    answer: OVERRIDE_GRAPHICS_IN_VIEW
+  - n: 14
+    asked: "2026-08-15"
+    question: "There are three ducts in the model — give each one a different colour."
+    kind: capability
+    answer: COLOR_BY_PARAMETER
+  - n: 15
+    asked: "2026-08-15"
+    question: "Do the grayout for MEP in the active view."
+    kind: skill
+    answer: mep-grayout
+  - n: 16
+    asked: "2026-08-19"
+    question: "Is the model connected? Check which model is active."
+    kind: tool
+    answer: revit_health
+  - n: 17
+    asked: "2026-08-19"
+    question: "Create an air terminal schedule in the model with all these parameters, and do not add any filters."
+    kind: capability
+    answer: CREATE_SCHEDULE
+  - n: 18
+    asked: "2026-08-19"
+    question: "Which model did you create it in? Two models are open."
+    kind: capability
+    answer: REPORT_OPEN_DOCUMENTS
+  - n: 19
+    asked: "2026-08-19"
+    question: "How many air terminals are there in the model?"
+    kind: capability
+    answer: COUNT_ELEMENTS
+  - n: 20
+    asked: "2026-08-19"
+    question: "Give me the family name and type name for all these items."
+    kind: capability
+    answer: DESCRIBE_ELEMENTS
+  - n: 21
+    asked: "2026-08-19"
+    question: "Select any one air terminal of this family so I can check it."
+    kind: capability
+    answer: SELECT_BY_FAMILY
+  - n: 22
+    asked: "2026-08-19"
+    question: "Change the Description of this family to \"Supply Air Grille - Rectangular\"."
+    kind: capability
+    answer: WRITE_ELEMENT_PARAMETERS
+  - n: 23
+    asked: "2026-08-19"
+    question: "Before you change the descriptions, show me a table with the family name, type name and the new description."
+    kind: capability
+    answer: DESCRIBE_ELEMENTS
+  - n: 24
+    asked: "2026-08-19"
+    question: "How many sheets are there for the duct layout?"
+    kind: capability
+    answer: COUNT_ELEMENTS
+  - n: 25
+    asked: "2026-08-19"
+    question: "In these sheets, how many floor plan views are there?"
+    kind: capability
+    answer: COUNT_ELEMENTS
+  - n: 26
+    asked: "2026-08-19"
+    question: "Fill each element's drawing-number parameter with the number of the sheet whose floor plan shows it."
+    kind: gap
+    answer: null
+    note: "pieces exist (FIND_VIEWS_SHOWING_ELEMENT, then IMPORT_PARAMETER_VALUES), nothing does the whole job"
+  - n: 27
+    asked: "2026-08-19"
+    question: "Create a schedule for the duct accessories like the air terminal one."
+    kind: capability
+    answer: CREATE_SCHEDULE
+  - n: 28
+    asked: "2026-08-19"
+    question: "Check the Description of the duct accessories."
+    kind: capability
+    answer: READ_ELEMENT_PARAMETERS
+  - n: 29
+    asked: "2026-08-19"
+    question: "Are there any round duct accessories?"
+    kind: capability
+    answer: REPORT_CONNECTORS
+  - n: 30
+    asked: "2026-08-19"
+    question: "Check the connector shape of all the placed duct accessories."
+    kind: capability
+    answer: REPORT_CONNECTORS
+  - n: 31
+    asked: "2026-08-19"
+    question: "These four duct accessories are not on any duct layout plan — are they on a section sheet?"
+    kind: capability
+    answer: FIND_VIEWS_SHOWING_ELEMENT
+  - n: 32
+    asked: "2026-08-19"
+    question: "Select all the instances of this louvre family in the model."
+    kind: capability
+    answer: SELECT_BY_FAMILY
+  - n: 33
+    asked: "2026-08-20"
+    question: "Create 10 sheets named after the project, numbered 01 to 10."
+    kind: capability
+    answer: CREATE_SHEETS
+  - n: 34
+    asked: "2026-08-20"
+    question: "Find the louvres that were modelled as mechanical equipment or duct fittings instead of air terminals."
+    kind: capability
+    answer: CHECK_CATEGORY_MISMATCH
+  - n: 35
+    asked: "2026-08-20"
+    question: "Highlight these in the active view and keep everything else grey."
+    kind: capability
+    answer: HIGHLIGHT_VS_REST
+  - n: 36
+    asked: "2026-08-20"
+    question: "Record all the parameter values of the selected family before I change it."
+    kind: capability
+    answer: REPORT_PARAMETER_INVENTORY
+  - n: 37
+    asked: "2026-08-20"
+    question: "Colour all the louvres red and the rest grey — only the ones that are not in the Air Terminals category."
+    kind: capability
+    answer: HIGHLIGHT_VS_REST
+  - n: 38
+    asked: "2026-08-21"
+    question: "How do I isolate the VCD dampers in this model?"
+    kind: capability
+    answer: ISOLATE_ELEMENTS
+  - n: 39
+    asked: "2026-08-21"
+    question: "How do I stop ducts overlapping the ceiling?"
+    kind: capability
+    answer: FIND_CLASHES
+  - n: 40
+    asked: "2026-08-21"
+    question: "How many diffusers are there in the model?"
+    kind: capability
+    answer: COUNT_ELEMENTS
+  - n: 41
+    asked: "2026-08-21"
+    question: "How many ducts are there?"
+    kind: capability
+    answer: COUNT_ELEMENTS
+  - n: 42
+    asked: "2026-08-21"
+    question: "Is this duct connected anywhere, or is it open?"
+    kind: capability
+    answer: REPORT_CONNECTORS
+  - n: 43
+    asked: "2026-08-21"
+    question: "Hide all the air terminals."
+    kind: capability
+    answer: HIDE_ELEMENTS
+  - n: 44
+    asked: "2026-08-23"
+    question: "Make the dimension in room 4."
+    kind: capability
+    answer: DIMENSION_ROOMS
+  - n: 45
+    asked: "2026-08-23"
+    question: "When you dimension a wall that has a door, include the door, and give one overall dimension for the wall."
+    kind: capability
+    answer: DIMENSION_WALL_OPENINGS
+  - n: 46
+    asked: "2026-08-23"
+    question: "There are lots of generic models — list their family names."
+    kind: capability
+    answer: DESCRIBE_ELEMENTS
+  - n: 47
+    asked: "2026-08-23"
+    question: "Support hide — every family whose name contains \"support\"."
+    kind: capability
+    answer: HIDE_ELEMENTS
+  - n: 48
+    asked: "2026-08-23"
+    question: "Show only the fire dampers in red and make everything else grey."
+    kind: capability
+    answer: HIGHLIGHT_VS_REST
+  - n: 49
+    asked: "2026-08-23"
+    question: "Red only VCD, remaining all grey."
+    kind: capability
+    answer: HIGHLIGHT_VS_REST
+  - n: 50
+    asked: "2026-08-23"
+    question: "When you colour ducts or duct accessories, colour their insulation too."
+    kind: capability
+    answer: HIGHLIGHT_VS_REST
+  - n: 51
+    asked: "2026-08-23"
+    question: "Show me the VCD that has no insulation."
+    kind: capability
+    answer: SELECT_BY_INSULATION
+  - n: 52
+    asked: "2026-08-23"
+    question: "Zoom to that VCD."
+    kind: capability
+    answer: ZOOM_TO_ELEMENTS
+  - n: 53
+    asked: "2026-08-23"
+    question: "Are there any clashes between the model's own elements, not with linked models?"
+    kind: capability
+    answer: FIND_CLASHES
+  - n: 54
+    asked: "2026-08-23"
+    question: "Show me all the disconnected items."
+    kind: capability
+    answer: SELECT_BY_CONNECTION_STATUS
+  - n: 55
+    asked: "2026-08-23"
+    question: "Place sprinklers in all the rooms."
+    kind: skill
+    answer: sprinkler-layout
+  - n: 56
+    asked: "2026-08-23"
+    question: "How many sprinklers do I need?"
+    kind: skill
+    answer: sprinkler-layout
+  - n: 57
+    asked: "2026-08-23"
+    question: "Add a view filter for this pipe system and make it red."
+    kind: capability
+    answer: CREATE_VIEW_FILTER
+  - n: 58
+    asked: "2026-08-23"
+    question: "Add a solid fill pattern to that pipe system filter."
+    kind: gap
+    answer: null
+    note: "nothing sets a fill on a view filter (SET_CATEGORY_SOLID_FILL does whole categories only)"
+  - n: 59
+    asked: "2026-08-23"
+    question: "Size the pipes."
+    kind: capability
+    answer: AUTO_SIZE_PIPE
+  - n: 60
+    asked: "2026-08-23"
+    question: "Create the piping for all the rooms."
+    kind: gap
+    answer: null
+    note: "pipe routing, pieces only"
+  - n: 61
+    asked: "2026-08-24"
+    question: "In all views, turn off the Levels annotation category in Visibility/Graphics."
+    kind: capability
+    answer: SET_CATEGORY_VISIBILITY
+  - n: 62
+    asked: "2026-08-25"
+    question: "Place a door in every room, like the one I placed."
+    kind: capability
+    answer: PLACE_HOSTED_FAMILY
+  - n: 63
+    asked: "2026-08-25"
+    question: "Move all the FCUs from 2400 to 2700."
+    kind: capability
+    answer: MOVE_ELEMENTS
+  - n: 64
+    asked: "2026-08-25"
+    question: "Move the FCU from the centre of the room to the door side — the door side is the return side."
+    kind: capability
+    answer: MOVE_ELEMENTS_TO_POINT
+  - n: 65
+    asked: "2026-08-25"
+    question: "Add the diffusers at 2100 in a 2 x 4 grid — 8 diffusers, 4 supply and 4 return."
+    kind: skill
+    answer: terminal-layout
+  - n: 66
+    asked: "2026-08-25"
+    question: "Connect all the supply diffusers to the FCU."
+    kind: gap
+    answer: null
+    note: "duct routing FCU to diffusers (package C9)"
+  - n: 67
+    asked: "2026-08-25"
+    question: "Create an air terminals filter, give it colours, and apply it to the active 3D view."
+    kind: capability
+    answer: CREATE_VIEW_FILTER
+  - n: 68
+    asked: "2026-08-25"
+    question: "Centre the FCU between the left and right walls."
+    kind: capability
+    answer: MOVE_ELEMENTS_TO_POINT
+  - n: 69
+    asked: "2026-08-25"
+    question: "Create a 600x600 type in both the supply and the return diffuser families."
+    kind: capability
+    answer: DUPLICATE_TYPE
+  - n: 70
+    asked: "2026-08-25"
+    question: "In the corridor, add one FCU and air terminals — one supply, one return — on the corridor centreline, with the FCU at either end."
+    kind: skill
+    answer: terminal-layout
+  - n: 71
+    asked: "2026-08-25"
+    question: "Put each reducer 200 mm after the branch takeoff."
+    kind: gap
+    answer: null
+    note: "package C9 writes it"
+  - n: 72
+    asked: "2026-08-25"
+    question: "The air terminal layout is wrong — make it zig zag: one supply, one return, alternating."
+    kind: skill
+    answer: terminal-layout
+  - n: 73
+    asked: "2026-08-25"
+    question: "Make the ducting for the corridor."
+    kind: gap
+    answer: null
+    note: "duct routing (package C9)"
+  - n: 74
+    asked: "2026-08-25"
+    question: "Set the airflow of all the diffusers to 200 L/s."
+    kind: capability
+    answer: WRITE_ELEMENT_PARAMETERS
+  - n: 75
+    asked: "2026-08-26"
+    question: "Ping the Revit model."
+    kind: tool
+    answer: revit_health
+  - n: 76
+    asked: "2026-08-26"
+    question: "Find the VCDs."
+    kind: capability
+    answer: SELECT_BY_FAMILY
+  - n: 77
+    asked: "2026-08-26"
+    question: "Tag all the ducts in the active view."
+    kind: capability
+    answer: TAG_ELEMENTS
+  - n: 78
+    asked: "2026-08-26"
+    question: "Tag the ducts again using this tag family."
+    kind: capability
+    answer: TAG_ELEMENTS
+  - n: 79
+    asked: "2026-08-27"
+    question: "This element cannot be deleted or moved in a BIM 360 model that is already synchronised — find out why."
+    kind: capability
+    answer: READ_ELEMENT_OWNERSHIP
