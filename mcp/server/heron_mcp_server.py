@@ -1724,12 +1724,16 @@ def _contract_lines(capability):
     except Exception:
         return []
 
+    # THE NAME GOES WITH THE TYPE. A plain `Element` is a type to build with
+    # or one particular element, and only the need's name says which - asked
+    # without it, every one was told to type a TYPE the add-in then refused.
+    # FRAGMENT-ISSUES row 5b-190.
     asked, elsewhere = [], 0
     for need in needs:
         name = (need or {}).get("name") or ""
         kind = (need or {}).get("type") or ""
         if HF.need_source(need) == "request":
-            asked.append((name, kind, HF.how_to_type(kind)))
+            asked.append((name, kind, HF.how_to_type(kind, name)))
         else:
             elsewhere += 1
 
