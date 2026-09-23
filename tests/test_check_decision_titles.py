@@ -35,9 +35,10 @@ WHAT IS PROVED
      longer needed, fails;
   8. a shallow clone exits 2 - NOT RUN, never a pass;
   9. TODAY'S LOG PASSES, over a history carrying every retitle the real one
-     does: D-45 and D-46 pass because their Numbering lines quote their first
-     titles, D-97 and D-98 because theirs name D-45 and D-46 - and each FAILS
-     the moment its line is taken away. A changed title in today's log fails;
+     does: D-45 to D-49 pass because their Numbering lines quote their first
+     titles, D-97, D-98 and D-101 to D-103 because theirs name the numbers they
+     were first written under - and each FAILS the moment its line is taken
+     away. A changed title in today's log fails;
  10. the real repository passes, where its history is whole;
  11. CI runs it, with the whole history fetched for it.
 """
@@ -77,12 +78,17 @@ DASH = chr(0x2014)
 FENCE = "`" * 3
 FAILURES = []
 
-# What D-45 and D-46 were first written as. Their own Numbering lines quote
-# these; the history this suite builds for today's log carries them.
+# What D-45 to D-49 were first written as. Their own Numbering lines quote
+# these; the history this suite builds for today's log carries them. Each
+# first decision is back under a number of its own - RESTORED below.
 FIRST = {
     "D-45": "The library is built out first, and proved in one pass later",
     "D-46": "A context fragment is consumed by the host, not by another fragment",
+    "D-47": "Risk is part of routing, not only part of permission",
+    "D-48": "Several fragments may jointly feed one, and the orphan check asks per need",
+    "D-49": "A need may bind to a provided name that is not its own",
 }
+RESTORED = {"D-97": "D-45", "D-98": "D-46", "D-101": "D-47", "D-102": "D-48", "D-103": "D-49"}
 
 
 def check(ok, said):
@@ -368,12 +374,12 @@ def run(work):
         m = TOOL.HEADING.match(line)
         if m:
             heads[m.group(1)] = m.group(2)
-        if m and m.group(1) in ("D-97", "D-98"):
+        if m and m.group(1) in RESTORED:
             continue                                    # restored 2026-09-23: not yet written
         if m and m.group(1) in first:
             line = "## %s %s %s" % (m.group(1), DASH, first[m.group(1)])
         then.append(line)
-    check(all(n in heads for n in list(first) + ["D-97", "D-98"]),
+    check(all(n in heads for n in list(first) + list(RESTORED)),
           "today's log holds every number the history below retitles")
     repo = new_repo(work)
     commit(repo, "2026-08-27T12:00:00+00:00", {LOG: NL.join(then)})
@@ -387,13 +393,15 @@ def run(work):
     check(report is not None and not report.failed,
           "today's log passes (%s)" % (why or "; ".join(report.failed)[:300] or "no finding"))
     accepted = " ".join(report.accepted) if report else ""
-    for number in ("D-45", "D-46", "D-97", "D-98"):
+    for number in sorted(FIRST) + sorted(RESTORED, key=lambda n: int(n[2:])):
         check(number in accepted, "%s is accepted on its Numbering line, and says so" % number)
     check(report is not None and len(report.known) == len(TOOL.KNOWN),
           "every KNOWN entry is still needed (%d of %d)" % (len(report.known) if report else 0, len(TOOL.KNOWN)))
 
-    for number, words in (("D-45", ["D-45", FIRST["D-45"]]), ("D-97", [FIRST["D-45"], "D-45", "D-97"]),
-                          ("D-46", ["D-46", FIRST["D-46"]]), ("D-98", [FIRST["D-46"], "D-46", "D-98"])):
+    pairs = []
+    for new, old in sorted(RESTORED.items(), key=lambda pair: int(pair[0][2:])):
+        pairs += [(old, [old, FIRST[old]]), (new, [FIRST[old], old, new])]
+    for number, words in pairs:
         heading = "## %s %s %s" % (number, DASH, heads[number])
         start = today.index(heading)
         cut = today.index("**Numbering:**", start)

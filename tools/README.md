@@ -322,7 +322,7 @@ the case underneath: a sentence claimed by a **READ** fragment and answered by o
 There the failure is not a wrong table, it is *the model changed on a question*. Those print above the
 flat list with both risk levels named. The first run found **six, four of them invisible until that
 moment** — *"follow the pipe"* was reaching `OFFSET_ELEMENTS`, which does not return a wrong route, it
-shifts the run sideways. See [D-47](../docs/DECISIONS.md).
+shifts the run sideways. See [D-101](../docs/DECISIONS.md).
 
 ---
 
@@ -1937,8 +1937,9 @@ it walks `--full-history`: git's default walk drops the side a merge threw away,
 
 **The one excuse lives in the decision.** A changed title passes only when the decision's own `**Numbering:**`
 line quotes the title it was first written with; a moved title only when that line names the number it had.
-D-45, D-46, D-97 and D-98 carry such lines. Titles that changed before the check existed are named one by one in
-its `KNOWN` table, and an entry that stops being needed fails the run, so that list only shrinks.
+D-45 to D-49, D-97, D-98 and D-101 to D-103 carry such lines. Titles that changed before the check existed are
+named one by one in its `KNOWN` table, and an entry that stops being needed fails the run, so that list only
+shrinks.
 
 **It exits 2 in a shallow clone** - CI's default checkout, and a cloud session's - rather than pass on history
 it cannot see. `git fetch --unshallow` first; the gates job fetches the whole history for it.

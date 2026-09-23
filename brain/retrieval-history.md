@@ -76,7 +76,7 @@ having measured before somebody spends a day doing it.
 What the top of the list shares is generic phrasing - *"show me..."*, *"which ... are in this model"*,
 *"what ... do we have"*. Every one is a real sentence a modeller says and none may be taken away to buy
 a number. So the finding is about the retrieval layer rather than any fragment, which is where
-[D-47](../docs/DECISIONS.md) arrived from the other direction, and **A7** - the trained embedding
+[D-101](../docs/DECISIONS.md) arrived from the other direction, and **A7** - the trained embedding
 backend, never yet run here - is the thing that would separate *"show me the drawing list"* from
 *"show me every duct"*.
 
