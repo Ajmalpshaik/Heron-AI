@@ -93,14 +93,29 @@ DERIVED = {
 
 # Named so a refusal can say what kind of thing it is protecting, rather
 # than only that it will not touch it.
+#
+# A REGISTER SPLIT INTO FILES KEEPS ITS NAME. Each decision has had its own
+# file since #303, each NEEDS-CHECKING group since #313, and the register's
+# done checks their own files since #303 - and a marker naming only the old
+# single file let every one of them fall through to the generic refusal:
+# still refused, no longer saying what it protects (FRAGMENT-ISSUES row
+# 5b-172). The archive's README is its tool's index, so only its group files
+# are named.
 SOURCES_OF_TRUTH = (
     ("brain/fragments", "the fragment library - each one is written and "
                         "proved, and nothing regenerates a proof"),
     ("brain/agents", "the agent contracts, which are the promises"),
     ("docs/DECISIONS.md", "decisions, which are a record of what was chosen "
                           "and cannot be re-derived from the code"),
+    ("docs/decisions/", "one decision's full record - what was chosen, "
+                        "which cannot be re-derived from the code"),
     ("docs/OPEN-QUESTIONS.md", "open questions"),
     ("docs/NEEDS-CHECKING.md", "the register of what nothing has proved"),
+    ("docs/needs-checking/", "one group of the register of what nothing "
+                             "has proved"),
+    ("docs/needs-checking-archive/group-", "the register's done checks, "
+                                           "their words unchanged from "
+                                           "NEEDS-CHECKING.md"),
     ("brain/proof-drafts", "proof drafts - evidence from real runs, which "
                            "is the one thing in this repository that a "
                            "machine cannot make more of"),

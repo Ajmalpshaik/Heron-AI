@@ -21,7 +21,9 @@ WHAT IT PROVES
      rebuild it and a wrong guess here is silent.
 
   3. A SOURCE OF TRUTH IS REFUSED BY NAME, saying what kind of thing it is
-     - fragments, decisions, proof drafts, a Revit model.
+     - fragments, decisions, proof drafts, a Revit model. So is each file of
+     a register that was split into files: one decision, one group of
+     NEEDS-CHECKING, one group of its done checks (row 5b-172).
 
   4. A REBUILDER WITH NO SOURCE REBUILDS NOTHING. Running a generator
      against a missing source produces an EMPTY artefact that looks current,
@@ -113,6 +115,23 @@ def main():
               "%s is refused as %s" % (path, word))
     check("under any circumstances" in ask("a.rvt")["why"],
           "and the model is refused in those words")
+    # A REGISTER SPLIT INTO FILES IS STILL REFUSED BY NAME. The generic
+    # refusal names the path, and "docs/decisions/" alone would satisfy a
+    # check for "decision" - so each check also asks for the sentence only a
+    # named source of truth gets. Row 5b-172.
+    for path, word in (("docs/decisions/D-30.md", "chosen"),
+                       ("docs/needs-checking/group-j.md", "proved"),
+                       ("docs/needs-checking-archive/group-a.md", "done checks")):
+        answer = ask(path)
+        check(answer.get("refused") == "NOT_KNOWN_TO_BE_DERIVED"
+              and "Nothing regenerates it" in answer["why"]
+              and word in answer["why"],
+              "%s, one file of a split register, is refused as %s"
+              % (path, word))
+    answer = ask("docs/needs-checking-archive/README.md")
+    check("Nothing regenerates it" not in answer["why"],
+          "and the archive's README, which its tool rewrites, is not called "
+          "the register's done checks")
 
     print()
     print("4. A rebuilder with no source rebuilds nothing")
