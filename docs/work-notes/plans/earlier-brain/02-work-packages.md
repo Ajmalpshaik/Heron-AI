@@ -12,7 +12,7 @@
 |---|---|---|---|---|---|
 | **C1** | Guards and checks that run in every session | cloud | 1 | — | **merged** as [#308](https://github.com/Ajmalpshaik/Heron-AI/pull/308), 2026-09-23, on the owner's word - owed on the PC: NEEDS-CHECKING **Group AH**, four checks, no Revit |
 | **C2** | The MCP server: a read-only door, rules for every chat, safety labels, the preview decision | cloud | 1 | owner decision **D1** | not started |
-| **C3** | Add-in safety (Revit failure handling, "changed in central?") and an API signature lookup | cloud, then PC | 1 | — | not started |
+| **C3** | Add-in safety (Revit failure handling, "changed in central?") and an API signature lookup | cloud, then PC | 1 | — | **built — [#306](https://github.com/Ajmalpshaik/Heron-AI/pull/306)**. Compiled on all eight releases, never run in Revit; the PC owes NEEDS-CHECKING **E19–E24** |
 | **C4** | Revit traps written into the fragments they affect | cloud, then PC | 1 | — | not started |
 | **C5** | The owner's words and standards — knowledge, not language | cloud, then PC | 2 | C2 merged | not started |
 | **C6** | A score for the owner's real questions | cloud | 1 | — | **DONE** — PR [#305](https://github.com/Ajmalpshaik/Heron-AI/pull/305). Answer key confirmed by the owner 2026-09-23; **D3 answered: report only** ([D-100](../../../DECISIONS.md)); first score recorded in [`brain/retrieval-history.md`](../../../../brain/retrieval-history.md) |

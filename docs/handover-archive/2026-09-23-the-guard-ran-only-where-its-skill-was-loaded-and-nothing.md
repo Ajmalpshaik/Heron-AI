@@ -16,7 +16,7 @@ A cloud session, no Revit: **earlier-brain package C1**, merged as
 here is for developing Heron; none of it reaches a model or a modeller.
 
 - **New:** `.claude/settings.json` now runs three hooks in every session. `heron-guard` moved there from
-  its skill's frontmatter, where it had run only in sessions that loaded the skill (row 5b-158). The new
+  its skill's frontmatter, where it had run only in sessions that loaded the skill (row 5b-161). The new
   [`heron-session`](../../.claude/skills/heron-session/SKILL.md) skill adds one line at session start - where
   the branch stands against `origin/main`, and the PROVEN and DRAFT counts - and, before a pull request is
   merged or marked ready, the commits on main the branch does not have. Advice only. Every hook writes one
@@ -26,7 +26,7 @@ here is for developing Heron; none of it reaches a model or a modeller.
   faster than before - the history-word test is asked once per line now - with byte-identical output.
 - **Mistake worth not repeating:** a test that pipes JSON into a hook through `json.dumps` escapes every
   non-ASCII character, so it cannot see what a real host sends. That hid the Windows code-page crash
-  (row 5b-159) until the payload was sent as raw UTF-8.
-- **To do:** NEEDS-CHECKING **Group AH** - four checks on the Windows PC, no Revit. Rows 5b-161 (the cloud
-  setup script installed nothing, so the `heron` MCP server could not start), 5b-162 and 5b-163 are open
+  (row 5b-162) until the payload was sent as raw UTF-8.
+- **To do:** NEEDS-CHECKING **Group AH** - four checks on the Windows PC, no Revit. Rows 5b-164 (the cloud
+  setup script installed nothing, so the `heron` MCP server could not start), 5b-165 and 5b-166 are open
   and belong to other files' owners.

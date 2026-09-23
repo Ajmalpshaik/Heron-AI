@@ -28,6 +28,11 @@ using System.Reflection.PortableExecutable;
 // LIMIT, and it is a real one: matching is by NAME. A member that still exists
 // but changed SIGNATURE passes here and would fail a real compile. That is why
 // this supplements check-compile.py rather than replacing it.
+//
+// `--members <Type>` (Members.cs) is the other half: it prints one type's
+// parameters, return types, get/set and [Obsolete] marks on every cached
+// release, so a changed signature can at least be SEEN before it is written.
+// It does not change what this mode checks.
 class Program
 {
     record Ref(string TypeFullName, string Member);
@@ -151,6 +156,11 @@ class Program
         // core-library trick are the awkward part and there is no reason
         // for two copies of them.
         if (args.Length == 3 && args[0] == "--dump") return Dump(args[1], args[2]);
+
+        // --members <Type> [--inherited] [<release dir> ...]. One type's
+        // SIGNATURES on every cached release - the half the LIMIT above says
+        // this file cannot see. Its own file, Members.cs, says how.
+        if (args.Length >= 1 && args[0] == "--members") return Members.Run(args);
 
         var addin = args[0];
         var refs = ReadRevitRefs(addin);
