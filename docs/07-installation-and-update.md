@@ -291,7 +291,7 @@ and nothing else stands behind it.
 
 > **It happened on 2026-09-20, and the guard was replaced the same day.** A session built for 2024 and
 > deployed for 2020; the script said *Deployed* and `.NETFramework,Version=v4.8` went into
-> `Addins0`. Caught by reading the assembly, not by anything in the script. `deploy-addin.ps1` now
+> `Addins\2020`. Caught by reading the assembly, not by anything in the script. `deploy-addin.ps1` now
 > reads the `TargetFrameworkAttribute` out of the assembly it is about to copy and refuses on any
 > disagreement, which covers all eight releases and both pairs the old proxies could not separate. Six
 > cases were run to prove it - see **Group Z** in [NEEDS-CHECKING](NEEDS-CHECKING.md). **The paragraph

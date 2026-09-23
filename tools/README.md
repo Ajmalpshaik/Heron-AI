@@ -43,6 +43,16 @@ Verifies that:
 - every `D-NN` reference points to a decision defined in [docs/DECISIONS.md](../docs/DECISIONS.md)
 - every `Q-NN` reference points to a question defined in [docs/OPEN-QUESTIONS.md](../docs/OPEN-QUESTIONS.md)
 - **no rule, decision or question number is defined TWICE** — added 2026-09-09, and it **fails the run**
+- **every file in `tools/` and every skill folder in `.claude/skills/` is named in its README** — one
+  direction only, read from the disk so a new tool is caught before it is committed — section 10, added
+  2026-09-23, **fails the run**
+- **text hygiene over every file git tracks**: no control character other than tab, CR and LF, no
+  double-encoded text, no merge-conflict marker — section 11, added 2026-09-23, **fails the run**, except
+  a hit inside a PROVEN fragment's `impl/`, which is reported as **waiting** because fixing it makes the
+  proof stale ([D-30](../docs/DECISIONS.md)). With no git to ask it says **NOT RUN**, never a pass
+- **no sentence states an MCP tool total other than `len(heron_tools.TOOLS)`** — in section 7, added
+  2026-09-23, **fails the run**. Another project's count (*"their 314 MCP tools"*) and a quotation are
+  left alone; the better sentence types no number and points at `python mcp/server/heron_tools.py`
 
 Run it after any edit that moves or renames a document. It is how the Golden Rule renumbering
 (ten rules to fifteen, [D-12](../docs/DECISIONS.md)) was verified across 31 files.
@@ -53,14 +63,44 @@ invisible: two `## D-56` headings collapse to one entry, *"REFERENCED BUT NOT DE
 the file is reported clean. **D-67 was first written as D-56, which already existed, and this checker
 passed on it** — the duplicate was found by eye, which is the reading it exists to make unnecessary.
 
-**It is the only thing here that fails the run, and a broken link does not.** That asymmetry is
-deliberate. A dead link announces itself the moment somebody clicks it. A duplicate id is silent, and it
+**A duplicate id was the first thing here to fail the run.** This paragraph went on to say it was the
+only one, and that a broken link did not, until 2026-09-23 - a broken link has failed the run since
+[D-77](../docs/DECISIONS.md) on 2026-09-16, and so has everything added since. Why a duplicate came first
+still holds: a dead link announces itself the moment somebody clicks it. A duplicate id is silent, and it
 makes every reference to that number ambiguous — `[D-56](../docs/DECISIONS.md)` now points at two
 different decisions and nothing can say which was meant, not the anchor, not the reader, not this
 script. Both entries look correct in isolation.
 
 Verified by breaking it on purpose, once per registry: a second `## D-56`, a second `### 3.` rule and a
 second `### Q-51` each name themselves and exit 1, and the unmodified repository exits 0.
+
+### The three checks added on 2026-09-23, and what each found on its first run
+
+Each was run against the repository as it stood before anything was corrected, and each failed on
+something real:
+
+| | found | corrected |
+|---|---|---|
+| **10. named in its README** | eight files in `tools/` named nowhere on this page, three of them not Python - which is why the one-liner further down, `*.py` only, could never have seen them | a row each, in [the section below](#nine-tools-this-page-did-not-describe-until-2026-09-23), with a ninth for `balance-of-work.py`, which was named only in passing |
+| **11. text hygiene** | a backspace and a form feed in one archived defect row, where the row meant to write `\u0008` and `\u000C`; and a C1 control character in [docs/07](../docs/07-installation-and-update.md), where `Addins\2020` had once been read as an octal escape and lost two characters | each written back as the text it stood for |
+| **7. the MCP tool total** | [33](../docs/33-external-repository-research.md) saying *"Heron has 14 MCP tools"* twice and [34](../docs/34-patterns-adapted.md) once, while `heron_tools.TOOLS` held more than twice that. The row this list used to carry for the count could not fire - it counted `tools/*.py` against a phrase no sentence uses | the sentences type no number now, and point at the command that lists the tools |
+
+**And it is faster for them, not slower.** The plan that asked for these checks measured this script at
+30-37 s on a busy PC and asked for it to be timed before and after. Five runs each, on a quiet Linux
+container, 2026-09-23:
+
+| | median | range |
+|---|---|---|
+| before | **7.3 s** | 7.0 - 7.4 |
+| with the three checks | 7.6 s | 7.3 - 7.8 |
+| and asking each line the history question **once** | **4.3 s** | 4.2 - 4.4 |
+
+Section 11 reads every tracked text file once, about 21 MB, and cost about 0.3 s. The profile showed where
+the rest had always gone: every count check walks every line of every markdown file and asks the
+history-word pattern first, so the same line was asked up to eight times - most of the run was that one
+regular expression. It is remembered per line now (`is_history`), and the sentence split is kept per file
+for the four checks that read it. **The output is byte for byte the same** - compared on the clean tree
+and again with thirteen planted drifts.
 
 ---
 
@@ -1604,10 +1644,32 @@ is *on disk and unnamed here*; a name on this page with no file behind it is wha
 already catches. **Prove the pattern can see what you know is there** - this repository's own
 rule, and the first version of this very command broke it.
 
+**It runs by itself now.** Since 2026-09-23 `check-docs.py` section 10 does this for every file in
+`tools/` - not only `*.py`, which is how three of nine went unseen - and for every skill folder in
+`.claude/skills/`, and it fails the run.
+
 **A tool nobody can find is a tool nobody runs**, and this repository has already paid for that once:
 `check-signatures.py` existed for two days with nothing calling it, and its own commit message named
 the defect - *"a gate nobody runs is the same as no gate."* Being undocumented is the quieter version
 of the same thing.
+
+## Nine tools this page did not describe, until 2026-09-23
+
+**Found on 2026-09-22 by a reader comparing this folder with this page, and made a check the next day**
+(`check-docs.py` section 10). Eight were named nowhere here; `balance-of-work.py` was named once, in
+passing, in another tool's section. Each tool's own header says more - this is where to start.
+
+| Tool | What it is for |
+|---|---|
+| [`HeronRevit.ps1`](HeronRevit.ps1) | Dot-sourced by the install scripts rather than run: which Revit releases are installed, which are open, and where each one's add-ins go - asked **per release**. **It never closes Revit**: an open Revit is named and the install stops, because an open model almost certainly holds unsaved work |
+| [`balance-of-work.py`](balance-of-work.py) | What is left to do, in one place - read back from the tools that each know part of it (`check-gaps`, `owner-queue`, `open-defects`, `agent-count`), every figure beside the command that derives it. `--write` regenerates the note. A report: always exits 0 |
+| [`build-release-assets.py`](build-release-assets.py) | Builds every product for every Revit release, in **Release** configuration only, and lays the results out as a GitHub release's assets - one zip per product per release, named from the manifest. **Nothing in it names a product**: the list is read from `platform/heron-products.json` |
+| [`check-products.py`](check-products.py) | **One of the gates CI decides on.** The product manifest nothing compiles: a duplicate `addInId` (a load failure, not a warning), a `partOf` typo (a tick vanishes from the installer with no error), and a Revit release the repository does not build |
+| [`cloud-setup.sh`](cloud-setup.sh) | Not run from a checkout: **pasted into a Claude Code cloud environment's setup box**. Installs the .NET 10 SDK, `python-is-python3` and the Python packages, gives the session somewhere to keep knowledge, and warms the store and the NuGet cache. [38](../docs/38-the-cloud-environment.md) says what goes in the other boxes |
+| [`deploy-addin.ps1`](deploy-addin.ps1) | Copies the built add-in and its manifest into the current user's Revit add-ins folder - **no administrator rights** - and refuses an assembly built for another release's runtime. `-Remove` uninstalls, `-Rollback` puts back the install it last replaced. Revit must be closed |
+| [`module-reach.py`](module-reach.py) | Who imports each module in `brain/`, in four buckets, and which ones a conversation can actually reach by following imports from `mcp/`. **It decides nothing**: a report, exit 0 |
+| [`prove-agent.py`](prove-agent.py) | The proof path for an **add-in agent**, which the fragment tools cannot prove: sessions, a tracking run, a draft, and a person's acceptance **by name**. The machine never signs, and the tool has no write path into `revit/` |
+| [`prove-tracking.py`](prove-tracking.py) | [D-53](../docs/DECISIONS.md) tracking for a **fragment**: runs it across several values of one input and shows the declared result following the input - the rows `heron_validate.py` has always judged and nothing had ever produced. `--dry-run` first |
 
 ## `check-declared-questions.py` — does a WRITE claim a QUESTION in writing?
 
@@ -1932,3 +1994,29 @@ the rule exists to forbid, written into the field meant to prevent it.
 `heron_validate.py accept` cannot fix them: it reads a draft from `brain/proof-drafts/` and none of the
 sixteen has one. **It changes the one field that is wrong and leaves every other line exactly as
 recorded, and it DOES NOT judge the evidence** - that was checked separately.
+
+## `hook-report.py` - how often each hook decided something, and what it said
+
+```bash
+python tools/hook-report.py                 # the diary this machine keeps
+python tools/hook-report.py --days 7        # only the last week
+python tools/hook-report.py --log FILE      # another diary file
+```
+
+Every hook in [`.claude/settings.json`](../.claude/settings.json) - the
+[guard](../.claude/skills/heron-guard/SKILL.md), the session line and the "has main moved?" advice of
+[`heron-session`](../.claude/skills/heron-session/SKILL.md) - appends one line per decision to a diary
+outside this repository, found through Heron's own path helpers and never a typed path. This counts it:
+per hook, how many decisions in how many sessions, each kind of decision, **how often it spoke at all**,
+and the things it said most.
+
+**A hook that only nags is switched off, and a hook that never fires is not there** - and from inside one
+session nobody can tell which. On 2026-09-22 the guard turned out to have been running only in sessions
+that had loaded its skill; a diary with a guard line in every session is what "runs everywhere" looks
+like when it is true.
+
+**A report, not a gate: it exits 0 whatever it finds.** A torn line - the file is appended to by
+several processes - is counted and shown, never fatal, and the one older copy kept after a rotation is
+read too. No diary on this machine is an answer, with the reason, not a crash.
+[`tests/test_hook_report.py`](../tests/test_hook_report.py) holds it to a diary written with known
+contents.
