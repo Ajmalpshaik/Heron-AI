@@ -225,9 +225,10 @@ def check_tools():
     #
     # WHAT THIS SAID UNTIL 2026-09-21, AND IT WAS FALSE: "the other checkers
     # in CI are reports, and a report's finding is a question for a person."
-    # gates.yml's job named "The gates that must pass" runs TEN commands
+    # gates.yml's job named "The gates that must pass" runs ELEVEN commands
     # under bash -e - these four plus check-signatures, check-licence,
-    # check-narrow-errors, check-products, check-routing and check-intrusion -
+    # check-narrow-errors, check-products, check-decision-titles,
+    # check-routing and check-intrusion -
     # so a non-zero from any of them fails the pull request exactly as these
     # four do. Measured: check-routing exited 2 on a head whose four were all
     # green. check-products joined the job the same day, having never run

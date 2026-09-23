@@ -11,7 +11,7 @@ The word `raise` in a comment, standing in for the statement.
 
     python tests/test_narrow_errors.py
 
-`tools/check-narrow-errors.py` is one of the ten gates a pull request has to
+`tools/check-narrow-errors.py` is one of the gates a pull request has to
 pass, and it looks for D-52's commonest shape: an
 `except sqlite3.OperationalError` that swallows a locked, malformed or
 out-of-date store and reports it as an empty one. Reviews found that same

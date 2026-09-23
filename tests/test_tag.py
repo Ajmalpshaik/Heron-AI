@@ -121,12 +121,18 @@ def main():
     # nowhere at all: not here, not in check-gaps (FRAGMENT-ISSUES row
     # 5b-77). This suite is what caught the list moving under it, which is
     # the whole reason the list is pinned here and derived there.
+    #
+    # CHECK-DECISION-TITLES JOINED ON 2026-09-23. A decision number means one
+    # decision for ever, and five did not: a merge kept one branch's log
+    # whole and dropped the other's D-45 to D-49 (FRAGMENT-ISSUES rows 5b-157
+    # and 5b-171). A release cut while a number had quietly changed meaning
+    # would ship every citation of it pointing at the wrong rule.
     check(GATES == ["check-docs", "check-metadata", "check-structure",
                     "check-signatures", "check-licence", "check-narrow-errors",
-                    "check-package", "check-products", "check-routing",
-                    "check-intrusion",
+                    "check-package", "check-products", "check-decision-titles",
+                    "check-routing", "check-intrusion",
                     "check-compile", "check-fragments-compile"],
-          "it is the twelve CI runs, in the order it runs them: %s"
+          "it is the thirteen CI runs, in the order it runs them: %s"
           % ", ".join(GATES))
     for name in GATES:
         check("python tools/%s.py" % name in workflow,
