@@ -74,6 +74,7 @@ which files have actually been read.
 
 import argparse
 import datetime
+import importlib.util
 import io
 import os
 import re
@@ -87,6 +88,13 @@ LEDGER = os.path.join(ROOT, "docs", "REVIEW-LEDGER.tsv")
 # sweep, and the register the `issue` notes have to point into.
 LEDGER_TRACKED = "docs/REVIEW-LEDGER.tsv"
 REGISTER = os.path.join(ROOT, "docs", "FRAGMENT-ISSUES.md")
+
+# The register is one file per section since 2026-09-23, and section 5b's
+# rows are in files of 25. tools/register-text.py reads it back as one text.
+_spec = importlib.util.spec_from_file_location(
+    "register_text", os.path.join(ROOT, "tools", "register-text.py"))
+RT = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(RT)
 
 COLUMNS = ["when", "who", "path", "blob", "verdict", "note", "scope"]
 
@@ -415,10 +423,12 @@ def register_rows():
     case it refuses rather than writing a mark nobody has verified.
     """
     try:
-        with io.open(REGISTER, "r", encoding="utf-8") as handle:
-            src = handle.read()
-    except (IOError, OSError):
+        src = RT.register_text(REGISTER)
+    except (IOError, OSError, RT.RegisterBroken):
         return None
+    if src is None:
+        return None
+    src = src.replace("\r\n", "\n").replace("\r", "\n")
     if _SECTION_5B not in src:
         return None
     body = src[src.index(_SECTION_5B):]
