@@ -1851,6 +1851,49 @@ and [`balance-of-work.py`](balance-of-work.py) are each run on the rewritten
 text and must answer exactly as before - and that row B8's dated `PASSED`, which `check-docs.py` reads, survives.
 [`tests/test_archive_needs_checking.py`](../tests/test_archive_needs_checking.py).
 
+**Since 2026-09-23 it reads and writes the register one file per group** - the layout
+[`split-needs-checking.py`](#split-needs-checkingpy---one-file-per-group-needs-checkingmd-as-the-index) made. It
+still plans on the register as one text, read through `needs-checking-register.py`, then writes each changed
+group back to its own file and refuses unless the files read back as the new register.
+
+---
+
+## `split-needs-checking.py` - one file per group, NEEDS-CHECKING.md as the index
+
+```bash
+python tools/split-needs-checking.py            # what would move - writes nothing
+python tools/split-needs-checking.py --write    # move it
+```
+
+Gives each group of [`docs/NEEDS-CHECKING.md`](../docs/NEEDS-CHECKING.md) its own file in
+[`docs/needs-checking/`](../docs/needs-checking/), and keeps NEEDS-CHECKING.md as the register's index: the page's
+rules, and each group's heading in its place with one line naming its file. A `## Group X` section moves whole; so
+does a dated section whose rows all belong to one group. A section with rows of two groups, or none, stays in full.
+Exits **0**, **1** when a check refused and nothing was written, **2** when the register could not be read.
+
+**The register is still one text, and that is what is proved.** Nothing is written unless the new files read back
+as the register byte for byte; the real readers - `owner-queue.py`, `check-gaps.py` with its WAITING list,
+`balance-of-work.py` and row B8 in `check-docs.py` - print exactly what they printed from the one file; every
+re-pointed link reaches the file it reached before; and no other document links into a heading that would move.
+
+**A new row goes into its group's file.** A new group written into NEEDS-CHECKING.md in full is moved by the next
+run; a run with nothing new moves nothing. [`tests/test_split_needs_checking.py`](../tests/test_split_needs_checking.py)
+builds its own register, never the real one.
+
+## `needs-checking-register.py` - the register read as one text
+
+```bash
+python tools/needs-checking-register.py              # the whole register
+python tools/needs-checking-register.py | grep K3    # search all of it at once
+```
+
+The reader every tool above goes through. It puts each group's file back under its heading in NEEDS-CHECKING.md,
+with its links as they were written in the one file, so a tool reads exactly the text it read before the split.
+Standard library only, so a reader never breaks because a writer changed. **A missing group file is not skipped**:
+a heading naming a file that is not there, or a file that does not hold that heading, stops it with
+`RegisterBroken` rather than returning a shorter register - *"a count that quietly omits a whole group is worse
+than no count"*, as the register says of itself.
+
 ---
 
 ## `split-decisions.py` - one file per decision, DECISIONS.md as the index

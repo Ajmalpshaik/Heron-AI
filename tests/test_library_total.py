@@ -72,7 +72,10 @@ each true on the day its row was written.
 `docs/needs-checking-archive/` is the same for NEEDS-CHECKING.md, which is in
 `RECORDS` too. `docs/decisions/` holds each decision's full record since
 2026-09-23 - DECISIONS.md, in `RECORDS`, became their index - so a total a
-decision recorded on its day stays a record there.
+decision recorded on its day stays a record there. `docs/needs-checking/` is
+the same for NEEDS-CHECKING.md's groups, one file each since the same day:
+Group J's "the 328 fragments" was dated 2026-09-07 in the register, and it
+failed this suite the moment its group moved folder.
 
 A count of PART of the library - "68 DRAFT", "91 carrying a guard", "279
 need a typed value" - is a different claim and is not matched here.
@@ -140,7 +143,8 @@ SEARCH = (".py", ".md", ".cs", ".yaml", ".yml", ".toml")
 # the normal way of working here rather than the exception.
 SKIP_FOLDERS = ("__pycache__", ".git", "worktrees", "bin", "obj", ".vs",
                 "node_modules", "handover-archive", "work-notes",
-                "fragment-issues-archive", "needs-checking-archive", "decisions")
+                "fragment-issues-archive", "needs-checking-archive", "decisions",
+                "needs-checking")
 
 # DATED REGISTERS. A row in one of these describes the day it was written -
 # docs/FRAGMENT-ISSUES.md says so in its own header - so a total inside one
