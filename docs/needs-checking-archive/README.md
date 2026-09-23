@@ -18,5 +18,7 @@ to its full text in one of these files.
 | Group T | [`group-t.md`](group-t.md) |
 | Group U | [`group-u.md`](group-u.md) |
 | Group Z | [`group-z.md`](group-z.md) |
+| Group AA | [`group-aa.md`](group-aa.md) |
+| Group AB | [`group-ab.md`](group-ab.md) |
 
 How many rows each file holds is derived, not typed: `grep -c '^### Row' docs/needs-checking-archive/*.md`
