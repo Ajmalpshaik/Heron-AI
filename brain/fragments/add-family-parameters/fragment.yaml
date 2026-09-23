@@ -1,0 +1,124 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-022
+semantic-identity: "add these family parameters to the family being edited"
+kind: action
+domain: revit.families
+capability: ADD_FAMILY_PARAMETERS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Adds one or more FAMILY parameters to the family open in the Family Editor -
+  Width, Depth, Neck Width - all of one kind (a length, a number, a yes/no...),
+  all type or all instance, filed under one group of the Properties palette.
+  The Family Types dialog's "New Parameter", several at a time.
+
+  **IT MAKES THE PARAMETERS AND WRITES NO VALUE.** A new length reads zero in
+  every type. Filling them in is SET_FAMILY_TYPE_VALUES, and the ORDER MATTERS:
+  values go in before any dimension is labelled with them, because a label on a
+  parameter that reads zero drives the planes it measures to zero and collapses
+  the family - reported from an earlier family build, and the reason
+  LABEL_FAMILY_DIMENSION refuses a label whose parameter disagrees with the
+  planes.
+
+  **A NAME ALREADY IN THE FAMILY IS LEFT ALONE AND NAMED.** Re-running the same
+  request adds nothing twice. When the one already there is a different kind or
+  scope from what was asked, that is said out loud - it is a different
+  parameter under a familiar name, and quietly carrying on would build the next
+  step on the wrong one. This includes the category's own built-in parameters:
+  an Air Terminal already has its flow fields.
+
+  **THE KIND, THE SCOPE AND THE GROUP ARE ASKED FOR.** Type or instance is a
+  decision about the family - sizes that describe the product are type,
+  anything that varies per placed unit is instance - and it is not guessed.
+  The group is the heading in the Properties palette, matched by the name Revit
+  shows. Left empty, lengths and angles go under Dimensions and everything else
+  under Data.
+
+  **ALL OR NOTHING.** Every name, the kind and the group are checked before the
+  first parameter is added. If Revit then refuses one - a character it does not
+  allow in a name - the call fails and nothing from it is kept, rather than
+  half the list being added and the rest reported.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The new parameters' names, comma separated - "Width, Depth, Neck Width".
+    - name: parameterNames
+      type: IList<string>
+      source: request
+    # What they hold: Length, Number, Integer, Angle, Area, Volume, YesNo,
+    # Text, Material or Air Flow.
+    - name: kind
+      type: string
+      source: request
+    # true for instance parameters, false for type parameters.
+    - name: instance
+      type: bool
+      source: request
+    # The Properties palette heading, as Revit names it - "Dimensions",
+    # "Mechanical", "Identity Data". Empty files lengths and angles under
+    # Dimensions and the rest under Data.
+    - name: parameterGroup
+      type: string
+      source: request
+  provides:
+    - name: added
+      # Each parameter added, read back from the family with the kind, scope
+      # and group Revit gave it.
+      role: result
+      type: IList<string>
+    - name: alreadyThere
+      # Names asked for that the family already had, with what they are. Left
+      # alone - a name it was HANDED and did not act on, never a thing it made
+      # (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was added, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  **THE CREATING CALL CHANGED SHAPE AT 2022, SO IT IS NEVER WRITTEN DOWN.**
+  `FamilyManager.AddParameter(string, BuiltInParameterGroup, ParameterType,
+  bool)` is 2020 to 2022 and `AddParameter(string, ForgeTypeId, ForgeTypeId,
+  bool)` is 2022 to 2027 (api-surface, read 2026-09-24). No single spelling
+  compiles on both ends, so the overload is chosen at run time by its own
+  third parameter's type, newest first, and the kind and group are looked up
+  by name - SpecTypeId and GroupTypeId properties on the newer releases, the
+  ParameterType and BuiltInParameterGroup enums on the older. The same shape
+  ADD_PROJECT_PARAMETER uses for the same move. Reading a parameter's kind back
+  follows the same split: `Definition.GetDataType()` from 2022,
+  `Definition.ParameterType` before it.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "add a Width parameter to this family"   -> here
+#   "add a shared parameter to the project"  -> ADD_PROJECT_PARAMETER
+#   "put 600 into Width"                     -> SET_FAMILY_TYPE_VALUES
+#   "what parameters has this family got"    -> REPORT_FAMILY_PARAMETERS
+
+utterances:
+  - add a Width parameter to this family
+  - add family parameters for width depth and height
+  - create type parameters Neck Width and Neck Depth
+  - add an instance length parameter to the family

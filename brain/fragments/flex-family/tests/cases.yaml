@@ -1,0 +1,40 @@
+positive:
+  - given: >
+      the air terminal built by the other family fragments - a 600 x 600 x 250
+      body and a 300 x 300 neck locked to labelled, centred planes, a Supply
+      Air connector tied to Neck Width and Neck Depth; trials "Width=900;
+      Depth=500 | Width=400; Depth=700; Neck Width=250"
+    expect: >
+      allHeld true, restored true, trial 1 reading a solid 900 x 500 wide and
+      trial 2 400 x 700, both centred at X 0 Y 0 with the base at Z 0 - and
+      afterwards Family Types showing Width 600 and Depth 600 again, LOOKED AT,
+      with the undo list holding one entry for the flex
+
+negative:
+  - given: >
+      a box extruded at the planes' coordinates WITHOUT locks, its planes
+      labelled Width; trials "Width=900"
+    expect: >
+      allHeld false, the trial marked NOT HELD with "the labelled planes moved
+      and the solid did NOT - it is not locked to them", and the family back
+      as it was. THIS is the case the fragment exists for
+
+  - given: trials naming "Widht=900" (misspelt)
+    expect: refused before anything is written, Family Types unchanged
+
+  - given: trials "Width=900mm"
+    expect: refused - digits only - and nothing tried
+
+  - given: a trial size the constraints cannot take, such as a neck wider than its body
+    expect: >
+      the call refused with Revit's words and the family exactly as it was
+      before - nothing kept
+
+  - given: a family with no type yet
+    expect: refused naming SET_FAMILY_TYPE_VALUES
+
+second_route:
+  - >
+      Family Types by hand in a copy of the family, the same sizes typed in
+      turn, and the box measured in plan and elevation at each, compared with
+      `trialResults`

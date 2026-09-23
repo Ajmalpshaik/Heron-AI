@@ -1,0 +1,45 @@
+positive:
+  - given: >
+      a family with Box Left at X -300 and Box Right at X 300, a type where the
+      length Width holds 600; fromPlane "Box Left", toPlane "Box Right",
+      parameterName "Width", centrePlane "Center (Left/Right)"
+    expect: >
+      labelled reading 600 mm and equalised true - and in the floor plan a
+      dimension showing "Width = 600" with an EQ dimension beside it. Then
+      Width typed as 800 in Family Types moves BOTH planes 100 mm outward,
+      measured, with the centre plane still midway
+
+  - given: >
+      fromPlane "Ref. Level", toPlane "Box Top" at Z 250, parameterName
+      "Height" holding 250, centrePlane empty
+    expect: >
+      a height dimension labelled Height in an elevation, reading 250 mm, and
+      equalised false
+
+negative:
+  - given: >
+      the same planes 600 apart and Width still holding 0 (never written)
+    expect: >
+      refused with both numbers - 600 mm apart, Width holds 0 - naming
+      SET_FAMILY_TYPE_VALUES. And the planes NOT collapsed: measured still
+      600 apart. This is the guard the fragment exists around
+
+  - given: Width already labelling a dimension, asked again
+    expect: refused, one label per parameter, and no second dimension made
+
+  - given: centrePlane "Center (Left/Right)" with Box Left at -200, Box Right at 400
+    expect: >
+      refused as not midway, and neither plane moved - an EQ would have
+      shifted them
+
+  - given: fromPlane "Box Left" and toPlane "Box Top"
+    expect: refused as not parallel, nothing made
+
+  - given: a project in front
+    expect: notAFamily true and nothing made
+
+second_route:
+  - >
+      Annotate, Aligned dimension between the same two planes by hand in a copy
+      of the family, labelled with the same parameter from the ribbon, and the
+      two dimensions' readings compared

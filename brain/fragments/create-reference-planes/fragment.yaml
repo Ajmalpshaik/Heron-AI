@@ -1,0 +1,111 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-034
+semantic-identity: "add named reference planes to the family being edited, at these distances"
+kind: action
+domain: revit.families
+capability: CREATE_REFERENCE_PLANES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Adds NAMED reference planes to the family open in the Family Editor, each at
+  a distance in millimetres from the family's origin, all facing one way:
+  planes that control left-right position, front-back position, or height.
+  "Box Left at -300, Box Right at 300" is one call; the height planes another.
+  The skeleton every parametric family is built on - geometry is locked to
+  these planes and dimensions labelled between them.
+
+  **THE AXES ARE THE FAMILY'S OWN.** Left is minus X and right plus X, front is
+  minus Y and back plus Y, as the template's own elevations are set out. A
+  left-right plane is drawn in the floor plan, a height plane in an elevation,
+  because a horizontal plane cannot be drawn in plan.
+
+  **EVERY PLANE IS READ BACK BEFORE IT IS KEPT.** Its normal must lie along the
+  axis asked for and its position must be the distance asked for. A plane that
+  came out tilted is reported from an earlier family build - a point passed
+  where Revit wanted a direction - and nothing checks it later, so a plane
+  that does not read back true fails the whole call and nothing is kept.
+
+  **A NAME ALREADY IN THE FAMILY** - a level's included, because every later
+  step finds planes and levels by name - is refused unless it is a plane that
+  already sits where it was asked for, which is left alone, so a request run twice adds nothing twice. A plane
+  of that name somewhere ELSE refuses the whole call: moving it would drag
+  whatever is locked to it, and that is a decision for the modeller, not a
+  side effect.
+
+  **IT DOES NOT TRIM OR STRETCH THE LINES.** Each plane is drawn across the
+  origin, comfortably past the distances in the call. How far a plane's line
+  runs is a model property that shows in every view at once, and judging it
+  is done by eye in Revit - reported from an earlier family build, where
+  changes to plane extents were undone by hand both times. Is Reference is left
+  at Revit's default and can be set in Properties.
+
+  **ALL OR NOTHING.** Every name is checked before the first plane is made, and
+  a refusal from Revit afterwards fails the call with nothing kept.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Name=distance pairs, millimetres from the family origin, SEMICOLONS
+    # between - "Box Left=-300; Box Right=300".
+    - name: planes
+      type: IDictionary<string, double>
+      source: request
+    # Which way the planes face: left-right, front-back or height.
+    - name: axis
+      type: string
+      source: request
+  provides:
+    - name: created
+      # Each plane made, read back: its name, what it controls and where it
+      # is, in millimetres.
+      role: result
+      type: IList<string>
+    - name: alreadyThere
+      # Planes asked for that the family already had in the same place. Left
+      # alone - handed and not acted on, never a thing made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was made, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ItemFactoryBase.NewReferencePlane(bubbleEnd, freeEnd, cutVec, view)`,
+  `ReferencePlane.Normal / GetPlane() / Name` and `View.ViewDirection /
+  RightDirection` read the same 2020 through 2027 (api-surface, read
+  2026-09-24). The third argument of NewReferencePlane is a DIRECTION, and the
+  plane's normal comes out as (freeEnd - bubbleEnd) crossed with it.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "add reference planes at 300 each side"   -> here
+#   "label the width between those planes"    -> LABEL_FAMILY_DIMENSION
+#   "draw a detail line"                      -> CREATE_LINE - a line, not a plane
+#   "set the grid or level extents"           -> SET_DATUM_EXTENT_TYPE
+
+utterances:
+  - add reference planes 300 either side of the centre
+  - create named reference planes in this family
+  - add a height reference plane at 250
+  - add front and back reference planes to the family
+  - add reference planes at 300 each side

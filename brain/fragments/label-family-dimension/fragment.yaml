@@ -1,0 +1,126 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-035
+semantic-identity: "tie the distance between two family planes to a parameter, kept centred if asked"
+kind: action
+domain: revit.families
+capability: LABEL_FAMILY_DIMENSION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Dimensions two parallel reference planes of the family open in the Family
+  Editor and LABELS that dimension with a family parameter, so the parameter
+  drives how far apart they are - "Box Left to Box Right is Width". With a
+  centre plane named as well, it also adds the EQ dimension across the three,
+  so the two planes move equally either side of the centre instead of one
+  edge doing all the moving. This is the step that makes a family parametric.
+
+  **THE PARAMETER MUST ALREADY HOLD THE DISTANCE THE PLANES ARE APART.** The
+  moment a dimension is labelled, Revit moves the planes to the parameter's
+  value. A new length reads zero, so labelling first collapses the planes onto
+  each other and the skeleton is gone - reported from an earlier family build.
+  So the distance is measured and compared with the parameter first, and a
+  difference of more than half a millimetre refuses the call with both numbers,
+  naming SET_FAMILY_TYPE_VALUES.
+
+  **ONE LABEL PER PARAMETER, AND PER PAIR OF PLANES.** A parameter that already
+  labels a dimension is refused a second one, and so is a pair of planes that a
+  labelled dimension already measures: two dimensions driving one parameter fight as soon as
+  anything moves - reported from an earlier family build, where a rebuild left
+  the old plane-to-plane dimension behind beside its replacement.
+
+  **THE EQ NEEDS THE CENTRE PLANE MIDWAY.** An EQ dimension moves the planes
+  until both sides are equal, so a centre plane that is not already midway is
+  refused rather than quietly shifting the geometry. Both plan axes are usually
+  centred - the family's insertion point then sits in the middle of the box -
+  and the base-to-top height usually is not.
+
+  **A LEVEL COUNTS AS A PLANE**, so a height is labelled from Ref. Level to a
+  top plane. Left-right and front-back dimensions are drawn in the floor plan,
+  heights in an elevation, placed outside the planes so they stay readable.
+
+  **ALL OR NOTHING, READ BACK AFTER REVIT REGENERATES.** The label, the EQ, the
+  distance the dimension reads and where every plane now sits are read after
+  the regeneration; a plane that moved or a reading that differs fails the
+  call, and nothing is kept.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # One end: a reference plane or a level, by name - "Box Left", "Ref. Level".
+    - name: fromPlane
+      type: string
+      source: request
+    # The other end, parallel to the first.
+    - name: toPlane
+      type: string
+      source: request
+    # The length parameter that will drive the distance - "Width".
+    - name: parameterName
+      type: string
+      source: request
+    # A plane midway between the two to keep them equal about - "Center
+    # (Left/Right)". Empty for a one-sided size such as a height.
+    - name: centrePlane
+      type: string
+      source: request
+  provides:
+    - name: labelled
+      # The dimension made, read back: which parameter now drives which two
+      # planes, and the distance it reads.
+      role: result
+      type: string
+    - name: equalised
+      role: result
+      type: bool
+    - name: distanceMm
+      # The distance between the planes, read off the labelled dimension after
+      # the write.
+      role: result
+      type: double
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was made, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ItemFactoryBase.NewDimension(view, line, references)`, `Dimension.FamilyLabel
+  { get; set; }`, `Dimension.AreSegmentsEqual { get; set; }`, `Dimension.Value`,
+  `ReferencePlane.GetReference()` and `new Reference(Element)` read the same 2020
+  through 2027 (api-surface, read 2026-09-24). A parameter's kind is read by
+  reflection, because it moved at 2022 - `Definition.ParameterType` before,
+  `Definition.GetDataType()` from.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "label the width with the Width parameter"   -> here
+#   "keep it centred as it resizes"               -> here, with a centre plane
+#   "dimension these ducts"                       -> CREATE_DIMENSION - a
+#                                                    project annotation
+#   "dimension the grids and levels"              -> DIMENSION_GRIDS_AND_LEVELS
+
+utterances:
+  - label the width dimension with the Width parameter
+  - make the width between these reference planes parametric
+  - drive the height from Ref Level to Box Top by Height
+  - add an EQ and label the depth with Depth
+  - label the width with the Width parameter
+  - keep it centred as it resizes

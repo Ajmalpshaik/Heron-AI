@@ -1,0 +1,46 @@
+positive:
+  - given: >
+      a new family with the type lengths Width, Depth and Height already added
+      and NO type yet, typeName "600 x 600", values "Width=600; Depth=600;
+      Height=250"
+    expect: >
+      typeCreated true, typeUsed "600 x 600", and the three values read back as
+      600, 600 and 250 mm - LOOKED AT in the Family Types dialog with that type
+      chosen, not read off the report
+
+  - given: >
+      the same family, typeName "600 x 600" again, values "Width=900" - with
+      Width already labelling a dimension between two planes
+    expect: >
+      typeCreated false, Width reading 900 mm (was 600 mm), drives 1, and the
+      two planes 900 mm apart when measured in the Family Editor - the flex a
+      value write is
+
+negative:
+  - given: values "Width=600mm"
+    expect: >
+      refused, nothing written - digits only. A unit typed into the value is
+      how a length ends up a thousand times wrong
+
+  - given: values "Widht=600" (misspelt)
+    expect: >
+      refused naming the missing parameter and pointing at
+      ADD_FAMILY_PARAMETERS. No type made for a call that wrote nothing
+
+  - given: values naming a parameter that a formula drives
+    expect: >
+      refused quoting the formula and naming SET_FAMILY_FORMULA - the formula
+      is NOT silently cleared
+
+  - given: typeName "EL 20-400V/3~"
+    expect: >
+      refused naming the tilde, before anything is written. Not a half-made
+      type
+
+  - given: a project in front
+    expect: notAFamily true and nothing written
+
+second_route:
+  - >
+      Family Types in the Family Editor, the same type chosen and each value
+      read there, compared with `written`
