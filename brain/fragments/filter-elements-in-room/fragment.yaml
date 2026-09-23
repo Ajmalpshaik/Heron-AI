@@ -98,7 +98,7 @@ compatibility-note: >
 # COUNT_BY_SPATIAL_CONTAINER tests at the room's own height and would count
 # that element IN; CHECK_ROOM_MEP_COMPLETENESS asks the volume question like
 # this one while its purpose says the opposite. FRAGMENT-ISSUES 5b-163 records
-# the disagreement; NEEDS-CHECKING AD5 settles it with evidence. A note only:
+# the disagreement; NEEDS-CHECKING AH5 settles it with evidence. A note only:
 # this fragment is PROVEN and its code is unchanged.
 
 # ROUTING - repeated in READ_ROOM_GEOMETRY and COUNT_ELEMENTS.

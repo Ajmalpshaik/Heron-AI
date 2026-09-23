@@ -118,7 +118,7 @@ compatibility-note: >
 # for the step after it. Before re-categorising what it finds, record the
 # parameter values of those elements (READ_ELEMENT_PARAMETERS) and check the
 # new category carries the same bindings. Not reproduced here. A note only:
-# the fragment is PROVEN and its code is unchanged. NEEDS-CHECKING AD9.
+# the fragment is PROVEN and its code is unchanged. NEEDS-CHECKING AH9.
 
 # ROUTING - the same rows are in the fragments named here.
 #

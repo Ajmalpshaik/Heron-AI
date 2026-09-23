@@ -125,7 +125,7 @@ compatibility-note: >
 # on the releases that have it. Nothing the proof recorded is contradicted,
 # but it describes code that no longer runs, so its fingerprint no longer
 # matches, and it must NOT be re-stamped: re-taking it on a named model is the
-# only thing that makes this PROVEN again (D-30). NEEDS-CHECKING AD6 says what
+# only thing that makes this PROVEN again (D-30). NEEDS-CHECKING AH6 says what
 # to arrange. FRAGMENT-ISSUES 5b-165.
 #
 # TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Another tool's check,

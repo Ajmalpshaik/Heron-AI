@@ -157,7 +157,7 @@ compatibility-note: >
 # A NOTE ONLY. This fragment is PROVEN, and a change to its code would make
 # the proof stale. AUTO_SIZE_PIPE, which was DRAFT, now counts the open
 # connectors before and after a resize; nothing here does yet. Until it does,
-# look at the joints of a CONNECTED run after sizing it. NEEDS-CHECKING AD2.
+# look at the joints of a CONNECTED run after sizing it. NEEDS-CHECKING AH2.
 
 # ROUTING - repeated in SET_MEP_SIZE, MEASURE_MEP_VELOCITY and TRACE_CONNECTIVITY.
 #

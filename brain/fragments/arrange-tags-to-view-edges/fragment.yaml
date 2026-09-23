@@ -130,7 +130,7 @@ compatibility-note: >
 # - and does not switch a room tag's leader on. Not reproduced here. A note
 # only: the fragment is PROVEN, and a change to its code would make the proof
 # stale. After parking room tags, check each one still points at its room.
-# NEEDS-CHECKING AD9.
+# NEEDS-CHECKING AH9.
 
 # ROUTING - the same rows are in the fragments named here.
 #

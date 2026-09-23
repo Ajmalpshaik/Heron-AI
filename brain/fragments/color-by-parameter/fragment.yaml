@@ -154,7 +154,7 @@ compatibility-note: >
 # recorded is contradicted, but it describes code that no longer runs, so its
 # fingerprint no longer matches, and it must NOT be re-stamped: re-taking it on
 # a named model is the only thing that makes this PROVEN again (D-30).
-# NEEDS-CHECKING AD7 says what to arrange. FRAGMENT-ISSUES 5b-166.
+# NEEDS-CHECKING AH7 says what to arrange. FRAGMENT-ISSUES 5b-166.
 #
 # THE RULE, AND WHERE IT COMES FROM. Insulation and lining take the colour of
 # the run they wrap - the owner's standing rule ("when you colour ducts or
@@ -170,7 +170,7 @@ compatibility-note: >
 # ELEMENT overrides, not category ones, and whether an element override keeps
 # the fill on those categories is not known here. FRAGMENT-ISSUES row 175
 # measured the category half on Ducts, in Revit 2024. Read back what stuck,
-# never "all coloured with a solid fill". NEEDS-CHECKING AD7.
+# never "all coloured with a solid fill". NEEDS-CHECKING AH7.
 
 # THE LEGEND IS PART OF THE ANSWER, NOT A COURTESY. A coloured drawing with no
 # statement of which colour is which system is a picture, not information - and

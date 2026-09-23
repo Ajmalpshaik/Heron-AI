@@ -121,7 +121,7 @@ compatibility-note: >
 # room it lists - and it does not switch a room tag's leader on. Not
 # reproduced here. A note only: the fragment is PROVEN, and a change to its
 # code would make the proof stale. After stacking room tags, check each one
-# still points at its room. NEEDS-CHECKING AD9.
+# still points at its room. NEEDS-CHECKING AH9.
 
 # ROUTING - the same rows are in the fragments named here.
 #

@@ -127,7 +127,7 @@ compatibility-note: >
 # `moved` with the distance on each axis. What is NOT done: no distance is
 # called acceptable, because nobody has given that number - it is the owner's
 # question, and until it is answered every movement is reported and none is
-# refused. NEEDS-CHECKING AD1 is the check on a real model: one terminal that
+# refused. NEEDS-CHECKING AH1 is the check on a real model: one terminal that
 # should move and one that should not.
 
 # ROUTING - repeated in CONNECT_OPEN_ENDS and PLACE_MEP_FITTING.

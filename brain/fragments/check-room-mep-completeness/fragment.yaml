@@ -140,7 +140,7 @@ compatibility-note: >
 # corrected here: which is right on a real model is to be measured, not
 # argued. COUNT_BY_SPATIAL_CONTAINER counts the same diffuser IN the room,
 # because it tests at the room's own height; FILTER_ELEMENTS_IN_ROOM agrees
-# with the code here. FRAGMENT-ISSUES 5b-163; NEEDS-CHECKING AD5.
+# with the code here. FRAGMENT-ISSUES 5b-163; NEEDS-CHECKING AH5.
 #
 # AND THE SIGNED PROOF NEVER REACHED THE ROOM TEST. Its positive handed in 8
 # DUCTS as the devices. A duct has a location CURVE and this code counts only

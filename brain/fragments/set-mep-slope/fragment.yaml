@@ -166,7 +166,7 @@ compatibility-note: >
 # Not reproduced here. A NOTE ONLY - the fragment is PROVEN, and teaching the
 # guard about side taps would change its code and make the proof stale. Until
 # then, do not re-slope a run with takeoffs on it without looking at each one
-# afterwards. NEEDS-CHECKING AD3.
+# afterwards. NEEDS-CHECKING AH3.
 
 # ROUTING - repeated in MEASURE_MEP_SLOPE and ALIGN_MEP_ELEVATION.
 #

@@ -162,7 +162,7 @@ compatibility-note: >
 # fittings joined to them are counted before any size is set and again after,
 # and any element with more open ends afterwards is named in
 # `openedByResize`. What is NOT done: nothing is repaired, and no fitting is
-# resized - the report is where it stops. NEEDS-CHECKING AD2 is the check on a
+# resized - the report is where it stops. NEEDS-CHECKING AH2 is the check on a
 # real model.
 #
 # Found beside it and fixed in the same change: the size was read back

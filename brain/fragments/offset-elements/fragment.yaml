@@ -99,7 +99,7 @@ compatibility-note: >
 # Neither has been reproduced here. A NOTE ONLY - the fragment is PROVEN, and
 # a change to its code would make the proof stale. After offsetting a run that
 # carries takeoffs, look at each one, and do not take a terminal reading
-# "connected" as the answer. NEEDS-CHECKING AD3.
+# "connected" as the answer. NEEDS-CHECKING AH3.
 
 # ROUTING - repeated in SPLIT_MEP_RUN and MOVE_ELEMENTS.
 #
