@@ -1,0 +1,38 @@
+positive:
+  - given: >
+      a family with Box Left / Box Right at X -300 / 300, Box Front / Box Back
+      at Y -300 / 300 and Box Top at Z 250, each pair labelled and centred;
+      sidePlanes "Box Left, Box Right, Box Front, Box Back", basePlane
+      "Ref. Level", topPlane "Box Top"
+    expect: >
+      size reading 600 x 600 x 250 mm centred at X 0, Y 0 from Z 0 to 250, and
+      five locks - LOOKED AT in the Family Editor as closed padlocks on the four
+      sides in plan and on the top in an elevation. Then Width changed to 800
+      in Family Types and the BOX (not only the planes) measured 800 wide -
+      that is the part a box drawn without locks fails
+
+  - given: >
+      a neck: planes Neck Left / Neck Right / Neck Front / Neck Back at 150
+      either way and Neck Top at 350, basePlane "Box Top"
+    expect: >
+      a 300 x 300 x 100 box from Z 250 to 350 on top of the body, and when
+      Height changes the neck rides up with the body's top
+
+negative:
+  - given: sidePlanes naming three left-right planes and one front-back
+    expect: refused as not two of each, and no extrusion in the family
+
+  - given: topPlane "Box Top" placed BELOW the base
+    expect: refused with both heights, nothing built
+
+  - given: a side plane name that does not exist
+    expect: refused listing the family's named planes, nothing built
+
+  - given: a project in front
+    expect: notAFamily true and nothing built anywhere
+
+second_route:
+  - >
+      Create, Extrusion in the Family Editor by hand in a copy, sketched on the
+      same planes with each sketch line locked, and the two boxes flexed side
+      by side with the same Width

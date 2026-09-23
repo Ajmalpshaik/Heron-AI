@@ -1,0 +1,112 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-035
+semantic-identity: "make the family being edited belong to this category"
+kind: action
+domain: revit.families
+capability: SET_FAMILY_CATEGORY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Changes the CATEGORY of the family open in the Family Editor - the Family
+  Category and Parameters setting - so a family started from a generic
+  template becomes, say, an Air Terminal or Mechanical Equipment.
+
+  **THE FIRST STEP OF BUILDING A FAMILY, AND THE ONE THAT CANNOT WAIT.** The
+  category decides which built-in parameters the family carries, which
+  schedules it lands in and which connectors make sense on it. Switching it
+  ADDS that category's own parameters - an Air Terminal gains its flow fields -
+  so it is done before anything is built that would have to be redone. The
+  report says how many parameters the switch brought with it, read from the
+  family, because that is the part people do not expect.
+
+  **THE CATEGORY IS NAMED, NEVER GUESSED.** It is matched to the names Revit
+  shows in its own Family Category and Parameters dialog, in the language this
+  Revit runs in. A name that matches nothing is refused with the close ones
+  listed - "Air Terminal" beside "Air Terminals" - rather than the nearest one
+  being taken, because a family filed under the wrong category schedules in the
+  wrong place and nothing about it looks wrong (D-33).
+
+  **IT ACTS ON THE DOCUMENT IN FRONT, AND REFUSES A PROJECT.** A project has no
+  family category to change. That refusal is reported as `notAFamily`, which is
+  different from a family that was already the category asked for.
+
+  **REVIT DECIDES WHICH CATEGORIES A FAMILY MAY TAKE.** A model family cannot
+  become an annotation category, and system categories such as Walls are not
+  available to a loadable family at all. When Revit refuses, its own words are
+  passed on and nothing is kept.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The category as Revit names it in the Family Category and Parameters
+    # dialog - "Air Terminals", "Mechanical Equipment".
+    - name: categoryName
+      type: string
+      source: request
+  provides:
+    - name: category
+      # The family's category AFTER, read back from the family - never the
+      # name that was asked for.
+      role: result
+      type: string
+    - name: changed
+      role: result
+      type: bool
+    - name: wasCategory
+      role: result
+      type: string
+    - name: parametersGained
+      # How many parameters the family has now minus how many it had before.
+      # A category switch brings that category's own built-in parameters.
+      role: result
+      type: int
+    - name: notAFamily
+      # That the document in front is a project. The evidence it looked in the
+      # wrong place, never a thing it changed (D-52).
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing changed, in plain words. Empty when the category changed.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Family.FamilyCategory { get; set; }` and `Document.OwnerFamily` read the same
+  2020 through 2027 in the cached reference assemblies (api-surface, read
+  2026-09-24). Category names come from `Category.Name`, so they follow the
+  language Revit runs in - the same words the modeller sees.
+
+# ROUTING - the family-building capabilities, each with one job:
+#
+#   "make this family an air terminal"       -> here
+#   "add Width and Depth parameters"          -> ADD_FAMILY_PARAMETERS
+#   "make a 600 x 600 type"                   -> SET_FAMILY_TYPE_VALUES
+#   "neck top is height plus neck depth"      -> SET_FAMILY_FORMULA
+#   "add reference planes at 300 each side"   -> CREATE_REFERENCE_PLANES
+#   "label the width with the Width parameter"-> LABEL_FAMILY_DIMENSION
+#   "make a box between these planes"         -> EXTRUDE_BETWEEN_PLANES
+#   "put a supply air connector on the neck"  -> ADD_FAMILY_CONNECTOR
+#   "flex the family"                         -> FLEX_FAMILY
+#   "start a new family from a template"      -> CREATE_FAMILY_DOCUMENT
+
+utterances:
+  - make this family an air terminal
+  - change the family category to mechanical equipment
+  - set the family category
+  - switch this family to the air terminals category
