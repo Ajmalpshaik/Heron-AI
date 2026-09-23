@@ -3,10 +3,9 @@
 > **Type:** Operational work note. **Not specification.** Where a sentence here disagrees with the
 > [Constitution](../../../../HERON_CONSTITUTION.md), the [Golden Rules](../../../14-golden-rules.md) or
 > [DECISIONS.md](../../../DECISIONS.md), **those win and this note is out of date.**
-> **Status:** **Active — planned, nothing built from it yet** except PR
-> [#299](https://github.com/Ajmalpshaik/Heron-AI/pull/299) (open, draft, waiting for the owner).
-> **The package-by-package status lives in [`02-work-packages.md` §0](02-work-packages.md) and nowhere
-> else.** Opened 2026-09-23. **Owner:** Ajmal PS.
+> **Status:** **Active — being built package by package.** The status of every package, and of PR
+> [#299](https://github.com/Ajmalpshaik/Heron-AI/pull/299), lives in
+> [`02-work-packages.md` §0](02-work-packages.md) **and nowhere else.** Opened 2026-09-23. **Owner:** Ajmal PS.
 
 ---
 
