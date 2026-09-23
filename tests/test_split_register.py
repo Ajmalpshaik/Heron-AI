@@ -9,8 +9,8 @@
 """
 tools/split-register.py gives every section of FRAGMENT-ISSUES.md its own file
 and the rows of sections 5 and 5b files of 25, and every section of
-PROPOSALS.md its own file - and every reader of each register still reads
-exactly what it read.
+PROPOSALS.md and OPEN-QUESTIONS.md its own file - and every reader of each
+register still reads exactly what it read.
 
     python tests/test_split_register.py
 
@@ -47,7 +47,10 @@ WHAT IS PROVED
      read the register through the one reader;
  12. PROPOSALS.md splits the same way - every section to its own file, two
      sections written on one day to two files - and owner-queue.py and
-     balance-of-work.py read the same proposals from it, through the reader.
+     balance-of-work.py read the same proposals from it, through the reader;
+ 13. OPEN-QUESTIONS.md splits the same way, one file per tier, and
+     owner-queue.py and check-docs.py - its questions and its Progress line
+     - read the same questions from it, through the reader.
 """
 
 import contextlib
@@ -55,6 +58,7 @@ import importlib.util
 import io
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -453,6 +457,10 @@ def run(work):
     print("12. PROPOSALS.md splits the same way, and its readers read the same proposals")
     proposals_case(work)
 
+    print()
+    print("13. OPEN-QUESTIONS.md splits the same way, and its readers count the same questions")
+    questions_case(work)
+
 
 RED, YELLOW, DONE = chr(0x1F534), chr(0x1F7E1), chr(0x2705)
 
@@ -541,6 +549,103 @@ def proposals_case(work):
         source = read(os.path.join(ROOT, "tools", filename))
         check("register-text.py" in source and "proposals_text()" in source,
               "%s reads PROPOSALS.md through tools/register-text.py" % filename)
+
+
+def questions_register():
+    orange, red = chr(0x1F7E0), chr(0x1F534)
+    return NL.join([
+        "# Open Questions",
+        "",
+        "> | **Its numbers** | `python tools/check-docs.py` derives answered-vs-open |",
+        "",
+        "**Progress: 3 answered " + chr(0xB7) + " 1 open " + chr(0xB7) + " nothing blocking any phase**",
+        "",
+        "Start at [the second](#q-2--is-it-answered), and see [the page](OPEN-QUESTIONS.md).",
+        "",
+        "---",
+        "",
+        "## Tier 1 " + DASH + " Blocking",
+        "",
+        "### " + red + " Q-1 " + DASH + " Where does it run?",
+        "",
+        "**Answer:** On the PC, as [D-01](DECISIONS.md) says.",
+        "",
+        "---",
+        "",
+        "## Tier 2 " + DASH + " Blocks a major area",
+        "",
+        "### " + orange + " Q-2 " + DASH + " Is it answered?",
+        "",
+        "**Answer:** Yes, in full.",
+        "",
+        "---",
+        "",
+        "### " + orange + " Q-3 " + DASH + " Is this one open?",
+        "",
+        "**Answer:**",
+        "",
+        "---",
+        "",
+        "## Answered",
+        "",
+        "### " + DONE + " Q-4 " + DASH + " Closed long ago",
+        "",
+        "Closed, and [Q-1](#q-1--where-does-it-run) with it.",
+        "",
+    ])
+
+
+def questions_readers_at(root):
+    oq = _load("owner_queue_questions_at_root", "owner-queue.py")
+    oq.ROOT = root
+    run = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "check-docs.py")], cwd=root,
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    text = run.stdout.decode("utf-8", "replace")
+    four = text[text.find("=== 4. QUESTIONS ==="):text.find("=== 5.")]
+    six = text[text.find("=== 6. THE PROGRESS LINE ==="):text.find("=== 7.")]
+    return {"owner-queue": oq.open_questions(), "check-docs, its questions": four,
+            "check-docs, its Progress line": six}
+
+
+def questions_case(work):
+    original = questions_register()
+    roots = []
+    for name in ("questions-whole", "questions"):
+        root = make_root(work, "", name)
+        os.remove(index_of(root))
+        put(os.path.join(root, "docs", "OPEN-QUESTIONS.md"), original)
+        roots.append(root)
+    one_file, root = roots
+    index = os.path.join(root, "docs", "OPEN-QUESTIONS.md")
+    folder = os.path.join(root, "docs", "open-questions")
+    today = questions_readers_at(one_file)
+    check("ACTUAL: 3 answered, 1 open" in today["check-docs, its Progress line"]
+          and "Q-4" in today["check-docs, its questions"],
+          "check-docs counts this register's questions as one file (%s)"
+          % today["check-docs, its Progress line"].strip().replace(NL, " / "))
+    p = SPLIT.plan("open-questions", index, "2026-09-23", root)
+    check(p.fatal is None and not p.problems, "the plan is clean (%s)" % (p.fatal or "; ".join(p.problems) or "no problem"))
+    check(sorted(n for _, n in p.moving) == ["answered.md", "tier-1.md", "tier-2.md"], "one file per tier")
+    check(SPLIT.write(p) == SPLIT.OK, "it writes")
+    page = read(index)
+    check(RT.register_text(index) == original, "read back, it is the register byte for byte")
+    check("**Progress: 3 answered" in page and "### " not in page,
+          "the Progress line stays on the page, and no question does")
+    check("[the second](open-questions/tier-2.md#q-2--is-it-answered)" in page,
+          "a link from the page to a question goes to its tier's file")
+    check("[the page](OPEN-QUESTIONS.md)" in page, "and a link to the page itself is untouched")
+    check("[D-01](../DECISIONS.md)" in read(os.path.join(folder, "tier-1.md")),
+          "a link one folder deeper: DECISIONS.md -> ../DECISIONS.md")
+    check("[Q-1](tier-1.md#q-1--where-does-it-run)" in read(os.path.join(folder, "answered.md")),
+          "a link to a question in another tier follows it")
+    now = questions_readers_at(root)
+    for key in sorted(today):
+        check(now[key] == today[key], "%s is the same on the split register" % key)
+    check([r[0] for r in now["owner-queue"]] == ["Q-3"], "owner-queue still lists Q-3, the one open question")
+    for filename in ("check-docs.py", "owner-queue.py"):
+        source = read(os.path.join(ROOT, "tools", filename))
+        check("register-text.py" in source and "OPEN-QUESTIONS.md" in source,
+              "%s reads OPEN-QUESTIONS.md through tools/register-text.py" % filename)
 
 
 if __name__ == "__main__":
