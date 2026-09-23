@@ -43,6 +43,11 @@ where the table was, naming the files in order. A row written after the last
 file's band - the register's rule is that a new row goes at the end of its
 section's last file - is moved to its own band by the next run.
 
+PROPOSALS.md - `python tools/split-register.py proposals` - moves every
+section whole: `## F23 ...` to f23.md, `## Part A ...` to part-a.md. A
+section headed with nothing but a date takes its first five words after
+the date as well, so two written on one day get two files.
+
 THE REGISTER IS STILL ONE TEXT, AND THAT IS WHAT IS PROVED
 ----------------------------------------------------------
 Every tool that reads a register reads it through tools/register-text.py,
@@ -54,7 +59,8 @@ written. Nothing here writes a byte unless:
      on one laid out the new way, answer exactly the same - borrowed, not
      re-implemented: for FRAGMENT-ISSUES, open-defects.py's whole report,
      review-ledger.py's rows of section 5b, and archive-fragment-issues.py's
-     plan;
+     plan; for PROPOSALS, the proposals owner-queue.py lists and the open ones
+     balance-of-work.py counts;
   3. every link re-pointed on the way out reaches the file it reached before
      (archive-handover.py's own function, which proves each one), and no other
      document links into a heading that would leave the page.
@@ -125,6 +131,21 @@ def _fragment_issues_readers(docs):
     return answers
 
 
+def _proposals_readers(docs):
+    """What PROPOSALS' readers make of the register laid out in DOCS: the
+    proposals owner-queue.py puts in front of the owner, and the open ones
+    balance-of-work.py counts."""
+    top = os.path.dirname(docs)
+    answers = {}
+    oq = _load("owner_queue_as_served", "owner-queue.py")
+    oq.ROOT = top
+    answers["owner-queue"] = oq.proposals()
+    bw = _load("balance_of_work_as_served", "balance-of-work.py")
+    bw.ROOT = top
+    answers["balance-of-work"] = bw.proposals_open()
+    return answers
+
+
 # Each register this splits: its page, the words its files are titled with,
 # the sections that are the page's own rules, the sections whose rows are
 # banded and the name each band's file starts with, the folders its readers
@@ -137,6 +158,14 @@ REGISTERS = {
         "rows": (("## 5. ", "section-5-rows"), ("## 5b. ", "section-5b-rows")),
         "beside": ("fragment-issues-archive",),
         "readers": _fragment_issues_readers,
+    },
+    "proposals": {
+        "index": os.path.join("docs", "PROPOSALS.md"),
+        "title": "Proposals",
+        "stays": (),
+        "rows": (),
+        "beside": (),
+        "readers": _proposals_readers,
     },
 }
 
@@ -157,15 +186,20 @@ def label_of(heading):
 
 def name_of(heading):
     """The file a section moves to, named from its heading: `## 1c.` is
-    section-1c.md, and any other is named from its opening words and its
-    date."""
+    section-1c.md, and any other is named from its opening words - with the
+    date, when one is written before the dash. A heading that opens with
+    nothing but a date takes its first five words after the dash as well,
+    so two sections written on one day do not ask for the same file."""
     m = NUMBERED.match(heading)
     if m:
         return "section-%s.md" % m.group(1).lower()
-    words = re.split(" " + DASH + " |, ", heading[3:], 1)[0]
-    date = DATE.search(heading)
+    head, _, rest = heading[3:].partition(" " + DASH + " ")
+    words = head.split(", ", 1)[0]
+    date = DATE.search(head)
     slug = _slug(words)
-    if date and date.group(0) not in words:
+    if DATE.fullmatch(words.strip()) and rest:
+        slug += "-" + _slug(" ".join(rest.split()[:5]))
+    elif date and date.group(0) not in words:
         slug += "-" + date.group(0)
     return (slug or "section") + ".md"
 
