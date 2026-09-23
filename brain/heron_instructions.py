@@ -80,6 +80,15 @@ CONSTITUTION = os.path.join(ROOT, "HERON_CONSTITUTION.md")
 
 REQUIRED = ("id", "version", "purpose", "text", "cases")
 
+# THE ONE INSTRUCTION A RUNNING AI IS GIVEN. The MCP server hands it to the
+# host as the server's own instructions (mcp/server/heron_brain.py,
+# host_instructions), so it reaches every chat a modeller has. The others in
+# brain/instructions/ are assembled for Heron's own agents, and nothing that
+# runs a model is given them yet - which is what the Constitution's
+# Enforcement table now says, and tests/test_instructions.py holds that table
+# to this name.
+HOST = "host.chat"
+
 # A numbered rule in the Constitution: "**12a. Pin the document...**". The
 # letter suffixes are real - 12a, 12b and 12c were added when session binding
 # grew three rules of its own - so the id is a string and never an int.
@@ -90,6 +99,24 @@ RULE = re.compile(r"^\*\*(\d+[a-z]?)\.\s+(.+?)\*\*\s*$")
 # active document" does not trip it, and short enough that a pasted sentence
 # cannot slip under it.
 COPY_WINDOW = 8
+
+
+def _article_text(lines):
+    """
+    One article's own lines, without the section rule that closes its Article.
+
+    The Constitution separates its Articles with a `---` line, and the last
+    rule of each Article used to carry that line away with it - 6, 12c, 17,
+    21 and 27, measured 2026-09-23 - so an instruction assembling one of them
+    printed a bare `---` in the middle of its rules. It changed no rule, and
+    it is text the host is now given in EVERY chat, so it is trimmed here,
+    where the article is read, rather than wherever an instruction happens to
+    be printed.
+    """
+    kept = list(lines)
+    while kept and kept[-1].strip() in ("", "---"):
+        kept.pop()
+    return "".join(kept).strip()
 
 
 def articles():
@@ -111,19 +138,19 @@ def articles():
             match = RULE.match(line.rstrip("\n"))
             if match:
                 if number:
-                    found[number] = "".join(lines).strip()
+                    found[number] = _article_text(lines)
                 number = match.group(1)
                 lines = ["%s. %s\n" % (number, match.group(2))]
                 continue
             if number is None:
                 continue
             if line.startswith("## "):                # the article ended
-                found[number] = "".join(lines).strip()
+                found[number] = _article_text(lines)
                 number, lines = None, []
                 continue
             lines.append(line)
     if number:
-        found[number] = "".join(lines).strip()
+        found[number] = _article_text(lines)
     return found
 
 

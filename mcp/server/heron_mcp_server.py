@@ -30,10 +30,24 @@ enforces. Found by a review 2026-09-11.
 TWO tools write, and the command marks them. revit_apply_move cannot run on
 its own - it applies a preview the user has already seen, once, and the add-in
 re-checks the model before it writes. revit_change carries a fragment straight
-to Revit and KEEPS what it did, with no preview in front of it: the owner's
-ribbon switch is what stands in its way - that, and since FRAGMENT-ISSUES row
-5b-155 the client's refusal of any fragment above Modify. Writing is switched
-off entirely until write.enabled is set - see HeronPermissions.
+to Revit and KEEPS what it did, with no preview in front of it - the owner's
+choice, recorded as D-99 and as Article 9's one exception. What stands in for
+the preview is named there: the owner's ribbon switch, the client's refusal of
+any fragment above Modify (since FRAGMENT-ISSUES row 5b-155), one undo entry,
+and the pin. Writing is switched off entirely until write.enabled is set - see
+HeronPermissions.
+
+ONE tool runs a fragment and changes nothing: revit_read, through the add-in's
+run_fragment_read. It opens no transaction, so Revit itself refuses any change;
+it works with Changes OFF; and it refuses a fragment declared above ANALYZE
+before anything is sent.
+
+EVERY CHAT IS TOLD THE RULES, AND EVERY TOOL CARRIES ITS LABELS. The server's
+instructions are the Instruction Registry's `host.chat`, with the Constitution's
+Articles assembled at start-up (heron_brain.host_instructions), and each tool's
+MCP safety labels are read off its risk in heron_tools.TOOLS as it registers
+(_Labelled below). Neither is typed in this file, for the reason the tool list
+is not.
 
     ============ revit_change: RUN, AND E16 STILL OPEN ============
     Written 2026-09-15 at the owner's instruction and run the SAME
@@ -69,6 +83,7 @@ over a same-named directory, verified rather than assumed. Do not "fix" this by
 renaming the folder.
 """
 
+import inspect
 import io
 import os
 import sys
@@ -115,7 +130,78 @@ except ImportError:
 
 NEWLINE = chr(10)
 
-server = _Server("heron")
+# THE SAFETY LABELS NEED A TYPE THE SDK ONLY GAINED PART-WAY THROUGH 1.x, so it
+# is looked up the same way the server class is. Without it every tool is
+# served unlabelled - which is SAFE, because a host told nothing assumes the
+# worst of a tool (not read-only, destructive, not idempotent) - and so an old
+# SDK costs the labels and never the server.
+try:                                                       # noqa: E402
+    from mcp.types import ToolAnnotations as _Annotations
+except ImportError:
+    _Annotations = None
+
+_TAKES_LABELS = (_Annotations is not None
+                 and "annotations" in inspect.signature(_Server.tool).parameters)
+
+
+class _Labelled(_Server):
+    """
+    The SDK's server with one difference: every `@server.tool()` is registered
+    with the MCP safety labels its declared risk implies.
+
+    WHY A SUBCLASS AND NOT A LABEL ON EACH DECORATOR. A label typed beside a
+    tool is a second declaration of what the tool can do, and the first one -
+    heron_tools.TOOLS - is the one the add-in's gate is checked against. Typed
+    twice, the two drift; and the drift that matters is a write labelled
+    read-only, which a host may call without asking. So the decorator every
+    tool already carries stays exactly as it is, and the label is read off the
+    registry at the moment the tool registers. tests/test_tool_registry.py
+    holds the rule; tests/test_mcp_serves.py reads the labels back from a real
+    SDK and compares them with the registry.
+
+    The labels are advice to the host. The gate stays in the add-in.
+    """
+
+    def tool(self, *args, **kwargs):
+        register = super(_Labelled, self).tool
+
+        def decorate(fn):
+            # A COPY, so one decorator applied twice cannot hand the second
+            # tool the first one's label.
+            options = dict(kwargs)
+            if _TAKES_LABELS and "annotations" not in options:
+                name = (args[0] if args else None) or options.get("name") or fn.__name__
+                options["annotations"] = _Annotations.model_validate(
+                    tools.annotations(name))
+            return register(*args, **options)(fn)
+
+        return decorate
+
+
+def _host_instructions():
+    """
+    What every chat is told before its first tool call - or, when it cannot be
+    assembled, a sentence saying so in the same place.
+
+    The Constitution's Enforcement table said its Articles were injected into
+    agent instructions, and this server was built with none: the AI a modeller
+    talks to was given no Article at all. The words come from the Instruction
+    Registry (`host.chat`), with the Articles assembled from
+    HERON_CONSTITUTION.md when the server starts - so an amendment reaches the
+    next chat with nobody editing this file.
+
+    A FAILURE IS SAID, NOT FATAL. A server that refused to start over its own
+    instructions would take every Revit tool out of the host with it.
+    """
+    try:
+        return brain.host_instructions()
+    except brain.BrainUnavailable as why:
+        return ("Heron could not give this chat its rules: %s\n"
+                "They are in HERON_CONSTITUTION.md, and they bind this chat "
+                "whether or not they arrived here." % why)
+
+
+server = _Labelled("heron", instructions=_host_instructions())
 
 # One chat, one Revit. Lives as long as this server does, which is as long as
 # the chat does - the correct scope for a binding (docs/25).
@@ -796,6 +882,125 @@ def _values_array(values):
     return out
 
 
+def _ignored_lines(undeclared, takeable):
+    """
+    What the reply says about a value no need declared - both doors, one copy.
+
+    `bridge.undeclared_values` decides WHICH names were dropped (row 71's rule,
+    in one place); this is only how that is said. revit_change and revit_read
+    both print it, and two copies of the sentence would drift the way two
+    copies of the rule once did.
+
+    IT IS PRINTED WITH THE RESULT rather than before it, because the dangerous
+    case is not the refusal - it is the clean success that did nothing by the
+    name you typed.
+    """
+    if not undeclared:
+        return []
+    one = len(undeclared) == 1
+    return [
+        "",
+        "  IGNORED: '%s' - %s not %s this capability takes, so %s dropped."
+        % ("', '".join(undeclared),
+           "is" if one else "are",
+           "a value" if one else "values",
+           "it was" if one else "they were"),
+        "  It takes: %s"
+        % (", ".join(takeable) if takeable else "no caller values at all"),
+        "  A mistyped name and an invented one look the same here, so "
+        "check the spelling before trusting what this run did.",
+    ]
+
+
+def _provides_lines(provides):
+    """
+    What a fragment left behind, one aligned line each - both doors, one copy.
+
+    The add-in's `Report` has already summarised every value - a collection
+    arrives as its count and its first three names - so nothing here can
+    carry the model in bulk (D-26). Empty when the fragment left nothing.
+    """
+    if not isinstance(provides, dict) or not provides:
+        return []
+    width = max(len(str(name)) for name in provides)
+    return [""] + ["  %-*s  %s" % (width, name, provides[name])
+                   for name in sorted(provides)]
+
+
+def _aim_at_pin(args):
+    """
+    Put the pinned model's identity on a fragment request, in place.
+
+    ONE COPY, FOR BOTH DOORS. revit_change and revit_read send the same three
+    keys because `RevitFragment.Run` is one method for both, and reads the
+    same three whichever door was used. The reasons are below, as they were
+    written for revit_change - on the WRITE path "too late" means committed,
+    and on the READ path it means an answer about a model nobody pointed at.
+    """
+    # THE PIN TRAVELS WITH THE REQUEST, because checking it on the reply is
+    # checking it too late - and on the WRITE path "too late" means committed.
+    # The fragment runs inside a TransactionGroup and group.Assimilate() has
+    # already kept the work by the time a reply exists, so the pinned.check()
+    # after the reply used to refuse a change that was already in the model,
+    # in a sentence saying nothing had been sent to Revit. The same defect as the
+    # selection tool's, on the one tool where the cost is the model. Found by
+    # a review 2026-09-15. The add-in refuses on this key before it opens the
+    # transaction group.
+    #
+    # Empty when this chat has not pinned a project yet, which the add-in
+    # reads as "do not check": a first request has nothing to compare
+    # against, and refusing it would make the pin unobtainable.
+    #
+    # WHERE THIS STILL GOES OUT EMPTY WITH A PIN SET, stated rather than
+    # discovered later: `project_key` is deliberately narrower than `key` and
+    # returns only a "project:" pin. A chat whose pin is path- or title-based
+    # - a FAMILY document, which has no Project Information, or a reply from
+    # an add-in too old to send one - has no key the add-in could compare, so
+    # the gate stays off and the caller's pinned.check() is the only cover.
+    # Closing that would mean the add-in comparing a compound identity rather
+    # than a project key, which is a change to the contract
+    # select_by_category shares and is not this fix.
+    args["expectProject"] = pinned.project_key or ""
+
+    # AIM THE WRITE AT THE MODEL THIS CHAT WAS POINTED AT, rather than at
+    # whatever happens to be in front of Revit.
+    #
+    # WHY THIS AND NOT THE GUARD BELOW. `expectProject` asks "did the user
+    # move?" and answers it by comparing project keys - and E11 was run in
+    # front of Revit on 2026-09-15 and FAILED. `ProjectKey` is
+    # `ProjectInformation.UniqueId`, which is inherited from the TEMPLATE: two
+    # blank projects and an unrelated PIPE.rvt open in a different Revit
+    # release all reported `8764c510-...-0000c160`. The comparison found them
+    # equal, the guard passed, and `CREATE_LEVEL ran in Project2` - a write
+    # into the model the chat was NOT pointed at, which is the one thing the
+    # guard exists to stop. Nothing is fixed by tightening a comparison whose
+    # two sides are equal and both wrong.
+    #
+    # So the question is inverted. Not "did the user move?" but "which model
+    # was I told to work on?" - which needs no key, and does not care what is
+    # on screen. It is also what the owner asked for in as many words: pin
+    # project 1, refer to project 2, and be sat in a third while it works.
+    #
+    # THE ADD-IN ALREADY DOES THIS. `RevitFragment.Run` has always accepted a
+    # `document` and found it among the open ones, refusing with
+    # `no_such_document` and listing them when it cannot. This path simply
+    # never sent one. Demonstrated end to end the same day with a FAMILY in
+    # front throughout: ten levels written into Project1 by name, verified by
+    # reading back, Project2 untouched.
+    #
+    # BOTH IDENTITIES TRAVEL, strongest first. A path tells two open models
+    # apart when they share a name, which is the case this class was built
+    # around; an unsaved model has none and falls back to the title, and the
+    # add-in refuses an AMBIGUOUS title rather than picking one.
+    #
+    # Nothing is sent before a pin exists - the first request has no model to
+    # aim at and is what obtains the pin.
+    if pinned.title:
+        args["document"] = pinned.title
+        if pinned.document_path:
+            args["documentPath"] = pinned.document_path
+
+
 @server.tool()
 def revit_change(capability: str, values: str = "",
                  expect_from: str = "") -> str:
@@ -826,6 +1031,16 @@ def revit_change(capability: str, values: str = "",
     own permission is not a permission. A capability that publishes or
     administers - sync with central, save, export, create a workset - is
     refused even then: Heron does not run those yet.
+
+    THERE IS NO PREVIEW: what this does is kept at once. That is the owner's
+    choice, recorded as D-99 - Article 9's one exception. Article 7 still
+    stands: deleting elements, purging, bulk parameter writes, family
+    reloads, workset changes and anything touching a linked model need the
+    user's explicit yes for that specific change BEFORE you call this, and
+    nothing in Heron asks for it on your behalf.
+
+    To answer a question about the model, use revit_read instead - it needs
+    no Changes switch and cannot change anything.
 
     One Ctrl+Z in Revit puts back whatever this did.
     """
@@ -918,68 +1133,10 @@ def revit_change(capability: str, values: str = "",
         "apply": "true",
     }
 
-    # THE PIN TRAVELS WITH THE REQUEST, because checking it on the reply is
-    # checking it too late - and on THIS path "too late" means committed.
-    # The fragment runs inside a TransactionGroup and group.Assimilate() has
-    # already kept the work by the time a reply exists, so the pinned.check()
-    # below used to refuse a change that was already in the model, in a
-    # sentence saying nothing had been sent to Revit. The same defect as the
-    # selection tool's, on the one tool where the cost is the model. Found by
-    # a review 2026-09-15. The add-in refuses on this key before it opens the
-    # transaction group.
-    #
-    # Empty when this chat has not pinned a project yet, which the add-in
-    # reads as "do not check": a first request has nothing to compare
-    # against, and refusing it would make the pin unobtainable.
-    #
-    # WHERE THIS STILL GOES OUT EMPTY WITH A PIN SET, stated rather than
-    # discovered later: `project_key` is deliberately narrower than `key` and
-    # returns only a "project:" pin. A chat whose pin is path- or title-based
-    # - a FAMILY document, which has no Project Information, or a reply from
-    # an add-in too old to send one - has no key the add-in could compare, so
-    # the gate stays off and pinned.check() below is the only cover. Closing
-    # that would mean the add-in comparing a compound identity rather than a
-    # project key, which is a change to the contract select_by_category shares
-    # and is not this fix.
-    args["expectProject"] = pinned.project_key or ""
-
-    # AIM THE WRITE AT THE MODEL THIS CHAT WAS POINTED AT, rather than at
-    # whatever happens to be in front of Revit.
-    #
-    # WHY THIS AND NOT THE GUARD BELOW. `expectProject` asks "did the user
-    # move?" and answers it by comparing project keys - and E11 was run in
-    # front of Revit on 2026-09-15 and FAILED. `ProjectKey` is
-    # `ProjectInformation.UniqueId`, which is inherited from the TEMPLATE: two
-    # blank projects and an unrelated PIPE.rvt open in a different Revit
-    # release all reported `8764c510-...-0000c160`. The comparison found them
-    # equal, the guard passed, and `CREATE_LEVEL ran in Project2` - a write
-    # into the model the chat was NOT pointed at, which is the one thing the
-    # guard exists to stop. Nothing is fixed by tightening a comparison whose
-    # two sides are equal and both wrong.
-    #
-    # So the question is inverted. Not "did the user move?" but "which model
-    # was I told to work on?" - which needs no key, and does not care what is
-    # on screen. It is also what the owner asked for in as many words: pin
-    # project 1, refer to project 2, and be sat in a third while it works.
-    #
-    # THE ADD-IN ALREADY DOES THIS. `RevitFragment.Run` has always accepted a
-    # `document` and found it among the open ones, refusing with
-    # `no_such_document` and listing them when it cannot. This path simply
-    # never sent one. Demonstrated end to end the same day with a FAMILY in
-    # front throughout: ten levels written into Project1 by name, verified by
-    # reading back, Project2 untouched.
-    #
-    # BOTH IDENTITIES TRAVEL, strongest first. A path tells two open models
-    # apart when they share a name, which is the case this class was built
-    # around; an unsaved model has none and falls back to the title, and the
-    # add-in refuses an AMBIGUOUS title rather than picking one.
-    #
-    # Nothing is sent before a pin exists - the first request has no model to
-    # aim at and is what obtains the pin.
-    if pinned.title:
-        args["document"] = pinned.title
-        if pinned.document_path:
-            args["documentPath"] = pinned.document_path
+    # WHICH MODEL: the pinned one, sent with the request and checked in the
+    # add-in BEFORE the transaction group opens. _aim_at_pin says why each
+    # identity travels; revit_read sends exactly the same ones.
+    _aim_at_pin(args)
 
     supplied = _values_array(values)
     if supplied:
@@ -1040,17 +1197,7 @@ def revit_change(capability: str, values: str = "",
     # nothing leaves no trace at all. It is printed with the RESULT rather
     # than before it, because the dangerous case is not the refusal - it is
     # the clean success that changed nothing by the name you typed.
-    if undeclared:
-        lines.append("")
-        lines.append("  IGNORED: '%s' - %s not %s this capability takes, so %s dropped."
-                     % ("', '".join(undeclared),
-                        "is" if len(undeclared) == 1 else "are",
-                        "a value" if len(undeclared) == 1 else "values",
-                        "it was" if len(undeclared) == 1 else "they were"))
-        lines.append("  It takes: %s"
-                     % (", ".join(takeable) if takeable else "no caller values at all"))
-        lines.append("  A mistyped name and an invented one look the same here, so "
-                     "check the spelling before trusting what this run did.")
+    lines.extend(_ignored_lines(undeclared, takeable))
 
     # WHAT IT ACTUALLY DID, AND IT USED TO BE PRINTED NOWHERE.
     #
@@ -1066,12 +1213,7 @@ def revit_change(capability: str, values: str = "",
     # A REFUSAL IS THE CASE THIS EXISTS FOR. A fragment that declined says so
     # in its results and nowhere else, and "it ran" is the one sentence that
     # makes a refusal look like a success.
-    provides = reply.get("provides")
-    if isinstance(provides, dict) and provides:
-        lines.append("")
-        width = max(len(str(name)) for name in provides)
-        for name in sorted(provides):
-            lines.append("  %-*s  %s" % (width, name, provides[name]))
+    lines.extend(_provides_lines(reply.get("provides")))
 
     # THE VERDICT IS THE ADD-IN'S TO WRITE, NOT THIS TOOL'S. It is the only
     # side that saw whether the transaction group actually held, and on
@@ -1090,6 +1232,174 @@ def revit_change(capability: str, values: str = "",
                      "negative case. Look at what it did before trusting it."
                      % (capability, status))
 
+    return "\n".join(lines)
+
+
+def _proof_line(capability, folder):
+    """
+    How far what just ran is proven, in one sentence, read from its own files.
+
+    Three answers, never merged (D-30): PROVEN and the code unchanged since;
+    PROVEN but the code has moved, so the proof describes code that no longer
+    runs; and not proven at all. A fourth - the status could not be read - is
+    said as itself, never rounded to either side.
+    """
+    found = brain.proof_status(folder)
+    if found is None:
+        return ("How far '%s' is proven could not be read just now - which is not "
+                "the same as unproven, and not the same as proven." % capability)
+
+    status = found["status"] or "not stated"
+    if status not in ("PROVEN", "PRODUCTION"):
+        return ("'%s' is %s - no recorded proof with a negative case stands behind "
+                "it. Treat this answer as a claim, and check it against the model "
+                "before relying on it." % (capability, status))
+
+    where = " on %s" % found["model"] if found["model"] else ""
+    when = []
+    if found["date"]:
+        when.append(found["date"])
+    if found["by"]:
+        when.append("signed by %s" % found["by"])
+    when = " (%s)" % ", ".join(when) if when else ""
+
+    if found["stale"]:
+        return ("'%s' was %s%s%s - BUT ITS CODE HAS CHANGED SINCE, so that proof "
+                "describes code that no longer runs. Treat this answer as unproven "
+                "until it is proved again (D-30)." % (capability, status, where, when))
+    return ("'%s' is %s%s%s, and its code has not changed since."
+            % (capability, status, where, when))
+
+
+@server.tool()
+def revit_read(capability: str, values: str = "",
+               expect_from: str = "") -> str:
+    """
+    Answer a question about the open Revit model with one of Heron's
+    capabilities that READS - and change nothing.
+
+    Use when the user asks something a capability answers - "which views have
+    no template", "find the ducts connected to nothing", "list the untagged
+    doors". Ask heron_lookup for the CAPABILITY in the user's own words, and
+    heron_resolve for the values it takes; never ask for a fragment id.
+
+    It works with Changes OFF. The fragment runs with no transaction open, so
+    Revit itself refuses any change it attempts. A capability declared above
+    ANALYZE - one that selects, changes, publishes or administers - is refused
+    here before anything is sent: a change is revit_change's.
+
+    `values` is one "name=value" per line, e.g. view=Level 1
+
+    `expect_from` names the fragment whose result this read should act on -
+    "find-views" - and Heron checks the carried values were left by THAT
+    fragment before it binds anything, exactly as revit_change does. Leave it
+    empty and the read starts clean.
+
+    It reads the model this chat is pinned to. The answer names that model and
+    says how far the capability is proven: PROVEN on a named model, PROVEN but
+    its code changed since, or never proved.
+    """
+    folder, _status = _fragment_for(capability)
+    if folder is None:
+        return ("Heron has nothing that does '%s', so nothing has been sent to Revit. "
+                "Ask heron_lookup in your own words and it will name the capability "
+                "Heron does have." % (capability or ""))
+
+    root = _repo_root()
+
+    # THE DOOR'S CEILING, FIRST - before any code is read or any session is
+    # bound, so a refusal costs nothing and touches nothing: the order
+    # revit_change keeps for risk_refusal, for the same reason. The ceiling is
+    # this tool's own declared risk (heron_tools.door_refusal says why that
+    # refuses EXECUTE too), and the fragment's risk is read by the client's
+    # one reader of that line, called and not reimplemented.
+    card = os.path.join(root, "brain", "fragments", folder, "fragment.yaml")
+    refusal = tools.door_refusal("revit_read", bridge.fragment_risk(card),
+                                 capability)
+    if refusal:
+        return refusal
+
+    source_path = os.path.join(root, "brain", "fragments", folder,
+                               "impl", "any", "fragment.cs")
+    if not os.path.isfile(source_path):
+        return ("'%s' is described but has no code behind it yet. Nothing has been "
+                "sent to Revit." % capability)
+
+    # THE SOURCE TRAVELS, NOT A NAME - for revit_change's reason.
+    with io.open(source_path, "r", encoding="utf-8") as fh:
+        source = fh.read()
+
+    needs = bridge.fragment_needs(os.path.join(root, "brain", "fragments",
+                                               folder, "fragment.yaml"))
+    if needs is None:
+        return ("'%s' could not be read with certainty - its contract is unclear, "
+                "so nothing has been sent to Revit." % capability)
+
+    # A NAME NOTHING DECLARES IS NAMED, NOT DROPPED IN SILENCE - row 71's rule,
+    # called from the client exactly as revit_change calls it.
+    undeclared, takeable = bridge.undeclared_values(_values_array(values), needs)
+
+    try:
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    # NO "apply", EVER, AND NOTHING FOR ONE TO KEEP. run_fragment_read opens no
+    # transaction, which is the whole of this door's guarantee. The chain
+    # resets unless the caller names what it means to consume - revit_change's
+    # rule and reason, and the add-in's refusal of the two together.
+    args = {"name": folder, "source": source, "needs": needs, "chain": "reset"}
+    _aim_at_pin(args)
+
+    supplied = _values_array(values)
+    if supplied:
+        args["values"] = supplied
+
+    if expect_from and expect_from.strip():
+        args.pop("chain", None)
+        args["expectChain"] = expect_from.strip()
+
+    # idempotent stays at its default, True: a read asked twice costs nothing,
+    # so a lost answer may be asked for again. The FRAGMENT timeout, because a
+    # fragment's first run in a session includes compiling it.
+    reply = session.request("run_fragment_read", op_args=args,
+                            response_timeout=configuration.fragment_timeout())
+    session.close()
+
+    failure = analyse(reply, writes=tools.writes("revit_read"))
+    if failure is not None:
+        return explain(failure)
+
+    # GOLDEN RULE 20, as revit_change keeps it: the add-in has already refused
+    # a different model on `expectProject`; this is the first call's pin, and
+    # the cover for an add-in too old to read the key.
+    wrong_model = pinned.check(reply)
+    if wrong_model is not None:
+        return wrong_model
+
+    document = reply.get("document")
+    lines = ["%s read %s." % (capability, document)]
+
+    # THE PINNED MODEL NEED NOT BE THE ONE ON SCREEN - that is what aiming at
+    # the pin means - and an answer about a window nobody is looking at is
+    # true and easy to misread. Said only when it happened.
+    if reply.get("wasActiveDocument") is False:
+        lines.append("  %s is not the model in front in Revit. The answer is about it "
+                     "all the same: it is the one this chat is working on." % document)
+
+    bound = reply.get("bound")
+    if bound:
+        lines.append("  inputs: %s" % bound)
+
+    lines.extend(_ignored_lines(undeclared, takeable))
+
+    left = _provides_lines(reply.get("provides"))
+    lines.extend(left or ["", "  It left nothing behind to report."])
+
+    lines.append("")
+    lines.append(_proof_line(capability, folder))
+    lines.append("Nothing in the model was changed: this runs with no transaction "
+                 "open, so Revit itself refuses any change.")
     return "\n".join(lines)
 
 
@@ -1158,9 +1468,9 @@ def revit_use_this_model() -> str:
 # computed from the fragments on disk now, so they cannot say DRAFT about a
 # fragment that is PROVEN - or claim nothing runs on the day something does.
 #
-# The caution they carried is kept, because it is still true where it applies:
-# a fragment that WRITES has no way to reach Revit yet, and a fragment nobody
-# has proved is still only a claim.
+# The caution they carried is kept where it is still true: a fragment that
+# WRITES reaches Revit only through revit_change and only while Changes is on,
+# and a fragment nobody has proved is still only a claim.
 
 def _repo_root():
     """This file is mcp/server/x.py, so the repository is two folders up."""
@@ -1209,16 +1519,24 @@ def _proven_split():
 
 
 def _cannot_run():
-    """What can and cannot reach Revit today."""
+    """
+    What can and cannot reach Revit today, and through which tool.
+
+    IT SAID A READ COULD RUN, AND FROM A CHAT IT COULD NOT. "Heron can now RUN
+    a read-only fragment against the open model" was true of the command line
+    and false of every chat: no tool sent `run_fragment_read`, so a host told
+    this went on to reach reads through revit_change - with Changes ON, inside
+    a transaction. It names the door now, and the door exists.
+    """
     return (
-        "Heron can now RUN a read-only fragment against the open model - D-28's "
-        "executor compiles it with Roslyn inside Revit and reports what it left "
-        "behind. A READ opens no transaction, so Revit itself refuses any "
-        "change - that guarantee is Revit's rather than Heron's. "
+        "A capability that READS runs through revit_read - D-28's executor "
+        "compiles it inside Revit with no transaction open, so Revit itself "
+        "refuses any change; it needs no Changes switch, and it refuses "
+        "anything declared above ANALYZE. "
         "A fragment that WRITES reaches Revit through revit_change, which KEEPS "
-        "what it did, and only while the owner has Changes switched ON in "
-        "Revit's ribbon. With that switch off HeronPermissions refuses it by "
-        "name and nothing is sent.")
+        "what it did with no preview (D-99), and only while the owner has "
+        "Changes switched ON in Revit's ribbon. With that switch off "
+        "HeronPermissions refuses it by name and nothing is sent.")
 
 
 def _not_proven():

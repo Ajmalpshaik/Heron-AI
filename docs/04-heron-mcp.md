@@ -93,6 +93,10 @@ Concretely:
 
 This is the practical implementation of Golden Rule 9.
 
+**What was built differs, and §8 says where.** No tool returns `REQUIRES_CONFIRMATION`. The add-in's
+gate is one switch per risk level, and `revit_change` keeps its change at once with no preview — a
+recorded exception, [D-99](DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so).
+
 ---
 
 ## 5. **[NOTE]** Version compatibility triangle
@@ -205,3 +209,73 @@ Design for it from the start:
 - Every job is cancellable, and cancellation rolls back the transaction group.
 
 If this is not designed in early it becomes very expensive to retrofit, because it changes every tool signature.
+
+---
+
+## 8. **[NOTE]** What every chat gets from the server — built 2026-09-23
+
+Four things, each derived from something that already owned the answer, so none of them is a second copy
+to drift. The tool list itself is `python mcp/server/heron_tools.py`, never a list typed here.
+
+### 8.1 A door that only reads — `revit_read`
+
+The add-in has had `run_fragment_read` since [D-28](DECISIONS.md): it runs a fragment with **no transaction
+open**, so Revit itself refuses any change, and it is declared `ANALYZE`, below the read-only ceiling —
+so it runs with **Changes OFF**. Until this tool nothing but the command line sent it, and a chat could
+reach a read only through `revit_change`, with Changes ON, inside a transaction.
+
+- **Its ceiling is its own declared risk.** `revit_read` is `ANALYZE` because its operation is, and
+  `heron_tools.door_refusal` refuses any fragment declared above that — `EXECUTE` included, because a
+  fragment that only changes the selection needs no transaction and Revit would not stop it. An
+  unreadable risk is refused too. The refusal comes **before** any session is bound or any code is read.
+- **It aims at the pinned model** through the same helper `revit_change` uses (`_aim_at_pin`), and says
+  so when that model is not the one in front.
+- **It says how far what it ran is proven**, read from the fragment's own files: `PROVEN` on a named
+  model and unchanged since, `PROVEN` but its code has moved (so the proof is stale — [D-30](DECISIONS.md)),
+  or never proved.
+- **It is not the generic executor [D-03](DECISIONS.md#d-03--mcp-tool-granularity-thick-and-specific)
+  rules out.** It takes a capability, never code: the source that runs is the library's own fragment,
+  with its declared risk and its proof.
+
+`tests/test_read_door.py` holds the ceiling over every fragment in the library, and
+`tests/test_mcp_serves.py` calls the tool through a real SDK against a stand-in Revit.
+
+### 8.2 `revit_change` keeps its change at once — and says so
+
+The owner chose on 2026-09-23 to keep `revit_change` changing at once rather than add a preview
+([D-99](DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so)),
+and Article 9 carries it as its one recorded exception. D-99 names what stands in for the preview. It
+also records what it does **not** change: **Article 7** still asks for explicit confirmation of a
+destructive change, and on this path nothing in code asks for it —
+[FRAGMENT-ISSUES row 5b-161](FRAGMENT-ISSUES.md).
+
+### 8.3 The rules reach the AI — the server's instructions
+
+The server is built with **instructions**: the Instruction Registry's `host.chat`
+([`brain/instructions/host.chat.yaml`](../brain/instructions/host.chat.yaml)), with the Constitution's
+Articles **assembled at start-up, never copied** ([23 §9](23-heron-kernel.md)). A host reads them once
+per chat, so they are short — `tests/test_instructions.py` holds a word budget — and they carry three
+house rules beside the Articles: take a change back with **Revit's own Undo**, never with a reversing
+change; a passing check means the model meets the values checked, **never "compliant"** — the engineer or
+the authority decides; and **an unfamiliar word is looked up, and asked about** when nothing records it
+([D-33](DECISIONS.md#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once),
+[D-34](DECISIONS.md#d-34--herons-own-wording-is-english-understanding-the-user-is-not-herons-job)).
+
+If they cannot be assembled the server **still starts**, and says so in the same place the rules would
+have been. The Constitution's Enforcement table now says which Articles reach every chat this way and
+which do not, and the registry test fails when the two disagree.
+
+### 8.4 Safety labels — advice to the host, never the gate
+
+Every tool carries MCP's `readOnlyHint`, `destructiveHint` and `idempotentHint`, **read off its risk in
+`heron_tools.TOOLS` as it registers** — never typed at a tool:
+
+| Risk | Read-only | Destructive | Idempotent |
+|---|---|---|---|
+| `READ`, `ANALYZE`, `SUGGEST` | yes | no | yes |
+| `EXECUTE` | no | no | yes |
+| `MODIFY`, `PUBLISH`, `ADMIN` | no | yes | **no** — asking twice can do the work twice |
+
+`openWorldHint` is not set: risk says what a tool can change, not where it reaches. A host may call a
+read-only tool without asking, which is why a **write labelled read-only** is the one wrong label that
+matters, and why the labels are derived rather than written. **The gate stays in the add-in (§4).**

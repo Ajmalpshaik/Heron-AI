@@ -77,6 +77,9 @@ Never leave a model partially modified.
 **9. Show before you change.**
 Any `MODIFY` operation that does not use a `PRODUCTION` fragment requires a preview the user has
 accepted — what will change, how many elements, what will be skipped.
+**One recorded exception, [D-99](docs/DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so):** a change the user asks for in a chat, through
+`revit_change`, is kept at once with no preview while the owner has Changes switched on. It is one
+named entry in Revit's undo list, it goes only to the pinned model, and its answer says what it did.
 *(Golden Rule 17)*
 
 **10. Never synchronise, publish or share on your own initiative.**
@@ -197,14 +200,27 @@ a partial result as complete.
 
 | Article | Enforced in code at | Also injected into agent instructions |
 |---|---|---|
-| 7, 8, 9, 10, 11, 12 | Revit add-in permission gate + transaction wrapper | yes |
-| 12a, 12b, 12c | Session binding and document pinning in the bridge; preview re-validation before execute | yes |
-| 13, 14, 15, 16, 17 | Permission layer, credential store, egress filter | yes |
-| 1, 2, 4, 20, 21 | Lifecycle gates in the registries | yes |
-| 5, 6, 16 | Physical scope separation — one store per scope | yes |
-| 18, 19 | Approval gates in the Agent HR pipeline | yes |
-| 22 | Audit log writer, non-optional | yes |
-| 3, 23, 24, 25, 26, 27 | Partly — evidence and retry policy in the Workflow Engine | yes |
+| 7, 8, 9, 10, 11, 12 | Revit add-in permission gate + transaction wrapper. **9:** the move's preview is enforced there, as a one-use approval re-counted before it writes; `revit_change` keeps its change with no preview — the recorded exception, [D-99](docs/DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so). **7:** on `revit_change` the Changes switch is all that stands — no per-operation confirmation exists in code ([FRAGMENT-ISSUES 5b-161](docs/FRAGMENT-ISSUES.md)) | every chat: 7, 8, 9, 10, 12 · assembled, not given: 11 |
+| 12a, 12b, 12c | Session binding and document pinning in the bridge; preview re-validation before execute | every chat: 12a, 12b, 12c |
+| 13, 14, 15, 16, 17 | Permission layer, credential store, egress filter | every chat: 14 · assembled, not given: 16 · no: 13, 15, 17 |
+| 1, 2, 4, 20, 21 | Lifecycle gates in the registries | no: 1, 2, 4, 20, 21 |
+| 5, 6, 16 | Physical scope separation — one store per scope | assembled, not given: 16 · no: 5, 6 |
+| 18, 19 | Approval gates in the Agent HR pipeline | no: 18, 19 |
+| 22 | Audit log writer, non-optional | assembled, not given: 22 |
+| 3, 23, 24, 25, 26, 27 | Partly — evidence and retry policy in the Workflow Engine | every chat: 27 · assembled, not given: 23, 25 · no: 3, 24, 26 |
+
+**The third column said *yes* on every row until 2026-09-23, and no Article reached a running AI.** The
+registry could assemble them and nothing handed the result to a model. Now it says which:
+
+- **every chat** — the MCP server hands the host its instructions, assembled from this file as
+  `host.chat`, so these reach the AI a modeller is talking to, once per chat.
+- **assembled, not given** — an instruction in `brain/instructions/` declares it (`agent.base`,
+  `agent.read`, `agent.modify`), and nothing that runs a model is given that instruction yet.
+- **no** — no instruction declares it.
+
+`python brain/heron_instructions.py` prints what each instruction assembles, and
+`tests/test_instructions.py` fails when this column and the registry disagree. **The second column was
+re-read in code on 2026-09-23 for Articles 7 and 9 only**; the other rows stand as accepted.
 
 Articles are assembled into an agent's instructions from this file via the
 [Prompt/Instruction Registry](docs/23-heron-kernel.md), so there is one source and no copies to drift.
@@ -226,6 +242,8 @@ and the compensating control. Articles are never weakened silently, and never by
 ([Q-35](docs/OPEN-QUESTIONS.md), [D-43](docs/DECISIONS.md)). Binding.*
 *Derived from **all 21 Golden Rules**, every one official since 2026-08-28
 ([Q-19](docs/OPEN-QUESTIONS.md)), plus Part 4 §5, §6, §29, §30, §46.*
+*Amended once, by the route above: **Article 9** gained one recorded exception on 2026-09-23, the
+owner's choice when he was asked — [D-99](docs/DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so).*
 
 > **Three stale statements were corrected on acceptance, and they are worth naming rather than quietly
 > fixing.** This file described its own basis as *"Golden Rules 1–15 (official) and 16–19 (proposed)"* —

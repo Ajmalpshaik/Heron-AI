@@ -1522,3 +1522,88 @@ def compatibility(release=None):
         "tested": matrix["tested"],
         "evidence_at": (matrix["evidence"] or {}).get("at"),
     }
+
+
+# ---------------------------------------------------------------------------
+# What every chat is told, and how far a fragment is proven
+# ---------------------------------------------------------------------------
+
+def host_instructions():
+    """
+    The words every chat is given before its first tool call - the Instruction
+    Registry's `host.chat`, with its Constitution articles ASSEMBLED from
+    HERON_CONSTITUTION.md at the moment the server starts, never copied here.
+
+    WHY THIS IS THE BRAIN'S AND NOT THE SERVER'S. The Constitution's
+    Enforcement table said its Articles were "also injected into agent
+    instructions: yes", and until this function nothing in mcp/ called the
+    registry: the server was built with no instructions at all, so the AI a
+    modeller talks to was told none of them. Which instruction, which
+    articles and in what order are the registry's to decide
+    (brain/heron_instructions.py, HOST); this only asks.
+
+    Raises BrainUnavailable, saying why, when they cannot be assembled - a
+    missing PyYAML, an unreadable Constitution, an instruction that names an
+    article that is not there. The server still starts: the Revit tools have
+    no use for the brain, and a server that refused to start over its own
+    instructions would take every tool out of the host at once.
+    """
+    try:
+        import heron_instructions as INSTRUCTIONS
+    except ImportError as exc:
+        raise BrainUnavailable(
+            "Heron's rules for this chat need PyYAML and it is not installed: %s\n"
+            "Install it with:  pip install --user pyyaml" % exc)
+
+    # NAMED, NOT SWALLOWED. compose() raises KeyError, ValueError or IOError
+    # by design, and a malformed instruction file raises PyYAML's own error,
+    # which is none of those. Every one of them ends in the same place - a
+    # server with no rules to give - so every one is turned into a sentence
+    # that says which, rather than one of them escaping and stopping the
+    # server before a single tool is registered.
+    host = getattr(INSTRUCTIONS, "HOST", None)
+    try:
+        text, _used = INSTRUCTIONS.compose(host)
+    except Exception as why:                                   # noqa: BLE001
+        raise BrainUnavailable(
+            "Heron's rules for this chat could not be assembled (%s: %s). "
+            "`python brain/heron_instructions.py %s` on this machine says why."
+            % (type(why).__name__, why, host))
+    return text
+
+
+def proof_status(folder):
+    """
+    How far one fragment is proven, as data - or None when it cannot be read.
+
+        {"status": "PROVEN", "stale": False, "date": "2026-09-08",
+         "model": "Snowdon-scratch ... Revit 2024", "by": "Ajmal PS"}
+
+    READ FROM THE FRAGMENT'S OWN FILES, never from the retrieval index, for
+    the reason the server gives for every status it prints: a status is a
+    fact about a file, and the index is a cache of it that has been stale
+    before. `stale` is D-30's fingerprint - True when the implementation
+    moved after the proof was taken, which makes the proof describe code that
+    no longer runs.
+
+    None rather than a guess. A caller told None says the status could not be
+    read; it never says PROVEN.
+    """
+    try:
+        import heron_fragment as FRAGMENT
+    except ImportError:
+        return None
+
+    try:
+        frag = FRAGMENT.load(os.path.join(ROOT, "brain", "fragments", folder))
+    except (ValueError, OSError):
+        return None
+
+    proof = frag.proof if isinstance(frag.proof, dict) else {}
+    return {
+        "status": str(frag.status or "").upper() or None,
+        "stale": bool(proof) and frag.proof_is_stale(),
+        "date": str(proof.get("date") or "") or None,
+        "model": str(proof.get("model") or "") or None,
+        "by": str(proof.get("by") or "") or None,
+    }
