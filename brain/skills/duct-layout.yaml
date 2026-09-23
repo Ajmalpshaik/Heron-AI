@@ -1,0 +1,76 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: duct-layout
+name: Duct a unit to its diffusers
+domain: revit.hvac
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Connects each fan coil unit to the supply diffusers of the room in front of
+  it with rigid ductwork - a straight main out of the unit, a tap for every
+  branch, a radius elbow down onto every diffuser - in three calls however
+  many rooms there are, at whatever angle each room sits.
+
+# The words Ajmal actually says, not the words the technique is named after.
+utterances:
+  - connect the diffusers to the units
+  - duct the diffusers to the fan coil unit
+  - draw the supply duct from the unit to the diffusers
+  - connect all the diffusers to these units with duct
+  - run the ductwork from each unit to its room
+
+# CAPABILITIES, never fragment ids. A fragment can be replaced, split or
+# retired without this file changing - that is what the registry is for.
+needs:
+  # Read first: where every unit outlet and diffuser neck is, which way it
+  # faces and whether it is supply or return. The route is worked out from
+  # these, in each unit's own direction, before anything is drawn.
+  - REPORT_CONNECTORS
+  # Then three calls, whatever the size of the job.
+  - CREATE_DUCT_RUNS
+  - FIT_MEP_JOINTS
+  - CONNECT_OPEN_ENDS
+  # And the proof: every duct and fitting joined at every end.
+  - SELECT_BY_CONNECTION_STATUS
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - the units and the diffusers are placed, and each diffuser's system - supply or return - is set by its family
+  - the duct type's routing preference has the fitting the owner wants at a branch - Taps, not Tees
+  - every drop, from the main down to a diffuser neck, is longer than the duct type's elbow leg plus some straight duct
+  - the piece leaving the unit at the outlet's own size is longer than the transition that follows it
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  THE OWNER'S RULES, each stated after it was got wrong once (2026-09-23/24,
+  Project1, Revit 2024). Rigid duct, never flexible. A branch TAPS into the
+  side of the main - draw the main as one straight run and start each branch on
+  its centreline; only the last branch turns off the main's end, with an elbow.
+  Radius elbows when he is choosing. The main leaves the unit straight, at the
+  outlet's own height: if the drops need more height, RAISE THE UNIT, never
+  put a sudden rise in the duct at the unit. A distance "from the wall" is to a
+  diffuser's centre, or to a unit's supply connector - not to the unit's box.
+
+  THE NUMBERS THAT BROKE A RUN, measured the same days. A 300x300 "1.5 W"
+  radius elbow reaches 450 mm along each leg, so a drop needs the neck, plus
+  450, plus straight duct - 321 mm fitted a mitered elbow and not a radius one.
+  An 850x195 to 300x300 transition is 664 mm long and sits on the larger run's
+  side, so the outlet-sized piece is drawn at least 700 mm long. Too short
+  either way and Revit turns the duct inside out - "modified to be in the
+  opposite direction" - and the whole job rolls back.
+
+  NOT CONNECT_AIR_TERMINALS. NEEDS-CHECKING AJ1 / FRAGMENT-ISSUES 5b-187: it
+  lifts the diffuser onto the duct and makes no tap. The drop is built instead.
+
+  THE RETURN IS NOT HERE YET. A unit whose return outlet faces away from its
+  room needs the owner's decision on the route - over the unit, or the unit
+  turned round - before a return skill can be written.

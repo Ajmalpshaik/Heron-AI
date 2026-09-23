@@ -1,0 +1,126 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-051
+semantic-identity: "put the fitting every joint in these runs calls for, all in one go"
+kind: action
+domain: revit.mep
+capability: FIT_MEP_JOINTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Finds every point where two, three or four open duct or pipe ends meet among
+  the runs handed in, and puts the fitting the geometry calls for at each one -
+  elbow, tee, transition, union or cross - in ONE call and ONE undo step.
+
+  **It exists because one-joint-per-call was the slow half of drawing a run.**
+  On 2026-09-23 five rooms of supply duct took 25 quick CREATE_DUCT calls and
+  then 90 calls for the fittings - a selection and a PLACE_MEP_FITTING for each
+  of 45 joints - although every joint was fully known the moment the ducts were
+  drawn. The owner's words: make the ducts, and then the path is known, so the
+  fittings can be made at one time.
+
+  **The fitting is chosen exactly as PLACE_MEP_FITTING chooses it**, and that is
+  the rule Revit follows when one duct is dragged onto another: two ends at an
+  angle make an elbow, two in line a union or - if the size changes - a
+  transition, three a tee whose main is the most nearly head-on pair, four a
+  cross. Nobody should have to name the fitting.
+
+  **A branch drawn to the side of a main gets a TAP.** An end that lands on
+  another run's axis, clear of both its ends, is joined with Revit's takeoff and
+  the main is not cut - how a duct type whose routing preference is "Taps" wants
+  its branches. The owner's correction, the same day: tap, not tee. Draw the
+  main as one straight run and start each branch on its centreline; draw the
+  main split at the branch points and three ends meet there, which is a tee.
+  Which tap family is built is the duct type's routing preference.
+
+  **Any other lone end is not a joint.** The end at a unit's outlet or on a
+  diffuser's neck has nothing meeting it, so it is counted in `freeEnds` and
+  left alone. CONNECT_OPEN_ENDS joins those to the equipment and terminals
+  afterwards.
+
+  **All or nothing.** If any joint cannot be fitted the whole job is rolled
+  back and every failed joint is named, with where it is and Revit's words
+  (Article 8). A run with forty-four fittings of forty-five looks finished and
+  carries no air past the gap.
+
+  **Nothing is moved to close a gap.** Ends are grouped only when they already
+  sit within the tolerance of one another.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The runs - ducts or pipes. Anything else handed in is counted in
+    # notMepCurve and ignored.
+    - name: elements
+      type: IList<Element>
+    # How close two ends must be to count as meeting. A rounding gap, not a
+    # hole: 1 mm is the value that was used on the first real run.
+    - name: toleranceMm
+      type: double
+      source: request
+  provides:
+    - name: fitted
+      role: result
+      type: int
+    - name: created
+      role: result
+      type: IList<ElementId>
+    # The whole answer as ONE string, because a string reaches the reader
+    # whole and a list is cut to three items of sixty characters.
+    - name: summary
+      role: result
+      type: string
+    - name: freeEnds
+      # Ends with nothing meeting them, so not joints at all - left open on
+      # purpose for CONNECT_OPEN_ENDS. The evidence it looked (D-52).
+      role: accounting
+      type: int
+    - name: notMepCurve
+      # Handed in but not a duct or pipe, so there was nothing here to fit.
+      # A count of what it was GIVEN and could not use (D-52).
+      role: accounting
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  The same Revit calls as PLACE_MEP_FITTING and nothing else -
+  `Document.Create.NewElbowFitting`, `NewTransitionFitting`, `NewUnionFitting`,
+  `NewTeeFitting` and `NewCrossFitting`, with `MEPCurve.ConnectorManager`,
+  `Connector.Origin`, `Connector.IsConnected`, `Connector.CoordinateSystem` and
+  `Connector.Radius` / `Width` / `Height` - all unchanged 2020 to 2027.
+
+  Millimetres to feet is arithmetic - divide by 304.8, per D-20.
+
+# ROUTING - the neighbours this must not be confused with.
+#
+#   "fit all the joints"            -> here
+#   "put the elbows and tees in"    -> here
+#   "join these two"                -> PLACE_MEP_FITTING - one joint
+#   "connect the open ends"         -> CONNECT_OPEN_ENDS - ends already at one
+#                                      point, no fitting added; it is what joins
+#                                      the free ends this leaves
+#   "draw a duct from here"         -> CREATE_DUCT, which this follows
+#   "connect the diffusers to the
+#    duct"                          -> CONNECT_AIR_TERMINALS - but NEEDS-CHECKING
+#                                      AJ1 saw it lift terminals; see its card
+
+utterances:
+  - fit all the joints
+  - put the fittings in
+  - add the elbows and tees
+  - make all the fittings at one time
+  - join every duct end
+  - fit the whole run
+  - place fittings at every joint

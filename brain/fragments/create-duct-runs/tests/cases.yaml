@@ -1,0 +1,25 @@
+positive:
+  - given: five mains, each an 850x195 outlet run then a 300x300 run, and twenty 300x300 branches, in one call
+    expect: >
+      every run drawn as consecutive segments at its own size, the sizes read
+      back unchanged, and the new ducts left as elements for FIT_MEP_JOINTS
+
+  - given: a run with no size
+    expect: drawn at the duct type's own size, and not counted in sized
+
+negative:
+  - given: one run of twenty with a point written 3075;-2100 instead of x,y,z
+    expect: >
+      THROWS before a single duct exists, naming the run and the point - a
+      typing mistake in the last run must not leave the first nineteen drawn
+
+  - given: a size the duct type snaps, or a round size on a rectangular type
+    expect: >
+      THROWS and rolls everything back, naming the segment, what was asked and
+      what the duct type made it
+
+  - given: two consecutive points closer than Revit's short-curve tolerance
+    expect: refused by name with the rest rolled back - no duct can exist there
+
+second_route:
+  - CREATE_DUCT once per run followed by SET_MEP_SIZE per size, over the same points - the ducts are the same, segment for segment
