@@ -48,6 +48,11 @@ WHAT IT PROVES
      the registry labels read-only - two that move the chat onto another
      Revit or model, and the preview that leaves a move waiting - and no
      label covers what those change.
+  7. AN AGENT THAT WRITES FILES NAMES NO TOOL THAT REACHES REVIT.
+     `heron-fragment-author` writes new fragments at DRAFT, and nothing at
+     runtime stops a DRAFT fragment from running. Article 11 is kept by its
+     tool list, so no `revit_*` tool may appear on it - reads included,
+     because `revit_read` executes a fragment too.
 
 WHAT IT DOES NOT PROVE
   That an agent's report is right. That takes a run against a named model.
@@ -172,14 +177,37 @@ def main():
               "registry%s" % (filename, "" if not labelled else
                               " - not: %s" % ", ".join(labelled)))
 
+    # AN AGENT THAT WRITES CODE MAY NOT RUN IT. Article 11: untested code
+    # never touches a live model, and a DRAFT fragment is not stopped at
+    # runtime - revit_change and revit_read run it with a warning. So an
+    # agent that can write files is given no Heron tool that reaches Revit
+    # at all, reads included: revit_read executes a fragment too.
+    print("\nWhat an agent that writes files may call")
+    writers = []
+    for filename in agents:
+        _, tools, _ = frontmatter(read(os.path.join(AGENTS, filename)))
+        if tools is not None and {"Write", "Edit"} & set(tools):
+            writers.append((filename, tools))
+    check(len(writers) >= 1,
+          "found %d agent(s) that write files - enough to be checking "
+          "something" % len(writers))
+    for filename, tools in writers:
+        reaching = sorted(t[len(PREFIX):] for t in tools
+                          if t.startswith(PREFIX + "revit_"))
+        check(not reaching,
+              "%s: writes files and names no tool that reaches Revit%s"
+              % (filename, "" if not reaching else
+                 " - but names %s" % ", ".join(reaching)))
+
     print()
     if FAILURES:
         print("FAILED")
         for one in FAILURES:
             print("  - %s" % one)
         return 1
-    print("PASSED - every background agent reads, and every tool it names is "
-          "one the server has.")
+    print("PASSED - every background agent reads, every agent that writes "
+          "files cannot reach Revit, and every tool named is one the server "
+          "has.")
     return 0
 
 

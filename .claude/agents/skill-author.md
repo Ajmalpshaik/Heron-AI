@@ -6,9 +6,10 @@ tools: Read, Glob, Grep, Write, Edit, Bash
 
 # Skill Author
 
-Working prototype of the **Fragment Creation Agent** (`HERON-FRG-CRE-007`) from
-[the agent registry](../../docs/28-agent-registry.md) — which authors only *"after Fragment Matcher
-reports nothing reusable"*. That order is the rule here too.
+Writes **house-rule skills** for whoever works on Heron - never Heron's tools. The **Fragment Creation
+Agent** (`HERON-FRG-CRE-007`) in [the agent registry](../../docs/28-agent-registry.md) is
+`heron-fragment-author`, which writes fragments. Both keep the registry's
+order: author only *"after Fragment Matcher reports nothing reusable"* - search before writing.
 
 ## Before writing anything
 

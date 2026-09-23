@@ -42,7 +42,7 @@ start package by package, as each one merges.
 | C4 | Each row whose **code** changed: `connect-air-terminals` reporting a terminal that moved, and reporting nothing when none did; the sizing fragments' open-connector count before and after; every other re-proof C4 listed | named models, built for the case |
 | C4, and the owner's own usage ([01 §5](01-findings.md)) | Prove the three jobs he used most that are still DRAFT: `FIND_CLASHES`, `CONNECT_AIR_TERMINALS`, `CENTER_ROOM_TAGS` | named models |
 | C5 | A recorded word looked up, and an unrecorded one asked about; grayout run as **one** undo on a view, reporting what stuck | a named model |
-| C7 | Its first real use: one missing capability from C9 written, then proved | a named model |
+| C7 | Its first real use: one missing capability the owner names, written, then proved - C9, which was to supply it, was dropped on the owner's word 2026-09-24 | a named model |
 | C8 | A ceiling check that sees an element in a **linked** model and says how many links it read; the central-status column; a placeholder sheet created | a model with a linked architectural model; a workshared central |
 | C9 | Terminal layout from a space's airflow, supply and return alternating; the return-airflow mode; duct routing from an FCU to its terminals with the end cap and the 200 mm reducer — each method end to end | named models |
 | C10 | Tags placed on the side that reads, then any overlaps resolved; a sprinkler layout checked against his loaded edition | named models; his NFPA edition in company scope |

@@ -34,20 +34,21 @@ A skill that drifts from the code is worse than no skill, because it is believed
 That applies to using one as much as to changing code: if guidance here turns out to be mistaken,
 incomplete or stale while you are following it, correcting it is part of the task you are already doing.
 
-Four agents in [`../agents/`](../agents) carry that work, each a working prototype of an agent already
-specified in [the registry](../../docs/28-agent-registry.md):
+Four agents in [`../agents/`](../agents) carry that work, three of them working prototypes of an agent
+already specified in [the registry](../../docs/28-agent-registry.md):
 
 | Agent | For | Registry |
 |---|---|---|
 | `skill-finder` | Finding which skill applies, and saying when none does | `HERON-RAG-SMT-005`, `HERON-RAG-RNK-006` |
-| `skill-author` | Writing a new skill, once nothing existing covers it | `HERON-FRG-CRE-007` |
+| `skill-author` | Writing a new skill, once nothing existing covers it | none - `HERON-FRG-CRE-007`, which it once claimed, is `heron-fragment-author` below |
 | `skill-maintainer` | Correcting one that has drifted from the code | `HERON-FRG-EVO-005`, `HERON-FRG-UPD-008` |
 | `skill-recorder` | Capturing what a session learned, before it is lost | `HERON-LRN-EXT-003` |
 
 The same folder also holds `heron-*.md` files, and they are **a different kind of thing**: not house
-rules for whoever works on Heron, but Heron's own background agents for a modeller - the first is
+rules for whoever works on Heron, but Heron's own agents for a modeller - the first is
 `heron-model-auditor`, which audits the open model with Heron's read tools while the modeller keeps
-working. They sit here only because this is where the host reads agents from.
+working; `heron-fragment-author` writes a new Heron tool at DRAFT when nothing in the library does the
+job, and cannot run it. They sit here only because this is where the host reads agents from.
 [PROJECT-MAP](../../docs/PROJECT-MAP.md) says where they fit; `tests/test_agent_tools.py` holds what
 they may call.
 
