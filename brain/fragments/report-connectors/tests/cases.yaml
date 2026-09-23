@@ -24,6 +24,35 @@ positive:
       facing near (0, 0, -1). The direction is the whole reason this is read
       from geometry rather than from a schedule
 
+  - given: a supply diffuser and a return grille, or an AHU with both
+    expect: >
+      "DomainHvac SupplyAir" opening the supply connector's line and
+      "DomainHvac ReturnAir" the return's. Compare each against the connector's
+      System Classification in Revit - an OPEN connector read SupplyAir in
+      Project1 on 2026-09-23, though the API documents an unconnected
+      connector's system type as undefined
+
+  - given: a plumbing fixture, or a pipe
+    expect: >
+      "DomainPiping" followed by its pipe system type - DomesticColdWater,
+      Sanitary and the like - and never a duct system type. Asking a piping
+      connector for its duct system type throws, which is why each is asked
+      only inside its own domain
+
+  - given: a straight duct with one end open
+    expect: >
+      whatever its open end says, recorded as it came. NOT YET READ ON A REAL
+      MODEL: the API calls an unconnected connector's system type undefined,
+      so `UndefinedSystemType` there would be Revit's answer rather than a
+      fault. The joined end should carry the run's own system
+
+  - given: any selection with connectors
+    expect: >
+      `connectorSummary` carrying every line of `connectorFacts`, element by
+      element in the order the elements were handed in, each as "element <id>:"
+      and its lines, the elements joined by "  ||  ". Through a chat it prints
+      whole, where the dictionaries print only how many entries they hold
+
 negative:
   - given: a connector whose `IsConnected` is true with nothing physically joined
     expect: >
@@ -42,11 +71,26 @@ negative:
       its id in `noConnectors` and no entry in `connectorFacts`. Not a failure,
       a fact about the element - and the rest of the set must still be reported
 
+  - given: a selection with no connector anywhere in it - walls, spaces
+    expect: >
+      `connectorSummary` EMPTY, an empty string and not a sentence saying so.
+      The proving tool reads any sentence as a shape it cannot count, so a note
+      there would fail the negative leg of a correct answer
+
   - given: an ELECTRICAL connector, which has no profile and throws on Shape
     expect: >
       a line carrying its domain, origin and direction with the size reported
-      as unavailable. A dropped connector would read as equipment having fewer
-      connections than it has
+      as unavailable, and nothing after the domain - no system word, and no
+      throw from asking for one. A dropped connector would read as equipment
+      having fewer connections than it has
+
+  - given: a selection holding more than 50 connectors
+    expect: >
+      `connectorSummary` stopping at a whole element - the first one in full
+      whatever its count - and ending "N more element(s) with M connector(s)
+      not listed here - select fewer to see them", where N plus the elements
+      listed is the number of entries in `connectorFacts`. Every element keeps
+      its entry there; only the one string stops (D-26)
 
   - given: a mixed set of ducts, equipment and walls
     expect: >

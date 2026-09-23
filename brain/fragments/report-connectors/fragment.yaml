@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,14 +9,21 @@ semantic-identity: "what connectors are on this thing, where they point, and wha
 kind: action
 domain: revit.mep
 capability: REPORT_CONNECTORS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
 purpose: >
-  Lists every MEP connector on the given elements - domain, shape, size, where
-  it sits and which way it faces - and, for each one, the elements REALLY
-  joined to it. Read-only.
+  Lists every MEP connector on the given elements - domain and, on a duct or
+  pipe connector, its system classification (Supply Air, Return Air and the
+  rest), shape, size, where it sits and which way it faces - and, for each
+  one, the elements REALLY joined to it. Read-only.
+
+  **THE WHOLE LIST ALSO COMES BACK AS ONE LINE OF TEXT**, `connectorSummary`,
+  because a chat is sent only how many entries a dictionary holds: through a
+  chat this answered `connectorFacts 1 entry(ies)` and nothing else (Project1,
+  Revit 2024, 2026-09-23). It stops after 50 connectors, at a whole element,
+  and says how many it left out.
 
   **`IsConnected` IS AN INTENT FLAG, NOT A FACT, AND IT HAS BEEN WRONG IN A
   REAL MODEL.** A connector can report `true` with nothing physically joined to
@@ -65,6 +72,17 @@ contract:
       # the air stops at a gap.
       role: result
       type: IList<ElementId>
+    - name: connectorSummary
+      # Every line of `connectorFacts`, element by element, as ONE string. A
+      # reply prints a dictionary as its size alone, so through a chat the
+      # three above arrived as `1 entry(ies)` each and the connectors
+      # themselves never arrived at all (Project1, Revit 2024, 2026-09-23).
+      # A RESULT, and EMPTY when nothing had a connector: an empty string is
+      # what the proving tool reads as nothing found, where any sentence is a
+      # shape it cannot count. Stops after 50 connectors, at a whole element,
+      # and its last part says how many it left out (D-26).
+      role: result
+      type: string
     - name: noConnectors
       # Elements with no connectors to list, so it could not be reported on.
       # The evidence it looked, never a thing it found (D-52).
@@ -95,12 +113,30 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. `ConnectorManager`, `Connector.AllRefs`,
-  `Domain`, `Shape`, `Origin` and `CoordinateSystem` are unchanged 2020 to 2027.
+  `Domain`, `Shape`, `Origin` and `CoordinateSystem` are unchanged 2020 to 2027,
+  and so are `DuctSystemType` and `PipeSystemType` - each documented, on every
+  release, as throwing InvalidOperationException on a connector whose domain is
+  not its own, so each is read only inside its own domain and guarded there.
   The size properties are the version-independent risk instead: `Radius` is only
   there on a round connector and `Width`/`Height` only on a rectangular one, and
   the wrong one THROWS rather than returning zero - on every release. Each is
   guarded, and an electrical connector, which has no profile at all, is reported
   with its domain and no size rather than being dropped.
+
+# BACK TO DRAFT ON 2026-09-23, AND THE PROOF ABOVE IS KEPT AS THE RECORD OF
+# WHAT WAS RUN.
+#
+# The proof was taken on the code as it stood. The code then changed: every
+# connector line now carries its duct or pipe system type after the domain -
+# "DomainHvac SupplyAir" - and `connectorSummary` was added, the whole answer
+# as one string, because through a chat the three dictionaries arrived as
+# counts and the connectors never arrived at all. Nothing the proof recorded
+# is contradicted, but it describes code that no longer runs, so its
+# fingerprint no longer matches, and it must NOT be re-stamped: re-taking it on
+# a named model is the only thing that makes this PROVEN again (D-30).
+# NEEDS-CHECKING AM1 says what to arrange, and
+# tools/jobs/report-connectors-project1-2026-09-23.yaml is that arrangement.
+# FRAGMENT-ISSUES 5b-195.
 
 # ROUTING - the same rows are in the fragments named here.
 #
@@ -132,3 +168,4 @@ utterances:
   - is anything connected to this
   - what size is the spigot
   - report the connectors
+  - is this connector supply or return

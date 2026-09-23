@@ -1,0 +1,54 @@
+# The re-proof of report-connectors, 2026-09-23 - NEEDS-CHECKING AM1,
+# FRAGMENT-ISSUES 5b-195.
+#
+#     python tools/batch-prove.py tools/jobs/report-connectors-project1-2026-09-23.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-connectors-project1-2026-09-23.yaml
+#
+# WHY IT IS PROVED AGAIN. It was PROVEN on Snowdon Towers Sample HVAC on
+# 2026-09-07. Its code then changed: every connector line carries its duct or
+# pipe system type after the domain, and `connectorSummary` carries the whole
+# answer as one string, because through a chat its three dictionaries arrived
+# as counts and the connectors never arrived at all. The old proof describes
+# code that no longer runs, so the card is DRAFT until this passes and is
+# signed (D-30).
+#
+# THE ARRANGEMENT IS ONE PROJECT1 HAS ANSWERED BEFORE, not a new guess. Ducts
+# in the floor plan "1 - Mech" were the positive of a dozen earlier Project1
+# jobs - 18 of them were scanned there on 2026-09-19, and the model has been
+# worked on since, so the count is the model's to say. Walls in the same plan
+# have no MEP model at all: every one must land in `noConnectors`, and the
+# answer must be EMPTY - `connectorSummary` an empty string, each dictionary
+# `0 entry(ies)`. A sentence in `connectorSummary` on that leg is the failure
+# this job exists to catch.
+#
+# Past 50 connectors the summary stops at a whole duct and its last part says
+# how many were left out. That is a pass as well - it is what the cap is for.
+#
+# WHAT TO READ IN THE POSITIVE, beyond the verdict: the word after `DomainHvac`
+# on each OPEN duct end. The API calls an unconnected connector's system type
+# undefined, yet an OPEN connector read SupplyAir in Project1 on 2026-09-23 -
+# this is the first reading of a duct's own open end.
+#
+# NOT SET HERE: `in:`. Without it the run reads the model in front. If Project1
+# is open but not in front, add `in:` under `defaults:` with its title as Revit
+# shows it. With two Revits connected to Heron, add `--session <process id>` to
+# both commands.
+#
+# THE CHAIN'S VALUES ARE `setup-set`, NOT `set`. The fragment takes nothing but
+# the selection, so a `set:` here would reach it as values it does not take.
+
+model: Project1, Revit 2024 - floor plan "1 - Mech"
+
+defaults:
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  - fragment: report-connectors
+    setup-set:
+      categoryName: Ducts
+      inViewOnly: "1 - Mech"
+    negative-setup-set:
+      categoryName: Walls
+      inViewOnly: "1 - Mech"
