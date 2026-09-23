@@ -1811,6 +1811,35 @@ reads a decision's Status and Date from the lines under its heading, so its tabl
 **To add a decision, write it into DECISIONS.md in full, as always, and run this.** It moves the new one into its
 file and leaves every decision already split alone. [`tests/test_split_decisions.py`](../tests/test_split_decisions.py).
 
+## `check-decision-titles.py` - a decision number means one decision for ever
+
+```bash
+python tools/check-decision-titles.py                        # against HEAD's history
+python tools/check-decision-titles.py --published origin/main # against what main has published
+```
+
+**A gate: CI's gates job runs it, with `--published HEAD^1`.** It reads every decision heading in
+[`docs/DECISIONS.md`](../docs/DECISIONS.md) and the git history of that file, and fails when a number's heading
+no longer carries the title the number was first written with, when a title turns up under a number it was not
+first written under, when a number leaves the log, or when a `decisions/D-NN.md` record stops opening with its
+heading. `check-docs.py` checks that no number is defined twice at once; nothing checked that a number KEPT its
+decision, and five did not - [rows 5b-157 and 5b-171](../docs/FRAGMENT-ISSUES.md).
+
+**It reads history because the tree cannot show what went wrong.** The first D-45 to D-49 were not edited away:
+a merge on 2026-09-02 kept one branch's log whole and dropped the other's five. A list of titles kept in the tree
+passes through a merge like that exactly as the log does. Only the history still holds both sides - which is why
+it walks `--full-history`: git's default walk drops the side a merge threw away, and with it the evidence.
+
+**The one excuse lives in the decision.** A changed title passes only when the decision's own `**Numbering:**`
+line quotes the title it was first written with; a moved title only when that line names the number it had.
+D-45, D-46, D-97 and D-98 carry such lines. Titles that changed before the check existed are named one by one in
+its `KNOWN` table, and an entry that stops being needed fails the run, so that list only shrinks.
+
+**It exits 2 in a shallow clone** - CI's default checkout, and a cloud session's - rather than pass on history
+it cannot see. `git fetch --unshallow` first; the gates job fetches the whole history for it.
+[`tests/test_check_decision_titles.py`](../tests/test_check_decision_titles.py) builds its own repositories, so
+it runs anywhere.
+
 ---
 
 ## `review-ledger.py` - which files have been read, word by word

@@ -150,7 +150,7 @@ real edit does.
 
 | | |
 |---|---|
-| All nine CI gates | yes |
+| Every CI gate | yes - `check-decision-titles` after `git fetch --unshallow`, since a session starts from a shallow clone |
 | The C# compiles, Revit 2020–2027 | yes — `python tools/check-compile.py` |
 | Every fragment's C#, against every release it claims | yes |
 | Every test suite but the three below | yes |
