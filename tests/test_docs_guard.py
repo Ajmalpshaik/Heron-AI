@@ -59,6 +59,10 @@ WHAT IT PROVES
   8. A HIT INSIDE A PROVEN FRAGMENT'S impl/ WAITS for its re-proof rather
      than failing the run, because fixing it makes the proof stale (D-30).
 
+  9. A DECISION REFERENCE IS COMPARED WITH THE LOG WHATEVER THE LENGTH OF
+     ITS NUMBER. It read exactly two digits, so from D-100 on a mistyped
+     number passed unread (row 5b-184).
+
 WHAT IT DOES NOT PROVE
   That the README is WRITTEN by anybody. Nothing generates it, and after
   D-77 nothing is scheduled to. The rows are closed on the guarding half
@@ -321,6 +325,25 @@ def main():
             check("0 finding(s) that fail, 1 waiting" in hygiene,
                   "and it is not counted as a failure")
             io.open(target, "w", encoding="utf-8").write(kept)
+
+        print("\n9. a decision reference is compared with the log whatever "
+              "the length of its number")
+        # The references were read as exactly two digits, so from D-100 on
+        # none was compared with the log (FRAGMENT-ISSUES row 5b-184). It is
+        # a report, not a failure - so it is the report that is read here.
+        kept = io.open(arch, encoding="utf-8").read()
+        io.open(arch, "w", encoding="utf-8").write(
+            kept + chr(10) * 2 + "See D-999, and D-98 beside it." + chr(10))
+        code, out = run_guard(tree)
+        said = [line for line in section(out, "3. DECISIONS").split(chr(10))
+                if "REFERENCED BUT NOT DEFINED" in line]
+        said = said[0] if said else ""
+        check("'D-999'" in said,
+              "a reference to D-999, which the log does not define, is "
+              "reported as referenced but not defined")
+        check("'D-98'" not in said,
+              "and D-98 beside it, which the log does define, is not")
+        io.open(arch, "w", encoding="utf-8").write(kept)
 
         code, _out = run_guard(tree)
         check(code == 0,
