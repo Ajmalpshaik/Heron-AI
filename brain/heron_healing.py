@@ -100,7 +100,7 @@ DERIVED = {
 # single file let every one of them fall through to the generic refusal:
 # still refused, no longer saying what it protects (FRAGMENT-ISSUES row
 # 5b-172). The archive's README is its tool's index, so only its group files
-# are named.
+# are named. OPEN-QUESTIONS.md is one file per section since 2026-09-23.
 SOURCES_OF_TRUTH = (
     ("brain/fragments", "the fragment library - each one is written and "
                         "proved, and nothing regenerates a proof"),
@@ -110,6 +110,8 @@ SOURCES_OF_TRUTH = (
     ("docs/decisions/", "one decision's full record - what was chosen, "
                         "which cannot be re-derived from the code"),
     ("docs/OPEN-QUESTIONS.md", "open questions"),
+    ("docs/open-questions/", "one section of the open questions, which only "
+                             "the owner answers"),
     ("docs/NEEDS-CHECKING.md", "the register of what nothing has proved"),
     ("docs/needs-checking/", "one group of the register of what nothing "
                              "has proved"),

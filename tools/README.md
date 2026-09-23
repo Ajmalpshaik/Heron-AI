@@ -322,7 +322,7 @@ the case underneath: a sentence claimed by a **READ** fragment and answered by o
 There the failure is not a wrong table, it is *the model changed on a question*. Those print above the
 flat list with both risk levels named. The first run found **six, four of them invisible until that
 moment** — *"follow the pipe"* was reaching `OFFSET_ELEMENTS`, which does not return a wrong route, it
-shifts the run sideways. See [D-47](../docs/DECISIONS.md).
+shifts the run sideways. See [D-101](../docs/DECISIONS.md).
 
 ---
 
@@ -1665,7 +1665,7 @@ passing, in another tool's section. Each tool's own header says more - this is w
 | [`balance-of-work.py`](balance-of-work.py) | What is left to do, in one place - read back from the tools that each know part of it (`check-gaps`, `owner-queue`, `open-defects`, `agent-count`), every figure beside the command that derives it. `--write` regenerates the note. A report: always exits 0 |
 | [`build-release-assets.py`](build-release-assets.py) | Builds every product for every Revit release, in **Release** configuration only, and lays the results out as a GitHub release's assets - one zip per product per release, named from the manifest. **Nothing in it names a product**: the list is read from `platform/heron-products.json` |
 | [`check-products.py`](check-products.py) | **One of the gates CI decides on.** The product manifest nothing compiles: a duplicate `addInId` (a load failure, not a warning), a `partOf` typo (a tick vanishes from the installer with no error), and a Revit release the repository does not build |
-| [`cloud-setup.sh`](cloud-setup.sh) | Not run from a checkout: **pasted into a Claude Code cloud environment's setup box**. Installs the .NET 10 SDK, `python-is-python3` and the Python packages, gives the session somewhere to keep knowledge, and warms the store and the NuGet cache. [38](../docs/38-the-cloud-environment.md) says what goes in the other boxes |
+| [`cloud-setup.sh`](cloud-setup.sh) | Not run from a checkout: **pasted into a Claude Code cloud environment's setup box**. Installs the .NET 10 SDK, `python-is-python3` and the Python packages, gives the session somewhere to keep knowledge, and warms the store and the NuGet cache. It must exit 0, so its last lines name whatever did not arrive; [`test_cloud_setup.py`](../tests/test_cloud_setup.py) runs it in a sandbox against the refusals of 2026-09-22 (row 5b-167). [38](../docs/38-the-cloud-environment.md) says what goes in the other boxes |
 | [`deploy-addin.ps1`](deploy-addin.ps1) | Copies the built add-in and its manifest into the current user's Revit add-ins folder - **no administrator rights** - and refuses an assembly built for another release's runtime. `-Remove` uninstalls, `-Rollback` puts back the install it last replaced. Revit must be closed |
 | [`module-reach.py`](module-reach.py) | Who imports each module in `brain/`, in four buckets, and which ones a conversation can actually reach by following imports from `mcp/`. **It decides nothing**: a report, exit 0 |
 | [`prove-agent.py`](prove-agent.py) | The proof path for an **add-in agent**, which the fragment tools cannot prove: sessions, a tracking run, a draft, and a person's acceptance **by name**. The machine never signs, and the tool has no write path into `revit/` |
@@ -1802,6 +1802,12 @@ fail the suite for the tool being right.
 **Run it again whenever rows close.** A moved row is recognised by its link, so a second run moves only what
 has closed since the first.
 
+**Since 2026-09-23 it reads and writes the register one file per section** - the layout
+[`split-register.py`](#split-registerpy---one-file-per-section-the-registers-page-as-its-index) made, with the rows of
+5 and 5b in files of 25. It still plans on the register as one text, read through `register-text.py`, then writes
+each changed rows file back and refuses unless the files read back as the new register. `open-defects.py` and
+`review-ledger.py` read the register through the same reader.
+
 ---
 
 ## `archive-handover.py` - one file per sitting, as the archive's own README asks
@@ -1896,6 +1902,64 @@ than no count"*, as the register says of itself.
 
 ---
 
+## `split-register.py` - one file per section, the register's page as its index
+
+```bash
+python tools/split-register.py fragment-issues            # what would move - writes nothing
+python tools/split-register.py fragment-issues --write    # move it
+```
+
+The same step as [`split-needs-checking.py`](#split-needs-checkingpy---one-file-per-group-needs-checkingmd-as-the-index),
+for a register whose sections are not groups. Every `## ` section of [`docs/FRAGMENT-ISSUES.md`](../docs/FRAGMENT-ISSUES.md)
+moves whole to its own file in [`docs/fragment-issues/`](../docs/fragment-issues/section-1.md) - `## 1c.` to
+`section-1c.md` - and leaves its heading on the page with one line naming its file. The page's own rules stay.
+**Sections 5 and 5b are too big for one file each**, so they keep their own words on the page and move only their
+rows, **25 to a file by row number** - row 5b-62 is in `section-5b-rows-051-075.md`, the band
+[`archive-fragment-issues.py`](#archive-fragment-issuespy---move-finished-defect-rows-out-of-the-live-register)
+already files it under. The page keeps one line where each table was, naming its files in order.
+Exits **0**, **1** when a check refused and nothing was written, **2** when the register could not be read.
+
+**The register is still one text, and that is what is proved.** Nothing is written unless the new files read back
+as the register byte for byte; the register's readers - `open-defects.py`'s whole report, `review-ledger.py`'s rows
+of 5b and `archive-fragment-issues.py`'s plan - answer exactly the same on a copy laid out the old way and on one laid
+out the new way; every re-pointed link reaches the file it reached before; and no other document links into a
+heading that would leave the page.
+
+**A new row goes at the end of its section's last file**, whatever its number; the next run moves it to the file its
+number belongs to. A new section written on the page is moved by the next run, and a run with nothing new moves
+nothing. [`tests/test_split_register.py`](../tests/test_split_register.py) builds its own register, never the real one.
+
+**PROPOSALS.md is split the same way** - `python tools/split-register.py proposals` - every section to its own file in
+[`docs/proposals/`](../docs/proposals/part-a.md), named from its opening words: `## F23 — ...` is `f23.md`, and a
+section headed only by a date takes its first five words as well, so two written on one day get two files.
+[`owner-queue.py`](#owner-queuepy--what-is-waiting-on-the-owner-derived-rather-than-typed) and `balance-of-work.py` read
+it through `register-text.py`, and the split was refused unless both read the same proposals from it.
+
+**So is OPEN-QUESTIONS.md** - `python tools/split-register.py open-questions` - one file per tier in
+[`docs/open-questions/`](../docs/open-questions/tier-1.md), with the Progress line kept on the page.
+[`check-docs.py`](#check-docspy--link-and-cross-reference-integrity) counts the questions and checks the Progress line
+from the register read whole, and `owner-queue.py` lists the open ones from it; the split was refused unless
+check-docs' questions and Progress line - run whole, on a copy laid out each way - and owner-queue's list came out
+the same.
+
+## `register-text.py` - a split register read as one text
+
+```bash
+python tools/register-text.py docs/FRAGMENT-ISSUES.md                 # the whole register
+python tools/register-text.py docs/FRAGMENT-ISSUES.md | grep 5b-62    # search all of it at once
+```
+
+The reader every tool of a register split by `split-register.py` goes through: `open-defects.py`,
+`review-ledger.py` and `archive-fragment-issues.py` for FRAGMENT-ISSUES, `owner-queue.py` and `balance-of-work.py` for
+PROPOSALS, `check-docs.py` and `owner-queue.py` for OPEN-QUESTIONS. It puts each section's file back under
+its heading, and each band of rows back where the table was, with the links as they were written in the one file.
+Standard library only. **A missing file is not skipped** - a line naming a file that is not there, a section's
+file that does not open with its heading, or a rows file with no table stops it with `RegisterBroken` rather than
+returning a shorter register. A page that names no file is returned as it is, which is how a suite's own register
+is read.
+
+---
+
 ## `split-decisions.py` - one file per decision, DECISIONS.md as the index
 
 ```bash
@@ -1937,8 +2001,9 @@ it walks `--full-history`: git's default walk drops the side a merge threw away,
 
 **The one excuse lives in the decision.** A changed title passes only when the decision's own `**Numbering:**`
 line quotes the title it was first written with; a moved title only when that line names the number it had.
-D-45, D-46, D-97 and D-98 carry such lines. Titles that changed before the check existed are named one by one in
-its `KNOWN` table, and an entry that stops being needed fails the run, so that list only shrinks.
+D-45 to D-49, D-97, D-98 and D-101 to D-103 carry such lines. Titles that changed before the check existed are
+named one by one in its `KNOWN` table, and an entry that stops being needed fails the run, so that list only
+shrinks.
 
 **It exits 2 in a shallow clone** - CI's default checkout, and a cloud session's - rather than pass on history
 it cannot see. `git fetch --unshallow` first; the gates job fetches the whole history for it.

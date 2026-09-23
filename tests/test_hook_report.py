@@ -92,9 +92,11 @@ def main():
 
 def run_all(home):
     env = dict(os.environ)
-    for name in ("LOCALAPPDATA", "APPDATA", "HERON_KNOWLEDGE"):
+    for name in ("LOCALAPPDATA", "XDG_DATA_HOME", "APPDATA", "HERON_KNOWLEDGE"):
         env.pop(name, None)
-    env["LOCALAPPDATA"] = home
+    # The per-user local folder, as .NET reads it: LOCALAPPDATA on Windows,
+    # XDG_DATA_HOME elsewhere. Both, so this runs the same on either.
+    env["LOCALAPPDATA"] = env["XDG_DATA_HOME"] = home
     logs = os.path.join(home, "Heron", "logs")
     os.makedirs(logs)
     refusal = ("This edit would put the Revit vendor namespace in brain, and "
@@ -156,16 +158,18 @@ def run_all(home):
     print("-" * 72)
     empty = os.path.join(home, "empty")
     os.makedirs(empty)
-    code, out = report([], dict(env, LOCALAPPDATA=empty))
+    code, out = report([], dict(env, LOCALAPPDATA=empty, XDG_DATA_HOME=empty))
     check(code == 0 and "does not exist yet" in out,
           "a machine where no hook has decided anything yet says so, exit 0")
-    bare = dict(env)
-    # APPDATA too: on Windows the knowledge folder is found through it.
-    bare.pop("LOCALAPPDATA", None)
+    # No USABLE folder: Heron's log folder would land inside this repository,
+    # which the diary refuses, and there is no knowledge folder - APPDATA
+    # goes too, because on Windows the knowledge folder is found through it.
+    inside = os.path.join(ROOT, "tests")
+    bare = dict(env, LOCALAPPDATA=inside, XDG_DATA_HOME=inside)
     bare.pop("APPDATA", None)
     code, out = report([], bare)
     check(code == 0 and "No hook log on this machine" in out,
-          "a machine with no log folder at all says why, and still exits 0")
+          "a machine with no usable log folder says why, and still exits 0")
     code, out = report(["--log", os.path.join(logs, "heron-hooks.jsonl")], bare)
     check(code == 0 and "heron-guard - 5 decision(s)" in out,
           "--log reads a named file, whatever this machine would have used")

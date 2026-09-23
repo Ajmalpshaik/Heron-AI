@@ -102,6 +102,27 @@ def needs_checking_text():
     return NCR.register_text(ROOT, read)
 
 
+# PROPOSALS.md IS ONE FILE PER SECTION SINCE 2026-09-23, and is still read
+# as one text - by tools/register-text.py, the reader of every register
+# tools/split-register.py splits, through `read` above as the register above
+# is. A file the page names that is missing raises, for the same reason.
+def _text_reader():
+    import importlib.util
+    here = os.path.dirname(os.path.abspath(__file__))
+    spec = importlib.util.spec_from_file_location(
+        "register_text", os.path.join(here, "register-text.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+RT = _text_reader()
+
+
+def proposals_text():
+    return RT.register_text("docs/PROPOSALS.md", read)
+
+
 def grab(text, pattern, group=1):
     """Pull one figure out of a tool's own printed summary, or None.
 
@@ -156,7 +177,7 @@ def register_rows():
 
 
 def proposals_open():
-    text = read("docs/PROPOSALS.md")
+    text = proposals_text()
     if not text:
         return None, None
     items = re.findall(u"^### ([\U0001F534\U0001F7E0\U0001F7E1\U0001F535✅])\\s*(F\\d+)\\.", text, re.M)

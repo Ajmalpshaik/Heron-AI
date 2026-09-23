@@ -39,14 +39,15 @@ agreeing with it. Only the history still holds both sides.
 
 That merge took three more than the two row 5b-157 restored: the first D-47,
 D-48 and D-49 left the log in it too, and on 2026-09-06 their numbers were given
-to new decisions. KNOWN below names them.
+to new decisions. They are back as D-101 to D-103 (row 5b-171).
 
 WHAT COUNTS AS AN EXCUSE, AND WHERE IT LIVES
 --------------------------------------------
 A changed title passes only when the decision says why, on a **Numbering:**
 line under its heading that QUOTES the title the number was first written with.
 A title that moved to another number passes only when that line NAMES the number
-it was first written under. D-45, D-46, D-97 and D-98 carry exactly those lines.
+it was first written under. D-45 to D-49, D-97, D-98 and D-101 to D-103
+carry exactly those lines.
 The excuse lives in the decision, where a person following a citation reads it,
 not in this file.
 
@@ -122,18 +123,6 @@ KNOWN = {
     "D-32": ("v1 answers questions about the model, and does not change it",
              "reversed within the hour of being written, 8cd98a3 to b950ff8, "
              "2026-08-28 - the log's read-back says so"),
-    "D-47": ("Risk is part of routing, not only part of permission",
-             "written 290edb5, 2026-08-31; left the log in merge 1f884ae, "
-             "2026-09-02; the number was given to another decision by ec17e79, "
-             "2026-09-06. OPEN - FRAGMENT-ISSUES row 5b-171"),
-    "D-48": ("Several fragments may jointly feed one, and the orphan check asks per need",
-             "written 5ff8ac0, 2026-08-31; left the log in merge 1f884ae, "
-             "2026-09-02; the number was given to another decision by ec17e79, "
-             "2026-09-06. OPEN - FRAGMENT-ISSUES row 5b-171"),
-    "D-49": ("A need may bind to a provided name that is not its own",
-             "written 469fd2e, 2026-08-31; left the log in merge 1f884ae, "
-             "2026-09-02; the number was given to another decision by 2087022, "
-             "2026-09-06. OPEN - FRAGMENT-ISSUES row 5b-171"),
 }
 
 

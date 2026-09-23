@@ -123,6 +123,27 @@ joined = "\n".join(allsrc.values())
 
 failed = False
 
+# OPEN-QUESTIONS.md IS ONE FILE PER SECTION SINCE 2026-09-23 - each tier in
+# docs/open-questions/ - and is read here as ONE TEXT, the way every reader
+# of a split register reads it: tools/register-text.py puts each file back
+# under its heading, served from the copy of every file loaded above. The
+# questions below are counted from that text, never from the page alone,
+# which holds none of them. A file the page names that is missing is said
+# and fails the run - a register that quietly drops a tier would pass
+# every count below with fewer questions.
+import importlib.util
+_rt_spec = importlib.util.spec_from_file_location(
+    'register_text', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'register-text.py'))
+_rt = importlib.util.module_from_spec(_rt_spec)
+_rt_spec.loader.exec_module(_rt)
+try:
+    oq_text = _rt.register_text(root + '/docs/OPEN-QUESTIONS.md',
+                                read=lambda p: allsrc.get(p.replace(os.sep, '/'))) or ''
+except _rt.RegisterBroken as _broken:
+    out("  OPEN-QUESTIONS.md COULD NOT BE READ WHOLE: %s\n" % _broken)
+    oq_text = ''
+    failed = True
+
 # SECTION 1 NOW FAILS, AND DID NOT UNTIL 2026-09-16 (D-77). It had been
 # FINDING dead links since 2026-08-31 and exiting 0 on them, which is the
 # same defect its own comment above describes one layer up: the check was
@@ -160,9 +181,10 @@ def defined(pattern, path):
 # every reference to that number ambiguous: `[D-56](DECISIONS.md)` now points at
 # two different decisions, and nothing - not this script, not a reader, not the
 # anchor - can say which was meant. Both entries look correct in isolation.
-def repeats(pattern, path, flags=0):
-    """The ids defined more than once in `path`, with their counts."""
-    found = re.findall(pattern, allsrc.get(path, ''), flags)
+def repeats(pattern, path, flags=0, text=None):
+    """The ids defined more than once in `path` - or in TEXT, read from it -
+    with their counts."""
+    found = re.findall(pattern, allsrc.get(path, '') if text is None else text, flags)
     seen, twice = {}, []
     for one in found:
         seen[one] = seen.get(one, 0) + 1
@@ -196,7 +218,10 @@ out("\n")
 
 # Decisions defined in DECISIONS.md
 d_def = set(re.findall(r'^## (D-\d+)', allsrc.get('./docs/DECISIONS.md', ''), re.M))
-d_ref = set(re.findall(r'\b(D-\d\d)\b', joined))
+# ANY NUMBER OF DIGITS, THE WAY THE DEFINITIONS ARE READ. This read exactly
+# two, so from D-100 on no reference was compared with the log and a mistyped
+# D-110 passed as quietly as a right one (FRAGMENT-ISSUES row 5b-184).
+d_ref = set(re.findall(r'\b(D-\d+)\b', joined))
 out("=== 3. DECISIONS ===\n")
 out("  defined: %s\n" % sorted(d_def))
 out("  REFERENCED BUT NOT DEFINED: %s\n" % sorted(d_ref - d_def))
@@ -206,12 +231,12 @@ if report_repeats(repeats(r'^## (D-\d+)', './docs/DECISIONS.md', re.M),
 out("\n")
 
 # Questions defined in OPEN-QUESTIONS.md
-q_def = set(re.findall(r'### (?:[^\n]*?)(Q-\d+[a-z]?)', allsrc.get('./docs/OPEN-QUESTIONS.md', '')))
+q_def = set(re.findall(r'### (?:[^\n]*?)(Q-\d+[a-z]?)', oq_text))
 q_ref = set(re.findall(r'\b(Q-\d+[a-z]?)\b', joined))
 out("=== 4. QUESTIONS ===\n")
 out("  defined: %s\n" % sorted(q_def))
 out("  REFERENCED BUT NOT DEFINED: %s\n" % sorted(q_ref - q_def))
-if report_repeats(repeats(r'### (?:[^\n]*?)(Q-\d+[a-z]?)', './docs/OPEN-QUESTIONS.md'),
+if report_repeats(repeats(r'### (?:[^\n]*?)(Q-\d+[a-z]?)', './docs/OPEN-QUESTIONS.md', text=oq_text),
                   'question', 'docs/OPEN-QUESTIONS.md'):
     failed = True
 out("\n")
@@ -231,8 +256,8 @@ for p in ['./README.md', './docs/README.md']:
 out("\n")
 
 # actual counts
-q_answered = len(re.findall(r'### \S+ (Q-\d+[a-z]?)', allsrc.get('./docs/OPEN-QUESTIONS.md', '')))
-answered_section = allsrc.get('./docs/OPEN-QUESTIONS.md', '').split('## Answered')
+q_answered = len(re.findall(r'### \S+ (Q-\d+[a-z]?)', oq_text))
+answered_section = oq_text.split('## Answered')
 n_answered = len(re.findall(r'### ', answered_section[1])) if len(answered_section) > 1 else 0
 articles = len(re.findall(r'^\*\*(\d+[a-c]?)\.', allsrc.get('./HERON_CONSTITUTION.md', ''), re.M))
 out("  ACTUAL: questions defined=%d, in Answered section=%d, constitution articles=%d\n"
@@ -254,7 +279,7 @@ out("  ACTUAL: golden rules defined=%d (all official; 16-21 accepted 2026-08-28)
 # So this one is derived and compared, and it is the ONLY part of this script
 # that can fail. Everything above is a report; a report cannot be wrong, which
 # is also why it cannot catch anything.
-oq = allsrc.get('./docs/OPEN-QUESTIONS.md', '')
+oq = oq_text
 answered = open_ids = None
 if oq:
     answered, open_ids = 0, []

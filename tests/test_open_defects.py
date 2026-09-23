@@ -40,7 +40,6 @@ WHAT IT PROVES
 """
 
 import importlib.util
-import io
 import os
 import re
 import sys
@@ -143,7 +142,10 @@ def main():
     # that, silently, and row 162 said OPEN for a day while the sweep counted
     # it neither open nor settled. Write a literal pipe as \\| - in a code
     # span too, which is where all four hid.
-    src = io.open(OD.REGISTER, encoding="utf-8").read()
+    # READ AS THE TOOL READS IT - the register as one text, every section's
+    # file back in its place - since the rows of 5 and 5b have their own
+    # files and the page alone holds none of them.
+    src = OD.source()
     opened = src.index(OD.SECTION_START)
     body_text = src[opened:src.index(OD.SECTION_END)]
     malformed = []

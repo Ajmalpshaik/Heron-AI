@@ -87,7 +87,8 @@ atexit.register(shutil.rmtree, QUIET, True)
 def run(payload, env=None):
     """(stdout, exit code) from the hook as the host would run it."""
     where = dict(os.environ)
-    where.update({"LOCALAPPDATA": QUIET, "HERON_KNOWLEDGE": ""})
+    where.update({"LOCALAPPDATA": QUIET, "XDG_DATA_HOME": QUIET,
+                  "HERON_KNOWLEDGE": ""})
     where.update(env or {})
     got = subprocess.run([sys.executable, HOOK],
                          input=payload if isinstance(payload, str)
@@ -104,7 +105,8 @@ def run_utf8(payload, env=None):
     the very thing section 4a exists to test.
     """
     where = dict(os.environ)
-    where.update({"LOCALAPPDATA": QUIET, "HERON_KNOWLEDGE": ""})
+    where.update({"LOCALAPPDATA": QUIET, "XDG_DATA_HOME": QUIET,
+                  "HERON_KNOWLEDGE": ""})
     where.update(env or {})
     got = subprocess.run([sys.executable, HOOK],
                          input=json.dumps(payload, ensure_ascii=False)
@@ -302,7 +304,8 @@ def main():
                 "content": "using %s.DB;" % vendor}}),
             capture_output=True, text=True,
             env=dict(os.environ, CLAUDE_PROJECT_DIR=ROOT,
-                     LOCALAPPDATA=QUIET, HERON_KNOWLEDGE=""))
+                     LOCALAPPDATA=QUIET, XDG_DATA_HOME=QUIET,
+                     HERON_KNOWLEDGE=""))
         check(verdict_of(got.stdout.strip()) == "deny",
               "the exact command settings.json gives, run under bash, REFUSES "
               "the forbidden edit")
@@ -314,11 +317,13 @@ def main():
     print("8. Every decision is one line in the hooks' diary - and cannot change one")
     print("-" * 70)
     # The diary is kept in Heron's log folder, resolved from the per-user
-    # local folder, so a throwaway one keeps this inside a temporary folder.
+    # local folder - LOCALAPPDATA on Windows, XDG_DATA_HOME elsewhere, as
+    # .NET reads them - so a throwaway one keeps this in a temporary folder.
     home = tempfile.mkdtemp(prefix="heron-guard-diary-")
     try:
         diary = os.path.join(home, "Heron", "logs", "heron-hooks.jsonl")
-        steer = {"LOCALAPPDATA": home, "HERON_KNOWLEDGE": ""}
+        steer = {"LOCALAPPDATA": home, "XDG_DATA_HOME": home,
+                 "HERON_KNOWLEDGE": ""}
         forbidden = {"session_id": "g-1", "tool_input": {
             "file_path": "brain/x.py", "content": "using %s.DB;" % vendor}}
         harmless = {"session_id": "g-1", "tool_input": {
@@ -344,7 +349,8 @@ def main():
 
         blocked = os.path.join(home, "a-file-not-a-folder")
         io.open(blocked, "w", encoding="utf-8").write("x")
-        steer = {"LOCALAPPDATA": blocked, "HERON_KNOWLEDGE": ""}
+        steer = {"LOCALAPPDATA": blocked, "XDG_DATA_HOME": blocked,
+                 "HERON_KNOWLEDGE": ""}
         denied, code = run(forbidden, env=steer)
         allowed, _ = run(harmless, env=steer)
         check(verdict_of(denied) == "deny" and code == 0 and allowed == "",

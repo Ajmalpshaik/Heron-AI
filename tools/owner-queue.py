@@ -91,6 +91,31 @@ def needs_checking_text():
     return NCR.register_text(ROOT, read)
 
 
+# PROPOSALS.md IS ONE FILE PER SECTION SINCE 2026-09-23, and is still read
+# as one text - by tools/register-text.py, the reader of every register
+# tools/split-register.py splits, through `read` above as the register above
+# is. A file the page names that is missing raises, for the same reason.
+def _text_reader():
+    import importlib.util
+    here = os.path.dirname(os.path.abspath(__file__))
+    spec = importlib.util.spec_from_file_location(
+        "register_text", os.path.join(here, "register-text.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+RT = _text_reader()
+
+
+def proposals_text():
+    return RT.register_text("docs/PROPOSALS.md", read)
+
+
+def open_questions_text():
+    return RT.register_text("docs/OPEN-QUESTIONS.md", read)
+
+
 # What the owner has to have in front of him. The order is the order he can
 # actually act in: the things needing nothing come first.
 BUCKETS = [
@@ -121,8 +146,9 @@ def classify(text):
 
 
 def open_questions():
-    """Same rule check-docs.py uses, so the two can never disagree."""
-    src = read("docs/OPEN-QUESTIONS.md")
+    """Same rule check-docs.py uses, so the two can never disagree - and
+    the same text: the register as one, every tier's file back in place."""
+    src = open_questions_text()
     if src is None:
         return []
     out = []
@@ -187,7 +213,7 @@ def needs_checking():
 
 
 def proposals():
-    src = read("docs/PROPOSALS.md")
+    src = proposals_text()
     if src is None:
         return []
     out = []
