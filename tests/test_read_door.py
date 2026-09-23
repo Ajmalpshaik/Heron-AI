@@ -42,6 +42,12 @@ MCP SDK, so CI runs it:
   5. ITS PROOF STATUS IS READ FROM THE FILES. A PROVEN fragment reads as
      PROVEN with its model; a DRAFT one as DRAFT; a folder that is not there
      as "could not be read" - never as either.
+  6. WHAT IT DID NOT SEND, IT SAYS. A dictionary reaches a reply as its size
+     alone, and REPORT_CONNECTORS answered three of them - `1 entry(ies)`
+     each - with the connectors themselves nowhere (Project1, 2026-09-23,
+     FRAGMENT-ISSUES 5b-195). `_provides_lines` is lifted out of the server
+     and RUN, the way tests/test_parameter_clash.py runs its helper, and must
+     name every dictionary that held something on one NOT SENT line.
 
 WHAT IT CANNOT DO
 -----------------
@@ -102,6 +108,31 @@ def body_of(text, name):
     rest = text[start + 1:]
     end = re.search(r"\n(?:@server\.tool\(\)\n)?def ", rest)
     return rest[:end.start()] if end else rest
+
+
+def lifted(text, name):
+    """One helper out of the server, compiled and ready to call - or None.
+
+    IMPORTING THE SERVER NEEDS THE MCP SDK, which CI leaves out on purpose,
+    so this reads the function as text and runs it alone - the way
+    tests/test_parameter_clash.py runs `_parameter_coverage`. Two blank lines
+    end a top-level function in that file. A helper renamed, moved or grown a
+    dependency on the module around it comes back None, which is ONE clean
+    failure below rather than a traceback over the whole section.
+    """
+    nl = chr(10)
+    start = text.find(nl + "def %s(" % name)
+    if start < 0:
+        return None
+    end = text.find(nl + nl + nl, start)
+    if end < 0:
+        return None
+    namespace = {}
+    try:
+        exec(text[start + 1:end], namespace)              # noqa: S102
+    except BaseException:                                 # noqa: BLE001
+        return None
+    return namespace.get(name)
 
 
 def main():
@@ -282,13 +313,57 @@ def main():
               "never DRAFT")
 
     print()
+    print("7. What it did not send, it says")
+    for door in ("revit_read", "revit_change"):
+        check('_provides_lines(reply.get("provides"))' in (body_of(text, door) or ""),
+              "%s prints what a fragment left through _provides_lines - both "
+              "doors, one copy" % door)
+    provides_lines = lifted(text, "_provides_lines")
+    check(provides_lines is not None,
+          "_provides_lines can be lifted out of the server and run on its own")
+    if provides_lines is not None:
+        # THE REPLY REPORT_CONNECTORS GAVE in Project1 on 2026-09-23, with the
+        # string that now carries the connectors beside it. 5b-195.
+        said = provides_lines({"connectorFacts": "1 entry(ies)",
+                               "connections": "1 entry(ies)",
+                               "openConnectors": "1 entry(ies)",
+                               "flagDisagrees": "0 item(s)",
+                               "connectorSummary": "element 1: DomainHvac "
+                                                   "SupplyAir, Rectangular, OPEN"})
+        withheld = [line for line in said if "NOT SENT" in line]
+        check(len(withheld) == 1,
+              "three dictionaries that held something are said to be NOT SENT, "
+              "on one line - found %d such line(s)" % len(withheld))
+        check(len(withheld) == 1
+              and all(name in withheld[0] for name in
+                      ("connectorFacts", "connections", "openConnectors")),
+              "and that line names every one of them")
+        check(len(withheld) == 1
+              and "flagDisagrees" not in withheld[0]
+              and "connectorSummary" not in withheld[0],
+              "and nothing that arrived whole - a list shows its first three, "
+              "a string prints in full")
+        check(any("DomainHvac SupplyAir" in line for line in said),
+              "while the string beside them still prints whole")
+
+        empty = provides_lines({"connectorFacts": "0 entry(ies)",
+                                "connectorSummary": ""})
+        check(not any("NOT SENT" in line for line in empty),
+              "an EMPTY dictionary held nothing back, so nothing is said")
+        prose = provides_lines({"findings": "12 entry(ies) were read"})
+        check(not any("NOT SENT" in line for line in prose),
+              "and a fragment's own sentence that says entry(ies) is not "
+              "taken for a dictionary")
+
+    print()
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for one in FAILURES:
             print("  - %s" % one)
         return 1
     print("PASSED - revit_read runs what reads, refuses the rest before "
-          "anything is sent, and says how far what it ran is proven.")
+          "anything is sent, says how far what it ran is proven, and says "
+          "what it did not send.")
     return 0
 
 

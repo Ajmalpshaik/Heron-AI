@@ -306,6 +306,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-al.md`](needs-checking/group-al.md)
 
+## Group AM - `report-connectors` in a chat: every connector in full, its system, and what a reply did not send (2026-09-23)
+
+**Its own file:** [`needs-checking/group-am.md`](needs-checking/group-am.md)
+
 ## Group AN - family creation, from an empty template to a flexed family (2026-09-24)
 
 **Its own file:** [`needs-checking/group-an.md`](needs-checking/group-an.md)
