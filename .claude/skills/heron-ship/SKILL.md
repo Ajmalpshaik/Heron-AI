@@ -1,6 +1,6 @@
 ---
 name: heron-ship
-description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the ten CI actually decides on, the reports whose findings are questions, the checker whose exit code follows the unfinished list, and the six checks that need a tool this container has not got.
+description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the eleven CI actually decides on, the reports whose findings are questions, the checker whose exit code follows the unfinished list, and the seven checks that need something this container has not got - a tool, a store or the whole git history.
 allowed-tools:
   - Bash
   - Read
@@ -96,17 +96,18 @@ machine can run Heron at all. Run it after a fresh clone, after touching `requir
 missing **optional** package exits 0 on purpose: silent degradation is the designed behaviour, and a
 checker that failed on one would be arguing with the requirement that allows it.
 
-### THESE FOUR ARE NOT WHAT DECIDES THE PULL REQUEST. TEN DO.
+### THESE FOUR ARE NOT WHAT DECIDES THE PULL REQUEST. ELEVEN DO.
 
-`.github/workflows/gates.yml` has a job named **"The gates that must pass"**, and it runs **ten**
+`.github/workflows/gates.yml` has a job named **"The gates that must pass"**, and it runs **eleven**
 commands under `bash -e` — so a non-zero exit from **any** of them turns the PR red. The four above
-are four of the ten. The other six are:
+are four of the eleven. The other seven are:
 
 ```bash
 python tools/check-signatures.py       # a proof whose code moved under it
 python tools/check-licence.py          # a licence header, and what may not be redistributed
 python tools/check-narrow-errors.py    # a bare except is a swallowed cause
 python tools/check-products.py         # the manifest the installer reads, which nothing compiles
+python tools/check-decision-titles.py  # a decision number that stopped meaning its decision
 HERON_KNOWLEDGE=$(mktemp -d) python tools/check-routing.py    # every capability still reachable
 HERON_KNOWLEDGE=$(mktemp -d) python tools/check-intrusion.py  # one fragment crowding out another
 ```
@@ -127,6 +128,12 @@ caught it.
 **The two with `HERON_KNOWLEDGE` need somewhere to put a knowledge store** and exit **2** saying so
 when there is none — an empty folder is enough, and CI makes one. On Windows `%APPDATA%` already
 answers, so the variable is only needed here.
+
+**`check-decision-titles` needs the whole git history** and exits **2** in a shallow clone, saying so:
+it reads what each decision was FIRST written as, and a clone cut short cannot show that. A cloud
+session starts from one - measured 2026-09-23, 51 commits - so run `git fetch --unshallow` first. CI's
+gates job fetches the whole history for it, and passes `--published HEAD^1` so that a title a branch
+changed before it was merged counts as a draft.
 
 ## 2. The tests
 
@@ -387,7 +394,7 @@ UNPROVEN."* **Read the buckets, not the exit code, and do not report either valu
 > echo $?` reports **`tail`'s** exit code, which is always 0 — and on 2026-09-12 that turned this very
 > section into a claim that the gate passes. Two characters, in the optimistic direction.
 
-## 5. The six that need something — and only ONE of them needs the owner's PC
+## 5. The seven that need something — and only ONE of them needs the owner's PC
 
 Not failures. They need a tool, and the error says which.
 
@@ -395,9 +402,11 @@ Not failures. They need a tool, and the error says which.
 |---|---|---|
 | `check-routing.py`, `check-intrusion.py` | a knowledge store | `No %APPDATA% and no HERON_KNOWLEDGE` |
 | `check-compile.py`, `check-fragments-compile.py`, `check-api-surface.py` | **`dotnet`** | `FileNotFoundError: 'dotnet'` |
+| `check-decision-titles.py` | the **whole git history** | `NOT RUN - this clone's history is cut short (shallow)` |
 | `batch-prove.py` | **a real Revit**, and the owner | — |
 
-The first two run fine with a store: `export HERON_KNOWLEDGE=/tmp/heron-kb`.
+The first two run fine with a store: `export HERON_KNOWLEDGE=/tmp/heron-kb`. The history one runs after
+`git fetch --unshallow`.
 
 **This section said the middle three "are the owner's PC" until 2026-09-17, and that was WRONG — the
 same shape of mistake as §2's "the known three".** They need a .NET SDK, which is one apt package, and

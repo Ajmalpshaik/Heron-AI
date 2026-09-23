@@ -84,7 +84,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      # THE WHOLE HISTORY, not the one commit a checkout fetches by default.
+      # check-decision-titles reads what each decision was FIRST written as,
+      # and in a shallow clone it exits 2 rather than pass on history it
+      # cannot see. Nothing else in this job reads history: measured
+      # 2026-09-23, the other ten print the same bytes and exit the same
+      # on a full clone as on a shallow one of the same commit.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v7
         with:
@@ -156,13 +164,26 @@ jobs:
       - name: check-products
         run: python tools/check-products.py
 
+      # A DECISION NUMBER MEANS ONE DECISION FOR EVER. check-docs sees a
+      # number DEFINED twice at once; nothing saw a number KEEP its decision,
+      # and D-45 to D-49 did not - a merge on 2026-09-02 kept one branch's log
+      # whole and dropped the other's five, and three of the numbers were
+      # given to new decisions four days later (rows 5b-157 and 5b-171). It
+      # reads the log's history, which is why this job fetches all of it.
+      # HEAD^1 is the base a pull request merges into: a title a branch
+      # changed before it was ever merged is a draft, and a branch that
+      # renumbers its own decision after main took the number is right.
+      - name: check-decision-titles
+        run: python tools/check-decision-titles.py --published HEAD^1
+
       # These two need somewhere to put a knowledge store. An empty
       # directory is enough for them to run, so CI gives them one.
       #
       # THEY ALSO GATE THIS JOB, AND THEY ARE NOT ON ANY "FOUR THAT MUST
       # PASS" LIST. check-routing exited 2 on a PR whose four documented
       # gates were all green locally - the four are what you run before
-      # pushing, and these nine are what decides the PR (row 5b-70).
+      # pushing, and every step of this job is what decides the PR (row
+      # 5b-70). This said "these nine" while the job ran ten.
       #
       # This comment said they "say so rather than failing when there is
       # none". Measured on Linux with the variable unset on 2026-09-21: they

@@ -11,7 +11,7 @@ A German word counted as a licence, and a list you cannot finish reading.
 
     python tests/test_check_licence.py
 
-`tools/check-licence.py` answers Q-53 (D-66) and is one of the ten gates a
+`tools/check-licence.py` answers Q-53 (D-66) and is one of the gates a
 pull request has to pass. Its own docstring states the rule it must never
 break:
 
