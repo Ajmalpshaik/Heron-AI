@@ -92,7 +92,10 @@ Func<FamilyParameter, string> kindOf = p =>
             if (spec == null) return "unknown";
             foreach (var entry in kindsNew)
                 if (sameKind(entry.Value, spec)) return entry.Key;
-            return spec.ToString();
+            // A ForgeTypeId prints as its CLASS name, so the id string is shown.
+            var typeId = spec.GetType().GetProperty("TypeId");
+            var id = typeId == null ? null : typeId.GetValue(spec) as string;
+            return string.IsNullOrEmpty(id) ? "an unnamed kind" : id;
         }
         var property = definition.GetType().GetProperty("ParameterType");
         var old = property == null ? null : property.GetValue(definition);
@@ -207,7 +210,8 @@ else
 
         var kindWord = kindOf(p);
         double number;
-        var isNumber = double.TryParse(text, System.Globalization.NumberStyles.Float, invariant, out number);
+        var isNumber = double.TryParse(text, System.Globalization.NumberStyles.Float, invariant, out number)
+            && !double.IsNaN(number) && !double.IsInfinity(number);
 
         switch (kindWord)
         {
@@ -267,6 +271,25 @@ if (refused == null)
     var before = new Dictionary<string, string>();
     foreach (var plan in planned)
         before[plan.Item1.Definition.Name] = target == null ? "(new type)" : shown(target, plan.Item1, plan.Item2);
+
+    // THE LABELLED DIMENSIONS THAT AGREE WITH THEIR PARAMETERS NOW. Revit posts
+    // a constraint it cannot satisfy as a WARNING, which the host dismisses and
+    // keeps - so the parameter would read what was asked while the planes stay
+    // where they were. The only witness is the dimension, so every one that
+    // agrees before the write must still agree after it, or nothing is kept.
+    Func<List<Dimension>> labelledNow = () => new FilteredElementCollector(doc).OfClass(typeof(Dimension))
+        .Cast<Dimension>()
+        .Where(d => { try { return d.FamilyLabel != null; } catch (Exception) { return false; } })
+        .ToList();
+    Func<Dimension, bool> agrees = d =>
+    {
+        var holds = fm.CurrentType == null ? null : fm.CurrentType.AsDouble(d.FamilyLabel);
+        var reads = d.Value;
+        return holds.HasValue && reads.HasValue && Math.Abs(holds.Value - reads.Value) < 0.01 / 304.8;
+    };
+    // Those that disagree ALREADY are the family's own business and are left out;
+    // a family with no type yet has nothing labelled to agree.
+    var agreedIds = new HashSet<string>(labelledNow().Where(d => agrees(d)).Select(d => d.UniqueId));
 
     try
     {
@@ -335,16 +358,30 @@ if (refused == null)
     findings.Add((typeCreated ? "Made the type \"" : "Wrote into the type \"") + typeUsed + "\", now the "
         + "family's current type. Read back: " + string.Join("; ", written) + ".");
 
+    // ALL OR NOTHING, READ BACK: a value that did not hold, or a dimension that
+    // stopped agreeing with its parameter, THROWS - the host rolls the whole
+    // call back rather than keeping a family whose numbers and planes disagree.
     if (mismatched.Count > 0)
-        findings.Add("NOT EVERY VALUE HELD what was asked for: " + string.Join("; ", mismatched)
-            + ". Revit keeps the value its constraints allow - check the dimensions labelled with "
-            + "these parameters.");
+        throw new InvalidOperationException("Not every value held what was asked for: "
+            + string.Join("; ", mismatched) + ". NOTHING from this call was kept.");
+
+    var broken = labelledNow()
+        .Where(d => agreedIds.Contains(d.UniqueId))
+        .Where(d => !agrees(d))
+        .Select(d => "the dimension labelled " + d.FamilyLabel.Definition.Name + " reads "
+            + (d.Value.HasValue ? mm(d.Value.Value) + " mm" : "nothing") + " where the parameter holds "
+            + (current.AsDouble(d.FamilyLabel).HasValue ? mm(current.AsDouble(d.FamilyLabel).Value) + " mm" : "nothing"))
+        .ToList();
+    if (broken.Count > 0)
+        throw new InvalidOperationException("Revit could not move the family to these values: "
+            + string.Join("; ", broken) + ". Its constraints cannot take them, so NOTHING from this call "
+            + "was kept.");
 
     findings.Add(drives == 0
         ? "Nothing in the family is labelled with or associated to these parameters yet, so no "
           + "geometry moved."
         : "These parameters drive " + drives + " labelled dimension(s) or associated element "
-          + "parameter(s), and the geometry locked to them moved with the values.");
+          + "parameter(s), and every labelled dimension reads its parameter after the write.");
 }
 
 if (refused != null) findings.Add(refused);

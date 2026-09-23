@@ -23,11 +23,11 @@ purpose: >
   **IT MEASURES THE GEOMETRY, NOT THE PLANES.** Planes that move prove the
   dimensions work, not that anything followed them - reported from an earlier
   family build, where a box drawn without locks looked parametric right up to
-  its first flex. So each trial reads the solid's own extent - its size, where
-  its centre sits, where its base is - and every labelled dimension and every
-  connector tied to a parameter is compared with what that parameter holds.
-  When the labelled planes moved and the solid did not, that is said in
-  those words.
+  its first flex. So each trial reads EVERY solid's own extent - a neck moving
+  inside a body that does not is invisible in the whole - and every labelled
+  dimension and every connector tied to a parameter is compared with what that
+  parameter holds. When the labelled planes moved and no solid did, that is
+  said in those words.
 
   **EACH TRIAL STARTS FROM THE FAMILY AS IT WAS**, plus only the values that
   trial names. Use sizes that are really different and not square - a square
@@ -39,9 +39,10 @@ purpose: >
   measured again against how it started. If the family does not come back
   exactly as it was, the call fails and nothing from it is kept.
 
-  **A TRIAL REVIT CANNOT SOLVE FAILS THE CALL** with Revit's words and nothing
-  kept - constraints that cannot be satisfied at some size are exactly what a
-  flex exists to find.
+  **A TRIAL REVIT CANNOT SOLVE FAILS THE CALL**, naming the trial and the
+  dimension that could not reach its value, and nothing is kept - constraints
+  that cannot be satisfied at some size are exactly what a flex exists to find,
+  and Revit itself may only warn about them.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 

@@ -55,7 +55,9 @@ if (doc.IsFamilyDocument)
         datums.Add(Tuple.Create((Element)rp, rp.GetReference(), at, along(rp.GetPlane().Origin, at), ownName(rp)));
     }
     foreach (var level in new FilteredElementCollector(doc).OfClass(typeof(Level)).Cast<Level>())
-        datums.Add(Tuple.Create((Element)level, new Reference(level), 2, level.Elevation, level.Name));
+        // The level's own PLANE reference - what a dimension or an alignment to
+        // a level is made against - rather than a reference to the element.
+        datums.Add(Tuple.Create((Element)level, level.GetPlaneReference(), 2, level.Elevation, level.Name));
 }
 
 var problems = new List<string>();

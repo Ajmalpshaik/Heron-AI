@@ -30,6 +30,14 @@ string refused = null;
 
 var wanted = categoryName == null ? "" : categoryName.Trim();
 
+// WHAT THE FAMILY IS NOW, read on every path that has a family - a refusal
+// included - so `category` never reads empty beside a family that has one.
+if (doc.IsFamilyDocument && doc.OwnerFamily.FamilyCategory != null)
+{
+    wasCategory = doc.OwnerFamily.FamilyCategory.Name;
+    category = wasCategory;
+}
+
 if (!doc.IsFamilyDocument)
 {
     notAFamily = true;
@@ -45,7 +53,6 @@ else if (wanted.Length == 0)
 else
 {
     var family = doc.OwnerFamily;
-    wasCategory = family.FamilyCategory == null ? "" : family.FamilyCategory.Name;
 
     // The document's own category list, in the language Revit runs in.
     var matches = new List<Category>();
@@ -86,8 +93,7 @@ else
 
         if (family.FamilyCategory != null && family.FamilyCategory.Id == target.Id)
         {
-            category = target.Name;
-            findings.Add("The family is already in \"" + target.Name + "\", so nothing changed.");
+            refused = "The family is already in \"" + target.Name + "\", so nothing changed.";
         }
         else
         {
@@ -118,8 +124,8 @@ else
 
             if (!changed)
             {
-                findings.Add("The category was set to \"" + target.Name + "\" and the family reads \""
-                    + category + "\" afterwards. Revit did not keep the change.");
+                refused = "The category was set to \"" + target.Name + "\" and the family reads \""
+                    + category + "\" afterwards. Revit did not keep the change.";
             }
             else
             {

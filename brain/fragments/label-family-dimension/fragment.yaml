@@ -29,8 +29,9 @@ purpose: >
   difference of more than half a millimetre refuses the call with both numbers,
   naming SET_FAMILY_TYPE_VALUES.
 
-  **ONE LABEL PER PARAMETER.** A parameter that already labels a dimension is
-  refused a second one: two dimensions driving one parameter fight as soon as
+  **ONE LABEL PER PARAMETER, AND PER PAIR OF PLANES.** A parameter that already
+  labels a dimension is refused a second one, and so is a pair of planes that a
+  labelled dimension already measures: two dimensions driving one parameter fight as soon as
   anything moves - reported from an earlier family build, where a rebuild left
   the old plane-to-plane dimension behind beside its replacement.
 
@@ -44,8 +45,10 @@ purpose: >
   top plane. Left-right and front-back dimensions are drawn in the floor plan,
   heights in an elevation, placed outside the planes so they stay readable.
 
-  **ALL OR NOTHING.** Both dimensions are made, labelled and read back, or the
-  call fails and nothing is kept.
+  **ALL OR NOTHING, READ BACK AFTER REVIT REGENERATES.** The label, the EQ, the
+  distance the dimension reads and where every plane now sits are read after
+  the regeneration; a plane that moved or a reading that differs fails the
+  call, and nothing is kept.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 

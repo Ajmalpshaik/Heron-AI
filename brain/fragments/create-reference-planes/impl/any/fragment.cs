@@ -90,6 +90,12 @@ else
     var existing = new FilteredElementCollector(doc).OfClass(typeof(ReferencePlane))
         .Cast<ReferencePlane>().ToList();
 
+    // A LEVEL'S NAME IS TAKEN TOO. Every family fragment after this finds a
+    // plane or a level by name, so a plane called "Ref. Level" would make that
+    // name mean two things and every one of them would refuse it.
+    var levelNames = new FilteredElementCollector(doc).OfClass(typeof(Level)).Cast<Level>()
+        .Select(l => l.Name).ToList();
+
     var problems = new List<string>();
 
     // Two names that differ only in case are one name to Revit.
@@ -110,6 +116,13 @@ else
     {
         var name = pair.Key == null ? "" : pair.Key.Trim();
         var wanted = pair.Value / 304.8;
+
+        if (levelNames.Any(l => string.Equals(l, name, StringComparison.OrdinalIgnoreCase)))
+        {
+            problems.Add("\"" + name + "\" is already the name of a level in this family. A plane of the "
+                + "same name would make every later step unable to tell the two apart - give it another.");
+            continue;
+        }
 
         var same = existing.Where(rp => string.Equals(ownName(rp), name, StringComparison.OrdinalIgnoreCase))
             .ToList();

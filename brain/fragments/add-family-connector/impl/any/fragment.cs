@@ -276,37 +276,76 @@ if (refused == null)
         sizedBy.Add("connector " + role + " <- " + driver.Definition.Name);
     };
 
+    // WHICH WAY ROUND. Revit takes a connector's own width direction from the
+    // FACE, not from the family's X, so "Neck Width" tied to the connector's
+    // width can come out lying along the neck's depth. The face is therefore
+    // measured along the connector's own axes, and the two parameters are tied
+    // the way round the face is actually built - a 400 x 300 neck gets a
+    // 400 x 300 port whichever way its width runs. Parameters that match the
+    // face neither way round would size a port that does not fit the face it
+    // sits on, and are refused.
+    var swapped = false;
+    var faceAlongX = 0.0;
+    var faceAlongY = 0.0;
+    if (chosen.Item1 == "duct" && !round)
+    {
+        var frame = made.CoordinateSystem;
+        var points = new List<XYZ>();
+        foreach (EdgeArray loop in face.EdgeLoops)
+            foreach (Edge edge in loop)
+                points.AddRange(edge.Tessellate());
+        var acrossX = points.Select(q => q.DotProduct(frame.BasisX)).ToList();
+        var acrossY = points.Select(q => q.DotProduct(frame.BasisY)).ToList();
+        faceAlongX = acrossX.Max() - acrossX.Min();
+        faceAlongY = acrossY.Max() - acrossY.Min();
+
+        var first = fm.CurrentType.AsDouble(sizes[0]);
+        var second = fm.CurrentType.AsDouble(sizes[1]);
+        var asGiven = first.HasValue && second.HasValue
+            && Math.Abs(first.Value - faceAlongX) <= halfMillimetre
+            && Math.Abs(second.Value - faceAlongY) <= halfMillimetre;
+        var turned = first.HasValue && second.HasValue
+            && Math.Abs(first.Value - faceAlongY) <= halfMillimetre
+            && Math.Abs(second.Value - faceAlongX) <= halfMillimetre;
+
+        if (!asGiven && !turned)
+            throw new InvalidOperationException("The face on \"" + faceName + "\" is " + mm(faceAlongX) + " x "
+                + mm(faceAlongY) + " mm, and \"" + sizes[0].Definition.Name + "\" and \"" + sizes[1].Definition.Name
+                + "\" hold " + (first.HasValue ? mm(first.Value) : "nothing") + " and "
+                + (second.HasValue ? mm(second.Value) : "nothing") + " mm - a port sized by them would not fit "
+                + "the face it sits on. NOTHING from this call was kept.");
+
+        swapped = !asGiven;
+    }
+
     if (chosen.Item1 != "electrical")
     {
         if (round) tie(BuiltInParameter.CONNECTOR_DIAMETER, sizes[0], "diameter");
         else
         {
-            tie(BuiltInParameter.CONNECTOR_WIDTH, sizes[0], "width");
-            tie(BuiltInParameter.CONNECTOR_HEIGHT, sizes[1], "height");
+            tie(BuiltInParameter.CONNECTOR_WIDTH, swapped ? sizes[1] : sizes[0], "width");
+            tie(BuiltInParameter.CONNECTOR_HEIGHT, swapped ? sizes[0] : sizes[1], "height");
         }
     }
 
     doc.Regenerate();
 
-    // READ BACK - the connector's own size beside what its parameters hold.
+    // READ BACK - and a connector that does not read what it was tied to, or
+    // does not fit its face, is not kept at some other size: it THROWS.
     Func<Func<double>, double?> read = get => { try { return get(); } catch (Exception) { return null; } };
     var shape = "";
-    var mismatched = new List<string>();
-
-    Action<string, double?, FamilyParameter> compare = (role, actual, driver) =>
-    {
-        var wanted = fm.CurrentType.AsDouble(driver);
-        if (!actual.HasValue || !wanted.HasValue || Math.Abs(actual.Value - wanted.Value) > halfMillimetre)
-            mismatched.Add(role + " reads " + (actual.HasValue ? mm(actual.Value) + " mm" : "nothing")
-                + " and " + driver.Definition.Name + " holds " + (wanted.HasValue ? mm(wanted.Value) + " mm" : "nothing"));
-    };
 
     if (chosen.Item1 == "electrical") shape = "no size";
     else if (round)
     {
         var diameter = read(() => made.Radius * 2);
+        var wanted = fm.CurrentType.AsDouble(sizes[0]);
         shape = "round " + (diameter.HasValue ? mm(diameter.Value) : "?") + " mm";
-        compare("the diameter", diameter, sizes[0]);
+        if (!diameter.HasValue || !wanted.HasValue || Math.Abs(diameter.Value - wanted.Value) > halfMillimetre)
+            throw new InvalidOperationException("The connector's diameter reads "
+                + (diameter.HasValue ? mm(diameter.Value) + " mm" : "nothing") + " and \"" + sizes[0].Definition.Name
+                + "\" holds " + (wanted.HasValue ? mm(wanted.Value) + " mm" : "nothing")
+                + ". NOTHING from this call was kept.");
     }
     else
     {
@@ -314,8 +353,16 @@ if (refused == null)
         var height = read(() => made.Height);
         shape = "rectangular " + (width.HasValue ? mm(width.Value) : "?") + " x "
             + (height.HasValue ? mm(height.Value) : "?") + " mm";
-        compare("the width", width, sizes[0]);
-        compare("the height", height, sizes[1]);
+        if (!width.HasValue || !height.HasValue
+            || Math.Abs(width.Value - faceAlongX) > halfMillimetre || Math.Abs(height.Value - faceAlongY) > halfMillimetre)
+            throw new InvalidOperationException("The connector reads " + shape + " on a face "
+                + mm(faceAlongX) + " x " + mm(faceAlongY) + " mm along the same axes - it does not fit the face. "
+                + "NOTHING from this call was kept.");
+
+        if (swapped)
+            findings.Add("Revit runs this connector's width along the face's other side, so \""
+                + sizes[1].Definition.Name + "\" drives its width and \"" + sizes[0].Definition.Name
+                + "\" its height - which makes the port match the face as it is built.");
     }
 
     var origin = made.Origin;
@@ -326,10 +373,6 @@ if (refused == null)
     findings.Add("Made a " + connector + " - read back from the connector." + (sizedBy.Count > 0
         ? " Its size follows the family: " + string.Join("; ", sizedBy) + "."
         : ""));
-
-    if (mismatched.Count > 0)
-        findings.Add("THE CONNECTOR DOES NOT READ WHAT ITS PARAMETERS HOLD: " + string.Join("; ", mismatched)
-            + ". Check which way round width and height sit on this face before trusting it.");
 
     findings.Add("Flow direction, description and electrical load are Revit's defaults - set them in "
         + "Properties. FLEX_FAMILY checks the connector follows its parameters through a resize.");

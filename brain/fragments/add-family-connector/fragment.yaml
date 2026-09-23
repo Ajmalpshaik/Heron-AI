@@ -39,10 +39,19 @@ purpose: >
   to Revit's own system names, spaces ignored, never guessed. Revit has no steam
   system; a steam connection is Other Pipe.
 
-  **THE SIZE IS READ BACK.** After the ties the connector's width, height or
-  diameter is read and compared with the parameters in the current type, and
-  both are reported. Flow direction, description and electrical load are left
-  at Revit's defaults and set in Properties.
+  **WHICH WAY ROUND IS MEASURED, NOT ASSUMED.** Revit takes a connector's own
+  width direction from the face, not from the family's X, so a parameter named
+  "Neck Width" can come out driving the port's height. The face is measured
+  along the connector's own axes and the two parameters are tied the way round
+  the face is built - a 400 x 300 neck gets a 400 x 300 port - and the report
+  says when they were turned. Parameters that fit the face neither way round
+  are refused: that port would not fit the face it sits on.
+
+  **THE SIZE IS READ BACK, AND A MISMATCH IS NOT KEPT.** After the ties the
+  connector's width and height are read against the face, or its diameter
+  against its parameter; one that differs fails the call. Flow direction,
+  description and electrical load are left at Revit's defaults and set in
+  Properties.
 
   **ALL OR NOTHING.** A connector that cannot be tied to its size is not left
   behind at one foot: the call fails and nothing is kept.

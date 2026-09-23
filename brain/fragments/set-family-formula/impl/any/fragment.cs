@@ -137,4 +137,14 @@ if (refused == null && !nothingToDo && target != null)
     }
 }
 
+// ON A REFUSAL, what the parameter HAS is still the answer: its formula and
+// the value it gives are read from the family, so an empty `formulaNow` always
+// means "no formula" and never "nothing was looked at".
+if (refused != null && target != null)
+{
+    formulaNow = target.Formula ?? "";
+    var holding = doc.FamilyManager.CurrentType;
+    if (holding != null) valueNow = holding.AsValueString(target) ?? "";
+}
+
 if (refused != null) findings.Add(refused);

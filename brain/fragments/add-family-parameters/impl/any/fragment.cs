@@ -57,6 +57,17 @@ Func<object, object, bool> sameKind = (first, second) =>
     return first.Equals(second);
 };
 
+// A ForgeTypeId prints as its CLASS name, so a kind or a group this cannot
+// label is shown by its id string instead - empty for the "Other" group.
+Func<object, string> idText = value =>
+{
+    if (value == null) return "";
+    var typeId = value.GetType().GetProperty("TypeId");
+    if (typeId == null) return value.ToString();
+    try { return (typeId.GetValue(value) as string) ?? ""; }
+    catch (Exception) { return ""; }
+};
+
 // THE KINDS. Each under its old enum name, and the SpecTypeId class and
 // property that replaced it. "Text" and "YesNo" are filed under nested classes
 // in the newer world.
@@ -126,6 +137,8 @@ if (groupType != null)
             string text = null;
             try { text = label == null ? null : (string)label.Invoke(null, new[] { value }); }
             catch (Exception) { }
+            // INVALID is the palette's "Other", and has no label of its own.
+            if (text == null && value.ToString() == "INVALID") text = "Other";
             groups.Add(new KeyValuePair<string, object>(text ?? value.ToString(), value));
             groupInternalNames[value] = value.ToString();
         }
@@ -148,6 +161,14 @@ if (groupType != null)
                 groupInternalNames[value] = property.Name;
             }
         }
+
+        // "OTHER" HAS NO GroupTypeId PROPERTY - it is the EMPTY id, where the
+        // older releases had INVALID. Offered so the same word works on every
+        // release; whether AddParameter takes an empty group is unproven, and a
+        // refusal from Revit rolls the call back with its own words.
+        var none = Activator.CreateInstance(groupType);
+        groups.Add(new KeyValuePair<string, object>("Other", none));
+        groupInternalNames[none] = "Other";
     }
 }
 
@@ -189,7 +210,8 @@ Func<object, string> kindLabel = spec =>
         if (label != null) return (string)label.Invoke(null, new[] { spec });
     }
     catch (Exception) { }
-    return spec.ToString();
+    var shown = idText(spec);
+    return shown.Length > 0 ? shown : "an unknown kind";
 };
 
 Func<FamilyParameter, string> groupLabel = p =>
@@ -208,7 +230,8 @@ Func<FamilyParameter, string> groupLabel = p =>
         if (value == null) return "no group";
         foreach (var entry in groups)
             if (sameKind(entry.Value, value)) return entry.Key;
-        return value.ToString();
+        var shown = idText(value);
+        return shown.Length > 0 ? shown : "Other";
     }
     catch (Exception)
     {

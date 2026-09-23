@@ -59,7 +59,9 @@ if (doc.IsFamilyDocument)
         datums.Add(Tuple.Create((Element)rp, rp.GetReference(), at, along(rp.GetPlane().Origin, at), ownName(rp)));
     }
     foreach (var level in new FilteredElementCollector(doc).OfClass(typeof(Level)).Cast<Level>())
-        datums.Add(Tuple.Create((Element)level, new Reference(level), 2, level.Elevation, level.Name));
+        // The level's own PLANE reference - what a dimension or an alignment to
+        // a level is made against - rather than a reference to the element.
+        datums.Add(Tuple.Create((Element)level, level.GetPlaneReference(), 2, level.Elevation, level.Name));
 }
 
 Func<string, List<Tuple<Element, Reference, int, double, string>>> named = wanted =>
@@ -181,10 +183,25 @@ else
         {
             FamilyParameter label = null;
             try { label = d.FamilyLabel; } catch (Exception) { }
-            if (label != null && label.Id == parameter.Id)
+            if (label == null) continue;
+
+            if (label.Id == parameter.Id)
             {
                 problems.Add("\"" + parameter.Definition.Name + "\" already labels a dimension in this family. "
                     + "A second label on it would fight the first as soon as anything moves.");
+                break;
+            }
+
+            // ONE LABEL PER PAIR OF PLANES TOO. Two parameters each driving the
+            // same two planes agree only while their values do; the first flex
+            // that changes one of them is a constraint Revit cannot satisfy.
+            var measured = new List<ElementId>();
+            try { foreach (Reference r in d.References) measured.Add(r.ElementId); } catch (Exception) { }
+            if (measured.Contains(a.Item1.Id) && measured.Contains(b.Item1.Id))
+            {
+                problems.Add("A dimension labelled \"" + label.Definition.Name + "\" already measures \"" + a.Item5
+                    + "\" to \"" + b.Item5 + "\". A second label on the same two planes would fight it as soon as "
+                    + "either parameter changes.");
                 break;
             }
         }
@@ -246,6 +263,7 @@ if (refused == null)
     var first = a.Item4 <= b.Item4 ? a : b;
     var last = a.Item4 <= b.Item4 ? b : a;
     Dimension dimension;
+    Dimension eq = null;
 
     try
     {
@@ -255,9 +273,8 @@ if (refused == null)
             three.Append(first.Item2);
             three.Append(centre.Item2);
             three.Append(last.Item2);
-            var eq = doc.FamilyCreate.NewDimension(view, lineAt(300), three);
+            eq = doc.FamilyCreate.NewDimension(view, lineAt(300), three);
             eq.AreSegmentsEqual = true;
-            equalised = eq.AreSegmentsEqual;
         }
 
         var two = new ReferenceArray();
@@ -274,10 +291,23 @@ if (refused == null)
 
     doc.Regenerate();
 
-    // READ BACK - the label, and the distance the dimension reads.
+    // READ BACK, AFTER THE REGENERATION - the label, the EQ, the distance the
+    // dimension reads, and where the planes are now. The guard above made the
+    // parameter agree with the planes, so NOTHING should have moved; a plane
+    // that did, or a reading that differs, is the collapse this exists to stop,
+    // and it is thrown rather than reported.
     var readLabel = dimension.FamilyLabel;
     var reads = dimension.Value;
     distanceMm = reads.HasValue ? Math.Round(reads.Value * 304.8, 2) : 0.0;
+    equalised = eq != null && eq.AreSegmentsEqual;
+
+    Func<Element, int, double> positionNow = (element, index) =>
+    {
+        var plane = element as ReferencePlane;
+        if (plane != null) return along(plane.GetPlane().Origin, index);
+        var level = element as Level;
+        return level != null ? level.Elevation : double.NaN;
+    };
 
     if (readLabel == null || readLabel.Id != parameter.Id)
         throw new InvalidOperationException("The dimension between \"" + a.Item5 + "\" and \"" + b.Item5
@@ -287,6 +317,20 @@ if (refused == null)
     if (centre != null && !equalised)
         throw new InvalidOperationException("The EQ across \"" + first.Item5 + "\", \"" + centre.Item5
             + "\" and \"" + last.Item5 + "\" did not hold. NOTHING from this call was kept.");
+
+    var apartBefore = Math.Abs(a.Item4 - b.Item4);
+    if (!reads.HasValue || Math.Abs(reads.Value - apartBefore) > halfMillimetre)
+        throw new InvalidOperationException("The labelled dimension reads "
+            + (reads.HasValue ? mm(reads.Value) + " mm" : "nothing") + " where the planes were " + mm(apartBefore)
+            + " mm apart. NOTHING from this call was kept.");
+
+    foreach (var plane in centre != null ? new[] { a, b, centre } : new[] { a, b })
+    {
+        var now = positionNow(plane.Item1, axis);
+        if (double.IsNaN(now) || Math.Abs(now - plane.Item4) > halfMillimetre)
+            throw new InvalidOperationException("\"" + plane.Item5 + "\" moved from " + mm(plane.Item4) + " to "
+                + mm(now) + " mm when the dimension was labelled. NOTHING from this call was kept.");
+    }
 
     labelled = parameter.Definition.Name + " drives \"" + first.Item5 + "\" to \"" + last.Item5 + "\", "
         + "reading " + distanceMm.ToString(invariant) + " mm";

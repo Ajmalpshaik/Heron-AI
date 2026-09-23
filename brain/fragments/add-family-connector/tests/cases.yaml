@@ -1,13 +1,16 @@
 positive:
   - given: >
-      an Air Terminals family with a 300 x 300 neck locked between planes, its
-      top on Neck Top; facePlane "Neck Top", system "Supply Air",
-      sizeParameters "Neck Width, Neck Depth" holding 300 and 300
+      an Air Terminals family with a NON-SQUARE 400 x 300 neck locked between
+      planes, its top on Neck Top; facePlane "Neck Top", system "Supply Air",
+      sizeParameters "Neck Width, Neck Depth" holding 400 and 300
     expect: >
-      a rectangular Supply Air duct connector reading 300 x 300 mm, pointing
-      up, at the neck top's centre - LOOKED AT in the Family Editor by
-      selecting the connector and reading its Properties. Then Neck Width
-      changed to 400 in Family Types and the connector read again at 400
+      a rectangular Supply Air duct connector whose width and height lie along
+      the neck's 400 and 300 sides, pointing up, at the neck top's centre -
+      LOOKED AT in the Family Editor by selecting the connector and reading its
+      Properties, and the report saying whether the two parameters were turned
+      to fit. Then Neck Width changed to 500 in Family Types and the connector
+      read again along the same side. A square neck cannot show a swap, which
+      is why this case is not square
 
   - given: >
       a stub on a Mechanical Equipment family, its end on the plane Drain End,
@@ -27,6 +30,12 @@ negative:
 
   - given: system "Suply Air" (misspelt)
     expect: refused with close system names offered, nothing made
+
+  - given: >
+      sizeParameters holding 600 and 600 on a 400 x 300 neck face
+    expect: >
+      refused with both sizes named - a port that does not fit its face - and
+      no connector in the family
 
   - given: a facePlane that no solid face lies on
     expect: refused naming EXTRUDE_BETWEEN_PLANES, nothing made

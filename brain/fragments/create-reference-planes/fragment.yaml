@@ -32,8 +32,9 @@ purpose: >
   where Revit wanted a direction - and nothing checks it later, so a plane
   that does not read back true fails the whole call and nothing is kept.
 
-  **A NAME ALREADY IN THE FAMILY** is left alone when that plane already sits
-  where it was asked for, so a request run twice adds nothing twice. A plane
+  **A NAME ALREADY IN THE FAMILY** - a level's included, because every later
+  step finds planes and levels by name - is refused unless it is a plane that
+  already sits where it was asked for, which is left alone, so a request run twice adds nothing twice. A plane
   of that name somewhere ELSE refuses the whole call: moving it would drag
   whatever is locked to it, and that is a decision for the modeller, not a
   side effect.

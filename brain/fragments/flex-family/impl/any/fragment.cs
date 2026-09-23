@@ -12,10 +12,13 @@
 //
 // THE SOLID IS MEASURED, NOT THE PLANES. Planes moving prove the dimensions
 // work, not that the geometry followed - reported from an earlier family
-// build. Each trial reads the union of every solid form's extent, compares
-// every labelled dimension with its parameter, and every connector size tied
-// to a parameter with that parameter. Labelled planes that moved while the
-// solid stayed put is named for what it is: geometry not locked to them.
+// build. Each trial reads EVERY solid form's own extent - a neck that moves
+// inside a body that does not is invisible in their union - compares every
+// labelled dimension with its parameter, and every connector size tied to a
+// parameter with that parameter. Labelled planes that moved while no solid
+// did is named for what it is: geometry not locked to them. A dimension that
+// cannot reach its parameter is a size the family cannot take, and it THROWS
+// naming the trial, because at commit it would be lost or kept silently.
 //
 // EACH TRIAL STARTS FROM THE ORIGINAL VALUES plus only what it names, so the
 // trials do not leak into one another.
@@ -84,7 +87,10 @@ Func<FamilyParameter, string> kindOf = p =>
             if (spec == null) return "unknown";
             foreach (var entry in kindsNew)
                 if (sameKind(entry.Value, spec)) return entry.Key;
-            return spec.ToString();
+            // A ForgeTypeId prints as its CLASS name, so the id string is shown.
+            var typeId = spec.GetType().GetProperty("TypeId");
+            var id = typeId == null ? null : typeId.GetValue(spec) as string;
+            return string.IsNullOrEmpty(id) ? "an unnamed kind" : id;
         }
         var property = definition.GetType().GetProperty("ParameterType");
         var old = property == null ? null : property.GetValue(definition);
@@ -153,7 +159,8 @@ else
 
             var kindWord = kindOf(p);
             double number;
-            var isNumber = double.TryParse(text, System.Globalization.NumberStyles.Float, invariant, out number);
+            var isNumber = double.TryParse(text, System.Globalization.NumberStyles.Float, invariant, out number)
+            && !double.IsNaN(number) && !double.IsInfinity(number);
             object value = null;
 
             if (kindWord == "length" && isNumber) value = number / 304.8;
@@ -200,27 +207,38 @@ if (refused == null)
 {
     var fm = doc.FamilyManager;
 
-    // WHAT THE FAMILY READS NOW: the solid's extent, every labelled dimension
-    // and every tied connector size against its parameter, and the labelled
-    // distances themselves.
-    Func<Tuple<double[], List<string>, int, Dictionary<string, double>>> measure = () =>
+    // WHAT THE FAMILY READS NOW, as one snapshot:
+    //   Item1  the union of every solid's extent - what the report shows
+    //   Item2  each solid form's OWN extent, by its unique id - what is judged.
+    //          A neck that moves inside a body that does not is invisible in
+    //          the union, and a flex judged on the union would call a
+    //          correctly locked neck "not locked"
+    //   Item3  labelled dimensions that disagree with their parameter
+    //   Item4  tied connector sizes that disagree with their parameter
+    //   Item5  how many labels and ties were checked
+    //   Item6  each labelled dimension's reading, to see whether planes moved
+    Func<Tuple<double[], Dictionary<string, double[]>, List<string>, List<string>, int, Dictionary<string, double>>> measure = () =>
     {
-        double[] box = null;
+        double[] union = null;
+        var boxes = new Dictionary<string, double[]>();
         var forms = new FilteredElementCollector(doc).WhereElementIsNotElementType().ToElements()
             .OfType<GenericForm>().Where(f => f.IsSolid).ToList();
         foreach (var form in forms)
         {
             var bounds = form.get_BoundingBox(null);
             if (bounds == null) continue;
-            if (box == null) box = new[] { bounds.Min.X, bounds.Min.Y, bounds.Min.Z, bounds.Max.X, bounds.Max.Y, bounds.Max.Z };
+            var own = new[] { bounds.Min.X, bounds.Min.Y, bounds.Min.Z, bounds.Max.X, bounds.Max.Y, bounds.Max.Z };
+            boxes[form.UniqueId] = own;
+            if (union == null) union = (double[])own.Clone();
             else
             {
-                box[0] = Math.Min(box[0], bounds.Min.X); box[1] = Math.Min(box[1], bounds.Min.Y); box[2] = Math.Min(box[2], bounds.Min.Z);
-                box[3] = Math.Max(box[3], bounds.Max.X); box[4] = Math.Max(box[4], bounds.Max.Y); box[5] = Math.Max(box[5], bounds.Max.Z);
+                for (var k = 0; k < 3; k++) union[k] = Math.Min(union[k], own[k]);
+                for (var k = 3; k < 6; k++) union[k] = Math.Max(union[k], own[k]);
             }
         }
 
-        var misses = new List<string>();
+        var dimensionMisses = new List<string>();
+        var portMisses = new List<string>();
         var checks = 0;
         var labels = new Dictionary<string, double>();
         var type = fm.CurrentType;
@@ -234,9 +252,9 @@ if (refused == null)
             var holds = type.AsDouble(label);
             if (!reads.HasValue || !holds.HasValue) continue;
             checks++;
-            labels[label.Definition.Name + " #" + checks] = reads.Value;
+            labels[dimension.UniqueId] = reads.Value;
             if (Math.Abs(reads.Value - holds.Value) > tolerance)
-                misses.Add("the dimension labelled " + label.Definition.Name + " reads " + mm(reads.Value)
+                dimensionMisses.Add("the dimension labelled " + label.Definition.Name + " reads " + mm(reads.Value)
                     + " mm and the parameter holds " + mm(holds.Value) + " mm");
         }
 
@@ -250,22 +268,22 @@ if (refused == null)
         {
             foreach (var tie in sized)
             {
-                var own = port.get_Parameter(tie.Item1);
-                if (own == null) continue;
+                var ownParameter = port.get_Parameter(tie.Item1);
+                if (ownParameter == null) continue;
                 FamilyParameter driver = null;
-                try { driver = fm.GetAssociatedFamilyParameter(own); } catch (Exception) { }
+                try { driver = fm.GetAssociatedFamilyParameter(ownParameter); } catch (Exception) { }
                 if (driver == null) continue;
                 var holds = type.AsDouble(driver);
                 if (!holds.HasValue) continue;
                 checks++;
-                var reads = own.AsDouble();
+                var reads = ownParameter.AsDouble();
                 if (Math.Abs(reads - holds.Value) > tolerance)
-                    misses.Add("a connector's " + tie.Item2 + " reads " + mm(reads) + " mm and "
+                    portMisses.Add("a connector's " + tie.Item2 + " reads " + mm(reads) + " mm and "
                         + driver.Definition.Name + " holds " + mm(holds.Value) + " mm");
             }
         }
 
-        return Tuple.Create(box, misses, checks, labels);
+        return Tuple.Create(union, boxes, dimensionMisses, portMisses, checks, labels);
     };
 
     Func<double[], string> describe = box => box == null
@@ -280,6 +298,11 @@ if (refused == null)
         for (var i = 0; i < 6; i++) if (Math.Abs(first[i] - second[i]) > 1e-6) return false;
         return true;
     };
+
+    // Every solid where it was, form by form - and none appearing or vanishing.
+    Func<Dictionary<string, double[]>, Dictionary<string, double[]>, bool> sameForms = (first, second) =>
+        first.Count == second.Count
+        && first.All(entry => second.ContainsKey(entry.Key) && sameBox(entry.Value, second[entry.Key]));
 
     // Writes every touched parameter: the trial's value where it names one,
     // the original everywhere else.
@@ -316,26 +339,38 @@ if (refused == null)
         }
 
         var now = measure();
-        var misses = new List<string>(now.Item2);
 
-        // PLANES MOVED AND THE SOLID DID NOT: the failure a flex exists for.
-        var planesMoved = now.Item4.Any(l => start.Item4.ContainsKey(l.Key)
-                                          && Math.Abs(start.Item4[l.Key] - l.Value) > tolerance);
-        if (planesMoved && sameBox(start.Item1, now.Item1))
-            misses.Add("the labelled planes moved and the solid did NOT - it is not locked to them");
+        // A LABELLED DIMENSION THAT DID NOT REACH ITS PARAMETER is a size the
+        // constraints cannot take. Revit may post it as a warning the host
+        // dismisses, or as an error that rolls everything back at commit and
+        // loses which trial it was - so it is thrown HERE, naming the trial.
+        if (now.Item3.Count > 0)
+            throw new InvalidOperationException("Trial " + number + " (" + said + ") could not be solved: "
+                + string.Join("; ", now.Item3) + ". That size is one the family cannot take. NOTHING from "
+                + "this flex was kept. " + (trialResults.Count > 0 ? "Before it: " + string.Join(" / ", trialResults) : ""));
 
-        if (now.Item3 == 0 && sameBox(start.Item1, now.Item1))
+        var misses = new List<string>(now.Item4);
+        var formsMoved = !sameForms(start.Item2, now.Item2);
+
+        // PLANES MOVED AND NO SOLID DID: the failure a flex exists for.
+        var planesMoved = now.Item6.Any(l => start.Item6.ContainsKey(l.Key)
+                                          && Math.Abs(start.Item6[l.Key] - l.Value) > tolerance);
+        if (planesMoved && !formsMoved)
+            misses.Add("the labelled planes moved and no solid did - the geometry is not locked to them");
+
+        if (now.Item5 == 0 && !formsMoved)
             misses.Add("nothing in this family is driven by these parameters - no labelled dimension, no "
-                + "tied connector, and the solid did not move");
+                + "tied connector, and no solid moved");
 
         if (misses.Count > 0) every = false;
 
-        trialResults.Add("Trial " + number + " (" + said + "): " + describe(now.Item1) + "; "
-            + (now.Item3 - now.Item2.Count) + " of " + now.Item3 + " driven sizes read their parameters"
+        trialResults.Add("Trial " + number + " (" + said + "): " + describe(now.Item1) + " across "
+            + now.Item2.Count + " solid(s); " + (now.Item5 - now.Item4.Count) + " of " + now.Item5
+            + " driven sizes read their parameters"
             + (misses.Count > 0 ? " - NOT HELD: " + string.Join("; ", misses) : ""));
     }
 
-    // PUT EVERYTHING BACK, and prove it.
+    // PUT EVERYTHING BACK, and prove it - every solid, not only their union.
     try
     {
         apply(null);
@@ -360,22 +395,22 @@ if (refused == null)
         return whole.HasValue && whole.Value == (int)original;
     });
 
-    restored = valuesBack && sameBox(start.Item1, end.Item1);
+    restored = valuesBack && sameForms(start.Item2, end.Item2);
 
     if (!restored)
         throw new InvalidOperationException("After the flex the family did not come back as it was - "
             + (valuesBack ? "" : "a value did not return; ") + "it started as " + describe(start.Item1)
-            + " and ended as " + describe(end.Item1) + ". NOTHING from this flex was kept. Trials: "
-            + string.Join(" / ", trialResults));
+            + " and ended as " + describe(end.Item1) + " (every solid is compared, not only the whole). "
+            + "NOTHING from this flex was kept. Trials: " + string.Join(" / ", trialResults));
 
-    allHeld = every && start.Item3 > 0;
+    allHeld = every && start.Item5 > 0;
 
     findings.Add("Flexed " + planned.Count + " size(s) and put the family back: " + describe(end.Item1)
-        + ", as it started, with every value read back.");
+        + ", every solid where it started, with every value read back.");
     findings.AddRange(trialResults);
     findings.Add(allHeld
         ? "Every labelled dimension and every tied connector read its parameter in every trial, and the "
-          + "solid moved with its planes. Compare the solid's sizes above with the sizes tried - that "
+          + "solids moved with their planes. Compare the sizes above with the sizes tried - that "
           + "comparison is the modeller's, and a square trial alone hides a width and depth swapped."
         : "NOT EVERYTHING HELD - see the trials marked NOT HELD. The family is back as it was.");
 }

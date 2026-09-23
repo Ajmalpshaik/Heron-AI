@@ -46,8 +46,12 @@ purpose: >
   with a parameter, not after - LABEL_FAMILY_DIMENSION refuses a label whose
   parameter disagrees with the planes.
 
-  **ALL OR NOTHING.** Every name and value is checked before the first write;
-  if Revit then refuses one, the call fails and nothing from it is kept.
+  **ALL OR NOTHING, READ BACK.** Every name and value is checked before the
+  first write; if Revit then refuses one, the call fails and nothing from it is
+  kept. And after the write, every labelled dimension that agreed with its
+  parameter before must still agree: Revit may only WARN about a size its
+  constraints cannot take, and keep the value while the planes stay put - so a
+  dimension that no longer reads its parameter fails the call too.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
