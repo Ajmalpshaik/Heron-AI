@@ -23,7 +23,8 @@ WHAT IT PROVES
   3. A SOURCE OF TRUTH IS REFUSED BY NAME, saying what kind of thing it is
      - fragments, decisions, proof drafts, a Revit model. So is each file of
      a register that was split into files: one decision, one group of
-     NEEDS-CHECKING, one group of its done checks (row 5b-172).
+     NEEDS-CHECKING, one group of its done checks (row 5b-172), one section
+     of the open questions.
 
   4. A REBUILDER WITH NO SOURCE REBUILDS NOTHING. Running a generator
      against a missing source produces an EMPTY artefact that looks current,
@@ -121,7 +122,8 @@ def main():
     # named source of truth gets. Row 5b-172.
     for path, word in (("docs/decisions/D-30.md", "chosen"),
                        ("docs/needs-checking/group-j.md", "proved"),
-                       ("docs/needs-checking-archive/group-a.md", "done checks")):
+                       ("docs/needs-checking-archive/group-a.md", "done checks"),
+                       ("docs/open-questions/tier-3.md", "open questions")):
         answer = ask(path)
         check(answer.get("refused") == "NOT_KNOWN_TO_BE_DERIVED"
               and "Nothing regenerates it" in answer["why"]

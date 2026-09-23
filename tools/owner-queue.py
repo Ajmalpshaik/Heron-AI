@@ -112,6 +112,10 @@ def proposals_text():
     return RT.register_text("docs/PROPOSALS.md", read)
 
 
+def open_questions_text():
+    return RT.register_text("docs/OPEN-QUESTIONS.md", read)
+
+
 # What the owner has to have in front of him. The order is the order he can
 # actually act in: the things needing nothing come first.
 BUCKETS = [
@@ -142,8 +146,9 @@ def classify(text):
 
 
 def open_questions():
-    """Same rule check-docs.py uses, so the two can never disagree."""
-    src = read("docs/OPEN-QUESTIONS.md")
+    """Same rule check-docs.py uses, so the two can never disagree - and
+    the same text: the register as one, every tier's file back in place."""
+    src = open_questions_text()
     if src is None:
         return []
     out = []

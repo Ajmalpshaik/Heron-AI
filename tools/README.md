@@ -1935,6 +1935,13 @@ section headed only by a date takes its first five words as well, so two written
 [`owner-queue.py`](#owner-queuepy--what-is-waiting-on-the-owner-derived-rather-than-typed) and `balance-of-work.py` read
 it through `register-text.py`, and the split was refused unless both read the same proposals from it.
 
+**So is OPEN-QUESTIONS.md** - `python tools/split-register.py open-questions` - one file per tier in
+[`docs/open-questions/`](../docs/open-questions/tier-1.md), with the Progress line kept on the page.
+[`check-docs.py`](#check-docspy--link-and-cross-reference-integrity) counts the questions and checks the Progress line
+from the register read whole, and `owner-queue.py` lists the open ones from it; the split was refused unless
+check-docs' questions and Progress line - run whole, on a copy laid out each way - and owner-queue's list came out
+the same.
+
 ## `register-text.py` - a split register read as one text
 
 ```bash
@@ -1944,7 +1951,7 @@ python tools/register-text.py docs/FRAGMENT-ISSUES.md | grep 5b-62    # search a
 
 The reader every tool of a register split by `split-register.py` goes through: `open-defects.py`,
 `review-ledger.py` and `archive-fragment-issues.py` for FRAGMENT-ISSUES, `owner-queue.py` and `balance-of-work.py` for
-PROPOSALS. It puts each section's file back under
+PROPOSALS, `check-docs.py` and `owner-queue.py` for OPEN-QUESTIONS. It puts each section's file back under
 its heading, and each band of rows back where the table was, with the links as they were written in the one file.
 Standard library only. **A missing file is not skipped** - a line naming a file that is not there, a section's
 file that does not open with its heading, or a rows file with no table stops it with `RegisterBroken` rather than

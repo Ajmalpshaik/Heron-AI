@@ -43,10 +43,11 @@ where the table was, naming the files in order. A row written after the last
 file's band - the register's rule is that a new row goes at the end of its
 section's last file - is moved to its own band by the next run.
 
-PROPOSALS.md - `python tools/split-register.py proposals` - moves every
-section whole: `## F23 ...` to f23.md, `## Part A ...` to part-a.md. A
-section headed with nothing but a date takes its first five words after
-the date as well, so two written on one day get two files.
+PROPOSALS.md - `python tools/split-register.py proposals` - and
+OPEN-QUESTIONS.md - `... open-questions` - move every section whole:
+`## F23 ...` to f23.md, `## Tier 3 ...` to tier-3.md. A section headed with
+nothing but a date takes its first five words after the date as well, so
+two written on one day get two files.
 
 THE REGISTER IS STILL ONE TEXT, AND THAT IS WHAT IS PROVED
 ----------------------------------------------------------
@@ -60,7 +61,9 @@ written. Nothing here writes a byte unless:
      re-implemented: for FRAGMENT-ISSUES, open-defects.py's whole report,
      review-ledger.py's rows of section 5b, and archive-fragment-issues.py's
      plan; for PROPOSALS, the proposals owner-queue.py lists and the open ones
-     balance-of-work.py counts;
+     balance-of-work.py counts; for OPEN-QUESTIONS, the questions owner-queue.py
+     lists, and check-docs.py's count of them and of its Progress line - run
+     whole, on each copy;
   3. every link re-pointed on the way out reaches the file it reached before
      (archive-handover.py's own function, which proves each one), and no other
      document links into a heading that would leave the page.
@@ -81,6 +84,7 @@ import io
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -146,6 +150,29 @@ def _proposals_readers(docs):
     return answers
 
 
+def _between(text, start, end):
+    at = text.find(start)
+    return text[at:text.find(end, at)] if at >= 0 else None
+
+
+def _open_questions_readers(docs):
+    """What OPEN-QUESTIONS' readers make of the register laid out in DOCS:
+    the questions owner-queue.py puts in front of the owner, and what
+    check-docs.py counts - run whole, in a folder holding nothing but this
+    register, and read at its sections 4 and 6, where the questions are."""
+    top = os.path.dirname(docs)
+    answers = {}
+    oq = _load("owner_queue_as_served", "owner-queue.py")
+    oq.ROOT = top
+    answers["owner-queue"] = oq.open_questions()
+    run = subprocess.run([sys.executable, os.path.join(HERE, "check-docs.py")], cwd=top,
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    text = run.stdout.decode("utf-8", "replace")
+    answers["check-docs, its questions"] = _between(text, "=== 4. QUESTIONS ===", "=== 5.")
+    answers["check-docs, its Progress line"] = _between(text, "=== 6. THE PROGRESS LINE ===", "=== 7.")
+    return answers
+
+
 # Each register this splits: its page, the words its files are titled with,
 # the sections that are the page's own rules, the sections whose rows are
 # banded and the name each band's file starts with, the folders its readers
@@ -166,6 +193,14 @@ REGISTERS = {
         "rows": (),
         "beside": (),
         "readers": _proposals_readers,
+    },
+    "open-questions": {
+        "index": os.path.join("docs", "OPEN-QUESTIONS.md"),
+        "title": "Open questions",
+        "stays": (),
+        "rows": (),
+        "beside": (),
+        "readers": _open_questions_readers,
     },
 }
 
