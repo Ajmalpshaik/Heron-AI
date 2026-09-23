@@ -2241,7 +2241,7 @@ running anything. `AA9` is owed by a browser download.
 
 ## Group AG - the background Model Auditor, `heron-model-auditor` ([PR #298](https://github.com/Ajmalpshaik/Heron-AI/pull/298))
 
-Heron's first background agent: `.claude/agents/heron-model-auditor.md`, which audits the open model with 18 read-only Heron tools. **Run once, not proven.** On 2026-09-22 it ran on **Project4**, Revit 2024, session 37184. Its report matched direct reads, including two areas read only after the run: views (12 views, 13 templates) and rooms (4, with 0 unplaced and 0 not enclosed). It declined a request to select all the walls. Its own list of callable tools showed only its 18 read tools. The model had 3,276 elements before and after. The evidence is in the PR.
+Heron's first background agent: `.claude/agents/heron-model-auditor.md`, which audits the open model with the read-only Heron tools its `tools:` line names - 18 when it ran, and three more since 2026-09-23, when package C2 added `revit_read`, `heron_lookup` and `heron_resolve` (Group AH). **Run once, not proven.** On 2026-09-22 it ran on **Project4**, Revit 2024, session 37184. Its report matched direct reads, including two areas read only after the run: views (12 views, 13 templates) and rooms (4, with 0 unplaced and 0 not enclosed). It declined a request to select all the walls. Its own list of callable tools showed only its 18 read tools. The model had 3,276 elements before and after. The evidence is in the PR.
 
 *Placed 2026-09-23 by the register split, from the session that ran it. Its ids were first AC1 to AC3, which Stage 5's rows further down already used - AE and AF are taken as well, by the `heron-install` rows - so it was renumbered AG1 to AG3 the same day. FRAGMENT-ISSUES row 5b-156.*
 
@@ -2253,7 +2253,27 @@ Heron's first background agent: `.claude/agents/heron-model-auditor.md`, which a
 
 ---
 
-## Group AH - the development hooks, on the owner's PC ([PR #308](https://github.com/Ajmalpshaik/Heron-AI/pull/308))
+## Group AH - the MCP server's read-only door, its rules and its labels (package C2, 2026-09-23)
+
+Built in a cloud session with no Revit: `revit_read`, the server's instructions (`host.chat`) and the
+safety labels on every tool ([04 §8](04-heron-mcp.md)), and the owner's answer to D1 recorded as
+[D-99](DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) - so there is **no preview row here**: `revit_change` keeps changing at once, by
+his choice. **Everything below passed only as code and against a stand-in Revit.** Use a **named** model,
+and say which in the result.
+
+| # | Check | Expected |
+|---|---|---|
+| **AH1** | **Changes OFF.** In a fresh chat on a named model, ask a question a PROVEN read answers - *"which views have no template"* - so the host calls `revit_read` | An answer naming the model, the capability's proof line (`PROVEN on ... and its code has not changed since`), and *"Nothing in the model was changed"*. The banner reads READING, not CHANGING; **nothing** is added to Revit's undo list. If it is refused for want of Changes ON, the add-in's gate disagrees with `HeronOperationRegistry` and that is the finding |
+| **AH2** | **Changes OFF.** Ask `revit_read` for a capability above ANALYZE - `SET_SELECTION` (EXECUTE) and `DELETE_ELEMENTS` (MODIFY) | Both refused with *"Nothing has been sent to Revit"*; the selection on screen does not change; Heron's audit log has **no** entry for either, because nothing reached the add-in |
+| **AH3** | Pin **Project1**, click into **Project2**, ask the same read again | The answer is about **Project1**, says it is not the model in front, and Project2 is untouched. The read door aims at the pin exactly as `revit_change` does (E16's write half) |
+| **AH4** | A **DRAFT** read - one `heron_lookup` offers that is not PROVEN | It runs, and its answer says DRAFT and *"Treat this answer as a claim"* - never PROVEN |
+| **AH5** | In a **fresh** Claude Code chat with Heron connected, before any tool call, ask *"what are your rules about undoing a change, and about saying compliant?"* | The answer comes from the server's instructions: Revit's own Undo, never a reversing change; never "compliant", the engineer or authority decides; and `revit_change` keeps a change at once (D-99). If the host cannot quote them, the instructions did not arrive - check `/mcp` for the server first |
+| **AH6** | Look at Heron's tools in the host's tool list (`/mcp` in Claude Code) | `revit_change` and `revit_apply_move` are **not** marked read-only; `revit_read` and the list tools are. If the host shows no labels at all, say so - it is advice the host may not display, not a failure |
+| **AH7** | Sign | A person reads AH1 to AH6 and signs. The machine never signs |
+
+---
+
+## Group AI - the development hooks, on the owner's PC ([PR #308](https://github.com/Ajmalpshaik/Heron-AI/pull/308))
 
 **No Revit is needed for any of these** - a Windows session with Git Bash, opened in the Heron folder. The
 hooks are wired from [`.claude/settings.json`](../.claude/settings.json) and are for developing Heron only.
@@ -2261,15 +2281,15 @@ They were proved on Linux, in the cloud session that built them; the Windows hal
 [`heron-session`](../.claude/skills/heron-session/SKILL.md) and
 [`heron-guard`](../.claude/skills/heron-guard/SKILL.md) say what each one does.
 
-*Placed 2026-09-23 by earlier-brain package C1. AH2 and AH3 guard against the defects in FRAGMENT-ISSUES
-rows 5b-161 and 5b-162.*
+*Placed 2026-09-23 by earlier-brain package C1. AI2 and AI3 guard against the defects in FRAGMENT-ISSUES
+rows 5b-164 and 5b-165.*
 
 | # | Check | Expected |
 |---|---|---|
-| **AH1** | Open Claude Code in the Heron folder: a new session | Before anything else the session is told one line - *"Heron: branch ... is N behind and M ahead of origin/main (as last fetched). Fragments: P PROVEN, D DRAFT of T."* - and its counts agree with `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c`. No line at all means the hook did not run: try `python --version` in Git Bash first |
-| **AH2** | In a fresh session, without loading any skill, ask for a new file under `brain/` holding the Revit vendor namespace in a comment | Refused before the file is written, with the guard's reason. Written means the guard is not running in every session - row 5b-161 again |
-| **AH3** | In the same session, ask for a short note carrying Arabic text in a new file under `docs/`, then delete it | Written, with no refusal. A refusal naming `UnicodeDecodeError` means the Windows code-page trap is back - row 5b-162 |
-| **AH4** | After a day of ordinary work, run `python tools/hook-report.py` | It names the diary in Heron's log folder - the one the add-in writes its own log to - and `heron-guard` shows decisions in every session of that day. A hook that never appears is not running |
+| **AI1** | Open Claude Code in the Heron folder: a new session | Before anything else the session is told one line - *"Heron: branch ... is N behind and M ahead of origin/main (as last fetched). Fragments: P PROVEN, D DRAFT of T."* - and its counts agree with `grep -h '^heron-status:' brain/fragments/*/fragment.yaml \| sort \| uniq -c`. No line at all means the hook did not run: try `python --version` in Git Bash first |
+| **AI2** | In a fresh session, without loading any skill, ask for a new file under `brain/` holding the Revit vendor namespace in a comment | Refused before the file is written, with the guard's reason. Written means the guard is not running in every session - row 5b-164 again |
+| **AI3** | In the same session, ask for a short note carrying Arabic text in a new file under `docs/`, then delete it | Written, with no refusal. A refusal naming `UnicodeDecodeError` means the Windows code-page trap is back - row 5b-165 |
+| **AI4** | After a day of ordinary work, run `python tools/hook-report.py` | It names the diary in Heron's log folder - the one the add-in writes its own log to - and `heron-guard` shows decisions in every session of that day. A hook that never appears is not running |
 
 ---
 
