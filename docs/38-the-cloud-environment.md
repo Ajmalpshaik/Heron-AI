@@ -112,11 +112,25 @@ than on shared words. This is the only thing on this page that cannot be checked
 
 In order: the .NET 10 SDK and `python-is-python3` from apt; PyYAML, `mcp`, `model2vec`, `sqlite-vec`
 and `pypdf` from pip; the knowledge directory; then a fragment index rebuild and a NuGet restore, run
-in parallel. Every step is bounded with `timeout`, and every failure is swallowed into a named log
-rather than raised.
+in parallel. The rebuild and the restore are bounded with `timeout`. Every failure is kept in a named
+log rather than raised, and the script's last lines say what did not arrive - `dotnet ... NOT
+INSTALLED`, or `python packages MISSING:` and the names - because the exit code cannot say it.
 
-**`python-is-python3` is not housekeeping.** [`.mcp.json`](../.mcp.json) runs `python`, and Ubuntu
-24.04 ships `python3` only. Without it the Heron MCP server never starts, and nothing says why.
+**On 2026-09-22 it installed nothing, and exited 0.** The image carries two third-party PPAs that
+answered 403, so `apt-get update` failed while the Ubuntu archive's own lists came down fine - and the
+install was chained on with `&&`. pip stopped because it cannot uninstall a package Debian installed:
+`--upgrade` asked for a newer PyYAML than Debian's, and `mcp` needs a newer PyJWT. So the update's exit
+code no longer gates the install, and pip tries a plain install first, then `--ignore-installed`,
+which installs beside Debian's copies and never removes one. `mcp` stays unpinned
+([D-45](DECISIONS.md#d-45--heron-tracks-the-mcp-sdk-across-major-versions-the-way-it-tracks-revit-releases)):
+both of its suites pass on SDK 2.2.0 as well as 1.x. [FRAGMENT-ISSUES row 5b-167](FRAGMENT-ISSUES.md)
+has the logs; [`tests/test_cloud_setup.py`](../tests/test_cloud_setup.py) runs the script against
+stand-ins that fail the way that image did.
+
+**`python-is-python3` is not housekeeping.** The hooks in
+[`.claude/settings.json`](../.claude/settings.json) and [`.mcp.json`](../.mcp.json) run `python`, and a
+stock Ubuntu 24.04 image ships `python3` only. A hook whose command is not found is read as no
+objection, so without it the boundary guard would let every edit through, and nothing would say why.
 
 **It does not install `sentence-transformers`.** That pulls torch — 500 MB to 2 GB — to re-order a
 shortlist it already has. [`requirements-optional.txt`](../requirements-optional.txt) gives the same

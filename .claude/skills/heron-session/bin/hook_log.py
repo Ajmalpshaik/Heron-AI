@@ -36,14 +36,15 @@ C#, so this asks the Python seams that already resolve Heron's folders:
   1. HERON'S LOG FOLDER - HeronPaths.Logs, the folder the add-in writes its own
      daily log to, as mcp/client/heron_bridge_client.LOG_DIR resolves it.
      DERIVED: machine-local and disposable, which is exactly what a log of
-     hook decisions is. This is the answer on Windows.
+     hook decisions is. %LOCALAPPDATA%\Heron\logs on Windows, and elsewhere
+     the ~/.local/share/Heron/logs that .NET names there.
 
   2. THE KNOWLEDGE FOLDER - heron_scope.knowledge_dir(), only when the first
-     cannot answer. On Linux there is no per-user local application folder
-     for the first to read, so it comes back as a RELATIVE path - one that
-     would land inside whatever folder the hook happens to run in, which is
-     this repository. HERON_KNOWLEDGE is the one folder a cloud session is
-     always given (docs/38), so the log goes there instead.
+     cannot be used: when it would land inside this repository, or is not an
+     absolute path at all. Until 2026-09-23 that was every Linux machine -
+     the bridge client read only %LOCALAPPDATA% and answered a RELATIVE path
+     there (FRAGMENT-ISSUES row 5b-168) - so a cloud session's diary went to
+     HERON_KNOWLEDGE, the one folder it is always given (docs/38).
 
   3. NEITHER - no log, silently. A hook never fails, and never refuses, because
      it could not write its diary. `hook-report.py` says which of the three
