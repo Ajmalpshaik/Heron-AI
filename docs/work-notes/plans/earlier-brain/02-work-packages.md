@@ -20,7 +20,7 @@
 | **C8** | Three fragments from the outside-library notes | cloud, then PC | 2 | C4 merged | not started |
 | **C9** | Skills that carry a method — the design, then the HVAC methods | cloud, then PC | 3 | owner decision **D2** | not started |
 | **C10** | Tagging and sprinkler methods | cloud, then PC | 3 | C9 merged | not started |
-| **C11** | Family creation | cloud, then PC | 3, last | C7 and C9 merged | not started |
+| **C11** | Family creation | PC | taken early | the owner's word, 2026-09-24 | **built, all `DRAFT`** on branch `claude/heron-family-creation-d5343a`, taken ahead of C7 and C9 when the owner asked for family creation in Heron (*"ADD THIS IN HERRON MAKE IT PARTOF HERON"*): nine fragments and the `family-creation` skill, every one compiled on all eight releases, none yet run in Revit. Owed on the PC: [NEEDS-CHECKING **Group AM**](../../../needs-checking/group-am.md). Not built: voids, round shapes, materials, subcategories, nested families |
 | — | PR #299, the risk gate on `revit_change` ([01 §3 H1](01-findings.md)) | cloud, then PC | — | **the owner's word to merge** | **merged** as [#299](https://github.com/Ajmalpshaik/Heron-AI/pull/299), 2026-09-22 - FRAGMENT-ISSUES **5b-155** FIXED; owed on the PC: its refusal check in [05](05-pc-proving.md) |
 
 **Wave 1 runs in parallel** — five sessions whose files do not overlap. **Wave 2** starts when the package
@@ -311,3 +311,10 @@ declares a question only when answering needs the write ([D-86](../../../DECISIO
 The largest and the job done least often. Missing capabilities: set a family's category, add a parameter,
 a reference plane, an extrusion, alignment and locking, a connector. The proof is a resize test with
 several values read back. Void cuts were never solved in the earlier library. Only after C7 and C9.
+
+**2026-09-24 - built ahead of C7 and C9, on the owner's word.** He asked for it directly after the earlier
+library was compared with Heron, so it did not wait for the fragment-writing agent: the nine capabilities were
+written by hand, the way every fragment before C7 was. It did not wait for D2 either - the `family-creation`
+skill carries its order in its `purpose` and in the order of its `needs`, and each fragment's answer names the
+next step. When D2 gives skills a `steps:` list, this skill is the first to take it; AM11 records how well the
+order reached the host without one.
