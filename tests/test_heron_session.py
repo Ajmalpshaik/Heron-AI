@@ -89,11 +89,21 @@ def clean_env(**extra):
     leaving it would make "no folder at all" impossible to set up there.
     """
     env = dict(os.environ)
-    for name in ("LOCALAPPDATA", "APPDATA", "HERON_KNOWLEDGE",
+    for name in ("LOCALAPPDATA", "XDG_DATA_HOME", "APPDATA", "HERON_KNOWLEDGE",
                  "CLAUDE_PROJECT_DIR"):
         env.pop(name, None)
     env.update(extra)
     return env
+
+
+def local_env(folder, **extra):
+    """clean_env with Heron's per-user local folder pointed at `folder`.
+
+    .NET reads LOCALAPPDATA on Windows and XDG_DATA_HOME elsewhere, and the
+    bridge client resolves Heron's log folder the same way, so both are set
+    and the suite steers the diary on either system.
+    """
+    return clean_env(LOCALAPPDATA=folder, XDG_DATA_HOME=folder, **extra)
 
 
 def hook(script, payload, env):
@@ -270,7 +280,7 @@ def run_all(home):
     local = os.path.join(home, "local")
     os.makedirs(local)
     logs = os.path.join(local, "Heron", "logs")
-    env = clean_env(LOCALAPPDATA=local)
+    env = local_env(local)
     plain = os.path.join(home, "plain")
     os.makedirs(plain)
 
@@ -505,17 +515,21 @@ def run_all(home):
 
     kb = os.path.join(home, "kb")
     os.makedirs(kb)
-    target, how = diary_path(clean_env(HERON_KNOWLEDGE=kb))
+    inside = os.path.join(ROOT, "tests")
+    target, how = diary_path(local_env(inside, HERON_KNOWLEDGE=kb))
     check(target == os.path.join(kb, "heron-hooks.jsonl"),
-          "with no per-user local folder (Linux), the knowledge folder is "
+          "when Heron's log folder cannot be used, the knowledge folder is "
           "used instead - found through %s" % how)
-    target, how = diary_path(clean_env())
+    # A relative answer is refused too. The bridge client no longer gives one
+    # on any system (FRAGMENT-ISSUES row 5b-168), so it is made here the only
+    # way left: a home folder that is itself relative.
+    target, how = diary_path(clean_env(HOME="not-absolute",
+                                       USERPROFILE="not-absolute"))
     check(target is None and "relative" in (how or ""),
           "with neither, there is NO diary - and the reason names the "
           "relative path that would have landed in the working folder")
-    target, how = diary_path(clean_env(
-        LOCALAPPDATA=os.path.join(ROOT, "tests"),
-        HERON_KNOWLEDGE=os.path.join(ROOT, "docs")))
+    target, how = diary_path(local_env(
+        inside, HERON_KNOWLEDGE=os.path.join(ROOT, "docs")))
     check(target is None and "inside this repository" in (how or ""),
           "a folder INSIDE this repository is refused, whichever helper "
           "offered it")
@@ -524,7 +538,7 @@ def run_all(home):
     with io.open(blocked, "w", encoding="utf-8") as handle:
         handle.write("x")
     parsed, raw, code = hook(MOVED, dict(merge, tool_input={
-        "command": "gh pr merge 13"}), clean_env(LOCALAPPDATA=blocked))
+        "command": "gh pr merge 13"}), local_env(blocked))
     check(code == 0 and no_decision(parsed),
           "a diary that cannot be written costs the hook nothing")
 
@@ -545,7 +559,7 @@ def run_all(home):
                            "decision": "x", "said": "", "session": ""})
         with io.open(big, "w", encoding="utf-8") as handle:
             handle.write((line + "\n") * (LOG.KEEP_BYTES // len(line) + 2))
-        hook(LINE, start, clean_env(LOCALAPPDATA=rotate))
+        hook(LINE, start, local_env(rotate))
         check(os.path.isfile(os.path.join(folder, "heron-hooks.1.jsonl"))
               and os.path.getsize(big) < 2000,
               "past the limit the file becomes the older copy and a new one "

@@ -44,10 +44,50 @@ import threading
 import time
 import uuid
 
+
+def local_app_data(environ=None, system=None):
+    """
+    The machine-local application-data folder, resolved the way .NET resolves
+    Environment.SpecialFolder.LocalApplicationData - so that this file and
+    platform/Heron.Core/HeronPaths.cs, the two allowed to resolve a special
+    folder, name the SAME folder on every system.
+
+    On Windows: %LOCALAPPDATA%, and if it is somehow missing, the profile's
+    AppData\\Local, which is where Windows keeps that folder.
+
+    Elsewhere: $XDG_DATA_HOME when it is an ABSOLUTE path, else
+    ~/.local/share. .NET ignores a relative XDG_DATA_HOME, and ignores
+    LOCALAPPDATA altogether off Windows - both measured with the .NET 10 SDK
+    on 2026-09-23, and tests/test_bridge_paths.py asks .NET again wherever it
+    can.
+
+    Until then this was `os.environ.get("LOCALAPPDATA", "")`, and off Windows
+    that made both folders RELATIVE - `Heron/logs`, inside whatever folder the
+    process happened to start in - while the .NET side named ~/.local/share
+    (FRAGMENT-ISSUES row 5b-168).
+    """
+    import ntpath
+    import posixpath
+    env = os.environ if environ is None else environ
+    if (os.name if system is None else system) == "nt":
+        found = env.get("LOCALAPPDATA", "")
+        if found.strip():
+            return found
+        home = env.get("USERPROFILE") or os.path.expanduser("~")
+        return ntpath.join(home, "AppData", "Local")
+    # Each system's own separators, whichever system asks - so the rule can
+    # be checked for both on either.
+    xdg = env.get("XDG_DATA_HOME", "")
+    if xdg.strip() and xdg.startswith("/"):
+        return xdg
+    home = env.get("HOME") or os.path.expanduser("~")
+    return posixpath.join(home, ".local", "share")
+
+
 # DERIVED state: machine-local, never roaming (D-17). A roaming discovery
 # file would follow the user to a PC where that process does not exist.
-DISCOVERY_DIR = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Heron", "bridges")
-LOG_DIR = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Heron", "logs")
+DISCOVERY_DIR = os.path.join(local_app_data(), "Heron", "bridges")
+LOG_DIR = os.path.join(local_app_data(), "Heron", "logs")
 PROTOCOL_VERSION = 2
 CONNECT_TIMEOUT_S = 2.0
 

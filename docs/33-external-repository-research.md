@@ -249,6 +249,12 @@ has no `.claude/settings.json` and no hooks of any kind.** Every one of those ga
 person types it. A gate that has to be remembered is a gate that is skipped on the day it matters, and
 that day is the busy one.
 
+*Corrected 2026-09-23: true when written, and no longer.* The owner answered
+[Q-49](OPEN-QUESTIONS.md) the day this was written, and since 2026-09-23
+[`.claude/settings.json`](../.claude/settings.json) wires three hooks that every session runs, the
+boundary guard among them ([`heron-guard`](../.claude/skills/heron-guard/SKILL.md),
+[`heron-session`](../.claude/skills/heron-session/SKILL.md)).
+
 This is not a small difference and it is not a licence question — the mechanism is the host's, not
 ECC's. It is recorded as **[Q-49](OPEN-QUESTIONS.md)**.
 
@@ -804,6 +810,12 @@ question offered three: nothing, a git pre-commit hook, or a `.claude/settings.j
 better than all three: **the hook travels with the skill**, so installing the capability installs its
 guard and the two cannot drift apart. Heron already has [`.claude/skills/`](../.claude/skills/) — the
 shelf is there and empty of exactly this.
+
+*Corrected 2026-09-23: the fourth shape did not fit.* A hook declared in a skill's frontmatter is
+registered only when that skill is invoked, so Heron's guard ran only in sessions that had loaded it
+([FRAGMENT-ISSUES row 5b-164](FRAGMENT-ISSUES.md)). It is wired from
+[`.claude/settings.json`](../.claude/settings.json) now — the third shape — and the skill declares no
+hook, so it runs once ([34 §2.9](34-patterns-adapted.md)).
 
 #### And `check-freeze.sh` names three traps that would silently defeat a naive attempt
 

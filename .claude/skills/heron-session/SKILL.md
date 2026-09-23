@@ -72,10 +72,12 @@ Python seams that already resolve Heron's folders are asked in turn:
 
 1. **Heron's log folder** — the one the add-in writes its own daily log to, as
    `mcp/client/heron_bridge_client.LOG_DIR` resolves it. Derived, machine-local and disposable, which is
-   what a hook's diary is. **The answer on Windows.**
-2. **The knowledge folder**, `heron_scope.knowledge_dir()`, only when the first has no answer. Linux has
-   no per-user local application folder, so the first comes back as a *relative* path that would land
-   inside whatever folder the hook runs in — this repository. A cloud session is always given
+   what a hook's diary is. `%LOCALAPPDATA%\Heron\logs` on Windows; elsewhere
+   `~/.local/share/Heron/logs`, the folder .NET names there (or `$XDG_DATA_HOME/Heron/logs`).
+2. **The knowledge folder**, `heron_scope.knowledge_dir()`, only when the first cannot be used — when it
+   would land inside this repository, or is not an absolute path. Until 2026-09-23 that was every Linux
+   machine: the bridge client answered a *relative* path there
+   ([FRAGMENT-ISSUES row 5b-168](../../../docs/FRAGMENT-ISSUES.md)), so a cloud session's diary went to
    `HERON_KNOWLEDGE` ([38](../../../docs/38-the-cloud-environment.md)).
 3. **Neither: no diary, silently.** A hook never fails, and never refuses, because it could not write a
    line — and the report says which of the three happened.
