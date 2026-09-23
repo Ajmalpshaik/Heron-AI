@@ -8,18 +8,39 @@ positive:
   - given: TRACE_CONNECTIVITY run over the branch afterwards
     expect: one system, not thirteen loose pieces
 
+  - given: >
+      a diffuser whose connector sits well BELOW the duct it will tap into -
+      the shape another tool saw Revit answer by lifting the terminal 625 mm -
+      with maxDistanceMm large enough to reach it
+    expect: >
+      tapped in, and IF Revit lifts it, its id in `moved` with the change on
+      the z axis, and the finding saying how far. Measure the diffuser's height
+      in a section BEFORE and AFTER and compare it with the report - the report
+      is not the evidence. If it comes back tapped and NOT moved, record that
+      too: it is the other answer to the question this case exists to settle
+
 negative:
   - given: a supply diffuser under a RETURN duct
     expect: >
       Revit declines, the false is reported by id, and NOTHING is counted as
-      done. THIS IS THE FIRST CASE TO RUN - the call returns a bool rather than
-      throwing, so a fragment that ignores the return value reports success over
-      a model where nothing happened
+      done - and nothing in `moved`. THIS IS THE FIRST CASE TO RUN - the call
+      returns a bool rather than throwing, so a fragment that ignores the
+      return value reports success over a model where nothing happened
+
+  - given: >
+      a diffuser whose connector already touches the underside of the duct,
+      tapped in
+    expect: >
+      tapped in, and `moved` EMPTY. This is the leg that shows the movement
+      report is not noise: a terminal Revit had no reason to move must not be
+      listed. If it IS listed at 0.0 mm, that is rounding the point test did not
+      absorb - record the size and put it to the owner with the tolerance
+      question, rather than choosing a number here
 
   - given: a diffuser 2 m from the nearest duct with maxDistanceMm at 600
     expect: >
-      in `noDuctNear`, untouched. Nothing is moved here, and a tap stretched 2 m
-      across a ceiling is not a connection anybody wants
+      in `noDuctNear`, untouched, and not in `moved`. No call is made for it,
+      and a tap stretched 2 m across a ceiling is not a connection anybody wants
 
   - given: two ducts running side by side above a row of diffusers
     expect: >
@@ -34,3 +55,6 @@ negative:
 
 second_route:
   - Revit's own Connect Into on one of the same terminals, and the two taps compared
+  - >
+    the terminal's Offset from Level read in the Properties palette before and
+    after the tap - a by-hand read of the same movement `moved` reports

@@ -16,6 +16,19 @@ positive:
       two kinds are never mixed
 
   - given: >
+      the same section on a model whose level type's Elevation Base is the
+      SURVEY POINT, with the survey point set well away from the project
+      origin vertically - so each level's Elevation and ProjectElevation
+      differ
+    expect: >
+      the same string, sitting beside the levels it measures and with the
+      same floor-to-floor values as on an ordinary model. Until 2026-09-23 the
+      line was built from Elevation, which sits off by the survey offset in
+      model coordinates. Read both numbers off one level first - REPORT_LEVEL_
+      ELEVATIONS gives both - because a model where they agree cannot tell the
+      two apart
+
+  - given: >
       six grids passed of which one is not shown in this view
     expect: >
       the five visible ones are dimensioned and the sixth is named in

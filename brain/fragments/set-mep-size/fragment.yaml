@@ -114,6 +114,21 @@ compatibility-note: >
   that looked up "Width" by name would work in English and silently find
   nothing on a French install.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# Another tool, on real models and mostly on Revit 2020, resized a connected
+# pipe run and Revit left the FITTINGS at the old size and added transitions:
+# 22 pipes became 41 elements, and unions became two transitions back to back
+# with connectors left open. Every pipe still read its new size - and this
+# fragment's whole check is that size read back after the regeneration, so
+# `sized` would be right while the run is broken. Nothing in this repository
+# has reproduced it yet.
+#
+# A NOTE ONLY. This fragment is PROVEN, and a change to its code would make
+# the proof stale. AUTO_SIZE_PIPE, which was DRAFT, now counts the open
+# connectors before and after a resize; nothing here does yet. Until it does,
+# look at the joints of a CONNECTED run after resizing it. NEEDS-CHECKING AJ2.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "make it 100 mm"                 -> here - and this is where Revit SNAPS

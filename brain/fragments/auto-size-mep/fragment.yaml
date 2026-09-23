@@ -144,6 +144,21 @@ compatibility-note: >
 # would disagree obviously, on the very first run, before a single size is
 # written. Read that line before trusting anything below it.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# Another tool, on real models and mostly on Revit 2020, resized a connected
+# PIPE run and Revit left the fittings at the old size and added transitions:
+# 22 pipes became 41 elements, and unions became two transitions back to back
+# with connectors left open. Every pipe still read its new size - and this
+# fragment reads back exactly that, the size parameter, so `sized` would be
+# right while the run is broken. It was seen on pipe; whether a duct run does
+# the same is not known. Nothing in this repository has reproduced either.
+#
+# A NOTE ONLY. This fragment is PROVEN, and a change to its code would make
+# the proof stale. AUTO_SIZE_PIPE, which was DRAFT, now counts the open
+# connectors before and after a resize; nothing here does yet. Until it does,
+# look at the joints of a CONNECTED run after sizing it. NEEDS-CHECKING AJ2.
+
 # ROUTING - repeated in SET_MEP_SIZE, MEASURE_MEP_VELOCITY and TRACE_CONNECTIVITY.
 #
 #   "size the ducts from the flow"   -> here

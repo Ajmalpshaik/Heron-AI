@@ -1,6 +1,7 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `targetVelocity`,
 // `nominalSizesMm` and `boresMm` are in scope; leaves `sized`, `findings`,
-// `noFlow`, `refused` and `velocityIsApproximate` behind.
+// `noFlow`, `refused`, `velocityIsApproximate`, `openConnectorsBefore`,
+// `openConnectorsAfter` and `openedByResize` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -27,7 +28,33 @@
 //
 // EVERY SIZE IS READ BACK. A pipe type whose segment offers only certain sizes
 // refuses anything else, and refuses quietly. The velocity reported is computed
-// on the size that came back.
+// on the size that came back - and it is read AFTER A REGENERATION, because
+// the snap happens there and not at the set. Until 2026-09-23 this read back
+// straight after the set, which returns the size that was ASKED FOR (the rule
+// SET_MEP_SIZE's header records, and the reason AUTO_SIZE_MEP regenerates), so
+// the snapped-size refusal below could never fire.
+//
+// ===========================================================================
+// RESIZING A CONNECTED RUN CAN LEAVE ITS FITTINGS BEHIND.
+// ===========================================================================
+//
+// OBSERVED ELSEWHERE, mostly on Revit 2020, and NOT YET PROVEN HERE: resizing
+// a connected run left fittings at the old size and added transitions - 22
+// pipes became 41 elements, and unions became two transitions back to back
+// with connectors left OPEN. Every pipe still reads its new size, so `sized`
+// cannot show it.
+//
+// So the open connectors around the pipes are COUNTED BEFORE ANY SIZE IS SET
+// and COUNTED AGAIN AFTER: the pipes handed in, and everything a walk through
+// pipe FITTINGS reaches from them - a union replaced by two transitions is two
+// hops out, not one. Whatever the walk stops at (another pipe, a valve,
+// equipment) is counted too and not walked through, so the answer stays about
+// these pipes and not the whole system. An element with more open connectors
+// after than before - a new one had none before, because it did not exist - is
+// named in `openedByResize`.
+//
+// ONLY PIPING ENDS ARE COUNTED. An unconnected electrical connector on a pump
+// is not what resizing breaks, and counting it would bury the one that is.
 
 var mmPerFoot = 304.8;
 var cubicMetresPerCubicFoot = 0.028316846592;
@@ -36,6 +63,97 @@ var sized = 0;
 var findings = new List<string>();
 var noFlow = new List<ElementId>();
 var refused = new List<string>();
+var openConnectorsBefore = 0;
+var openConnectorsAfter = 0;
+var openedByResize = new List<ElementId>();
+
+// The connectors of anything that has them. Written once, asked before and
+// after.
+Func<Element, ConnectorSet> connectorsOf = e =>
+{
+    try
+    {
+        var curve = e as MEPCurve;
+        if (curve != null) return curve.ConnectorManager.Connectors;
+        var instance = e as FamilyInstance;
+        if (instance != null && instance.MEPModel != null && instance.MEPModel.ConnectorManager != null)
+            return instance.MEPModel.ConnectorManager.Connectors;
+    }
+    catch { }
+    return null;
+};
+
+// Open piping ENDS on one element. A connector that cannot be read is counted
+// neither way.
+Func<Element, int> openEnds = e =>
+{
+    var open = 0;
+    var set = connectorsOf(e);
+    if (set == null) return 0;
+    foreach (Connector connector in set)
+    {
+        try
+        {
+            if (connector.ConnectorType != ConnectorType.End) continue;
+            if (connector.Domain != Domain.DomainPiping) continue;
+            if (!connector.IsConnected) open++;
+        }
+        catch { }
+    }
+    return open;
+};
+
+var pipeFittingCategory = new ElementId(BuiltInCategory.OST_PipeFitting);
+Func<Element, bool> isFitting = e =>
+{
+    try { return e != null && e.Category != null && e.Category.Id == pipeFittingCategory; }
+    catch { return false; }
+};
+
+// Open ends per element, over the pipes handed in and what a walk through
+// fittings reaches from them. See the header for where the walk stops.
+Func<Dictionary<ElementId, int>> openAround = () =>
+{
+    var open = new Dictionary<ElementId, int>();
+    var pending = new Stack<Element>();
+    foreach (var element in elements)
+    {
+        if (element == null || open.ContainsKey(element.Id)) continue;
+        open[element.Id] = openEnds(element);
+        pending.Push(element);
+    }
+    while (pending.Count > 0)
+    {
+        var here = pending.Pop();
+        var set = connectorsOf(here);
+        if (set == null) continue;
+        foreach (Connector connector in set)
+        {
+            ConnectorSet joined = null;
+            try { joined = connector.AllRefs; } catch { }
+            if (joined == null) continue;
+            foreach (Connector other in joined)
+            {
+                Element neighbour = null;
+                try { neighbour = other.Owner; } catch { }
+                // A pipe's link to its own SYSTEM is in AllRefs too, and a
+                // system is not a joint.
+                if (neighbour == null || neighbour is MEPSystem) continue;
+                if (open.ContainsKey(neighbour.Id)) continue;
+                open[neighbour.Id] = openEnds(neighbour);
+                if (isFitting(neighbour)) pending.Push(neighbour);
+            }
+        }
+    }
+    return open;
+};
+
+Func<Dictionary<ElementId, int>, int> fittingsIn = open =>
+{
+    var fittings = 0;
+    foreach (var id in open.Keys) if (isFitting(doc.GetElement(id))) fittings++;
+    return fittings;
+};
 
 var haveBores = boresMm != null && nominalSizesMm != null
     && boresMm.Count == nominalSizesMm.Count && boresMm.Count > 0;
@@ -75,6 +193,12 @@ else
     var sizes = new List<double>();
     foreach (var size in nominalSizesMm) sizes.Add(size);
     sizes.Sort();
+
+    // BEFORE ANY SIZE IS SET. See the header.
+    var openBefore = openAround();
+    foreach (var count in openBefore.Values) openConnectorsBefore += count;
+    var fittingsBefore = fittingsIn(openBefore);
+    var setCalls = 0;
 
     foreach (var element in elements)
     {
@@ -132,10 +256,13 @@ else
         }
 
         diameter.Set(pick / mmPerFoot);
+        setCalls++;
 
-        // Read back. The pipe type's segment table can refuse a size without
-        // raising anything, and the velocity has to be computed on what the
-        // pipe actually became.
+        // Regenerate, THEN read back. The pipe type's segment table can refuse
+        // a size without raising anything, and the snap happens at the
+        // regeneration - before it, the parameter still says what was asked
+        // for. The velocity has to be computed on what the pipe became.
+        doc.Regenerate();
         var gotMm = diameter.AsDouble() * mmPerFoot;
 
         // The bore to compute velocity on: the paired one when the size that
@@ -179,5 +306,51 @@ else
         findings.Add(noFlow.Count + " pipe(s) carry no flow and were NOT sized. That is not a "
             + "pass. A pipe reads zero when nothing is connected to it, so a whole run with no "
             + "flow is a connectivity problem - TRACE_CONNECTIVITY, not a sizing job.");
+    }
+
+    // AFTER. Only when a size was actually set - with none, nothing can have
+    // opened, and the count stands as it was.
+    if (setCalls == 0)
+    {
+        openConnectorsAfter = openConnectorsBefore;
+    }
+    else
+    {
+        var openAfter = openAround();
+
+        // An element the walk no longer reaches may simply have been cut loose
+        // - a fitting left behind at the old size is exactly that - so every
+        // one seen before is counted again if it still exists. Only the ones
+        // Revit deleted drop out, and they are counted as gone.
+        var goneSince = 0;
+        foreach (var id in openBefore.Keys)
+        {
+            if (openAfter.ContainsKey(id)) continue;
+            var still = doc.GetElement(id);
+            if (still == null || !still.IsValidObject) { goneSince++; continue; }
+            openAfter[id] = openEnds(still);
+        }
+
+        foreach (var count in openAfter.Values) openConnectorsAfter += count;
+        var fittingsAfter = fittingsIn(openAfter);
+
+        foreach (var entry in openAfter)
+        {
+            var had = 0;
+            openBefore.TryGetValue(entry.Key, out had);
+            if (entry.Value > had) openedByResize.Add(entry.Key);
+        }
+
+        findings.Add(string.Format("Around these pipes: {0} open piping connector(s) and {1} fitting(s) "
+            + "before any size was set; {2} and {3} after. {4} element(s) that were there before are gone",
+            openConnectorsBefore, fittingsBefore, openConnectorsAfter, fittingsAfter, goneSince));
+
+        if (openedByResize.Count > 0)
+        {
+            findings.Add(string.Format("RESIZING LEFT {0} ELEMENT(S) WITH A CONNECTOR OPEN THAT WAS NOT OPEN "
+                + "BEFORE - listed in `openedByResize`. Revit has been seen elsewhere to leave fittings at "
+                + "the old size and add transitions between them when a connected run is resized. Look at "
+                + "every joint named before keeping this", openedByResize.Count));
+        }
     }
 }

@@ -181,7 +181,16 @@ else
             foreach (var level in levels)
             {
                 references.Add(new Reference(level));
-                positions.Add(level.Elevation);
+
+                // ProjectElevation, NOT Elevation. These positions build the
+                // dimension LINE, in model coordinates. Elevation is measured
+                // from whatever the level type's Elevation Base says - a
+                // survey point, a moved base point - and is off by that
+                // offset in model space; two level types with different bases
+                // can even put two different heights at one number, which the
+                // zero-length check below would then refuse. Until 2026-09-23
+                // this read Elevation.
+                positions.Add(level.ProjectElevation);
                 accepted.Add(level.Id);
             }
         }

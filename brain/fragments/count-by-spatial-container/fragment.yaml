@@ -137,6 +137,23 @@ compatibility-note: >
 
   No `ElementId` is read as a number.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# "Is it in the room" is a VOLUME test in Revit. Another tool, on real models
+# and mostly on Revit 2020, found a device in the ceiling void to be OUTSIDE
+# its room's volume. This fragment does not ask the volume question: it tests
+# the element's X and Y at the CONTAINER'S OWN HEIGHT (see the purpose), so a
+# diffuser in the ceiling void is counted IN the room below it.
+#
+# Two other fragments ask the volume question, and the three DISAGREE about
+# exactly that diffuser: CHECK_ROOM_MEP_COMPLETENESS and FILTER_ELEMENTS_IN_ROOM
+# test the element's own point against the room's volume, so where the room
+# stops at the ceiling they leave it out. Which answer a job wants is a
+# question about the job, and the three are to be settled with evidence, one
+# at a time - NOT by picking one here. FRAGMENT-ISSUES 5b-175 records the
+# disagreement; NEEDS-CHECKING AJ5 is the check on a real model. A note only:
+# this fragment is PROVEN and its code is unchanged.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "how many diffusers in each room"    -> here. The element carries no room

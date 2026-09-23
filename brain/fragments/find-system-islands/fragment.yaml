@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-SYS-030
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -105,7 +105,31 @@ compatibility-note: >
   a type test, because "a source" is three different categories and no single
   class covers them - not because the classes are out of reach. Mechanical,
   Plumbing, Electrical and Structure are all imported by the wrapper, measured
-  on 2026-08-31 rather than assumed; only Architecture is not.
+  on 2026-08-31 rather than assumed; only Architecture is not. Plumbing
+  Equipment is a category only from the 2023.1 API on, so it is looked up by
+  NAME at run time and added only where the release has it - the spelled-out
+  member would not compile on 2020 to 2022.
+
+# BACK TO DRAFT ON 2026-09-23, AND THE PROOF ABOVE IS KEPT AS THE RECORD OF
+# WHAT WAS RUN.
+#
+# The proof was taken on the code as it stood. The code then changed: Plumbing
+# Equipment - new as a category from the 2023.1 API - now counts as a SOURCE,
+# so a domestic water network fed by a water heater or a pump no longer reads
+# as sourceless on the releases that have it. Nothing the proof recorded is
+# contradicted, but it describes code that no longer runs, so its fingerprint
+# no longer matches, and it must NOT be re-stamped: re-taking it on a named
+# model is the only thing that makes this PROVEN again (D-30). NEEDS-CHECKING
+# AJ6 says what to arrange. FRAGMENT-ISSUES 5b-177.
+#
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Another tool's check,
+# mostly on Revit 2020 models, decided what counts by a few category names and
+# missed the categories added since. Plumbing Equipment is the one this change
+# adds, verified against the reference assemblies. Fire Protection, Food
+# Service Equipment and Medical Equipment also arrived after 2020, and whether
+# any of them feeds a network is NOT decided here - a network whose only
+# equipment is in one of them still reads as sourceless.
+
 #   "put a damper in this duct"          -> PLACE_ACCESSORY_ON_RUN, which
 #                                           breaks and rejoins a run on
 #                                           purpose. This one finds breaks

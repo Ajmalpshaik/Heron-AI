@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -87,6 +87,12 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: string
+    - name: wrapsFollowed
+      # Insulation and lining coloured with the run they wrap. Without them a
+      # coloured duct sits inside a jacket of another colour, so these are
+      # part of what it drew - the same output HIGHLIGHT_VS_REST gives.
+      role: result
+      type: int
 
 proof:
   date: '2026-09-09'
@@ -134,6 +140,37 @@ compatibility-note: >
   reference assemblies at both ends rather than remembered. The hue-to-RGB
   arithmetic is plain maths and depends on no drawing library, which is the
   reason it is written out rather than called.
+  `InsulationLiningBase.GetInsulationIds`, `GetLiningIds` and `HostElementId`
+  are present 2020 through 2027, read off the reference assemblies on
+  2026-09-23.
+
+# BACK TO DRAFT ON 2026-09-23, AND THE PROOF ABOVE IS KEPT AS THE RECORD OF
+# WHAT WAS RUN.
+#
+# The proof was taken on the code as it stood. The code then changed to follow
+# the INSULATION RULE: every run it colours passes its colour to its own
+# insulation and lining in the view, and a wrap handed in with its run takes
+# the run's colour instead of being grouped on its own value. Nothing the proof
+# recorded is contradicted, but it describes code that no longer runs, so its
+# fingerprint no longer matches, and it must NOT be re-stamped: re-taking it on
+# a named model is the only thing that makes this PROVEN again (D-30).
+# NEEDS-CHECKING AJ7 says what to arrange. FRAGMENT-ISSUES 5b-178.
+#
+# THE RULE, AND WHERE IT COMES FROM. Insulation and lining take the colour of
+# the run they wrap - the owner's standing rule ("when you colour ducts or
+# duct accessories, colour their insulation too"), which HIGHLIGHT_VS_REST has
+# followed since it was written. Here it runs one way only, run to wrap: a
+# wrap handed in without its run is coloured like anything else and its run
+# is not pulled in, because this fragment colours what it is given.
+#
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Another tool, mostly on
+# Revit 2020, saw a CATEGORY override drop the surface fill on ducts, pipes,
+# air terminals, sprinklers, cable tray and conduit, and found that
+# `IsCuttable` predicts only the cut half of what lands. This fragment sets
+# ELEMENT overrides, not category ones, and whether an element override keeps
+# the fill on those categories is not known here. FRAGMENT-ISSUES row 175
+# measured the category half on Ducts, in Revit 2024. Read back what stuck,
+# never "all coloured with a solid fill". NEEDS-CHECKING AJ7.
 
 # THE LEGEND IS PART OF THE ANSWER, NOT A COURTESY. A coloured drawing with no
 # statement of which colour is which system is a picture, not information - and

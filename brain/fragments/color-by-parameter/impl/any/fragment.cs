@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `view`, `elements`, `parameterName` and
-// `colourBand` are in scope; leaves `coloured`, `legend`, `noValue`, `skipped`
-// and `refused` behind.
+// `colourBand` are in scope; leaves `coloured`, `legend`, `noValue`, `skipped`,
+// `refused` and `wrapsFollowed` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -51,12 +51,46 @@
 // A BLANK IS ITS OWN GROUP. Left plain in a coloured view, an element with
 // nothing in the parameter reads as "not part of this" rather than "nobody
 // filled it in", so it is coloured with the rest and named in `noValue`.
+//
+// ===========================================================================
+// INSULATION AND LINING TAKE THE COLOUR OF THE RUN THEY WRAP.
+// ===========================================================================
+//
+// The owner's standing rule, and HIGHLIGHT_VS_REST has followed it since it
+// was written: colour a duct and leave its insulation as it was, and the
+// colour you asked for sits inside a jacket of the old one. Until 2026-09-23
+// this fragment coloured the run and not the wrap. Now every run it paints
+// passes its colour to its own insulation and lining, where the view shows
+// them - the same colour calls, on the wrap's own settings, so the wrap keeps
+// anything else it had.
+//
+// ONE DIRECTION ONLY: RUN TO WRAP. A wrap handed in whose run is handed in too
+// takes the RUN'S colour and is not grouped on its own value - otherwise
+// colouring by Type gives the insulation a different colour from its duct. A
+// wrap handed in WITHOUT its run is grouped like anything else, and its run is
+// not pulled in: this fragment colours what it was given.
+//
+// GetInsulationIds and GetLiningIds THROW for an element that cannot be
+// wrapped, so catching per element IS the test, as in HIGHLIGHT_VS_REST.
 
 var coloured = 0;
 var legend = new List<string>();
 var noValue = new List<ElementId>();
 var skipped = new List<ElementId>();
 string refused = null;
+var wrapsFollowed = 0;
+
+// What was handed in, so a wrap whose run is also here can follow the run.
+var handedIds = new HashSet<ElementId>();
+foreach (var element in elements) if (element != null) handedIds.Add(element.Id);
+
+Func<Element, bool> followsItsRun = e =>
+{
+    var wrap = e as InsulationLiningBase;
+    if (wrap == null) return false;
+    try { return handedIds.Contains(wrap.HostElementId); }
+    catch { return false; }
+};
 
 // The value as Revit renders it - what a schedule would print. An ElementId
 // parameter is resolved to the referenced element's name, because "Level: 428"
@@ -127,6 +161,10 @@ var carrying = 0;
 foreach (var element in elements)
 {
     if (element == null) continue;
+
+    // A wrap whose run was handed in too takes the RUN'S colour below, and is
+    // not grouped on its own value. See the header.
+    if (followsItsRun(element)) continue;
     handed++;
 
     // ASKED SEPARATELY FROM THE VALUE, and that separation is the whole fix.
@@ -211,6 +249,51 @@ if (refused != null)
 var names = grouped.Keys.OrderBy(k => k, StringComparer.OrdinalIgnoreCase).ToList();
 var step = names.Count > 0 ? 360.0 / names.Count : 0.0;
 
+// The same colour calls for a run and for its wraps, starting from the
+// element's OWN current overrides so whatever else it had is kept. False when
+// the view will not take the override.
+Func<ElementId, Color, bool> paint = (id, colour) =>
+{
+    try
+    {
+        var overrides = view.GetElementOverrides(id);
+        overrides.SetProjectionLineColor(colour);
+        overrides.SetCutLineColor(colour);
+        if (solid != null)
+        {
+            overrides.SetSurfaceForegroundPatternColor(colour);
+            overrides.SetSurfaceForegroundPatternId(solid.Id);
+            overrides.SetSurfaceForegroundPatternVisible(true);
+            overrides.SetCutForegroundPatternColor(colour);
+            overrides.SetCutForegroundPatternId(solid.Id);
+            overrides.SetCutForegroundPatternVisible(true);
+        }
+        view.SetElementOverrides(id, overrides);
+        return true;
+    }
+    catch
+    {
+        return false;
+    }
+};
+
+// A run's insulation and lining. Both calls THROW for an element that cannot
+// be wrapped, which is the test.
+Func<ElementId, List<ElementId>> wrapsOf = id =>
+{
+    var found = new List<ElementId>();
+    try { foreach (var wrapId in InsulationLiningBase.GetInsulationIds(doc, id)) found.Add(wrapId); }
+    catch { }
+    try { foreach (var wrapId in InsulationLiningBase.GetLiningIds(doc, id)) found.Add(wrapId); }
+    catch { }
+    return found;
+};
+
+// What the view shows, asked for only once a wrap turns up. A wrap outside the
+// view has nothing to override, and counting it would pad the report.
+HashSet<ElementId> shownInView = null;
+var wrapsPainted = new HashSet<ElementId>();
+
 for (var i = 0; i < names.Count; i++)
 {
     var colour = fromHue(step * i, saturation, brightness);
@@ -218,36 +301,60 @@ for (var i = 0; i < names.Count; i++)
 
     foreach (var element in grouped[names[i]])
     {
-        try
-        {
-            var overrides = view.GetElementOverrides(element.Id);
-            overrides.SetProjectionLineColor(colour);
-            overrides.SetCutLineColor(colour);
-            if (solid != null)
-            {
-                overrides.SetSurfaceForegroundPatternColor(colour);
-                overrides.SetSurfaceForegroundPatternId(solid.Id);
-                overrides.SetSurfaceForegroundPatternVisible(true);
-                overrides.SetCutForegroundPatternColor(colour);
-                overrides.SetCutForegroundPatternId(solid.Id);
-                overrides.SetCutForegroundPatternVisible(true);
-            }
-            view.SetElementOverrides(element.Id, overrides);
-            painted++;
-            coloured++;
-        }
-        catch
+        if (!paint(element.Id, colour))
         {
             // A view that will not take an override on this element - a
             // template-controlled view is the usual cause. Named, never
             // counted as coloured.
             skipped.Add(element.Id);
+            continue;
+        }
+        painted++;
+        coloured++;
+
+        foreach (var wrapId in wrapsOf(element.Id))
+        {
+            if (wrapsPainted.Contains(wrapId)) continue;
+
+            // A wrap that was handed in is painted wherever it is; one found
+            // through its run only where the view shows it.
+            if (!handedIds.Contains(wrapId))
+            {
+                if (shownInView == null)
+                {
+                    shownInView = new HashSet<ElementId>();
+                    foreach (var shown in new FilteredElementCollector(doc, view.Id).WhereElementIsNotElementType())
+                        shownInView.Add(shown.Id);
+                }
+                if (!shownInView.Contains(wrapId)) continue;
+            }
+
+            if (paint(wrapId, colour))
+            {
+                wrapsPainted.Add(wrapId);
+                wrapsFollowed++;
+            }
         }
     }
 
     legend.Add(string.Format("{0}  - RGB {1},{2},{3}  ({4} element(s))",
         names[i], colour.Red, colour.Green, colour.Blue, painted));
 }
+
+// A wrap handed in to follow its run, whose run the view refused: refused
+// with it, never silently dropped from the counts.
+if (refused == null)
+{
+    foreach (var element in elements)
+    {
+        if (element == null || !followsItsRun(element)) continue;
+        if (!wrapsPainted.Contains(element.Id) && !skipped.Contains(element.Id)) skipped.Add(element.Id);
+    }
+}
+
+if (refused == null && wrapsFollowed > 0)
+    legend.Add(string.Format("{0} insulation or lining element(s) took the colour of the run they wrap, "
+        + "so no coloured run is left inside a jacket of another colour", wrapsFollowed));
 
 if (refused == null && solid == null)
     legend.Add("NOTE: this project has no solid fill pattern, so only the LINES are coloured - the "

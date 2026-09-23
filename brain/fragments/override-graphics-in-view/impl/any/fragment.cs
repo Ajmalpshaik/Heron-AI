@@ -1,5 +1,5 @@
 // NOT STANDALONE. Assumes `view`, `elements` and `overrides` are in scope, and
-// leaves `overridden` and `skipped` behind.
+// leaves `overridden`, `skipped` and `wrapsFollowed` behind.
 //
 // ASSUMES AN OPEN TRANSACTION. Golden Rule 16 - the TransactionGroup belongs to
 // the operation, so a grayout of six categories is ONE undo entry.
@@ -33,9 +33,34 @@
 // modify that object, and pass it here. Building a fresh
 // OverrideGraphicSettings and setting one property on it is the mistake, and it
 // looks completely reasonable in the code that makes it.
+//
+// ===========================================================================
+// INSULATION AND LINING TAKE THE LOOK OF THE RUN THEY WRAP.
+// ===========================================================================
+//
+// The owner's standing rule, and HIGHLIGHT_VS_REST has followed it since it was
+// written: make a duct red and leave its insulation alone, and the red sits
+// inside a jacket of the old colour. Until 2026-09-23 this fragment overrode
+// the run and not the wrap. Now every element it overrides passes the SAME
+// settings to its own insulation and lining, where the view shows them.
+//
+// ONE DIRECTION ONLY: RUN TO WRAP, and that is deliberate. A look handed to
+// the WRAPS alone - a grayout's quiet grey insulation layer is exactly that -
+// must not drag the run along, so a wrap handed in never pulls in its run.
+//
+// SO THE ORDER NOW MATTERS IN A GRAYOUT. Bringing the services forward through
+// this fragment brings their insulation forward with them, and an element
+// override beats a category one. A job that wants the insulation to keep a
+// look of its own gives the insulation that look AFTER the services, through
+// this fragment - not before, and not by category.
+//
+// GetInsulationIds and GetLiningIds THROW for an element that cannot be
+// wrapped, so catching per element IS the test, as in HIGHLIGHT_VS_REST. A wrap
+// the view will not take is passed over rather than allowed to lose the rest.
 
 var overridden = 0;
 var skipped = new List<ElementId>();
+var wrapsFollowed = 0;
 
 if (view == null || !view.AreGraphicsOverridesAllowed())
 {
@@ -45,6 +70,18 @@ if (view == null || !view.AreGraphicsOverridesAllowed())
 }
 else
 {
+    var document = view.Document;
+
+    // What was handed in. A wrap that is here on its own takes the look as one
+    // of the elements, and is counted there rather than as a follower.
+    var handedIds = new HashSet<ElementId>();
+    foreach (var element in elements) if (element != null) handedIds.Add(element.Id);
+
+    // What the view shows, asked for only once a wrap turns up. A wrap outside
+    // the view has nothing to override, and counting it would pad the report.
+    HashSet<ElementId> shownInView = null;
+    var wrapsDone = new HashSet<ElementId>();
+
     foreach (var element in elements)
     {
         // An element from another document, or one already deleted, cannot be
@@ -59,5 +96,32 @@ else
 
         view.SetElementOverrides(element.Id, overrides);
         overridden++;
+
+        // The run's insulation and lining take the same look. See the header.
+        var wraps = new List<ElementId>();
+        try { foreach (var wrapId in InsulationLiningBase.GetInsulationIds(document, element.Id)) wraps.Add(wrapId); }
+        catch { }
+        try { foreach (var wrapId in InsulationLiningBase.GetLiningIds(document, element.Id)) wraps.Add(wrapId); }
+        catch { }
+
+        foreach (var wrapId in wraps)
+        {
+            if (handedIds.Contains(wrapId) || !wrapsDone.Add(wrapId)) continue;
+
+            if (shownInView == null)
+            {
+                shownInView = new HashSet<ElementId>();
+                foreach (var shown in new FilteredElementCollector(document, view.Id).WhereElementIsNotElementType())
+                    shownInView.Add(shown.Id);
+            }
+            if (!shownInView.Contains(wrapId)) continue;
+
+            try
+            {
+                view.SetElementOverrides(wrapId, overrides);
+                wrapsFollowed++;
+            }
+            catch { }
+        }
     }
 }
