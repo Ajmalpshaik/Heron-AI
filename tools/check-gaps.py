@@ -82,6 +82,30 @@ def read(*parts):
     return io.open(path, encoding="utf-8", errors="replace").read()
 
 
+# THE REGISTER IS SEVERAL FILES SINCE 2026-09-23, AND IS STILL READ AS ONE.
+# tools/needs-checking-register.py puts every group's file back under its
+# heading in NEEDS-CHECKING.md, links as they were written, so this tool reads
+# exactly the text it read when the register was one file. It reads through
+# `read` above, so a suite that serves this tool a register is still obeyed.
+# A group file that is missing raises - a register that quietly drops a group
+# is the failure the register records against itself.
+def _register_reader():
+    import importlib.util
+    here = os.path.dirname(os.path.abspath(__file__))
+    spec = importlib.util.spec_from_file_location(
+        "needs_checking_register", os.path.join(here, "needs-checking-register.py"))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+NCR = _register_reader()
+
+
+def needs_checking_text():
+    return NCR.register_text(ROOT, read)
+
+
 # ---------------------------------------------------------------------------
 
 def check_steps():
@@ -479,7 +503,7 @@ def check_register():
     """NEEDS-CHECKING, split the same way this tool splits everything."""
     print()
     print("THE REGISTER - what it says is left")
-    text = read("docs/NEEDS-CHECKING.md")
+    text = needs_checking_text()
     # ONE LETTER OR MORE - [A-Z]+, not [A-Z]. One letter hid every two-letter
     # group - AA, AB and on - until 2026-09-23: checks waiting on the owner that
     # never reached him, in owner-queue.py, check-gaps.py and balance-of-work.py

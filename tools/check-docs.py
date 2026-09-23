@@ -798,10 +798,20 @@ else:
     # docs/decisions/ is exempt for the same reason: since 2026-09-23 each
     # decision's full record is its own file there, and DECISIONS.md is the
     # index (tools/split-decisions.py). D-19's Context moved with D-19.
-    b8 = re.search(r'^\|\s*~~\*\*B8\*\*~~.*$',
-                   allsrc.get(os.path.join(root, 'docs',
-                                           'NEEDS-CHECKING.md').replace(
-                       os.sep, '/'), ''), re.M)
+    #
+    # SINCE 2026-09-23 THE REGISTER IS ONE FILE PER GROUP, and B8 lives in
+    # docs/needs-checking/group-b.md. It is read the way every reader of the
+    # register reads it: tools/needs-checking-register.py puts each group back
+    # under its heading, served here from the copy of every file loaded above.
+    import importlib.util
+    _ncr_spec = importlib.util.spec_from_file_location(
+        'needs_checking_register',
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), 'needs-checking-register.py'))
+    _ncr = importlib.util.module_from_spec(_ncr_spec)
+    _ncr_spec.loader.exec_module(_ncr)
+    register = _ncr.register_text(
+        read=lambda rel: allsrc.get(os.path.join(root, *rel.split('/')).replace(os.sep, '/'))) or ''
+    b8 = re.search(r'^\|\s*~~\*\*B8\*\*~~.*$', register, re.M)
     moved = re.search(r'\*\*PASSED\s+(\d{4}-\d{2}-\d{2})', b8.group(0)) \
         if b8 else None
     if moved:
