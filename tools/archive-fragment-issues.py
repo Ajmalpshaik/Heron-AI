@@ -97,6 +97,14 @@ nothing is written.
 RUN IT AGAIN WHENEVER ROWS CLOSE. A moved row is recognised by its link and
 skipped, so a second run moves only what has closed since the first.
 
+SINCE 2026-09-23 THE REGISTER IS ONE FILE PER SECTION. The page keeps each
+section's heading; sections 5 and 5b keep their own words there too, and
+their rows are in files of 25 under docs/fragment-issues/. This reads the
+register as one text through tools/register-text.py, plans on that text
+exactly as before, and writes each changed file back through
+tools/split-register.py's layout_split() - once the files it would write have
+been read back as the new register.
+
 NO BACKSLASH IS TYPED IN THIS FILE. The one regular expression it needs, and
 the escaped pipe a table cell needs, are built from chr(92): a typed backslash
 can be turned into a control character on its way into a file, and a regular
@@ -181,6 +189,24 @@ def _load_open_defects():
 
 
 OD = _load_open_defects()
+
+# SINCE 2026-09-23 THE REGISTER IS ONE FILE PER SECTION, and the rows of
+# sections 5 and 5b are in files of 25 under docs/fragment-issues/. It is
+# read as one text - the page with every file read back into its place, by
+# the same reader open-defects.py uses - and written back through the same
+# layout, so everything below still plans on one text.
+RT = OD.RT
+
+
+def _split_tool():
+    """tools/split-register.py, loaded when a split register is written and
+    not before: it loads this file, through archive-handover.py, so loading
+    it here at import would load the two of them round and round."""
+    path = os.path.join(ROOT, "tools", "split-register.py")
+    spec = importlib.util.spec_from_file_location("split_register", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 # ------------------------------------------------------------------ the rows
@@ -338,9 +364,12 @@ class Plan(object):
         self.bands = {}        # archive file name -> (label, low, high)
         self.sizes = {}        # archive file name -> bytes it will hold once written
         self.eol = NL
-        self.before = ""
+        self.before = ""       # the register as one text
         self.after = ""
         self.parity = None     # [(label, number, open)] as open-defects reads it
+        self.split = False     # the page names files, so it is written through them
+        self.index_after = ""  # the page as written, when it is split
+        self.files_after = {}  # each of its files as written, when it is split
 
 
 def _read(path):
@@ -501,9 +530,14 @@ def plan(register=REGISTER, archive=ARCHIVE, today=None):
     """Work out the whole move in memory. Nothing is written here."""
     p = Plan(register, archive, today or datetime.date.today().isoformat())
     try:
-        p.before = _read(register)
+        page = _read(register)
+        p.split = bool(RT.named_files(page, register))
+        p.before = RT.register_text(register)
     except (IOError, OSError) as error:
         p.fatal = "could not read %s: %s" % (register, error)
+        return p
+    except RT.RegisterBroken as broken:
+        p.fatal = str(broken)
         return p
     lines, p.eol = _split(p.before)
     if lines is None:
@@ -534,6 +568,14 @@ def plan(register=REGISTER, archive=ARCHIVE, today=None):
         p.sizes[name] = len(_archive_file(p, name, was).encode("utf-8"))
     if p.moves and not p.problems:
         _prove_parity(p)
+    if p.moves and not p.problems and p.split:
+        split = _split_tool()
+        p.index_after, p.files_after, trouble = split.layout_split(register, p.after, p.today)
+        p.problems.extend(trouble)
+        back = RT.register_text(register, read=split._served(register, p.index_after, p.files_after))
+        if back != p.after:
+            p.problems.append("the register's files, written the way it is laid out, would not "
+                              "read back as the new register")
     return p
 
 
@@ -683,7 +725,17 @@ def write(p):
         was = _read(path) if os.path.exists(path) else None
         _put(path, _archive_file(p, name, was))
     _put(os.path.join(p.archive, "README.md"), _readme(p))
-    _put(p.register, p.after)
+    if not p.split:
+        _put(p.register, p.after)
+        return OK
+    folder = os.path.join(os.path.dirname(p.register), RT.folder_of(p.register))
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
+    for name in sorted(p.files_after):
+        path = os.path.join(folder, name)
+        if not os.path.exists(path) or _read(path) != p.files_after[name]:
+            _put(path, p.files_after[name])
+    _put(p.register, p.index_after)
     return OK
 
 

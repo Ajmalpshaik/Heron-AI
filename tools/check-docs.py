@@ -196,7 +196,10 @@ out("\n")
 
 # Decisions defined in DECISIONS.md
 d_def = set(re.findall(r'^## (D-\d+)', allsrc.get('./docs/DECISIONS.md', ''), re.M))
-d_ref = set(re.findall(r'\b(D-\d\d)\b', joined))
+# ANY NUMBER OF DIGITS, THE WAY THE DEFINITIONS ARE READ. This read exactly
+# two, so from D-100 on no reference was compared with the log and a mistyped
+# D-110 passed as quietly as a right one (FRAGMENT-ISSUES row 5b-184).
+d_ref = set(re.findall(r'\b(D-\d+)\b', joined))
 out("=== 3. DECISIONS ===\n")
 out("  defined: %s\n" % sorted(d_def))
 out("  REFERENCED BUT NOT DEFINED: %s\n" % sorted(d_ref - d_def))

@@ -60,12 +60,38 @@ is written in a different row in prose. Reading beats grepping here. This tool
 narrows the pile you have to read; it does not replace reading it.
 """
 
+import importlib.util
 import os
 import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REGISTER = os.path.join(ROOT, "docs", "FRAGMENT-ISSUES.md")
+
+# SINCE 2026-09-23 THE REGISTER IS ONE FILE PER SECTION, and the rows of
+# sections 5 and 5b are in files of 25 under docs/fragment-issues/. It is
+# read as one text - the page with every file read back into its place, by
+# tools/register-text.py - so everything below still reads the text it read
+# when the register was one file.
+_spec = importlib.util.spec_from_file_location(
+    "register_text", os.path.join(ROOT, "tools", "register-text.py"))
+RT = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(RT)
+
+
+def source():
+    """The register as one text, its line endings read the way open() in
+    text mode read them before the register was split - or None when it
+    cannot be read, having said why."""
+    try:
+        text = RT.register_text(REGISTER)
+    except RT.RegisterBroken as broken:
+        sys.stdout.write("Could not read the register: %s\n" % broken)
+        return None
+    if text is None:
+        sys.stdout.write("Could not read the register: %s is not there\n" % REGISTER)
+        return None
+    return text.replace("\r\n", "\n").replace("\r", "\n")
 
 SECTION_START = "## 5. HERON'S OWN DEFECTS"
 SECTION_5B = "## 5b. HERON'S OWN DEFECTS found by reading"
@@ -125,8 +151,9 @@ def rows(start=None, ends=None, label="5"):
     start = SECTION_START if start is None else start
     ends = [SECTION_5B, SECTION_END] if ends is None else ends
 
-    with open(REGISTER, encoding="utf-8") as handle:
-        src = handle.read()
+    src = source()
+    if src is None:
+        return None
 
     # The headings moved. Say so rather than silently reporting zero - a
     # register that reports "no open defects" because it could not find the

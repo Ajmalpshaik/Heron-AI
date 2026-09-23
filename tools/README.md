@@ -1802,6 +1802,12 @@ fail the suite for the tool being right.
 **Run it again whenever rows close.** A moved row is recognised by its link, so a second run moves only what
 has closed since the first.
 
+**Since 2026-09-23 it reads and writes the register one file per section** - the layout
+[`split-register.py`](#split-registerpy---one-file-per-section-the-registers-page-as-its-index) made, with the rows of
+5 and 5b in files of 25. It still plans on the register as one text, read through `register-text.py`, then writes
+each changed rows file back and refuses unless the files read back as the new register. `open-defects.py` and
+`review-ledger.py` read the register through the same reader.
+
 ---
 
 ## `archive-handover.py` - one file per sitting, as the archive's own README asks
@@ -1893,6 +1899,57 @@ Standard library only, so a reader never breaks because a writer changed. **A mi
 a heading naming a file that is not there, or a file that does not hold that heading, stops it with
 `RegisterBroken` rather than returning a shorter register - *"a count that quietly omits a whole group is worse
 than no count"*, as the register says of itself.
+
+---
+
+## `split-register.py` - one file per section, the register's page as its index
+
+```bash
+python tools/split-register.py fragment-issues            # what would move - writes nothing
+python tools/split-register.py fragment-issues --write    # move it
+```
+
+The same step as [`split-needs-checking.py`](#split-needs-checkingpy---one-file-per-group-needs-checkingmd-as-the-index),
+for a register whose sections are not groups. Every `## ` section of [`docs/FRAGMENT-ISSUES.md`](../docs/FRAGMENT-ISSUES.md)
+moves whole to its own file in [`docs/fragment-issues/`](../docs/fragment-issues/section-1.md) - `## 1c.` to
+`section-1c.md` - and leaves its heading on the page with one line naming its file. The page's own rules stay.
+**Sections 5 and 5b are too big for one file each**, so they keep their own words on the page and move only their
+rows, **25 to a file by row number** - row 5b-62 is in `section-5b-rows-051-075.md`, the band
+[`archive-fragment-issues.py`](#archive-fragment-issuespy---move-finished-defect-rows-out-of-the-live-register)
+already files it under. The page keeps one line where each table was, naming its files in order.
+Exits **0**, **1** when a check refused and nothing was written, **2** when the register could not be read.
+
+**The register is still one text, and that is what is proved.** Nothing is written unless the new files read back
+as the register byte for byte; the register's readers - `open-defects.py`'s whole report, `review-ledger.py`'s rows
+of 5b and `archive-fragment-issues.py`'s plan - answer exactly the same on a copy laid out the old way and on one laid
+out the new way; every re-pointed link reaches the file it reached before; and no other document links into a
+heading that would leave the page.
+
+**A new row goes at the end of its section's last file**, whatever its number; the next run moves it to the file its
+number belongs to. A new section written on the page is moved by the next run, and a run with nothing new moves
+nothing. [`tests/test_split_register.py`](../tests/test_split_register.py) builds its own register, never the real one.
+
+**PROPOSALS.md is split the same way** - `python tools/split-register.py proposals` - every section to its own file in
+[`docs/proposals/`](../docs/proposals/part-a.md), named from its opening words: `## F23 — ...` is `f23.md`, and a
+section headed only by a date takes its first five words as well, so two written on one day get two files.
+[`owner-queue.py`](#owner-queuepy--what-is-waiting-on-the-owner-derived-rather-than-typed) and `balance-of-work.py` read
+it through `register-text.py`, and the split was refused unless both read the same proposals from it.
+
+## `register-text.py` - a split register read as one text
+
+```bash
+python tools/register-text.py docs/FRAGMENT-ISSUES.md                 # the whole register
+python tools/register-text.py docs/FRAGMENT-ISSUES.md | grep 5b-62    # search all of it at once
+```
+
+The reader every tool of a register split by `split-register.py` goes through: `open-defects.py`,
+`review-ledger.py` and `archive-fragment-issues.py` for FRAGMENT-ISSUES, `owner-queue.py` and `balance-of-work.py` for
+PROPOSALS. It puts each section's file back under
+its heading, and each band of rows back where the table was, with the links as they were written in the one file.
+Standard library only. **A missing file is not skipped** - a line naming a file that is not there, a section's
+file that does not open with its heading, or a rows file with no table stops it with `RegisterBroken` rather than
+returning a shorter register. A page that names no file is returned as it is, which is how a suite's own register
+is read.
 
 ---
 
