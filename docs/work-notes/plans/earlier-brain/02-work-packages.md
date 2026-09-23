@@ -21,7 +21,7 @@
 | **C9** | Skills that carry a method — the design, then the HVAC methods | cloud, then PC | 3 | owner decision **D2** | not started |
 | **C10** | Tagging and sprinkler methods | cloud, then PC | 3 | C9 merged | not started |
 | **C11** | Family creation | cloud, then PC | 3, last | C7 and C9 merged | not started |
-| — | PR #299, the risk gate on `revit_change` ([01 §3 H1](01-findings.md)) | done, waiting | — | **the owner's word to merge** | built, draft |
+| — | PR #299, the risk gate on `revit_change` ([01 §3 H1](01-findings.md)) | cloud, then PC | — | **the owner's word to merge** | **merged** as [#299](https://github.com/Ajmalpshaik/Heron-AI/pull/299), 2026-09-22 - FRAGMENT-ISSUES **5b-155** FIXED; owed on the PC: its refusal check in [05](05-pc-proving.md) |
 
 **Wave 1 runs in parallel** — five sessions whose files do not overlap. **Wave 2** starts when the package
 it needs has merged. **Wave 3** starts with the owner's answer to D2. Proving on the PC
