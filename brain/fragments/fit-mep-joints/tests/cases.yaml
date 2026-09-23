@@ -1,0 +1,32 @@
+positive:
+  - given: a run drawn as CREATE_DUCT segments - a main with three branch points and an end, and four branches each turning down to a terminal
+    expect: >
+      every joint fitted in one call - a tee at each branch point, an elbow at
+      the end and at every drop - and the free ends at the unit and the
+      terminals left open and counted in freeEnds
+
+  - given: two segments in line where the size changes, as at a unit's outlet
+    expect: a TRANSITION, because only the size decides between it and a union
+
+  - given: three ends meeting, handed in in any order
+    expect: >
+      a TEE whose main is the in-line pair, whatever order the runs were found
+      in
+
+negative:
+  - given: a joint Revit cannot fit - a drop too short for the elbow the duct type's routing asks for
+    expect: >
+      THROWS, and the whole job is rolled back: no fitting from any other
+      joint is kept, and the message names the failed joint, where it is and
+      Revit's words
+
+  - given: two duct ends 40 mm apart, tolerance 1 mm
+    expect: >
+      not a joint - both are counted as free ends and nothing is moved to
+      close the gap
+
+  - given: only walls or air terminals
+    expect: nothing fitted, everything in notMepCurve
+
+second_route:
+  - PLACE_MEP_FITTING run once per joint over the same arrangement - the fittings it builds are the ones this builds, joint for joint
