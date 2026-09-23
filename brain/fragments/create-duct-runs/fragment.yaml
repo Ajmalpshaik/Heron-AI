@@ -1,0 +1,114 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-052
+semantic-identity: "draw every duct run of a layout, each at its own size, in one go"
+kind: action
+domain: revit.mep
+capability: CREATE_DUCT_RUNS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws many straight duct runs in ONE call and ONE undo step - every main and
+  every branch of a layout, each run at its own size. The same drawing as
+  CREATE_DUCT, which takes one run per call, without the one-call-per-run.
+
+  **It exists because drawing was the slow half once the fittings were not.**
+  On 2026-09-23 a five-room supply layout took twenty-five CREATE_DUCT calls
+  and two SET_MEP_SIZE calls, then one FIT_MEP_JOINTS and one
+  CONNECT_OPEN_ENDS. The owner asked for the drawing to be done at one time as
+  well. With this the whole layout is three calls: draw, fit, join.
+
+  **How to write the runs.** Runs are separated by | . Each is an optional
+  size - WxH for rectangular, d250 for round, in millimetres - a colon, then the
+  points in millimetres, x,y,z each, separated by ; . Consecutive points make
+  one segment each. No size means the duct type's own:
+  `850x195: 3075,-2100,3122.5; 3075,-1100,3122.5 | 300x300: 3075,-1100,3122.5; 3075,8100,3122.5`
+
+  **It guesses no route.** Every point is given and used in order. Deciding
+  where ducts go - reading the connectors, leaving room for an elbow or a
+  transition - happens before this call.
+
+  **It connects nothing.** The new ducts are left as `elements`, so
+  FIT_MEP_JOINTS can take them straight from here, and CONNECT_OPEN_ENDS joins
+  the free ends to equipment and terminals after that.
+
+  **All or nothing.** A run it cannot read, a segment too short to exist, a duct
+  Revit will not create, or a size the duct type snaps to something else - any
+  one of them rolls the whole job back and names each problem (Article 8).
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # RESOLVED OBJECTS, never ids - the same reason as CREATE_DUCT (D-05).
+    - name: systemType
+      type: MechanicalSystemType
+      source: request
+    - name: ductType
+      type: DuctType
+      source: request
+    - name: level
+      type: Level
+      source: request
+    # The runs as the caller typed them - millimetres, converted here once
+    # (D-20). A string on purpose: many runs, each with its own size, is not
+    # something a list of points can say.
+    - name: runs
+      type: string
+      source: request
+  provides:
+    # The new ducts, named `elements` on purpose so FIT_MEP_JOINTS can take
+    # them straight from here with expect_from.
+    - name: elements
+      role: result
+      type: IList<Element>
+    - name: runsDrawn
+      role: result
+      type: int
+    - name: segments
+      role: result
+      type: int
+    - name: sized
+      role: result
+      type: int
+    # The whole answer as ONE string, because a string reaches the reader whole.
+    - name: summary
+      role: result
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Duct.Create(Document, ElementId, ElementId, ElementId, XYZ, XYZ)`, as
+  CREATE_DUCT uses it, and the `RBS_CURVE_WIDTH_PARAM`, `RBS_CURVE_HEIGHT_PARAM`
+  and `RBS_CURVE_DIAMETER_PARAM` parameters, as SET_MEP_SIZE uses them - all
+  unchanged 2020 to 2027. The numbers are read with the invariant culture, so a
+  PC set to a comma decimal separator reads 3122.5 as the caller meant it.
+
+  Millimetres to feet is arithmetic - divide by 304.8, per D-20.
+
+# ROUTING - the neighbours this must not be confused with.
+#
+#   "draw all the ducts"            -> here
+#   "draw the mains and branches"   -> here
+#   "draw a duct from here to there" -> CREATE_DUCT - one run
+#   "change these ducts to 400x250" -> SET_MEP_SIZE - existing ducts
+#   "put the fittings in"           -> FIT_MEP_JOINTS, which follows this
+#   "connect the open ends"         -> CONNECT_OPEN_ENDS, which follows that
+
+utterances:
+  - draw all the ducts
+  - draw every duct run at once
+  - draw the mains and the branches
+  - make all the ducts at one time
+  - draw the whole duct layout
