@@ -106,10 +106,15 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # whole library rather than a slice: "all 360 fragments", "the 372
 # fragments", "over 360 fragments". Without one, "68 fragments" is a count of
 # something and this suite has no business with it.
+#
+# THREE DIGITS OR MORE, NOT EXACTLY THREE. Exactly three stopped reading the
+# day a total passed 999: every total typed after that would have gone by
+# unread - the blindness FRAGMENT-ISSUES row 5b-184 found in check-docs.py,
+# which stopped comparing decision references at D-100.
 WHOLE = re.compile(
-    r'\b(?:all|the|every|those|only|its|real)\s+(\d{3})\s+(?:real\s+)?fragments?\b'
-    r'|\b(?:over|across)\s+(\d{3})\s+fragments?\b'
-    r'|\b(\d{3})\s+fragments?\s+(?:on disk|in the library)\b', re.I)
+    r'\b(?:all|the|every|those|only|its|real)\s+(\d{3,})\s+(?:real\s+)?fragments?\b'
+    r'|\b(?:over|across)\s+(\d{3,})\s+fragments?\b'
+    r'|\b(\d{3,})\s+fragments?\s+(?:on disk|in the library)\b', re.I)
 
 # A date, or one of the words this repository uses when it is quoting a
 # figure it has already corrected. check-docs.py's HISTORY, plus the date.
@@ -280,6 +285,15 @@ def main():
     check(len(found) >= 8,
           "enough to be comparing something - a sweep that finds nothing "
           "passes perfectly and means the opposite")
+
+    # AND THE PATTERN HAS TO OUTGROW THE LIBRARY, or it goes quiet the day
+    # the library passes 999 and nothing says so.
+    for said in ("all 1024 fragments", "the 1024 fragments",
+                 "over 1024 fragments", "1024 fragments on disk"):
+        check(WHOLE.search(said) is not None,
+              "a total of four digits is still read: '%s'" % said)
+    check(WHOLE.search("the 68 fragments") is None,
+          "and a count of two digits is still left alone, as a slice")
 
     print("\nEach one is either right today, or says when it was measured")
     for rel, line, n, sentence, quoted in found:
