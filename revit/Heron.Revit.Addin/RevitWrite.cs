@@ -155,14 +155,15 @@ namespace Heron.Revit.Addin
             var unknown = RevitOperations.ResolveCategory(category, out builtIn);
             if (unknown != null) return unknown;
 
-            List<ElementId> movable, skipped;
+            List<ElementId> movable;
+            Skips skipped;
             Partition(doc, builtIn, out movable, out skipped);
 
             if (movable.Count == 0)
             {
                 return Json.Error("nothing_to_move",
                     "Nothing in " + doc.Title + " can be moved: " +
-                    Describe(0, skipped.Count, category) + ".");
+                    Describe(0, skipped, category) + ".");
             }
 
             var preview = new Preview
@@ -173,7 +174,7 @@ namespace Heron.Revit.Addin
                 Category = category.Trim(),
                 MillimetresUp = millimetres,
                 Ids = new HashSet<ElementId>(movable),
-                Skipped = skipped,
+                Skipped = skipped.All(),
                 CreatedUtc = DateTime.UtcNow,
             };
 
@@ -185,13 +186,16 @@ namespace Heron.Revit.Addin
                 Json.Str("approvalToken", preview.Token),
                 Json.Num("willMove", movable.Count),
                 Json.Num("willSkip", skipped.Count),
+                // WHY, BY REASON - null when nothing is skipped. `willSkip` alone
+                // cannot say which of three different things the user has to do.
+                Json.Str("skipReasons", skipped.Why()),
                 Json.Str("category", preview.Category),
                 Json.Str("distance", HeronUnits.DescribeMillimetres(millimetres)),
                 Json.Str("document", doc.Title),
                 Json.Str("documentPath", string.IsNullOrEmpty(doc.PathName) ? null : doc.PathName),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
                 Json.Num("expiresInSeconds", (long)PreviewLifetime.TotalSeconds),
-                Json.Str("summary", Describe(movable.Count, skipped.Count, preview.Category) +
+                Json.Str("summary", Describe(movable.Count, skipped, preview.Category) +
                                     " " + HeronUnits.DescribeVerticalMove(millimetres) +
                                     " in " + doc.Title));
         }
@@ -291,7 +295,8 @@ namespace Heron.Revit.Addin
             var unknown = RevitOperations.ResolveCategory(preview.Category, out builtIn);
             if (unknown != null) return unknown;
 
-            List<ElementId> movable, skipped;
+            List<ElementId> movable;
+            Skips skipped;
             Partition(doc, builtIn, out movable, out skipped);
 
             var now = new HashSet<ElementId>(movable);
@@ -455,7 +460,8 @@ namespace Heron.Revit.Addin
                 new KeyValuePair<string, string>("warnings", handler.Count.ToString(CultureInfo.InvariantCulture)),
                 new KeyValuePair<string, string>("undoEntry", name),
                 new KeyValuePair<string, string>("elements", UniqueIds(doc, verdicts.Moved)),
-                new KeyValuePair<string, string>("skippedElements", UniqueIds(doc, skipped)),
+                new KeyValuePair<string, string>("skippedElements", UniqueIds(doc, skipped.All())),
+                new KeyValuePair<string, string>("skipReasons", skipped.Why()),
             };
 
             if (verdicts.Moved.Count != movable.Count)
@@ -478,6 +484,7 @@ namespace Heron.Revit.Addin
             return Json.Ok(
                 Json.Num("moved", reallyMoved),
                 Json.Num("skipped", skipped.Count),
+                Json.Str("skipReasons", skipped.Why()),
                 // Three counts that are normally zero and must never be
                 // folded into "moved" when they are not. `blocked` in
                 // particular is the one Revit itself will not tell you about.
@@ -920,8 +927,8 @@ namespace Heron.Revit.Addin
         /// Splits a category into what can move and what cannot, WITHOUT
         /// changing anything.
         ///
-        /// The two reasons an element is left alone are the two the user will
-        /// meet in real work:
+        /// The reasons an element is left alone are the ones the user will
+        /// meet in real work, checked cheapest first:
         ///
         ///   PINNED       somebody pinned it on purpose. Moving a pinned
         ///                element either fails or silently defeats the pin,
@@ -930,6 +937,41 @@ namespace Heron.Revit.Addin
         ///   SOMEONE ELSE on a workshared model, another person holds it.
         ///                Revit would refuse mid-transaction and take the
         ///                whole operation down with it.
+        ///   CHANGED IN
+        ///   CENTRAL      on a workshared model, somebody changed it and
+        ///                synchronised, and this copy has not reloaded since.
+        ///                Revit's own word for it is that "a reload latest will
+        ///                be required before it can be modified in the current
+        ///                model" - so it is the same refusal as ownership,
+        ///                arriving by a different route. Added 2026-09-23,
+        ///                earlier-brain plan package C3.
+        ///   DELETED IN
+        ///   CENTRAL      somebody deleted it and synchronised. Moving it here
+        ///                moves something the next reload takes away.
+        ///
+        /// NotYetInCentral is NOT skipped, and that is deliberate: it is an
+        /// element made in this copy and not yet synchronised - the ducts the
+        /// user drew five minutes ago - and they are theirs to move.
+        ///
+        /// OWNERSHIP IS ASKED FIRST, so an element somebody else holds keeps
+        /// the reason it has always been reported under; the central status is
+        /// only asked of what nobody else owns.
+        ///
+        /// BOTH ARE ANSWERED FROM WHAT THIS COPY ALREADY KNOWS. Revit's
+        /// documentation of GetModelUpdatesStatus and GetCheckoutStatus says
+        /// each "returns a locally cached value which may not be up to date",
+        /// is fit for "reporting to an interactive user", and "cannot be
+        /// considered a reliable indication of whether the element can be
+        /// immediately edited" - and "may not be dependable in the middle of a
+        /// local transaction", which is why this runs before the
+        /// TransactionGroup opens and never inside it. By that documentation
+        /// neither contacts the central server - NEEDS-CHECKING E24 times it
+        /// on a real central rather than taking the sentence on trust - and
+        /// neither is the last word: a change synchronised a minute ago can
+        /// still read as current here. The last word is
+        /// Revit's at commit, where CollectWarnings rolls the whole move back
+        /// rather than let it half-happen. What this buys is the common case
+        /// named in the preview instead of a failed move.
         ///
         /// Finding them BEFORE the transaction is what lets the preview say
         /// "12 are owned by another user and will be skipped" - which is the
@@ -937,10 +979,10 @@ namespace Heron.Revit.Addin
         /// the check happens here rather than as an error later.
         /// </summary>
         private static void Partition(Document doc, BuiltInCategory builtIn,
-                                      out List<ElementId> movable, out List<ElementId> skipped)
+                                      out List<ElementId> movable, out Skips skipped)
         {
             movable = new List<ElementId>();
-            skipped = new List<ElementId>();
+            skipped = new Skips();
 
             var workshared = doc.IsWorkshared;
 
@@ -956,7 +998,7 @@ namespace Heron.Revit.Addin
 
                 if (element.Pinned)
                 {
-                    skipped.Add(id);
+                    skipped.Pinned.Add(id);
                     continue;
                 }
 
@@ -965,7 +1007,19 @@ namespace Heron.Revit.Addin
                     var status = WorksharingUtils.GetCheckoutStatus(doc, id);
                     if (status == CheckoutStatus.OwnedByOtherUser)
                     {
-                        skipped.Add(id);
+                        skipped.Owned.Add(id);
+                        continue;
+                    }
+
+                    var central = WorksharingUtils.GetModelUpdatesStatus(doc, id);
+                    if (central == ModelUpdatesStatus.UpdatedInCentral)
+                    {
+                        skipped.ChangedInCentral.Add(id);
+                        continue;
+                    }
+                    if (central == ModelUpdatesStatus.DeletedInCentral)
+                    {
+                        skipped.DeletedInCentral.Add(id);
                         continue;
                     }
                 }
@@ -974,13 +1028,78 @@ namespace Heron.Revit.Addin
             }
         }
 
-        private static string Describe(int movable, int skipped, string category)
+        /// <summary>
+        /// What Partition left alone, kept apart BY REASON, because each asks
+        /// something different of the user: unpin it, ask its owner, or
+        /// Reload Latest. One count with one blended reason - "pinned or owned
+        /// by someone else", which is what this said until 2026-09-23 - sends
+        /// them looking in the wrong place for every element that is neither.
+        /// </summary>
+        private sealed class Skips
+        {
+            public readonly List<ElementId> Pinned = new List<ElementId>();
+            public readonly List<ElementId> Owned = new List<ElementId>();
+            public readonly List<ElementId> ChangedInCentral = new List<ElementId>();
+            public readonly List<ElementId> DeletedInCentral = new List<ElementId>();
+
+            public int Count
+            {
+                get
+                {
+                    return Pinned.Count + Owned.Count + ChangedInCentral.Count +
+                           DeletedInCentral.Count;
+                }
+            }
+
+            /// <summary>Every skipped element, whatever the reason - for the audit.</summary>
+            public List<ElementId> All()
+            {
+                var all = new List<ElementId>(Count);
+                all.AddRange(Pinned);
+                all.AddRange(Owned);
+                all.AddRange(ChangedInCentral);
+                all.AddRange(DeletedInCentral);
+                return all;
+            }
+
+            /// <summary>
+            /// The reasons as the user reads them, only the ones that happened,
+            /// or null when nothing was skipped.
+            /// </summary>
+            public string Why()
+            {
+                var parts = new List<string>(4);
+                if (Pinned.Count > 0) parts.Add(Number(Pinned.Count) + " pinned");
+                if (Owned.Count > 0) parts.Add(Number(Owned.Count) + " owned by someone else");
+                if (ChangedInCentral.Count > 0)
+                {
+                    parts.Add(Number(ChangedInCentral.Count) +
+                              " changed in central since this model last reloaded (Reload " +
+                              "Latest, then ask again, to include " +
+                              (ChangedInCentral.Count == 1 ? "it" : "them") + ")");
+                }
+                if (DeletedInCentral.Count > 0)
+                    parts.Add(Number(DeletedInCentral.Count) + " deleted in central");
+
+                if (parts.Count == 0) return null;
+                if (parts.Count == 1) return parts[0];
+                return string.Join(", ", parts.GetRange(0, parts.Count - 1).ToArray()) +
+                       " and " + parts[parts.Count - 1];
+            }
+
+            private static string Number(int count)
+            {
+                return count.ToString("N0", CultureInfo.InvariantCulture);
+            }
+        }
+
+        private static string Describe(int movable, Skips skipped, string category)
         {
             var text = movable.ToString("N0", CultureInfo.InvariantCulture) + " " + category;
-            if (skipped > 0)
+            if (skipped.Count > 0)
             {
-                text += ", skipping " + skipped.ToString("N0", CultureInfo.InvariantCulture) +
-                        " that are pinned or owned by someone else";
+                text += ", skipping " + skipped.Count.ToString("N0", CultureInfo.InvariantCulture) +
+                        ": " + skipped.Why();
             }
             return text;
         }

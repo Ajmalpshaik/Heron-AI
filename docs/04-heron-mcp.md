@@ -247,7 +247,7 @@ The owner chose on 2026-09-23 to keep `revit_change` changing at once rather tha
 and Article 9 carries it as its one recorded exception. D-99 names what stands in for the preview. It
 also records what it does **not** change: **Article 7** still asks for explicit confirmation of a
 destructive change, and on this path nothing in code asks for it —
-[FRAGMENT-ISSUES row 5b-158](FRAGMENT-ISSUES.md).
+[FRAGMENT-ISSUES row 5b-161](FRAGMENT-ISSUES.md).
 
 ### 8.3 The rules reach the AI — the server's instructions
 
