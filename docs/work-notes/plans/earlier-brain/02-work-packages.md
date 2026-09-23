@@ -15,7 +15,7 @@
 | **C3** | Add-in safety (Revit failure handling, "changed in central?") and an API signature lookup | cloud, then PC | 1 | — | not started |
 | **C4** | Revit traps written into the fragments they affect | cloud, then PC | 1 | — | not started |
 | **C5** | The owner's words and standards — knowledge, not language | cloud, then PC | 2 | C2 merged | not started |
-| **C6** | A score for the owner's real questions | cloud | 1 | — | **built, draft** — PR [#305](https://github.com/Ajmalpshaik/Heron-AI/pull/305). Answer key confirmed by the owner 2026-09-23; **D3 answered: report only** ([D-100](../../../DECISIONS.md)) |
+| **C6** | A score for the owner's real questions | cloud | 1 | — | **DONE** — PR [#305](https://github.com/Ajmalpshaik/Heron-AI/pull/305). Answer key confirmed by the owner 2026-09-23; **D3 answered: report only** ([D-100](../../../DECISIONS.md)); first score recorded in [`brain/retrieval-history.md`](../../../../brain/retrieval-history.md) |
 | **C7** | A fragment-writing agent | cloud | 2 | C3 merged | not started |
 | **C8** | Three fragments from the outside-library notes | cloud, then PC | 2 | C4 merged | not started |
 | **C9** | Skills that carry a method — the design, then the HVAC methods | cloud, then PC | 3 | owner decision **D2** | not started |
