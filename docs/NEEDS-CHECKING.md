@@ -294,9 +294,13 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ai.md`](needs-checking/group-ai.md)
 
-## Group AJ - the cloud setup script, pasted into the environment again (2026-09-23)
+## Group AJ - Revit traps seen elsewhere, written into the fragments they affect (earlier-brain plan, package C4)
 
 **Its own file:** [`needs-checking/group-aj.md`](needs-checking/group-aj.md)
+
+## Group AK - the cloud setup script, pasted into the environment again (2026-09-23)
+
+**Its own file:** [`needs-checking/group-ak.md`](needs-checking/group-ak.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

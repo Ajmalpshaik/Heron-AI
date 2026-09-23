@@ -19,7 +19,7 @@ that day**:
 > **If you are the owner and you want only what is waiting on YOU, read
 > [`FOR-THE-OWNER.md`](FOR-THE-OWNER.md) and run `python tools/owner-queue.py`.** The page is the
 > structure; the tool is the list, derived from the registers at the moment you ask so that it cannot
-> go stale. It also says what is **safe to use today** — **144 proven `READ` fragments cannot modify a
+> go stale. It also says what is **safe to use today** — **143 proven `READ` fragments cannot modify a
 > model**, so they are safe on a live project now.
 >
 > **For the next stretch as an ordered plan**, open

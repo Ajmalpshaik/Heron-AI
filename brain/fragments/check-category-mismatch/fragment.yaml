@@ -108,6 +108,18 @@ compatibility-note: >
   where a mis-categorised element can be: a system family's category is fixed
   by what it is.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# Another tool, on real models and mostly on Revit 2020, found that changing
+# a family's CATEGORY - the fix this check points at - DROPS every parameter
+# bound only to the old category, with its values: a project or shared
+# parameter bound to Generic Models is not carried across to Duct
+# Accessories. This fragment changes nothing, as its purpose says; the note is
+# for the step after it. Before re-categorising what it finds, record the
+# parameter values of those elements (READ_ELEMENT_PARAMETERS) and check the
+# new category carries the same bindings. Not reproduced here. A note only:
+# the fragment is PROVEN and its code is unchanged. NEEDS-CHECKING AJ9.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "these are in the wrong category"    -> here

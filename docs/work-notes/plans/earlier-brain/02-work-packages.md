@@ -13,7 +13,7 @@
 | **C1** | Guards and checks that run in every session | cloud | 1 | — | **merged** as [#308](https://github.com/Ajmalpshaik/Heron-AI/pull/308), 2026-09-23, on the owner's word - owed on the PC: NEEDS-CHECKING **Group AI**, four checks, no Revit |
 | **C2** | The MCP server: a read-only door, rules for every chat, safety labels, the preview decision | cloud | 1 | owner decision **D1** | **merged** in [#307](https://github.com/Ajmalpshaik/Heron-AI/pull/307), on the owner's instruction - D1 answered **B** (keep changing at once), recorded as [D-99](../../../DECISIONS.md#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so). Still owed: the PC proofs, [NEEDS-CHECKING Group AH](../../../NEEDS-CHECKING.md), and the owner's answer to [FRAGMENT-ISSUES 5b-161](../../../FRAGMENT-ISSUES.md) |
 | **C3** | Add-in safety (Revit failure handling, "changed in central?") and an API signature lookup | cloud, then PC | 1 | — | **merged — [#306](https://github.com/Ajmalpshaik/Heron-AI/pull/306)**, 2026-09-23: the cloud part. Compiled on all eight releases, never run in Revit; the PC owes NEEDS-CHECKING **E19–E24** |
-| **C4** | Revit traps written into the fragments they affect | cloud, then PC | 1 | — | not started |
+| **C4** | Revit traps written into the fragments they affect | cloud, then PC | 1 | — | **merged** as [#309](https://github.com/Ajmalpshaik/Heron-AI/pull/309), 2026-09-23, on the owner's word — 25 fragment folders; code changed in 8, and 5 of those went `PROVEN` → `DRAFT` with their proofs kept. Owed on the PC: [NEEDS-CHECKING **Group AJ**](../../../needs-checking/group-aj.md), nine checks on a named model |
 | **C5** | The owner's words and standards — knowledge, not language | cloud, then PC | 2 | C2 merged | not started |
 | **C6** | A score for the owner's real questions | cloud | 1 | — | **DONE** — PR [#305](https://github.com/Ajmalpshaik/Heron-AI/pull/305). Answer key confirmed by the owner 2026-09-23; **D3 answered: report only** ([D-100](../../../DECISIONS.md)); first score recorded in [`brain/retrieval-history.md`](../../../../brain/retrieval-history.md) |
 | **C7** | A fragment-writing agent | cloud | 2 | C3 merged | not started |
@@ -21,7 +21,7 @@
 | **C9** | Skills that carry a method — the design, then the HVAC methods | cloud, then PC | 3 | owner decision **D2** | not started |
 | **C10** | Tagging and sprinkler methods | cloud, then PC | 3 | C9 merged | not started |
 | **C11** | Family creation | cloud, then PC | 3, last | C7 and C9 merged | not started |
-| — | PR #299, the risk gate on `revit_change` ([01 §3 H1](01-findings.md)) | done, waiting | — | **the owner's word to merge** | built, draft |
+| — | PR #299, the risk gate on `revit_change` ([01 §3 H1](01-findings.md)) | cloud, then PC | — | **the owner's word to merge** | **merged** as [#299](https://github.com/Ajmalpshaik/Heron-AI/pull/299), 2026-09-22 - FRAGMENT-ISSUES **5b-155** FIXED; owed on the PC: its refusal check in [05](05-pc-proving.md) |
 
 **Wave 1 runs in parallel** — five sessions whose files do not overlap. **Wave 2** starts when the package
 it needs has merged. **Wave 3** starts with the owner's answer to D2. Proving on the PC

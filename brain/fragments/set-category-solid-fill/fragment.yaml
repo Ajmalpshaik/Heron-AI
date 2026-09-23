@@ -149,6 +149,36 @@ compatibility-note: >
   decision possible without stamping and un-stamping one shared object round
   the loop.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# Another tool, on real models and mostly on Revit 2020, saw a CATEGORY
+# override drop the SURFACE fill on ducts, pipes, air terminals, sprinklers,
+# cable tray and conduit - and found that `IsCuttable` predicts only the CUT
+# half of what lands. This fragment decides the cut half by `IsCuttable` and
+# counts every category it set as `overridden`, so on those six categories the
+# wash may not land at all and nothing in the answer says so. Heron measured
+# the same shape once, one fragment over: on Ducts, Revit kept one setting of
+# the four SET_CATEGORY_GRAPHICS gave it, the surface colour among the ones
+# dropped (FRAGMENT-ISSUES row 175, Revit 2024). Not reproduced here for this
+# fragment. Since PR #300, REPORT_CATEGORY_OVERRIDES reads the surface and cut
+# pattern and colour back in full, so what stuck can be read rather than
+# assumed - read it after this runs. NEEDS-CHECKING AJ7.
+#
+# THE INSULATION RULE IS NOT APPLIED HERE, AND WHY. The owner's standing rule
+# is that insulation and lining take the colour of the run they wrap, and
+# COLOR_BY_PARAMETER, OVERRIDE_GRAPHICS_IN_VIEW and HIGHLIGHT_VS_REST follow it
+# element by element. By CATEGORY it has no single answer: ducts and duct
+# fittings washed two colours cannot both be the colour of the one Duct
+# Insulation category; the owner's grayout standard gives insulation a layer
+# of its own; and whether Revit keeps a surface fill on the insulation
+# categories at all is not known. To wash insulation the colour of its runs,
+# name the insulation categories in the same call.
+#
+# A note only. This fragment is PROVEN and its code is unchanged. Row 174 -
+# its signed proof says the read-back cannot tell a stamped pattern from none,
+# and the code and a run since say it could - is the owner's call and is not
+# touched here.
+
 # ROUTING - the line between this and SET_CATEGORY_GRAPHICS is ONE QUESTION:
 # must the category READ as a colour, or only be tinted where it already
 # hatches?

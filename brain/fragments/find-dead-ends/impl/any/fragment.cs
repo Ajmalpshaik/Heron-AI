@@ -42,6 +42,19 @@ var terminalCategories = new List<BuiltInCategory>
     BuiltInCategory.OST_Sprinklers,
 };
 
+// PLUMBING EQUIPMENT - a water heater, a pump, a tank - is a category of its
+// own only in the newer releases: the API names it from the 2023.1 reference
+// assemblies on, and not in 2020, 2021 or 2022. A run ending at one is served,
+// and until 2026-09-23 this list did not know the category existed, so every
+// such run came back a dead end. It is looked up BY NAME AT RUN TIME rather
+// than spelled BuiltInCategory.OST_PlumbingEquipment, because that spelling
+// does not compile on the older releases - and a version #if cannot stand in:
+// the add-in compiles fragments with no release symbols defined
+// (FRAGMENT-ISSUES 5b-181), so the #if branch would never be the one that ran.
+BuiltInCategory plumbingEquipment;
+if (Enum.TryParse("OST_PlumbingEquipment", out plumbingEquipment))
+    terminalCategories.Add(plumbingEquipment);
+
 Func<Element, bool> servesSomething = element =>
 {
     try

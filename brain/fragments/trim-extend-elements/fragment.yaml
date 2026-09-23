@@ -94,6 +94,22 @@ compatibility-note: >
   compiled at both ends. The corner is plain arithmetic on XYZ - no units API,
   no geometry service, nothing that changed shape at 2021.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# Another tool, on real models and mostly on Revit 2020, saw a rewritten run
+# curve DELETE the takeoffs on that run and leave their branches orphaned -
+# while the terminal at the end of each branch still read as connected,
+# because it is joined to its own branch and the branch no longer reaches the
+# main. This fragment rewrites the curve of both elements it is given. Its
+# report already says a connection at a MOVED END is broken; a takeoff part
+# way along a trimmed run is a different thing, and the report does not look
+# for it.
+#
+# Not reproduced here. A NOTE ONLY - the fragment is PROVEN, and a change to
+# its code would make the proof stale. After squaring off a run that carries
+# takeoffs, look at each takeoff before trusting the report, and do not take a
+# terminal reading "connected" as the answer. NEEDS-CHECKING AJ3.
+
 # ROUTING - repeated in PLACE_MEP_FITTING, MOVE_ELEMENTS and FILLET_LINES.
 #
 #   "make these two meet"            -> here

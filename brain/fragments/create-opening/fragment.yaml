@@ -67,6 +67,24 @@ compatibility-note: >
   chooses whether the profile is cut perpendicular to the face or vertically,
   which matters on a sloped roof and on nothing else. Lengths are internal FEET.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# Another tool, on real models and mostly on Revit 2020, found that an opening
+# in a WALL and an opening in a BEAM take different API calls from an opening
+# in a floor. Revit's API carries four `NewOpening` calls - read off the 2020
+# and 2027 reference assemblies on 2026-09-23. This fragment uses the one that
+# takes a host `Element`, a profile and a bool. A wall has a call of its own,
+# taking the `Wall` and two corner points; a family instance - a beam, a
+# brace, a column - has another, taking a profile and a reference face. So
+# the purpose's "a wall, a floor, a roof or a ceiling" is a claim the call
+# used here may not keep for a wall, and a beam is not covered at all.
+# Autodesk's own description of which host each call serves could not be read
+# from the machine this was written on.
+#
+# A note only: the fragment is DRAFT and nothing was changed. Prove it on a
+# WALL first. If Revit refuses the wall, the purpose is wrong about walls and
+# the repair is the wall's own call. NEEDS-CHECKING AJ9.
+
 # ROUTING - repeated in PROPOSE_MEP_OPENINGS and AUDIT_MEP_OPENINGS.
 #
 #   "cut the holes"                  -> here, on a list somebody has approved

@@ -82,6 +82,25 @@ compatibility-note: >
   `LocationCurve.Curve` are unchanged 2020 to 2027, and the distance arrives in
   internal feet with no units call.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# Two things another tool saw on real models, mostly on Revit 2020:
+#
+#   1. Rewriting a run's curve DELETED the takeoffs on it and left their
+#      branches orphaned - while the terminal at the end of each branch still
+#      read as connected, because it is joined to its own branch and the
+#      branch no longer reaches the main. This fragment rewrites the curve.
+#      Its purpose already says the run comes apart at its joints; a takeoff
+#      deleted part way along is worse, because nothing is left to rejoin.
+#   2. Two pieces reconnected PLAIN - connector to connector, nothing between
+#      - later MERGED into one duct. A UNION FITTING between them kept them
+#      two. That matters to the "reconnect afterwards" this card advises.
+#
+# Neither has been reproduced here. A NOTE ONLY - the fragment is PROVEN, and
+# a change to its code would make the proof stale. After offsetting a run that
+# carries takeoffs, look at each one, and do not take a terminal reading
+# "connected" as the answer. NEEDS-CHECKING AJ3.
+
 # ROUTING - repeated in SPLIT_MEP_RUN and MOVE_ELEMENTS.
 #
 #   "move it 200 across"        -> here - a shift perpendicular to the run

@@ -113,6 +113,25 @@ contract:
       # a pipe it sized (D-52).
       role: accounting
       type: bool
+    - name: openConnectorsBefore
+      # Open piping ends on the pipes and the fittings joined to them, counted
+      # BEFORE any size was set. Evidence of the state it started from, never
+      # a thing it found (D-52).
+      role: accounting
+      type: int
+    - name: openConnectorsAfter
+      # The same count after the sizes were set, over the same pipes, what a
+      # walk through fittings now reaches, and everything seen before that
+      # still exists. Equal to the count before when nothing was set.
+      role: accounting
+      type: int
+    - name: openedByResize
+      # Elements with more open piping ends after the resize than before - a
+      # fitting left at the old size, a transition Revit added. Every pipe can
+      # read its new size while this is not empty, which is why it is its own
+      # answer.
+      role: result
+      type: IList<ElementId>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -129,6 +148,28 @@ compatibility-note: >
   foot and 0.028316846592 cubic metres per cubic foot, which is exact. Asking
   Revit to convert would mean `DisplayUnitType` before 2021 and `ForgeTypeId`
   from 2022, which is the break this project refuses to write (D-20).
+
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# Another tool, on real models and mostly on Revit 2020, resized a connected
+# run and Revit left the FITTINGS at the old size and added transitions: 22
+# pipes became 41 elements, and unions became two transitions back to back
+# with connectors left open. Every pipe still read its new size. Nothing in
+# this repository has reproduced it yet, and the cards of SET_MEP_SIZE and
+# AUTO_SIZE_MEP said nothing about it.
+#
+# What is done about it here: the open piping ends on the pipes and the
+# fittings joined to them are counted before any size is set and again after,
+# and any element with more open ends afterwards is named in
+# `openedByResize`. What is NOT done: nothing is repaired, and no fitting is
+# resized - the report is where it stops. NEEDS-CHECKING AJ2 is the check on a
+# real model.
+#
+# Found beside it and fixed in the same change: the size was read back
+# straight after the set, before any regeneration, so a size the pipe type
+# snapped could never be seen - the parameter still reports what was asked
+# for until the model regenerates. It now regenerates first, as AUTO_SIZE_MEP
+# always has.
 
 # ROUTING - repeated in AUTO_SIZE_MEP, SET_MEP_SIZE and MEASURE_MEP_VELOCITY.
 #

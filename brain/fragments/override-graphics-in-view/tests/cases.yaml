@@ -11,7 +11,31 @@ positive:
       the architecture recedes and the services stay solid. This is the whole
       job; a number is not a proof that it looks right
 
+  - given: INSULATED ducts made red in a plan that shows their insulation
+    expect: >
+      the insulation red with its ducts, and `wrapsFollowed` equal to the
+      wraps the view shows - a little lower than the duct count is normal,
+      because not every duct is insulated. LOOK at it in the plan and in a 3D
+      view: the duct must still read inside its red jacket. If the wrap's fill
+      hides the run in plan, record it - that is a question for the owner, not
+      a number to pick here
+
 negative:
+  - given: >
+      the insulation alone handed a grey dashed look, with the ducts it wraps
+      left out
+    expect: >
+      the insulation grey, the DUCTS UNCHANGED, and `wrapsFollowed` 0. The
+      rule runs one way, run to wrap - this is the grayout's insulation layer,
+      and pulling the ducts in would grey the services the grayout brought
+      forward
+
+  - given: an insulated duct whose insulation is NOT shown in this view
+    expect: >
+      the duct overridden and `wrapsFollowed` 0. A wrap the view does not show
+      has nothing to override, and counting it would pad the report
+
+
   - given: a view whose TEMPLATE controls visibility and graphics
     expect: >
       overridden = 0, every element in `skipped`, AND NO EXCEPTION. This is the

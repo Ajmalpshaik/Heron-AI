@@ -20,10 +20,18 @@ negative:
 
   - given: a batch containing an element whose geometry cannot be read
     expect: >
-      the batch runs to the END, that element is counted in clear, and
-      clashing + clear equals the number of elements handed in - not an
-      exception that abandons the rest, and not a silent drop that makes the
-      counts disagree with the input
+      the batch runs to the END, that element is in `notChecked` with Revit's
+      reason in the findings - NOT in clear - and clashing + clear +
+      notChecked equals the number of elements handed in. Not an exception
+      that abandons the rest, not a silent drop, and not a "clear" for an
+      element that was never tested. Until 2026-09-23 this case said "counted
+      in clear", which is the trap another tool's clash check fell into
+
+  - given: an empty set to check against
+    expect: >
+      nothing counted clear and nothing clashing, and a finding saying nothing
+      was checked. A report of forty clear elements that were tested against
+      nothing reads as a clean model
 
 second_route:
   - Revit's own Interference Check, run on the same two selections

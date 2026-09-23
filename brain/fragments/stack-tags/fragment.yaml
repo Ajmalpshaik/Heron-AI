@@ -111,6 +111,18 @@ compatibility-note: >
   are handled in their own branches rather than by one cast: casting to the
   independent kind silently skips every room tag in the set.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# Another tool, on real models and mostly on Revit 2020, found that a ROOM TAG
+# moved out of its room needs a LEADER: without one Revit flags the tag as
+# outside its room, and on the sheet the tag reads as belonging to whatever
+# room it now sits over. This fragment moves room tags (`SpatialElementTag`)
+# into a stack along with element tags, and a stack is rarely inside every
+# room it lists - and it does not switch a room tag's leader on. Not
+# reproduced here. A note only: the fragment is PROVEN, and a change to its
+# code would make the proof stale. After stacking room tags, check each one
+# still points at its room. NEEDS-CHECKING AJ9.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "stack these tags at the side"       -> here

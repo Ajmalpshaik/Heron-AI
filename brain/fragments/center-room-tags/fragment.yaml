@@ -96,6 +96,18 @@ compatibility-note: >
   the link instance as well as the room, so no version-specific accessor is
   needed.
 
+# TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
+#
+# Another tool, on real models and mostly on Revit 2020, found that a ROOM TAG
+# moved out of its room needs a LEADER: without one Revit flags the tag as
+# outside its room. This fragment moves room tags INTO their rooms, which is
+# the cure rather than the trap - except where a fallback decides the point:
+# the box centre (step 3) and the room's own location point (step 4) are not
+# promised to be inside an L- or U-shaped room, and a tag sent there lands
+# outside it with no leader. A note only: the fragment is DRAFT and nothing
+# was changed. When it is proved, include a room whose boundary cannot be read
+# and check where its tag lands. NEEDS-CHECKING AJ9.
+
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "the room tags are all over the      -> here
