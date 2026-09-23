@@ -171,6 +171,7 @@ an edit.
 | [D-97](#d-97--the-library-is-built-out-first-and-proved-in-one-pass-later) | The library is built out first, and proved in one pass later | ✅ Accepted · 2026-08-30 |
 | [D-98](#d-98--a-context-fragment-is-consumed-by-the-host-not-by-another-fragment) | A context fragment is consumed by the host, not by another fragment | ⏳ Proposed · 2026-08-31 |
 | [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so) | A change asked for in a chat is kept at once, with no preview, and Article 9 says so | ✅ Accepted · 2026-09-23 |
+| [D-100](#d-100--a-drop-in-the-score-of-the-owners-own-questions-is-reported-never-a-gate) | A drop in the score of the owner's own questions is reported, never a gate | ✅ Accepted · 2026-09-23 |
 
 ## Format
 
@@ -836,3 +837,10 @@ What this makes easy. What this makes hard. What it locks in.
 **Amends:** [Constitution Article 9](../HERON_CONSTITUTION.md) · **Breaks, on the record:** [Golden Rule 17](14-golden-rules.md) · **Keeps:** [D-55](#d-55--a-fragments-preview-is-the-run-itself-rolled-back), [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)
 
 **Full record:** [`decisions/D-99.md`](decisions/D-99.md)
+
+## D-100 — A drop in the score of the owner's own questions is reported, never a gate
+
+**Status:** Accepted · **Date:** 2026-09-23 · **Source:** Ajmal PS, 2026-09-23, asked as decision D3 of the earlier-brain plan
+**Affects:** [`tools/score-routing.py`](../tools/score-routing.py), [`tests/test_score_routing.py`](../tests/test_score_routing.py), [`.github/workflows/gates.yml`](../.github/workflows/gates.yml), which does not run it
+
+**Full record:** [`decisions/D-100.md`](decisions/D-100.md)
