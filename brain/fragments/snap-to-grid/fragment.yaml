@@ -100,8 +100,11 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. It is arithmetic plus one move call, and
-  neither has changed 2020 to 2027. All distances are internal feet with no
-  units call.
+  neither has changed 2020 to 2027. `spacingX` and `spacingY` arrive in
+  millimetres and are divided by 304.8 in the code (D-71); every distance
+  after that is internal feet, and no units API is touched. (This note said
+  "All distances are internal feet" until 2026-09-24, while the code and its
+  own proof - 600 in, 1.97 feet used - said millimetres.)
 
 # ROUTING - repeated in LIST_GRIDS and CREATE_GRID.
 #

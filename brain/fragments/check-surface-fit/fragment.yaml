@@ -108,7 +108,10 @@ compatibility-note: >
   `ReferenceWithContext.Proximity`, `Reference.ElementId` and `View3D` are
   unchanged 2020 through 2027 - read off the reference assemblies at both ends.
   Elements are compared by `ElementId`, never by a number. `maxDistance` and
-  `evenness` arrive in internal FEET.
+  `evenness` arrive in millimetres and are divided by 304.8 in the code
+  (D-71) - no units API is touched. (This note said they "arrive in internal
+  FEET" until 2026-09-24, while the code and its own proof - 50000 and 5 in,
+  164.04 and 0.0164 feet used - said millimetres.)
 
   **THE CONSTRUCTOR WAS WRONG ON ALL EIGHT RELEASES UNTIL 2026-09-05, AND THIS
   NOTE SAID IT HAD BEEN CHECKED.** It called
