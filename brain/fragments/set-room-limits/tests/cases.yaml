@@ -1,0 +1,31 @@
+positive:
+  - given: >
+      the 15 rooms on Level 1 of Project1, each with Upper Limit Level 1 and a
+      Limit Offset of 3700 except one at Level 2 + 3700, asked for Level 2 and
+      -300, on Revit 2024
+    expect: >
+      15 changed - every room now reads Upper Limit Level 2 and Limit Offset
+      -300 mm, and Unbounded Height reads 3700 mm on all 15. CHECKED by
+      SELECT_BY_PARAMETER_VALUE on Upper Limit and SELECT_BY_NUMERIC_PARAMETER
+      on Limit Offset and Unbounded Height, never by this fragment's own count
+
+  - given: the same 15 rooms asked for the same level and offset a second time
+    expect: 0 changed and all 15 in `alreadyRight` - a re-run writes nothing
+
+negative:
+  - given: walls handed in instead of rooms
+    expect: >
+      0 changed and every wall named in `notSpatial`; no wall parameter touched
+
+  - given: rooms on Level 1 asked for Level 1 and -300
+    expect: >
+      the top would be 300 mm below their floor - every room named in
+      `topBelowFloor`, nothing written
+
+  - given: a level name that two levels share
+    expect: refused by the add-in before the fragment runs - nothing written
+
+second_route:
+  - >
+      Revit's own Properties palette: select a room, read Upper Limit and Limit
+      Offset, and compare with this fragment's read-back

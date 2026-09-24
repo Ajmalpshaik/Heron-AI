@@ -1,0 +1,88 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+#
+# THE ARRANGEMENT IS HALF OF EVERY CASE HERE. The rooms are collected by
+# FILTER_ELEMENTS_BY_CATEGORY - category=Rooms, levelId=<the plan's level> -
+# which reads the WHOLE model. Never by a view-scoped select: on 2026-09-19
+# that found 0 of a model's 7 rooms in every view, because the templates hid
+# Rooms, and a zero from a hidden category looks exactly like an empty model.
+# The negative leg is the SAME call with category=Ducts - a different set,
+# not an empty one (fragment-proving, rules 3 and 5).
+
+positive:
+  - given: >
+      the rooms on one level, from FILTER_ELEMENTS_BY_CATEGORY (category=Rooms,
+      levelId=that level), that level's floor plan as `view`, and `tagTypeId`
+      naming a room tag type the model has - "Room Tag With Area" - with no
+      room tagged in that plan yet
+    expect: >
+      one room tag on every placed, enclosed room of that level, each showing
+      the room's name, number and area; `tagged` equal to that count and to the
+      ids in `newTags`; every room handed in named in exactly one list. Look at
+      the plan - one tag per room, at the point the room was placed
+
+  - given: the same call again on the same plan, after the first run was KEPT
+    expect: >
+      `tagged` 0, `newTags` empty, and every room the first run tagged in
+      `alreadyTaggedHere` - no second tag stacked on the first. Hover one tag
+      and press Tab: Revit offers one room tag there, not two
+
+  - given: the same rooms handed in twice in one set
+    expect: >
+      each room tagged once; its second appearance in `alreadyTaggedHere`
+
+  - given: a plan whose Visibility/Graphics, or view template, turns Room Tags off
+    expect: >
+      the tags placed and counted, and `findings` saying they are in the model
+      and not shown in that plan. The drawing looks unchanged, which is why the
+      sentence exists
+
+  - given: a dependent view of a plan whose primary view already carries room tags
+    expect: >
+      the rooms tagged in the primary in `alreadyTaggedHere`. Believed from how
+      Revit shares annotation between a primary view and its dependents, and
+      NOT yet seen through this fragment - check it before relying on it
+
+negative:
+  - given: >
+      the Ducts on the same level instead - FILTER_ELEMENTS_BY_CATEGORY with
+      category=Ducts, levelId=that level - with the same plan and the same tag
+      type
+    expect: >
+      `tagged` 0, `newTags` empty, and every duct in `notRooms`. No tag of any
+      kind placed. This is the leg D-30 exists for: a fragment that tagged
+      whatever it was handed, or fell back to the rooms in the view, shows here
+
+  - given: a DUCT tag type named as `tagTypeId`, with the rooms of the level
+    expect: >
+      refused before anything is placed, with a sentence naming the type and
+      its category - "... is a Duct Tags type, not a Room Tags type" - and the
+      call rolled back, so there is nothing to undo
+
+  - given: tagTypeId=none
+    expect: >
+      refused - no room tag type was named, and one is never guessed (D-33).
+      Nothing placed
+
+  - given: a 3D view, a section or a schedule named as `view`
+    expect: >
+      refused before anything is placed - it is not a plan of one level
+
+  - given: the rooms of ANOTHER level handed to this level's plan
+    expect: >
+      `tagged` 0 and every one of them in `otherLevel` - not tagged where they
+      are not drawn
+
+  - given: >
+      a set holding a room that was never placed and one that is not enclosed,
+      among enclosed rooms
+    expect: >
+      the first in `unplaced`, the second in `notEnclosed`, and every other
+      room still tagged. One room that cannot take a tag must not stop the rest
+
+second_route:
+  - >
+    In Revit, select one of the new tags: the Properties palette names its type
+    (M_Room Tag, Room Tag With Area). Right-click it, Select All Instances,
+    Visible in View - the count Revit shows is the room tags of that type in
+    the plan, which after a first run on an untagged plan is `tagged`. Revit's
+    own count, not another Heron read

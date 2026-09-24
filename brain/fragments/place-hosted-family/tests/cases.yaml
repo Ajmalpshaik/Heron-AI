@@ -1,28 +1,147 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a door, "succeeded and cut nothing". Rewritten 2026-09-24 for version 2.
+# Version 1's negative "no host" went with its `host` input: the wall is now
+# found from each point, so every case below is arranged by its POINTS.
+#
+# THE ARRANGEMENT. `points`, `toRoomAt` and `hingeAt` are typed in
+# MILLIMETRES, "x,y,z", several separated by semicolons, and they line up in
+# order: the first room point and the first hinge point belong to the first
+# door point. A door point sits on a straight wall's location line - or within
+# half the wall's width of it - away from the wall's ends. A room point sits
+# inside the room that door should swing toward, clear of the door's own
+# swing. A hinge point sits on the side of the door where its hinge belongs -
+# toward the side wall, when the open leaf should lie back along it.
+#
+# A DOOR IS PROVED BY ITS WALL, NEVER BY `placed`. On 2026-09-22 a door went
+# in free-standing and the answer still said "placed 1, failed 0". Read each
+# host wall's Volume before and after: a door that is really in its wall takes
+# its opening out of it. Measured 2026-09-24 in Project1 (Revit 2024): 14 x
+# M_Single-Flush 0915 x 2134mm took the walls from 299.36 to 293.893 m3 - 14 x
+# 0.3905 m3, which is 0.915 x 2.134 x the 0.2 m wall - so every door cut its
+# wall. That was a chat run, not this proof.
+#
+# THE HINGE IS READ OFF THE DRAWING. The centre of the door's plan swing arc,
+# in a floor plan of the level, is taken as the hinge. Read an arrangement's
+# hinge the same way in plan: the swing arc is centred on the hinged jamb.
+
 positive:
   - given: >
-      a straight wall on Level 1, a loaded single door family type, and two
-      points on the wall's centre line, on Revit 2024
+      a loaded door type - M_Single-Flush 0915 x 2134mm, or the single door
+      the test model has - the level the walls stand on, one point per door
+      on the location line of a straight wall on that level, and for each a
+      `toRoomAt` point inside the room that door should swing toward and a
+      `hingeAt` point on the side its hinge belongs, on a model whose rooms
+      are placed and enclosed and whose level has a floor plan
     expect: >
-      two doors IN the wall - checked by moving the wall and watching them move
-      with it, and by the wall showing an opening in plan. A door that does not
-      move with its wall was placed free-standing and the whole fragment failed
-      quietly
+      one door INTO the wall found at each point. `placed` holds one id per
+      point, and the host walls' Volume drops by one opening per door - its
+      width x height x the wall's thickness. Each door's swing is drawn in the
+      room named for it, centred on the jamb on the `hingeAt` side, and its To
+      Room is that room: read the rooms in a door schedule with From Room and
+      To Room, or with REPORT_DOOR_ROOM_LINKS. `noWall`, `twoWalls`,
+      `alreadyThere`, `wrongRoom`, `wrongHinge` and `toRoomWrong` empty,
+      `failed` 0. `flipped`, `handFlipped` and `toRoomSwapped` count the doors
+      it had to turn - what it did to them, never a thing it found
+
+  - given: >
+      doors already in their walls, with `hingeAt` naming the jamb at the
+      other end of each opening from the one Revit hung some of them on
+    expect: >
+      every point in `alreadyThere` and nothing placed; each door hinged at
+      the jamb named, with `handFlipped` equal to the doors that were hung at
+      the other end - never more - and `wrongHinge` empty. The swing side and
+      the To Room do not move when the hand is flipped. Measured 2026-09-24 in
+      Project1 (Revit 2024) on 14 M_Single-Flush doors moved beforehand to sit
+      100 mm from their side walls: alreadyThere 14, placed 0, flipped 0,
+      handFlipped 5, toRoomSwapped 0, and wrongRoom, wrongHinge and
+      toRoomWrong empty. A read probe, deleted afterwards, found every hinge
+      at the jamb 100 mm from its side wall's face. A chat run, not this proof
 
 negative:
-  - given: no host
+  - given: >
+      the same call with one point moved off its wall into the middle of a
+      room, where no straight wall on the level passes within half its width
     expect: >
-      refused by name, nothing placed, and the message saying why a hosted
-      family needs one. NOT a silent free-standing placement
+      that point in `noWall`, named with its coordinates, and no door placed
+      anywhere near it - `placed` short by exactly one. Every other point
+      still gets its door: one point that cannot take a door does not stop the
+      rest. For the proof's own negative, move EVERY point this way: `placed`
+      comes back empty and every point is in `noWall`, a set that was given
+      and could not be used rather than an empty one
 
-  - given: a point well outside the wall
+  - given: >
+      a point exactly as far from two walls' location lines as from each
+      other and within half a wall's width of both - two straight walls built
+      face to face, and the point on the line where their faces meet
     expect: >
-      counted in `failed` rather than thrown away. Revit refuses per point and
-      the rest of the run survives
+      that point in `twoWalls` - "two walls are equally near, so which one is
+      not guessed" - and nothing placed for it. Read from the code and NOT yet
+      seen on a model: two walls that close are rare, so the test model has to
+      be built for this case
 
-  - given: a free-standing family type, not a hosted one
-    expect: counted in `failed`, with the run intact
+  - given: >
+      a door point on a wall as usual, with its `toRoomAt` point in no room -
+      outside the building, or in a space where no room is placed
+    expect: >
+      the door PLACED in its wall and left exactly as Revit placed it: that
+      point in `wrongRoom` - "no room at the point it should open into" - and
+      nothing flipped, re-hung or swapped for it. A room point in no room is
+      never taken as leave to guess which way the door opens
+
+  - given: the same points, room points and hinge points again, after the first run was KEPT
+    expect: >
+      `placed` empty and every point in `alreadyThere` - no second door on top
+      of the first, and the walls' Volume unchanged. Measured 2026-09-24 in
+      Project1: a re-run over 4 doors came back alreadyThere 4, placed 0,
+      toRoomSwapped 4, because that re-run also put right their To Room - which
+      is what a door found already there is brought into line for
+
+  - given: >
+      `points` and `toRoomAt` of different lengths - three door points and
+      two room points
+    expect: >
+      nothing placed at all, and `findings` saying every point needs a second
+      point inside the room it should open into, with both counts - "Nothing
+      was placed". Never the first two doors placed and the third dropped
+
+  - given: >
+      `points` and `hingeAt` of different lengths - three door points, three
+      room points and two hinge points
+    expect: >
+      nothing placed at all, and `findings` saying every point needs a third
+      point on the side its hinge belongs, with both counts - "Nothing was
+      placed". Never the first two doors hung and the third left to chance
+
+  - given: >
+      a `hingeAt` point level with the door's centre - the door's own point
+      given again as its hinge point, so it lies on neither side of the
+      opening
+    expect: >
+      the door placed in its wall, its swing and To Room set as usual, and its
+      hinge left where Revit put it: that point in `wrongHinge` - "the hinge
+      point is level with the door's centre, so which jamb is meant is not
+      guessed" - and `handFlipped` not counting it
+
+  - given: >
+      a double-leaf door type - M_Double-Flush, or whichever pair of leaves the
+      test model has loaded - with points, room points and hinge points as for
+      a single door
+    expect: >
+      each door placed in its wall and its swing and To Room set, and every
+      one in `wrongHinge` - "it draws two swing arcs a jamb apart - a pair of
+      leaves has no one hinge side" - with `handFlipped` 0. Read from the code
+      and NOT yet seen on a model: two leaves are hinged at both jambs, so
+      there is no one side to name
 
 second_route:
   - >
-      Revit's own Architecture then Door, clicked on the same wall, and the two
-      compared - specifically whether both move when the wall is moved
+      Revit's own Architecture > Door: the same type clicked by hand into the
+      same wall, beside a door this placed, and the two compared. Both must
+      move with the wall when the wall is moved, both must cut the same
+      opening - the wall's Volume drops by the same amount for each - and both
+      must show the wall as their host when selected. Then flip the hand-placed
+      door with its facing arrows and read its To Room before and after: if it
+      does not change, the rule this fragment is built on - the swing and the
+      To Room are two settings - holds for a door placed by hand as well. Flip
+      its hand with the other arrows the same way: the swing arc moves to the
+      other jamb and stays on the same side of the wall
