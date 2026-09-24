@@ -2,6 +2,9 @@
 #
 #     pip install --user -r requirements.txt
 #
+# In plain words - everything a PC needs for Heron, Python first:
+#     docs/WHAT-TO-INSTALL.md
+#
 # Per-user, no administrator rights: D-01. The optional packages are in
 # requirements-optional.txt, and every one of them degrades rather than
 # breaks - run `python tools/check-dependencies.py` to see which are here.

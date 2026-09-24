@@ -95,6 +95,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | Know what gets built first | [ROADMAP.md](ROADMAP.md) |
 | **Actually start building** | [**27 — Build Order**](27-build-order.md) |
 | Know the non-negotiables | [14 — Golden Rules](14-golden-rules.md) |
+| Know **what to install** for Heron — Python first — and what is optional | [WHAT-TO-INSTALL.md](WHAT-TO-INSTALL.md) |
 
 ---
 
