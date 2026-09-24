@@ -7,6 +7,13 @@
 // This READS each element's position and derives what to write, per element -
 // nobody can hand in four hundred different room names.
 //
+// A TARGET NAME TWO PARAMETERS SHARE IS NOT FILLED. A shared or project
+// parameter can be bound beside a built-in one of the same name, and
+// LookupParameter then returns one of them - "determined at random", in
+// Autodesk's own reference - so the room name would land in a field no schedule
+// reads. Each target is checked on its own and counted apart (D-54 s3,
+// FRAGMENT-ISSUES 5b-203).
+//
 // ROOM AND SPACE ARE NOT THE SAME THING and this is the commonest way a location
 // register comes out wrong. Architecture puts people in ROOMS; MEP calculates in
 // SPACES. A model can hold both, in the same place, with different names.
@@ -45,6 +52,8 @@ if (spatial.Count == 0)
 
 var missingRoomParameter = 0;
 var missingLevelParameter = 0;
+var ambiguousRoomParameter = 0;
+var ambiguousLevelParameter = 0;
 
 foreach (var element in elements)
 {
@@ -92,8 +101,10 @@ foreach (var element in elements)
 
     if (!string.IsNullOrEmpty(roomParameter))
     {
-        var target = element.LookupParameter(roomParameter);
-        if (target == null || target.IsReadOnly) missingRoomParameter++;
+        var twice = element.GetParameters(roomParameter).Count > 1;
+        var target = twice ? null : element.LookupParameter(roomParameter);
+        if (twice) ambiguousRoomParameter++;
+        else if (target == null || target.IsReadOnly) missingRoomParameter++;
         else if (found == null) noRoomFound.Add(element.Id);
         else
         {
@@ -104,8 +115,10 @@ foreach (var element in elements)
 
     if (!string.IsNullOrEmpty(levelParameter))
     {
-        var target = element.LookupParameter(levelParameter);
-        if (target == null || target.IsReadOnly) missingLevelParameter++;
+        var twice = element.GetParameters(levelParameter).Count > 1;
+        var target = twice ? null : element.LookupParameter(levelParameter);
+        if (twice) ambiguousLevelParameter++;
+        else if (target == null || target.IsReadOnly) missingLevelParameter++;
         else
         {
             var levelId = element.LevelId;
@@ -131,6 +144,17 @@ if (missingLevelParameter > 0)
 {
     refused.Add(string.Format("{0} element(s) have no writable '{1}' parameter",
         missingLevelParameter, levelParameter));
+}
+if (ambiguousRoomParameter > 0)
+{
+    refused.Add(string.Format("{0} element(s) carry TWO OR MORE parameters called '{1}' - usually a "
+        + "shared or project parameter bound beside a built-in one of the same name. Revit would pick "
+        + "one of them at random, so NEITHER was filled", ambiguousRoomParameter, roomParameter));
+}
+if (ambiguousLevelParameter > 0)
+{
+    refused.Add(string.Format("{0} element(s) carry TWO OR MORE parameters called '{1}', so NEITHER "
+        + "was filled", ambiguousLevelParameter, levelParameter));
 }
 if (noRoomFound.Count > 0)
 {

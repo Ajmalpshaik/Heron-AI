@@ -18,6 +18,14 @@
 // case-sensitivity argument was dropped. EACH SPELLING COMPILES ON EXACTLY ONE
 // END AND BREAKS THE OTHER, so the overload is picked at run time by its
 // argument count.
+//
+// AN ELEMENT CARRYING THE NAME TWICE IS LEFT OUT, AND NEVER CHOOSES THE RULE'S
+// PARAMETER. A shared or project parameter can be bound beside a built-in one of
+// the same name, and LookupParameter then returns one of them - "determined at
+// random", in Autodesk's own reference. The filter rule is built on ONE
+// parameter's id, so taking that id from such an element would build every
+// filter on a parameter nobody chose. Counted and named (D-54 s3,
+// FRAGMENT-ISSUES 5b-203).
 
 var created = new List<Element>();
 var valuesFound = new List<string>();
@@ -29,10 +37,13 @@ var byValue = new Dictionary<string, List<Element>>();
 var categories = new List<ElementId>();
 ElementId parameterId = ElementId.InvalidElementId;
 var withoutParameter = 0;
+var carriesItTwice = 0;
 
 foreach (var element in elements)
 {
     if (element == null || !element.IsValidObject) continue;
+
+    if (element.GetParameters(parameterName).Count > 1) { carriesItTwice++; continue; }
 
     var parameter = element.LookupParameter(parameterName);
     if (parameter == null) { withoutParameter++; continue; }
@@ -62,6 +73,14 @@ if (withoutParameter > 0)
     refused.Add(string.Format("{0} element(s) do not carry '{1}' and were left out of the category set. "
         + "A filter naming a category that lacks the parameter is rejected by Revit ENTIRELY, so they "
         + "cannot simply be included", withoutParameter, parameterName));
+}
+
+if (carriesItTwice > 0)
+{
+    refused.Add(string.Format("{0} element(s) carry TWO OR MORE parameters called '{1}' - usually a "
+        + "shared or project parameter bound beside a built-in one of the same name - and were left "
+        + "out. Revit would pick one of them at random, and a filter is built on one parameter",
+        carriesItTwice, parameterName));
 }
 
 if (parameterId == ElementId.InvalidElementId)

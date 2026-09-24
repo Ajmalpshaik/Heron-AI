@@ -22,5 +22,15 @@ negative:
       "did nothing" to two doors is invisible otherwise, and the tags on the
       sheet will show it long after
 
+  - given: >
+      a batch where 2 elements carry the parameter's name twice - a shared
+      parameter loaded with the same name as a built-in one and bound to the
+      category (NEEDS-CHECKING P8 arranges it)
+    expect: >
+      those 2 ids in `ambiguous`, no number written to either of their two
+      parameters, and the rest numbered WITHOUT A GAP - the numbers they would
+      have taken go to the next elements. Before version 2 one of each pair,
+      which Revit's reference calls random, took a number
+
 second_route:
   - A Revit schedule of the category showing the parameter, sorted - duplicates and gaps both show at a glance

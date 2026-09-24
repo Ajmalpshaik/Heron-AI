@@ -36,6 +36,17 @@ negative:
   - given: a parameter that stores an ElementId, such as a Level
     expect: refused, by name. Never resolved from text by guessing
 
+  # THE CASE VERSION 2 COULD NOT HAVE PASSED, and the reason for version 3.
+  - given: >
+      a name two parameters on one element share - a curtain wall TYPE and
+      `Spacing`, which it carries once under Vertical Grid and once under
+      Horizontal Grid (NEEDS-CHECKING AP5 confirms the pair first), on a type
+      DUPLICATE_TYPE has just made so nothing placed can change
+    expect: >
+      written = 0 and the type in `ambiguous`, and BOTH Spacings in Edit Type
+      exactly as they were. Before version 3 this answered written = 1 with one
+      of the two changed - which one, Revit's reference calls random
+
   # THE CASE VERSION 1 COULD NOT HAVE PASSED, and the reason for version 2.
   - given: >
       a pipe or duct Diameter set to a size the type does NOT carry - 77 when the

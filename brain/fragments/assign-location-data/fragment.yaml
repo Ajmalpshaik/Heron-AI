@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "write where each element is onto its own parameters"
 kind: action
 domain: revit.parameters
 capability: ASSIGN_LOCATION_DATA
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -39,6 +39,14 @@ purpose: >
   **THE TARGET PARAMETERS MUST ALREADY EXIST.** This fills them; it does not
   create them. Anything missing is counted and named per parameter, so
   *"0 written"* is never mysterious.
+
+  **A TARGET NAME TWO PARAMETERS SHARE IS NOT FILLED.** A shared or project
+  parameter can be bound beside a built-in one of the same name, and Revit's
+  lookup by name then returns one of them at random, in Autodesk's own words - so
+  the room name would land in a field no schedule reads. Counted and named per
+  parameter in `refused`, and neither is touched (D-54 s3, FRAGMENT-ISSUES
+  5b-203). This is version 2; version 1's proof no longer describes the code and
+  is kept as a record, and the fragment is DRAFT until it is proved again.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 

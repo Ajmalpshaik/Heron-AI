@@ -1,0 +1,63 @@
+# SLOPE_ROOF_EDGES - the proof plan as a batch-prove job. NOT RUN. 2026-09-24.
+# NEEDS-CHECKING AP1 and AP2; docs/39 section 3, lesson 11.
+#
+#     python tools/batch-prove.py tools/jobs/slope-roof-edges-test-projject-2026-09-24.yaml --dry-run --session <pid>
+#     python tools/batch-prove.py tools/jobs/slope-roof-edges-test-projject-2026-09-24.yaml --session <pid>
+#
+# ON A TEST COPY. `test projject` is where CREATE_ROOF was proved on 2026-09-19:
+# "Level 2" at 4000 mm and the roof type "Generic - 400mm" both resolved there.
+# Check both still exist, and COUNT THE ROOFS FIRST - select-by-category-name
+# takes every roof visible in the view, and a leftover rectangular one would be
+# sloped on the negative leg and read as this fragment failing.
+#
+# THE VIEW IS A GUESS UNTIL CHECKED. "{3D}" is Revit's default 3D view name and
+# the model may not have one. Any view the new roof shows in will do.
+#
+# THE ROOF IS BUILT BY THE SETUP, NOT FOUND. create-roof makes it flat, then
+# select-by-category-name and set-selection put it in Revit's selection, which
+# is where this fragment takes it from. CREATE_ROOF's own `created` is one id,
+# not a list, so it is not handed across directly (see fragment.yaml).
+#
+# risk: MODIFY. `validate` never sends `apply`, so both legs - the setup that
+# builds the roof and the slope itself - run inside one TransactionGroup and are
+# rolled back (D-55). Nothing is kept.
+
+model: test projject, Revit 2024 - a TEST COPY
+
+defaults:
+  in: test projject
+  write: true
+  setup:
+    - create-roof
+    - select-by-category-name
+    - set-selection
+  set:
+    level: "Level 2"
+    roofType: "Generic - 400mm"
+    boundary: "0,0,0; 10000,0,0; 10000,6000,0; 0,6000,0"
+    categoryName: Roofs
+    inViewOnly: "{3D}"
+    roofShape: gable
+    pitchDegrees: "30"
+  negative-set:
+    # THE SAME REQUEST ON A ROOF IT MUST NOT TOUCH - an L-shaped outline has
+    # six sides and no single pair of eaves. A different roof, not a cleared
+    # selection, and not a changed request.
+    level: "Level 2"
+    roofType: "Generic - 400mm"
+    boundary: "0,0,0; 10000,0,0; 10000,4000,0; 4000,4000,0; 4000,8000,0; 0,8000,0"
+    categoryName: Roofs
+    inViewOnly: "{3D}"
+    roofShape: gable
+    pitchDegrees: "30"
+
+jobs:
+  - fragment: slope-roof-edges
+    # `sloped` is the work: edges Revit HOLDS at 30 degrees, read back.
+    # `upright` moves with it on a gable; `differs` should stay empty.
+    expect: sloped
+    note: >
+      Positive: sloped 2, upright 2, and measuredMm with the highest point about
+      2 m above the lowest where it was 400 mm - NOT about 90 m, which is what
+      the degrees handed through unconverted would build. Negative: sloped 0,
+      refused naming the L-shaped roof's six sides.

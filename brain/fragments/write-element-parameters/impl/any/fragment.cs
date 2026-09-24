@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `parameterName` and `value` are in
-// scope, and leaves `written`, `snapped`, `unverified`, `readOnly`, `absent` and
-// `refused` behind.
+// scope, and leaves `written`, `snapped`, `unverified`, `readOnly`, `absent`,
+// `ambiguous` and `refused` behind.
 //
 // ASSUMES AN OPEN TRANSACTION. It does not start one. Golden Rule 16 wants one
 // user action to be one undo entry, and that is owned by the operation's
@@ -74,6 +74,7 @@ var snapped = new List<ElementId>();
 var unverified = new List<ElementId>();
 var readOnly = new List<ElementId>();
 var absent = new List<ElementId>();
+var ambiguous = new List<ElementId>();
 var refused = new List<ElementId>();
 
 // Integer parameters report through AsInteger and read 0 from AsDouble, so the
@@ -90,6 +91,20 @@ var asked = new List<double>();
 
 foreach (var element in elements)
 {
+    // TWO PARAMETERS CAN ANSWER TO ONE NAME, AND THEN A WRITE BY NAME IS A COIN
+    // TOSS. A shared or project parameter can be bound beside a built-in one of
+    // the same name, and a curtain wall type carries its grid and mullion
+    // settings twice, once for each direction. LookupParameter then returns "the
+    // first one encountered", which Autodesk's own reference says "is determined
+    // at random" - and the read-back below looks the name up the same way, so it
+    // would confirm whichever one was written. D-54 s3: a name that matches twice
+    // is refused, never chosen from. FRAGMENT-ISSUES 5b-203.
+    if (element.GetParameters(parameterName).Count > 1)
+    {
+        ambiguous.Add(element.Id);
+        continue;
+    }
+
     var parameter = element.LookupParameter(parameterName);
 
     if (parameter == null)

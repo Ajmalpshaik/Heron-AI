@@ -26,8 +26,8 @@ NOTHING RAN IT. It was added to `heron_dotnet.PROJECTS` so that it COMPILES on
 all eight Revit releases - HANDOVER calls that "the 'a gate nobody runs' shape
 caught before it could set" - and the half it caught was the compiling half.
 No suite built it, no suite executed it, and `check-gaps.py` sweeps
-`tests/test_*.py`, so 915 checks over 407 fragments sat outside every count of
-"every test passes". Its three siblings that link C# by source - Kernel,
+`tests/test_*.py`, so 915 checks over 407 fragments, as measured on 2026-09-24,
+sat outside every count of "every test passes". Its three siblings that link C# by source - Kernel,
 BindingNote and Bridge - each have a runner here. This is the fourth.
 
 IT RUNS ON LINUX, MEASURED RATHER THAN ASSUMED. `HeronStackGuard.cs` touches

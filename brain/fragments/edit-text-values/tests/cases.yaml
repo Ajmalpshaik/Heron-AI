@@ -43,6 +43,15 @@ negative:
       in `unverified`, NOT in changed. Everything reported as changed was
       re-read after the write
 
+  - given: >
+      a field name two text parameters on one element share - a shared
+      parameter loaded with the same name as a built-in text one and bound to
+      the category (NEEDS-CHECKING P8 arranges it), mode prefix
+    expect: >
+      those elements in `ambiguous`, not in changed, and BOTH parameters exactly
+      as they were. Before version 2 one of the two - Revit's reference calls the
+      choice random - took the prefix and was reported changed
+
 second_route:
   - >
     open a schedule of that parameter in Revit before and after - the column is

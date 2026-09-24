@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `parameterName`, `find`,
 // `replaceWith`, `prefix` and `suffix` are in scope; leaves `edited`,
-// `typesEdited`, `unchanged`, `absent` and `refused` behind.
+// `typesEdited`, `unchanged`, `absent`, `ambiguous` and `refused` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). One batch, one undo entry.
 //
@@ -33,11 +33,21 @@
 // that did not take is REFUSED rather than counted as done. Reporting what was
 // asked for instead of what landed is the defect this whole library is built
 // around.
+//
+// A NAME TWO PARAMETERS SHARE IS NOT EDITED.
+//
+// A shared or project parameter can be bound beside a built-in one of the same
+// name, and then LookupParameter returns one of them - "determined at random",
+// in Autodesk's own reference. The read-back would look the name up the same
+// way and agree with itself, so the only safe answer is to touch neither: the
+// element goes in `ambiguous` (D-54 s3, FRAGMENT-ISSUES 5b-203). Checked on the
+// instance, and on the type when the search falls through to it.
 
 int edited = 0;
 var typesEdited = new List<ElementId>();
 var unchanged = new List<ElementId>();
 var absent = new List<ElementId>();
+var ambiguous = new List<ElementId>();
 var refused = new List<ElementId>();
 
 Func<string, string> editText = current =>
@@ -76,13 +86,24 @@ foreach (var element in elements)
     Element owner = element;
     bool onType = false;
 
+    bool twice = false;
+    try { twice = element.GetParameters(parameterName).Count > 1; } catch { }
+    if (twice) { ambiguous.Add(element.Id); continue; }
+
     try { parameter = element.LookupParameter(parameterName); } catch { }
     if (parameter == null || parameter.StorageType != StorageType.String)
     {
         Element type = null;
         try { type = doc.GetElement(element.GetTypeId()); } catch { }
         Parameter typeParameter = null;
-        if (type != null) { try { typeParameter = type.LookupParameter(parameterName); } catch { } }
+        if (type != null)
+        {
+            bool typeTwice = false;
+            try { typeTwice = type.GetParameters(parameterName).Count > 1; } catch { }
+            if (typeTwice) { ambiguous.Add(element.Id); continue; }
+
+            try { typeParameter = type.LookupParameter(parameterName); } catch { }
+        }
 
         if (typeParameter != null && typeParameter.StorageType == StorageType.String)
         {

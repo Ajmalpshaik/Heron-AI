@@ -1,0 +1,114 @@
+# THE PROOF PLAN, written 2026-09-24 and NOT RUN. Nothing here has touched a
+# model (D-30); every case says what to arrange and what must come back.
+#
+# THE ROOF IS BUILT, NOT FOUND. A model with no roof proves nothing, so each
+# leg makes its own: CREATE_ROOF on the top level, then
+# select-by-category-name (Roofs, in a view that shows them) and set-selection,
+# then this on the selection - all inside the one transaction group `validate`
+# rolls back, so nothing is kept. BEFORE THE FIRST RUN, count the roofs already
+# in the model: the selection step takes EVERY roof in that view, and a
+# rectangular one left over would be sloped on the negative leg and make it
+# look like a failure of this fragment.
+#
+# NOT fed from CREATE_ROOF's `created` directly - see the note on `elements`
+# in fragment.yaml.
+#
+# THE UNIT TRAP IS CHECKED BY A HEIGHT, NOT BY A NUMBER THE FRAGMENT PRINTS.
+# Arithmetic for the reader, not a claim about Revit: over a 6000 mm span the
+# ridge sits half the span in, 3000 mm, and 3000 x tan 30 is 1732 mm; a 400 mm
+# roof measured plumb at 30 degrees is 462 mm; so roughly 2200 mm between the
+# lowest and highest points is what a right answer looks like. With the degrees
+# handed through unconverted it would be 3000 x 30 - about 90,000 mm. The two
+# cannot be confused, which is why measuredMm exists.
+
+positive:
+  - given: >
+      a flat roof made by CREATE_ROOF on the top level - `test projject`,
+      Revit 2024: level "Level 2" at 4000 mm, roof type "Generic - 400mm" -
+      with boundary "0,0,0; 10000,0,0; 10000,6000,0; 0,6000,0", selected;
+      roofShape gable, pitchDegrees 30
+    expect: >
+      sloped 2, upright 2, differs empty, refused empty. readBack names the two
+      10000 mm edges as eaves, "Defines Slope on at 30.00 degrees (Revit holds a
+      rise of 0.5774 per 1 of run), was off", and the two 6000 mm edges as gable
+      ends with Defines Slope off. measuredMm shows the highest point about
+      2 m above the lowest (see the arithmetic above) where it was 400 mm
+      before - and NOT about 90 m. On a kept run, the roof seen in a 3D view is
+      a gable with its ridge running the 10000 mm way
+
+  - given: the same roof, roofShape hip, pitchDegrees 30
+    expect: >
+      sloped 4, upright 0, differs empty; all four edges eaves at 30.00
+      degrees. The highest point about as high as the gable's - the short span
+      decides both
+
+  - given: >
+      the same outline with one long side drawn in two pieces - boundary
+      "0,0,0; 5000,0,0; 10000,0,0; 10000,6000,0; 0,6000,0" - roofShape gable,
+      pitchDegrees 30
+    expect: >
+      sloped 3 and upright 2: the two collinear pieces are ONE side and both
+      slope with the other long side. This is the case that proves sides are
+      counted, not sketch lines
+
+  - given: >
+      a roof drawn BY HAND through Architecture > Roof by Footprint on the same
+      10000 x 6000 outline, with Defines Slope unticked on every line so it is
+      flat, selected; roofShape gable, pitchDegrees 30
+    expect: >
+      the same answer as the first case. Heron's roof and a hand-drawn one are
+      the same element, and this is where that is shown rather than assumed
+
+  - given: the first case again on Revit 2020
+    expect: >
+      the same answer. One path serves every release; this is the release at
+      the other end of the range
+
+negative:
+  - given: >
+      the same arrangement and the SAME request - roofShape gable, pitchDegrees
+      30 - on an L-shaped roof CREATE_ROOF makes with boundary "0,0,0;
+      10000,0,0; 10000,4000,0; 4000,4000,0; 4000,8000,0; 0,8000,0", selected.
+      A roof it must NOT touch, not an empty selection
+    expect: >
+      sloped 0, upright 0, differs empty, readBack and measuredMm empty.
+      refused names the roof and says "its outline has 6 sides, so there is no
+      single pair of long eaves"; findings says nothing was changed
+
+  - given: the positive's own rectangular roof, roofShape gable, pitchDegrees 0
+    expect: >
+      refused "A pitch of 0 degrees is not a slope" before any roof is looked
+      at; sloped 0, readBack empty. A value the fragment turns down itself - 0
+      binds as a number, so the add-in's binder lets it through to be judged
+
+  - given: the positive's own rectangular roof, roofShape gable, pitchDegrees 100
+    expect: >
+      refused at the 80 degree limit, with 100 percent converted as the hint
+      (45 degrees); sloped 0
+
+  - given: >
+      a square roof, boundary "0,0,0; 8000,0,0; 8000,8000,0; 0,8000,0",
+      roofShape gable, pitchDegrees 30
+    expect: >
+      refused - "all four sides are 8000 mm, so neither pair is the long one" -
+      and sloped 0. The same roof with roofShape hip slopes all four
+
+  - given: >
+      the rectangular roof with roofShape mansard, and separately with a floor
+      or a wall selected instead of a roof
+    expect: >
+      the shape refused by name, listing gable and hip; the floor or wall named
+      as not a roof. sloped 0 both times
+
+  - given: an extrusion roof drawn by hand, selected, roofShape hip, pitchDegrees 30
+    expect: >
+      refused as an extrusion roof whose slope comes from its profile; sloped 0
+      and the roof unchanged
+
+second_route:
+  - >
+      By hand on the same 10000 x 6000 roof: Edit Footprint, tick Defines Slope
+      on the two 10000 mm lines with Slope 30 degrees, untick it on the two
+      6000 mm ends, Finish. Then compare Heron's roof and the hand-sloped one in
+      a section across the 6000 mm span - eave and ridge at the same heights,
+      to the millimetre

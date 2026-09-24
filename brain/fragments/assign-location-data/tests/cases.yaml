@@ -37,5 +37,15 @@ negative:
   - given: an element with no position at all
     expect: skipped, with the rest completing
 
+  - given: >
+      a room parameter name two parameters on the element share - a shared text
+      parameter loaded with the same name as a built-in one and bound to the
+      category (NEEDS-CHECKING P8 arranges it)
+    expect: >
+      those elements counted and named in `refused` as carrying the name twice,
+      and BOTH parameters exactly as they were. Before version 2 one of the two -
+      Revit's reference calls the choice random - took the room name and the
+      element was counted in written
+
 second_route:
   - Schedule the equipment with the room parameter as a column and compare against a plan
