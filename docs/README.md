@@ -95,6 +95,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | Know what gets built first | [ROADMAP.md](ROADMAP.md) |
 | **Actually start building** | [**27 — Build Order**](27-build-order.md) |
 | Know the non-negotiables | [14 — Golden Rules](14-golden-rules.md) |
+| Know what the optional **search add-ons** are, and whether you need them | [SEARCH-ADD-ONS.md](SEARCH-ADD-ONS.md) |
 
 ---
 

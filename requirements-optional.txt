@@ -2,6 +2,9 @@
 #
 #     pip install --user -r requirements-optional.txt
 #
+# In plain words, for someone deciding whether they want the two search
+# add-ons: docs/SEARCH-ADD-ONS.md
+#
 # INSTALLING ALL OF THESE IS NOT RECOMMENDED AS ONE COMMAND. One of them
 # is 500 MB to 2 GB. Read what each buys first:
 #

@@ -637,6 +637,10 @@ claim is that it improves an order. **An improvement nobody measured is a feelin
 > same tracked question and the same twelve of the Stage 0b run. `A10` in
 > [`docs/NEEDS-CHECKING.md`](../docs/NEEDS-CHECKING.md) is that run.
 
+**The after was taken on 2026-09-24, in a cloud session that reaches `huggingface.co`** - the
+2026-09-24 section below. It re-ordered as built, made picking a tool worse and put the right
+clause first on the one document question.
+
 ### The size, announced before anything downloads
 
 `python brain/heron_rerank.py` prints the package, what it is for, **500 MB to 2 GB**, and
@@ -812,6 +816,132 @@ key, with the day he gave it.
 | Date | Fragments | Backend | Revit | Answer key | 1st | 2nd-3rd | 4th-5th | Not found | Exact (right) | Handed a change | Skill rows, a step in the top 3 | Per question |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 2026-09-23 | 396 | `lexical` | any | `88c7eadd` | 18 | 8 | 3 | 35 | 1 (0) | 4 | 5 of 7 | `1-1-1---21-1-11.-112---2-w------2-15-1-1---11--24311--122w1w14---w1---w1w-w2--1` |
+| 2026-09-23 | 398 | `lexical` | any | `88c7eadd` | 18 | 7 | 4 | 35 | 1 (0) | 5 | 5 of 7 | `1-1-1---31-1-11.-112---4-w------2-15-1-1---11--24311--122w1w14---w1---w1w-w2--1` |
+| 2026-09-23 | 398 | `model` | any | `88c7eadd` | 19 | 11 | 4 | 30 | 1 (0) | 9 | 5 of 7 | `11341----1---11.--32-----.---5--2-1111-2--311-522211--121w1w141-2w1---w-w-w1221` |
+| 2026-09-24 | 398 | `model+rerank` | any | `88c7eadd` | 12 | 14 | 10 | 28 | 1 (0) | 15 | 4 of 7 | `1--51--431---41.43-32-5--.-----24-1213-4--311-312-115--1-w1w143-2w3-1-w-w-w22-4` |
+
+---
+
+## 2026-09-24 — the trained backend and the re-ranker, asked the owner's own questions
+
+**The first time a cross-encoder has run in this repository, and the first time his questions were
+asked of anything but `lexical`.** Measured in a Claude Code cloud session — Linux, the Heron
+environment, whose network reaches `huggingface.co` ([38 §1](../docs/38-the-cloud-environment.md)) —
+at **398 fragments**, answer key `88c7eadd`, no Revit filter. The three rows dated 2026-09-23 and
+2026-09-24 in the owner's-questions table above are these runs; this section is what they mean.
+
+**How the three were kept apart.** Heron uses whichever backend is installed, and the only way to
+force another is to point `HERON_EMBED_MODEL` at a model that does not exist, as the 2026-09-12
+section did. Rather than that, the optional packages went into a separate virtual environment and the container's own
+Python was left with none — `lexical` ran on the container's Python, `model` on the venv with
+`model2vec` (`minishlab/potion-base-8M`), and `model+rerank` on the same venv after
+`sentence-transformers` was installed and `python brain/heron_rerank.py --fetch --yes` fetched the
+weights. Each ran against **its own knowledge store**, rebuilt from this tree, so no run could
+re-index another's ([row 131](../docs/FRAGMENT-ISSUES.md)).
+
+### What his questions got — the 64 capability rows
+
+| | `lexical` | `model` | `model+rerank` |
+|---|---|---|---|
+| the right answer **first** | 18 | 19 | **12** |
+| in the **top three** | 25 | **30** | 26 |
+| **not in the shortlist** at all | 35 | 30 | 28 |
+| asked for **no change**, handed one ([D-86](../docs/DECISIONS.md)) | **5** | 9 | 15 |
+| a change asked for, a **different** change given | 19 | 15 | 20 |
+| the whole run, 79 questions | 166 s | 172 s | 183 s |
+
+**1. The trained backend finds more, and ranks first place no better.** Five more in the top three,
+five fewer not found, first place 18 to 19. **And it hands a change to more of the questions that asked
+for none — five to nine.** *"How many diffusers are there in the model?"* reaches
+`PLACE_FAMILY_INSTANCES`, *"How many air terminals are there in the model?"* reaches
+`CONNECT_AIR_TERMINALS`, *"What is the biggest space?"* reaches `PLACE_ROOMS`. It is the shape the
+2026-09-10 and 2026-09-12 sections recorded, a third time and on real questions: **the encoder matches
+what the sentence is ABOUT — air terminals, spaces — and not what KIND of answer it asks for, a count.**
+
+**2. The re-ranker makes picking a tool worse, on the two columns that matter most.** First place
+19 to **12**; handed a change 9 to **15**. Its worst, verbatim: *"Ping the Revit model."* reaches
+**`UNLOAD_LINKS`**; *"Show me all the disconnected items."* reaches `SET_VIEW_UNDERLAY`; *"Is this duct
+connected anywhere, or is it open?"* reaches `CONNECT_OPEN_ENDS`. It does lift more right answers into
+the shortlist — 28 not found against 30 — and that does not buy back what it costs at the top.
+
+**3. On documents it does what it was built for — on the one question there is.**
+`tests/test_document_retrieval.py` asks *"how thick should duct insulation be"* of its four-chunk
+fixture. The trained backend alone puts `9.1.2` Vapour Barrier first — the 2026-09-12 finding,
+reproduced here. **With the re-ranker, `9.1.1` Thickness is first**, and the suite's check that was
+written as *"a claim about the re-ranker"* ran against a real one for the first time and passed. **One
+question on one fixture is an observation, not a measurement.** No document store was measured beyond
+it: A10 asks for 62 chunks, and the store this ran against held none.
+
+**Why the two sides may differ is written in the code, and was not tried.** `_fragment_passage` in
+[`heron_retrieve.py`](heron_retrieve.py) gives the cross-encoder three short columns — the semantic
+identity, the capability name and the domain — and not the utterances or the purpose, and its own
+docstring says what to do if a measurement ever asks: *"the fix is to carry them into the store, not to
+load the library per query."* A clause is a whole passage; a fragment arrives as a line. **And the model
+is `cross-encoder/ms-marco-MiniLM-L-6-v2`, trained to judge web passages against web searches.**
+Neither a richer passage nor another model was tried; both are the next experiment, not a result.
+
+### The tracked question, beside the 2026-09-11 `absent` row
+
+`show me every duct in the model`, Revit 2024:
+
+| | 2026-09-11, 360 | `lexical`, 398 | `model`, 398 | `model+rerank`, 398 |
+|---|---|---|---|---|
+| re-ranker reported | `absent` | `absent` | `absent` | **`cross-encoder`** |
+| best | `FRG-SEL-030` `ZOOM_TO_ELEMENTS` | `FRG-SEL-030` `ZOOM_TO_ELEMENTS` | `FRG-MEP-031` `SELECT_BY_INSULATION` | **`FRG-MEP-052` `CREATE_DUCT_RUNS`** |
+| winner's lead | 2.1 ranks | 2.5 ranks | 16.1 ranks | not reported — the re-ranker set the order |
+| found by both routes | 3 of 5 | 3 of 5 | 2 of 5 | 1 of 5 |
+| best bm25 / best nearness | −4.3609 / 0.4924 | −4.5699 / 0.4924 | −4.5699 / 0.4853 | −4.3215 / 0.4493 |
+
+**None of the four is `FRG-ELE-001`**, the fragment this file's first section tracks. With the
+re-ranker, a question that asks to SEE ducts is answered first by a DRAFT fragment that DRAWS them —
+`SELECT_BY_CATEGORIES` and `SELECT_BY_CATEGORY_NAME` are second and third.
+
+### What it costs
+
+| | `lexical` | `model` | `model+rerank` |
+|---|---|---|---|
+| one `retrieve()` on the tracked question, mean of 20 after one warm call | 0.0097 s | 0.0184 s | 0.0912 s |
+| install | nothing | `model2vec`: 8 s, 114 MB of packages; **59 MB** of weights in the Hugging Face cache — the figure [38 §2](../docs/38-the-cloud-environment.md) recorded on the owner's PC | `sentence-transformers`: **3,099 MB downloaded** in 60 files, **5,753 MB installed**; **88 MB** of weights |
+
+**Speed is not the objection** — a tenth of a second a question. **The download is bigger than the
+figure `heron_rerank.announcement()` prints, 500 MB to 2 GB, and most of it is a graphics card's.**
+Of the 3,099 MB: `torch` 555, NVIDIA's GPU libraries 2,190, `triton` 248, everything else 106. On Linux
+x86_64 pip's default `torch` is the CUDA build, and the CPU-only index at `download.pytorch.org` is
+refused by this environment's proxy (403). **The Windows figure was not measured** — that is the owner's
+PC, and it is the one the announcement is read on. [Row 5b-200](../docs/FRAGMENT-ISSUES.md).
+
+### A15 — the floor, measured on what was written down
+
+**Only four of the twelve Stage 0b questions were ever written down** — this file and
+`heron_retrieve.Contest`'s docstring name them, and the other eight are in no file in the tree and in
+no commit that mentions the run (`git log -S sourdough`, over the whole history). So the twelve cannot be re-asked. Best nearness for the four:
+
+| | `lexical` | `model` |
+|---|---|---|
+| *show me every duct in the model* | 0.4924 | 0.4853 |
+| *tag every mechanical equipment* | 0.1946 | 0.3958 |
+| *what is the best food for a cat* | **0.4661** | 0.2004 |
+| *how do I bake sourdough bread* | 0.1546 | 0.2066 |
+
+**On `lexical` the columns overlap, as they did at 360. On `model` they come apart.** Asked beside his
+79 — 78 of them ranked, one answered by an exact phrase — the lowest real question's best nearness on
+`model` is **0.2272**, and both questions with no BIM content sit below every one. On `lexical` the cat
+question sits above **29** of them.
+
+**Two things stop this being a floor.** Two questions with no BIM content is an observation, and
+[R-60](../docs/work-notes/plans/rag/01-requirements.md) derives a floor from a measurement or not at all
+— so none is set. **And the six gap rows, jobs nothing in Heron does, are not low**: 0.39 to 0.67 on
+`model`. A floor on nearness would catch a question about cats and would not catch a BIM job Heron
+cannot do, so R-58's *refuse a question nothing covers* is not reachable this way.
+
+### What this does not establish
+
+- **Nothing here ran on the owner's PC.** It has had `model2vec` since 2026-09-06 (`A7`), so the
+  `model` row is what his search should give — an inference from the same code, not a run there.
+- **Nothing here met Revit.** This is retrieval only; which tool a chat then runs is the host's choice
+  from the shortlist, behind the Changes switch ([row 137](../docs/FRAGMENT-ISSUES.md)).
+- **Nothing was re-ranked, reworded or re-declared to improve a number** — the rule at the head of the
+  owner's-questions section.
 
 ---
 
