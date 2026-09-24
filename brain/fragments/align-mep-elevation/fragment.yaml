@@ -104,7 +104,12 @@ compatibility-note: >
   One implementation for every release. The four size parameters are
   BuiltInParameter values unchanged 2020 to 2027, and they are asked for by
   enum rather than by display name so this works on a Revit in any language.
-  Heights arrive and are used in internal feet with no units call.
+  `targetZ` arrives in millimetres and is divided by 304.8 in the code (D-71);
+  from there heights are used in internal feet, and no units API is touched.
+  (This note said "Heights arrive and are used in internal feet" until
+  2026-09-24, while the code and its own proof - 3000 in, 9.84 feet used -
+  said millimetres. The header of impl/any/fragment.cs was corrected on
+  2026-09-13 and this note was missed.)
 
 # ROUTING - the same rows are in the fragments named here.
 #

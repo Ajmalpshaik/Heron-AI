@@ -1,7 +1,9 @@
 // NOT STANDALONE. Assumes `start`, `elements` and `tolerance` are in scope;
 // leaves `reached`, `openEnds` and `joinedByGeometry` behind.
 //
-// TOLERANCE IS IN INTERNAL FEET, and it is an input (D-33). No default.
+// TOLERANCE ARRIVES IN MILLIMETRES and is divided by 304.8 below (D-71), and
+// it is an input (D-33). No default. (This line said "TOLERANCE IS IN INTERNAL
+// FEET" until 2026-09-24; the division went in on 2026-09-13.)
 //
 // WHY THIS DOES NOT TRUST Connector.IsConnected.
 //

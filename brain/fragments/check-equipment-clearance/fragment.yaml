@@ -113,8 +113,11 @@ compatibility-note: >
   One implementation for every release. `ElementIntersectsSolidFilter`,
   `GeometryCreationUtilities.CreateExtrusionGeometry`, `CurveLoop.Create` and
   `FamilyInstance.GetTransform` are unchanged 2020 through 2027 - read off the
-  reference assemblies at both ends. All four clearances arrive in internal
-  FEET; the millimetres the person spoke are converted at the edge, before this.
+  reference assemblies at both ends. All four clearances arrive in millimetres
+  and are divided by 304.8 in the code (D-71) - no units API is touched. (This
+  note said they "arrive in internal FEET", with the millimetres converted at
+  the edge before this, until 2026-09-24, while the code and its own proof -
+  1 in, 0.0033 feet used, for each of the four - said millimetres.)
 
 # ROUTING - repeated in CHECK_MINIMUM_CLEARANCE, CHECK_VALVE_ACCESSIBILITY and
 # CHECK_OBSTRUCTIONS.

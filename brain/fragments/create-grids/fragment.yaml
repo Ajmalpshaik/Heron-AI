@@ -37,8 +37,8 @@ purpose: >
   created and then named, and a clash leaves that one grid carrying Revit's own
   name rather than losing the whole run - which is reported per grid.
 
-  **The start point and the bay dimensions are internal FEET.** The millimetres
-  on the drawing are converted at the edge, before this (D-20).
+  **The bay dimensions are MILLIMETRES, divided by 304.8 (D-71).** The start
+  point is internal FEET, converted from millimetres by the add-in (D-67).
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -108,10 +108,15 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `Grid.Create` and `Line.CreateBound` are
   unchanged 2020 through 2027 - read off the reference assemblies at both ends.
-  Every distance arrives in internal FEET; the millimetres a drawing carries are
-  converted at the edge, before this. Names are compared as text against the
-  grids already in the document rather than trusted to Revit's own refusal,
-  which throws.
+  `spacingsAcross` and `spacingsUp` arrive in millimetres and are divided by
+  304.8 in the code (D-71); `origin` is a point, which the add-in converts at
+  the boundary (D-67), so no units API is touched. (This note said "Every
+  distance arrives in internal FEET", with the millimetres converted at the
+  edge before this, until 2026-09-24, while the code and its own proof -
+  spacings used as 19.69 and 24.61 feet, which is 6000 and 7500 divided by
+  304.8 - said millimetres; the purpose said the same of the bay dimensions
+  until that day.) Names are compared as text against the grids already in the
+  document rather than trusted to Revit's own refusal, which throws.
 
 # ROUTING - repeated in CREATE_GRID, LIST_GRIDS and CREATE_LEVELS.
 #

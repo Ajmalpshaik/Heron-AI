@@ -103,7 +103,10 @@ compatibility-note: >
   identity is compared as `ElementId` to `ElementId`, never as a number, which
   is what keeps it working across the release where the type went 64-bit and the
   one where reading it as an integer was removed. `requiredGap` arrives in
-  internal FEET.
+  millimetres and is divided by 304.8 in the code (D-71) - no units API is
+  touched. (This note said it "arrives in internal FEET" until 2026-09-24,
+  while the code and its own proof - 1 in, 0.0033 feet used - said
+  millimetres.)
 
 # ROUTING - repeated in CHECK_MINIMUM_CLEARANCE, ALIGN_MEP_ELEVATION and
 # MEASURE_CEILING_HEIGHT.
