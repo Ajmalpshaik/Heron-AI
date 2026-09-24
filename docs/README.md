@@ -5,7 +5,7 @@
 > ([B8](NEEDS-CHECKING.md)), and what is still owed is a tape measure on the result — `D3`. **Phase 2
 > (Steps 7 to 14) is built and barely proven.** This line said both *"have never loaded into Revit"*
 > until 2026-09-21, a fortnight after the first write ([row 5b-54](FRAGMENT-ISSUES.md)).
-> **All twelve skills are `DRAFT`; 322 of the 409 fragments are `PROVEN`
+> **All thirteen skills are `DRAFT`; 313 of the 410 fragments are `PROVEN`
 > as of 2026-09-24** — this line said *every fragment is `DRAFT`* long after that stopped being true, so
 > derive it: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 >
@@ -167,6 +167,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | 36 | [Remembering Between Steps](36-remembering-between-steps.md) | **A design note, not a decision.** Nothing in it is built and no `D-` number has been spent on it — it exists so the plan can be read before any code is written |
 | 37 | [The Provider Adapter](37-the-provider-adapter.md) | **A scope, not an implementation.** Three agents decide which model to use, whether it is reachable and what it cost; all three are built, all three are tested, and **not one of them has ever met a provider** |
 | 38 | [**The Cloud Environment**](38-the-cloud-environment.md) | **Where Heron work runs when it is not on the owner's PC.** The four fields to set; why **Custom** network access rather than Trusted, which does not carry `huggingface.co` and so silently costs retrieval its meaning; what a cloud session runs that CI does not — every suite in `tests/`, against the three CI leaves unrun — and the three things the setup script deliberately refuses to do |
+| 39 | [Three Downloaded Skill Sets, Studied](39-three-downloaded-skill-sets.md) | **Another product's Revit connector notes, an office master prompt and a studio toolkit index, read lesson by lesson against Heron's code.** Nothing copied. What came out: a roof slope Heron had named as missing in its own words, a step-by-step building-shell skill, a defect their same-name scar exposed in Heron's parameter fragments, and a list of what their connector does that Heron does not - left unbuilt on purpose. **Its best lesson is a scar whose cause was never isolated:** the same roof error Heron had already traced to a different one |
 
 ## Working documents
 

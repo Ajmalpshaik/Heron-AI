@@ -112,8 +112,11 @@ compatibility-note: >
   One implementation for every release. `InsulationLiningBase.GetInsulationIds`,
   `BoundingBoxXYZ` and the geometry options are unchanged 2020 through 2027 -
   read off the reference assemblies at both ends. `annularClearance` and
-  `maxOversize` arrive in internal FEET; the millimetres the person spoke are
-  converted at the edge, before this (D-20).
+  `maxOversize` arrive in millimetres and are divided by 304.8 in the code
+  (D-71) - no units API is touched. (This note said they "arrive in internal
+  FEET", with the millimetres converted at the edge before this, citing D-20,
+  until 2026-09-24, while the code and its own proof - 25 and 50 in, 0.082 and
+  0.164 feet used - said millimetres.)
 
 # ROUTING - repeated in CHECK_MINIMUM_CLEARANCE and AUDIT_MEP_OPENINGS.
 #

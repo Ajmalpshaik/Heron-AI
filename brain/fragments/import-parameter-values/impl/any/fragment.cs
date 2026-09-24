@@ -156,6 +156,7 @@ else
         {
             var readOnlySkips = 0;
             var unknownParameter = 0;
+            var ambiguousName = 0;
             var refusedValue = 0;
             var problems = new List<string>();
 
@@ -184,16 +185,42 @@ else
                     if (parameterName.Length == 0) continue;
                     var wanted = cells[c];
 
-                    var parameter = element.LookupParameter(parameterName);
+                    // A COLUMN NAME TWO PARAMETERS SHARE IS NOT WRITTEN. A shared or project
+                    // parameter can be bound beside a built-in one of the same name, and
+                    // LookupParameter then returns one of them - "determined at random", in
+                    // Autodesk's own reference - so a file would fill whichever it hit, and the
+                    // read-back below would agree with itself. Checked on the instance, and on
+                    // the type when the search reaches it (D-54 s3, FRAGMENT-ISSUES 5b-203).
+                    var twice = element.GetParameters(parameterName).Count > 1;
+                    var parameter = twice ? null : element.LookupParameter(parameterName);
                     var target = element;
-                    if (parameter == null && includeTypeParameters)
+                    if (!twice && parameter == null && includeTypeParameters)
                     {
                         var type = doc.GetElement(element.GetTypeId()) as ElementType;
                         if (type != null)
                         {
-                            var typeParameter = type.LookupParameter(parameterName);
-                            if (typeParameter != null) { parameter = typeParameter; target = type; }
+                            if (type.GetParameters(parameterName).Count > 1)
+                            {
+                                twice = true;
+                            }
+                            else
+                            {
+                                var typeParameter = type.LookupParameter(parameterName);
+                                if (typeParameter != null) { parameter = typeParameter; target = type; }
+                            }
                         }
+                    }
+
+                    if (twice)
+                    {
+                        ambiguousName++;
+                        if (problems.Count < 25)
+                        {
+                            problems.Add("row " + (r + 1) + ": '" + parameterName + "' is the name of "
+                                + "two or more parameters on id " + element.Id + " - Revit would pick "
+                                + "one of them at random, so neither was written");
+                        }
+                        continue;
                     }
 
                     if (parameter == null)
@@ -282,8 +309,9 @@ else
                 findings.Add("  ... further detail not listed. The counts above are complete");
 
             findings.Add("Skipped: " + unknownParameter + " because the parameter is not there, "
+                + ambiguousName + " because the column's name belongs to two or more parameters, "
                 + readOnlySkips + " because it is read-only, " + refusedValue
-                + " because Revit would not take the value. Those are three different fixes and are "
+                + " because Revit would not take the value. Those are four different fixes and are "
                 + "counted apart on purpose");
         }
     }

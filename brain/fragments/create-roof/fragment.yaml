@@ -123,9 +123,9 @@ compatibility-note: >
 #   "put a roof on it"        -> here
 #   "make the slab"           -> CREATE_FLOOR
 #   "put a ceiling in"        -> CREATE_CEILING
-#   "slope this roof"         -> NOT HERE. This makes it flat and hands back the
-#                                edges; setting a slope per edge is a separate
-#                                job nothing in the library covers yet
+#   "slope this roof"         -> SLOPE_ROOF_EDGES. This makes it flat; that one
+#                                slopes the edges of a selected footprint roof -
+#                                gable or hip, at the pitch the modeller gives
 
 utterances:
   - put a roof over this

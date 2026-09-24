@@ -9,7 +9,7 @@ semantic-identity: "give every system its own colour in this view"
 kind: action
 domain: revit.views
 capability: COLOR_BY_PARAMETER
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -42,6 +42,13 @@ purpose: >
   in that parameter are coloured together and reported as "no value" rather
   than left plain, because plain in a coloured drawing reads as "not part of
   this" instead of "nobody filled it in".
+
+  **AN ELEMENT CARRYING THE NAME TWICE IS NOT COLOURED.** A shared or project
+  parameter can be bound beside a built-in one of the same name, and Revit's
+  lookup by name then returns one of them at random, in Autodesk's own words -
+  so its colour would say a value nobody chose. Listed in `ambiguous`, and when
+  every element handed in is one, nothing is coloured and `refused` says why
+  (D-54 s3, FRAGMENT-ISSUES 5b-203).
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -79,6 +86,13 @@ contract:
       # What it passed over. The evidence it looked, never a thing it
       # FOUND - so it must not count toward "did this come back empty"
       # (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: ambiguous
+      # Elements carrying TWO OR MORE parameters by this name, where Revit's
+      # lookup would pick one at random. Not grouped and not coloured, and kept
+      # apart from `skipped` because the fix is different (D-54 s3,
+      # FRAGMENT-ISSUES 5b-203). Turned down, never found (D-52).
       role: accounting
       type: IList<ElementId>
     - name: refused

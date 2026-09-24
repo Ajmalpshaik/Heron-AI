@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `elements`, `parameterName`, `prefix`, `startAt` and
-// `existingValues` are in scope; leaves `renumbered`, `refused` and
-// `collisions` behind.
+// `existingValues` are in scope; leaves `renumbered`, `refused`, `ambiguous`
+// and `collisions` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -29,6 +29,7 @@
 
 var renumbered = 0;
 var refused = new List<ElementId>();
+var ambiguous = new List<ElementId>();
 var collisions = new List<string>();
 
 var taken = new HashSet<string>(existingValues ?? new List<string>());
@@ -42,6 +43,18 @@ var next = startAt;
 foreach (var element in elements)
 {
     if (element == null) continue;
+
+    // A NAME TWO PARAMETERS SHARE GETS NO NUMBER. A shared or project parameter
+    // can be bound beside a built-in one of the same name, and LookupParameter
+    // then returns one of them - "determined at random", in Autodesk's own
+    // reference - so a number would land in a field no tag reads. It is skipped
+    // BEFORE a number is given out, so the sequence has no gap where it would
+    // have been (D-54 s3, FRAGMENT-ISSUES 5b-203).
+    if (element.GetParameters(parameterName).Count > 1)
+    {
+        ambiguous.Add(element.Id);
+        continue;
+    }
 
     var parameter = element.LookupParameter(parameterName);
     if (parameter == null || parameter.IsReadOnly)

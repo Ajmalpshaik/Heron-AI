@@ -8,7 +8,7 @@
 # See docs/29-metadata-standard.md
 
 """
-The 921 checks that compiled every day and ran on no day.
+The 924 checks that compiled every day and ran on no day.
 
     python tests/test_stack_guard.py
 
@@ -26,8 +26,8 @@ NOTHING RAN IT. It was added to `heron_dotnet.PROJECTS` so that it COMPILES on
 all eight Revit releases - HANDOVER calls that "the 'a gate nobody runs' shape
 caught before it could set" - and the half it caught was the compiling half.
 No suite built it, no suite executed it, and `check-gaps.py` sweeps
-`tests/test_*.py`, so 921 checks over 409 fragments sat outside every count of
-"every test passes". Its three siblings that link C# by source - Kernel,
+`tests/test_*.py`, so 924 checks over 410 fragments, as measured on 2026-09-24,
+sat outside every count of "every test passes". Its three siblings that link C# by source - Kernel,
 BindingNote and Bridge - each have a runner here. This is the fourth.
 
 IT RUNS ON LINUX, MEASURED RATHER THAN ASSUMED. `HeronStackGuard.cs` touches
@@ -36,11 +36,11 @@ referencing the add-in; `dotnet run` as the project file suggests fails,
 because `RevitVersion=2024` maps to `net48` and there is no Mono here. Built
 with `HeronTfm` overridden to a plain `net10.0` - the same override
 `tests/test_kernel.py` works out for itself - it builds in under two seconds
-and prints **PASSED - 921 checks, 409 fragments, 102 carrying a guard**.
+and prints **PASSED - 924 checks, 410 fragments, 103 carrying a guard**.
 
 THE COUNT IT WAS LAST DESCRIBED WITH WAS 372. HANDOVER says the host "runs the
-rewriter over all 372 fragments: 836 checks". The library is 409 now and the
-host reports 920 checks run - so the host itself was right all along and the
+rewriter over all 372 fragments: 836 checks". The library is 410 now and the
+host reports 923 checks run - so the host itself was right all along and the
 only thing that had gone stale is everything ABOUT it, which is what happens
 to a thing nobody runs.
 

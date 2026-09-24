@@ -79,8 +79,11 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. `Curve.CreateOffset` and assigning a
-  `LocationCurve.Curve` are unchanged 2020 to 2027, and the distance arrives in
-  internal feet with no units call.
+  `LocationCurve.Curve` are unchanged 2020 to 2027. `distance` arrives in
+  millimetres and is divided by 304.8 in the code (D-71) - no units API is
+  touched. (This note said the distance "arrives in internal feet" until
+  2026-09-24, while the code and its own proof - 500 in, 1.64 feet used - said
+  millimetres.)
 
 # TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
 #

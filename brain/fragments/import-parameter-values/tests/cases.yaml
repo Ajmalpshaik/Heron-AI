@@ -60,6 +60,16 @@ negative:
       reported as READS BACK DIFFERENT, with both values. A Set call returning
       true is not a value in the model, and this is the count that says which
 
+  - given: >
+      a column whose header two parameters on the element share - a shared
+      parameter loaded with the same name as a built-in one and bound to the
+      category (NEEDS-CHECKING P8 arranges it)
+    expect: >
+      that cell counted in its own skip - the name belongs to two or more
+      parameters - with the row and the id named, and BOTH parameters exactly as
+      they were. Before version 2 one of the two, which Revit's reference calls
+      random, was written and counted in valuesWritten
+
   - given: an empty element list
     expect: >
       "nothing was written" with the instruction to run the filter first - not a

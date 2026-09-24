@@ -42,5 +42,16 @@ negative:
       twelve visibly different colours. A fixed palette of six repeats on the
       seventh and two systems then look like one
 
+  - given: >
+      elements that carry the parameter's name twice - a shared parameter loaded
+      with the same name as a built-in one and bound to the category
+      (NEEDS-CHECKING P8 arranges it)
+    expect: >
+      those elements counted and named in `refused` as carrying the name twice,
+      left out of the values and the categories, and no filter's rule built on a
+      parameter taken from one of them. Before version 2 the first such element
+      could decide which parameter every filter tested - Revit's reference calls
+      that choice random
+
 second_route:
   - Visibility/Graphics, Filters tab - each filter should be listed with its override colour

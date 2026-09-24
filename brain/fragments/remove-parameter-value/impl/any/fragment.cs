@@ -17,6 +17,12 @@
 //
 // A TYPE PARAMETER IS REFUSED FROM AN INSTANCE LIST. A type is shared, so
 // clearing one from forty instances changes every other instance in the project.
+//
+// A NAME TWO PARAMETERS SHARE IS REFUSED TOO. A shared or project parameter can
+// be bound beside a built-in one of the same name, and LookupParameter then
+// returns one of them - "determined at random", in Autodesk's own reference - so
+// clearing by that name empties a field nobody chose. Counted and named, never
+// cleared (D-54 s3, FRAGMENT-ISSUES 5b-203).
 
 var cleared = 0;
 var alreadyEmpty = 0;
@@ -25,10 +31,17 @@ var refused = new List<string>();
 var missing = 0;
 var readOnly = 0;
 var typeLevel = 0;
+var ambiguousName = 0;
 
 foreach (var element in elements)
 {
     if (element == null || !element.IsValidObject) continue;
+
+    if (element.GetParameters(parameterName).Count > 1)
+    {
+        ambiguousName++;
+        continue;
+    }
 
     var parameter = element.LookupParameter(parameterName);
 
@@ -114,6 +127,12 @@ if (readOnly > 0)
     refused.Add(string.Format("{0} element(s) carry '{1}' as READ-ONLY and it cannot be cleared. Area, "
         + "Volume and Length are computed by Revit - reporting them as cleared would be a lie the "
         + "schedule contradicts", readOnly, parameterName));
+}
+if (ambiguousName > 0)
+{
+    refused.Add(string.Format("{0} element(s) carry TWO OR MORE parameters called '{1}' - usually a "
+        + "shared or project parameter bound beside a built-in one of the same name. Revit would "
+        + "pick one of them at random, so NEITHER was cleared", ambiguousName, parameterName));
 }
 if (typeLevel > 0)
 {

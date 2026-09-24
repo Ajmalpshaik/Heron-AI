@@ -63,5 +63,15 @@ negative:
       one group, "(no value)", every element in `noValue`, and the note saying
       so. NOT a colourful drawing that looks like it worked
 
+  - given: >
+      elements that carry the parameter's name twice - a shared parameter loaded
+      with the same name as a built-in one and bound to the category
+      (NEEDS-CHECKING P8 arranges it)
+    expect: >
+      those elements in `ambiguous`, not in any legend group and left their own
+      colour; and when EVERY element handed in is one, `refused` says so and
+      nothing is coloured. Before version 2 each took the colour of whichever of
+      its two parameters Revit happened to return
+
 second_route:
   - a view filter per system with a colour set by hand, compared against what this produced

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "clear a parameter back to empty on many elements"
 kind: action
 domain: revit.parameters
 capability: REMOVE_PARAMETER_VALUE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -37,6 +37,14 @@ purpose: >
   **IT WILL NOT CLEAR A TYPE PARAMETER FROM AN INSTANCE LIST.** A type is shared,
   so clearing one from a selection of forty instances changes every other
   instance in the project too. That is refused by name rather than done quietly.
+
+  **A NAME TWO PARAMETERS SHARE IS REFUSED TOO.** A shared or project parameter
+  can be bound beside a built-in one of the same name, and Revit's lookup by name
+  then returns one of them at random, in Autodesk's own words - so clearing by
+  that name empties a field nobody chose. Those elements are counted and named in
+  `refused`, and neither parameter is touched (D-54 s3, FRAGMENT-ISSUES 5b-203).
+  This is version 2; version 1's proof no longer describes the code and is kept
+  as a record, and the fragment is DRAFT until it is proved again.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "copy one parameter's value into another parameter on the sam
 kind: action
 domain: revit.parameters
 capability: COPY_PARAMETER_VALUE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -30,6 +30,14 @@ purpose: >
   field puts a unit-suffixed string somewhere that a later calculation cannot
   use. Same storage type means the same internal value moves.
 
+  **A name two parameters share is neither copied from nor copied into.** A
+  shared or project parameter can be bound beside a built-in one of the same
+  name, and Revit's lookup by name then returns one of them at random, in
+  Autodesk's own words. Either side matching twice puts the element in
+  `ambiguous`, untouched (D-54 s3, FRAGMENT-ISSUES 5b-203). This is version 2;
+  version 1's proof no longer describes the code and is kept as a record, and
+  the fragment is DRAFT until it is proved again.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -49,6 +57,13 @@ contract:
     - name: sourceEmpty
       # Elements whose source parameter held nothing, so there was nothing to
       # copy. Given and unusable, never a write it made (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: ambiguous
+      # Elements where the source name or the destination name answers to TWO
+      # OR MORE parameters, so Revit's lookup would pick one at random. Nothing
+      # is copied on them (D-54 s3, FRAGMENT-ISSUES 5b-203). Turned down, never
+      # found (D-52).
       role: accounting
       type: IList<ElementId>
     - name: refused
