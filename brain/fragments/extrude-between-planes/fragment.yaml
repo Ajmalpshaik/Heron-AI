@@ -1,0 +1,120 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-036
+semantic-identity: "build a solid box between these family planes, locked to them"
+kind: action
+domain: revit.families
+capability: EXTRUDE_BETWEEN_PLANES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Builds a rectangular SOLID extrusion in the family open in the Family
+  Editor, exactly between four named side planes, standing on a base (a level
+  or a horizontal plane) and reaching up to a top plane - and LOCKS its four
+  side faces and its top face to those planes. The body of an air terminal,
+  the neck on top of it, a casing: any box a parametric family is made of.
+
+  **LOCKED IS THE WHOLE POINT.** A box drawn at the same coordinates as the
+  planes is not tied to them: move the planes and it stays where it was, while
+  looking parametric right up until someone flexes it - reported from an
+  earlier family build. So every face is aligned and locked to its plane, the
+  base is sketched ON the base plane so it follows it, and if any one of the
+  five locks cannot be made the whole call fails and no box is left behind.
+
+  **THE PROFILE IS SKETCHED FLAT, ON THE BASE.** Face references come back
+  reliably from a sketch on a horizontal plane - reported from an earlier
+  family build, where a sketch stood on a vertical plane gave a reference for
+  one face of six. A box sitting on top of another - a neck on a body - is
+  built with the top of the lower one as its base.
+
+  **THE FAMILY'S AXES ARE TAKEN FROM THE PLANES.** Two of the four side planes
+  must control left-right and two front-back; which name is which does not
+  matter. The size is read back from the box after it is locked and must match
+  the planes, or nothing is kept.
+
+  **SOLID ONLY.** A void is not built here: a void cut made this way has never
+  been shown to remove anything - reported from an earlier family build, where
+  five different measurements found no volume change - and a cut that cannot
+  be proved is not offered. Round shapes are not built either: a circle's size
+  cannot be driven by a parameter through the API on the oldest release Heron
+  supports.
+
+  **IT BUILDS GEOMETRY AND NOTHING ELSE.** Material, visibility and
+  subcategory are set in Properties; the planes' positions are decided by
+  CREATE_REFERENCE_PLANES and LABEL_FAMILY_DIMENSION before this runs.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The four side planes by name, comma separated - two controlling
+    # left-right and two front-back: "Box Left, Box Right, Box Front, Box Back".
+    - name: sidePlanes
+      type: IList<string>
+      source: request
+    # What the box stands on: a level or a horizontal reference plane -
+    # "Ref. Level", or "Box Top" for a neck sitting on a body.
+    - name: basePlane
+      type: string
+      source: request
+    # The horizontal reference plane the top face is locked to.
+    - name: topPlane
+      type: string
+      source: request
+  provides:
+    - name: size
+      # The box as built, read back from its own bounding box: width, depth
+      # and height in millimetres, and where it sits.
+      role: result
+      type: string
+    - name: locked
+      # Each face lock made: which face, to which plane.
+      role: result
+      type: IList<string>
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was built, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyItemFactory.NewExtrusion(isSolid, profile, sketchPlane, end)`,
+  `SketchPlane.Create(Document, ElementId datumId)`, `ItemFactoryBase.NewAlignment
+  (view, reference1, reference2)`, `Options.ComputeReferences`,
+  `PlanarFace.FaceNormal` and `Dimension.IsLocked` read the same 2020 through
+  2027 (api-surface, read 2026-09-24). The sketch plane is made from the base
+  plane's ELEMENT id, not from a copy of its geometry: made from geometry it is
+  hosted on nothing, and cannot be re-hosted afterwards - reported from an
+  earlier family build.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "make a box between these planes"          -> here
+#   "extrude the neck on top of the body"      -> here, the body's top as base
+#   "cut a hole with a void"                   -> not offered; see purpose
+#   "make a floor from these room boundaries"  -> CREATE_FROM_ROOM_BOUNDARIES,
+#                                                 project geometry, not a family
+
+utterances:
+  - make a solid box between these reference planes and lock it
+  - extrude the body between the reference planes
+  - build the neck on top of the body up to Neck Top
+  - create a locked extrusion between Box Left Box Right Box Front and Box Back
+  - make a box between these planes
+  - extrude the neck on top of the body

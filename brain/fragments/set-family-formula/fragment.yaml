@@ -1,0 +1,106 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-024
+semantic-identity: "drive this family parameter by a formula, or clear its formula"
+kind: action
+domain: revit.families
+capability: SET_FAMILY_FORMULA
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Gives one parameter of the family open in the Family Editor a FORMULA - "Neck
+  Top = Height + Neck Depth", "Neck Width = Width - 100 mm" - or clears the one
+  it has, which is the Formula column of the Family Types dialog.
+
+  **A FORMULA NEEDS A TYPE TO HOLD ITS RESULT.** A new family has no type, and
+  Revit refuses a formula there with "There is no valid family type" - reported
+  from an earlier family build, where that refusal also took down the
+  parameters added in the same step. So this refuses until a type exists and
+  names SET_FAMILY_TYPE_VALUES, which makes the first one.
+
+  **NAMES ARE WRITTEN BARE, SPACES AND ALL.** `Height + Neck Depth` works;
+  `Height + "Neck Depth"` is rejected by Revit as an invalid formula with no
+  word about why - reported from the same build, found only by trying each
+  name alone. A formula that puts one of the family's own parameter names in
+  quotes is refused here with that reason, before Revit is asked. A unit may
+  follow a number - `Height + 60 mm` - and text formulas keep their quoted
+  strings, which are not parameter names.
+
+  **AN EMPTY FORMULA CLEARS IT**, and the parameter keeps the value the formula
+  last gave it and becomes editable again - the way to type a value into a
+  parameter a formula drove.
+
+  **A FORMULA OF A PLAIN VALUE LOCKS A SIZE.** `600 mm` greys the parameter out,
+  so a manufacturer's product cannot be dragged to a size it is not made in,
+  and it still labels its dimension. That is a deliberate use, not an error.
+
+  **REVIT'S WORDS COME BACK WHEN IT REFUSES**, and nothing is kept. The
+  formula and the value it produces in the current type are read back from
+  the family afterwards.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: parameterName
+      type: string
+      source: request
+    # The formula as the Family Types dialog takes it - "Height + Neck Depth".
+    # Empty clears the formula the parameter has.
+    - name: formula
+      type: string
+      source: request
+  provides:
+    - name: formulaNow
+      # The parameter's formula read back afterwards. Empty when it has none.
+      role: result
+      type: string
+    - name: valueNow
+      # What the formula gives in the family's current type, as Revit shows it.
+      role: result
+      type: string
+    - name: cleared
+      role: result
+      type: bool
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing changed, in plain words. Empty when the formula was set.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyManager.SetFormula`, `FamilyParameter.CanAssignFormula / Formula /
+  IsDeterminedByFormula` and `FamilyType.AsValueString` read the same 2020
+  through 2027 (api-surface, read 2026-09-24). Nothing here depends on a
+  parameter's kind, so the move at 2022 does not reach it.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "neck top is height plus neck depth"   -> here
+#   "lock the width at 600"                -> here, a formula of "600 mm"
+#   "put 600 into Width"                   -> SET_FAMILY_TYPE_VALUES
+#   "what formulas does this family use"   -> REPORT_FAMILY_PARAMETERS
+
+utterances:
+  - set the formula for Neck Top to Height plus Neck Depth
+  - give this family parameter a formula
+  - make Neck Width equal Width minus 100
+  - clear the formula on Width
+  - neck top is height plus neck depth
+  - lock the width at 600

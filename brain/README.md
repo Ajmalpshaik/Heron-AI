@@ -41,7 +41,7 @@ caller passes `apply` ([D-55](../docs/DECISIONS.md)).
 | [`heron_graph.py`](heron_graph.py) | **Step 13.** *What breaks if this changes.* Every edge but one is **computed from the fragments on demand** (D-40) — the only stored edge is a skill's requirement, which no artifact underneath carries. Names the dangerous case out loud: a **sole provider**, because whatever asked for its capability never named it |
 | [`heron_capability.py`](heron_capability.py) | **Step 12.** Ask for *what you want done*, never for *who does it*. Add a provider, retire one, split one into three — **no call site changes**. Almost all of it is **derived** from the fragments (D-40), including risk, which already has two homes and must not gain a third |
 | [`heron_retrieve.py`](heron_retrieve.py) | **Step 11.** The whole lookup: a structured filter **first**, then keywords and nearness over the survivors, fused by reciprocal rank. **The Revit version filter is a wall** — an incompatible fragment is not demoted, it is absent — and what was excluded is reported with its reason |
-| [`heron_rerank.py`](heron_rerank.py) | **Stage 7 of the RAG plan.** Reads the top ~20 **(question, passage) pairs together**, which neither retrieval route can do — and it is the largest optional piece in Heron, so `python brain/heron_rerank.py` names the package, the **500 MB – 2 GB** and the `--user` install **before** anything downloads (R-77, [D-01](../docs/DECISIONS.md)). **With nothing installed the shortlist comes back in exactly fusion's order and says so** — `Re-rank: absent` from the retrieval command, and a `re-rank` line on every `heron_lookup` through the MCP seam, beside which nearness backend answered — measured at 360 fragments as byte-identical to the recorded before, and costing 0.05 % of a query. **No cross-encoder has ever run here**: the weights need `huggingface.co`, so the before-and-after Stage 7 asks for is owed, and `A10` in [NEEDS-CHECKING.md](../docs/NEEDS-CHECKING.md) is that run |
+| [`heron_rerank.py`](heron_rerank.py) | **Stage 7 of the RAG plan.** Reads the top ~20 **(question, passage) pairs together**, which neither retrieval route can do — and it is the largest optional piece in Heron, so `python brain/heron_rerank.py` names the package, the **500 MB – 2 GB** and the `--user` install **before** anything downloads (R-77, [D-01](../docs/DECISIONS.md)). **With nothing installed the shortlist comes back in exactly fusion's order and says so** — `Re-rank: absent` from the retrieval command, and a `re-rank` line on every `heron_lookup` through the MCP seam, beside which nearness backend answered — measured at 360 fragments as byte-identical to the recorded before, and costing 0.05 % of a query. **A cross-encoder ran for the first time on 2026-09-24**, in a cloud session that reaches `huggingface.co` (`A10`), and on the owner's own questions it made picking a tool **worse** while it fixed the one document question there is - [`retrieval-history.md`](retrieval-history.md) carries every figure, and [`docs/WHAT-TO-INSTALL.md`](../docs/WHAT-TO-INSTALL.md) says it in plain words |
 | [`retrieval-history.md`](retrieval-history.md) | **What was measured, and at what library size.** Quote this file, never a remembered figure — the owner's earlier library once had three accuracy numbers in circulation at once because the early scores recorded no corpus size. It records the built-in backend **sinking in proportion as the library grows**, and since 2026-09-11 it also records **both backends measured at the same library size** — which is the comparison `A7` was opened to get, and `A7` is closed |
 | [`heron_embed.py`](heron_embed.py) | **Step 10.** Finding a fragment by something other than its exact words. **Two backends**: `lexical` is built in, offline, needs nothing installed — and is measured, in numbers, as *not meaning*; `model` is a trained encoder **used when one is present** — it ran on 2026-09-10 at 360 fragments and put the tracked duct filter **19th where the built-in one puts it 194th** ([`retrieval-history.md`](retrieval-history.md)), and it loads **only where the weights can be fetched**, so a container that blocks `huggingface.co` gets `lexical` and is told so. Content-hashed, so re-indexing unchanged files costs nothing — and since Stage 6 `--refresh` **fires** that check: a changed file is re-ingested and **retires its predecessor, naming it**, a moved file **deletes nothing**, and a clause byte-identical to one already held is reported at write time |
 | [`heron_scope.py`](heron_scope.py) | **Step 8.** One knowledge store per scope, as one file each. A cross-scope query is impossible to *write*: the API takes one scope and `ATTACH` is refused by name. The stores are **derived** — delete them all and `--rebuild` puts them back |
@@ -65,7 +65,7 @@ python tools/check-gaps.py                                  # unfinished, versus
 
 ## What is still to come
 
-**Proof, mostly.** **323 fragments are `PROVEN`; the other 75 and all eleven skills are `DRAFT`** — derive
+**Proof, mostly.** **322 fragments are `PROVEN`; the other 85 and all twelve skills are `DRAFT`** — derive
 both with `python brain/heron_fragment.py` rather than reading them here. **This line said 167 and 193
 until 2026-09-19**, which was wrong by 149 in one direction and 114 in the other and had been for weeks:
 the sentence telling its reader to derive the numbers was itself the reason nobody did. Phase 2's
@@ -87,7 +87,7 @@ than that.
 
 **The queue the skills produced has been worked.** Writing the skills first ordered it by real demand
 rather than by guessing, and on 2026-08-29 all seven were written — so `python brain/heron_skill.py` now
-prints **no gaps** and all eleven skills have every capability provided. What that bought is a shorter list
+prints **no gaps** and all twelve skills have every capability provided. What that bought is a shorter list
 of *kinds* of outstanding work, not less of it: the seven are `DRAFT` like the rest, and every one is
 waiting on the same machine.
 
@@ -130,6 +130,10 @@ that goes stale in the one place it had to be right.
 
 Every optional package degrades rather than breaks: Heron answers without all five and names the one
 that did not run.
+
+**In plain words** — everything a PC needs for Heron, Python first, what is optional, where each
+piece lives, and what the first measurement of the two search add-ons found:
+[`docs/WHAT-TO-INSTALL.md`](../docs/WHAT-TO-INSTALL.md).
 
 **What is still owed here, so nobody reads the above as more than it is:** nothing installs
 automatically ([R-74](../docs/work-notes/plans/rag/01-requirements.md), R-77 — `tools/setup.ps1` still

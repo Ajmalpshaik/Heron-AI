@@ -1,0 +1,35 @@
+positive:
+  - given: >
+      a new family started from the metric Generic Model template and open in
+      front, and categoryName "Air Terminals"
+    expect: >
+      category "Air Terminals" and changed true - LOOKED AT in Revit's own
+      Family Category and Parameters dialog, not read off the report - and
+      parametersGained above zero, matching the new flow fields that appear in
+      Family Types
+
+  - given: the same family, run again with the same name
+    expect: >
+      changed false, category "Air Terminals", and the finding saying it was
+      already there. Nothing in the undo list but the one entry the call makes
+
+negative:
+  - given: the same family and categoryName "Air Terminal" (singular)
+    expect: >
+      refused, nothing changed, and "Air Terminals" offered as a close name.
+      NOT the nearest category quietly taken - that is the guess this refuses
+
+  - given: a PROJECT in front instead of a family
+    expect: >
+      notAFamily true, refused naming OPEN_FAMILY_FOR_EDITING, and the
+      project's categories untouched
+
+  - given: categoryName "Walls" on a loadable family
+    expect: >
+      the call refused with Revit's own words and NOTHING kept - the family's
+      category still reads what it was before, checked in the dialog
+
+second_route:
+  - >
+      Create, Family Category and Parameters in the Family Editor, the category
+      read there and compared with `category`

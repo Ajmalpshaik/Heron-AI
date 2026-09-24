@@ -310,6 +310,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-am.md`](needs-checking/group-am.md)
 
+## Group AN - family creation, from an empty template to a flexed family (2026-09-24)
+
+**Its own file:** [`needs-checking/group-an.md`](needs-checking/group-an.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

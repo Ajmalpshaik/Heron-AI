@@ -1,0 +1,35 @@
+positive:
+  - given: >
+      a family with a type, the lengths Height = 250 and Neck Depth = 100, and a
+      length Neck Top; parameterName "Neck Top", formula "Height + Neck Depth"
+    expect: >
+      formulaNow "Height + Neck Depth" and valueNow 350 mm - LOOKED AT in the
+      Formula column of Family Types, with Neck Top greyed out there
+
+  - given: the same family, parameterName "Neck Top", formula empty
+    expect: >
+      cleared true, the Formula column empty in Family Types, and Neck Top
+      still reading 350 mm and editable again
+
+negative:
+  - given: formula 'Height + "Neck Depth"' (the name in quotes)
+    expect: >
+      refused naming "Neck Depth" and saying names are written bare - before
+      Revit is asked, and the Formula column unchanged
+
+  - given: a new family with the parameters added and NO type yet
+    expect: >
+      refused naming SET_FAMILY_TYPE_VALUES. Not Revit's bare "no valid family
+      type", and nothing else in the family disturbed
+
+  - given: formula "Neck Top + 10" on Neck Top itself
+    expect: >
+      the call refused with Revit's own words about the loop, and nothing kept
+
+  - given: a project in front
+    expect: notAFamily true and no formula set anywhere
+
+second_route:
+  - >
+      Family Types, the same formula typed into the Formula column by hand in a
+      copy of the family, and the value it gives compared with `valueNow`

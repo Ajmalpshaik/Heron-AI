@@ -30,6 +30,7 @@ this folder exists to remove.
 
 | Date | Sitting |
 |---|---|
+| 2026-09-24 | [THE RE-RANKER RAN FOR THE FIRST TIME, AND IT MAKES PICKING A TOOL WORSE](2026-09-24-the-re-ranker-ran-for-the-first-time-and-it-makes-picking-a.md) |
 | 2026-09-23 | [THE GUARD RAN ONLY WHERE ITS SKILL WAS LOADED, AND NOTHING SAID WHEN MAIN HAD MOVED](2026-09-23-the-guard-ran-only-where-its-skill-was-loaded-and-nothing.md) |
 | 2026-09-23 | [THE THREE ROWS C1 LEFT OPEN ARE FIXED, AND THE SETUP SCRIPT HAS TO BE PASTED AGAIN](2026-09-23-the-three-rows-c1-left-open-are-fixed-and-the-setup-script.md) |
 | 2026-09-22 | [THE CATEGORY-OVERRIDE READ-BACK COULD NOT SHOW THE FILL](2026-09-22-the-category-override-read-back-could-not-show-the-fill.md) |

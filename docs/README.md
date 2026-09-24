@@ -5,7 +5,7 @@
 > ([B8](NEEDS-CHECKING.md)), and what is still owed is a tape measure on the result — `D3`. **Phase 2
 > (Steps 7 to 14) is built and barely proven.** This line said both *"have never loaded into Revit"*
 > until 2026-09-21, a fortnight after the first write ([row 5b-54](FRAGMENT-ISSUES.md)).
-> **All eleven skills are `DRAFT`; 322 of the 398 fragments are `PROVEN`
+> **All twelve skills are `DRAFT`; 322 of the 407 fragments are `PROVEN`
 > as of 2026-09-24** — this line said *every fragment is `DRAFT`* long after that stopped being true, so
 > derive it: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 >
@@ -95,6 +95,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | Know what gets built first | [ROADMAP.md](ROADMAP.md) |
 | **Actually start building** | [**27 — Build Order**](27-build-order.md) |
 | Know the non-negotiables | [14 — Golden Rules](14-golden-rules.md) |
+| Know **what to install** for Heron — Python first — and what is optional | [WHAT-TO-INSTALL.md](WHAT-TO-INSTALL.md) |
 
 ---
 
