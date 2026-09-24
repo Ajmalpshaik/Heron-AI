@@ -356,57 +356,15 @@ ELEMENT_INSTANCE_REASON = (
 is_type_need_name = HF.is_type_need_name
 
 
-ADDIN_FRAGMENT = os.path.join(ROOT, "revit", "Heron.Revit.Addin", "RevitFragment.cs")
-
-_ID_NAME = re.compile(r'name == "([A-Za-z]+)"')
-
-
-def id_need_names(path=ADDIN_FRAGMENT):
-    """Every need-name `OneIdNamed` in the add-in has a rule for.
-
-    READ OUT OF THE C#, NEVER TYPED HERE, for the same reason `risk_ladder`
-    reads the enum: this file decides whether to EMIT a job and Revit decides
-    whether to REFUSE it, and the two disagreeing produces a job that is
-    generated every time and always declines. That is worse than either
-    behaviour alone, because the job file then reads like a worklist.
-
-    AN `ElementId` IS RESOLVED BY THE NEED'S NAME, NOT BY ITS TYPE, and that
-    is the whole reason this exists. `OneIdNamed` dispatches on the name -
-    `levelId` finds a Level, `sheetId` a sheet's number - and a name it does
-    not hold is refused rather than guessed at, because the alternative is
-    searching every element in the model and binding whatever matched.
-
-    RAISES when the add-in cannot be read or `OneIdNamed` cannot be found, and
-    that is the whole point of the change. The first version returned an empty
-    set and called it "cannot tell", and `receivable` then skipped its guard
-    and fell through to "the TYPE is receivable" - so a missing or refactored
-    add-in silently marked EVERY id need arrangeable, which is exactly the
-    outcome this function exists to prevent. Found by review on PR #198.
-
-    "I could not tell" and "it is fine" must not collapse into one answer on a
-    path where being wrong sends a job to Revit to be refused. Stopping loudly
-    is the only safe third option.
-    """
-    try:
-        source = io.open(path, encoding="utf-8", errors="replace").read()
-    except (IOError, OSError) as exc:
-        raise RuntimeError(
-            "Cannot read %s, so which id NAMES the add-in resolves is unknown "
-            "and no job can be judged: %s. Nothing was generated." % (path, exc))
-
-    start = source.find("OneIdNamed(Document")
-    if start < 0:
-        raise RuntimeError(
-            "Found no `OneIdNamed(Document` in %s, so the table of id names "
-            "this tool must agree with cannot be read. If that method was "
-            "renamed, rename it here too - do not delete this check, because "
-            "without it every ElementId need is reported as arrangeable and "
-            "the jobs are refused on arrival. Nothing was generated." % path)
-    # To the end of that method: the next method's signature at class indent.
-    end = source.find(chr(10) + "        private static", start + 1)
-    if end < 0:
-        end = len(source)
-    return set(_ID_NAME.findall(source[start:end]))
+# MOVED to brain/heron_fragment.py on 2026-09-23, beside is_type_need_name and
+# for the same reason: `how_to_type` has to ask it too, or an id need the
+# add-in has no rule for is told to type a name it refuses - FRAGMENT-ISSUES
+# row 5b-191. Re-exported, so `receivable` below and the suites that ask this
+# file still find it here. It still RAISES when the add-in cannot be read -
+# the note there says why - because this file decides whether to EMIT a job
+# and Revit decides whether to REFUSE it.
+ADDIN_FRAGMENT = HF.ADDIN_FRAGMENT
+id_need_names = HF.id_need_names
 
 
 ID_NEED_REASON = (

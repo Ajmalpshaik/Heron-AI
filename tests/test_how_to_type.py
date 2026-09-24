@@ -58,6 +58,15 @@ WHAT IT PROVES
      RevitFragment.cs - checked for every such need in the library, through
      heron_resolve's own contract block and generate-jobs' job lines, the two
      places the hint is printed. FRAGMENT-ISSUES row 5b-190.
+  9. An `ElementId` need is told what the add-in accepts for its NAME: a name
+     only where OneIdNamed has a rule for it, and otherwise CANNOT BE TYPED BY
+     NAME and what binds anyway - a blank or `none` for one id, `selected` or
+     a blank for a list. The table and those answers are read out of
+     RevitFragment.cs, and every id need in the library is checked through
+     how_to_type and heron_resolve's own contract block, and generate-jobs'
+     printer is handed a made-up fragment holding each kind. The brain holds
+     the one reader of the table and generate-jobs asks it. FRAGMENT-ISSUES
+     row 5b-191.
 
 WHAT IT CANNOT DO
   It does not prove a hint is TRUE beyond the strings it reads out of the C#.
@@ -135,6 +144,24 @@ def plain_element_needs(client):
             if (need.get("source") == "request"
                     and (need.get("type") or "").replace(" ", "") == "Element"):
                 found.append((name, need.get("name"),
+                              name.upper().replace("-", "_")))
+    return found
+
+
+def id_needs(client):
+    """(folder, need name, type, capability) for every caller-supplied need
+    whose type is an `ElementId` or a list of them - the shapes how_to_type's
+    id rule answers."""
+    found = []
+    fragments = os.path.join(ROOT, "brain", "fragments")
+    for name in sorted(os.listdir(fragments)):
+        needs = client.fragment_needs(
+            os.path.join(fragments, name, "fragment.yaml")) or []
+        for need in needs:
+            kind = (need.get("type") or "").replace(" ", "")
+            if (need.get("source") == "request"
+                    and re.search(r"\bElementId>?$", kind)):
+                found.append((name, need.get("name"), kind,
                               name.upper().replace("-", "_")))
     return found
 
@@ -255,8 +282,10 @@ def main():
           "bool says true or false, because bool.TryParse refuses yes")
     check("is red" in csharp and "255,0,0" in HF.how_to_type("Color"),
           "Color gives three numbers, as OneColour's refusal does")
-    check("never" in HF.how_to_type("ElementId"),
-          "an ElementId is a NAME, never its number")
+    # WITH THE NEED'S NAME since row 5b-191: whether an id is typed as a name
+    # at all is decided by the name, and clause 9 holds the rest to the C#.
+    check("never" in HF.how_to_type("ElementId", "levelId"),
+          "an ElementId the add-in has a rule for is a NAME, never its number")
     check("`selected`" in HF.how_to_type("IList<ElementId>"),
           "a LIST of ids also takes the word `selected`")
     check("refused" in HF.how_to_type("View3D"),
@@ -462,6 +491,161 @@ def main():
           % hosts)
     check(types_ and all("Basic Wall" in line for line in types_),
           "and a type name beside a type-named one: %s" % types_)
+
+    # --- 9. an `ElementId` need is told what the add-in accepts for its NAME -
+    #
+    # FRAGMENT-ISSUES row 5b-191 - clause 8's defect one type over. An id is
+    # resolved by the need's NAME: OneIdNamed finds a level for `levelId` and a
+    # sheet for `sheetId`, and refuses a name it has no rule for whatever is
+    # typed. how_to_type answered the type alone, so every id need was told to
+    # type a name, and four in the library have no rule. So the table, and what
+    # binds without one, are read out of the C#, and every id need in the
+    # library is held to them - through how_to_type, through heron_resolve's
+    # own contract block, and through generate-jobs' printer on a made-up
+    # fragment.
+    print()
+    print("An `ElementId` need is told what the add-in accepts for its name")
+
+    one_id = method_body(csharp, "private static object OneIdNamed")
+    table = set(re.findall(r'name == "([A-Za-z]+)"', one_id))
+    check(len(table) > 10 and "levelId" in table,
+          "OneIdNamed's table of id names is read out of RevitFragment.cs: "
+          "%d names" % len(table))
+    check("said.Length == 0" in one_id and '"none"' in one_id
+          and "return ElementId.InvalidElementId;" in one_id,
+          "and a blank or `none` binds NO element whatever the name, before "
+          "the table is asked")
+    single = re.search(r'if \(wanted == "ElementId"\)\s*return (\w+)\(', csharp)
+    check(single is not None and single.group(1) == "OneIdNamed",
+          "one id goes straight to OneIdNamed, so `selected` is just a name "
+          "there, refused without a rule")
+    opens = csharp.find('wanted == "IList<ElementId>"')
+    closes = csharp.find('wanted == "IList<Element>"', opens + 1)
+    listed = csharp[opens:closes] if 0 <= opens < closes else ""
+    check(0 <= listed.find("IsSelectionWord(text)") < listed.find("OneIdNamed(")
+          and "IsNullOrWhiteSpace(text)) return ids;" in listed,
+          "a list takes `selected` before the table is asked, and a blank is "
+          "an empty list")
+
+    # ONE READER OF THE TABLE, IN THE BRAIN. Asked for rather than called, so
+    # the code as it stood before is one clean failure here - and the checks
+    # below still run, against the table this clause read itself.
+    ours = getattr(HF, "id_need_names", None)
+    check(ours is not None,
+          "heron_fragment carries the add-in's table of id names")
+    try:
+        theirs = ours() if ours is not None else None
+    except RuntimeError as exc:
+        theirs = "it raised: %s" % exc
+    check(theirs == table,
+          "and reads the same names out of the C#%s"
+          % ("" if theirs == table else " - IT READ: %r" % (theirs,)))
+    check(ours is not None and GJ.id_need_names is ours,
+          "generate-jobs asks the brain's reader, so there is one, not two")
+
+    offers_a_name = ("the NAME of the thing", "NAMES, never numbers")
+
+    def says_right(hint, name, kind):
+        """The hint, or a printed row, says what the add-in does with it."""
+        many = "<" in kind
+        if name in table:
+            return "CANNOT BE TYPED" not in hint and (
+                offers_a_name[1] in hint if many else offers_a_name[0] in hint)
+        if ("CANNOT BE TYPED BY NAME" not in hint
+                or any(offer in hint for offer in offers_a_name)):
+            return False
+        if many:
+            return "`selected`" in hint and "empty list" in hint
+        return "`none`" in hint and "blank" in hint and "NO element" in hint
+
+    ids = id_needs(CLIENT)
+    check(ids, "the library declares caller-supplied id needs to check")
+    blind = sorted("%s.%s" % (folder, name)
+                   for folder, name, _kind, _cap in ids if name not in table)
+    check(blind, "and some have no rule, so there is something to catch: %s"
+          % blind)
+    for folder, name, kind, _cap in ids:
+        hint = (HF.how_to_type(kind, name) if takes_name
+                else HF.how_to_type(kind))
+        check(says_right(hint, name, kind),
+              "%s's `%s` (%s) %s: %r"
+              % (folder, name, kind,
+                 "has a rule and is told a name" if name in table
+                 else "has no rule and is told what binds instead", hint))
+    check(says_right(HF.how_to_type("ElementId"), None, "ElementId"),
+          "with no name one id gets the no-rule answer, as in the add-in: %r"
+          % HF.how_to_type("ElementId"))
+    check(says_right(HF.how_to_type("IList<ElementId>"), None,
+                     "IList<ElementId>"),
+          "and so does a list: %r" % HF.how_to_type("IList<ElementId>"))
+
+    def need_row(lines, name):
+        row = [line for line in lines if line.split()[:1] == [name]]
+        return row[0].strip() if row else "no row for it in %r" % lines
+
+    for folder, name, kind, capability in (ids if space is not None else []):
+        row = need_row(contract_lines(space, capability), name)
+        check(says_right(row, name, kind),
+              "heron_resolve %s prints `%s` as the add-in reads it: %s"
+              % (capability, name, row))
+
+    # A TABLE THAT CANNOT BE READ IS NOT A TABLE THAT SAYS YES. id_need_names
+    # raises, and the hint must neither pass that on - it would end the
+    # caller's heron_resolve - nor guess. Put back whatever was there, so
+    # nothing after this reads the stand-in.
+    def unreadable(*_args, **_kwargs):
+        raise RuntimeError("a stand-in for an add-in that cannot be read")
+
+    missing = object()
+    kept = getattr(HF, "id_need_names", missing)
+    HF.id_need_names = unreadable
+    try:
+        try:
+            shown = [HF.how_to_type("ElementId", "levelId"),
+                     HF.how_to_type("IList<ElementId>", "revisionIds")]
+        except RuntimeError as exc:
+            shown = ["it raised: %s" % exc]
+    finally:
+        if kept is missing:
+            del HF.id_need_names
+        else:
+            HF.id_need_names = kept
+    check(all("NOT KNOWN" in hint
+              and not any(offer in hint for offer in offers_a_name)
+              for hint in shown),
+          "an add-in that cannot be read makes the hint say NOT KNOWN - no "
+          "name offered, and no crash: %r" % shown)
+
+    # GENERATE-JOBS' PRINTER, ON ONE MADE-UP FRAGMENT holding each kind.
+    # heron_resolve's is held above, over the library, which has both kinds;
+    # generate-jobs' is not run over the library here, so it is handed one of
+    # each through the same code it runs for a real fragment. A printer that
+    # dropped the name shows on the needs WITH a rule, which the no-name
+    # answer calls untypeable.
+    class FourIds(object):
+        slug = "four-ids"
+        data = {"risk": "READ"}
+
+        def needs(self):
+            return [{"name": "levelId", "type": "ElementId",
+                     "source": "request"},
+                    {"name": "parameterId", "type": "ElementId",
+                     "source": "request"},
+                    {"name": "categoryIds", "type": "ICollection<ElementId>",
+                     "source": "request"},
+                    {"name": "elementIds", "type": "IList<ElementId>",
+                     "source": "request"}]
+
+        def provides(self):
+            return []
+
+    job = GJ.job_block(FourIds(), False, {})
+    for need in FourIds().needs():
+        name, kind = need["name"], need["type"]
+        lines = [line for line in job if line.strip().startswith(name + ":")]
+        check(lines and all(says_right(line, name, kind) for line in lines),
+              "generate-jobs writes `%s` (%s) as the add-in reads it: %s"
+              % (name, "a rule" if name in table else "no rule", lines))
 
     print()
     if FAILURES:

@@ -304,6 +304,69 @@ def is_type_need_name(need_name):
     return (need_name or "").endswith("Type")
 
 
+# THE ADD-IN'S TABLE OF ID NAMES, read out of its source as text - the way
+# heron_context reads the executor's import list - and never typed here. A
+# table typed here would go on refusing the next name the add-in learns.
+ADDIN_FRAGMENT = os.path.join(ROOT, "revit", "Heron.Revit.Addin",
+                              "RevitFragment.cs")
+
+_ID_NAME = re.compile(r'name == "([A-Za-z]+)"')
+
+
+def id_need_names(path=ADDIN_FRAGMENT):
+    """Every need-name `OneIdNamed` in the add-in has a rule for.
+
+    READ OUT OF THE C#, NEVER TYPED HERE, and asked by the same two readers as
+    is_type_need_name: tools/generate-jobs.py, deciding whether to EMIT a job,
+    and how_to_type, deciding what a caller is TOLD to type. Revit decides
+    whether to REFUSE, and a reader that disagrees with it produces a job that
+    is generated every time and always declines, or a blank filled in one way
+    and refused in another.
+
+    It lived in tools/generate-jobs.py until 2026-09-23 and moved here so
+    how_to_type could ask it too - brain/ may not import tools/, and a second
+    copy would drift. That file re-exports it. FRAGMENT-ISSUES row 5b-191.
+
+    AN `ElementId` IS RESOLVED BY THE NEED'S NAME, NOT BY ITS TYPE, and that
+    is the whole reason this exists. `OneIdNamed` dispatches on the name -
+    `levelId` finds a Level, `sheetId` a sheet's number - and a name it does
+    not hold is refused rather than guessed at, because the alternative is
+    searching every element in the model and binding whatever matched.
+
+    RAISES when the add-in cannot be read or `OneIdNamed` cannot be found, and
+    that is the whole point of the change. The first version returned an empty
+    set and called it "cannot tell", and `receivable` then skipped its guard
+    and fell through to "the TYPE is receivable" - so a missing or refactored
+    add-in silently marked EVERY id need arrangeable, which is exactly the
+    outcome this function exists to prevent. Found by review on PR #198.
+
+    "I could not tell" and "it is fine" must not collapse into one answer on a
+    path where being wrong sends a job to Revit to be refused. Stopping loudly
+    is the only safe third option - and how_to_type, which cannot stop a
+    caller's heron_resolve, says NOT KNOWN instead, for the same reason.
+    """
+    try:
+        source = io.open(path, encoding="utf-8", errors="replace").read()
+    except (IOError, OSError) as exc:
+        raise RuntimeError(
+            "Cannot read %s, so which id NAMES the add-in resolves is unknown "
+            "and no job can be judged: %s. Nothing was generated." % (path, exc))
+
+    start = source.find("OneIdNamed(Document")
+    if start < 0:
+        raise RuntimeError(
+            "Found no `OneIdNamed(Document` in %s, so the table of id names "
+            "this tool must agree with cannot be read. If that method was "
+            "renamed, rename it here too - do not delete this check, because "
+            "without it every ElementId need is reported as arrangeable and "
+            "the jobs are refused on arrival. Nothing was generated." % path)
+    # To the end of that method: the next method's signature at class indent.
+    end = source.find(chr(10) + "        private static", start + 1)
+    if end < 0:
+        end = len(source)
+    return set(_ID_NAME.findall(source[start:end]))
+
+
 def how_to_type(declared, need_name=None):
     """What a person needs to know to fill this one in, beyond its type.
 
@@ -332,6 +395,14 @@ def how_to_type(declared, need_name=None):
       `selected`, meaning the one element selected in Revit. With no name the
       answer is the particular element, as it is in the add-in - a caller that
       cannot show it means a type is not told to type one.
+
+      AN `ElementId` IS RESOLVED BY THE NEED'S NAME TOO, through the table
+      id_need_names reads out of the add-in. A name with a rule is typed as the
+      name of the thing. A name without one CANNOT BE TYPED BY NAME, and the
+      hint says what binds anyway: a blank or `none` for one id, meaning no
+      element, and `selected` or a blank for a list. With no name the answer
+      is the no-rule one, as it is in the add-in, which finds no rule for a
+      name it was not given.
     """
     wanted = (declared or "").replace(" ", "")
     hints = []
@@ -466,12 +537,48 @@ def how_to_type(declared, need_name=None):
     # modeller opens and is refused. The field's NAME decides the kind:
     # `levelId` searches levels, `sheetId` sheets. The old `\bElement\b` rule
     # never reached this, because "ElementId" has no word break after "Element".
+    #
+    # AND ONLY A NAME OneIdNamed HAS A RULE FOR CAN BE TYPED AT ALL - the
+    # add-in's own table, through id_need_names. Until 2026-09-23 this
+    # answered the type alone and told every id need to type a name, so
+    # `parameterId`, `elementIds`, `linkedElementIds` and `against` were each
+    # told to type what the add-in refuses whatever it says. FRAGMENT-ISSUES
+    # row 5b-191. What binds WITHOUT a rule is settled before the table is
+    # asked: a blank or `none` is no element, and a list takes `selected`. A
+    # blank list is an empty one; `none` in a list is one INVALID id, not no
+    # ids, so a list is not offered it.
     if re.search(r"\bElementId>?$", wanted):
-        if "<" in wanted:
+        many = "<" in wanted
+        try:
+            ruled = need_name in id_need_names()
+        except RuntimeError:
+            # "I could not tell" is not "it is fine" - id_need_names says why -
+            # and a hint must not end the caller's heron_resolve either. What
+            # binds without a rule binds whatever the table says, so that half
+            # is still true and is still said.
+            if many:
+                return ('NOT KNOWN - the add-in\'s table of id names could not '
+                        'be read, so whether a name binds cannot be said. '
+                        '`selected` binds whatever the name - everything '
+                        'selected in Revit, in the model being read - and a '
+                        'blank binds an empty list')
+            return ('NOT KNOWN - the add-in\'s table of id names could not be '
+                    'read, so whether a name binds cannot be said. A blank or '
+                    '`none` binds whatever the name, and it means NO element')
+        if ruled and many:
             return ('NAMES, never numbers, comma separated - or the word '
                     '`selected` for everything selected in Revit')
-        return ('the NAME of the thing, never its number - "Level 1" for a '
-                'levelId. The field\'s own name says which kind')
+        if ruled:
+            return ('the NAME of the thing, never its number - "Level 1" for a '
+                    'levelId. The field\'s own name says which kind')
+        if many:
+            return ('CANNOT BE TYPED BY NAME - the add-in has no rule for what '
+                    'these ids name, so it refuses any name or number. The '
+                    'word `selected` binds everything selected in Revit, in '
+                    'the model being read, and a blank binds an empty list')
+        return ('CANNOT BE TYPED BY NAME - the add-in has no rule for what this '
+                'id names, so it refuses any name, a number or `selected`. Only '
+                'a blank or `none` binds, and it means NO element')
 
     # THREE CLASSES THE NAME RULE BELOW MISSES FOR THE SAME REASON - "View3D",
     # "ViewDuplicateOption" and "SpatialElement" carry no word break after
