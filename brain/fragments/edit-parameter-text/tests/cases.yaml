@@ -54,6 +54,15 @@ negative:
       the id in `refused` and no claim of success. Ownership failure is a
       normal outcome, not an exception to hide
 
+  - given: >
+      a name two text parameters on one element share - a shared parameter
+      loaded with the same name as a built-in text one and bound to the
+      category (NEEDS-CHECKING P8 arranges it), with a prefix to add
+    expect: >
+      those elements in `ambiguous`, edited 0 for them, and BOTH parameters
+      exactly as they were. Before version 2 one of the two - Revit's reference
+      calls the choice random - took the prefix and was counted as edited
+
 second_route:
   - >
     read the values back in a Revit schedule of the same parameter after the

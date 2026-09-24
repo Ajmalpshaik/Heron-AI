@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-PAR-011
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "put the values from this table back onto the elements they c
 kind: action
 domain: revit.parameters
 capability: IMPORT_PARAMETER_VALUES
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -58,6 +58,14 @@ purpose: >
   DIFFERENT SKIPS AND ARE COUNTED APART.** They have three different fixes -
   change the target, fix the header, fix the cell - and one merged "skipped"
   number sends every one of them to the wrong place.
+
+  **A FOURTH SKIP SINCE VERSION 2: A COLUMN NAME TWO PARAMETERS SHARE.** A shared
+  or project parameter can be bound beside a built-in one of the same name, and
+  Revit's lookup by name then returns one of them at random, in Autodesk's own
+  words. That cell is written to neither, counted apart and named in the
+  findings (D-54 s3, FRAGMENT-ISSUES 5b-203). Version 1's proof no longer
+  describes the code and is kept as a record, and the fragment is DRAFT until it
+  is proved again.
 
 contract:
   needs:

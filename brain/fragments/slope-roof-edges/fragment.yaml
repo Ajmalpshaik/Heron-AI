@@ -1,0 +1,190 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-071
+semantic-identity: "slope the edges of this roof to make it a gable or a hip"
+kind: action
+domain: revit.elements
+capability: SLOPE_ROOF_EDGES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Slopes the edges of a footprint roof that is already in the model, so a flat
+  roof becomes a GABLE or a HIP at the pitch the modeller gives. It acts on the
+  roof SELECTED in Revit - one CREATE_ROOF made, or one drawn by hand through
+  Architecture > Roof by Footprint, which is the same kind of element. Several
+  roofs may be selected; each is judged, sloped and read back on its own.
+
+  **REVIT'S "SlopeAngle" IS NOT AN ANGLE.** The per-edge property holds a rise
+  over a run - 0.5 is one unit up for every two across, 26.57 degrees. The pitch
+  arrives in degrees and is turned into that ratio by its tangent before it is
+  written: 30 degrees becomes 0.5774. Handed 30 straight through, Revit would
+  build a roof 88 degrees steep and say nothing. So every edge is read back and
+  turned back into degrees with the raw ratio printed beside it, and the roof's
+  height is measured - the mistake would show twice over if it ever came back.
+
+  **THE PITCH IS ALWAYS ASKED FOR AND NEVER ASSUMED (D-33).** CREATE_ROOF
+  refused to invent one for the same reason: a default pitch becomes a pitch
+  quietly relied on. It is in DEGREES, the usual way to state a pitch on a
+  metric drawing. A ratio - "1 in 2" - is the other common way and is NOT read
+  here, so that one number can never mean two things: convert it first (1 in 2
+  is 26.57 degrees). More than 0 and at most 80 degrees: 0 is the flat roof it
+  already is, and 80 is a rise of 5.7 times the run, past any ordinary roof. A
+  bigger number is refused rather than built, because a percentage or a height
+  typed where degrees were asked is no pitch at all.
+
+  **GABLE: THE TWO LONG SIDES SLOPE AND THE TWO ENDS STAY UPRIGHT.** Only on an
+  outline of four straight sides in two parallel pairs, one pair longer than
+  the other; a side drawn in collinear pieces still counts as one side.
+  Anything else is REFUSED with the reason and that roof is not touched - an
+  L-shaped outline has six sides and no single pair of eaves, a square has no
+  LONG pair, and a curved edge is no eave. Heron does not choose two edges for
+  the modeller.
+
+  **HIP: EVERY EDGE SLOPES**, straight or curved, whatever the outline.
+
+  **ONE OUTLINE PER ROOF.** A footprint with a second loop - an opening, or a
+  second roof area drawn in the same sketch - is refused for both shapes, since
+  which loop is the eaves is not a thing to guess.
+
+  **WHAT IS NOT A FOOTPRINT ROOF IS NAMED AND LEFT ALONE.** An extrusion roof
+  takes its slope from the profile it was drawn with and has no footprint
+  edges; a wall or a floor in the same selection is not a roof. A roof inside a
+  group is refused before anything is attempted.
+
+  **IT REPORTS WHAT REVIT HOLDS, NOT WHAT WAS ASKED.** After the write the roof
+  is rebuilt and every edge is read back: whether it defines slope, and the
+  slope in degrees. An edge holding anything else is named in `differs`, the
+  way WRITE_ELEMENT_PARAMETERS names `snapped`. The roof is measured too - how
+  far its highest point sits above its lowest, now and before - because an edge
+  count cannot tell a 30 degree roof from an 88 degree one, and a height can.
+
+  **IT DOES NOT TOUCH THE OVERHANG, THE OFFSET OR THE ROOF TYPE.** ASSUMES AN
+  OPEN TRANSACTION and does not open one (Golden Rule 16). When Revit will not
+  take a slope, or cannot rebuild the roof with it, the call stops and nothing
+  it did is kept - a half-sloped roof is worse than none.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The roof, FROM THE SELECTION - one CREATE_ROOF made or one drawn by hand;
+    # they are the same element. Several may be selected, and anything in the
+    # selection that is not a footprint roof is named in `refused` and left
+    # alone. SELECT THE ROOF. Run straight after CREATE_ROOF with nothing
+    # selected, the add-in's fallback hands that fragment's `created` - ONE id,
+    # not a list - to `elements`; read in RevitFragment.Shape, NOT run, that is
+    # a cast the prologue cannot make, so the selection is the route to use.
+    - name: elements
+      type: IList<Element>
+    # `gable` or `hip`, and nothing else is read. A shape is a design decision,
+    # so there is no default.
+    - name: roofShape
+      type: string
+      source: request
+    # DEGREES, and only degrees - see the purpose. Never assumed (D-33), and
+    # refused outside more than 0 and at most 80.
+    - name: pitchDegrees
+      type: double
+      source: request
+  provides:
+    - name: sloped
+      # Edges Revit HOLDS as defining slope at the pitch asked for, read back
+      # after the rebuild. Counted off the read-back, never off the write.
+      role: result
+      type: int
+    - name: upright
+      # Gable ends Revit holds with Defines Slope off, read back. Always 0 for
+      # a hip, which has no ends.
+      role: result
+      type: int
+    - name: differs
+      # Edges where Revit holds something other than what was asked - a pitch
+      # that did not stick, an end still sloping, a line gone from the sketch.
+      # A finding, like `snapped` in WRITE_ELEMENT_PARAMETERS.
+      role: result
+      type: IList<string>
+    - name: readBack
+      # EVERY EDGE AS REVIT HOLDS IT after the write: its length, whether it is
+      # an eave or a gable end, Defines Slope with the slope in degrees and the
+      # raw rise-over-run beside it, and what it was before. A STRING, because
+      # a reply cuts a list to three items of sixty characters, and this is the
+      # evidence (the lesson measuredMm in CREATE_ROOF records). ACCOUNTING,
+      # NOT A RESULT (D-52): it describes what `sloped` counts, and on a refusal
+      # there is correctly nothing in it.
+      role: accounting
+      type: string
+    - name: measuredMm
+      # How far the roof's highest point sits above its lowest, now and before
+      # the write, with the level it sits on - read off Revit's bounding box,
+      # never worked out from the pitch. Accounting, for the same reason.
+      role: accounting
+      type: string
+    - name: refused
+      # Why each thing it was handed was left alone, in plain words, one per
+      # element and joined by " | ". Empty when everything was sloped.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE PATH FOR EVERY RELEASE, read rather than remembered. On 2026-09-24
+  tools/api-surface read the reference assemblies of all eight releases, 2020
+  through 2027, and found FootPrintRoof's `GetProfiles()` returning a
+  ModelCurveArrArray and its per-edge indexed properties `DefinesSlope` (bool)
+  and `SlopeAngle` (double), both get and set - written get_/set_DefinesSlope
+  and get_/set_SlopeAngle in C# - with one signature on every release.
+  `ExtrusionRoof` and `RoofBase`, ModelCurveArrArray and ModelCurveArray,
+  `CurveElement.GeometryCurve`, the application's `ShortCurveTolerance` and
+  `AngleTolerance`, `Element.GroupId`, `LevelId` and `get_BoundingBox`,
+  `Document.Regenerate`, `Level.ProjectElevation`, and ElementId's `Equals`
+  and `!=` read the same on all eight. ElementId's `CompareTo` exists only
+  from 2026 and is not used. The API reference text for SlopeAngle - a slope,
+  0.5 being one of rise for two of run, 26.57 degrees - is identical on all
+  eight releases (2020 to 2026 from the reference packages, 2027 from Revit
+  2027's own RevitAPI.xml). No ElementId is constructed and none is read as a
+  number.
+
+# ROUTING - repeated in CREATE_ROOF.
+#
+#   "slope this roof"                    -> here
+#   "make it a gable roof at 30 degrees" -> here
+#   "make this a hip roof"               -> here
+#   "put a roof over this"               -> CREATE_ROOF. It makes the roof FLAT;
+#                                           this slopes it afterwards
+#   "what pitch is this roof"            -> NOT HERE, and nowhere yet. A
+#                                           question must not land on a write,
+#                                           and nothing reads a roof's pitch
+#                                           edge by edge. Measured 2026-09-24
+#                                           through heron_lookup: that sentence
+#                                           resolved to CREATE_ROOF, another
+#                                           write. READ_ELEMENT_PARAMETERS reads
+#                                           what the roof's Properties show
+#   "change a value in the roof's Properties"
+#                                        -> WRITE_ELEMENT_PARAMETERS. It writes
+#                                           one parameter and cannot choose which
+#                                           edges slope, so it cannot make a flat
+#                                           roof a gable
+#   "give it a fall of 1 in 100"         -> SET_MEP_SLOPE - a pipe or a duct,
+#                                           never a roof
+#   "slope just this one edge", a lean-to -> NOT HERE. Gable and hip only; an
+#                                           edge number is something only a
+#                                           Heron reply can show, and Revit's own
+#                                           screen names none
+
+utterances:
+  - slope this roof
+  - turn this flat roof into a gable roof
+  - make this a hip roof
+  - slope the edges of this roof
+  - make it a gable roof at 30 degrees

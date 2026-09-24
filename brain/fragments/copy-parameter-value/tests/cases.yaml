@@ -24,5 +24,14 @@ negative:
   - given: a parameter that Revit accepts and stores something different
     expect: it is in refused, caught by the read-back rather than by the absence of an exception
 
+  - given: >
+      a destination name two parameters on the element share - a shared text
+      parameter loaded with the same name as a built-in one and bound to the
+      category (NEEDS-CHECKING P8 arranges it)
+    expect: >
+      those elements in `ambiguous`, copied is 0 for them, and BOTH same-named
+      parameters exactly as they were. Before version 2 one of the two - Revit's
+      reference calls the choice random - was written and counted as copied
+
 second_route:
   - A schedule showing both parameters side by side, before and after

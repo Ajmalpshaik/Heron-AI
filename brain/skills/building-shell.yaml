@@ -1,0 +1,115 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: building-shell
+name: Build a building's shell from a plan
+domain: revit.elements
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Builds the shell of a building from a plan the modeller gives - its levels,
+  its walls, a slab on each floor, a room in every space, a ceiling in every
+  room and a roof on top - and counts each part against the plan before the
+  next one goes on. The steps are listed in the order they have to happen, and
+  the order is not a preference: each one hangs off the one before it.
+
+  1. CREATE_LEVELS first, every level the building will have. A wall, a slab
+     and a roof each belong to a level, and a level added afterwards leaves
+     what was already built on the wrong one. Count them before going on.
+  2. CREATE_GRIDS when the plan is set out on bays - the lines the walls are
+     drawn to, so a wall position is read off the plan rather than worked out.
+  3. CREATE_WALL, one run of points per wall line, on its level, at the height
+     from that level to the one above.
+  4. SET_WALL_CONSTRAINTS on those walls, tying each top to the level above,
+     with allowUnconnectedToBecomeBound set - a wall drawn at a typed height
+     does not follow when the level above is moved, and one tied to it does.
+     Because step 3 drew it to that height, nothing moves when it is tied.
+  5. CREATE_FLOOR, one slab per floor, drawn to the OUTSIDE faces of the
+     outside walls - not to their centrelines, which leaves the slab half a
+     wall short all the way round.
+  6. PLACE_ROOM_AT_POINT with a point inside every space, all of one level in
+     one call. Then SELECT_UNENCLOSED_ROOMS must return none: a room that is not
+     enclosed has no area, and it almost always means two walls do not meet.
+  7. CREATE_FROM_ROOM_BOUNDARIES for the ceilings, the shape of each room, at
+     the height the modeller gives. Rooms at different ceiling heights - a
+     corridor higher than the rooms off it - are separate calls, one per height.
+  8. CREATE_ROOF on the top level, from the outline of the outside walls. It
+     makes a FLAT roof, and it takes its level as an input, so which view is
+     open does not decide where it goes.
+  9. SLOPE_ROOF_EDGES, only when the roof is pitched: a gable slopes the two
+     long eaves and leaves the two ends upright, a hip slopes every edge. The
+     pitch is the modeller's and is never assumed.
+  10. The count, and it is the proof that the shell is the plan - the calls not
+      failing is not. FILTER_ELEMENTS_BY_CATEGORY then COUNT_ELEMENTS for the
+      walls, floors, rooms and ceilings on each level against the plan's own
+      numbers; MEASURE_ELEMENT_LENGTHS for the total length of wall against the
+      plan's; READ_MODEL_WARNINGS for anything the shell added.
+
+  NOT YET: doors and windows. On the day this was written no route in the
+  library put one INTO a particular wall - a door placed free-standing looks
+  right in plan and cuts nothing - so they go in by hand. A version of
+  PLACE_HOSTED_FAMILY that finds the wall at a point and sets each door's To
+  Room was being built the same day; when it is in, the doors get a step of
+  their own and this list changes. Curtain walls (nothing writes a grid or a
+  mullion), stairs, railings and the ground are not here either.
+
+# The words the modeller says when he wants a building put up.
+utterances:
+  - build the building from this plan
+  - draw the walls of the building on this level
+  - put a room in every space and a ceiling in every room
+  - make the levels, the walls and the floor slab
+  - build the shell of the house with a roof
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+needs:
+  - CREATE_LEVELS
+  - CREATE_GRIDS
+  - CREATE_WALL
+  - SET_WALL_CONSTRAINTS
+  - CREATE_FLOOR
+  - PLACE_ROOM_AT_POINT
+  # The rooms' own check, before a ceiling is hung from any of them.
+  - SELECT_UNENCLOSED_ROOMS
+  - CREATE_FROM_ROOM_BOUNDARIES
+  - CREATE_ROOF
+  # Only for a pitched roof - see step 9.
+  - SLOPE_ROOF_EDGES
+  # The count. Never skipped.
+  - FILTER_ELEMENTS_BY_CATEGORY
+  - COUNT_ELEMENTS
+  - MEASURE_ELEMENT_LENGTHS
+  - READ_MODEL_WARNINGS
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - a project, not a family, is open in front, and it is the model the modeller means
+  - every size has been given for THIS request - the levels and their heights, each wall's type and points, the slab type, a point inside every room, each ceiling's type and height, the roof type, and the pitch if the roof is pitched - and none is assumed (D-33)
+  - every length is in millimetres from one origin the modeller has named (D-71)
+  - the shell is not already there - counted first, because a second run lays a second set of walls over the first and Revit only warns about it
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  THE ORDER WAS LEARNED ON THE OWNER'S OWN BUILDINGS, not decided at a desk -
+  a house plan in Project4 on 2026-09-22 and an L-shaped building of fourteen
+  rooms in Project1 on 2026-09-24, both Revit 2024. Project1 taught most of the
+  steps: its walls went in at a typed 4000 mm and were left still needing to be
+  tied to the level above; its slab went to the outside faces; its fifteen rooms
+  went in one call with none left unenclosed; and its ceilings needed two
+  heights, 2400 in the rooms and 2800 in the corridor. Its count is step 10:
+  twenty-one walls found, and their total length measured back at exactly the
+  design's 311200 mm. Project4 taught the NOT YET - a door placed through Heron
+  came out standing on its own, cutting nothing, while the answer said it was
+  placed.
+
+  Every step is one entry in Revit's undo list. DRAFT until the whole order has
+  been run from an empty level on a scratch model, with the count at the end
+  compared against the plan (NEEDS-CHECKING Group AP).

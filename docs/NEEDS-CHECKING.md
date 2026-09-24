@@ -314,6 +314,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-an.md`](needs-checking/group-an.md)
 
+## Group AP - what three downloaded skill sets raised: a pitched roof, a name two parameters share, and two claims to settle (2026-09-24)
+
+**Its own file:** [`needs-checking/group-ap.md`](needs-checking/group-ap.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

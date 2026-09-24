@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `view`, `elements`, `parameterName` and
 // `colourBand` are in scope; leaves `coloured`, `legend`, `noValue`, `skipped`,
-// `refused` and `wrapsFollowed` behind.
+// `ambiguous`, `refused` and `wrapsFollowed` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -72,11 +72,19 @@
 //
 // GetInsulationIds and GetLiningIds THROW for an element that cannot be
 // wrapped, so catching per element IS the test, as in HIGHLIGHT_VS_REST.
+//
+// AN ELEMENT CARRYING THE NAME TWICE IS NOT GROUPED AND NOT COLOURED. A shared
+// or project parameter can be bound beside a built-in one of the same name, and
+// LookupParameter then returns one of them - "determined at random", in
+// Autodesk's own reference - so its colour would say a value nobody chose. It is
+// listed in `ambiguous`, apart from `skipped` because the fix is different
+// (D-54 s3, FRAGMENT-ISSUES 5b-203).
 
 var coloured = 0;
 var legend = new List<string>();
 var noValue = new List<ElementId>();
 var skipped = new List<ElementId>();
+var ambiguous = new List<ElementId>();
 string refused = null;
 var wrapsFollowed = 0;
 
@@ -167,6 +175,11 @@ foreach (var element in elements)
     if (followsItsRun(element)) continue;
     handed++;
 
+    var twice = false;
+    try { twice = element.GetParameters(parameterName).Count > 1; }
+    catch { twice = false; }
+    if (twice) { ambiguous.Add(element.Id); continue; }
+
     // ASKED SEPARATELY FROM THE VALUE, and that separation is the whole fix.
     // `valueOf` answers "" for a parameter that is absent and for one that is
     // there and empty; only this call tells them apart.
@@ -196,6 +209,14 @@ if (string.IsNullOrEmpty((parameterName ?? "").Trim()))
 else if (handed == 0)
 {
     refused = "nothing was handed in to colour";
+}
+else if (ambiguous.Count == handed)
+{
+    refused = string.Format(
+        "every one of the {0} element(s) handed in carries TWO OR MORE parameters called '{1}' - "
+        + "usually a shared or project parameter bound beside a built-in one of the same name. "
+        + "Revit would pick one of them at random, so there is no one value to group by and "
+        + "NOTHING WAS COLOURED", handed, parameterName);
 }
 else if (carrying == 0)
 {

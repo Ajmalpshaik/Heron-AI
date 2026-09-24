@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `field`, `mode`, `text` and
 // `replacement` are in scope, and leaves `changed`, `untouched`, `blank`,
-// `readOnly`, `absent`, `unverified` and `refused` behind.
+// `readOnly`, `absent`, `ambiguous`, `unverified` and `refused` behind.
 //
 // ASSUMES AN OPEN TRANSACTION. It does not start one - Golden Rule 16 wants
 // one user action to be one undo entry, and that belongs to the operation's
@@ -64,6 +64,7 @@ var untouched = new List<ElementId>();
 var blank = new List<ElementId>();
 var readOnly = new List<ElementId>();
 var absent = new List<ElementId>();
+var ambiguous = new List<ElementId>();
 var unverified = new List<ElementId>();
 string refused = null;
 
@@ -188,6 +189,14 @@ foreach (var element in elements)
     }
     else
     {
+        // A FIELD NAME TWO PARAMETERS SHARE IS NOT EDITED. A shared or project
+        // parameter can be bound beside a built-in one of the same name, and
+        // LookupParameter then returns one of them - "determined at random", in
+        // Autodesk's own reference - and the read-back below would agree with
+        // itself. Checked on the instance, and on the type when the search
+        // reaches it (D-54 s3, FRAGMENT-ISSUES 5b-203).
+        if (element.GetParameters(field).Count > 1) { ambiguous.Add(element.Id); continue; }
+
         parameter = element.LookupParameter(field);
         if (parameter == null)
         {
@@ -195,6 +204,11 @@ foreach (var element in elements)
             // the same name is the one the modeller edited.
             Element elementType = null;
             try { elementType = doc.GetElement(element.GetTypeId()); } catch { }
+            if (elementType != null && elementType.GetParameters(field).Count > 1)
+            {
+                ambiguous.Add(element.Id);
+                continue;
+            }
             if (elementType != null) parameter = elementType.LookupParameter(field);
         }
 

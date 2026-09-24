@@ -31,5 +31,15 @@ negative:
   - given: an element deleted between the query and the call
     expect: named, with the rest of the batch completing
 
+  - given: >
+      a name two parameters on one element share - a shared parameter loaded
+      with the same name as a built-in one, bound to the category and filled in
+      (NEEDS-CHECKING P8 arranges it)
+    expect: >
+      those elements counted and named in `refused` as carrying the name twice,
+      cleared 0 for them, and BOTH parameters still holding their values.
+      Before version 2 one of the two - Revit's reference calls the choice
+      random - was emptied and counted as cleared
+
 second_route:
   - Put the parameter in a schedule and look for blank cells rather than zeros

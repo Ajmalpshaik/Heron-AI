@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "one persistent view filter per distinct value"
 kind: action
 domain: revit.views
 capability: CREATE_VIEW_FILTERS_BY_VALUE
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -40,6 +40,15 @@ purpose: >
   **The colours are stepped evenly around the hue wheel**, for the reason
   `COLOR_BY_PARAMETER` records: a fixed palette of six repeats on the seventh
   system, and two runs then look like one.
+
+  **AN ELEMENT CARRYING THE NAME TWICE IS LEFT OUT, AND NEVER CHOOSES THE
+  PARAMETER THE FILTERS ARE BUILT ON.** A shared or project parameter can be
+  bound beside a built-in one of the same name, and Revit's lookup by name then
+  returns one of them at random, in Autodesk's own words - and every filter's
+  rule is built on one parameter's id. Counted and named in `refused` (D-54 s3,
+  FRAGMENT-ISSUES 5b-203). This is version 2; version 1's proof no longer
+  describes the code and is kept as a record, and the fragment is DRAFT until it
+  is proved again.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 

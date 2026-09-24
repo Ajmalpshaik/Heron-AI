@@ -1,5 +1,6 @@
 // NOT STANDALONE. Assumes `elements`, `fromName` and `toName` are in scope;
-// leaves `copied`, `sourceEmpty`, `refused` and `typeMismatch` behind.
+// leaves `copied`, `sourceEmpty`, `ambiguous`, `refused` and `typeMismatch`
+// behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
@@ -17,9 +18,18 @@
 // AN EMPTY SOURCE IS NOT COPIED. Writing a blank over a filled destination
 // destroys data to no purpose, and it is indistinguishable afterwards from the
 // destination never having been filled.
+//
+// A NAME TWO PARAMETERS SHARE IS NOT COPIED FROM OR TO. A shared or project
+// parameter can be bound beside a built-in one of the same name, and then
+// LookupParameter returns one of them - "determined at random", in Autodesk's
+// own reference. Copying from the wrong one moves a value nobody chose; copying
+// into the wrong one fills a field no schedule is reading. Either side matching
+// twice puts the element in `ambiguous`, untouched (D-54 s3, FRAGMENT-ISSUES
+// 5b-203).
 
 var copied = 0;
 var sourceEmpty = new List<ElementId>();
+var ambiguous = new List<ElementId>();
 var refused = new List<ElementId>();
 var typeMismatch = false;
 
@@ -29,6 +39,13 @@ var pairs = new List<KeyValuePair<Parameter, Parameter>>();
 foreach (var element in elements)
 {
     if (element == null) continue;
+
+    if (element.GetParameters(fromName).Count > 1
+        || element.GetParameters(toName).Count > 1)
+    {
+        ambiguous.Add(element.Id);
+        continue;
+    }
 
     var from = element.LookupParameter(fromName);
     var to = element.LookupParameter(toName);
