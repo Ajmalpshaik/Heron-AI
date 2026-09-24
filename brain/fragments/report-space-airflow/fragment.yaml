@@ -127,3 +127,7 @@ utterances:
   - design versus actual flow
   - how much air is going into each space
   - check the space airflows
+  # ADDED 2026-09-25 (FRAGMENT-ISSUES 5b-226). With SET_AIR_TERMINAL_FLOW in the
+  # library this question reached it - a write. Design versus actual per space
+  # is what this fragment reads, so it is declared here.
+  - do the diffuser flows add up to the space airflow

@@ -116,3 +116,9 @@ utterances:
   - replace this type with another one
   - use a different diffuser type
   - swap them for the other diffuser
+  # ADDED 2026-09-25 (FRAGMENT-ISSUES 5b-220). "change the type of these air
+  # terminals to another type" reached SET_FAMILY_CATEGORY - which changes a
+  # FAMILY's category - with this fragment fourth. Declared here, so the
+  # identity route answers it before any ranking runs.
+  - change the type of these air terminals to another type
+  - change these elements to a different type
