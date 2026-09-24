@@ -18,8 +18,8 @@ puts more right tools in the top three and barely moves first place, and hands a
 questions that asked for none. **The re-ranker** takes first place down and sends more of those
 questions to a writer still — *"Ping the Revit model."* reached `UNLOAD_LINKS` — and it put the right
 clause first on the one document question there is. `A10` is closed; `A15` is measured in part and stays
-open. [`SEARCH-ADD-ONS.md`](../SEARCH-ADD-ONS.md) says all of it in plain words, for anyone deciding
-whether to install either one.
+open. [`WHAT-TO-INSTALL.md`](../WHAT-TO-INSTALL.md) says all of it in plain words, beside everything
+else a PC needs for Heron, Python first.
 
 **A MISTAKE WORTH NOT REPEATING.** Both rows waited as *"needs a machine that can reach
 huggingface.co"* while the Heron cloud environment had reached it since 2026-09-22

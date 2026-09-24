@@ -2,8 +2,8 @@
 #
 #     pip install --user -r requirements-optional.txt
 #
-# In plain words, for someone deciding whether they want the two search
-# add-ons: docs/SEARCH-ADD-ONS.md
+# In plain words - what every PC needs for Heron, and what is optional:
+#     docs/WHAT-TO-INSTALL.md
 #
 # INSTALLING ALL OF THESE IS NOT RECOMMENDED AS ONE COMMAND. One of them
 # is 500 MB to 2 GB. Read what each buys first:
