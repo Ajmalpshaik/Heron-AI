@@ -1,0 +1,75 @@
+# The first proof of tag-rooms (TAG_ROOMS, FRG-VIEW-108), 2026-09-24 -
+# NEEDS-CHECKING Group AO.
+#
+#     python tools/batch-prove.py tools/jobs/tag-rooms-project1-2026-09-24.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/tag-rooms-project1-2026-09-24.yaml
+#
+# RUN ON A TEST COPY OF Project1, never the working file. `write: true` runs
+# both legs inside a transaction group and ROLLS THEM BACK, so nothing should be
+# kept - look at the plan afterwards rather than assuming it: rollback has
+# failed before on this PC, and one Ctrl+Z removes any tag that survived.
+#
+# THE ROOMS COME FROM THE WHOLE MODEL, NOT FROM THE VIEW. The one setup step is
+# filter-elements-by-category, which collects from the whole document - NOT
+# select-by-category-name, which is view-scoped and on 2026-09-19 returned 0 of
+# a model's 7 rooms in every view, because the templates hid Rooms.
+# `keep-chain: true` hands its `elements` straight to the fragment, with no
+# selection in between, so rooms the plan hides are still handed in.
+#
+# THE CHAIN'S VALUES ARE `setup-set`, THE FRAGMENT'S ARE `set`. `category` and
+# `levelId` go to the filter; `view` and `tagTypeId` go to tag-rooms.
+#
+# POSITIVE: the rooms on Level 1, tagged in the floor plan "1 - Mech" with the
+# room tag type "Room Tag With Area". `tagged` must move off zero.
+#
+# NEGATIVE: THE SAME CALL WITH category=Ducts - the ducts on Level 1, the same
+# plan, the same tag type. None is a room, so nothing may be tagged and every
+# duct must land in `notRooms`. A different set, not an empty one: a fragment
+# that tagged whatever it was handed, or fell back to the rooms in the plan,
+# shows here as NEG NOT EMPTY.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - the binding note on the positive: elements from filter-elements-by-
+#     category (N). N is the rooms on Level 1, placed or not; compare it with a
+#     room schedule filtered to Level 1
+#   - where the rooms that were NOT tagged went: `alreadyTaggedHere` (a room
+#     tagged by hand earlier - a pass for the re-run rule, not a failure),
+#     `unplaced`, `notEnclosed`, `refused`. `findings` carries every count in
+#     one line, and Revit's own words for the first refusal
+#   - `findings` saying Room Tags are turned off in "1 - Mech": the tags were
+#     placed and that plan will not show them. Worth knowing before a run there
+#     is KEPT; the second route then needs a plan that shows Room Tags
+#
+# THE TYPE NAME. "Room Tag With Area" binds only when exactly one loaded family
+# type has that name, and the add-in refuses rather than picks when two do. If
+# the run is refused as ambiguous, write it with its family:
+# "M_Room Tag: Room Tag With Area" - the colon straight after the family name.
+#
+# NOT SET HERE: `in:`. Without it the run reads the model in front, so bring
+# the test copy to the front. With two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Project1 (a test copy), Revit 2024 - floor plan "1 - Mech", Level 1
+
+defaults:
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: tag-rooms
+    expect: tagged
+    keep-chain: true
+    setup:
+      - filter-elements-by-category
+    setup-set:
+      category: Rooms
+      levelId: Level 1
+    negative-setup-set:
+      category: Ducts
+      levelId: Level 1
+    set:
+      view: "1 - Mech"
+      tagTypeId: "Room Tag With Area"
+    negative-set:
+      view: "1 - Mech"
+      tagTypeId: "Room Tag With Area"

@@ -1,0 +1,198 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-108
+semantic-identity: "put a room tag on each of these rooms, in this view"
+kind: action
+domain: revit.annotation
+capability: TAG_ROOMS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places one room tag on each room handed in, in one floor or ceiling plan, at
+  the room's own reference point, and gives every tag the room tag type the
+  caller named. It makes Revit's own room-tag element, with the document's
+  room-tag call (NewRoomTag). TAG_ELEMENTS makes the kind of tag every other
+  category takes, and that is NOT the same element: it did tag rooms on
+  2026-09-23 - "tagged 5, refused 0" in Project1's "1 - Mech" - but as
+  IndependentTags (revit_annotation's count rose 0 to 5). Whether those act as
+  room tags - CENTER_ROOM_TAGS, STACK_TAGS and ARRANGE_TAGS want the RoomTag
+  kind - is NOT yet checked. Until it is, rooms are tagged here. Those three
+  only move room tags that already exist.
+
+  **THE ROOMS COME FROM THE FRAGMENT BEFORE, COLLECTED FROM THE WHOLE MODEL.**
+  A collector scoped to a view returns only what Visibility/Graphics shows, and
+  mechanical templates hide Rooms: on 2026-09-19 one found 0 of a model's 7
+  rooms in every view, a plan made for rooms included. So this never looks for
+  rooms in the view. FILTER_ELEMENTS_BY_CATEGORY, with Rooms and the plan's
+  level, hands them in.
+
+  **THE TAG TYPE IS AN INPUT AND IS NEVER GUESSED (D-33).** "Room Tag", "Room
+  Tag With Area" and "Room Tag With Volume" print different drawings, and which
+  one the office issues is the modeller's call. A type that is not a room tag
+  type - a duct tag, a door tag - is refused before anything is placed, and so
+  is a view that is not a plan of one level.
+
+  **ONE TAG PER ROOM PER VIEW, AND A ROOM ALREADY TAGGED IS LEFT ALONE.** The
+  room tags already in this plan are read from the whole model by the view that
+  owns them, never from what the view shows, so a tag the view hides still
+  counts. A re-run adds nothing on top of the last one; a duplicate would land
+  exactly on the first and stay invisible until somebody dragged one.
+
+  **EVERY ROOM IT DOES NOT TAG IS NAMED, WITH ITS REASON** - not a room at all,
+  already tagged here, not placed, not enclosed or redundant (no area), on
+  another level from this plan, or refused by Revit. A count that drops with no
+  reason given reads as rooms the tool could not handle.
+
+  **EVERY TAG IS READ BACK.** A tag counts only when it carries the type asked
+  for and points at the room it was made for. One that does not is removed
+  again, inside the same undo, and its room is named: a tag on the wrong room
+  still prints a confident name.
+
+  **IT PLACES, IT DOES NOT LAY OUT.** The reference point is where the room was
+  placed and is normally inside it, but a room re-shaped since can leave it
+  outside. CENTER_ROOM_TAGS puts tags back in the middle of their rooms.
+
+  **A TAG IN A PLAN THAT HIDES ROOM TAGS IS PLACED AND NOT SHOWN.** When Room
+  Tags are off in the plan's Visibility/Graphics, or its template's, `findings`
+  says so - the tags are in the model and the drawing looks unchanged.
+
+  **LINKED ROOMS ARE NOT TAGGED HERE.** A room in the architect's link needs the
+  link as well as the room, and nothing hands that pair in yet. A room from
+  another model is refused, never tagged by an id that means something else in
+  this one.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a whole
+  plan's worth of room tags is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      # The floor or ceiling plan the tags go in, BY NAME. A floor plan and a
+      # ceiling plan often share one; "FloorPlan: 1 - Mech" says which. Its
+      # level decides which rooms are tagged.
+      type: View
+      source: request
+    - name: elements
+      # The rooms, left by the fragment before - FILTER_ELEMENTS_BY_CATEGORY
+      # with category=Rooms and levelId set to the plan's level. That one
+      # collects from the whole model. A view-scoped collector returns only
+      # what Visibility/Graphics shows, which was 0 of 7 rooms in every view of
+      # one model on 2026-09-19.
+      type: IList<Element>
+    - name: tagTypeId
+      # The room tag type, BY NAME: "Room Tag With Area", or with its family -
+      # "M_Room Tag: Room Tag With Area" - when the short name is not unique.
+      # The add-in looks it up among the loaded family types and REFUSES a
+      # name that matches twice rather than picking one. Never guessed (D-33),
+      # and refused before anything is placed unless it is a Room Tags type.
+      type: ElementId
+      source: request
+  provides:
+    - name: tagged
+      role: result
+      type: int
+    - name: newTags
+      # The room tags this placed - each read back carrying the type asked for
+      # and pointing at its own room.
+      role: result
+      type: IList<ElementId>
+    - name: mismatched
+      # Rooms whose new tag read back pointing at a DIFFERENT room. That tag is
+      # removed again inside the same undo. A fact about what it made, like
+      # PLACE_ROOM_AT_POINT's `unenclosed`, not an input it could not use.
+      role: result
+      type: IList<ElementId>
+    - name: alreadyTaggedHere
+      # Rooms that already carry a room tag in this plan, so there was nothing
+      # to do. The evidence it looked, never a tag it placed (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notRooms
+      # Handed in and not rooms - a duct, a space, an area - and left alone.
+      # What it was GIVEN and could not use, never a thing it found (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: unplaced
+      # Rooms with no location: in the schedule, in no plan, so nowhere to put
+      # a tag. The same word MEASURE_ROOM_DIMENSIONS uses (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notEnclosed
+      # Placed rooms with no area - not enclosed by walls or separation lines,
+      # or redundant with another room. Given and unusable (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: otherLevel
+      # Rooms on a different level from the plan's. Left for that level's plan
+      # rather than tagged where they are not drawn (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: refused
+      # Rooms Revit would not tag, or whose tag would not take the type asked
+      # for (that tag removed again), and rooms of another model. Why it
+      # declined, never a thing it FOUND (D-52). `findings` quotes Revit's
+      # first refusal.
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. The room-tag creation call
+  NewRoomTag(LinkElementId, UV, ElementId), RoomTag.TaggedLocalRoomId,
+  Element.GetTypeId and ChangeTypeId, View.GenLevel, GetPrimaryViewId,
+  GetDependentViewIds and GetCategoryHidden, and FamilySymbol.IsActive and
+  Activate carry the same signatures 2020 to 2027 - read off every release's
+  shipped reference assemblies with `tools/api-surface --members` on
+  2026-09-24. The room tags already in the plan are collected by CATEGORY over
+  the whole model, because Revit's class filter refuses the room tag class and
+  a view-scoped collector misses the tags a view hides. No ElementId is built
+  from a number and none is read as one, so 2024's move to 64-bit ids and the
+  removal of IntegerValue after 2025 do not reach this code.
+
+# ROUTING - the rows about room tags are also in TAG_ELEMENTS and
+# CENTER_ROOM_TAGS.
+#
+#   "tag all the rooms in the active view" -> here, after FILTER_ELEMENTS_BY_
+#                                            CATEGORY with category=Rooms and
+#                                            the plan's level. Never a view-
+#                                            scoped collect: it can return no
+#                                            rooms at all
+#   "tag the rooms"                        -> here
+#   "put tags on these"                    -> TAG_ELEMENTS. Ducts, pipes,
+#                                            equipment - the tag a room will
+#                                            not take
+#   "tag everything in this view"          -> TAG_ELEMENTS_IN_VIEW, a mixed set
+#                                            by category. It has no room entry
+#                                            and reports a room as not tagged
+#   "centre the room tags"                 -> CENTER_ROOM_TAGS, which only MOVES
+#                                            room tags that already exist - for
+#                                            tidying these afterwards
+#   "stack the tags at the side"           -> STACK_TAGS, for tags that exist
+#
+# A QUESTION RANKS HERE, AND THIS WRITES. Measured 2026-09-24 against a store
+# built from this library: "which rooms are not tagged" and "are all the rooms
+# tagged" both rank THIS card first (words #1, nearness #1), where before it
+# existed they reached FIND_UNTAGGED_ELEMENTS. Neither sentence is declared
+# anywhere. FIND_UNTAGGED_ELEMENTS, a read, is second in both shortlists, so
+# heron_lookup prints its "check this is a change you meant to make" warning -
+# the floor, not the fix. And that read cannot answer the question either: it
+# reads only the other tag class, so to it every room is untagged. No read sees
+# room tags yet. Recorded for the owner, not repaired by rewording this card.
+
+utterances:
+  - tag all the rooms in the active view
+  - tag the rooms
+  - put room tags on every room in this view

@@ -125,6 +125,15 @@ compatibility-note: >
 #   "put tags on these"                  -> here
 #   "centre the room tags"               -> CENTER_ROOM_TAGS, which only
 #                                           MOVES tags that already exist
+#   "tag the rooms"                      -> TAG_ROOMS, which makes Revit's own
+#                                           room-tag element (NewRoomTag). This
+#                                           one DID tag rooms on 2026-09-23 -
+#                                           "tagged 5, refused 0" in Project1's
+#                                           "1 - Mech" - but as IndependentTags
+#                                           (revit_annotation's count rose 0 to
+#                                           5). Whether those act as room tags
+#                                           (CENTER_ROOM_TAGS wants the RoomTag
+#                                           kind) is NOT yet checked
 #   "stack the tags at the side"         -> STACK_TAGS, for tags that already
 #                                           exist
 

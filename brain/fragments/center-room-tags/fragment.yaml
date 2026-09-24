@@ -119,9 +119,11 @@ compatibility-note: >
 #                                           small rooms' tags close together
 #   "which tags overlap"                 -> FIND_OVERLAPPING_TAGS
 #   "what are the tags pointing at"      -> REPORT_TAGS_AND_TARGETS
-#   "tag the rooms"                      -> TAG_ELEMENTS_IN_VIEW places the
-#                                           missing ones; this only moves tags
-#                                           that already exist
+#   "tag the rooms"                      -> TAG_ROOMS places them; this only
+#                                           moves room tags that already exist.
+#                                           TAG_ELEMENTS_IN_VIEW, named here
+#                                           until 2026-09-24, has no room entry
+#                                           and cannot place one
 #   "put tags on these"                  -> TAG_ELEMENTS. This one moves the
 #                                           ones that are already there
 #   "there is no room for the tags here" -> STACK_TAGS, which gathers them at

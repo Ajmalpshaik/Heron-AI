@@ -1,0 +1,119 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-037
+semantic-identity: "set where these rooms or spaces stop at the top - a level and an offset"
+kind: action
+domain: revit.rooms
+capability: SET_ROOM_LIMITS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets the top of each room or MEP space handed in - its Upper Limit, a level,
+  and its Limit Offset from that level - together, in one undo.
+
+  **NOTHING ELSE COULD TIE A ROOM'S TOP TO A LEVEL.** WRITE_ELEMENT_PARAMETERS
+  refuses a parameter that stores an element id, deliberately, because "Level 2"
+  as text is a name and not a level. So a room's height could be changed by its
+  offset but never measured from the level above. Here the level arrives
+  resolved by name - refused if two levels share it - and is written as that
+  level.
+
+  **BOTH ARE SET TOGETHER, BECAUSE EITHER ALONE MOVES THE TOP.** Change the level
+  and keep the offset and the top jumps by the distance between the levels. On
+  2026-09-24, in Project1, one room's Upper Limit was moved to Level 2 by hand
+  with its offset left at +3700, and its top went 3700 mm above Level 2, through
+  the slab. The caller names the level and the offset, and the top they make is
+  worked out before anything is written.
+
+  **A TOP AT OR BELOW THE ROOM'S OWN FLOOR IS REFUSED**, per room, before
+  anything is written to it - the floor being the room's level plus its base
+  offset.
+
+  **ROOMS AND SPACES ALIKE**, told apart by category, since both carry the same
+  Upper Limit and Limit Offset. Anything else - an Area included - is named and
+  left alone.
+
+  **EVERY ONE IS READ BACK** after one regeneration: the level it names and the
+  offset it holds. One whose values did not stick is named, never counted.
+
+  It does not decide how high a room should go - that is the caller's. The house
+  rule recorded 2026-09-24 is rooms to the underside of the slab above and MEP
+  spaces to the ceiling; the VA BIM Manual v2.2 (2023), 2.13.1, puts both to the
+  underside of the deck with ceilings as bounding elements.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: upperLevel
+      type: Level
+      source: request
+    # Millimetres from the upper level - negative is below it, e.g. -300 for
+    # the underside of a 300 mm slab. Converted once to feet (D-71).
+    - name: limitOffset
+      type: double
+      source: request
+  provides:
+    - name: changed
+      role: result
+      type: int
+    - name: alreadyRight
+      # Already at this level and offset, so there was nothing to do. The
+      # evidence it looked, never a change it made (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notSpatial
+      # Handed in but not a room or a space - an Area included. Given and
+      # unusable (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: topBelowFloor
+      # The asked-for top would sit at or below the room's own floor, so
+      # nothing was written to it (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: refused
+      # Read-only, no base level, or the values did not stick. Named, never
+      # counted (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. It writes the two built-in parameters
+  every room and space carries - ROOM_UPPER_LEVEL, an element id, and
+  ROOM_UPPER_OFFSET, a length - and reads the floor from ROOM_LEVEL_ID and
+  ROOM_LOWER_OFFSET. No ElementId is built from a number, and categories are
+  compared ElementId to ElementId.
+
+# ROUTING
+#
+#   "set the rooms' upper limit to level 2"  -> here
+#   "rooms up to the slab soffit"            -> here, the level above and minus
+#                                               the slab depth
+#   "spaces up to the ceiling"               -> here, the room's own level and
+#                                               the ceiling height
+#   "how high are these rooms"               -> READ_ROOM_GEOMETRY, a read
+#   "put these walls on another level"       -> SET_WALL_CONSTRAINTS, walls only
+
+utterances:
+  - set the room upper limit to the level above
+  - make the rooms go up to the slab soffit
+  - set the space height to the ceiling
+  - tie the room tops to level 2
+  - change the upper limit of these rooms

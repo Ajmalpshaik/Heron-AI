@@ -314,6 +314,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-an.md`](needs-checking/group-an.md)
 
+## Group AO - `tag-rooms`, `place-hosted-family` version 2 and `set-room-limits`: room tags on a plan's rooms, doors into the wall found at each point, and room tops tied to a level (2026-09-24)
+
+**Its own file:** [`needs-checking/group-ao.md`](needs-checking/group-ao.md)
+
 ## Group AP - what three downloaded skill sets raised: a pitched roof, a name two parameters share, and two claims to settle (2026-09-24)
 
 **Its own file:** [`needs-checking/group-ap.md`](needs-checking/group-ap.md)
