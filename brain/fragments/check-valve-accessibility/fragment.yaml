@@ -108,9 +108,13 @@ compatibility-note: >
   `ElementIntersectsSolidFilter` and
   `GeometryCreationUtilities.CreateExtrusionGeometry` are unchanged 2020 through
   2027 - read off the reference assemblies at both ends. `envelope` and
-  `maxReachHeight` arrive in internal FEET. The height is measured above the
-  accessory's own level using `ProjectElevation`, never `Elevation`: a level has
-  two heights and only one is in the same space as a point in the model.
+  `maxReachHeight` arrive in millimetres and are divided by 304.8 in the code
+  (D-71) - no units API is touched. (This note said they "arrive in internal
+  FEET" until 2026-09-24, while the code and its own proof - 1 and 100000 in,
+  0.0033 and 328.08 feet used - said millimetres.) The height is measured
+  above the accessory's own level using `ProjectElevation`, never `Elevation`:
+  a level has two heights and only one is in the same space as a point in the
+  model.
 
 # ROUTING - repeated in CHECK_EQUIPMENT_CLEARANCE and CHECK_OBSTRUCTIONS.
 #

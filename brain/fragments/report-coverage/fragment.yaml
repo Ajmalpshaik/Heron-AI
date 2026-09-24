@@ -42,8 +42,11 @@ contract:
   needs:
     - name: elements
       type: IList<Element>
-    # Internal units. No default: a throw, a code spacing and a lighting level
-    # are three different numbers for the same diffuser.
+    # MILLIMETRES, divided by 304.8 in the code before first use (D-71). This
+    # comment said "Internal units." until 2026-09-24, while the code and its
+    # own proof - 50000 in, 164.04 feet used - said millimetres. No default: a
+    # throw, a code spacing and a lighting level are three different numbers
+    # for the same diffuser.
     - name: coverageRadius
       type: double
       source: request

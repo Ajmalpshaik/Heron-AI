@@ -98,7 +98,10 @@ compatibility-note: >
   unchanged 2020 through 2027 - read off the reference assemblies at both ends.
   `Domain.DomainStructuralAnalytical` is deliberately NOT named: it arrives at a
   later release and naming it would break the 2020 build for a domain no duct or
-  pipe ever carries. `sizeTolerance` arrives in internal FEET.
+  pipe ever carries. `sizeTolerance` arrives in millimetres and is divided by
+  304.8 in the code (D-71) - no units API is touched. (This note said it
+  "arrives in internal FEET" until 2026-09-24, while the code and its own
+  proof - 1 in, 0.0033 feet used - said millimetres.)
 
 # ROUTING - repeated in TRACE_CONNECTIVITY, CONNECT_OPEN_ENDS and
 # REPORT_CONNECTOR_LOADS.

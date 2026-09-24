@@ -105,8 +105,11 @@ compatibility-note: >
   One implementation for every release. `ReferenceIntersector`,
   `FindReferenceTarget`, `ReferenceWithContext.Proximity` and `View3D` are
   unchanged 2020 through 2027 - read off the reference assemblies at both ends.
-  `tolerance` arrives in internal FEET; the millimetres the person spoke are
-  converted at the edge, before this.
+  `tolerance` arrives in millimetres and is divided by 304.8 in the code
+  (D-71) - no units API is touched. (This note said it "arrives in internal
+  FEET", with the millimetres converted at the edge before this, until
+  2026-09-24, while the code and its own proof - 100000 in, 328.08 feet used -
+  said millimetres.)
 
 # ROUTING - repeated in READ_CEILING_GRID, SNAP_TO_GRID and
 # MEASURE_CEILING_HEIGHT.

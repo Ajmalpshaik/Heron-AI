@@ -41,7 +41,10 @@ contract:
       type: Document
     - name: elements
       type: IList<Element>
-    # Internal units. Zero means "leave this one alone", so one call can set a
+    # MILLIMETRES, all three, divided by 304.8 in the code before first use
+    # (D-71). This comment said "Internal units." until 2026-09-24, while the
+    # code and its own proof - 400 and 300 in, 1.31 and 0.98 feet used - said
+    # millimetres. Zero means "leave this one alone", so one call can set a
     # diameter without also being asked what the width should be.
     - name: width
       type: double

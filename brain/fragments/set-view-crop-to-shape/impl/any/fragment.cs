@@ -1,6 +1,10 @@
 // NOT STANDALONE. Assumes `doc`, `view`, `boundary` and `joinTolerance` are in
 // scope; leaves `applied`, `worstGap` and `refused` behind.
-// ASSUMES AN OPEN TRANSACTION (Golden Rule 16). Tolerances are internal FEET.
+// ASSUMES AN OPEN TRANSACTION (Golden Rule 16). `joinTolerance` ARRIVES IN
+// MILLIMETRES and is divided by 304.8 below (D-71). `worstGap` is measured in
+// the model and left behind in internal FEET; only the sentence reporting it
+// says millimetres. (This line said "Tolerances are internal FEET" until
+// 2026-09-24.)
 //
 // SET_VIEW_CROP CANNOT DO THIS. That one sets the crop BOX - two corners and a
 // transform, so it can only ever be a rectangle. A shaped crop goes through the

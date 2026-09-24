@@ -93,8 +93,12 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. `ReferenceIntersector`, `Find` and
-  `ReferenceWithContext.Proximity` are unchanged 2020 to 2027. Distances arrive
-  and are used in Revit's internal feet with no units call.
+  `ReferenceWithContext.Proximity` are unchanged 2020 to 2027. `maxDistance`
+  and `offsetAlongRay` arrive in millimetres and are divided by 304.8 in the
+  code (D-71); from there they are used in Revit's internal feet, and no
+  units API is touched. (This note said distances "arrive and are used in
+  Revit's internal feet" until 2026-09-24, while the code and its own proof -
+  50000 in, 164.04 feet used - said millimetres.)
 
 # ROUTING - repeated in CHECK_SURFACE_FIT and SNAP_TO_GRID.
 #

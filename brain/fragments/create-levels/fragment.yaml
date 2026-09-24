@@ -101,10 +101,14 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. `Level.Create`, `Level.Name` and
-  `Level.ProjectElevation` are unchanged 2020 to 2027. Elevations arrive and are
-  returned in Revit's internal feet with no units API touched - D-20 keeps the
-  millimetre conversion at the edge where the user is, which is also what keeps
-  this clear of the 2021 units move.
+  `Level.ProjectElevation` are unchanged 2020 to 2027. `elevations` arrive in
+  millimetres and are divided by 304.8 in the code (D-71); what comes back -
+  `elevationOf` and `alreadyThere` - stays in Revit's internal feet. No units
+  API is touched, which is what keeps this clear of the 2021 units move. (This
+  note said "Elevations arrive and are returned in Revit's internal feet",
+  with D-20 keeping the millimetre conversion at the edge, until 2026-09-24,
+  while the code and its own proof - 4000 in, 13.12 feet used - said
+  millimetres. The returning half was true all along.)
 
 # ROUTING - repeated in CREATE_GRIDS and CREATE_LEVEL.
 #

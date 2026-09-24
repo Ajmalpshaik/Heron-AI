@@ -79,8 +79,14 @@ compatibility-note: >
   `ViewCropRegionShapeManager.SetCropShape`, `CanHaveShape` and
   `IsCropRegionShapeValid` are present 2020 through 2027, as are
   `VIEWER_CROP_REGION` and `VIEWER_CROP_REGION_VISIBLE` - read off the reference
-  assemblies at both ends. `joinTolerance` and `worstGap` are in internal FEET;
-  the millimetres the person spoke are converted at the edge, before this.
+  assemblies at both ends. `joinTolerance` arrives in millimetres and is
+  divided by 304.8 in the code (D-71) - no units API is touched. `worstGap` is
+  a distance measured between curve ends in the model, so the value left
+  behind is internal FEET; the sentence added to `refused` when a gap was
+  bridged multiplies it by 304.8 and states it in millimetres. (This note said
+  both were internal FEET, with the millimetres converted at the edge before
+  this, until 2026-09-24, while the code had divided `joinTolerance` by 304.8
+  since 2026-09-13.)
 
 # ROUTING - repeated in SET_VIEW_CROP and SET_VIEW_SECTION_BOX.
 #
