@@ -314,6 +314,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-an.md`](needs-checking/group-an.md)
 
+## Group AO - `tag-rooms`, `place-hosted-family` version 2 and `set-room-limits`: room tags on a plan's rooms, doors into the wall found at each point, and room tops tied to a level (2026-09-24)
+
+**Its own file:** [`needs-checking/group-ao.md`](needs-checking/group-ao.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
