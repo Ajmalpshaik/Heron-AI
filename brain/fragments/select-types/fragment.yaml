@@ -126,6 +126,13 @@ compatibility-note: >
 #
 #   "give me the types themselves"      -> here
 #   "list the wall types in this model" -> here
+#   "what are the mullion types in this model"
+#                                       -> here, category Curtain Wall Mullions.
+#                                          A LISTING question. Without this row
+#                                          it reached SET_CURTAIN_WALL_MULLIONS,
+#                                          a write, measured 2026-09-25; the one
+#                                          type's mullions are
+#                                          REPORT_CURTAIN_WALL_TYPE's
 #   "rename that type"                  -> RENAME_ELEMENTS does the renaming.
 #                                          This one is how the type is REACHED
 #                                          when nothing of it is placed, which
@@ -154,3 +161,4 @@ utterances:
   - find the type by name
   - the types not the instances
   - show me every family type in this category
+  - what are the mullion types in this model

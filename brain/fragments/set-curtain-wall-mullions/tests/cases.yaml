@@ -1,0 +1,130 @@
+# THE PROOF PLAN, written 2026-09-24 and NOT RUN. Nothing here has touched a
+# model (D-30); every case says what to arrange and what must come back. The
+# owner runs it, on a TEST COPY - the first positive with the first negative is
+# tools/jobs/set-curtain-wall-mullions-test-projject-2026-09-24.yaml, and with
+# the second negative tools/jobs/set-curtain-wall-mullions-unknown-name-test-
+# projject-2026-09-24.yaml. Two files, because a batch keeps one draft per
+# fragment.
+#
+# THE TYPE IS BUILT, NOT FOUND - the same four steps as SET_CURTAIN_WALL_GRID,
+# rolled back with everything else:
+#   1. CREATE_WALL draws one 9000 mm wall, 3000 mm high, of an EXISTING curtain
+#      wall type - "Curtain Wall: Curtain Wall 1" in Revit's templates, which
+#      has no grid lines and no mullions: the cleanest "before" there is
+#   2. DUPLICATE_TYPE copies that wall's type as "HERON CW MULLION PROOF"
+#   3. CHANGE_ELEMENT_TYPE puts the wall on the copy
+#   4. this fragment, on "HERON CW MULLION PROOF"
+# See set-curtain-wall-grid/tests/cases.yaml for why it is built in that order.
+#
+# NOTHING MAY BE SELECTED IN REVIT WHEN THE POSITIVE STARTS - press Esc.
+# Steps 2 and 3 take the selection before they take what step 1 made.
+#
+# READ `measured` BEFORE `applied`. It must name ONE wall, 9000 mm long.
+#
+# THE MULLION TYPE IS A GUESS UNTIL CHECKED. "Rectangular Mullion: 50 x 150mm"
+# is in Revit's metric templates; whether `test projject` has it has not been
+# read. The second negative below prints every mullion type the model has, so
+# its own answer is the list to correct the name from.
+#
+# THE COUNTS ARE DERIVED, NOT REMEMBERED. Curtain Wall 1 has no grid lines, so
+# each edge of the wall is ONE border segment: Border 1 and Border 2 of the
+# vertical mullions are the wall's two ends, and Border 1 and Border 2 of the
+# horizontal ones its base and its top - four edges, one mullion each.
+
+positive:
+  - given: >
+      the arrangement above in `test projject`, Revit 2024, on "Level 1": the
+      wall from "0,60000,0" to "9000,60000,0" - well clear of the building -
+      height 3000, structural false;
+      curtainWallType "HERON CW MULLION PROOF"; mullions "vertical border
+      1=Rectangular Mullion: 50 x 150mm; vertical border 2=Rectangular Mullion:
+      50 x 150mm; horizontal border 1=Rectangular Mullion: 50 x 150mm;
+      horizontal border 2=Rectangular Mullion: 50 x 150mm"
+    expect: >
+      wallsOfType 1, applied 4, alreadyAsAsked 0, differs empty, refused empty.
+      readBack names the four border positions "'Rectangular Mullion: 50 x
+      150mm', was none - asked for 'Rectangular Mullion: 50 x 150mm'" and both
+      interior positions "not asked, left as it was". measured names one wall,
+      "9000 mm long", with 0 vertical and 0 horizontal grid lines; mullions
+      before "none", now "2 x horizontal 'Rectangular Mullion: 50 x 150mm', 2 x
+      vertical 'Rectangular Mullion: 50 x 150mm'" - four edges, one mullion
+      each (derivation above)
+
+  - given: >
+      the same arrangement with SET_CURTAIN_WALL_GRID as a fourth setup step
+      before this one - grid "vertical layout=fixed distance; vertical
+      spacing=1500" on the same copy - and mullions "vertical
+      interior=Rectangular Mullion: 50 x 150mm". RUN ONLY ONCE
+      SET_CURTAIN_WALL_GRID HAS PASSED ITS OWN PROOF: here it is part of the
+      arrangement, and an arrangement nobody has proved proves nothing
+    expect: >
+      applied 1; measured shows 5 vertical grid lines (derived in
+      set-curtain-wall-grid's cases) and the mullions now "5 x vertical
+      'Rectangular Mullion: 50 x 150mm'" - one per interior line, each line a
+      single segment because the copy has no horizontal lines
+
+  - given: >
+      the first case with the bare type name - mullions "vertical border
+      1=50 x 150mm" - on a model where no other mullion type is called that;
+      and again spelled "Rectangular Mullion : 50 x 150mm", a space before the
+      colon
+    expect: >
+      both resolve to the same type as the full name: applied 1, and readBack's
+      vertical border 1 reads "'Rectangular Mullion: 50 x 150mm'". Two
+      spellings of one name, not a guess between two names
+
+  - given: the first case again on Revit 2020
+    expect: >
+      the same answer. One path serves every release, and this is the release
+      at the other end of the range
+
+negative:
+  - given: >
+      the same arrangement and the SAME mullions, with curtainWallType "Basic
+      Wall: Generic - 200mm" - the basic type CREATE_WALL was proved with in
+      this model. A type it must NOT touch, not an empty request
+    expect: >
+      applied 0, differs empty, wallsOfType 0, readBack and measured empty.
+      refused names the type: "is a basic wall type, not a curtain wall type -
+      it has no mullions to set", ending "Nothing was changed"
+
+  - given: >
+      the same arrangement; mullions "vertical border 1=HERON NO SUCH MULLION"
+    expect: >
+      refused "No mullion type called 'HERON NO SUCH MULLION' in this model",
+      followed by EVERY mullion type the model has, in the Properties spelling,
+      and that Heron does not load families; applied 0, readBack empty. Nothing
+      is chosen for the modeller and nothing is loaded
+
+  - given: >
+      a bare type name two mullion families in the model share - only if the
+      list the case above prints has one; if it has none, this case cannot be
+      arranged in this model and is recorded NOT RUN, never passed
+    expect: >
+      refused "2 mullion types are called", naming both in the family-and-type
+      spelling; applied 0. Never chosen from (D-54 s3)
+
+  - given: >
+      the arrangement; mullions "vertical interior=" - a position with nothing
+      after the equals sign - and separately "top border=none"
+    expect: >
+      the first refused "was given no mullion type. Name one, or say none"; the
+      second refused naming the six positions this sets. applied 0 both times.
+      A blank is never read as none
+
+  - given: >
+      the arrangement; mullions "vertical interior=none" - the copy of Curtain
+      Wall 1 already holds none there
+    expect: >
+      applied 0 and alreadyAsAsked 1, NOT a refusal: findings says nothing
+      needed changing. A request already met writes nothing and counts nothing
+      as done
+
+second_route:
+  - >
+      By hand on a test copy: duplicate the same curtain wall type, set the four
+      Border 1 and Border 2 types under Vertical Mullions and Horizontal
+      Mullions to Rectangular Mullion : 50 x 150mm in Type Properties, draw a
+      9000 mm wall of it, and count the mullions - Tab through them in a 3D
+      view, or a Curtain Wall Mullion schedule filtered to that wall. Four,
+      matching `measured`

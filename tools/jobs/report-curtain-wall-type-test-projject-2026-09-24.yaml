@@ -1,0 +1,73 @@
+# REPORT_CURTAIN_WALL_TYPE - the proof plan as a batch-prove job. NOT RUN. 2026-09-24.
+# The cases are in brain/fragments/report-curtain-wall-type/tests/cases.yaml.
+#
+#     python tools/batch-prove.py tools/jobs/report-curtain-wall-type-test-projject-2026-09-24.yaml --dry-run --session <pid>
+#     python tools/batch-prove.py tools/jobs/report-curtain-wall-type-test-projject-2026-09-24.yaml --session <pid>
+#
+# RUN IT AFTER set-curtain-wall-grid-test-projject-2026-09-24.yaml HAS PASSED.
+# The fifth setup step here is that DRAFT fragment, and an arrangement nobody
+# has proved proves nothing. Until then, the second positive in the cases -
+# an existing curtain wall type read with no setup - needs no writer.
+#
+# A READ FRAGMENT WITH WRITING SETUP STEPS. `write: true` is what lets them
+# run: `validate --write` sends every step that changes the model WITH this
+# fragment, and the add-in runs them all in one transaction group and rolls it
+# back - so this read happens on a type that exists only for the length of the
+# run. The fragment itself writes nothing, so the rollback undoes only the
+# arrangement.
+#
+# EVERYTHING IN set-curtain-wall-grid-test-projject-2026-09-24.yaml's HEADER
+# HOLDS HERE: check "Curtain Wall 1" exists, press Esc so nothing is selected,
+# and check the line 60 m north is empty.
+#
+# ONE SET OF VALUES FEEDS ALL FIVE STEPS, as there. `curtainWallType` is read
+# by BOTH set-curtain-wall-grid and this fragment - on purpose: the grid is
+# laid out on the type this one then reads.
+
+model: test projject, Revit 2024 - a TEST COPY
+
+defaults:
+  in: test projject
+  write: true
+  setup:
+    - create-wall
+    - duplicate-type
+    - change-element-type
+    - set-curtain-wall-grid
+  set:
+    level: "Level 1"
+    wallType: "Curtain Wall: Curtain Wall 1"
+    points: "0,60000,0; 9000,60000,0"
+    height: "3000"
+    structural: "false"
+    newTypeName: "HERON CW READ PROOF"
+    newTypeId: "HERON CW READ PROOF"
+    curtainWallType: "HERON CW READ PROOF"
+    grid: "vertical layout=fixed distance; vertical spacing=1500; horizontal layout=minimum spacing; horizontal spacing=800"
+  negative-set:
+    # THE SAME ARRANGEMENT AND THE SAME REQUEST, AIMED AT A TYPE IT MUST NOT
+    # READ AS A CURTAIN WALL - the basic wall type CREATE_WALL was proved with
+    # in this model. The grid step is handed it too, and refuses it without
+    # changing anything.
+    level: "Level 1"
+    wallType: "Curtain Wall: Curtain Wall 1"
+    points: "0,60000,0; 9000,60000,0"
+    height: "3000"
+    structural: "false"
+    newTypeName: "HERON CW READ PROOF"
+    newTypeId: "HERON CW READ PROOF"
+    curtainWallType: "Basic Wall: Generic - 200mm"
+    grid: "vertical layout=fixed distance; vertical spacing=1500; horizontal layout=minimum spacing; horizontal spacing=800"
+
+jobs:
+  - fragment: report-curtain-wall-type
+    # `gridsLaidOut` is the thing found: directions the type lays grid lines
+    # out in. `layoutsDisagreeing` must stay empty.
+    expect: gridsLaidOut
+    note: >
+      Positive: gridsLaidOut 2, mullionPositionsFilled 0, layoutsDisagreeing
+      empty, wallsOfType 1; settings reads the vertical layout as Fixed
+      Distance (Revit's value 1) at 1500.0 mm and the horizontal as Minimum
+      Spacing (Revit's value 5) at 800.0 mm - what the grid step wrote, read
+      back by a second fragment. Negative: gridsLaidOut 0, settings empty,
+      refused "is a basic wall type, not a curtain wall type".

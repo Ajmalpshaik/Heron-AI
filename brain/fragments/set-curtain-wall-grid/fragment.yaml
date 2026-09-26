@@ -1,0 +1,233 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-072
+semantic-identity: "set how a curtain wall type's grid lines are laid out and spaced, each way"
+kind: action
+domain: revit.elements
+capability: SET_CURTAIN_WALL_GRID
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets a curtain wall TYPE's grid - the Layout and the Spacing of its Vertical
+  Grid, its Horizontal Grid, or both, which is what Type Properties shows under
+  those two headings. Only what the modeller names changes: a direction, or a
+  setting, left out of the request is left exactly as it is.
+
+  **IT CHANGES THE TYPE, SO IT CHANGES EVERY WALL OF THAT TYPE.** The walls
+  using it are counted before anything is written, and the count is the first
+  line of the answer - "used by 12 walls - every one of them changed with the
+  type". To change one wall alone, DUPLICATE_TYPE first, put that wall on the
+  copy with CHANGE_ELEMENT_TYPE, and set the copy.
+
+  **THE TYPE IS NAMED, NOT SELECTED.** "Curtain Wall: Storefront", or the bare
+  type name when no other wall type shares it (D-54). The change is a type
+  change, and naming the type keeps that in the request itself; a selected
+  wall would read as "this wall" and change a hundred. REPORT_CURTAIN_ELEMENTS
+  on a selected curtain wall prints its name, which for a wall is its type's.
+  A wall type that is not a curtain wall - a basic or a stacked one - is
+  refused by name and nothing is changed.
+
+  **WHY NOT WRITE_ELEMENT_PARAMETERS.** "Layout" and "Spacing" each appear
+  twice on a curtain wall type, once per direction, and a lookup by name picks
+  one of the two with no rule for which - so that fragment refuses the name
+  (D-54 s3, FRAGMENT-ISSUES 5b-203). This reaches each setting by Revit's own
+  parameter id, SPACING_LAYOUT_VERT and _HORIZ and SPACING_LENGTH_VERT and
+  _HORIZ, so there is no name to confuse.
+
+  **THE REQUEST IS A SHORT TABLE** - "vertical layout=fixed distance; vertical
+  spacing=1500". Four settings can be named: vertical layout, vertical spacing,
+  horizontal layout, horizontal spacing. A layout is none, fixed distance,
+  maximum spacing or minimum spacing. A spacing is MILLIMETRES (D-71), digits
+  only, converted to Revit's feet once, here; at least 100 and at most 100,000,
+  because below that a number typed in metres - 1.5 for 1500 - would put a line
+  every 1.5 mm on every wall of the type. A spacing is taken only with a layout
+  that uses one: under None there are no lines to space, and a spacing that
+  would change nothing is refused rather than written and reported as done.
+
+  **FIXED NUMBER IS REFUSED, AND THAT IS THE BOUNDARY.** Under Fixed Number the
+  COUNT is not on the type: Revit shows it as "Number" in each placed WALL's
+  own Properties, so a type change cannot say how many, and every wall of the
+  type would switch to a count nobody chose. Asking for it refuses the whole
+  request and changes nothing. Where Revit keeps that count - and each wall's
+  Justification, Angle and Offset - is MEASURED on every run and printed in
+  `readBack`, so the first proof records it rather than this card asserting it.
+
+  **IT REPORTS WHAT REVIT HOLDS, NOT WHAT WAS ASKED.** After the write the
+  walls are rebuilt and every grid setting of the type is read back, both
+  directions, beside what it was before. A layout is stored as a whole number,
+  and the number written is Revit's SpacingRuleLayout value - None 0, Fixed
+  Distance 1, Fixed Number 2, Maximum Spacing 3, Minimum Spacing 5, read off
+  all eight releases' assemblies; there is no 4. That this parameter uses those
+  numbers is an ASSUMPTION until a proof reads it back, so each layout is also
+  read as Revit displays it: one displayed as a different layout from the one
+  written stops the call and nothing is kept, and one displayed in words this
+  does not recognise - a Revit in another language - is named in `differs` and
+  not counted. Where a wall of the type is placed, one wall is measured before
+  and after: its grid lines counted by the way each one actually runs - never
+  by Revit's U and V names, which its reference does not tie to vertical or
+  horizontal on a wall - and its mullions counted by type.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Every
+  refusal is made before the first write. If Revit refuses a write, or cannot
+  rebuild the walls with it, the call stops and nothing it did is kept - a type
+  half-changed across every wall that uses it is worse than one left alone.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # A curtain wall TYPE BY NAME - "Curtain Wall: Storefront", or "Storefront"
+    # when no other wall type is called that. Resolved among wall types by the
+    # add-in (D-54); a basic or stacked type binds and is refused here, by name.
+    # NOT `wallType`: CREATE_WALL takes that name, and a proof that draws the
+    # wall first binds every writing step from one set of values - the two
+    # would be forced to be the same type.
+    - name: curtainWallType
+      type: WallType
+      source: request
+    # The settings to change, SEMICOLONS between - "vertical layout=fixed
+    # distance; vertical spacing=1500". Keys: vertical layout, vertical
+    # spacing, horizontal layout, horizontal spacing. A key left out is left as
+    # it was. Layouts: none, fixed distance, maximum spacing, minimum spacing
+    # (fixed number is refused - see the purpose). Spacings: millimetres,
+    # digits only.
+    - name: grid
+      type: IDictionary<string, string>
+      source: request
+  provides:
+    - name: applied
+      # Settings Revit now HOLDS as asked AND that this call changed - counted
+      # off the read-back after the rebuild, never off the write.
+      role: result
+      type: int
+    - name: differs
+      # Settings Revit holds differently from what was asked, or holds in words
+      # this cannot match to a layout. A finding, like `snapped` in
+      # WRITE_ELEMENT_PARAMETERS - never a success.
+      role: result
+      type: IList<string>
+    - name: alreadyAsAsked
+      # Settings that already held what was asked, so nothing was written. The
+      # evidence it looked, never a change it made (D-52).
+      role: accounting
+      type: int
+    - name: wallsOfType
+      # How many placed walls use the type - the REACH of the change, counted
+      # before the write. The size of what it touches, never a thing it found
+      # (D-52).
+      role: accounting
+      type: int
+    - name: readBack
+      # EVERY grid setting of the type as Revit holds it after the write, both
+      # directions, beside what it was - and where Revit keeps Number,
+      # Justification, Angle and Offset, measured. A STRING, because a reply
+      # cuts a list to three items, and this is the evidence. Accounting: it
+      # describes what `applied` counts, and on a refusal it is empty.
+      role: accounting
+      type: string
+    - name: measured
+      # One placed wall of the type, before and after: its length, its grid
+      # lines by the way each runs (and which of Revit's U and V sets each came
+      # from), and its mullions by type. Read off Revit, never worked out from
+      # the spacing. Accounting, for the same reason as readBack.
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE PATH FOR EVERY RELEASE, read rather than remembered. On 2026-09-24
+  tools/api-surface read the reference assemblies of all eight releases, 2020
+  through 2027: `WallType.Kind`, `Wall.CurtainGrid`, CurtainGrid's
+  `GetUGridLineIds`, `GetVGridLineIds` and `GetMullionIds` (each an
+  ICollection of ElementId), `CurtainGridLine.FullCurve`,
+  `Mullion.LocationCurve`, the four `Parameter.Set` overloads (ElementId,
+  double, int, string), `Parameter.AsValueString()` and the application's
+  `AngleTolerance` carry one signature on every release. `SpacingRuleLayout`
+  has the same five values on all eight - None 0, FixedDistance 1,
+  FixedNumber 2, MaximumSpacing 3, MinimumSpacing 5 - and the values are cast
+  from the enum, never typed. The API reference text of all eight releases
+  (2020 to 2026 from the reference packages, 2027 from its own RevitAPI.xml)
+  lists SPACING_LAYOUT_VERT and _HORIZ ("Layout"), SPACING_LENGTH_VERT and
+  _HORIZ ("Spacing") and the per-wall ids this measures, with the same display
+  names; it says nothing about which of them sit on the type and which on the
+  wall, and nothing tying U or V to vertical, which is why both are measured.
+  No ElementId is constructed and none is read as a number.
+
+# ROUTING - repeated in SET_CURTAIN_WALL_MULLIONS, REPORT_CURTAIN_ELEMENTS,
+# WRITE_ELEMENT_PARAMETERS, DUPLICATE_TYPE and CREATE_WALL.
+#
+#   "set the curtain wall grid spacing"    -> here
+#   "make the vertical grid fixed distance
+#    1500"                                 -> here
+#   "change the mullions on this curtain
+#    wall"                                 -> SET_CURTAIN_WALL_MULLIONS. The grid
+#                                             decides where interior mullions can
+#                                             sit; their TYPES are set there
+#   "change the grid on just this curtain wall" -> DUPLICATE_TYPE first, then
+#                                             CHANGE_ELEMENT_TYPE to put that wall
+#                                             on the copy, then here on the copy.
+#                                             A type change reaches every wall.
+#                                             MEASURED 2026-09-24 through the
+#                                             host's own find: the sentence
+#                                             reaches HERE, which would change
+#                                             every wall of the type. Three steps
+#                                             is a composition - a skill's to own,
+#                                             not a fragment's; until one exists,
+#                                             the first line of this answer says
+#                                             how many walls changed
+#   "divide this curtain wall into six
+#    panels", Fixed Number                 -> NOT HERE, and nothing does yet. The
+#                                             count is each wall's own "Number";
+#                                             Fixed Number is refused here, and
+#                                             WRITE_ELEMENT_PARAMETERS refuses
+#                                             "Number" because the vertical and
+#                                             horizontal ones share the name
+#   "add a grid line here"                 -> NOT HERE. One line on one wall is
+#                                             Revit's own Curtain Grid tool
+#   "how many grid lines are in this
+#    curtain wall"                         -> REPORT_CURTAIN_ELEMENTS. A question
+#                                             must not land on a write (D-86)
+#   "what is the grid spacing on this
+#    curtain wall", "what grid layout does
+#    this curtain wall type have"          -> REPORT_CURTAIN_WALL_TYPE, which
+#                                             reads the same settings by the same
+#                                             ids and changes none. A question
+#                                             must not land on a write (D-86):
+#                                             measured through the host's find on
+#                                             2026-09-24, both reached HERE while
+#                                             this card was the nearest text, and
+#                                             reach that reader since it exists
+#   "which type is this curtain wall"      -> REPORT_CURTAIN_ELEMENTS prints the
+#                                             wall's name, which is its type's -
+#                                             the name this one takes
+#   "set the Spacing parameter"            -> NOT WRITE_ELEMENT_PARAMETERS. The
+#                                             name appears once per direction and
+#                                             it refuses a shared name (5b-203)
+#   "draw a curtain wall"                  -> CREATE_WALL, with a curtain wall
+#                                             type as its wall type
+#   "tick adjust for mullion size",
+#   "change the curtain panel"             -> NOT HERE, and nothing does yet.
+#                                             Both are type settings this does
+#                                             not touch
+
+utterances:
+  - set the curtain wall grid spacing
+  - set a curtain wall's grid spacing on the type
+  - change the curtain grid layout to fixed distance
+  - space the vertical curtain grid lines at 1500
+  - make the horizontal curtain grid maximum spacing

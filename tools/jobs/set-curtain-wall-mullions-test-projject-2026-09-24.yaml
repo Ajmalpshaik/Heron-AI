@@ -1,0 +1,81 @@
+# SET_CURTAIN_WALL_MULLIONS - the proof plan as a batch-prove job. NOT RUN. 2026-09-24.
+# docs/39 section 3, lesson 12; the cases are in
+# brain/fragments/set-curtain-wall-mullions/tests/cases.yaml.
+#
+#     python tools/batch-prove.py tools/jobs/set-curtain-wall-mullions-test-projject-2026-09-24.yaml --dry-run --session <pid>
+#     python tools/batch-prove.py tools/jobs/set-curtain-wall-mullions-test-projject-2026-09-24.yaml --session <pid>
+#
+# ITS SECOND NEGATIVE - a mullion name the model does not have, refused with the
+# ones it does - is set-curtain-wall-mullions-unknown-name-test-projject-2026-09-24.yaml.
+# A batch keeps ONE run record and ONE draft per fragment, so two jobs for this
+# fragment in one file would leave only the second's draft; they are two files.
+#
+# ON A TEST COPY, the same model and the same arrangement as
+# set-curtain-wall-grid-test-projject-2026-09-24.yaml - read that file's notes on
+# "Curtain Wall 1", on the empty selection, on the wall drawn 60 m north, and on
+# reading `measured` first. They all hold here.
+#
+# THE MULLION TYPE IS A GUESS UNTIL CHECKED. "Rectangular Mullion: 50 x 150mm"
+# is in Revit's metric templates; whether `test projject` has it has not been
+# read. The second file's negative prints every mullion type the model has, so
+# run that one first if unsure and correct `mullions` below from its answer.
+#
+# THE TYPE IS BUILT, NOT FOUND:
+#   create-wall                one 9000 mm wall, 3000 mm high, of Curtain Wall 1
+#                              - no grid lines, no mullions
+#   duplicate-type             copies that wall's type as "HERON CW MULLION PROOF"
+#   change-element-type        puts that wall on the copy
+#   set-curtain-wall-mullions  the four BORDER positions, on the copy
+#
+# BORDERS, NOT INTERIOR, ON PURPOSE. Curtain Wall 1 has no grid lines, so an
+# interior type would show nowhere, while each of the wall's four edges is one
+# border segment - two ends, a base and a top: four mullions, derived in the
+# cases. The interior case needs set-curtain-wall-grid in the setup, and it
+# waits until that fragment has passed its own proof.
+#
+# risk: MODIFY. `validate` never sends `apply`, so all four steps run inside one
+# TransactionGroup and are rolled back (D-55). Nothing is kept.
+
+model: test projject, Revit 2024 - a TEST COPY
+
+defaults:
+  in: test projject
+  write: true
+  setup:
+    - create-wall
+    - duplicate-type
+    - change-element-type
+  set:
+    level: "Level 1"
+    wallType: "Curtain Wall: Curtain Wall 1"
+    points: "0,60000,0; 9000,60000,0"
+    height: "3000"
+    structural: "false"
+    newTypeName: "HERON CW MULLION PROOF"
+    newTypeId: "HERON CW MULLION PROOF"
+    curtainWallType: "HERON CW MULLION PROOF"
+    mullions: "vertical border 1=Rectangular Mullion: 50 x 150mm; vertical border 2=Rectangular Mullion: 50 x 150mm; horizontal border 1=Rectangular Mullion: 50 x 150mm; horizontal border 2=Rectangular Mullion: 50 x 150mm"
+  negative-set:
+    # THE SAME ARRANGEMENT AND THE SAME REQUEST, AIMED AT A TYPE IT MUST NOT
+    # TOUCH - the basic wall type CREATE_WALL was proved with in this model.
+    level: "Level 1"
+    wallType: "Curtain Wall: Curtain Wall 1"
+    points: "0,60000,0; 9000,60000,0"
+    height: "3000"
+    structural: "false"
+    newTypeName: "HERON CW MULLION PROOF"
+    newTypeId: "HERON CW MULLION PROOF"
+    curtainWallType: "Basic Wall: Generic - 200mm"
+    mullions: "vertical border 1=Rectangular Mullion: 50 x 150mm; vertical border 2=Rectangular Mullion: 50 x 150mm; horizontal border 1=Rectangular Mullion: 50 x 150mm; horizontal border 2=Rectangular Mullion: 50 x 150mm"
+
+jobs:
+  - fragment: set-curtain-wall-mullions
+    # `applied` is the work: positions Revit HOLDS as asked after the rebuild,
+    # counted off the read-back. `differs` should stay empty.
+    expect: applied
+    note: >
+      Positive: wallsOfType 1, applied 4, differs empty; measured names one
+      wall 9000 mm long with 0 grid lines each way, mullions before "none" and
+      now "2 x horizontal 'Rectangular Mullion: 50 x 150mm', 2 x vertical
+      'Rectangular Mullion: 50 x 150mm'". Negative: applied 0, refused "is a
+      basic wall type, not a curtain wall type", readBack and measured empty.

@@ -131,6 +131,33 @@ compatibility-note: >
 #                                          for ducts and pipes and for nothing
 #                                          else - SPLIT_MEP_RUN is named for
 #                                          what it can actually do, and says so
+#   "draw a curtain wall between these points" -> here, with a curtain wall
+#                                          type as wallType. Declared
+#                                          2026-09-24, once check-routing showed
+#                                          it landing here with no other
+#                                          fragment's sentence moving. Nothing in
+#                                          this one is particular to a kind of
+#                                          wall type, and its own proof drew a
+#                                          BASIC wall - whether it builds a
+#                                          curtain one is shown by the first run
+#                                          of set-curtain-wall-grid's job file,
+#                                          whose setup draws a curtain wall with
+#                                          this fragment before anything else
+#   "draw a curtain wall"               -> here, and NOT REACHED. Measured
+#                                          through find on 2026-09-24, before and
+#                                          after the sentence above was declared:
+#                                          it reaches REPORT_CURTAIN_ELEMENTS, and
+#                                          so do "build me a curtain wall" and
+#                                          "make a curtain wall" - a read, so
+#                                          nothing is built and nothing changes.
+#                                          Only the sentence with the points a
+#                                          wall needs is declared here
+#   "set the curtain wall grid", "set   -> SET_CURTAIN_WALL_GRID and
+#    the mullions"                         SET_CURTAIN_WALL_MULLIONS. A curtain
+#                                          wall's grid and mullions come from
+#                                          its TYPE, never from here
+#   "what is this curtain wall type set
+#    to"                                -> REPORT_CURTAIN_WALL_TYPE
 
 utterances:
   - build a wall between these points
@@ -138,3 +165,4 @@ utterances:
   - draw the walls for this room
   - make a wall
   - add a partition here
+  - draw a curtain wall between these points

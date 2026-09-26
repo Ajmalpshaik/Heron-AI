@@ -71,7 +71,7 @@ code that writes by a name did not keep it.
 | 9 | When a route cannot do the job, say so and give the shortest way by hand; do not keep retrying | **Held** | a fragment refuses in a sentence, and the chat tool prints a refusal as a refusal rather than as *"it ran"* - `heron_mcp_server.py`, where it says a refusal is the case the check exists for |
 | 10 | When a tool seems to be missing, report the connector's version first | **Held** | `heron_version`, `heron_compatibility` |
 | 11 | **A pitched roof: the two long eaves carry the slope for a gable, every edge for a hip, and the pitch is the modeller's** | **Missing - and Heron's own words said so** | `CREATE_ROOF`'s routing: *"slope this roof -> NOT HERE"*. Built as `SLOPE_ROOF_EDGES`, DRAFT. It carries one scar of its own, read off Autodesk's reference: the per-edge property named *SlopeAngle* is a rise over a run, not an angle |
-| 12 | Set a curtain wall's grid spacing and its mullions on the type | **Missing** | `REPORT_CURTAIN_ELEMENTS` reads a curtain wall; nothing writes its grid or its mullions. By lesson 6 those are exactly the settings whose names repeat, so a write by name now refuses them (row 5b-203), and the route that can work reaches them by Revit's own parameter ids - §5 |
+| 12 | Set a curtain wall's grid spacing and its mullions on the type | **Built 2026-09-25, DRAFT** - the owner's first pick from §5 | `SET_CURTAIN_WALL_GRID`, `SET_CURTAIN_WALL_MULLIONS` and the reader `REPORT_CURTAIN_WALL_TYPE`, each reaching the settings by Revit's own parameter ids, never by a name - by lesson 6 every one of those names repeats. The order is the [`curtain-wall`](../brain/skills/curtain-wall.yaml) skill; the proofs are [Group AR](needs-checking/group-ar.md) |
 | 13 | Streets and pavements as thin floors and kerbs as low walls, each set at a height where nothing floats | **Possible today, not written down** | `CREATE_FLOOR`, `CREATE_WALL`. The ground surface itself is §5 |
 | 14 | A tower lives or dies on its levels: make every level first, one floor per level, then count them | **Held, and now written down** | `CREATE_LEVELS`, `CREATE_FLOOR`, `COUNT_ELEMENTS` - the order in [`building-shell`](../brain/skills/building-shell.yaml) |
 
@@ -150,7 +150,7 @@ asked which, one at a time.
 
 | The job | What makes it more than one call |
 |---|---|
-| Curtain wall grid lines and mullions | The settings repeat their names (§3 lesson 6), so a fragment reaches them by Revit's own parameter ids, never by a typed name |
+| ~~Curtain wall grid lines and mullions~~ | **Built 2026-09-25, DRAFT** - the grid and the mullions of a curtain wall TYPE, and a reader of both (§3 lesson 12). Still not built: a fixed NUMBER of divisions, which is a per-wall count, and one grid line placed by hand |
 | A wall's profile - an arched head | |
 | A ground surface | Revit 2024 brought in the toposolid in place of the toposurface, so it is two routes across Heron's eight releases |
 | Stairs and railings | |
@@ -159,7 +159,7 @@ asked which, one at a time.
 | Point clouds | |
 | Masses, and the floors and walls made from one | |
 | Painting one face; the material of one layer of a wall | `SET_COMPOUND_LAYER_WIDTH` changes a layer's width and nothing else |
-| A door or a window put into one particular wall | **Not from these notes** - [the house plan of 2026-09-22](fragment-issues/a-drawing-set-and-a-house-plan-2026-09-22.md) found it: `PLACE_HOSTED_FAMILY` resolved its host by a type name, never to one wall. A version that finds the wall at a point was being built in another change on 2026-09-24, so this row may already be out of date - read that fragment's own card first |
+| ~~A door or a window put into one particular wall~~ | **Built 2026-09-25 as `PLACE_HOSTED_FAMILY` version 2, DRAFT** (#334) - it finds the wall at each point. Not from these notes: [the house plan of 2026-09-22](fragment-issues/a-drawing-set-and-a-house-plan-2026-09-22.md) found it, and [`building-shell`](../brain/skills/building-shell.yaml) now has a door step |
 
 ---
 

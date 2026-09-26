@@ -161,6 +161,16 @@ compatibility-note: >
 #   "add a prefix to what is already     -> EDIT_PARAMETER_TEXT. This one
 #    there"                                 writes one fixed value over
 #                                           every element
+#   "set the curtain wall grid spacing"  -> SET_CURTAIN_WALL_GRID. Layout and
+#                                           Spacing appear once per direction
+#                                           on a curtain wall type, so this one
+#                                           refuses them as a shared name
+#                                           (5b-203); that one reaches each by
+#                                           Revit's own parameter id
+#   "change the mullion type on the      -> SET_CURTAIN_WALL_MULLIONS. The same
+#    curtain wall"                          shared names, and each holds a
+#                                           mullion TYPE - an element reference,
+#                                           which this one refuses as well
 
 utterances:
   - set the comments on these
