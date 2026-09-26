@@ -1,47 +1,39 @@
-# Re-proving FRG-VIEW-030 after leaders were added to it - 2026-09-21.
+# Re-proving the two tag fragments after the L-shape rebuild - 2026-09-21.
 #
-# WHY THIS EXISTS. `tag-elements-in-view` was signed on 2026-09-14 and the code
-# changed under it, so check-docs reports it STALE. That is D-30 working. The
-# version 1 proof covered `addLeader: false` and nothing else, so it says
-# nothing whatever about the leader work and cannot be leaned on.
+# WHY THIS EXISTS. Both were signed before the rebuild and check-docs reports
+# them STALE, which is D-30 working. The version 1 proofs covered neither
+# leaders, nor risers, nor a minimum length, so neither says anything about
+# what these fragments now do.
 #
-# THE NEGATIVE IS VALUE-DRIVEN, which is the kind worth having. Both legs use
-# the SAME selection, the same view and the same offset - only `leader` moves:
+# BOTH NEGATIVES ARE A DIFFERENT SELECTION, NOT A DIFFERENT VALUE. An earlier
+# version of this file used a value-driven negative - the same ducts with
+# leader=none - and batch-prove refused it NEG NOT EMPTY, correctly: it needs
+# the negative leg empty of EVERY result, and `tagged` stays at 13 in that
+# arrangement by design. The runner cannot express "this result holds while
+# that one goes to zero", so the negative has to be a selection that genuinely
+# produces nothing.
 #
-#     leader=straight   leadersDrawn 15   tagged 15
-#     leader=none       leadersDrawn 0    tagged 15
-#
-# `tagged` staying put across both legs is the part that makes this a proof
-# rather than a coincidence: the fragment found and tagged the same 13 ducts
-# each time, and only whether it BENT THE LEADER changed. A negative that
-# emptied the selection instead would prove only that an empty selection tags
-# nothing, which nobody doubted.
-#
-# READ `tagged` IN THE NEGATIVE LEG BEFORE BELIEVING IT. This fragment refuses
-# to double-tag: it reads existing tags first. So if the rollback after the
-# positive leg did NOT hold, leg two meets 13 ducts that are already tagged and
-# answers `alreadyTagged 13, tagged 0, elbowsDrawn 0` - which passes the
-# expect: check for entirely the wrong reason. The tell is `tagged 0` with
-# `alreadyTagged 13`. Section 1c records rollback failing three times, so this
-# is a live possibility and not a hypothetical.
+#   tag-elements-in-view      Walls - no tag category is mapped for them. The
+#                                     map carries 17 entries and Walls is not
+#                                     one, so every wall lands in notTagged.
+#   force-tag-leader-lshape   Ducts - handed the ducts instead of their tags.
+#                                     Its own version 1 negative had exactly
+#                                     this shape: bent 0, notTags 307.
 #
 # NOTHING IS KEPT. `apply` is never sent, so each phase runs inside a
-# TransactionGroup and is rolled back (D-55). Check the model afterwards rather
-# than assuming: one Ctrl+Z in Revit removes any tag that survived.
+# TransactionGroup and is rolled back (D-55). Section 1c records rollback
+# failing three times, so count the tags in the view afterwards rather than
+# assuming it held.
 #
-# UNITS: `leaderOffsetMm` is MILLIMETRES and the fragment converts it itself
-# (`leaderOffsetMm * MmToFeet`). 3000 mm holds the head clear of the duct at
-# the scale this view is drawn at; it is a working value, not a standard.
+# TAGTYPEHINTID IS DECLARED, SO IT HAS TO BE SAID. batch-prove refuses rather
+# than defaulting a request value - "guessing it is how a job runs against the
+# wrong thing and reports success". `none` means let the fragment choose: the
+# caller hint, then the project default, then first loaded.
 #
 #     python tools/batch-prove.py tools/jobs/project1-tag-leader.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/project1-tag-leader.yaml
 
-# TAGTYPEHINTID IS DECLARED, SO IT HAS TO BE SAID. It is a request value, and
-# batch-prove refuses rather than defaulting one - "guessing it is how a job runs
-# against the wrong thing and reports success". `none` means let the fragment
-# choose: the caller hint, then the project default, then first loaded.
-
-model: "Project1 (3,449 elements), Revit 2024 - view '1 - Mech'"
+model: "Project1 (Revit 2024) - view '1 - Mech' at 1:50, 26 ducts of which 8 are risers"
 
 defaults:
   write: true
@@ -51,6 +43,9 @@ defaults:
     - set-selection
 
 jobs:
+  # 26 ducts in; 8 risers and 5 runs under a metre deliberately left out; 13
+  # tagged. The two skips are what this version added and both are reported by
+  # name rather than quietly dropped.
   - fragment: tag-elements-in-view
     write: true
     set:
@@ -59,12 +54,31 @@ jobs:
       view:           "1 - Mech"
       leader:         straight
       leaderOffsetMm: 8
+      minLengthMm:    1000
       tagTypeHintId:  none
     negative-set:
-      categoryName:   Ducts
+      categoryName:   Walls
       inViewOnly:     "1 - Mech"
       view:           "1 - Mech"
-      leader:         none
+      leader:         straight
       leaderOffsetMm: 8
+      minLengthMm:    1000
       tagTypeHintId:  none
-    expect: leadersDrawn
+    expect: tagged
+
+  # The duct tags: the ones lying across the sheet are bent, the ones lying up
+  # it are left straight and keep their attached end. The negative hands it
+  # the ducts themselves, which are not tags at all.
+  - fragment: force-tag-leader-lshape
+    write: true
+    set:
+      categoryName: "Duct Tags"
+      inViewOnly:   "1 - Mech"
+      view:         "1 - Mech"
+      legMm:        10
+    negative-set:
+      categoryName: Ducts
+      inViewOnly:   "1 - Mech"
+      view:         "1 - Mech"
+      legMm:        10
+    expect: bent
