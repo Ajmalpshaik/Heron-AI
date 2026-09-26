@@ -48,10 +48,28 @@ contract:
       type: HostObjAttributes
       source: request
     # Ceilings only: how far above the room's level the ceiling sits, in
-    # INTERNAL FEET. It goes straight into CEILING_HEIGHTABOVELEVEL_PARAM via
-    # Parameter.Set(double), which takes Revit's internal units and accepts any
-    # number without complaint - so a caller who reads "how far above" and
-    # passes 2700 for millimetres gets a ceiling 2,700 FEET up and no error.
+    # MILLIMETRES. The code divides it by 304.8 once, before first use (D-71),
+    # and Set()s the feet into CEILING_HEIGHTABOVELEVEL_PARAM, which accepts
+    # any number without complaint. So the wrong unit still fails silently,
+    # the other way round now: a caller who types feet - 7.87 for a 2400
+    # ceiling - gets a ceiling about 8 mm above its level, and no error.
+    #
+    # THIS COMMENT SAID "INTERNAL FEET" UNTIL 2026-09-26, and the header of
+    # impl/any/fragment.cs still does (corrected 2026-09-24 on a branch that
+    # was never pushed). Both were true when written on
+    # 2026-09-09 and went stale on 2026-09-13, when D-71 put the division in
+    # (PR #138) - the proof below, taken that day, reads 2700 in and 8.858
+    # feet used. Measured 2026-09-24 in Project1, Revit 2024, session 32116:
+    # 2400 and 2800 read back through SELECT_BY_NUMERIC_PARAMETER on Ceilings,
+    # Height Offset From Level, as 7.874 ft and 9.186 ft - 2400 mm and 2800
+    # mm, within 1 mm.
+    #
+    # THE fragment.cs HEADER IS LEFT WRONG ON PURPOSE. The proof fingerprint
+    # hashes every byte under impl/, comments included, so correcting it
+    # would stale this PROVEN proof; the correction goes in with the next
+    # re-proof (FRAGMENT-ISSUES row 5b-69). Until then the D-71 block in the
+    # code and this comment are the truth, and that header is not.
+    #
     # Stated 2026-09-09: tools/check-revit-gate.py asked question 11 of the
     # fourteen against all 360 fragments and this was the only one that never
     # said what its number meant.
