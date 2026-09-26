@@ -265,7 +265,7 @@ Model Checker (rule-based checksets).
 
 | Decision | Revised position |
 |---|---|
-| Grow fragment count toward coverage | **Stop counting it as progress.** It is the commoditised layer, and 68 fragments have still never met a model |
+| Grow fragment count toward coverage | **Stop counting it as progress.** It is the commoditised layer, and every fragment still marked `DRAFT` has never met a model - [README](../README.md) gives the command that counts them |
 | Write safety | **Read [AB.RevitMcp](https://github.com/Al-Qublawi/AB.RevitMcp)'s `TransactionGroup` and dry-run design against Heron's own write path** before assuming Heron's is better. Study it; do not take its code ([31](31-studying-the-existing-libraries.md)) |
 | Autodesk's write server | **Plan to sit on top of it for 2027**, not against it. Heron's own bridge keeps 2020–2026, where Autodesk will not be |
 | Where remaining effort goes | **Proof, standards and the signed audit trail** — and a wedge SWAPP does not hold: **MEP, and Qatar/QCS/Ashghal practice** |
