@@ -1,0 +1,82 @@
+# The first proof of set-air-terminal-flow (SET_AIR_TERMINAL_FLOW, FRG-MEP-054),
+# 2026-09-25 - NEEDS-CHECKING Group AQ, row AQ1.
+#
+#     python tools/batch-prove.py tools/jobs/set-air-terminal-flow-project1-2026-09-25.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-air-terminal-flow-project1-2026-09-25.yaml
+#
+# RUN ON A TEST COPY OF "heron ai bulding" (Project1), never the working file.
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK,
+# so nothing should be kept - read one diffuser's Flow in Properties afterwards
+# rather than assuming it: rollback has failed before on this PC, and one
+# Ctrl+Z takes back a flow that survived.
+#
+# THE TEST COPY ALREADY HOLDS THE DESIGN FLOWS. The working run of 2026-09-25
+# wrote them, so the design file itself would change nothing on a copy made
+# since - `changed` 0, reported POSITIVE EMPTY, and nothing proved. So the
+# positive hands in aq-away.csv: the same 90 ids, every flow 10 L/s higher,
+# except 927789, left at the 110 it holds. 89 change, and 927789 lands in
+# `alreadyThatFlow` - every terminal changed but one.
+#
+# THE FILES are in the scratchpad of the session that did the run, in
+# proof-aq\ - the paths below:
+#   aq-design-flows.csv  the working run's own file, byte for byte - 90 rows,
+#                        each space's specified supply and return airflow
+#                        split over its three supply and three return diffusers
+#   aq-away.csv          that file with 10 added to every flow but 927789's
+#   aq-bad-rows.csv      for AQ3, not used here
+#   aq-walls.csv         NOT MADE YET - the negative's file, made at the sitting
+# If the scratchpad has been cleared, remake aq-away.csv from the design file
+# the same way. The ids are the test copy's own, because Save As keeps them.
+#
+# THE TERMINALS COME FROM THE WHOLE MODEL, NOT FROM A VIEW. The one setup step
+# is filter-elements-by-category, which collects from the whole document, and
+# `keep-chain: true` hands its `elements` straight to the fragment, with no
+# selection in between. The chain's values are `setup-set`; the fragment's
+# one value, `csvPath`, is `set`.
+#
+# NEGATIVE: THE WALLS ON LEVEL 1, WITH A ROW FOR EACH. None is an air terminal,
+# so nothing may be written and every wall must be named in `notATerminal`.
+# Make aq-walls.csv first, from the test copy: export the Level 1 walls' ids
+# with export-parameters-to-csv after the same filter with category=Walls,
+# keep its ElementId column, head the file Id,Flow and put 100 on every row.
+#
+# A MISSING aq-walls.csv PASSES THIS NEGATIVE FOR THE WRONG REASON. The
+# fragment then says "There is no file at ..., so NOTHING was written" and
+# `changed` is 0, which reads as a pass. So read the negative's findings: they
+# must not say there is no file, and `notATerminal` must list the walls.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - the binding note on the positive: elements from filter-elements-by-
+#     category (N). N is every air terminal on Level 1; the file has 90 rows,
+#     and a terminal on the level that is not in it is left alone, uncounted
+#   - `refused`, `noFlowParameter` and `builtInDisagrees` on the positive: all
+#     three empty. A name in `refused` did not hold its value and was PUT BACK
+#   - `rowsUnmatched` on the positive: 0. More means the file's ids are not
+#     this model's - a copy made some other way than Save As
+#
+# NOT SET HERE: `in:`. Without it the run reads the model in front, so bring
+# the test copy to the front. With two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Project1 "heron ai bulding" (a test copy), Revit 2024 - Level 1
+
+defaults:
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: set-air-terminal-flow
+    expect: changed
+    keep-chain: true
+    setup:
+      - filter-elements-by-category
+    setup-set:
+      category: Air Terminals
+      levelId: Level 1
+    negative-setup-set:
+      category: Walls
+      levelId: Level 1
+    set:
+      csvPath: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai--claude-worktrees-heron-ai-dev-setup-42a74c/307d8038-c173-48c1-9734-ca1c05b98624/scratchpad/proof-aq/aq-away.csv"
+    negative-set:
+      csvPath: "C:/Users/AJMALA~1/AppData/Local/Temp/claude/D--Ajmal-Aj-Programs-Heron-Ai--claude-worktrees-heron-ai-dev-setup-42a74c/307d8038-c173-48c1-9734-ca1c05b98624/scratchpad/proof-aq/aq-walls.csv"

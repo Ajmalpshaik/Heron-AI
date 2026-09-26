@@ -1,0 +1,134 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-054
+semantic-identity: "set each air terminal's design flow, in L/s, from a file of ids and flows"
+kind: action
+domain: revit.mep
+capability: SET_AIR_TERMINAL_FLOW
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets the design flow on each air terminal handed in, from a file - the
+  element id in the first column, the flow in litres per second in the second -
+  in one undo.
+
+  **NO WRITER COULD SET IT.** An air terminal carries TWO parameters called
+  "Flow": the family's own, which the duct connector takes its flow from, and a
+  built-in one Revit works out from the connector.
+
+  On 2026-09-24, in Project1, 110 L/s was written by that name to one terminal,
+  and the read-back, by the same name, said 235.0 L/s - the family's default. On
+  2026-09-25 that terminal's connector parameter already held 110. The value had
+  landed, and the read-back had not shown it. A write by name cannot say what it
+  did.
+
+  D-54 s3 refuses a name that matches twice rather than choosing, and since row
+  5b-203 every writer that looks a name up refuses "Flow" on an air terminal,
+  correctly.
+
+  **SO THE PARAMETER IS FOUND THROUGH THE CONNECTOR, NEVER BY NAME.** The
+  terminal's one duct connector names the family parameter its flow is tied to,
+  and that parameter, matched by id, is written. A terminal with no duct
+  connector, or two, or whose connector flow is tied to no parameter - a Flow
+  Configuration of Calculated or System - is named in `noFlowParameter` and left
+  alone.
+
+  **EVERY ONE IS READ BACK** after one regeneration. One whose parameter does
+  not hold the value is put back to what it held and named in `refused`. The
+  built-in "Flow" is read as well, and a terminal where it still shows something
+  else is named in `builtInDisagrees` - reported, not put back.
+
+  It does not work out what the flow should be. Splitting a space's airflow
+  across its terminals is the caller's arithmetic, and so is the file.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    # A CSV file. The first line is a header and is never read as a row. Each
+    # later line is an element id, then a flow in litres per second - zero or
+    # more. Converted once to cubic feet per second (D-71).
+    - name: csvPath
+      type: string
+      source: request
+  provides:
+    - name: changed
+      role: result
+      type: int
+    - name: alreadyThatFlow
+      # Already at the flow in the file, so there was nothing to do. The
+      # evidence it looked, never a change it made (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notATerminal
+      # In the file and handed in, but not an air terminal. Given and unusable
+      # (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: noFlowParameter
+      # An air terminal whose flow is tied to no parameter this can write - no
+      # duct connector, two of them, or a Calculated or System flow. Named, and
+      # nothing written (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: refused
+      # Read-only, not accepted, or did not hold the value - and put back to what
+      # it held. Named, never counted (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: builtInDisagrees
+      # Written and read back, but the built-in Flow Revit shows still reads
+      # something else. Reported for a person to look at (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: rowsUnmatched
+      # Rows whose id is none of the elements handed in - usually the wrong
+      # model, or a filter that did not cover them (D-52).
+      role: accounting
+      type: int
+    - name: badRows
+      # Lines that are not an id and a flow of zero or more, or repeat an id
+      # already read. Nothing is written for them (D-52).
+      role: accounting
+      type: int
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Connector.GetMEPConnectorInfo` and
+  `MEPFamilyConnectorInfo.GetAssociateFamilyParameterId` date from Revit 2017,
+  read off `RevitAPI.xml` for 2020, 2024 and 2027 on the owner's PC. Litres
+  per second become cubic feet per second by one constant, so there is no
+  UnitTypeId (2021 on) or DisplayUnitType (to 2021) branch. Every ElementId is
+  built from a BuiltInCategory or BuiltInParameter, never from a number.
+
+# ROUTING
+#
+#   "set the flow on these diffusers"              -> here
+#   "update the air terminal flow from this file"  -> here
+#   "how much air does each space get"             -> REPORT_SPACE_AIRFLOW, a read
+#   "set the space's supply airflow"               -> IMPORT_PARAMETER_VALUES - a
+#                                                     space has one parameter by
+#                                                     that name
+#   "size the ducts from the flows"                -> AUTO_SIZE_MEP
+
+utterances:
+  - set the flow on these air terminals
+  - update the air terminal flow
+  - put the design airflow on each diffuser from this file
+  - set each diffuser's flow in litres per second
+  - write the airflow values to the supply and return diffusers

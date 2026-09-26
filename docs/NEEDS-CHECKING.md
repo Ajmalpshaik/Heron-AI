@@ -322,6 +322,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ap.md`](needs-checking/group-ap.md)
 
+## Group AQ - `set-air-terminal-flow`: each air terminal's design flow, written through the parameter its duct connector names (2026-09-25)
+
+**Its own file:** [`needs-checking/group-aq.md`](needs-checking/group-aq.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

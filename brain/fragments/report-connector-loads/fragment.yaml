@@ -114,3 +114,10 @@ utterances:
   - which terminals have no flow assigned
   - are the demands set
   - why is the system flow zero
+  # ADDED 2026-09-25 (FRAGMENT-ISSUES 5b-226). With SET_AIR_TERMINAL_FLOW in the
+  # library these questions reached it - a write - where they had reached a
+  # read, and the last one reached AUTO_SIZE_MEP before it. A question about
+  # what a terminal carries is this fragment's, so it is declared here.
+  - what is the flow on each diffuser
+  - what flow does each air terminal have
+  - which diffusers have no flow

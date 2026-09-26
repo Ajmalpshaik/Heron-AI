@@ -123,3 +123,7 @@ utterances:
   - what is blocking these
   - is anything obstructing the head
   - check for obstructions
+  # ADDED 2026-09-25 (FRAGMENT-ISSUES 5b-223). The routing table above claims it,
+  # and three others send it here; it reached SET_ROOM_LIMITS, a write, once that
+  # fragment arrived. Declared, so the identity route answers it.
+  - is anything above this point

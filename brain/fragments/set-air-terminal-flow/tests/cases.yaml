@@ -1,0 +1,38 @@
+positive:
+  - given: >
+      the 45 supply and 45 return diffusers on Level 1 of Project1 (saved as
+      "heron ai bulding"), Revit 2024, and a file of 90 rows - every space's
+      specified supply and return airflow split evenly over its three supply
+      and three return diffusers
+    expect: >
+      every terminal not already at its row's flow is changed, and one already
+      at it is counted in `alreadyThatFlow`. CHECKED by each space's Actual
+      Supply Airflow and Actual Return Airflow (SELECT_BY_NUMERIC_PARAMETER,
+      category Spaces), never by this fragment's own count - all 15 read their
+      specified values (330 to 400 L/s supply in the offices, 455 in the
+      corridor). RUN ONCE on the owner's working model on 2026-09-25, Changes
+      ON: 89 changed, 1 already at 110, 0 refused, 0 put back, 0 where the
+      built-in Flow disagreed, and all 15 spaces matched on supply and return.
+      That was a working run, not a proof - no negative case, no fingerprint
+
+  - given: the same diffusers and the same file a second time
+    expect: 0 changed and all 90 in `alreadyThatFlow` - a re-run writes nothing
+
+negative:
+  - given: walls handed in, with a row for each
+    expect: 0 changed and every wall named in `notATerminal`; nothing written
+
+  - given: a file with a flow of -50, a flow of "abc" and an id given twice
+    expect: >
+      all three counted in `badRows` and named in the findings; nothing written
+      for them, and the good rows still written
+
+  - given: an air terminal whose connector Flow Configuration is Calculated
+    expect: >
+      named in `noFlowParameter` and left at its flow - there is no parameter
+      its flow is tied to
+
+second_route:
+  - >
+      Revit's own Properties palette: select a diffuser and read Flow under
+      Mechanical - Flow, then select its space and read Actual Supply Airflow

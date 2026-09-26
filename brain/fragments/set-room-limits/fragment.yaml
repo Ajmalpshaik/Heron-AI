@@ -117,3 +117,8 @@ utterances:
   - set the space height to the ceiling
   - tie the room tops to level 2
   - change the upper limit of these rooms
+  # ADDED 2026-09-25 (FRAGMENT-ISSUES 5b-223). The routing table above claims
+  # these two, and the index never reads a comment: they reached
+  # CREATE_FROM_ROOM_BOUNDARIES and PLACE_ROOMS, two writes that make something.
+  - rooms up to the slab soffit
+  - spaces up to the ceiling
