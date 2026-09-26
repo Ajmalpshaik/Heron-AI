@@ -1,0 +1,94 @@
+# SET_CURTAIN_WALL_GRID - the proof plan as a batch-prove job. NOT RUN. 2026-09-24.
+# docs/39 section 3, lesson 12; the cases are in
+# brain/fragments/set-curtain-wall-grid/tests/cases.yaml.
+#
+#     python tools/batch-prove.py tools/jobs/set-curtain-wall-grid-test-projject-2026-09-24.yaml --dry-run --session <pid>
+#     python tools/batch-prove.py tools/jobs/set-curtain-wall-grid-test-projject-2026-09-24.yaml --session <pid>
+#
+# ON A TEST COPY. `test projject` is where CREATE_WALL was proved on
+# 2026-09-13: "Level 1" and the basic wall type "Generic - 200mm" both resolved
+# there. CHECK FIRST that it has a curtain wall type called "Curtain Wall 1" -
+# it is in Revit's templates, and whether this model kept it has not been read.
+# Any curtain wall type will do (the expected numbers do not depend on which,
+# see the cases); put its name in `wallType` below, in both blocks.
+#
+# NOTHING MAY BE SELECTED IN REVIT WHEN THE RUN STARTS - press Esc.
+# duplicate-type and change-element-type take their walls from Revit's
+# selection BEFORE they take the wall create-wall just made (the add-in's
+# binding order), so a stale selection would be copied and moved instead. A
+# rolled-back write clears the selection, so the negative leg starts clean.
+#
+# THE WALL IS DRAWN 60 m NORTH OF THE ORIGIN, WELL CLEAR OF THE BUILDING. A
+# curtain wall drawn across another wall can embed in it. Check that line is
+# empty in this model.
+#
+# THE TYPE IS BUILT, NOT FOUND, SO NOTHING ALREADY PLACED CAN CHANGE:
+#   create-wall            one 9000 mm wall, 3000 mm high, of Curtain Wall 1
+#   duplicate-type         copies that wall's type as "HERON CW GRID PROOF"
+#   change-element-type    puts that wall on the copy
+#   set-curtain-wall-grid  on "HERON CW GRID PROOF" - a type one wall uses
+#
+# ONE SET OF VALUES FEEDS ALL FOUR. Every setup step here changes the model, so
+# they travel with the fragment and the add-in binds each of them from the same
+# `set:` - a writing step cannot be given `setup-set:`, and the client refuses
+# one. That is why the fragment's type is `curtainWallType` while CREATE_WALL's
+# is `wallType`: two names, so two types. The client will print "IGNORED" for
+# the values only the setup steps take; they are sent all the same.
+#
+# READ `measured` BEFORE `applied`. It must name ONE wall, 9000 mm long.
+# "No wall of this type is placed" means change-element-type did not move the
+# wall - it records a refusal without stopping the chain - and then only the
+# parameter half of this proof ran.
+#
+# risk: MODIFY. `validate` never sends `apply`, so all four steps run inside one
+# TransactionGroup and are rolled back (D-55). Nothing is kept.
+
+model: test projject, Revit 2024 - a TEST COPY
+
+defaults:
+  in: test projject
+  write: true
+  setup:
+    - create-wall
+    - duplicate-type
+    - change-element-type
+  set:
+    level: "Level 1"
+    wallType: "Curtain Wall: Curtain Wall 1"
+    points: "0,60000,0; 9000,60000,0"
+    height: "3000"
+    structural: "false"
+    newTypeName: "HERON CW GRID PROOF"
+    newTypeId: "HERON CW GRID PROOF"
+    curtainWallType: "HERON CW GRID PROOF"
+    # BOTH DIRECTIONS IN ONE RUN: all four parameter ids, and layout values 1
+    # and 5 - 5 being Minimum Spacing, the one most likely to be mapped wrong.
+    grid: "vertical layout=fixed distance; vertical spacing=1500; horizontal layout=minimum spacing; horizontal spacing=800"
+  negative-set:
+    # THE SAME ARRANGEMENT AND THE SAME REQUEST, AIMED AT A TYPE IT MUST NOT
+    # TOUCH - the basic wall type CREATE_WALL was proved with in this model. A
+    # different type, not an empty request.
+    level: "Level 1"
+    wallType: "Curtain Wall: Curtain Wall 1"
+    points: "0,60000,0; 9000,60000,0"
+    height: "3000"
+    structural: "false"
+    newTypeName: "HERON CW GRID PROOF"
+    newTypeId: "HERON CW GRID PROOF"
+    curtainWallType: "Basic Wall: Generic - 200mm"
+    grid: "vertical layout=fixed distance; vertical spacing=1500; horizontal layout=minimum spacing; horizontal spacing=800"
+
+jobs:
+  - fragment: set-curtain-wall-grid
+    # `applied` is the work: settings Revit HOLDS as asked after the rebuild,
+    # counted off the read-back. `differs` should stay empty.
+    expect: applied
+    note: >
+      Positive: wallsOfType 1, applied 4, differs empty; measured names one
+      wall 9000 mm long with vertical grid lines 0 before and 5 now, horizontal
+      0 before and 2 now (derived in the cases). Record which of Revit's U and V
+      sets each came from, and readBack's last part - where Number,
+      Justification, Angle and Offset live. A refusal quoting how Revit shows a
+      layout value is the layout table being wrong: a finding, not a retry.
+      Negative: applied 0, refused "is a basic wall type, not a curtain wall
+      type", readBack and measured empty.

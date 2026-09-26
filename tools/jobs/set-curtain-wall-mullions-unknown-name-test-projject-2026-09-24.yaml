@@ -1,0 +1,61 @@
+# SET_CURTAIN_WALL_MULLIONS - its SECOND negative, as a batch-prove job. NOT RUN. 2026-09-24.
+# The first, with its notes, is set-curtain-wall-mullions-test-projject-2026-09-24.yaml.
+#
+#     python tools/batch-prove.py tools/jobs/set-curtain-wall-mullions-unknown-name-test-projject-2026-09-24.yaml --dry-run --session <pid>
+#     python tools/batch-prove.py tools/jobs/set-curtain-wall-mullions-unknown-name-test-projject-2026-09-24.yaml --session <pid>
+#
+# THIS DRAFT REPLACES THE OTHER FILE'S. A batch keeps one run record and one
+# draft per fragment, so run this one BEFORE the other when the model's mullion
+# names are unknown - its refusal lists them - or AFTER that one's draft has
+# been read and dealt with.
+#
+# THE SAME POSITIVE as the other file. THE NEGATIVE differs in one value: the
+# same curtain wall type copy, and a mullion name no model has. It must be
+# refused WITH THE NAMES THE MODEL DOES HAVE, nothing chosen, nothing loaded,
+# nothing changed. Everything else - the empty selection, "Curtain Wall 1", the
+# wall 60 m north, reading `measured` first - is as that file says.
+#
+# risk: MODIFY. `validate` never sends `apply`, so all four steps run inside one
+# TransactionGroup and are rolled back (D-55). Nothing is kept.
+
+model: test projject, Revit 2024 - a TEST COPY
+
+defaults:
+  in: test projject
+  write: true
+  setup:
+    - create-wall
+    - duplicate-type
+    - change-element-type
+  set:
+    level: "Level 1"
+    wallType: "Curtain Wall: Curtain Wall 1"
+    points: "0,60000,0; 9000,60000,0"
+    height: "3000"
+    structural: "false"
+    newTypeName: "HERON CW MULLION PROOF"
+    newTypeId: "HERON CW MULLION PROOF"
+    curtainWallType: "HERON CW MULLION PROOF"
+    mullions: "vertical border 1=Rectangular Mullion: 50 x 150mm; vertical border 2=Rectangular Mullion: 50 x 150mm; horizontal border 1=Rectangular Mullion: 50 x 150mm; horizontal border 2=Rectangular Mullion: 50 x 150mm"
+  negative-set:
+    # THE SAME TYPE COPY, AND A MULLION NAME IT MUST NOT GUESS AT.
+    level: "Level 1"
+    wallType: "Curtain Wall: Curtain Wall 1"
+    points: "0,60000,0; 9000,60000,0"
+    height: "3000"
+    structural: "false"
+    newTypeName: "HERON CW MULLION PROOF"
+    newTypeId: "HERON CW MULLION PROOF"
+    curtainWallType: "HERON CW MULLION PROOF"
+    mullions: "vertical border 1=HERON NO SUCH MULLION"
+
+jobs:
+  - fragment: set-curtain-wall-mullions
+    expect: applied
+    note: >
+      Positive: as the other file - applied 4, four border mullions measured.
+      Negative: applied 0, readBack and measured empty, and refused "No mullion
+      type called 'HERON NO SUCH MULLION' in this model" followed by every
+      mullion type the model has and "Heron does not load families". If
+      "Rectangular Mullion: 50 x 150mm" is not among them, the positive's name
+      is wrong for this model - correct it in both files from that list.

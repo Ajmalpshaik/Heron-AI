@@ -1,0 +1,100 @@
+# THE PROOF PLAN, written 2026-09-24 and NOT RUN. Nothing here has touched a
+# model (D-30); every case says what to arrange and what must come back. The
+# owner runs it, on a TEST COPY - tools/jobs/report-curtain-wall-type-test-
+# projject-2026-09-24.yaml is the first positive and the first negative.
+#
+# THE POSITIVE IS SET_CURTAIN_WALL_GRID'S OWN ARRANGEMENT, READ BACK. The same
+# four steps build a copied curtain wall type one new wall uses, and a fifth
+# lays its grid out; then this reads it. All of it runs inside the transaction
+# group `validate --write` opens for a READ fragment with writing setup steps,
+# and all of it is rolled back:
+#   1. CREATE_WALL - one 9000 mm wall, 3000 mm high, of "Curtain Wall: Curtain
+#      Wall 1", 60 m north of the origin
+#   2. DUPLICATE_TYPE - copies its type as "HERON CW READ PROOF"
+#   3. CHANGE_ELEMENT_TYPE - puts the wall on the copy
+#   4. SET_CURTAIN_WALL_GRID - vertical Fixed Distance 1500, horizontal
+#      Minimum Spacing 800, on the copy
+#   5. this fragment, on the copy
+# Read set-curtain-wall-grid/tests/cases.yaml for why it is built in that order,
+# why nothing may be selected in Revit when it starts, and why the need is
+# `curtainWallType`.
+#
+# STEP 4 IS A DRAFT FRAGMENT, SO THIS WAITS FOR IT. Run this after
+# set-curtain-wall-grid's own job has passed - an arrangement nobody has proved
+# proves nothing. The second positive below needs no writer at all.
+#
+# WHAT THIS ADDS TO THE GRID'S PROOF: it reads the same four settings by the
+# same ids from a different fragment, so the two agreeing is the writer's
+# read-back shown a second way - and `layoutsDisagreeing` is the one place the
+# layout numbers are checked with nothing written.
+
+positive:
+  - given: >
+      the five steps above in `test projject`, Revit 2024; curtainWallType "HERON
+      CW READ PROOF"; grid "vertical layout=fixed distance; vertical
+      spacing=1500; horizontal layout=minimum spacing; horizontal spacing=800"
+      for step 4
+    expect: >
+      gridsLaidOut 2, mullionPositionsFilled 0, layoutsDisagreeing empty,
+      wallsOfType 1, refused empty. settings reads "vertical grid: layout Fixed
+      Distance (Revit's value 1, shown as 'Fixed Distance'); spacing 1500.0 mm"
+      and "horizontal grid: layout Minimum Spacing (Revit's value 5, shown as
+      'Minimum Spacing'); spacing 800.0 mm", with adjust for mullion size as
+      the copy of Curtain Wall 1 holds it, and all six mullion positions
+      "none" - Curtain Wall 1 has no mullions. findings opens "'Curtain Wall:
+      HERON CW READ PROOF' is used by 1 wall in this model". If step 4 stops
+      the run on a layout Revit shows differently, that is the grid writer's
+      finding, and this case waits until it is resolved
+
+  - given: >
+      NO SETUP AT ALL: an existing curtain wall type that has a grid and
+      mullions - "Curtain Wall: Storefront" in Revit's templates, if this model
+      kept it; any such type will do - named as curtainWallType, and the same
+      type opened in Type Properties beside it
+    expect: >
+      gridsLaidOut and mullionPositionsFilled as Type Properties shows them,
+      every layout, spacing, tick box and mullion type in settings matching the
+      dialog line for line, and layoutsDisagreeing empty. A read needs no
+      write to prove, and this one does not lean on a DRAFT fragment
+
+  - given: the first case again on Revit 2020
+    expect: >
+      the same answer. One path serves every release, and this is the release
+      at the other end of the range
+
+negative:
+  - given: >
+      the same five steps and the same request, with curtainWallType "Basic
+      Wall: Generic - 200mm" - the basic type CREATE_WALL was proved with in
+      this model. A type it must NOT read as a curtain wall, not an empty
+      request. Step 4 is handed the same basic type and refuses it too, which
+      changes nothing
+    expect: >
+      gridsLaidOut 0, mullionPositionsFilled 0, layoutsDisagreeing empty,
+      wallsOfType 0, settings empty; refused names the type - "is a basic wall
+      type, not a curtain wall type - it has no curtain grid or mullions to
+      read" - and points at REPORT_COMPOUND_STRUCTURE
+
+  - given: >
+      the arrangement WITHOUT step 4 - the copy of Curtain Wall 1 left as it
+      came - named as curtainWallType
+    expect: >
+      gridsLaidOut 0 and mullionPositionsFilled 0, with settings reading both
+      layouts as None (Revit's value 0) and every mullion position "none". A
+      curtain wall type with nothing laid out reads as nothing laid out - not a
+      refusal, and not a count of something that is not there
+
+  - given: the name of a curtain SYSTEM type, if the model has one
+    expect: >
+      refused by the add-in before this runs - "No wall type called" that name -
+      because a curtain system's type is not a wall type. Recorded as the
+      boundary, not as a failure of this fragment
+
+second_route:
+  - >
+      Type Properties of the same type in Revit: Vertical Grid and Horizontal
+      Grid (Layout, Spacing, Adjust for Mullion Size) and Vertical Mullions and
+      Horizontal Mullions (Interior, Border 1, Border 2), compared with
+      `settings` line for line. On a rolled-back run the dialog has nothing left
+      to show, so the second positive - a type that stays in the model - is
+      where this route can be taken

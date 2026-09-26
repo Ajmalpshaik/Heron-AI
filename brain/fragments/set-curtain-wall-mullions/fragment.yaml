@@ -1,0 +1,216 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-073
+semantic-identity: "put these mullion types on a curtain wall type's grid lines and borders"
+kind: action
+domain: revit.elements
+capability: SET_CURTAIN_WALL_MULLIONS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets the mullion types of a curtain wall TYPE - its Interior, Border 1 and
+  Border 2 types for the Vertical Mullions, the Horizontal Mullions, or both,
+  which is what Type Properties shows under those two headings. Only the
+  positions the modeller names change; a position left out keeps what it has.
+
+  **IT CHANGES THE TYPE, SO IT CHANGES EVERY WALL OF THAT TYPE.** The walls
+  using it are counted before anything is written, and the count is the first
+  line of the answer. To change one wall alone, DUPLICATE_TYPE first, put that
+  wall on the copy with CHANGE_ELEMENT_TYPE, and set the copy.
+
+  **THE TYPE IS NAMED, NOT SELECTED** - "Curtain Wall: Storefront", or the bare
+  type name when no other wall type shares it (D-54) - for the same reason as
+  SET_CURTAIN_WALL_GRID: it is a type change, and the request should say so. A
+  wall type that is not a curtain wall is refused by name and nothing changes.
+
+  **WHY NOT WRITE_ELEMENT_PARAMETERS.** "Interior Type", "Border 1 Type" and
+  "Border 2 Type" each appear twice on a curtain wall type, once per direction,
+  so that fragment refuses the name (D-54 s3, FRAGMENT-ISSUES 5b-203) - and
+  each holds a mullion TYPE, an element reference, which it refuses as well.
+  This reaches each position by Revit's own parameter id -
+  AUTO_MULLION_INTERIOR_VERT, _BORDER1_VERT, _BORDER2_VERT and the three _HORIZ.
+
+  **THE REQUEST IS A SHORT TABLE** - "vertical interior=Rectangular Mullion:
+  50 x 150mm; horizontal border 2=none". Six positions can be named: vertical
+  interior, vertical border 1, vertical border 2, and the same three
+  horizontal. Border 1 and Border 2 are the two edges of that direction.
+
+  **A MULLION TYPE IS NAMED, AND THE NAME HAS TO MEAN ONE.** The family and the
+  type as Revit writes them - "Rectangular Mullion: 50 x 150mm", with or
+  without a space before the colon - or the bare type name when no other
+  mullion type in the model shares it. Compared exactly, capitals included. A
+  name that matches none is refused WITH THE MULLION TYPES THE MODEL HAS; a
+  name that matches two is refused naming both, never chosen from (D-54 s3).
+  Any refusal refuses the whole request, so nothing is half-done.
+
+  **"none" TAKES THE MULLIONS OFF A POSITION**, and it is the only word that
+  does. A blank is refused rather than read as none.
+
+  **NOTHING IS LOADED.** A mullion family that is not in the model is refused
+  with the ones that are. Loading one is the modeller's call - a family brings
+  its own materials and can overwrite the project's.
+
+  **IT REPORTS WHAT REVIT HOLDS, NOT WHAT WAS ASKED.** After the write the
+  walls are rebuilt and all six positions are read back, beside what each held
+  before. Where a wall of the type is placed, one wall is measured before and
+  after: its mullions counted by type and by the way each one runs, and how
+  many grid lines it has each way - an interior type on a direction with no
+  grid lines shows nowhere, and the answer says so rather than leaving the
+  modeller to wonder why nothing appeared.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Every
+  refusal is made before the first write. If Revit refuses a write, or cannot
+  rebuild the walls with it, the call stops and nothing it did is kept.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # A curtain wall TYPE BY NAME - "Curtain Wall: Storefront", or the bare
+    # name when unique among wall types (D-54). A basic or stacked type binds
+    # and is refused here, by name. Not `wallType`, for the reason
+    # SET_CURTAIN_WALL_GRID gives: CREATE_WALL takes that name, and a proof's
+    # writing steps share one set of values.
+    - name: curtainWallType
+      type: WallType
+      source: request
+    # Position=mullion type, SEMICOLONS between - "vertical interior=
+    # Rectangular Mullion: 50 x 150mm; horizontal border 2=none". Positions:
+    # vertical interior, vertical border 1, vertical border 2, horizontal
+    # interior, horizontal border 1, horizontal border 2. A position left out
+    # keeps what it has; "none" takes its mullions off. A mullion type's name
+    # cannot hold a semicolon - Revit forbids one in any type name - so the
+    # table's separator can never cut a name in two.
+    - name: mullions
+      type: IDictionary<string, string>
+      source: request
+  provides:
+    - name: applied
+      # Positions Revit now HOLDS as asked AND that this call changed - counted
+      # off the read-back after the rebuild, never off the write.
+      role: result
+      type: int
+    - name: differs
+      # Positions where Revit holds something other than what was asked. A
+      # finding, never a success.
+      role: result
+      type: IList<string>
+    - name: alreadyAsAsked
+      # Positions that already held what was asked, so nothing was written.
+      # The evidence it looked, never a change it made (D-52).
+      role: accounting
+      type: int
+    - name: wallsOfType
+      # How many placed walls use the type - the REACH of the change, counted
+      # before the write. Never a thing it found (D-52).
+      role: accounting
+      type: int
+    - name: readBack
+      # ALL SIX positions as Revit holds them after the write, beside what each
+      # held before. A STRING, because a reply cuts a list to three items and
+      # this is the evidence. Accounting: empty on a refusal.
+      role: accounting
+      type: string
+    - name: measured
+      # One placed wall of the type, before and after: its mullions by type and
+      # by the way each runs, and its grid lines each way. Read off Revit.
+      role: accounting
+      type: string
+    - name: refused
+      # Why nothing was changed, in plain words - for a name that matches no
+      # mullion type, WITH the names the model has. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE PATH FOR EVERY RELEASE, read rather than remembered. On 2026-09-24
+  tools/api-surface read the reference assemblies of all eight releases, 2020
+  through 2027: `MullionType` derives from FamilySymbol on all eight, so its
+  `FamilyName` is the mullion family's; `WallType.Kind`, `Wall.CurtainGrid`,
+  CurtainGrid's `GetMullionIds`, `GetUGridLineIds` and `GetVGridLineIds`,
+  `CurtainGridLine.FullCurve`, `Mullion.LocationCurve`,
+  `Parameter.Set(ElementId)`, `Parameter.AsElementId()` and the application's
+  `AngleTolerance` carry one signature on every release. The API reference
+  text of all eight releases lists AUTO_MULLION_INTERIOR_VERT and _HORIZ
+  ("Interior Type"), AUTO_MULLION_BORDER1_VERT and _HORIZ ("Border 1 Type")
+  and AUTO_MULLION_BORDER2_VERT and _HORIZ ("Border 2 Type"). A mullion type is
+  found by walking the model's element types and testing each as a
+  MullionType - the add-in's own way of finding a type by class - rather than
+  by a class filter. No ElementId is constructed and none is read as a number.
+
+# ROUTING - repeated in SET_CURTAIN_WALL_GRID, REPORT_CURTAIN_ELEMENTS,
+# WRITE_ELEMENT_PARAMETERS, DUPLICATE_TYPE and CREATE_WALL.
+#
+#   "set the mullions on this curtain wall type" -> here
+#   "put 50 x 150 mullions on the borders"  -> here
+#   "take the top mullion off"              -> here, horizontal border 2=none
+#   "set the curtain wall grid spacing"     -> SET_CURTAIN_WALL_GRID. Interior
+#                                              mullions sit on the grid lines;
+#                                              with none there, an interior type
+#                                              shows nowhere
+#   "change the mullions on just this wall" -> DUPLICATE_TYPE first, then
+#                                              CHANGE_ELEMENT_TYPE to put that
+#                                              wall on the copy, then here on the
+#                                              copy
+#   "change this one mullion"               -> CHANGE_ELEMENT_TYPE, with that
+#                                              mullion selected - one instance,
+#                                              where this changes the type every
+#                                              wall's mullions come from. Not yet
+#                                              run on a mullion: one the type
+#                                              placed may need unpinning first
+#   "list the mullions on this facade"      -> REPORT_CURTAIN_ELEMENTS. A
+#                                              question must not land on a write
+#                                              (D-86)
+#   "which mullion type is on the curtain wall borders" -> REPORT_CURTAIN_WALL_TYPE,
+#                                              which reads all six positions by
+#                                              the same ids and changes none.
+#                                              Measured through find on
+#                                              2026-09-24: it reached HERE while
+#                                              this card was the nearest text,
+#                                              and reaches that reader since
+#   "what are the mullion types in this model" -> SELECT_TYPES, on Curtain Wall
+#                                              Mullions with both name filters
+#                                              blank - every mullion type in the
+#                                              model, a listing job. It still
+#                                              REACHES HERE (measured through find,
+#                                              2026-09-24, with REPORT_CURTAIN_WALL_TYPE
+#                                              in place): SELECT_TYPES does not
+#                                              declare it. In a throwaway copy with
+#                                              that sentence declared there, it
+#                                              reached SELECT_TYPES and no other
+#                                              sentence moved - but "list the
+#                                              mullion types in this model", "which
+#                                              mullion types are loaded", "show me
+#                                              all the mullion types" and "what
+#                                              mullion types do we have" still
+#                                              reached here. Refused for want of a
+#                                              `mullions` table, never answered
+#   "which type is this curtain wall"       -> REPORT_CURTAIN_ELEMENTS prints the
+#                                              wall's name, which is its type's -
+#                                              the name this one takes
+#   "set the Interior Type parameter"       -> NOT WRITE_ELEMENT_PARAMETERS. The
+#                                              name appears once per direction,
+#                                              and it holds a type reference
+#   "load a mullion family"                 -> NOT HERE, and not by Heron. A
+#                                              family carries its own materials
+#                                              and loading one can overwrite the
+#                                              project's
+
+utterances:
+  - set the mullions on this curtain wall type
+  - set a curtain wall's mullions on the type
+  - change the mullion type on the curtain wall
+  - put rectangular mullions on the curtain wall borders
+  - take the border mullions off this curtain wall type

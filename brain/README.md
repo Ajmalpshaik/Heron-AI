@@ -65,7 +65,7 @@ python tools/check-gaps.py                                  # unfinished, versus
 
 ## What is still to come
 
-**Proof, mostly.** **313 fragments are `PROVEN`; the other 98 and all thirteen skills are `DRAFT`** — derive
+**Proof, mostly.** **313 fragments are `PROVEN`; the other 101 and all fourteen skills are `DRAFT`** — derive
 both with `python brain/heron_fragment.py` rather than reading them here. **This line said 167 and 193
 until 2026-09-19**, which was wrong by 149 in one direction and 114 in the other and had been for weeks:
 the sentence telling its reader to derive the numbers was itself the reason nobody did. Phase 2's
@@ -87,7 +87,7 @@ than that.
 
 **The queue the skills produced has been worked.** Writing the skills first ordered it by real demand
 rather than by guessing, and on 2026-08-29 all seven were written — so `python brain/heron_skill.py` now
-prints **no gaps** and all thirteen skills have every capability provided. What that bought is a shorter list
+prints **no gaps** and all fourteen skills have every capability provided. What that bought is a shorter list
 of *kinds* of outstanding work, not less of it: the seven are `DRAFT` like the rest, and every one is
 waiting on the same machine.
 

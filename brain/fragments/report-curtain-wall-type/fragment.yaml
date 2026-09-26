@@ -1,0 +1,168 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-074
+semantic-identity: "the grid layout, spacing and mullion types a curtain wall type holds, each way"
+kind: action
+domain: revit.reporting
+capability: REPORT_CURTAIN_WALL_TYPE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads what a curtain wall TYPE is set to - for its Vertical Grid and its
+  Horizontal Grid, the Layout, the Spacing in millimetres and Adjust for
+  Mullion Size, and for its Vertical and Horizontal Mullions, the Interior,
+  Border 1 and Border 2 types by "Family: Type" name, or none - and how many
+  placed walls use the type. It changes nothing.
+
+  **IT EXISTS BECAUSE THE QUESTIONS WERE LANDING ON WRITES.** Measured through
+  the host's own find on 2026-09-24: once SET_CURTAIN_WALL_GRID and
+  SET_CURTAIN_WALL_MULLIONS existed, "what is the grid spacing on this curtain
+  wall" and "which mullion type is on the curtain wall borders" reached them
+  - a question handed to something that changes the model (D-86). Nothing read
+  these settings, so the writers' own cards were the nearest text.
+
+  **EVERY SETTING IS READ BY REVIT'S OWN PARAMETER ID, NEVER BY A NAME.** On a
+  curtain wall type each of these names appears twice, once per direction, and
+  a lookup by name returns one of the two with no rule for which (D-54 s3,
+  FRAGMENT-ISSUES 5b-203). READ_ELEMENT_PARAMETERS reads by name, so it cannot
+  answer these reliably; this reads SPACING_LAYOUT_VERT and _HORIZ,
+  SPACING_LENGTH_VERT and _HORIZ, CURTAINGRID_ADJUST_BORDER_VERT and _HORIZ,
+  and the six AUTO_MULLION ids.
+
+  **THE LAYOUT IS REPORTED TWICE, AND THE TWO ARE COMPARED.** Revit stores it
+  as a whole number. It is named here by what SpacingRuleLayout calls that
+  number - None 0, Fixed Distance 1, Fixed Number 2, Maximum Spacing 3,
+  Minimum Spacing 5 - and printed beside the words Revit displays for it. A
+  number displayed as a DIFFERENT layout is listed in `layoutsDisagreeing`:
+  SET_CURTAIN_WALL_GRID writes those numbers on the assumption that this
+  parameter uses them, and this is the read that can show the assumption
+  wrong without writing anything. A Spacing under a layout that does not use
+  one is said to do nothing. Under Fixed Number the count is each placed
+  wall's own Number, which a type does not hold, and the answer says so.
+
+  **THE TYPE IS NAMED, AS FOR THE TWO WRITERS** - "Curtain Wall: Storefront",
+  or the bare type name when no other wall type shares it (D-54).
+  REPORT_CURTAIN_ELEMENTS prints a placed wall's name, which is its type's. A
+  basic or stacked wall type is refused by name. A curtain SYSTEM is out of
+  scope: its type is a curtain system type, not a wall type, and the add-in
+  refuses its name before this runs - nothing reads a curtain system's
+  settings yet.
+
+  **THE REACH IS COUNTED**, as the two writers count it: how many placed walls
+  use the type, which is how many a change to any of these settings would
+  change.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # A curtain wall TYPE BY NAME - the same need, and the same name, as
+    # SET_CURTAIN_WALL_GRID and SET_CURTAIN_WALL_MULLIONS, so a proof can build
+    # a type with one and read it with this. Resolved among wall types by the
+    # add-in (D-54); a basic or stacked type binds and is refused here.
+    - name: curtainWallType
+      type: WallType
+      source: request
+  provides:
+    - name: gridsLaidOut
+      # Directions, of two, whose Layout is anything but None - the type puts
+      # grid lines on its walls that way. Something the read FOUND.
+      role: result
+      type: int
+    - name: mullionPositionsFilled
+      # Mullion positions, of six, holding a mullion type rather than none.
+      role: result
+      type: int
+    - name: layoutsDisagreeing
+      # Directions whose stored layout number Revit DISPLAYS as a different
+      # layout from the one SpacingRuleLayout gives that number. A finding:
+      # empty unless the assumption SET_CURTAIN_WALL_GRID writes on is wrong.
+      role: result
+      type: IList<string>
+    - name: settings
+      # EVERY SETTING READ, both directions, in words: layout (the enum's name,
+      # Revit's number and Revit's display), spacing in millimetres, adjust for
+      # mullion size, and the three mullion types. A STRING, because a reply
+      # cuts a list to three items and this is the answer. Accounting: it is
+      # what the two counts above count, and a refusal leaves it empty.
+      role: accounting
+      type: string
+    - name: wallsOfType
+      # How many placed walls use the type - the reach a change to it would
+      # have. The size of what it touches, never a thing it found (D-52).
+      role: accounting
+      type: int
+    - name: refused
+      # Why nothing was read, in plain words. Empty when the read ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE PATH FOR EVERY RELEASE, read rather than remembered - the same reading as
+  SET_CURTAIN_WALL_GRID and SET_CURTAIN_WALL_MULLIONS on 2026-09-24:
+  `WallType.Kind`, `Parameter.AsInteger`, `AsDouble`, `AsElementId` and
+  `AsValueString()` carry one signature on all eight releases, 2020 through
+  2027, and `SpacingRuleLayout` the same five values, cast from the enum. The
+  API reference text of all eight lists every parameter id read here -
+  CURTAINGRID_ADJUST_BORDER_VERT and _HORIZ as "Adjust for Mullion Size" among
+  them - and `CurtainSystemType` as its own class, derived from
+  HostObjAttributes and not from WallType, on all eight. No ElementId is
+  constructed and none is read as a number.
+
+# ROUTING - repeated in SET_CURTAIN_WALL_GRID, SET_CURTAIN_WALL_MULLIONS and
+# REPORT_CURTAIN_ELEMENTS.
+#
+#   "what is the grid spacing on this curtain wall"    -> here
+#   "which mullion type is on the curtain wall borders" -> here
+#   "show me the curtain wall type settings"           -> here
+#   "set the curtain wall grid spacing"   -> SET_CURTAIN_WALL_GRID. This one
+#                                            reads the same settings and
+#                                            changes none
+#   "change the mullion type on the
+#    curtain wall"                        -> SET_CURTAIN_WALL_MULLIONS
+#   "what is in this curtain wall", "how many grid lines in this curtain wall"
+#                                         -> REPORT_CURTAIN_ELEMENTS. A placed
+#                                            WALL, counted: its panels, its
+#                                            mullions by type and its grid lines.
+#                                            This reads the TYPE they come from
+#   "what are the mullion types in this model"
+#                                         -> SELECT_TYPES, with the category
+#                                            Curtain Wall Mullions and both name
+#                                            filters left blank - a listing of
+#                                            every mullion type there is.
+#                                            This reads the six positions ONE
+#                                            curtain wall type uses, so it is not
+#                                            this one's question. Today it reaches
+#                                            SET_CURTAIN_WALL_MULLIONS - see that
+#                                            card's row, measured 2026-09-24
+#   "what is the Number on this wall"     -> NOT HERE, and nothing reads it
+#                                            reliably yet. Under Fixed Number the
+#                                            count is each wall's own, and the
+#                                            name "Number" is worn by both
+#                                            directions (5b-203)
+#   "what is this wall made of"           -> REPORT_COMPOUND_STRUCTURE for a
+#                                            layered wall
+#   "the settings of this curtain system" -> NOT HERE, and nothing reads them
+#                                            yet. A curtain system's type is not
+#                                            a wall type
+
+utterances:
+  - what is the grid spacing on this curtain wall
+  - what grid layout does this curtain wall type have
+  - which mullion type is on the curtain wall borders
+  - what spacing are the curtain grid lines
+  - show me the curtain wall type settings
+  - is this curtain wall fixed distance or maximum spacing
+  - what mullions are on this curtain wall type

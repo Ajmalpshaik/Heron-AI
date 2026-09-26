@@ -128,6 +128,23 @@ compatibility-note: >
 #                                          fragment until 2026-09-05
 #   "what area is the glazing"          -> MEASURE_ELEMENT_VOLUME on the panels,
 #                                          which reports surface area
+#   "set the curtain wall grid spacing" -> SET_CURTAIN_WALL_GRID. This one READS
+#                                          a curtain wall; that one changes its
+#                                          TYPE's grid, and so every wall of the
+#                                          type. Asked through heron_lookup on
+#                                          2026-09-24, before that fragment
+#                                          existed, the sentence resolved here
+#   "change the mullion type on the     -> SET_CURTAIN_WALL_MULLIONS - and that
+#    curtain wall"                         sentence resolved here too
+#   "set this curtain wall's grid"      -> SET_CURTAIN_WALL_GRID, which takes the
+#                                          TYPE by name. This one prints each
+#                                          wall under its own name, and a wall's
+#                                          name is its type's
+#   "what is the grid spacing on this curtain wall" -> REPORT_CURTAIN_WALL_TYPE,
+#                                          which reads the TYPE's Layout, Spacing
+#                                          and mullion types by Revit's ids. This
+#                                          one counts what a placed wall has - its
+#                                          grid lines, panels and mullions
 
 utterances:
   - what panels and mullions are in this curtain wall

@@ -326,6 +326,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-aq.md`](needs-checking/group-aq.md)
 
+## Group AR - a curtain wall's grid and mullions: set on the type, read back off the wall (2026-09-25)
+
+**Its own file:** [`needs-checking/group-ar.md`](needs-checking/group-ar.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

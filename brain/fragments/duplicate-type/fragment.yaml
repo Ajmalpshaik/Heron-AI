@@ -119,6 +119,12 @@ compatibility-note: >
 #                                        system a run belongs to. This one
 #                                        duplicates the type behind ELEMENTS -
 #                                        a duct type, its size and shape
+#   "change the grid on just this curtain wall" -> here FIRST, then
+#                                        CHANGE_ELEMENT_TYPE to put that wall on
+#                                        the copy, then SET_CURTAIN_WALL_GRID or
+#                                        SET_CURTAIN_WALL_MULLIONS on the copy.
+#                                        Both change a TYPE, and so every wall
+#                                        of it
 utterances:
   - make a new duct type
   - duplicate this type

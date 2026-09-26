@@ -1,0 +1,175 @@
+# THE PROOF PLAN, written 2026-09-24 and NOT RUN. Nothing here has touched a
+# model (D-30); every case says what to arrange and what must come back. The
+# owner runs it, on a TEST COPY - tools/jobs/set-curtain-wall-grid-test-projject-
+# 2026-09-24.yaml is the positive and the first negative as a batch.
+#
+# THE TYPE IS BUILT, NOT FOUND, SO NOTHING ALREADY PLACED CAN CHANGE. Every
+# leg makes its own, in the one transaction group `validate` rolls back:
+#   1. CREATE_WALL draws one 9000 mm wall, 3000 mm high, of an EXISTING curtain
+#      wall type - "Curtain Wall: Curtain Wall 1" in Revit's templates; any
+#      curtain wall type does, see the note on the numbers below
+#   2. DUPLICATE_TYPE copies that wall's type as "HERON CW GRID PROOF" - its
+#      `elements` come from the wall CREATE_WALL just made
+#   3. CHANGE_ELEMENT_TYPE puts that wall on the copy
+#   4. this fragment, on "HERON CW GRID PROOF" - a type exactly one wall uses
+# The end state is the one asked for - a copied curtain wall type used by one
+# new wall - built in that order because every writing setup step is bound
+# from ONE set of values, so CREATE_WALL's `wallType` can only name the type
+# that already exists, and DUPLICATE_TYPE copies the type behind the elements
+# it is handed. That is also why this fragment's need is `curtainWallType` and
+# not `wallType`.
+#
+# NOTHING MAY BE SELECTED IN REVIT WHEN THE POSITIVE STARTS. Steps 2 and 3 take
+# their walls from the selection before they take what step 1 made (the
+# add-in's binding order), so a stale selection would be duplicated instead.
+# Press Esc in Revit first. A rolled-back write clears the selection, so the
+# later legs start clean by themselves.
+#
+# READ `measured` BEFORE `applied`. It must name ONE wall, 9000 mm long. "No
+# wall of this type is placed" means step 3 did not move the wall - it records
+# a refusal without stopping the chain - and then only the parameter half ran.
+#
+# THE NUMBERS BELOW ARE DERIVED, NOT REMEMBERED, and hold for ANY curtain wall
+# type copied in step 1: the fragment overwrites the vertical layout and
+# spacing, and the wall is new, so its per-wall Justification, Angle and
+# Offset are Revit's defaults. For a 9000 mm wall at a fixed distance of 1500:
+# lines at 1500, 3000, 4500, 6000 and 7500 from the start; 6 x 1500 = 9000 is
+# the wall's END, a border and not a grid line; so 5 interior lines and six
+# 1500 mm panels. Justified at the centre instead, the lines sit at 4500 +/- k
+# x 1500 - the same five, because 4500 is itself a multiple of 1500. Justified
+# at the end, the mirror image. Five in every case - which is the test every
+# fixed-distance count here is chosen to pass: the length AND its midpoint
+# must both be multiples of the spacing, or the answer depends on a
+# justification nobody set. Maximum and Minimum Spacing divide the whole
+# length into equal panels, so justification does not enter them.
+
+positive:
+  - given: >
+      THE JOB FILE'S CASE. The arrangement above in `test projject`, Revit
+      2024, on "Level 1": the wall from "0,60000,0" to "9000,60000,0" - well
+      clear of the building - height 3000, structural false; curtainWallType
+      "HERON CW GRID PROOF"; grid "vertical layout=fixed distance; vertical
+      spacing=1500; horizontal layout=minimum spacing; horizontal spacing=800".
+      BOTH DIRECTIONS IN ONE RUN, on purpose: all four parameter ids are
+      written, and so are layout values 1 and 5 - 5 being Minimum Spacing, the
+      value most likely to be mapped wrong, since SpacingRuleLayout has no 4
+    expect: >
+      wallsOfType 1, applied 4 (fewer, with alreadyAsAsked making up the
+      difference, if the copied type already held one of these), differs
+      empty, refused empty. readBack reads "vertical: layout Fixed Distance
+      [Revit's value 1], was None [Revit's value 0]" when the copy came from
+      Curtain Wall 1, "spacing 1500.0 mm", and "horizontal: layout Minimum
+      Spacing [Revit's value 5]", "spacing 800.0 mm", each "- asked". measured
+      names one wall, "9000 mm long", with vertical grid lines 0 before and 5
+      now (derivation above) and horizontal lines 0 before and 2 now: Minimum
+      Spacing divides the 3000 mm height into equal panels no NARROWER than
+      800, and 3000 / 800 = 3.75 rounds DOWN to 3 panels of 1000 mm - 2 lines,
+      with no justification to depend on. RECORD from it: which of Revit's U
+      and V sets the vertical and the horizontal lines came from - the
+      question the API reference leaves open - and, from readBack's last part,
+      which of Number, Justification, Angle and Offset the TYPE carries and
+      which the WALL does. A layout shown as anything other than the one its
+      value was written for never reaches this answer: the fragment stops and
+      keeps nothing, quoting what Revit showed, and that refusal is the
+      finding. 9000 is an exact multiple of 1500, so a sixth vertical line
+      would fall ON the wall's end - a border, where Revit draws no grid line.
+      One appearing a hair inside the end would be Revit's rounding, recorded
+      as a finding about Revit rather than this fragment
+
+  - given: >
+      the same arrangement with the vertical half alone - grid "vertical
+      layout=fixed distance; vertical spacing=1500" - the case to run if the
+      one above stops on the horizontal layout
+    expect: >
+      applied 2, differs empty; measured: vertical lines 0 before and 5 now,
+      horizontal the same before and now; readBack's horizontal part "not
+      asked, left as it was" twice
+
+  - given: >
+      the same arrangement; grid "vertical layout=minimum spacing; vertical
+      spacing=2000" - value 5 again, this time on the vertical parameter id
+    expect: >
+      applied 2, differs empty; readBack "layout Minimum Spacing [Revit's value
+      5]". measured: vertical lines 3. Derived, not remembered: Minimum Spacing
+      divides the length into equal panels no NARROWER than the spacing, so
+      9000 / 2000 = 4.5 rounds DOWN to 4 panels of 2250 mm, which is 3
+      interior lines. If Revit shows value 5 as anything else, the call stops
+      and keeps nothing - that is the assumption failing, and it must be
+      recorded as a finding, not retried
+
+  - given: >
+      the same arrangement; grid "vertical layout=maximum spacing; vertical
+      spacing=2000"
+    expect: >
+      applied 2, differs empty; readBack "layout Maximum Spacing [Revit's value
+      3]". measured: vertical lines 4. Derived: Maximum Spacing divides the
+      length into equal panels no WIDER than the spacing, so 9000 / 2000 = 4.5
+      rounds UP to 5 panels of 1800 mm, which is 4 interior lines. 3 lines
+      here and 4 in the case above is the two layouts told apart by geometry,
+      not by a number the fragment printed
+
+  - given: >
+      the same arrangement; grid "horizontal layout=fixed distance; horizontal
+      spacing=750" - the OTHER direction, with the vertical left alone
+    expect: >
+      applied 2; the vertical part of readBack "not asked, left as it was"
+      both times. measured: horizontal lines 3 on the 3000 mm high wall - at
+      750, 1500 and 2250 above its base, 3000 being its top border - and the
+      vertical count the same before and now. 750 and not 1000 ON PURPOSE:
+      the wall's own Justification is Revit's default, which nobody here has
+      read, and 1000 gives 2 lines justified at the base but 3 at the centre
+      (1500 +/- 1000). 750 divides both 3000 and its centre, 1500, so every
+      justification gives 3
+
+  - given: the first case again on Revit 2020
+    expect: >
+      the same answer. One path serves every release, and this is the release
+      at the other end of the range
+
+negative:
+  - given: >
+      the same arrangement and the SAME grid, "vertical layout=fixed distance;
+      vertical spacing=1500", with curtainWallType "Basic Wall: Generic -
+      200mm" - the basic type CREATE_WALL was proved with in this model. A
+      type it must NOT touch, not an empty request
+    expect: >
+      applied 0, differs empty, wallsOfType 0, readBack and measured empty.
+      refused names the type and says "is a basic wall type, not a curtain
+      wall type - it has no grid to lay out"; findings repeats it, ending
+      "Nothing was changed"
+
+  - given: the arrangement; grid "vertical layout=fixed number"
+    expect: >
+      refused, beginning "Fixed Number is not set here" and naming the wall's
+      own Number as the reason; applied 0, readBack empty. A request this
+      fragment turns down on purpose, not a value it failed to write
+
+  - given: >
+      the arrangement; grid "vertical spacing=1500" alone - the copy's
+      vertical layout is still None when it came from Curtain Wall 1
+    expect: >
+      refused "A vertical spacing does nothing while the vertical layout is
+      None"; applied 0. The write that would have changed nothing is refused
+      rather than reported as done
+
+  - given: the arrangement; grid "vertical layout=fixed distance; vertical spacing=1.5"
+    expect: >
+      refused as outside 100 to 100000 mm, with "1.5 m is 1500" as the hint;
+      applied 0. A number in the wrong unit, caught before the type is touched
+
+  - given: >
+      the arrangement; grid "vertical layut=fixed distance" - a misspelt
+      setting - and separately an empty table
+    expect: >
+      the first refused naming the four settings it does change; the second
+      refused "Nothing was named to change". applied 0 both times
+
+second_route:
+  - >
+      By hand on a test copy: duplicate the same curtain wall type in Type
+      Properties, set Vertical Grid Layout to Fixed Distance and Spacing to
+      1500, draw a 9000 mm wall of it, and count the vertical grid lines in an
+      elevation - five, matching `measured`. Then switch the copy's Layout to
+      Fixed Number and look where "Number" appears: in the wall's own
+      Properties, or in Type Properties. That is the fact readBack measures,
+      read a second way

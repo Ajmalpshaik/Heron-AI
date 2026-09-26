@@ -1,0 +1,94 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: curtain-wall
+name: Build a curtain wall with its grid and mullions
+domain: revit.elements
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Builds a curtain wall and gives it the grid and the mullions the modeller
+  asks for, and reads back off the wall that they are there. The grid and the
+  mullions of a curtain wall live on its TYPE, not on the wall - so the order
+  below is the order that changes the wall asked about and leaves every other
+  wall of that type exactly as it was.
+
+  1. REPORT_CURTAIN_WALL_TYPE on the type the modeller named, first: its layout and
+     spacing each way, its mullions, and how many placed walls use it. That
+     number decides step 2.
+  2. When other walls use that type and only this one should change: the
+     wall's type is copied with DUPLICATE_TYPE, and CHANGE_ELEMENT_TYPE moves
+     this wall onto the copy. Steps 4 and 5 then change the copy. When the
+     modeller says every wall of the type should change, this step is skipped
+     - and the answer from step 4 says how many walls that was.
+  3. CREATE_WALL with the curtain wall type, along the modeller's points and at
+     his height, when the wall is not drawn yet.
+  4. SET_CURTAIN_WALL_GRID on the type - the vertical grid, the horizontal
+     grid or both: a layout (none, fixed distance, maximum or minimum spacing)
+     and a spacing in millimetres. A direction nobody mentioned is left alone.
+  5. SET_CURTAIN_WALL_MULLIONS on the type - the interior, border 1 and border
+     2 mullion each way, each named by its type ("Rectangular Mullion : 50 x
+     150mm"), or none. A mullion type the model does not have is refused with
+     the names it does have; loading one is the modeller's.
+  6. REPORT_CURTAIN_ELEMENTS on the wall - its grid lines each way and its
+     mullions by type, measured - against what the spacing should give. A 9000
+     mm wall at a 1500 mm fixed distance has five vertical lines inside it. The
+     calls not failing is not the proof; the lines on the wall are.
+
+  NOT YET: a FIXED NUMBER of divisions - the count lives on each wall, not on
+  the type, so the grid step refuses it and says so; one grid line added,
+  moved or removed by hand; the panel type, glazed or solid; an arched or
+  shaped head.
+
+# The words the modeller says when he wants a curtain wall.
+utterances:
+  - build a curtain wall with a 1500 grid and 50 by 150 mullions
+  - set the curtain wall grid and the mullions
+  - change the grid on just this curtain wall
+  - put mullions on this curtain wall
+  - give this curtain wall a vertical grid every 1500
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+needs:
+  # Read first - it decides whether step 2 is needed.
+  - REPORT_CURTAIN_WALL_TYPE
+  - DUPLICATE_TYPE
+  - CHANGE_ELEMENT_TYPE
+  - CREATE_WALL
+  - SET_CURTAIN_WALL_GRID
+  - SET_CURTAIN_WALL_MULLIONS
+  # The proof, on the wall itself. Never skipped.
+  - REPORT_CURTAIN_ELEMENTS
+
+# What must be true BEFORE it runs, so it fails early with something
+# useful instead of deep inside a transaction (docs/09 s2).
+preconditions:
+  - a project is open in front, and it is the model the modeller means
+  - the curtain wall type is named by the modeller and is in the model - Heron does not choose one
+  - every mullion type named is already loaded in the model
+  - every spacing is the modeller's, in millimetres, and none is assumed (D-33, D-71)
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  WHY THE TYPE, AND WHY IT IS READ FIRST. A curtain wall's grid and mullions
+  are type settings, so changing them for one wall changes every wall of that
+  type, including walls nobody selected and walls on other levels. The grid and
+  mullion steps each say how many walls they reached; step 1 says it before
+  anything changes, which is when it is useful.
+
+  WHY NOT BY A PARAMETER NAME. Every one of these settings shares its name with
+  another - Layout, Spacing, Interior Type, Border 1 Type and Border 2 Type each
+  appear once under the vertical heading and once under the horizontal one - so
+  writing them by name reaches one at random (FRAGMENT-ISSUES 5b-203). Steps 4
+  and 5 reach each one by Revit's own id for it.
+
+  Every step is one entry in Revit's undo list. DRAFT until the whole order has
+  been run on a scratch model - a curtain wall drawn, its type copied, the grid
+  and mullions set, and the lines counted on the wall (NEEDS-CHECKING Group AR).
