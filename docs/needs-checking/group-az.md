@@ -62,6 +62,21 @@ cut foreground patterns, `solidFill=both`, `visible=true`, `enabled=true`, `keep
    Mech`: `filterSettings` empty, and the first two findings *"No view called 'No Such View'"* and *"View
    '1 - Mech' (FloorPlan) carries no filters."*
 
+**Routing, measured rather than assumed.** The real `find` was asked 60 sentences on two scratch stores -
+one built from `origin/main` at `4bf727fb`, one from this branch - and the answers compared. The owner's five
+("make the filter pattern solid", "set the filter transparency", "halftone the return air filter", "disable
+the filter", "untick the supply air filter") reach APPLY_VIEW_FILTER by identity; on main they reached
+SET_CATEGORY_SOLID_FILL, CREATE_VIEW_FILTERS_BY_RULE, AUDIT_VIEW_FILTERS and SET_VIEW_FILTER_CATEGORIES. "what
+are the filter settings on this view" and "read the filter settings back" now reach REPORT_VIEW_FILTERS
+instead of COPY_VIEW_FILTERS, a writer. **The widened card first pulled create questions onto itself** -
+"make a view filter for supply air", "make a view filter for exhaust air", "make a filter for supply air" all
+answered APPLY_VIEW_FILTER - so `create-view-filter` gained "make a view filter for supply air" and
+`create-view-filters-by-rule` "make a view filter for return air" and "... for exhaust air". After that no
+sentence that reached a create tool on main reaches a writer or a read here; three move between the two
+create tools, and "create a filter for the supply ducts" reaches CREATE_VIEW_FILTER instead of CREATE_DUCT.
+Still wrong on both, and not made worse: "what colour is the supply air filter in this view" reaches
+CREATE_VIEW_FILTER, a writer, and "check the filter overrides" COPY_VIEW_FILTERS.
+
 | # | Check | Expected |
 |---|---|---|
 | **AZ1** | **On the WORKING model, by eye - the second route for both fragments.** Open `Level 1 - Air Terminal Layout`, then `{3D}`: Visibility/Graphics, Filters tab | Supply Air, Return Air, Exhaust Air each with **Enable Filter ticked** and **Visibility ticked**; Projection/Surface Lines in the company colour; Projection/Surface Patterns showing **Solid fill** in the company colour; the Cut Lines and Cut Patterns cells **greyed out** for all three. And on the plan itself the ducts and air terminals drawn solid blue, magenta and brown. This is what the read-back of 2026-09-28 said; the dialog is what decides |

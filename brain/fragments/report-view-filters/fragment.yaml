@@ -113,9 +113,8 @@ compatibility-note: >
 # CREATE_SELECTION_FILTER.
 #
 #   "what filters are on this view"  -> here - a READ
-#   "what are the filter settings on
-#    this view" / "read the filter
-#    colours back"                   -> here, with viewName
+#   "what are the filter settings on this view" -> here, with viewName
+#   "read the filter settings back"  -> here, with viewName
 #   "which views use this filter"    -> here
 #   "what filters already exist"     -> here, before making a near-duplicate
 #   "put that filter on this view"   -> APPLY_VIEW_FILTER - a WRITE, and it must

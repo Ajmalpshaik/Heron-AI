@@ -172,8 +172,7 @@ compatibility-note: >
 #
 #   "put that filter on this view"   -> here
 #   "apply the filter"               -> here
-#   "hide everything that filter
-#    matches"                        -> here, with visible false
+#   "hide everything that filter matches" -> here, with visible false
 #   "make a filter for supply air"   -> CREATE_VIEW_FILTER - it MAKES the rule
 #                                       and puts it on no view
 #   "save these as a set"            -> CREATE_SELECTION_FILTER
@@ -199,9 +198,8 @@ compatibility-note: >
 #   "disable the filter"                 -> here, enabled=false, overrides=none
 #   "untick the supply air filter"       -> here - ask whether Enable Filter or
 #                                           Visibility is meant
-#   "what are the filter settings on
-#    this view"                          -> REPORT_VIEW_FILTERS with viewName -
-#                                           a READ
+#   "what are the filter settings on this view" -> REPORT_VIEW_FILTERS with
+#                                           viewName - a READ
 utterances:
   - apply the filter
   - put that filter on this view
