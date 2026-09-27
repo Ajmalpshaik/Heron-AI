@@ -990,7 +990,7 @@ capability rows **19** first and **28** in the top three.
 | nearness = the better of the card and its identity-plus-sentences | 7 | 16 / 31 | the zone tool's identity and sentences are all zone |
 | nearness reads identity, name and sentences only, no purpose | 7 | 16 / 31 | the same |
 | identity-plus-sentences and purpose as two equal halves | 7 | 19 / 30 | and one more question handed a change, 9 to 10 |
-| markdown stripped before embedding | 7 | 19 / 28, identical | 395 of 416 purposes carry `**` and the asterisks are embedded as tokens, but stripping them helped the zone tool more |
+| markdown stripped before embedding | 7 | 19 / 28, identical | 399 of 420 purposes carry `**` and the asterisks are embedded as tokens, but stripping them helped the zone tool more |
 | nearness weighted 0.9, 0.8 or 0.7 under `model` | 9 | 19 / 29, 19 / 28, 19 / 29 | a swap outvotes the nudge only below 0.62 |
 | nearness weighted 0.6 under `model` | 13 | **18** / 29 | loses his #37 - below |
 | no status nudge at all | 13 | **18** / 28 | loses his #37: *"Colour all the louvres red and the rest grey"* - `HIGHLIGHT_VS_REST`, PROVEN, trailed a DRAFT by 0.09 of a rank, and the nudge was right to lift it |
