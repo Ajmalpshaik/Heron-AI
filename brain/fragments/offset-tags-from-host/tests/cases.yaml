@@ -1,0 +1,50 @@
+positive:
+  - given: >
+      the 90 air terminal tags on FloorPlan "Level 1 - Air Terminal Layout" (1:75), fed by
+      SELECT_BY_CATEGORY_NAME categoryName Air Terminal Tags inViewOnly that view, with
+      tagCategories Air Terminal Tags, offsetRightMm 8, offsetUpMm 6 and addLeader true
+    expect: >
+      moved 90, leadersOn 90, every moved head within half a paper millimetre of its
+      diffuser's point plus 600 mm right and 450 mm up, and the viewport on M-104 reading the
+      same box centre before and after - or put back, and said so, in the same undo
+
+  - given: the same request run a second time, straight after
+    expect: >
+      moved 0, alreadyThere 90, leadersOn 90. THIS IS THE READ-BACK: the target is measured
+      from the element, so a second run computes the same target and finds every tag there
+
+  - given: duct tags on a plan, addLeader keep, offsetRightMm 0 and offsetUpMm 5
+    expect: >
+      each tag 5 mm above the middle of its own duct on paper, and any free leader end still
+      where it pointed before - not dragged along with the head
+
+  - given: room tags on a plan, tagCategories Room Tags, addLeader true
+    expect: >
+      moved by their head, leader on, the leader end left in the room, and nothing in
+      leaderNotAsAsked - a room tag has no end condition to attach
+
+negative:
+  - given: >
+      the same 90 air terminal tags handed in, with tagCategories Duct Tags. THIS IS THE
+      FIRST NEGATIVE TO RUN
+    expect: >
+      moved 0 and otherCategory 90 - every tag left where it was and counted, not skipped
+      silently and not moved
+
+  - given: the air terminals themselves handed in instead of their tags
+    expect: notTags 90, moved 0, nothing changed
+
+  - given: tags of another view handed in with this view named
+    expect: notInView naming them, moved 0
+
+  - given: addLeader maybe
+    expect: refused as not understood, with the three words it takes, and nothing moved
+
+  - given: a 2022-or-later tag that points at two elements
+    expect: named in notSupported and left where it was
+
+second_route:
+  - >
+    Revit's own Tag properties on a moved tag: Leader checked, Leader End Condition Attached;
+    and the tag head measured on the sheet from its diffuser's insertion point with Revit's
+    measure tool - 8 mm right and 6 mm up on paper
