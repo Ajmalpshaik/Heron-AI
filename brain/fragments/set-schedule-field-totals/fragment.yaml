@@ -1,0 +1,169 @@
+heron-agent: HERON-REVIT-SCH-026
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-109
+semantic-identity: "switch on calculate totals for these columns of a schedule"
+kind: action
+domain: revit.schedules
+capability: SET_SCHEDULE_FIELD_TOTALS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Switches on "Calculate totals" for named columns of a schedule - Schedule
+  Properties, Formatting, pick the field, Calculate totals - so each group
+  footer and the grand total add that column up.
+
+  IT EXISTS BECAUSE *"calculate totals for the Flow column"* RESOLVED TO
+  `MEASURE_ELEMENT_VOLUME`, and *"sum this column in the schedule"* to
+  `SET_SCHEDULE_APPEARANCE`, which renames headings and widens columns - both
+  asked of `heron_lookup` on 2026-09-27. The schedule that needed it was an air
+  terminal schedule grouped by room with footers and a grand total on, whose
+  Flow column had no total. Nothing in the library set a column's calculation.
+
+  **FOOTERS AND TOTALS ARE TWO SETTINGS, ON TWO TABS.** A group footer and the
+  grand total are switched on in Sorting/Grouping - `SET_SCHEDULE_SORT_GROUP`.
+  What they ADD UP is chosen per column on the Formatting tab, and until a
+  column has totals on, a footer only counts rows. So a schedule can look fully
+  set up and still show no total flow, and every column switched on here says
+  where its total will print - or that it prints nowhere yet.
+
+  **ON ONLY.** Nothing here turns totals off or asks for a minimum or maximum. A
+  column already totalling is reported and left alone, which is also how the
+  change is read back: a second run finds it already totalled.
+
+  **A COLUMN THAT CANNOT BE ADDED UP IS ASKED ABOUT BEFORE IT IS TRIED.**
+  `CanTotal` is Revit's own answer - a type name or a room name is text - and a
+  refusal changes nothing.
+
+  **A NAME THAT COULD MEAN TWO COLUMNS TOUCHES NEITHER.** A column is found by
+  its field name or its printed heading, and a heading can be renamed to
+  another column's field name. Taking the first match would total whichever
+  column comes first, not necessarily the one on screen, so anything but
+  exactly one match is refused. A hidden column is switched on too, and the
+  answer says its total prints nowhere until the column is shown.
+
+  **REVIT ALLOWS ONE CALCULATION PER COLUMN.** A column showing its minimum or
+  maximum is switched to totals, because totals is what was asked for, and what
+  it showed before is reported rather than lost - the rule
+  `SET_SCHEDULE_SORT_GROUP` keeps for a sort it replaces.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+    - name: fieldNames
+      type: IList<string>
+      source: request
+  provides:
+    - name: totalled
+      role: result
+      type: int
+    - name: appliedTotals
+      # A second read of each column switched on, with where its total prints
+      # on that schedule - never an echo of the request. ONE STRING, joined
+      # with "; ", because a list reaches the chat as three entries cut at
+      # sixty characters and the cut part is where the total prints.
+      role: result
+      type: string
+    - name: alreadyTotalled
+      # Columns that were totalling before this ran and were left alone. The
+      # prior state, never a change it made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: cannotTotal
+      # Columns Revit will not add up - CanTotal is its own answer, asked
+      # before anything is set. Given and unusable (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notPresent
+      # Column names the schedule does not carry. The evidence it looked,
+      # never a thing it found (D-52).
+      role: accounting
+      type: IList<string>
+    - name: ambiguous
+      # Names that more than one column answers to, by field name or by
+      # printed heading. NONE of them was touched. Given and unusable (D-52).
+      role: accounting
+      type: IList<string>
+    - name: replacedCalculation
+      # A minimum or maximum the column showed BEFORE it was switched to
+      # totals. The prior state, reported before it goes (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND, so it must not count toward
+      # "did this come back empty" (D-52).
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `ScheduleField.DisplayType` (get and
+  set), `ScheduleField.CanTotal()`, `GetName`, `ColumnHeading` and `IsHidden`,
+  `ScheduleFieldId`'s `Equals`, `GetHashCode` and `==` (so a set of them holds
+  one entry per column), and the
+  `ScheduleFieldDisplayType` enum with `Standard = 0`, `Totals = 1`,
+  `MinMax = 2`, `Max = 3` and `Min = 4`, are present and unchanged 2020 through
+  2027 - read out of the reference assemblies for each release with
+  `tools/api-surface --members`, not assumed from the names.
+  `ScheduleDefinition.GetSortGroupFields`, `ScheduleSortGroupField.ShowFooter`
+  and `ShowGrandTotal`, read to say where a total prints, are the members
+  `SET_SCHEDULE_SORT_GROUP` already uses on all eight.
+
+  `CanDisplayMinMax` and `CanTotalByAssemblyType` exist on every release and are
+  deliberately NOT used: minimum and maximum are out of this fragment's scope,
+  and totalling by assembly type is a different Revit setting.
+
+  Field identity is `ScheduleFieldId`, not an `ElementId`. No units call is
+  made - a total is summed by Revit in the column's own units.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "calculate totals for the flow column" -> here
+#   "total the flow per room"              -> here, on a schedule grouped by
+#                                             room with footers on. It is the
+#                                             COLUMN that is totalled; the
+#                                             grouping is already there
+#   "sum this column in the schedule"      -> here. It used to reach
+#                                             SET_SCHEDULE_APPEARANCE, a write
+#                                             that renames and widens columns
+#   "add a total to the bottom of the      -> SET_SCHEDULE_SORT_GROUP,
+#    schedule"                                showGrandTotal. That switches the
+#                                             grand total ROW on; this decides
+#                                             what the row adds up. Both are
+#                                             needed for a total flow to print
+#   "show the grand total on this          -> SET_SCHEDULE_SORT_GROUP, the same
+#    schedule"                                row. check-routing ranks this card
+#                                             first on it by words (2026-09-27);
+#                                             the exact sentence is sort-group's
+#   "is there a total on this schedule"    -> REPORT_SCHEDULE_DEFINITION, which
+#                                             reads the grand total ON or off.
+#                                             A question, and ranked here by
+#                                             words - it was ranked on
+#                                             SET_SCHEDULE_SORT_GROUP, a write,
+#                                             before this card existed
+#   "what is the total per type"           -> SUM_BY_GROUP. A question about
+#                                             the model, answered in the chat;
+#                                             this changes a schedule
+#   "which columns are totalled"           -> nothing reads it yet.
+#                                             REPORT_SCHEDULE_DEFINITION does
+#                                             not report a column's calculation
+
+utterances:
+  - calculate totals for the flow column
+  - total the flow per room
+  - add up the airflow in the schedule
+  - sum this column in the schedule

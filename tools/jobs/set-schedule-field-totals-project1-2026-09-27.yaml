@@ -1,0 +1,63 @@
+# The first proof of set-schedule-field-totals (SET_SCHEDULE_FIELD_TOTALS,
+# FRG-VIEW-109), 2026-09-27 - NEEDS-CHECKING Group AT, row AT1.
+#
+#     python tools/batch-prove.py tools/jobs/set-schedule-field-totals-project1-2026-09-27.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-schedule-field-totals-project1-2026-09-27.yaml
+#
+# RUN ON A TEST COPY OF "heron ai bulding" (Project1), never the working file.
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK,
+# so nothing should be kept - open the schedule's Formatting tab afterwards
+# rather than assuming it: rollback has failed before on this PC.
+#
+# THE TEST COPY ALREADY TOTALS FLOW. The working run of 2026-09-27 switched it
+# on in "heron ai bulding", so a copy saved since would answer `totalled` 0 and
+# `alreadyTotalled` 1 - reported POSITIVE EMPTY, and nothing proved. So ARRANGE
+# IT FIRST, on the test copy only: Air Terminal Schedule, Properties, Formatting,
+# select Flow, set the calculation to "No calculation", OK. Flow is the only
+# column in that schedule Revit can add up, so there is no second column to use
+# instead. Nothing in the library turns totals off - that is out of this
+# fragment's scope - which is why this one step is by hand.
+#
+# THE SCHEDULE COMES FROM ITS NAME, NOT THE SELECTION. The one setup step is
+# find-schedules, and `keep-chain: true` hands its `elements` straight to the
+# fragment. The chain's value is `setup-set`; the fragment's one value,
+# `fieldNames`, is `set`.
+#
+# NEGATIVE: THE SAME SCHEDULE, AND THE COLUMN "Family and Type". It is text,
+# CanTotal refuses it, and it must come back in `cannotTotal` with `totalled` 0.
+# The same schedule on purpose: a different schedule would pass by not holding
+# the column, which is `notPresent` and proves the wrong thing.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - `replacedCalculation` on the positive: empty. A name there means Flow was
+#     showing a minimum or maximum, not "No calculation" - the arrangement above
+#     was not what was run on
+#   - `appliedTotals` on the positive names where the total prints - the Room:
+#     Name footer, and the grand total if it is on. "PRINTS NOWHERE YET" means
+#     the test copy has lost its grouping, and the proof is on a different
+#     schedule from the one the working run changed
+#   - `notPresent` on the negative: empty. 'Family and Type' in it means the
+#     column has been renamed on the copy, and the negative proved nothing
+#
+# NOT SET HERE: `in:`. Without it the run reads the model in front, so bring
+# the test copy to the front. With two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Project1 "heron ai bulding" (a test copy), Revit 2024 - Air Terminal Schedule
+
+defaults:
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: set-schedule-field-totals
+    expect: totalled
+    keep-chain: true
+    setup:
+      - find-schedules
+    setup-set:
+      nameContains: Air Terminal Schedule
+    set:
+      fieldNames: Flow
+    negative-set:
+      fieldNames: Family and Type

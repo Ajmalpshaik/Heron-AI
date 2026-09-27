@@ -334,6 +334,9 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-as.md`](needs-checking/group-as.md)
 
+## Group AT - `set-schedule-field-totals`: "Calculate totals" switched on for a schedule's columns (2026-09-27)
+
+**Its own file:** [`needs-checking/group-at.md`](needs-checking/group-at.md)
 ## Group AV - `apply-color-fill-scheme`: a plan's colour scheme and its Color Fill Legend (2026-09-27)
 
 **Its own file:** [`needs-checking/group-av.md`](needs-checking/group-av.md)
