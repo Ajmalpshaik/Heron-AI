@@ -99,6 +99,9 @@ compatibility-note: >
 #                                          knows nothing about legends
 #   "make a detail view"                -> CREATE_DRAFTING_VIEW - the other view
 #                                          that shows no model
+#   "add a colour fill legend"          -> APPLY_COLOR_FILL_SCHEME - Revit's
+#                                          Color Fill Legend, placed IN a plan,
+#                                          not a legend view
 
 utterances:
   - make another legend like this one

@@ -76,6 +76,9 @@ compatibility-note: >
 #   "stack the tags at the side"   -> STACK_TAGS
 #   "put the room tags back"       -> CENTER_ROOM_TAGS
 #   "move a model element"         -> MOVE_ELEMENTS_TO_POINT
+#   "move the tags off the elements" -> OFFSET_TAGS_FROM_HOST - each tag to
+#                                    its OWN element plus an offset, not all
+#                                    to one point
 
 utterances:
   - move this tag here
