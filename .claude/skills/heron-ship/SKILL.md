@@ -130,8 +130,13 @@ a `PROVEN` fragment's `impl/` broke D-30's fingerprint. Nothing a contributor is
 caught it.
 
 **The two with `HERON_KNOWLEDGE` need somewhere to put a knowledge store** and exit **2** saying so
-when there is none — an empty folder is enough, and CI makes one. On Windows `%APPDATA%` already
-answers, so the variable is only needed here.
+when there is none — an empty folder is enough, and CI makes one. **Set it on Windows too.**
+`%APPDATA%` answers there, but it answers with the ONE store every checkout and every live Heron chat
+on the machine reads: when `check-routing` finds that store does not hold your branch's fragments it
+rebuilds it from your branch, and from then on every other session's `heron_lookup` names your
+unmerged fragments ([row 5b-233](../../../docs/FRAGMENT-ISSUES.md)). Measured 2026-09-27. Point both at
+a scratch folder, and if you ran one without it, put the shared store back from the main checkout with
+`python brain/heron_scope.py --rebuild`.
 
 **`check-decision-titles` needs the whole git history** and exits **2** in a shallow clone, saying so:
 it reads what each decision was FIRST written as, and a clone cut short cannot show that. A cloud
