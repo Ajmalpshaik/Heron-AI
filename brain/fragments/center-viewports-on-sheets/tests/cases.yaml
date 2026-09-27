@@ -5,7 +5,7 @@ positive:
       three sheets, each with one A1 title block and one floor plan viewport
       that sits to one side of it - M-101 to M-103 in "heron ai bulding"
     expect: >
-      `centred` 3, and in `report` each sheet's viewport centre reading back
+      `centred` 3, and in `findings` each sheet's viewport centre reading back
       at its title block's centre, with the before and after in millimetres.
       Look at the sheets in Revit - the box sits in the middle of the paper,
       which is the whole test
@@ -61,6 +61,15 @@ negative:
     expect: >
       the sheet in `refused`, established by reading the centre back. A sheet
       counted as centred that is not is a report nobody can trust
+
+  - given: >
+      a viewport Revit moves but does not read back at the title block centre
+    expect: >
+      the viewport PUT BACK where it was, read back there, and the sheet in
+      `refused` saying so - never left moved under a refusal, which is what
+      ALIGN_VIEWPORTS_ACROSS_SHEETS does (row 5b-237). If it cannot be put
+      back either, the run throws, the whole group rolls back, and nothing on
+      any sheet is kept
 
 second_route:
   - >

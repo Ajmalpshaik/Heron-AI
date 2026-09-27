@@ -9,12 +9,19 @@
 # so nothing should be kept - open M-101 afterwards and look rather than
 # assuming it: rollback has failed before on this PC.
 #
-# THE TEST COPY IS ALREADY CENTRED. The working runs of 2026-09-27 centred
-# M-101 to M-104 in "heron ai bulding", so a copy saved since would answer
-# `centred` 0 and `alreadyCentred` 4 - reported POSITIVE EMPTY, and nothing
-# proved. So ARRANGE IT FIRST, on the test copy only: open M-101, select the
-# viewport and drag it about 50 mm to the left. Nothing in the library moves a
-# viewport off-centre, which is why this one step is by hand.
+# MEASURE THE TEST COPY FIRST - WHERE ITS VIEWPORTS ARE DEPENDS ON WHEN IT WAS
+# SAVED. The working runs of 2026-09-27 centred M-101 to M-104; later that
+# evening the owner placed M-104 at (312, 303) mm and the other three were
+# aligned to it. So first, with the test copy in front:
+#
+#     python mcp/client/heron_bridge_client.py validate --setup find-sheets --keep-chain --setup-set "numberOrNameContains=Level 1 -" center-viewports-on-sheets < /dev/null
+#
+# No `--write`, so no transaction is open, Revit refuses every move, and
+# `findings` says where each viewport is - nothing can be kept. If all four
+# are already centred, ARRANGE IT, on the test copy only: open M-101, select
+# the viewport and drag it about 50 mm to the left. Nothing in the library
+# moves a viewport off-centre, which is why that one step is by hand. A
+# `centred` 0 with `alreadyCentred` 4 is POSITIVE EMPTY, and proves nothing.
 #
 # THE SHEETS COME FROM THEIR NAMES, NOT THE SELECTION. The one setup step is
 # find-sheets, and `keep-chain: true` hands its `elements` straight to the
@@ -30,11 +37,11 @@
 # negative stops being one - check the sheets first.
 #
 # WHAT TO READ BEYOND THE VERDICT:
-#   - `report` on the positive: M-101 "was" about 50 mm left of its title
-#     block centre and "reads back" at it; M-102 to M-104 "already centred".
-#     All four centres are the same point - they share one title block
-#   - `alreadyCentred` on the positive: 3. If it is 4, the drag above did not
-#     happen on the copy that was run
+#   - `findings` on the positive: every sheet it moved "was" where the
+#     measurement said and "reads back" at (422, 296); the rest "already
+#     centred". All four centres are one point - they share one title block
+#   - `alreadyCentred` on the positive: 4 means the arrangement above was
+#     skipped
 #   - `ambiguous`, `noTitleBlock`, `severalTitleBlocks` and `refused`: empty on
 #     both legs. None of the seven sheets has two viewports or two title
 #     blocks, so the AMBIGUOUS case is NOT in this job - it is row AU3

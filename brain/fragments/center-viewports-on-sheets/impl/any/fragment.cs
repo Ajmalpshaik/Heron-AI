@@ -1,5 +1,5 @@
 // NOT STANDALONE. Assumes `doc` and `elements` are in scope, and leaves
-// `centred`, `report`, `alreadyCentred`, `ambiguous`, `noViewport`,
+// `centred`, `findings`, `alreadyCentred`, `ambiguous`, `noViewport`,
 // `noTitleBlock`, `severalTitleBlocks` and `refused` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). A drawing set, one undo.
@@ -192,11 +192,33 @@ foreach (var element in elements)
     }
     else
     {
+        // A MOVE WHOSE READ-BACK MISSED IS PUT BACK, never left in place and
+        // called refused. The transaction keeps whatever the viewport holds,
+        // so "refused" over a moved viewport is a report that lies - which is
+        // what ALIGN_VIEWPORTS_ACROSS_SHEETS does (row 5b-237). And if it
+        // cannot be put back and read back where it was, the run STOPS: an
+        // exception rolls the whole group back, so nothing is kept at all.
+        XYZ back = null;
+        try
+        {
+            viewport.SetBoxCenter(before);
+            back = viewport.GetBoxCenter();
+        }
+        catch { }
+
+        if (back == null || apartOnPaper(back, before) > tolerance)
+            throw new InvalidOperationException(
+                label + ": its viewport was moved, did not read back at the title block centre, "
+                + "and could not be put back where it was - nothing on any sheet has been kept");
+
         refused.Add(sheet.Id);
         lines.Add(label + view + ": was " + at(before) + ", asked for " + at(target)
                   + ", reads back " + (after == null ? "nothing" : at(after))
-                  + " - NOT centred");
+                  + " - NOT centred, and put back where it was");
     }
 }
 
-string report = string.Join(" | ", lines);
+// PROSE, NOT A COUNT - so it is `findings`, the one name the proof reads as
+// a note (NOTE_KEYS, D-51). Named anything else, a negative run's "no
+// viewport on it" line would read as something found.
+string findings = string.Join(" | ", lines);

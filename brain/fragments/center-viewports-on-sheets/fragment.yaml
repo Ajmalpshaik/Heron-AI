@@ -39,7 +39,10 @@ purpose: >
   **MEASURED BEFORE IT MOVES, READ BACK AFTER.** A viewport already within half
   a millimetre of the centre is named in `alreadyCentred` and not touched, so
   a second run moves nothing - which is also the read-back. A move counts in
-  `centred` only when Revit reads the new centre back at the target.
+  `centred` only when Revit reads the new centre back at the target. A move
+  that does not read back is PUT BACK where it was and named in `refused`,
+  never left moved under a refusal; if even that cannot be read back, the run
+  stops and nothing on any sheet is kept.
 
   **THE BOX IS WHAT IS CENTRED, AND THE BOX IS NOT ONLY THE PLAN.** A
   viewport's box takes in the view's annotation - elevation markers, tags, a
@@ -67,12 +70,15 @@ contract:
     - name: centred
       role: result
       type: int
-    - name: report
+    - name: findings
       # One entry per sheet, "|" between them: where the viewport's box
       # centre was, the title block's centre, the move, the centre READ BACK,
       # and the box's size beside the title block's - or why it was left
       # alone. A string, so the reply prints every sheet rather than three.
-      role: result
+      # PROSE, SO NO ROLE: `findings` is the one name the proof reads as a
+      # note (NOTE_KEYS, D-51). As `report`, a result, a negative run's "no
+      # viewport on it" read as something found - caught by Codex on #341,
+      # and measured against the run record before it was renamed.
       type: string
     - name: alreadyCentred
       # Sheets whose viewport was within half a millimetre of the title
