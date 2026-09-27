@@ -1,0 +1,125 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-112
+semantic-identity: "tick and untick categories on existing view filters, keeping their rules"
+kind: action
+domain: revit.views
+capability: SET_VIEW_FILTER_CATEGORIES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Changes which categories named rule-based view filters apply to - the
+  Categories ticks beside a filter's rule - keeping the rule, the name and
+  every view it is on. *"Take Duct Systems off those three and add the duct
+  insulation and lining to them."*
+
+  **THE CATEGORIES GIVEN REPLACE THE ONES IT HAD.** One it had that the request
+  leaves out is taken off, which is how "not Duct Systems" is said.
+
+  **A CATEGORY THE RULE CANNOT APPLY TO IS LEFT OUT, NAMED WITH THE REASON, AND
+  THE REST ARE STILL SET.** Each is asked whether it may be filtered by every
+  parameter the rule tests, then put to Revit's own acceptability test for that
+  rule, and the survivors are tested together once more before anything is
+  set. One that no given category survives for keeps what it had - never
+  emptied.
+
+  **A SECOND RUN CHANGES NOTHING.** Categories it already has are compared as a
+  set, reported as already so, and not written again.
+
+  **AFTERWARDS EACH ONE IS READ BACK FROM REVIT** - its categories, its rule,
+  and how many elements that rule catches today.
+
+  ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: filterNames
+      # Names of filters already in the project, as Manage, Filters lists them.
+      type: IList<string>
+      source: request
+    - name: categories
+      # The WHOLE new list - it replaces what each filter holds.
+      type: IList<BuiltInCategory>
+      source: request
+  provides:
+    - name: changed
+      role: result
+      type: IList<Element>
+    - name: readBack
+      # Each named filter as Revit holds it afterwards - changed, already so,
+      # or left as it was: its categories, its rule, and the elements it
+      # catches today. ONE STRING, because a list reaches the chat as three
+      # entries cut at sixty characters and the rule is at the end of each.
+      role: result
+      type: string
+    - name: alreadySet
+      # Filters that already held exactly this list and were not written. The
+      # prior state, never a change it made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: leftOut
+      # Categories given that a filter's rule cannot apply to, each with the
+      # reason - left out of what was set. Given and unusable (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notFound
+      # Names that are no rule-based filter in this project - absent, or a
+      # selection filter. The evidence it looked (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND, so it must not count toward
+      # "did this come back empty" (D-52).
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE implementation, and no member it calls changes between 2020 and 2027 -
+  read off the reference assemblies for each release with `tools/api-surface
+  --members`: `ParameterFilterElement.SetCategories(ICollection<ElementId>)`,
+  `GetCategories`, `GetElementFilter`, `GetElementFilterParameters` and the
+  static `ElementFilterIsAcceptableForParameterFilterElement(Document,
+  ISet<ElementId>, ElementFilter)`; `ParameterFilterUtilities.
+  GetAllFilterableCategories` and `GetFilterableParametersInCommon`;
+  `FilterRule.GetRuleParameter`; `FilterStringRule.RuleString` and
+  `GetEvaluator`; `ElementParameterFilter.GetRules`;
+  `ElementLogicalFilter.GetFilters`;
+  `ElementMulticategoryFilter(ICollection<ElementId>)`;
+  `LabelUtils.GetLabelFor(BuiltInParameter)`; and the
+  `ElementId(BuiltInCategory)` and `ElementId(BuiltInParameter)`
+  constructors. No id is read as a number.
+
+# ROUTING - the same rows are in CREATE_VIEW_FILTERS_BY_RULE.
+#
+#   "take the Duct Systems category off      -> here
+#    these view filters"
+#   "add duct insulation and lining to       -> here, with the WHOLE list -
+#    those filters"                             what is not named is taken off
+#   "create a supply air filter for ducts"   -> CREATE_VIEW_FILTERS_BY_RULE.
+#                                               This never makes a filter
+#   "put that filter on this view"           -> APPLY_VIEW_FILTER
+#   "take that filter off the view"          -> REMOVE_VIEW_FILTER - the view
+#                                               loses it; the filter keeps its
+#                                               categories
+#   "what filters already exist"             -> REPORT_VIEW_FILTERS
+#   "which parameters can I filter duct      -> REPORT_FILTERABLE_PARAMETERS
+#    insulation by"
+
+utterances:
+  - take the Duct Systems category off these view filters
+  - change the categories of these view filters
+  - add duct insulation and lining to those filters
+  - set which categories the filter applies to

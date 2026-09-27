@@ -1,0 +1,33 @@
+positive:
+  - given: >
+      filterNames "Supply Air, Return Air, Exhaust Air" - each holding Air
+      Terminals, Duct Accessories, Duct Fittings, Duct Systems, Ducts and Flex
+      Ducts, with a System Classification rule - and categories "Air Terminals,
+      Ducts, Flex Ducts, Duct Fittings, Duct Accessories, Duct Insulations,
+      Duct Linings, Duct Placeholders"
+    expect: >
+      each filter changed. Duct Systems taken off because the list does not name
+      it; every named category that System Classification can filter put on;
+      any that cannot named in leftOut with the reason and the rest still set.
+      readBack gives each filter's categories and rule as Revit holds them
+      afterwards. The rule is unchanged and no view is touched
+
+  - given: the same call again, straight after
+    expect: >
+      changed 0 and alreadySet naming all three - nothing written, and no new
+      entry in the undo list
+
+negative:
+  - given: filterNames naming no filter in the project
+    expect: nothing changed, notFound naming each, refused saying none is a rule-based filter here
+
+  - given: categories that none can take the filter's rule - "Walls" alone for a System Classification filter
+    expect: >
+      the filter left exactly as it was, never emptied; leftOut names Walls and
+      refused says why. changed 0
+
+  - given: the name of a selection filter
+    expect: named in notFound as a selection filter - it holds chosen elements, not categories - and left alone
+
+second_route:
+  - Revit's own Manage, Filters dialog - the categories ticked for each filter, read on screen, and the rule unchanged

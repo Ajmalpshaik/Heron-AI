@@ -1,0 +1,59 @@
+positive:
+  - given: >
+      filterNames "Supply Air, Return Air, Exhaust Air", categories "Air
+      Terminals, Ducts, Flex Ducts, Duct Fittings, Duct Accessories",
+      parameterName "System Classification", matchValues "Supply Air, Return
+      Air, Exhaust Air", in a project with none of those filters
+    expect: >
+      three filters created, on no view. readBack names each with the five
+      categories as Revit holds them and the rule "System Classification equals
+      '<value>'". The count each catches today is the model's own - an exhaust
+      filter in a model with no exhaust ductwork catches 0 and is still created,
+      because the value came from the request, not from the model
+
+  - given: the same call again, straight after
+    expect: >
+      nothing created, alreadyExists naming all three, and refused saying they
+      were left as they were. Never an overwrite and never a second copy
+
+  - given: parameterName "RBS_SYSTEM_CLASSIFICATION_PARAM" instead of the label
+    expect: the same filters as the label gives - the built-in name is the way to choose it when the label is shared
+
+negative:
+  - given: >
+      "Air Terminals, Ducts, Walls" with System Classification, and the three
+      names already filters in the project - so a check that failed still
+      could not create anything
+    expect: >
+      NOTHING created. cannotFilter names Walls - it cannot be filtered by
+      System Classification - and refused says to take it out of the list.
+      Revit would have rejected the whole filter, so neither good category is
+      made into a filter either. Measured 2026-09-27 on "heron ai bulding",
+      Revit 2024: exactly this
+
+  - given: the five categories above plus "Duct Systems"
+    expect: >
+      NOT a refusal. It was expected to be one and was not: on Revit 2024
+      Revit lists System Classification among what Duct Systems can be
+      filtered by, and its acceptability test passed, so all three filters were
+      created with six categories (2026-09-27, "heron ai bulding" - kept, see
+      NEEDS-CHECKING group AX). Recorded so the next reader does not use it as
+      the negative
+
+  - given: parameterName "ZZZ No Such Parameter"
+    expect: every category in cannotFilter, nothing created
+
+  - given: three names and two values
+    expect: refused before Revit is asked anything - each filter needs exactly one value, in order
+
+  - given: a filter name holding a colon or a semicolon
+    expect: refused by NamingUtils.IsValidName before anything is created, naming the name
+
+  - given: a shared parameter called "System Classification" bound to the same categories
+    expect: >
+      NOTHING created, and refused names both candidates - the built-in one by
+      its Revit name - because a rule is built on one parameter
+
+second_route:
+  - Revit's own Manage, Filters dialog - each filter's categories ticked and its rule, read on screen
+  - Visibility/Graphics, Filters tab, Add - the three names listed, and none of them on the view until added

@@ -1,0 +1,58 @@
+# The first proof of create-view-filters-by-rule (CREATE_VIEW_FILTERS_BY_RULE,
+# FRG-VIEW-111), 2026-09-27 - NEEDS-CHECKING Group AX, row AX2.
+#
+#     python tools/batch-prove.py tools/jobs/create-view-filters-by-rule-project1-2026-09-27.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-view-filters-by-rule-project1-2026-09-27.yaml
+#
+# RUN ON A TEST COPY OF "heron ai bulding" (Project1), never the working file.
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK,
+# so nothing should be kept - open Manage, Filters afterwards rather than
+# assuming it: rollback has failed before on this PC.
+#
+# THE NAMES ARE NOT "Supply Air" AND "Return Air". The working run of
+# 2026-09-27 created filters with those names in "heron ai bulding", so a copy
+# saved since already holds them and would answer `alreadyExists` 2 with
+# nothing created - reported POSITIVE EMPTY, and nothing proved. The HERON
+# PROOF names cannot be in any copy.
+#
+# ZERO SETUP. Every value is typed; nothing is selected and nothing is chained,
+# so another chat's selection in the same Revit cannot reach this run.
+#
+# NEGATIVE: THE SAME CALL WITH WALLS IN THE CATEGORY LIST. Walls cannot be
+# filtered by System Classification, so `cannotFilter` must name Walls and
+# `created` must be empty - for BOTH filters, because one bad category stops
+# the whole call. NOT Duct Systems: that was the expected negative, and on
+# Revit 2024 Revit accepted it (Group AX).
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - `readBack` on the positive: five categories and "System Classification
+#     equals 'Supply Air'" as Revit holds them, and the count it catches. On a
+#     copy of the model as it stood on 2026-09-27 that is 45 Air Terminals for
+#     supply and 45 for return. A different count means the copy differs, not
+#     that the tool is wrong - say which
+#   - `alreadyExists` on the positive: empty. A name in it means the arrangement
+#     above was not what was run on
+#
+# NOT SET HERE: `in:`. Without it the run reads the model in front, so bring
+# the test copy to the front. With two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Project1 "heron ai bulding" (a test copy), Revit 2024
+
+defaults:
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: create-view-filters-by-rule
+    expect: created
+    set:
+      filterNames: HERON PROOF Supply Air, HERON PROOF Return Air
+      categories: Air Terminals, Ducts, Flex Ducts, Duct Fittings, Duct Accessories
+      parameterName: System Classification
+      matchValues: Supply Air, Return Air
+    negative-set:
+      filterNames: HERON PROOF Supply Air, HERON PROOF Return Air
+      categories: Air Terminals, Ducts, Walls
+      parameterName: System Classification
+      matchValues: Supply Air, Return Air

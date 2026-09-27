@@ -1,0 +1,161 @@
+heron-agent: HERON-REVIT-VIE-013
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-111
+semantic-identity: "create named view filters from a parameter name, a list of categories and one value each"
+kind: action
+domain: revit.views
+capability: CREATE_VIEW_FILTERS_BY_RULE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Creates new rule-based view filters, each with its own name and one rule
+  "parameter equals value", all on the same categories, and puts them on NO
+  view. The standards job done the way a modeller does it by hand: *"Supply
+  Air, Return Air and Exhaust Air on System Classification, for air terminals
+  and ductwork"*.
+
+  **THE PARAMETER IS TYPED BY ITS NAME** - "System Classification", as Revit
+  shows it - and looked up among the parameters Revit says those categories may
+  be filtered by. No element has to exist, so the rules can be set up before
+  anything is modelled, and a value nothing carries yet (an exhaust system not
+  drawn yet) still gets its own.
+
+  **ONE CATEGORY THAT CANNOT TAKE THE RULE STOPS THE WHOLE CALL, AND IS NAMED.**
+  Revit rejects the rule for every category when one of them lacks the
+  parameter - Walls have no System Classification. Every category is asked
+  first; nothing is created until all of them can.
+  **REVIT DECIDES WHICH CATEGORIES CAN, NOT A MODELLER'S MEMORY OF THE DIALOG.**
+  Duct Systems was expected to be refused with System Classification, and on
+  Revit 2024 it was ACCEPTED - Revit lists the parameter for that category and
+  passed the rule - so a category the modeller wants left out has to be left
+  out of the request.
+
+  **THE NAME MUST MEAN ONE PARAMETER.** A shared or project parameter bound
+  beside a built-in one of the same name is two candidates; both are named and
+  nothing is created. The built-in one can then be typed by its Revit name,
+  such as RBS_SYSTEM_CLASSIFICATION_PARAM.
+
+  **A NAME ALREADY TAKEN IS SKIPPED AND NAMED, NEVER OVERWRITTEN.** The others
+  are still created. Anything else that stops one stops all of them, before any
+  exists.
+
+  **EACH NEW ONE IS READ BACK FROM REVIT** - its categories and rule as Revit
+  holds them, and how many elements the rule catches today.
+
+  ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: filterNames
+      type: IList<string>
+      source: request
+    - name: categories
+      type: IList<BuiltInCategory>
+      source: request
+    - name: parameterName
+      type: string
+      source: request
+    - name: matchValues
+      # One value per filter name, in the same order - the text the rule
+      # "equals". Type it as Revit shows it: whether capitals matter on 2023
+      # and later is not known here (CREATE_VIEW_FILTER's cases say why).
+      type: IList<string>
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: IList<Element>
+    - name: readBack
+      # Each new filter as Revit holds it: its categories, its rule, and the
+      # elements that rule catches today. ONE STRING, because a list reaches
+      # the chat as three entries cut at sixty characters and the rule is at
+      # the end of each.
+      role: result
+      type: string
+    - name: alreadyExists
+      # Names that were already a filter in the project and were left exactly
+      # as they were. Given and unused, never a thing it made (D-52).
+      role: accounting
+      type: IList<string>
+    - name: cannotFilter
+      # Categories the named parameter cannot filter, each with the reason.
+      # Any entry here means nothing was created. Given and unusable (D-52).
+      role: accounting
+      type: IList<string>
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND, so it must not count toward
+      # "did this come back empty" (D-52).
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE implementation. The text rule factory is reached BY REFLECTION:
+  `ParameterFilterRuleFactory.CreateEqualsRule(ElementId, string, bool)` is on
+  2020 to 2025 and `CreateEqualsRule(ElementId, string)` on 2023 to 2027, read
+  off the reference assemblies for each release with `tools/api-surface
+  --members`. The two-argument one is used where it exists, the three-argument
+  one with `false` elsewhere - the same choice CREATE_VIEW_FILTERS_BY_VALUE
+  makes.
+
+  Unchanged 2020 through 2027, read the same way:
+  `ParameterFilterUtilities.GetAllFilterableCategories` and
+  `GetFilterableParametersInCommon`; `ParameterFilterElement.Create` with an
+  element filter, `GetCategories`, `GetElementFilter` and the static
+  `ElementFilterIsAcceptableForParameterFilterElement(Document,
+  ISet<ElementId>, ElementFilter)`; `FilterRule.GetRuleParameter`;
+  `FilterStringRule.RuleString` and `GetEvaluator`;
+  `ElementParameterFilter.GetRules`; `ElementLogicalFilter.GetFilters`;
+  `ElementMulticategoryFilter(ICollection<ElementId>)`;
+  `NamingUtils.IsValidName`; `LabelUtils.GetLabelFor(BuiltInParameter)`; and
+  the `ElementId(BuiltInCategory)` and `ElementId(BuiltInParameter)`
+  constructors. No id is read as a number anywhere, so the 2024 widening of
+  ElementId does not reach it.
+
+# ROUTING - the same rows are in CREATE_VIEW_FILTER and
+# CREATE_VIEW_FILTERS_BY_VALUE.
+#
+#   "create a supply air filter for ducts"  -> here. A named filter, a rule
+#                                              you already know, on no view
+#   "make filters for supply return and     -> here. Three names, three
+#    exhaust air"                              values, one category list
+#   "make a filter for each of these values" -> here. The values come from the
+#                                              request, so one nothing
+#                                              carries yet still gets a filter
+#   "make a filter for every different      -> CREATE_VIEW_FILTERS_BY_VALUE.
+#    system type"                              The values come from the model,
+#                                              and each filter is put on a view
+#                                              with a colour
+#   "make the supply ducts blue"            -> CREATE_VIEW_FILTER - one filter,
+#                                              applied to a view with a colour
+#                                              in the same call
+#   "put that filter on this view"          -> APPLY_VIEW_FILTER. This puts
+#                                              the new filters on no view
+#   "take the Duct Systems category off     -> SET_VIEW_FILTER_CATEGORIES.
+#    these view filters"                       This never edits a filter that
+#                                              exists - it skips the name
+#   "what filters already exist"            -> REPORT_VIEW_FILTERS, before
+#                                              making a near-duplicate
+#   "which parameters can I filter ducts    -> REPORT_FILTERABLE_PARAMETERS.
+#    by"                                       What to ask BEFORE this, when
+#                                              the parameter's name is not
+#                                              known
+
+utterances:
+  - create a supply air filter for ducts
+  - make filters for supply return and exhaust air
+  - create view filters on system classification
+  - make a filter for each of these values
+  - set up supply and return filters for the ductwork
