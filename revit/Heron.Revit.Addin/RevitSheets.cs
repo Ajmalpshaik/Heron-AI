@@ -309,8 +309,12 @@ namespace Heron.Revit.Addin
         /// ScheduleSheetInstance too, and every sheet with a titleblock that
         /// shows revisions carries one, so counting it would make every empty
         /// sheet look full - the one thing this count exists to catch.
+        ///
+        /// RevitExport.cs asks the same question at export time and calls this
+        /// rather than keeping a copy: the copy it kept counted views only, and
+        /// would have called a sheet carrying a schedule blank (5b-239).
         /// </summary>
-        private static Dictionary<ElementId, int> ScheduleCountBySheet(Document doc)
+        internal static Dictionary<ElementId, int> ScheduleCountBySheet(Document doc)
         {
             var counts = new Dictionary<ElementId, int>();
             foreach (var element in new FilteredElementCollector(doc)

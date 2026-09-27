@@ -3358,6 +3358,33 @@ def revit_families() -> str:
     return "\n".join(lines)
 
 
+def _export_blank_line(reply):
+    """The "would print blank" line of revit_export_check, honest about what counted.
+
+    An add-in built before 2026-09-27 counts a sheet blank when it has no
+    VIEWS, so a sheet carrying only a schedule is among its number
+    (FRAGMENT-ISSUES 5b-239). One that counts schedules says so with
+    `schedulesCounted`. This server and the add-in go live at different
+    restarts, so the one cannot assume the other.
+    """
+    blank = reply.get("sheetsThatWouldPrintBlank", 0)
+    line = "  would print blank         %d" % blank
+    if blank and not reply.get("schedulesCounted"):
+        line += "   <-- views only; schedules not counted by this add-in"
+    return line
+
+
+def _export_blank_caveat(reply):
+    """What to say when an older add-in's blank count may hold schedule sheets, or None."""
+    blank = reply.get("sheetsThatWouldPrintBlank", 0)
+    if not blank or reply.get("schedulesCounted"):
+        return None
+    return ("The Heron add-in in this Revit is older than this check and counted "
+            "only VIEWS, so a sheet carrying only a schedule is among the %d it "
+            "calls blank. Restart Revit after the add-in is updated for the real "
+            "count." % blank)
+
+
 @server.tool()
 def revit_export_check() -> str:
     """
@@ -3374,6 +3401,10 @@ def revit_export_check() -> str:
     BLANK, links that are NOT LOADED (an unloaded link exports as nothing, so
     the drawing goes out with that model missing), and rooms with no area
     feeding area schedules.
+
+    A sheet would print blank only with no view AND no schedule on it; the
+    titleblock's own revision schedule is not counted, because every sheet has
+    one.
 
     It reports what it found and does not decide whether that is acceptable - a
     coordination model with links deliberately unloaded is a legitimate thing
@@ -3407,7 +3438,7 @@ def revit_export_check() -> str:
     lines.append("  sheets                    %d" % reply.get("sheets", 0))
     if reply.get("placeholderSheets"):
         lines.append("  of which placeholders     %d" % reply["placeholderSheets"])
-    lines.append("  would print blank         %d" % reply.get("sheetsThatWouldPrintBlank", 0))
+    lines.append(_export_blank_line(reply))
     lines.append("  links not loaded          %d of %d"
                  % (reply.get("linksNotLoaded", 0), reply.get("links", 0)))
     lines.append("  rooms with no area        %d of %d"
@@ -3418,6 +3449,11 @@ def revit_export_check() -> str:
         lines.append("Nothing here says an export would be wrong.")
     else:
         lines.append("There is at least one thing to look at before sending this.")
+
+    caveat = _export_blank_caveat(reply)
+    if caveat:
+        lines.append("")
+        lines.append(caveat)
 
     reads = reply.get("reads")
     if reads:
