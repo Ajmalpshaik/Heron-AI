@@ -35,6 +35,14 @@ sheet, and every viewport box is 531 x 443 mm in an 840 x 594 mm title block.
 5. FIND_VIEWS for the floor plan `Level 1 - Room Plan Layout`, handed in instead of a sheet - `refused` 1, named
    as not a sheet, `centred` 0.
 6. `numberOrNameContains=Schedule -`, the three schedule sheets M-105 to M-107 - `noViewport` 3, `centred` 0.
+7. **A measurement, with NOTHING kept.** Later that evening M-104 had been moved to (312, 303) mm - the owner's own
+   placement, by the other chat's account - and `ALIGN_VIEWPORTS_ACROSS_SHEETS` run on the other three. To see where
+   they stood, `heron_bridge_client.py validate` ran this fragment with no `--write`: no transaction was open, so Revit
+   refused every move - *"Attempt to modify the model outside of transaction"* - and the refusal line reports where the
+   viewport was. All four at (312, 303); boxes M-101 579 x 444, M-102 635 x 444, M-103 579 x 444, M-104 531 x 443 mm.
+   The three that grew each have a colour fill legend inside the view. The refusal line gained those numbers for this
+   run, **after runs 1 to 6** - a change to the report of a refusal only. What it found is
+   [row 5b-237](../FRAGMENT-ISSUES.md).
 
 **WHY M-104 MOVED BETWEEN RUNS.** Another chat added 15 room tags to that view between runs 1 and 2, and 90 air
 terminal tags between 3 and 4, and changed no crop, scale or placement. Each time the viewport's box centre on the

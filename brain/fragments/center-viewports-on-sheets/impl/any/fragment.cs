@@ -170,8 +170,12 @@ foreach (var element in elements)
     try { viewport.SetBoxCenter(target); }
     catch (Exception failure)
     {
+        // Where it was and where it was asked to go, even on a refusal: run
+        // with no transaction open - Revit refusing every move - this is the
+        // measurement, and the only one that cannot change the model.
         refused.Add(sheet.Id);
-        lines.Add(label + view + ": Revit refused the move - " + failure.Message);
+        lines.Add(label + view + ": was " + at(before) + ", title block centre " + at(target)
+                  + sizes + " - Revit refused the move: " + failure.Message);
         continue;
     }
 

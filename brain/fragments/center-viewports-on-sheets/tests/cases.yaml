@@ -47,6 +47,16 @@ negative:
     expect: >
       its id in `refused`, named as not a sheet, and nothing moved
 
+  - given: >
+      the four sheets run with NO transaction open - `heron_bridge_client.py
+      validate` without `--write` - so Revit refuses every move
+    expect: >
+      every off-centre sheet in `refused`, each line still saying where the
+      viewport was, the title block centre and the box size, and nothing
+      moved. That makes it the one measurement that cannot change the model:
+      on 2026-09-27 it found all four at (312, 303) mm after another tool had
+      moved them
+
   - given: a viewport Revit refuses to move
     expect: >
       the sheet in `refused`, established by reading the centre back. A sheet
