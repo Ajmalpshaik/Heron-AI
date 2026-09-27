@@ -137,10 +137,6 @@ PROJECTS = [
     "tests/Heron.Installer.TestHost/Heron.Installer.TestHost.csproj",
     "tests/Heron.Kernel.TestHost/Heron.Kernel.TestHost.csproj",
     "tests/Heron.StackGuard.TestHost/Heron.StackGuard.TestHost.csproj",
-    # Talk's mailbox (D-104), linked by source like the binding note - what it
-    # writes is read back by the Python the chat uses, in
-    # tests/test_talk_contract.py.
-    "tests/Heron.Talk.TestHost/Heron.Talk.TestHost.csproj",
 ]
 
 # The one project that is a tool rather than something Heron ships. Named here

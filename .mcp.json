@@ -4,8 +4,7 @@
       "command": "python",
       "args": ["mcp/server/heron_mcp_server.py"],
       "env": {
-        "HERON_CLIENT_ID": "ajmal-pc",
-        "HERON_TALK": "${HERON_TALK:-off}"
+        "HERON_CLIENT_ID": "ajmal-pc"
       }
     }
   }

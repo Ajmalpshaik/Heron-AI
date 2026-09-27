@@ -175,7 +175,8 @@ an edit.
 | [D-101](#d-101--risk-is-part-of-routing-not-only-part-of-permission) | Risk is part of routing, not only part of permission | ⏳ Proposed · 2026-08-31 |
 | [D-102](#d-102--several-fragments-may-jointly-feed-one-and-the-orphan-check-asks-per-need) | Several fragments may jointly feed one, and the orphan check asks per need | ✅ Accepted · 2026-08-31 |
 | [D-103](#d-103--a-need-may-bind-to-a-provided-name-that-is-not-its-own) | A need may bind to a provided name that is not its own | ✅ Accepted · 2026-08-31 |
-| [D-104](#d-104--the-modeller-can-talk-to-the-open-chat-from-inside-revit) | The modeller can talk to the open chat from inside Revit | ✅ Accepted · 2026-09-27 |
+| [D-104](#d-104--the-modeller-can-talk-to-the-open-chat-from-inside-revit) | The modeller can talk to the open chat from inside Revit | ↩ Superseded by D-105 the same day · 2026-09-27 |
+| [D-105](#d-105--talk-is-removed-and-the-modeller-works-with-heron-in-the-chat-only) | Talk is removed, and the modeller works with Heron in the chat only | ✅ Accepted · 2026-09-27 |
 
 ## Format
 
@@ -877,8 +878,17 @@ What this makes easy. What this makes hard. What it locks in.
 
 ## D-104 — The modeller can talk to the open chat from inside Revit
 
-**Status:** Accepted · **Date:** 2026-09-27 · **Source:** Ajmal PS, 2026-09-27, in conversation
+**Status:** Superseded by D-105 the same day, after its first run in Revit lost a message · **Date:** 2026-09-27 · **Source:** Ajmal PS, 2026-09-27, in conversation
 **Supersedes:** one sentence of [D-01](#d-01--execution-host-claude-code-plugin) — *"nothing is being built for it"* — and nothing else in it · **Keeps:** [D-01](#d-01--execution-host-claude-code-plugin), [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit), [D-34](#d-34--herons-own-wording-is-english-understanding-the-user-is-not-herons-job), [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so)
-**Affects:** [`mcp/server/heron_talk.py`](../mcp/server/heron_talk.py), [`mcp/heron-talk.cmd`](../mcp/heron-talk.cmd), [`.mcp.json`](../.mcp.json), [`revit/Heron.Revit.Addin/HeronTalk.cs`](../revit/Heron.Revit.Addin/HeronTalk.cs), [`HeronTalkMailbox.cs`](../revit/Heron.Revit.Addin/HeronTalkMailbox.cs), [`HeronTalkWindow.cs`](../revit/Heron.Revit.Addin/HeronTalkWindow.cs)
+**Superseded by:** [D-105](#d-105--talk-is-removed-and-the-modeller-works-with-heron-in-the-chat-only) - on the owner's instruction Talk was removed from Revit and from the code, 2026-09-27, after NEEDS-CHECKING row AS4 failed. Its code is linked below at commit `5b18541a`, the last that had it
+**Affects:** [`mcp/server/heron_talk.py`](https://github.com/Ajmalpshaik/Heron-AI/blob/5b18541a/mcp/server/heron_talk.py), [`mcp/heron-talk.cmd`](https://github.com/Ajmalpshaik/Heron-AI/blob/5b18541a/mcp/heron-talk.cmd), [`.mcp.json`](../.mcp.json), [`revit/Heron.Revit.Addin/HeronTalk.cs`](https://github.com/Ajmalpshaik/Heron-AI/blob/5b18541a/revit/Heron.Revit.Addin/HeronTalk.cs), [`HeronTalkMailbox.cs`](https://github.com/Ajmalpshaik/Heron-AI/blob/5b18541a/revit/Heron.Revit.Addin/HeronTalkMailbox.cs), [`HeronTalkWindow.cs`](https://github.com/Ajmalpshaik/Heron-AI/blob/5b18541a/revit/Heron.Revit.Addin/HeronTalkWindow.cs)
 
 **Full record:** [`decisions/D-104.md`](decisions/D-104.md)
+
+## D-105 — Talk is removed, and the modeller works with Heron in the chat only
+
+**Status:** Accepted · **Date:** 2026-09-27 · **Source:** Ajmal PS, 2026-09-27, in conversation, when NEEDS-CHECKING row AS4 failed on his PC
+**Supersedes:** [D-104](#d-104--the-modeller-can-talk-to-the-open-chat-from-inside-revit) in full · **Restores:** the one sentence of [D-01](#d-01--execution-host-claude-code-plugin) that D-104 superseded - *"nothing is being built for it"* · **Keeps:** [D-01](#d-01--execution-host-claude-code-plugin), [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)
+**Affects:** removed - `mcp/server/heron_talk.py`, `mcp/heron-talk.cmd`, `HeronTalk.cs`, `HeronTalkMailbox.cs`, `HeronTalkWindow.cs`, `Resources/Talk.png`, `tests/Heron.Talk.TestHost/`, `tests/test_talk.py`, `tests/test_talk_contract.py`, `tests/test_talk_served.py`; put back as they were before #338 - [`.mcp.json`](../.mcp.json), [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs), [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [`heron_dotnet.py`](../brain/heron_dotnet.py), [`gates.yml`](../.github/workflows/gates.yml)
+
+**Full record:** [`decisions/D-105.md`](decisions/D-105.md)

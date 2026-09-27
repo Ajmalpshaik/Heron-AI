@@ -575,6 +575,9 @@ whatever door is built. **Unblocked 2026-09-22.**
   sends what the modeller types or says, with the selection, into the Claude Code chat already open,
   and Revit does not wait. Step 1 (a box to type in) is built; the proof is
   [NEEDS-CHECKING group AS](../../../needs-checking/group-as.md), and press-and-hold is step 2.
+  **Removed the same evening - [D-105](../../../DECISIONS.md#d-105--talk-is-removed-and-the-modeller-works-with-heron-in-the-chat-only).**
+  Its first run in Revit lost a message (group AS, row AS4) and the owner had it taken out of Revit and
+  the code. Nothing of it is built now; the chat is the one way in, as D-01 chose.
 - **One body, two front doors.** [S6](00-structure.md). Worth restating because it is the idea that
   makes Doc and MEP cheap: a ribbon button calls the same proven fragment body the AI calls.
 

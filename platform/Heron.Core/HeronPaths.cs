@@ -81,14 +81,6 @@ namespace Heron.Core
         /// <summary>DERIVED - logs. Verbose, rotated, disposable.</summary>
         public static string Logs { get { return Ensure(Path.Combine(Derived, "logs")); } }
 
-        /// <summary>
-        /// DERIVED - what the modeller sends from Revit's Talk button, and the
-        /// selection saved with it, waiting for the chat that listens (D-104).
-        /// Runtime state: each Revit removes its own folder when it closes, and
-        /// deleting all of it is always a valid recovery action.
-        /// </summary>
-        public static string Talk { get { return Ensure(Path.Combine(Derived, "talk")); } }
-
         /// <summary>DATA - configuration the user or an admin owns.</summary>
         public static string Config { get { return Ensure(Path.Combine(Data, "config")); } }
 
