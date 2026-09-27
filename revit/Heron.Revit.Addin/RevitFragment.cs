@@ -2561,14 +2561,16 @@ namespace Heron.Revit.Addin
 
                 // THE SHORT NAMES STAY. surface-colour and cut-colour were the
                 // only pattern colours before the background ones existed, and
-                // a caller written then keeps working.
+                // a caller written then keeps working. "Pattern Colour" is the
+                // dialog's own word, so it is folded FIRST - surface-pattern-colour
+                // then lands on the short name and is mapped with it.
+                key = key.Replace("-pattern-colour", "-colour");
                 if (key == "surface-colour") key = "surface-foreground-colour";
                 else if (key == "cut-colour") key = "cut-foreground-colour";
                 else if (key == "surface-pattern") key = "surface-foreground-pattern";
                 else if (key == "cut-pattern") key = "cut-foreground-pattern";
                 else if (key == "foreground-visible") key = "surface-foreground-visible";
                 else if (key == "background-visible") key = "surface-background-visible";
-                key = key.Replace("-pattern-colour", "-colour");
 
                 if (key == "projection-line-colour" || key == "cut-line-colour"
                     || key == "surface-foreground-colour" || key == "surface-background-colour"
