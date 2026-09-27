@@ -175,6 +175,7 @@ an edit.
 | [D-101](#d-101--risk-is-part-of-routing-not-only-part-of-permission) | Risk is part of routing, not only part of permission | ⏳ Proposed · 2026-08-31 |
 | [D-102](#d-102--several-fragments-may-jointly-feed-one-and-the-orphan-check-asks-per-need) | Several fragments may jointly feed one, and the orphan check asks per need | ✅ Accepted · 2026-08-31 |
 | [D-103](#d-103--a-need-may-bind-to-a-provided-name-that-is-not-its-own) | A need may bind to a provided name that is not its own | ✅ Accepted · 2026-08-31 |
+| [D-104](#d-104--the-modeller-can-talk-to-the-open-chat-from-inside-revit) | The modeller can talk to the open chat from inside Revit | ✅ Accepted · 2026-09-27 |
 
 ## Format
 
@@ -873,3 +874,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Numbering:** restored 2026-09-23 under a new number, on the owner's instruction, word for word from commit `5c84302`, except that its references to the first D-48 now say D-102, the number that decision has now. This decision was D-49 from 2026-08-31 until the merge `1f884ae` (2026-09-02) left it out of the log, and commit `2087022` (2026-09-06) gave the number to a different decision. A citation of D-49 written before `2087022` means this decision.
 
 **Full record:** [`decisions/D-103.md`](decisions/D-103.md)
+
+## D-104 — The modeller can talk to the open chat from inside Revit
+
+**Status:** Accepted · **Date:** 2026-09-27 · **Source:** Ajmal PS, 2026-09-27, in conversation
+**Supersedes:** one sentence of [D-01](#d-01--execution-host-claude-code-plugin) — *"nothing is being built for it"* — and nothing else in it · **Keeps:** [D-01](#d-01--execution-host-claude-code-plugin), [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit), [D-34](#d-34--herons-own-wording-is-english-understanding-the-user-is-not-herons-job), [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so)
+**Affects:** [`mcp/server/heron_talk.py`](../mcp/server/heron_talk.py), [`mcp/heron-talk.cmd`](../mcp/heron-talk.cmd), [`.mcp.json`](../.mcp.json), [`revit/Heron.Revit.Addin/HeronTalk.cs`](../revit/Heron.Revit.Addin/HeronTalk.cs), [`HeronTalkMailbox.cs`](../revit/Heron.Revit.Addin/HeronTalkMailbox.cs), [`HeronTalkWindow.cs`](../revit/Heron.Revit.Addin/HeronTalkWindow.cs)
+
+**Full record:** [`decisions/D-104.md`](decisions/D-104.md)

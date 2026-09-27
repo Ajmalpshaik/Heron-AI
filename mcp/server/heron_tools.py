@@ -239,6 +239,19 @@ TOOLS = {
     # reach the bridge, through revit_health's own discovery, but it asks
     # nothing of a model and can change nothing.
     "heron_diagnose":           (READ,    None),
+
+    # Talk's saved selection (D-104). READ, and the operation is None
+    # because it sends nothing to Revit: the list was written to Heron's own
+    # derived folder by the Talk button at the moment the modeller spoke, and
+    # this reads that file. That is the point of it - checking "these" again
+    # cannot interrupt the modeller or take the pipe from anybody.
+    #
+    # It carries element ids and UniqueIds, which heron_gaps' note above says
+    # should make whoever adds such a field think again. Thought again: the
+    # ids are of elements the modeller themselves selected and sent to this
+    # chat, and naming the elements an answer is about is what every Revit
+    # tool here already does.
+    "heron_selection":          (READ,    None),
 }
 
 
