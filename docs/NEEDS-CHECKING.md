@@ -338,6 +338,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-at.md`](needs-checking/group-at.md)
 
+## Group AW - `revit_sheets` counts schedules: a sheet carrying only a schedule is not empty (2026-09-27)
+
+**Its own file:** [`needs-checking/group-aw.md`](needs-checking/group-aw.md)
+
 ## Group AY - `offset-tags-from-host`: every tag moved a set paper distance off its own element (2026-09-27)
 
 **Its own file:** [`needs-checking/group-ay.md`](needs-checking/group-ay.md)

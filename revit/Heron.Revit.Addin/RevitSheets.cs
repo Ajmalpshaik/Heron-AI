@@ -43,7 +43,9 @@ namespace Heron.Revit.Addin
     ///   A SHEET WITH NOTHING ON IT. Numbered, in the register, in the
     ///   issue sheet, and blank. It is the single most embarrassing thing to
     ///   issue and it is invisible in the Project Browser, which shows a
-    ///   sheet with one view and a sheet with none identically.
+    ///   sheet with one view and a sheet with none identically. A schedule
+    ///   is something on a sheet; the titleblock's own revision schedule is
+    ///   not, because every sheet with a titleblock carries one.
     ///
     ///   A SHEET WITH NO TITLEBLOCK. It will print without a border, a
     ///   number, a revision or a signature block.
@@ -125,6 +127,11 @@ namespace Heron.Revit.Addin
             // sheet and OwnedByView is the question that says so.
             var titleblockUse = new Dictionary<string, int>(StringComparer.Ordinal);
 
+            // Schedules on each sheet, in one pass over the model rather than
+            // one per sheet. See ScheduleCountBySheet for why they are counted
+            // apart from views at all.
+            var schedulesOn = ScheduleCountBySheet(doc);
+
             var rows = new List<string>();
             var emptySheets = 0;
             var noTitleblock = 0;
@@ -137,7 +144,9 @@ namespace Heron.Revit.Addin
                 if (placeholder) placeholders++;
 
                 var views = PlacedViewCount(sheet);
-                if (!placeholder && views == 0) emptySheets++;
+                int schedules;
+                if (!schedulesOn.TryGetValue(sheet.Id, out schedules)) schedules = 0;
+                if (!placeholder && views == 0 && schedules == 0) emptySheets++;
 
                 var titleblock = TitleblockOf(doc, sheet);
                 if (titleblock == null)
@@ -158,6 +167,7 @@ namespace Heron.Revit.Addin
                     Json.Str("number", NumberOf(sheet)),
                     Json.Str("name", SafeName(sheet)),
                     Json.Num("views", views),
+                    Json.Num("schedules", schedules),
                     Json.Str("titleblock", titleblock),
                     Json.Num("revisions", revisions),
                     Json.Bool("placeholder", placeholder)));
@@ -270,8 +280,11 @@ namespace Heron.Revit.Addin
         /// How many views are placed on this sheet.
         ///
         /// `GetAllPlacedViews` rather than counting Viewports, because it is
-        /// the sheet's own answer and it includes what a Viewport sweep would
-        /// miss.
+        /// the sheet's own answer. It does NOT include schedules - those are
+        /// counted by ScheduleCountBySheet - and taking it for the whole of
+        /// what is on a sheet is how three sheets each carrying a schedule
+        /// were reported as having nothing on them ("heron ai bulding",
+        /// 2026-09-27, FRAGMENT-ISSUES 5b-238).
         /// </summary>
         private static int PlacedViewCount(ViewSheet sheet)
         {
@@ -282,6 +295,48 @@ namespace Heron.Revit.Addin
             }
             catch (Autodesk.Revit.Exceptions.ApplicationException) { return 0; }
             catch (InvalidOperationException) { return 0; }
+        }
+
+        /// <summary>
+        /// How many schedules each sheet carries, keyed by the sheet's id.
+        ///
+        /// A schedule arrives on a sheet as a ScheduleSheetInstance, never as
+        /// a Viewport, so the sheet's own list of placed views cannot see it -
+        /// the same fact RevitViews.cs and RevitSchedules.cs have to know from
+        /// the other direction. The instance's OwnerViewId is the sheet.
+        ///
+        /// THE TITLEBLOCK'S REVISION SCHEDULE IS LEFT OUT. It is a
+        /// ScheduleSheetInstance too, and every sheet with a titleblock that
+        /// shows revisions carries one, so counting it would make every empty
+        /// sheet look full - the one thing this count exists to catch.
+        /// </summary>
+        private static Dictionary<ElementId, int> ScheduleCountBySheet(Document doc)
+        {
+            var counts = new Dictionary<ElementId, int>();
+            foreach (var element in new FilteredElementCollector(doc)
+                                        .OfClass(typeof(ScheduleSheetInstance)))
+            {
+                var instance = element as ScheduleSheetInstance;
+                if (instance == null || IsRevisionSchedule(instance)) continue;
+                var sheetId = instance.OwnerViewId;
+                if (sheetId == null || sheetId == ElementId.InvalidElementId) continue;
+                int seen;
+                counts[sheetId] = counts.TryGetValue(sheetId, out seen) ? seen + 1 : 1;
+            }
+            return counts;
+        }
+
+        /// <summary>
+        /// Is this the titleblock's own revision schedule?
+        ///
+        /// When Revit will not say, it is treated as one and NOT counted: a
+        /// sheet wrongly called empty is a false alarm somebody checks, while
+        /// a sheet wrongly called full is the blank drawing that gets issued.
+        /// </summary>
+        private static bool IsRevisionSchedule(ScheduleSheetInstance instance)
+        {
+            try { return instance.IsTitleblockRevisionSchedule; }
+            catch (Autodesk.Revit.Exceptions.ApplicationException) { return true; }
         }
 
         /// <summary>

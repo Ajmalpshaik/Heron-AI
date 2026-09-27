@@ -2920,6 +2920,57 @@ def revit_views() -> str:
     return "\n".join(lines)
 
 
+def _schedules_counted(sheets):
+    """Did the add-in that answered count schedules on sheets at all?
+
+    An add-in built before 2026-09-27 sends `views` and no `schedules`, and
+    its "nothing on it" means only "no views" - a sheet carrying just a
+    schedule is among them (FRAGMENT-ISSUES 5b-238). This server and the
+    add-in go live at different restarts, so the one cannot assume the other.
+    """
+    return any("schedules" in sheet for sheet in sheets)
+
+
+def _sheet_line(sheet):
+    """One sheet's line in revit_sheets: views and schedules counted apart.
+
+    A sheet is NOTHING ON IT only when it has no view AND no schedule. The
+    titleblock's revision schedule is never in the add-in's count, so it
+    cannot make an empty sheet look full. When the add-in sent no schedule
+    count, an empty-looking sheet is said to have no VIEWS - never nothing.
+    """
+    views = sheet.get("views") or 0
+    schedules = sheet.get("schedules")
+    note = ""
+    if sheet.get("placeholder"):
+        note = "   placeholder"
+    elif not views and schedules is None:
+        note = "   <-- no views; schedules not counted by this add-in"
+    elif not views and not schedules:
+        note = "   <-- NOTHING ON IT"
+    elif not sheet.get("titleblock"):
+        note = "   <-- no titleblock"
+    counts = "%2d view(s)" % views
+    if schedules is not None:
+        counts += ", %d schedule(s)" % schedules
+    return ("  %-14s %-38s %s%s"
+            % (sheet.get("number"), (sheet.get("name") or "")[:38], counts, note))
+
+
+def _empty_sheets_finding(count, schedules_counted):
+    """The finding line for sheets with nothing on them, honest about what counted."""
+    if not schedules_counted:
+        return ("%d sheet(s) have no views placed on them. Schedules were NOT "
+                "counted - the Heron add-in in this Revit is older than this "
+                "check - so a sheet carrying only a schedule is among them. "
+                "Restart Revit after the add-in is updated for the real count."
+                % count)
+    return ("%d sheet(s) have nothing placed on them - no view and no schedule. "
+            "The Project Browser shows a sheet with one view and a sheet with "
+            "none identically, so this does not show up until it is printed."
+            % count)
+
+
 @server.tool()
 def revit_sheets() -> str:
     """
@@ -2931,6 +2982,10 @@ def revit_sheets() -> str:
     (invisible in the Project Browser, which shows an empty sheet and a full
     one identically), a sheet with NO titleblock, more than one titleblock
     family across the set, and placeholder sheets.
+
+    Views and schedules are counted apart. A sheet carrying only a schedule is
+    not empty; the titleblock's own revision schedule is not counted, because
+    every sheet has one.
 
     Placeholders are counted separately rather than left out - a reserved
     number must never read as a sheet that is ready.
@@ -2974,16 +3029,7 @@ def revit_sheets() -> str:
 
     shown = sheets[:30]
     for sheet in shown:
-        note = ""
-        if sheet.get("placeholder"):
-            note = "   placeholder"
-        elif not sheet.get("views"):
-            note = "   <-- NOTHING ON IT"
-        elif not sheet.get("titleblock"):
-            note = "   <-- no titleblock"
-        lines.append("  %-14s %-38s %2d view(s)%s"
-                     % (sheet.get("number"), (sheet.get("name") or "")[:38],
-                        sheet.get("views", 0), note))
+        lines.append(_sheet_line(sheet))
     if len(sheets) > len(shown):
         lines.append("  ... and %d more sheet(s)." % (len(sheets) - len(shown)))
 
@@ -2996,11 +3042,8 @@ def revit_sheets() -> str:
 
     findings = []
     if reply.get("sheetsWithNothingOnThem"):
-        findings.append(
-            "%d sheet(s) have nothing placed on them. The Project Browser shows "
-            "a sheet with one view and a sheet with none identically, so this "
-            "does not show up until it is printed."
-            % reply["sheetsWithNothingOnThem"])
+        findings.append(_empty_sheets_finding(reply["sheetsWithNothingOnThem"],
+                                              _schedules_counted(sheets)))
     if reply.get("sheetsWithNoTitleblock"):
         findings.append(
             "%d sheet(s) have no titleblock. They print with no border, no "
