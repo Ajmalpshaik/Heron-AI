@@ -40,6 +40,13 @@ purpose: >
   `CanTotal` is Revit's own answer - a type name or a room name is text - and a
   refusal changes nothing.
 
+  **A NAME THAT COULD MEAN TWO COLUMNS TOUCHES NEITHER.** A column is found by
+  its field name or its printed heading, and a heading can be renamed to
+  another column's field name. Taking the first match would total whichever
+  column comes first, not necessarily the one on screen, so anything but
+  exactly one match is refused. A hidden column is switched on too, and the
+  answer says its total prints nowhere until the column is shown.
+
   **REVIT ALLOWS ONE CALCULATION PER COLUMN.** A column showing its minimum or
   maximum is switched to totals, because totals is what was asked for, and what
   it showed before is reported rather than lost - the rule
@@ -62,9 +69,11 @@ contract:
       type: int
     - name: appliedTotals
       # A second read of each column switched on, with where its total prints
-      # on that schedule - never an echo of the request.
+      # on that schedule - never an echo of the request. ONE STRING, joined
+      # with "; ", because a list reaches the chat as three entries cut at
+      # sixty characters and the cut part is where the total prints.
       role: result
-      type: IList<string>
+      type: string
     - name: alreadyTotalled
       # Columns that were totalling before this ran and were left alone. The
       # prior state, never a change it made (D-52).
@@ -78,6 +87,11 @@ contract:
     - name: notPresent
       # Column names the schedule does not carry. The evidence it looked,
       # never a thing it found (D-52).
+      role: accounting
+      type: IList<string>
+    - name: ambiguous
+      # Names that more than one column answers to, by field name or by
+      # printed heading. NONE of them was touched. Given and unusable (D-52).
       role: accounting
       type: IList<string>
     - name: replacedCalculation
@@ -98,7 +112,9 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. `ScheduleField.DisplayType` (get and
-  set), `ScheduleField.CanTotal()`, `GetName` and `ColumnHeading`, and the
+  set), `ScheduleField.CanTotal()`, `GetName`, `ColumnHeading` and `IsHidden`,
+  `ScheduleFieldId`'s `Equals`, `GetHashCode` and `==` (so a set of them holds
+  one entry per column), and the
   `ScheduleFieldDisplayType` enum with `Standard = 0`, `Totals = 1`,
   `MinMax = 2`, `Max = 3` and `Min = 4`, are present and unchanged 2020 through
   2027 - read out of the reference assemblies for each release with

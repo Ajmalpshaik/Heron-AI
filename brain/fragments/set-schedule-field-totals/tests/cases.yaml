@@ -13,13 +13,19 @@ positive:
 
   - given: a column showing its maximum, asked to total
     expect: >
-      totalled 1, with replacedCalculation naming "its maximum" - the old
-      calculation reported, not silently lost
+      totalled 1, with replacedCalculation naming "its maximum" and appliedTotals
+      saying "it was calculating its maximum" - the old calculation reported,
+      not silently lost
 
   - given: a schedule with no footer and the grand total off
     expect: >
       totalled 1, and appliedTotals saying the total PRINTS NOWHERE YET - the
       column is set, and the modeller is told why nothing shows
+
+  - given: a hidden numeric column, asked to total
+    expect: >
+      totalled 1, and appliedTotals saying THE COLUMN IS HIDDEN and its total
+      prints nowhere until it is shown - not that it prints in the footer
 
 negative:
   - given: fieldNames Family and Type on the same schedule
@@ -28,11 +34,26 @@ negative:
       calculation unchanged - CanTotal refuses text, and it is asked before
       anything is set. THIS IS THE FIRST NEGATIVE TO RUN
 
+  - given: fieldNames "Flow, Flow" on a schedule whose Flow is already totalling
+    expect: >
+      alreadyTotalled 1, not 2 - the same column named twice is one request,
+      and a second pass must not report the first pass's change as found
+
+  - given: a heading renamed to another column's field name, and that name asked for
+    expect: >
+      ambiguous naming it with "2 columns answer to that name", totalled 0, and
+      NEITHER column's calculation changed
+
   - given: a column name that is not in the schedule
     expect: named in notPresent, totalled 0, nothing changed
 
   - given: an empty fieldNames list
     expect: refused, totalled 0, and no column touched
+
+  - given: an empty elements list - a schedule name that found nothing
+    expect: >
+      refused, saying no schedule was handed in. A misspelled name must not read
+      as a run that succeeded and had nothing to do
 
   - given: elements that are not schedules - a selection of air terminals
     expect: >

@@ -6,7 +6,7 @@
 > (Steps 7 to 14) is built and barely proven.** This line said both *"have never loaded into Revit"*
 > until 2026-09-21, a fortnight after the first write ([row 5b-54](FRAGMENT-ISSUES.md)).
 > **All fourteen skills are `DRAFT`; 313 of the 415 fragments are `PROVEN`
-> as of 2026-09-25** — this line said *every fragment is `DRAFT`* long after that stopped being true, so
+> as of 2026-09-27** — this line said *every fragment is `DRAFT`* long after that stopped being true, so
 > derive it: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 >
 > **Do not trust this paragraph over the tool.** `python tools/check-gaps.py` is computed from disk on

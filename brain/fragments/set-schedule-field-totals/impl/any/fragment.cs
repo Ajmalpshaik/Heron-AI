@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `elements` and `fieldNames` are in scope;
 // leaves `totalled`, `appliedTotals`, `alreadyTotalled`, `cannotTotal`,
-// `notPresent`, `replacedCalculation` and `refused` behind.
+// `notPresent`, `ambiguous`, `replacedCalculation` and `refused` behind.
 //
 // ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 //
@@ -18,13 +18,23 @@
 // answer - text such as a type name or a room name cannot be added up - and it
 // is asked before anything is set, so a refusal changes nothing.
 //
+// A NAME THAT COULD MEAN TWO COLUMNS TOUCHES NEITHER. A column is found by its
+// field name or by its printed heading, and a heading can be renamed to
+// anything - including another column's field name. Taking the first match
+// would total whichever column happens to come first, which may not be the
+// one the modeller is looking at. So every column answering to the name is
+// collected, and anything but exactly one is refused in `ambiguous`.
+//
 // REVIT ALLOWS ONE CALCULATION PER COLUMN. A column showing its minimum or
 // maximum is switched to totals, because totals is what was asked for, and
 // what it showed before is REPORTED in `replacedCalculation` rather than
 // vanishing quietly - the same rule SET_SCHEDULE_SORT_GROUP keeps for a sort.
 //
 // READ FIRST, WRITE, READ BACK. `appliedTotals` comes from a second read of the
-// column, not an echo of what was asked for.
+// column, not an echo of what was asked for. It is ONE STRING, not a list,
+// because a list reaches the chat as its first three entries cut at sixty
+// characters, and the part that was cut was the part saying where the total
+// prints.
 
 // A SCHEDULE ON A SHEET IS A ScheduleSheetInstance, NOT A ViewSchedule, AND
 // CLICKING IT IS THE ONLY WAY A PERSON CAN POINT AT ONE. The same read-through
@@ -46,15 +56,17 @@ Func<Element, ViewSchedule> scheduleBehind = candidate =>
 };
 
 var totalled = 0;
-var appliedTotals = new List<string>();
+string appliedTotals = "";
 var alreadyTotalled = new List<string>();
 var cannotTotal = new List<string>();
 var notPresent = new List<string>();
+var ambiguous = new List<string>();
 var replacedCalculation = new List<string>();
 string refused = null;
 
 var handed = 0;
 var schedulesSeen = 0;
+var appliedParts = new List<string>();
 
 // A schedule selected twice - itself and its placement on a sheet, or placed
 // on two sheets - is one schedule. Counting it twice would report its own
@@ -76,7 +88,7 @@ if (askedFor == 0)
         + "it reads in the schedule - 'Flow', for instance";
 }
 
-foreach (var element in elements)
+foreach (var element in elements ?? new List<Element>())
 {
     if (refused != null) break;
     if (element == null) continue;
@@ -115,13 +127,18 @@ foreach (var element in elements)
         printsWhere = "BUT PRINTS NOWHERE YET - no group has a footer and the grand total is "
             + "off. Switch one on in the schedule's Sorting/Grouping";
 
+    // The same column named twice - "Flow, Flow", or its field name and its
+    // heading - is one request. Without this the second pass would find the
+    // first pass's change and report it as "already totalled".
+    var fieldsDone = new HashSet<ScheduleFieldId>();
+
     foreach (var wanted in fieldNames)
     {
         if (string.IsNullOrEmpty(wanted)) continue;
 
-        // The field name or the printed heading - a heading renamed to
-        // "Airflow" still finds the field called Flow, and the other way round.
-        ScheduleFieldId foundId = null;
+        // Every column answering to the name, by field name or by printed
+        // heading. One column matching both ways is still one column.
+        var matches = new List<ScheduleFieldId>();
         foreach (var fieldId in definition.GetFieldOrder())
         {
             var candidate = definition.GetField(fieldId);
@@ -129,17 +146,27 @@ foreach (var element in elements)
             if (string.Equals(candidate.GetName(), wanted, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(candidate.ColumnHeading, wanted, StringComparison.OrdinalIgnoreCase))
             {
-                foundId = fieldId;
-                break;
+                matches.Add(fieldId);
             }
         }
 
-        if (foundId == null)
+        if (matches.Count == 0)
         {
             notPresent.Add(string.Format("'{0}' on '{1}' - not a column in this schedule, so there "
                 + "is nothing to total. Add it first", wanted, schedule.Name));
             continue;
         }
+
+        if (matches.Count > 1)
+        {
+            ambiguous.Add(string.Format("'{0}' on '{1}' - {2} columns answer to that name, by field "
+                + "name or heading, so NONE was touched. Rename a heading, or name the column "
+                + "another way", wanted, schedule.Name, matches.Count));
+            continue;
+        }
+
+        var foundId = matches[0];
+        if (!fieldsDone.Add(foundId)) continue;
 
         var field = definition.GetField(foundId);
         var name = field.GetName();
@@ -183,9 +210,9 @@ foreach (var element in elements)
             continue;
         }
 
+        var was = "";
         if (before != ScheduleFieldDisplayType.Standard)
         {
-            string was;
             if (before == ScheduleFieldDisplayType.MinMax) was = "its minimum and maximum";
             else if (before == ScheduleFieldDisplayType.Max) was = "its maximum";
             else if (before == ScheduleFieldDisplayType.Min) was = "its minimum";
@@ -196,15 +223,33 @@ foreach (var element in elements)
                 schedule.Name, was));
         }
 
+        // A HIDDEN COLUMN'S TOTAL PRINTS NOWHERE. The setting is kept - it is
+        // what was asked for, and it shows the moment the column does - but
+        // saying it prints in the footer would be untrue.
+        var hidden = false;
+        try { hidden = readBack.IsHidden; }
+        catch (Exception) { hidden = false; }
+
         totalled++;
-        appliedTotals.Add(string.Format("'{0}' on '{1}': calculates totals - {2}", name,
-            schedule.Name, printsWhere));
+        appliedParts.Add(string.Format("'{0}' on '{1}' now calculates totals{2} - {3}", name,
+            schedule.Name,
+            was.Length == 0 ? "" : string.Format(" (it was calculating {0})", was),
+            hidden
+                ? "BUT THE COLUMN IS HIDDEN, so its total prints nowhere until the column is shown"
+                : printsWhere));
     }
 }
 
+appliedTotals = string.Join("; ", appliedParts);
+
 // Decided after the loop, and safe there: an element that is not a schedule
 // `continue`s before any column is touched.
-if (refused == null && handed > 0 && schedulesSeen == 0)
+if (refused == null && handed == 0)
+{
+    refused = "no schedule was handed in - nothing was found by that name, and nothing is "
+        + "selected - so NOTHING WAS TOTALLED. Check the schedule's name, or click it on a sheet";
+}
+else if (refused == null && schedulesSeen == 0)
 {
     refused = string.Format(
         "not one of the {0} element(s) handed in is a schedule, so NOTHING WAS TOTALLED. "

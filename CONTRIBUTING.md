@@ -11,7 +11,7 @@ people who actually do BIM work are worth more than contributions from people wh
 > **313 of the 415 fragments are `PROVEN`** — each on a recorded run against a named model.
 > **102 of the 415 fragments are `DRAFT`**, which is Heron's word for *not proven as it stands* - most
 > have never met a model, and some were proved before their code changed.
-> **All fourteen skills are still `DRAFT`.** Derived 2026-09-26.
+> **All fourteen skills are still `DRAFT`.** Derived 2026-09-27.
 >
 > Derive it rather than believing this line —
 > `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
