@@ -346,6 +346,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-aw.md`](needs-checking/group-aw.md)
 
+## Group AX - `create-view-filters-by-rule` and `set-view-filter-categories`: named view filters from a parameter name and a category list, and their categories set afterwards (2026-09-27)
+
+**Its own file:** [`needs-checking/group-ax.md`](needs-checking/group-ax.md)
+
 ## Group AY - `offset-tags-from-host`: every tag moved a set paper distance off its own element (2026-09-27)
 
 **Its own file:** [`needs-checking/group-ay.md`](needs-checking/group-ay.md)
