@@ -17,8 +17,6 @@
 | `server/` | The MCP server — Step 3 |
 | [`server/heron_tools.py`](server/heron_tools.py) | **What each tool can do, and the one place that says so.** Its risk is what the add-in's gate is checked against; the MCP safety labels a host sees and `revit_read`'s ceiling (nothing above `ANALYZE`) are **derived** from it, never typed at a tool ([docs/04 §8](../docs/04-heron-mcp.md)). The list: `python server/heron_tools.py` |
 | [`server/heron_brain.py`](server/heron_brain.py) | **The one place this side reaches `brain/`** — Step 14. It started with three tools on it — what Heron knows how to do, who provides a capability, and which capability a sentence needs — and there are more now. **Derive how many** rather than reading a figure here: `grep -c 'brain\.' server/heron_mcp_server.py` counts the calls, and the tools are the `@server.tool()` functions around them. It said *three* until 2026-09-21, when it was ten — row 5b-82 |
-| [`server/heron_talk.py`](server/heron_talk.py) | **Talk - the other direction** ([D-104](../docs/DECISIONS.md)). What the modeller types or says with Revit's Talk button is saved as a file in Heron's derived `talk` folder; this claims it and pushes it into the Claude Code session already open, as a channel event. It never talks to Revit. **Off unless the chat was started for it** |
-| [`heron-talk.cmd`](heron-talk.cmd) | **Starts a Talk chat**: Claude Code in the Heron folder with `HERON_TALK=on`, the development-channel flag for Heron's server, and Heron's own tools pre-allowed for that chat. Double-click it |
 
 ## Rules for this folder
 

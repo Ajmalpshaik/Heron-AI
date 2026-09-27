@@ -88,6 +88,21 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
+> ## TALK WAS RUN IN REVIT, LOST A MESSAGE, AND WAS REMOVED - 2026-09-27, evening
+>
+> **The note below this one is history.** Group AS ran on the owner's PC - Revit 2024, his test copy
+> *heron ai bulding*, the terminal Claude Code 2.1.283 installed for it. **AS1, AS2 and AS3 passed**:
+> the Talk button, Claude Code registering Heron's channel, and the box refusing when no chat listened.
+> **AS4 failed**: the message was saved, the Talk chat's listener stopped the moment it was waiting,
+> and when the chat was closed six minutes later the message was claimed and shown to nobody. AS5 to
+> AS10 were not run. The evidence, row by row, is in [group AS](needs-checking/group-as.md).
+>
+> The owner had Talk removed that evening, from Revit and from the code: [D-105](DECISIONS.md#d-105--talk-is-removed-and-the-modeller-works-with-heron-in-the-chat-only)
+> supersedes D-104. Revit 2024 and 2027 were redeployed without it that evening; Revit 2020 was open
+> at the time and keeps the old add-in until `tools/deploy-addin.ps1 -RevitVersion 2020` runs with it
+> closed. **Nothing about Talk is next.** A second attempt would start with a new decision that
+> answers AS4 first.
+
 > ## TALK, STEP 1 - FROM REVIT INTO THE OPEN CHAT. BUILT, NOT RUN IN REVIT - 2026-09-27
 >
 > The owner asked for the other direction and said yes to the design: [D-104](DECISIONS.md). A **Talk**

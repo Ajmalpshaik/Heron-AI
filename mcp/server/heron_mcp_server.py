@@ -102,7 +102,6 @@ import heron_tools as tools                         # noqa: E402
 import heron_config as configuration                # noqa: E402
 import heron_health as health                       # noqa: E402
 import heron_brain as brain                         # noqa: E402
-import heron_talk as talk                           # noqa: E402
 # THE SDK RENAMED THIS CLASS, AND AN UNPINNED INSTALL GETS THE NEW ONE.
 # `pip install --user mcp` - which is what tools/HeronRevit.ps1 tells a user to
 # run - resolved to 1.x when this server was written and resolves to 2.x now.
@@ -193,21 +192,13 @@ def _host_instructions():
 
     A FAILURE IS SAID, NOT FATAL. A server that refused to start over its own
     instructions would take every Revit tool out of the host with it.
-
-    A TALK CHAT IS TOLD ONE THING MORE (D-104): that the modeller can also
-    speak from inside Revit, what those messages look like, and that "this"
-    means the selection saved with them. Only when Talk is on - a chat that
-    will never receive such a message has no use for the paragraph.
     """
     try:
-        text = brain.host_instructions()
+        return brain.host_instructions()
     except brain.BrainUnavailable as why:
-        text = ("Heron could not give this chat its rules: %s\n"
+        return ("Heron could not give this chat its rules: %s\n"
                 "They are in HERON_CONSTITUTION.md, and they bind this chat "
                 "whether or not they arrived here." % why)
-    if talk.enabled():
-        text += "\n\n" + talk.instructions()
-    return text
 
 
 server = _Labelled("heron", instructions=_host_instructions())
@@ -4064,57 +4055,6 @@ def _groups_in_category(reply, where):
     return "\n".join(lines)
 
 
-@server.tool()
-def heron_selection(number: int = 0, page: int = 1, revit: int = 0) -> str:
-    """
-    What the modeller had selected when they sent a message from Revit's Talk
-    button - saved by Heron at that moment, read from disk, never from the live
-    model.
-
-    Use it when a message from Revit says "this", "these" or "the selected
-    ...": the message itself carries only the count, the categories and the
-    selection number. number=0 means the latest. With more than one Revit
-    open, pass the message's revit attribute as revit. It lists each element's
-    id, UniqueId, category and name, 200 to a page, and says when the list was
-    cut short. It sends nothing to Revit, so it cannot interrupt the modeller.
-    """
-    # THE NUMBER IS LOOKED FOR IN EVERY REVIT, and the Revit this chat is
-    # using is asked only for "the latest" - see heron_talk.find_selection
-    # for why a clash between two Revits is a question and never a guess.
-    return talk.selection_answer(number=number, page=page, revit=revit or None,
-                                 bound=binding.pid)
-
-
-def _talk_arrived(message):
-    """
-    A message has come from Revit's Talk button. Which Revit should this chat
-    now be using? Returns a sentence for the chat when the answer is "not the
-    one the message came from", else None.
-
-    SPEAKING FROM A REVIT IS CHOOSING IT. docs/25's table separates a binding
-    the modeller made from one Heron assumed, and pressing Talk in one Revit
-    and asking about its model is as explicit a choice as there is - so this
-    binds to it as CHOSEN, which also means that if it closes, Heron stops
-    rather than sliding onto another.
-
-    EXCEPT OVER AN EARLIER CHOICE. If the modeller already chose a different
-    Revit in this chat, that choice is not overturned by a message arriving:
-    the chat is told, and asks.
-    """
-    pid = message.get("revitPid")
-    if pid is None or binding.pid == pid:
-        return None
-    if binding.pid is not None and binding.was_chosen:
-        return ("This came from a different Revit from the one this chat is using by the "
-                "modeller's earlier choice, so the chat was not switched. Ask which one is meant "
-                "before sending anything to Revit.")
-    try:
-        binding.choose(str(pid))
-    except NotBound as why:
-        return str(why)
-    return None
-
-
 if __name__ == "__main__":
     if os.name != "nt":
         # The bridge is a Windows named pipe, and Revit is Windows-only.
@@ -4127,10 +4067,4 @@ if __name__ == "__main__":
     # every answer uses the lexical backend and says so. See heron_embed.warm().
     brain.warm()
 
-    # TALK (D-104): only a chat started by mcp/heron-talk.cmd listens for
-    # Revit's Talk button, because only such a chat has the channel flag that
-    # lets Claude Code deliver what it hears.
-    if talk.enabled():
-        talk.serve(server, _talk_arrived)
-    else:
-        server.run()
+    server.run()
