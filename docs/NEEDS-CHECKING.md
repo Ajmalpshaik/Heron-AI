@@ -349,6 +349,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-aw.md`](needs-checking/group-aw.md)
 
+## Group AX - `create-view-filters-by-rule` and `set-view-filter-categories`: named view filters from a parameter name and a category list, and their categories set afterwards (2026-09-27)
+
+**Its own file:** [`needs-checking/group-ax.md`](needs-checking/group-ax.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

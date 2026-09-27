@@ -134,6 +134,10 @@ compatibility-note: >
 #                                           tomorrow gets nothing
 #   "make a filter for supply air"       -> CREATE_VIEW_FILTER - ONE rule, one
 #                                           filter, when the value is known
+#   "make filters for supply return and  -> CREATE_VIEW_FILTERS_BY_RULE - the
+#    exhaust air"                           values and categories are TYPED,
+#                                           not read off the model, and the
+#                                           filters go on no view
 #   "put that filter on this view"       -> APPLY_VIEW_FILTER
 
 utterances:
