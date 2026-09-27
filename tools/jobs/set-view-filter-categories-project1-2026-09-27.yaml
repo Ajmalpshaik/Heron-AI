@@ -1,0 +1,46 @@
+# The first proof of set-view-filter-categories (SET_VIEW_FILTER_CATEGORIES,
+# FRG-VIEW-112), 2026-09-27 - NEEDS-CHECKING Group AX, row AX5.
+#
+#     python tools/batch-prove.py tools/jobs/set-view-filter-categories-project1-2026-09-27.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/set-view-filter-categories-project1-2026-09-27.yaml
+#
+# RUN ON A TEST COPY OF "heron ai bulding" (Project1), never the working file.
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK,
+# so nothing should be kept - open Manage, Filters afterwards rather than
+# assuming it: rollback has failed before on this PC.
+#
+# THE COPY MUST BE SAVED AFTER THE WORKING RUN OF 2026-09-27, which made the
+# Supply Air and Return Air filters and set their eight duct categories. An
+# older copy has no such filters: `notFound` names both, nothing changes, and
+# the run is reported POSITIVE EMPTY with nothing proved.
+#
+# ZERO SETUP. Every value is typed; nothing is selected and nothing is chained,
+# so another chat's selection in the same Revit cannot reach this run.
+#
+# POSITIVE: THE TWO FILTERS CUT TO AIR TERMINALS AND DUCTS. Each holds eight
+# categories, so `changed` must be 2 and `readBack` must name exactly those two
+# categories for each, with the rule unchanged.
+#
+# NEGATIVE: WALLS ALONE. Walls cannot be filtered by System Classification, so
+# each filter must be LEFT AS IT WAS - never emptied - with `leftOut` naming
+# Walls and `changed` 0.
+#
+# NOT SET HERE: `in:`. Without it the run reads the model in front, so bring
+# the test copy to the front. With two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Project1 "heron ai bulding" (a test copy saved after 2026-09-27), Revit 2024
+
+defaults:
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: set-view-filter-categories
+    expect: changed
+    set:
+      filterNames: Supply Air, Return Air
+      categories: Air Terminals, Ducts
+    negative-set:
+      filterNames: Supply Air, Return Air
+      categories: Walls

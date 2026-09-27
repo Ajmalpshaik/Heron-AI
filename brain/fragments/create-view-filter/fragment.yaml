@@ -138,6 +138,11 @@ compatibility-note: >
 #                                        model. This makes ONE, from a rule
 #                                        you already know
 #   "take that filter off the view"      -> REMOVE_VIEW_FILTER
+#   "create a supply air filter for      -> CREATE_VIEW_FILTERS_BY_RULE. The
+#    ducts"                                 parameter typed by NAME, the
+#                                           categories by name, one or several
+#                                           filters, and on NO view - this one
+#                                           needs a parameter id and a view
 utterances:
   - colour by system
   - add a filter to the view
