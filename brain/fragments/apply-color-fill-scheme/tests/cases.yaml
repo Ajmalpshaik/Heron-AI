@@ -47,6 +47,23 @@ negative:
     expect: >
       refused says the view takes no colour scheme at all. Nothing is written
 
+  - given: >
+      a plan whose view template holds the colour scheme, category Rooms,
+      parameterName Name, in a model with no "Rooms by Name"
+    expect: >
+      refused says the view will not take a colour scheme and names the view
+      template as the usual reason. NO COPY IS MADE - the view is asked
+      before anything is copied - so the Rooms schemes are exactly the ones
+      that were there before
+
+  - given: >
+      a request that gets as far as setting the scheme and then cannot place
+      the legend
+    expect: >
+      the call fails with "NOTHING WAS KEPT" and the model is as it was: no
+      copied scheme, the view's colour scheme unchanged, no legend. Half of
+      the request - a coloured plan with no legend - is never kept
+
   - given: parameterName "ZZZ Not A Parameter" with category Rooms
     expect: >
       refused lists what a Rooms scheme CAN colour by. No scheme is copied

@@ -29,6 +29,14 @@ Before them, Walls on the Room plan was refused and wrote nothing - *"cannot tak
 Walls. It takes: Ducts, HVAC Zones, Pipes, Rooms, Spaces"*. After them, the Room plan was run a second
 time: it used "Rooms by Name", made no copy and placed no second legend (`legendsInView` 1).
 
+**The code changed after that run, and the change has not been run in Revit.** A review of
+[PR #342](https://github.com/Ajmalpshaik/Heron-AI/pull/342) found six things, all taken: a range scheme
+on the parameter now counts as a match; the view is asked before a scheme is copied; any failure after a
+write throws, so a copy, or a scheme set with no legend, is rolled back instead of kept; numeric rows are
+written in the project's units; and a category with nothing placed yet can still be coloured by a
+built-in parameter. The path the three plans took - use or copy, set, place the legend - is the same
+code, but the proof (AV1) is what shows it.
+
 **The colours are Revit's own.** Every row came back pale - 250,230,230 for the first, stepping
 through near-white tints - which is what Revit assigned; nothing here chose them. On a sheet some
 neighbours are hard to tell apart (Office 09 237,230,250 against Office 12 243,230,250).

@@ -26,6 +26,13 @@
 // its top, and where it landed is read back and reported in millimetres on
 // the sheet, because that is where somebody will look for it.
 //
+// A FAILURE AFTER ANYTHING IS WRITTEN THROWS. A normal return keeps the
+// transaction, so a refusal is only ever returned before the first write;
+// once a copy exists or the scheme is set, a copy the view will not take, a
+// scheme that reads back wrong or a legend Revit will not place rolls the
+// whole request back. Half of this - a coloured plan with no legend - is not
+// kept (Golden Rule 16).
+//
 // READ BACK, NOT ASSUMED. The view's scheme for the category is read again
 // after it is set, and the legends in the view are counted again after one is
 // placed. `schemeApplied` and `legendsInView` are those reads, not the calls
@@ -50,6 +57,9 @@ var wanted = (parameterName ?? "").Trim();
 var categoryName = category == null ? "" : category.Name;
 ColorFillScheme scheme = null;
 var parameterId = ElementId.InvalidElementId;
+// The KIND of value the parameter holds, off an element that carries it, so a
+// numeric row can be written in the project's units, not Revit's.
+ForgeTypeId specOf = null;
 
 // ---- what the view is, said in every answer --------------------------------
 // The crop and annotation crop decide whether a legend placed outside the
@@ -150,6 +160,11 @@ if (refused.Length == 0)
     }
     catch (Exception) { sample = null; }
 
+    // A CATEGORY WITH NOTHING PLACED YET STILL HAS ITS BUILT-IN PARAMETERS.
+    // Revit's own list of them is walked once, only if an id is left unnamed,
+    // and each is turned into an id to COMPARE - so a plan can be set up
+    // before its rooms are drawn, and no id is read as a number.
+    Dictionary<ElementId, string> builtIns = null;
     Func<ElementId, string> labelOf = id =>
     {
         if (sample != null)
@@ -160,8 +175,24 @@ if (refused.Length == 0)
         var asElement = doc.GetElement(id) as ParameterElement;
         if (asElement != null && asElement.GetDefinition() != null)
             return asElement.GetDefinition().Name;
-        return null;
+        if (builtIns == null)
+        {
+            builtIns = new Dictionary<ElementId, string>();
+            foreach (var typeId in ParameterUtils.GetAllBuiltInParameters())
+            {
+                try
+                {
+                    var asId = new ElementId(ParameterUtils.GetBuiltInParameter(typeId));
+                    if (!builtIns.ContainsKey(asId))
+                        builtIns[asId] = LabelUtils.GetLabelForBuiltInParameter(typeId);
+                }
+                catch (Exception) { }
+            }
+        }
+        string named;
+        return builtIns.TryGetValue(id, out named) ? named : null;
     };
+
 
     var offered = new List<KeyValuePair<string, ElementId>>();
     foreach (var id in schemes[0].GetSupportedParameterIds())
@@ -178,6 +209,15 @@ if (refused.Length == 0)
     {
         parameterId = loose[0].Value;
         wanted = loose[0].Key;
+        if (sample != null)
+        {
+            foreach (Parameter p in sample.Parameters)
+            {
+                if (!p.Id.Equals(parameterId) || p.Definition == null) continue;
+                try { specOf = p.Definition.GetDataType(); } catch (Exception) { specOf = null; }
+                break;
+            }
+        }
     }
     else if (loose.Count > 1)
     {
@@ -203,7 +243,12 @@ var copied = false;
 if (refused.Length == 0)
 {
     var current = view.GetColorFillSchemeId(category.Id);
-    var matching = schemes.Where(s => s.ParameterDefinition.Equals(parameterId) && !s.IsByRange).ToList();
+
+    // BY VALUE OR BY RANGE, EITHER ONE COUNTS. The request names a parameter
+    // and nothing else, so a range scheme on it is a match. Turning ranges
+    // away would copy one on every run, because a copy of a range scheme is
+    // itself by range.
+    var matching = schemes.Where(s => s.ParameterDefinition.Equals(parameterId)).ToList();
 
     // The one this view already uses wins, so running this twice changes
     // nothing the second time.
@@ -227,37 +272,45 @@ if (refused.Length == 0)
         // shows now if it has one - its colours and title style are what the
         // modeller last chose - else the first by name.
         var source = schemes.FirstOrDefault(s => s.Id.Equals(current)) ?? schemes[0];
-        var baseName = categoryName + " by " + wanted;
-        var newName = baseName;
-        var taken = new HashSet<string>(
-            new FilteredElementCollector(doc).OfClass(typeof(ColorFillScheme))
-                .Cast<ColorFillScheme>().Where(s => s.CategoryId.Equals(category.Id))
-                .Select(s => s.Name),
-            StringComparer.OrdinalIgnoreCase);
-        for (var n = 2; (taken.Contains(newName) || !source.IsValidSchemeName(newName)) && n < 50; n++)
-            newName = baseName + " (" + n + ")";
 
-        try
+        // ASK THE VIEW BEFORE COPYING ANYTHING. A view whose colour scheme a
+        // template holds takes no scheme at all, and a copy made first would
+        // be kept by a run that then declines.
+        if (!view.CanApplyColorFillScheme(category.Id, source.Id))
         {
-            var madeId = source.Duplicate(newName);
-            scheme = doc.GetElement(madeId) as ColorFillScheme;
+            refused = viewFacts + " will not take a colour scheme for " + categoryName
+                + " - a view template holding the colour scheme is the usual reason. "
+                + "Nothing was changed.";
         }
-        catch (Exception ex)
+        else
         {
-            refused = "Revit would not copy the scheme '" + source.Name + "': " + ex.Message
-                + " Nothing was changed.";
-        }
+            var baseName = categoryName + " by " + wanted;
+            var newName = baseName;
+            var taken = new HashSet<string>(schemes.Select(s => s.Name), StringComparer.OrdinalIgnoreCase);
+            for (var n = 2; (taken.Contains(newName) || !source.IsValidSchemeName(newName)) && n < 50; n++)
+                newName = baseName + " (" + n + ")";
 
-        if (scheme != null)
-        {
-            if (!scheme.IsValidParameterDefinitionId(parameterId))
+            ElementId madeId = null;
+            try { madeId = source.Duplicate(newName); }
+            catch (Exception ex)
             {
-                refused = "the copied scheme will not take '" + wanted + "' as what it colours by. "
-                    + "The copy was made in this transaction and goes with it.";
-                scheme = null;
+                refused = "Revit would not copy the scheme '" + source.Name + "': " + ex.Message
+                    + " Nothing was changed.";
             }
-            else
+
+            // FROM HERE A COPY EXISTS, SO A FAILURE THROWS. A normal return
+            // keeps the transaction, and with it a copy nobody asked for; a
+            // throw rolls the whole request back (Golden Rule 16).
+            if (madeId != null)
             {
+                scheme = doc.GetElement(madeId) as ColorFillScheme;
+                if (scheme == null)
+                    throw new InvalidOperationException("Revit copied the scheme '" + source.Name
+                        + "' but the copy could not be found again. NOTHING WAS KEPT.");
+                if (!scheme.IsValidParameterDefinitionId(parameterId))
+                    throw new InvalidOperationException("The copy of '" + source.Name
+                        + "' will not take '" + wanted + "' as what it colours by. NOTHING WAS KEPT.");
+
                 scheme.ParameterDefinition = parameterId;
                 scheme.Title = baseName;
                 copied = true;
@@ -267,15 +320,12 @@ if (refused.Length == 0)
                     + " - '" + source.Name + "' is unchanged";
             }
         }
-        else if (refused.Length == 0)
-        {
-            refused = "Revit copied the scheme but the copy could not be found again. Nothing "
-                + "that depends on it was done.";
-        }
     }
 }
 
 // ---- 4. set it on the view, and read it back --------------------------------
+// Only a copy made above has been written so far. A refusal here, with no
+// copy, leaves the model as it was; with a copy, it throws so the copy goes.
 if (refused.Length == 0)
 {
     schemeName = scheme.Name;
@@ -283,23 +333,37 @@ if (refused.Length == 0)
     var wasName = before.Equals(ElementId.InvalidElementId) ? "none"
         : (doc.GetElement(before) == null ? "none" : "'" + doc.GetElement(before).Name + "'");
 
+    string declined = null;
     if (!view.CanApplyColorFillScheme(category.Id, scheme.Id))
     {
-        refused = viewFacts + " will not take the scheme '" + scheme.Name + "' for "
-            + categoryName + " - a view template holding the colour scheme is the usual reason. "
-            + "Nothing was changed on the view.";
+        declined = viewFacts + " will not take the scheme '" + scheme.Name + "' for "
+            + categoryName + " - a view template holding the colour scheme is the usual reason.";
     }
     else
     {
         try { view.SetColorFillSchemeId(category.Id, scheme.Id); }
-        catch (Exception ex)
-        {
-            refused = "Revit refused the scheme on " + viewFacts + ": " + ex.Message;
-        }
+        catch (Exception ex) { declined = "Revit refused the scheme on " + viewFacts + ": " + ex.Message; }
+    }
+
+    if (declined == null)
+    {
         doc.Regenerate();
         schemeApplied = view.GetColorFillSchemeId(category.Id).Equals(scheme.Id);
+        if (!schemeApplied)
+            throw new InvalidOperationException("The colour scheme for " + categoryName + " on "
+                + viewFacts + " reads back as something other than '" + scheme.Name
+                + "' after it was set. NOTHING WAS KEPT.");
         findings.Add("the view's colour scheme for " + categoryName + " was " + wasName
-            + " and reads back as " + (schemeApplied ? "'" + scheme.Name + "'" : "SOMETHING ELSE"));
+            + " and reads back as '" + scheme.Name + "'");
+    }
+    else if (copied)
+    {
+        throw new InvalidOperationException(declined + " NOTHING WAS KEPT - the copied scheme '"
+            + scheme.Name + "' was rolled back with the rest.");
+    }
+    else
+    {
+        refused = declined + " Nothing was changed.";
     }
 }
 
@@ -399,7 +463,13 @@ if (refused.Length == 0 && schemeApplied)
                     ? (doc.GetElement(row.GetElementIdValue()) == null ? "(none)"
                         : doc.GetElement(row.GetElementIdValue()).Name)
                 : row.StorageType == StorageType.Integer ? row.GetIntegerValue().ToString()
-                : row.GetDoubleValue().ToString("0.###");
+                // A NUMBER IS WRITTEN IN THE PROJECT'S UNITS, as the dialog shows
+                // it. Revit stores it in its own internal units, so without the
+                // parameter's kind the raw figure is said to be exactly that.
+                : specOf != null
+                    ? UnitFormatUtils.Format(doc.GetUnits(), specOf, row.GetDoubleValue(), false)
+                    : (!string.IsNullOrEmpty(row.Caption) ? row.Caption
+                        : row.GetDoubleValue().ToString("0.###") + " (Revit internal units)");
         }
         catch (Exception) { value = row.Caption; }
         var c = row.Color;
@@ -443,9 +513,16 @@ if (refused.Length == 0 && schemeApplied)
         }
         catch (Exception ex)
         {
-            findings.Add("Revit would not place the legend: " + ex.Message
-                + " The scheme IS set on the view.");
+            // THE LEGEND IS HALF OF WHAT WAS ASKED FOR. A scheme set with no
+            // legend is a coloured plan nobody can read, so the whole request
+            // rolls back rather than keeping half of it.
+            throw new InvalidOperationException("Revit would not place the colour fill legend in "
+                + viewFacts + ": " + ex.Message + " NOTHING WAS KEPT - the colour scheme was "
+                + "rolled back with it, so the view is as it was.");
         }
+        if (legend == null)
+            throw new InvalidOperationException("Revit placed no colour fill legend in " + viewFacts
+                + ". NOTHING WAS KEPT - the colour scheme was rolled back with it.");
         doc.Regenerate();
     }
 

@@ -48,6 +48,11 @@ purpose: >
   (`legendsInView`). `summary` carries all of it in one sentence, because a
   reply shows only the first three rows of a list.
 
+  **ALL OF IT OR NONE OF IT.** A refusal is returned only before anything is
+  written. Once a scheme has been copied or set, a failure - the view will not
+  take it, it reads back wrong, Revit will not place the legend - throws, and
+  the whole request rolls back: a coloured plan with no legend is not kept.
+
   **A LEGEND PLACED OUTSIDE THE CROP MAKES THE VIEWPORT BIGGER.** On a sheet
   that pulls the plan off the centre it had. This fragment does not touch the
   sheet or the viewport; re-centring is a separate step, and the reply says
@@ -144,9 +149,14 @@ compatibility-note: >
   `ColorFillScheme.Duplicate`, `ParameterDefinition`, `Title`, `IsByRange`,
   `StorageType`, `GetEntries`, `AddEntry`, `GetSupportedParameterIds`,
   `IsValidParameterDefinitionId`, `IsValidSchemeName`; `ColorFillLegend.Create`,
-  `Origin`, `ColorFillCategoryId`. No `ElementId` is read as a number - a
-  parameter's name comes off an element that carries it, and ids are only ever
-  compared - so 2024's move to 64-bit ids does not reach here. Millimetres on
+  `Origin`, `ColorFillCategoryId`; and, for a category with nothing placed
+  yet, `ParameterUtils.GetAllBuiltInParameters`, `GetBuiltInParameter`,
+  `LabelUtils.GetLabelForBuiltInParameter` and `new ElementId(BuiltInParameter)`;
+  for a numeric row, `Definition.GetDataType` and `UnitFormatUtils.Format(Units,
+  ForgeTypeId, double, bool)` - all 2022-2027, read the same way. No
+  `ElementId` is read as a number - a parameter's name comes off an element
+  that carries it or off Revit's own list of built-in parameters, and ids are
+  only ever compared - so 2024's move to 64-bit ids does not reach here. Millimetres on
   the sheet become model feet by the view's scale over 304.8 (D-20).
 
 # ROUTING - repeated in COLOR_BY_PARAMETER and CREATE_LEGEND_VIEW.
@@ -157,9 +167,12 @@ compatibility-note: >
 #   "colour the rooms by name"        -> here. Rooms, spaces, zones, areas are
 #                                        what a colour SCHEME is for
 #   "colour fill the spaces"          -> here
-#   "colour the HVAC zones by name"   -> here. CREATE_HVAC_ZONE MAKES zones;
-#                                        a bare "color the hvac zones" still
-#                                        reaches it (FRAGMENT-ISSUES 5b-236)
+#   "colour the HVAC zones by name"   -> here
+#   "color the hvac zones"            -> here, NOT CREATE_HVAC_ZONE. That one
+#   "colour the spaces by zone"          MAKES zones and moves spaces into
+#   "colour fill the zones"              them; a request to colour must never
+#                                        reach a write that changes what the
+#                                        model holds (FRAGMENT-ISSUES 5b-236)
 #   "colour code the ducts by system" -> COLOR_BY_PARAMETER - overrides on the
 #                                        elements handed in, the co-ordination
 #                                        picture, with its legend in the reply
@@ -170,3 +183,6 @@ utterances:
   - colour the rooms by name
   - colour fill the spaces
   - colour the HVAC zones by name
+  - color the hvac zones
+  - colour the spaces by zone
+  - colour fill the zones
