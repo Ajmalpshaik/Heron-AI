@@ -41,11 +41,25 @@ Then `revit_read` REPORT_TAGS_AND_TARGETS on the same 90: `tagCount` 90, `tagTar
 runs**, although two earlier tag changes in this view moved it 30 and 43 mm the same day; what moved it then
 is not known, and the put-back branch has never run on a model (AY3).
 
+**Changed after that run, on the pull request's review (2026-09-28).** The run above was on the code before
+this change. The 2020/2021 split no longer uses a version `#if` - the add-in compiles fragments with no
+release symbols, so the `#if` always took the 2022-and-later branch ([row 5b-181](../FRAGMENT-ISSUES.md#)) -
+and each member is looked up on the tag at run time instead. A tag whose head reads back off target is now
+put back as it was, not only one Revit refuses; a kept free leader end is read back and named in
+`leaderNotAsAsked` if it travelled; a viewport is put back only when its box is the same size before and
+after; `report` and `viewportKept` are accounting, so the negative is judged on `moved` and `leadersOn`;
+and the job file gives the negative's chain its own values ([row 5b-242](../FRAGMENT-ISSUES.md#)). **The
+changed code has run once, changing nothing** - same model and session, 2026-09-28, after another chat had
+switched the 90 leaders off: SELECT_BY_CATEGORY_NAME then OFFSET_TAGS_FROM_HOST 8 and 6 mm, `addLeader=keep`,
+gave `moved` 0, `alreadyThere` 90, `noHostLocation` 0 - every diffuser found through the run-time lookup -
+`leadersOn` 0 and M-104 at (311.78, 303.18) mm before and after. Nothing else in the changed code has run on a
+model; AY1 is its first real test.
+
 Every row runs on a TEST COPY of "heron ai bulding" - never the working model.
 
 | # | Check | Expected |
 |---|---|---|
 | **AY1** | The two legs ([D-30](../DECISIONS.md)) - **a draft, not yet signed.** With `HERON_CLIENT_ID=ajmal-pc` set and the test copy in front, `python tools/batch-prove.py tools/jobs/offset-tags-from-host-heron-ai-bulding-2026-09-27.yaml --dry-run`, then the same without `--dry-run`. The positive asks for 10 and 4 mm, not the 8 and 6 the copy already has, so every tag has to move. **Do not sign yet** - the draft's `second_route` reads NOT ESTABLISHED until AY2 is done | `PASS`. The positive: `moved` 90, `leadersOn` 90, `report` saying every head within 0 mm. The negative - `tagCategories=Duct Tags` on the same 90: `moved` 0, `otherCategory` 90. `viewportKept` the same before and after on both legs. Afterwards the tags are back at 8 and 6 - both legs are rolled back |
 | **AY2** | The second route, THEN the signature. On the WORKING model after the chat run: pick three diffuser tags on the plan and read Leader (checked) and Leader End Condition (Attached) in Properties, and measure one head from its diffuser with Revit's Measure tool on the sheet. Write what was seen into the `second_route` field of the draft `brain/proof-drafts/` holds for `offset-tags-from-host`. Only then `python brain/heron_validate.py accept offset-tags-from-host --by "Ajmal PS"` and set `heron-status: PROVEN` | Leader on, end Attached, and the head 8 mm right and 6 mm up of the diffuser on paper - **read on screen, not inferred from `moved`** |
-| **AY3** | The viewport put-back. On a test copy, turn M-104's view Crop Region OFF, then in a chat run SELECT_BY_CATEGORY_NAME and OFFSET_TAGS_FROM_HOST with `offsetRightMm=60` so the tags reach past the plan's edge and the box has to grow | `viewportKept` either unchanged, or "PUT BACK" with both positions. **Read the sheet**: whether putting the box centre back is right when the box changed SIZE is the open question - the plan itself may then sit off by half the growth |
+| **AY3** | The viewport put-back. On a test copy, turn M-104's view Crop Region OFF, then in a chat run SELECT_BY_CATEGORY_NAME and OFFSET_TAGS_FROM_HOST with `offsetRightMm=60` so the tags reach past the plan's edge and the box has to grow | `viewportKept` saying the box CHANGED SIZE and was NOT put back, with both sizes - and on the sheet, the plan itself where it was. A "PUT BACK" line here is a failure: recentring a box that grew moves the plan by half the growth |
 | **AY4** | Other tag kinds, one chat run each on a test copy: duct tags (`addLeader=keep`, measured from the duct's middle), door tags, and room tags (`tagCategories=Room Tags`, `addLeader=true`) | Each moved, `fromBoxCentre` 0, nothing in `notSupported`; the room tags' leaders on and their end still inside the room - **a room tag has no end condition**, so `leaderNotAsAsked` stays empty |

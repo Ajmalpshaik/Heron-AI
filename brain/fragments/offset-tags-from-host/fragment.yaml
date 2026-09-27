@@ -57,7 +57,16 @@ purpose: >
   moved its viewport on the sheet - 30 and 43 mm on 2026-09-27, with the box
   the same size. Each viewport of the view is read before, read again after a
   regenerate, and put back inside the same undo if it moved more than half a
-  millimetre; the report gives both positions in paper millimetres.
+  millimetre WITH ITS BOX THE SAME SIZE; the report gives both positions in
+  paper millimetres. A box that changed size is reported and NOT put back:
+  when tags past the plan's edge make it grow, its centre moves while the plan
+  inside it does not, and recentring would shift the plan.
+
+  **A REFUSED TAG IS LEFT AS IT WAS.** Revit refusing the move, or accepting
+  it and reading the head back more than half a paper millimetre away, both
+  put the tag's head, leader and end condition back. A kept free leader end is
+  read back after the move, and one that travelled with the head is named in
+  leaderNotAsAsked.
 
   **EVERYTHING HANDED IN IS ACCOUNTED FOR.** Tags of a category not asked for,
   tags in another view and things that are not tags are left alone and
@@ -103,14 +112,17 @@ contract:
       type: int
     - name: report
       # ONE STRING, because a list reaches the chat as three entries cut short
-      # and the cut part is where the viewport and the reasons are.
-      role: result
+      # and the cut part is where the viewport and the reasons are. PROSE ABOUT
+      # THE RUN, written whatever it found - so accounting, not a result: a
+      # negative that moved nothing still says so, and must still read empty
+      # (D-52). `moved` and `leadersOn` are what is judged.
+      role: accounting
       type: string
     - name: viewportKept
       # Each viewport of the view: its box centre before and after on the
-      # paper, and whether it had to be put back. A change this made, when it
-      # made one.
-      role: result
+      # paper, and whether it was put back. Written on every run, so
+      # accounting for the same reason as `report` (D-52).
+      role: accounting
       type: string
     - name: alreadyThere
       # Tags that were at the target with the leader as asked, so nothing was
@@ -159,17 +171,19 @@ runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  A compile-time split at 2022 for what a tag points at and for a free leader
-  end, the same split as ARRANGE_TAGS. 2020 and 2021 use the singular
-  `IndependentTag.TaggedElementId` and `LeaderEnd`; 2022 on use
+  A RUN-TIME split at 2022 for what a tag points at and for a free leader end,
+  with NO version #if: the add-in compiles fragments without release symbols,
+  so an #if always takes its #else, which calls members 2020 and 2021 lack
+  (row 5b-181). Each member is looked up by name on the tag - 2022 on,
   `GetTaggedElementIds`, `GetTaggedReferences`, `GetLeaderEnd` and
-  `SetLeaderEnd`, and the singular members are gone after 2022.
+  `SetLeaderEnd`; 2020 and 2021, the singular `TaggedElementId` and
+  `LeaderEnd`, which are gone after 2022.
   `TagHeadPosition`, `HasLeader`, `LeaderEndCondition` and
   `CanLeaderEndConditionBeAssigned` on IndependentTag, and `TagHeadPosition`
   and `HasLeader` on SpatialElementTag, are present 2020 through 2027, as are
   `RoomTag.TaggedRoomId` and `Room`, `SpaceTag.Space`, `AreaTag.Area`,
   `LinkElementId`'s three ids, `Viewport.GetBoxCenter`, `SetBoxCenter`,
-  `SheetId` and `ViewId` - all read from the reference assemblies for each
+  `GetBoxOutline`, `SheetId` and `ViewId` - all read from the reference assemblies for each
   release with `tools/api-surface --members` on 2026-09-27. A room tag has no
   `LeaderEndCondition` on any release.
 

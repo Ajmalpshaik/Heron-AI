@@ -36,7 +36,9 @@
 // FROM 2022 A TAG CAN POINT AT SEVERAL ELEMENTS, and which one it should sit
 // beside is not answerable here. Such a tag is named in notSupported and left
 // alone. The 2020 and 2021 properties are singular and were REMOVED after
-// 2022, so the split is a compile-time one, as in ARRANGE_TAGS.
+// 2022, and the split is made AT RUN TIME by looking the member up on the tag,
+// NOT with a version #if: the add-in compiles fragments with no release
+// symbols, so an #if always takes its #else (row 5b-181).
 //
 // A FREE LEADER END TRAVELS WITH THE HEAD. When the leader is left as it is, a
 // free end is read before and written back after, so the arrow does not come
@@ -45,8 +47,9 @@
 // MOVING TAGS HAS MOVED THE VIEW'S VIEWPORT ON ITS SHEET. Seen twice on
 // 2026-09-27 - 30 and 43 mm, with the box the same size. So each viewport of
 // this view is read before, read again after a regenerate, and put back if it
-// moved more than half a millimetre on the paper - inside this same undo - and
-// the report says what happened.
+// moved more than half a millimetre on the paper with its box the SAME SIZE -
+// inside this same undo. A box that changed size is reported and left: its
+// centre moves when it grows, while the plan inside it does not.
 
 const double MmToFeet = 1.0 / 304.8;
 var invariant = System.Globalization.CultureInfo.InvariantCulture;
@@ -161,6 +164,69 @@ else
         return toHost == null ? point : toHost.OfPoint(point);
     };
 
+    // ---- the 2022 split, looked up at run time ----
+    //
+    // NO VERSION #if. The add-in compiles a fragment with no release symbols,
+    // so an #if always takes its #else - which on 2020 and 2021 calls members
+    // those releases do not have (row 5b-181). Each member is found by name on
+    // the tag in front of it instead: the 2022-and-later method where Revit
+    // has it, the 2020/2021 property where it does not. A missing member is
+    // null here, never a compile error.
+    Func<IndependentTag, List<LinkElementId>> taggedIdsOf = tag =>
+    {
+        var found = new List<LinkElementId>();
+        var many = tag.GetType().GetMethod("GetTaggedElementIds", Type.EmptyTypes);
+        if (many != null)
+        {
+            var all = many.Invoke(tag, null) as IEnumerable<LinkElementId>;
+            if (all != null) found.AddRange(all);
+            return found;
+        }
+        var single = tag.GetType().GetProperty("TaggedElementId");
+        var one = single == null ? null : single.GetValue(tag, null) as LinkElementId;
+        if (one != null) found.Add(one);
+        return found;
+    };
+
+    // The first tagged reference, which the 2022-and-later leader-end methods
+    // take. Null on 2020 and 2021, where the property needs none.
+    Func<IndependentTag, Reference> firstReferenceOf = tag =>
+    {
+        var method = tag.GetType().GetMethod("GetTaggedReferences", Type.EmptyTypes);
+        if (method == null) return null;
+        var references = method.Invoke(tag, null) as IList<Reference>;
+        return references != null && references.Count > 0 ? references[0] : null;
+    };
+
+    Func<IndependentTag, XYZ> leaderEndOf = tag =>
+    {
+        var method = tag.GetType().GetMethod("GetLeaderEnd", new[] { typeof(Reference) });
+        if (method != null)
+        {
+            var reference = firstReferenceOf(tag);
+            return reference == null ? null : method.Invoke(tag, new object[] { reference }) as XYZ;
+        }
+        var property = tag.GetType().GetProperty("LeaderEnd");
+        return property == null ? null : property.GetValue(tag, null) as XYZ;
+    };
+
+    // True when the end was written; false when no member could take it.
+    Func<IndependentTag, XYZ, bool> setLeaderEnd = (tag, end) =>
+    {
+        var method = tag.GetType().GetMethod("SetLeaderEnd", new[] { typeof(Reference), typeof(XYZ) });
+        if (method != null)
+        {
+            var reference = firstReferenceOf(tag);
+            if (reference == null) return false;
+            method.Invoke(tag, new object[] { reference, end });
+            return true;
+        }
+        var property = tag.GetType().GetProperty("LeaderEnd");
+        if (property == null || !property.CanWrite) return false;
+        property.SetValue(tag, end, null);
+        return true;
+    };
+
     // ---- the viewport, before anything moves ----
     var viewports = new List<Viewport>();
     try
@@ -173,9 +239,11 @@ else
     }
     catch { }
     var centreBefore = new Dictionary<ElementId, XYZ>();
+    var sizeBefore = new Dictionary<ElementId, XYZ>();
     foreach (var port in viewports)
     {
         try { centreBefore[port.Id] = port.GetBoxCenter(); } catch { }
+        try { var box = port.GetBoxOutline(); sizeBefore[port.Id] = box.MaximumPoint - box.MinimumPoint; } catch { }
     }
 
     foreach (var element in elements)
@@ -201,11 +269,7 @@ else
         if (independent != null)
         {
             var ids = new List<LinkElementId>();
-#if REVIT2020 || REVIT2021
-            try { var one = independent.TaggedElementId; if (one != null) ids.Add(one); } catch { }
-#else
-            try { var all = independent.GetTaggedElementIds(); if (all != null) ids.AddRange(all); } catch { }
-#endif
+            try { ids = taggedIdsOf(independent); } catch { }
             if (ids.Count > 1)
             {
                 notSupported.Add(element.Id);
@@ -294,28 +358,37 @@ else
         }
 
         XYZ target = head + right * (wantRight - head.DotProduct(right)) + up * (wantUp - head.DotProduct(up));
+        XYZ freeEnd = null;
+
+        // What this tag had, put back. Used when Revit refuses the move AND
+        // when it accepts it but the head reads back somewhere else - a
+        // refused tag is left as it was either way, never half-moved.
+        Action putBack = () =>
+        {
+            try
+            {
+                if (independent != null)
+                {
+                    if (independent.HasLeader != hadLeader) independent.HasLeader = hadLeader;
+                    if (hadLeader && independent.LeaderEndCondition != endBefore) independent.LeaderEndCondition = endBefore;
+                    independent.TagHeadPosition = head;
+                    if (freeEnd != null) setLeaderEnd(independent, freeEnd);
+                }
+                else
+                {
+                    if (spatial.HasLeader != hadLeader) spatial.HasLeader = hadLeader;
+                    spatial.TagHeadPosition = head;
+                }
+            }
+            catch { }
+        };
 
         // ---- move it ----
         try
         {
             if (independent != null)
             {
-                XYZ freeEnd = null;
-#if REVIT2020 || REVIT2021
-                if (leaderMode == -1 && hadLeader && !wasAttached) { try { freeEnd = independent.LeaderEnd; } catch { } }
-#else
-                Reference taggedReference = null;
-                try
-                {
-                    var references = independent.GetTaggedReferences();
-                    if (references != null && references.Count > 0) taggedReference = references[0];
-                }
-                catch { }
-                if (leaderMode == -1 && hadLeader && !wasAttached && taggedReference != null)
-                {
-                    try { freeEnd = independent.GetLeaderEnd(taggedReference); } catch { }
-                }
-#endif
+                if (leaderMode == -1 && hadLeader && !wasAttached) { try { freeEnd = leaderEndOf(independent); } catch { } }
                 if (leaderMode == 1)
                 {
                     if (!independent.HasLeader) independent.HasLeader = true;
@@ -330,14 +403,9 @@ else
 
                 independent.TagHeadPosition = target;
 
-                if (freeEnd != null)
-                {
-#if REVIT2020 || REVIT2021
-                    try { independent.LeaderEnd = freeEnd; } catch { }
-#else
-                    try { independent.SetLeaderEnd(taggedReference, freeEnd); } catch { }
-#endif
-                }
+                // Put the free end back. Whether it took is read back below,
+                // not assumed from the call returning.
+                if (freeEnd != null) { try { setLeaderEnd(independent, freeEnd); } catch { } }
             }
             else
             {
@@ -350,22 +418,7 @@ else
         }
         catch (Exception ex)
         {
-            // Put back what this tag had, so a refusal leaves it as it was.
-            try
-            {
-                if (independent != null)
-                {
-                    if (independent.HasLeader != hadLeader) independent.HasLeader = hadLeader;
-                    if (hadLeader && independent.LeaderEndCondition != endBefore) independent.LeaderEndCondition = endBefore;
-                    independent.TagHeadPosition = head;
-                }
-                else
-                {
-                    if (spatial.HasLeader != hadLeader) spatial.HasLeader = hadLeader;
-                    spatial.TagHeadPosition = head;
-                }
-            }
-            catch { }
+            putBack();
             refused.Add(element.Id);
             reasons.Add(element.Id + ": " + ex.Message);
             continue;
@@ -385,9 +438,11 @@ else
         double miss = now == null ? double.MaxValue : missBy(now, wantRight, wantUp);
         if (miss > tolerance)
         {
+            putBack();
             refused.Add(element.Id);
-            reasons.Add(element.Id + " was sent but its head reads back "
-                + (now == null ? "as nothing" : number(miss / scale / MmToFeet) + " mm from the target on paper"));
+            reasons.Add(element.Id + " was sent but its head read back "
+                + (now == null ? "as nothing" : number(miss / scale / MmToFeet) + " mm from the target on paper")
+                + ", so it was put back as it was");
             continue;
         }
 
@@ -395,14 +450,26 @@ else
         moved++;
         if (leaderNow) leadersOn++;
 
-        bool leaderIsRight = leaderMode == -1
+        // A kept free end must still be where it pointed. Read back, never
+        // assumed from the call returning - a swallowed failure would let the
+        // arrow travel with the head, which is what keeping it is for.
+        bool freeEndHeld = true;
+        if (freeEnd != null)
+        {
+            XYZ endNow = null;
+            try { endNow = leaderEndOf(independent); } catch { }
+            freeEndHeld = endNow != null && endNow.DistanceTo(freeEnd) <= tolerance;
+        }
+
+        bool leaderIsRight = (leaderMode == -1 && freeEndHeld)
             || (leaderMode == 0 && !leaderNow)
             || (leaderMode == 1 && leaderNow && attachedNow);
         if (!leaderIsRight)
         {
             leaderNotAsAsked.Add(element.Id);
             reasons.Add(element.Id + " moved, but its leader reads back "
-                + (leaderNow ? (attachedNow ? "on" : "on with a FREE end - Revit would not attach it") : "off"));
+                + (!freeEndHeld ? "with its free end dragged off where it pointed"
+                   : leaderNow ? (attachedNow ? "on" : "on with a FREE end - Revit would not attach it") : "off"));
         }
     }
 
@@ -450,6 +517,29 @@ else
             {
                 portLines.Add("Viewport on " + sheetName + ": box centre " + at(before) + " before and "
                     + at(after) + " after - it did not move");
+                continue;
+            }
+
+            // ONLY A MOVE IS PUT BACK, NEVER A GROWTH. A box that grew on one
+            // side has a new centre while the plan inside it has not moved,
+            // and recentring it would shift the plan by half the growth. The
+            // same size before and after is the evidence it was translated;
+            // anything else is reported, and the sheet is the place to look.
+            XYZ before2 = null, after2 = null;
+            sizeBefore.TryGetValue(port.Id, out before2);
+            try { var box = port.GetBoxOutline(); after2 = box.MaximumPoint - box.MinimumPoint; } catch { }
+            bool sameSize = before2 != null && after2 != null
+                && Math.Abs(before2.X - after2.X) / MmToFeet <= 0.5
+                && Math.Abs(before2.Y - after2.Y) / MmToFeet <= 0.5;
+            if (!sameSize)
+            {
+                portLines.Add("Viewport on " + sheetName + ": box centre " + at(before) + " before and " + at(after)
+                    + " after, and the box changed size"
+                    + (before2 != null && after2 != null
+                        ? " from " + number(before2.X / MmToFeet) + " x " + number(before2.Y / MmToFeet) + " to "
+                          + number(after2.X / MmToFeet) + " x " + number(after2.Y / MmToFeet) + " mm"
+                        : "")
+                    + ". NOT put back: a box that grew moves its centre without moving the plan. Check the sheet");
                 continue;
             }
 

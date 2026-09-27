@@ -58,6 +58,13 @@ jobs:
       offsetRightMm: 10
       offsetUpMm: 4
       addLeader: "true"
+    # THE NEGATIVE'S CHAIN NEEDS ITS OWN VALUES. With none, the runner hands
+    # the negative-set below to select-by-category-name, which has no
+    # categoryName in it and refuses before the fragment runs. The same 90
+    # tags, on purpose - see the header.
+    negative-setup-set:
+      categoryName: Air Terminal Tags
+      inViewOnly: "FloorPlan: Level 1 - Air Terminal Layout"
     negative-set:
       view: "FloorPlan: Level 1 - Air Terminal Layout"
       tagCategories: Duct Tags
