@@ -159,7 +159,7 @@ compatibility-note: >
 #   "colour fill the spaces"          -> here
 #   "colour the HVAC zones by name"   -> here. CREATE_HVAC_ZONE MAKES zones;
 #                                        a bare "color the hvac zones" still
-#                                        reaches it (FRAGMENT-ISSUES 5b-234)
+#                                        reaches it (FRAGMENT-ISSUES 5b-236)
 #   "colour code the ducts by system" -> COLOR_BY_PARAMETER - overrides on the
 #                                        elements handed in, the co-ordination
 #                                        picture, with its legend in the reply
