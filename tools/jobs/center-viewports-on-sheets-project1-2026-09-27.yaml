@@ -1,0 +1,68 @@
+# The first proof of center-viewports-on-sheets (CENTER_VIEWPORTS_ON_SHEETS,
+# FRG-SHT-020), 2026-09-27 - NEEDS-CHECKING Group AU, row AU1.
+#
+#     python tools/batch-prove.py tools/jobs/center-viewports-on-sheets-project1-2026-09-27.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/center-viewports-on-sheets-project1-2026-09-27.yaml
+#
+# RUN ON A TEST COPY OF "heron ai bulding" (Project1), never the working file.
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK,
+# so nothing should be kept - open M-101 afterwards and look rather than
+# assuming it: rollback has failed before on this PC.
+#
+# MEASURE THE TEST COPY FIRST - WHERE ITS VIEWPORTS ARE DEPENDS ON WHEN IT WAS
+# SAVED. The working runs of 2026-09-27 centred M-101 to M-104; later that
+# evening the owner placed M-104 at (312, 303) mm and the other three were
+# aligned to it. So first, with the test copy in front:
+#
+#     python mcp/client/heron_bridge_client.py validate --setup find-sheets --keep-chain --setup-set "numberOrNameContains=Level 1 -" center-viewports-on-sheets < /dev/null
+#
+# No `--write`, so no transaction is open, Revit refuses every move, and
+# `findings` says where each viewport is - nothing can be kept. If all four
+# are already centred, ARRANGE IT, on the test copy only: open M-101, select
+# the viewport and drag it about 50 mm to the left. Nothing in the library
+# moves a viewport off-centre, which is why that one step is by hand. A
+# `centred` 0 with `alreadyCentred` 4 is POSITIVE EMPTY, and proves nothing.
+#
+# THE SHEETS COME FROM THEIR NAMES, NOT THE SELECTION. The one setup step is
+# find-sheets, and `keep-chain: true` hands its `elements` straight to the
+# fragment, which takes no values of its own. NOT "M-10": that matched only
+# the four plan sheets until M-105 to M-107 were made the same afternoon, and
+# now matches all seven. "Level 1 -" is in the four plan sheets' names only.
+#
+# NEGATIVE: THE THREE SCHEDULE SHEETS, M-105 TO M-107, which carry no
+# viewport - a schedule on a sheet is not a viewport, and this fragment never
+# touches one. Each must come back in `noViewport` with `centred` 0. Run in a
+# chat on the working model on 2026-09-27, that exact call returned
+# `noViewport` 3 and `centred` 0. If a view is ever placed on one of them, this
+# negative stops being one - check the sheets first.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - `findings` on the positive: every sheet it moved "was" where the
+#     measurement said and "reads back" at (422, 296); the rest "already
+#     centred". All four centres are one point - they share one title block
+#   - `alreadyCentred` on the positive: 4 means the arrangement above was
+#     skipped
+#   - `ambiguous`, `noTitleBlock`, `severalTitleBlocks` and `refused`: empty on
+#     both legs. None of the seven sheets has two viewports or two title
+#     blocks, so the AMBIGUOUS case is NOT in this job - it is row AU3
+#
+# NOT SET HERE: `in:`. Without it the run reads the model in front, so bring
+# the test copy to the front. With two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Project1 "heron ai bulding" (a test copy), Revit 2024 - sheets M-101 to M-107
+
+defaults:
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: center-viewports-on-sheets
+    expect: centred
+    keep-chain: true
+    setup:
+      - find-sheets
+    setup-set:
+      numberOrNameContains: Level 1 -
+    negative-setup-set:
+      numberOrNameContains: Schedule -
