@@ -248,7 +248,18 @@ if (refused.Length == 0)
     // and nothing else, so a range scheme on it is a match. Turning ranges
     // away would copy one on every run, because a copy of a range scheme is
     // itself by range.
-    var matching = schemes.Where(s => s.ParameterDefinition.Equals(parameterId)).ToList();
+    //
+    // AND ONE THE VIEW CAN TAKE COMES FIRST. An area plan takes only the
+    // schemes of its own area scheme, though every one of them is Areas, so
+    // the first match by name can be one this plan refuses while a later one
+    // would do.
+    Func<ColorFillScheme, bool> takes = s =>
+    {
+        try { return view.CanApplyColorFillScheme(category.Id, s.Id); }
+        catch (Exception) { return false; }
+    };
+    var matching = schemes.Where(s => s.ParameterDefinition.Equals(parameterId))
+        .OrderBy(s => takes(s) ? 0 : 1).ToList();
 
     // The one this view already uses wins, so running this twice changes
     // nothing the second time.
@@ -271,7 +282,8 @@ if (refused.Length == 0)
         // COPY, AND CHANGE ONLY THE COPY. The source is the scheme this view
         // shows now if it has one - its colours and title style are what the
         // modeller last chose - else the first by name.
-        var source = schemes.FirstOrDefault(s => s.Id.Equals(current)) ?? schemes[0];
+        var source = schemes.FirstOrDefault(s => s.Id.Equals(current))
+            ?? schemes.FirstOrDefault(s => takes(s)) ?? schemes[0];
 
         // ASK THE VIEW BEFORE COPYING ANYTHING. A view whose colour scheme a
         // template holds takes no scheme at all, and a copy made first would
@@ -388,13 +400,27 @@ if (refused.Length == 0 && schemeApplied)
         }
         catch (Exception) { solid = null; }
 
+        // WHAT THE VIEW SHOWS, not what sits on its level. A zone spans the
+        // spaces of more than one level, and a view range reaches past its own
+        // level. Only when the view hands back nothing of the category is the
+        // level used instead.
         var level = view.GenLevel;
+        var shown = new List<Element>();
+        try
+        {
+            shown = new FilteredElementCollector(doc, view.Id).OfCategoryId(category.Id)
+                .WhereElementIsNotElementType().ToList();
+        }
+        catch (Exception) { shown = new List<Element>(); }
+        if (shown.Count == 0)
+            shown = new FilteredElementCollector(doc).OfCategoryId(category.Id)
+                .WhereElementIsNotElementType()
+                .Where(e => level == null || e.LevelId.Equals(level.Id)).ToList();
+
         var seen = new List<string>();
         var seenIds = new List<ElementId>();
-        foreach (var e in new FilteredElementCollector(doc).OfCategoryId(category.Id)
-                              .WhereElementIsNotElementType())
+        foreach (var e in shown)
         {
-            if (level != null && !e.LevelId.Equals(level.Id)) continue;
             foreach (Parameter p in e.Parameters)
             {
                 if (!p.Id.Equals(parameterId)) continue;
@@ -429,9 +455,13 @@ if (refused.Length == 0 && schemeApplied)
             return new Color(tone(r), tone(g), tone(b));
         };
 
+        // EVERY ROW OR NONE. The copy is made and set by now, so a row Revit
+        // refuses throws and the whole request rolls back - a scheme holding
+        // some of the values would read as all of them.
         var added = 0;
         for (var i = 0; i < total; i++)
         {
+            var value = i < seen.Count ? seen[i] : "an element value";
             try
             {
                 var entry = new ColorFillSchemeEntry(scheme.StorageType);
@@ -442,13 +472,18 @@ if (refused.Length == 0 && schemeApplied)
                 scheme.AddEntry(entry);
                 added++;
             }
-            catch (Exception) { }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Revit would not add the row for '" + value
+                    + "' to the new scheme '" + scheme.Name + "': " + ex.Message
+                    + " NOTHING WAS KEPT - the copy and the view's scheme were rolled back.");
+            }
         }
         if (added > 0)
         {
             doc.Regenerate();
-            findings.Add("Revit left the new copy with no rows, so " + added + " were added, one per "
-                + "value on this level");
+            findings.Add("Revit left the new copy with no rows, so all " + added + " were added, one "
+                + "per value the view shows");
         }
         rows = scheme.GetEntries();
     }

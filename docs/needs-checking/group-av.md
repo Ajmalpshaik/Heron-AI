@@ -29,12 +29,14 @@ Before them, Walls on the Room plan was refused and wrote nothing - *"cannot tak
 Walls. It takes: Ducts, HVAC Zones, Pipes, Rooms, Spaces"*. After them, the Room plan was run a second
 time: it used "Rooms by Name", made no copy and placed no second legend (`legendsInView` 1).
 
-**The code changed after that run, and the change has not been run in Revit.** A review of
-[PR #342](https://github.com/Ajmalpshaik/Heron-AI/pull/342) found six things, all taken: a range scheme
-on the parameter now counts as a match; the view is asked before a scheme is copied; any failure after a
-write throws, so a copy, or a scheme set with no legend, is rolled back instead of kept; numeric rows are
-written in the project's units; and a category with nothing placed yet can still be coloured by a
-built-in parameter. The path the three plans took - use or copy, set, place the legend - is the same
+**The code changed after that run, and the change has not been run in Revit.** Two Codex reviews of
+[PR #342](https://github.com/Ajmalpshaik/Heron-AI/pull/342) found ten things, all taken: a range scheme
+on the parameter now counts as a match, and one the view can take comes first (an area plan takes only
+its own area scheme's); the view is asked before a scheme is copied; any failure after a write throws,
+so a copy, a scheme set with no legend, or a copy holding only some of its rows is rolled back instead
+of kept; numeric rows are written in the project's units; a category with nothing placed yet can still
+be coloured by a built-in parameter; rows Heron fills itself come from what the view shows, not what sits
+on its level; and `summary` is accounting, so the negative leg can read as empty. The path the three plans took - use or copy, set, place the legend - is the same
 code, but the proof (AV1) is what shows it.
 
 **The colours are Revit's own.** Every row came back pale - 250,230,230 for the first, stepping

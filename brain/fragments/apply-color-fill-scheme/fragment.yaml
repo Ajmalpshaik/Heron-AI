@@ -110,8 +110,10 @@ contract:
       role: result
       type: IList<string>
     - name: summary
-      # Everything above in one sentence the reply cannot truncate.
-      role: result
+      # Everything above in one sentence the reply cannot truncate. PROSE, so
+      # it is accounting: a refusal still writes one, and a proof's negative
+      # leg must be able to read as empty (batch-prove, looks_empty).
+      role: accounting
       type: string
     - name: findings
       # What it noticed on the way - the scheme the view had before, a legend

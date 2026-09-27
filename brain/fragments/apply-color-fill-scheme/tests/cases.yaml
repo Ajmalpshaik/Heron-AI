@@ -27,6 +27,14 @@ positive:
       legendsInView still 1
 
   - given: >
+      an AREA plan, category Areas, parameterName Name, in a model with two
+      area schemes that each have an Areas colour scheme by Name
+    expect: >
+      the scheme of THIS plan's area scheme is used, even when the other one
+      comes first by name - the view is asked which it can take before one is
+      chosen
+
+  - given: >
       a second view on the same level, Spaces by Name - a category whose
       scheme was never copied before
     expect: >
