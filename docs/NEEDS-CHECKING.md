@@ -341,6 +341,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-av.md`](needs-checking/group-av.md)
 
+## Group AU - `center-viewports-on-sheets`: each sheet's viewport moved to the centre of its title block (2026-09-27)
+
+**Its own file:** [`needs-checking/group-au.md`](needs-checking/group-au.md)
+
 ## Group AW - `revit_sheets` counts schedules: a sheet carrying only a schedule is not empty (2026-09-27)
 
 **Its own file:** [`needs-checking/group-aw.md`](needs-checking/group-aw.md)
