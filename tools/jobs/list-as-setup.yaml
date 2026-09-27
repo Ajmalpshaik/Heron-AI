@@ -78,30 +78,7 @@ jobs:
 
   # ---- revisions, from list-revisions rather than a category --------------
 
-  - fragment: edit-revision
-    setup:
-      - list-revisions
-      - set-selection
-    set:
-      sequenceNumber: 1
-      description: "HERON REV Z1"
-      issuedBy: "Heron"
-      issuedTo: "Proving"
-      issueState: "false"
-      revisionDate: "2026-09-09"
-    negative-set:
-      sequenceNumber: 99
-      description: "HERON REV Z1"
-      issuedBy: "Heron"
-      issuedTo: "Proving"
-      issueState: "false"
-      revisionDate: "2026-09-09"
-    expect: changed
-    note: >
-      The model has exactly one revision, Seq. 1. Sequence 99 does not exist, so
-      the negative must change nothing - a value-driven negative on a model with
-      only one of the thing.
-
-      `delete-revision` is NOT here and stays blocked: section 3 records that
-      Revit refuses to delete revision 1 while a cloud still uses it, and one
-      revision is all this model has.
+  # edit-revision WAS HERE, and passed this route on 2026-09-09 (the first round).
+  # TAKEN OUT 2026-09-28: version 2 is handed ONE revision by a find rather than
+  # typed a `sequenceNumber`, so the values below no longer bind. Its proof job
+  # is tools/jobs/sheet-issues-revisions-test-copy-2026-09-28.yaml (Group BA).
