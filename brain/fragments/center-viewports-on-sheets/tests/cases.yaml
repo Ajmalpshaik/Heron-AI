@@ -1,0 +1,61 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      three sheets, each with one A1 title block and one floor plan viewport
+      that sits to one side of it - M-101 to M-103 in "heron ai bulding"
+    expect: >
+      `centred` 3, and in `report` each sheet's viewport centre reading back
+      at its title block's centre, with the before and after in millimetres.
+      Look at the sheets in Revit - the box sits in the middle of the paper,
+      which is the whole test
+
+  - given: the same three sheets, run a second time
+    expect: >
+      `centred` 0 and all three in `alreadyCentred`, nothing moved. This is
+      the read-back, and it proves a centred viewport is not nudged again
+
+  - given: >
+      one of those views annotated after it was centred - on 2026-09-27, 15
+      room tags and then 90 air terminal tags added to M-104's view shifted
+      its viewport 30 mm and then 43 mm left on the sheet, with the box the
+      same size
+    expect: >
+      that sheet alone moved back to the title block centre and the others in
+      `alreadyCentred`. Annotating a placed view can move it on its sheet, so
+      this runs last
+
+negative:
+  - given: >
+      a sheet carrying TWO viewports, one of them off-centre, handed in with
+      the sheets above
+    expect: >
+      its id in `ambiguous` and neither viewport moved. Which one is "the
+      plan" is not answerable here, and moving the wrong one is worse than
+      moving none
+
+  - given: a sheet with no title block
+    expect: >
+      its id in `noTitleBlock` and its viewport not moved. There is no paper
+      to centre on
+
+  - given: a sheet with two title blocks
+    expect: >
+      its id in `severalTitleBlocks` and its viewport not moved
+
+  - given: a view or a wall handed in instead of a sheet
+    expect: >
+      its id in `refused`, named as not a sheet, and nothing moved
+
+  - given: a viewport Revit refuses to move
+    expect: >
+      the sheet in `refused`, established by reading the centre back. A sheet
+      counted as centred that is not is a report nobody can trust
+
+second_route:
+  - >
+    open each sheet in Revit, select the viewport and read where its box sits
+    against the title block border - or print it. The box's left and right
+    margins, and its top and bottom ones, come out equal to the millimetre.
+    Paper is the second route, and a lopsided box from an elevation marker
+    shows there first

@@ -1,0 +1,150 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-020
+semantic-identity: "a viewport sits off-centre on its sheet - move it to the middle of the title block"
+
+# WHY IT EXISTS - kept in a comment, not in `purpose`, because `purpose` is
+# searched: written there, the sheet numbers and the other capabilities' names
+# pulled "place the plan on sheet m-101" here, away from PLACE_VIEWS_ON_SHEET
+# (measured 2026-09-27 against a scratch store).
+#
+# Four plans ended up to one side of their sheets and nothing in the library
+# put them back. On 2026-09-27, in "heron ai bulding", sheets M-101 to M-103
+# each got one floor plan from PLACE_VIEWS_ON_SHEET, which centres on the
+# sheet's own outline, and the plans' scale then went from 1:50 to 1:75; M-104
+# followed the same day. "centre the view on the sheet" resolved to
+# ALIGN_VIEWPORTS_ACROSS_SHEETS, which copies a MASTER sheet's centre and never
+# centres anything, and "the plan is off to the side, centre it" to
+# PLACE_HOSTED_FAMILY, which places doors in walls.
+kind: action
+domain: revit.sheets
+capability: CENTER_VIEWPORTS_ON_SHEETS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Moves the one viewport on each sheet so that its box sits in the centre of
+  the sheet's title block, and says where each one was and where it went, in
+  millimetres on the paper.
+
+  **THE TARGET IS THE CENTRE OF THE TITLE BLOCK'S EXTENTS ON THE SHEET** - the
+  whole title block, title strip included, which is the paper. A sheet's own
+  outline is not the paper.
+
+  **MEASURED BEFORE IT MOVES, READ BACK AFTER.** A viewport already within half
+  a millimetre of the centre is named in `alreadyCentred` and not touched, so
+  a second run moves nothing - which is also the read-back. A move counts in
+  `centred` only when Revit reads the new centre back at the target.
+
+  **THE BOX IS WHAT IS CENTRED, AND THE BOX IS NOT ONLY THE PLAN.** A
+  viewport's box takes in the view's annotation - elevation markers, tags, a
+  visible crop region - so a marker out to one side pulls the drawing off the
+  centre by half its distance. Nothing is hidden or cropped to make up for it.
+  The box's size is reported beside the title block's, so a lopsided box shows
+  in the answer rather than on the print.
+
+  **SKIPPED AND NAMED, NEVER GUESSED.** A sheet with two viewports is
+  `ambiguous` - which one is the plan is not answerable here. A sheet with no
+  title block, or with two, has no single paper to centre on. A sheet with no
+  viewport has nothing to centre. Each is named in its own list and nothing on
+  it moves.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a
+  drawing set is one undo entry.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: elements
+      type: IList<Element>
+  provides:
+    - name: centred
+      role: result
+      type: int
+    - name: report
+      # One entry per sheet, "|" between them: where the viewport's box
+      # centre was, the title block's centre, the move, the centre READ BACK,
+      # and the box's size beside the title block's - or why it was left
+      # alone. A string, so the reply prints every sheet rather than three.
+      role: result
+      type: string
+    - name: alreadyCentred
+      # Sheets whose viewport was within half a millimetre of the title
+      # block's centre before this ran, and was left alone. The prior state,
+      # never a move it made (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: ambiguous
+      # Sheets with several viewports, where which one is the plan is not a
+      # question this can answer. LEFT ALONE, never centred (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: noViewport
+      # Sheets with no viewport on them. Nothing to centre (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: noTitleBlock
+      # Sheets with no title block, so no paper to centre on. Left alone
+      # (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: severalTitleBlocks
+      # Sheets with more than one title block, where which is the paper is
+      # not answerable. Left alone (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: refused
+      # What was handed in that is not a sheet, and sheets Revit would not
+      # move or did not read back at the target. The evidence it looked and
+      # said no, never a thing it centred (D-52).
+      role: accounting
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Viewport.GetBoxCenter`,
+  `Viewport.SetBoxCenter`, `Viewport.GetBoxOutline`, `ViewSheet.GetAllViewports`
+  and `Element.get_BoundingBox(View)` are present and unchanged 2020 through
+  2027 - read out of the reference assemblies for each release with
+  `tools/api-surface --members Viewport --inherited` and `ViewSheet`, not
+  assumed from `ALIGN_VIEWPORTS_ACROSS_SHEETS`, which uses the first two.
+  Positions are Revit's internal feet on the sheet, turned into millimetres
+  only for the report by `* 304.8` (D-20), so no units API is called and the
+  2021 units move cannot reach this.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "centre the view on the sheet"       -> here. It used to reach
+#                                           ALIGN_VIEWPORTS_ACROSS_SHEETS,
+#                                           which needs a master sheet and
+#                                           copies its centre
+#   "the plan is off to the side,        -> here. It used to reach
+#    centre it"                             PLACE_HOSTED_FAMILY, which places
+#                                           doors and windows in walls
+#   "move the viewport to the middle     -> here
+#    of the sheet"
+#   "the plan jumps between sheets"      -> ALIGN_VIEWPORTS_ACROSS_SHEETS. The
+#                                           SAME place on every sheet, copied
+#                                           from a master; this puts each in
+#                                           the middle of its own title block
+#   "put these views on a sheet"         -> PLACE_VIEWS_ON_SHEET, which places
+#                                           them. This moves one already placed
+#   "change the view scale"              -> SET_VIEW_SCALE. Run this after it
+#                                           when a rescaled plan has ended up
+#                                           to one side of its sheet
+#   "which sheets are these"             -> FIND_SHEETS, the read that hands
+#                                           this its sheets
+
+utterances:
+  - centre the view on the sheet
+  - move the viewport to the middle of the sheet
+  - the plan is off to the side, centre it
