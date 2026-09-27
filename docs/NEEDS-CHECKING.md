@@ -338,6 +338,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-at.md`](needs-checking/group-at.md)
 
+## Group AW - `revit_sheets` counts schedules: a sheet carrying only a schedule is not empty (2026-09-27)
+
+**Its own file:** [`needs-checking/group-aw.md`](needs-checking/group-aw.md)
+
 ## Group AX - `create-view-filters-by-rule` and `set-view-filter-categories`: named view filters from a parameter name and a category list, and their categories set afterwards (2026-09-27)
 
 **Its own file:** [`needs-checking/group-ax.md`](needs-checking/group-ax.md)
