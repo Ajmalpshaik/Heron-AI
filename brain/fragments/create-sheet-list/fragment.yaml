@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 15
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-SHT-011
-semantic-identity: "create the drawing index schedule that lists every sheet"
+semantic-identity: "create the drawing index schedule that lists every sheet, or the view list that lists every view"
 kind: action
 domain: revit.sheets
 capability: CREATE_SHEET_LIST
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -35,6 +35,21 @@ purpose: >
   and it appears on a sheet list like any other. That is how a drawing register
   is set up before the drawings are. CREATE_SHEET makes them; this lists them.
 
+  **A VIEW LIST IS THE SAME JOB, ONE CALL OVER.** `listKind` = `views` makes
+  Revit's View List through `ViewSchedule.CreateViewList` - a schedule of the
+  project's views - with the same fields-by-name, the same refusal listing the
+  real names, and the same sort. Its fields are VIEW parameters - View Name,
+  Sheet Number, Sheet Name, Title on Sheet, Detail Number are the names expected,
+  not yet read off a model; the refusal lists the real ones. Blank or `sheets` is
+  the sheet list this fragment has always made. Anything else is refused and
+  NOTHING is created - guessing would make the wrong index and report it made.
+
+  **"ONLY THE VIEWS PLACED ON A SHEET" IS A FILTER, NOT A SECOND LIST.** A view
+  list shows every view. Add Sheet Number as a column, then SET_SCHEDULE_FILTERS
+  with `matchType` = `has value` on Sheet Number keeps only the placed ones - a
+  view on no sheet has that column blank. The column has to be in the list for
+  the filter to find it.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -51,6 +66,14 @@ contract:
       type: string
       source: request
       optional: true
+    # BLANK MEANS A SHEET LIST, SO A CALLER THAT SENDS "" GETS TODAY'S JOB.
+    # "views" makes a view list. NOT marked `optional: true`, because nothing
+    # reads that key: the add-in refuses any `source: request` need that
+    # arrives with no value, marked or not (FRAGMENT-ISSUES 5b-227). Send it,
+    # blank or not.
+    - name: listKind
+      type: string
+      source: request
   provides:
     - name: sheetList
       role: result
@@ -91,8 +114,11 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. `ViewSchedule.CreateSheetList`,
-  `ScheduleDefinition.GetSchedulableFields` and `ScheduleSortGroupField` are
-  present 2020 through 2027 - read off the reference assemblies at both ends. A
+  `ViewSchedule.CreateViewList`, `ScheduleDefinition.GetSchedulableFields` and
+  `ScheduleSortGroupField` are present 2020 through 2027 - read off the
+  reference assemblies at both ends, and `CreateViewList(Document)` checked in
+  all eight releases' RevitAPI.xml on 2026-09-27 with the same one-argument
+  signature as `CreateSheetList`. A
   schedulable field is matched by the NAME Revit gives it rather than by any
   parameter id, which is what keeps one implementation working across the
   release where parameter identity changed.
@@ -103,6 +129,15 @@ compatibility-note: >
 #   "make a sheet list schedule"      -> here
 #   "I need a drawing index"          -> here
 #   "put a list of all the sheets on the cover" -> here
+#   "create a view list"              -> here, listKind=views. Until version 2
+#                                        this sentence landed here and could
+#                                        only make a SHEET list
+#   "schedule of the views on sheets" -> here, listKind=views, then
+#                                        SET_SCHEDULE_FILTERS Sheet Number
+#                                        has value. A view list shows every
+#                                        view until it is filtered
+#   "which views are not on a sheet"  -> FIND_UNPLACED_VIEWS - a READ, no
+#                                        schedule made
 #   "make a duct schedule"            -> CREATE_SCHEDULE - a CATEGORY of model
 #                                        elements; sheets are not model elements
 #                                        and the category route cannot make this
@@ -123,3 +158,6 @@ utterances:
   - put a list of all the sheets on the cover
   - create the drawing register schedule
   - schedule every sheet in this project
+  - create a view list
+  - schedule of the views on sheets
+  - make a view list schedule of every view placed on a sheet
