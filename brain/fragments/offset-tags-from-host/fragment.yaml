@@ -1,0 +1,215 @@
+heron-agent: HERON-REVIT-DIM-031
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-113
+semantic-identity: "move each tag a set distance off its own element, with or without a leader"
+kind: action
+domain: revit.annotation
+capability: OFFSET_TAGS_FROM_HOST
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Moves every tag handed in to the same offset from ITS OWN element - so many
+  paper millimetres right and up - and switches its leader on, off, or leaves
+  it. Any tag: air terminal, duct, pipe, equipment, door and window tags, and
+  room, space and area tags. Which tags, how far and whether they have a leader
+  are all values; nothing here knows about diffusers.
+
+  IT EXISTS BECAUSE THE TAGS ON A 1:75 AIR TERMINAL PLAN SAT ON TOP OF THEIR
+  DIFFUSERS after the tag family was edited, and every tag fragment in the
+  library decides the position by its own rule. `ARRANGE_TAGS` pushes clashing
+  tags apart, `STACK_TAGS` columns them at one point, `MOVE_ANNOTATION` puts
+  them all at ONE point, `CENTER_ROOM_TAGS` puts room tags in the middle of
+  their rooms, `FORCE_TAG_LEADER_LSHAPE` bends leaders. None takes "8 mm right
+  and 6 mm up of each tag's own element". Widening was weighed and refused:
+  ARRANGE and STACK are PROVEN, so their proofs would go stale, and each is a
+  different rule; MOVE_ANNOTATION's contract is one target for every element,
+  and a second mode there would give one card two jobs.
+
+  **MEASURED FROM THE ELEMENT, NEVER FROM THE HEAD.** The target is the
+  element's location plus the offset, so a second run finds every tag already
+  there and moves nothing. That second run is also the read-back. The location
+  is the element's point - an air terminal, a door, equipment, a room - or the
+  middle of its line - a duct, a pipe. Anything with neither is measured from
+  the centre of its box and COUNTED, because a box centre is a guess.
+
+  **THE OFFSET IS ON PAPER, IN THE VIEW'S OWN PLANE.** 8 mm right on the sheet
+  is 600 mm in the model at 1:75, and "right" is the view's right, which is
+  not the model's X on a rotated plan. The head keeps its own depth, so a
+  diffuser 2.7 m up does not pull its tag off the view.
+
+  **"LEADER ON" MEANS ON AND ATTACHED.** A free end stays where it was put when
+  the element moves, which is not a leader to the element. A room, space or
+  area tag has no end condition on any release, so for those the leader is
+  switched on and its end stays where the tag is anchored in the room. With the
+  leader left as it is, a free end is put back after the move rather than
+  dragged along with the head.
+
+  **A TAG THAT POINTS AT SEVERAL ELEMENTS (2022 on) IS LEFT ALONE AND NAMED.**
+  Which of them it should sit beside is not answerable here.
+
+  **THE SHEET STAYS WHERE IT WAS PUT.** Changing tags in a placed view has
+  moved its viewport on the sheet - 30 and 43 mm on 2026-09-27, with the box
+  the same size. Each viewport of the view is read before, read again after a
+  regenerate, and put back inside the same undo if it moved more than half a
+  millimetre WITH ITS BOX THE SAME SIZE; the report gives both positions in
+  paper millimetres. A box that changed size is reported and NOT put back:
+  when tags past the plan's edge make it grow, its centre moves while the plan
+  inside it does not, and recentring would shift the plan.
+
+  **A REFUSED TAG IS LEFT AS IT WAS.** Revit refusing the move, or accepting
+  it and reading the head back more than half a paper millimetre away, both
+  put the tag's head, leader and end condition back. A kept free leader end is
+  read back after the move, and one that travelled with the head is named in
+  leaderNotAsAsked.
+
+  **EVERYTHING HANDED IN IS ACCOUNTED FOR.** Tags of a category not asked for,
+  tags in another view and things that are not tags are left alone and
+  counted, never skipped silently.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: view
+      type: View
+      source: request
+    - name: elements
+      type: IList<Element>
+    # Tag category names as Revit shows them - "Air Terminal Tags, Duct Tags" -
+    # or the word all. A tag of any other category is left alone and counted.
+    - name: tagCategories
+      type: IList<string>
+      source: request
+    # PAPER millimetres along the view's right and up. Negative goes left or
+    # down. Multiplied by the view's scale here, never before.
+    - name: offsetRightMm
+      type: double
+      source: request
+    - name: offsetUpMm
+      type: double
+      source: request
+    # true - leader on with its end attached; false - no leader; keep - each
+    # leader left as it is.
+    - name: addLeader
+      type: string
+      source: request
+  provides:
+    - name: moved
+      role: result
+      type: int
+    - name: leadersOn
+      # Tags carrying a leader after the run, among those moved or already
+      # there - read back from each tag, never the request echoed.
+      role: result
+      type: int
+    - name: report
+      # ONE STRING, because a list reaches the chat as three entries cut short
+      # and the cut part is where the viewport and the reasons are. PROSE ABOUT
+      # THE RUN, written whatever it found - so accounting, not a result: a
+      # negative that moved nothing still says so, and must still read empty
+      # (D-52). `moved` and `leadersOn` are what is judged.
+      role: accounting
+      type: string
+    - name: viewportKept
+      # Each viewport of the view: its box centre before and after on the
+      # paper, and whether it was put back. Written on every run, so
+      # accounting for the same reason as `report` (D-52).
+      role: accounting
+      type: string
+    - name: alreadyThere
+      # Tags that were at the target with the leader as asked, so nothing was
+      # written. The prior state, never a change (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: fromBoxCentre
+      # How many were measured from their element's box centre because it has
+      # no point or line. About HOW it measured, never a tag it found (D-52).
+      role: accounting
+      type: int
+    - name: noHostLocation
+      # Tags whose element could not be found or located - an orphan, or one
+      # in a link that is not loaded. Given and unusable (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: leaderNotAsAsked
+      # Moved, but the leader reads back other than asked - an end Revit
+      # would not attach. Named, not counted as a clean move (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: notTags
+      # Handed in but not tags. Given and unusable (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: otherCategory
+      # Tags of a category not asked for, left alone. The negative case.
+      role: accounting
+      type: IList<ElementId>
+    - name: notInView
+      # Tags that belong to another view than the one named. Left alone.
+      role: accounting
+      type: IList<ElementId>
+    - name: notSupported
+      # Tags that point at several elements (2022 on). Left alone (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: refused
+      # Revit refused the move, or the head read back more than half a paper
+      # millimetre off. Each is put back as it was (D-52).
+      role: accounting
+      type: IList<ElementId>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  A RUN-TIME split at 2022 for what a tag points at and for a free leader end,
+  with NO version #if: the add-in compiles fragments without release symbols,
+  so an #if always takes its #else, which calls members 2020 and 2021 lack
+  (row 5b-181). Each member is looked up by name on the tag - 2022 on,
+  `GetTaggedElementIds`, `GetTaggedReferences`, `GetLeaderEnd` and
+  `SetLeaderEnd`; 2020 and 2021, the singular `TaggedElementId` and
+  `LeaderEnd`, which are gone after 2022.
+  `TagHeadPosition`, `HasLeader`, `LeaderEndCondition` and
+  `CanLeaderEndConditionBeAssigned` on IndependentTag, and `TagHeadPosition`
+  and `HasLeader` on SpatialElementTag, are present 2020 through 2027, as are
+  `RoomTag.TaggedRoomId` and `Room`, `SpaceTag.Space`, `AreaTag.Area`,
+  `LinkElementId`'s three ids, `Viewport.GetBoxCenter`, `SetBoxCenter`,
+  `GetBoxOutline`, `SheetId` and `ViewId` - all read from the reference assemblies for each
+  release with `tools/api-surface --members` on 2026-09-27. A room tag has no
+  `LeaderEndCondition` on any release.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "move the tags beside the diffusers"   -> here, with the offset as values
+#   "offset the duct tags with a leader"   -> here
+#   "move the tags off the elements"       -> here
+#   "the tags are on top of each other"    -> FIND_OVERLAPPING_TAGS to see
+#                                             them, ARRANGE_TAGS to push the
+#                                             clashing TAGS apart. This one
+#                                             moves each tag off its ELEMENT,
+#                                             by a distance the caller names
+#   "separate the overlapping tags"        -> ARRANGE_TAGS or
+#                                             FIND_OVERLAPPING_TAGS - never
+#                                             here (checked 2026-09-27)
+#   "stack the tags at the side"           -> STACK_TAGS
+#   "move this tag here"                   -> MOVE_ANNOTATION - one point for
+#                                             every tag handed in
+#   "put the room tags back in the middle" -> CENTER_ROOM_TAGS
+#   "make the leaders L-shaped"            -> FORCE_TAG_LEADER_LSHAPE, which
+#                                             bends a leader and leaves the
+#                                             head where it is
+
+utterances:
+  - move the tags beside the diffusers
+  - offset the duct tags with a leader
+  - move the tags off the elements
+  - move each tag 8 mm right and 6 mm up from its element
