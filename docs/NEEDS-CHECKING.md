@@ -334,6 +334,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-as.md`](needs-checking/group-as.md)
 
+## Group AT - `set-schedule-field-totals`: "Calculate totals" switched on for a schedule's columns (2026-09-27)
+
+**Its own file:** [`needs-checking/group-at.md`](needs-checking/group-at.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

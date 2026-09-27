@@ -163,6 +163,12 @@ compatibility-note: >
 #   "group the schedule by system type" -> here, with showHeader - grouping IS
 #                                          sorting with a header in Revit
 #   "put a total at the bottom"         -> here, showGrandTotal
+#   "calculate totals for the flow column"
+#                                       -> SET_SCHEDULE_FIELD_TOTALS. A footer
+#                                          and the grand total are switched on
+#                                          HERE; what they add up is chosen per
+#                                          column THERE. Until a column has
+#                                          totals on, a footer only counts rows
 #   "one line per size instead of every duct"
 #                                       -> here, itemized off - it is the flag
 #                                          that changes the ROW COUNT. Worded

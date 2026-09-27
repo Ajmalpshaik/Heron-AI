@@ -159,6 +159,11 @@ compatibility-note: >
 #                                         only the printed heading changes
 #   "make the schedule column wider"   -> here, in mm
 #   "turn the heading sideways"        -> here
+#   "sum this column in the schedule"  -> SET_SCHEDULE_FIELD_TOTALS. A total is
+#                                         what a column CALCULATES, not how it
+#                                         prints, and this sentence used to
+#                                         land here - on a write that renames
+#                                         and widens columns
 #   "make the schedule text bold"      -> NOT here and NOT anywhere in this
 #                                         library. Bold, font and size live on
 #                                         the schedule's TEXT TYPE, which other
