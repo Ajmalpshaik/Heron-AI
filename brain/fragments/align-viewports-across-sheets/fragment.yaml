@@ -124,6 +124,12 @@ compatibility-note: >
 #
 #   "the plan jumps between sheets"      -> here
 #   "line the viewports up"              -> here
+#   "centre the view on the sheet"       -> CENTER_VIEWPORTS_ON_SHEETS, which
+#                                           puts each viewport in the middle of
+#                                           its OWN title block. This copies a
+#                                           master's centre and never centres
+#                                           anything; the sentence reached here
+#                                           until 2026-09-27
 #   "put this view on a sheet"           -> PLACE_VIEW_ON_SHEET, which places
 #                                           one. This moves ones already placed
 #   "put these views on sheets"          -> PLACE_VIEWS_ON_SHEET
