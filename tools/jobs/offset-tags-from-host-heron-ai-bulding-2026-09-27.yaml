@@ -1,0 +1,73 @@
+# The first proof of offset-tags-from-host (OFFSET_TAGS_FROM_HOST,
+# FRG-VIEW-113), 2026-09-27 - NEEDS-CHECKING Group AY, row AY1.
+#
+#     python tools/batch-prove.py tools/jobs/offset-tags-from-host-heron-ai-bulding-2026-09-27.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/offset-tags-from-host-heron-ai-bulding-2026-09-27.yaml
+#
+# RUN ON A TEST COPY OF "heron ai bulding" (Project1), never the working file.
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK,
+# so nothing should be kept - look at the Air Terminal Layout plan afterwards
+# rather than assuming it: rollback has failed before on this PC.
+#
+# THE TEST COPY ALREADY HAS THE TAGS AT 8 AND 6. The working run of 2026-09-27
+# moved all 90 there, so the same values would answer `moved` 0 and
+# `alreadyThere` 90 - POSITIVE EMPTY, and nothing proved. So the positive asks
+# for 10 mm right and 4 mm up instead: every tag genuinely has to move, and the
+# answer is still measured from each diffuser, not from where the tag sits.
+#
+# THE TAGS COME FROM THEIR CATEGORY IN THE VIEW, NOT THE SELECTION. The one
+# setup step is select-by-category-name, and `keep-chain: true` hands its
+# `elements` straight to the fragment. Other chats share this Revit's
+# selection, so a selection-fed proof could run on somebody else's set.
+#
+# NEGATIVE: THE SAME 90 TAGS, WITH tagCategories Duct Tags. Every one must come
+# back in `otherCategory` with `moved` 0 - left alone and counted. The same set
+# on purpose: an empty or different set would pass by having nothing in it.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - `report` on the positive: "every moved head within 0 mm of its target"
+#     and "90 with a leader on". A miss above zero, or fewer leaders, is a
+#     tag that did not land where it was sent
+#   - `viewportKept` on both legs: M-104's box centre the same before and
+#     after, about (311.78, 303.18) mm. "PUT BACK" is the fragment catching a
+#     shift; "COULD NOT be put back" is a failure whatever the verdict says
+#   - `fromBoxCentre` 0 - a diffuser always has a location point
+#
+# NOT SET HERE: `in:`. Without it the run reads the model in front, so bring
+# the test copy to the front. With two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Project1 "heron ai bulding" (a test copy), Revit 2024 - FloorPlan "Level 1 - Air Terminal Layout", 90 air terminal tags
+
+defaults:
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: offset-tags-from-host
+    expect: moved
+    keep-chain: true
+    setup:
+      - select-by-category-name
+    setup-set:
+      categoryName: Air Terminal Tags
+      inViewOnly: "FloorPlan: Level 1 - Air Terminal Layout"
+    set:
+      view: "FloorPlan: Level 1 - Air Terminal Layout"
+      tagCategories: Air Terminal Tags
+      offsetRightMm: 10
+      offsetUpMm: 4
+      addLeader: "true"
+    # THE NEGATIVE'S CHAIN NEEDS ITS OWN VALUES. With none, the runner hands
+    # the negative-set below to select-by-category-name, which has no
+    # categoryName in it and refuses before the fragment runs. The same 90
+    # tags, on purpose - see the header.
+    negative-setup-set:
+      categoryName: Air Terminal Tags
+      inViewOnly: "FloorPlan: Level 1 - Air Terminal Layout"
+    negative-set:
+      view: "FloorPlan: Level 1 - Air Terminal Layout"
+      tagCategories: Duct Tags
+      offsetRightMm: 10
+      offsetUpMm: 4
+      addLeader: "true"

@@ -1,0 +1,86 @@
+# THE PROOF PLAN, written 2026-09-27. The positive below was RUN on Ajmal PS's
+# working model "heron ai bulding" (Revit 2024, session 46596) at his request,
+# through revit_change, and KEPT - that is a delivery, not a proof: no negative
+# was rolled back beside it and no fingerprint was taken (D-30). The proof is
+# still to be run, on a test copy, by the owner. NEEDS-CHECKING group AV.
+#
+# ARRANGE: a floor plan with its crop region on, rooms or spaces on its level,
+# and no colour fill legend in it yet. Run it TWICE on the same view: the
+# second run is the case that shows nothing is duplicated.
+
+positive:
+  - given: >
+      view "FloorPlan: Level 1 - Room Plan Layout", category Rooms,
+      parameterName Name, in a model where no scheme colours Rooms by Name
+    expect: >
+      schemeSource says a scheme was COPIED as "Rooms by Name" and names the
+      one it came from as unchanged; schemeApplied true; entries lists one row
+      per room name the VIEW SHOWS, with its RGB - a room seen through the view
+      range or an underlay counts, a room on the level the view hides does not;
+      legendPlaced true;
+      legendsInView 1; legendAtMm reads about 10 mm right of the crop region's
+      right edge and 0 mm below its top edge
+
+  - given: the same request, run a second time on the same view
+    expect: >
+      schemeSource says the existing "Rooms by Name" was USED as it stands;
+      no second copy is made ("Rooms by Name (2)" does not appear);
+      legendPlaced false with a finding that one was already there;
+      legendsInView still 1
+
+  - given: >
+      an AREA plan, category Areas, parameterName Name, in a model with two
+      area schemes that each have an Areas colour scheme by Name
+    expect: >
+      the scheme of THIS plan's area scheme is used, even when the other one
+      comes first by name - the view is asked which it can take before one is
+      chosen
+
+  - given: >
+      a second view on the same level, Spaces by Name - a category whose
+      scheme was never copied before
+    expect: >
+      a scheme "Spaces by Name" is copied from a Spaces scheme, and nothing
+      about the Rooms scheme or the first view changes
+
+negative:
+  - given: >
+      category Walls on the same floor plan - a category Revit never
+      colour-fills
+    expect: >
+      refused names the view, its scale and crop state, and lists the
+      categories it DOES take (Rooms, Spaces, and whatever else the view
+      offers). NOTHING is written: no scheme is copied, schemeApplied false,
+      and legendsInView is the count that was already there
+
+  - given: a sheet, or a 3D view, as the view
+    expect: >
+      refused says the view takes no colour scheme at all. Nothing is written
+
+  - given: >
+      a plan whose view template holds the colour scheme, category Rooms,
+      parameterName Name, in a model with no "Rooms by Name"
+    expect: >
+      refused says the view will not take a colour scheme and names the view
+      template as the usual reason. NO COPY IS MADE - the view is asked
+      before anything is copied - so the Rooms schemes are exactly the ones
+      that were there before
+
+  - given: >
+      a request that gets as far as setting the scheme and then cannot place
+      the legend
+    expect: >
+      the call fails with "NOTHING WAS KEPT" and the model is as it was: no
+      copied scheme, the view's colour scheme unchanged, no legend. Half of
+      the request - a coloured plan with no legend - is never kept
+
+  - given: parameterName "ZZZ Not A Parameter" with category Rooms
+    expect: >
+      refused lists what a Rooms scheme CAN colour by. No scheme is copied
+
+second_route: >
+  Revit's own dialog: select the view, Properties > Color Scheme shows the
+  scheme per category - it must read "Rooms by Name" for Rooms - and Edit
+  Color Scheme lists the same rows and colours `entries` returned. The legend
+  is visible in the view and on the sheet, and selecting it shows it is a
+  Color Fill Legend for that category.

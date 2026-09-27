@@ -128,6 +128,10 @@ compatibility-note: >
 #                                          spaces, and the spaces have to exist
 #                                          before any zone can hold them
 #   "what airflow does this space need"  -> REPORT_SPACE_AIRFLOW
+#   "color the hvac zones"             -> APPLY_COLOR_FILL_SCHEME - COLOURING
+#   "colour the spaces by zone"          zones or spaces in a plan changes no
+#                                        zone, and must never reach this
+#                                        (FRAGMENT-ISSUES 5b-236)
 
 utterances:
   - create an HVAC zone for these spaces

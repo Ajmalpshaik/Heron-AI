@@ -143,6 +143,21 @@ jobs:
     # No confirm: refused, nothing deleted (Article 7).
     negative-set:
       confirm: ""
+    # THE SAME ARRANGEMENT FOR THE NEGATIVE, SPELLED OUT: without it the
+    # runner hands the chain the negative-set instead (row 5b-242).
+    negative-setup-set:
+      description: HERON PROOF second
+      revisionDate: ""
+      issuedBy: ""
+      issuedTo: ""
+      show: ""
+      numbering: ""
+      issueState: ""
+      parameterName: Revision Description
+      matchText: HERON PROOF second
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Revisions
 
   - fragment: reorder-revision
     expect: moved
@@ -209,6 +224,21 @@ jobs:
     negative-set:
       direction: up
       confirm: "1"
+    # THE SAME ARRANGEMENT FOR THE NEGATIVE, SPELLED OUT: without it the
+    # runner hands the chain the negative-set instead (row 5b-242).
+    negative-setup-set:
+      description: HERON PROOF second
+      revisionDate: ""
+      issuedBy: ""
+      issuedTo: ""
+      show: ""
+      numbering: ""
+      issueState: ""
+      parameterName: Revision Description
+      matchText: HERON PROOF second
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Revisions
 
   # ---- the project-wide settings ---------------------------------------------
 

@@ -137,6 +137,9 @@ compatibility-note: >
 #   "make the leaders L-shaped"          -> FORCE_TAG_LEADER_LSHAPE
 #   "put tags on these"                  -> TAG_ELEMENTS_IN_VIEW. This one
 #                                           only moves tags that exist
+#   "move the tags beside the diffusers" -> OFFSET_TAGS_FROM_HOST - each tag
+#                                           beside its own element, not in a
+#                                           column
 
 utterances:
   - stack these tags in a column

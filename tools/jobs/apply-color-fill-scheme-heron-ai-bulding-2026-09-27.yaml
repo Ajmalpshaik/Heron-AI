@@ -1,0 +1,41 @@
+# The proof plan for APPLY_COLOR_FILL_SCHEME (FRG-VIEW-110), NEEDS-CHECKING
+# group AV. Written 2026-09-27 and NOT RUN as a proof - the owner runs it, on a
+# TEST COPY.
+#
+#     python tools/batch-prove.py tools/jobs/apply-color-fill-scheme-heron-ai-bulding-2026-09-27.yaml --dry-run
+#
+# THE MODEL ALREADY HOLDS WHAT THE DELIVERY RUN MADE. On 2026-09-27 this
+# fragment was run and KEPT on three plans of "heron ai bulding" (group AV,
+# "What was run"), so that model now has a scheme "Rooms by Name" and a
+# colour fill legend on each of those three plans. The positive below is
+# therefore aimed at "1 - Mech", which carries no legend, and at Spaces, whose
+# scheme "Schema 1" already colours by Name - so it proves the USE-AS-IT-STANDS
+# branch. The COPY branch is proved by the first positive case in
+# cases.yaml, on a model with no "Rooms by Name".
+
+model: heron ai bulding, Revit 2024 - a TEST COPY
+
+defaults:
+  in: heron ai bulding
+  write: true
+  set:
+    view: "FloorPlan: 1 - Mech"
+    category: Spaces
+    parameterName: Name
+  negative-set:
+    # THE SAME VIEW, A CATEGORY REVIT NEVER COLOUR-FILLS. Not an empty request:
+    # the refusal must list what the view DOES take, and write nothing.
+    view: "FloorPlan: 1 - Mech"
+    category: Walls
+    parameterName: Name
+
+jobs:
+  - fragment: apply-color-fill-scheme
+    # `schemeApplied` is the view's scheme READ BACK after it was set.
+    expect: schemeApplied
+    note: >
+      Positive: schemeApplied true, schemeName "Schema 1", schemeSource "used
+      ... as it stands", legendPlaced true, legendsInView 1, legendAtMm about
+      "10 mm right ... 0 mm below". Negative: refused names the view and lists
+      Ducts, HVAC Zones, Pipes, Rooms, Spaces; schemeApplied false,
+      legendsInView 0.

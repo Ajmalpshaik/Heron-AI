@@ -337,6 +337,9 @@ Step 6 is finished, and not before. At that point:
 ## Group AT - `set-schedule-field-totals`: "Calculate totals" switched on for a schedule's columns (2026-09-27)
 
 **Its own file:** [`needs-checking/group-at.md`](needs-checking/group-at.md)
+## Group AV - `apply-color-fill-scheme`: a plan's colour scheme and its Color Fill Legend (2026-09-27)
+
+**Its own file:** [`needs-checking/group-av.md`](needs-checking/group-av.md)
 
 ## Group AU - `center-viewports-on-sheets`: each sheet's viewport moved to the centre of its title block (2026-09-27)
 
@@ -349,6 +352,10 @@ Step 6 is finished, and not before. At that point:
 ## Group AX - `create-view-filters-by-rule` and `set-view-filter-categories`: named view filters from a parameter name and a category list, and their categories set afterwards (2026-09-27)
 
 **Its own file:** [`needs-checking/group-ax.md`](needs-checking/group-ax.md)
+
+## Group AY - `offset-tags-from-host`: every tag moved a set paper distance off its own element (2026-09-27)
+
+**Its own file:** [`needs-checking/group-ay.md`](needs-checking/group-ay.md)
 
 ## Group BA - the Sheet Issues/Revisions dialog from chat: every column, Move, Merge, Delete, Numbering and the arc length (2026-09-28)
 

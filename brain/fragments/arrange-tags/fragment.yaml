@@ -183,6 +183,10 @@ compatibility-note: >
 #                                           leader shape alone
 #   "there is no room for the tags here" -> STACK_TAGS, which gathers them at
 #                                           the side instead of spreading them
+#   "move the tags off the elements"     -> OFFSET_TAGS_FROM_HOST, which puts
+#                                           each tag a set paper distance from
+#                                           its OWN element. This one moves tags
+#                                           away from each OTHER
 
 utterances:
   - the tags are sitting on top of each other
