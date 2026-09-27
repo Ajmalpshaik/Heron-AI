@@ -2435,29 +2435,53 @@ namespace Heron.Revit.Addin
         /// SEMICOLONS BETWEEN SETTINGS, because a colour is already three
         /// comma-separated numbers and a comma cannot do both jobs.
         ///
-        /// NINE SETTINGS, NOT TWENTY-FOUR, AND THE SHORT LIST IS THE POINT.
-        /// OverrideGraphicSettings carries far more than this; what is here is
-        /// what the Visibility/Graphics override dialog puts in front of a
-        /// modeller. A property nobody asked for is a property nobody checks,
-        /// and an unknown key is refused by NAMING the nine - so a wrong
-        /// spelling is one line away from a right one rather than a shrug.
+        /// WHAT THE VISIBILITY/GRAPHICS OVERRIDE DIALOG PUTS IN FRONT OF A
+        /// MODELLER, AND NOTHING ELSE. OverrideGraphicSettings carries a few
+        /// members no dialog shows; a property nobody asked for is a property
+        /// nobody checks. An unknown key is refused by NAMING every one that is
+        /// accepted, so a wrong spelling is one line away from a right one
+        /// rather than a shrug.
         ///
-        /// THE FILL PATTERNS ARE LEFT OUT ON PURPOSE. A pattern is an ELEMENT,
-        /// and naming one is a filter's job rather than a string parse - the
-        /// same split that keeps finding a FamilySymbol out of
-        /// SET_SHEET_TITLE_BLOCK. Their COLOURS are here, because a colour is
-        /// three numbers and nothing else.
+        /// THE PATTERNS ARE HERE NOW, BY NAME. Until 2026-09-28 they were left
+        /// out on the grounds that a pattern is an ELEMENT - and the result was
+        /// a colour stored against a pattern that was never set, which reads
+        /// back perfectly and paints nothing. The Filters tab of
+        /// Visibility/Graphics is mostly patterns, so a parser without them
+        /// could not fill it in (FRAGMENT-ISSUES 5b-243). A name is looked up
+        /// in the model, and an unknown one is refused with the ones that
+        /// exist. "solid" is Revit's solid fill found by what it IS - never a
+        /// hard-coded id, which differs between models.
+        ///
+        /// FILL PATTERNS ARE DRAFTING PATTERNS. Every Set*PatternId on
+        /// OverrideGraphicSettings says "the fill pattern must be a drafting
+        /// pattern", on the 2020, 2024 and 2027 reference assemblies alike. A
+        /// name that exists only as a model pattern is refused and says so,
+        /// rather than handed to Revit to find out.
+        ///
+        /// ENABLE FILTER AND VISIBILITY ARE NOT OVERRIDES. They are ticks on a
+        /// view's Filters tab, set by APPLY_VIEW_FILTER's own values, and
+        /// typing them here is refused by saying where they go - the mistake is
+        /// natural, because the dialog shows them in the same row.
         ///
         /// AMERICAN SPELLING IS ACCEPTED WHEREVER BRITISH IS. The Revit API
         /// spells it one way and this repository the other, and refusing over
         /// that would be the tool being right about nothing.
         /// </summary>
-        private static object OneOverride(string text, out string problem)
+        private static object OneOverride(Document doc, string text, out string problem)
         {
             problem = null;
 
             var settings = new OverrideGraphicSettings();
             var given = 0;
+
+            // NONE IS SAID, NOT LEFT BLANK. A blank stays refused below; the
+            // word asks for no override on purpose - a filter put on a view to
+            // hide or switch off rather than to colour, or an element's
+            // override cleared. What it does after that is the tool's to say.
+            var whole = (text ?? "").Trim();
+            if (string.Equals(whole, "none", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(whole, "no override", StringComparison.OrdinalIgnoreCase))
+                return settings;
 
             foreach (var piece in (text ?? "").Split(';'))
             {
@@ -2535,23 +2559,92 @@ namespace Heron.Revit.Addin
                     continue;
                 }
 
+                // THE SHORT NAMES STAY. surface-colour and cut-colour were the
+                // only pattern colours before the background ones existed, and
+                // a caller written then keeps working.
+                if (key == "surface-colour") key = "surface-foreground-colour";
+                else if (key == "cut-colour") key = "cut-foreground-colour";
+                else if (key == "surface-pattern") key = "surface-foreground-pattern";
+                else if (key == "cut-pattern") key = "cut-foreground-pattern";
+                else if (key == "foreground-visible") key = "surface-foreground-visible";
+                else if (key == "background-visible") key = "surface-background-visible";
+                key = key.Replace("-pattern-colour", "-colour");
+
                 if (key == "projection-line-colour" || key == "cut-line-colour"
-                    || key == "surface-colour" || key == "cut-colour")
+                    || key == "surface-foreground-colour" || key == "surface-background-colour"
+                    || key == "cut-foreground-colour" || key == "cut-background-colour")
                 {
                     var colour = OneColour(value, out problem) as Color;
                     if (colour == null) return null;
                     if (key == "projection-line-colour") settings.SetProjectionLineColor(colour);
                     else if (key == "cut-line-colour") settings.SetCutLineColor(colour);
-                    else if (key == "surface-colour") settings.SetSurfaceForegroundPatternColor(colour);
-                    else settings.SetCutForegroundPatternColor(colour);
+                    else if (key == "surface-foreground-colour") settings.SetSurfaceForegroundPatternColor(colour);
+                    else if (key == "surface-background-colour") settings.SetSurfaceBackgroundPatternColor(colour);
+                    else if (key == "cut-foreground-colour") settings.SetCutForegroundPatternColor(colour);
+                    else settings.SetCutBackgroundPatternColor(colour);
                     continue;
+                }
+
+                if (key == "projection-line-pattern" || key == "cut-line-pattern")
+                {
+                    var linePattern = OneLinePattern(doc, value, out problem);
+                    if (linePattern == null) return null;
+                    if (key == "projection-line-pattern") settings.SetProjectionLinePatternId(linePattern);
+                    else settings.SetCutLinePatternId(linePattern);
+                    continue;
+                }
+
+                if (key == "surface-foreground-pattern" || key == "surface-background-pattern"
+                    || key == "cut-foreground-pattern" || key == "cut-background-pattern")
+                {
+                    var fillPattern = OneFillPattern(doc, value, out problem);
+                    if (fillPattern == null) return null;
+                    if (key == "surface-foreground-pattern") settings.SetSurfaceForegroundPatternId(fillPattern);
+                    else if (key == "surface-background-pattern") settings.SetSurfaceBackgroundPatternId(fillPattern);
+                    else if (key == "cut-foreground-pattern") settings.SetCutForegroundPatternId(fillPattern);
+                    else settings.SetCutBackgroundPatternId(fillPattern);
+                    continue;
+                }
+
+                if (key == "surface-foreground-visible" || key == "surface-background-visible"
+                    || key == "cut-foreground-visible" || key == "cut-background-visible")
+                {
+                    bool shown;
+                    if (!bool.TryParse(value, out shown))
+                    {
+                        problem = "\"" + value + "\" is not true or false, and " + key + " is "
+                                + "the Visible tick beside a pattern - on or off.";
+                        return null;
+                    }
+                    if (key == "surface-foreground-visible") settings.SetSurfaceForegroundPatternVisible(shown);
+                    else if (key == "surface-background-visible") settings.SetSurfaceBackgroundPatternVisible(shown);
+                    else if (key == "cut-foreground-visible") settings.SetCutForegroundPatternVisible(shown);
+                    else settings.SetCutBackgroundPatternVisible(shown);
+                    continue;
+                }
+
+                if (key == "enable-filter" || key == "enabled" || key == "enable"
+                    || key == "visible" || key == "visibility")
+                {
+                    problem = "\"" + key + "\" is not a graphic override - it is a tick on the "
+                            + "view's Filters tab, beside the overrides rather than inside them. "
+                            + "APPLY_VIEW_FILTER sets it with its own values: enabled=true or "
+                            + "false for Enable Filter, visible=true or false for Visibility.";
+                    return null;
                 }
 
                 problem = "\"" + key + "\" is not a graphic override Heron can set. It takes "
                         + "halftone, transparency, detail-level, projection-line-colour, "
-                        + "cut-line-colour, surface-colour, cut-colour, "
-                        + "projection-line-weight and cut-line-weight - separated with "
-                        + "semicolons, like \"halftone=true; transparency=50\".";
+                        + "projection-line-weight, projection-line-pattern, "
+                        + "surface-foreground-pattern, surface-foreground-colour, "
+                        + "surface-foreground-visible, surface-background-pattern, "
+                        + "surface-background-colour, surface-background-visible, "
+                        + "cut-line-colour, cut-line-weight, cut-line-pattern, "
+                        + "cut-foreground-pattern, cut-foreground-colour, "
+                        + "cut-foreground-visible, cut-background-pattern, "
+                        + "cut-background-colour, cut-background-visible, "
+                        + "surface-colour and cut-colour - separated with "
+                        + "semicolons, like \"halftone=true; surface-foreground-pattern=solid\".";
                 return null;
             }
 
@@ -2559,10 +2652,116 @@ namespace Heron.Revit.Addin
             {
                 problem = "No overrides were given, and an empty set of them would leave the "
                         + "view exactly as it is while reporting that it had been changed. "
-                        + "Name at least one - \"halftone=true\".";
+                        + "Name at least one - \"halftone=true\" - or type none for no "
+                        + "override at all.";
                 return null;
             }
             return settings;
+        }
+
+        /// <summary>
+        /// A line pattern by the name Revit's Line Patterns dialog shows it,
+        /// or "solid". Null and a problem when there is no such pattern.
+        ///
+        /// SOLID IS NOT AN ELEMENT. Revit's solid line has an id of its own and
+        /// no LinePatternElement behind it, so it is asked for by what it is -
+        /// `GetSolidPatternId` - and never by a number, which would be this
+        /// file remembering something the model decides.
+        /// </summary>
+        private static ElementId OneLinePattern(Document doc, string text, out string problem)
+        {
+            problem = null;
+            var said = (text ?? "").Trim();
+
+            if (string.Equals(said, "solid", StringComparison.OrdinalIgnoreCase))
+                return LinePatternElement.GetSolidPatternId();
+
+            var known = new List<string>();
+            foreach (LinePatternElement pattern in new FilteredElementCollector(doc)
+                         .OfClass(typeof(LinePatternElement)))
+            {
+                if (pattern == null) continue;
+                if (string.Equals(pattern.Name, said, StringComparison.OrdinalIgnoreCase))
+                    return pattern.Id;
+                known.Add(pattern.Name);
+            }
+
+            known.Sort(StringComparer.OrdinalIgnoreCase);
+            problem = "No line pattern called \"" + said + "\" in " + doc.Title + ". Type Solid, "
+                    + "or one of the " + known.Count + " in Manage, Additional Settings, Line "
+                    + "Patterns" + (known.Count == 0 ? "." : ": "
+                        + string.Join(", ", known.Take(20).ToArray())
+                        + (known.Count > 20 ? " and " + (known.Count - 20) + " more." : "."));
+            return null;
+        }
+
+        /// <summary>
+        /// A DRAFTING fill pattern by name, or "solid" for Revit's solid fill.
+        /// Null and a problem when there is none.
+        ///
+        /// SOLID IS FOUND BY WHAT IT IS - `FillPattern.IsSolidFill` on a
+        /// drafting pattern - because its name is whatever the template called
+        /// it ("&lt;Solid fill&gt;", "Solid fill") and its id differs between
+        /// models. The same lookup SET_CATEGORY_SOLID_FILL makes.
+        ///
+        /// A MODEL PATTERN OF THE SAME NAME IS REFUSED BY NAME. The API says
+        /// every override pattern "must be a drafting pattern"; saying so here
+        /// costs one sentence, and handing one to Revit costs a failed write.
+        /// </summary>
+        private static ElementId OneFillPattern(Document doc, string text, out string problem)
+        {
+            problem = null;
+            var said = (text ?? "").Trim().Trim('<', '>').Trim();
+            var wantSolid = string.Equals(said, "solid", StringComparison.OrdinalIgnoreCase)
+                         || string.Equals(said, "solid fill", StringComparison.OrdinalIgnoreCase);
+
+            var drafting = new List<string>();
+            var modelOnly = false;
+            foreach (FillPatternElement element in new FilteredElementCollector(doc)
+                         .OfClass(typeof(FillPatternElement)))
+            {
+                FillPattern pattern = null;
+                try { pattern = element == null ? null : element.GetFillPattern(); }
+                catch { pattern = null; }
+                if (pattern == null) continue;
+
+                var isDrafting = pattern.Target == FillPatternTarget.Drafting;
+                if (wantSolid)
+                {
+                    if (isDrafting && pattern.IsSolidFill) return element.Id;
+                    continue;
+                }
+
+                var matches = string.Equals(element.Name.Trim('<', '>').Trim(), said,
+                                            StringComparison.OrdinalIgnoreCase);
+                if (isDrafting)
+                {
+                    if (matches) return element.Id;
+                    drafting.Add(element.Name);
+                }
+                else if (matches) modelOnly = true;
+            }
+
+            if (wantSolid)
+            {
+                problem = "This model has no solid drafting fill pattern, so \"solid\" has "
+                        + "nothing to point at. Every Revit template ships one; a model without "
+                        + "it has had it purged.";
+                return null;
+            }
+
+            drafting.Sort(StringComparer.OrdinalIgnoreCase);
+            problem = (modelOnly
+                          ? "\"" + said + "\" is a MODEL pattern, and a graphic override takes "
+                            + "drafting patterns only - Revit's API says so for every pattern "
+                            + "slot. "
+                          : "No drafting fill pattern called \"" + said + "\" in " + doc.Title
+                            + ". ")
+                    + "Type solid, or one of the " + drafting.Count + " drafting patterns"
+                    + (drafting.Count == 0 ? "." : ": "
+                        + string.Join(", ", drafting.Take(20).ToArray())
+                        + (drafting.Count > 20 ? " and " + (drafting.Count - 20) + " more." : "."));
+            return null;
         }
 
         /// <summary>
@@ -4085,7 +4284,7 @@ namespace Heron.Revit.Addin
             // THE STRUCTURED VALUES. Each is an object a caller cannot name -
             // it has to be BUILT from what they typed - and each was a named
             // refusal until a fragment the owner asked for needed it.
-            if (wanted == "OverrideGraphicSettings") return OneOverride(text, out problem);
+            if (wanted == "OverrideGraphicSettings") return OneOverride(doc, text, out problem);
             if (wanted == "ForgeTypeId") return OneSpecTypeId(text, out problem);
             if (wanted == "ParameterValue") return OneParameterValue(text, out problem);
 

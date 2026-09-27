@@ -1,0 +1,63 @@
+# The re-proof of apply-view-filter version 2 (APPLY_VIEW_FILTER, FRG-VIEW-039),
+# 2026-09-28 - NEEDS-CHECKING Group AZ, row AZ3.
+#
+#     python tools/batch-prove.py tools/jobs/apply-view-filter-heron-ai-bulding-2026-09-28.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/apply-view-filter-heron-ai-bulding-2026-09-28.yaml
+#
+# RUN ON A TEST COPY OF "heron ai bulding" (Project1), never the working file.
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK,
+# so nothing should be kept - open the view's Visibility/Graphics afterwards
+# rather than assuming it: rollback has failed before on this PC.
+#
+# THE COPY MUST BE SAVED AFTER 2026-09-27, which made the three duct filters.
+# An older copy has no Supply Air filter and the run refuses before Revit is
+# touched.
+#
+# ZERO SETUP. Every value is typed; nothing is selected and nothing is chained,
+# so another chat's selection in the same Revit cannot reach this run.
+#
+# POSITIVE: SUPPLY AIR ONTO `1 - Mech`, A FLOOR PLAN THAT CARRIES NO FILTER
+# (read 2026-09-28 with REPORT_VIEW_FILTERS viewName=1 - Mech). A view that
+# already had it would answer "was already there" - true, and indistinguishable
+# from a fragment that did nothing. Every value v2 added is exercised: the
+# Enable Filter tick, the tool-side solid fill, and cut values on a filter
+# whose eight categories cannot be cut, so the summary must say "cut not
+# applicable" and name them. `applied` must be true.
+#
+# NEGATIVE: THE SAME CALL ON `Project View`, the project browser, which refuses
+# a filter in Revit's own words - the negative v1 was proved with. `applied`
+# must be false; the flag flipping is the evidence (heron_validate's
+# _flag_flipped).
+#
+# ONLY THE KEYS THE ADD-IN ALREADY HAD ARE IN `overrides`, so this job runs on
+# an add-in older than 2026-09-28. The new pattern keys are AZ2's.
+#
+# NOT SET HERE: `in:`. Without it the run reads the model in front, so bring
+# the test copy to the front. With two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Project1 "heron ai bulding" (a test copy saved after 2026-09-27), Revit 2024
+
+defaults:
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: apply-view-filter
+    expect: applied
+    set:
+      view: "FloorPlan: 1 - Mech"
+      filter: "Supply Air"
+      overrides: "projection-line-colour=0,0,255; surface-colour=0,0,255; cut-line-colour=0,0,255; cut-colour=0,0,255"
+      visible: "true"
+      enabled: "true"
+      keepOtherSettings: ""
+      solidFill: "both"
+    negative-set:
+      view: "Project View"
+      filter: "Supply Air"
+      overrides: "projection-line-colour=0,0,255; surface-colour=0,0,255; cut-line-colour=0,0,255; cut-colour=0,0,255"
+      visible: "true"
+      enabled: "true"
+      keepOtherSettings: ""
+      solidFill: "both"

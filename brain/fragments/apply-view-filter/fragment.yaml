@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,14 +9,44 @@ semantic-identity: "put that filter on this view and make it do something"
 kind: action
 domain: revit.views
 capability: APPLY_VIEW_FILTER
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Adds a filter to a view, gives it an override and sets whether what it matches
-  is visible. The step after making a filter - without which the filter exists
-  in the project and does nothing to any drawing.
+  Adds a filter to a view and sets its whole row on the view's Visibility/Graphics
+  Filters tab - Enable Filter, Visibility, Projection/Surface Lines and Patterns,
+  Transparency, Cut Lines and Patterns, Halftone. The step after making a filter -
+  without which the filter exists in the project and does nothing to any drawing.
+
+  **Every control of the row, since version 2 (2026-09-28, FRAGMENT-ISSUES
+  5b-243).** The graphic ones come in `overrides`: line pattern, colour and
+  weight; foreground and background pattern, colour and Visible tick; for the
+  surface and for the cut; transparency, halftone. Patterns by the name Revit
+  shows, or `solid`. `enabled` is the Enable Filter tick and `visible` the
+  Visibility tick. `solidFill` puts Revit's solid fill on as the foreground
+  pattern from this fragment's own code, so it works on an add-in that has not
+  been restarted since the pattern keys were added to the parser.
+
+  **A blank leaves it as it is.** With `keepOtherSettings` blank or true only
+  what `overrides` sets changes, so "halftone the return air filter" keeps its
+  colours. `keepOtherSettings=false` replaces the filter's whole override - the
+  way to clear a colour or switch halftone, transparency or a Visible tick back
+  to Revit's default, which a keep-mode call cannot do because those defaults
+  are also values. `overrides=none` asks for no graphic change at all, for a
+  call that only ticks or unticks.
+
+  **Cut is never stamped where it cannot show.** When none of the filter's
+  categories can be cut (`Category.IsCuttable`), Revit greys the Cut columns out
+  and a cut value set anyway is stored and draws nothing. The cut half is left
+  out and the answer says "cut not applicable to this filter's categories" and
+  names them.
+
+  **"Untick the filter" is two different ticks in Revit's own dialog** - Enable
+  Filter and Visibility sit side by side. Unticking Visibility HIDES what the
+  filter matches; unticking Enable Filter switches the filter off so its
+  elements draw as if it were not there. Ask which is meant when the sentence
+  does not say.
 
   **It works with either kind of filter.** A rule-based view filter and a saved
   selection filter are both looked up through the class they share, and a view
@@ -29,8 +59,9 @@ purpose: >
   where twenty-six filters carried a projection colour and no cut colour.
 
   **Re-running it updates rather than fails.** A filter already on the view has
-  its override and visibility rewritten, which is what somebody adjusting a
-  colour actually wants.
+  its override and ticks rewritten, which is what somebody adjusting a colour
+  actually wants - and the `summary` names each setting that changed, before and
+  after, or says NOTHING CHANGED.
 
   **Hiding is done here too, and it is the same operation.** A filter set
   invisible hides everything it matches in that view - the ordinary way to take
@@ -50,11 +81,28 @@ contract:
     - name: filter
       type: FilterElement
       source: request
+    # Built by the add-in's parser from "key=value; key=value", or `none`.
     - name: overrides
       type: OverrideGraphicSettings
       source: request
+    # The Visibility tick. False HIDES what the filter matches in this view.
     - name: visible
       type: bool
+      source: request
+    # The Enable Filter tick: true, false, or BLANK to leave it as it is.
+    # Revit 2021 and later; a non-blank value on 2020 refuses the whole call.
+    - name: enabled
+      type: string
+      source: request
+    # BLANK or true: only what `overrides` sets changes. false: `overrides`
+    # replaces the filter's whole override on this view.
+    - name: keepOtherSettings
+      type: string
+      source: request
+    # surface, cut or both: Revit's solid fill as the foreground pattern, set
+    # by this fragment rather than the parser. BLANK sets nothing.
+    - name: solidFill
+      type: string
       source: request
   provides:
     - name: applied
@@ -62,6 +110,13 @@ contract:
       type: bool
     - name: findings
       type: IList<string>
+    # The whole answer as ONE string, because a list reaches the reply cut to
+    # three items of sixty characters: what changed before and after, what
+    # was kept, which cut values were not applicable, and any setting Revit
+    # did not keep.
+    - name: summary
+      role: accounting
+      type: string
 
 proof:
   date: '2026-09-15'
@@ -89,16 +144,28 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. `View.AddFilter`, `GetFilters`,
-  `SetFilterOverrides`, `GetFilterOverrides` and `SetFilterVisibility` are
-  present 2020 through 2027 - read off the reference assemblies at both ends
-  rather than remembered. `SetIsFilterEnabled` is NOT used: it arrived at 2024
-  and naming it would break the 2020 build for a switch this fragment does not
-  need.
+  `SetFilterOverrides`, `GetFilterOverrides`, `SetFilterVisibility`, every
+  pattern, colour and Visible setter and getter on `OverrideGraphicSettings`
+  and its copy constructor, `Category.IsCuttable`, `ParameterFilterElement.GetCategories`,
+  `FillPattern.IsSolidFill` and `LinePatternElement.GetSolidPatternId` are
+  present 2020 through 2027 - read off all eight reference assemblies on
+  2026-09-28 rather than remembered.
+
+  `View.SetIsFilterEnabled` and `GetIsFilterEnabled` are present 2021 through
+  2027 and ABSENT from 2020. Version 1's note said they arrived at 2024, which
+  the 2021 reference assembly disproves. They are reached by name at run time,
+  not under `#if REVIT2020`: the add-in compiles fragments with no release
+  symbols (FRAGMENT-ISSUES 5b-181), so a `#if` would name the member on a real
+  Revit 2020 and the whole fragment would fail to compile there. On 2020 a
+  non-blank `enabled` refuses the call by name and nothing is written.
 
 # THE OVERRIDE COMES IN ALREADY BUILT, exactly as OVERRIDE_GRAPHICS_IN_VIEW
 # takes it. Building it here from colours and weights would be a second place
 # where the eight-release compatibility of OverrideGraphicSettings has to be got
-# right, and one of the two would drift.
+# right, and one of the two would drift. `solidFill` is the one exception and
+# it is narrow on purpose: one pattern, found the way the parser finds it, so a
+# filter can be made solid before the add-in carrying the pattern keys is
+# loaded.
 
 # ROUTING - repeated in CREATE_VIEW_FILTER, CREATE_SELECTION_FILTER and
 # APPLY_VIEW_TEMPLATE.
@@ -123,6 +190,18 @@ compatibility-note: >
 #                                          caller built
 #   "take that filter off the view"      -> REMOVE_VIEW_FILTER - the other end
 #                                        of this one
+#
+#   "make the filter pattern solid"      -> here, solidFill=surface (or the
+#                                           parser's surface-foreground-pattern)
+#   "set the filter transparency"        -> here, overrides=transparency=N
+#   "halftone the return air filter"     -> here, overrides=halftone=true;
+#                                           keepOtherSettings blank keeps colours
+#   "disable the filter"                 -> here, enabled=false, overrides=none
+#   "untick the supply air filter"       -> here - ask whether Enable Filter or
+#                                           Visibility is meant
+#   "what are the filter settings on
+#    this view"                          -> REPORT_VIEW_FILTERS with viewName -
+#                                           a READ
 utterances:
   - apply the filter
   - put that filter on this view
@@ -130,3 +209,10 @@ utterances:
   - hide everything that filter matches
   - add the filter and colour it
   - use that filter here
+  - make the filter pattern solid
+  - set the filter transparency
+  - halftone the return air filter
+  - disable the filter
+  - untick the supply air filter
+  - enable the filter on this view
+  - switch off the filter in this view

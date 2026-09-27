@@ -159,3 +159,5 @@ utterances:
   - create view filters on system classification
   - make a filter for each of these values
   - set up supply and return filters for the ductwork
+  - make a filter for supply air
+  - make a view filter for return air
