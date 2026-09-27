@@ -1,20 +1,33 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-SHT-017
 semantic-identity: "delete that revision from the project"
+
+# VERSION 2, BACK TO DRAFT ON 2026-09-28, AND THE PROOF BLOCK IS KEPT.
+# Version 1 deleted whichever revision held the `sequenceNumber` it was typed,
+# with no confirmation at all - Article 7 lived only in the chat's good
+# manners. Version 2 is handed ONE revision by a find and refuses unless
+# `confirm` names that same revision; it refuses an issued one by name, reports
+# the clouds and sheets it touched and Revit's own reason when Revit says no.
+# Version 1's refusal wording "a revision cloud still uses it" was a guess
+# (section 2 of FRAGMENT-ISSUES quotes it) - on a one-revision model the reason
+# may equally have been that it was the last revision.
 kind: action
 domain: revit.sheets
 capability: DELETE_REVISION
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Deletes a project revision.
+  Deletes one project revision - the Delete button of the revisions dialog -
+  and only with `confirm` naming that revision: its sequence number, or
+  Revit's own "Seq. N - description". The caller passes it only after the
+  owner has said yes for that revision. An issued revision is refused by name.
 
   **DELETING ONE RENUMBERS EVERY LATER REVISION, AND THAT IS THE PART THAT
   CATCHES PEOPLE.** Delete revision 3 of 5 and the old 4 and 5 become 3 and 4.
@@ -23,12 +36,13 @@ purpose: >
   The numbers after the deletion are read back and reported for exactly that
   reason.
 
-  **REVIT REFUSES TO DELETE ONE THAT A CLOUD STILL USES**, which is a refusal
-  rather than a crash, and it is usually the right answer: the cloud is on a
-  sheet somebody has issued.
+  **WHAT IT TOUCHED IS REPORTED**: the clouds that carried it, the sheets that
+  showed it, what Revit deleted along with it, and every revision that was
+  renumbered. When Revit refuses - the project's last revision, or one still
+  in use - Revit's own reason is reported, never a guessed one.
 
-  **IT IS FOUND BY SEQUENCE NUMBER**, the number Revit's own dialog shows -
-  not by description, which repeats across a job.
+  **ONE REVISION, HANDED IN BY A FIND** - by Revision Sequence, the number the
+  dialog shows, or by description; two found is refused with both named.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so one
   undo puts the revision and its numbering back.
@@ -37,8 +51,13 @@ contract:
   needs:
     - name: doc
       type: Document
-    - name: sequenceNumber
-      type: int
+    # THE revision, from the find before this - exactly one.
+    - name: elements
+      type: IList<Element>
+    # The owner's yes for THIS revision: its sequence number ("2") or
+    # "Seq. 2 - Issued for Review". Anything else refuses.
+    - name: confirm
+      type: string
       source: request
   provides:
     - name: deleted
@@ -47,9 +66,29 @@ contract:
     - name: renumbered
       # DELETING ONE RENUMBERS EVERY LATER REVISION, AND THAT IS THE PART THAT
       # CATCHES PEOPLE - every note and every drawing referring to the old
-      # numbers is now wrong. The consequence, not the bookkeeping.
+      # numbers is now wrong. Each revision that moved, old number to new,
+      # then the whole list as it now stands. A string, so all of it prints.
       role: result
-      type: IDictionary<int, string>
+      type: string
+    - name: revisionName
+      # Which revision, "Seq. N 'description'" as it stood before.
+      role: accounting
+      type: string
+    - name: cloudsTouched
+      # The revision clouds that carried it, by id, and after a delete what
+      # became of each. Counted whether or not anything was deleted (D-52).
+      role: accounting
+      type: string
+    - name: sheetsTouched
+      # The sheets that showed it, and whether from a cloud or ticked by hand
+      # (D-52).
+      role: accounting
+      type: string
+    - name: alsoDeleted
+      # Whatever Revit removed along with the revision - its clouds and tags,
+      # if it takes them. Revit's own list from the delete (D-52).
+      role: accounting
+      type: IList<ElementId>
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
@@ -81,15 +120,25 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. A revision is an ordinary element to
-  delete, and its sequence number and description are unchanged 2020 to 2027.
-  Revit's own refusal when a cloud still references it comes back as a failed
-  delete rather than as a thrown error on some releases, so the result is
-  established by looking for the revision afterwards.
+  delete, and its sequence number, description and issued flag, the
+  `RevisionCloud.RevisionId` and `ViewSheet.GetAllRevisionIds` /
+  `GetAdditionalRevisionIds` it is looked up by, are unchanged 2020 to 2027 -
+  read with tools/api-surface --members on each release. (`ViewSheet.
+  GetAllRevisionCloudIds` would be shorter and is NOT used: it arrives in
+  2023.) Revit's refusal may come back as a failed delete rather than a thrown
+  error, so the result is established by looking for the revision afterwards.
 
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "delete that revision"               -> here, and everything after it
-#                                           renumbers
+#                                           renumbers. Needs confirm
+#   "delete revision 1"                  -> here, fed by
+#                                           SELECT_BY_PARAMETER_VALUE,
+#                                           parameterName=Revision Sequence,
+#                                           matchText=1
+#   "merge revision 2 into revision 1"   -> MERGE_REVISION, which keeps the
+#                                           clouds by moving them first
+#   "delete the numbering sequence"      -> DELETE_REVISION_NUMBERING_SEQUENCE
 #   "change the revision"                -> EDIT_REVISION, when the fix is a
 #                                           wrong date or description rather
 #                                           than a revision that should not
@@ -105,3 +154,4 @@ utterances:
   - delete that revision
   - remove the revision from the project
   - get rid of revision 3
+  - delete revision 1

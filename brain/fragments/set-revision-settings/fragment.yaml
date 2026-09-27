@@ -1,0 +1,105 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-023
+semantic-identity: "number revisions per project or per sheet, and set the revision cloud arc length"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# On 2026-09-28 the owner checked Manage > Sheet Issues/Revisions control by
+# control in Revit 2024 and asked for every one from chat. Nothing in the
+# library touched RevisionSettings: the Numbering switch and the Arc length
+# box had no tool at all (a search for the class found 0 files).
+kind: action
+domain: revit.sheets
+capability: SET_REVISION_SETTINGS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets the two project-wide revision settings in Sheet Issues/Revisions: the
+  Numbering switch - revisions numbered per project or per sheet - and the
+  revision cloud arc length, in millimetres on paper. Empty leaves a setting
+  alone.
+
+  **SWITCHING THE NUMBERING RENUMBERS WHAT IS ALREADY PRINTED**, issued
+  revisions included, so it is refused while any ISSUED revision shows on a
+  sheet - each one named with its sheets.
+
+  **THE ARC LENGTH IS CHECKED WITH REVIT FIRST** - whether it accepts the
+  value - and read back within a tenth of a millimetre on paper, because Revit
+  stores it on its own rounding grid; the value it stores is reported.
+
+  A setting already at the value asked is named in `alreadyThat` and not
+  written, so a repeat changes nothing. A write that does not read back after
+  the other has gone in rolls both back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # "per project" or "per sheet"; empty leaves it alone.
+    - name: numbering
+      type: string
+      source: request
+    # Millimetres on paper, "20" or "12.5"; empty leaves it alone.
+    - name: arcLengthMm
+      type: string
+      source: request
+  provides:
+    - name: changed
+      # Each setting that moved, before -> after as READ BACK.
+      role: result
+      type: string
+    - name: alreadyThat
+      # Settings already at the value asked, not written. The prior state,
+      # never a change (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      # Both settings READ BACK after the call.
+      type: string
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND, so it must not count toward "did
+      # this come back empty" (D-52).
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `RevisionSettings.GetRevisionSettings`,
+  its `RevisionNumbering` (PerProject / PerSheet) and `RevisionCloudSpacing`,
+  and `IsAcceptableRevisionCloudSpacing` are present and unchanged 2020
+  through 2027 -
+  read with tools/api-surface --members on each release's RevitAPI.dll. The
+  arc length is Revit's internal feet in paper space, turned from millimetres
+  by / 304.8 (D-20), so no units API is called and the 2021 units move cannot
+  reach this.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "number revisions per project"       -> here
+#   "number revisions per sheet"         -> here
+#   "set the cloud arc length"           -> here
+#   "list the revisions"                 -> LIST_REVISIONS, which reads both
+#                                           settings back
+#   "make an alphabetic sequence"        -> CREATE_REVISION_NUMBERING_SEQUENCE.
+#                                           The sequence is how ONE revision is
+#                                           numbered; this is where the number
+#                                           is counted from
+#   "put a revision cloud around this"   -> ADD_REVISION_CLOUD
+
+utterances:
+  - number revisions per project
+  - number revisions per sheet
+  - set the cloud arc length
+  - change the revision cloud arc length to 10 mm

@@ -1,0 +1,120 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-022
+semantic-identity: "merge a revision into the one above or below it, moving its clouds"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# On 2026-09-28 the owner checked Manage > Sheet Issues/Revisions control by
+# control in Revit 2024 and asked for every one of them from chat. Merge Up
+# and Merge Down had nothing behind them in the library.
+kind: action
+domain: revit.sheets
+capability: MERGE_REVISION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Merges one revision into the revision above it or below it - the Merge Up
+  and Merge Down buttons in Sheet Issues/Revisions. Its revision clouds and
+  tags move to that neighbour, and the merged revision is removed.
+
+  **IT REMOVES A REVISION, SO IT NEEDS THE OWNER'S YES FOR THAT REVISION.**
+  `confirm` must name the revision being merged away - its sequence number or
+  Revit's "Seq. N - description". A bare yes, or another revision's number,
+  is refused and nothing changes.
+
+  **BOTH MUST BE UNISSUED**, which is Revit's rule; the refusal names the
+  issued one before Revit is asked.
+
+  **ONE REVISION, HANDED IN BY A FIND** - by Revision Sequence or description.
+
+  **READ BACK**: the merged revision must be gone and every cloud Revit moved
+  must carry its new revision, or the whole merge is rolled back. The clouds
+  moved, the sheets that showed it and the order before and after are handed
+  back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so one
+  undo puts all of it back.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # THE revision merged away, from the find before this - exactly one.
+    - name: elements
+      type: IList<Element>
+    # "up" into the revision above (Merge Up), "down" into the one below.
+    - name: direction
+      type: string
+      source: request
+    # The owner's yes for THIS revision: its sequence number ("2") or
+    # "Seq. 2 - Issued for Review". Anything else refuses.
+    - name: confirm
+      type: string
+      source: request
+  provides:
+    - name: merged
+      role: result
+      type: bool
+    - name: cloudsMoved
+      # The revision clouds Revit moved to the neighbour - its own returned
+      # list, each read back on the neighbour. Can rightly be none (D-52).
+      role: accounting
+      type: IList<ElementId>
+    - name: mergedInto
+      # The revision that received the clouds, as it reads after the merge.
+      role: accounting
+      type: string
+    - name: sheetsTouched
+      # The sheets that showed the merged revision, and what each shows after
+      # (D-52).
+      role: accounting
+      type: string
+    - name: order
+      # The whole sequence before and after, READ BACK (D-52).
+      role: accounting
+      type: string
+    - name: revisionName
+      # Which revision was merged away, "Seq. N 'description'" as it stood.
+      role: accounting
+      type: string
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND, so it must not count toward "did
+      # this come back empty" (D-52).
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Revision.CombineWithPrevious` and
+  `Revision.CombineWithNext` (Document, ElementId) returning the moved clouds'
+  ids, `RevisionCloud.RevisionId`, `ViewSheet.GetAllRevisionIds` and the
+  revision's `Issued` are present and unchanged 2020 through 2027 - read with
+  tools/api-surface --members on each release's RevitAPI.dll. Their API
+  documentation says both revisions must be unissued and names that as the
+  refusal; it is checked here first so the refusal can name the revision.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "merge revision 2 down"              -> here
+#   "merge this revision into the previous one" -> here
+#   "combine two revisions"              -> here
+#   "move revision 2 up"                 -> REORDER_REVISION, which keeps both
+#                                           revisions and changes the order
+#   "delete revision 1"                  -> DELETE_REVISION, which does not
+#                                           move the clouds first
+#   "put this revision on these sheets"  -> SET_SHEET_REVISIONS
+
+utterances:
+  - merge revision 2 down
+  - combine two revisions
+  - merge this revision into the previous one

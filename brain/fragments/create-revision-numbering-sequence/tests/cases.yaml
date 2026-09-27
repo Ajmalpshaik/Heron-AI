@@ -1,0 +1,44 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a TEST COPY, name=Alpha Issue, numberType=alphanumeric,
+      customSequence=A, B, C, D, prefix=<blank>, suffix=<blank>
+    expect: >
+      `created` an id, and `findings` reading it back as alphanumeric A, B, C,
+      D. Customize Numbering > Numbering lists 'Alpha Issue'
+
+  - given: >
+      name=Numeric 2, copyFrom=Numeric, minimumDigits=2 (Duplicate)
+    expect: >
+      created, numeric, minimum digits 2 and every other setting copied from
+      'Numeric'
+
+  - given: >
+      the working model, no transaction open (validate without --write) - a
+      measurement, not a change
+    expect: >
+      `refused` with Revit's own words about the missing transaction and the
+      settings it would have made. Nothing is created
+
+negative:
+  - given: name=Numeric, which already exists
+    expect: >
+      `refused` naming the existing sequences; nothing created
+
+  - given: numberType=numeric with customSequence=A, B
+    expect: >
+      `refused` - a numeric sequence has no custom list; nothing created
+
+  - given: numberType=alphanumeric with no customSequence
+    expect: >
+      `refused` - it needs its custom list; nothing created
+
+  - given: a name with a | or ; in it
+    expect: >
+      `refused` naming the characters Revit forbids
+
+second_route:
+  - >
+    open Manage - Sheet Issues/Revisions > Customize Numbering > Numbering and
+    Edit the new sequence; LIST_REVISIONS' numberingSequences reads it too

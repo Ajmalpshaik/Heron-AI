@@ -11,6 +11,15 @@ positive:
       that sheet IS counted. It prints the revision either way, and a sheet
       showing a revision is issued under it however it got there
 
+  - given: >
+      "heron ai bulding", Revit 2024, 2026-09-28 - two revisions, numbered Per
+      Sheet, sequences Numeric and Custom
+    expect: >
+      `revisionTable` with both rows and every column as the Sheet
+      Issues/Revisions dialog shows them; `numbering` Per Sheet;
+      `numberingSequences` 'Custom' alphanumeric A to Z and 'Numeric' numeric,
+      minimum digits 1, start 1; `arcLength` 20 mm - the dialog's 20.0
+
 negative:
   - given: >
       a revision clouded only on a view that is on no sheet

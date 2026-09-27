@@ -1,11 +1,17 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-SHT-005
 semantic-identity: "every revision in the project and which sheets carry each one"
+
+# BACK TO DRAFT ON 2026-09-28, AND THE PROOF BLOCK BELOW IS KEPT ON PURPOSE.
+# The code was widened to read the whole Sheet Issues/Revisions dialog, so the
+# 2026-09-13 fingerprint no longer matches it. What that proof recorded - the
+# sheet lines and `onNoSheets` - is unchanged here and still the arrangement to
+# re-prove from. `can_promote` refuses to carry a stale proof forward.
 kind: filter
 domain: revit.sheets
 capability: LIST_REVISIONS
@@ -28,6 +34,12 @@ purpose: >
   cloud anywhere. Revit reports both together and so does this - because both
   print, and a sheet that shows a revision is issued whichever way it got there.
 
+  **It also reads the Sheet Issues/Revisions dialog row by row**: each
+  revision's numbering, date, description, issued tick, issued to, issued by
+  and show setting, the number it actually prints on each sheet, the Per
+  Project / Per Sheet setting, every numbering sequence with its settings, and
+  the revision cloud arc length.
+
 contract:
   needs:
     - name: doc
@@ -44,6 +56,31 @@ contract:
       # nowhere, which is what somebody planning an issue needs to know.
       role: result
       type: IList<ElementId>
+    - name: revisionTable
+      # The dialog's table, one row per revision with " || " between rows:
+      # sequence, numbering, date, description, issued, issued to, issued by,
+      # show, and what it PRINTS on each sheet carrying it. A STRING, because
+      # a list reaches the reply cut to three entries of sixty characters and
+      # this list is the answer.
+      role: result
+      type: string
+    - name: numbering
+      # Per Project or Per Sheet - the switch at the bottom of the dialog.
+      # Project state, there whether or not anything was found (D-52).
+      role: accounting
+      type: string
+    - name: numberingSequences
+      # Every numbering sequence with its type and settings, and which
+      # revisions use it. On 2020 and 2021 there are no named sequences: the
+      # project's one numeric and one alphanumeric scheme are read instead.
+      # Project state, never a thing found (D-52).
+      role: accounting
+      type: string
+    - name: arcLength
+      # The revision cloud arc length, in millimetres on paper, with Revit's
+      # internal feet beside it. Project state (D-52).
+      role: accounting
+      type: string
 
 proof:
   date: '2026-09-13'
@@ -65,7 +102,21 @@ tests: tests/
 compatibility-note: >
   `Revision.GetAllRevisionIds(Document)`, `ViewSheet.GetAllRevisionIds()` and
   `GetRevisionNumberOnSheet(ElementId)` are unchanged 2020 to 2027 - read off
-  the reference assemblies at both ends rather than remembered.
+  the reference assemblies at both ends rather than remembered. So are the
+  revision's `Description`, `RevisionDate`, `Issued`, `IssuedTo`, `IssuedBy`,
+  `Visibility`, `SequenceNumber` and `RevisionNumber`, and `RevisionSettings`'
+  `RevisionNumbering` and `RevisionCloudSpacing` (the arc length) - all read
+  with tools/api-surface --members on each release's RevitAPI.dll.
+
+  THE NUMBERING IS WHERE THE RELEASES PART. `RevisionNumberingSequence`,
+  `Revision.RevisionNumberingSequenceId` and `NumericRevisionSettings.MinimumDigits`
+  arrive in 2022; `Revision.NumberType` and `RevisionSettings`'
+  Get/SetNumericRevisionSettings and Get/SetAlphanumericRevisionSettings exist
+  2020 to 2022 and are gone from 2023. The add-in compiles fragments with no
+  release symbol defined, so a `#if` would take one branch on every release;
+  each of those members is reached by name and the one this Revit has is used.
+  Only the 2022+ route has run on a model; the 2020/2021 route is compiled, not
+  run.
 
   No ElementId is built from an int, so 2024's 64-bit ids do not reach this
   code.
@@ -79,6 +130,20 @@ compatibility-note: >
 #   "put a revision cloud around this" -> ADD_REVISION_CLOUD
 #   "list the sheets"                  -> LIST_SHEETS - all of them, with no
 #                                         revision involved
+#   "show me the sheet issues and revisions table"
+#                                      -> here - every column, the numbering
+#                                         sequences, Per Project / Per Sheet
+#                                         and the arc length
+#   "set issued to"                    -> EDIT_REVISION, fed one revision by
+#                                         SELECT_BY_PARAMETER_VALUE
+#   "move revision 2 up"               -> REORDER_REVISION
+#   "merge revision 2 down"            -> MERGE_REVISION
+#   "what is the revision cloud arc length" -> here - a question; the setter
+#                                         is SET_REVISION_SETTINGS
+#   "number revisions per project"     -> SET_REVISION_SETTINGS
+#   "set the cloud arc length"         -> SET_REVISION_SETTINGS
+#   "make an alphabetic sequence"      -> CREATE_REVISION_NUMBERING_SEQUENCE
+#   "rename the numbering"             -> EDIT_REVISION_NUMBERING_SEQUENCE
 
 utterances:
   - which sheets have this revision
@@ -87,3 +152,9 @@ utterances:
   - what goes out with this issue
   - show me the revision history
   - which sheets are in this revision
+  - show me the sheet issues and revisions table
+  - what numbering sequences do the revisions use
+  - what is the revision cloud arc length
+  - are the revisions numbered per sheet or per project
+  - show me the revision numbering sequences
+  - what arc length do the revision clouds use

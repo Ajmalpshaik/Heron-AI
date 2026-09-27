@@ -1,0 +1,47 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a TEST COPY numbered Per Sheet with no issued revision on a sheet; numbering=per project
+    expect: >
+      `changed` "numbering Per Sheet -> Per Project", and `findings` reading it
+      back. The Numbering switch in Sheet Issues/Revisions has moved
+
+  - given: the same copy, arcLengthMm=10 where it was 20
+    expect: >
+      `changed` "arc length 20 mm -> 10 mm" or what Revit stored, read back
+      within 0.1 mm; new clouds draw smaller bumps
+
+  - given: the same values a second time
+    expect: >
+      `changed` empty and both in `alreadyThat` - nothing written
+
+  - given: arcLengthMm=20 where the dialog shows 20.0
+    expect: >
+      `alreadyThat` "arc length 20 mm", nothing written. Measured 2026-09-28:
+      Revit's own rounding helper makes 20 mm into 20.042 mm, and comparing
+      against that rewrote a setting that was already right
+
+  - given: >
+      the working model, no transaction open (validate without --write),
+      numbering=per project - a measurement, not a change
+    expect: >
+      `refused` with Revit's own words about the missing transaction and the
+      change it would have made. Nothing changes
+
+negative:
+  - given: numbering=per project while an ISSUED revision shows on a sheet
+    expect: >
+      `refused` naming that revision and its sheets; nothing changed
+
+  - given: arcLengthMm=0, or arcLengthMm=twenty
+    expect: >
+      `refused` saying why; nothing changed
+
+  - given: numbering and arcLengthMm both empty
+    expect: >
+      `refused` saying nothing was asked for
+
+second_route:
+  - >
+    open Manage - Sheet Issues/Revisions: the Numbering radio buttons and the
+    Arc length box at the bottom. LIST_REVISIONS reads both too

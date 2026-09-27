@@ -1,6 +1,15 @@
 # D-30: the negative case is what catches "succeeded and did nothing".
 
 positive:
+  - given: >
+      "heron ai bulding", 2026-09-28 - Seq. 2 found by SELECT_BY_PARAMETER_VALUE
+      (Revision Description equals Issued for Review, exactly 1), issuedTo
+      "Ajmal PS", every other value empty
+    expect: >
+      `changed` "issued to (blank) -> 'Ajmal PS'", and a SECOND identical run
+      `changed` empty with `alreadyThat` "issued to 'Ajmal PS'". Kept on the
+      working model at the owner's request
+
   - given: revision 3 with a wrong date, a new date given
     expect: >
       the date changed and "date" in `changed`. Open Manage - Sheet Issues and
@@ -20,17 +29,18 @@ positive:
       the date, issued-by and issued-to untouched
 
 negative:
-  - given: two revisions both described "For Construction"
+  - given: a find by description that brought back two revisions both described "For Construction"
     expect: >
-      the one matched by SEQUENCE NUMBER edited. Matching on the description
-      would edit whichever came first, silently, on a document about to go out
+      `refused` naming both by sequence number and NOTHING edited. Editing
+      whichever came first would be silent, on a document about to go out
 
-  - given: a revision that is already ISSUED
+  - given: a revision that is already ISSUED, issuedTo given
     expect: >
-      the refused edits NOT listed in `changed`, and the reason named. Revit
-      returns from the call and keeps the old value
+      `refused` naming the revision and the locked field, `changed` empty,
+      nothing attempted. With issueState=unissue in the same call it is
+      un-issued first and then edited; show alone is allowed, as in Revit
 
-  - given: a sequence number that does not exist
+  - given: a find that brought back no revision
     expect: >
       `refused` saying so and nothing changed
 
