@@ -130,7 +130,7 @@ namespace Heron.Revit.Addin
                 var view = uidoc.ActiveView;
                 selection.View = view == null ? "" : view.Name;
             }
-            catch (Exception)
+            catch
             {
                 selection.View = "";
             }
@@ -157,7 +157,7 @@ namespace Heron.Revit.Addin
 
                 Element element;
                 try { element = doc.GetElement(id); }
-                catch (Exception) { element = null; }
+                catch { element = null; }
                 if (element == null)
                 {
                     selection.Unreadable++;
@@ -184,7 +184,7 @@ namespace Heron.Revit.Addin
                 var category = element.Category;
                 return category == null ? "" : category.Name;
             }
-            catch (Exception)
+            catch
             {
                 return "";
             }
@@ -193,7 +193,7 @@ namespace Heron.Revit.Addin
         private static string NameOf(Element element)
         {
             try { return element.Name ?? ""; }
-            catch (Exception) { return ""; }
+            catch { return ""; }
         }
     }
 }
