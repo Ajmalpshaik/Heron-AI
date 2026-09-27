@@ -43,7 +43,7 @@ purpose: >
   **Version 4 writes a Yes/No parameter.** Revit keeps a tick box as the
   number 1 or 0, so version 3 sent it through `SetValueString`, which returned
   false for it: one tick box on 15 units was refused all 15 times with `No`,
-  and again with `0` (FRAGMENT-ISSUES 5b-243). It now finds a Yes/No parameter
+  and again with `0` (FRAGMENT-ISSUES 5b-247). It now finds a Yes/No parameter
   first, on every release from 2020, and takes Yes/No, True/False, On/Off, 1/0
   and Ticked/Unticked in any case - anything else is refused and `findings`
   names the value and those words. The read-back is unchanged: `AsInteger`
@@ -217,7 +217,7 @@ utterances:
   - set the room number
   - fill in the mark
   - make the new type 300 wide
-  # A Yes/No parameter - a tick box in Properties. Version 4 (5b-243).
+  # A Yes/No parameter - a tick box in Properties. Version 4 (5b-247).
   - turn off show clearance
   - untick show clearance
   - untick the parameter on these

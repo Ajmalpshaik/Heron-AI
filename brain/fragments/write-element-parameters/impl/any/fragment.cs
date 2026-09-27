@@ -77,7 +77,7 @@
 // down the numeric road above - and `SetValueString` returned FALSE for it,
 // "No" and "0" alike. Measured 2026-09-27 on 15 fan coil units in "heron ai
 // bulding" (Revit 2024), their instance tick box "Show_Clearance": refused 15,
-// written 0, twice (FRAGMENT-ISSUES 5b-243).
+// written 0, twice (FRAGMENT-ISSUES 5b-247).
 //
 // So a Yes/No parameter is found first and written with `Set(1)` or `Set(0)`.
 // The words are the ones a modeller says of a tick box - Yes/No, True/False,

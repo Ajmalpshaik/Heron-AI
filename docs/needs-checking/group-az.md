@@ -6,29 +6,40 @@
 > reads it back into the register for every tool that reads the register, so a row here is seen
 > exactly as it was seen there.
 
-## Group AZ - `write-element-parameters` version 4: a Yes/No parameter ticked or unticked (2026-09-27)
+## Group AZ - `create-sheet-list` version 2: a view list as well as a sheet list, and only the placed views (2026-09-27)
 
-**One fragment edited, not added, and it is DRAFT.**
-[`write-element-parameters`](../../brain/fragments/write-element-parameters/fragment.yaml) -
-WRITE_ELEMENT_PARAMETERS, FRG-PAR-003 - refused every Yes/No parameter until version 4: on 2026-09-27, in
-"heron ai bulding" (Revit 2024, Heron session 46596), `Show_Clearance` on the 15 fan coil units
-`TRG_MECH_EQP_Fan Coil Unit_FCU_R0 : FCU-01` (ids 930673-930687) came back `refused` 15, `written` 0, with
-`value=No` and again with `value=0` ([row 5b-243](../FRAGMENT-ISSUES.md#)). Version 4 finds a tick box first,
-takes Yes/No, True/False, On/Off, 1/0 or Ticked/Unticked, writes 1 or 0, reads it back with `AsInteger`, and
-counts an element that already held the value in `alreadyThat`. Anything else is refused and `findings` names
-the value and the words that are taken.
+**One existing fragment edited, not a new one, on the owner's rule that an existing tool is extended
+rather than a second one added.** [`create-sheet-list`](../../brain/fragments/create-sheet-list/fragment.yaml) -
+CREATE_SHEET_LIST, FRG-SHT-011 - takes a new value, `listKind`. Blank or `sheets` makes the sheet list it
+always made; `views` makes Revit's View List through `ViewSchedule.CreateViewList`, with the same fields by
+name, the same refusal listing the real names, and the same sort; anything else is refused and nothing is
+created. It compiles on every release from 2020 to 2027. **It was PROVEN and is DRAFT now**: the change is
+inside `impl/`, so the 2026-09-13 proof (a sheet list on test projject) no longer matches the code and is
+kept in the card as the record of version 1 ([D-30](../DECISIONS.md)). [Row 5b-243](../FRAGMENT-ISSUES.md#)
+has why.
 
-**What is already known, and it is NOT a proof.** Every fragment compiles on 2020 to 2027. The Yes/No test
-asks `Definition.GetDataType()` against `SpecTypeId.Boolean.YesNo` on 2022 to 2027 and
-`Definition.ParameterType` on 2020 and 2021 - both read from the reference assemblies of all eight releases,
-neither run on a Revit. The version 4 code has not run on any model.
+**`listKind` has to be SENT, blank or not.** The add-in refuses any value the card marks `source: request`
+that arrives with none, whatever the card says about it being optional
+([row 5b-227](../FRAGMENT-ISSUES.md#)). So a caller that sends only the three old values is now told
+`listKind` is missing; sending it blank gets exactly the old job.
 
-**Pick the chain, not the selection.** Every row feeds the fragment from `filter-elements-by-category` with
-`category=Mechanical Equipment` and `levelId=none` (every level). Other chats share this Revit's selection.
+**"Only the views placed on a sheet" is not new code.** A view list shows every view. `SET_SCHEDULE_FILTERS`
+(FRG-VIEW-060, PROVEN, **unchanged**) already writes a `has value` rule, and a view's Sheet Number has a
+value exactly when the view is on a sheet - so the chain is CREATE_SHEET_LIST `listKind=views` with Sheet
+Number as a column, then FIND_SCHEDULES and SET_SCHEDULE_FILTERS `filterFieldName=Sheet Number`,
+`matchType=has value`, `filterValue` blank.
+
+**The working run: NOT RUN by the session that wrote this.** It ran in a cloud container with no Revit,
+and its Heron connection failed to start, so nothing here has met a model. It is handed to the chat
+working in "heron ai bulding" (Revit 2024, Heron session 46596), and AZ3 is that run.
+
+Every proof row runs on a TEST COPY of "heron ai bulding" - never the working model. AZ3 is a chat run on
+the working model, because the View List is what the owner asked to keep.
 
 | # | Check | Expected |
 |---|---|---|
-| **AZ1** | **The working run, on the working model, Changes ON.** It is a chat run, not a proof. FIRST read `Show_Clearance` on the 15 units - the owner may already have unticked it by hand. Then `revit_change` WRITE_ELEMENT_PARAMETERS with `parameterName=Show_Clearance`, `value=No`, `expect_from` naming `filter-elements-by-category where category=Mechanical Equipment`. Then the same call again. If `revit_change` is refused, write down what it said and stop - do not find another way | First run: `written` 15 if they were ticked, or `written` 0 and `alreadyThat` 15 if the owner had already unticked them - write down which. `refused`, `snapped`, `unverified` and `findings` empty. Second run: `written` 0, `alreadyThat` 15, nothing changed. Read back: all 15 unticked |
-| **AZ2** | **The two legs ([D-30](../DECISIONS.md)), on a TEST COPY.** With `HERON_CLIENT_ID=ajmal-pc` set and the copy in front, read one unit's `Show_Clearance`, set the job's positive `value` to the OPPOSITE (the job says how), then `python tools/batch-prove.py tools/jobs/write-element-parameters-yes-no-heron-ai-bulding-2026-09-27.yaml --dry-run`, then without `--dry-run` | `PASS`. The positive: `written` 15, `alreadyThat`, `snapped` and `refused` empty. **The negative, `value=Maybe` on the same 15:** `written` 0, `refused` 15, one `findings` line naming 'Maybe' and the accepted words, and every box exactly as it was. Both legs rolled back - read three boxes afterwards |
-| **AZ3** | **The second route, THEN the signature.** On the working model after AZ1, read `Show_Clearance` on three units in the Properties palette, or add it as a column to a Mechanical Equipment schedule. Write what was seen into the draft's `second_route`, and only then `python brain/heron_validate.py accept write-element-parameters --by "Ajmal PS"` and set `heron-status: PROVEN` | Unticked on every unit looked at - **seen on screen, not inferred from `written`**. The proof taken 2026-09-09 described version 2 and is kept only as a record until this replaces it |
-| **AZ4** | **The other road to the same answer - Revit 2020 or 2021.** Those releases have no `GetDataType`, so the tick box is found through `ParameterType` instead, and that branch has never run. On a test model in Revit 2020 with any family carrying an instance Yes/No parameter, run WRITE_ELEMENT_PARAMETERS with `value=Yes` and then `value=Maybe` | `Yes`: every element `written`, the box ticked in Properties. `Maybe`: `refused`, one `findings` line. If `Yes` comes back `refused` with no `findings` line, the Yes/No was not recognised and the element went the version 3 road - the 2020 branch has failed |
+| **AZ1** | The two legs ([D-30](../DECISIONS.md)) - **a draft, not yet signed.** With `HERON_CLIENT_ID=ajmal-pc` set and the test copy in front, `python tools/batch-prove.py tools/jobs/create-sheet-list-views-heron-ai-bulding-2026-09-27.yaml --dry-run`, then the same without `--dry-run`. **Do not sign yet** - the draft's `second_route` reads NOT ESTABLISHED until AZ4 is done | `PASS`. The positive - `listKind=views`, View Name, Sheet Number, Sheet Name, Title on Sheet, sorted by Sheet Number: `fieldsAdded` 4, `refused` empty. The negative - `listKind=views`, `fieldNames=Flow`: `fieldsAdded` 0, and `refused` saying *"'Flow' is not a field a view list can carry. It can carry: ..."* with the view list's real names, then the sort refusal and the NO-columns warning. Both legs rolled back - no `HERON VIEW LIST PROOF` left under Schedules/Quantities |
+| **AZ2** | The old job, unchanged. One chat run on a test copy: CREATE_SHEET_LIST `listKind` blank (sent as an empty value), `fieldNames=Sheet Number, Sheet Name`, `sortByField=Sheet Number`, then open the schedule | A SHEET list, exactly as version 1 made it: every sheet a row, in number order, `refused` empty. A view list here is a failure - blank must mean sheets |
+| **AZ3** | The View List the owner asked for, on the WORKING model, as chat runs with no selection-fed step: CREATE_SHEET_LIST `listKind=views`, `scheduleName=View List`, fields such as View Name, Sheet Number, Sheet Name, Title on Sheet, View Scale, Detail Number, `sortByField=Sheet Number` (a name refused is replaced by the real name the refusal lists, and which was used is written here); then FIND_SCHEDULES `nameContains=View List` and SET_SCHEDULE_FILTERS `filterFieldName=Sheet Number`, `matchType=has value`, `filterValue` blank; then REPORT_SCHEDULE_DEFINITION on it | The definition reads back the columns asked for, the filter as Sheet Number HasValue, and the sort by Sheet Number. **Heron reads the schedule's setup, not its rows**, so the owner opens it: one row for each of the four plan views on M-101 to M-104 - the Level 1 Room, HVAC Zone and Space plan layouts and "Level 1 - Air Terminal Layout" - each with its own sheet's number. The schedules on M-105 to M-107 are not rows: a view list is a schedule of views, and a schedule is not one |
+| **AZ4** | The second route, THEN the signature. View tab, Schedules, View List by hand on the test copy, filtered on Sheet Number has a value, and its rows compared with the views under each sheet in the Sheets branch of the Project Browser. Write what was seen into the `second_route` field of the draft `brain/proof-drafts/` holds for `create-sheet-list`. Only then `python brain/heron_validate.py accept create-sheet-list --by "Ajmal PS"` and set `heron-status: PROVEN` | The hand-made list and the one AZ3 made show the same rows, and every placed view in the Project Browser is one of them |
+| **AZ5** | The routing, on the owner's PC with the shared store rebuilt from main after this merges: `heron_lookup` on *"create a view list"*, *"make a schedule of the views on sheets"* and *"create a sheet list"* | All three name CREATE_SHEET_LIST. The first two are its own declared sentences since version 2; the third is the job it always had |

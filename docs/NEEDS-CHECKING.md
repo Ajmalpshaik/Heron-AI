@@ -357,9 +357,13 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ay.md`](needs-checking/group-ay.md)
 
-## Group AZ - `write-element-parameters` version 4: a Yes/No parameter ticked or unticked (2026-09-27)
+## Group AZ - `create-sheet-list` version 2: a view list as well as a sheet list, and only the placed views (2026-09-27)
 
 **Its own file:** [`needs-checking/group-az.md`](needs-checking/group-az.md)
+
+## Group BB - `write-element-parameters` version 4: a Yes/No parameter ticked or unticked (2026-09-27)
+
+**Its own file:** [`needs-checking/group-bb.md`](needs-checking/group-bb.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

@@ -21,7 +21,7 @@ positive:
   - given: >
       a Yes/No parameter - 15 fan coil units whose instance tick box
       Show_Clearance is ticked - and value "No". Version 3 answered refused 15,
-      written 0, with "No" and again with "0" (FRAGMENT-ISSUES 5b-243)
+      written 0, with "No" and again with "0" (FRAGMENT-ISSUES 5b-247)
     expect: >
       written = 15, every box unticked in Properties, and snapped, refused and
       alreadyThat empty. "0", "off", "False" and "Unticked" must do the same,
