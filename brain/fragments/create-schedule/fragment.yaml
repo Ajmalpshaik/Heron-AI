@@ -128,6 +128,9 @@ compatibility-note: >
 #   "make a sheet list schedule"       -> CREATE_SHEET_LIST - sheets are not
 #                                        model elements, so the category route
 #                                        here cannot produce a drawing index
+#   "create a view list"               -> CREATE_SHEET_LIST, listKind=views.
+#                                        Views are not model elements either;
+#                                        it is ViewSchedule.CreateViewList
 utterances:
   - make a schedule
   - create a schedule of the ducts
