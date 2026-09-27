@@ -207,6 +207,9 @@ compatibility-note: >
 #   "put the colours back"           -> RESET_GRAPHIC_OVERRIDES
 #   "save these as a set"            -> CREATE_SELECTION_FILTER
 #   "do the grayout"                 -> HIGHLIGHT_VS_REST
+#   "colour the rooms by name"       -> APPLY_COLOR_FILL_SCHEME - the view's
+#                                     colour SCHEME, which follows a renamed
+#                                     room, with Revit's own legend
 
 #   "make a filter for every different system type" ->
 #                                        CREATE_VIEW_FILTERS_BY_VALUE - real
