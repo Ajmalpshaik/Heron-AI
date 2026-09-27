@@ -20,7 +20,7 @@ purpose: >
   without which the filter exists in the project and does nothing to any drawing.
 
   **Every control of the row, since version 2 (2026-09-28, FRAGMENT-ISSUES
-  5b-243).** The graphic ones come in `overrides`: line pattern, colour and
+  5b-248).** The graphic ones come in `overrides`: line pattern, colour and
   weight; foreground and background pattern, colour and Visible tick; for the
   surface and for the cut; transparency, halftone. Patterns by the name Revit
   shows, or `solid`. `enabled` is the Enable Filter tick and `visible` the

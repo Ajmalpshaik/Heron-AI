@@ -2447,7 +2447,7 @@ namespace Heron.Revit.Addin
         /// a colour stored against a pattern that was never set, which reads
         /// back perfectly and paints nothing. The Filters tab of
         /// Visibility/Graphics is mostly patterns, so a parser without them
-        /// could not fill it in (FRAGMENT-ISSUES 5b-243). A name is looked up
+        /// could not fill it in (FRAGMENT-ISSUES 5b-248). A name is looked up
         /// in the model, and an unknown one is refused with the ones that
         /// exist. "solid" is Revit's solid fill found by what it IS - never a
         /// hard-coded id, which differs between models.

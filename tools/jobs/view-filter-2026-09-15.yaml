@@ -10,7 +10,7 @@
 # VERSION 2 OF THE FRAGMENT (2026-09-28) TAKES THREE MORE VALUES - enabled,
 # keepOtherSettings and solidFill - and the add-in refuses a call that leaves
 # any value out. They are given blank below, which leaves each as it was, so
-# this job asks what it always asked. Its re-proof is NEEDS-CHECKING Group AZ.
+# this job asks what it always asked. Its re-proof is NEEDS-CHECKING Group BC.
 
 model: Snowdon-scratch_ajmal.al (9,638 elements, 13 view filters), Revit 2024, session 28236
 

@@ -18,7 +18,7 @@ purpose: >
   views actually use each one. Read-only.
 
   **Name a view and its whole Filters tab comes back** (version 2, 2026-09-28,
-  FRAGMENT-ISSUES 5b-243). `viewName` takes a view as the Project Browser shows
+  FRAGMENT-ISSUES 5b-248). `viewName` takes a view as the Project Browser shows
   it or as Heron prints it (`FloorPlan: Level 1`), several separated by
   semicolons, or `*` for every view carrying a filter. For each filter on it,
   `filterSettings` reads back the row of Visibility/Graphics: Enable Filter,

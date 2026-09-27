@@ -19,7 +19,7 @@
 // whether it keeps working as the model grows.
 //
 // NAME A VIEW AND ITS WHOLE FILTERS TAB COMES BACK (version 2, 2026-09-28,
-// FRAGMENT-ISSUES 5b-243). Each filter's row - Enable Filter, Visibility, the
+// FRAGMENT-ISSUES 5b-248). Each filter's row - Enable Filter, Visibility, the
 // projection and cut lines and patterns with their colours and Visible ticks,
 // transparency, halftone - read off the view, which is the read half of
 // APPLY_VIEW_FILTER. ONE STRING, because a list reaches the reply cut to three

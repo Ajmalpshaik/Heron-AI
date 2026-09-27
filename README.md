@@ -74,7 +74,7 @@ than neglected. Nine
 more went back from `PROVEN` on 2026-09-24, when a refusal was added inside them
 ([row 5b-203](docs/FRAGMENT-ISSUES.md)), and two on 2026-09-28, when `APPLY_VIEW_FILTER` and
 `REPORT_VIEW_FILTERS` were widened to set and read every control of a view's Filters tab
-([row 5b-243](docs/FRAGMENT-ISSUES.md)).
+([row 5b-248](docs/FRAGMENT-ISSUES.md)).
 That second half read **79** until 2026-09-20 and **66** until 2026-09-21, both times because the
 `PROVEN` half was re-derived and the sentence beside it was not: the two halves of one sentence
 disagreed by thirteen, and then by two. Exactly the failure the next paragraph warns about, twice,

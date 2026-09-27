@@ -357,9 +357,9 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ay.md`](needs-checking/group-ay.md)
 
-## Group AZ - `apply-view-filter` and `report-view-filters` version 2: every control of a view's Filters tab, set and read back per filter (2026-09-28)
+## Group BC - `apply-view-filter` and `report-view-filters` version 2: every control of a view's Filters tab, set and read back per filter (2026-09-28)
 
-**Its own file:** [`needs-checking/group-az.md`](needs-checking/group-az.md)
+**Its own file:** [`needs-checking/group-bc.md`](needs-checking/group-bc.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

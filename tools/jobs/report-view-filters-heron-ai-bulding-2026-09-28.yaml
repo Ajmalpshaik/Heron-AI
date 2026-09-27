@@ -1,5 +1,5 @@
 # The re-proof of report-view-filters version 2 (REPORT_VIEW_FILTERS,
-# FRG-VIEW-041), 2026-09-28 - NEEDS-CHECKING Group AZ, row AZ4.
+# FRG-VIEW-041), 2026-09-28 - NEEDS-CHECKING Group BC, row BC4.
 #
 #     python tools/batch-prove.py tools/jobs/report-view-filters-heron-ai-bulding-2026-09-28.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/report-view-filters-heron-ai-bulding-2026-09-28.yaml

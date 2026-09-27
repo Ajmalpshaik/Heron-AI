@@ -1,5 +1,5 @@
 # The re-proof of apply-view-filter version 2 (APPLY_VIEW_FILTER, FRG-VIEW-039),
-# 2026-09-28 - NEEDS-CHECKING Group AZ, row AZ3.
+# 2026-09-28 - NEEDS-CHECKING Group BC, row BC3.
 #
 #     python tools/batch-prove.py tools/jobs/apply-view-filter-heron-ai-bulding-2026-09-28.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/apply-view-filter-heron-ai-bulding-2026-09-28.yaml
@@ -30,7 +30,7 @@
 # _flag_flipped).
 #
 # ONLY THE KEYS THE ADD-IN ALREADY HAD ARE IN `overrides`, so this job runs on
-# an add-in older than 2026-09-28. The new pattern keys are AZ2's.
+# an add-in older than 2026-09-28. The new pattern keys are BC2's.
 #
 # NOT SET HERE: `in:`. Without it the run reads the model in front, so bring
 # the test copy to the front. With two Revits connected to Heron, add
