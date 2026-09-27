@@ -57,7 +57,11 @@ namespace Heron.Revit.Addin
     ///
     ///   SHEETS THAT WOULD PRINT BLANK. Counted by RevitSheets and repeated
     ///   here because at export time it is the thing that matters, and the
-    ///   person exporting is usually not the person who modelled.
+    ///   person exporting is usually not the person who modelled. Blank means
+    ///   no view AND no schedule. The schedules are RevitSheets' own count,
+    ///   called rather than copied: the copy this file used to keep counted
+    ///   views only, so a sheet carrying just a schedule read as blank
+    ///   (FRAGMENT-ISSUES 5b-239).
     ///
     ///   UNRESOLVED LINKS. A link that is not loaded exports as nothing at
     ///   all. The drawing goes out with the structure missing and the
@@ -93,6 +97,11 @@ namespace Heron.Revit.Addin
             }
 
             // --- what there is to export at all ---------------------------
+            // Schedules on each sheet, in one pass, the titleblock's revision
+            // schedule left out - the Sheet Agent's count, so the two agents
+            // cannot disagree about which sheets are empty.
+            var schedulesOn = RevitSheets.ScheduleCountBySheet(doc);
+
             var sheets = 0;
             var blankSheets = 0;
             var placeholders = 0;
@@ -104,7 +113,9 @@ namespace Heron.Revit.Addin
                 if (sheet == null) continue;
                 sheets++;
                 if (IsPlaceholder(sheet)) { placeholders++; continue; }
-                if (PlacedViewCount(sheet) == 0) blankSheets++;
+                int schedules;
+                if (!schedulesOn.TryGetValue(sheet.Id, out schedules)) schedules = 0;
+                if (PlacedViewCount(sheet) == 0 && schedules == 0) blankSheets++;
             }
 
             // --- links, which export as nothing when unloaded --------------
@@ -142,6 +153,10 @@ namespace Heron.Revit.Addin
                 Json.Num("sheets", sheets),
                 Json.Num("placeholderSheets", placeholders),
                 Json.Num("sheetsThatWouldPrintBlank", blankSheets),
+                // Says the blank count above looked at schedules. An add-in
+                // built before 5b-239 does not send it, and the server then
+                // warns that its count may hold sheets carrying a schedule.
+                Json.Bool("schedulesCounted", true),
                 Json.Num("links", links),
                 Json.Num("linksNotLoaded", linksNotLoaded),
                 Json.Num("rooms", rooms),
@@ -171,9 +186,10 @@ namespace Heron.Revit.Addin
             {
                 said.Add(string.Format(CultureInfo.InvariantCulture,
                     "{0} sheet(s) would print BLANK - numbered, in the register, "
-                  + "and with nothing on them. The Project Browser shows an empty "
-                  + "sheet and a full one identically, and the person exporting is "
-                  + "usually not the person who modelled", blank));
+                  + "and with nothing on them, no view and no schedule. The "
+                  + "Project Browser shows an empty sheet and a full one "
+                  + "identically, and the person exporting is usually not the "
+                  + "person who modelled", blank));
             }
 
             if (notLoaded > 0)
@@ -234,7 +250,11 @@ namespace Heron.Revit.Addin
             catch (InvalidOperationException) { return false; }
         }
 
-        /// <summary>How many views are placed on this sheet.</summary>
+        /// <summary>
+        /// How many views are placed on this sheet. Viewports only - a
+        /// schedule is never in this list, which is why Check also asks
+        /// RevitSheets.ScheduleCountBySheet.
+        /// </summary>
         private static int PlacedViewCount(ViewSheet sheet)
         {
             try
