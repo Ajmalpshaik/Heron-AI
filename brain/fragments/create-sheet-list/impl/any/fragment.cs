@@ -1,24 +1,58 @@
-// NOT STANDALONE. Assumes `doc`, `scheduleName`, `fieldNames` and
-// `sortByField` are in scope; leaves `sheetList`, `fieldsAdded` and `refused`
+// NOT STANDALONE. Assumes `doc`, `scheduleName`, `fieldNames`, `sortByField`
+// and `listKind` are in scope; leaves `sheetList`, `fieldsAdded` and `refused`
 // behind.
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16).
 //
-// A SHEET LIST IS ITS OWN API CALL. An ordinary schedule schedules a CATEGORY
-// of model elements; sheets are not model elements, so the category route
-// cannot produce this at all.
+// A SHEET LIST IS ITS OWN API CALL, AND SO IS A VIEW LIST. An ordinary schedule
+// schedules a CATEGORY of model elements; sheets and views are not model
+// elements, so the category route cannot produce either at all.
 //
-// THE FIELDS ARE SHEET PARAMETERS - Sheet Number, Sheet Name, Current Revision,
-// Sheet Issue Date. A name the list cannot carry is REPORTED with the real
-// names listed. A silently short index looks finished on the printed sheet and
-// nobody reading it can tell a column was asked for.
+// `listKind` PICKS WHICH OF THE TWO. Blank or "sheets" is the sheet list this
+// fragment has always made - `CreateSheetList`. "views" is Revit's View List -
+// `CreateViewList`, a schedule of the project's views. Anything else is REFUSED
+// and nothing is created: guessing would make the wrong index and report it
+// made.
+//
+// THE FIELDS ARE THE LIST'S OWN PARAMETERS - Sheet Number, Sheet Name, Current
+// Revision for a sheet list; View Name, Sheet Number, Title on Sheet for a view
+// list. A name the list cannot carry is REPORTED with the real names listed. A
+// silently short index looks finished on the printed sheet and nobody reading
+// it can tell a column was asked for.
+//
+// `sheetList` KEEPS ITS NAME FOR A VIEW LIST TOO. It is the name the contract
+// has always provided, and renaming an output breaks whatever reads it.
 
 Element sheetList = null;
 var fieldsAdded = new List<string>();
 var refused = new List<string>();
 
+var wantedKind = (listKind ?? "").Trim().ToLowerInvariant();
+var makeViews = false;
+var kindIsKnown = true;
+
+if (wantedKind == "" || wantedKind == "sheets" || wantedKind == "sheet"
+    || wantedKind == "sheet list" || wantedKind == "sheetlist")
+    makeViews = false;
+else if (wantedKind == "views" || wantedKind == "view"
+    || wantedKind == "view list" || wantedKind == "viewlist")
+    makeViews = true;
+else
+    kindIsKnown = false;
+
+var kindWord = makeViews ? "view list" : "sheet list";
+
 ViewSchedule schedule = null;
-try { schedule = ViewSchedule.CreateSheetList(doc); }
-catch (Exception ex) { refused.Add(string.Format("could not create a sheet list - {0}", ex.Message)); }
+if (!kindIsKnown)
+{
+    refused.Add(string.Format("'{0}' is not a kind of list this makes, so NOTHING WAS CREATED. "
+        + "Use 'sheets' (or leave it blank) for a sheet list, or 'views' for a view list",
+        listKind));
+}
+else
+{
+    try { schedule = makeViews ? ViewSchedule.CreateViewList(doc) : ViewSchedule.CreateSheetList(doc); }
+    catch (Exception ex) { refused.Add(string.Format("could not create a {0} - {1}", kindWord, ex.Message)); }
+}
 
 if (schedule != null)
 {
@@ -31,8 +65,8 @@ if (schedule != null)
         try { schedule.Name = scheduleName; }
         catch
         {
-            refused.Add(string.Format("'{0}' is already the name of another view - the sheet list was "
-                + "created as '{1}' instead", scheduleName, schedule.Name));
+            refused.Add(string.Format("'{0}' is already the name of another view - the {1} was "
+                + "created as '{2}' instead", scheduleName, kindWord, schedule.Name));
         }
     }
 
@@ -61,8 +95,8 @@ if (schedule != null)
 
         if (match == null)
         {
-            refused.Add(string.Format("'{0}' is not a field a sheet list can carry. It can carry: {1}",
-                wanted, string.Join(", ", available)));
+            refused.Add(string.Format("'{0}' is not a field a {1} can carry. It can carry: {2}",
+                wanted, kindWord, string.Join(", ", available)));
             continue;
         }
 
@@ -86,7 +120,7 @@ if (schedule != null)
     {
         if (sortField == null)
         {
-            refused.Add(string.Format("cannot sort by '{0}' - it is not one of the columns. A drawing "
+            refused.Add(string.Format("cannot sort by '{0}' - it is not one of the columns. An "
                 + "index in creation order is the usual reason one looks wrong", sortByField));
         }
         else
@@ -106,6 +140,7 @@ if (schedule != null)
 
     if (fieldsAdded.Count == 0)
     {
-        refused.Add("the sheet list was created with NO columns - it will print as an empty box");
+        refused.Add(string.Format("the {0} was created with NO columns - it will print as an empty box",
+            kindWord));
     }
 }

@@ -17,6 +17,30 @@ positive:
       they appear like any other row. That is what placeholders are for - a
       register set up before the drawings exist
 
+  - given: >
+      listKind blank, then listKind "sheets", each with Sheet Number and Sheet
+      Name
+    expect: >
+      a SHEET list both times, exactly as before version 2. Blank is how every
+      caller from before listKind existed now reaches the old job
+
+  - given: >
+      listKind "views", fields View Name, Sheet Number, Sheet Name and Title on
+      Sheet, sorted by Sheet Number
+    expect: >
+      a VIEW list - Revit's View List, a schedule of the Views category - with
+      those four columns in number order. CHECKED by opening it: every view in
+      the project is a row until it is filtered, and the views on no sheet
+      have Sheet Number blank
+
+  - given: >
+      that view list, then SET_SCHEDULE_FILTERS with filterFieldName Sheet
+      Number, matchType "has value", filterValue blank
+    expect: >
+      only the views placed on a sheet remain - one row per placed view, each
+      with its sheet's number. REPORT_SCHEDULE_DEFINITION reads the filter back
+      as Sheet Number HasValue
+
 negative:
   - given: >
       "Level" asked for as a field
@@ -25,6 +49,23 @@ negative:
       THE FIRST CASE TO RUN. A version that skips an unavailable field produces
       an index that looks complete and is missing a column, and nobody reading
       the printed cover can tell
+
+  - given: >
+      listKind "views" and a field no view carries - "Flow", a duct and air
+      terminal value
+    expect: >
+      named in refused as "not a field a view list can carry", WITH the view
+      list's real names listed, and fieldsAdded empty. THE FIRST CASE TO RUN
+      for version 2 - a silently short list reads as finished. Whether a view
+      list also carries sheet-only names such as Current Revision was NOT
+      checked when this was written; the refusal's list answers it on the run
+
+  - given: >
+      listKind "drawings" - a kind this does not make
+    expect: >
+      refused naming 'sheets' and 'views', and NOTHING created - sheetList
+      null, fieldsAdded empty. Guessing a kind makes the wrong index and
+      reports it made
 
   - given: >
       sortByField naming a field that was not added as a column
@@ -46,3 +87,5 @@ negative:
 
 second_route:
   - View tab, Schedules, Sheet List - and compare the row count against the Sheets branch of the Project Browser
+  - for a view list - View tab, Schedules, View List, filtered on Sheet Number has a value; compare its rows
+    against the views under each sheet in the Sheets branch of the Project Browser
