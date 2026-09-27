@@ -1,0 +1,61 @@
+# The re-proof of create-sheet-list (CREATE_SHEET_LIST, FRG-SHT-011) at
+# version 2, which added `listKind` - NEEDS-CHECKING Group AZ, row AZ1.
+#
+#     python tools/batch-prove.py tools/jobs/create-sheet-list-views-heron-ai-bulding-2026-09-27.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/create-sheet-list-views-heron-ai-bulding-2026-09-27.yaml
+#
+# RUN ON A TEST COPY OF "heron ai bulding", never the working file.
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK,
+# so no list should be left behind - look in the Project Browser under
+# Schedules/Quantities afterwards rather than assuming it: rollback has failed
+# before on this PC.
+#
+# WHY A VIEW LIST AND NOT A SHEET LIST. Version 1's proof (test projject,
+# 2026-09-13) was a sheet list and is kept in fragment.yaml. What version 2
+# changed is the `listKind` branch, so the view list is the leg that needs a
+# model. AZ2 re-runs the sheet list with `listKind` blank, to show the old
+# job is unchanged.
+#
+# NO SETUP CHAIN. This fragment makes a new schedule from values alone; it
+# consumes no element, so there is no selection and no chain to arrange.
+#
+# THE NEGATIVE SENDS ALL FOUR VALUES. The client runs the negative leg with
+# `negative-set` alone, not merged over `set`, so a value left out here would
+# be refused as never supplied - which proves nothing about the fragment.
+#
+# NEGATIVE: A VIEW LIST ASKED FOR "Flow". No view carries a duct and air
+# terminal value, so it must come back in `refused` as "not a field a view
+# list can carry" WITH the view list's real names, and `fieldsAdded` empty.
+# The same listKind on purpose: a sheet list asked for Flow would also
+# refuse, and would prove the version 1 branch rather than the new one.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - `refused` on the positive: empty. A name there means one of the four
+#     fields is spelt differently in this Revit - the negative's list of real
+#     names says how
+#   - the negative's list of real names: keep it. It is the first record of
+#     what a view list can carry, and the card names only five
+#
+# NOT SET HERE: `in:`. Without it the run reads the model in front, so bring
+# the test copy to the front. With two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Project1 "heron ai bulding" (a test copy), Revit 2024 - 4 plan views placed on sheets M-101 to M-104
+
+defaults:
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: create-sheet-list
+    expect: fieldsAdded
+    set:
+      listKind: views
+      scheduleName: HERON VIEW LIST PROOF
+      fieldNames: View Name, Sheet Number, Sheet Name, Title on Sheet
+      sortByField: Sheet Number
+    negative-set:
+      listKind: views
+      scheduleName: HERON VIEW LIST PROOF B
+      fieldNames: Flow
+      sortByField: Flow

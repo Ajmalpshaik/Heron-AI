@@ -357,6 +357,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ay.md`](needs-checking/group-ay.md)
 
+## Group AZ - `create-sheet-list` version 2: a view list as well as a sheet list, and only the placed views (2026-09-27)
+
+**Its own file:** [`needs-checking/group-az.md`](needs-checking/group-az.md)
+
 ## Group BC - `apply-view-filter` and `report-view-filters` version 2: every control of a view's Filters tab, set and read back per filter (2026-09-28)
 
 **Its own file:** [`needs-checking/group-bc.md`](needs-checking/group-bc.md)
