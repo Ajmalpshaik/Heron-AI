@@ -1,6 +1,6 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `parameterName` and `value` are in
 // scope, and leaves `written`, `snapped`, `unverified`, `readOnly`, `absent`,
-// `ambiguous` and `refused` behind.
+// `ambiguous`, `refused`, `alreadyThat` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION. It does not start one. Golden Rule 16 wants one
 // user action to be one undo entry, and that is owned by the operation's
@@ -68,6 +68,39 @@
 // and the read-back, which should not happen and is reported rather than
 // assumed away. Silence about a check that did not run is how an unproven
 // claim becomes a believed one.
+//
+// ===========================================================================
+// A YES/NO PARAMETER IS A TICK BOX, NOT A NUMBER THAT PARSES. (Version 4.)
+// ===========================================================================
+//
+// Revit stores a Yes/No parameter as an Integer, 1 or 0, so version 3 sent it
+// down the numeric road above - and `SetValueString` returned FALSE for it,
+// "No" and "0" alike. Measured 2026-09-27 on 15 fan coil units in "heron ai
+// bulding" (Revit 2024), their instance tick box "Show_Clearance": refused 15,
+// written 0, twice (FRAGMENT-ISSUES 5b-243).
+//
+// So a Yes/No parameter is found first and written with `Set(1)` or `Set(0)`.
+// The words are the ones a modeller says of a tick box - Yes/No, True/False,
+// On/Off, 1/0, Ticked/Unticked, any case. Anything else is refused and the
+// refusal names the value and those words; "Maybe" is never guessed at.
+//
+// THE KIND IS READ BY REFLECTION, NOT BY `#if`. Read from the reference
+// assemblies of all eight releases on 2026-09-27: `Definition.GetDataType()`
+// and `SpecTypeId.Boolean.YesNo` exist from 2022; `Definition.ParameterType`
+// exists in 2020, 2021 and 2022 and is gone from 2023. The add-in compiles
+// fragments with no release symbols (5b-181), so an `#if` would take the same
+// branch on every release. The member present on the running Revit is looked
+// up and asked - the way `set-family-type-values` reads a family parameter's
+// kind.
+//
+// The read-back is the one above, unchanged: the element joins `pending` with
+// the 1 or 0 asked for, and after the one regeneration `AsInteger` has to
+// equal it before it counts as written.
+//
+// An element that ALREADY holds the value asked for is not written again and
+// is counted in `alreadyThat`, so a second run says so rather than claiming
+// fifteen fresh writes. Only a Yes/No parameter is checked this way; every
+// other storage type goes exactly the road it went in version 3.
 
 var written = 0;
 var snapped = new List<ElementId>();
@@ -76,6 +109,59 @@ var readOnly = new List<ElementId>();
 var absent = new List<ElementId>();
 var ambiguous = new List<ElementId>();
 var refused = new List<ElementId>();
+var alreadyThat = new List<ElementId>();
+var findings = new List<string>();
+
+// SpecTypeId.Boolean.YesNo on 2022 and later; null on 2020 and 2021, which
+// answer through ParameterType instead.
+var yesNoSpecs = typeof(Document).Assembly.GetType(typeof(Document).Namespace + ".SpecTypeId+Boolean");
+var yesNoProperty = yesNoSpecs == null ? null : yesNoSpecs.GetProperty("YesNo",
+    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+var yesNoSpec = yesNoProperty == null ? null : yesNoProperty.GetValue(null, null);
+
+Func<Parameter, bool> isYesNo = p =>
+{
+    if (p.StorageType != StorageType.Integer) return false;
+    try
+    {
+        var definition = p.Definition;
+        if (definition == null) return false;
+
+        var getDataType = definition.GetType().GetMethod("GetDataType", System.Type.EmptyTypes);
+        if (getDataType != null && yesNoSpec != null)
+        {
+            var spec = getDataType.Invoke(definition, null);
+            if (spec == null) return false;
+            // NameEquals, because a spec id carries its version -
+            // "...bool-1.0.0" - and a parameter made under another version
+            // must still read as a tick box.
+            var nameEquals = spec.GetType().GetMethod("NameEquals", new[] { yesNoSpec.GetType() });
+            return nameEquals != null
+                ? (bool)nameEquals.Invoke(spec, new[] { yesNoSpec })
+                : spec.Equals(yesNoSpec);
+        }
+
+        var parameterType = definition.GetType().GetProperty("ParameterType");
+        var kind = parameterType == null ? null : parameterType.GetValue(definition, null);
+        return kind != null && kind.ToString() == "YesNo";
+    }
+    catch (Exception)
+    {
+        // Not known to be a tick box, so it takes the version 3 road, where
+        // SetValueString refused the two Yes/No values measured rather than
+        // writing them wrongly.
+        return false;
+    }
+};
+
+// What the text means for a tick box: 1, 0, or null for "not a Yes/No word".
+var tickedWords = new[] { "yes", "true", "on", "1", "ticked" };
+var untickedWords = new[] { "no", "false", "off", "0", "unticked" };
+var said = (value ?? "").Trim().ToLowerInvariant();
+int? tickAsked = Array.IndexOf(tickedWords, said) >= 0 ? 1
+    : Array.IndexOf(untickedWords, said) >= 0 ? 0
+    : (int?)null;
+var notAYesNoWord = 0;
 
 // Integer parameters report through AsInteger and read 0 from AsDouble, so the
 // read has to branch. It is written once and used on both sides of the
@@ -119,6 +205,33 @@ foreach (var element in elements)
     if (parameter.IsReadOnly)
     {
         readOnly.Add(element.Id);
+        continue;
+    }
+
+    if (isYesNo(parameter))
+    {
+        if (tickAsked == null)
+        {
+            refused.Add(element.Id);
+            notAYesNoWord++;
+            continue;
+        }
+
+        if (parameter.HasValue && parameter.AsInteger() == tickAsked.Value)
+        {
+            alreadyThat.Add(element.Id);
+            continue;
+        }
+
+        if (!parameter.Set(tickAsked.Value))
+        {
+            refused.Add(element.Id);
+            continue;
+        }
+
+        // Believed only after the regeneration, like every other number here.
+        pending.Add(element);
+        asked.Add(tickAsked.Value);
         continue;
     }
 
@@ -188,4 +301,13 @@ if (pending.Count > 0)
         if (Math.Abs(stored - want) <= Math.Abs(want) * 1e-9 + 1e-12) written++;
         else snapped.Add(pending[i].Id);
     }
+}
+
+if (notAYesNoWord > 0)
+{
+    findings.Add(string.Format(
+        "'{0}' is not a Yes/No value, so {1} element(s) were left as they were. " +
+        "'{2}' is a Yes/No parameter: say Yes or No - True/False, On/Off, 1/0 " +
+        "and Ticked/Unticked mean the same.",
+        value, notAYesNoWord, parameterName));
 }

@@ -9,7 +9,7 @@ semantic-identity: "write one parameter value onto these elements"
 kind: action
 domain: revit.parameters
 capability: WRITE_ELEMENT_PARAMETERS
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -39,6 +39,18 @@ purpose: >
   is touched (D-54 s3, FRAGMENT-ISSUES 5b-203). Version 2's proof was taken
   before this and no longer describes the code, so it is kept as a record and
   the fragment is DRAFT until it is proved again.
+
+  **Version 4 writes a Yes/No parameter.** Revit keeps a tick box as the
+  number 1 or 0, so version 3 sent it through `SetValueString`, which returned
+  false for it: one tick box on 15 units was refused all 15 times with `No`,
+  and again with `0` (FRAGMENT-ISSUES 5b-243). It now finds a Yes/No parameter
+  first, on every release from 2020, and takes Yes/No, True/False, On/Off, 1/0
+  and Ticked/Unticked in any case - anything else is refused and `findings`
+  names the value and those words. The read-back is unchanged: `AsInteger`
+  after the regeneration must equal what was asked. An element already holding
+  the value is left alone and counted in `alreadyThat`, so a second run
+  changes nothing and says so. Text, numbers and element references go exactly
+  the way they went in version 3; `alreadyThat` is filled for a tick box only.
 
   ASSUMES AN OPEN TRANSACTION and does not open one. Golden Rule 16 puts the
   TransactionGroup at the OPERATION, so that one user action is one undo; a
@@ -102,6 +114,18 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: IList<ElementId>
+    - name: alreadyThat
+      # Elements whose Yes/No parameter ALREADY held the value asked for, so
+      # nothing was written to them. The evidence it looked, never a change
+      # it made (D-52). A tick box only, since version 4.
+      role: accounting
+      type: IList<ElementId>
+    - name: findings
+      # Why a value was turned down, in words - today only a value that is not
+      # a Yes/No word on a Yes/No parameter, naming it and the words that are.
+      # A sentence about a refusal, never a thing found (D-52).
+      role: accounting
+      type: IList<string>
 
 proof:
   date: '2026-09-09'
@@ -135,8 +159,20 @@ compatibility-note: >
   is only one. `SetValueString` parses in the DOCUMENT's own display units and
   has been unchanged from 2020 to 2027, while everything around it moved:
   `DisplayUnitType` became `ForgeTypeId` in 2021, and `ParameterType` became
-  `GetDataType()` in 2022. This fragment touches none of them, so there is no
-  `#if` and no version branch to keep in step.
+  `GetDataType()` in 2022. The write itself touches none of them, so there is
+  no `#if` and no version branch to keep in step.
+
+  Since version 4 one question does cross that line: is this parameter a
+  Yes/No? It is asked by REFLECTION, not by `#if` - `Definition.GetDataType()`
+  compared with `SpecTypeId.Boolean.YesNo` where the running Revit has them
+  (2022 on), `Definition.ParameterType` read as `YesNo` where it has not (2020,
+  2021). Read from the reference assemblies of all eight releases on
+  2026-09-27: `ParameterType` is in 2020 to 2022 and gone from 2023, and
+  `GetDataType` and `SpecTypeId.Boolean.YesNo` are in 2022 to 2027, so every
+  release answers by one of the two. The add-in compiles fragments with no release symbols (5b-181), so an
+  `#if` would pick the same branch on every release. `set-family-type-values`
+  reads a family parameter's kind the same way. `Parameter.Set(int)`,
+  `HasValue` and `AsInteger` are unchanged from 2020 to 2027.
 
   The read-back is version-safe for the same reason: it compares two internal
   doubles from `AsDouble`/`AsInteger`, never a formatted string. Comparing
@@ -181,3 +217,8 @@ utterances:
   - set the room number
   - fill in the mark
   - make the new type 300 wide
+  # A Yes/No parameter - a tick box in Properties. Version 4 (5b-243).
+  - turn off show clearance
+  - untick show clearance
+  - untick the parameter on these
+  - set the parameter to yes

@@ -1,0 +1,71 @@
+# The re-proof of write-element-parameters (WRITE_ELEMENT_PARAMETERS,
+# FRG-PAR-003) at version 4, on a Yes/No parameter - NEEDS-CHECKING Group AZ,
+# row AZ2. Version 4 writes a tick box; version 3 refused every one
+# (FRAGMENT-ISSUES 5b-243).
+#
+#     python tools/batch-prove.py tools/jobs/write-element-parameters-yes-no-heron-ai-bulding-2026-09-27.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/write-element-parameters-yes-no-heron-ai-bulding-2026-09-27.yaml
+#
+# RUN ON A TEST COPY OF "heron ai bulding" (Project1), never the working file.
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK,
+# so nothing should be kept - tick through the 15 fan coil units' Show_Clearance
+# in Properties afterwards rather than assuming it: rollback has failed before
+# on this PC, and one Ctrl+Z takes back a write that survived.
+#
+# THE POSITIVE MUST ASK FOR THE OPPOSITE OF WHAT THE COPY HOLDS. A copy made
+# after AZ1 has every Show_Clearance UNTICKED, so `value: "Yes"` below makes
+# all 15 change. If the copy was made before AZ1 they are still ticked - then
+# change `value` to "No". Asking for what they already hold answers `written`
+# 0 and `alreadyThat` 15: POSITIVE EMPTY, and nothing proved. Read one unit's
+# box in Properties before running.
+#
+# THE UNITS COME FROM THEIR CATEGORY, NOT THE SELECTION. The one setup step is
+# filter-elements-by-category over the whole model (`levelId: none` means
+# every level), and `keep-chain: true` hands its `elements` straight to the
+# fragment. Other chats share this Revit's selection. On 2026-09-27 the
+# category held the 15 units `TRG_MECH_EQP_Fan Coil Unit_FCU_R0 : FCU-01`,
+# ids 930673-930687, and nothing else - if the count is not 15, anything
+# else in it lands in `absent`, which is fine, but say so in the record.
+#
+# NEGATIVE: THE SAME 15 UNITS, WITH `value: Maybe`. Not a Yes/No word, so all
+# 15 must come back in `refused`, `written` 0, and `findings` one line naming
+# 'Maybe' and the words that are taken. The same set on purpose: an empty or
+# different set would pass by having nothing in it. The negative's chain gets
+# its own values (row 5b-242) - the same category, so the same 15.
+#
+# WHAT TO READ BEYOND THE VERDICT:
+#   - `snapped` and `unverified` empty on the positive. A tick box read back
+#     as something other than what was asked would land in `snapped`
+#   - `alreadyThat` empty on the positive - 15 there means the copy already
+#     held the value and the positive proved nothing (see above)
+#   - `readOnly` and `ambiguous` empty on both legs
+#   - `findings` empty on the positive, one line on the negative
+#
+# NOT SET HERE: `in:`. Without it the run reads the model in front, so bring
+# the test copy to the front. With two Revits connected to Heron, add
+# `--session <process id>` to both commands.
+
+model: Project1 "heron ai bulding" (a test copy), Revit 2024 - 15 fan coil units, instance Yes/No Show_Clearance
+
+defaults:
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: write-element-parameters
+    expect: written
+    keep-chain: true
+    setup:
+      - filter-elements-by-category
+    setup-set:
+      category: Mechanical Equipment
+      levelId: none
+    set:
+      parameterName: Show_Clearance
+      value: "Yes"
+    negative-setup-set:
+      category: Mechanical Equipment
+      levelId: none
+    negative-set:
+      parameterName: Show_Clearance
+      value: Maybe

@@ -17,6 +17,21 @@ positive:
       still matches what the user typed, because the parse follows the document.
       Without this row the units claim is untested
 
+  # THE CASE VERSION 3 COULD NOT HAVE PASSED, and the reason for version 4.
+  - given: >
+      a Yes/No parameter - 15 fan coil units whose instance tick box
+      Show_Clearance is ticked - and value "No". Version 3 answered refused 15,
+      written 0, with "No" and again with "0" (FRAGMENT-ISSUES 5b-243)
+    expect: >
+      written = 15, every box unticked in Properties, and snapped, refused and
+      alreadyThat empty. "0", "off", "False" and "Unticked" must do the same,
+      in any case
+
+  - given: the same 15, run again with the same value
+    expect: >
+      written = 0 and all 15 in `alreadyThat`. Nothing is written a second
+      time, and the model is exactly as the first run left it
+
 negative:
   - given: 4 elements that do not have the named parameter at all
     expect: >
@@ -35,6 +50,27 @@ negative:
 
   - given: a parameter that stores an ElementId, such as a Level
     expect: refused, by name. Never resolved from text by guessing
+
+  - given: >
+      the same 15 Yes/No boxes and value "Maybe" - not a Yes/No word
+    expect: >
+      written = 0, all 15 in `refused`, one line in `findings` naming 'Maybe'
+      and the words that are taken, and every box exactly as it was. Never
+      guessed at
+
+  - given: >
+      a TEXT parameter such as Comments, and value "No"
+    expect: >
+      written as the text "No" - the Yes/No words mean nothing to a text
+      parameter, and `alreadyThat` stays empty. Version 4 changed the road
+      for a tick box and nothing else
+
+  - given: >
+      a whole-number parameter that is NOT a Yes/No, and value "Yes"
+    expect: >
+      exactly what version 3 did with it - through SetValueString, whatever
+      that answers (not measured) - with `alreadyThat` and `findings` empty.
+      The tick-box words must not reach a whole number
 
   # THE CASE VERSION 2 COULD NOT HAVE PASSED, and the reason for version 3.
   - given: >
@@ -73,3 +109,7 @@ second_route:
     for a snap, read the size in Revit's own properties palette - it must show
     the SNAPPED value, and `written` must not have counted it
   - one Ctrl+Z must put every element back in a single step (Golden Rule 16)
+  - >
+    for a Yes/No write, the box itself in Revit's properties palette on three of
+    the elements - ticked or unticked as asked - or a schedule with the
+    parameter as a column
