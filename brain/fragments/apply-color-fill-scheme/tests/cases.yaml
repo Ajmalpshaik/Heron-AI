@@ -15,7 +15,9 @@ positive:
     expect: >
       schemeSource says a scheme was COPIED as "Rooms by Name" and names the
       one it came from as unchanged; schemeApplied true; entries lists one row
-      per room name on the level with its RGB; legendPlaced true;
+      per room name the VIEW SHOWS, with its RGB - a room seen through the view
+      range or an underlay counts, a room on the level the view hides does not;
+      legendPlaced true;
       legendsInView 1; legendAtMm reads about 10 mm right of the crop region's
       right edge and 0 mm below its top edge
 
