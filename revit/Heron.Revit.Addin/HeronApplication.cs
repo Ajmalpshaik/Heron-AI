@@ -60,6 +60,8 @@ namespace Heron.Revit.Addin
         internal const string WriteLockedIcon = "WriteLocked.png";
         internal const string WriteUnlockedIcon = "WriteUnlocked.png";
 
+        internal const string TalkIcon = "Talk.png";
+
         internal static BridgeServer Bridge { get; private set; }
 
         /// <summary>
@@ -247,6 +249,11 @@ namespace Heron.Revit.Addin
                     Bridge.Dispose();
                     Bridge = null;
                 }
+
+                // THE SHORT MEMORY ENDS WITH THIS REVIT (D-104). What was
+                // said from here, and the selections saved with it, name
+                // elements in models this process is closing.
+                HeronTalkMailbox.Forget(HeronPaths.Talk, Process.GetCurrentProcess().Id);
             }
             catch (Exception ex)
             {
@@ -354,6 +361,34 @@ namespace Heron.Revit.Addin
             // a Revit restart because it lives in the config, so starting this
             // at 'locked' would be a picture that disagrees with the gate.
             SetWriteIcon(HeronPermissions.WriteEnabled());
+
+            // TALK - the other direction (D-104). What the modeller types or
+            // says here goes, with the selection, into the chat already open,
+            // and Revit does not wait for the answer. It changes nothing
+            // itself: whatever the chat then does to the model still passes
+            // the bridge, the lease and the padlock beside it.
+            var talk = new PushButtonData(
+                "HeronTalk",
+                "Talk",
+                assemblyPath,
+                typeof(TalkCommand).FullName);
+            talk.ToolTip = "Send what you type or say, with what you have selected, to your open Claude chat.";
+            talk.LongDescription =
+                "Opens a small box. Type what you want, or press Win+H and say it, then press Enter. " +
+                "Your words go to the chat you started with Heron Talk, together with the model, the " +
+                "view and what is selected, and Revit carries on while the chat works.\n\n" +
+                "The selection is saved as it was when you sent, so the chat can check it again " +
+                "without asking you. Nothing is sent when no chat is listening.";
+
+            var talkButton = panel.AddItem(talk) as PushButton;
+            if (talkButton != null)
+            {
+                var loader = new IconLoader(assemblyPath);
+                var large = loader.LoadLarge(TalkIcon);
+                if (large != null) talkButton.LargeImage = large;
+                var small = loader.LoadSmall(TalkIcon);
+                if (small != null) talkButton.Image = small;
+            }
 
             // NO EMERGENCY STOP BUTTON - removed on Ajmal's instruction,
             // 2026-09-06 (D-46 in docs/DECISIONS.md). The switch behind it

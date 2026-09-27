@@ -88,6 +88,9 @@ def local_app_data(environ=None, system=None):
 # file would follow the user to a PC where that process does not exist.
 DISCOVERY_DIR = os.path.join(local_app_data(), "Heron", "bridges")
 LOG_DIR = os.path.join(local_app_data(), "Heron", "logs")
+# What Revit's Talk button leaves for the chat that listens (D-104). DERIVED
+# like the two above, and HeronPaths.Talk names the same folder.
+TALK_DIR = os.path.join(local_app_data(), "Heron", "talk")
 PROTOCOL_VERSION = 2
 CONNECT_TIMEOUT_S = 2.0
 

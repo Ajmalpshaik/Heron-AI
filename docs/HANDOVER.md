@@ -88,6 +88,22 @@ when the thing you hit is on no list at all.
 
 ## WHERE THIS STANDS RIGHT NOW — read this, then §9a or §9
 
+> ## TALK, STEP 1 - FROM REVIT INTO THE OPEN CHAT. BUILT, NOT RUN IN REVIT - 2026-09-27
+>
+> The owner asked for the other direction and said yes to the design: [D-104](DECISIONS.md). A **Talk**
+> button in Revit opens a box; what is typed there - or said with Win+H - goes, with the selection
+> saved beside it, into the Claude Code chat started by `mcp\heron-talk.cmd`, through Claude Code's
+> channels. Revit does not wait. The chat reads the saved selection with `heron_selection`.
+>
+> **Proved here, not in Revit:** the add-in's mailbox against the Python that reads it
+> (`tests/test_talk_contract.py`), and Heron's server declaring the channel and delivering a message
+> through a real MCP SDK (`tests/test_talk_served.py`). **The proof is [group AS](needs-checking/group-as.md)
+> on the owner's PC** - AS2 first, because if Claude Code will not register the channel on that account
+> nothing else in the group can run.
+>
+> **Next, and only after AS passes:** step 2, press and hold to talk, with a speech engine that runs
+> outside Revit; then step 3, a hold key on the keyboard. Both are in D-104.
+
 > ## THE INSTALLER IS BUILT AND MERGED. NOTHING OF IT HAS RUN ON A REVIT — 2026-09-22
 >
 > Merged as [#253](https://github.com/Ajmalpshaik/Heron-AI/pull/253). Stages 5, 6 and 7, plus the

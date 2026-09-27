@@ -571,6 +571,10 @@ whatever door is built. **Unblocked 2026-09-22.**
   anywhere in `revit/`** — nothing has been started. It would reuse
   [`RevitDispatcher`](../../../../revit/Heron.Revit.Addin/RevitDispatcher.cs) for the API thread hop,
   and its code-behind must **never** touch the Revit API directly.
+  **Taken up 2026-09-27 as Talk - [D-104](../../../DECISIONS.md).** Not a chat panel: a **Talk** button
+  sends what the modeller types or says, with the selection, into the Claude Code chat already open,
+  and Revit does not wait. Step 1 (a box to type in) is built; the proof is
+  [NEEDS-CHECKING group AS](../../../needs-checking/group-as.md), and press-and-hold is step 2.
 - **One body, two front doors.** [S6](00-structure.md). Worth restating because it is the idea that
   makes Doc and MEP cheap: a ribbon button calls the same proven fragment body the AI calls.
 

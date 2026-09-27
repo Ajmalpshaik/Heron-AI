@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Runs the Talk mailbox WITHOUT Revit (D-104).
+
+    HeronTalkMailbox.cs touches no Autodesk type - what was selected arrives
+    already read, as text - so it is linked here BY SOURCE, the pattern
+    Heron.BindingNote.TestHost and Heron.StackGuard.TestHost already use and
+    for the reason their project files give: a project reference to the
+    add-in would drag in RevitAPI.dll, and linking the source keeps exactly
+    ONE copy of what the mailbox writes.
+
+    What it writes is read back by mcp/server/heron_talk.py in
+    tests/test_talk_contract.py, which drives this host one step at a time.
+    The two halves of the format are in two languages; that suite is the
+    only thing that holds them together.
+
+        Build it with `dotnet build`, pointed at this folder, passing
+        -p:RevitVersion=2024. (XML comments cannot carry a double
+        hyphen, so the flag is spelled out rather than shown.)
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(HeronTfm)</TargetFramework>
+    <RootNamespace>Heron.Talk.TestHost</RootNamespace>
+    <AssemblyName>Heron.Talk.TestHost</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\revit\Heron.Revit.Addin\HeronTalkMailbox.cs"
+             Link="HeronTalkMailbox.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\revit\Heron.Bridge\Heron.Bridge.csproj" />
+  </ItemGroup>
+
+</Project>
