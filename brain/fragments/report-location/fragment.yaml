@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "where exactly are these"
 kind: action
 domain: revit.geometry
 capability: REPORT_LOCATION
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -34,6 +34,15 @@ purpose: >
   survey point or the project base point - so these numbers are for comparing
   elements with each other, and a coordinate to hand to a surveyor is a
   different question.
+
+  **A POINT-PLACED ELEMENT ALSO REPORTS WHICH WAY IT IS TURNED (version 2).**
+  Its rotation in degrees, and the facing direction of a family instance.
+  Two units at the same point facing opposite ways are not the same
+  placement, and copying a layout from one room to the next needs both
+  halves. Measured 2026-09-28 on "heron ai bulding": an FCU the modeller had
+  turned by hand read "turned 180 degrees", and one left alone read 0. This
+  is version 2; version 1's proof no longer describes the code, and the
+  fragment is DRAFT until it is proved again.
 
 contract:
   needs:
