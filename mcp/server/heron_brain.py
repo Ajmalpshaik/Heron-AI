@@ -297,8 +297,8 @@ class _Open(object):
             # by hand. This rewrites only the rows whose card changed on disk -
             # and in the store every chat on the machine reads, only to what
             # the MAIN checkout's card says, never to a worktree's unmerged
-            # edit (row 131; heron_scope.follows). BEFORE the indexes, because
-            # every one of them reads these rows.
+            # edit (row 131; heron_scope.refreshes_from). BEFORE the indexes,
+            # because every one of them reads these rows.
             SCOPE.refresh(self.store)
             CAP.rebuild(self.store)
             SEARCH.index(self.store)

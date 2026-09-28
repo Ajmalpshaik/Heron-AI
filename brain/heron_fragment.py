@@ -69,7 +69,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRAGMENTS_DIR = os.path.join(ROOT, "brain", "fragments")
 
 
-def repo_relative(path):
+def repo_relative(path, root=None):
     """`path` written against the repository root.
 
     Falls back to the absolute path when there is no relative form. A fragment
@@ -84,8 +84,13 @@ def repo_relative(path):
     2026-09-22, and every caller that could not afford this module's PyYAML
     import wrote its own copy instead - FRAGMENT-ISSUES row 5b-152. ROOT is
     read at the call, so a suite that points it elsewhere is still obeyed.
+
+    `root` is for a card read out of ANOTHER checkout - heron_scope.refresh
+    reads the main checkout's cards from inside a worktree (row 5b-249) - so
+    that its paths, and the proof fingerprint taken over them, come out as
+    that checkout would write them. None means this one.
     """
-    return RELPATH.relpath(path, ROOT)
+    return RELPATH.relpath(path, root or ROOT)
 
 
 # D-29. A fragment is a COMPOSABLE PIECE, not a whole answer: a filter says
@@ -786,9 +791,12 @@ class Fragment(object):
     """One fragment, as it is on disk. `folder` is where it was FOUND, never
     what it IS - see `id`."""
 
-    def __init__(self, data, folder):
+    def __init__(self, data, folder, root=None):
         self.data = data
         self.folder = folder
+        # The checkout this card belongs to, when it is not this one - see
+        # repo_relative(). Only the proof's paths depend on it.
+        self.root = root
 
     # -- identity -----------------------------------------------------------
 
@@ -890,7 +898,7 @@ class Fragment(object):
         for base, _dirs, files in os.walk(impl):
             for name in sorted(files):
                 full = os.path.join(base, name)
-                found.append(repo_relative(full))
+                found.append(repo_relative(full, self.root))
         return sorted(found)
 
     def fingerprint(self):
@@ -941,8 +949,8 @@ class Fragment(object):
             # called `m2` and failed from one called `mainonly-long-name`, same
             # commit, same bytes. Collapsing the `..` costs nothing and cannot
             # change which file is named.
-            content = io.open(os.path.normpath(os.path.join(ROOT, path)),
-                              "rb").read()
+            content = io.open(os.path.normpath(os.path.join(
+                self.root or ROOT, path)), "rb").read()
             digest.update(content.replace(b"\r\n", b"\n"))
         return digest.hexdigest()[:16]
 
@@ -969,8 +977,11 @@ class Fragment(object):
 # Loading
 # ---------------------------------------------------------------------------
 
-def load(folder):
+def load(folder, root=None):
     """Read one fragment folder. Raises ValueError with a readable message.
+
+    `root`: the checkout the folder belongs to, when it is not this one - see
+    repo_relative().
 
     EVERY failure in here leaves as a ValueError, and that is load_all's
     contract rather than a detail: it catches ValueError so that one unreadable
@@ -995,7 +1006,7 @@ def load(folder):
         raise ValueError("%s: fragment.yaml could not be read - %s" % (folder, exc))
     if not isinstance(data, dict):
         raise ValueError("%s: fragment.yaml is not a mapping" % folder)
-    return Fragment(data, folder)
+    return Fragment(data, folder, root)
 
 
 def load_all(root=None):

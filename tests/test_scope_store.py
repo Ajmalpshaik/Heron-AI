@@ -141,13 +141,14 @@ def refreshing(S, F):
     print()
     print("5. A card changed on disk reaches its row, without a rebuild")
     refresh = getattr(S, "refresh", None)
-    follows = getattr(S, "follows", None)
+    refreshes_from = getattr(S, "refreshes_from", None)
     check(callable(refresh), "heron_scope has a refresh() at all")
-    check(callable(follows), "and a follows() that says which cards it may use")
+    check(callable(refreshes_from),
+          "and a refreshes_from() that says whose cards it reads")
     if not callable(refresh):
         refresh = lambda store, root=None: []          # noqa: E731
-    if not callable(follows):
-        follows = lambda root=None: (None, None)       # noqa: E731
+    if not callable(refreshes_from):
+        refreshes_from = lambda root=None: "missing"   # noqa: E731
     seen_key = getattr(S, "CARDS_SEEN", "cards_seen:")
 
     work = tempfile.mkdtemp(prefix="heron-refresh-")
@@ -247,6 +248,55 @@ def refreshing(S, F):
               == "a renamed test fragment",
               "a card that will not load keeps its row, not loses it")
 
+        # A CARD THAT COULD NOT BE READ IS TRIED AGAIN - a Windows lock, an
+        # updater holding the file. Its mark must not be recorded as looked at,
+        # or the lookup after the lock clears sees nothing to do (review on
+        # PR #353). The read is made to fail once, from inside.
+        shutil.rmtree(os.path.dirname(card))
+        write_valid_fragment(os.path.dirname(card))
+        _rewrite_card(card, "a test fragment", "a locked-out rename")
+        real_card = getattr(S, "_card", None)
+        if callable(real_card):
+            S._card = lambda folder, name: None
+        store = S.open_scope(S.GLOBAL)
+        try:
+            first = refresh(store)
+        finally:
+            store.close()
+            if callable(real_card):
+                S._card = real_card
+        store = S.open_scope(S.GLOBAL)
+        try:
+            second = refresh(store)
+        finally:
+            store.close()
+        check(first == [] and second == ["FRG-ELE-001"]
+              and _row(S, "FRG-ELE-001", "semantic_identity")
+              == "a locked-out rename",
+              "a card that could not be read is read again next time "
+              "(%r then %r)" % (first, second))
+
+        # A NEW WAY OF MAKING A ROW makes every record of the old way void:
+        # ROW_FORMAT, as heron_search's INDEX_FORMAT (review on PR #353).
+        store = S.open_scope(S.GLOBAL)
+        was_format = getattr(S, "ROW_FORMAT", None)
+        try:
+            store.execute("UPDATE fragments SET domain = 'OLD-DERIVATION' "
+                          "WHERE id = 'FRG-ELE-001'")
+            store.db.commit()
+            untouched = refresh(store)
+            if was_format is not None:
+                S.ROW_FORMAT = was_format + 1
+            got = refresh(store)
+        finally:
+            if was_format is not None:
+                S.ROW_FORMAT = was_format
+            store.close()
+        check(untouched == [] and got == ["FRG-ELE-001"]
+              and _row(S, "FRG-ELE-001", "domain") == "test",
+              "a row made by an older ROW_FORMAT is compared again (%r then "
+              "%r)" % (untouched, got))
+
         # A STORE THAT CANNOT SAY WHAT ITS ROWS WERE MADE FROM - one written
         # before this existed - compares every card once: an absent record is
         # not a clean one (D-52).
@@ -270,14 +320,15 @@ def refreshing(S, F):
         shutil.rmtree(work, ignore_errors=True)
 
     print()
-    print("  ..and the SHARED store follows the main checkout, never a "
-          "worktree's own edit (row 131)")
+    print("  ..and the SHARED store follows the main checkout's cards, never "
+          "a worktree's (row 131)")
     saved = {k: os.environ.get(k) for k in ("APPDATA", "HERON_KNOWLEDGE")}
     fake = tempfile.mkdtemp(prefix="heron-trees-")
     try:
         # A MAIN CHECKOUT AND ONE WORKTREE, laid out as git lays them out: the
         # main checkout's .git is a folder, the worktree's is a one-line file
         # naming its folder under it, and that folder's `commondir` leads back.
+        # Both hold a full card, as a real checkout does.
         main_tree = os.path.join(fake, "main")
         worktree = os.path.join(fake, "wt")
         installed = os.path.join(fake, "installed")
@@ -290,8 +341,8 @@ def refreshing(S, F):
         wt_cards = os.path.join(worktree, "brain", "fragments")
         wt_card = os.path.join(write_valid_fragment(
             os.path.join(wt_cards, "do-a-test-thing")), "fragment.yaml")
-        os.makedirs(os.path.join(main_cards, "do-a-test-thing"))
-        main_card = os.path.join(main_cards, "do-a-test-thing", "fragment.yaml")
+        main_card = os.path.join(write_valid_fragment(
+            os.path.join(main_cards, "do-a-test-thing")), "fragment.yaml")
         shutil.copyfile(wt_card, main_card)
         io.open(os.path.join(worktree, ".git"), "w", encoding="utf-8").write(
             u"gitdir: %s\n" % pointer.replace(os.sep, "/"))
@@ -300,39 +351,72 @@ def refreshing(S, F):
         io.open(os.path.join(lost, ".git"), "w", encoding="utf-8").write(
             u"gitdir: nowhere/.git/worktrees/lost\n")
 
+        def same(a, b):
+            return bool(a) and bool(b) and \
+                os.path.normcase(os.path.abspath(a)) == \
+                os.path.normcase(os.path.abspath(b))
+
         os.environ["HERON_KNOWLEDGE"] = os.path.join(fake, "private")
-        check(follows(worktree) == (True, None),
-              "a store HERON_KNOWLEDGE points at is private: every card, "
-              "from any checkout (%r)" % (follows(worktree),))
+        got = refreshes_from(worktree)
+        check(got is not None and same(got[0], F.FRAGMENTS_DIR)
+              and got[1] is None,
+              "a store HERON_KNOWLEDGE points at is private: this checkout's "
+              "own cards (%r)" % (got,))
 
         # THE SHARED STORE: knowledge_dir() is the Heron/knowledge folder
         # under %APPDATA%.
         os.environ.pop("HERON_KNOWLEDGE", None)
         os.environ["APPDATA"] = os.path.join(fake, "appdata")
-        allowed, folder = follows(worktree)
-        check(allowed is True and folder is not None
-              and os.path.normcase(os.path.abspath(folder))
-              == os.path.normcase(os.path.abspath(main_cards)),
-              "the SHARED store, from a worktree, follows the main checkout's "
-              "cards (%r)" % (folder,))
-        allowed, folder = follows(main_tree)
-        check(allowed is True and folder is not None
-              and os.path.normcase(os.path.abspath(folder))
-              == os.path.normcase(os.path.abspath(main_cards)),
-              "and from the main checkout, its own")
-        check(follows(installed)[0] is True,
-              "an installed Heron, which has no .git at all, may refresh too")
-        check(follows(lost) == (False, None),
+        got = refreshes_from(worktree)
+        check(got is not None and same(got[0], main_cards)
+              and same(got[1], main_tree),
+              "the SHARED store, asked from a worktree, is refreshed from the "
+              "MAIN checkout's cards (%r)" % (got,))
+        got = refreshes_from(main_tree)
+        check(got is not None and same(got[0], main_cards),
+              "and asked from the main checkout, from its own")
+        got = refreshes_from(installed)
+        check(got is not None and same(got[1], installed),
+              "an installed Heron, which has no .git at all, uses its own")
+        check(refreshes_from(lost) is None,
               "a worktree whose main checkout cannot be found refreshes "
-              "nothing (%r)" % (follows(lost),))
+              "nothing (%r)" % (refreshes_from(lost),))
         os.environ["HERON_KNOWLEDGE"] = os.path.join(
             fake, "appdata", "Heron", "knowledge")
-        check(follows(lost) == (False, None),
+        check(refreshes_from(lost) is None,
               "HERON_KNOWLEDGE spelling out the shared folder is still shared")
+
+        # THE SAME FOLDER BY ANOTHER NAME - a junction or a symbolic link -
+        # is still the shared one (review on PR #353). Skipped, and said so,
+        # where this machine will not make a link.
+        shared = os.path.join(fake, "appdata", "Heron", "knowledge")
+        os.makedirs(shared)
+        alias = os.path.join(fake, "alias")
+        linked = False
+        try:
+            os.symlink(shared, alias, target_is_directory=True)
+            linked = True
+        except (OSError, NotImplementedError, AttributeError):
+            try:
+                import _winapi
+                _winapi.CreateJunction(shared, alias)
+                linked = True
+            except (ImportError, OSError, AttributeError):
+                linked = False
+        if linked:
+            os.environ["HERON_KNOWLEDGE"] = alias
+            check(refreshes_from(lost) is None,
+                  "HERON_KNOWLEDGE naming the shared folder through a link "
+                  "is still shared")
+            try:
+                os.unlink(alias)
+            except OSError:
+                os.rmdir(alias)
+        else:
+            print("  (not run: this machine would not make a folder link)")
         os.environ.pop("HERON_KNOWLEDGE", None)
 
-        # AND IN ACTION: the worktree's chat asks, with the main checkout
-        # holding the merged card.
+        # AND IN ACTION: a chat in the worktree asks, on the shared store.
         F.FRAGMENTS_DIR = wt_cards
         S.rebuild()
         _rewrite_card(wt_card, "a test fragment", "an unmerged edit")
@@ -346,10 +430,14 @@ def refreshing(S, F):
               "a worktree's UNMERGED edit is not pushed into the shared "
               "store (%r)" % (got,))
 
-        # The merge: the main checkout is fast-forwarded to the same bytes.
-        # The worktree's card has not moved since it was last looked at - it
-        # was left un-looked-at on purpose - so the row follows now.
-        shutil.copyfile(wt_card, main_card)
+        # ANOTHER PR MERGES: the main checkout moves to a card the worktree
+        # has never held. The worktree's chat - opened before that merge, its
+        # own card different again - still brings the row level, because it
+        # reads the main checkout's card rather than comparing its own (the
+        # review's P1 on PR #353).
+        _rewrite_card(main_card, "a test fragment", "merged from elsewhere")
+        check(F.validate(F.load(os.path.dirname(main_card))) == [],
+              "the main checkout's new card validates")
         store = S.open_scope(S.GLOBAL)
         try:
             got = refresh(store, worktree)
@@ -357,18 +445,22 @@ def refreshing(S, F):
             store.close()
         check(got == ["FRG-ELE-001"]
               and _row(S, "FRG-ELE-001", "semantic_identity")
-              == "an unmerged edit",
-              "once the main checkout holds the same card, the next lookup "
-              "from any chat brings the row level (%r)" % (got,))
+              == "merged from elsewhere",
+              "a chat opened BEFORE the merge brings the row to the main "
+              "checkout's card (%r)" % (got,))
+        folder = _row(S, "FRG-ELE-001", "folder")
+        check(folder is not None
+              and folder.replace(chr(92), "/") == "brain/fragments/do-a-test-thing",
+              "and writes its folder as the main checkout would (%r)" % folder)
 
-        _rewrite_card(wt_card, "an unmerged edit", "a lost edit")
+        _rewrite_card(main_card, "merged from elsewhere", "never seen")
         store = S.open_scope(S.GLOBAL)
         try:
             got = refresh(store, lost)
         finally:
             store.close()
         check(got == [] and _row(S, "FRG-ELE-001", "semantic_identity")
-              == "an unmerged edit",
+              == "merged from elsewhere",
               "and a checkout that cannot say where its main checkout is "
               "leaves the shared store alone (%r)" % (got,))
     finally:
@@ -383,7 +475,8 @@ def refreshing(S, F):
     # THE WIRING. The rows are only as fresh as the path that serves a lookup,
     # and that path is heron_brain._Open - read as TEXT, as test_review_findings
     # reads it, because importing the server here would pull the search models
-    # into a store suite.
+    # into a store suite. The two command-line lookups open the same store and
+    # owe the same order (review on PR #353).
     server = io.open(os.path.join(ROOT, "mcp", "server", "heron_brain.py"),
                      encoding="utf-8").read()
     start = server.find("class _Open")
@@ -393,7 +486,13 @@ def refreshing(S, F):
     check(at >= 0 and all(0 <= at < enter.find(later) for later in
                           ("CAP.rebuild(", "SEARCH.index(", "EMBED.index(")),
           "and does it BEFORE the capability map and both indexes read them")
-
+    for name in ("heron_retrieve.py", "heron_context.py"):
+        text = io.open(os.path.join(ROOT, "brain", name),
+                       encoding="utf-8").read()
+        body = text[text.find("def main("):]
+        at = body.find("SCOPE.refresh(")
+        check(0 <= at < body.find("SEARCH.index("),
+              "brain/%s refreshes the rows before it indexes" % name)
 
 def main():
     home = tempfile.mkdtemp(prefix="heron-kn-")

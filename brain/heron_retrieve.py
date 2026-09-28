@@ -1246,6 +1246,10 @@ def main(argv):
 
     store = SCOPE.open_scope(SCOPE.GLOBAL)
     try:
+        # FRAGMENT-ISSUES row 5b-249: the rows first, because both indexes
+        # read identity, status, capability, domain and risk from them.
+        # _Open does the same; this entry point opens the same store.
+        SCOPE.refresh(store)
         SEARCH.index(store)
         EMBED.index(store)
         # The document side of the same two indexes. Derived, rebuilt on

@@ -106,7 +106,7 @@ def row_of(frag):
             frag.status or "",
             frag.data.get("domain", ""),
             frag.data.get("risk", ""),
-            FRAG.repo_relative(frag.folder),
+            FRAG.repo_relative(frag.folder, getattr(frag, "root", None)),
             ",".join(frag.supported))
 
 
@@ -373,7 +373,7 @@ def rebuild(scope=GLOBAL, project_key=None):
                 raw = raws.get(os.path.basename(frag.folder))
                 if raw is not None:
                     rows_from[os.path.basename(frag.folder)] = _digest(raw)
-        _record(store, marks, rows_from)
+        _record(store, _key(FRAG.FRAGMENTS_DIR), marks, rows_from)
         return store.count(), problems
     finally:
         store.close()
@@ -394,11 +394,11 @@ def rebuild(scope=GLOBAL, project_key=None):
 #
 # WHAT IT DOES: rewrites the row of a card whose fragment.yaml is not the one
 # the row was made from, when the row differs. Two records keep that cheap
-# enough to run on every lookup. Per checkout, the stat marks of the cards it
+# enough to run on every lookup. Per card folder, the stat marks of the cards
 # last looked at - a stat walk costs milliseconds, and a card whose mark has
 # not moved is not even opened. Per store, a digest of the bytes each row was
-# made from - so a checkout seeing the library for the first time reads the
-# bytes rather than parsing every card (seconds) to find they already match.
+# made from - so a reader with no marks of its own reads bytes rather than
+# parsing every card (seconds) to find they already match.
 #
 # WHAT IT NEVER DOES, AND WHY. It never ADDS a row and never REMOVES one - that
 # is what `rebuild()` is for - and it never rewrites a row that was made from
@@ -408,27 +408,40 @@ def rebuild(scope=GLOBAL, project_key=None):
 # out again. A merged NEW card still needs a rebuild to be found.
 #
 # AND THE SHARED STORE FOLLOWS THE MAIN CHECKOUT - row 131's race, and the
-# reason for `follows()` below.
+# reason for `refreshes_from()` below.
 
-CARDS_SEEN = "cards_seen:"      # + the fragment folder the marks describe
+CARDS_SEEN = "cards_seen:"      # + the card folder the marks describe
 ROWS_FROM = "rows_from"
 
+# BUMP THIS WHENEVER row_of() DERIVES A ROW DIFFERENTLY. The records above say
+# "this row was made from these bytes", and without the version a code-only
+# change to how a row is made would match every record the old code wrote and
+# never reach a row - heron_search.INDEX_FORMAT's reason, one table over.
+# Found by review on PR #353.
+ROW_FORMAT = 1
 
-def cards_on_disk():
+
+def cards_on_disk(folder=None):
     """Each card's fragment.yaml as [mtime_ns, size], by folder name.
 
     A stat walk - no file is opened. Everything a row holds comes from
     fragment.yaml, so nothing else can change a row. A git checkout rewrites
     the files it changes and leaves the rest alone, which is exactly the set
     worth reading again.
+
+    WHAT IT CANNOT SEE: a card replaced by different bytes of the same length
+    with its old mtime kept - a copy that preserves timestamps, on top of a
+    file of exactly the same size. git never does that; `--rebuild` is the
+    answer when something else has. The alternative is reading every card on
+    every lookup, and `heron_search.disk_status` makes the same trade.
     """
-    root = FRAG.FRAGMENTS_DIR
+    folder = folder or FRAG.FRAGMENTS_DIR
     marks = {}
-    if not os.path.isdir(root):
+    if not os.path.isdir(folder):
         return marks
-    for name in sorted(os.listdir(root)):
+    for name in sorted(os.listdir(folder)):
         try:
-            stat = os.stat(os.path.join(root, name, "fragment.yaml"))
+            stat = os.stat(os.path.join(folder, name, "fragment.yaml"))
         except OSError:
             continue
         marks[name] = [stat.st_mtime_ns, stat.st_size]
@@ -436,13 +449,16 @@ def cards_on_disk():
 
 
 def _same_folder(a, b):
-    return os.path.normcase(os.path.abspath(a)) == \
-        os.path.normcase(os.path.abspath(b))
+    """The same folder, however it is spelt - a junction or a symbolic link
+    included, which is how a HERON_KNOWLEDGE naming the shared folder by
+    another path would otherwise pass for private. Found by review on #353."""
+    return os.path.normcase(os.path.realpath(a)) == \
+        os.path.normcase(os.path.realpath(b))
 
 
-def _tree():
-    """The fragment folder these marks describe, written one way on every OS."""
-    return os.path.normcase(os.path.abspath(FRAG.FRAGMENTS_DIR)).replace(
+def _key(folder):
+    """The marks' key for one card folder, written one way on every OS."""
+    return CARDS_SEEN + os.path.normcase(os.path.abspath(folder)).replace(
         os.sep, "/")
 
 
@@ -456,14 +472,18 @@ def _card(folder, name):
 
 
 def _digest(raw):
-    return hashlib.blake2b(raw, digest_size=12).hexdigest()
+    digest = hashlib.blake2b(digest_size=12)
+    digest.update(("rows/%d/" % ROW_FORMAT).encode("utf-8"))
+    digest.update(raw)
+    return digest.hexdigest()
 
 
 def _meta(store, key):
-    """A JSON object kept in `meta`, or None when there is none to trust.
+    """What `_record` kept under `key`, or None when there is none to trust.
 
-    None - not {} - for a store written before this existed: an absent record
-    is not a clean one (D-52), so every card is looked at once.
+    None - not {} - for a store written before this existed, or by another
+    ROW_FORMAT: an absent record is not a clean one (D-52), so every card is
+    looked at once.
     """
     row = store.execute(
         "SELECT value FROM meta WHERE key = ?", (key,)).fetchone()
@@ -473,15 +493,19 @@ def _meta(store, key):
         value = json.loads(row["value"])
     except ValueError:
         return None
-    return value if isinstance(value, dict) else None
+    if not isinstance(value, dict) or value.get("format") != ROW_FORMAT:
+        return None
+    kept = value.get("kept")
+    return kept if isinstance(kept, dict) else None
 
 
-def _record(store, marks, rows_from):
-    """What this checkout last looked at, and which bytes each row came from."""
-    for key, value in ((CARDS_SEEN + _tree(), marks), (ROWS_FROM, rows_from)):
+def _record(store, key, marks, rows_from):
+    """The marks last looked at, and which bytes each row came from."""
+    for name, kept in ((key, marks), (ROWS_FROM, rows_from)):
         store.execute(
             "INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)",
-            (key, json.dumps(value, sort_keys=True)))
+            (name, json.dumps({"format": ROW_FORMAT, "kept": kept},
+                              sort_keys=True)))
     # A worktree's marks outlive the worktree. They go when its folder does,
     # or the store would keep one record for every chat there ever was.
     for row in store.execute("SELECT key FROM meta WHERE key LIKE ?",
@@ -532,58 +556,66 @@ def main_checkout(root=None):
         else None
 
 
-def follows(root=None):
-    """Which cards the store `knowledge_dir()` names may be refreshed from.
+def refreshes_from(root=None):
+    """Where the rows of the store `knowledge_dir()` names are refreshed from.
 
-    Returns (allowed, folder):
-      (True, None)     a PRIVATE store - HERON_KNOWLEDGE points somewhere of
-                       its own: a suite, a CI job, a session measuring on a
-                       scratch store. This checkout's cards, all of them.
-      (True, folder)   the SHARED store: only a card byte-for-byte the same
-                       as the one in `folder`, the main checkout's fragments.
-      (False, None)    the shared store, from a worktree whose main checkout
-                       cannot be found. Nothing.
+    Returns (cards, checkout), or None for "nowhere":
+      (this checkout's cards, None)   a PRIVATE store - HERON_KNOWLEDGE points
+                                      somewhere of its own: a suite, a CI job,
+                                      a session measuring on a scratch store.
+      (main's cards, main)            the SHARED store, asked from anywhere.
+      None                            the shared store, from a worktree whose
+                                      main checkout cannot be found.
 
     FRAGMENT-ISSUES row 131: the shared store is ONE file every checkout on
     the machine reads, and a chat started in a worktree runs its own copy of
     the server - five were running on the owner's PC when this was written. A
-    worktree's cards are that session's UNMERGED work, and refreshing from
-    them would push it into every other chat's answers. So the shared store
-    follows the main checkout, which a merge fast-forwards: any chat may bring
-    a row up to date, but only to what the main checkout's card says.
+    worktree's cards are that session's UNMERGED work, or a library older than
+    main, and refreshing from them would push either into every other chat's
+    answers. So the shared store follows the MAIN checkout, which a merge
+    fast-forwards, and every chat reads the main checkout's cards to do it -
+    a chat opened before a merge brings the row level as surely as one opened
+    after. (The first version compared the asking checkout's own card with
+    main's and refreshed only when they matched, which left exactly those
+    older chats unable to; found by review on PR #353.)
 
-    The CARD IS READ FROM THIS CHECKOUT, never from the main one, and only
-    compared there: a PROVEN card's proof fingerprint is taken against paths
-    relative to the checkout reading it, so the same card read from another
-    tree fails its own validation.
+    The main checkout's cards are read AS the main checkout reads them -
+    `FRAG.load(folder, root=main)` - because a PROVEN card's proof
+    fingerprint is taken over paths relative to the checkout, and read from
+    here with this checkout's paths it would fail its own validation.
     """
     base = knowledge_dir()
     shared = shared_dir()
     if not base or not shared or not _same_folder(base, shared):
-        return True, None
+        return FRAG.FRAGMENTS_DIR, None
     main = main_checkout(root)
     if main is None:
-        return False, None
-    return True, os.path.join(main, "brain", "fragments")
+        return None
+    if _same_folder(main, FRAG.ROOT):
+        return FRAG.FRAGMENTS_DIR, None
+    return os.path.join(main, "brain", "fragments"), main
 
 
 def refresh(store, root=None):
     """Rewrite the rows whose card changed on disk. Returns the ids rewritten.
 
     Nothing is opened when no card's mark moved, which is every lookup between
-    two merges. A card that will not load, or loads and does not validate,
-    keeps the row it had: rebuild() would drop it, and a lookup that loses a
-    working capability because a file was caught half-saved is worse than one
-    that answers from the previous version of it (D-48).
+    two merges. A card that loads and does not validate keeps the row it had:
+    rebuild() would drop it, and a lookup that loses a working capability over
+    a card that fails a check is worse than one answering from the version
+    before. A card that could not be READ or PARSED is not marked as looked at
+    - a Windows lock, a file caught half-saved - so the next lookup tries it
+    again rather than trusting a mark that never met the bytes (D-48; review
+    on PR #353).
     """
-    allowed, follow = follows(root)
-    if not allowed:
+    source = refreshes_from(root)
+    if source is None:
         return []
-    if follow is not None and _same_folder(follow, FRAG.FRAGMENTS_DIR):
-        follow = None
+    cards, checkout = source
+    key = _key(cards)
 
-    marks = cards_on_disk()
-    seen = _meta(store, CARDS_SEEN + _tree())
+    marks = cards_on_disk(cards)
+    seen = _meta(store, key)
     if seen == marks:
         return []
     rows_from = _meta(store, ROWS_FROM) or {}
@@ -597,39 +629,33 @@ def refresh(store, root=None):
     for name, mark in sorted(marks.items()):
         if seen is not None and seen.get(name) == mark:
             continue
-        raw = _card(FRAG.FRAGMENTS_DIR, name)
+        raw = _card(cards, name)
+        frag = None
+        if raw is not None and rows_from.get(name) != _digest(raw):
+            try:
+                frag = FRAG.load(os.path.join(cards, name), root=checkout)
+            except ValueError:
+                raw = None
+            except Exception:                      # noqa: BLE001 - deliberate
+                # D-48, as load_all() has it: one card that fails in a way
+                # load() did not turn into a ValueError costs that card, never
+                # the lookup this runs inside.
+                raw = None
         if raw is None:
-            continue
-        if follow is not None and _card(follow, name) != raw:
-            # THIS CHECKOUT'S OWN VERSION, NOT THE MERGED ONE. Left out, and
-            # NOT marked as looked at: it is compared again on the next open -
-            # the few cards a session edits, never the library - so the moment
-            # a merge brings the main checkout level, the row follows.
             if seen is not None and name in seen:
                 looked[name] = seen[name]
             else:
                 looked.pop(name)
             continue
-        digest = _digest(raw)
-        if rows_from.get(name) == digest:
-            continue
-        try:
-            frag = FRAG.load(os.path.join(FRAG.FRAGMENTS_DIR, name))
-        except ValueError:
-            continue
-        except Exception:                          # noqa: BLE001 - deliberate
-            # D-48, as load_all() has it: one card that fails in a way load()
-            # did not turn into a ValueError costs that card, never the lookup
-            # this runs inside.
-            continue
-        if not frag.id or frag.id not in held or FRAG.validate(frag):
-            continue
-        if held[frag.id] != row_of(frag):
-            store.put_fragment(frag)
-            rewritten.append(frag.id)
-        rows_from[name] = digest
+        if frag is None:
+            continue                  # the row was made from these bytes
+        if frag.id and frag.id in held and not FRAG.validate(frag):
+            if held[frag.id] != row_of(frag):
+                store.put_fragment(frag)
+                rewritten.append(frag.id)
+            rows_from[name] = _digest(raw)
 
-    _record(store, looked, rows_from)
+    _record(store, key, looked, rows_from)
     return rewritten
 
 
