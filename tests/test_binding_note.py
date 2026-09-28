@@ -223,7 +223,17 @@ def main():
     print()
     print("  %s  the production call passes the survivor first - %s"
           % ("ok  " if ok else "FAIL", said))
-    return 0 if ok else 1
+
+    # The same crude read for row 5b-252's rule: the host proves what
+    # AbsentValue answers, and only this can see that the binder asks it.
+    try:
+        text = io.open(CALL_SITE, encoding="utf-8").read()
+    except (IOError, OSError):
+        text = ""
+    asks = "HeronBindingNote.AbsentValue(type, optional)" in text
+    print("  %s  the binder asks AbsentValue before refusing an absent "
+          "request need" % ("ok  " if asks else "FAIL"))
+    return 0 if ok and asks else 1
 
 
 if __name__ == "__main__":

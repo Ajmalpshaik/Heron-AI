@@ -1,5 +1,6 @@
-// NOT STANDALONE. Assumes `doc`, `elements` and `containerKind` are in scope;
-// leaves `findings`, `groupNames`, `groupCounts`, `placed` and `unplaced` behind.
+// NOT STANDALONE. Assumes `doc`, `elements`, `containerKind` and `includeLinks`
+// are in scope; leaves `findings`, `groupNames`, `groupCounts`, `placed`,
+// `unplaced`, `linksSearched` and `linkedMatches` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -23,6 +24,24 @@
 // AN UNPLACED OR UNENCLOSED CONTAINER IS SKIPPED, NOT ASKED. Its test cannot
 // mean anything, and asking it is how an element gets filed under a room that is
 // not on the drawing.
+//
+// LINKED ROOMS AND SPACES ARE CONTAINERS ONLY WHEN ASKED FOR - D-59. This is
+// the fragment a federated job needs most: the ducts are in this model and the
+// ROOMS ARE IN THE ARCHITECTURAL LINK, so host-only answers "in no room" for
+// every one of them. Absent `includeLinks` means host only, which is what this
+// did before and what its proof measured.
+//
+// When it is set, each loaded link's placed and enclosed rooms (or spaces) are
+// asked AFTER the host's own, so a host container still wins where both
+// answer. The element's point is moved into the link through each placement's
+// inverse transform, and the container's own Z is then taken there, as for a
+// host container. A linked group is named "<link> :: <room>", so two models
+// with a room of the same name stay two groups. The ELEMENTS are still only
+// the host's own, handed in as before - nothing from a link is selected or
+// carried (FRAGMENT-ISSUES row 75).
+//
+// NESTED LINKS ARE NOT READ, AND THE ANSWER COUNTS THEM - see
+// SELECT_BY_CATEGORY_NAME, which carries the same rule.
 
 var findings = new List<string>();
 var groupNames = new List<string>();
@@ -35,6 +54,65 @@ var kind = (containerKind ?? "").Trim().ToLower();
 var rooms = new List<Room>();
 var spaces = new List<Space>();
 var skippedContainers = 0;
+
+// ---- D-59: which links, only when asked for --------------------------------
+
+var linksSearched = 0;
+var linkedMatches = new List<string>();
+var linkedTotal = 0;
+var nestedLinks = 0;
+var linkBlocked = "";
+
+// One entry per link FILE, keyed by link type - a file placed twice is one
+// model placed twice, and counting placements would report a job with four
+// links as having nine. LIST_LINKED_MODELS' rule, as REPORT_AREAS applies it.
+var linkTypes = new List<ElementId>();
+var linkDocs = new List<Document>();
+var linkPlacements = new List<List<RevitLinkInstance>>();
+
+if (includeLinks)
+{
+    foreach (var instance in new FilteredElementCollector(doc)
+        .OfClass(typeof(RevitLinkInstance)).Cast<RevitLinkInstance>())
+    {
+        if (instance == null) continue;
+
+        var typeId = instance.GetTypeId();
+        if (typeId == null || typeId == ElementId.InvalidElementId) continue;
+
+        var known = linkTypes.IndexOf(typeId);
+        if (known >= 0) { linkPlacements[known].Add(instance); continue; }
+
+        // LOADED IS ESTABLISHED BY ASKING FOR THE DOCUMENT, never by a status.
+        Document linked = null;
+        try { linked = instance.GetLinkDocument(); }
+        catch (Exception) { linked = null; }
+        if (linked == null) continue;
+
+        linkTypes.Add(typeId);
+        linkDocs.Add(linked);
+        linkPlacements.Add(new List<RevitLinkInstance> { instance });
+
+        try
+        {
+            nestedLinks += new FilteredElementCollector(linked)
+                .OfClass(typeof(RevitLinkInstance)).GetElementCount();
+        }
+        catch (Exception) { }
+    }
+}
+
+// Containers from the links: the element, the transform INTO its link, and
+// the link's name - one row per placement, because a file placed twice
+// occupies two places.
+var linkedRooms = new List<Room>();
+var linkedRoomsTo = new List<Transform>();
+var linkedRoomsFrom = new List<string>();
+var linkedSpaces = new List<Space>();
+var linkedSpacesTo = new List<Transform>();
+var linkedSpacesFrom = new List<string>();
+var linkedSkipped = 0;
+var linkedLanded = 0;
 
 if (kind == "room")
 {
@@ -60,6 +138,76 @@ else if (kind == "space" || kind == "zone")
         spaces.Add(space);
     }
 }
+
+// An unknown container kind reads nothing anywhere - the findings say why -
+// so no link is claimed as read.
+if (kind != "room" && kind != "space" && kind != "zone" && linkDocs.Count > 0)
+    linkBlocked = "Links NOT read: no container kind to look for - see findings";
+
+for (var i = 0; i < linkDocs.Count && linkBlocked.Length == 0; i++)
+{
+    var linked = linkDocs[i];
+    var usable = 0;
+
+    var inLink = new List<SpatialElement>();
+    try
+    {
+        if (kind == "room")
+        {
+            foreach (var element in new FilteredElementCollector(linked)
+                .OfCategory(BuiltInCategory.OST_Rooms).WhereElementIsNotElementType())
+            {
+                var room = element as Room;
+                if (room == null) continue;
+                if (room.Area <= 0.0) { linkedSkipped++; continue; }
+                inLink.Add(room);
+            }
+        }
+        else if (kind == "space" || kind == "zone")
+        {
+            foreach (var element in new FilteredElementCollector(linked)
+                .OfCategory(BuiltInCategory.OST_MEPSpaces).WhereElementIsNotElementType())
+            {
+                var space = element as Space;
+                if (space == null) continue;
+                if (space.Area <= 0.0) { linkedSkipped++; continue; }
+                inLink.Add(space);
+            }
+        }
+    }
+    catch (Exception) { }
+
+    foreach (var placement in linkPlacements[i])
+    {
+        Transform toLink = null;
+        try { toLink = placement.GetTotalTransform().Inverse; }
+        catch (Exception) { toLink = null; }
+        if (toLink == null) continue;
+
+        foreach (var container in inLink)
+        {
+            var room = container as Room;
+            var space = container as Space;
+            if (room != null)
+            {
+                linkedRooms.Add(room); linkedRoomsTo.Add(toLink); linkedRoomsFrom.Add(linked.Title);
+            }
+            else if (space != null)
+            {
+                linkedSpaces.Add(space); linkedSpacesTo.Add(toLink); linkedSpacesFrom.Add(linked.Title);
+            }
+        }
+    }
+
+    usable = inLink.Count;
+    linksSearched++;
+    linkedMatches.Add(string.Format("{0}: {1} placed and enclosed {2}(s) asked", linked.Title,
+        usable, kind == "room" ? "room" : "space"));
+}
+
+if (linkedSkipped > 0)
+    linkedMatches.Add(string.Format("{0} linked {1}(s) are UNPLACED or UNENCLOSED and were not asked",
+        linkedSkipped, kind == "room" ? "room" : "space"));
 
 Func<Element, XYZ> pointOf = element =>
 {
@@ -87,6 +235,19 @@ Func<Element, string> groupFor = element =>
             if (room.IsPointInRoom(new XYZ(point.X, point.Y, z)))
                 return room.Name + " " + room.Number;
         }
+
+        // The links' rooms, after the host's - see the header.
+        for (var r = 0; r < linkedRooms.Count; r++)
+        {
+            var local = linkedRoomsTo[r].OfPoint(point);
+            var at = linkedRooms[r].Location as LocationPoint;
+            var z = at != null && at.Point != null ? at.Point.Z : local.Z;
+            if (linkedRooms[r].IsPointInRoom(new XYZ(local.X, local.Y, z)))
+            {
+                linkedLanded++;
+                return linkedRoomsFrom[r] + " :: " + linkedRooms[r].Name + " " + linkedRooms[r].Number;
+            }
+        }
         return "(in no room)";
     }
 
@@ -98,10 +259,29 @@ Func<Element, string> groupFor = element =>
         if (space.IsPointInSpace(new XYZ(point.X, point.Y, z))) { containing = space; break; }
     }
 
+    // The links' spaces, after the host's - see the header.
+    var containingFrom = "";
+    if (containing == null)
+    {
+        for (var s = 0; s < linkedSpaces.Count; s++)
+        {
+            var local = linkedSpacesTo[s].OfPoint(point);
+            var at = linkedSpaces[s].Location as LocationPoint;
+            var z = at != null && at.Point != null ? at.Point.Z : local.Z;
+            if (linkedSpaces[s].IsPointInSpace(new XYZ(local.X, local.Y, z)))
+            {
+                containing = linkedSpaces[s];
+                containingFrom = linkedSpacesFrom[s] + " :: ";
+                linkedLanded++;
+                break;
+            }
+        }
+    }
+
     if (kind == "space")
     {
         return containing != null
-            ? containing.Name + " " + containing.Number
+            ? containingFrom + containing.Name + " " + containing.Number
             : "(in no space)";
     }
 
@@ -109,7 +289,7 @@ Func<Element, string> groupFor = element =>
     // people, so they are different groups.
     if (containing == null) return "(in no space, so no zone either)";
     var zone = containing.Zone;
-    return zone != null ? zone.Name : "(the space it is in has no zone)";
+    return zone != null ? containingFrom + zone.Name : "(the space it is in has no zone)";
 };
 
 if (kind != "room" && kind != "space" && kind != "zone")
@@ -123,7 +303,8 @@ else if (elements == null || elements.Count == 0)
     findings.Add("No elements were handed in, so there is nothing to count. That is not a model with "
         + "no elements in any " + kind);
 }
-else if ((kind == "room" && rooms.Count == 0) || (kind != "room" && spaces.Count == 0))
+else if ((kind == "room" && rooms.Count + linkedRooms.Count == 0)
+         || (kind != "room" && spaces.Count + linkedSpaces.Count == 0))
 {
     findings.Add("This model has no placed and enclosed " + (kind == "room" ? "room" : "space")
         + " at all" + (skippedContainers > 0
@@ -189,3 +370,25 @@ findings.Insert(0, string.Format("{0} element(s) counted by {1}: {2} landed in o
     placed + unplaced,
     kind == "room" || kind == "space" || kind == "zone" ? kind : "(nothing)",
     placed, unplaced));
+
+linkedTotal = linkedLanded;
+
+// THE ANSWER SAYS WHAT IT READ. Asked-and-found, asked-and-none-loaded and not
+// asked read differently on purpose - D-59's own worked example.
+if (!includeLinks)
+    linkedMatches.Insert(0, "Host model only - links not read");
+else if (linkBlocked.Length > 0)
+    linkedMatches.Insert(0, linkBlocked);
+else if (linksSearched == 0)
+    linkedMatches.Insert(0, "Links asked for, NONE loaded - host only");
+else
+    linkedMatches.Insert(0, string.Format("{0} link(s) read: {1} element(s) landed in a linked "
+        + "container", linksSearched, linkedTotal));
+
+if (includeLinks && nestedLinks > 0)
+    linkedMatches.Add(string.Format("{0} link placement(s) nested inside those links were NOT "
+        + "read", nestedLinks));
+
+if (linksSearched > 0)
+    linkedMatches.Add("Linked rooms and spaces are used only as containers - every element "
+        + "counted is this model's own, handed in as before");
