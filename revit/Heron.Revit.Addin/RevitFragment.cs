@@ -1779,6 +1779,21 @@ namespace Heron.Revit.Addin
                     string givenText;
                     if (supplied == null || !supplied.TryGetValue(name, out givenText))
                     {
+                        // ONE EXCEPTION: a bool the card marks optional is a
+                        // switch left off - D-59's "absent means host only".
+                        // Everything else is still the caller's to supply.
+                        string optional;
+                        need.TryGetValue("optional", out optional);
+                        var absent = HeronBindingNote.AbsentValue(type, optional);
+                        if (absent != null)
+                        {
+                            bound.Add(name);
+                            lines.Append(type).Append(" ").Append(name)
+                                 .Append(" = ").Append(absent).Append(";\n");
+                            how.Add(name + " not given - " + absent + " (optional)");
+                            continue;
+                        }
+
                         fromRequest.Add(name + " (" + type + ")");
                         continue;
                     }

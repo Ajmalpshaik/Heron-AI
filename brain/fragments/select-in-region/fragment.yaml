@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-ELE-010
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "everything inside this box of space"
 kind: filter
 domain: revit.selection
 capability: SELECT_IN_REGION
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -50,6 +50,20 @@ purpose: >
   **The two corners are sorted, so either order works.** A volume given
   max-first is not an error a modeller should have to think about.
 
+  **LINKED MODELS ARE READ ONLY WHEN ASKED FOR (version 2, D-59).** With
+  `includeLinks` absent this answers for this model alone, exactly as the
+  proof measured. With it set, every loaded link is read too and
+  `linksSearched` says how many were: set and 0 means "you asked, and none
+  are loaded", which is a different answer from host-only. The same volume is moved into each link
+  through each placement's transform, and the matches are counted per link
+  in `linkedMatches`.
+  **NOTHING FROM A LINK IS EVER SELECTED OR CARRIED** - `elements` stays this model's own; the chain
+  revives ids against this model, and a linked id that happens to be in
+  use here binds an unrelated element (FRAGMENT-ISSUES row 75). Links
+  nested inside a link are not read, and are counted in the answer. This
+  is version 2; version 1's proof no longer describes the code, and the
+  fragment is DRAFT until it is proved again.
+
 contract:
   needs:
     - name: doc
@@ -66,6 +80,15 @@ contract:
     - name: categories
       type: IList<BuiltInCategory>
       source: request
+    - name: includeLinks
+      # D-59. THE MODELLER DECIDES, JOB BY JOB, and absent means host only -
+      # which is what this fragment did before and what its proof measured.
+      # `optional: true` is what lets it be left out: the binder refuses an
+      # absent request need unless it is a bool marked optional, which binds
+      # false (HeronBindingNote.AbsentValue, FRAGMENT-ISSUES row 5b-227).
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: elements
       role: result
@@ -76,6 +99,20 @@ contract:
       role: accounting
       type: int
     - name: findings
+      type: IList<string>
+    - name: linksSearched
+      # D-59's second field, and the one that does the work: how many
+      # linked DOCUMENTS were actually read - a file placed twice is one.
+      # `includeLinks` set and this at 0 means "asked, and none are
+      # loaded", which must not read the same as host-only.
+      role: accounting
+      type: int
+    - name: linkedMatches
+      # What was found in the links, as TEXT - the first line says which of
+      # D-59's three cases this is, then one line per link. Text on
+      # purpose: a linked element or id carried to the next step is looked
+      # up in THIS model (FRAGMENT-ISSUES row 75).
+      role: accounting
       type: IList<string>
 
 proof:

@@ -373,9 +373,17 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bc.md`](needs-checking/group-bc.md)
 
+## Group BE - D-59's first batch: eleven reading tools look inside linked models when asked (2026-09-28)
+
+**Its own file:** [`needs-checking/group-be.md`](needs-checking/group-be.md)
+
 ## Group BF - the Admin and Publish switches: refused by name while off, a project parameter bound with Admin on, refused again once it is off (2026-09-28)
 
 **Its own file:** [`needs-checking/group-bf.md`](needs-checking/group-bf.md)
+
+## Group BG - D-59's second batch: ten more reading tools look inside linked models when asked (2026-09-28)
+
+**Its own file:** [`needs-checking/group-bg.md`](needs-checking/group-bg.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

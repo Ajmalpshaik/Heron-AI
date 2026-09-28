@@ -19,6 +19,14 @@ positive:
       the elements whose count is 3. A filter that tests only for
       StorageType.Double answers this with a clean, wrong zero
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      a comparison that linked elements pass (for
+      example Walls, Unconnected Height gt 0), includeLinks true
+    expect: >
+      `elements` unchanged from the host-only run,
+      and each link's matched-of-scanned count in `linkedMatches`
+
 negative:
   - given: 500 handed in WITHOUT converting, against a length parameter
     expect: >
@@ -44,6 +52,24 @@ negative:
 
   - given: a between whose upper bound is below its lower bound
     expect: refused, with the reason - not an empty result
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1's proof, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
 
 second_route: >
   A schedule of the same category with that parameter as a field and a numeric

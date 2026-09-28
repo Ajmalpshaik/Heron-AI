@@ -82,6 +82,24 @@ namespace Heron.BindingNote.TestHost
             Check(HeronBindingNote.Size(new List<int>(), offered) == " (0 of 1128)",
                   "an empty survivor list against 1128 offered still names both");
 
+            // FRAGMENT-ISSUES row 5b-252: WHAT AN ABSENT REQUEST NEED BINDS.
+            // D-59's switch left out is a switch left off, and nothing else
+            // gains a value it was not given.
+            Check(HeronBindingNote.AbsentValue("bool", "true") == "false",
+                  "an absent bool marked optional binds false");
+            Check(HeronBindingNote.AbsentValue("bool", " True ") == "false",
+                  "\"optional\" is read however the card spells true");
+            Check(HeronBindingNote.AbsentValue("bool", null) == null,
+                  "a bool NOT marked optional is still refused");
+            Check(HeronBindingNote.AbsentValue("bool", "false") == null,
+                  "and so is one marked optional: false");
+            Check(HeronBindingNote.AbsentValue("View", "true") == null,
+                  "an optional View is still refused - row 5b-227's create-line case");
+            Check(HeronBindingNote.AbsentValue("string", "true") == null,
+                  "an optional string is still refused - row 5b-227's other two");
+            Check(HeronBindingNote.AbsentValue("double", "true") == null,
+                  "an optional number is still refused - no number means 'not asked'");
+
             Console.WriteLine();
             if (Failures.Count > 0)
             {
