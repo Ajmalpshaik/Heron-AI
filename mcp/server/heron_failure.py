@@ -123,6 +123,16 @@ _KNOWN = {
     "nothing_to_move":   (REFUSED, STOP, "there is nothing there to move"),
     "write_disabled":    (REFUSED, FIX_FIRST,
                           "Heron's ability to change the model is switched off"),
+    # THE TWO SWITCHES ABOVE CHANGES (D-106). Refused by the add-in's gate
+    # before anything ran, exactly like write_disabled - so REFUSED, never the
+    # fail-closed unknown this file gives a code it has not met, which would
+    # tell the owner to check a model nothing touched.
+    "admin_disabled":    (REFUSED, FIX_FIRST,
+                          "Heron's Admin switch is off, so nothing that changes how the "
+                          "project is set up was sent"),
+    "publish_disabled":  (REFUSED, FIX_FIRST,
+                          "Heron's Publish switch is off, so nothing that exports, prints, "
+                          "saves or syncs was sent"),
     # NOT "the Emergency Stop is on". That ribbon button was removed on
     # 2026-09-06 (D-46) and nothing a user can press sets this flag, so
     # naming it sends a worried reader hunting the ribbon for something that

@@ -374,8 +374,13 @@ namespace Heron.Revit.Addin
                             new KeyValuePair<string, string>("session", _session),
                             new KeyValuePair<string, string>("document", document),
                             new KeyValuePair<string, string>("error", Json.ReadString(response, "error")),
+                            // The two operations above Modify run the same
+                            // executor (D-106), and a trail that named the
+                            // fragment for a Modify run and not for an Admin
+                            // one would lose exactly the runs worth finding.
                             new KeyValuePair<string, string>("fragment",
                                 op == "run_fragment_read" || op == "run_fragment_write"
+                                || op == "run_fragment_publish" || op == "run_fragment_admin"
                                     ? Json.ReadString(job.Request, "name") : null),
                         },
                         new[]
@@ -461,6 +466,20 @@ namespace Heron.Revit.Addin
                                                 StringComparison.OrdinalIgnoreCase);
                     var verb = keeping ? "Changing the model" : "Trying a change";
                     return writing.Length == 0 ? verb : verb + ": " + writing;
+
+                // THE TWO ABOVE MODIFY SAY WHICH KIND OF CHANGE, because the
+                // owner turned a separate switch on for each (D-106) and the
+                // banner is where he sees which one is being used. Whether it
+                // is kept is still the caller's `apply`, as above.
+                case "run_fragment_publish":
+                case "run_fragment_admin":
+                    var named = Clean(Json.ReadString(request, "name"));
+                    var kept = string.Equals(Json.ReadString(request, "apply"), "true",
+                                             StringComparison.OrdinalIgnoreCase);
+                    var kind = op == "run_fragment_admin"
+                        ? (kept ? "Changing the project setup" : "Trying a project setup change")
+                        : (kept ? "Publishing from the model" : "Trying a publish");
+                    return named.Length == 0 ? kind : kind + ": " + named;
             }
 
             var readable = Clean(op);
@@ -508,6 +527,8 @@ namespace Heron.Revit.Addin
                 case "revit_busy":      return "Revit was busy - nothing was sent";
                 case "stopped":         return "Heron is stopped";
                 case "write_disabled":  return "Not allowed to change the model";
+                case "admin_disabled":  return "Admin is off - nothing was sent";
+                case "publish_disabled": return "Publish is off - nothing was sent";
                 case "session_in_use":  return "Another chat is using this Revit";
                 case "unknown_op":      return "Heron does not know that job";
                 case "not_implemented": return "Heron has no handler for that yet";

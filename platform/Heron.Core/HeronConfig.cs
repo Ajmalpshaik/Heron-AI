@@ -71,6 +71,18 @@ namespace Heron.Core
                 // default (D-19); it is turned on deliberately or not at all.
                 { "write.enabled", "false" },
 
+                // THE TWO SWITCHES ABOVE CHANGES (D-106). Admin lets through a
+                // fragment declared risk ADMIN - project parameters, worksets,
+                // global parameters, a new family file - and Publish one
+                // declared PUBLISH - export, print, save, sync with central.
+                // Off by default, like write.enabled, and for the same reason:
+                // each is turned on by the owner in Revit's ribbon or not at
+                // all. Neither does anything while write.enabled is false.
+                // Declared here for the reason write.enabled's comment gives:
+                // a key missing from this table is silently ignored.
+                { "admin.enabled", "false" },
+                { "publish.enabled", "false" },
+
                 { "log.retainDays", "14" },
 
                 // WHAT REVIT SHOWS WHILE HERON WORKS (HERON-REVIT-UI-022).

@@ -60,6 +60,15 @@ namespace Heron.Revit.Addin
         internal const string WriteLockedIcon = "WriteLocked.png";
         internal const string WriteUnlockedIcon = "WriteUnlocked.png";
 
+        // The Admin and Publish switches (D-106). The Changes padlock with a
+        // mark where its keyhole was - a gear for Admin, an arrow leaving a
+        // tray for Publish - in the same two colours, so all three read as
+        // one family: blue and closed is off, red and open is on.
+        internal const string AdminLockedIcon = "AdminLocked.png";
+        internal const string AdminUnlockedIcon = "AdminUnlocked.png";
+        internal const string PublishLockedIcon = "PublishLocked.png";
+        internal const string PublishUnlockedIcon = "PublishUnlocked.png";
+
         internal static BridgeServer Bridge { get; private set; }
 
         /// <summary>
@@ -78,6 +87,15 @@ namespace Heron.Revit.Addin
         /// offers no way to look a button up again.
         /// </summary>
         internal static PushButton WriteButton { get; private set; }
+
+        /// <summary>
+        /// The Admin and Publish buttons (D-106), captured for the same
+        /// reason as the other two: the picture is the switch, and there is
+        /// no way to look a button up again.
+        /// </summary>
+        internal static PushButton AdminButton { get; private set; }
+
+        internal static PushButton PublishButton { get; private set; }
 
         /// <summary>
         /// The one way into the Revit API. Created on Revit's own thread
@@ -355,6 +373,65 @@ namespace Heron.Revit.Addin
             // at 'locked' would be a picture that disagrees with the gate.
             SetWriteIcon(HeronPermissions.WriteEnabled());
 
+            // ADMIN AND PUBLISH, BESIDE CHANGES - D-106, 2026-09-28.
+            //
+            // Until then HeronPermissions refused both levels outright, and on
+            // 2026-09-28 that refused ADD_PROJECT_PARAMETER when the owner
+            // asked for two project parameters. He decided both become
+            // reachable ONLY through a switch he turns on himself, exactly as
+            // Changes is - so each gets what Changes has: its own button, its
+            // picture as the state, a question on the way on and none on the
+            // way off, and the setting in heron.config where the gate reads it
+            // fresh on every call.
+            //
+            // NEITHER DOES ANYTHING WITHOUT CHANGES, and each says so in its
+            // tooltip rather than being greyed out. They are independent
+            // switches, and a greyed button would hide what the setting
+            // actually holds - the one thing the picture exists to show.
+            var admin = new PushButtonData(
+                "HeronAdminToggle",
+                "Admin",
+                assemblyPath,
+                typeof(AdminToggleCommand).FullName);
+            admin.ToolTip =
+                "Whether Heron may change how this project is set up - project parameters, " +
+                "worksets, global parameters. Click to turn it on or off.";
+            admin.LongDescription =
+                "Closed padlock: Heron cannot change the project's setup. Open padlock: it may, " +
+                "when you ask it to - add a project or global parameter, create a workset, " +
+                "start a new family file.\n\n" +
+                "Admin only works while Changes is on as well. Turning it on asks first; " +
+                "turning it off never does.\n\n" +
+                "The chat is still told to ask you before it deletes, purges, changes a " +
+                "workset or touches a link - Admin does not change that.\n\n" +
+                "This is the same setting as admin.enabled in heron.config, and either way of " +
+                "changing it takes effect immediately.";
+
+            AdminButton = panel.AddItem(admin) as PushButton;
+            SetAdminIcon(HeronPermissions.AdminEnabled());
+
+            var publish = new PushButtonData(
+                "HeronPublishToggle",
+                "Publish",
+                assemblyPath,
+                typeof(PublishToggleCommand).FullName);
+            publish.ToolTip =
+                "Whether Heron may send things out of the model - export, print, save, sync " +
+                "with central. Click to turn it on or off.";
+            publish.LongDescription =
+                "Closed padlock: Heron cannot export, print, save or sync. Open padlock: it " +
+                "may, when you ask it to - sheets to PDF, a schedule to CSV, a save, a sync " +
+                "with central.\n\n" +
+                "Publish only works while Changes is on as well. Turning it on asks first; " +
+                "turning it off never does.\n\n" +
+                "The chat is told never to save, sync or export on its own - only when you " +
+                "ask, for that one request.\n\n" +
+                "This is the same setting as publish.enabled in heron.config, and either way " +
+                "of changing it takes effect immediately.";
+
+            PublishButton = panel.AddItem(publish) as PushButton;
+            SetPublishIcon(HeronPermissions.PublishEnabled());
+
             // NO EMERGENCY STOP BUTTON - removed on Ajmal's instruction,
             // 2026-09-06 (D-46 in docs/DECISIONS.md). The switch behind it
             // survives on purpose: HeronStop and both gates that read it are
@@ -445,6 +522,46 @@ namespace Heron.Revit.Addin
             if (small != null) button.Image = small;
 
             button.ItemText = enabled ? "Changes ON" : "Changes off";
+        }
+
+        /// <summary>
+        /// Puts the Admin button in step with admin.enabled. After every
+        /// toggle, and once at startup - the SETTING, which can read ON while
+        /// Changes is off; the refusal is what explains that case.
+        /// </summary>
+        internal static void SetAdminIcon(bool enabled)
+        {
+            PaintSwitch(AdminButton, enabled, AdminUnlockedIcon, AdminLockedIcon,
+                        enabled ? "Admin ON" : "Admin off");
+        }
+
+        /// <summary>Puts the Publish button in step with publish.enabled. See SetAdminIcon.</summary>
+        internal static void SetPublishIcon(bool enabled)
+        {
+            PaintSwitch(PublishButton, enabled, PublishUnlockedIcon, PublishLockedIcon,
+                        enabled ? "Publish ON" : "Publish off");
+        }
+
+        /// <summary>
+        /// One switch button's picture and words - SetWriteIcon's shape, for
+        /// the two switches D-106 added. SetWriteIcon itself is left as it
+        /// was: it has been seen in Revit, and these two have not.
+        /// </summary>
+        private static void PaintSwitch(PushButton button, bool on, string onIcon,
+                                        string offIcon, string text)
+        {
+            if (button == null) return;
+
+            var loader = new IconLoader(Assembly.GetExecutingAssembly().Location);
+            var fileName = on ? onIcon : offIcon;
+
+            var large = loader.LoadLarge(fileName);
+            if (large != null) button.LargeImage = large;
+
+            var small = loader.LoadSmall(fileName);
+            if (small != null) button.Image = small;
+
+            button.ItemText = text;
         }
 
         /// <summary>

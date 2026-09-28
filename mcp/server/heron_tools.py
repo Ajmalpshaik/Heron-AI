@@ -141,6 +141,9 @@ TOOLS = {
     # NO PREVIEW, AND THAT IS NOW A DECISION RATHER THAN A SILENCE. Article 9
     # asks for one; the owner chose, on 2026-09-23, to keep the change at once
     # and record the exception - D-99, which names what stands in for it.
+    #
+    # ITS ROW IS ITS OWN LEVEL, AND ALSO_REACHES BELOW SAYS WHAT ELSE IT CAN
+    # SEND (D-106): a PUBLISH or ADMIN fragment goes as its own operation.
     "revit_change":             (MODIFY,  "run_fragment_write"),
 
     # THE READ-ONLY DOOR (package C2, 2026-09-23). The same executor as the
@@ -242,6 +245,28 @@ TOOLS = {
 }
 
 
+# WHAT A TOOL CAN ALSO SEND, BEYOND ITS OWN ROW - D-106, 2026-09-28.
+#
+# revit_change sends a fragment as the operation its OWN declared risk names:
+# `run_fragment_write` for Modify and below - its row above - and one
+# operation each for the two levels over it. The add-in's gate reads each of
+# those at its own level and refuses it unless the owner's switch for that
+# level is on in Revit, with Changes.
+#
+# A TABLE, NOT A SECOND RISK IN THE ROW, because the row's property - a tool's
+# risk equals its operation's - is what tests/test_tool_registry.py holds the
+# two languages to, and this keeps it true for every operation a tool can
+# reach rather than for one of them. The client carries the same pairs as
+# SWITCHED_OPERATIONS, which is what actually picks the operation; the test
+# holds the two copies to each other and to the add-in.
+ALSO_REACHES = {
+    "revit_change": {
+        PUBLISH: "run_fragment_publish",
+        ADMIN: "run_fragment_admin",
+    },
+}
+
+
 class NotDeclared(Exception):
     """A tool nobody declared. Never treated as harmless."""
 
@@ -337,8 +362,12 @@ def door_refusal(door, declared, capability):
         instead = ("A change belongs to revit_change, and that needs Changes "
                    "switched on in Revit's ribbon.")
     else:
-        instead = ("Heron does not run a capability that publishes or administers "
-                   "from a chat at all.")
+        # D-106: the level has its own switch now, and saying which one is
+        # the whole of the way forward.
+        switch = "Admin" if level == ADMIN else "Publish"
+        instead = ("A capability declared %s belongs to revit_change, and that "
+                   "needs %s switched on in Revit's Heron ribbon, with Changes."
+                   % (NAMES[level], switch))
     return ("'%s' is declared %s, and %s runs nothing above %s - %s only. "
             "Nothing has been sent to Revit. %s"
             % (capability, NAMES[level], door, NAMES[ceiling], within, instead))
@@ -404,6 +433,13 @@ def describe():
     for name, (risk, op) in rows:
         mark = "  <- CHANGES THE MODEL" if risk >= MODIFY else ""
         lines.append("  %-*s  %-8s%s" % (width, name, NAMES[risk], mark))
+        # AND WHAT ELSE IT CAN SEND, on the line under it - the answer to
+        # "which tools can change my model" is incomplete without it (D-106).
+        for level in sorted(ALSO_REACHES.get(name, {})):
+            lines.append("  %-*s  %-8s  also, as %s - only while the owner's %s "
+                         "switch is on" % (width, "", NAMES[level],
+                                           ALSO_REACHES[name][level],
+                                           "Admin" if level == ADMIN else "Publish"))
     return "\n".join(lines)
 
 

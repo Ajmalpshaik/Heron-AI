@@ -11,7 +11,9 @@ domain: revit.export
 capability: EXPORT_MODEL_TO_IFC
 version: 1
 source: OFFICIAL
-risk: MODIFY
+# PUBLISH since D-107 (Q-59, 2026-09-28): it writes a file out of the model,
+# so the owner's Publish switch guards it, with Changes. It was MODIFY.
+risk: PUBLISH
 
 purpose: >
   Exports the model to a single IFC file, at a named schema version, optionally

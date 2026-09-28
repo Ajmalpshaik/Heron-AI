@@ -224,6 +224,20 @@ namespace Heron.Revit.Addin
                 case "run_fragment_write":
                     return RevitFragment.Run(app, request, true);
 
+                // THE SAME WRITE EXECUTOR, reached under the two levels above
+                // Modify (D-106). Nothing about the run differs from the case
+                // above - the same TransactionGroup, kept only on apply - and
+                // that is deliberate: every PUBLISH and ADMIN proof so far but
+                // one was taken through that executor (export-parameters-to-
+                // csv ran on the read path, which no longer carries either
+                // level). What differs is
+                // the risk the gate above read for the NAME, so it is the
+                // owner's Publish or Admin switch that let this through, with
+                // Changes, and nothing in the request could have said so.
+                case "run_fragment_publish":
+                case "run_fragment_admin":
+                    return RevitFragment.Run(app, request, true);
+
                 default:
                     // Step 6 added the write path. It lives in its own file so
                     // that everything able to change a model is in one place a
@@ -273,9 +287,37 @@ namespace Heron.Revit.Addin
                 return Json.Error("stopped", HeronStop.Message);
             }
 
-            // 3. THE PERMISSION LEVEL.
-            var denied = HeronPermissions.Explain(risk);
-            if (denied != null) return Json.Error("write_disabled", denied);
+            // 3. THE PERMISSION LEVEL - the three switches, read ONCE.
+            //
+            // One load of heron.config answers whether, why and which switch,
+            // so the owner clicking Admin between two reads cannot produce a
+            // refusal that names a switch he had just turned on. Nothing is
+            // read at all for a level at or below the read-only ceiling,
+            // which is what Allows() has always done.
+            if (risk > HeronPermissions.ReadOnlyCeiling)
+            {
+                var config = HeronConfig.Load();
+                var refusedBy = HeronPermissions.RefusedBy(risk, config);
+                if (refusedBy != null)
+                {
+                    var denied = HeronPermissions.Explain(risk, config, HeronConfig.FilePath);
+
+                    // WHICH SWITCH, IN THE CODE AS WELL AS THE WORDS. The chat
+                    // reads the sentence; the banner over Revit has room for
+                    // one line and reads the code, and "Not allowed to change
+                    // the model" is the wrong line to show somebody whose
+                    // Changes switch is on and whose Admin switch is off.
+                    switch (refusedBy)
+                    {
+                        case HeronPermissions.AdminEnabledKey:
+                            return Json.Error("admin_disabled", denied);
+                        case HeronPermissions.PublishEnabledKey:
+                            return Json.Error("publish_disabled", denied);
+                        default:
+                            return Json.Error("write_disabled", denied);
+                    }
+                }
+            }
 
             return null;
         }
