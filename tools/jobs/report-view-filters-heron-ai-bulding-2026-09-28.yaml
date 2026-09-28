@@ -1,0 +1,36 @@
+# The re-proof of report-view-filters version 2 (REPORT_VIEW_FILTERS,
+# FRG-VIEW-041), 2026-09-28 - NEEDS-CHECKING Group BC, row BC4.
+#
+#     python tools/batch-prove.py tools/jobs/report-view-filters-heron-ai-bulding-2026-09-28.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/report-view-filters-heron-ai-bulding-2026-09-28.yaml
+#
+# READ ONLY. Nothing is written, so it may run on the working file.
+#
+# ZERO SETUP. Every value is typed; nothing is selected and nothing is chained.
+#
+# POSITIVE: `*`, every view carrying a filter. On 2026-09-28 that was
+# `{3D}` and `FloorPlan: Level 1 - Air Terminal Layout`, three duct filters
+# each, and `filterSettings` must hold all six rows - Enable Filter,
+# Visibility, the patterns and colours, and "cut not applicable" naming the
+# eight duct categories.
+#
+# NEGATIVE: `1 - Mech`, a floor plan that carries NO filter (read 2026-09-28).
+# `filterSettings` must come back EMPTY, with the first finding saying the view
+# carries no filters - an answer with nothing in it, not a sentence.
+#
+# `unusedFilters` is 0 in both legs here - all three filters are on a view -
+# so `filterSettings` is the result that moves. Version 1's two-model proof of
+# the unused list still describes that half.
+#
+# NOT SET HERE: `in:`. Without it the run reads the model in front. With two
+# Revits connected to Heron, add `--session <process id>` to both commands.
+
+model: Project1 "heron ai bulding" (as it stood after 2026-09-28), Revit 2024
+
+jobs:
+  - fragment: report-view-filters
+    expect: filterSettings
+    set:
+      viewName: "*"
+    negative-set:
+      viewName: "1 - Mech"
