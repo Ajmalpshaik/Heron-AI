@@ -21,6 +21,8 @@ WHAT IT PROVES
   5. A card changed on disk reaches its row without a rebuild - only that
      card's row, never a row somebody else wrote, and never from a linked
      worktree into the one shared store (FRAGMENT-ISSUES 5b-249, row 131).
+     A card caught mid-checkout is looked at again, and two chats racing a
+     fast-forward leave the row at the card on disk.
 
 WHAT IT DOES NOT PROVE. That any of this is wired to a real Revit document. The
 resolver is handed the same facts the bridge would report; nothing here has
@@ -276,6 +278,56 @@ def refreshing(S, F):
               "a card that could not be read is read again next time "
               "(%r then %r)" % (first, second))
 
+        # A CARD CAUGHT MID-CHECKOUT IS TRIED AGAIN: fragment.yaml written,
+        # tests/cases.yaml not yet. It parses and does not validate, and the
+        # file that finishes it does not move fragment.yaml's mark - so a card
+        # marked as looked at there was never looked at again (second review
+        # on PR #353).
+        cases = os.path.join(os.path.dirname(card), "tests", "cases.yaml")
+        os.remove(cases)
+        _rewrite_card(card, "a locked-out rename", "a rename mid-checkout")
+        check(F.validate(F.load(os.path.dirname(card))) != [],
+              "a card without its cases does not validate")
+        store = S.open_scope(S.GLOBAL)
+        try:
+            first = refresh(store)
+            io.open(cases, "w", encoding="utf-8").write(CASES)
+            second = refresh(store)
+        finally:
+            store.close()
+        check(first == [] and second == ["FRG-ELE-001"]
+              and _row(S, "FRG-ELE-001", "semantic_identity")
+              == "a rename mid-checkout",
+              "a card that did not validate is looked at again once it does, "
+              "though fragment.yaml did not move (%r then %r)"
+              % (first, second))
+
+        # BUT A NEW CARD THAT DOES NOT VALIDATE IS STILL MARKED. It is never
+        # added here, so looking again gains nothing, and leaving it unmarked
+        # would parse it on every lookup until a rebuild.
+        fresh = write_valid_fragment(os.path.join(work, "do-a-broken-new-one"))
+        _rewrite_card(os.path.join(fresh, "fragment.yaml"),
+                      "FRG-ELE-001", "FRG-ELE-003")
+        os.remove(os.path.join(fresh, "tests", "cases.yaml"))
+        loaded = []
+        real_load = F.load
+
+        def counting_load(folder, *args, **kwargs):
+            loaded.append(os.path.basename(folder))
+            return real_load(folder, *args, **kwargs)
+
+        store = S.open_scope(S.GLOBAL)
+        try:
+            refresh(store)
+            F.load = counting_load
+            refresh(store)
+        finally:
+            F.load = real_load
+            store.close()
+        check("do-a-broken-new-one" not in loaded,
+              "a NEW card that does not validate is parsed once, not on every "
+              "lookup (parsed again: %s)" % (", ".join(loaded) or "nothing"))
+
         # A NEW WAY OF MAKING A ROW makes every record of the old way void:
         # ROW_FORMAT, as heron_search's INDEX_FORMAT (review on PR #353).
         store = S.open_scope(S.GLOBAL)
@@ -315,6 +367,8 @@ def refreshing(S, F):
         check(got == ["FRG-ELE-001"]
               and _row(S, "FRG-ELE-001", "capability") == "DO_A_TEST_THING",
               "a store with no record of what it saw is compared in full")
+
+        racing_a_fast_forward(S, F, refresh, card)
     finally:
         F.FRAGMENTS_DIR = was_fragments_dir
         shutil.rmtree(work, ignore_errors=True)
@@ -486,13 +540,106 @@ def refreshing(S, F):
     check(at >= 0 and all(0 <= at < enter.find(later) for later in
                           ("CAP.rebuild(", "SEARCH.index(", "EMBED.index(")),
           "and does it BEFORE the capability map and both indexes read them")
-    for name in ("heron_retrieve.py", "heron_context.py"):
+    # heron_search.py's own command line was the third, found by the second
+    # review on PR #353; it calls its own index(), so the anchor is the call.
+    for name in ("heron_retrieve.py", "heron_context.py", "heron_search.py"):
         text = io.open(os.path.join(ROOT, "brain", name),
                        encoding="utf-8").read()
         body = text[text.find("def main("):]
         at = body.find("SCOPE.refresh(")
-        check(0 <= at < body.find("SEARCH.index("),
+        check(0 <= at < body.find("index(store)"),
               "brain/%s refreshes the rows before it indexes" % name)
+
+
+def racing_a_fast_forward(S, F, refresh, card):
+    """Two chats refresh one store while its card changes under them.
+
+    Chat A reads the card as it stood BEFORE the main checkout moved, and is
+    still parsing when the card changes; chat B reads the card AFTER, writes
+    its row and records it. A must not then write the row it read, nor record
+    over B's marks and digest: the code before the fix did both, and left the
+    row stale until the card changed again (second review on PR #353).
+
+    Driven by a thread and two events, so the interleaving is the same on
+    every run. A waits inside its parse. On the code before the fix, B waits
+    between writing its row and recording it - put_fragment committed the one
+    and _record the other, which is the gap A's writes fell into. The code
+    after writes rows without put_fragment, so B never waits there, and A is
+    let go when B is done.
+    """
+    import threading
+
+    _rewrite_card(card, "a test fragment", "the card before a fast-forward")
+    parsed, resume = threading.Event(), threading.Event()
+    outcome = {}
+    real_load = F.load
+    real_put = S.Store.put_fragment
+
+    def chat_a():
+        try:
+            store = S.open_scope(S.GLOBAL)
+            try:
+                outcome["A"] = refresh(store)
+            finally:
+                store.close()
+        except Exception as exc:          # named by the check below
+            outcome["A"] = "raised %r" % (exc,)
+        finally:
+            parsed.set()
+
+    a = threading.Thread(target=chat_a, name="chat-a")
+
+    def let_a_finish():
+        if not resume.is_set():
+            resume.set()
+            a.join(60)
+
+    def load_then_wait(folder, *args, **kwargs):
+        frag = real_load(folder, *args, **kwargs)
+        if threading.current_thread() is a and not parsed.is_set():
+            parsed.set()
+            resume.wait(60)
+        return frag
+
+    def put_then_let_a_finish(self, frag):
+        real_put(self, frag)
+        if threading.current_thread() is not a:
+            let_a_finish()
+
+    F.load = load_then_wait
+    S.Store.put_fragment = put_then_let_a_finish
+    try:
+        a.start()
+        check(parsed.wait(60), "chat A read the card before the fast-forward")
+        _rewrite_card(card, "the card before a fast-forward",
+                      "the card after a fast-forward")
+        store = S.open_scope(S.GLOBAL)
+        try:
+            outcome["B"] = refresh(store)
+        finally:
+            store.close()
+        let_a_finish()
+    finally:
+        F.load = real_load
+        S.Store.put_fragment = real_put
+        resume.set()
+        a.join(60)
+
+    after = _row(S, "FRG-ELE-001", "semantic_identity")
+    store = S.open_scope(S.GLOBAL)
+    try:
+        later = refresh(store)
+    finally:
+        store.close()
+    check(after == "the card after a fast-forward",
+          "two chats racing a fast-forward leave the row at the card on disk "
+          "(%r; chat A %r, chat B %r)"
+          % (after, outcome.get("A"), outcome.get("B")))
+    check(_row(S, "FRG-ELE-001", "semantic_identity")
+          == "the card after a fast-forward",
+          "and the next lookup finds it there too, rather than trusting "
+          "records that describe another row (%r, rewrote %r)"
+          % (_row(S, "FRG-ELE-001", "semantic_identity"), later))
 
 def main():
     home = tempfile.mkdtemp(prefix="heron-kn-")

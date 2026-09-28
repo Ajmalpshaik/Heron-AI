@@ -251,11 +251,18 @@ class Store(object):
     # -- contents -----------------------------------------------------------
 
     def put_fragment(self, frag):
+        self.put_row(frag)
+        self.db.commit()
+
+    def put_row(self, frag):
+        """put_fragment WITHOUT the commit, for a caller whose transaction
+        commits the row together with what it records about the row -
+        `refresh()`, where committing each on its own is a race (review of
+        PR #353)."""
         self.execute(
             "INSERT OR REPLACE INTO fragments (%s) VALUES (?,?,?,?,?,?,?,?,?)"
             % ", ".join(ROW_FIELDS),
             row_of(frag))
-        self.db.commit()
 
     def fragments(self):
         return [dict(r) for r in self.execute(
@@ -374,6 +381,7 @@ def rebuild(scope=GLOBAL, project_key=None):
                 if raw is not None:
                     rows_from[os.path.basename(frag.folder)] = _digest(raw)
         _record(store, _key(FRAG.FRAGMENTS_DIR), marks, rows_from)
+        store.db.commit()
         return store.count(), problems
     finally:
         store.close()
@@ -440,12 +448,19 @@ def cards_on_disk(folder=None):
     if not os.path.isdir(folder):
         return marks
     for name in sorted(os.listdir(folder)):
-        try:
-            stat = os.stat(os.path.join(folder, name, "fragment.yaml"))
-        except OSError:
-            continue
-        marks[name] = [stat.st_mtime_ns, stat.st_size]
+        mark = _mark(folder, name)
+        if mark is not None:
+            marks[name] = mark
     return marks
+
+
+def _mark(folder, name):
+    """One card's [mtime_ns, size], or None when it has no fragment.yaml."""
+    try:
+        stat = os.stat(os.path.join(folder, name, "fragment.yaml"))
+    except OSError:
+        return None
+    return [stat.st_mtime_ns, stat.st_size]
 
 
 def _same_folder(a, b):
@@ -500,7 +515,11 @@ def _meta(store, key):
 
 
 def _record(store, key, marks, rows_from):
-    """The marks last looked at, and which bytes each row came from."""
+    """The marks last looked at, and which bytes each row came from.
+
+    NOT COMMITTED HERE. The caller commits, so these records land in the same
+    transaction as the rows they describe, or not at all.
+    """
     for name, kept in ((key, marks), (ROWS_FROM, rows_from)):
         store.execute(
             "INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)",
@@ -512,7 +531,6 @@ def _record(store, key, marks, rows_from):
                              (CARDS_SEEN + "%",)).fetchall():
         if not os.path.isdir(row["key"][len(CARDS_SEEN):]):
             store.execute("DELETE FROM meta WHERE key = ?", (row["key"],))
-    store.db.commit()
 
 
 def shared_dir():
@@ -603,10 +621,32 @@ def refresh(store, root=None):
     two merges. A card that loads and does not validate keeps the row it had:
     rebuild() would drop it, and a lookup that loses a working capability over
     a card that fails a check is worse than one answering from the version
-    before. A card that could not be READ or PARSED is not marked as looked at
-    - a Windows lock, a file caught half-saved - so the next lookup tries it
-    again rather than trusting a mark that never met the bytes (D-48; review
-    on PR #353).
+    before.
+
+    A CARD IS MARKED AS LOOKED AT ONLY WHEN ITS BYTES HAVE BEEN DEALT WITH.
+    One that could not be READ or PARSED - a Windows lock, a file caught
+    half-saved - is tried again on the next lookup rather than trusted to a
+    mark that never met the bytes (D-48; review on PR #353). So is a card the
+    store holds that parses and does not VALIDATE: a lookup racing a checkout
+    that has written fragment.yaml but not yet tests/cases.yaml or the impl
+    would otherwise never look again, because the files that finish the card
+    do not move fragment.yaml's mark (second review on PR #353). A card the
+    store does NOT hold is marked either way. It is never added here, and
+    leaving it unmarked would parse every new card on every lookup until a
+    rebuild.
+
+    ONE SHORT TRANSACTION, AND EVERYTHING SLOW OUTSIDE IT. The cards are read
+    and parsed holding no lock. Then, under BEGIN IMMEDIATE, the records and
+    the rows are read again, each card is stat'ed again and left unmarked if
+    its mark moved since it was read, the rows are written, and this reader's
+    marks and digests are MERGED into the records as they stand now - and all
+    of it commits at once. Before this, two chats refreshing the shared store
+    while the main checkout was being fast-forwarded could interleave: one
+    wrote a row from the card BEFORE the fast-forward after the other had
+    recorded the marks and digest of the card AFTER it, and that row stayed
+    stale until the card changed again (second review on PR #353). Every chat
+    on the PC shares that store, so the transaction holds only stat calls, a
+    read of the rows and the rows that changed.
     """
     source = refreshes_from(root)
     if source is None:
@@ -619,43 +659,73 @@ def refresh(store, root=None):
     if seen == marks:
         return []
     rows_from = _meta(store, ROWS_FROM) or {}
+    held = set(row["id"] for row in store.execute(
+        "SELECT id FROM fragments").fetchall())
 
-    held = {}
-    for row in store.fragments():
-        held[row["id"]] = tuple(row[f] for f in ROW_FIELDS)
-
-    rewritten = []
-    looked = dict(marks)
+    # READ AND PARSE, HOLDING NO LOCK. A card worth recording is kept as its
+    # name, the mark taken BEFORE its bytes were read, their digest, the card
+    # (None when the row was made from these bytes) and whether it validates.
+    looked = []
     for name, mark in sorted(marks.items()):
         if seen is not None and seen.get(name) == mark:
             continue
         raw = _card(cards, name)
-        frag = None
-        if raw is not None and rows_from.get(name) != _digest(raw):
-            try:
-                frag = FRAG.load(os.path.join(cards, name), root=checkout)
-            except ValueError:
-                raw = None
-            except Exception:                      # noqa: BLE001 - deliberate
-                # D-48, as load_all() has it: one card that fails in a way
-                # load() did not turn into a ValueError costs that card, never
-                # the lookup this runs inside.
-                raw = None
         if raw is None:
-            if seen is not None and name in seen:
-                looked[name] = seen[name]
-            else:
-                looked.pop(name)
+            continue                  # not marked: tried again next lookup
+        digest = _digest(raw)
+        if rows_from.get(name) == digest:
+            looked.append((name, mark, digest, None, True))
             continue
-        if frag is None:
-            continue                  # the row was made from these bytes
-        if frag.id and frag.id in held and not FRAG.validate(frag):
-            if held[frag.id] != row_of(frag):
-                store.put_fragment(frag)
-                rewritten.append(frag.id)
-            rows_from[name] = _digest(raw)
+        try:
+            frag = FRAG.load(os.path.join(cards, name), root=checkout)
+            valid = not FRAG.validate(frag)
+        except ValueError:
+            continue
+        except Exception:                      # noqa: BLE001 - deliberate
+            # D-48, as load_all() has it: one card that fails in a way
+            # load() did not turn into a ValueError costs that card, never
+            # the lookup this runs inside.
+            continue
+        if valid or not (frag.id and frag.id in held):
+            looked.append((name, mark, digest, frag, valid))
 
-    _record(store, key, looked, rows_from)
+    gone = seen is not None and any(name not in marks for name in seen)
+    if not looked and not gone:
+        return []
+
+    rewritten = []
+    store.execute("BEGIN IMMEDIATE")
+    done = False
+    try:
+        kept = dict((name, mark) for name, mark in
+                    (_meta(store, key) or {}).items() if name in marks)
+        now_from = _meta(store, ROWS_FROM) or {}
+        now_held = dict((row["id"], tuple(row[f] for f in ROW_FIELDS))
+                        for row in store.fragments())
+        for name, mark, digest, frag, valid in looked:
+            if _mark(cards, name) != mark:
+                continue              # saved again since it was read
+            if frag is None:
+                if now_from.get(name) == digest:
+                    kept[name] = mark
+                continue
+            row = now_held.get(frag.id) if frag.id else None
+            if row is None:
+                kept[name] = mark     # not held, and never added here
+                continue
+            if not valid:
+                continue
+            if row != row_of(frag):
+                store.put_row(frag)
+                rewritten.append(frag.id)
+            now_from[name] = digest
+            kept[name] = mark
+        _record(store, key, kept, now_from)
+        store.db.commit()
+        done = True
+    finally:
+        if not done:
+            store.db.rollback()
     return rewritten
 
 
