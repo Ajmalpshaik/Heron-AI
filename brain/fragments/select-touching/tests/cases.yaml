@@ -12,6 +12,15 @@ positive:
   - given: the same target with a category list of walls only
     expect: the wall and nothing else, from the same overlap set
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      one pipe in this MEP model that runs through a wall of the
+      architectural link, target that pipe, includeLinks true
+    expect: >
+      `elements` unchanged from the host-only run; the link's line reads
+      "1 overlap (Walls 1)" and the next line names the wall's type, its id
+      in the link and its Fire Rating - checked by picking the wall with Tab
+
 negative:
   - given: two ducts joined by a real elbow fitting at a shared connector
     expect: >
@@ -33,6 +42,34 @@ negative:
 
   - given: no target given
     expect: refused, with the reason
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
+
+  - given: a pipe running in open ceiling space, clear of every linked element, includeLinks true
+    expect: >
+      each link's line reads "0 overlap" - a pipe near a wall but not
+      through it is NOT a hit, because the test is the solid, not the box
+
+  - given: a target with no solid geometry (a model line), includeLinks true
+    expect: >
+      "Links NOT read: the element given has no solid to test against them" -
+      never a count of 0 that reads as clear
 
 second_route: >
   Revit's own Interference Check between the target and the candidate category,

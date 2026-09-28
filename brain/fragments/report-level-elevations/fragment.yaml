@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-EXP-018
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "whether this model's level heights can be trusted in a calcu
 kind: action
 domain: revit.document
 capability: REPORT_LEVEL_ELEVATIONS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -51,11 +51,37 @@ purpose: >
   Project and half on Shared is legal. `typesDisagree` is reported for that
   case, because it is the version of this that survives a spot check.
 
+  **LINKED MODELS ARE READ ONLY WHEN ASKED FOR (version 2, D-59).** With
+  `includeLinks` absent this answers for this model alone, exactly as the
+  proof measured. With it set, every loaded link's levels are carried
+  through its first placement into this model's space and set against this
+  model's level of the same NAME - *"is the architect's Level 2 at the same
+  height as mine"* - and `linkedMatches` gives each link's count, then one
+  line per linked level: its height here, this model's, and the difference
+  in millimetres, or that no level here has that name. A file placed more
+  than once at different heights is said, not averaged. `linksSearched`
+  says how many links were read: set and 0 means "you asked, and none are
+  loaded". **NOTHING FROM A LINK IS CARRIED** - `levels` and both
+  dictionaries stay this model's own; they are keyed by ids the next step
+  would look up here (FRAGMENT-ISSUES row 75). Links nested inside a link
+  are not read, and are counted in the answer. This is version 2; version
+  1's proof no longer describes the code, and the fragment is DRAFT until
+  it is proved again.
+
 contract:
   needs:
     - name: doc
       type: Document
       source: ambient
+    - name: includeLinks
+      # D-59. THE MODELLER DECIDES, JOB BY JOB, and absent means host only -
+      # which is what this fragment did before and what its proof measured.
+      # `optional: true` is what lets it be left out: the binder refuses an
+      # absent request need unless it is a bool marked optional, which binds
+      # false (HeronBindingNote.AbsentValue, FRAGMENT-ISSUES row 5b-227).
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: levels
       role: result
@@ -86,6 +112,20 @@ contract:
       # REST, and this is what says so.
       role: result
       type: bool
+    - name: linksSearched
+      # D-59's second field, and the one that does the work: how many
+      # linked DOCUMENTS were actually read - a file placed twice is one.
+      # `includeLinks` set and this at 0 means "asked, and none are
+      # loaded", which must not read the same as host-only.
+      role: accounting
+      type: int
+    - name: linkedMatches
+      # What was found in the links, as TEXT - the first line says which of
+      # D-59's three cases this is, then the links' own lines. Text on
+      # purpose: a linked element or id carried to the next step is looked
+      # up in THIS model (FRAGMENT-ISSUES row 75).
+      role: accounting
+      type: IList<string>
 
 proof:
   date: '2026-09-13'

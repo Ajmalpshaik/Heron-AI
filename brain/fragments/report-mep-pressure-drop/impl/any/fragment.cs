@@ -1,6 +1,6 @@
-// NOT STANDALONE. Assumes `doc` and `systemNameContains` are in scope; leaves
-// `findings`, `systemsCalculated`, `uncalculated` and `criticalPathTotals`
-// behind.
+// NOT STANDALONE. Assumes `doc`, `systemNameContains` and `includeLinks` are in
+// scope; leaves `findings`, `systemsCalculated`, `uncalculated`,
+// `criticalPathTotals`, `linksSearched` and `linkedMatches` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -23,11 +23,68 @@
 //
 // MEPSection IS IN THE Mechanical NAMESPACE FOR PIPE SYSTEMS TOO, which its use
 // on a PipingSystem does not suggest.
+//
+// LINKS ARE READ ONLY WHEN ASKED FOR, AND ONLY AS TEXT - D-59. On a job split
+// by trade the plumbing or the mechanical model is a link. With `includeLinks`
+// set, each loaded link's systems are read the same way - calculated or not,
+// and the critical-path total - and reported in `linkedMatches`, one line per
+// link and one per calculated system. `systemsCalculated`, `uncalculated` and
+// `criticalPathTotals` stay this model's own, so the host answer reads exactly
+// as before. NESTED LINKS ARE NOT READ, AND THE ANSWER COUNTS THEM. Only model
+// elements are read from a link, never its views or sheets.
 
 var findings = new List<string>();
 var systemsCalculated = 0;
 var uncalculated = new List<string>();
 var criticalPathTotals = new List<string>();
+
+// ---- D-59: which links, only when asked for --------------------------------
+
+var linksSearched = 0;
+var linkedMatches = new List<string>();
+var linkedTotal = 0;
+var nestedLinks = 0;
+
+// One entry per link FILE, keyed by link type - a file placed twice is one
+// model placed twice, and counting placements would report a job with four
+// links as having nine. LIST_LINKED_MODELS' rule, as REPORT_AREAS applies it.
+var linkTypes = new List<ElementId>();
+var linkDocs = new List<Document>();
+var linkPlacements = new List<List<RevitLinkInstance>>();
+
+if (includeLinks)
+{
+    foreach (var instance in new FilteredElementCollector(doc)
+        .OfClass(typeof(RevitLinkInstance)).Cast<RevitLinkInstance>())
+    {
+        if (instance == null) continue;
+
+        var typeId = instance.GetTypeId();
+        if (typeId == null || typeId == ElementId.InvalidElementId) continue;
+
+        var known = linkTypes.IndexOf(typeId);
+        if (known >= 0) { linkPlacements[known].Add(instance); continue; }
+
+        // LOADED IS ESTABLISHED BY ASKING FOR THE DOCUMENT, never by a status.
+        Document linked = null;
+        try { linked = instance.GetLinkDocument(); }
+        catch (Exception) { linked = null; }
+        if (linked == null) continue;
+
+        linkTypes.Add(typeId);
+        linkDocs.Add(linked);
+        linkPlacements.Add(new List<RevitLinkInstance> { instance });
+
+        try
+        {
+            nestedLinks += new FilteredElementCollector(linked)
+                .OfClass(typeof(RevitLinkInstance)).GetElementCount();
+        }
+        catch (Exception) { }
+    }
+}
+
+var linkBlocked = "";
 
 // Both system kinds, walked the same way.
 var systems = new List<MEPSystem>();
@@ -149,3 +206,97 @@ findings.Insert(0, string.Format("{0} system(s) with hydraulics calculated, {1} 
     + "Pressure and friction are in REVIT'S INTERNAL UNITS and are not converted - compare against "
     + "the system's own properties in Revit, where the same figures appear formatted",
     systemsCalculated, uncalculated.Count));
+
+// ---- D-59: the same read, in each link -------------------------------------
+
+for (var i = 0; i < linkDocs.Count; i++)
+{
+    var linked = linkDocs[i];
+    var linkSystems = new List<MEPSystem>();
+    try
+    {
+        foreach (var element in new FilteredElementCollector(linked)
+            .OfClass(typeof(MechanicalSystem)).WhereElementIsNotElementType())
+        {
+            var system = element as MEPSystem;
+            if (system != null) linkSystems.Add(system);
+        }
+        foreach (var element in new FilteredElementCollector(linked)
+            .OfClass(typeof(PipingSystem)).WhereElementIsNotElementType())
+        {
+            var system = element as MEPSystem;
+            if (system != null) linkSystems.Add(system);
+        }
+    }
+    catch (Exception) { }
+
+    var linkCalculated = 0;
+    var linkUncalculated = 0;
+    var rows = new List<string>();
+    foreach (var system in linkSystems)
+    {
+        var name = system.Name ?? "";
+        if (!string.IsNullOrEmpty(systemNameContains)
+            && name.IndexOf(systemNameContains, StringComparison.OrdinalIgnoreCase) < 0)
+            continue;
+
+        var mech = system as MechanicalSystem;
+        var pipe = system as PipingSystem;
+        var sectionCount = 0;
+        try { sectionCount = mech != null ? mech.SectionsCount : (pipe != null ? pipe.SectionsCount : 0); }
+        catch (Exception) { sectionCount = 0; }
+        if (sectionCount == 0) { linkUncalculated++; continue; }
+
+        var criticalNumbers = new HashSet<int>();
+        try
+        {
+            var path = mech != null ? mech.GetCriticalPathSectionNumbers() : pipe.GetCriticalPathSectionNumbers();
+            if (path != null) foreach (var n in path) criticalNumbers.Add(n);
+        }
+        catch (Exception) { }
+
+        // BY INDEX, as above.
+        var criticalLoss = 0.0;
+        for (var index = 0; index < sectionCount; index++)
+        {
+            try
+            {
+                var section = mech != null ? mech.GetSectionByIndex(index) : pipe.GetSectionByIndex(index);
+                if (section != null && criticalNumbers.Contains(section.Number))
+                    criticalLoss += section.TotalPressureLoss;
+            }
+            catch (Exception) { }
+        }
+
+        linkCalculated++;
+        rows.Add(string.Format("  {0} - '{1}' critical path {2:0.####} (internal units){3}",
+            linked.Title, name, criticalLoss,
+            criticalNumbers.Count == 0 ? " - no critical path reported" : ""));
+    }
+
+    linksSearched++;
+    linkedTotal += linkCalculated;
+    linkedMatches.Add(string.Format("{0}: {1} system(s) calculated, {2} UNCALCULATED",
+        linked.Title, linkCalculated, linkUncalculated));
+    linkedMatches.AddRange(rows);
+}
+
+// THE ANSWER SAYS WHAT IT READ. Asked-and-found, asked-and-none-loaded and not
+// asked read differently on purpose - D-59's own worked example.
+if (!includeLinks)
+    linkedMatches.Insert(0, "Host model only - links not read");
+else if (linkBlocked.Length > 0)
+    linkedMatches.Insert(0, linkBlocked);
+else if (linksSearched == 0)
+    linkedMatches.Insert(0, "Links asked for, NONE loaded - host only");
+else
+    linkedMatches.Insert(0, string.Format("{0} link(s) read: {1} calculated system(s), NOT selected",
+        linksSearched, linkedTotal));
+
+if (includeLinks && nestedLinks > 0)
+    linkedMatches.Add(string.Format("{0} link placement(s) nested inside those links were NOT "
+        + "read", nestedLinks));
+
+if (linksSearched > 0)
+    linkedMatches.Add("What a link holds is reported here as text only - nothing from a link "
+        + "is carried to the next step, which would look it up in this model");

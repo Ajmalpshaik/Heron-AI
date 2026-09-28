@@ -1,6 +1,6 @@
-// NOT STANDALONE. Assumes `doc`, `sleeves`, `annularClearance` and
-// `maxOversize` are in scope; leaves `findings`, `undersized`, `orphaned` and
-// `unreadable` behind.
+// NOT STANDALONE. Assumes `doc`, `sleeves`, `annularClearance`, `maxOversize`
+// and `includeLinks` are in scope; leaves `findings`, `undersized`, `orphaned`,
+// `unreadable`, `linksSearched` and `linkedMatches` behind.
 //
 // READ ONLY. Opens no transaction and needs none. Sizes are internal FEET.
 //
@@ -19,6 +19,20 @@
 // SLEEVE SIZE IS READ BY PARAMETER NAME AND FAMILIES DO NOT AGREE ON NAMES. The
 // usual ones are tried and the one that answered is NAMED per row, so a family
 // calling it something else reads as unreadable rather than as passing.
+//
+// WHAT THE SLEEVE GOES THROUGH IS READ FROM THE LINKS ONLY WHEN ASKED FOR -
+// D-59. On a coordination job the wall or slab a sleeve crosses is usually the
+// architect's or the structural engineer's, in a link, and its Fire Rating
+// decides the fire-stopping - which is why an oversized sleeve matters. With
+// `includeLinks` set, each sleeve's centre is looked for inside the linked
+// walls, floors, roofs, ceilings and structural members, in each placement's
+// own coordinates, and what it sits in is reported as TEXT in `linkedMatches`.
+// `undersized` and `orphaned` stay this model's own: the chain revives ids
+// against the HOST document, so a linked id carried there binds an unrelated
+// element silently (FRAGMENT-ISSUES row 75). "Sits inside" is a box test, so a
+// sleeve near a corner can name both walls - every candidate is listed.
+// NESTED LINKS ARE NOT READ, AND THE ANSWER COUNTS THEM. Only model elements
+// are read from a link, never its views or sheets.
 
 // MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
 // millimetres. The add-in converts an XYZ at the boundary and cannot convert a
@@ -45,6 +59,123 @@ Func<Element, string, double> readNamed = (element, name) =>
     return parameter.AsDouble();
 };
 
+// ---- D-59: which links, only when asked for --------------------------------
+
+var linksSearched = 0;
+var linkedMatches = new List<string>();
+var linkedTotal = 0;
+var nestedLinks = 0;
+
+// One entry per link FILE, keyed by link type - a file placed twice is one
+// model placed twice, and counting placements would report a job with four
+// links as having nine. LIST_LINKED_MODELS' rule, as REPORT_AREAS applies it.
+var linkTypes = new List<ElementId>();
+var linkDocs = new List<Document>();
+var linkPlacements = new List<List<RevitLinkInstance>>();
+
+if (includeLinks)
+{
+    foreach (var instance in new FilteredElementCollector(doc)
+        .OfClass(typeof(RevitLinkInstance)).Cast<RevitLinkInstance>())
+    {
+        if (instance == null) continue;
+
+        var typeId = instance.GetTypeId();
+        if (typeId == null || typeId == ElementId.InvalidElementId) continue;
+
+        var known = linkTypes.IndexOf(typeId);
+        if (known >= 0) { linkPlacements[known].Add(instance); continue; }
+
+        // LOADED IS ESTABLISHED BY ASKING FOR THE DOCUMENT, never by a status.
+        Document linked = null;
+        try { linked = instance.GetLinkDocument(); }
+        catch (Exception) { linked = null; }
+        if (linked == null) continue;
+
+        linkTypes.Add(typeId);
+        linkDocs.Add(linked);
+        linkPlacements.Add(new List<RevitLinkInstance> { instance });
+
+        try
+        {
+            nestedLinks += new FilteredElementCollector(linked)
+                .OfClass(typeof(RevitLinkInstance)).GetElementCount();
+        }
+        catch (Exception) { }
+    }
+    linksSearched = linkDocs.Count;
+}
+
+// What an opening can be cut through. Model elements only - never a view.
+var LINKED_HOST_CATEGORIES = new List<BuiltInCategory> { BuiltInCategory.OST_Walls,
+    BuiltInCategory.OST_Floors, BuiltInCategory.OST_Roofs, BuiltInCategory.OST_Ceilings,
+    BuiltInCategory.OST_StructuralFraming, BuiltInCategory.OST_StructuralColumns };
+
+// Fire Rating by the name Revit's own walls, floors and doors carry it under,
+// on the element first and then its type. Read as the palette shows it. A
+// family that calls it something else reads "not set" - said, never guessed.
+Func<Element, string> fireRatingOf = element =>
+{
+    Element type = null;
+    try { type = element.Document.GetElement(element.GetTypeId()); } catch (Exception) { }
+    foreach (var source in new[] { element, type })
+    {
+        if (source == null) continue;
+        Parameter parameter = null;
+        try { parameter = source.LookupParameter("Fire Rating"); } catch (Exception) { }
+        if (parameter == null || !parameter.HasValue) continue;
+        string text = null;
+        try
+        {
+            text = parameter.StorageType == StorageType.String
+                ? parameter.AsString() : parameter.AsValueString();
+        }
+        catch (Exception) { }
+        if (!string.IsNullOrEmpty(text)) return text;
+    }
+    return "not set";
+};
+
+// Every linked host element whose box holds this point, as text: the link, the
+// category, 'Family: Type', its id IN THE LINK, and its Fire Rating.
+Func<XYZ, List<string>> linkedHostsAt = point =>
+{
+    var hits = new List<string>();
+    for (var i = 0; i < linkDocs.Count; i++)
+    {
+        var seen = new HashSet<ElementId>();
+        foreach (var placement in linkPlacements[i])
+        {
+            try
+            {
+                var local = placement.GetTotalTransform().Inverse.OfPoint(point);
+                foreach (var element in new FilteredElementCollector(linkDocs[i])
+                             .WhereElementIsNotElementType()
+                             .WherePasses(new ElementMulticategoryFilter(LINKED_HOST_CATEGORIES))
+                             .WherePasses(new BoundingBoxContainsPointFilter(local)))
+                {
+                    if (element == null || !seen.Add(element.Id)) continue;
+                    var typeName = "";
+                    try
+                    {
+                        var type = linkDocs[i].GetElement(element.GetTypeId()) as ElementType;
+                        if (type != null)
+                            typeName = string.IsNullOrEmpty(type.FamilyName)
+                                ? type.Name : type.FamilyName + ": " + type.Name;
+                    }
+                    catch (Exception) { }
+                    hits.Add(string.Format("{0} - {1} '{2}' (id {3} in the link), Fire Rating {4}",
+                        linkDocs[i].Title,
+                        element.Category == null ? "element" : element.Category.Name,
+                        typeName, element.Id, fireRatingOf(element)));
+                }
+            }
+            catch (Exception) { }
+        }
+    }
+    return hits;
+};
+
 // The services, collected once. Doing it per sleeve is the same query run
 // hundreds of times.
 var services = new List<Element>();
@@ -67,6 +198,16 @@ foreach (var sleeve in sleeves)
         unreadable++;
         findings.Add(string.Format("sleeve {0}: no readable geometry - not checked", sleeve.Id));
         continue;
+    }
+
+    // What it passes through, in the links. Text only - see the header.
+    if (linkDocs.Count > 0)
+    {
+        var inLinks = linkedHostsAt((sleeveBox.Min + sleeveBox.Max) / 2.0);
+        if (inLinks.Count > 0) linkedTotal++;
+        linkedMatches.Add(inLinks.Count > 0
+            ? string.Format("sleeve {0}: through {1}", sleeve.Id, string.Join("; ", inLinks))
+            : string.Format("sleeve {0}: inside nothing in any link", sleeve.Id));
     }
 
     // Which service passes through. The box test is the whole test here and it
@@ -171,3 +312,22 @@ foreach (var sleeve in sleeves)
 
 findings.Insert(0, string.Format("{0} sleeve(s) checked: {1} undersized, {2} with nothing through them, "
     + "{3} unreadable", sleeves.Count, undersized.Count, orphaned.Count, unreadable));
+
+// THE ANSWER SAYS WHAT IT READ. Asked-and-found, asked-and-none-loaded and not
+// asked read differently on purpose - D-59's own worked example.
+if (!includeLinks)
+    linkedMatches.Insert(0, "Host model only - links not read");
+else if (linksSearched == 0)
+    linkedMatches.Insert(0, "Links asked for, NONE loaded - host only");
+else
+    linkedMatches.Insert(0, string.Format("{0} link(s) read: {1} of {2} sleeve(s) pass through a "
+        + "linked wall, floor, roof, ceiling or structural member, NOT selected",
+        linksSearched, linkedTotal, sleeves.Count));
+
+if (includeLinks && nestedLinks > 0)
+    linkedMatches.Add(string.Format("{0} link placement(s) nested inside those links were NOT "
+        + "read", nestedLinks));
+
+if (linksSearched > 0)
+    linkedMatches.Add("Linked elements are named here, never selected - the next step would "
+        + "look them up in this model and could bind the wrong element");
