@@ -206,6 +206,7 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 
 | Date | Sitting |
 |---|---|
+| 2026-09-28 | [REVIT'S OWN DUCT SIZING TORE UP HERON'S MAIN, AND THE FIX PUTS THE TRANSITION ON THE UNIT](handover-archive/2026-09-28-revit-s-own-duct-sizing-tore-up-heron-s-main-and-the-fix.md) |
 | 2026-09-24 | [THE RE-RANKER RAN FOR THE FIRST TIME, AND IT MAKES PICKING A TOOL WORSE](handover-archive/2026-09-24-the-re-ranker-ran-for-the-first-time-and-it-makes-picking-a.md) |
 | 2026-09-23 | [THE THREE ROWS C1 LEFT OPEN ARE FIXED, AND THE SETUP SCRIPT HAS TO BE PASTED AGAIN](handover-archive/2026-09-23-the-three-rows-c1-left-open-are-fixed-and-the-setup-script.md) |
 | 2026-09-23 | [THE GUARD RAN ONLY WHERE ITS SKILL WAS LOADED, AND NOTHING SAID WHEN MAIN HAD MOVED](handover-archive/2026-09-23-the-guard-ran-only-where-its-skill-was-loaded-and-nothing.md) |
@@ -217,7 +218,6 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 | 2026-09-22 | [IT SUPPRESSED 52 PRODUCTION FUNCTIONS AND NOT ONE REAL DISPATCH](handover-archive/2026-09-22-it-suppressed-52-production-functions-and-not-one-real.md) |
 | 2026-09-22 | [ELEVEN OF FOURTEEN REPORT `0`, AND THAT ZERO MEANS THREE THINGS](handover-archive/2026-09-22-eleven-of-fourteen-report-0-and-that-zero-means-three-things.md) |
 | 2026-09-22 | [THE API PAGE'S ONE FINDING WAS FALSE, AND TWO DOCSTRINGS TYPED A STALE COUNT](handover-archive/2026-09-22-the-api-page-s-one-finding-was-false-and-two-docstrings.md) |
-| 2026-09-22 | [THREE AGENTS ARE COUNTED AS BUILT BY A TEST SUITE'S HEADER](handover-archive/2026-09-22-three-agents-are-counted-as-built-by-a-test-suite-s-header.md) |
 
 ## The session archive — what happened before today
 
