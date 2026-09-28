@@ -249,6 +249,11 @@ class _Open(object):
     THE HALF STILL NOT FIXED: two trees whose fragments genuinely DIFFER hash
     differently and each still rebuilds from its own files. A routing repair is
     durable only once every tree declares it, which means MERGED.
+
+    AND "MERGED" WAS NOT ENOUGH FOR A CARD'S ROW until 2026-09-28 (row 5b-249):
+    the rows were written by the rebuild alone, which runs only for an empty
+    store, so a merged change to a card's identity never reached them. A
+    changed card's row is refreshed on every open now - see __enter__.
     """
 
     def __init__(self):
@@ -284,6 +289,17 @@ class _Open(object):
                         % ("\n  " + "\n  ".join(problems) if problems else
                            " Nothing was reported as invalid, so look at "
                            "whether brain/fragments/ arrived at all."))
+            # FRAGMENT-ISSUES row 5b-249. The indexes below read a card's
+            # purpose from its FILE and its identity, status, capability,
+            # domain and risk from its ROW, and nothing but the rebuild above
+            # wrote rows - so a merged change to a card's identity was searched
+            # under the old one, beside the new purpose, until somebody rebuilt
+            # by hand. This rewrites only the rows whose card changed on disk -
+            # and in the store every chat on the machine reads, only to what
+            # the MAIN checkout's card says, never to a worktree's unmerged
+            # edit (row 131; heron_scope.refreshes_from). BEFORE the indexes,
+            # because every one of them reads these rows.
+            SCOPE.refresh(self.store)
             CAP.rebuild(self.store)
             SEARCH.index(self.store)
             EMBED.index(self.store)
