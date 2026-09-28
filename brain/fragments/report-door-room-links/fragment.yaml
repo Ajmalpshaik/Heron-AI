@@ -48,8 +48,8 @@ purpose: >
   is reported as that.
 
   **LINKED MODELS ARE READ ONLY WHEN ASKED FOR (version 2, D-59).** With
-  `includeLinks` absent this answers for this model alone, exactly as the
-  proof measured. With it set, every loaded link is read too and
+  `includeLinks` absent this answers for this model alone, exactly as
+  version 1 did. With it set, every loaded link is read too and
   `linksSearched` says how many were: set and 0 means "you asked, and none
   are loaded", which is a different answer from host-only. Every door in each link is checked against
   that link's own rooms, on its phase of the same name, and reported in
@@ -58,8 +58,7 @@ purpose: >
   revives ids against this model, and a linked id that happens to be in
   use here binds an unrelated element (FRAGMENT-ISSUES row 75). Links
   nested inside a link are not read, and are counted in the answer. This
-  is version 2; version 1's proof no longer describes the code, and the
-  fragment is DRAFT until it is proved again.
+  is version 2, and like version 1 it is DRAFT - it has never been proved.
 
 contract:
   needs:
@@ -75,7 +74,7 @@ contract:
       source: request
     - name: includeLinks
       # D-59. THE MODELLER DECIDES, JOB BY JOB, and absent means host only -
-      # which is what this fragment did before and what its proof measured.
+      # which is what this fragment did before.
       # `optional: true` is what lets it be left out: the binder refuses an
       # absent request need unless it is a bool marked optional, which binds
       # false (HeronBindingNote.AbsentValue, FRAGMENT-ISSUES row 5b-227).

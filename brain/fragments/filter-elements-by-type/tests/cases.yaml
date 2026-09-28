@@ -5,6 +5,15 @@ positive:
   - given: the same exemplar with inViewOnly set to the current plan, 18 of them on it
     expect: found is 18 - and that is a different answer to the same sentence, which is why the scope is an input
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      a host door handed in as the exemplar, includeLinks
+      true, on a model whose architectural link uses the same door type
+    expect: >
+      `elements` unchanged from the host-only run, and
+      the link's count of 'family : type' in `linkedMatches`, checked against
+      a schedule of that type opened in the link
+
 negative:
   - given: a project with two DIFFERENT diffuser types that both read 600x600 on the plan
     expect: >
@@ -23,6 +32,29 @@ negative:
       the WHOLE MODEL comes back. This is the failure the input exists to
       prevent - a change meant for one floor reaching nine, with the count as
       the only clue and nobody reading it
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1's proof, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
+
+  - given: includeLinks true WITH a view, on Revit 2020, 2021 or 2022
+    expect: >
+      "Links NOT read: this Revit cannot read a link through a view" and
+      linksSearched 0 - never the whole link reported as if it were the view
 
 second_route:
   - Revit's own Select All Instances - In Entire Project, and In Active View, which are the same two answers

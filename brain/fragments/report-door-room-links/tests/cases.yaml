@@ -60,7 +60,7 @@ negative:
   # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
   - given: includeLinks ABSENT, on a model that HAS loaded links
     expect: >
-      the same answer as version 1's proof, and linksSearched 0 with the first
+      the same answer as version 1 gave, and linksSearched 0 with the first
       line of linkedMatches reading "Host model only - links not read". The
       switch left out must bind false, not refuse - if the run refuses with
       needs_request_values, the add-in in Revit is older than this change
