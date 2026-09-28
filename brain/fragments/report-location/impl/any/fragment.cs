@@ -41,7 +41,23 @@ else
         if (atPoint != null)
         {
             points++;
-            locations.Add(string.Format("id {0}: AT {1}", element.Id, asMm(atPoint.Point)));
+            // THE TURN IS PART OF WHERE A POINT-PLACED THING IS. Two units at the same
+            // point facing opposite ways are not the same placement, and copying one
+            // layout to another room needs both halves.
+            string turned = "";
+            try { turned = string.Format(", turned {0:0.#} degrees", atPoint.Rotation * 180.0 / Math.PI); }
+            catch { }
+            var instance = element as FamilyInstance;
+            if (instance != null)
+            {
+                try
+                {
+                    var facing = instance.FacingOrientation;
+                    turned += string.Format(", facing ({0:0.###}, {1:0.###})", facing.X, facing.Y);
+                }
+                catch { }
+            }
+            locations.Add(string.Format("id {0}: AT {1}{2}", element.Id, asMm(atPoint.Point), turned));
             continue;
         }
 
