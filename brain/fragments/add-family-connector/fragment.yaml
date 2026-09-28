@@ -116,6 +116,10 @@ compatibility-note: >
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "put a supply air connector on the neck"     -> here
+#   "link the connector flow to a parameter"     -> LINK_FAMILY_PARAMETER - a
+#                                                   connector ALREADY in the
+#                                                   family, any linkable
+#                                                   parameter
 #   "which connectors does this family have"     -> CHECK_EQUIPMENT_CONNECTORS
 #   "connect these ducts to the terminal"        -> CONNECT_AIR_TERMINALS, in a
 #                                                   project

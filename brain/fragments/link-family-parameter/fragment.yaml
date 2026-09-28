@@ -1,0 +1,149 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-025
+semantic-identity: "link or unlink a parameter of elements already in the family to a family parameter, and read the links back"
+kind: action
+domain: revit.families
+capability: LINK_FAMILY_PARAMETER
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Links a parameter of elements ALREADY in the family open in the Family
+  Editor to one of the family's own parameters, or unlinks it, and reads every
+  link back - the "Associate Family Parameter" button at the end of a row in
+  Properties, for every element the call names at once. A duct connector's
+  Flow or size, a solid's Material or Visible: whatever Revit lets be linked.
+
+  **THE ELEMENTS ARE NAMED, NEVER GUESSED.** A category as Revit or the
+  Properties palette names it - "Duct Connector", "Pipe Connector",
+  "Extrusion", a nested family's name - or "all", and for connectors a system
+  classification such as "Return Air", or "all". A name that takes nothing is
+  refused with what the family has.
+
+  **THE LINKS ARE PAIRS**, element parameter = family parameter, semicolons
+  between; "none" in place of a family parameter unlinks.
+
+  **A LINK REVIT WOULD REFUSE IS REFUSED FIRST.** A family parameter that does
+  not exist, or holds a different kind of value - a Length cannot drive an Air
+  Flow - is refused naming both parameters and both kinds, with the ones that
+  could drive it, before anything changes. So is a parameter Revit does not
+  let be linked at all.
+
+  **EVERY LINK IS READ BACK**, before and after, per element, on one line. One
+  already as asked is reported "already linked" and not counted as a change.
+
+  **ALL OR NOTHING, ONE UNDO.** Everything is checked before the first link; a
+  refusal from Revit part-way fails the call and nothing is kept. The links
+  live in the family: a project's placed units follow them only once the
+  family is loaded into it again.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Which elements: a category as Revit or the Properties palette names it -
+    # "Duct Connector", "Pipe Connector", "Extrusion", a nested family's name -
+    # or "all". Case and spaces are ignored, and a plural is its singular.
+    - name: category
+      type: string
+      source: request
+    # For connectors, the system classification - "Supply Air", "Return Air",
+    # "Hydronic Supply" - or "all". Anything but "all" leaves out every element
+    # that is not a connector of that system.
+    - name: system
+      type: string
+      source: request
+    # Element parameter = family parameter, SEMICOLONS between -
+    # "Flow=Actual_Supply_Air_Flow". "Flow=none" unlinks. The left name is the
+    # one in Properties, the right one the one in Family Types.
+    - name: links
+      type: IDictionary<string, string>
+      source: request
+  provides:
+    - name: linkReport
+      # Every link asked for, element by element, as it was before and as it
+      # reads after, on ONE line - a list is cut to three entries before anyone
+      # reads it, and the whole of this is the answer.
+      role: result
+      type: string
+    - name: changed
+      # Links that read differently after the call than before it. One already
+      # as asked is not counted.
+      role: result
+      type: int
+    - name: alreadyLinked
+      # Asked for and already so: looked at, nothing done (D-52).
+      role: accounting
+      type: int
+    - name: matched
+      # How many elements the category and system took. Work done, never a
+      # thing changed (D-52).
+      role: accounting
+      type: int
+    - name: notAFamily
+      # That the document in front is a project, not a family being edited.
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing changed, in plain words - with what the family has when
+      # nothing matched. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyManager.AssociateElementParameterToFamilyParameter`,
+  `GetAssociatedFamilyParameter`, `CanElementParameterBeAssociated` and
+  `Parameters`, `ConnectorElement.Domain` and `SystemClassification`, and the
+  `MEPSystemClassification` values read the same 2020 through 2027
+  (api-surface, read 2026-09-28). Revit's own rule - "the parameter types of
+  these two input parameter should be same" - is in RevitAPI.xml for 2020, 2024
+  and 2027 alike. A parameter's KIND moved at 2022: `Definition.ParameterType`
+  and `LabelUtils.GetLabelFor(ParameterType)` up to 2022,
+  `Definition.GetDataType()` and `LabelUtils.GetLabelForSpec` from 2022 - so
+  both are reached by reflection, newest first, the way SET_FAMILY_TYPE_VALUES
+  reads a kind. Nested families' TYPE parameters (Edit Type on a nested
+  family) are not reached: only elements placed in the family are.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "link the connector flow to a family parameter"  -> here
+#   "unlink the solid's material"                    -> here, material=none
+#   "put a supply air connector on the neck"         -> ADD_FAMILY_CONNECTOR -
+#                                                       a connector it MAKES,
+#                                                       sized as it is made
+#   "label the width with the Width parameter"       -> LABEL_FAMILY_DIMENSION -
+#                                                       a dimension, not an
+#                                                       element's parameter
+#   "set the flow on these air terminals"            -> SET_AIR_TERMINAL_FLOW -
+#                                                       a VALUE, in a project
+#   "what parameters does this family have"          -> REPORT_FAMILY_PARAMETERS
+#   "is this connector supply or return"             -> REPORT_CONNECTORS, a
+#                                                       read. By words alone
+#                                                       this card ranks first;
+#                                                       the identity route
+#                                                       keeps it there
+#                                                       (measured 2026-09-28)
+
+utterances:
+  - link the supply connector flow to Actual_Supply_Air_Flow
+  - relink the return connector flow to Actual_Return_Air_Flow
+  - link the connector flow to a family parameter
+  - associate this element parameter with a family parameter
+  - change which family parameter drives the connector flow
+  - unlink the connector flow from its family parameter
+  - associate the extrusion material with a family parameter
+  - link the visibility of this solid to a yes no family parameter

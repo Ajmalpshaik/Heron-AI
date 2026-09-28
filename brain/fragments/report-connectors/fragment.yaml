@@ -159,6 +159,11 @@ compatibility-note: >
 #   "narrow this set to the connected     -> SELECT_BY_CONNECTION_STATUS,
 #    ones"                                   which hands on a set to act on
 #                                            rather than describing each one
+#   "is this connector supply or return"  -> here, a read. By words alone
+#                                            LINK_FAMILY_PARAMETER ranks
+#                                            first, a writer in a family;
+#                                            the identity route keeps it
+#                                            here (measured 2026-09-28)
 
 utterances:
   - what connectors does this AHU have
