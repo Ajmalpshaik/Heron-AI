@@ -1,0 +1,48 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a TEST COPY with two unissued revisions, a revision cloud on Seq. 2 in
+      a view placed on a sheet; Seq. 2 found by SELECT_BY_PARAMETER_VALUE
+      parameterName=Revision Sequence matchText=2; direction=up, confirm="Seq. 2 -
+      <its description>" (or its element id)
+    expect: >
+      `merged` true, `cloudsMoved` holding that cloud, now carrying Seq. 1;
+      the sheet in `sheetsTouched` now showing Seq. 1; `order` ending with one
+      revision fewer. Sheet Issues/Revisions shows one row fewer
+
+  - given: >
+      the working model, with no transaction open (validate without --write),
+      confirm given - a measurement, not a merge
+    expect: >
+      `refused` carrying Revit's own words about the missing transaction and
+      what it would have moved. Nothing changes
+
+negative:
+  - given: the same revision with NO confirm, or confirm=yes
+    expect: >
+      `refused` saying it needs the owner's yes for THIS revision, naming the
+      value to pass, and `merged` false. Nothing changed - checked by
+      LIST_REVISIONS afterwards
+
+  - given: confirm=1, or confirm=2, while the revision handed in is Seq. 2
+    expect: >
+      refused - a bare number cannot tell this revision from whichever holds
+      that number after a renumber, so only the id or the full name binds
+
+  - given: an unissued revision with an ISSUED revision after it
+    expect: >
+      `refused` naming the issued one it would renumber; nothing changed
+
+  - given: an issued revision, or an unissued one whose neighbour is issued
+    expect: >
+      `refused` naming the issued one; nothing changed
+
+  - given: the first revision, direction=up
+    expect: >
+      `refused` - nothing above it to merge into
+
+second_route:
+  - >
+    open Manage - Sheet Issues/Revisions and count the rows, and select the
+    cloud in its view: its Properties show the revision it now carries

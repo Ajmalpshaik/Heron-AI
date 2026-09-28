@@ -1,11 +1,18 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-SHT-004
 semantic-identity: "add a new revision to the project's revision schedule"
+
+# BACK TO DRAFT ON 2026-09-28, AND THE PROOF BLOCK BELOW IS KEPT ON PURPOSE.
+# Widened so Add fills every column of the Sheet Issues/Revisions row - issued
+# to, show, numbering and the issued tick joined description, date and issued
+# by - so the 2026-09-08 fingerprint no longer matches the code. The refusal of
+# an empty description it recorded is unchanged, and is the negative to
+# re-prove with.
 kind: action
 domain: revit.sheets
 capability: CREATE_REVISION
@@ -14,19 +21,24 @@ source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Creates a revision in the project and fills in its description, date and
-  issued-by.
+  Creates a revision in the project and fills in its description, date,
+  issued by, issued to, show (cloud and tag, tag or none) and numbering
+  sequence - every column Add fills in Sheet Issues/Revisions. An empty
+  value leaves Revit's default; the word <blank> writes an empty one.
 
   **It is the input ADD_REVISION_CLOUD could not get.** That fragment needs a
   `revisionId` and deliberately refuses to invent one - picking "the latest"
   automatically is wrong often enough to matter. Nothing in the library could
   produce one, so the whole revision job stopped at the first step.
 
-  **A new revision is NOT issued, and that is deliberate.** `Issued` is a
-  one-way gate in Revit: once set, the revision's description and date are
-  locked and clouds can no longer be added to it. Creating one already issued
-  would produce a revision nobody can cloud, which is the exact opposite of why
-  it was made.
+  **A new revision is NOT issued unless `issueState` says `issue`.** Issuing
+  locks the description, date, issued to, issued by and numbering, and no new
+  cloud can go on it - right for recording an issue that has already gone out,
+  wrong by default. It is never implied by another value, and it is set last.
+
+  **Everything is checked before anything is made, and every column is read
+  back.** A value that does not read back after the revision exists throws,
+  and the add-in rolls the whole call back - never a half-filled row.
 
 contract:
   needs:
@@ -39,6 +51,24 @@ contract:
       type: string
       source: request
     - name: issuedBy
+      type: string
+      source: request
+    - name: issuedTo
+      type: string
+      source: request
+    # The dialog's Show column: "cloud and tag", "tag" or "none". Empty
+    # leaves Revit's default.
+    - name: show
+      type: string
+      source: request
+    # 2022 on, a numbering sequence's name ("Numeric", "Custom"). 2020 and
+    # 2021 have no named sequences: "numeric", "alphanumeric" or "none".
+    # Empty leaves Revit's default.
+    - name: numbering
+      type: string
+      source: request
+    # "issue" issues it after every other column is written. Empty does not.
+    - name: issueState
       type: string
       source: request
   provides:
@@ -54,6 +84,10 @@ contract:
     - name: sequence
       role: result
       type: int
+    - name: findings
+      # The new row READ BACK from Revit - every column. A string, so the
+      # reply prints all of it.
+      type: string
 
 proof:
   date: '2026-09-08'
@@ -80,9 +114,15 @@ tests: tests/
 
 compatibility-note: >
   `Revision.Create(Document)`, `Revision.GetAllRevisionIds(Document)` and the
-  `Description`, `RevisionDate`, `IssuedBy` and `Issued` properties are
-  unchanged 2020 to 2027 - read off the reference assemblies for both ends of
-  the span rather than remembered.
+  `Description`, `RevisionDate`, `IssuedBy`, `IssuedTo`, `Visibility` and
+  `Issued` properties are unchanged 2020 to 2027 - read off the reference
+  assemblies for every release with tools/api-surface --members.
+
+  THE NUMBERING PARTS AT 2022. `Revision.RevisionNumberingSequenceId` and
+  `RevisionNumberingSequence` exist from 2022; `Revision.NumberType` exists
+  2020 to 2022 and is gone from 2023. The add-in compiles fragments with no
+  release symbol defined, so both are reached by name and the one this Revit
+  has is used. Only the 2022+ route has met a model.
 
   No ElementId is built from an int, so 2024's 64-bit ids do not reach this
   code.
@@ -106,9 +146,14 @@ compatibility-note: >
 #                                           revision they carry
 #   "change the revision date"           -> EDIT_REVISION. This one makes a
 #                                           new revision
+#   "list the revisions"                 -> LIST_REVISIONS, which reads every
+#                                           column this one writes
+#   "make an alphabetic sequence"        -> CREATE_REVISION_NUMBERING_SEQUENCE.
+#                                           This one USES a sequence by name
 
 utterances:
   - add a revision
+  - create a revision
   - add a revision to the project
   - create a new revision
   - start revision B

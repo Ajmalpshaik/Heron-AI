@@ -93,11 +93,9 @@ jobs:
   # Run to find out, not because the answer is known. Project1 is a fresh
   # template, so it very likely has no revisions and no design options - and a
   # POSITIVE EMPTY verdict is the recorded finding that says so.
-  - fragment: delete-revision
-    setup: []
-    set:          {sequenceNumber: 1}
-    negative-set: {sequenceNumber: 999}
-    expect: deleted
+  # delete-revision WAS HERE. TAKEN OUT 2026-09-28: version 2 is handed ONE
+  # revision by a find and needs `confirm`, so `sequenceNumber` no longer binds.
+  # Its proof job is tools/jobs/sheet-issues-revisions-test-copy-2026-09-28.yaml.
 
   - fragment: set-design-option
     set:          {designOptionName: "Main Model"}

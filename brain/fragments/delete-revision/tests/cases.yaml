@@ -1,7 +1,7 @@
 # D-30: the negative case is what catches "succeeded and did nothing".
 
 positive:
-  - given: five revisions, number 3 deleted, none of them clouded
+  - given: five revisions on a TEST COPY, number 3 found by SELECT_BY_PARAMETER_VALUE (Revision Sequence equals 3), confirm="Seq. 3 - <its description>" or its element id, none of them clouded
     expect: >
       `deleted` true and `renumbered` showing four revisions numbered 1 to 4 -
       the old 4 and 5 having moved down. Check the numbers against what an
@@ -12,19 +12,33 @@ positive:
       nothing renumbered, and the remaining ones unchanged
 
 negative:
-  - given: a revision a revision CLOUD still uses
+  - given: the revision found, and NO confirm - or confirm=yes, or a bare sequence number (even its own)
     expect: >
-      `deleted` false and `refused` saying why. Revit refuses it, and that is
-      usually right - the cloud is on a sheet somebody issued
+      `deleted` false and `refused` naming the value to pass, the clouds it
+      carries and the sheets it is on. Nothing deleted - Article 7
+
+  - given: an unissued revision with an ISSUED revision after it, confirm given
+    expect: >
+      `refused` naming the issued one it would renumber; nothing deleted
+
+  - given: an ISSUED revision, confirm given
+    expect: >
+      `refused` naming it; nothing deleted
+
+  - given: the project's only revision, or one a cloud still uses
+    expect: >
+      `deleted` false and `refused` quoting REVIT'S OWN reason - never a
+      reason guessed here. `cloudsTouched` and `sheetsTouched` say what it
+      carries
 
   - given: some releases refusing WITHOUT throwing
     expect: >
       the outcome established by looking for the revision afterwards. A call
       that returns is not evidence that anything was deleted
 
-  - given: a sequence number that does not exist
+  - given: a find that brought back two revisions, or none
     expect: >
-      `refused` saying so and nothing deleted
+      `refused` naming them, or saying none came in; nothing deleted
 
   - given: revision 3 of 5 deleted
     expect: >

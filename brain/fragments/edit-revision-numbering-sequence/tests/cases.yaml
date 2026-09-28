@@ -1,0 +1,46 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a TEST COPY, name=Custom, newName=Alphabetic
+    expect: >
+      `changed` "name 'Custom' -> 'Alphabetic'", read back; every revision
+      that used it still does
+
+  - given: name=Numeric, prefix=R, minimumDigits=2, where no ISSUED revision uses it
+    expect: >
+      `changed` naming both; `findings` reads back prefix 'R', minimum digits
+      2. A sheet's revision schedule then prints R01
+
+  - given: the same values a second time
+    expect: >
+      `changed` empty and every field in `alreadyThat`
+
+  - given: >
+      the working model, no transaction open (validate without --write) - a
+      measurement
+    expect: >
+      `refused` with Revit's own words about the missing transaction and what
+      it would have changed. Nothing changes
+
+negative:
+  - given: name=Numeric, minimumDigits=2, while an ISSUED revision uses 'Numeric'
+    expect: >
+      `refused` naming that revision; nothing changed. A rename alone of the
+      same sequence is allowed
+
+  - given: name=Numeric, customSequence=A, B
+    expect: >
+      `refused` - a numeric sequence has no custom list; nothing changed
+
+  - given: name=Nonesuch
+    expect: >
+      `refused` listing the sequences that do exist
+
+  - given: newName=Numeric on 'Custom'
+    expect: >
+      `refused` - another sequence already has that name
+
+second_route:
+  - >
+    open Customize Numbering > Numbering > Edit in Revit; LIST_REVISIONS'
+    numberingSequences reads every setting

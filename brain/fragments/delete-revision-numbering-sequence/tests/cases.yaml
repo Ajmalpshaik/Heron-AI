@@ -1,0 +1,28 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: a TEST COPY with a sequence no revision uses, name=<it>, confirm=<the same name>
+    expect: >
+      `deleted` true, and `findings` listing the sequences left without it
+
+  - given: >
+      the working model, no transaction open (validate without --write),
+      name=Custom, confirm=Custom - a measurement
+    expect: >
+      `refused` with Revit's own words about the missing transaction. Nothing
+      is deleted
+
+negative:
+  - given: name=Numeric, confirm=Numeric, while Seq. 1 and Seq. 2 use it
+    expect: >
+      `refused` naming Seq. 1 and Seq. 2; nothing deleted - checked by
+      LIST_REVISIONS afterwards
+
+  - given: name=Custom with no confirm, or confirm=yes
+    expect: >
+      `refused` asking for confirm=Custom; nothing deleted
+
+second_route:
+  - >
+    open Customize Numbering > Numbering in Revit and read the list;
+    LIST_REVISIONS' numberingSequences reads it too

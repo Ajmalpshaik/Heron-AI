@@ -1,38 +1,54 @@
 heron-agent: HERON-REVIT-SHT-029
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-SHT-016
 semantic-identity: "change the revision description or date"
+
+# VERSION 2, BACK TO DRAFT ON 2026-09-28, AND THE PROOF BLOCK IS KEPT.
+# Version 1 found its revision by a `sequenceNumber` it was typed. Version 2 is
+# handed ONE revision by the find before it (SELECT_BY_PARAMETER_VALUE on the
+# Revisions category - by `Revision Sequence` when the number is what is
+# known), so a stale number can no longer edit whichever revision now holds
+# it, and a chat never leans on Revit's selection while other chats share the
+# same Revit. It also gained show and numbering, `alreadyThat`, and a refusal
+# that names an issued revision instead of trying and failing. The 2026-09-09
+# proof's arrangement is still the one to re-prove from; its fingerprint no
+# longer matches.
 kind: action
 domain: revit.sheets
 capability: EDIT_REVISION
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Changes an existing project revision - its description, date, who it was
-  issued by and to, whether it is issued, and how its clouds and tags show.
+  Changes one existing project revision - its description, date, issued to,
+  issued by, show (cloud and tag, tag or none), numbering sequence, and the
+  issued tick - every column of its row in Sheet Issues/Revisions.
 
-  **IT IS FOUND BY SEQUENCE NUMBER, NOT BY DESCRIPTION.** The sequence number
-  is what Revit shows in its own revision dialog and what every sheet's
-  revision schedule sorts on. Descriptions repeat across a job - two issues
-  called "For Construction" is normal - so matching on one would edit whichever
-  came first.
+  **ONE REVISION, HANDED IN BY A FIND.** Find it by Revision Sequence, the
+  number the dialog shows, or by description; a find that brings back two is
+  refused with both named, because descriptions repeat across a job.
 
-  **ISSUING A REVISION LOCKS IT.** Once issued, Revit stops most edits to it
-  and to the clouds that carry it. Setting that flag is therefore the one field
-  here that changes what can be done next, and it is reported separately for
-  that reason.
+  **AN ISSUED REVISION IS LOCKED, AND THE REFUSAL NAMES IT.** Revit locks the
+  description, date, issued to, issued by and numbering of an issued revision,
+  so asking for any of them changes nothing and names the revision and the
+  fields. `issueState=unissue` in the same call un-issues it first; show stays
+  open, as it does in Revit. A numbering change that would renumber a later
+  issued revision is refused the same way.
 
-  **ANY FIELD LEFT EMPTY IS NOT TOUCHED.** One call fixes a date without
-  rewriting a description somebody worded carefully.
+  **THE ISSUED TICK MOVES ONLY WHEN `issueState` SAYS SO** - "issue" after
+  every other column, "unissue" before them.
 
-  **EVERY FIELD IS READ BACK.** A revision that refuses an edit - usually
-  because it is issued - returns from the call and keeps its old value.
+  **EMPTY LEAVES A FIELD ALONE; <blank> WRITES AN EMPTY ONE.**
+
+  **COMPARED FIRST, READ BACK AFTER.** A field already holding the value is
+  named in `alreadyThat` and not written, so a repeat changes nothing and
+  says so. A write that does not read back after another has gone in throws,
+  and the whole call is rolled back.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -40,9 +56,9 @@ contract:
   needs:
     - name: doc
       type: Document
-    - name: sequenceNumber
-      type: int
-      source: request
+    # THE revision, from the find before this - exactly one.
+    - name: elements
+      type: IList<Element>
     - name: description
       type: string
       source: request
@@ -55,17 +71,42 @@ contract:
     - name: issuedTo
       type: string
       source: request
+    # The dialog's Show column: "cloud and tag", "tag" or "none".
+    - name: show
+      type: string
+      source: request
+    # 2022 on, a numbering sequence's name ("Numeric", "Custom"); 2020 and
+    # 2021, "numeric", "alphanumeric" or "none".
+    - name: numbering
+      type: string
+      source: request
     # "issue" | "unissue" | "" to leave alone.
     - name: issueState
       type: string
       source: request
   provides:
     - name: changed
+      # Each column that moved, before -> after as READ BACK. A string, so
+      # the reply prints every one.
       role: result
-      type: IList<string>
+      type: string
+    - name: alreadyThat
+      # Columns that already held the value asked for, and were not written.
+      # What a second identical run answers - the prior state, never a change
+      # (D-52).
+      role: accounting
+      type: string
     - name: nowIssued
-      role: result
+      # Whether the revision is issued after the call. State, not work.
+      role: accounting
       type: bool
+    - name: revisionName
+      # Which revision was edited, "Seq. N 'description'" as it stood.
+      role: accounting
+      type: string
+    - name: findings
+      # The whole row READ BACK after the call.
+      type: string
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and
       # said no. Never a thing it FOUND, so it must not count toward
@@ -103,19 +144,33 @@ tests: tests/
 
 compatibility-note: >
   One implementation for every release. A revision's description, date, issued
-  by and to, issued flag and sequence number are unchanged 2020 to 2027. The
+  by and to, issued flag, show (`Visibility`) and sequence number are unchanged
+  2020 to 2027 - read with tools/api-surface --members on each release. The
   date is a plain string on the revision, not a date type - Revit stores
   whatever the office writes, which is why nothing here parses it.
+
+  THE NUMBERING PARTS AT 2022: `Revision.RevisionNumberingSequenceId` from
+  2022, `Revision.NumberType` 2020 to 2022 and gone from 2023. Both are reached
+  by name, because the add-in compiles fragments with no release symbol
+  defined. Only the 2022+ route has met a model.
 
 # ROUTING - the same rows are in the fragments named here.
 #
 #   "change the revision date"           -> here
 #   "mark that revision as issued"       -> here
+#   "set issued to"                      -> here, fed by
+#                                           SELECT_BY_PARAMETER_VALUE on the
+#                                           Revisions category
+#   "tick issued"                        -> here, issueState=issue; unissue
+#                                           takes the tick off
+#   "show only the tag for revision 2"   -> here, show=tag
+#   "move revision 2 up"                 -> REORDER_REVISION
+#   "merge revision 2 down"              -> MERGE_REVISION
 #   "make a new revision"                -> CREATE_REVISION
 #   "list the revisions"                 -> LIST_REVISIONS, which is where the
 #                                           sequence number comes from
 #   "delete that revision"               -> DELETE_REVISION, which renumbers
-#                                           every later one
+#                                           every later one and needs confirm
 #   "put that revision on these sheets"  -> SET_SHEET_REVISIONS
 #   "cloud this change"                  -> ADD_REVISION_CLOUD
 
@@ -125,3 +180,6 @@ utterances:
   - mark the revision as issued
   - update who the revision was issued by
   - change the revision date
+  - set issued to
+  - tick issued
+  - show only the tag for revision 2
