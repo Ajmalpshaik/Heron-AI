@@ -18,6 +18,9 @@ WHAT IT PROVES
   3. The stores are DERIVED - delete them all and a rebuild puts them back.
   4. The scope is resolved from facts, and an unidentified project is REFUSED
      rather than guessed at.
+  5. A card changed on disk reaches its row without a rebuild - only that
+     card's row, never a row somebody else wrote, and never from a linked
+     worktree into the one shared store (FRAGMENT-ISSUES 5b-249, row 131).
 
 WHAT IT DOES NOT PROVE. That any of this is wired to a real Revit document. The
 resolver is handed the same facts the bridge would report; nothing here has
@@ -98,6 +101,298 @@ def write_valid_fragment(folder):
     io.open(os.path.join(folder, "tests", "cases.yaml"), "w",
             encoding="utf-8").write(CASES)
     return folder
+
+
+def _rewrite_card(path, old, new):
+    """Replace `old` with `new` in a card, and MOVE ITS MARK for certain.
+
+    A rewrite inside the same clock tick can leave mtime where it was, and the
+    same length leaves the size - the one-second .pyc trap heron-ship records,
+    in another place. The mark is pushed on by a second so this suite tests
+    the refresh, not the filesystem's clock.
+    """
+    text = io.open(path, encoding="utf-8").read()
+    io.open(path, "w", encoding="utf-8").write(text.replace(old, new))
+    st = os.stat(path)
+    os.utime(path, ns=(st.st_atime_ns, st.st_mtime_ns + 10 ** 9))
+
+
+def _row(S, fid, field):
+    store = S.open_scope(S.GLOBAL)
+    try:
+        for r in store.fragments():
+            if r["id"] == fid:
+                return r[field]
+        return None
+    finally:
+        store.close()
+
+
+def refreshing(S, F):
+    """FRAGMENT-ISSUES row 5b-249: a card changed on disk reaches its row.
+
+    The search reads a card's purpose from the FILE and its identity, status,
+    capability, domain and risk from the store's ROW, and only rebuild() wrote
+    rows - so a merged identity change was searched under the old identity
+    until somebody rebuilt by hand. Every name below is asked for with
+    getattr first, so the code before the fix FAILS here rather than raising
+    (heron-ship 2a).
+    """
+    print()
+    print("5. A card changed on disk reaches its row, without a rebuild")
+    refresh = getattr(S, "refresh", None)
+    follows = getattr(S, "follows", None)
+    check(callable(refresh), "heron_scope has a refresh() at all")
+    check(callable(follows), "and a follows() that says which cards it may use")
+    if not callable(refresh):
+        refresh = lambda store, root=None: []          # noqa: E731
+    if not callable(follows):
+        follows = lambda root=None: (None, None)       # noqa: E731
+    seen_key = getattr(S, "CARDS_SEEN", "cards_seen:")
+
+    work = tempfile.mkdtemp(prefix="heron-refresh-")
+    was_fragments_dir = F.FRAGMENTS_DIR
+    try:
+        card = os.path.join(write_valid_fragment(
+            os.path.join(work, "do-a-test-thing")), "fragment.yaml")
+        F.FRAGMENTS_DIR = work
+        S.rebuild()
+        check(_row(S, "FRG-ELE-001", "semantic_identity") == "a test fragment",
+              "the rebuilt row carries the card's identity")
+
+        # THE DEFECT, as a merge delivers it: the card changes, the store does
+        # not get rebuilt. DEPRECATED rather than PROVEN because a PROVEN card
+        # needs a proof to validate, and one that does not validate keeps its
+        # old row on purpose - which is not what this check is about.
+        _rewrite_card(card, "a test fragment", "a renamed test fragment")
+        _rewrite_card(card, "heron-status: DRAFT", "heron-status: DEPRECATED")
+        check(F.validate(F.load(os.path.dirname(card))) == [],
+              "the edited card still validates, so a red below is the refresh")
+        store = S.open_scope(S.GLOBAL)
+        try:
+            got = refresh(store)
+        finally:
+            store.close()
+        check(got == ["FRG-ELE-001"],
+              "refresh() names the one row it rewrote (%r)" % (got,))
+        check(_row(S, "FRG-ELE-001", "semantic_identity")
+              == "a renamed test fragment",
+              "the row now carries the NEW identity (%r)"
+              % _row(S, "FRG-ELE-001", "semantic_identity"))
+        check(_row(S, "FRG-ELE-001", "status") == "DEPRECATED",
+              "and the new status")
+
+        # NOTHING MOVED ON DISK, SO NOTHING IS READ OR WRITTEN - and a row
+        # somebody else wrote is theirs. A suite plants a DRAFT row in a
+        # throwaway store; a session proving an unmerged card puts one row in
+        # the shared store. Rewriting either would undo a deliberate write.
+        store = S.open_scope(S.GLOBAL)
+        try:
+            store.execute("UPDATE fragments SET status = 'PLANTED' "
+                          "WHERE id = 'FRG-ELE-001'")
+            store.db.commit()
+            got = refresh(store)
+        finally:
+            store.close()
+        check(got == [], "a card that has not changed is not read (%r)"
+              % (got,))
+        check(_row(S, "FRG-ELE-001", "status") == "PLANTED",
+              "and a row somebody else wrote is left as they wrote it")
+
+        # A CHECKOUT SEEING THE LIBRARY FOR THE FIRST TIME - a new chat in a
+        # new worktree - has no marks of its own. It reads each card's bytes
+        # and finds the row was made from exactly those, so it neither parses
+        # the library nor undoes the plant above.
+        store = S.open_scope(S.GLOBAL)
+        try:
+            store.execute("DELETE FROM meta WHERE key LIKE ?",
+                          (seen_key + "%",))
+            store.db.commit()
+            got = refresh(store)
+        finally:
+            store.close()
+        check(got == [] and _row(S, "FRG-ELE-001", "status") == "PLANTED",
+              "a checkout with no marks of its own trusts a row made from the "
+              "same bytes (%r)" % (got,))
+
+        # A NEW CARD IS NOT ADDED. That is rebuild()'s job: adding would fill
+        # a store built with a subset on purpose.
+        other = write_valid_fragment(os.path.join(work, "do-another-thing"))
+        _rewrite_card(os.path.join(other, "fragment.yaml"),
+                      "FRG-ELE-001", "FRG-ELE-002")
+        _rewrite_card(os.path.join(other, "fragment.yaml"),
+                      "DO_A_TEST_THING", "DO_ANOTHER_THING")
+        check(F.validate(F.load(other)) == [],
+              "the new card validates, so it is left out for being NEW")
+        store = S.open_scope(S.GLOBAL)
+        try:
+            refresh(store)
+            ids = sorted(r["id"] for r in store.fragments())
+        finally:
+            store.close()
+        check(ids == ["FRG-ELE-001"],
+              "a card the store does not hold is not added (%s)"
+              % ", ".join(ids))
+
+        # A CARD CAUGHT HALF-SAVED KEEPS THE ROW IT HAD (D-48).
+        io.open(card, "w", encoding="utf-8").write(u"id: [unclosed\n")
+        st = os.stat(card)
+        os.utime(card, ns=(st.st_atime_ns, st.st_mtime_ns + 10 ** 9))
+        store = S.open_scope(S.GLOBAL)
+        try:
+            got = refresh(store)
+        finally:
+            store.close()
+        check(got == [] and _row(S, "FRG-ELE-001", "semantic_identity")
+              == "a renamed test fragment",
+              "a card that will not load keeps its row, not loses it")
+
+        # A STORE THAT CANNOT SAY WHAT ITS ROWS WERE MADE FROM - one written
+        # before this existed - compares every card once: an absent record is
+        # not a clean one (D-52).
+        shutil.rmtree(os.path.dirname(card))
+        write_valid_fragment(os.path.dirname(card))
+        store = S.open_scope(S.GLOBAL)
+        try:
+            store.execute("DELETE FROM meta WHERE key LIKE ? OR key = ?",
+                          (seen_key + "%", getattr(S, "ROWS_FROM", "rows_from")))
+            store.execute("UPDATE fragments SET capability = 'STALE' "
+                          "WHERE id = 'FRG-ELE-001'")
+            store.db.commit()
+            got = refresh(store)
+        finally:
+            store.close()
+        check(got == ["FRG-ELE-001"]
+              and _row(S, "FRG-ELE-001", "capability") == "DO_A_TEST_THING",
+              "a store with no record of what it saw is compared in full")
+    finally:
+        F.FRAGMENTS_DIR = was_fragments_dir
+        shutil.rmtree(work, ignore_errors=True)
+
+    print()
+    print("  ..and the SHARED store follows the main checkout, never a "
+          "worktree's own edit (row 131)")
+    saved = {k: os.environ.get(k) for k in ("APPDATA", "HERON_KNOWLEDGE")}
+    fake = tempfile.mkdtemp(prefix="heron-trees-")
+    try:
+        # A MAIN CHECKOUT AND ONE WORKTREE, laid out as git lays them out: the
+        # main checkout's .git is a folder, the worktree's is a one-line file
+        # naming its folder under it, and that folder's `commondir` leads back.
+        main_tree = os.path.join(fake, "main")
+        worktree = os.path.join(fake, "wt")
+        installed = os.path.join(fake, "installed")
+        pointer = os.path.join(main_tree, ".git", "worktrees", "wt")
+        os.makedirs(pointer)
+        io.open(os.path.join(pointer, "commondir"), "w",
+                encoding="utf-8").write(u"../..\n")
+        os.makedirs(os.path.join(installed, "brain", "fragments"))
+        main_cards = os.path.join(main_tree, "brain", "fragments")
+        wt_cards = os.path.join(worktree, "brain", "fragments")
+        wt_card = os.path.join(write_valid_fragment(
+            os.path.join(wt_cards, "do-a-test-thing")), "fragment.yaml")
+        os.makedirs(os.path.join(main_cards, "do-a-test-thing"))
+        main_card = os.path.join(main_cards, "do-a-test-thing", "fragment.yaml")
+        shutil.copyfile(wt_card, main_card)
+        io.open(os.path.join(worktree, ".git"), "w", encoding="utf-8").write(
+            u"gitdir: %s\n" % pointer.replace(os.sep, "/"))
+        lost = os.path.join(fake, "lost")
+        os.makedirs(lost)
+        io.open(os.path.join(lost, ".git"), "w", encoding="utf-8").write(
+            u"gitdir: nowhere/.git/worktrees/lost\n")
+
+        os.environ["HERON_KNOWLEDGE"] = os.path.join(fake, "private")
+        check(follows(worktree) == (True, None),
+              "a store HERON_KNOWLEDGE points at is private: every card, "
+              "from any checkout (%r)" % (follows(worktree),))
+
+        # THE SHARED STORE: knowledge_dir() is the Heron/knowledge folder
+        # under %APPDATA%.
+        os.environ.pop("HERON_KNOWLEDGE", None)
+        os.environ["APPDATA"] = os.path.join(fake, "appdata")
+        allowed, folder = follows(worktree)
+        check(allowed is True and folder is not None
+              and os.path.normcase(os.path.abspath(folder))
+              == os.path.normcase(os.path.abspath(main_cards)),
+              "the SHARED store, from a worktree, follows the main checkout's "
+              "cards (%r)" % (folder,))
+        allowed, folder = follows(main_tree)
+        check(allowed is True and folder is not None
+              and os.path.normcase(os.path.abspath(folder))
+              == os.path.normcase(os.path.abspath(main_cards)),
+              "and from the main checkout, its own")
+        check(follows(installed)[0] is True,
+              "an installed Heron, which has no .git at all, may refresh too")
+        check(follows(lost) == (False, None),
+              "a worktree whose main checkout cannot be found refreshes "
+              "nothing (%r)" % (follows(lost),))
+        os.environ["HERON_KNOWLEDGE"] = os.path.join(
+            fake, "appdata", "Heron", "knowledge")
+        check(follows(lost) == (False, None),
+              "HERON_KNOWLEDGE spelling out the shared folder is still shared")
+        os.environ.pop("HERON_KNOWLEDGE", None)
+
+        # AND IN ACTION: the worktree's chat asks, with the main checkout
+        # holding the merged card.
+        F.FRAGMENTS_DIR = wt_cards
+        S.rebuild()
+        _rewrite_card(wt_card, "a test fragment", "an unmerged edit")
+        store = S.open_scope(S.GLOBAL)
+        try:
+            got = refresh(store, worktree)
+        finally:
+            store.close()
+        check(got == [] and _row(S, "FRG-ELE-001", "semantic_identity")
+              == "a test fragment",
+              "a worktree's UNMERGED edit is not pushed into the shared "
+              "store (%r)" % (got,))
+
+        # The merge: the main checkout is fast-forwarded to the same bytes.
+        # The worktree's card has not moved since it was last looked at - it
+        # was left un-looked-at on purpose - so the row follows now.
+        shutil.copyfile(wt_card, main_card)
+        store = S.open_scope(S.GLOBAL)
+        try:
+            got = refresh(store, worktree)
+        finally:
+            store.close()
+        check(got == ["FRG-ELE-001"]
+              and _row(S, "FRG-ELE-001", "semantic_identity")
+              == "an unmerged edit",
+              "once the main checkout holds the same card, the next lookup "
+              "from any chat brings the row level (%r)" % (got,))
+
+        _rewrite_card(wt_card, "an unmerged edit", "a lost edit")
+        store = S.open_scope(S.GLOBAL)
+        try:
+            got = refresh(store, lost)
+        finally:
+            store.close()
+        check(got == [] and _row(S, "FRG-ELE-001", "semantic_identity")
+              == "an unmerged edit",
+              "and a checkout that cannot say where its main checkout is "
+              "leaves the shared store alone (%r)" % (got,))
+    finally:
+        F.FRAGMENTS_DIR = was_fragments_dir
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        shutil.rmtree(fake, ignore_errors=True)
+
+    # THE WIRING. The rows are only as fresh as the path that serves a lookup,
+    # and that path is heron_brain._Open - read as TEXT, as test_review_findings
+    # reads it, because importing the server here would pull the search models
+    # into a store suite.
+    server = io.open(os.path.join(ROOT, "mcp", "server", "heron_brain.py"),
+                     encoding="utf-8").read()
+    start = server.find("class _Open")
+    enter = server[start:server.find("def _shut", start)] if start >= 0 else ""
+    at = enter.find("SCOPE.refresh(")
+    check(at >= 0, "_Open refreshes the rows")
+    check(at >= 0 and all(0 <= at < enter.find(later) for later in
+                          ("CAP.rebuild(", "SEARCH.index(", "EMBED.index(")),
+          "and does it BEFORE the capability map and both indexes read them")
 
 
 def main():
@@ -274,6 +569,8 @@ def main():
         finally:
             F.FRAGMENTS_DIR = was_fragments_dir
             shutil.rmtree(work, ignore_errors=True)
+
+        refreshing(S, F)
 
         print()
         print("Unknown scopes are an error, never a guess")
