@@ -114,6 +114,9 @@ def main():
     print()
     print("Refusals did not touch anything, but still need a person to act")
     for code, step in (("write_disabled", fa.FIX_FIRST),
+                       # D-106's two switches refuse the same way Changes does.
+                       ("admin_disabled", fa.FIX_FIRST),
+                       ("publish_disabled", fa.FIX_FIRST),
                        ("stopped", fa.FIX_FIRST),
                        ("revit_busy", fa.FIX_FIRST),
                        ("preview_expired", fa.START_OVER),

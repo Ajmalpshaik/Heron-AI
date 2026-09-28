@@ -22,8 +22,8 @@ no Heron tool here reaches Revit.
 
 Bash is here to compile and to run the checks. **Never** use it to reach Revit: not
 `mcp/client/heron_bridge_client.py`, not `tools/batch-prove.py` without `--dry-run`, not
-`tools/HeronRevit.ps1`, not `tools/deploy-addin.ps1`. Never set `write.enabled`, and never edit
-`heron-status` above DRAFT - nothing you write approves itself ([Article 20](../../HERON_CONSTITUTION.md)).
+`tools/HeronRevit.ps1`, not `tools/deploy-addin.ps1`. Never set `write.enabled`, `admin.enabled` or
+`publish.enabled`, and never edit `heron-status` above DRAFT - nothing you write approves itself ([Article 20](../../HERON_CONSTITUTION.md)).
 
 ## Order of work
 

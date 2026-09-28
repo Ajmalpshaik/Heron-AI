@@ -208,6 +208,21 @@ def main():
           "the MODIFY operations are exactly move_elements and run_fragment_write "
           "- found: %s" % (cs_writers or "none"))
 
+    # AND ABOVE MODIFY, TYPED HERE FOR THE SAME REASON (D-106, 2026-09-28).
+    # Until that day nothing was declared above Modify at all. Each of these
+    # runs the same executor as run_fragment_write and is let through only
+    # while the owner's Publish or Admin switch is on, with Changes - and a
+    # third operation up here fails this line until somebody types it in.
+    cs_above = sorted(op for op, level in declared_cs.items()
+                      if level in ("PUBLISH", "ADMIN"))
+    check(cs_above == ["run_fragment_admin", "run_fragment_publish"],
+          "the operations above MODIFY are exactly run_fragment_admin and "
+          "run_fragment_publish - found: %s" % (cs_above or "none"))
+    check(declared_cs.get("run_fragment_admin") == "ADMIN"
+          and declared_cs.get("run_fragment_publish") == "PUBLISH",
+          "each at its own level - so the switch the gate asks is the one its "
+          "name says")
+
     # THE READ EXECUTOR MUST NEVER BECOME A WRITE ONE. They share every line
     # up to the transaction, so the thing that separates them is this pair of
     # declarations and nothing else.

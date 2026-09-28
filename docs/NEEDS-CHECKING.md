@@ -373,6 +373,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bc.md`](needs-checking/group-bc.md)
 
+## Group BF - the Admin and Publish switches: refused by name while off, a project parameter bound with Admin on, refused again once it is off (2026-09-28)
+
+**Its own file:** [`needs-checking/group-bf.md`](needs-checking/group-bf.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

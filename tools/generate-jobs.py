@@ -582,10 +582,10 @@ def blockers(frag, supply, threshold_ordinal, ladder):
         found.append("it does not say what `risk:` it carries, and a fragment "
                      "whose danger nobody can establish is not run")
     elif risk not in CLIENT.RUNNABLE_RISKS:
-        found.append("`risk: %s` is above what Heron runs today - "
-                     "HeronPermissions puts Publish and Admin out of reach for "
-                     "Phase 0 and Phase 1, so nothing would be sent to Revit"
-                     % risk)
+        found.append("`risk: %s` is out of reach for a batch - a PUBLISH or "
+                     "ADMIN fragment runs only through the owner's own switch "
+                     "in Revit (D-106), and a generated job never sends one, "
+                     "so nothing would be sent to Revit" % risk)
     elif risk not in ladder:
         found.append("`risk: %s` is not a level HeronRisk declares" % risk)
 

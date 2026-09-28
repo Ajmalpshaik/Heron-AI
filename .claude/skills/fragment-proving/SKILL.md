@@ -41,6 +41,24 @@ of 16 fragments already PROVEN** — the run reported six passes and produced no
 refuses a fragment at PROVEN or PRODUCTION and reports `ALREADY`, so the job file cannot repeat that
 mistake; do not build one that leans on the refusal to find out.
 
+### A PUBLISH or ADMIN fragment is proved only through its switch
+
+**Since [D-106](../../../docs/DECISIONS.md) (2026-09-28)** a fragment declared `PUBLISH` or `ADMIN`
+travels only as its own operation - `run_fragment_publish` or `run_fragment_admin` - and Revit lets it
+through only while the owner's **Publish** or **Admin** switch is on in the ribbon, with **Changes**.
+
+- `batch-prove` and `prove` never send one. `validate` refuses one unless it is given
+  **`--allow-publish --write` together** - `--allow-publish` alone is refused, because the read path
+  would have run an export past the Publish switch.
+- **The switch is the owner's to turn on, at the ribbon.** Ask him; never set `admin.enabled` or
+  `publish.enabled` in `heron.config` yourself.
+- A proof rolls the model back; **it does not unwrite a file.** An export proof leaves what it wrote -
+  point it at a scratch folder.
+- A setup step declared `PUBLISH` or `ADMIN` is refused whatever the flags: arranging a proof never
+  needs one.
+- `export-model-to-ifc` and `export-views-to-dwg` declare `MODIFY`, so none of this applies to them
+  until the owner answers [Q-59](../../../docs/OPEN-QUESTIONS.md).
+
 ## The five rules
 
 Each was learned by breaking it. The full account of every one, with what was passed and what came

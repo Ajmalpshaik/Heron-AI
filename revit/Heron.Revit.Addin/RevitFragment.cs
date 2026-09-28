@@ -96,7 +96,9 @@ namespace Heron.Revit.Addin
         /// The write is gated before it reaches here: `run_fragment_write` is
         /// declared at Modify in the tool registry, and RevitOperations refuses
         /// on risk BEFORE routing. This method never decides its own risk -
-        /// Golden Rule 19.
+        /// Golden Rule 19. `run_fragment_publish` and `run_fragment_admin`
+        /// arrive here the same way, declared Publish and Admin (D-106): the
+        /// run is identical and only the switch that let it through differs.
         /// </summary>
         public static string Run(UIApplication app, string request, bool writing)
         {

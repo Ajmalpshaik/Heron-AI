@@ -106,6 +106,12 @@ CORRECT_REFUSALS = {
         "Revit was mid-command; interrupting it is not on offer",
     "write_disabled":
         "asked to change the model while writing was switched off",
+    # D-106's two switches. Refusing is right for the same reason as the row
+    # above: the owner had not turned that switch on.
+    "admin_disabled":
+        "asked to change the project's setup while the Admin switch was off",
+    "publish_disabled":
+        "asked to export, print, save or sync while the Publish switch was off",
     "no_such_document":
         "the model it was pointed at was not open",
     "ambiguous_document":
