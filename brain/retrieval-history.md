@@ -945,6 +945,87 @@ cannot do, so R-58's *refuse a question nothing covers* is not reachable this wa
 
 ---
 
+## 2026-09-28 — a colour sentence reached the tool that makes zones
+
+[Row 5b-236](../docs/fragment-issues/section-5b-rows-176-200.md). *"color hvac zones in this plan"*, which
+no card declares, resolved on the owner's backend to `CREATE_HVAC_ZONE` - a PROVEN write that makes HVAC
+zones and moves spaces into them - with `APPLY_COLOR_FILL_SCHEME`, the DRAFT colour tool, second.
+Measured on scratch stores, never the shared one, at **420 fragments** on `main` as it stood:
+backend **`model`** (`model2vec:minishlab/potion-base-8M`), no re-ranker, Revit 2024.
+
+### Four causes, stacked
+
+| | colour tool | zone tool |
+|---|---|---|
+| words route, bm25 | **1st**, −21.69 | 2nd, −12.63 |
+| nearness route, cosine | 2nd, 0.4220 | **1st**, 0.5407 |
+| fused | 0.032522 | 0.032522 |
+| status nudge | DRAFT, +0 | PROVEN, **+0.0001** |
+
+1. **A swap is an exact tie when the two routes vote equally.** `model` gets the same weight as the words
+   route, so 1st-and-2nd and 2nd-and-1st fuse to the same number. The comment above
+   `VECTOR_WEIGHT_BY_BACKEND` in [`heron_retrieve.py`](heron_retrieve.py) describes exactly this and fixed
+   it with an unequal weight - for `lexical` only. On `lexical` the sentence went to the colour tool, by
+   0.0000056.
+2. **The tie went to status.** Settling a dead heat is what the quality nudge is for, and here it meant
+   PROVEN over DRAFT rather than the colour word.
+3. **The nearness route embeds a card as one averaged string.** The colour tool's own *"color the hvac
+   zones"* scores **0.9436** against the sentence and its 481-word purpose **0.2792**; the averaged card
+   came out at 0.4220. Its declared *"color the hvac zones"* and *"colour the spaces by zone"* found
+   `CREATE_HVAC_ZONE` first on the ranked route too - only the identity route was saving them.
+4. **Spelling.** The card named Revit's features in British spelling. *"colour hvac zones in this plan"*
+   reached the colour tool on nearness; *"color ..."* did not.
+
+### Changes to the ranker, measured on his questions and rejected
+
+Each ran with the nearness scorer swapped in memory, through `tools/score-routing.py`'s own scoring and
+the 13 colour wordings recorded in the row. Run that way, the unchanged ranker matched the real
+`score-routing.py` question for question. Baseline: **9 of 13** colour wordings right, and of his 64
+capability rows **19** first and **28** in the top three.
+
+| Change | Colour wordings right | His rows: 1st / top 3 | Why not |
+|---|---|---|---|
+| nearness = the better of the card and its closest declared sentence | 13 | **14** / 28 | a short sentence is mostly its subject, and this encoder matches subject - *"How many VCDs are there?"* went to `SELECT_BY_FAMILY` |
+| nearness = the card and its closest sentence, averaged | 13 | **15** / 30 | the same, less |
+| nearness = the better of the card and its identity-plus-sentences | 7 | 16 / 31 | the zone tool's identity and sentences are all zone |
+| nearness reads identity, name and sentences only, no purpose | 7 | 16 / 31 | the same |
+| identity-plus-sentences and purpose as two equal halves | 7 | 19 / 30 | and one more question handed a change, 9 to 10 |
+| markdown stripped before embedding | 7 | 19 / 28, identical | 399 of 420 purposes carry `**` and the asterisks are embedded as tokens, but stripping them helped the zone tool more |
+| nearness weighted 0.9, 0.8 or 0.7 under `model` | 9 | 19 / 29, 19 / 28, 19 / 29 | a swap outvotes the nudge only below 0.62 |
+| nearness weighted 0.6 under `model` | 13 | **18** / 29 | loses his #37 - below |
+| no status nudge at all | 13 | **18** / 28 | loses his #37: *"Colour all the louvres red and the rest grey"* - `HIGHLIGHT_VS_REST`, PROVEN, trailed a DRAFT by 0.09 of a rank, and the nudge was right to lift it |
+
+**Not tried, and why:** letting the words route settle an exact tie before status. `test_retrieve.py`
+checks that *between two equal matches, the PROVEN one wins*, and two equal texts land swapped as often
+as not - so that rule would hand the case to whichever the words route happened to list first.
+
+### The card, and what it cost
+
+The fix went in the card. The purpose keeps every rule in 177 words and the reasons moved, unchanged, into
+comments above it; the identity names what a modeller colours - rooms, spaces or HVAC zones - and Revit's
+own **Color Scheme** and **Color Fill Legend**. At 420 fragments, before and after:
+
+| | before | after |
+|---|---|---|
+| *"color hvac zones in this plan"* | `CREATE_HVAC_ZONE`, by the nudge | **colour tool, 1st on both routes** |
+| the 13 colour wordings | 9 | **13** |
+| the colour tool's own 7 sentences, ranked route alone | 5 | **7** |
+| the zone tool's own 5, by identity and by ranking alone | 5 and 5 | 5 and 5 |
+| his questions, `model` | `11441----1---11.--52-----.------2-1311-1--411-522211--121w1w131-2w1---w-w-w1321` | identical |
+| Revit 2024 risk crossings | 4 | the same 4 |
+| shortlists the colour tool sits in and does not own, `model` | 28, heading 2 | 38, heading **1** |
+| shortlists the zone tool heads and does not own | 4 | 2 |
+| his #50 on `lexical`, *"When you colour ducts ..., colour their insulation too"* | right answer 3rd | **4th**, winner unchanged |
+
+### What this does not establish
+
+- **The margin is thin.** 0.5453 against 0.5407 on nearness for the row's sentence. A longer purpose can
+  hand it back, and the card says so beside it.
+- **One encoder.** Every `model` number is `potion-base-8M`. Another encoder answers differently.
+- **Nothing here met Revit**, and nothing was declared, reworded or weakened to buy a rank.
+
+---
+
 ## How to add a line
 
 Run the measurement, do not estimate it:
