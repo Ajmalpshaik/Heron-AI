@@ -28,7 +28,9 @@
 //
 // NOTHING IS CHANGED UNTIL EVERYTHING HAS BEEN CHECKED, so a refusal leaves the
 // family as it was. A refusal from Revit part-way THROWS, and the host rolls
-// back what came before it: one undo, all or nothing.
+// back what came before it: one undo, all or nothing. Its words say the call
+// FAILED and is rolled back, never that nothing was kept - the rollback is the
+// host's, and whether it held cannot be seen from here (Codex, PR #356).
 //
 // EVERY LINK IS READ BACK, and one that does not read what was asked THROWS.
 // One already as asked is reported "already linked" and not counted - which
@@ -331,6 +333,18 @@ else
         {
             var own = (pair.Key ?? "").Trim();
             var wanted = (pair.Value ?? "").Trim();
+
+            // THE SAME PARAMETER TWICE, in another case - "Flow=A; flow=A". The
+            // table keeps both keys and both find the one parameter, so it would
+            // be planned twice (Codex, PR #356).
+            var twice = asked.FirstOrDefault(a => string.Equals(a.Item1, own, StringComparison.OrdinalIgnoreCase));
+            if (twice != null)
+            {
+                problems.Add("\"" + twice.Item1 + "\" and \"" + own + "\" name the same parameter twice in the links - "
+                    + "say it once.");
+                continue;
+            }
+
             if (wanted.Length == 0)
             {
                 problems.Add("\"" + own + "=\" names no family parameter - write \"" + own + "=none\" to unlink it.");
@@ -386,11 +400,46 @@ else
             if (linkable) candidates.Add(e);
         }
 
-        foreach (var e in candidates)
+        // A CATEGORY MATCHES EXACTLY FIRST, case aside. Only when no element
+        // carries the name exactly is the loose match used - spaces and
+        // punctuation ignored, a plural read as its singular - and a loose
+        // match that reaches two DIFFERENT sets of elements, nested families
+        // "Pump" and "Pumps" say, is refused rather than taking both (Codex,
+        // PR #356). Two names on the same elements are one set, not two.
+        Func<Element, List<string>> labelsOf = e =>
         {
             var labels = new List<string> { kindName(e) };
             if (e.Category != null) labels.Add(e.Category.Name);
-            if (!everyCategory && !labels.Any(l => sameWord(saidCategory, l))) continue;
+            return labels;
+        };
+        Func<string, string, bool> sameName = (one, two) =>
+            string.Equals((one ?? "").Trim(), (two ?? "").Trim(), StringComparison.OrdinalIgnoreCase);
+        var takenBy = new List<string>();
+        var ambiguous = false;
+        if (!everyCategory)
+        {
+            var allLabels = candidates.SelectMany(labelsOf).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            takenBy = allLabels.Where(l => sameName(l, saidCategory)).ToList();
+            if (takenBy.Count == 0)
+            {
+                takenBy = allLabels.Where(l => sameWord(saidCategory, l)).ToList();
+                var sets = takenBy
+                    .Select(l => string.Join(",", candidates.Where(c => labelsOf(c).Any(x => sameName(x, l)))
+                        .Select(c => c.Id.ToString()).OrderBy(id => id)))
+                    .Distinct().ToList();
+                if (sets.Count > 1)
+                {
+                    ambiguous = true;
+                    problems.Add("\"" + saidCategory + "\" could mean " + string.Join(" or ", takenBy.Select(l => "\"" + l + "\""))
+                        + ", which are different elements - name one of them exactly.");
+                }
+            }
+        }
+
+        foreach (var e in candidates)
+        {
+            if (ambiguous) break;
+            if (!everyCategory && !labelsOf(e).Any(l => takenBy.Any(t => sameName(t, l)))) continue;
             if (!everySystem)
             {
                 var served = classificationOf(e);
@@ -408,7 +457,7 @@ else
             leftOut = before - chosen.Count;
         }
 
-        if (chosen.Count == 0)
+        if (chosen.Count == 0 && !ambiguous)
         {
             var inventory = candidates
                 .GroupBy(e => kindName(e) + (classificationOf(e).Length > 0 ? " (" + spaced(classificationOf(e)) + ")" : ""))
@@ -561,7 +610,8 @@ if (refused == null)
             throw new InvalidOperationException("Revit refused to " + (plan.Item3 == null
                     ? "unlink \"" + plan.Item4 + "\" on " + describe(plan.Item1)
                     : "link \"" + plan.Item4 + "\" on " + describe(plan.Item1) + " to \"" + nameOf(plan.Item3) + "\"")
-                + ": " + ex.Message + " NOTHING from this call was kept. As it stood: " + asItWas + ".");
+                + ": " + ex.Message + " The call failed there, and Heron rolls the whole call back - read the "
+                + "links again to see that it did. As they stood before the call: " + asItWas + ".");
         }
     }
 
@@ -578,7 +628,8 @@ if (refused == null)
             if (!same(after, plan.Item3))
                 throw new InvalidOperationException("\"" + plan.Item4 + "\" on " + describe(e) + " reads " + nameOf(after)
                     + " after the call, not " + (plan.Item3 == null ? "unlinked" : "\"" + nameOf(plan.Item3) + "\"")
-                    + ". NOTHING from this call was kept. As it stood: " + asItWas + ".");
+                    + ". The call failed, and Heron rolls the whole call back - read the links again to see that "
+                    + "it did. As they stood before the call: " + asItWas + ".");
 
             var value = reads(plan.Item2);
             var tail = value.Length > 0 ? " (reads " + value + ")" : "";
