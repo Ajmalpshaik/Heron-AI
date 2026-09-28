@@ -11,6 +11,13 @@ positive:
       an empty set and a finding saying how many were examined. Empty here is the
       right answer and the `checked` count is what proves it looked
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      categories Walls and Doors, includeLinks true
+    expect: >
+      `elements` unchanged, and each link's count in
+      `linkedMatches`
+
 negative:
   - given: the same request with NO category list
     expect: >
@@ -23,6 +30,24 @@ negative:
       empty. THIS IS THE CASE THAT CATCHES THE LOOKUP BUG: a lookup that stops
       before RBS_START_LEVEL_PARAM returns every duct in the model here, which is
       a confident, enormous and entirely wrong answer
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1's proof, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
 
 second_route:
   - >

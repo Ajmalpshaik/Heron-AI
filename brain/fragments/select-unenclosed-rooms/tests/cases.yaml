@@ -22,6 +22,15 @@ positive:
     expect: >
       Spaces ignored entirely, even faulty ones. The scope is the caller's
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      includeRooms true, includeLinks true, on a model
+      whose architectural link holds an unplaced or unenclosed room
+    expect: >
+      `elements`, `unplaced` and `unenclosed`
+      unchanged, and each faulty linked room listed by name and number with
+      NOT PLACED or NOT ENCLOSED
+
 negative:
   - given: a room that exists in the schedule and was never placed
     expect: >
@@ -43,6 +52,24 @@ negative:
     expect: >
       empty outputs and `roomsChecked` = 0, distinct from a model whose rooms are
       all fine
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1's proof, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
 
 second_route:
   - >

@@ -221,6 +221,21 @@ def need_source(entry):
     return "fragment"
 
 
+def need_may_be_absent(entry):
+    """Can this `source: request` need be left out, and bind false?
+
+    THE ADD-IN'S RULE, MIRRORED: HeronBindingNote.AbsentValue binds an absent
+    request need only when it is a `bool` marked `optional: true` - D-59's
+    `includeLinks`, where a switch not mentioned is a switch left off. Every
+    other request need is still refused when absent (FRAGMENT-ISSUES rows
+    5b-227 and 5b-252), so it answers False for them. One rule on both sides,
+    or the Python half calls runnable what Revit refuses - row 96's lesson.
+    """
+    return (need_source(entry) == "request"
+            and str(entry.get("type") or "").strip() == "bool"
+            and str(entry.get("optional")).strip().lower() == "true")
+
+
 def need_binds(entry):
     """The PROVIDED name that fills this need, which is not always its own.
 

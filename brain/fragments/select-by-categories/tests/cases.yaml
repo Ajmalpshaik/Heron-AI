@@ -16,6 +16,15 @@ positive:
       every element once. One filter cannot return a duplicate; a collector per
       category can, which is the reason for this shape
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      categories Doors and Walls, includeLinks true, on
+      Snowdon-scratch_ajmal.al
+    expect: >
+      `elements` and `perCategory` unchanged from the
+      host-only run, and each link's count and per-category breakdown in
+      `linkedMatches`
+
 negative:
   - given: a category asked for that has nothing in the model
     expect: >
@@ -36,6 +45,29 @@ negative:
     expect: >
       the breakdown keyed by Revit's own category NAME, which is what the
       person reading it uses
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1's proof, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
+
+  - given: includeLinks true WITH a view, on Revit 2020, 2021 or 2022
+    expect: >
+      "Links NOT read: this Revit cannot read a link through a view" and
+      linksSearched 0 - never the whole link reported as if it were the view
 
 second_route:
   - >
