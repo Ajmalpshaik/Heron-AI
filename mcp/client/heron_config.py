@@ -48,6 +48,10 @@ DEFAULTS = {
     "revit.busyTimeoutSeconds": "10",
     "revit.operationTimeoutSeconds": "60",
     "write.enabled": "false",
+    # The two switches above Changes (D-106): each lets one more level
+    # through, and only while write.enabled is on as well.
+    "admin.enabled": "false",
+    "publish.enabled": "false",
     "log.retainDays": "14",
     "ui.activityBanner": "true",
 }

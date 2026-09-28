@@ -878,9 +878,9 @@ def cmd_count(pid=None):
     return 1 if failures else 0
 
 
-# THE RISK LEVELS A FRAGMENT MAY CARRY AND STILL BE RUN FROM HERE.
+# THE RISK LEVELS A FRAGMENT MAY CARRY AND STILL BE RUN FROM ANY PATH HERE.
 #
-# HeronPermissions says Publish and Admin "are not reachable in Phase 0 or
+# HeronPermissions said Publish and Admin "are not reachable in Phase 0 or
 # Phase 1 at all". That was true by accident until 2026-09-08: the gate reads
 # the OPERATION's risk from the tool registry - Golden Rule 19, and right - and
 # `run_fragment_write` is declared Modify. So a fragment declaring ADMIN or
@@ -893,7 +893,34 @@ def cmd_count(pid=None):
 # because then the caller decides how dangerous its own request is. The real
 # boundary stays where it is; this stops the accident that is actually likely,
 # which is somebody proving fragments alphabetically and reaching `export-*`.
+#
+# THAT ACCIDENT IS STILL WHAT THIS LIST IS FOR, after D-106. `prove`, a plain
+# `fragment`, `validate` without --allow-publish, every job a batch generates
+# (tools/generate-jobs.py reads this list) and every setup step send nothing
+# above it. What changed is the other half, SWITCHED_OPERATIONS below.
 RUNNABLE_RISKS = ("READ", "ANALYZE", "EXECUTE", "MODIFY", "SUGGEST")
+
+# THE TWO LEVELS ABOVE MODIFY, AND THE OPERATION EACH ONE TRAVELS AS (D-106).
+#
+# Until 2026-09-28 there was no such operation: an ADMIN or PUBLISH fragment
+# could only go as `run_fragment_write`, under the Modify gate, so it was not
+# sent at all. The owner decided both levels become reachable ONLY through a
+# switch he turns on himself in Revit, and the add-in now declares one
+# operation per level - so a fragment is sent as the operation matching its
+# OWN declared risk, read from its card on this disk, and the add-in decides
+# by the switch. No risk crosses the wire: the operation's name is looked up
+# in the add-in's registry, exactly as `run_fragment_write`'s always was.
+#
+# ONLY THREE PATHS SEND THESE: `revit_change` from a chat, `fragment --write`,
+# and `validate --write --allow-publish`. Each is somebody asking for that one
+# fragment by name, and Revit still refuses it unless the switch is on.
+SWITCHED_OPERATIONS = {
+    "PUBLISH": "run_fragment_publish",
+    "ADMIN": "run_fragment_admin",
+}
+
+# The word on each switch's ribbon button, which is what a refusal names.
+SWITCH_NAMES = {"PUBLISH": "Publish", "ADMIN": "Admin"}
 
 
 def fragment_risk(path):
@@ -1070,13 +1097,20 @@ def pull_values(rest):
     return kept, pairs, negatives, setups, negative_setups
 
 
-def risk_refusal(root, name):
-    """The refusal for a fragment nothing here may run, or None.
+def risk_refusal(root, name, switched=False):
+    """The refusal for a fragment this path may not send, or None.
 
     An UNREADABLE risk is refused too. The alternative is running a fragment
     whose danger nobody could establish, and this file's own needs reader takes
     the same line for the same reason: on a path where being wrong is expensive,
     "I could not tell" and "it is fine" must not collapse into one answer.
+
+    `switched` IS TRUE ONLY ON THE THREE PATHS THAT SEND A PUBLISH OR ADMIN
+    FRAGMENT AS ITS OWN OPERATION - see SWITCHED_OPERATIONS. There this lets it
+    through and the add-in decides by the owner's switch. Everywhere else it is
+    refused here, before anything is read or sent, and the refusal NAMES THE
+    SWITCH: the person reading it is told which button in Revit is the way,
+    rather than only that there is no way from here.
     """
     path = os.path.join(root, "brain", "fragments", name, "fragment.yaml")
     risk = fragment_risk(path)
@@ -1085,11 +1119,41 @@ def risk_refusal(root, name):
         return ("%s does not say what risk it carries, so it will not be run. "
                 "Add a `risk:` line to %s." % (name, path))
 
-    if risk not in RUNNABLE_RISKS:
-        return ("%s is declared risk: %s, and Heron does not run those yet - "
-                "HeronPermissions puts Publish and Admin out of reach for Phase 0 "
-                "and Phase 1. Nothing was sent to Revit." % (name, risk))
+    if risk in RUNNABLE_RISKS:
+        return None
 
+    switch = SWITCH_NAMES.get(risk)
+    if switch is None:
+        return ("%s is declared risk: %s, which is not a level Heron knows, so it "
+                "will not be run. Nothing was sent to Revit." % (name, risk))
+
+    if switched:
+        return None
+
+    return ("%s is declared risk: %s, so it runs only through Heron's %s switch, "
+            "and this path does not send it. Nothing was sent to Revit. To run "
+            "it, turn on %s in Revit's Heron ribbon (Heron > AI Bridge > %s), "
+            "with Changes on as well, then ask for it in a chat - or send it "
+            "yourself with `fragment %s --write`." % (name, risk, switch, switch,
+                                                      switch, name))
+
+
+def write_operation(root, name):
+    """The add-in operation that runs this fragment as a CHANGE, or None.
+
+    Read from the fragment's own card, on this disk - never from anything the
+    request says. A PUBLISH or ADMIN fragment goes as its own operation, so
+    the add-in's gate reads that level and the owner's switch for it (D-106);
+    everything this file may send at all goes as `run_fragment_write`, as it
+    always has. None for a risk nobody can read or nobody knows - and a caller
+    must treat None as a refusal, which `risk_refusal` will already have said.
+    """
+    risk = fragment_risk(os.path.join(root, "brain", "fragments", name,
+                                      "fragment.yaml"))
+    if risk in SWITCHED_OPERATIONS:
+        return SWITCHED_OPERATIONS[risk]
+    if risk in RUNNABLE_RISKS:
+        return "run_fragment_write"
     return None
 
 
@@ -1212,6 +1276,14 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
     at all. It still keeps nothing unless `apply_it` is set: the default runs
     the change for real and rolls it back, which is a record of what happened
     rather than a prediction of what would.
+
+    A PUBLISH OR ADMIN FRAGMENT GOES AS ITS OWN OPERATION when `writing` is
+    set - `run_fragment_publish` or `run_fragment_admin`, chosen from its own
+    card by `write_operation` - and the add-in refuses it unless the owner's
+    switch for that level is on in Revit, with Changes (D-106). Without
+    `writing` it is refused here, and the refusal names the switch. Rolling
+    back does not unwrite a file: an export sent without `apply_it` has still
+    written what it wrote.
     """
     # This one needs a pipe. Said here rather than in main(), so that a
     # command line nobody could run anywhere is refused on its own terms
@@ -1226,10 +1298,19 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
         print("No fragment called '%s' - looked for %s" % (name, source_path))
         return 2
 
-    # WHAT IT IS ALLOWED TO BE, before anything is read or sent.
-    refusal = risk_refusal(root, name)
+    # WHAT IT IS ALLOWED TO BE, before anything is read or sent. A PUBLISH
+    # or ADMIN fragment passes only on the write path, where it goes as its
+    # own operation and the add-in decides by the owner's switch (D-106).
+    refusal = risk_refusal(root, name, switched=writing)
     if refusal is not None:
         print(refusal)
+        return 2
+
+    # WHICH OPERATION, from the fragment's own card - never from the request.
+    operation = write_operation(root, name) if writing else "run_fragment_read"
+    if operation is None:
+        print("%s does not say what risk it carries in a form Heron can read, so it "
+              "will not be run. Nothing was sent to Revit." % name)
         return 2
 
     with io.open(source_path, "r", encoding="utf-8") as fh:
@@ -1286,8 +1367,8 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
         if writing and apply_it:
             args["apply"] = "true"
 
-        reply = bridge.request("run_fragment_write" if writing else "run_fragment_read",
-                               op_args=args, response_timeout=heron_config.fragment_timeout())
+        reply = bridge.request(operation, op_args=args,
+                               response_timeout=heron_config.fragment_timeout())
 
         if reply is None:
             print("No reply from Revit %s (session %s)." % (bridge.revit_version, bridge.pid))
@@ -1678,13 +1759,53 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     # necessary thing impossible gets worked around instead of obeyed.
     # `--allow-publish` is typed per run, appears in the shell history, and is
     # the difference between a decision and an accident.
-    if not allow_publish:
-        refusal = risk_refusal(root, name)
-        if refusal:
-            print(refusal)
+    #
+    # AND SINCE D-106 IT IS NOT ENOUGH ON ITS OWN. A PUBLISH or ADMIN fragment
+    # now travels only as its own operation, `run_fragment_publish` or
+    # `run_fragment_admin`, and those are the WRITE executor - so it needs
+    # --write as well, and Revit refuses it unless the owner's switch for that
+    # level is on, with Changes. The read path used to carry an export with no
+    # switch at all: `run_fragment_read` opens no transaction, and writing a
+    # file needs none. That is the one route an export could have taken past
+    # the owner's Publish switch, and it is closed here.
+    #
+    # AN UNREADABLE RISK IS REFUSED EVEN WITH --allow-publish, which it was
+    # not: the flag skipped the check entirely. "Prove it anyway" was meant for
+    # a level somebody had read, not for one nobody could.
+    refusal = risk_refusal(root, name, switched=allow_publish and writing)
+    if refusal:
+        print(refusal)
+        switch = SWITCH_NAMES.get(fragment_risk(os.path.join(
+            root, "brain", "fragments", name, "fragment.yaml")))
+        if switch:
             print("")
-            print("If you mean to prove it, say so: add --allow-publish.")
+            print("If you mean to prove it, say so: add --allow-publish --write.")
+            print("It then goes as its own operation, and Revit refuses it unless")
+            print("%s is on in the Heron ribbon, with Changes. Both phases are" % switch)
+            print("rolled back, as every --write proof is - but a file an export")
+            print("writes stays written.")
+        return 2
+
+    # NO SETUP STEP ABOVE MODIFY, whatever the flags. A step is an
+    # ARRANGEMENT, and nothing about arranging a proof needs to export, save,
+    # sync or set up the project. It matters because a step that changes the
+    # model travels INSIDE the fragment's own request (deferred_setup below),
+    # so an ADMIN step behind a MODIFY fragment would run under the Modify
+    # gate - past the Admin switch - and one on the read path would export
+    # with no switch at all. D-106 makes the switch the only way in.
+    for step in (setup or []):
+        refusal = risk_refusal(root, step)
+        if refusal:
+            print("setup: %s" % refusal)
             return 2
+
+    # THE OPERATION THE FRAGMENT RUNS AS on a --write proof, read from its own
+    # card. Modify and below go as run_fragment_write, as they always did.
+    write_op = write_operation(root, name) if writing else None
+    if writing and write_op is None:
+        print("%s does not say what risk it carries in a form Heron can read, so "
+              "it will not be run. Nothing was sent to Revit." % name)
+        return 2
 
     source_path = os.path.join(root, "brain", "fragments", name, "impl", "any",
                                "fragment.cs")
@@ -1975,7 +2096,7 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
         # run looks exactly like a fragment that decided not to act. That is
         # what this line looked like for one commit, and it read as intermittent
         # worksharing behaviour rather than as a wrong operation name.
-        reply = bridge.request("run_fragment_write" if writing else "run_fragment_read",
+        reply = bridge.request(write_op if writing else "run_fragment_read",
                                op_args=args, response_timeout=heron_config.fragment_timeout())
         if reply is None:
             record = {"phase": phase, "ok": False, "error": "no_reply",
@@ -2440,7 +2561,9 @@ def main(argv):
             print("  --view \"Level 1\"        a view the fragment asks the caller for")
             print("  --set name=value        any other value it asks for")
             print("  --session <pid>         which Revit, when more than one is connected")
-            print("  --write                 run a MODIFY fragment, in a transaction")
+            print("  --write                 run a MODIFY fragment, in a transaction. A")
+            print("                          PUBLISH or ADMIN one goes as its own operation,")
+            print("                          refused unless its switch is on in Revit")
             print("  --write --apply         ...and KEEP what it did (one Ctrl+Z undoes it)")
             print("  --expect-from <fragment>  consume what THAT fragment left, instead")
             print("                          of resetting. Refused if something else")
@@ -2561,7 +2684,9 @@ def main(argv):
             print("                       should NOT have what this reports")
             print("  --negative-set n=v    any other value for the negative case")
             print("  --allow-publish       run a PUBLISH or ADMIN fragment. Refused")
-            print("                        without it - proving one is a decision")
+            print("                        without it - proving one is a decision.")
+            print("                        Needs --write too, and Revit refuses it")
+            print("                        unless Publish or Admin is on, with Changes")
             print("  --write               a MODIFY fragment - both phases run inside a")
             print("                        transaction and are ROLLED BACK, keeping nothing")
             print("  --setup <fragment>    run this BEFORE each phase to re-make the")

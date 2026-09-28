@@ -220,6 +220,10 @@ did not edit it**, so the row is owed rather than written: *which of `export-mod
 and `export-model-to-nwc` (`PUBLISH`) is declared wrong, given that neither changes the model.* It is
 named here so the gap is visible instead of silent.
 
+> **ANSWERED 2026-09-28 - [Q-59](../OPEN-QUESTIONS.md), [D-107](../DECISIONS.md).** `MODIFY` was the wrong one.
+> The owner made `export-model-to-ifc` and `export-views-to-dwg` both `PUBLISH`, so every export now
+> needs the Publish switch as well as Changes.
+
 ---
 
 #### The nine that want one particular element are not waiting on a rule

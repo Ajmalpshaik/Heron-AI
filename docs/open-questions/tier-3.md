@@ -1003,3 +1003,35 @@ whether the capability ships.
 view rather than tidied away.
 
 ---
+
+### ✅ Q-59 — Are `EXPORT_MODEL_TO_IFC` and `EXPORT_VIEWS_TO_DWG` PUBLISH, so that they need the Publish switch? → **Both PUBLISH** *(found 2026-09-19, asked and answered 2026-09-28)*
+
+**Two fragments write a file out of the model and declare `risk: MODIFY`:**
+[`export-model-to-ifc`](../../brain/fragments/export-model-to-ifc/fragment.yaml) and
+[`export-views-to-dwg`](../../brain/fragments/export-views-to-dwg/fragment.yaml). Every other export in the
+library declares `PUBLISH`.
+
+**Since [D-106](../DECISIONS.md) that difference decides which switch guards them.** A `PUBLISH` fragment
+needs the owner's Publish switch as well as Changes; a `MODIFY` one needs Changes alone. So with Changes on,
+a chat can export IFC or DWG with Publish off - and a batch walking the library alphabetically can reach
+both, which is the one thing the batch guard exists to prevent for `export-*`.
+[`tests/test_admin_publish.py`](../../tests/test_admin_publish.py) names the two, so a third cannot join
+them unnoticed.
+
+**Found in [FRAGMENT-ISSUES section 6](../fragment-issues/section-6.md) on 2026-09-19**, which said *"one of
+the two is mis-declared"* - comparing `export-model-to-ifc` (`MODIFY`) with `export-model-to-nwc`
+(`PUBLISH`), neither of which changes the model - and that the question was owed here. It was never
+written until now. [Row 5b-254](../FRAGMENT-ISSUES.md) records it again.
+
+**Both sides.** `MODIFY` reads as *changes the model*, and neither fragment does. `PUBLISH` is what
+[docs/12 §1](../12-security-and-permissions.md) calls *leaves the machine - export*, and it is what the
+Publish switch now covers. Nothing written anywhere argues for `MODIFY`. **Recommendation: declare both
+`PUBLISH`** - one line in each card, and both are DRAFT, so no proof moves. Not done in D-106's change,
+because which level an operation carries is the owner's decision, not a tidy-up. **Ajmal resolves it.**
+
+**Answer: BOTH `PUBLISH` — 2026-09-28. See [D-107](../DECISIONS.md).** The owner: *"make both exports
+PUBLISH for Q-59"*. One line in each card, and both were DRAFT, so no proof moved. Every export in the
+library now needs the Publish switch as well as Changes, no batch reaches either of them, and
+[`tests/test_admin_publish.py`](../../tests/test_admin_publish.py) names no exception any more.
+
+---

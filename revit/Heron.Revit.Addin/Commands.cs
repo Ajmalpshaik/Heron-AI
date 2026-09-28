@@ -245,6 +245,216 @@ namespace Heron.Revit.Addin
     }
 
     /// <summary>
+    /// Turning Admin or Publish on or off - D-106. What WriteToggleCommand
+    /// does for Changes, once, for the two switches added beside it.
+    ///
+    /// WriteToggleCommand ITSELF IS LEFT AS IT WAS. It has been pressed in
+    /// Revit and its window has been seen (NEEDS-CHECKING Z10); these two have
+    /// not. Folding it in here would put a proven button behind unproven code
+    /// for the sake of sharing a dozen lines.
+    ///
+    /// THE SAME SHAPE, AND IT IS THE SHAPE THAT MATTERS: asks on the way on,
+    /// never on the way off; a window that could not be drawn is asked again
+    /// plainly, never taken as an answer; the picture follows the setting
+    /// read back, not the one attempted; NO TRANSACTION and no element - it
+    /// edits a file in the user's own data folder.
+    /// </summary>
+    internal static class HeronSwitchToggle
+    {
+        internal static Result Toggle(
+            string name,
+            Func<bool> read,
+            Func<bool, bool> write,
+            Action<bool> paint,
+            Func<HeronSwitchQuestion> question,
+            ref string message)
+        {
+            try
+            {
+                var enabled = read();
+
+                if (!enabled)
+                {
+                    // Built at the moment of asking, so the line about
+                    // Changes being off is true when it is read.
+                    var asked = question();
+                    var answer = HeronSwitchWindow.Ask(asked, HeronApplication.Log);
+
+                    // NULL IS NOT NO - WriteToggleCommand says why.
+                    if (!answer.HasValue) answer = AskPlainly(asked);
+
+                    if (answer != true)
+                    {
+                        HeronApplication.Log(name + " toggle: offered, declined. Still off.");
+                        return Result.Cancelled;
+                    }
+                }
+
+                var now = write(!enabled);
+                paint(now);
+                HeronApplication.Log(name + " switch set to " + now + " from the ribbon.");
+                return Result.Succeeded;
+            }
+            catch (Exception ex)
+            {
+                // The picture follows what the SETTING is, read back.
+                try { paint(read()); }
+                catch { /* the icon is the lesser problem; report the real one */ }
+
+                HeronApplication.Log(name + " toggle failed: " + ex);
+                message = "Could not change Heron's " + name + " switch, so it is as it was. " +
+                          "The setting is in " + HeronConfig.FilePath + " and can be changed " +
+                          "there instead. Revit said: " + ex.Message;
+                return Result.Failed;
+            }
+        }
+
+        /// <summary>
+        /// Changes is off right now: turning this switch on alone will let
+        /// nothing through yet. Said in the question rather than discovered at
+        /// the first refusal. Null when Changes is on.
+        /// </summary>
+        internal static string ChangesOffLine(string name)
+        {
+            return HeronPermissions.WriteEnabled()
+                ? null
+                : "Changes is off right now, so " + name + " will not let anything through " +
+                  "until you turn Changes on as well.";
+        }
+
+        /// <summary>
+        /// The same question with no window around it, for when the window
+        /// will not draw. TRUE to turn the switch on.
+        ///
+        /// ENTER LANDS ON "LEAVE IT OFF". The window has no default button
+        /// for this reason; a TaskDialog always has one, so it is pointed at
+        /// the safe answer.
+        /// </summary>
+        private static bool AskPlainly(HeronSwitchQuestion asked)
+        {
+            var content = asked.What;
+            if (!string.IsNullOrEmpty(asked.Caution)) content += "\n\n" + asked.Caution;
+            if (!string.IsNullOrEmpty(asked.ChangesOff)) content += "\n\n" + asked.ChangesOff;
+            content += "\n\nThis stays on until you turn it off, including after Revit restarts. " +
+                       "The " + asked.Name + " button on the ribbon shows which state you are in.";
+
+            var ask = new TaskDialog("Heron - " + asked.Name)
+            {
+                MainInstruction = asked.Headline,
+                MainContent = content,
+                CommonButtons = TaskDialogCommonButtons.None,
+                AllowCancellation = true
+            };
+            ask.AddCommandLink(TaskDialogCommandLinkId.CommandLink1,
+                asked.TurnOn, "Heron may do this until you turn " + asked.Name + " off.");
+            ask.AddCommandLink(TaskDialogCommandLinkId.CommandLink2,
+                "Leave it off", "Nothing changes.");
+            ask.DefaultButton = TaskDialogResult.CommandLink2;
+
+            return ask.Show() == TaskDialogResult.CommandLink1;
+        }
+    }
+
+    /// <summary>
+    /// Turns Heron's Admin switch on or off - D-106. While it is on, with
+    /// Changes, Heron may run what is declared ADMIN: add a project or global
+    /// parameter, create a workset, start a new family document.
+    ///
+    /// Asked for after ADD_PROJECT_PARAMETER was refused on 2026-09-28 -
+    /// every level above Modify was out of reach, whatever the owner said.
+    /// </summary>
+    [Transaction(TransactionMode.Manual)]
+    [Regeneration(RegenerationOption.Manual)]
+    public sealed class AdminToggleCommand : IExternalCommand
+    {
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            return HeronSwitchToggle.Toggle(
+                "Admin",
+                HeronPermissions.AdminEnabled,
+                HeronPermissions.SetAdminEnabled,
+                HeronApplication.SetAdminIcon,
+                Question,
+                ref message);
+        }
+
+        /// <summary>
+        /// What turning Admin on is asked as. Every tick is true in the code;
+        /// the amber line is what Ctrl+Z will not take back.
+        /// </summary>
+        private static HeronSwitchQuestion Question()
+        {
+            return new HeronSwitchQuestion
+            {
+                Name = "Admin",
+                Headline = "Let Heron change how this project is set up?",
+                What = "Heron will be able to add project and global parameters, create " +
+                       "worksets and start new family files when you ask it to. Until you " +
+                       "turn this on it cannot.",
+                Promises = new[]
+                {
+                    "It only works while Changes is on as well.",
+                    "It stays on until you turn it off, including after Revit restarts.",
+                    "Turning it off takes effect at once, with nothing to restart.",
+                },
+                Caution = "Ctrl+Z undoes what it does inside this model, not what it writes " +
+                          "outside it - a parameter added to your shared parameter file " +
+                          "stays in that file.",
+                ChangesOff = HeronSwitchToggle.ChangesOffLine("Admin"),
+                Note = "The chat is still told to ask you before it deletes, purges, changes " +
+                       "a workset or touches a link - Admin does not change that.",
+                TurnOn = "Turn Admin on",
+            };
+        }
+    }
+
+    /// <summary>
+    /// Turns Heron's Publish switch on or off - D-106. While it is on, with
+    /// Changes, Heron may run what is declared PUBLISH: export, print, save,
+    /// sync with central.
+    /// </summary>
+    [Transaction(TransactionMode.Manual)]
+    [Regeneration(RegenerationOption.Manual)]
+    public sealed class PublishToggleCommand : IExternalCommand
+    {
+        public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
+        {
+            return HeronSwitchToggle.Toggle(
+                "Publish",
+                HeronPermissions.PublishEnabled,
+                HeronPermissions.SetPublishEnabled,
+                HeronApplication.SetPublishIcon,
+                Question,
+                ref message);
+        }
+
+        /// <summary>What turning Publish on is asked as. See AdminToggleCommand.</summary>
+        private static HeronSwitchQuestion Question()
+        {
+            return new HeronSwitchQuestion
+            {
+                Name = "Publish",
+                Headline = "Let Heron publish from this model?",
+                What = "Heron will be able to export, print, save and sync with central when " +
+                       "you ask it to. Until you turn this on it cannot.",
+                Promises = new[]
+                {
+                    "It only works while Changes is on as well.",
+                    "It stays on until you turn it off, including after Revit restarts.",
+                    "Turning it off takes effect at once, with nothing to restart.",
+                },
+                Caution = "What leaves the model cannot be taken back with Ctrl+Z - an " +
+                          "exported file stays written, a save is kept, and a sync reaches " +
+                          "everybody on the project.",
+                ChangesOff = HeronSwitchToggle.ChangesOffLine("Publish"),
+                Note = "The chat is told never to save, sync or export on its own - only when " +
+                       "you ask, for that one request.",
+                TurnOn = "Turn Publish on",
+            };
+        }
+    }
+
+    /// <summary>
     /// Reports bridge state. Reads nothing from the model, opens no
     /// transaction, and needs no document - it answers on the start screen
     /// too, which is exactly where somebody whose ribbon looks wrong will go

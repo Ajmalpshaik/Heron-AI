@@ -177,6 +177,8 @@ an edit.
 | [D-103](#d-103--a-need-may-bind-to-a-provided-name-that-is-not-its-own) | A need may bind to a provided name that is not its own | ✅ Accepted · 2026-08-31 |
 | [D-104](#d-104--the-modeller-can-talk-to-the-open-chat-from-inside-revit) | The modeller can talk to the open chat from inside Revit | ↩ Superseded by D-105 the same day · 2026-09-27 |
 | [D-105](#d-105--talk-is-removed-and-the-modeller-works-with-heron-in-the-chat-only) | Talk is removed, and the modeller works with Heron in the chat only | ✅ Accepted · 2026-09-27 |
+| [D-106](#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on) | Admin and Publish each get a switch of their own, and only the owner turns them on | ✅ Accepted · 2026-09-28 |
+| [D-107](#d-107--the-ifc-and-dwg-exports-are-publish-so-the-publish-switch-guards-every-export) | The IFC and DWG exports are PUBLISH, so the Publish switch guards every export | ✅ Accepted · 2026-09-28 |
 
 ## Format
 
@@ -892,3 +894,19 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** removed - `mcp/server/heron_talk.py`, `mcp/heron-talk.cmd`, `HeronTalk.cs`, `HeronTalkMailbox.cs`, `HeronTalkWindow.cs`, `Resources/Talk.png`, `tests/Heron.Talk.TestHost/`, `tests/test_talk.py`, `tests/test_talk_contract.py`, `tests/test_talk_served.py`; put back as they were before #338 - [`.mcp.json`](../.mcp.json), [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs), [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [`heron_dotnet.py`](../brain/heron_dotnet.py), [`gates.yml`](../.github/workflows/gates.yml)
 
 **Full record:** [`decisions/D-105.md`](decisions/D-105.md)
+
+## D-106 — Admin and Publish each get a switch of their own, and only the owner turns them on
+
+**Status:** Accepted · **Date:** 2026-09-28 · **Source:** Ajmal PS, 2026-09-28, after Heron refused ADD_PROJECT_PARAMETER when he asked for two project parameters
+**Supersedes:** the rule that Publish and Admin are *"not reachable in Phase 0 or Phase 1 at all"* - it lived in `HeronPermissions.Allows()` and the client's `risk_refusal`, never in a decision - and so the row *"Publish and Admin refused"* in [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so)'s table, which now reads *refused unless the owner's switch for that level is on* · **Keeps:** [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit), [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so), [Constitution Articles 7 and 10](../HERON_CONSTITUTION.md), [Golden Rule 19](14-golden-rules.md)
+**Affects:** [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs), [`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs), [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs), [`Commands.cs`](../revit/Heron.Revit.Addin/Commands.cs), [`HeronSwitchWindow.cs`](../revit/Heron.Revit.Addin/HeronSwitchWindow.cs), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py)
+
+**Full record:** [`decisions/D-106.md`](decisions/D-106.md)
+
+## D-107 — The IFC and DWG exports are PUBLISH, so the Publish switch guards every export
+
+**Status:** Accepted · **Date:** 2026-09-28 · **Question:** [Q-59](OPEN-QUESTIONS.md) · **Source:** Ajmal PS, 2026-09-28, in conversation: *"make both exports PUBLISH for Q-59"*
+**Changes:** the third point under *What it accepts* in [D-106](#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on) - the two exports it names are now guarded by the Publish switch · **Keeps:** [D-106](#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on), [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)
+**Affects:** [`export-model-to-ifc/fragment.yaml`](../brain/fragments/export-model-to-ifc/fragment.yaml), [`export-views-to-dwg/fragment.yaml`](../brain/fragments/export-views-to-dwg/fragment.yaml), [`tests/test_admin_publish.py`](../tests/test_admin_publish.py)
+
+**Full record:** [`decisions/D-107.md`](decisions/D-107.md)

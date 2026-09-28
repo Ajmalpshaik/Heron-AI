@@ -35,7 +35,9 @@ choice, recorded as D-99 and as Article 9's one exception. What stands in for
 the preview is named there: the owner's ribbon switch, the client's refusal of
 any fragment above Modify (since FRAGMENT-ISSUES row 5b-155), one undo entry,
 and the pin. Writing is switched off entirely until write.enabled is set - see
-HeronPermissions.
+HeronPermissions. Since D-106 a fragment declared PUBLISH or ADMIN goes as its
+own operation, run_fragment_publish or run_fragment_admin, and the add-in lets
+it through only while the owner's Publish or Admin switch is on as well.
 
 ONE tool runs a fragment and changes nothing: revit_read, through the add-in's
 run_fragment_read. It opens no transaction, so Revit itself refuses any change;
@@ -1060,21 +1062,32 @@ def revit_change(capability: str, values: str = "",
 
     It is REFUSED unless the owner has switched Changes ON in Revit's ribbon.
     That switch is read inside the add-in, never here - a client deciding its
-    own permission is not a permission. A capability that publishes or
-    administers - sync with central, save, export, create a workset - is
-    refused even then: Heron does not run those yet.
+    own permission is not a permission.
+
+    TWO MORE SWITCHES SIT BESIDE CHANGES (D-106), each OFF until the owner
+    turns it on in Revit, and each only while Changes is on too:
+      Admin   - a capability that changes how the project is set up: add a
+                project or global parameter, create a workset, start a new
+                family document.
+      Publish - a capability that sends something out of the model or saves
+                it: export, print, save, sync with central.
+    When one is off the reply names it and says where to turn it on. Tell the
+    user that; never try another capability to get round it.
 
     THERE IS NO PREVIEW: what this does is kept at once. That is the owner's
     choice, recorded as D-99 - Article 9's one exception. Article 7 still
     stands: deleting elements, purging, bulk parameter writes, family
     reloads, workset changes and anything touching a linked model need the
     user's explicit yes for that specific change BEFORE you call this, and
-    nothing in Heron asks for it on your behalf.
+    nothing in Heron asks for it on your behalf. Article 10 still stands:
+    never save, sync or export on your own initiative - only when the user
+    asks, for that one request. An export cannot be undone.
 
     To answer a question about the model, use revit_read instead - it needs
     no Changes switch and cannot change anything.
 
-    One Ctrl+Z in Revit puts back whatever this did.
+    One Ctrl+Z in Revit puts back what this did to the model - never a file it
+    wrote, a save it made or a sync that has already reached other people.
     """
     folder, status = _fragment_for(capability)
     if folder is None:
@@ -1084,25 +1097,35 @@ def revit_change(capability: str, values: str = "",
 
     root = _repo_root()
 
-    # PUBLISH AND ADMIN STOP HERE, EXACTLY AS THEY DO ON THE COMMAND LINE.
+    # PUBLISH AND ADMIN GO AS THEIR OWN OPERATION, AND ONLY FROM HERE.
     #
-    # FRAGMENT-ISSUES row 9 closed this hole by making the CLIENT refuse to
-    # send a fragment above Modify - `risk_refusal`, called by `fragment`,
-    # `prove` and, since row 54, `validate`. The add-in cannot catch it:
+    # FRAGMENT-ISSUES row 9 closed a hole by making the CLIENT refuse to send a
+    # fragment above Modify - `risk_refusal`, called by `fragment`, `prove`
+    # and, since row 54, `validate`. The add-in could not catch it:
     # `run_fragment_write` is declared Modify, and row 9 records why the
     # fragment's own risk is not sent over for the add-in to judge. This tool
     # was written a week after that fix and never called it, so with Changes ON
     # a chat could run SYNC_WITH_CENTRAL, CREATE_WORKSET, SAVE_DOCUMENT or
-    # UPGRADE_FAMILY_FILES - all out of reach in Phase 0 and Phase 1 according
-    # to HeronPermissions - while the same request typed at the command line
-    # was refused. Row 5b-155.
+    # UPGRADE_FAMILY_FILES while the same request typed at the command line was
+    # refused. Row 5b-155.
+    #
+    # D-106 GAVE EACH LEVEL ITS OWN OPERATION AND ITS OWN SWITCH. So this path
+    # no longer refuses them: `switched=True` lets a PUBLISH or ADMIN fragment
+    # through the client, `write_operation` names the operation from the
+    # fragment's own card, and the add-in reads that operation's level from
+    # its registry and refuses it unless the owner's switch is on. No risk
+    # crosses the wire. An unreadable or unknown level is still refused here.
     #
     # CALLED, NOT REIMPLEMENTED, for the reason `undeclared_values` gives below.
     # And FIRST, before any code is read or any session is bound, so a refusal
     # costs nothing and touches nothing.
-    refusal = bridge.risk_refusal(root, folder)
+    refusal = bridge.risk_refusal(root, folder, switched=True)
     if refusal:
         return refusal
+    operation = bridge.write_operation(root, folder)
+    if operation is None:
+        return ("'%s' does not say what risk it carries in a form Heron can read, so "
+                "nothing has been sent to Revit." % capability)
 
     source_path = os.path.join(root, "brain", "fragments", folder,
                                "impl", "any", "fragment.cs")
@@ -1190,7 +1213,9 @@ def revit_change(capability: str, values: str = "",
     # revit.operationTimeoutSeconds for a slow model cannot make THIS side
     # give up first - which on a request sent idempotent=False would report
     # "no answer" for a write nobody can ask about again.
-    reply = session.request("run_fragment_write", op_args=args,
+    # THE OPERATION FROM THE FRAGMENT'S OWN CARD - run_fragment_write for
+    # Modify and below, run_fragment_publish or run_fragment_admin above it.
+    reply = session.request(operation, op_args=args,
                             idempotent=False,
                             response_timeout=configuration.fragment_timeout())
     session.close()
@@ -1568,7 +1593,11 @@ def _cannot_run():
         "A fragment that WRITES reaches Revit through revit_change, which KEEPS "
         "what it did with no preview (D-99), and only while the owner has "
         "Changes switched ON in Revit's ribbon. With that switch off "
-        "HeronPermissions refuses it by name and nothing is sent.")
+        "HeronPermissions refuses it by name and nothing is sent. One declared "
+        "ADMIN - a project or global parameter, a workset, a new family file - "
+        "also needs the owner's Admin switch on, and one declared PUBLISH - "
+        "export, print, save, sync - his Publish switch (D-106); both are off "
+        "until he turns them on in Revit.")
 
 
 def _not_proven():

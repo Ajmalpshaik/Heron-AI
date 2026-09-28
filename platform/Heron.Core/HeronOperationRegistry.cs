@@ -192,6 +192,33 @@ namespace Heron.Core
                 // act, and the caller has to say so in as many words.
                 { "run_fragment_write", HeronRisk.Modify },
 
+                // PUBLISH and ADMIN - THE SAME EXECUTOR AGAIN, under the two
+                // levels above Modify (D-106). Each one runs exactly what
+                // run_fragment_write runs, inside the same TransactionGroup,
+                // kept only on apply. What differs is the risk the gate reads
+                // for it BY NAME, and so the switch that has to be on:
+                //
+                //   run_fragment_publish   Publish, with Changes
+                //   run_fragment_admin     Admin, with Changes
+                //
+                // WHY A NAME PER LEVEL AND NOT A RISK ON THE REQUEST. Golden
+                // Rule 19: the caller may ask for an operation and may not say
+                // how dangerous it is. The client picks the operation from the
+                // fragment's own declared risk, on its own disk, and the add-in
+                // decides from this table. Until these two existed an ADMIN or
+                // PUBLISH fragment could only travel as run_fragment_write,
+                // under the Modify gate, or as run_fragment_read, under none -
+                // which is why the client refused them outright
+                // (FRAGMENT-ISSUES row 9).
+                //
+                // WHAT THIS DOES NOT CLOSE, said rather than implied: the
+                // add-in never sees a fragment's own risk, so a caller that
+                // skips Heron's client could still send an ADMIN fragment as
+                // run_fragment_write. The client refuses that mistake; nothing
+                // here can refuse a deliberate one. FRAGMENT-ISSUES 5b-254.
+                { "run_fragment_publish", HeronRisk.Publish },
+                { "run_fragment_admin",   HeronRisk.Admin },
+
                 // MODIFY. It needs a preview the user accepted, and writing
                 // must be switched on (HeronPermissions, D-19).
                 { "move_elements",      HeronRisk.Modify },

@@ -20,7 +20,7 @@
 >
 > **Priority:** 🔴 blocks all work · 🟠 blocks a major area · 🟡 needed soon · 🔵 can wait
 
-**Progress: 57 answered · 1 open · nothing blocking any phase**
+**Progress: 58 answered · 1 open · nothing blocking any phase**
 
 **The count moved 1 → 3 on 2026-09-12 without anybody asking anything new.** `Q-54` and `Q-55` were
 raised on 2026-09-10 and 2026-09-11 and had been living in a work note — `Q-D` and `Q-E` in

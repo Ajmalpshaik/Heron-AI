@@ -45,9 +45,17 @@ namespace Heron.Kernel.TestHost
     ///     GetBool is exercised through a config built in memory, which is
     ///     the part row 8 is about.
     ///
-    ///   HeronAudit, HeronLease, HeronPermissions, HeronOperationRegistry
+    ///   HeronAudit, HeronLease, HeronOperationRegistry
     ///     already have suites that name them. Row 7 counted them; they are
     ///     not this host's job.
+    ///
+    /// HeronPermissions WAS on that list, and came off it on 2026-09-28 with
+    /// D-106. Its suites read it as TEXT, which was enough while it had one
+    /// switch; with three, and a rule about which combinations let which
+    /// level through, the question is what Allows() RETURNS for each of the
+    /// eight - and only running it answers that. Section 8 does, through the
+    /// overloads that take a config built in memory, so the owner's own
+    /// heron.config is never read or written to check it.
     /// </summary>
     internal static class Program
     {
@@ -73,6 +81,7 @@ namespace Heron.Kernel.TestHost
             AtomicWrite();
             Append();
             Config();
+            Permissions();
 
             Console.WriteLine();
             if (Failures.Count > 0)
@@ -467,6 +476,201 @@ namespace Heron.Kernel.TestHost
             ints.Set("bridge.idleReleaseMinutes", "not a number");
             Check(ints.GetInt("bridge.idleReleaseMinutes", 42) == 42,
                   "GetInt already did this, and is what GetBool now matches");
+        }
+
+        // ------------------------------------------------------------------
+        // HeronPermissions - D-106's three switches, every combination.
+        // ------------------------------------------------------------------
+
+        /// <summary>A stand-in for the settings path, so no real folder is asked for.</summary>
+        private const string FakePath = "(test) heron.config";
+
+        private static HeronConfig Switches(bool changes, bool admin, bool publish)
+        {
+            var config = new HeronConfig();
+            config.Set(HeronPermissions.WriteEnabledKey, changes ? "true" : "false");
+            config.Set(HeronPermissions.AdminEnabledKey, admin ? "true" : "false");
+            config.Set(HeronPermissions.PublishEnabledKey, publish ? "true" : "false");
+            return config;
+        }
+
+        private static string Said(bool changes, bool admin, bool publish)
+        {
+            return "Changes " + (changes ? "ON" : "off") + ", Admin " + (admin ? "ON" : "off")
+                   + ", Publish " + (publish ? "ON" : "off");
+        }
+
+        private static void Permissions()
+        {
+            Console.WriteLine();
+            Console.WriteLine("8. HeronPermissions - the three switches, every combination (D-106)");
+
+            // THE TWO NEW KEYS ARE DECLARED. Set() throws for a key Defaults
+            // does not hold, and a key Load() would silently ignore is the
+            // failure write.enabled once had: set in the file, never honoured.
+            var declared = new HeronConfig();
+            var threw = false;
+            try
+            {
+                declared.Set(HeronPermissions.AdminEnabledKey, "true");
+                declared.Set(HeronPermissions.PublishEnabledKey, "true");
+            }
+            catch (ArgumentException) { threw = true; }
+            Check(!threw, "admin.enabled and publish.enabled are declared settings - Set() "
+                          + "accepts both, so Load() would honour them in a file");
+
+            var fresh = new HeronConfig();
+            Check(!fresh.GetBool(HeronPermissions.AdminEnabledKey, true)
+                  && !fresh.GetBool(HeronPermissions.PublishEnabledKey, true),
+                  "and both DEFAULT to false - read with a true fallback, the declared "
+                  + "default still answers false");
+
+            var levels = new[]
+            {
+                HeronRisk.Read, HeronRisk.Analyze, HeronRisk.Suggest, HeronRisk.Execute,
+                HeronRisk.Modify, HeronRisk.Publish, HeronRisk.Admin,
+            };
+
+            var mismatches = 0;
+            foreach (var changes in new[] { false, true })
+            foreach (var admin in new[] { false, true })
+            foreach (var publish in new[] { false, true })
+            {
+                var config = Switches(changes, admin, publish);
+                foreach (var level in levels)
+                {
+                    // THE RULE, written once here from D-106 rather than read
+                    // back out of the code under test.
+                    bool expected;
+                    if (level <= HeronRisk.Execute) expected = true;
+                    else if (level == HeronRisk.Modify) expected = changes;
+                    else if (level == HeronRisk.Publish) expected = changes && publish;
+                    else expected = changes && admin;
+
+                    var allowed = HeronPermissions.Allows(level, config);
+                    var why = HeronPermissions.Explain(level, config, FakePath);
+                    var by = HeronPermissions.RefusedBy(level, config);
+
+                    var agrees = allowed == expected
+                                 && (why == null) == allowed
+                                 && (by == null) == allowed;
+                    if (!agrees)
+                    {
+                        mismatches++;
+                        Check(false, Said(changes, admin, publish) + ": " + level
+                                     + " should be " + (expected ? "allowed" : "refused")
+                                     + " - Allows " + allowed + ", Explain "
+                                     + (why == null ? "null" : "a refusal")
+                                     + ", RefusedBy " + (by ?? "null"));
+                    }
+                }
+            }
+            Check(mismatches == 0,
+                  "all 8 combinations x 7 levels agree with D-106: reads always, Modify "
+                  + "with Changes, Publish with Changes AND Publish, Admin with Changes AND "
+                  + "Admin - and Explain and RefusedBy agree with Allows every time");
+
+            // EACH SWITCH OFF -> REFUSED, BY NAME.
+            var adminOff = Switches(true, false, true);
+            var adminSaid = HeronPermissions.Explain(HeronRisk.Admin, adminOff, FakePath) ?? "";
+            Check(HeronPermissions.RefusedBy(HeronRisk.Admin, adminOff)
+                  == HeronPermissions.AdminEnabledKey,
+                  "Admin off, Changes on: refused by admin.enabled");
+            Check(adminSaid.Contains("turn on Admin in Revit's Heron ribbon")
+                  && adminSaid.Contains("Heron > AI Bridge > Admin"),
+                  "and the refusal names the switch and where it is: \"" + adminSaid + "\"");
+            Check(adminSaid.Contains("nothing was sent to Revit"),
+                  "and says nothing was sent to Revit");
+            Check(adminSaid.Contains(HeronPermissions.AdminEnabledKey + " = true")
+                  && adminSaid.Contains(FakePath),
+                  "and names the setting and the file it lives in");
+
+            var publishOff = Switches(true, true, false);
+            var publishSaid = HeronPermissions.Explain(HeronRisk.Publish, publishOff, FakePath) ?? "";
+            Check(HeronPermissions.RefusedBy(HeronRisk.Publish, publishOff)
+                  == HeronPermissions.PublishEnabledKey,
+                  "Publish off, Changes on: refused by publish.enabled");
+            Check(publishSaid.Contains("turn on Publish in Revit's Heron ribbon")
+                  && publishSaid.Contains("Heron > AI Bridge > Publish")
+                  && publishSaid.Contains("nothing was sent to Revit"),
+                  "and the refusal names Publish and where it is: \"" + publishSaid + "\"");
+
+            // ON -> ALLOWED.
+            var allOn = Switches(true, true, true);
+            Check(HeronPermissions.Allows(HeronRisk.Admin, allOn)
+                  && HeronPermissions.Explain(HeronRisk.Admin, allOn, FakePath) == null,
+                  "Admin on with Changes on: allowed, and nothing to explain");
+            Check(HeronPermissions.Allows(HeronRisk.Publish, allOn)
+                  && HeronPermissions.Explain(HeronRisk.Publish, allOn, FakePath) == null,
+                  "Publish on with Changes on: allowed, and nothing to explain");
+
+            // THE TWO ARE INDEPENDENT OF EACH OTHER.
+            var onlyAdmin = Switches(true, true, false);
+            Check(HeronPermissions.Allows(HeronRisk.Admin, onlyAdmin)
+                  && !HeronPermissions.Allows(HeronRisk.Publish, onlyAdmin),
+                  "Admin on, Publish off: Admin allowed, Publish still refused");
+            var onlyPublish = Switches(true, false, true);
+            Check(HeronPermissions.Allows(HeronRisk.Publish, onlyPublish)
+                  && !HeronPermissions.Allows(HeronRisk.Admin, onlyPublish),
+                  "Publish on, Admin off: Publish allowed, Admin still refused");
+            Check(HeronPermissions.Allows(HeronRisk.Modify, Switches(true, false, false)),
+                  "and Modify needs neither - Changes alone, exactly as before D-106");
+
+            // ADMIN OR PUBLISH ON WITH CHANGES OFF -> REFUSED, AND CHANGES IS NAMED.
+            var changesOff = Switches(false, true, true);
+            Check(!HeronPermissions.Allows(HeronRisk.Admin, changesOff)
+                  && !HeronPermissions.Allows(HeronRisk.Publish, changesOff)
+                  && !HeronPermissions.Allows(HeronRisk.Modify, changesOff),
+                  "Admin and Publish ON with Changes off: Admin, Publish and Modify all refused");
+            Check(HeronPermissions.RefusedBy(HeronRisk.Admin, changesOff)
+                  == HeronPermissions.WriteEnabledKey
+                  && HeronPermissions.RefusedBy(HeronRisk.Publish, changesOff)
+                  == HeronPermissions.WriteEnabledKey,
+                  "and what refused them is Changes - the switch that is actually off");
+            var needsChanges = HeronPermissions.Explain(HeronRisk.Admin, changesOff, FakePath) ?? "";
+            Check(needsChanges.Contains("Admin is on, but Changes is off")
+                  && needsChanges.Contains("turn on Changes in Revit's Heron ribbon")
+                  && needsChanges.Contains("nothing was sent to Revit"),
+                  "and the refusal says so in those words: \"" + needsChanges + "\"");
+
+            // BOTH OFF: THE LEVEL'S OWN SWITCH IS NAMED, AND CHANGES WITH IT.
+            var bothOff = Switches(false, false, false);
+            var bothSaid = HeronPermissions.Explain(HeronRisk.Admin, bothOff, FakePath) ?? "";
+            Check(HeronPermissions.RefusedBy(HeronRisk.Admin, bothOff)
+                  == HeronPermissions.AdminEnabledKey,
+                  "everything off: an Admin request is refused by Admin, the switch it was about");
+            Check(bothSaid.Contains("turn on both Changes and Admin")
+                  && bothSaid.Contains(HeronPermissions.WriteEnabledKey + " = true")
+                  && bothSaid.Contains(HeronPermissions.AdminEnabledKey + " = true"),
+                  "and one refusal names BOTH switches, so one read gets both right");
+
+            // MODIFY'S WORDS ARE UNCHANGED BY D-106.
+            var modifySaid = HeronPermissions.Explain(HeronRisk.Modify, bothOff, FakePath) ?? "";
+            Check(modifySaid.StartsWith("Heron's ability to change the model is switched off",
+                                        StringComparison.Ordinal)
+                  && HeronPermissions.RefusedBy(HeronRisk.Modify, bothOff)
+                  == HeronPermissions.WriteEnabledKey,
+                  "Modify with Changes off is refused in the words it always was");
+
+            // FAILS CLOSED.
+            Check(!HeronPermissions.Allows(HeronRisk.Modify, null)
+                  && !HeronPermissions.Allows(HeronRisk.Admin, null)
+                  && HeronPermissions.Allows(HeronRisk.Execute, null),
+                  "no config at all refuses everything above Execute, and still reads");
+            Check(!HeronPermissions.Allows((HeronRisk)7, allOn)
+                  && HeronPermissions.RefusedBy((HeronRisk)7, allOn) == HeronPermissions.NoSwitch,
+                  "a level above Admin - none exists yet - is refused with every switch on, "
+                  + "and RefusedBy says no switch opens it rather than borrowing one");
+
+            // THE ADMIN AND PUBLISH WORDS SAY WHAT KIND OF THING, IN PLAIN WORDS.
+            var adminWhat = HeronPermissions.Explain(HeronRisk.Admin, Switches(true, false, false), FakePath) ?? "";
+            var publishWhat = HeronPermissions.Explain(HeronRisk.Publish, Switches(true, false, false), FakePath) ?? "";
+            Check(adminWhat.Contains("project") && adminWhat.Contains("parameter")
+                  && adminWhat.Contains("workset"),
+                  "Admin's refusal says what it covers - project parameters, worksets");
+            Check(publishWhat.Contains("export") && publishWhat.Contains("save")
+                  && publishWhat.Contains("sync with central"),
+                  "Publish's refusal says what it covers - export, save, sync with central");
         }
     }
 }
