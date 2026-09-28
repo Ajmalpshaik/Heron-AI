@@ -246,7 +246,7 @@ var leftOut = 0;
 var saidCategory = (category ?? "").Trim();
 var saidSystem = (system ?? "").Trim();
 var everyCategory = squash(saidCategory) == "all";
-var everySystem = saidSystem.Length == 0 || squash(saidSystem) == "all";
+var everySystem = squash(saidSystem) == "all";
 
 if (!doc.IsFamilyDocument)
 {
@@ -364,9 +364,16 @@ else
     if (saidCategory.Length == 0)
         problems.Add("No elements were named - a category such as \"Duct Connector\" or \"Extrusion\", or \"all\".");
 
+    // A BLANK SYSTEM IS NOT "ALL". Read as all, a missing classification on
+    // "Duct Connector" would relink supply, return and exhaust alike, and the
+    // choice would be this code's rather than the modeller's (Codex, PR #356).
+    if (saidSystem.Length == 0)
+        problems.Add("No system was named - a connector classification such as \"Supply Air\", or \"all\" for "
+            + "every element whatever its system. A blank is not read as all.");
+
     // A SYSTEM REVIT DOES NOT HAVE is refused with the close ones, before the
     // family is searched for it.
-    if (!everySystem)
+    if (!everySystem && saidSystem.Length > 0)
     {
         var classifications = Enum.GetNames(typeof(MEPSystemClassification))
             .Where(n => n != "UndefinedSystemClassification" && n != "Fitting" && n != "Global").ToList();
@@ -524,8 +531,18 @@ else
                 }
 
                 var own = linkable[0];
+                // A READ THAT FAILED IS NOT "NOT LINKED" - null is what an
+                // unlinked parameter answers too (Codex, PR #356).
                 FamilyParameter now = null;
-                try { now = fm.GetAssociatedFamilyParameter(own); } catch (Exception) { now = null; }
+                string unreadable = null;
+                try { now = fm.GetAssociatedFamilyParameter(own); }
+                catch (Exception ex) { unreadable = ex.Message; }
+                if (unreadable != null)
+                {
+                    refuseFor("Revit could not say which family parameter \"" + link.Item1 + "\" is linked to on "
+                        + "<<ELEMENTS>>: " + unreadable, e);
+                    continue;
+                }
 
                 FamilyParameter target = null;
                 if (!link.Item3)
@@ -623,8 +640,19 @@ if (refused == null)
         var parts = new List<string>();
         foreach (var plan in plans.Where(p => p.Item1.Id == e.Id))
         {
+            // A READ-BACK THAT FAILED FAILS THE CALL. Taken as null it would pass
+            // an unlink it never saw (Codex, PR #356).
             FamilyParameter after = null;
-            try { after = fm.GetAssociatedFamilyParameter(plan.Item2); } catch (Exception) { after = null; }
+            try
+            {
+                after = fm.GetAssociatedFamilyParameter(plan.Item2);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("\"" + plan.Item4 + "\" on " + describe(e) + " could not be read "
+                    + "back after the call: " + ex.Message + " The call failed, and Heron rolls the whole call back - "
+                    + "read the links again to see that it did. As they stood before the call: " + asItWas + ".");
+            }
             if (!same(after, plan.Item3))
                 throw new InvalidOperationException("\"" + plan.Item4 + "\" on " + describe(e) + " reads " + nameOf(after)
                     + " after the call, not " + (plan.Item3 == null ? "unlinked" : "\"" + nameOf(plan.Item3) + "\"")

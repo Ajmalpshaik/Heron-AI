@@ -59,7 +59,8 @@ contract:
       source: request
     # For connectors, the system classification - "Supply Air", "Return Air",
     # "Hydronic Supply" - or "all". Anything but "all" leaves out every element
-    # that is not a connector of that system.
+    # that is not a connector of that system. A blank is refused, never read
+    # as "all".
     - name: system
       type: string
       source: request
@@ -136,11 +137,17 @@ proof:
     RuntimeAssembly, saidCategory Duct Connector, saidSystem Supply Air, sameKind Func`3,
     sameSystem Func`3, sameWord Func`3, spaced Func`2, squash Func`2. inputs came category
     as given; system as given; links as given (1). on TRG_MECH_EQP_Fan Coil Unit_FCU_R0'
-  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
-    whether one exists here has not been settled, and a declared absence is not the same as
-    none
-  fingerprint: 41eae592ab6417e8
-
+  second_route: 'BY HAND, in Revit''s own dialog, by Ajmal PS. On 2026-09-28, before this
+    fragment existed, he re-linked the supply duct connector''s Flow to Actual_Supply_Air_Flow
+    and the return duct connector''s Flow to Actual_Return_Air_Flow with the Family Editor''s
+    Associate Family Parameter button - his words, relayed by the session that planned the
+    work, and confirmed by him in this chat on 2026-09-29 ("for the family I already change
+    it"). This fragment''s own read of the same two connectors, with no transaction open,
+    answered exactly those two parameters before any proof ran on 2026-09-28 and after every
+    proof on both days, and the positive case read the supply connector as linked to Actual_Supply_Air_Flow
+    before changing it. What this route cannot see is the rolled-back change itself: after
+    a rollback there is nothing left in the dialog to look at.'
+  fingerprint: ec38de660815c7c6
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

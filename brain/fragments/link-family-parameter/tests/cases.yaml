@@ -41,6 +41,14 @@ negative:
   - given: system "Suply Air" (misspelt)
     expect: refused as no such system classification, nothing changed
 
+  - given: system left blank, category "Duct Connector"
+    expect: >
+      refused, asking for a classification or "all" - a blank is never read as
+      all, which would relink supply, return and exhaust alike
+
+  - given: links "Flow=Actual_Supply_Air_Flow; flow=Actual_Supply_Air_Flow"
+    expect: refused as the same parameter named twice, nothing changed
+
   - given: a project in front
     expect: notAFamily true and nothing changed
 
