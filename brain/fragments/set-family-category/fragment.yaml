@@ -102,6 +102,8 @@ compatibility-note: >
 #   "label the width with the Width parameter"-> LABEL_FAMILY_DIMENSION
 #   "make a box between these planes"         -> EXTRUDE_BETWEEN_PLANES
 #   "put a supply air connector on the neck"  -> ADD_FAMILY_CONNECTOR
+#   "link the connector flow to a parameter"  -> LINK_FAMILY_PARAMETER - an
+#                                                element already in the family
 #   "flex the family"                         -> FLEX_FAMILY
 #   "start a new family from a template"      -> CREATE_FAMILY_DOCUMENT
 

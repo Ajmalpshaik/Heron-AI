@@ -1,0 +1,60 @@
+positive:
+  - given: >
+      a Mechanical Equipment family with a Supply Air and a Return Air duct
+      connector, each with a Preset flow, and the Air Flow parameters
+      Designed_Supply_Air_Flow and Actual_Supply_Air_Flow; the supply
+      connector's Flow linked to Actual_Supply_Air_Flow. category "Duct
+      Connector", system "Supply Air", links "Flow=Designed_Supply_Air_Flow"
+    expect: >
+      changed 1, matched 1, and linkReport "Duct Connector (Supply Air) id N:
+      Flow Actual_Supply_Air_Flow -> Designed_Supply_Air_Flow" - LOOKED AT in
+      the Family Editor by selecting that connector and pressing the button at
+      the end of Flow's row in Properties. The return connector untouched
+
+  - given: the same family and selector, links "Flow=Actual_Supply_Air_Flow" when it already is
+    expect: >
+      changed 0, alreadyLinked 1, "Flow already linked to Actual_Supply_Air_Flow",
+      and nothing in Revit's undo list that changes anything
+
+  - given: the same family, category "Duct Connector", system "all", links "Flow=none"
+    expect: >
+      changed 2, both connectors' Flow "-> not linked", each keeping the value
+      it read, and editable again in Properties
+
+negative:
+  - given: >
+      the same family, category "Duct Connector", system "Supply Air", links
+      "Flow=<a Length parameter of the family>"
+    expect: >
+      refused naming the Length parameter and Flow, both kinds (Length, Air
+      Flow), and the Air Flow parameters that could drive it; changed 0 and
+      the connector's link as it was
+
+  - given: links "Flow=No_Such_Parameter"
+    expect: refused with the family parameters that could drive Flow, nothing changed
+
+  - given: category "Duct Connector", system "Exhaust Air", in a family with no exhaust connector
+    expect: >
+      refused with what the family has - "1 Duct Connector (Supply Air), 1 Duct
+      Connector (Return Air), ..." - and nothing changed
+
+  - given: system "Suply Air" (misspelt)
+    expect: refused as no such system classification, nothing changed
+
+  - given: system left blank, category "Duct Connector"
+    expect: >
+      refused, asking for a classification or "all" - a blank is never read as
+      all, which would relink supply, return and exhaust alike
+
+  - given: links "Flow=Actual_Supply_Air_Flow; flow=Actual_Supply_Air_Flow"
+    expect: refused as the same parameter named twice, nothing changed
+
+  - given: a project in front
+    expect: notAFamily true and nothing changed
+
+second_route:
+  - >
+      Family Editor by hand: select the connector, press the button at the end
+      of Flow's row in Properties, and read which family parameter the
+      Associate Family Parameter dialog has selected - compared with
+      linkReport, before and after
