@@ -264,28 +264,19 @@ def main():
 
     # THE GUARD THAT MUST NOT MOVE. A batch walks the library in this order.
     #
-    # TWO EXPORTS ARE REACHED, AND THAT IS RECORDED RATHER THAN HIDDEN.
-    # `export-model-to-ifc` and `export-views-to-dwg` declare risk MODIFY, so
-    # they travel under Changes alone and the Publish switch never sees them.
-    # FRAGMENT-ISSUES section 6 found the mismatch on 2026-09-19 ("one of the
-    # two is mis-declared") and left it for the owner; Q-59 puts it to him.
-    # Re-declaring them here would close a policy question to make a test
-    # pass. So they are NAMED: a new export-* that a batch can reach fails
-    # this suite, and so does either of these once it no longer needs naming.
-    KNOWN_MODIFY_EXPORTS = ["export-model-to-ifc", "export-views-to-dwg"]
+    # NO EXCEPTION IS NAMED ANY MORE. `export-model-to-ifc` and
+    # `export-views-to-dwg` declared MODIFY until the owner answered Q-59 on
+    # 2026-09-28 (D-107): both are PUBLISH, so the Publish switch guards every
+    # export and an export-* that a batch can reach fails this suite.
     exports = [n for n in names if n.startswith("export-")]
     reached = [n for n in exports if refusal_of(n, switched=False)[0] is None]
-    unexpected = [n for n in reached if n not in KNOWN_MODIFY_EXPORTS]
-    check(len(exports) > 0 and not unexpected,
-          "walking all %d fragments alphabetically, no export-* is reached "
-          "except the %d named for Q-59 - also reached: %r"
-          % (len(names), len(KNOWN_MODIFY_EXPORTS), unexpected))
-    stale = [n for n in KNOWN_MODIFY_EXPORTS if card_risk(n) != "MODIFY"]
-    check(not stale,
-          "and each named one still declares MODIFY - when Q-59 is answered and "
-          "one is re-declared, take it off the list: %r" % stale)
-    print("        OPEN (Q-59): %s declare MODIFY, so a batch can reach them and the "
-          "Publish switch does not guard them" % " and ".join(KNOWN_MODIFY_EXPORTS))
+    check(len(exports) > 0 and not reached,
+          "walking all %d fragments alphabetically, no export-* is reached - "
+          "reached: %r" % (len(names), reached))
+    check(not [n for n in exports if card_risk(n) != "PUBLISH"],
+          "and every export-* declares PUBLISH, so the Publish switch guards "
+          "each one (D-107) - not PUBLISH: %r"
+          % [(n, card_risk(n)) for n in exports if card_risk(n) != "PUBLISH"])
     first_export = exports[0] if exports else None
     check(first_export is not None
           and refusal_of(first_export, switched=False)[0] is not None
@@ -501,8 +492,7 @@ def main():
             print("  - %s" % one)
         return 1
     print("PASSED - Admin and Publish reach Revit only as their own operations, the "
-          "add-in decides by the owner's switch, and no batch reaches an export "
-          "declared PUBLISH. Two export-* declared MODIFY wait on Q-59.")
+          "add-in decides by the owner's switch, and no batch reaches any export-*.")
     return 0
 
 

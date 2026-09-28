@@ -56,8 +56,9 @@ through only while the owner's **Publish** or **Admin** switch is on in the ribb
   point it at a scratch folder.
 - A setup step declared `PUBLISH` or `ADMIN` is refused whatever the flags: arranging a proof never
   needs one.
-- `export-model-to-ifc` and `export-views-to-dwg` declare `MODIFY`, so none of this applies to them
-  until the owner answers [Q-59](../../../docs/OPEN-QUESTIONS.md).
+- **Every `export-*` is `PUBLISH`** since [D-107](../../../docs/DECISIONS.md): `export-model-to-ifc` and
+  `export-views-to-dwg` declared `MODIFY` until 2026-09-28. A job file that proved one of them as
+  `MODIFY` is refused now - `batch-prove` passes `--write` and never `--allow-publish`.
 
 ## The five rules
 

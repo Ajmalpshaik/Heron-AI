@@ -178,6 +178,7 @@ an edit.
 | [D-104](#d-104--the-modeller-can-talk-to-the-open-chat-from-inside-revit) | The modeller can talk to the open chat from inside Revit | ↩ Superseded by D-105 the same day · 2026-09-27 |
 | [D-105](#d-105--talk-is-removed-and-the-modeller-works-with-heron-in-the-chat-only) | Talk is removed, and the modeller works with Heron in the chat only | ✅ Accepted · 2026-09-27 |
 | [D-106](#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on) | Admin and Publish each get a switch of their own, and only the owner turns them on | ✅ Accepted · 2026-09-28 |
+| [D-107](#d-107--the-ifc-and-dwg-exports-are-publish-so-the-publish-switch-guards-every-export) | The IFC and DWG exports are PUBLISH, so the Publish switch guards every export | ✅ Accepted · 2026-09-28 |
 
 ## Format
 
@@ -901,3 +902,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`HeronPermissions.cs`](../platform/Heron.Core/HeronPermissions.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs), [`HeronOperationRegistry.cs`](../platform/Heron.Core/HeronOperationRegistry.cs), [`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs), [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs), [`Commands.cs`](../revit/Heron.Revit.Addin/Commands.cs), [`HeronSwitchWindow.cs`](../revit/Heron.Revit.Addin/HeronSwitchWindow.cs), [`heron_bridge_client.py`](../mcp/client/heron_bridge_client.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py)
 
 **Full record:** [`decisions/D-106.md`](decisions/D-106.md)
+
+## D-107 — The IFC and DWG exports are PUBLISH, so the Publish switch guards every export
+
+**Status:** Accepted · **Date:** 2026-09-28 · **Question:** [Q-59](OPEN-QUESTIONS.md) · **Source:** Ajmal PS, 2026-09-28, in conversation: *"make both exports PUBLISH for Q-59"*
+**Changes:** the third point under *What it accepts* in [D-106](#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on) - the two exports it names are now guarded by the Publish switch · **Keeps:** [D-106](#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on), [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit)
+**Affects:** [`export-model-to-ifc/fragment.yaml`](../brain/fragments/export-model-to-ifc/fragment.yaml), [`export-views-to-dwg/fragment.yaml`](../brain/fragments/export-views-to-dwg/fragment.yaml), [`tests/test_admin_publish.py`](../tests/test_admin_publish.py)
+
+**Full record:** [`decisions/D-107.md`](decisions/D-107.md)

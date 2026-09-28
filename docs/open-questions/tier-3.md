@@ -1004,7 +1004,7 @@ view rather than tidied away.
 
 ---
 
-### 🟡 Q-59 — Are `EXPORT_MODEL_TO_IFC` and `EXPORT_VIEWS_TO_DWG` PUBLISH, so that they need the Publish switch? *(found 2026-09-19, asked 2026-09-28)*
+### ✅ Q-59 — Are `EXPORT_MODEL_TO_IFC` and `EXPORT_VIEWS_TO_DWG` PUBLISH, so that they need the Publish switch? → **Both PUBLISH** *(found 2026-09-19, asked and answered 2026-09-28)*
 
 **Two fragments write a file out of the model and declare `risk: MODIFY`:**
 [`export-model-to-ifc`](../../brain/fragments/export-model-to-ifc/fragment.yaml) and
@@ -1028,5 +1028,10 @@ written until now. [Row 5b-254](../FRAGMENT-ISSUES.md) records it again.
 Publish switch now covers. Nothing written anywhere argues for `MODIFY`. **Recommendation: declare both
 `PUBLISH`** - one line in each card, and both are DRAFT, so no proof moves. Not done in D-106's change,
 because which level an operation carries is the owner's decision, not a tidy-up. **Ajmal resolves it.**
+
+**Answer: BOTH `PUBLISH` — 2026-09-28. See [D-107](../DECISIONS.md).** The owner: *"make both exports
+PUBLISH for Q-59"*. One line in each card, and both were DRAFT, so no proof moved. Every export in the
+library now needs the Publish switch as well as Changes, no batch reaches either of them, and
+[`tests/test_admin_publish.py`](../../tests/test_admin_publish.py) names no exception any more.
 
 ---
