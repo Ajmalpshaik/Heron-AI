@@ -40,8 +40,9 @@
 //
 // NESTED LINKS ARE NOT READ, AND THE ANSWER COUNTS THEM. A link inside a link
 // is a real case D-59 left open; reading it needs the parent placement's
-// transform and a decision about what `linksSearched` counts. Until that is
-// decided against a real federated model, they are named, not guessed at.
+// transform and a decision about what `linksSearched` counts. The owner
+// decided on 2026-09-28 to keep them counted and unread for now
+// (FRAGMENT-ISSUES row 5b-253).
 
 var elements = new List<Element>();
 string resolvedTo = "";
