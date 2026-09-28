@@ -19,10 +19,11 @@
 // naming each. A RENAME changes no printed number and is allowed.
 //
 // COMPARED FIRST, READ BACK AFTER. A field already at the value asked is named
-// in `alreadyThat` and not written, so a repeat changes nothing. A write that
-// does not read back after another has gone in throws, and the add-in rolls
-// the whole call back; with nothing written yet it is a refusal with Revit's
-// own words and what it would have done.
+// in `alreadyThat` and not written, so a repeat changes nothing. A write Revit
+// took that reads back different throws, and so does a refusal after another
+// write went in - the add-in rolls the whole call back. Only when Revit refused
+// the first write, so nothing was stored, is it a refusal with Revit's own
+// words and what it would have done.
 //
 // 2022 ON ONLY - earlier releases have no named sequences; see the contract.
 
@@ -199,6 +200,9 @@ var refused = "";
         {
             var done = new List<string>();
             var missed = new List<string>();
+            // A WRITE REVIT TOOK THAT READS BACK DIFFERENT is stored, so it
+            // throws below rather than being reported as "nothing changed".
+            var storedWrong = false;
             var before = describe(target);
 
             if (fieldsAsked.Count > 0)
@@ -209,13 +213,13 @@ var refused = "";
                     {
                         target.SetNumericRevisionSettings(numeric);
                         if (target.GetNumericRevisionSettings().IsEqual(numeric)) done.Add(string.Join(", ", fieldsAsked.ToArray()));
-                        else missed.Add("settings read back as " + describe(target));
+                        else { storedWrong = true; missed.Add("settings read back as " + describe(target)); }
                     }
                     else
                     {
                         target.SetAlphanumericRevisionSettings(alphanumeric);
                         if (target.GetAlphanumericRevisionSettings().IsEqual(alphanumeric)) done.Add(string.Join(", ", fieldsAsked.ToArray()));
-                        else missed.Add("settings read back as " + describe(target));
+                        else { storedWrong = true; missed.Add("settings read back as " + describe(target)); }
                     }
                 }
                 catch (Exception failure) { missed.Add("settings (" + revitSaid(failure) + ")"); }
@@ -227,15 +231,16 @@ var refused = "";
                 {
                     target.SequenceName = renameTo;
                     if (target.SequenceName == renameTo) done.Add("renamed to '" + renameTo + "'");
-                    else missed.Add("name reads back '" + target.SequenceName + "'");
+                    else { storedWrong = true; missed.Add("name reads back '" + target.SequenceName + "'"); }
                 }
                 catch (Exception failure) { missed.Add("rename (" + revitSaid(failure) + ")"); }
             }
 
-            if (missed.Count > 0 && done.Count > 0)
+            if (missed.Count > 0 && (done.Count > 0 || storedWrong))
                 throw new InvalidOperationException(
-                    "EDIT_REVISION_NUMBERING_SEQUENCE would have been half done, so nothing is kept: "
-                    + string.Join("; ", done.ToArray()) + " went in, then " + string.Join("; ", missed.ToArray()) + ".");
+                    "EDIT_REVISION_NUMBERING_SEQUENCE did not read back as asked, so nothing is kept: "
+                    + (done.Count > 0 ? string.Join("; ", done.ToArray()) + " went in, then " : "")
+                    + string.Join("; ", missed.ToArray()) + ".");
             if (missed.Count > 0)
                 refused = "Revit would not change '" + target.SequenceName + "': " + string.Join("; ", missed.ToArray())
                         + ". Nothing was changed. It would have: " + string.Join("; ", plan.ToArray()) + ".";

@@ -7,13 +7,16 @@
 //
 // DELETING IS ARTICLE 7, SO IT NEEDS THE OWNER'S YES FOR THIS REVISION.
 //
-// `confirm` must name the revision being deleted - its sequence number as the
-// dialog shows it ("2"), or Revit's own name for it ("Seq. 2 - Issued for
-// Review"). A bare "yes" is refused, and so is a number that belongs to a
-// different revision: a yes given for one revision must never delete another,
-// and deleting renumbers everything after it, so yesterday's "2" is not
-// today's. The caller passes it only after the owner has agreed to delete THAT
+// `confirm` must name the revision being deleted - its element id ("929474",
+// which LIST_REVISIONS prints and which never moves), or Revit's own name for
+// it ("Seq. 2 - Issued for Review"). A bare "yes" is refused, and so is a bare
+// sequence number: a yes given for one revision must never delete another, and
+// deleting renumbers everything after it, so yesterday's "2" is not today's.
+// The caller passes it only after the owner has agreed to delete THAT
 // revision; nothing here can ask him.
+//
+// A LATER ISSUED REVISION WOULD BE RENUMBERED, so that is refused by name - its
+// number is printed on drawings already sent out.
 //
 // ONE REVISION, HANDED IN BY A FIND, never the selection -
 // SELECT_BY_PARAMETER_VALUE on the Revisions category, by Revision Sequence or
@@ -79,10 +82,30 @@ var refused = "";
         var targetId = target.Id;
         revisionName = "Seq. " + target.SequenceNumber + " " + quoted(target.Description);
 
+        // THE YES MUST NAME THIS REVISION ITSELF: its element id, which never
+        // moves, or Revit's own "Seq. N - description". A bare sequence number
+        // is NOT enough - the find and the confirm would carry the same number,
+        // so a yes given before an earlier delete renumbered everything would
+        // pass on whichever revision holds that number now (review before
+        // merge, 2026-09-28).
         var said = (confirm ?? "").Trim();
         var confirmed = said.Length > 0
-            && (said == target.SequenceNumber.ToString()
+            && (said == target.Id.ToString()
                 || string.Equals(said, target.Name, StringComparison.OrdinalIgnoreCase));
+
+        // EVERY LATER ISSUED REVISION IS RENUMBERED by a revision leaving the
+        // sequence - its sequence number, and what it prints - so it is
+        // refused, naming each, as REORDER_REVISION does.
+        var laterIssued = new List<string>();
+        var pastTarget = false;
+        foreach (var id in Revision.GetAllRevisionIds(doc))
+        {
+            if (id == targetId) { pastTarget = true; continue; }
+            if (!pastTarget) continue;
+            var later = doc.GetElement(id) as Revision;
+            if (later != null && later.Issued)
+                laterIssued.Add("Seq. " + later.SequenceNumber + " " + quoted(later.Description));
+        }
 
         // WHAT IT CARRIES, counted before anything moves.
         var clouds = new List<RevisionCloud>();
@@ -123,7 +146,7 @@ var refused = "";
 
         if (!confirmed)
             refused = "Deleting " + revisionName + " needs the owner's yes for THIS revision: pass "
-                    + "confirm=" + target.SequenceNumber + " (or confirm=" + target.Name + ") only "
+                    + "confirm=" + target.Id + " (its id) or confirm=" + target.Name + " only "
                     + "after he has agreed. " + (said.Length == 0 ? "No confirm was given"
                         : "confirm='" + said + "' does not name it")
                     + ". Nothing was deleted. It carries " + cloudsTouched + " and is "
@@ -132,6 +155,10 @@ var refused = "";
             refused = revisionName + " is ISSUED - it records an issue that has gone out, and "
                     + "Heron does not delete one. Nothing was deleted. Un-issuing it first "
                     + "(EDIT_REVISION, issueState=unissue) is the owner's separate decision.";
+        else if (laterIssued.Count > 0)
+            refused = "Deleting " + revisionName + " would renumber " + string.Join(", ", laterIssued.ToArray())
+                    + ", which " + (laterIssued.Count == 1 ? "is" : "are") + " ISSUED - that number is printed "
+                    + "on drawings already sent out. Nothing was deleted.";
         else
         {
             ICollection<ElementId> removed = null;

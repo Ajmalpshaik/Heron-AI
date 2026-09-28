@@ -25,9 +25,11 @@ risk: MODIFY
 
 purpose: >
   Deletes one project revision - the Delete button of the revisions dialog -
-  and only with `confirm` naming that revision: its sequence number, or
-  Revit's own "Seq. N - description". The caller passes it only after the
-  owner has said yes for that revision. An issued revision is refused by name.
+  and only with `confirm` naming that revision: its element id, or Revit's
+  own "Seq. N - description" - never a bare number, which a renumber moves.
+  The caller passes it only after the owner has said yes for that revision.
+  An issued revision is refused by name, and so is a delete that would
+  renumber a later issued one.
 
   **DELETING ONE RENUMBERS EVERY LATER REVISION, AND THAT IS THE PART THAT
   CATCHES PEOPLE.** Delete revision 3 of 5 and the old 4 and 5 become 3 and 4.
@@ -54,8 +56,8 @@ contract:
     # THE revision, from the find before this - exactly one.
     - name: elements
       type: IList<Element>
-    # The owner's yes for THIS revision: its sequence number ("2") or
-    # "Seq. 2 - Issued for Review". Anything else refuses.
+    # The owner's yes for THIS revision: its element id ("929474") or
+    # "Seq. 2 - Issued for Review". A bare number or anything else refuses.
     - name: confirm
       type: string
       source: request

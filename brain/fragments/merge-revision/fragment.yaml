@@ -24,9 +24,10 @@ purpose: >
   tags move to that neighbour, and the merged revision is removed.
 
   **IT REMOVES A REVISION, SO IT NEEDS THE OWNER'S YES FOR THAT REVISION.**
-  `confirm` must name the revision being merged away - its sequence number or
-  Revit's "Seq. N - description". A bare yes, or another revision's number,
-  is refused and nothing changes.
+  `confirm` must name the revision being merged away - its element id or
+  Revit's "Seq. N - description". A bare yes, or a bare number, is refused
+  and nothing changes. So is a merge that would renumber a later ISSUED
+  revision.
 
   **BOTH MUST BE UNISSUED**, which is Revit's rule; the refusal names the
   issued one before Revit is asked.
@@ -52,8 +53,8 @@ contract:
     - name: direction
       type: string
       source: request
-    # The owner's yes for THIS revision: its sequence number ("2") or
-    # "Seq. 2 - Issued for Review". Anything else refuses.
+    # The owner's yes for THIS revision: its element id ("929474") or
+    # "Seq. 2 - Issued for Review". A bare number or anything else refuses.
     - name: confirm
       type: string
       source: request

@@ -37,7 +37,8 @@ purpose: >
   description, date, issued to, issued by and numbering of an issued revision,
   so asking for any of them changes nothing and names the revision and the
   fields. `issueState=unissue` in the same call un-issues it first; show stays
-  open, as it does in Revit.
+  open, as it does in Revit. A numbering change that would renumber a later
+  issued revision is refused the same way.
 
   **THE ISSUED TICK MOVES ONLY WHEN `issueState` SAYS SO** - "issue" after
   every other column, "unissue" before them.

@@ -1,0 +1,75 @@
+# The "would renumber an ISSUED revision" refusal of edit-revision, 2026-09-28 -
+# NEEDS-CHECKING Group BA, row BA2. A file of its own because batch-prove keys
+# its run record by fragment name, and the main job file already proves
+# edit-revision's locked-field refusal.
+#
+#     python tools/batch-prove.py tools/jobs/sheet-issues-revisions-renumber-2026-09-28.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/sheet-issues-revisions-renumber-2026-09-28.yaml
+#
+# RUN ON THE SAME TEST COPY as sheet-issues-revisions-test-copy-2026-09-28.yaml,
+# never the working file; `write: true` rolls both legs back.
+#
+# WHAT IT ARRANGES. The copy holds one revision, Seq. 1 'Issued for Review',
+# numbered by 'Numeric'. The setup adds Seq. 2 'HERON PROOF later', also on
+# 'Numeric' - UNISSUED for the positive, ISSUED for the negative - then finds
+# Seq. 1 by description. The fragment under test moves Seq. 1 to 'Custom'.
+# That renumbers Seq. 2 on 'Numeric' (it would print 1 instead of 2), so:
+#   positive - Seq. 2 unissued: `changed` "numbering Numeric -> Custom"
+#   negative - Seq. 2 ISSUED: `refused` naming Seq. 2, nothing changed
+# Found by the review before merge; the owner's rule is that nothing Heron does
+# may change what an issued revision prints.
+
+model: '"heron ai bulding" (a test copy), Revit 2024'
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: edit-revision
+    expect: changed
+    setup:
+      - create-revision
+      - select-by-parameter-value
+    keep-chain: true
+    setup-set:
+      description: HERON PROOF later
+      revisionDate: ""
+      issuedBy: ""
+      issuedTo: ""
+      show: ""
+      numbering: Numeric
+      issueState: ""
+      parameterName: Revision Description
+      matchText: Issued for Review
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Revisions
+    set:
+      description: ""
+      revisionDate: ""
+      issuedBy: ""
+      issuedTo: ""
+      show: ""
+      numbering: Custom
+      issueState: ""
+    negative-setup-set:
+      description: HERON PROOF later
+      revisionDate: ""
+      issuedBy: ""
+      issuedTo: ""
+      show: ""
+      numbering: Numeric
+      issueState: issue
+      parameterName: Revision Description
+      matchText: Issued for Review
+      matchMode: equals
+      includeTypeParameters: "false"
+      categories: Revisions
+    negative-set:
+      description: ""
+      revisionDate: ""
+      issuedBy: ""
+      issuedTo: ""
+      show: ""
+      numbering: Custom
+      issueState: ""

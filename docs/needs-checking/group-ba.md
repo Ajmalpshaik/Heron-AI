@@ -28,11 +28,23 @@ six were added:
 
 **The rules they share.** The per-revision tools are handed ONE revision by a find - SELECT_BY_PARAMETER_VALUE
 on the Revisions category, by `Revision Sequence` or `Revision Description` - never the selection, because
-other chats share the same Revit. Deleting and merging refuse unless `confirm` names that same revision
-(Article 7); deleting a sequence needs its name repeated. An issued revision is refused BY NAME: Revit locks
-its description, date, issued to, issued by and numbering, and Heron also refuses a move, a numbering switch
-or a sequence change that would renumber what an issued revision prints. Every write is compared first
-(`alreadyThat`) and read back after; a half-done call throws and the add-in rolls it back.
+other chats share the same Revit. Deleting and merging refuse unless `confirm` names that same revision -
+its element id or Revit's "Seq. N - description", never a bare number (Article 7); deleting a sequence needs
+its name repeated. An issued revision is refused BY NAME: Revit locks its description, date, issued to,
+issued by and numbering, and Heron also refuses a move, a merge, a delete, a numbering change on a revision,
+a numbering switch or a sequence change that would renumber what an issued revision prints. Every write is
+compared first (`alreadyThat`) and read back after; a write Revit took that reads back different, or a
+refusal after another write went in, throws and the add-in rolls the whole call back.
+
+**Reviewed before merge, 2026-09-28** - Codex was out of review credit, so an independent review read the
+ten files and found three gaps, all fixed in the same PR before it merged: (1) a numbering change on EDIT_REVISION, and
+a merge or delete, could renumber a LATER issued revision without a word - now refused, naming it; (2) in
+EDIT_REVISION, SET_REVISION_SETTINGS and EDIT_REVISION_NUMBERING_SEQUENCE a FIRST write that Revit took but
+that read back different was reported as "nothing was changed" and kept - now it throws; (3) `confirm`
+accepted a bare sequence number, which the find and the confirm share, so a yes given before a renumber
+would pass on whichever revision holds that number now - now only the element id or the full name binds.
+These fixed paths are compiled on every release and NOT yet run: Revit was not connected when they
+were made. BA2 and the renumber job cover them.
 
 **Revit releases.** The seven revision tools compile and are written for 2020 to 2027. The three sequence tools
 are 2022 to 2027 only: `RevisionNumberingSequence` arrived in 2022, and 2020/2021 have one numeric and one
@@ -80,7 +92,7 @@ reads them there.
 | # | Check | Expected |
 |---|---|---|
 | **BA1** | **On the WORKING model, by eye.** Manage, Sheet Issues/Revisions: read the row "Issued for Review" - Seq. 1 since "Revision 1" was deleted | Issued to reads *Ajmal PS*; every other column as before (Numeric, 28-09-2026, Issued for Review, not issued, issued by Heron, Cloud and Tag). Numbering Per Sheet, arc length 20.0, sequences Numeric and Custom |
-| **BA2** | The two legs ([D-30](../DECISIONS.md)) for nine of the ten - **drafts, not yet signed.** On a TEST COPY of "heron ai bulding", in front, with `HERON_CLIENT_ID=ajmal-pc`: `python tools/batch-prove.py tools/jobs/sheet-issues-revisions-test-copy-2026-09-28.yaml --dry-run`, then without `--dry-run` | `PASS` for all nine. The copy needs only the one revision the working model now has: delete, move and merge make a second one in their own setup. The edit-revision negative ISSUES Seq. 1 in its setup and must be refused naming it - the one issued-revision refusal no model on this PC could show yet. Then LIST_REVISIONS on the copy: nothing kept |
+| **BA2** | The two legs ([D-30](../DECISIONS.md)) for nine of the ten - **drafts, not yet signed.** On a TEST COPY of "heron ai bulding", in front, with `HERON_CLIENT_ID=ajmal-pc`: `python tools/batch-prove.py tools/jobs/sheet-issues-revisions-test-copy-2026-09-28.yaml --dry-run`, then without `--dry-run` | `PASS` for all nine, and then `tools/jobs/sheet-issues-revisions-renumber-2026-09-28.yaml` - `PASS`, its negative refusing a numbering change that would renumber an ISSUED later revision. The copy needs only the one revision the working model now has: delete, move and merge make a second one in their own setup. The edit-revision negative ISSUES Seq. 1 in its setup and must be refused naming it - the one issued-revision refusal no model on this PC could show yet. Then LIST_REVISIONS on the copy: nothing kept |
 | **BA3** | LIST_REVISIONS re-proved - read-only, so the working model is fair: `validate list-revisions` with a second open model as the negative, the arrangement its kept 2026-09-13 proof block records | Its sheet lines and `onNoSheets` as before, plus `revisionTable`, `numbering`, `numberingSequences` and `arcLength` as the dialog shows them |
 | **BA4** | **Revit 2020, by eye then by run.** LIST_REVISIONS, then CREATE_REVISION with `numbering=alphanumeric` on a test project | The 2020/2021 route - `Revision.NumberType` and the project's two schemes, reached by name - has never run. The table's numbering column reads Numeric / Alphanumeric / None, and `numberingSequences` shows the two schemes |
 | **BA5** | `numbering=none` on Revit 2022 or later, on a test copy, through EDIT_REVISION | Unknown: the tool sets no sequence and reads back what Revit holds. Write down whether Revit accepts a revision with no numbering sequence, and correct the purpose if it does not |

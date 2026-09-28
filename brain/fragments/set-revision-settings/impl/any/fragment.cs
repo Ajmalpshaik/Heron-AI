@@ -27,10 +27,11 @@
 // equality (5b-237) - and the value Revit stores is what is reported.
 //
 // COMPARED FIRST, READ BACK AFTER. A setting already at the value asked is
-// named in `alreadyThat` and not written. A write that does not read back after
-// the other has gone in throws, and the add-in rolls both back; with nothing
-// written yet it is a refusal with Revit's own words and what it would have
-// done, which is what makes a run with no transaction open a measurement.
+// named in `alreadyThat` and not written. A write Revit took that reads back
+// different throws, and so does a refusal after the other went in - the add-in
+// rolls both back. Only when Revit refused the first write, so nothing was
+// stored, is it a refusal with Revit's own words and what it would have done,
+// which is what makes a run with no transaction open a measurement.
 
 var changed = "";
 var alreadyThat = "";
@@ -123,6 +124,9 @@ var refused = "";
         var already = new List<string>();
         var done = new List<string>();
         var missed = new List<string>();
+        // A WRITE REVIT TOOK THAT READS BACK DIFFERENT is stored, so it
+        // throws below rather than being reported as "nothing changed".
+        var storedWrong = false;
 
         if (wantedMode != null)
         {
@@ -142,7 +146,7 @@ var refused = "";
                 settings.RevisionNumbering = wantedMode.Value;
                 var now = settings.RevisionNumbering;
                 if (now == wantedMode.Value) done.Add("numbering " + modeName(currentMode) + " -> " + modeName(now));
-                else missed.Add("numbering reads back " + modeName(now));
+                else { storedWrong = true; missed.Add("numbering reads back " + modeName(now)); }
             }
             catch (Exception failure) { missed.Add("numbering (" + revitSaid(failure) + ")"); }
         }
@@ -155,15 +159,16 @@ var refused = "";
                 var now = settings.RevisionCloudSpacing;
                 if (Math.Abs(now - wantedFeet.Value) * 304.8 < 0.1)
                     done.Add("arc length " + mm(currentFeet) + " -> " + mm(now));
-                else missed.Add("arc length reads back " + mm(now) + ", not " + mm(wantedFeet.Value));
+                else { storedWrong = true; missed.Add("arc length reads back " + mm(now) + ", not " + mm(wantedFeet.Value)); }
             }
             catch (Exception failure) { missed.Add("arc length (" + revitSaid(failure) + ")"); }
         }
 
-        if (missed.Count > 0 && done.Count > 0)
+        if (missed.Count > 0 && (done.Count > 0 || storedWrong))
             throw new InvalidOperationException(
-                "SET_REVISION_SETTINGS would have been half done, so nothing is kept: "
-                + string.Join("; ", done.ToArray()) + " went in, then " + string.Join("; ", missed.ToArray()) + ".");
+                "SET_REVISION_SETTINGS did not read back as asked, so nothing is kept: "
+                + (done.Count > 0 ? string.Join("; ", done.ToArray()) + " went in, then " : "")
+                + string.Join("; ", missed.ToArray()) + ".");
         if (missed.Count > 0)
             refused = "Revit would not change the revision settings: " + string.Join("; ", missed.ToArray())
                     + ". Nothing was changed. It would have: " + string.Join("; ", plan.ToArray()) + ".";

@@ -138,8 +138,10 @@ jobs:
       matchMode: equals
       includeTypeParameters: "false"
       categories: Revisions
+    # confirm is Revit's own name for the revision - or its element id. A bare
+    # sequence number is refused since the review of 2026-09-28.
     set:
-      confirm: "2"
+      confirm: Seq. 2 - HERON PROOF second
     # No confirm: refused, nothing deleted (Article 7).
     negative-set:
       confirm: ""
@@ -219,11 +221,12 @@ jobs:
       categories: Revisions
     set:
       direction: up
-      confirm: "2"
-    # confirm=1 names ANOTHER revision: refused, nothing merged.
+      confirm: Seq. 2 - HERON PROOF second
+    # confirm=2, the bare number: refused, nothing merged - a number cannot
+    # tell this revision from whichever holds that number after a renumber.
     negative-set:
       direction: up
-      confirm: "1"
+      confirm: "2"
     # THE SAME ARRANGEMENT FOR THE NEGATIVE, SPELLED OUT: without it the
     # runner hands the chain the negative-set instead (row 5b-242).
     negative-setup-set:

@@ -40,6 +40,13 @@ negative:
       nothing attempted. With issueState=unissue in the same call it is
       un-issued first and then edited; show alone is allowed, as in Revit
 
+  - given: >
+      numbering=Custom on an unissued Seq. 1 while an ISSUED Seq. 2 is on the
+      same sequence (tools/jobs/sheet-issues-revisions-renumber-2026-09-28.yaml)
+    expect: >
+      `refused` naming Seq. 2, whose printed number the move would change;
+      nothing changed. With Seq. 2 unissued the same call is `changed`
+
   - given: a find that brought back no revision
     expect: >
       `refused` saying so and nothing changed

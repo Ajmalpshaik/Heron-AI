@@ -13,8 +13,11 @@
 //
 // IT REMOVES A REVISION, SO IT IS ARTICLE 7 AND NEEDS THE OWNER'S YES FOR
 // THAT REVISION. `confirm` must name the revision being merged away - its
-// sequence number ("2") or Revit's "Seq. 2 - description". A bare "yes" or a
-// number belonging to another revision is refused, and nothing changes.
+// element id, which never moves, or Revit's "Seq. 2 - description". A bare
+// "yes" or a bare sequence number is refused, and nothing changes.
+//
+// A LATER ISSUED REVISION WOULD BE RENUMBERED when this one leaves the
+// sequence, so that is refused by name, as REORDER_REVISION does.
 //
 // ONE REVISION, HANDED IN BY A FIND, never the selection -
 // SELECT_BY_PARAMETER_VALUE on the Revisions category.
@@ -108,10 +111,30 @@ var refused = "";
         }
         var carries = clouds.Count + " revision cloud(s), and it shows on " + sheets.Count + " sheet(s)";
 
+        // THE YES MUST NAME THIS REVISION ITSELF: its element id, which never
+        // moves, or Revit's own "Seq. N - description". A bare sequence number
+        // is NOT enough - the find and the confirm would carry the same number,
+        // so a yes given before an earlier delete renumbered everything would
+        // pass on whichever revision holds that number now (review before
+        // merge, 2026-09-28).
         var said = (confirm ?? "").Trim();
         var confirmed = said.Length > 0
-            && (said == target.SequenceNumber.ToString()
+            && (said == target.Id.ToString()
                 || string.Equals(said, target.Name, StringComparison.OrdinalIgnoreCase));
+
+        // EVERY LATER ISSUED REVISION IS RENUMBERED by a revision leaving the
+        // sequence - its sequence number, and what it prints - so it is
+        // refused, naming each, as REORDER_REVISION does.
+        var laterIssued = new List<string>();
+        var pastTarget = false;
+        foreach (var id in Revision.GetAllRevisionIds(doc))
+        {
+            if (id == targetId) { pastTarget = true; continue; }
+            if (!pastTarget) continue;
+            var later = doc.GetElement(id) as Revision;
+            if (later != null && later.Issued)
+                laterIssued.Add("Seq. " + later.SequenceNumber + " " + quoted(later.Description));
+        }
 
         if (neighbour == null)
             refused = revisionName + " is the " + (way == "up" ? "first" : "last")
@@ -120,7 +143,7 @@ var refused = "";
         else if (!confirmed)
             refused = "Merging " + revisionName + " " + way + " into " + named(neighbour)
                     + " REMOVES " + revisionName + ", so it needs the owner's yes for it: pass confirm="
-                    + target.SequenceNumber + " (or confirm=" + target.Name + ") only after he has "
+                    + target.Id + " (its id) or confirm=" + target.Name + " only after he has "
                     + "agreed. " + (said.Length == 0 ? "No confirm was given"
                         : "confirm='" + said + "' does not name it")
                     + ". Nothing changed. It carries " + carries + ".";
@@ -129,6 +152,10 @@ var refused = "";
                     + (target.Issued && neighbour.Issued ? revisionName + " and " + named(neighbour) + " are"
                        : (target.Issued ? revisionName : named(neighbour)) + " is")
                     + " ISSUED. Nothing changed.";
+        else if (laterIssued.Count > 0)
+            refused = "Merging " + revisionName + " away would renumber " + string.Join(", ", laterIssued.ToArray())
+                    + ", which " + (laterIssued.Count == 1 ? "is" : "are") + " ISSUED - that number is printed "
+                    + "on drawings already sent out. Nothing changed.";
         else
         {
             var neighbourId = neighbour.Id;

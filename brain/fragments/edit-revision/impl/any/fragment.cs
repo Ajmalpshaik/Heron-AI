@@ -29,14 +29,23 @@
 //
 // EMPTY MEANS LEAVE ALONE; THE WORD <blank> WRITES AN EMPTY VALUE.
 //
+// A NUMBERING CHANGE RENUMBERS THE REVISIONS AFTER IT. Revit numbers the
+// revisions on one numbering sequence one after another, in sequence order, so
+// moving a revision off a sequence (or onto one) changes the number every LATER
+// revision on either sequence prints. Where one of those is ISSUED, the change
+// is refused, naming it - the same rule REORDER_REVISION keeps. Found by review
+// before merge, 2026-09-28: Seq. 1 moved to 'Custom' made an issued Seq. 2
+// print 1 instead of 2, and nothing said so.
+//
 // EVERY FIELD IS COMPARED BEFORE IT IS WRITTEN AND READ BACK AFTER. A field
 // already holding the wanted value is named in `alreadyThat` and not written,
-// so a second identical run changes nothing and says so. A write that does
-// not read back, after something else in this call has already changed,
-// throws - and the add-in rolls the whole call back, never half an edit. If
-// nothing had changed yet, it is a refusal carrying Revit's own words and what
-// the call would have done, which is what makes a run with no transaction open
-// a measurement.
+// so a second identical run changes nothing and says so. A write Revit took
+// but that reads back different THROWS, and so does any refusal after another
+// write went in - the add-in rolls the whole call back, never half an edit and
+// never a stored value under a reply saying nothing changed. Only when Revit
+// refused the very first write, so nothing was stored, is it a refusal carrying
+// Revit's own words and what the call would have done - which is what makes a
+// run with no transaction open a measurement.
 
 var changed = "";
 var alreadyThat = "";
@@ -249,6 +258,26 @@ var refused = "";
             else plan.Insert(0, "un-issued first");
         }
 
+        // THE ISSUED REVISIONS A NUMBERING CHANGE WOULD RENUMBER: every later
+        // issued revision on the sequence it leaves or the one it joins.
+        var renumberedIssued = new List<string>();
+        var numberingBefore = currentNumbering(target);
+        if (numberingValue != null && (numberingBefore == null || !numberingBefore.Equals(numberingValue)))
+        {
+            var pastTarget = false;
+            foreach (var id in Revision.GetAllRevisionIds(doc))
+            {
+                if (id == target.Id) { pastTarget = true; continue; }
+                if (!pastTarget) continue;
+                var later = doc.GetElement(id) as Revision;
+                if (later == null || !later.Issued) continue;
+                var scheme = currentNumbering(later);
+                if (scheme != null && (scheme.Equals(numberingBefore) || scheme.Equals(numberingValue)))
+                    renumberedIssued.Add("Seq. " + later.SequenceNumber + " " + quoted(later.Description)
+                                         + " (" + numberingLabel(scheme) + ")");
+            }
+        }
+
         if (wasIssued && issueWord != "unissue" && lockedAsked.Count > 0)
         {
             // THE LOCK, NAMED. Nothing is attempted: Revit would refuse each of
@@ -258,10 +287,20 @@ var refused = "";
                     + "Nothing was changed. Un-issuing it first (issueState=unissue) is the "
                     + "owner's decision to take, because the issue it records has gone out.";
         }
+        else if (renumberedIssued.Count > 0)
+        {
+            refused = "Moving " + revisionName + " from numbering " + numberingLabel(numberingBefore)
+                    + " to " + numberingName + " would renumber " + string.Join(", ", renumberedIssued.ToArray())
+                    + ", which " + (renumberedIssued.Count == 1 ? "is" : "are") + " ISSUED - that number is "
+                    + "printed on drawings already sent out. Nothing was changed.";
+        }
         else
         {
             var done = new List<string>();
             var missed = new List<string>();
+            // A WRITE REVIT TOOK THAT READS BACK DIFFERENT. It is stored, so it
+            // is never reported as "nothing changed" - it throws below.
+            var storedWrong = false;
 
             // 1. UN-ISSUE FIRST, when asked: every locked column needs it.
             if (issueWord == "unissue" && wasIssued)
@@ -270,7 +309,7 @@ var refused = "";
                 {
                     target.Issued = false;
                     if (!target.Issued) done.Add("un-issued");
-                    else missed.Add("un-issue (it still reads back as issued)");
+                    else { storedWrong = true; missed.Add("un-issue (it still reads back as issued)"); }
                 }
                 catch (Exception failure) { missed.Add("un-issue (" + revitSaid(failure) + ")"); }
             }
@@ -286,7 +325,7 @@ var refused = "";
                     catch (Exception failure) { missed.Add(field.Label + " (" + revitSaid(failure) + ")"); break; }
                     var after = readText(field.Label) ?? "";
                     if (after == field.Wanted) done.Add(field.Label + " " + quoted(before) + " -> " + quoted(after));
-                    else { missed.Add(field.Label + " reads back " + quoted(after)); break; }
+                    else { storedWrong = true; missed.Add(field.Label + " reads back " + quoted(after)); break; }
                 }
 
             // 3. Numbering.
@@ -302,7 +341,7 @@ var refused = "";
                         var after = currentNumbering(target);
                         if (after != null && after.Equals(numberingValue))
                             done.Add("numbering " + numberingLabel(before) + " -> " + numberingLabel(after));
-                        else missed.Add("numbering reads back " + numberingLabel(after));
+                        else { storedWrong = true; missed.Add("numbering reads back " + numberingLabel(after)); }
                     }
                     catch (Exception failure) { missed.Add("numbering " + numberingName + " (" + revitSaid(failure) + ")"); }
                 }
@@ -317,7 +356,7 @@ var refused = "";
                     target.Visibility = wantedShow.Value;
                     if (target.Visibility == wantedShow.Value)
                         done.Add("show " + showName(before) + " -> " + showName(target.Visibility));
-                    else missed.Add("show reads back " + showName(target.Visibility));
+                    else { storedWrong = true; missed.Add("show reads back " + showName(target.Visibility)); }
                 }
                 catch (Exception failure) { missed.Add("show (" + revitSaid(failure) + ")"); }
             }
@@ -329,15 +368,15 @@ var refused = "";
                 {
                     target.Issued = true;
                     if (target.Issued) done.Add("issued");
-                    else missed.Add("issue (it still reads back as not issued)");
+                    else { storedWrong = true; missed.Add("issue (it still reads back as not issued)"); }
                 }
                 catch (Exception failure) { missed.Add("issue (" + revitSaid(failure) + ")"); }
             }
 
-            if (missed.Count > 0 && done.Count > 0)
+            if (missed.Count > 0 && (done.Count > 0 || storedWrong))
                 throw new InvalidOperationException(
-                    "EDIT_REVISION on " + revisionName + " would have been half done, so nothing is "
-                    + "kept: " + string.Join("; ", done.ToArray()) + " went in, then "
+                    "EDIT_REVISION on " + revisionName + " did not read back as asked, so nothing is "
+                    + "kept: " + (done.Count > 0 ? string.Join("; ", done.ToArray()) + " went in, then " : "")
                     + string.Join("; ", missed.ToArray()) + ".");
 
             if (missed.Count > 0)

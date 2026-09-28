@@ -4,7 +4,8 @@ positive:
   - given: >
       a TEST COPY with two unissued revisions, a revision cloud on Seq. 2 in
       a view placed on a sheet; Seq. 2 found by SELECT_BY_PARAMETER_VALUE
-      parameterName=Revision Sequence matchText=2; direction=up, confirm=2
+      parameterName=Revision Sequence matchText=2; direction=up, confirm="Seq. 2 -
+      <its description>" (or its element id)
     expect: >
       `merged` true, `cloudsMoved` holding that cloud, now carrying Seq. 1;
       the sheet in `sheetsTouched` now showing Seq. 1; `order` ending with one
@@ -24,9 +25,14 @@ negative:
       value to pass, and `merged` false. Nothing changed - checked by
       LIST_REVISIONS afterwards
 
-  - given: confirm=1 while the revision handed in is Seq. 2
+  - given: confirm=1, or confirm=2, while the revision handed in is Seq. 2
     expect: >
-      refused - a yes for one revision never merges another
+      refused - a bare number cannot tell this revision from whichever holds
+      that number after a renumber, so only the id or the full name binds
+
+  - given: an unissued revision with an ISSUED revision after it
+    expect: >
+      `refused` naming the issued one it would renumber; nothing changed
 
   - given: an issued revision, or an unissued one whose neighbour is issued
     expect: >
