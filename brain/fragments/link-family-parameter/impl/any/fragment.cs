@@ -77,10 +77,15 @@ Func<string, string, bool> sameWord = (said, label) =>
 
 // A SYSTEM IN EITHER ORDER. Revit's list says "Hydronic Supply" where its enum
 // says SupplyHydronic, so the same words in another order are the same system.
+// And a modeller writes "Fire Protection Wet", the name of Revit's own piping
+// system, where the enum says FireProtectWet - so "protection" is read as
+// "protect" before either comparison (row 5b-257).
+Func<string, string> systemWords = said => (said ?? "").ToLowerInvariant().Replace("protection", "protect");
 Func<string, string, bool> sameSystem = (said, enumName) =>
 {
-    if (squash(said) == squash(enumName)) return true;
-    var one = said.ToLowerInvariant().Split(new[] { ' ', '-', '_' }, StringSplitOptions.RemoveEmptyEntries)
+    var words = systemWords(said);
+    if (squash(words) == squash(enumName)) return true;
+    var one = words.Split(new[] { ' ', '-', '_' }, StringSplitOptions.RemoveEmptyEntries)
         .OrderBy(w => w).ToArray();
     var two = spaced(enumName).ToLowerInvariant().Split(' ').Where(w => w.Length > 0).OrderBy(w => w).ToArray();
     return one.Length > 0 && one.SequenceEqual(two);
@@ -233,6 +238,19 @@ Func<Parameter, string> reads = p =>
     }
 };
 
+// A CONNECTOR'S OWN FLOW, by Revit's id for it rather than by the word "Flow":
+// it is the one parameter on a connector that is read-only until its Flow
+// Configuration is Preset, so the refusal says that of it and of nothing else
+// (row 5b-257). The duct and the pipe flow are the only two parameters Revit
+// labels "Flow" that are not obsolete (RevitAPI.xml, 2020, 2024 and 2027).
+var ductFlow = new ElementId(BuiltInParameter.RBS_DUCT_FLOW_PARAM);
+var pipeFlow = new ElementId(BuiltInParameter.RBS_PIPE_FLOW_PARAM);
+Func<Parameter, bool> isFlow = p =>
+{
+    try { return p != null && (p.Id == ductFlow || p.Id == pipeFlow); }
+    catch (Exception) { return false; }
+};
+
 // Each link asked for: the element parameter's name, the family parameter's
 // name as typed, and whether it is an unlink.
 var asked = new List<Tuple<string, string, bool>>();
@@ -243,6 +261,23 @@ var asked = new List<Tuple<string, string, bool>>();
 var plans = new List<Tuple<Element, Parameter, FamilyParameter, string, FamilyParameter>>();
 var chosen = new List<Element>();
 var leftOut = 0;
+// Each element "all" left out, and the parameters asked for that it lacks.
+var lacking = new List<Tuple<Element, List<string>>>();
+
+// WHAT EACH ONE "all" LEFT OUT LACKS, grouped by what it lacks and named. With
+// two links an element can have one and lack the other, and version 1's "no
+// Visible or Material" was untrue of the one that has Visible (row 5b-257).
+Func<List<string>, string> quoted = names =>
+{
+    var marked = names.Select(n => "\"" + n + "\"").ToList();
+    return marked.Count <= 2 ? string.Join(" and ", marked)
+        : string.Join(", ", marked.Take(marked.Count - 1)) + " and " + marked[marked.Count - 1];
+};
+Func<string> whatEachLacks = () => string.Join("; ", lacking
+    .GroupBy(l => quoted(l.Item2))
+    .Select(g => g.Count() + (g.Count() == 1 ? " lacks " : " lack ") + g.Key + ": "
+        + string.Join(", ", g.Take(20).Select(l => describe(l.Item1)))
+        + (g.Count() > 20 ? " and " + (g.Count() - 20) + " more" : "")));
 var saidCategory = (category ?? "").Trim();
 var saidSystem = (system ?? "").Trim();
 var everyCategory = squash(saidCategory) == "all";
@@ -372,15 +407,20 @@ else
             + "every element whatever its system. A blank is not read as all.");
 
     // A SYSTEM REVIT DOES NOT HAVE is refused with the close ones, before the
-    // family is searched for it.
+    // family is searched for it. Every classification Revit has counts but
+    // Undefined. "Global" and "Fitting" are "used for UI filtering in Family
+    // Editor" in RevitAPI.xml's words, and a family's own connectors carry
+    // them - the inventory below can print "Duct Connector (Fitting)" - so
+    // refusing them refused a name the refusal itself had offered (row 5b-257).
     if (!everySystem && saidSystem.Length > 0)
     {
         var classifications = Enum.GetNames(typeof(MEPSystemClassification))
-            .Where(n => n != "UndefinedSystemClassification" && n != "Fitting" && n != "Global").ToList();
+            .Where(n => n != "UndefinedSystemClassification").ToList();
         if (!classifications.Any(n => sameSystem(saidSystem, n)))
         {
+            var saidSquashed = squash(systemWords(saidSystem));
             var near = classifications
-                .Where(n => squash(n).Contains(squash(saidSystem)) || squash(saidSystem).Contains(squash(n)))
+                .Where(n => squash(n).Contains(saidSquashed) || saidSquashed.Contains(squash(n)))
                 .Select(spaced).Take(8).ToList();
             problems.Add("No system classification is called \"" + saidSystem + "\"." + (near.Count > 0
                 ? " Close: " + string.Join(", ", near) + "."
@@ -456,12 +496,20 @@ else
         }
 
         // "all" TAKES ONLY WHAT HAS EVERY PARAMETER NAMED; a named category
-        // must have them all, or the call is refused below.
+        // must have them all, or the call is refused below. What each one left
+        // out lacks is kept: with two links an element can have one and lack
+        // the other, and the finding names which (row 5b-257).
         if (everyCategory)
         {
-            var before = chosen.Count;
-            chosen = chosen.Where(e => asked.All(a => parametersNamed(e, a.Item1).Any(canLink))).ToList();
-            leftOut = before - chosen.Count;
+            var kept = new List<Element>();
+            foreach (var e in chosen)
+            {
+                var missing = asked.Where(a => !parametersNamed(e, a.Item1).Any(canLink)).Select(a => a.Item1).ToList();
+                if (missing.Count == 0) kept.Add(e);
+                else lacking.Add(Tuple.Create(e, missing));
+            }
+            chosen = kept;
+            leftOut = lacking.Count;
         }
 
         if (chosen.Count == 0 && !ambiguous)
@@ -475,6 +523,7 @@ else
             problems.Add("Nothing in this family matches \"" + saidCategory + "\""
                 + (everySystem ? "" : " on the system \"" + saidSystem + "\"")
                 + (everyCategory && leftOut > 0 ? " with " + string.Join(" and ", asked.Select(a => "\"" + a.Item1 + "\"")) + " to link" : "")
+                + (everyCategory && leftOut > 0 && asked.Count > 1 ? " - " + whatEachLacks() : "")
                 + ". What it has that can be linked: "
                 + (inventory.Count > 0 ? string.Join(", ", inventory) : "nothing")
                 + (categories.Count > 0 ? " - in the Revit categories " + string.Join(", ", categories) : "") + ".");
@@ -517,7 +566,7 @@ else
                     else
                         refuseFor("Revit does not let \"" + link.Item1 + "\" be linked to a family parameter on <<ELEMENTS>>"
                             + (named.Any(p => p.IsReadOnly)
-                                ? " - it is read-only there" + (e is ConnectorElement
+                                ? " - it is read-only there" + (e is ConnectorElement && named.Any(p => p.IsReadOnly && isFlow(p))
                                     ? ", as a connector's flow is unless its Flow Configuration is Preset" : "")
                                 : "") + ".", e);
                     continue;
@@ -679,9 +728,15 @@ if (refused == null)
     findings.Add("Family '" + doc.Title + "': " + changed + " link(s) changed and " + alreadyLinked
         + " already as asked, on " + matched + " element(s) matching \"" + saidCategory + "\""
         + (everySystem ? "" : " on the system \"" + saidSystem + "\"") + " - read back from the family.");
-    if (leftOut > 0)
-        findings.Add(leftOut + " element(s) matched \"all\" but have no " + string.Join(" or ", asked.Select(a => "\"" + a.Item1 + "\""))
-            + " that can be linked, and were left alone.");
+    // With one link what the ones left out lack is that link; with more, which
+    // one each lacks is named (row 5b-257).
+    if (leftOut > 0 && asked.Count == 1)
+        findings.Add(leftOut + " element(s) matched \"all\" but have no \"" + asked[0].Item1
+            + "\" that can be linked, and were left alone.");
+    else if (leftOut > 0)
+        findings.Add(leftOut + " element(s) matched \"all\" but lack at least one of "
+            + quoted(asked.Select(a => a.Item1).ToList()) + " that can be linked, and were left alone - "
+            + whatEachLacks() + ".");
     if (plans.Any(p => p.Item3 == null && p.Item5 != null))
         findings.Add("An unlinked parameter keeps the value it had and can be typed into again in Properties.");
     if (changed > 0)
