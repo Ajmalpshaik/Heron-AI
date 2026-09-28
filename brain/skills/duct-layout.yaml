@@ -46,7 +46,7 @@ preconditions:
   - the units and the diffusers are placed, and each diffuser's system - supply or return - is set by its family
   - the duct type's routing preference has the fitting the owner wants at a branch - Taps, not Tees
   - every drop, from the main down to a diffuser neck, is longer than the duct type's elbow leg plus some straight duct
-  - the main starts at the unit's outlet at the main's own size, and runs further than the transition's length before its first tap - FIT_MEP_JOINTS builds the transition straight onto the outlet
+  - the main starts at the unit's outlet at the main's own size; where the outlet is a different size, FIT_MEP_JOINTS builds the transition straight onto it and the main runs further than that transition's length before its first tap
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
@@ -74,7 +74,9 @@ note: >
   main carrying both taps and left two diffusers of three on open ends
   (FRAGMENT-ISSUES 5b-250). Draw the main from the outlet at its own size and
   FIT_MEP_JOINTS builds the transition onto the outlet, the way Revit joins a
-  duct to a unit - all 14 offices were redrawn so and sized cleanly.
+  duct to a unit. All 14 offices were redrawn so and read back with no open
+  end; Duct Sizing has been run on two of them, Offices 01 and 02, and both
+  stayed joined.
 
   NOT CONNECT_AIR_TERMINALS. NEEDS-CHECKING AJ1 / FRAGMENT-ISSUES 5b-187: it
   lifts the diffuser onto the duct and makes no tap. The drop is built instead.

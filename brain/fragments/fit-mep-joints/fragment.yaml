@@ -89,6 +89,12 @@ contract:
       # purpose for CONNECT_OPEN_ENDS. The evidence it looked (D-52).
       role: accounting
       type: int
+    - name: ontoOutlets
+      # How many of the transitions were built straight onto the open
+      # connector of a unit, terminal or accessory (version 2). Also counted
+      # in `fitted`; NEEDS-CHECKING AL7 reads it.
+      role: result
+      type: int
     - name: notMepCurve
       # Handed in but not a duct or pipe, so there was nothing here to fit.
       # A count of what it was GIVEN and could not use (D-52).

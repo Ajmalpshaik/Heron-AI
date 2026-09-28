@@ -162,12 +162,24 @@ Func<Connector, MEPCurve> tapTarget = end =>
     return best;
 };
 
-// The open connector of a unit, terminal or accessory that a lone end sits on,
-// or null. Fittings are left out: an end meeting another fitting is a run
-// problem, not an outlet. Searched in the model rather than among `elements`,
-// because what is handed in is the ducts just drawn and the unit is not one.
-Func<Connector, Connector> outletUnder = end =>
+// The open connectors of units, terminals and accessories that a lone end sits
+// on - ALL of them, so the caller can refuse a guess. Fittings are left out BY
+// CATEGORY: an end meeting another fitting is a run problem, not an outlet, and
+// an accessory - a damper, a valve - can carry a MechanicalFitting MEP model
+// just as a fitting does, so the model's class cannot tell the two apart.
+// Searched in the model rather than among `elements`, because what is handed
+// in is the ducts just drawn and the unit is not one of them.
+var fittingCategories = new List<ElementId>
 {
+    new ElementId(BuiltInCategory.OST_DuctFitting),
+    new ElementId(BuiltInCategory.OST_PipeFitting),
+    new ElementId(BuiltInCategory.OST_CableTrayFitting),
+    new ElementId(BuiltInCategory.OST_ConduitFitting),
+};
+
+Func<Connector, List<Connector>> outletsUnder = end =>
+{
+    var found = new List<Connector>();
     var at = end.Origin;
     var reach = new XYZ(tolerance, tolerance, tolerance);
     var near = new FilteredElementCollector(doc)
@@ -178,7 +190,7 @@ Func<Connector, Connector> outletUnder = end =>
     {
         var instance = element as FamilyInstance;
         if (instance == null || instance.MEPModel == null) continue;
-        if (instance.MEPModel is MechanicalFitting) continue;
+        if (instance.Category != null && fittingCategories.Contains(instance.Category.Id)) continue;
 
         var manager = instance.MEPModel.ConnectorManager;
         if (manager == null) continue;
@@ -190,11 +202,11 @@ Func<Connector, Connector> outletUnder = end =>
             if (connector.Domain != end.Domain) continue;
             if (connector.IsConnected) continue;
             if (connector.Origin.DistanceTo(at) > tolerance) continue;
-            return connector;
+            found.Add(connector);
         }
     }
 
-    return null;
+    return found;
 };
 
 // Shape before size, as below: reading Radius off a rectangular connector throws.
@@ -217,7 +229,20 @@ foreach (var joint in joints)
         var target = tapTarget(joint[0]);
         if (target == null)
         {
-            var outlet = outletUnder(joint[0]);
+            var outlets = outletsUnder(joint[0]);
+            if (outlets.Count > 1)
+            {
+                // Two units or terminals overlapping at one outlet. Taking
+                // whichever Revit enumerates first would build the transition
+                // against a guess and report it as done.
+                jointCount++;
+                failures.Add(placeOf(joint[0].Origin) + ": " + outlets.Count + " open outlets meet "
+                    + "this end - two units or terminals overlap there, so no transition was built "
+                    + "against a guess");
+                continue;
+            }
+
+            var outlet = outlets.Count == 1 ? outlets[0] : null;
             if (outlet == null || sameSizeAs(joint[0], outlet)) { freeEnds++; continue; }
             jointCount++;
 
