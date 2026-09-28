@@ -1,0 +1,45 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: >
+      a TEST COPY with three unissued revisions, Seq. 3 found by
+      SELECT_BY_PARAMETER_VALUE parameterName=Revision Sequence matchText=3,
+      direction=up
+    expect: >
+      `moved` true, and `order` reading it back as Seq. 2 with the old Seq. 2
+      now Seq. 3. Open Manage - Sheet Issues/Revisions: the rows have swapped
+
+  - given: the same revision, direction=first
+    expect: >
+      `moved` true and it reads back as Seq. 1, every revision it passed one
+      number later
+
+  - given: >
+      the working model, with no transaction open (validate without --write) -
+      a measurement, not a move
+    expect: >
+      `refused` carrying Revit's own words about the missing transaction, and
+      the position it would have gone to. Nothing moves
+
+negative:
+  - given: a revision that is ISSUED, or an up/down that passes an issued one
+    expect: >
+      `refused` naming each issued revision whose number would change, and
+      nothing moved. Revit itself would allow it
+
+  - given: the first revision, direction=up
+    expect: >
+      `refused` saying it is already first; nothing moved
+
+  - given: a find that brought back two revisions
+    expect: >
+      `refused` naming both by sequence and description; nothing moved
+
+  - given: direction=sideways
+    expect: >
+      `refused` naming the four words it takes; nothing moved
+
+second_route:
+  - >
+    open Manage - Sheet Issues/Revisions in Revit and read the Sequence column,
+    or run LIST_REVISIONS, whose revisionTable is in sequence order

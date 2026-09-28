@@ -1,0 +1,103 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-021
+semantic-identity: "move a revision up or down the project's revision sequence"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# On 2026-09-28 the owner checked Manage > Sheet Issues/Revisions control by
+# control in Revit 2024 and asked for every one of them from chat. Move Up and
+# Move Down had nothing behind them in the library.
+kind: action
+domain: revit.sheets
+capability: REORDER_REVISION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Moves one revision up or down the project's revision sequence - the Move Up
+  and Move Down buttons in Sheet Issues/Revisions - one row at a time, or to
+  the first or last place, and reads the order back.
+
+  **MOVING A REVISION RENUMBERS IT AND EVERY REVISION IT PASSES**, issued ones
+  included. So a move that would change the number of an ISSUED revision is
+  refused, naming it: that number is printed on drawings already sent out.
+
+  **ONE REVISION, HANDED IN BY A FIND** - by Revision Sequence, the number the
+  dialog shows, or by description. Two found is refused with both named.
+
+  The order before and after is handed back in full. A move that does not read
+  back where it was asked is rolled back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so one
+  undo puts the order back.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # THE revision to move, from the find before this - exactly one.
+    - name: elements
+      type: IList<Element>
+    # "up" or "down" (one row, as the dialog's buttons), or "first" or "last".
+    - name: direction
+      type: string
+      source: request
+  provides:
+    - name: moved
+      role: result
+      type: bool
+    - name: order
+      # The whole sequence before and after, READ BACK - "Seq. 1 'A', Seq. 2
+      # 'B'". A string, so every revision prints. The project's order whether
+      # or not anything moved (D-52).
+      role: accounting
+      type: string
+    - name: revisionName
+      # Which revision, "Seq. N 'description'" as it stood before the move.
+      role: accounting
+      type: string
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND, so it must not count toward "did
+      # this come back empty" (D-52).
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `Revision.ReorderRevisionSequence
+  (Document, IList<ElementId>)`, `Revision.GetAllRevisionIds`, and the
+  revision's `SequenceNumber`, `Description` and `Issued` are present and
+  unchanged 2020 through 2027 - read with tools/api-surface --members on each
+  release's RevitAPI.dll. The API documentation for the reorder says the new
+  sequence must hold every revision exactly once, and that it can change the
+  numbers of issued revisions; the whole list is passed, and the issued check
+  is Heron's.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "move revision 2 up"                 -> here
+#   "move the revision down in the list" -> here
+#   "reorder the revisions"              -> here
+#   "merge revision 2 down"              -> MERGE_REVISION, which removes one
+#                                           revision into its neighbour. This
+#                                           keeps both
+#   "delete revision 1"                  -> DELETE_REVISION
+#   "list the revisions"                 -> LIST_REVISIONS, which shows the
+#                                           order this changes
+#   "move these elements"                -> MOVE_ELEMENTS - model elements in
+#                                           space, nothing to do with revisions
+
+utterances:
+  - move revision 2 up
+  - move the revision down in the list
+  - reorder the revisions
+  - move revision 3 to the top of the revision list

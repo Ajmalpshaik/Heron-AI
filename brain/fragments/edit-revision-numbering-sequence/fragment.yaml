@@ -1,0 +1,120 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-025
+semantic-identity: "rename a revision numbering sequence or change its digits, start, prefix, suffix or custom list"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# On 2026-09-28 the owner checked the Edit Numbering Sequence dialog field by
+# field in Revit 2024 (Name, Type, Minimum number of digits, Starting Number,
+# Prefix, Suffix, Custom Sequence) and asked for every one from chat.
+kind: action
+domain: revit.sheets
+capability: EDIT_REVISION_NUMBERING_SEQUENCE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Changes one revision numbering sequence - the Edit button in Sheet
+  Issues/Revisions > Customize Numbering: its name, and for a numeric
+  sequence its minimum number of digits, starting number, prefix and suffix,
+  or for an alphanumeric one its custom sequence, prefix and suffix. Empty
+  leaves a field alone; <blank> writes an empty prefix or suffix.
+
+  **THE TYPE IS FIXED ONCE MADE**, so a value belonging to the other type is
+  refused by name.
+
+  **A SEQUENCE AN ISSUED REVISION USES KEEPS ITS SETTINGS** - changing them
+  would change the number that revision prints on drawings already sent out -
+  so that is refused, naming the revisions. A new name is allowed.
+
+  A field already at the value asked is named in `alreadyThat` and not
+  written; every write is read back, and a half-done edit is rolled back.
+  Revit 2022 on - earlier releases have no named sequences.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The sequence to change, by its current name.
+    - name: name
+      type: string
+      source: request
+    # Its new name; empty keeps the name.
+    - name: newName
+      type: string
+      source: request
+    # Numeric only: a whole number, 1 or more.
+    - name: minimumDigits
+      type: string
+      source: request
+    # Numeric only: a whole number, 0 or more.
+    - name: startingNumber
+      type: string
+      source: request
+    - name: prefix
+      type: string
+      source: request
+    - name: suffix
+      type: string
+      source: request
+    # Alphanumeric only: the values in order, commas between - "A, B, C".
+    - name: customSequence
+      type: string
+      source: request
+  provides:
+    - name: changed
+      # What moved, before -> after, and the whole sequence as it was.
+      role: result
+      type: string
+    - name: alreadyThat
+      # Fields already at the value asked, not written. The prior state,
+      # never a change (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      # The sequence READ BACK after the call, and which revisions use it.
+      type: string
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND, so it must not count toward "did
+      # this come back empty" (D-52).
+      role: accounting
+      type: string
+
+revit: ["2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  2022 TO 2027, AND 2020 AND 2021 ARE LEFT OUT ON PURPOSE. `RevisionNumberingSequence`
+  with its `SequenceName` (settable), `NumberType`, `Get/SetNumericRevisionSettings`
+  and `Get/SetAlphanumericRevisionSettings`, `NumericRevisionSettings.MinimumDigits`
+  and `Revision.RevisionNumberingSequenceId` exist from 2022 - read with
+  tools/api-surface --members on every release's RevitAPI.dll. Revit 2020 and
+  2021 keep ONE numeric and ONE alphanumeric scheme on `RevisionSettings`
+  (`Get/SetNumericRevisionSettings`, gone from 2023), with no names and no
+  minimum digits. Editing those two is NOT built; LIST_REVISIONS reads them.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "rename the numbering"               -> here, newName=
+#   "change the revision numbering prefix" -> here
+#   "edit the numbering sequence"        -> here
+#   "make an alphabetic sequence"        -> CREATE_REVISION_NUMBERING_SEQUENCE
+#   "delete the numbering sequence"      -> DELETE_REVISION_NUMBERING_SEQUENCE
+#   "use the Custom numbering on revision 2"
+#                                        -> EDIT_REVISION, numbering=Custom -
+#                                           which sequence a REVISION uses
+
+utterances:
+  - rename the numbering
+  - change the revision numbering prefix
+  - edit the numbering sequence
+  - start the numeric revision numbering at 0 with 2 digits

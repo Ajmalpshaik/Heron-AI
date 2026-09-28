@@ -2,6 +2,18 @@ positive:
   - given: description "Coordination comments", date "02/09/26", issued by "AP"
     expect: a revision in the project, third in the sequence say, with `sequence` reporting 3
 
+  - given: >
+      every column at once on a TEST COPY - issuedTo "Client", show "tag",
+      numbering "Custom" (2022 on) or "alphanumeric" (2020, 2021)
+    expect: >
+      each read back in `findings`; the new row in Sheet Issues/Revisions
+      shows all of them
+
+  - given: issueState "issue"
+    expect: >
+      issued, and set LAST - every other column went in first, because
+      issuing locks them
+
   - given: the new revision handed straight to ADD_REVISION_CLOUD
     expect: >
       the clouds are drawn against it and appear on the titleblock's revision
@@ -19,11 +31,16 @@ negative:
       the titleblock, so the project's convention wins - reformatting it would
       change what a signed drawing says
 
-  - given: the revision checked for its Issued flag
+  - given: the revision checked for its Issued flag, issueState empty
     expect: >
-      NOT issued. Issuing is one-way: it locks the description and the date and
-      refuses any new cloud, so a revision created already issued is one nobody
-      can cloud
+      NOT issued. Issuing locks the description, date, issued to, issued by
+      and numbering and refuses any new cloud, so it happens only when
+      issueState says "issue"
+
+  - given: show "sideways", or numbering naming a sequence the project lacks
+    expect: >
+      refused with the words it takes or the sequences there are, and NOTHING
+      created - every value is checked before the revision is made
 
 second_route:
   - Revit's own View > Revisions dialog, and a sheet's revision schedule, read for the same row

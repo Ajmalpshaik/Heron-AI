@@ -1,0 +1,85 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-026
+semantic-identity: "delete a revision numbering sequence that no revision uses"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# On 2026-09-28 the owner checked Sheet Issues/Revisions > Customize Numbering
+# > Numbering in Revit 2024, including its Delete button, and asked for every
+# control from chat.
+kind: action
+domain: revit.sheets
+capability: DELETE_REVISION_NUMBERING_SEQUENCE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Deletes one revision numbering sequence - the Delete button under
+  Customize Numbering in the revisions dialog - only with `confirm` repeating its
+  name, which the caller passes after the owner has said yes for that
+  sequence.
+
+  **A SEQUENCE A REVISION USES IS REFUSED, NAMING EACH REVISION** that uses
+  it; move them to another sequence first. When Revit refuses, Revit's own
+  reason is reported. The sequences left afterwards are read back. Revit 2022
+  on - earlier releases have no named sequences.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The sequence to delete, by name.
+    - name: name
+      type: string
+      source: request
+    # The owner's yes for THIS sequence: its name again. Anything else refuses.
+    - name: confirm
+      type: string
+      source: request
+  provides:
+    - name: deleted
+      role: result
+      type: bool
+    - name: findings
+      # The numbering sequences left afterwards, READ BACK.
+      type: string
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND, so it must not count toward "did
+      # this come back empty" (D-52).
+      role: accounting
+      type: string
+
+revit: ["2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  2022 TO 2027, AND 2020 AND 2021 ARE LEFT OUT ON PURPOSE. `RevisionNumberingSequence`,
+  `GetAllRevisionNumberingSequences`, `SequenceName`, `NumberType` and
+  `Revision.RevisionNumberingSequenceId` exist from 2022 - read with
+  tools/api-surface --members on every release's RevitAPI.dll. A sequence is
+  an element, so it is deleted with `Document.Delete`, and the result is
+  established by looking for it afterwards. Revit 2020 and 2021 have no named
+  sequences to delete: one numeric and one alphanumeric scheme are always
+  there.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "delete the numbering sequence"      -> here. Needs confirm
+#   "remove the revision numbering sequence" -> here
+#   "delete revision 1"                  -> DELETE_REVISION - a revision, not
+#                                           the numbering it uses
+#   "rename the numbering"               -> EDIT_REVISION_NUMBERING_SEQUENCE
+#   "make an alphabetic sequence"        -> CREATE_REVISION_NUMBERING_SEQUENCE
+
+utterances:
+  - delete the numbering sequence
+  - remove the revision numbering sequence

@@ -1,0 +1,124 @@
+heron-agent: HERON-REVIT-SHT-029
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-SHT-024
+semantic-identity: "make a new revision numbering sequence, numeric or alphanumeric, or duplicate one"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# On 2026-09-28 the owner checked Manage > Sheet Issues/Revisions > Customize
+# Numbering > Numbering control by control in Revit 2024 and asked for every
+# one from chat. Nothing in the library touched RevisionNumberingSequence (a
+# search for the class found 0 files).
+#
+# NO EXAMPLE LETTERS IN `purpose`. "(A, B, C ...)" stood after "custom
+# sequence" there until the routing check of 2026-09-28 showed the lone "B"
+# pulling CREATE_REVISION's own "start revision B" here by words.
+kind: action
+domain: revit.sheets
+capability: CREATE_REVISION_NUMBERING_SEQUENCE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes a new revision numbering sequence - New and Duplicate in Sheet
+  Issues/Revisions > Customize Numbering. Numeric takes minimum digits, a
+  starting number, prefix and suffix; alphanumeric takes its custom sequence
+  of values, prefix and suffix. With `copyFrom` it duplicates a sequence,
+  keeping its type and every setting not given here.
+
+  **THE TYPE IS FIXED ONCE MADE**, so a value belonging to the other type is
+  refused by name rather than dropped.
+
+  **CHECKED BEFORE IT IS MADE, READ BACK AFTER**: the name must be new and
+  free of the characters Revit forbids, and Revit must call the settings
+  valid. A sequence that does not read back as asked is rolled back.
+
+  Empty leaves Revit's default or the copied value; <blank> writes an empty
+  prefix or suffix. Revit 2022 on - earlier releases have no named sequences.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The new sequence's name.
+    - name: name
+      type: string
+      source: request
+    # "numeric" or "alphanumeric". May be empty when copyFrom is given.
+    - name: numberType
+      type: string
+      source: request
+    # A sequence to DUPLICATE, by name; empty makes a new one.
+    - name: copyFrom
+      type: string
+      source: request
+    # Numeric only: a whole number, 1 or more.
+    - name: minimumDigits
+      type: string
+      source: request
+    # Numeric only: a whole number, 0 or more.
+    - name: startingNumber
+      type: string
+      source: request
+    - name: prefix
+      type: string
+      source: request
+    - name: suffix
+      type: string
+      source: request
+    # Alphanumeric only: the values in order, commas between - "A, B, C".
+    - name: customSequence
+      type: string
+      source: request
+  provides:
+    - name: created
+      role: result
+      type: ElementId
+    - name: findings
+      # The new sequence READ BACK - its type and every setting.
+      type: string
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND, so it must not count toward "did
+      # this come back empty" (D-52).
+      role: accounting
+      type: string
+
+revit: ["2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  2022 TO 2027, AND 2020 AND 2021 ARE LEFT OUT ON PURPOSE. `RevisionNumberingSequence`
+  - `CreateNumericSequence`, `CreateAlphanumericSequence`,
+  `GetAllRevisionNumberingSequences`, `SequenceName`, `NumberType`,
+  `Get/SetNumericRevisionSettings` and `Get/SetAlphanumericRevisionSettings` -
+  and `NumericRevisionSettings.MinimumDigits` exist from 2022, read with
+  tools/api-surface --members on every release's RevitAPI.dll. Revit 2020 and
+  2021 have no named sequences at all: a project has ONE numeric and ONE
+  alphanumeric scheme, held on `RevisionSettings`, so there is nothing to
+  create or duplicate there. Their two schemes are read by LIST_REVISIONS; a
+  tool to edit them on those releases is not built.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "make an alphabetic sequence"        -> here, numberType=alphanumeric
+#   "create a new revision numbering sequence" -> here
+#   "duplicate the numbering sequence"   -> here, copyFrom=<its name>
+#   "rename the numbering"               -> EDIT_REVISION_NUMBERING_SEQUENCE
+#   "delete the numbering sequence"      -> DELETE_REVISION_NUMBERING_SEQUENCE
+#   "use the Custom numbering on revision 2"
+#                                        -> EDIT_REVISION, numbering=Custom
+#   "number revisions per sheet"         -> SET_REVISION_SETTINGS
+
+utterances:
+  - make an alphabetic sequence
+  - create a new revision numbering sequence
+  - duplicate the numbering sequence
+  - add a numeric revision numbering with prefix R
