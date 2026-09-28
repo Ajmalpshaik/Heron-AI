@@ -1034,6 +1034,11 @@ def main(argv):
 
     store = SCOPE.open_scope(SCOPE.GLOBAL)
     try:
+        # FRAGMENT-ISSUES row 5b-249: the rows first, because the index reads
+        # identity, status, capability, domain and risk from them. _Open,
+        # heron_retrieve.py and heron_context.py do the same, and this entry
+        # point opens the same store (second review on PR #353).
+        SCOPE.refresh(store)
         # UNPACKED, because `index()` returns a PAIR now. It returned a bare
         # count until FRAGMENT-ISSUES row 136 taught it to skip, and this line
         # then handed a tuple to `%d` - so the advertised entry point at the
