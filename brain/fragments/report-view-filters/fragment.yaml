@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-VIE-013
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,13 +9,25 @@ semantic-identity: "what filters exist and which views use them"
 kind: filter
 domain: revit.views
 capability: REPORT_VIEW_FILTERS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
 purpose: >
   Lists every filter in the project - rule-based and saved-set alike - and which
   views actually use each one. Read-only.
+
+  **Name a view and its whole Filters tab comes back** (version 2, 2026-09-28,
+  FRAGMENT-ISSUES 5b-248). `viewName` takes a view as the Project Browser shows
+  it or as Heron prints it (`FloorPlan: Level 1`), several separated by
+  semicolons, or `*` for every view carrying a filter. For each filter on it,
+  `filterSettings` reads back the row of Visibility/Graphics: Enable Filter,
+  Visibility, projection lines (pattern, colour, weight), surface foreground and
+  background patterns (pattern, colour, Visible tick), transparency, cut lines,
+  cut patterns, halftone - and whether the cut columns apply at all, because
+  Revit greys them out when none of the filter's categories can be cut. It is
+  the read half of APPLY_VIEW_FILTER. A blank `viewName` leaves
+  `filterSettings` empty and the report is what it always was.
 
   **Before this, asking what filters a view has resolved to APPLY_VIEW_FILTER**,
   which is a write. A question about a drawing answered by something that
@@ -41,6 +53,11 @@ contract:
   needs:
     - name: doc
       type: Document
+    # A view, several separated by semicolons, or * - or BLANK for the
+    # project-wide report alone.
+    - name: viewName
+      type: string
+      source: request
   provides:
     - name: findings
       type: IList<string>
@@ -52,6 +69,12 @@ contract:
       # unused one it found (D-52).
       role: accounting
       type: int
+    # Every Filters-tab control of every filter on the views named, as ONE
+    # string - a list reaches the reply cut to three items of sixty
+    # characters, and this list is the answer.
+    - name: filterSettings
+      role: result
+      type: string
 
 proof:
   date: '2026-09-13'
@@ -74,13 +97,24 @@ compatibility-note: >
   One implementation for every release. `FilterElement` and its two subclasses,
   and `View.IsFilterApplied`, are present 2020 through 2027 - read off the
   reference assemblies at both ends rather than remembered. `GetOrderedFilters`
-  is NOT used: it arrived at 2024 and naming it would break the 2020 build for
-  ordering this report does not need.
+  is NOT used: it is absent from 2020 (present 2021 to 2027 - version 1 said it
+  arrived at 2024, which the 2021 reference assembly disproves) and the order is
+  not what this report is for.
+
+  `View.GetIsFilterEnabled` is the same: 2021 to 2027, absent from 2020, read
+  off all eight reference assemblies on 2026-09-28. It is reached by name at run
+  time, never under `#if REVIT2020`, because the add-in compiles fragments with
+  no release symbols (FRAGMENT-ISSUES 5b-181). On 2020 the report says there is
+  no Enable Filter tick. Every `OverrideGraphicSettings` getter it reads,
+  `Category.IsCuttable`, `ParameterFilterElement.GetCategories` and
+  `LinePatternElement.GetSolidPatternId` are present 2020 to 2027.
 
 # ROUTING - repeated in APPLY_VIEW_FILTER, CREATE_VIEW_FILTER and
 # CREATE_SELECTION_FILTER.
 #
 #   "what filters are on this view"  -> here - a READ
+#   "what are the filter settings on this view" -> here, with viewName
+#   "read the filter settings back"  -> here, with viewName
 #   "which views use this filter"    -> here
 #   "what filters already exist"     -> here, before making a near-duplicate
 #   "put that filter on this view"   -> APPLY_VIEW_FILTER - a WRITE, and it must
@@ -99,3 +133,5 @@ utterances:
   - what filters already exist
   - report the filters in this model
   - list the view filters
+  - what are the filter settings on this view
+  - show the filter overrides on this view

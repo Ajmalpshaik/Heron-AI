@@ -412,9 +412,17 @@ def how_to_type(declared, need_name=None):
     # Revit's own interface that would tell somebody how to write it.
     if wanted == "OverrideGraphicSettings":
         return ('settings separated by semicolons - "halftone=true; '
-                'transparency=50; projection-line-colour=255,0,0". Also takes '
-                'detail-level, cut-line-colour, surface-colour, cut-colour, '
-                'projection-line-weight and cut-line-weight')
+                'transparency=50; projection-line-colour=255,0,0", or none for '
+                'no override. Also takes detail-level, projection-line-weight, '
+                'projection-line-pattern, surface-foreground-pattern, '
+                'surface-foreground-colour, surface-foreground-visible, '
+                'surface-background-pattern, surface-background-colour, '
+                'surface-background-visible, cut-line-colour, cut-line-weight, '
+                'cut-line-pattern, cut-foreground-pattern, cut-foreground-colour, '
+                'cut-foreground-visible, cut-background-pattern, '
+                'cut-background-colour, cut-background-visible, surface-colour '
+                'and cut-colour. A pattern is its name as Revit shows it, or '
+                'solid; a colour is three numbers 0-255')
     if wanted == "ForgeTypeId":
         return ('what the parameter HOLDS - Length, Number, Integer, Angle, '
                 'Area, Volume, Mass, Currency, Text or YesNo')

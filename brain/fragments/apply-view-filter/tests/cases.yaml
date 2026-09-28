@@ -9,6 +9,30 @@ positive:
       identical behaviour. The view does not care which kind of filter it was
       given, which is why one fragment serves both
 
+  - given: version 2 - colours, solidFill=both, visible true, enabled true, on a filter of the eight duct categories
+    expect: >
+      the surface foreground pattern becomes Revit's solid fill in the colour
+      given, Enable Filter and Visibility ticked, and the cut half REFUSED as
+      "cut not applicable to this filter's categories", naming all eight. Run
+      2026-09-28 on six view/filter pairs in "heron ai bulding", Revit 2024, and
+      read back with REPORT_VIEW_FILTERS
+
+  - given: the same call a second time
+    expect: >
+      applied true and the summary saying NOTHING CHANGED. Measured on all six
+      pairs on 2026-09-28
+
+  - given: enabled=false, then enabled=true, with keepOtherSettings blank and overrides a default
+    expect: >
+      Enable Filter OFF then ON read back off the view, and every colour and the
+      solid fill KEPT - the summary lists them as kept. Measured on {3D} /
+      Exhaust Air on 2026-09-28
+
+  - given: the parser's pattern keys - surface-foreground-pattern=solid, projection-line-pattern=Dash - after the add-in carrying them is loaded
+    expect: >
+      the pattern set by name, read back by REPORT_VIEW_FILTERS. NOT YET RUN -
+      the add-in in Revit on 2026-09-28 predates the keys (NEEDS-CHECKING BC2)
+
 negative:
   - given: an override carrying a projection colour and no cut colour
     expect: >
@@ -26,6 +50,27 @@ negative:
     expect: >
       everything the filter matches HIDDEN in that view and still present in the
       model. If anything was deleted, this fragment did something it must never do
+
+  - given: cut values on a filter none of whose categories can be cut
+    expect: >
+      "cut not applicable to this filter's categories" and the categories named;
+      the cut values are NOT written. Revit accepts them and draws nothing, which
+      is why they are left out rather than stamped. Measured 2026-09-28
+
+  - given: an unknown pattern name in overrides - surface-foreground-pattern=NoSuchPattern
+    expect: >
+      refused by the add-in's parser before anything reaches Revit, naming the
+      drafting patterns the model has. A MODEL pattern's name is refused as a
+      model pattern. NOT YET RUN - needs the add-in with the new keys (BC2)
+
+  - given: enabled=true on Revit 2020
+    expect: >
+      applied false, NOTHING written, and the summary saying Revit 2020 has no
+      Enable Filter tick. NOT YET RUN on 2020 (BC5)
+
+  - given: enabled=maybe, or solidFill=crosshatch
+    expect: >
+      applied false and NOTHING CHANGED, the value named. Measured 2026-09-28
 
   - given: a view whose template controls its filters
     expect: >
