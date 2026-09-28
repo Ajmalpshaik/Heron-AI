@@ -57,5 +57,36 @@ namespace Heron.Revit.Addin
 
             return " (" + list.Count + ")";
         }
+
+        /// <summary>
+        /// What an ABSENT `source: request` need binds to, or null to refuse
+        /// it as before.
+        ///
+        /// ONE CASE, AND IT IS D-59's. A switch a modeller did not mention is
+        /// a switch left OFF - "include the links" not said means host only,
+        /// which is what D-59 decided and what every proof of the fragments
+        /// that take it measured. Until this existed the binder refused every
+        /// request need that arrived without a value (FRAGMENT-ISSUES row
+        /// 5b-227), so adding `includeLinks` to a fragment would have stopped
+        /// it running for every caller who did not know the switch was there.
+        ///
+        /// ONLY A `bool` DECLARED `optional: true`. A view, a name or a
+        /// number has no value that means "not asked", and inventing one is
+        /// how a job runs against the wrong thing and reports success - so
+        /// those still refuse, and so does a bool nobody marked optional. The
+        /// three cards row 5b-227 found carrying the key on a View or a string
+        /// are refused exactly as they were.
+        ///
+        /// Returns the C# literal to bind, which the caller writes into the
+        /// generated prologue. Nothing here touches an Autodesk type, so it is
+        /// proved without Revit in Heron.BindingNote.TestHost.
+        /// </summary>
+        internal static string AbsentValue(string type, string optional)
+        {
+            if (!string.Equals((optional ?? "").Trim(), "true", System.StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            return (type ?? "").Trim() == "bool" ? "false" : null;
+        }
     }
 }

@@ -16,6 +16,14 @@ positive:
       the fully joined pieces, and the two answers plus withoutConnectors adding
       up to the scanned count
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      Ducts, wantOpenEnds false, includeLinks true, on
+      a model with a loaded MEP link
+    expect: >
+      `elements` unchanged from the host-only run,
+      and each link's count in `linkedMatches`
+
 negative:
   - given: a panelboard, or any family with surface connectors, in the category
     expect: >
@@ -40,6 +48,24 @@ negative:
     expect: >
       the whole model swept and a very large withoutConnectors count, with the
       sentence saying the category is probably wrong
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1's proof, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
 
 second_route: >
   Revit's own disconnect warnings, and clicking a suspect element to see the

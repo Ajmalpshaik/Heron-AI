@@ -1,6 +1,7 @@
-// NOT STANDALONE. Assumes `doc`, `elements`, `phaseName` and `probeDistanceMm`
-// are in scope; leaves `findings`, `doorsChecked`, `disagreements`,
-// `noRoomEitherSide` and `phaseUsed` behind.
+// NOT STANDALONE. Assumes `doc`, `elements`, `phaseName`, `probeDistanceMm` and
+// `includeLinks` are in scope; leaves `findings`, `doorsChecked`,
+// `disagreements`, `noRoomEitherSide`, `phaseUsed`, `linksSearched` and
+// `linkedMatches` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -22,6 +23,19 @@
 //
 // mm TO INTERNAL FEET BY /304.8. Plain arithmetic at the edge, never a units
 // API - that is the call that breaks at Revit 2021.
+//
+// LINKED DOORS ARE CHECKED ONLY WHEN ASKED FOR - D-59, and absent
+// `includeLinks` means host only, which is what this did before. In a
+// federated job the doors AND their rooms are in the architectural link, and
+// neither a selection nor a chain can hand a linked door in (FRAGMENT-ISSUES
+// row 75). So when it is set, EVERY door in each loaded link is checked
+// against THAT link's own rooms, on the link's phase of the same name, with
+// the same probe - all inside the link, so no transform is involved. The
+// result is TEXT in `linkedMatches`; the counts and lists above stay the
+// host's own, so a proof of the host behaviour still reads the same.
+//
+// NESTED LINKS ARE NOT READ, AND THE ANSWER COUNTS THEM - see
+// SELECT_BY_CATEGORY_NAME, which carries the same rule.
 
 var findings = new List<string>();
 var doorsChecked = 0;
@@ -162,3 +176,193 @@ else
         + "geometry; {3} have no room on either side",
         doorsChecked, phaseUsed, disagreements.Count, noRoomEitherSide.Count));
 }
+
+// ---- D-59: which links, only when asked for --------------------------------
+
+var linksSearched = 0;
+var linkedMatches = new List<string>();
+var linkedTotal = 0;
+var nestedLinks = 0;
+var linkBlocked = "";
+
+// One entry per link FILE, keyed by link type - a file placed twice is one
+// model placed twice, and counting placements would report a job with four
+// links as having nine. LIST_LINKED_MODELS' rule, as REPORT_AREAS applies it.
+var linkTypes = new List<ElementId>();
+var linkDocs = new List<Document>();
+var linkPlacements = new List<List<RevitLinkInstance>>();
+
+if (includeLinks)
+{
+    foreach (var instance in new FilteredElementCollector(doc)
+        .OfClass(typeof(RevitLinkInstance)).Cast<RevitLinkInstance>())
+    {
+        if (instance == null) continue;
+
+        var typeId = instance.GetTypeId();
+        if (typeId == null || typeId == ElementId.InvalidElementId) continue;
+
+        var known = linkTypes.IndexOf(typeId);
+        if (known >= 0) { linkPlacements[known].Add(instance); continue; }
+
+        // LOADED IS ESTABLISHED BY ASKING FOR THE DOCUMENT, never by a status.
+        Document linked = null;
+        try { linked = instance.GetLinkDocument(); }
+        catch (Exception) { linked = null; }
+        if (linked == null) continue;
+
+        linkTypes.Add(typeId);
+        linkDocs.Add(linked);
+        linkPlacements.Add(new List<RevitLinkInstance> { instance });
+
+        try
+        {
+            nestedLinks += new FilteredElementCollector(linked)
+                .OfClass(typeof(RevitLinkInstance)).GetElementCount();
+        }
+        catch (Exception) { }
+    }
+}
+
+// The phase a link is asked on: the one asked for, else the host's, by NAME -
+// a link's phases are its own elements.
+var linkPhaseWanted = !string.IsNullOrEmpty(phaseName) ? phaseName : phaseUsed;
+var linkProbeFt = (probeDistanceMm > 0 ? probeDistanceMm : 300.0) / 304.8;
+
+for (var i = 0; i < linkDocs.Count; i++)
+{
+    var linked = linkDocs[i];
+
+    Phase linkPhase = null;
+    foreach (Phase candidate in linked.Phases)
+    {
+        if (candidate == null) continue;
+        linkPhase = candidate;                            // ends on the last one
+        if (!string.IsNullOrEmpty(linkPhaseWanted)
+            && string.Equals(candidate.Name, linkPhaseWanted, StringComparison.OrdinalIgnoreCase))
+        {
+            break;
+        }
+    }
+
+    linksSearched++;
+
+    if (linkPhase == null)
+    {
+        linkedMatches.Add(string.Format("{0}: no phases, so no door could be asked", linked.Title));
+        continue;
+    }
+
+    var linkRooms = new List<Room>();
+    var linkDoors = new List<FamilyInstance>();
+    try
+    {
+        foreach (var element in new FilteredElementCollector(linked)
+            .OfCategory(BuiltInCategory.OST_Rooms).WhereElementIsNotElementType())
+        {
+            var room = element as Room;
+            if (room != null && room.Area > 0) linkRooms.Add(room);
+        }
+
+        foreach (var element in new FilteredElementCollector(linked)
+            .OfCategory(BuiltInCategory.OST_Doors).WhereElementIsNotElementType())
+        {
+            var door = element as FamilyInstance;
+            if (door != null) linkDoors.Add(door);
+        }
+    }
+    catch (Exception) { }
+
+    var linkDisagree = new List<string>();
+    var linkNoRoom = 0;
+    var linkNotProbed = 0;
+
+    foreach (var door in linkDoors)
+    {
+        Room fromRoom = null;
+        Room toRoom = null;
+        try
+        {
+            fromRoom = door.get_FromRoom(linkPhase);
+            toRoom = door.get_ToRoom(linkPhase);
+        }
+        catch (Exception) { }
+
+        if (fromRoom == null && toRoom == null) { linkNoRoom++; continue; }
+
+        Room geomFacing = null;
+        Room geomBehind = null;
+        var probed = false;
+        try
+        {
+            var location = door.Location as LocationPoint;
+            if (location != null)
+            {
+                var facing = door.FacingOrientation;
+                var ahead = location.Point + facing.Multiply(linkProbeFt);
+                var behind = location.Point - facing.Multiply(linkProbeFt);
+
+                foreach (var room in linkRooms)
+                {
+                    try
+                    {
+                        if (geomFacing == null && room.IsPointInRoom(ahead)) geomFacing = room;
+                        if (geomBehind == null && room.IsPointInRoom(behind)) geomBehind = room;
+                    }
+                    catch (Exception) { }
+                }
+                probed = true;
+            }
+        }
+        catch (Exception) { }
+
+        if (!probed) { linkNotProbed++; continue; }
+
+        var toMatches = (toRoom == null && geomFacing == null)
+            || (toRoom != null && geomFacing != null && toRoom.Id == geomFacing.Id);
+        var fromMatches = (fromRoom == null && geomBehind == null)
+            || (fromRoom != null && geomBehind != null && fromRoom.Id == geomBehind.Id);
+
+        if (!(toMatches && fromMatches))
+        {
+            linkDisagree.Add(string.Format("  {0}: Door {1} ('{2}') - Revit says {3} -> {4}, the "
+                + "GEOMETRY says {5} -> {6}", linked.Title, door.Id, door.Name,
+                fromRoom == null ? "(outside)" : fromRoom.Name,
+                toRoom == null ? "(outside)" : toRoom.Name,
+                geomBehind == null ? "(outside)" : geomBehind.Name,
+                geomFacing == null ? "(outside)" : geomFacing.Name));
+        }
+    }
+
+    linkedTotal += linkDisagree.Count;
+    linkedMatches.Add(string.Format("{0}: {1} door(s) on phase '{2}'{3}; {4} disagree with the "
+        + "geometry, {5} have no room on either side{6}", linked.Title, linkDoors.Count,
+        linkPhase.Name,
+        !string.IsNullOrEmpty(linkPhaseWanted)
+            && !string.Equals(linkPhase.Name, linkPhaseWanted, StringComparison.OrdinalIgnoreCase)
+            ? string.Format(" (it has no phase '{0}')", linkPhaseWanted)
+            : "",
+        linkDisagree.Count, linkNoRoom,
+        linkNotProbed > 0 ? string.Format(", {0} could not be probed", linkNotProbed) : ""));
+    linkedMatches.AddRange(linkDisagree);
+}
+
+// THE ANSWER SAYS WHAT IT READ. Asked-and-found, asked-and-none-loaded and not
+// asked read differently on purpose - D-59's own worked example.
+if (!includeLinks)
+    linkedMatches.Insert(0, "Host model only - links not read");
+else if (linkBlocked.Length > 0)
+    linkedMatches.Insert(0, linkBlocked);
+else if (linksSearched == 0)
+    linkedMatches.Insert(0, "Links asked for, NONE loaded - host only");
+else
+    linkedMatches.Insert(0, string.Format("{0} link(s) read: {1} linked door(s) disagree",
+        linksSearched, linkedTotal));
+
+if (includeLinks && nestedLinks > 0)
+    linkedMatches.Add(string.Format("{0} link placement(s) nested inside those links were NOT "
+        + "read", nestedLinks));
+
+if (linksSearched > 0)
+    linkedMatches.Add("Linked doors are EVERY door in each link, reported here and never "
+        + "selected - a selection cannot reach into a link, and a chain cannot carry one");

@@ -17,6 +17,14 @@ positive:
       every DXS 1, DXS 2 and DXS 3 element - a contains match, because that is
       how these are named and typed
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      matchOn "type", a system type the MEP link
+      uses, includeLinks true, on a model with a loaded MEP link
+    expect: >
+      `elements` unchanged, and each link's
+      matched-of-scanned count in `linkedMatches`
+
 negative:
   - given: any run at all, with the answer checked for TYPE elements
     expect: >
@@ -45,6 +53,24 @@ negative:
       counted in withoutSystem and named in the report. A duct on no system is
       usually a disconnected duct, and it must not vanish silently from the
       arithmetic
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1's proof, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
 
 second_route: >
   A duct or pipe schedule with System Name and System Type as two separate

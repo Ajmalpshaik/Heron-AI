@@ -377,6 +377,14 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bd.md`](needs-checking/group-bd.md)
 
+## Group BE - D-59's first batch: eleven reading tools look inside linked models when asked (2026-09-28)
+
+**Its own file:** [`needs-checking/group-be.md`](needs-checking/group-be.md)
+
+## Group BG - D-59's second batch: ten more reading tools look inside linked models when asked (2026-09-28)
+
+**Its own file:** [`needs-checking/group-bg.md`](needs-checking/group-bg.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
