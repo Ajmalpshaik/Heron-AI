@@ -7,6 +7,15 @@ positive:
   - given: a filter known to be on three views
     expect: those three named, and no others
 
+  - given: viewName naming a view that carries filters (version 2)
+    expect: >
+      filterSettings reads back every filter's whole row of the Filters tab -
+      Enable Filter, Visibility, projection lines, surface foreground and
+      background patterns, transparency, cut lines and patterns, halftone - and
+      says whether the cut columns apply. First read on 2026-09-28 in "heron ai
+      bulding", Revit 2024: the three duct filters on two views, each "cut not
+      applicable" because none of the eight duct categories can be cut
+
 negative:
   - given: any project at all
     expect: >
@@ -29,6 +38,23 @@ negative:
 
   - given: a project with no filters
     expect: a plain zero, not silence
+
+  - given: viewName naming a view that does not exist
+    expect: >
+      filterSettings says there is no view called that and nothing was read for
+      it - never an empty string that reads as "no filters". Measured 2026-09-28
+      with "No Such View"
+
+  - given: viewName blank
+    expect: >
+      filterSettings empty and the rest of the report exactly what version 1
+      gave - a caller that only wants the project-wide list is not handed more
+
+  - given: a Revit 2020 model and viewName
+    expect: >
+      the view's heading says Revit 2020 has no Enable Filter tick, and no row
+      claims one. GetIsFilterEnabled arrived at 2021 and is reached by name, so
+      the fragment still compiles and runs on 2020. NOT YET RUN on 2020
 
 second_route:
   - Revit's own Manage then Filters for the list, and one view's Visibility/Graphics for the usage
