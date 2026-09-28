@@ -38,3 +38,10 @@ negative case, and neither fragment has a fingerprint. Both are `DRAFT` until th
 | **AL4** | `fit-mep-joints` on a joint Revit will not fit - a drop shorter than its elbow's leg | Nothing kept anywhere, and the answer names the joint. **Watch which layer refuses:** on 2026-09-23 Revit posted *"modified to be in the opposite direction"* at commit and the add-in rolled back - the fragment's own all-or-nothing throw has never been seen to fire |
 | **AL5** | The `duct-layout` skill end to end on a model the owner lays out fresh, one room at an angle nobody has used | The three calls, then `select-by-connection-status` on Ducts and Duct Fittings: 0 open. The route follows his rules in the skill's note - taps, radius elbows, a straight main out of the unit |
 | **AL6** | AL1 to AL3 on **Revit 2020** | The same answers. net472 is the older runtime and the routing preferences of the 2020 template may differ - record the duct type used |
+| **AL7** | `fit-mep-joints` version 2 through `heron_validate`, on a working copy: a `300x300` run drawn FROM a unit's `850x195` supply outlet, and a `225x225` drop ending on a `225x225` diffuser neck | One transition straight onto the outlet, `ontoOutlets 1`, the unit not moved and the duct shortened by the transition's length; the drop on the neck of its own size left in `freeEnds` - the negative case. Then Revit's Duct Sizing on the run: `select-by-connection-status` finds 0 open ends and the main still carries its taps |
+
+*2026-09-28, not a proof.* Version 2 run live through `revit_change` on "heron ai bulding", Revit 2024,
+session 27288: 14 offices, 126 ducts and 126 fittings - 70 elbows, 28 taps, 28 transitions, 14 of them
+straight onto a unit's outlet - then `select-by-connection-status` found 0 of 258 duct pieces open. The
+owner's Duct Sizing on Offices 01 and 02 left both joined. Why the check exists:
+[FRAGMENT-ISSUES 5b-250](../fragment-issues/section-5b-rows-176-200.md).

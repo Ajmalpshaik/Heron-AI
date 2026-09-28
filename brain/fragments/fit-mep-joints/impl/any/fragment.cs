@@ -30,6 +30,20 @@
 // `freeEnds` and left alone. Joining those to equipment and terminals is
 // CONNECT_OPEN_ENDS, which needs no fitting.
 //
+// EXCEPT WHERE THE SIZE CHANGES AT THE UNIT OR TERMINAL. An end sitting on the
+// open connector of a unit, a terminal or an accessory of a DIFFERENT size
+// needs a transition, and CONNECT_OPEN_ENDS builds none. So the transition is
+// built here, with the duct's end passed FIRST, so it sits in the duct and
+// straight on the outlet - which is how Revit itself joins a duct to a unit.
+// The run is drawn from the outlet at the main's own size.
+//
+// NEVER A SHORT OUTLET-SIZED PIECE INSTEAD. Measured 2026-09-28 on heron ai
+// bulding, Office 01, Revit 2024: the run had been drawn with a 700 mm piece
+// of 850x195 out of the unit, which the 664 mm transition left 36 mm long.
+// Revit's own Duct Sizing resized that piece to the main's size and deleted the
+// main carrying both taps, leaving two of three diffusers on open ends. A run
+// Revit had built itself, transition straight on the unit, sized cleanly.
+//
 // ALL OR NOTHING - ARTICLE 8. If any joint cannot be fitted, this THROWS, and
 // the whole job is rolled back with every failed joint named in the message.
 // Keeping forty-four fittings of forty-five leaves a run that looks finished
@@ -148,7 +162,51 @@ Func<Connector, MEPCurve> tapTarget = end =>
     return best;
 };
 
+// The open connector of a unit, terminal or accessory that a lone end sits on,
+// or null. Fittings are left out: an end meeting another fitting is a run
+// problem, not an outlet. Searched in the model rather than among `elements`,
+// because what is handed in is the ducts just drawn and the unit is not one.
+Func<Connector, Connector> outletUnder = end =>
+{
+    var at = end.Origin;
+    var reach = new XYZ(tolerance, tolerance, tolerance);
+    var near = new FilteredElementCollector(doc)
+        .OfClass(typeof(FamilyInstance))
+        .WherePasses(new BoundingBoxIntersectsFilter(new Outline(at - reach, at + reach)));
+
+    foreach (var element in near)
+    {
+        var instance = element as FamilyInstance;
+        if (instance == null || instance.MEPModel == null) continue;
+        if (instance.MEPModel is MechanicalFitting) continue;
+
+        var manager = instance.MEPModel.ConnectorManager;
+        if (manager == null) continue;
+
+        foreach (Connector connector in manager.Connectors)
+        {
+            if (connector == null) continue;
+            if (connector.ConnectorType != ConnectorType.End) continue;
+            if (connector.Domain != end.Domain) continue;
+            if (connector.IsConnected) continue;
+            if (connector.Origin.DistanceTo(at) > tolerance) continue;
+            return connector;
+        }
+    }
+
+    return null;
+};
+
+// Shape before size, as below: reading Radius off a rectangular connector throws.
+Func<Connector, Connector, bool> sameSizeAs = (a, b) =>
+{
+    if (a.Shape != b.Shape) return false;
+    if (a.Shape == ConnectorProfileType.Round) return Math.Abs(a.Radius - b.Radius) < 1e-6;
+    return Math.Abs(a.Width - b.Width) < 1e-6 && Math.Abs(a.Height - b.Height) < 1e-6;
+};
+
 var failures = new List<string>();
+var ontoOutlets = 0;
 var jointCount = 0;
 int elbows = 0, unions = 0, transitions = 0, tees = 0, crosses = 0, taps = 0;
 
@@ -157,7 +215,40 @@ foreach (var joint in joints)
     if (joint.Count == 1)
     {
         var target = tapTarget(joint[0]);
-        if (target == null) { freeEnds++; continue; }
+        if (target == null)
+        {
+            var outlet = outletUnder(joint[0]);
+            if (outlet == null || sameSizeAs(joint[0], outlet)) { freeEnds++; continue; }
+            jointCount++;
+
+            var ontoAt = placeOf(joint[0].Origin);
+            FamilyInstance onto = null;
+
+            // The duct's end FIRST: a transition sits on the side of the
+            // connector passed first, and a unit cannot make room for it.
+            try { onto = doc.Create.NewTransitionFitting(joint[0], outlet); }
+            catch (Exception failure)
+            {
+                failures.Add(ontoAt + ": Revit would not build the transition onto the outlet - " + failure.Message);
+                continue;
+            }
+
+            if (onto == null) { failures.Add(ontoAt + ": Revit returned no transition onto the outlet"); continue; }
+
+            var ontoJoined = false;
+            try { ontoJoined = joint[0].IsConnected && outlet.IsConnected; } catch { ontoJoined = false; }
+            if (!ontoJoined)
+            {
+                failures.Add(ontoAt + ": the transition was built but the duct end or the outlet does not report being joined to it");
+                continue;
+            }
+
+            created.Add(onto.Id);
+            fitted++;
+            transitions++;
+            ontoOutlets++;
+            continue;
+        }
         jointCount++;
 
         var tapAt = placeOf(joint[0].Origin);
@@ -335,7 +426,9 @@ if (failures.Count > 0)
 
 summary = string.Format(
     "{0} joint(s) among {1} run(s), and all {2} fitted: {3} elbow(s), {4} tee(s), "
-    + "{5} tap(s), {6} transition(s), {7} union(s), {8} cross(es). {9} free end(s) left "
-    + "open - an end with nothing meeting it is not a joint; CONNECT_OPEN_ENDS joins those "
-    + "to equipment and terminals",
-    jointCount, runCount, fitted, elbows, tees, taps, transitions, unions, crosses, freeEnds);
+    + "{5} tap(s), {6} transition(s) - {10} of them straight onto a unit's or terminal's "
+    + "outlet - {7} union(s), {8} cross(es). {9} free end(s) left open - an end with nothing "
+    + "meeting it, or on an outlet of its own size, is not a joint; CONNECT_OPEN_ENDS joins "
+    + "those to equipment and terminals",
+    jointCount, runCount, fitted, elbows, tees, taps, transitions, unions, crosses, freeEnds,
+    ontoOutlets);

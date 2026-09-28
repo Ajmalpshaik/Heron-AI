@@ -46,7 +46,7 @@ preconditions:
   - the units and the diffusers are placed, and each diffuser's system - supply or return - is set by its family
   - the duct type's routing preference has the fitting the owner wants at a branch - Taps, not Tees
   - every drop, from the main down to a diffuser neck, is longer than the duct type's elbow leg plus some straight duct
-  - the piece leaving the unit at the outlet's own size is longer than the transition that follows it
+  - the main starts at the unit's outlet at the main's own size, and runs further than the transition's length before its first tap - FIT_MEP_JOINTS builds the transition straight onto the outlet
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
@@ -63,10 +63,18 @@ note: >
   THE NUMBERS THAT BROKE A RUN, measured the same days. A 300x300 "1.5 W"
   radius elbow reaches 450 mm along each leg, so a drop needs the neck, plus
   450, plus straight duct - 321 mm fitted a mitered elbow and not a radius one.
-  An 850x195 to 300x300 transition is 664 mm long and sits on the larger run's
-  side, so the outlet-sized piece is drawn at least 700 mm long. Too short
-  either way and Revit turns the duct inside out - "modified to be in the
-  opposite direction" - and the whole job rolls back.
+  An 850x195 to 300x300 transition is 664 mm long. Too short either way and
+  Revit turns the duct inside out - "modified to be in the opposite
+  direction" - and the whole job rolls back.
+
+  THE TRANSITION SITS STRAIGHT ON THE UNIT'S OUTLET, measured 2026-09-28 on
+  heron ai bulding. Until then this skill drew a 700 mm piece of outlet-sized
+  duct for the transition to sit in, which left 36 mm of it between the unit
+  and the transition. Revit's own Duct Sizing resized that stub, deleted the
+  main carrying both taps and left two diffusers of three on open ends
+  (FRAGMENT-ISSUES 5b-250). Draw the main from the outlet at its own size and
+  FIT_MEP_JOINTS builds the transition onto the outlet, the way Revit joins a
+  duct to a unit - all 14 offices were redrawn so and sized cleanly.
 
   NOT CONNECT_AIR_TERMINALS. NEEDS-CHECKING AJ1 / FRAGMENT-ISSUES 5b-187: it
   lifts the diffuser onto the duct and makes no tap. The drop is built instead.

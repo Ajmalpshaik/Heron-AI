@@ -9,7 +9,7 @@ semantic-identity: "put the fitting every joint in these runs calls for, all in 
 kind: action
 domain: revit.mep
 capability: FIT_MEP_JOINTS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -39,10 +39,15 @@ purpose: >
   main split at the branch points and three ends meet there, which is a tee.
   Which tap family is built is the duct type's routing preference.
 
-  **Any other lone end is not a joint.** The end at a unit's outlet or on a
-  diffuser's neck has nothing meeting it, so it is counted in `freeEnds` and
-  left alone. CONNECT_OPEN_ENDS joins those to the equipment and terminals
-  afterwards.
+  **Any other lone end is not a joint - unless the size changes at an outlet.**
+  An end on a diffuser's neck, or on a unit's outlet of its own size, has
+  nothing to fit, so it is counted in `freeEnds` and CONNECT_OPEN_ENDS joins it
+  afterwards. An end on the open connector of a unit, terminal or accessory of
+  a DIFFERENT size gets a transition, built into the duct and straight onto the
+  outlet (version 2, 2026-09-28): draw the main from the outlet at its own size.
+  A short outlet-sized piece before the transition, the way this was done
+  until then, is what Revit's own Duct Sizing tore up - it deleted the main
+  carrying the taps (FRAGMENT-ISSUES 5b-250).
 
   **All or nothing.** If any joint cannot be fitted the whole job is rolled
   back and every failed joint is named, with where it is and Revit's words
