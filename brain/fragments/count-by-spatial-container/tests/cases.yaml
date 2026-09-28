@@ -19,6 +19,15 @@ positive:
       elements in the short leg counted in it. IsPointInRoom answers the real
       boundary; a bounding-box test would put them in the neighbouring room
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      host ducts handed in, containerKind "room",
+      includeLinks true, on a model whose ROOMS ARE ONLY IN THE LINK
+    expect: >
+      ducts grouped under "<link> :: <room>" names
+      where host-only put them all "(in no room)"; placed + unplaced still
+      equal to the number handed in
+
 negative:
   - given: containerKind "phase"
     expect: >
@@ -50,6 +59,24 @@ negative:
 
   - given: any run at all
     expect: NOTHING CHANGED, and no transaction opened
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1's proof, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
 
 second_route:
   - >

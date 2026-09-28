@@ -1,5 +1,6 @@
-// NOT STANDALONE. Assumes `doc`, `materialName`, `includePaint` and
-// `categories` are in scope; leaves `elements`, `scanned` and `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `materialName`, `includePaint`, `categories`
+// and `includeLinks` are in scope; leaves `elements`, `scanned`, `findings`,
+// `linksSearched` and `linkedMatches` behind.
 //
 // THERE IS NO MATERIAL-TO-ELEMENTS LOOKUP IN REVIT, so this asks every element
 // in scope what it is made of. That is why the category bound matters more here
@@ -16,6 +17,23 @@
 // near-duplicated and punctuated inconsistently - "Steel, Galvanized" against
 // "Steel - Galvanized" - so a miss is far more often a spelling than an
 // absence, and a bare zero reads as the wrong one.
+//
+// LINKS ARE READ ONLY WHEN ASKED FOR, AND THEY ARE COUNTED, NEVER SELECTED -
+// D-59. Absent `includeLinks` means host only, which is what this did before
+// and what its proof measured. When it is set, each loaded link is read with
+// the same test and its matches are reported as TEXT in `linkedMatches`, one
+// line per link. They never enter `elements`: that list feeds the next
+// fragment in a chain, and the chain revives ids against the HOST document, so
+// a linked id that happens to be in use in the host binds an unrelated element
+// silently (FRAGMENT-ISSUES row 75, 2 of 1128 measured).
+//
+// NESTED LINKS ARE NOT READ, AND THE ANSWER COUNTS THEM - see
+// SELECT_BY_CATEGORY_NAME, which carries the same rule.
+//
+// A LINK HAS ITS OWN MATERIALS, SO THE NAME IS LOOKED FOR IN EACH LINK. The
+// architect's materials are usually in the architectural link and nowhere in
+// the host, so a link is read even when this model has no material of that
+// name - and a link without one says so on its own line.
 
 var elements = new List<Element>();
 var scanned = 0;
@@ -92,3 +110,122 @@ else
                 + "bounds the scan and makes the count mean something narrower");
     }
 }
+
+// ---- D-59: which links, only when asked for --------------------------------
+
+var linksSearched = 0;
+var linkedMatches = new List<string>();
+var linkedTotal = 0;
+var nestedLinks = 0;
+var linkBlocked = "";
+
+// One entry per link FILE, keyed by link type - a file placed twice is one
+// model placed twice, and counting placements would report a job with four
+// links as having nine. LIST_LINKED_MODELS' rule, as REPORT_AREAS applies it.
+var linkTypes = new List<ElementId>();
+var linkDocs = new List<Document>();
+var linkPlacements = new List<List<RevitLinkInstance>>();
+
+if (includeLinks)
+{
+    foreach (var instance in new FilteredElementCollector(doc)
+        .OfClass(typeof(RevitLinkInstance)).Cast<RevitLinkInstance>())
+    {
+        if (instance == null) continue;
+
+        var typeId = instance.GetTypeId();
+        if (typeId == null || typeId == ElementId.InvalidElementId) continue;
+
+        var known = linkTypes.IndexOf(typeId);
+        if (known >= 0) { linkPlacements[known].Add(instance); continue; }
+
+        // LOADED IS ESTABLISHED BY ASKING FOR THE DOCUMENT, never by a status.
+        Document linked = null;
+        try { linked = instance.GetLinkDocument(); }
+        catch (Exception) { linked = null; }
+        if (linked == null) continue;
+
+        linkTypes.Add(typeId);
+        linkDocs.Add(linked);
+        linkPlacements.Add(new List<RevitLinkInstance> { instance });
+
+        try
+        {
+            nestedLinks += new FilteredElementCollector(linked)
+                .OfClass(typeof(RevitLinkInstance)).GetElementCount();
+        }
+        catch (Exception) { }
+    }
+}
+
+if (wanted.Length == 0 && linkDocs.Count > 0)
+    linkBlocked = "Links NOT read: no material was named";
+
+for (var i = 0; i < linkDocs.Count && linkBlocked.Length == 0; i++)
+{
+    var linked = linkDocs[i];
+
+    Material linkTarget = null;
+    try
+    {
+        foreach (var candidate in new FilteredElementCollector(linked)
+            .OfClass(typeof(Material)).Cast<Material>())
+        {
+            if (string.Equals(candidate.Name, wanted, StringComparison.OrdinalIgnoreCase))
+            {
+                linkTarget = candidate;
+                break;
+            }
+        }
+    }
+    catch (Exception) { }
+
+    linksSearched++;
+
+    if (linkTarget == null)
+    {
+        linkedMatches.Add(string.Format("{0}: no material called '{1}'", linked.Title, wanted));
+        continue;
+    }
+
+    var linkedCollector = new FilteredElementCollector(linked).WhereElementIsNotElementType();
+    if (categories != null && categories.Count > 0)
+        linkedCollector = linkedCollector.WherePasses(new ElementMulticategoryFilter(categories));
+
+    var linkScanned = 0;
+    var linkMatched = 0;
+    foreach (var element in linkedCollector)
+    {
+        linkScanned++;
+        try
+        {
+            var ids = element.GetMaterialIds(includePaint);
+            if (ids != null && ids.Contains(linkTarget.Id)) linkMatched++;
+        }
+        catch (Exception) { }
+    }
+
+    linkedTotal += linkMatched;
+    linkedMatches.Add(string.Format("{0}: {1} of {2} use '{3}'", linked.Title, linkMatched,
+        linkScanned, linkTarget.Name));
+}
+
+// THE ANSWER SAYS WHAT IT READ. Asked-and-found, asked-and-none-loaded and not
+// asked read differently on purpose - D-59's own worked example.
+if (!includeLinks)
+    linkedMatches.Insert(0, "Host model only - links not read");
+else if (linkBlocked.Length > 0)
+    linkedMatches.Insert(0, linkBlocked);
+else if (linksSearched == 0)
+    linkedMatches.Insert(0, "Links asked for, NONE loaded - host only");
+else
+    linkedMatches.Insert(0, string.Format("{0} link(s) read: {1} match(es), NOT selected",
+        linksSearched, linkedTotal));
+
+if (includeLinks && nestedLinks > 0)
+    linkedMatches.Add(string.Format("{0} link placement(s) nested inside those links were NOT "
+        + "read", nestedLinks));
+
+if (linksSearched > 0)
+    linkedMatches.Add("Linked elements are counted here, never selected - the next step would "
+        + "look them up in this model and could bind the wrong element");

@@ -21,6 +21,14 @@ positive:
     category: OST_Walls
     expect: the walls on that level only, via Wall.LevelId rather than a parameter
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      category Doors, a host level whose NAME also
+      exists in the architectural link, includeLinks true
+    expect: >
+      `elements` unchanged from the host-only run,
+      and the link's count "on a level named" that name in `linkedMatches`
+
 negative:
   - given: the same model, which has no air terminals
     category: OST_DuctTerminal
@@ -31,6 +39,24 @@ negative:
     expect: >
       EMPTY - and this zero is only meaningful once the positive level case
       above has passed. On its own it is indistinguishable from a broken chain
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1's proof, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
 
 second_route:
   - compare against Revit's own schedule count for the category

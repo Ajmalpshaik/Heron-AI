@@ -14,6 +14,14 @@ positive:
   - given: a name typed in the wrong case
     expect: found anyway
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      a material that exists ONLY in the architectural
+      link, categories Walls, includeLinks true
+    expect: >
+      the host's findings say it has no such material, and
+      the link's line gives its count - the case a link exists for
+
 negative:
   - given: >
       a wall PAINTED with a material it is not made of, asked with includePaint
@@ -37,6 +45,24 @@ negative:
 
   - given: an empty material name
     expect: refused, with the reason
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1's proof, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
 
 second_route: >
   A material takeoff schedule filtered to the same material and counted, and

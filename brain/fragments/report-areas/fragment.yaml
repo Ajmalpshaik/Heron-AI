@@ -64,8 +64,13 @@ contract:
       # AREAS ARE IN THE ARCHITECTURAL MODEL, which for an MEP coordinator is
       # a link - so "report the areas" answered against the host alone comes
       # back confidently empty on a model where every area exists.
+      #
+      # `optional: true` added 2026-09-28: without it the binder REFUSED any
+      # call that left this out, so "report the areas" alone never ran
+      # (FRAGMENT-ISSUES row 5b-252).
       type: bool
       source: request
+      optional: true
   provides:
     - name: findings
       type: IList<string>

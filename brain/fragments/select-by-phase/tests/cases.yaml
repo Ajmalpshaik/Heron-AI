@@ -15,6 +15,14 @@ positive:
   - given: the phase asked for as "phase 2", lower case
     expect: the same answer - nobody retypes Revit's capitalisation
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      createdPhaseName a phase the architectural link has,
+      categories Walls, includeLinks true
+    expect: >
+      `elements` unchanged, and the link's count in
+      `linkedMatches`; a link without that phase says so and lists its own
+
 negative:
   - given: no category list, so the sweep covers levels, grids, views and sheets
     expect: >
@@ -35,6 +43,24 @@ negative:
 
   - given: neither phase name given
     expect: refused, with the reason
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1's proof, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
 
 second_route: >
   A schedule with Phase Created and Phase Demolished added as fields, filtered
