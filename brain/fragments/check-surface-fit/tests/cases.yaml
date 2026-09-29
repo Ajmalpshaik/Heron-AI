@@ -12,6 +12,15 @@ positive:
   - given: a unit half over the edge of a slab
     expect: OVERHANGING, with how many sample points found nothing
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      air terminals in this MEP model under a ceiling that is only in the
+      architectural link, direction up, includeLinks true
+    expect: >
+      `unsafeToMove` and `clean` unchanged from the host-only run; each
+      terminal's line in `linkedMatches` reads "sits flat" or names its
+      verdict against the linked ceiling - checked with one in a section
+
 negative:
   - given: a fitting on a sloping soffit
     expect: >
@@ -36,6 +45,29 @@ negative:
 
   - given: an element with no readable extent
     expect: named and skipped, with the rest completing
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
+
+  - given: a terminal placed half under the edge of a linked ceiling, includeLinks true
+    expect: >
+      OVERHANGING on its linked line - never "sits flat" because the centre
+      ray alone reached the ceiling
 
 second_route:
   - Cut a section through a reported element and look at whether its underside meets the surface

@@ -13,6 +13,15 @@ positive:
       pairs in that category judged by it, and judgedBy naming the rule. Check
       one pair's gap against the Measure tool in Revit
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      a duct 30 mm from a wall of the architectural link, defaultClearance
+      50, rules "Walls=100", includeLinks true
+    expect: >
+      `tooClose` unchanged from the host-only run; the duct's line in
+      `linkedMatches` reads about 30 mm, needs 100 mm (Walls), naming the
+      linked wall - checked with a dimension in section
+
 negative:
   - given: >
       TWO SERVICES 120 mm APART, EACH WITH A 50 mm JACKET, includeInsulation
@@ -46,6 +55,29 @@ negative:
       reported too close, AND THAT IS THE STATED LIMIT. Boxes are axis-aligned,
       so the error is toward over-reporting - the safe direction for a clearance
       check, and still not a certified figure
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
+
+  - given: a duct 500 mm clear of every linked element, defaultClearance 50, includeLinks true
+    expect: >
+      each link's line reads "0 pair(s) too close" with a checked count
+      beside it - a zero that was looked for
 
 second_route:
   - >
