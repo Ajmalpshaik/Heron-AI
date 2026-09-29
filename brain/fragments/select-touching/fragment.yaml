@@ -9,7 +9,7 @@ semantic-identity: "what is physically overlapping this one element"
 kind: filter
 domain: revit.selection
 capability: SELECT_TOUCHING
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -37,6 +37,23 @@ purpose: >
   reports pairs, which is what a coordination round needs; this is the single
   question a modeller asks with something already selected.
 
+  **LINKED MODELS ARE READ ONLY WHEN ASKED FOR (version 2, D-59).** With
+  `includeLinks` absent this answers for this model alone, exactly as
+  version 1 did. With it set, the target's solids are carried into each
+  placement of every loaded link and tested against that link's elements,
+  and `linkedMatches` gives each link's count by category and then names
+  every overlap, up to twenty a link - the type, the id IN THE LINK and the
+  **Fire Rating**. *"What does this pipe run through"* is usually answered
+  by the architect's walls and the structural slabs, and whether the wall
+  is 2-hour is the question that follows. `linksSearched` says how many
+  links were read: set and 0 means "you asked, and none are loaded".
+  **NOTHING FROM A LINK IS EVER SELECTED OR CARRIED** - `elements` stays
+  this model's own; the chain revives ids against this model, and a linked
+  id that happens to be in use here binds an unrelated element
+  (FRAGMENT-ISSUES row 75). Only model elements are read from a link, never
+  its views or sheets. Links nested inside a link are not read, and are
+  counted in the answer. This is version 2, and DRAFT until proved.
+
 contract:
   needs:
     - name: doc
@@ -47,11 +64,34 @@ contract:
     - name: categories
       type: IList<BuiltInCategory>
       source: request
+    - name: includeLinks
+      # D-59. THE MODELLER DECIDES, JOB BY JOB, and absent means host only -
+      # which is what this fragment did before and what its proof measured.
+      # `optional: true` is what lets it be left out: the binder refuses an
+      # absent request need unless it is a bool marked optional, which binds
+      # false (HeronBindingNote.AbsentValue, FRAGMENT-ISSUES row 5b-227).
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: elements
       role: result
       type: IList<Element>
     - name: findings
+      type: IList<string>
+    - name: linksSearched
+      # D-59's second field, and the one that does the work: how many
+      # linked DOCUMENTS were actually read - a file placed twice is one.
+      # `includeLinks` set and this at 0 means "asked, and none are
+      # loaded", which must not read the same as host-only.
+      role: accounting
+      type: int
+    - name: linkedMatches
+      # What was found in the links, as TEXT - the first line says which of
+      # D-59's three cases this is, then the links' own lines. Text on
+      # purpose: a linked element or id carried to the next step is looked
+      # up in THIS model (FRAGMENT-ISSUES row 75).
+      role: accounting
       type: IList<string>
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]

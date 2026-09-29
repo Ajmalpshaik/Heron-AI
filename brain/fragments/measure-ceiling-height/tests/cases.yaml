@@ -15,6 +15,15 @@ positive:
       bulkhead as the room's ceiling height, and the whole point is that both
       numbers survive
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      the spaces of this MEP model, under ceilings that are only in the
+      architectural link, includeLinks true
+    expect: >
+      every dictionary unchanged from the host-only run; each space's line
+      gives the linked ceiling's clear height in mm and its type, checked
+      against the ceiling's Height Offset From Level in the link
+
 negative:
   - given: A ROOM WHOSE UPPER LIMIT IS LEFT AT ITS OWN LEVEL, the common case
     expect: >
@@ -45,6 +54,24 @@ negative:
       `coverage` close for both. This is the case where ranking by plan area
       could differ from ranking by intersected volume, and it must be visible
       in the numbers rather than settled silently
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
 
 second_route:
   - >

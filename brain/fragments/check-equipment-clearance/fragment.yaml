@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-CMP-021
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "is the maintenance space round this equipment clear"
 kind: filter
 domain: revit.qa
 capability: CHECK_EQUIPMENT_CLEARANCE
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -38,14 +38,30 @@ purpose: >
   it, and its own sub-components, are excluded - otherwise every unit reports
   its own pipework as blocking it and the check gets switched off.
 
-  **LINKED MODELS ARE NOT SCANNED, AND A CLEAN RESULT MAY THEREFORE HAVE
-  CHECKED NOTHING.** Structure and architecture usually arrive as links and are
+  **WITHOUT `includeLinks` LINKED MODELS ARE NOT SCANNED, AND A CLEAN RESULT
+  MAY THEREFORE HAVE CHECKED NOTHING.** Structure and architecture usually arrive as links and are
   exactly what blocks access. The count of host-model candidates is reported for
   that reason.
 
   **EVERY FIGURE IS A PER-REQUEST INPUT (D-33).** Manufacturers' clearances
   differ per unit; there is no default here, because a number nobody chose
   applied to a plant room is the failure this rule exists for.
+
+  **LINKED MODELS ARE READ ONLY WHEN ASKED FOR (version 2, D-59).** With
+  `includeLinks` absent this answers for this model alone, exactly as the
+  proof measured. With it set, each unit's access zone is carried into
+  every placement of every loaded link and tested with the same solid
+  test; rooms, spaces and areas are not obstructions. Every unit something
+  in a link blocks gets a line in `linkedMatches` naming the linked walls,
+  columns or beams with their type, id IN THE LINK and **Fire Rating** -
+  structure and architecture are exactly what blocks access, and they are
+  usually links. `linksSearched` says how many links were read: set and 0
+  means "you asked, and none are loaded". **NOTHING FROM A LINK IS
+  CARRIED** - `blocked` stays this model's answer (FRAGMENT-ISSUES row 75).
+  Only model elements are read from a link, never its views or sheets.
+  Links nested inside a link are not read, and are counted in the answer.
+  This is version 2; version 1's proof no longer describes the code, and
+  the fragment is DRAFT until it is proved again.
 
 contract:
   needs:
@@ -65,6 +81,15 @@ contract:
     - name: topClearance
       type: double
       source: request
+    - name: includeLinks
+      # D-59. THE MODELLER DECIDES, JOB BY JOB, and absent means host only -
+      # which is what this fragment did before and what its proof measured.
+      # `optional: true` is what lets it be left out: the binder refuses an
+      # absent request need unless it is a bool marked optional, which binds
+      # false (HeronBindingNote.AbsentValue, FRAGMENT-ISSUES row 5b-227).
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: findings
       type: IList<string>
@@ -76,6 +101,20 @@ contract:
       # never a thing it found (D-52).
       role: accounting
       type: int
+    - name: linksSearched
+      # D-59's second field, and the one that does the work: how many
+      # linked DOCUMENTS were actually read - a file placed twice is one.
+      # `includeLinks` set and this at 0 means "asked, and none are
+      # loaded", which must not read the same as host-only.
+      role: accounting
+      type: int
+    - name: linkedMatches
+      # What was found in the links, as TEXT - the first line says which of
+      # D-59's three cases this is, then the links' own lines. Text on
+      # purpose: a linked element or id carried to the next step is looked
+      # up in THIS model (FRAGMENT-ISSUES row 75).
+      role: accounting
+      type: IList<string>
 
 proof:
   date: '2026-09-13'

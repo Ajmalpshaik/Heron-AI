@@ -43,7 +43,7 @@ purpose: >
   back. The links live in the family: a project's placed units follow them
   only once the family is loaded into it again.
 
-  **VERSION 2 (2026-09-29, FRAGMENT-ISSUES 5b-257).** Three edge cases a
+  **VERSION 2 (2026-09-29, FRAGMENT-ISSUES 5b-259).** Three edge cases a
   review found after version 1 was signed are fixed, and a fourth waits on a
   measurement in Revit - NEEDS-CHECKING BD5. This is version 2; version 1's
   proof no longer describes the code and is kept as a record, and the fragment

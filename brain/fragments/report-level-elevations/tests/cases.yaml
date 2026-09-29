@@ -21,6 +21,13 @@ positive:
       typesDisagree true. This is the case that survives a spot check: half the
       levels read correctly and half do not, so checking one proves nothing
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: an architectural link whose levels carry the same names as this model's, includeLinks true
+    expect: >
+      the host answer unchanged; one line per linked level with both heights
+      in millimetres and "same height" or "DIFFERS by N mm", checked by
+      reading one level head in a section with the link visible
+
 negative:
   - given: >
       a model where the two heights AGREE but the survey point sits above the
@@ -40,6 +47,29 @@ negative:
     expect: >
       levels empty, affected false, and no throw. "Nothing to check" must not
       come back as "checked and fine" through an exception being swallowed
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
+
+  - given: a linked level whose name this model does not use, includeLinks true
+    expect: >
+      "NO level of that name in this model" on its line - never compared
+      with the nearest level by height
 
 second_route:
   - >
