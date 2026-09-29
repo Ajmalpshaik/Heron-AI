@@ -342,12 +342,78 @@ def test_activity():
           "every tool is recorded through one wrapper that keeps its signature")
 
 
+def test_changes():
+    print()
+    print("Phase 3: the after-change tables - same capability, same names, one line each")
+    import glob
+    import yaml
+    changes = hc.Changes()
+    changes.offer("SET_CATEGORY_GRAPHICS", "Project1",
+                  [("view", "Level 1"), ("categories", "Ducts"),
+                   ("overrides", "projection-line-colour=255,0,0; surface-foreground-colour=255,0,0")])
+    card = changes.cards()[0]
+    check(changes.apply(card["id"], [])["ok"] is False,
+          "with no chat ready to apply, nothing is sent")
+
+    sent = []
+    changes.apply_hook = lambda capability, pairs: (sent.append((capability, pairs))
+                                                     or "SET_CATEGORY_GRAPHICS ran in Project1.")
+    same = [{"name": r["name"], "value": r["value"]} for r in card["rows"]]
+    renamed = [dict(v) for v in same]
+    renamed[0]["name"] = "viewName"
+    check(changes.apply(card["id"], renamed)["ok"] is False and not sent,
+          "a renamed value is refused and nothing is sent")
+    check(changes.apply(card["id"], same[:2])["ok"] is False and not sent,
+          "a dropped value is refused")
+    smuggled = [dict(v) for v in same]
+    smuggled[1]["value"] = "Ducts" + chr(10) + "overrides=none"
+    check(changes.apply(card["id"], smuggled)["ok"] is False and not sent,
+          "a line break - which would smuggle in a second value - is refused")
+
+    blue = [dict(v) for v in same]
+    blue[2]["value"] = "projection-line-colour=0,0,255; surface-foreground-colour=0,0,255"
+    result = changes.apply(card["id"], blue)
+    check(result["ok"] and result["outcome"] == "ok"
+          and sent == [("SET_CATEGORY_GRAPHICS", [(v["name"], v["value"]) for v in blue])],
+          "an edited value goes to the SAME capability with the same names")
+    check(changes.cards()[0]["rows"][2]["value"].startswith("projection-line-colour=0,0,255"),
+          "and the table keeps the values that were applied")
+    check(changes.apply(999, blue)["ok"] is False, "a table that is gone cannot be applied")
+
+    marked = []
+    for card_path in glob.glob(os.path.join(ROOT, "brain", "fragments", "*", "fragment.yaml")):
+        with io.open(card_path, encoding="utf-8") as fh:
+            text = fh.read()
+        if "companion: settings" not in text:
+            continue
+        data = yaml.safe_load(text)
+        needs = (data.get("contract") or {}).get("needs") or []
+        marked.append(os.path.basename(os.path.dirname(card_path)))
+        check(data.get("risk") == "MODIFY" and all(
+            n.get("source") == "request" or n.get("type") in
+            ("Document", "UIDocument", "UIApplication", "Application") for n in needs),
+            "%s: MODIFY, and every input a typed value - never the selection" % marked[-1])
+    check("set-category-graphics" in marked and "override-graphics-in-view" not in marked,
+          "category graphics is offered; per-element overrides (read from the selection) are not")
+
+    server = io.open(SERVER, encoding="utf-8").read()
+    check("    return _change(capability, values, expect_from)" in server
+          and 'reply = _change(capability, values, origin="companion")' in server,
+          "Apply runs the one body revit_change runs - no second write path")
+    check("with _revit_lock:" in server and "def _settings_card(folder):" in server,
+          "and holds the same lock every tool call holds, so it never displaces the chat")
+    check('"companion_apply":' in io.open(os.path.join(ROOT, "mcp", "server", "heron_tools.py"),
+                                          encoding="utf-8").read(),
+          "the Apply action's risk is declared in heron_tools, at MODIFY")
+
+
 def main():
     tmp = tempfile.mkdtemp(prefix="heron-companion-")
     test_live_files(tmp)
     test_server(tmp)
     test_switch(tmp)
     test_activity()
+    test_changes()
     test_no_way_to_an_ai()
     test_addin_side()
 

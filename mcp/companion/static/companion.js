@@ -112,6 +112,159 @@ async function activity() {
   } catch (e) { /* the state poll reports a closed page */ }
 }
 
+// ---------------------------------------------------------------- Phase 3
+// The after-change tables (docs/40 section 21.1). A value is edited in place;
+// a colour - three whole numbers 0-255, the form every Heron colour takes -
+// also gets a colour picker; an override string such as
+// "projection-line-colour=255,0,0; surface-foreground-colour=255,0,0" is split
+// into one row per setting and put back together on Apply. Model text only
+// ever reaches the page as text.
+
+const RGB = /^ *([0-9]{1,3}) *, *([0-9]{1,3}) *, *([0-9]{1,3}) *$/;
+const shown = new Map();   // card id -> { el, lastAt }
+
+function isRgb(v) {
+  const m = RGB.exec(v);
+  return !!m && [m[1], m[2], m[3]].every(n => Number(n) <= 255);
+}
+
+function toHex(v) {
+  const m = RGB.exec(v);
+  return "#" + [m[1], m[2], m[3]].map(n => Number(n).toString(16).padStart(2, "0")).join("");
+}
+
+function fromHex(h) {
+  return [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)).join(",");
+}
+
+function isOverrides(v) {
+  return v.includes("=") && v.split(";").every(p => p.trim() === "" || p.includes("="));
+}
+
+function valueEditor(value) {
+  const box = document.createElement("div");
+  box.className = "pair";
+  const text = document.createElement("input");
+  text.type = "text";
+  text.value = value;
+  if (isRgb(value)) {
+    const pick = document.createElement("input");
+    pick.type = "color";
+    pick.value = toHex(value);
+    pick.addEventListener("input", () => { text.value = fromHex(pick.value); });
+    text.addEventListener("input", () => { if (isRgb(text.value)) pick.value = toHex(text.value); });
+    box.append(pick);
+  }
+  box.append(text);
+  return { box, read: () => text.value.trim() };
+}
+
+function rowsFor(row, table) {
+  // One table row per setting inside an override string; one row otherwise.
+  if (isOverrides(row.value)) {
+    const parts = row.value.split(";").map(p => p.trim()).filter(p => p);
+    const readers = parts.map(part => {
+      const at = part.indexOf("=");
+      const key = part.slice(0, at).trim();
+      const tr = document.createElement("tr");
+      const name = document.createElement("td");
+      name.className = "name";
+      name.textContent = row.name + " › " + key;
+      const cell = document.createElement("td");
+      const editor = valueEditor(part.slice(at + 1).trim());
+      cell.append(editor.box);
+      tr.append(name, cell);
+      table.append(tr);
+      return () => key + "=" + editor.read();
+    });
+    return () => readers.map(r => r()).join("; ");
+  }
+  const tr = document.createElement("tr");
+  const name = document.createElement("td");
+  name.className = "name";
+  name.textContent = row.name;
+  const cell = document.createElement("td");
+  const editor = valueEditor(row.value);
+  cell.append(editor.box);
+  tr.append(name, cell);
+  table.append(tr);
+  return editor.read;
+}
+
+function showResult(el, last) {
+  el.className = "result " + last.outcome;
+  const first = String(last.reply).split("\n").slice(0, 4).join("\n");
+  el.textContent = last.at + " · " + (last.outcome === "ok" ? "Applied. " : "") + first +
+    (last.outcome === "ok" ? "\nTo take it back, press Ctrl+Z once in Revit." : "");
+}
+
+function buildCard(card) {
+  const box = document.createElement("div");
+  box.className = "change";
+  const head = document.createElement("header");
+  const cap = document.createElement("span");
+  cap.className = "cap";
+  cap.textContent = card.capability;
+  const where = document.createElement("span");
+  where.className = "where";
+  where.textContent = (card.document || "") + " · " + card.at;
+  head.append(cap, where);
+
+  const table = document.createElement("table");
+  const readers = card.rows.map(row => ({ name: row.name, read: rowsFor(row, table) }));
+
+  const foot = document.createElement("footer");
+  const button = document.createElement("button");
+  button.textContent = "Apply again";
+  const result = document.createElement("span");
+  result.className = "result";
+  if (card.last) showResult(result, card.last);
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    result.className = "result";
+    result.textContent = "Sending to Revit - it waits if the chat is using Revit right now…";
+    try {
+      const res = await fetch("/api/change/apply", {
+        method: "POST",
+        headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
+        credentials: "same-origin",
+        body: JSON.stringify({ id: card.id, values: readers.map(r => ({ name: r.name, value: r.read() })) }),
+      });
+      const body = await res.json();
+      if (body.ok) showResult(result, { at: "now", outcome: body.outcome, reply: body.reply });
+      else { result.className = "result failed"; result.textContent = body.error || "Not applied."; }
+    } catch (e) {
+      result.className = "result failed";
+      result.textContent = "The page could not reach the chat. Nothing was sent to Revit.";
+    }
+    button.disabled = false;
+  });
+  foot.append(button, result);
+  box.append(head, table, foot);
+  return box;
+}
+
+async function changes() {
+  try {
+    const res = await fetch("/api/changes", { headers: HEADER, credentials: "same-origin" });
+    if (!res.ok) return;
+    const body = await res.json();
+    const list = $("c-list");
+    const ids = new Set(body.cards.map(c => c.id));
+    for (const [id, item] of shown) {
+      if (!ids.has(id)) { item.el.remove(); shown.delete(id); }
+    }
+    body.cards.slice().reverse().forEach(card => {
+      if (!shown.has(card.id)) {
+        const el = buildCard(card);
+        list.prepend(el);
+        shown.set(card.id, { el });
+      }
+    });
+    $("c-empty").hidden = shown.size > 0;
+  } catch (e) { /* the state poll reports a closed page */ }
+}
+
 async function pair(code) {
   const res = await fetch("/api/pair", {
     method: "POST",
@@ -135,6 +288,7 @@ async function poll() {
     document.body.classList.remove("closed");
     show(body.state);
     activity();
+    changes();
   } catch (e) {
     failures += 1;
     if (failures >= 3) {

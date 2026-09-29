@@ -150,6 +150,90 @@ class Activity(object):
 ACTIVITY = Activity()
 
 
+class Changes(object):
+    """
+    PHASE 3: the after-change tables (docs/40 section 21.1).
+
+    When the chat makes a SETTINGS change - a category's graphics, a
+    material's colour, a view filter's overrides - the values it used land
+    here, and the page shows them as a small table the modeller can edit and
+    apply again, with no message to the chat. Which changes qualify is the
+    server's decision, read from the fragment's own card; this class only
+    holds them and checks what comes back from the page.
+
+    APPLY RE-RUNS THE SAME CAPABILITY, WITH THE SAME NAMES, and nothing else:
+    the page may change a value, never add, drop or rename one, and a value
+    may not carry a line break - values cross as one "name=value" per line,
+    so a break would smuggle in a second value.
+    """
+
+    KEEP = 10
+    LONGEST = 2000
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._cards = []
+        self._next = 0
+        #: Set by the MCP server: (capability, [(name, value)]) -> answer text.
+        self.apply_hook = None
+
+    def offer(self, capability, document, pairs):
+        with self._lock:
+            self._cards = [c for c in self._cards
+                           if not (c["capability"] == capability and c["document"] == document)]
+            self._next += 1
+            self._cards.insert(0, {"id": self._next, "capability": capability,
+                                   "document": document, "at": time.strftime("%H:%M:%S"),
+                                   "rows": [{"name": n, "value": v} for n, v in pairs],
+                                   "last": None})
+            del self._cards[self.KEEP:]
+
+    def cards(self):
+        with self._lock:
+            return json.loads(json.dumps(self._cards))
+
+    def check(self, card_id, values):
+        """The card and the pairs to send, or (None, why)."""
+        with self._lock:
+            card = next((c for c in self._cards if c["id"] == card_id), None)
+            if card is None:
+                return None, "That table is no longer here - the chat has made newer changes."
+            names = [r["name"] for r in card["rows"]]
+            if not isinstance(values, list) or [v.get("name") if isinstance(v, dict) else None
+                                                for v in values] != names:
+                return None, "The table's rows do not match what Heron offered."
+            pairs = []
+            for v in values:
+                value = v.get("value")
+                if not isinstance(value, str) or len(value) > self.LONGEST \
+                        or chr(10) in value or chr(13) in value:
+                    return None, "A value must be one line of text."
+                pairs.append((v["name"], value))
+            return card, pairs
+
+    def apply(self, card_id, values):
+        hook = self.apply_hook
+        if hook is None:
+            return {"ok": False, "error": "The chat is not ready to apply anything yet."}
+        card, pairs = self.check(card_id, values)
+        if card is None:
+            return {"ok": False, "error": pairs}
+        reply = hook(card["capability"], pairs)
+        outcome = Activity.outcome(reply)
+        with self._lock:
+            for c in self._cards:
+                if c["id"] == card_id:
+                    if outcome == "ok":
+                        c["rows"] = [{"name": n, "value": v} for n, v in pairs]
+                    c["last"] = {"at": time.strftime("%H:%M:%S"), "outcome": outcome,
+                                 "reply": str(reply)[:1500]}
+        return {"ok": True, "outcome": outcome, "reply": str(reply)[:1500]}
+
+
+#: This process's after-change tables - one chat's.
+CHANGES = Changes()
+
+
 def companion_dir():
     """Where each chat leaves the note the Companion button in Revit reads -
     HeronPaths.Companion, mirrored (D-109)."""
@@ -507,6 +591,11 @@ class _Handler(http.server.BaseHTTPRequestHandler):
                 if name == "since" and value.isdigit():
                     since = int(value)
             return self._json(200, {"ok": True, "items": ACTIVITY.since(since)})
+        if path == "/api/changes":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "cards": CHANGES.cards()})
         return self._refuse(404, "not found")
 
     def do_POST(self):
@@ -528,6 +617,17 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             return self._json(200, {"ok": True}, extra=(
                 ("Set-Cookie", "%s=%s; HttpOnly; SameSite=Strict; Path=/"
                  % (self.owner.cookie_name(), session)),))
+        if path == "/api/change/apply":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 65536)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+                card_id = int(body.get("id"))
+            except (ValueError, TypeError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            return self._json(200, CHANGES.apply(card_id, body.get("values")))
         return self._refuse(404, "not found")
 
     def do_OPTIONS(self):

@@ -252,6 +252,16 @@ TOOLS = {
 }
 
 
+# WHAT THE COMPANION PAGE CAN DO THAT THE CHAT CANNOT CALL (D-108, docs/40
+# section 13). Not MCP tools - the host never sees them - but their risk is
+# declared here, the one place a risk lives. companion_apply runs a settings
+# change again with the modeller's values through revit_change's own body,
+# so it is exactly revit_change's level and operation.
+COMPANION_ACTIONS = {
+    "companion_apply":          (MODIFY,  "run_fragment_write"),
+}
+
+
 # WHAT A TOOL CAN ALSO SEND, BEYOND ITS OWN ROW - D-106, 2026-09-28.
 #
 # revit_change sends a fragment as the operation its OWN declared risk names:

@@ -208,6 +208,13 @@ def _host_instructions():
 
 _depth = threading.local()
 
+# ONE CONVERSATION WITH REVIT AT A TIME, from this process. Every tool call
+# holds it (through _recorded) and so does the Companion's Apply, so a change
+# from the page can never open a second pipe connection while the chat's
+# request is in flight - which would displace it and lose its answer (docs/40
+# section 4). Re-entrant, because a tool may call another.
+_revit_lock = threading.RLock()
+
 
 def _recorded(fn):
     """
@@ -223,6 +230,10 @@ def _recorded(fn):
     """
     @functools.wraps(fn)
     def run(*a, **k):
+        with _revit_lock:
+            return _run(*a, **k)
+
+    def _run(*a, **k):
         outer = not getattr(_depth, "busy", False)
         _depth.busy = True
         started, clock = time.strftime("%H:%M:%S"), time.time()
@@ -1134,6 +1145,18 @@ def revit_change(capability: str, values: str = "",
     One Ctrl+Z in Revit puts back what this did to the model - never a file it
     wrote, a save it made or a sync that has already reached other people.
     """
+    return _change(capability, values, expect_from)
+
+
+def _change(capability, values="", expect_from="", origin="chat"):
+    """
+    revit_change's body, and the ONLY one: the Companion's Apply calls this
+    same function (D-108 point 5), so a change from the page passes exactly
+    the checks a change from the chat passes - the risk refusal, the
+    operation named from the fragment's own card, the undeclared-value
+    warning, the binding, the pin, the add-in's gate and its switches.
+    `origin` changes nothing but the after-change table below.
+    """
     folder, status = _fragment_for(capability)
     if folder is None:
         return ("Heron has nothing that does '%s', so nothing has been sent to Revit. "
@@ -1334,7 +1357,69 @@ def revit_change(capability: str, values: str = "",
                      "negative case. Look at what it did before trusting it."
                      % (capability, status))
 
+    # THE AFTER-CHANGE TABLE (docs/40 section 21.1): a settings change from
+    # the chat leaves the values it used on the Companion page, where the
+    # modeller can edit them and apply again with no message to the chat.
+    if origin == "chat":
+        _offer_change(capability, folder, values, reply.get("document"))
+
     return "\n".join(lines)
+
+
+#: A need Revit fills itself, never the caller - the only kind an
+#: after-change table may leave unshown.
+_HOST_SUPPLIED = frozenset(("Document", "UIDocument", "UIApplication", "Application"))
+
+
+def _settings_card(folder):
+    """True when this fragment may get an after-change table: its card says
+    `companion: settings`, and EVERY input it takes is a typed value. A
+    fragment that reads the selection or the chain is never offered - applied
+    again later it would act on whatever is selected THEN, not on what the
+    table showed."""
+    import yaml
+    path = os.path.join(_repo_root(), "brain", "fragments", folder, "fragment.yaml")
+    try:
+        with io.open(path, encoding="utf-8") as fh:
+            card = yaml.safe_load(fh) or {}
+    except (OSError, yaml.YAMLError):
+        return False
+    if card.get("companion") != "settings" or card.get("risk") != "MODIFY":
+        return False
+    needs = (card.get("contract") or {}).get("needs") or []
+    return all(n.get("source") == "request" or n.get("type") in _HOST_SUPPLIED
+               for n in needs)
+
+
+def _offer_change(capability, folder, values, document):
+    """Leave a settings change's values on the Companion page (docs/40 21.1).
+    Display only: a fault here never reaches the chat's answer."""
+    try:
+        if not _settings_card(folder):
+            return
+        pairs = [(v["name"], v["value"]) for v in _values_array(values)]
+        if pairs:
+            companion_page = _companion_module()
+            companion_page.CHANGES.offer(capability, document, pairs)
+    except Exception:                                # noqa: BLE001 - display only
+        pass
+
+
+def _apply_change(capability, pairs):
+    """The Companion's Apply: the same capability again, with the modeller's
+    values, through _change - the one body revit_change uses - under the same
+    lock every tool call holds. Called from the page's thread, never the
+    chat's."""
+    values = NEWLINE.join("%s=%s" % (name, value) for name, value in pairs)
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    with _revit_lock:
+        try:
+            reply = _change(capability, values, origin="companion")
+        except Exception as error:                   # noqa: BLE001 - said on the page
+            _note("companion_apply", started, time.time() - clock, error=error)
+            return "Heron could not run it: %s" % error
+    _note("companion_apply", started, time.time() - clock, reply=reply)
+    return reply
 
 
 def _proof_line(capability, folder):
@@ -4274,7 +4359,9 @@ if __name__ == "__main__":
     # reads a settings file and writes one note; it never touches the pipe,
     # and a fault in it never reaches the chat.
     try:
-        _companion_module().keep(bound_pid=lambda: binding.pid)
+        companion_page = _companion_module()
+        companion_page.CHANGES.apply_hook = _apply_change
+        companion_page.keep(bound_pid=lambda: binding.pid)
     except Exception as why:                         # noqa: BLE001 - never cost the chat
         sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)
 
