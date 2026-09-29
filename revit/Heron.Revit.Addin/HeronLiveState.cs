@@ -68,6 +68,14 @@ namespace Heron.Revit.Addin
         private static readonly TimeSpan IdleInterval = TimeSpan.FromMilliseconds(200);
         private static readonly Stopwatch SinceIdleCheck = Stopwatch.StartNew();
 
+        /// <summary>
+        /// How often the Companion switch is re-read from heron.config: another
+        /// Revit, or the ribbon of this one, may have flipped the shared
+        /// setting. One small file read every two seconds while Revit is idle.
+        /// </summary>
+        private static readonly TimeSpan SwitchInterval = TimeSpan.FromSeconds(2);
+        private static readonly Stopwatch SinceSwitchRead = Stopwatch.StartNew();
+
         private static readonly object Gate = new object();
 
         private static string _revitVersion;
@@ -186,6 +194,27 @@ namespace Heron.Revit.Addin
             SinceIdleCheck.Restart();
 
             Remember(sender);
+
+            if (SinceSwitchRead.Elapsed >= SwitchInterval)
+            {
+                SinceSwitchRead.Restart();
+                try
+                {
+                    var now = HeronConfig.Load().GetBool(EnabledKey, true);
+                    if (now != _enabled)
+                    {
+                        _enabled = now;
+                        if (!now) Delete();
+                        HeronApplication.SetCompanionIcon(now);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Idling is Revit's own thread: nothing may escape it.
+                    HeronApplication.Log("Companion switch could not be re-read: " + ex.Message);
+                }
+            }
+
             if (!Connected() || !_enabled) return;
 
             // Nothing moved since the last look: stop before reading a single

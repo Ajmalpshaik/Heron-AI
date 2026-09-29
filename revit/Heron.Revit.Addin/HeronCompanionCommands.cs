@@ -38,6 +38,13 @@ namespace Heron.Revit.Addin
     {
         private static readonly Regex Code = new Regex("^[A-Za-z0-9_-]{16,64}$");
 
+        /// <summary>
+        /// A running chat touches its note every two seconds. One older than
+        /// this was left by a chat that crashed, whose process id Windows may
+        /// already have given to something else (Codex review of #362).
+        /// </summary>
+        private const int NoteSeconds = 30;
+
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             try
@@ -80,9 +87,12 @@ namespace Heron.Revit.Addin
             string best = null, newest = null;
             var newestTime = DateTime.MinValue;
             var mine = revitPid.ToString(CultureInfo.InvariantCulture);
+            var oldest = DateTime.UtcNow.AddSeconds(-NoteSeconds);
 
             foreach (var path in Directory.GetFiles(HeronPaths.Companion, "chat-*.json"))
             {
+                if (File.GetLastWriteTimeUtc(path) < oldest) continue;
+
                 string text;
                 try { text = File.ReadAllText(path); }
                 catch (IOException) { continue; }
@@ -137,7 +147,10 @@ namespace Heron.Revit.Addin
         {
             try
             {
-                var on = !HeronLiveState.Enabled;
+                // THE SHARED SETTING, READ FRESH - not this Revit's cached
+                // copy. With two Revits open, the other may have switched it
+                // since this one started (Codex review of #362).
+                var on = !HeronConfig.Load().GetBool(HeronLiveState.EnabledKey, true);
                 HeronLiveState.SetEnabled(on);
                 HeronApplication.SetCompanionIcon(on);
                 HeronApplication.Log("Companion switched " + (on ? "on" : "off") + " from the ribbon.");

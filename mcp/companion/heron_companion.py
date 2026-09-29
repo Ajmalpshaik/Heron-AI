@@ -115,6 +115,10 @@ class Activity(object):
     FIRST_LINE = 200
     REFUSED = ("nothing has been sent to revit", "nothing was sent to revit",
                "has refused", "is refused", "was refused", "refused rather")
+    # An answer that says the work did not happen - most tools say so in a
+    # sentence rather than raising (Codex review of #362). Display only.
+    FAILED = ("did not answer", "could not", "no answer", "was lost", "not connected",
+              "rolled back", "failed", "unknown outcome")
 
     def __init__(self):
         self._lock = threading.Lock()
@@ -128,6 +132,8 @@ class Activity(object):
         text = str(reply or "").lower()
         if any(word in text for word in cls.REFUSED):
             return "refused"
+        if any(word in text for word in cls.FAILED):
+            return "failed"
         return "ok"
 
     def record(self, tool, started, seconds, reply=None, error=None, outcome=None):
@@ -193,7 +199,7 @@ class Changes(object):
         one after another left only the last (the owner, 2026-09-29)."""
         return tuple((n, v) for n, v in pairs if not cls._SETTING.match(str(v).strip()))
 
-    def offer(self, capability, document, pairs):
+    def offer(self, capability, document, pairs, identity=None):
         subject = self.subject(pairs)
         with self._lock:
             self._cards = [c for c in self._cards
@@ -204,6 +210,7 @@ class Changes(object):
             self._cards.insert(0, {"id": self._next, "capability": capability,
                                    "document": document, "at": time.strftime("%H:%M:%S"),
                                    "rows": [{"name": n, "value": v} for n, v in pairs],
+                                   "identity": list(identity) if identity else None,
                                    "last": None})
             del self._cards[self.KEEP:]
 
@@ -237,7 +244,7 @@ class Changes(object):
         card, pairs = self.check(card_id, values)
         if card is None:
             return {"ok": False, "error": pairs}
-        reply = hook(card["capability"], pairs)
+        reply = hook(card["capability"], pairs, card.get("identity"))
         outcome = Activity.outcome(reply)
         with self._lock:
             for c in self._cards:
@@ -274,10 +281,11 @@ class Tables(object):
         #: Set by the MCP server: [(id, uniqueId, name, was, new)] -> (text, result).
         self.apply_hook = None
 
-    def open(self, document, table):
+    def open(self, document, table, identity=None):
         with self._lock:
             self._next += 1
             self._table = {"id": self._next, "document": document,
+                           "identity": list(identity) if identity else None,
                            "at": time.strftime("%H:%M:%S"),
                            "columns": list(table.get("columns") or []),
                            "rows": list(table.get("rows") or []),
@@ -321,7 +329,9 @@ class Tables(object):
         rows, why = self.check(table_id, changes)
         if rows is None:
             return {"ok": False, "error": why}
-        text, result = hook(rows)
+        with self._lock:
+            identity = (self._table or {}).get("identity")
+        text, result = hook(rows, identity)
         outcome = Activity.outcome(text)
         applied = bool(result and result.get("applied"))
         with self._lock:
@@ -562,6 +572,11 @@ class Companion(object):
                                "revitPid": "" if bound is None else str(bound)})
             path = os.path.join(folder, "chat-%d.json" % os.getpid())
             if text == self._note_text and os.path.exists(path):
+                # TOUCHED EVERY LOOK: the Revit button ignores a note older
+                # than 30 seconds, so a chat that crashed - whose process id
+                # Windows may give to something else - is never mistaken for
+                # a running one (Codex review of #362).
+                os.utime(path, None)
                 return path
             os.makedirs(folder, exist_ok=True)
             partial = path + ".tmp"

@@ -49,6 +49,62 @@ Func<Parameter, string> readValue = p =>
 
 Func<string, string> same = text => (text ?? "").Trim();
 
+// WHAT COUNTS AS "STILL THE SAME". Text is compared EXACTLY - a Comment
+// changed in Revit from "A" to " A " is a change, and trimming would have
+// written over it (Codex review of #362). A number, a length or a tick box
+// is compared by its display string trimmed, because that is the form both
+// sides read it in.
+Func<Parameter, string, bool> unchanged = (p, was) =>
+    p.StorageType == StorageType.String
+        ? (readValue(p) ?? "") == (was ?? "")
+        : same(readValue(p)) == same(was);
+
+// A TICK BOX IS FOUND BY WHAT IT IS, NOT BY WHAT IT SAYS. Version 1 looked for
+// the display words "Yes" or "No", which a Revit in another language does not
+// show. This is write-element-parameters' own version-safe check, the same
+// text, so the two cannot disagree about which parameter is a Yes/No.
+// SpecTypeId.Boolean.YesNo on 2022 and later; null on 2020 and 2021, which
+// answer through ParameterType instead.
+var yesNoSpecs = typeof(Document).Assembly.GetType(typeof(Document).Namespace + ".SpecTypeId+Boolean");
+var yesNoProperty = yesNoSpecs == null ? null : yesNoSpecs.GetProperty("YesNo",
+    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+var yesNoSpec = yesNoProperty == null ? null : yesNoProperty.GetValue(null, null);
+
+Func<Parameter, bool> isYesNo = p =>
+{
+    if (p.StorageType != StorageType.Integer) return false;
+    try
+    {
+        var definition = p.Definition;
+        if (definition == null) return false;
+
+        var getDataType = definition.GetType().GetMethod("GetDataType", System.Type.EmptyTypes);
+        if (getDataType != null && yesNoSpec != null)
+        {
+            var spec = getDataType.Invoke(definition, null);
+            if (spec == null) return false;
+            // NameEquals, because a spec id carries its version -
+            // "...bool-1.0.0" - and a parameter made under another version
+            // must still read as a tick box.
+            var nameEquals = spec.GetType().GetMethod("NameEquals", new[] { yesNoSpec.GetType() });
+            return nameEquals != null
+                ? (bool)nameEquals.Invoke(spec, new[] { yesNoSpec })
+                : spec.Equals(yesNoSpec);
+        }
+
+        var parameterType = definition.GetType().GetProperty("ParameterType");
+        var kind = parameterType == null ? null : parameterType.GetValue(definition, null);
+        return kind != null && kind.ToString() == "YesNo";
+    }
+    catch (Exception)
+    {
+        // Not known to be a tick box, so it takes the version 3 road, where
+        // SetValueString refused the two Yes/No values measured rather than
+        // writing them wrongly.
+        return false;
+    }
+};
+
 var ticked = new[] { "yes", "true", "on", "1", "ticked" };
 var unticked = new[] { "no", "false", "off", "0", "unticked" };
 
@@ -112,7 +168,7 @@ foreach (var raw in (rows ?? "").Split(';'))
         else if (target.StorageType == StorageType.ElementId
                  || target.StorageType == StorageType.None)
             why = name + " holds a reference to another element, which cannot be typed as text";
-        else if (same(readValue(target)) != same(was))
+        else if (!unchanged(target, was))
             why = "it was changed in Revit since the table was read - it now reads '"
                   + (readValue(target) ?? "") + "'";
     }
@@ -148,10 +204,9 @@ else
     {
         var p = theOne(step.Item1, step.Item2);
         var want = step.Item3;
-        var shown = same(readValue(p)).ToLowerInvariant();
         var ok = false;
 
-        if (p.StorageType == StorageType.Integer && (shown == "yes" || shown == "no"))
+        if (isYesNo(p))
         {
             var said = same(want).ToLowerInvariant();
             if (Array.IndexOf(ticked, said) >= 0) ok = p.Set(1);

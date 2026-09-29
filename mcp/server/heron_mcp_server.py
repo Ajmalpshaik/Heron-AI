@@ -1412,6 +1412,28 @@ def _settings_card(folder):
                for n in needs)
 
 
+def _pin_identity():
+    """The model this chat is pinned to, by the two things that tell two
+    models apart - title and path. A card or a table carries the identity it
+    was made under, and its Apply is refused if the chat has since moved
+    (Codex review of #362): an old table must never write into the model the
+    chat is on NOW, least of all a copy whose ids and UniqueIds all match."""
+    return (pinned.title or "", pinned.document_path or "")
+
+
+def _moved_since(identity):
+    """A sentence when the chat's pinned model is no longer the one the
+    table was made in; None when it is the same, or when none was recorded."""
+    if not identity:
+        return None
+    now = _pin_identity()
+    if tuple(identity) == now:
+        return None
+    return ("This table was made in %s, and the chat is now working on %s, so nothing "
+            "was sent to Revit. Ask the chat for the table again in this model."
+            % (identity[0] or "another model", now[0] or "no model yet"))
+
+
 def _offer_change(capability, folder, values, document):
     """Leave a settings change's values on the Companion page (docs/40 21.1).
     Display only: a fault here never reaches the chat's answer."""
@@ -1421,12 +1443,12 @@ def _offer_change(capability, folder, values, document):
         pairs = [(v["name"], v["value"]) for v in _values_array(values)]
         if pairs:
             companion_page = _companion_module()
-            companion_page.CHANGES.offer(capability, document, pairs)
+            companion_page.CHANGES.offer(capability, document, pairs, _pin_identity())
     except Exception:                                # noqa: BLE001 - display only
         pass
 
 
-def _apply_change(capability, pairs):
+def _apply_change(capability, pairs, identity=None):
     """The Companion's Apply: the same capability again, with the modeller's
     values, through _change - the one body revit_change uses - under the same
     lock every tool call holds. Called from the page's thread, never the
@@ -1434,6 +1456,10 @@ def _apply_change(capability, pairs):
     values = NEWLINE.join("%s=%s" % (name, value) for name, value in pairs)
     started, clock = time.strftime("%H:%M:%S"), time.time()
     with _revit_lock:
+        moved = _moved_since(identity)
+        if moved:
+            _note("companion_apply", started, 0, reply=moved, outcome="refused")
+            return moved
         try:
             reply = _through(revit_change, origin="companion")(capability, values)
         except Exception as error:                   # noqa: BLE001 - said on the page
@@ -1443,7 +1469,7 @@ def _apply_change(capability, pairs):
     return reply
 
 
-def _apply_table(rows):
+def _apply_table(rows, identity=None):
     """
     The Companion's element-table Apply (docs/40 section 8.4): one run of
     SET_PARAMETER_VALUES_BY_ID with every edited cell, through _change - the
@@ -1457,7 +1483,21 @@ def _apply_table(rows):
     line = ";".join("|".join(quote(str(field), safe="") for field in row) for row in rows)
     out = {}
     started, clock = time.strftime("%H:%M:%S"), time.time()
+    # THE BRIDGE READS AT MOST ONE MEBIBYTE A LINE (BridgeServer.MaxRequestChars)
+    # and the fragment's source travels with the rows. Splitting the Apply
+    # would break all-or-nothing and the single undo entry, so a change set
+    # that cannot fit is refused whole, here, before anything is sent.
+    if len(line) > 700000:
+        said = ("That is too many changes, or values too long, to send to Revit as one "
+                "change (%d characters once encoded). Nothing was sent. Apply them in "
+                "smaller groups." % len(line))
+        _note("companion_table_apply", started, 0, reply=said, outcome="refused")
+        return said, None
     with _revit_lock:
+        moved = _moved_since(identity)
+        if moved:
+            _note("companion_table_apply", started, 0, reply=moved, outcome="refused")
+            return moved, None
         try:
             text = _through(revit_change, reply_out=out, origin="companion")(
                 "SET_PARAMETER_VALUES_BY_ID", "rows=" + line)
@@ -1690,7 +1730,8 @@ def revit_offer_settings(capability: str, values: str) -> str:
                 % (capability, (" - not taken: %s" % ", ".join(undeclared)) if undeclared else ""))
 
     companion_page.CHANGES.offer(capability, pinned.title or "",
-                                 [(v["name"], v["value"]) for v in supplied])
+                                 [(v["name"], v["value"]) for v in supplied],
+                                 _pin_identity() if pinned.title else None)
     companion = companion_page.shared(bound_pid=_companion_revit)
     if not companion.recently_seen():
         try:
@@ -1753,7 +1794,7 @@ def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 200
 
     document = reply.get("document")
     companion = companion_page.shared(bound_pid=_companion_revit)
-    companion_page.TABLES.open(document, table)
+    companion_page.TABLES.open(document, table, _pin_identity())
     shown = companion.recently_seen()
     if not shown:
         try:

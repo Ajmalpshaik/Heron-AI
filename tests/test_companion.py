@@ -341,6 +341,9 @@ def test_activity():
     items = act.since(0)
     check([i["outcome"] for i in items] == ["ok", "refused", "failed"],
           "ok / refused / failed, read from the answer's own words")
+    check(hc.Activity.outcome("Revit 2024 did not answer.") == "failed"
+          and hc.Activity.outcome("Heron could not read its own session list") == "failed",
+          "an answer saying the work did not happen is failed, not OK")
     check(items[0]["summary"] == "Ducts: 24 in Level 1",
           "only the first line of an answer is kept")
     check(len(act.since(2)) == 1 and act.since(2)[0]["tool"] == "revit_views",
@@ -371,7 +374,7 @@ def test_changes():
           "with no chat ready to apply, nothing is sent")
 
     sent = []
-    changes.apply_hook = lambda capability, pairs: (sent.append((capability, pairs))
+    changes.apply_hook = lambda capability, pairs, identity=None: (sent.append((capability, pairs))
                                                      or "SET_CATEGORY_GRAPHICS ran in Project1.")
     same = [{"name": r["name"], "value": r["value"]} for r in card["rows"]]
     renamed = [dict(v) for v in same]
@@ -449,7 +452,7 @@ def test_tables():
           "with no chat ready to apply, nothing is sent")
 
     sent = []
-    def hook(rows):
+    def hook(rows, identity=None):
         sent.append(rows)
         return "SET_PARAMETER_VALUES_BY_ID ran in Project1.", {
             "applied": True, "stale": [],
@@ -470,7 +473,7 @@ def test_tables():
     check(tables.current()["rows"][0]["cells"]["Mark"]["value"] == "FCU-1A",
           "after Apply the table shows what Revit read back")
 
-    tables.apply_hook = lambda rows: ("SET_PARAMETER_VALUES_BY_ID ran in Project1.", {
+    tables.apply_hook = lambda rows, identity=None: ("SET_PARAMETER_VALUES_BY_ID ran in Project1.", {
         "applied": False, "readBack": [],
         "stale": [{"id": "101", "name": "Mark", "why": "it was changed in Revit"}]})
     stopped = tables.apply(tid, [{"id": "101", "name": "Mark", "value": "FCU-1B"}])
@@ -507,6 +510,28 @@ def test_tables():
           "offering a settings table sends nothing to Revit, and only for a settings card")
 
 
+def test_model_guard():
+    print()
+    print("A table made in one model never applies in another (Codex review of #362)")
+    server = io.open(SERVER, encoding="utf-8").read()
+    for name in ("def _apply_change(", "def _apply_table("):
+        body = server[server.index(name):]
+        body = body[:body.index(chr(10) + "def ", 10)]
+        check("moved = _moved_since(identity)" in body
+              and body.index("moved = _moved_since(identity)") < body.index("_through(revit_change"),
+              "%s refuses when the chat has moved to another model, BEFORE anything is sent"
+              % name[4:-1])
+    check("CHANGES.offer(capability, document, pairs, _pin_identity())" in server
+          and "TABLES.open(document, table, _pin_identity())" in server,
+          "every table and card records the model it was made in")
+    check("if len(line) > 700000:" in server,
+          "a change set too big for the bridge's one line is refused whole, never split")
+    cs = io.open(os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronCompanionCommands.cs"),
+                 encoding="utf-8").read()
+    check("AddSeconds(-NoteSeconds)" in cs and "HeronConfig.Load().GetBool(HeronLiveState.EnabledKey" in cs,
+          "the button ignores a stale note, and the switch reads the SHARED setting before flipping")
+
+
 def main():
     tmp = tempfile.mkdtemp(prefix="heron-companion-")
     test_live_files(tmp)
@@ -515,6 +540,7 @@ def main():
     test_activity()
     test_changes()
     test_tables()
+    test_model_guard()
     test_no_way_to_an_ai()
     test_addin_side()
 
