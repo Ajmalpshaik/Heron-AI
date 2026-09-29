@@ -69,13 +69,20 @@ function show(state) {
   set("s-count", sel.count);
   const list = $("s-categories");
   const rows = Object.entries(sel.categories || {}).sort((a, b) => b[1] - a[1]);
+  const most = rows.length ? Math.max(1, rows[0][1]) : 1;
   list.replaceChildren(...rows.map(([name, n]) => {
     const li = document.createElement("li");
     const a = document.createElement("span");
     const b = document.createElement("span");
     a.textContent = name;
     b.textContent = n;
-    li.append(a, b);
+    // A bar showing each category's share of the largest - drawn only.
+    const share = document.createElement("span");
+    share.className = "share";
+    const bar = document.createElement("i");
+    bar.style.setProperty("--share", Math.round(100 * Number(n) / most) + "%");
+    share.append(bar);
+    li.append(a, b, share);
     return li;
   }));
   $("s-note").textContent = sel.count === 0 ? "Nothing is selected in Revit."
@@ -98,7 +105,6 @@ async function activity() {
         ["when", item.at],
         ["tool", item.tool],
         ["what", item.summary],
-        ["end " + item.outcome, (WORDS[item.outcome] || item.outcome) + " · " + item.seconds + " s"],
       ];
       for (const [cls, text] of cells) {
         const span = document.createElement("span");
@@ -106,6 +112,14 @@ async function activity() {
         span.textContent = text;
         li.append(span);
       }
+      // How it ended, as a chip that says it in words, then how long it took.
+      const end = document.createElement("span");
+      end.className = "end " + item.outcome;
+      const chip = document.createElement("span");
+      chip.className = "chip " + item.outcome;
+      chip.textContent = WORDS[item.outcome] || item.outcome;
+      end.append(chip, item.seconds + " s");
+      li.append(end);
       list.prepend(li);
     }
     $("a-empty").hidden = list.children.length > 0;
@@ -215,6 +229,7 @@ function buildCard(card) {
 
   const foot = document.createElement("footer");
   const button = document.createElement("button");
+  button.className = "btn";
   button.textContent = "Apply again";
   const result = document.createElement("span");
   result.className = "result";
@@ -305,13 +320,19 @@ function renderTable(t) {
 
   const head = document.createElement("p");
   head.className = "where";
-  head.textContent = t.rows.length + " element(s) in " + (t.document || "") + " · opened " + t.at +
-    (t.truncated ? " · " + t.truncated + " more were left out" : "");
+  [t.rows.length + " element(s) in " + (t.document || ""), "opened " + t.at]
+    .concat(t.truncated ? [t.truncated + " more were left out"] : [])
+    .forEach(text => {
+      const span = document.createElement("span");
+      span.textContent = text;
+      head.append(span);
+    });
   box.append(head);
 
   const stale = new Map((t.last && t.last.stale || []).map(s => [s.id + "/" + s.name, s.why]));
   const edits = new Map();
   const button = document.createElement("button");
+  button.className = "btn";
   const count = () => {
     button.textContent = edits.size ? "Apply " + edits.size + " change(s)" : "Apply";
     button.disabled = edits.size === 0;
@@ -319,34 +340,70 @@ function renderTable(t) {
 
   const wrap = document.createElement("div");
   wrap.className = "grid";
+  // How a column is drawn: right-aligned when every value in it is a number,
+  // marked as editable when any of its cells is. Presentation only.
+  const NUM = /^ *-?[0-9]+(?:[.,][0-9]+)? *$/;
+  const cellsOf = name => t.rows.map(r => (r.cells || {})[name]).filter(c => c);
+  const numeric = {}, editable = {};
+  for (const name of t.columns) {
+    const cells = cellsOf(name);
+    const values = cells.map(c => c.value).filter(v => v != null && v !== "");
+    numeric[name] = values.length > 0 && values.every(v => NUM.test(String(v)));
+    editable[name] = cells.some(c => c.editable);
+  }
+
   const table = document.createElement("table");
+  const thead = document.createElement("thead");
   const hr = document.createElement("tr");
-  ["Element", "Category", "Type"].concat(t.columns).forEach(c => {
+  ["Element", "Category", "Type"].concat(t.columns).forEach((c, i) => {
     const th = document.createElement("th");
+    th.scope = "col";
     th.textContent = c;
+    if (i === 0) th.className = "num";
+    if (i >= 3) {
+      const name = t.columns[i - 3];
+      if (numeric[name]) th.classList.add("num");
+      if (editable[name]) { th.classList.add("edit"); th.title = "You can edit this column"; }
+    }
     hr.append(th);
   });
-  table.append(hr);
+  thead.append(hr);
+  const tbody = document.createElement("tbody");
   for (const row of t.rows) {
     const tr = document.createElement("tr");
-    [row.id, row.category, row.type].forEach(v => {
+    [row.id, row.category, row.type].forEach((v, i) => {
       const td = document.createElement("td");
-      td.className = "fixed";
+      td.className = i === 0 ? "fixed id num" : "fixed";
       td.textContent = v == null ? "" : v;
       tr.append(td);
     });
     for (const name of t.columns) {
       const td = tableCell(row, name, (row.cells || {})[name], edits, count);
+      if (numeric[name]) td.classList.add("num");
       const why = stale.get(row.id + "/" + name);
       if (why) { td.classList.add("stale"); td.title = why; }
       tr.append(td);
     }
-    table.append(tr);
+    tbody.append(tr);
   }
+  table.append(thead, tbody);
   wrap.append(table);
   box.append(wrap);
 
+  const legend = document.createElement("p");
+  legend.className = "legend";
+  [["l-edit", "You can edit"], ["l-fixed", "Read-only - point at it for why"],
+   ["l-edited", "Edited, not applied yet"]].concat(stale.size ? [["l-stale", "Changed in Revit since it was read"]] : [])
+    .forEach(([cls, text]) => {
+      const span = document.createElement("span");
+      span.className = cls;
+      span.textContent = text;
+      legend.append(span);
+    });
+  box.append(legend);
+
   const foot = document.createElement("footer");
+  foot.className = "actions";
   const result = document.createElement("span");
   result.className = "result";
   if (t.last) {

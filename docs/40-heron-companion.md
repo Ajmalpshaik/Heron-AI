@@ -831,3 +831,5 @@ The owner asked for the rest the same day: *"you can do that phase 2 and 3"*.
 end; and the page itself, driven in a browser with sample data - edit two cells, Apply, the read-back
 shown; change a colour, Apply again. **Not yet run in Revit** - [group BK](needs-checking/group-bk.md)
 rows BK7 to BK12.
+
+**Restyled 2026-09-29, the page files only** (`index.html`, `companion.css`, and how `companion.js` draws its results): same requests, same behaviour, still nothing loaded from the internet.
