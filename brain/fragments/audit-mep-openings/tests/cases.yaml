@@ -13,6 +13,16 @@ positive:
   - given: a mix of cut voids and placed sleeve families
     expect: both audited, each row saying which route was used
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      openings in this MEP model cut through walls that are in the
+      architectural link, one of them a 2-hour wall, includeLinks true
+    expect: >
+      `stale`, `combined` and `unhosted` unchanged from the host-only run;
+      each opening's line in `linkedMatches` names the linked wall's type, its
+      id in the link and "Fire Rating 2 hr" (or however that link writes it),
+      checked by picking the wall in the link with Tab
+
 negative:
   - given: openings gathered by the usual route, which returns mostly cut VOIDS
     expect: >
@@ -40,6 +50,29 @@ negative:
     expect: >
       every opening STALE and the service count of zero on the summary line, so
       the cause is visible rather than looking like fifty real faults
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
+
+  - given: an opening in open space, well clear of any linked wall or slab, includeLinks true
+    expect: >
+      its line reads "inside nothing in any link" - never a wall picked
+      because it was the nearest
 
 second_route:
   - Open a 3D view, isolate the openings and the services, and look at one reported STALE hole

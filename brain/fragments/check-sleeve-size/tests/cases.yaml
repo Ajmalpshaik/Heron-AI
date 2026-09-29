@@ -14,6 +14,16 @@ positive:
       OVERSIZED, with the figure. A generous hole costs fire-stopping and gets
       queried on site, so it is a finding rather than a pass
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      sleeves in this MEP model through a wall of the architectural link
+      whose type carries Fire Rating "2 hr", includeLinks true
+    expect: >
+      `undersized` and `orphaned` unchanged from the host-only run; each
+      sleeve's line in `linkedMatches` reads "through <link> - Walls
+      '<type>' (id N in the link), Fire Rating 2 hr", checked by picking the
+      wall in the link with Tab
+
 negative:
   - given: a sleeve with no service passing through it
     expect: >
@@ -38,6 +48,29 @@ negative:
 
   - given: an empty sleeves list
     expect: a plain zero, not silence
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
+
+  - given: a sleeve in a wall whose type has NO Fire Rating value, includeLinks true
+    expect: >
+      "Fire Rating not set" on its line - never a rating borrowed from
+      another wall, and never the line left out
 
 second_route:
   - Cut a section through one sleeve and dimension the annular gap by hand

@@ -1,6 +1,7 @@
 // NOT STANDALONE. Assumes `doc`, `elements`, `devices`, `ruleRoomNames`,
-// `ruleCategories` and `ruleMinimums` are in scope; leaves `findings`,
-// `shortRooms`, `unbounded` and `noRule` behind.
+// `ruleCategories`, `ruleMinimums` and `includeLinks` are in scope; leaves
+// `findings`, `shortRooms`, `unbounded`, `noRule`, `linksSearched` and
+// `linkedMatches` behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -117,3 +118,155 @@ else
         + "{2} matched no rule - and a room matching no rule is a NAMING mismatch, not a pass",
         shortRooms.Count, unbounded.Count, noRule.Count));
 }
+
+// ---- D-59: the same rules, over each link's rooms --------------------------
+
+// ---- D-59: which links, only when asked for --------------------------------
+
+var linksSearched = 0;
+var linkedMatches = new List<string>();
+var linkedTotal = 0;
+var nestedLinks = 0;
+
+// One entry per link FILE, keyed by link type - a file placed twice is one
+// model placed twice, and counting placements would report a job with four
+// links as having nine. LIST_LINKED_MODELS' rule, as REPORT_AREAS applies it.
+var linkTypes = new List<ElementId>();
+var linkDocs = new List<Document>();
+var linkPlacements = new List<List<RevitLinkInstance>>();
+
+if (includeLinks)
+{
+    foreach (var instance in new FilteredElementCollector(doc)
+        .OfClass(typeof(RevitLinkInstance)).Cast<RevitLinkInstance>())
+    {
+        if (instance == null) continue;
+
+        var typeId = instance.GetTypeId();
+        if (typeId == null || typeId == ElementId.InvalidElementId) continue;
+
+        var known = linkTypes.IndexOf(typeId);
+        if (known >= 0) { linkPlacements[known].Add(instance); continue; }
+
+        // LOADED IS ESTABLISHED BY ASKING FOR THE DOCUMENT, never by a status.
+        Document linked = null;
+        try { linked = instance.GetLinkDocument(); }
+        catch (Exception) { linked = null; }
+        if (linked == null) continue;
+
+        linkTypes.Add(typeId);
+        linkDocs.Add(linked);
+        linkPlacements.Add(new List<RevitLinkInstance> { instance });
+
+        try
+        {
+            nestedLinks += new FilteredElementCollector(linked)
+                .OfClass(typeof(RevitLinkInstance)).GetElementCount();
+        }
+        catch (Exception) { }
+    }
+}
+
+var linkBlocked = "";
+
+if (ruleCount == 0 && linkDocs.Count > 0)
+    linkBlocked = "Links NOT read: no rules were given - see findings";
+
+for (var i = 0; i < linkDocs.Count && ruleCount > 0; i++)
+{
+    var linked = linkDocs[i];
+    var summaryAt = linkedMatches.Count;
+    var linkShort = 0;
+    var linkUnbounded = 0;
+    var linkNoRule = 0;
+    var linkChecked = 0;
+
+    // Each device's point in each placement's own coordinates, worked out once
+    // per link rather than once per room.
+    var localPoints = new List<KeyValuePair<string, List<XYZ>>>();
+    foreach (var device in devices)
+    {
+        if (device == null || device.Category == null) continue;
+        var point = device.Location as LocationPoint;
+        if (point == null) continue;
+        var here = new List<XYZ>();
+        foreach (var placement in linkPlacements[i])
+        {
+            try { here.Add(placement.GetTotalTransform().Inverse.OfPoint(point.Point)); }
+            catch (Exception) { }
+        }
+        localPoints.Add(new KeyValuePair<string, List<XYZ>>(device.Category.Name, here));
+    }
+
+    IList<Element> linkRooms = new List<Element>();
+    try
+    {
+        linkRooms = new FilteredElementCollector(linked)
+            .OfCategory(BuiltInCategory.OST_Rooms).WhereElementIsNotElementType().ToElements();
+    }
+    catch (Exception) { }
+
+    foreach (var element in linkRooms)
+    {
+        var room = element as Room;
+        if (room == null) continue;
+        if (room.Area <= 0) { linkUnbounded++; continue; }
+
+        var roomName = room.Name ?? "";
+        var matched = 0;
+        var missing = new List<string>();
+        for (var r = 0; r < ruleCount; r++)
+        {
+            var wants = ruleRoomNames[r] ?? "";
+            if (wants.Length > 0 && roomName.IndexOf(wants, StringComparison.OrdinalIgnoreCase) < 0) continue;
+            matched++;
+
+            var count = 0;
+            foreach (var entry in localPoints)
+            {
+                if (entry.Key != ruleCategories[r]) continue;
+                foreach (var local in entry.Value)
+                {
+                    var inside = false;
+                    try { inside = room.IsPointInRoom(local); } catch { }
+                    if (inside) { count++; break; }
+                }
+            }
+            if (count < ruleMinimums[r])
+                missing.Add(string.Format("{0} ({1} of {2})", ruleCategories[r], count, ruleMinimums[r]));
+        }
+
+        if (matched == 0) { linkNoRule++; continue; }
+        linkChecked++;
+        if (missing.Count == 0) continue;
+        linkShort++;
+        linkedMatches.Add(string.Format("  {0} - room '{1}' (id {2} in the link) - short of: {3}",
+            linked.Title, roomName, room.Id, string.Join(", ", missing)));
+    }
+
+    linksSearched++;
+    linkedTotal += linkShort;
+    linkedMatches.Insert(summaryAt, string.Format("{0}: {1} of {2} room(s) checked are short; {3} had no "
+        + "area, {4} matched no rule - a NAMING mismatch, not a pass", linked.Title, linkShort,
+        linkChecked, linkUnbounded, linkNoRule));
+}
+
+// THE ANSWER SAYS WHAT IT READ. Asked-and-found, asked-and-none-loaded and not
+// asked read differently on purpose - D-59's own worked example.
+if (!includeLinks)
+    linkedMatches.Insert(0, "Host model only - links not read");
+else if (linkBlocked.Length > 0)
+    linkedMatches.Insert(0, linkBlocked);
+else if (linksSearched == 0)
+    linkedMatches.Insert(0, "Links asked for, NONE loaded - host only");
+else
+    linkedMatches.Insert(0, string.Format("{0} link(s) read: {1} linked room(s) short of what the rules ask for, NOT selected",
+        linksSearched, linkedTotal));
+
+if (includeLinks && nestedLinks > 0)
+    linkedMatches.Add(string.Format("{0} link placement(s) nested inside those links were NOT "
+        + "read", nestedLinks));
+
+if (linksSearched > 0)
+    linkedMatches.Add("What a link holds is reported here as text only - nothing from a link "
+        + "is carried to the next step, which would look it up in this model");

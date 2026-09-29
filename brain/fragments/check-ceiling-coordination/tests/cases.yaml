@@ -11,6 +11,15 @@ positive:
   - given: a device in an open-soffit area
     expect: NO CEILING above, listed separately rather than as a fault
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      air terminals in this MEP model under ceilings that are only in the
+      architectural link, tolerance 5, includeLinks true
+    expect: >
+      `outOfPlane` and `noCeilingAbove` unchanged from the host-only run;
+      each terminal's line in `linkedMatches` gives the gap to the linked
+      ceiling and its type, checked with one terminal in a section
+
 negative:
   - given: a project where every ceiling is in a LINKED architectural model
     expect: >
@@ -30,6 +39,29 @@ negative:
 
   - given: a device with no readable position
     expect: named and skipped, with the rest of the sweep completing
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
+
+  - given: the architectural link HIDDEN in the first 3D view, includeLinks true
+    expect: >
+      every device counted "with no ceiling above", and the summary naming
+      that view - the proof that a hidden link is not silently read as clear
 
 second_route:
   - Cut a section through one reported device and dimension from it to the ceiling

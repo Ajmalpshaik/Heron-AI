@@ -298,6 +298,12 @@ def main():
             if not os.path.isfile(card) or card_line(card, "risk") not in ("READ", "ANALYZE"):
                 continue
             state = (card_line(card, "heron-status") or "").upper()
+            # The DRAFT case is a read that has NEVER been proved. A DRAFT
+            # that still carries a proof from before its code changed (D-59's
+            # batches keep it) is stale by D-30, correctly - it is not the
+            # case this check is about, so it is not picked.
+            if state == "DRAFT" and card_line(card, "proof") is not None:
+                continue
             pick.setdefault(state, name)
         good = proof_status(pick.get("PROVEN", ""))
         check(good is not None and good["status"] == "PROVEN" and good["model"],

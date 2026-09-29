@@ -5,6 +5,15 @@ positive:
   - given: the same run against Revit's own Interference Check on the same two categories
     expect: the same element pairs - the second route, and the one that says whether this fragment is right at all
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      ducts in this model, one of them passing through a linked beam, against
+      EMPTY, includeLinks true
+    expect: >
+      the host part says nothing was given to check against; the link's line
+      reads "1 of N element(s) clash" and names the duct and the beam's type,
+      id in the link and Fire Rating - checked in a section with the link shown
+
 negative:
   - given: a DIAGONAL duct running past a beam without touching it
     expect: >
@@ -32,6 +41,29 @@ negative:
       nothing counted clear and nothing clashing, and a finding saying nothing
       was checked. A report of forty clear elements that were tested against
       nothing reads as a clean model
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
+
+  - given: ducts clear of every linked element, includeLinks true
+    expect: >
+      each link's line reads "0 of N element(s) clash" - with N the number of
+      ducts, so the zero is visibly a checked zero
 
 second_route:
   - Revit's own Interference Check, run on the same two selections
