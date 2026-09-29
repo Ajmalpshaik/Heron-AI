@@ -1,6 +1,11 @@
 # 40 — Heron Companion: a window beside the chat that shows what Heron does and lets you edit a table
 
-> **Status: A DESIGN, NOT A DECISION. Nothing here is built.** Written 2026-09-29 as Phase 0 of the
+> **Status now: BUILT, NOT PROVEN - Phases 1, 2 and 3 are in the code, allowed by [D-108](decisions/D-108.md)
+> and [D-109](decisions/D-109.md), and none has been run in Revit beyond NEEDS-CHECKING
+> [group BK](needs-checking/group-bk.md) row BK6. What was built, and how it differs from the design
+> below, is §21. The paragraph that follows is the status this document was written with.**
+>
+> **Status when written: A DESIGN, NOT A DECISION. Nothing here is built.** Written 2026-09-29 as Phase 0 of the
 > owner's Companion request. No decision number has been spent on it — the decision it needs is drafted
 > in §19 and is filed only on the owner's word, the way [36](36-remembering-between-steps.md) was.
 > **Phase 1 does not start until the owner has answered the questions in §18**, because §2 lists
@@ -9,7 +14,7 @@
 >
 > **Since then - read §21 first.** Question 1 was answered yes on 2026-09-29 and filed as
 > [D-108](decisions/D-108.md). Every other question was answered the same day, and the owner narrowed
-> what the tables are for - §21.1. **Nothing is built yet.**
+> what the tables are for - §21.1. What was then built is §21.2 and §21.3.
 
 ---
 

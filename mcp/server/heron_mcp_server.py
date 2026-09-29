@@ -1704,7 +1704,7 @@ def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 200
                 "model was changed." % (" - %s" % found if found else ""))
 
     document = reply.get("document")
-    companion = companion_page.shared(bound_pid=lambda: binding.pid)
+    companion = companion_page.shared(bound_pid=_companion_revit)
     companion_page.TABLES.open(document, table)
     shown = companion.recently_seen()
     if not shown:
@@ -2781,6 +2781,19 @@ def heron_diagnose() -> str:
     return diagnosis.describe(diagnosis.diagnose())
 
 
+def _companion_revit():
+    """
+    The Revit the Companion page may call THIS chat's - only one the modeller
+    CHOSE (Codex review of #362). An ASSUMED binding is not sticky: the next
+    tool call re-decides it when a second Revit appears (heron_session's four
+    cases), so reading the cached pid would show the first Revit as this
+    chat's after it no longer is. Unchosen, the page follows its own rule -
+    one connected Revit shown as the only one, several listed and none picked
+    (Article 12a).
+    """
+    return binding.pid if binding.was_chosen else None
+
+
 def _companion_module():
     """mcp/companion, imported on first use - it is not on the server's path."""
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -2810,7 +2823,7 @@ def heron_companion() -> str:
         return ("The Heron Companion is switched off in Revit, so it was not opened. "
                 "Heron itself is working as normal. To turn it on, click the arrow "
                 "under the Companion button on the Heron tab.")
-    companion = companion_page.shared(bound_pid=lambda: binding.pid)
+    companion = companion_page.shared(bound_pid=_companion_revit)
     try:
         address = companion.pairing_address()
     except OSError as why:
@@ -4493,7 +4506,7 @@ if __name__ == "__main__":
         companion_page = _companion_module()
         companion_page.CHANGES.apply_hook = _apply_change
         companion_page.TABLES.apply_hook = _apply_table
-        companion_page.keep(bound_pid=lambda: binding.pid)
+        companion_page.keep(bound_pid=_companion_revit)
     except Exception as why:                         # noqa: BLE001 - never cost the chat
         sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)
 

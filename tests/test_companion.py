@@ -90,6 +90,10 @@ def live_record(pid, title="heron ai bulding", count=3):
 
 def test_live_files(tmp):
     print("The live file: only a connected Revit, never a guess among several")
+    # The test's Revits are made up, so none is a running process: say they
+    # run, and prove the dead case on its own below.
+    real_alive = hc.revit_alive
+    hc.revit_alive = lambda pid: pid != 666
     live = os.path.join(tmp, "live")
     bridges = os.path.join(tmp, "bridges")
     os.makedirs(live)
@@ -131,13 +135,20 @@ def test_live_files(tmp):
     check(200 not in hc.read_live(live, bridges),
           "a file naming a different process than its own name is skipped")
 
+    write(os.path.join(live, "pid-666.json"), live_record(666, "Killed"))
+    write(os.path.join(bridges, "666.json"), {"pid": 666})
+    check(666 not in hc.read_live(live, bridges),
+          "a Revit that was killed - both files left behind - is not shown as connected")
+    hc.revit_alive = real_alive
+
 
 def test_server(tmp):
     print()
     print("Protection: a real server on this machine")
     live = os.path.join(tmp, "live")
     bridges = os.path.join(tmp, "bridges")
-    companion = hc.Companion(bound_pid=lambda: 100, folder=live, discovery_dir=bridges)
+    companion = hc.Companion(bound_pid=lambda: 100, folder=live, discovery_dir=bridges,
+                             is_alive=lambda pid: True)
 
     real_stdout, sys.stdout = sys.stdout, io.StringIO()
     try:
@@ -233,6 +244,9 @@ def test_no_way_to_an_ai():
     returns = [l for l in body.splitlines() if l.strip().startswith("return")]
     check(returns and not any("address" in l for l in returns),
           "heron_companion never puts the one-time address in its reply to the chat")
+    check("return binding.pid if binding.was_chosen else None" in server
+          and server.count("bound_pid=_companion_revit") == 3,
+          "the page calls a Revit this chat's only when the modeller CHOSE it")
     check(tools.TOOLS.get("heron_companion") == (tools.READ, None),
           "heron_companion is declared READ with no Revit operation")
 

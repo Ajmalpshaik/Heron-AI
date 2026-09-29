@@ -340,9 +340,37 @@ def enabled(path=None):
     return configuration.truthy(configuration.load(path), "companion.enabled")
 
 
-def connected_pids(discovery_dir=None):
-    """Process ids with a discovery file - Revits whose bridge is connected.
-    A live file whose Revit has no discovery file is left over from a crash."""
+#: How long one answer to "is that Revit still running?" is trusted. The
+#: check asks Windows for the process list, which can take a second on a busy
+#: PC; the page asks every second, so the answer is kept a while.
+ALIVE_SECONDS = 15.0
+
+_alive_cache = {}
+_alive_lock = threading.Lock()
+
+
+def revit_alive(pid):
+    """Is a Revit still running at that process id? The bridge client's own
+    check - process id AND program name, so a reused id is not taken for
+    Revit - asked at most every ALIVE_SECONDS, and never through the pipe.
+    Unknown counts as alive, as it does in the client (Codex review of #362:
+    a Revit that was killed leaves its discovery and live files behind)."""
+    now = time.time()
+    with _alive_lock:
+        seen = _alive_cache.get(pid)
+        if seen and now - seen[0] < ALIVE_SECONDS:
+            return seen[1]
+    answer = bridge.bridge_process_is_running(pid) is not False
+    with _alive_lock:
+        _alive_cache[pid] = (now, answer)
+    return answer
+
+
+def connected_pids(discovery_dir=None, is_alive=None):
+    """Process ids with a discovery file whose Revit is still running. A live
+    file whose Revit has no discovery file, or whose process is gone, is left
+    over from a crash."""
+    is_alive = is_alive or revit_alive
     folder = discovery_dir or bridge.DISCOVERY_DIR
     try:
         names = os.listdir(folder)
@@ -352,19 +380,19 @@ def connected_pids(discovery_dir=None):
     for name in names:
         if name.endswith(".json"):
             pid = bridge.pid_from_filename(name)
-            if pid is not None:
+            if pid is not None and is_alive(pid):
                 found.add(pid)
     return found
 
 
-def read_live(folder=None, discovery_dir=None):
+def read_live(folder=None, discovery_dir=None, is_alive=None):
     """Every readable live file whose Revit is still connected, by pid.
 
     A file that is missing, half-written or not JSON is skipped rather than
     shown: the add-in writes by replace, so a bad read is a race, and the next
     poll a second later sees the whole file."""
     folder = folder or live_dir()
-    alive = connected_pids(discovery_dir)
+    alive = connected_pids(discovery_dir, is_alive)
     out = {}
     try:
         names = os.listdir(folder)
@@ -393,13 +421,13 @@ def read_live(folder=None, discovery_dir=None):
     return out
 
 
-def state(bound_pid, folder=None, discovery_dir=None):
+def state(bound_pid, folder=None, discovery_dir=None, is_alive=None):
     """What the page shows: the Revit this chat uses, and how that was decided.
 
     NEVER A GUESS AMONG SEVERAL (Article 12a). With this chat bound, it is that
     Revit or nothing. Unbound, one connected Revit is shown and labelled as the
     only one; several are listed and none is picked."""
-    live = read_live(folder, discovery_dir)
+    live = read_live(folder, discovery_dir, is_alive)
     if bound_pid is not None:
         record = live.get(bound_pid)
         return {"choice": "bound" if record else "bound-gone", "revit": record,
@@ -422,8 +450,9 @@ class _Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
 class Companion(object):
     """One chat's Companion. Started on request; lives as long as the chat."""
 
-    def __init__(self, bound_pid=lambda: None, folder=None, discovery_dir=None):
+    def __init__(self, bound_pid=lambda: None, folder=None, discovery_dir=None, is_alive=None):
         self._bound_pid = bound_pid
+        self._is_alive = is_alive
         self._folder = folder
         self._discovery_dir = discovery_dir
         self._lock = threading.Lock()
@@ -572,7 +601,7 @@ class Companion(object):
             pid = self._bound_pid()
         except Exception:                            # noqa: BLE001 - display only
             pid = None
-        return state(pid, self._folder, self._discovery_dir)
+        return state(pid, self._folder, self._discovery_dir, self._is_alive)
 
 
 _shared = None
