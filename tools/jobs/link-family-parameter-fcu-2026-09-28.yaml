@@ -1,0 +1,48 @@
+# The proof of link-family-parameter (LINK_FAMILY_PARAMETER, FRG-PAR-025),
+# 2026-09-28 - NEEDS-CHECKING Group BD, row BD2.
+#
+#     python tools/batch-prove.py tools/jobs/link-family-parameter-fcu-2026-09-28.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/link-family-parameter-fcu-2026-09-28.yaml
+#
+# RUN WITH THE FAMILY "TRG_MECH_EQP_Fan Coil Unit_FCU_R0" OPEN IN THE FAMILY
+# EDITOR. `in:` names it, so the run lands on the family whichever window is
+# in front, and never on the project it was opened from. `write: true` runs
+# both legs inside a transaction group and ROLLS THEM BACK, so the working
+# family will do - then read both connectors back anyway (BD1): rollback has
+# failed before on this PC.
+#
+# ZERO SETUP. Every value is typed; nothing is selected and nothing is
+# chained, so another chat's selection in the same Revit cannot reach it.
+#
+# POSITIVE: THE SUPPLY DUCT CONNECTOR'S FLOW MOVED OFF THE PARAMETER IT IS ON.
+# The owner put it on Actual_Supply_Air_Flow by hand on 2026-09-28, so the
+# positive asks for Designed_Supply_Air_Flow: a connector already on the
+# asked parameter answers "already linked" and changes nothing - true, and
+# indistinguishable from a tool that did nothing. `changed` must be 1 and
+# `linkReport` must read "Flow Actual_Supply_Air_Flow -> Designed_Supply_Air_Flow".
+#
+# NEGATIVE: THE SAME CONNECTOR'S FLOW ONTO Unit_Length, A LENGTH. Refused before
+# anything changes, naming both parameters and both kinds (Length, Air Flow),
+# with the five Air Flow parameters that could drive it. `changed` must be 0.
+#
+# With two Revits connected to Heron, add `--session <process id>` to both
+# commands.
+
+model: TRG_MECH_EQP_Fan Coil Unit_FCU_R0 (a family, opened from heron ai bulding), Revit 2024
+
+defaults:
+  in: "TRG_MECH_EQP_Fan Coil Unit_FCU_R0"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: link-family-parameter
+    expect: changed
+    set:
+      category: "Duct Connector"
+      system: "Supply Air"
+      links: "Flow=Designed_Supply_Air_Flow"
+    negative-set:
+      category: "Duct Connector"
+      system: "Supply Air"
+      links: "Flow=Unit_Length"

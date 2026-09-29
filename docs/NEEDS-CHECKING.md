@@ -373,6 +373,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bc.md`](needs-checking/group-bc.md)
 
+## Group BD - `link-family-parameter`: an element already in a family linked to a family parameter, or unlinked, and read back (2026-09-28)
+
+**Its own file:** [`needs-checking/group-bd.md`](needs-checking/group-bd.md)
+
 ## Group BE - D-59's first batch: eleven reading tools look inside linked models when asked (2026-09-28)
 
 **Its own file:** [`needs-checking/group-be.md`](needs-checking/group-be.md)
