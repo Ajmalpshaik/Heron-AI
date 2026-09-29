@@ -266,6 +266,173 @@ function dragColour(pick) {
   pick.addEventListener("click", e => { if (dragged) { e.preventDefault(); dragged = false; } });
 }
 
+// The colour books and the paint button (the owner's idea, 2026-09-29). Five
+// fixed books of seven colours, a column of colours picked from the screen or
+// mixed by hand, and a round paint button in the top-right corner that holds
+// the colour chosen. Dragging the button onto a colour in a change paints it;
+// let go, the button springs back to its corner. Like any drop, it only fills
+// in the box - nothing is sent until Apply again.
+const BOOKS = [
+  ["Basic",  ["255,0,0", "255,128,0", "255,255,0", "0,128,0", "0,0,255", "128,0,128", "0,0,0"]],
+  ["Neon",   ["255,20,147", "255,95,31", "224,255,0", "57,255,20", "0,255,255", "31,81,255", "188,19,254"]],
+  ["Pastel", ["255,179,186", "255,223,186", "255,255,186", "186,255,201", "186,225,255", "204,186,255", "255,186,243"]],
+  ["Light",  ["255,204,204", "255,229,204", "255,255,204", "204,255,204", "204,229,255", "229,204,255", "224,224,224"]],
+  ["Dark",   ["139,0,0", "139,69,0", "128,128,0", "0,100,0", "0,0,139", "75,0,130", "64,64,64"]],
+];
+const PICKED_MAX = 7;
+let paintRgb = "30,79,184";
+let picked = [];
+
+function paintSave() {
+  try { localStorage.setItem("heron-companion-paint", JSON.stringify({ now: paintRgb, picked })); } catch (e) { /* not kept */ }
+}
+
+function paintUse(rgb) {
+  paintRgb = rgb;
+  const root = document.documentElement;
+  root.style.setProperty("--paint", "rgb(" + rgb + ")");
+  const [r, g, b] = rgb.split(",").map(Number);
+  $("p-toggle").classList.toggle("light-paint", 0.299 * r + 0.587 * g + 0.114 * b > 170);
+  $("p-rgb").textContent = rgb;
+  document.querySelectorAll(".paint-chip").forEach(c => c.classList.toggle("on", c.dataset.rgb === rgb));
+  paintSave();
+}
+
+function paintChip(rgb, name) {
+  const chip = document.createElement("button");
+  chip.type = "button";
+  chip.className = "paint-chip";
+  chip.dataset.rgb = rgb;
+  chip.style.setProperty("background-color", "rgb(" + rgb + ")");
+  chip.title = name + " " + rgb;
+  chip.setAttribute("aria-label", name + " " + rgb);
+  chip.addEventListener("click", () => paintUse(rgb));
+  return chip;
+}
+
+function paintBook(name, colours, slots) {
+  const book = document.createElement("div");
+  book.className = "paint-book";
+  const head = document.createElement("h3");
+  head.textContent = name;
+  const list = document.createElement("ol");
+  for (let i = 0; i < slots; i++) {
+    const li = document.createElement("li");
+    if (colours[i]) li.append(paintChip(colours[i], name));
+    else { const gap = document.createElement("div"); gap.className = "paint-empty"; li.append(gap); }
+    list.append(li);
+  }
+  book.append(head, list);
+  return book;
+}
+
+function paintBooks() {
+  const box = $("p-books");
+  box.replaceChildren(...BOOKS.map(([name, colours]) => paintBook(name, colours, 7)),
+                      paintBook("Picked", picked, PICKED_MAX));
+  paintUse(paintRgb);
+}
+
+function paintPicked(rgb) {
+  picked = [rgb].concat(picked.filter(c => c !== rgb)).slice(0, PICKED_MAX);
+  paintBooks();
+  paintUse(rgb);
+}
+
+function paintOpen() { return !$("p-panel").hidden; }
+
+function paintSet(open) {
+  $("p-panel").hidden = !open;
+  $("p-toggle").setAttribute("aria-expanded", String(open));
+}
+
+// The button follows the pointer while dragged; elementsFromPoint looks
+// underneath it, since the button itself is what the pointer is over.
+function paintTarget(x, y) {
+  const under = document.elementsFromPoint(x, y).find(el => !$("paint").contains(el));
+  const pair = under && under.closest(".change .pair");
+  return pair && pair.querySelector("input[type=color]");
+}
+
+function paintDrag() {
+  const button = $("p-toggle");
+  let start = null, over = null, dragged = false;
+  const mark = target => {
+    if (over) over.closest(".pair").classList.remove("drop-here");
+    over = target;
+    if (over) over.closest(".pair").classList.add("drop-here");
+  };
+  const home = () => {
+    mark(null);
+    button.classList.remove("dragging");
+    button.style.removeProperty("transform");
+    document.body.classList.remove("dragging-colour");
+    start = null;
+  };
+  button.addEventListener("pointerdown", e => {
+    if (e.button !== 0) return;
+    start = { x: e.clientX, y: e.clientY };
+    dragged = false;
+    try { button.setPointerCapture(e.pointerId); } catch (err) { /* the drag still works without it */ }
+  });
+  button.addEventListener("pointermove", e => {
+    if (!start) return;
+    const dx = e.clientX - start.x, dy = e.clientY - start.y;
+    if (!dragged) {
+      if (Math.abs(dx) + Math.abs(dy) < 6) return;
+      dragged = true;
+      button.classList.add("dragging");
+      document.body.classList.add("dragging-colour");
+    }
+    button.style.setProperty("transform", "translate(" + dx + "px," + dy + "px)");
+    mark(paintTarget(e.clientX, e.clientY));
+  });
+  button.addEventListener("pointerup", e => {
+    if (!start) return;
+    const target = dragged ? paintTarget(e.clientX, e.clientY) : null;
+    home();
+    if (target) {
+      target.value = toHex(paintRgb);
+      target.dispatchEvent(new Event("input"));
+      const pair = target.closest(".pair");
+      pair.classList.add("dropped");
+      setTimeout(() => pair.classList.remove("dropped"), 900);
+    }
+  });
+  button.addEventListener("pointercancel", home);
+  button.addEventListener("click", e => {
+    if (dragged) { e.preventDefault(); dragged = false; return; }
+    paintSet(!paintOpen());
+  });
+}
+
+function paint() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("heron-companion-paint") || "null");
+    if (saved && isRgb(saved.now)) paintRgb = saved.now;
+    if (saved && Array.isArray(saved.picked)) picked = saved.picked.filter(isRgb).slice(0, PICKED_MAX);
+  } catch (e) { /* start from the defaults */ }
+  paintBooks();
+  paintDrag();
+  $("p-close").addEventListener("click", () => { paintSet(false); $("p-toggle").focus(); });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && paintOpen()) { paintSet(false); $("p-toggle").focus(); }
+  });
+  $("p-own").addEventListener("change", e => paintPicked(fromHex(e.target.value)));
+  // Picking from the screen is Chrome and Edge's EyeDropper; where the
+  // browser has none, the button stays hidden and Mix your own still works.
+  if ("EyeDropper" in window) {
+    const eye = $("p-eye");
+    eye.hidden = false;
+    eye.addEventListener("click", async () => {
+      try {
+        const got = await new window.EyeDropper().open();
+        paintPicked(fromHex(got.sRGBHex));
+      } catch (e) { /* the modeller pressed Esc */ }
+    });
+  }
+}
+
 // A true / false value is a tick box (the owner's idea, 2026-09-29), with
 // the word beside it. It sends back the same word in the same case it came
 // with - "true" stays lower case, "True" stays capitalised.
@@ -813,6 +980,7 @@ function theme() {
 async function start() {
   theme();
   dock();
+  paint();
   const code = new URLSearchParams(location.search).get("pair");
   if (code) {
     // The one-time code leaves the address bar at once, whatever happens next.

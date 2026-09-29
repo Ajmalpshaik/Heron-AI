@@ -472,3 +472,57 @@ body.closed .dock { opacity: .55; filter: grayscale(1); }
   :root:not([data-theme="light"]) .dock-toggle, :root:not([data-theme="light"]) .dock-panel { box-shadow: 0 10px 30px rgba(0, 0, 0, .5); }
 }
 :root[data-theme="dark"] .dock-toggle, :root[data-theme="dark"] .dock-panel { box-shadow: 0 10px 30px rgba(0, 0, 0, .5); }
+
+/* The colour books and the paint button (the owner's idea, 2026-09-29).
+   The button sits in the top-right corner; dragged, it follows the pointer
+   and springs back to the corner when let go. */
+.paint {
+  position: fixed; top: 70px; right: 20px; z-index: 11;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+}
+.paint-btn {
+  position: relative; display: grid; place-items: center; width: 48px; height: 48px; padding: 0;
+  border-radius: 50%; cursor: grab; touch-action: none;
+  background: var(--paint, #1e4fb8); color: #fff; border: 3px solid var(--surface);
+  box-shadow: 0 6px 20px rgba(15, 26, 42, .22), 0 0 0 1px var(--line-strong);
+  transition: transform .45s cubic-bezier(.34, 1.56, .64, 1), box-shadow .15s;
+}
+.paint-btn .ico { width: 22px; height: 22px; stroke: currentColor; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .35)); }
+.paint-btn.light-paint { color: #1b2533; }
+.paint-btn.light-paint .ico { filter: none; }
+.paint-btn:focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+.paint-btn.dragging { transition: none; cursor: grabbing; box-shadow: 0 12px 30px rgba(15, 26, 42, .35), 0 0 0 1px var(--line-strong); }
+.paint-panel {
+  width: min(520px, calc(100vw - 32px));
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: 12px;
+  box-shadow: 0 12px 36px rgba(15, 26, 42, .22), 0 2px 6px rgba(15, 26, 42, .1);
+  padding: 12px 14px;
+}
+.paint-books { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.paint-book h3 { margin: 0 0 6px; font-size: 11.5px; font-weight: 650; color: var(--muted); text-align: center; }
+.paint-book ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.paint-chip {
+  display: block; width: 100%; height: 26px; padding: 0; cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, .15); border-radius: 6px;
+  transition: transform .1s;
+}
+.paint-chip:hover { transform: scale(1.06); }
+.paint-chip:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.paint-chip.on { outline: 2px solid var(--ink); outline-offset: 2px; }
+.paint-empty { height: 26px; border: 1px dashed var(--line-strong); border-radius: 6px; }
+.paint-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; font-size: 12.5px; }
+.btn-lite {
+  padding: 5px 10px; border: 1px solid var(--line-strong); border-radius: 6px; cursor: pointer;
+  background: var(--surface); color: var(--ink); font-size: 12.5px;
+}
+.btn-lite:hover { background: var(--head); }
+.paint-own { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); cursor: pointer; }
+.paint-own input[type=color] { width: 30px; height: 26px; padding: 1px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--field); cursor: pointer; }
+.paint-now { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; color: var(--muted); }
+.paint-swatch { width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(0, 0, 0, .2); background: var(--paint, #1e4fb8); }
+.paint-now code { font-family: var(--mono); color: var(--ink); }
+body.closed .paint { opacity: .55; filter: grayscale(1); }
+@media (max-width: 560px) {
+  .paint { right: 12px; top: 64px; }
+  .paint-books { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

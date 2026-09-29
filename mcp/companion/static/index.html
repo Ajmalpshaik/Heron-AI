@@ -101,6 +101,28 @@
   </button>
 </aside>
 
+<aside class="paint" id="paint" aria-label="Colour books">
+  <button type="button" class="paint-btn" id="p-toggle" aria-expanded="false" aria-controls="p-panel"
+          title="Colour books - click to open. Drag this button onto a colour to paint it.">
+    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 4H6a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><path d="M20 7h1v5h-9v3"/><rect x="10" y="15" width="4" height="6" rx="1"/></svg>
+  </button>
+  <div class="paint-panel" id="p-panel" hidden>
+    <header class="dock-head">
+      <h2 id="h-paint">Colour books</h2>
+      <button type="button" class="dock-close" id="p-close" aria-label="Close the colour books" title="Close (Esc)">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </header>
+    <div class="paint-books" id="p-books"></div>
+    <div class="paint-tools">
+      <button type="button" class="btn-lite" id="p-eye" hidden>Pick from screen</button>
+      <label class="paint-own">Mix your own <input type="color" id="p-own" value="#1e4fb8"></label>
+      <span class="paint-now">Paint: <span class="paint-swatch" id="p-now"></span> <code id="p-rgb"></code></span>
+    </div>
+    <p class="dock-note">Click a colour to load the paint button. Drag the paint button onto any colour in a change to paint it - nothing is sent until you press Apply again.</p>
+  </div>
+</aside>
+
 <footer class="foot">
   <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
   This page talks only to Heron on this PC. It never sends anything to Claude.
