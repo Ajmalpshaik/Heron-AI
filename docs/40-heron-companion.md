@@ -833,3 +833,28 @@ shown; change a colour, Apply again. **Not yet run in Revit** - [group BK](needs
 rows BK7 to BK12.
 
 **Restyled 2026-09-29, the page files only** (`index.html`, `companion.css`, and how `companion.js` draws its results): same requests, same behaviour, still nothing loaded from the internet. One addition the owner asked for: drag a colour swatch onto another row's swatch to copy it there - it only fills in that box; nothing is sent until **Apply again**. Also: a **Family** column; **drag a cell onto another in its column** to copy its value, like the colours, or drag the square that shows at a cell's corner to **fill up or down like Excel** (neither on Mark or Type Mark, per 21.1); a card changed from another tab is redrawn, or, holding unsent edits, keeps them and says so; a light / dark switch in the header; and the activity list moved into a small button in the corner, like a chat bubble, that opens into the full list - still a record, not a chat.
+
+### 21.4 Load from Revit and Clear tables (2026-09-30)
+
+The owner asked for the tables to come from the page itself, not from the chat each time: *"can we
+add the fixed tools ... if it will come all the filters like that"*. Three buttons sit at the top of
+**Changes you can adjust**:
+
+- **Load filters** reads the view active in Revit with `REPORT_VIEW_FILTERS` and offers one
+  `APPLY_VIEW_FILTER` table per filter, with `keepOtherSettings=true` and `solidFill` blank.
+- **Load category colours** reads it with `REPORT_CATEGORY_OVERRIDES` and offers one
+  `SET_CATEGORY_GRAPHICS` table per category that carries an override. A category with none is not
+  shown - there is nothing to read back for it.
+- **Clear tables** forgets every table. Nothing reaches Revit.
+
+Both loads READ only, through `revit_read` with no transaction open, under the same lock and pin as
+a chat's call; Apply on the tables they leave is the ordinary Apply. The readers parse the one
+string each fragment returns (`filterSettings`, `overrideList`), so **a change to either fragment's
+wording must be matched in `filter_cards` / `category_cards`** - `tests/test_companion.py` holds
+the text a real view returned. A part the parser does not recognise is left off the table, never
+guessed, and with other settings kept it is left as it is. The table limit rose from 10 to 30 so a
+view's filters do not push each other off the page.
+
+Why `solidFill` is blank: a hand-offered filter table on 2026-09-30 carried `solidFill=true`, which
+the fragment refuses (it takes surface, cut or both), so every Apply came back NOTHING CHANGED while
+the audit log said ok. **Not yet run in Revit** - press each button once on a view with filters.

@@ -532,6 +532,50 @@ def test_model_guard():
           "the button ignores a stale note, and the switch reads the SHARED setting before flipping")
 
 
+def test_load_from_revit():
+    """The page's Load buttons: what REPORT_VIEW_FILTERS and
+    REPORT_CATEGORY_OVERRIDES said about a real view (heron ai bulding,
+    {3D}, 2026-09-30) becomes the values APPLY_VIEW_FILTER and
+    SET_CATEGORY_GRAPHICS take - and Clear forgets every table."""
+    print("load from revit")
+    said = ("View '{3D}' (ThreeD): 1 filter(s)." + chr(10) +
+            "  'Supply Air' - Enable Filter ON; Visibility ON; Projection/Surface Lines: colour "
+            "0,0,255; Surface Patterns: foreground <Solid fill>, colour 0,0,255 / background no "
+            "override; Transparency 0; Cut Lines: colour 0,0,255; Cut Patterns: foreground colour "
+            "0,0,255 / background no override; Halftone off; cut not applicable - none of Ducts "
+            "can be cut, so the Cut columns are greyed out.")
+    cards = hc.filter_cards("{3D}", said)
+    check(len(cards) == 1 and cards[0][0] == "APPLY_VIEW_FILTER", "one filter, one table")
+    values = dict(cards[0][1])
+    check(values["filter"] == "Supply Air" and values["enabled"] == "true"
+          and values["visible"] == "true", "the filter, its Enable and Visibility ticks")
+    check("surface-foreground-colour=0,0,255" in values["overrides"]
+          and "surface-foreground-pattern=solid" in values["overrides"], "solid fill and colour")
+    check("cut-" not in values["overrides"], "cut values left out where Revit greys the Cut columns")
+    check(values["solidFill"] == "" and values["keepOtherSettings"] == "true",
+          "solidFill blank - 'true' made every Apply refuse (2026-09-30) - and other settings kept")
+
+    listed = ("Walls: line RGB(255,179,186), cut line RGB(255,179,186), surface RGB(255,179,186), "
+              "surface pattern <Solid fill>  ||  Ceilings: line RGB(0,0,255), 30% transparent")
+    cards = hc.category_cards("{3D}", listed)
+    check([dict(c[1])["categories"] for c in cards] == ["Walls", "Ceilings"], "one table per category")
+    walls = dict(cards[0][1])["overrides"]
+    check("cut-line-colour=255,179,186" in walls and "projection-line-colour=255,179,186" in walls,
+          "cut line never read as line")
+    check("transparency=30" in dict(cards[1][1])["overrides"], "transparency")
+    check(hc.filter_cards("{3D}", "") == [] and hc.category_cards("{3D}", "") == [],
+          "an empty answer makes no table")
+
+    changes = hc.Changes()
+    changes.offer("APPLY_VIEW_FILTER", "m", [("view", "{3D}")])
+    changes.clear()
+    check(changes.cards() == [], "Clear tables forgets every table")
+    check(not changes.load("filters")["ok"], "Load refuses before the chat has set its reader")
+    changes.load_hook = lambda kind: ("read", [])
+    check(not changes.load("walls")["ok"] and changes.load("filters")["ok"],
+          "only the two known kinds load")
+
+
 def main():
     tmp = tempfile.mkdtemp(prefix="heron-companion-")
     test_live_files(tmp)
@@ -540,6 +584,7 @@ def main():
     test_activity()
     test_changes()
     test_tables()
+    test_load_from_revit()
     test_model_guard()
     test_no_way_to_an_ai()
     test_addin_side()

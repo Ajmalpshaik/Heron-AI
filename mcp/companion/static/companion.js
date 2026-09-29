@@ -995,4 +995,34 @@ async function start() {
   poll();
 }
 
+// The Load and Clear buttons: the page asks Heron itself - never the chat -
+// to READ the active view and put its filters or category colours here as
+// tables, or to forget every table. Neither changes anything in Revit.
+async function tableTool(button, path, body) {
+  const said = $("c-said");
+  document.querySelectorAll(".c-tools button").forEach(b => { b.disabled = true; });
+  said.className = "result";
+  said.textContent = path.endsWith("clear") ? "Clearing..." : "Reading Revit's active view...";
+  try {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
+      credentials: "same-origin",
+      body: JSON.stringify(body || {}),
+    });
+    const answer = await res.json();
+    if (!answer.ok) { said.className = "result failed"; said.textContent = answer.error || "Not done."; }
+    else said.textContent = answer.reply || "Every table was removed. Nothing in Revit changed.";
+  } catch (e) {
+    said.className = "result failed";
+    said.textContent = "The page could not reach Heron. Nothing was read or changed.";
+  }
+  document.querySelectorAll(".c-tools button").forEach(b => { b.disabled = false; });
+  changes();
+}
+
+$("c-load-filters").addEventListener("click", () => tableTool(null, "/api/changes/load", { kind: "filters" }));
+$("c-load-categories").addEventListener("click", () => tableTool(null, "/api/changes/load", { kind: "categories" }));
+$("c-clear").addEventListener("click", () => tableTool(null, "/api/changes/clear"));
+
 start();

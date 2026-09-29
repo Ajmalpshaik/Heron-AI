@@ -526,3 +526,7 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
   .paint { right: 12px; top: 64px; }
   .paint-books { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* Load from Revit and Clear tables - the Changes card's own tools. */
+.c-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
+.c-tools .result { flex: 1 1 240px; }
