@@ -69,6 +69,10 @@ namespace Heron.Revit.Addin
         internal const string PublishLockedIcon = "PublishLocked.png";
         internal const string PublishUnlockedIcon = "PublishUnlocked.png";
 
+        // The Companion button (D-109): lit while the Companion is on.
+        internal const string CompanionOnIcon = "CompanionOn.png";
+        internal const string CompanionOffIcon = "CompanionOff.png";
+
         internal static BridgeServer Bridge { get; private set; }
 
         /// <summary>
@@ -96,6 +100,9 @@ namespace Heron.Revit.Addin
         internal static PushButton AdminButton { get; private set; }
 
         internal static PushButton PublishButton { get; private set; }
+
+        internal static PushButton CompanionButton { get; private set; }
+        internal static PushButton CompanionToggleButton { get; private set; }
 
         /// <summary>
         /// The one way into the Revit API. Created on Revit's own thread
@@ -439,6 +446,40 @@ namespace Heron.Revit.Addin
             PublishButton = panel.AddItem(publish) as PushButton;
             SetPublishIcon(HeronPermissions.PublishEnabled());
 
+            // THE COMPANION (D-108, D-109). The top opens the chat's page in
+            // the browser; the arrow holds the switch. Its picture is the
+            // switch's state. It shows and never changes the model, so neither
+            // half asks for confirmation - unlike the three padlocks.
+            var companionOpen = new PushButtonData(
+                "HeronCompanionOpen",
+                "Companion",
+                assemblyPath,
+                typeof(CompanionOpenCommand).FullName);
+            companionOpen.ToolTip =
+                "Open the Heron Companion - a page beside Revit that shows the model, the view " +
+                "and what is selected.";
+            companionOpen.LongDescription =
+                "Opens the page in your web browser. It needs a Claude chat with Heron running, " +
+                "and the Heron button connected.\n\n" +
+                "The page only shows. It never sends anything to Claude or any AI.\n\n" +
+                "Turn it off from this button's arrow; Heron itself keeps working.";
+
+            var companionToggle = new PushButtonData(
+                "HeronCompanionToggle",
+                "Turn Companion off",
+                assemblyPath,
+                typeof(CompanionToggleCommand).FullName);
+            companionToggle.ToolTip =
+                "Switch the Companion page off or on. Heron and the chat keep working either way.";
+
+            var companionGroup = panel.AddItem(
+                new SplitButtonData("HeronCompanion", "Companion")) as SplitButton;
+            CompanionButton = companionGroup.AddPushButton(companionOpen);
+            CompanionToggleButton = companionGroup.AddPushButton(companionToggle);
+            // As for the bridge button: the top stays Open, whatever was picked last.
+            companionGroup.IsSynchronizedWithCurrentItem = false;
+            SetCompanionIcon(HeronLiveState.Enabled);
+
             // NO EMERGENCY STOP BUTTON - removed on Ajmal's instruction,
             // 2026-09-06 (D-46 in docs/DECISIONS.md). The switch behind it
             // survives on purpose: HeronStop and both gates that read it are
@@ -547,6 +588,15 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>Puts the Publish button in step with publish.enabled. See SetAdminIcon.</summary>
+        /// <summary>The Companion button's picture and both halves' words (D-109).</summary>
+        internal static void SetCompanionIcon(bool on)
+        {
+            PaintSwitch(CompanionButton, on, CompanionOnIcon, CompanionOffIcon,
+                        on ? "Companion" : "Companion off");
+            var toggle = CompanionToggleButton;
+            if (toggle != null) toggle.ItemText = on ? "Turn Companion off" : "Turn Companion on";
+        }
+
         internal static void SetPublishIcon(bool enabled)
         {
             PaintSwitch(PublishButton, enabled, PublishUnlockedIcon, PublishLockedIcon,

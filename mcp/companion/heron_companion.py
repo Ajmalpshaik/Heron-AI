@@ -58,6 +58,10 @@ STATIC = os.path.join(HERE, "static")
 
 sys.path.insert(0, os.path.join(HERE, "..", "client"))
 import heron_bridge_client as bridge        # noqa: E402
+import heron_config as configuration        # noqa: E402
+
+#: How often the keeper looks at the switch and refreshes the note Revit reads.
+KEEP_SECONDS = 2.0
 
 #: The header every /api request must carry. Its value is not a secret - its
 #: presence is the point: a cross-site request cannot add it without a
@@ -89,6 +93,19 @@ def live_dir():
     """Where the add-in writes its live files - HeronPaths.Live, mirrored the
     way DISCOVERY_DIR mirrors HeronPaths.Bridges."""
     return os.path.join(bridge.local_app_data(), "Heron", "live")
+
+
+def companion_dir():
+    """Where each chat leaves the note the Companion button in Revit reads -
+    HeronPaths.Companion, mirrored (D-109)."""
+    return os.path.join(bridge.local_app_data(), "Heron", "companion")
+
+
+def enabled(path=None):
+    """The Companion switch, read fresh: companion.enabled in heron.config,
+    flipped from the Companion button's arrow in Revit. The add-in's own
+    idea of true, so the two halves cannot disagree."""
+    return configuration.truthy(configuration.load(path), "companion.enabled")
 
 
 def connected_pids(discovery_dir=None):
@@ -182,6 +199,12 @@ class Companion(object):
         self._sessions = set()    # cookie values issued
         self._server = None
         self._thread = None
+        # THE STANDING CODE: the one the note for Revit's button carries. It
+        # has no clock - the button may be pressed hours later - so it is
+        # single use instead, and replaced the moment it is redeemed.
+        self._standing = None
+        self._note = None
+        self._note_text = None
 
     # ------------------------------------------------------------ lifecycle
 
@@ -228,12 +251,65 @@ class Companion(object):
 
     def redeem(self, code):
         with self._lock:
-            expiry = self._codes.pop(code, None)
+            if code and code == self._standing:
+                self._standing = None           # used: the next publish mints another
+                expiry = time.time() + 1
+            else:
+                expiry = self._codes.pop(code, None)
             if expiry is None or expiry < time.time():
                 return None
             session = secrets.token_urlsafe(32)
             self._sessions.add(session)
             return session
+
+    # ------------------------------------------------ the note for Revit (D-109)
+
+    def publish(self, folder=None):
+        """Write, or refresh, this chat's note: its port and a standing one-time
+        code, so the Companion button in Revit can open the page. Rewritten
+        only when something in it changed."""
+        folder = folder or companion_dir()
+        with self._lock:
+            if not self._standing:
+                self._standing = secrets.token_urlsafe(24)
+            try:
+                bound = self._bound_pid()
+            except Exception:                        # noqa: BLE001 - display only
+                bound = None
+            text = json.dumps({"format": "1", "mcpPid": str(os.getpid()),
+                               "port": str(self.port), "code": self._standing,
+                               "revitPid": "" if bound is None else str(bound)})
+            path = os.path.join(folder, "chat-%d.json" % os.getpid())
+            if text == self._note_text and os.path.exists(path):
+                return path
+            os.makedirs(folder, exist_ok=True)
+            partial = path + ".tmp"
+            with io.open(partial, "w", encoding="utf-8") as fh:
+                fh.write(text)
+            os.replace(partial, path)
+            self._note, self._note_text = path, text
+            return path
+
+    def unpublish(self):
+        with self._lock:
+            path, self._note, self._note_text, self._standing = self._note, None, None, None
+        if path:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+
+    def keep_once(self, config_path=None, folder=None):
+        """One look at the switch: on -> the page is up and the note is fresh;
+        off -> the page is down and the note is gone. Heron itself is never
+        touched either way."""
+        if enabled(config_path):
+            self.start()
+            self.publish(folder)
+            return True
+        self.unpublish()
+        self.stop()
+        return False
 
     def knows(self, session):
         with self._lock:
@@ -256,6 +332,41 @@ class Companion(object):
         except Exception:                            # noqa: BLE001 - display only
             pid = None
         return state(pid, self._folder, self._discovery_dir)
+
+
+_shared = None
+_shared_lock = threading.Lock()
+
+
+def shared(bound_pid=lambda: None):
+    """This process's one Companion, made on first use."""
+    global _shared
+    with _shared_lock:
+        if _shared is None:
+            _shared = Companion(bound_pid=bound_pid)
+        return _shared
+
+
+def keep(bound_pid=lambda: None):
+    """Start the keeper: every two seconds it follows the Companion switch
+    (D-109). It reads one settings file and writes one small note - it never
+    touches the pipe, so it cannot stall on a Revit the way Talk's listener
+    did (D-105), and a fault in it is swallowed rather than reaching the chat.
+    Called once, when the MCP server starts."""
+    import atexit
+    companion = shared(bound_pid)
+
+    def loop():
+        while True:
+            try:
+                companion.keep_once()
+            except Exception:                        # noqa: BLE001 - never reach the chat
+                pass
+            time.sleep(KEEP_SECONDS)
+
+    atexit.register(companion.unpublish)
+    threading.Thread(target=loop, name="heron-companion-keeper", daemon=True).start()
+    return companion
 
 
 class _Handler(http.server.BaseHTTPRequestHandler):

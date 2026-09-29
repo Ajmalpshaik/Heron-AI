@@ -86,6 +86,14 @@ namespace Heron.Core
         /// </summary>
         public static string Live { get { return Ensure(Path.Combine(Derived, "live")); } }
 
+        /// <summary>
+        /// DERIVED - one small file per running chat whose Companion page is
+        /// up, saying which port it is on and holding a one-time code, so the
+        /// Companion button in Revit can open the page (D-109). Written and
+        /// deleted by the chat's MCP process; read, never written, by the add-in.
+        /// </summary>
+        public static string Companion { get { return Ensure(Path.Combine(Derived, "companion")); } }
+
         /// <summary>DERIVED - logs. Verbose, rotated, disposable.</summary>
         public static string Logs { get { return Ensure(Path.Combine(Derived, "logs")); } }
 

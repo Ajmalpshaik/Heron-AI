@@ -82,6 +82,24 @@ namespace Heron.Revit.Addin
         // What was last written, so an unchanged selection writes nothing.
         private static string _lastWritten;
 
+        // A cheap fingerprint of what Idling last looked at - the model, the
+        // view and the selected ids, hashed, without opening one element. The
+        // file's full text, which reads every selected element's category, is
+        // built only when this moves. Before it, a 5,000-element selection
+        // was read element by element five times a second while nothing
+        // changed.
+        private static string _lastSeen;
+
+        /// <summary>The setting the Companion switch on the ribbon flips (D-109).</summary>
+        internal const string EnabledKey = "companion.enabled";
+
+        // Read once at startup and changed only by SetEnabled, so the Idling
+        // check never opens the settings file.
+        private static volatile bool _enabled = true;
+
+        /// <summary>Whether the Companion is switched on.</summary>
+        internal static bool Enabled { get { return _enabled; } }
+
         /// <summary>Revit's own thread, from OnStartup.</summary>
         internal static void Attach(UIControlledApplication application)
         {
@@ -89,6 +107,7 @@ namespace Heron.Revit.Addin
             {
                 _revitVersion = application.ControlledApplication.VersionNumber;
                 _pid = Process.GetCurrentProcess().Id;
+                _enabled = HeronConfig.Load().GetBool(EnabledKey, true);
 
                 application.Idling += OnIdling;
                 // AFTER a model has closed, not while it closes: while
@@ -132,6 +151,21 @@ namespace Heron.Revit.Addin
             else Delete();
         }
 
+        /// <summary>
+        /// The Companion switch on the ribbon (D-109). Saved to heron.config so
+        /// the chat's page follows it too; off deletes this Revit's live file at
+        /// once. The bridge, and everything a chat asks of Heron, are untouched.
+        /// </summary>
+        internal static void SetEnabled(bool on)
+        {
+            var config = HeronConfig.Load();
+            config.Set(EnabledKey, on ? "true" : "false");
+            config.Save();
+            _enabled = on;
+            if (on) Write(_uiApp);
+            else Delete();
+        }
+
         /// <summary>The view or model in front changed. Revit's own thread.</summary>
         internal static void ViewActivated(object sender)
         {
@@ -152,8 +186,36 @@ namespace Heron.Revit.Addin
             SinceIdleCheck.Restart();
 
             Remember(sender);
-            if (!Connected()) return;
+            if (!Connected() || !_enabled) return;
+
+            // Nothing moved since the last look: stop before reading a single
+            // element. Any fault here falls through to Write, which logs.
+            try
+            {
+                var seen = Fingerprint(_uiApp);
+                if (seen == _lastSeen) return;
+                _lastSeen = seen;
+            }
+            catch (Exception) { }
             Write(_uiApp);
+        }
+
+        private static string Fingerprint(UIApplication app)
+        {
+            var uiDoc = app == null ? null : app.ActiveUIDocument;
+            var doc = uiDoc == null ? null : uiDoc.Document;
+            if (doc == null) return "(none)";
+
+            var ids = uiDoc.Selection.GetElementIds();
+            var hash = 17;
+            unchecked
+            {
+                foreach (var id in ids) hash = hash * 31 + id.GetHashCode();
+            }
+            var view = doc.ActiveView;
+            return doc.Title + "|" + doc.PathName + "|" + (view == null ? "" : view.Id.ToString())
+                 + "|" + ids.Count.ToString(CultureInfo.InvariantCulture)
+                 + "|" + hash.ToString(CultureInfo.InvariantCulture);
         }
 
         private static void Remember(object sender)
@@ -179,7 +241,7 @@ namespace Heron.Revit.Addin
         {
             try
             {
-                if (!Connected()) return;
+                if (!Connected() || !_enabled) return;
 
                 var text = Describe(app);
                 lock (Gate)
@@ -202,6 +264,7 @@ namespace Heron.Revit.Addin
                 lock (Gate)
                 {
                     _lastWritten = null;
+                    _lastSeen = null;
                     var path = FilePath();
                     if (File.Exists(path)) File.Delete(path);
                 }

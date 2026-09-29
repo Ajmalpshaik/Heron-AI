@@ -2520,9 +2520,12 @@ def heron_diagnose() -> str:
     return diagnosis.describe(diagnosis.diagnose())
 
 
-# THIS CHAT'S COMPANION PAGE (D-108, docs/40). Made the first time it is asked
-# for and kept for the life of this process, which is the life of the chat.
-_companion = None
+def _companion_module():
+    """mcp/companion, imported on first use - it is not on the server's path."""
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    "..", "companion"))
+    import heron_companion as companion_page
+    return companion_page
 
 
 @server.tool()
@@ -2538,16 +2541,17 @@ def heron_companion() -> str:
     reads a small status file the add-in writes while the Heron button is
     connected. The page never sends anything to you or any AI.
     """
-    global _companion
     import webbrowser
-    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                    "..", "companion"))
-    import heron_companion as companion_page
+    companion_page = _companion_module()
 
-    if _companion is None:
-        _companion = companion_page.Companion(bound_pid=lambda: binding.pid)
+    # THE SWITCH IS THE OWNER'S (D-109): the Companion button's arrow in Revit.
+    if not companion_page.enabled():
+        return ("The Heron Companion is switched off in Revit, so it was not opened. "
+                "Heron itself is working as normal. To turn it on, click the arrow "
+                "under the Companion button on the Heron tab.")
+    companion = companion_page.shared(bound_pid=lambda: binding.pid)
     try:
-        address = _companion.pairing_address()
+        address = companion.pairing_address()
     except OSError as why:
         return "The Heron Companion could not start on this PC: %s" % why
 
@@ -4219,5 +4223,14 @@ if __name__ == "__main__":
     # event loop - the host waited and no reply ever came. Until it finishes,
     # every answer uses the lexical backend and says so. See heron_embed.warm().
     brain.warm()
+
+    # THE COMPANION KEEPER (D-109): follows the Companion switch every two
+    # seconds so the Companion button in Revit finds this chat's page. It
+    # reads a settings file and writes one note; it never touches the pipe,
+    # and a fault in it never reaches the chat.
+    try:
+        _companion_module().keep(bound_pid=lambda: binding.pid)
+    except Exception as why:                         # noqa: BLE001 - never cost the chat
+        sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)
 
     server.run()

@@ -258,10 +258,68 @@ def test_addin_side():
     check("System.Net" not in text, "and touches no network")
 
 
+def test_switch(tmp):
+    print()
+    print("The Companion switch (D-109): on keeps the page and the note; off removes both")
+    config = os.path.join(tmp, "heron.config")
+    notes = os.path.join(tmp, "notes")
+    companion = hc.Companion(bound_pid=lambda: 4242, folder=os.path.join(tmp, "live"),
+                             discovery_dir=os.path.join(tmp, "bridges"))
+
+    pending = []
+    real_stdout, sys.stdout = sys.stdout, io.StringIO()
+    try:
+        write(config, "companion.enabled = true\n")
+        on = companion.keep_once(config, notes)
+        path = os.path.join(notes, "chat-%d.json" % os.getpid())
+        note = json.load(io.open(path, encoding="utf-8")) if os.path.exists(path) else {}
+        pending.append((on and companion.running, "switch on -> the page is served"))
+        pending.append((note.get("port") == str(companion.port) and note.get("revitPid") == "4242"
+              and note.get("mcpPid") == str(os.getpid()),
+              "and the note names this chat, its port and the Revit it is bound to"))
+        code = note.get("code", "")
+        pending.append((re.match(r"^[A-Za-z0-9_-]{16,64}$", code) is not None,
+              "the note's code is one the Revit button accepts"))
+
+        first = companion.redeem(code)
+        pending.append((first is not None, "the note's code opens the page once"))
+        pending.append((companion.redeem(code) is None, "and never a second time"))
+        companion.keep_once(config, notes)
+        fresh = json.load(io.open(path, encoding="utf-8")).get("code")
+        pending.append((fresh and fresh != code, "the next look writes a fresh code into the note"))
+
+        write(config, "companion.enabled = false\n")
+        off = companion.keep_once(config, notes)
+        pending.append((not off and not companion.running and not os.path.exists(path),
+              "switch off -> the page stops and the note is gone"))
+        pending.append((hc.enabled(config) is False and hc.enabled(os.path.join(tmp, "absent")) is True,
+              "off is read from the file; a missing file means the default, on"))
+    finally:
+        printed, sys.stdout = sys.stdout.getvalue(), real_stdout
+        companion.stop()
+        companion.unpublish()
+    for condition, what in pending:
+        check(condition, what)
+    check(printed == "", "and still nothing reached stdout")
+
+    cs = io.open(os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronCompanionCommands.cs"),
+                 encoding="utf-8").read()
+    check("127.0.0.1:" in cs and "Alive(owner)" in cs,
+          "the Revit button opens only 127.0.0.1, and only for a chat still running")
+    check("System.Net" not in cs and "Socket" not in cs,
+          "and Revit opens no socket to do it")
+    live = io.open(LIVE_CS, encoding="utf-8").read()
+    check("if (!Connected() || !_enabled) return;" in live,
+          "the add-in writes nothing while the Companion is off")
+    check("if (seen == _lastSeen) return;" in live,
+          "and Idling stops before reading any element when nothing changed")
+
+
 def main():
     tmp = tempfile.mkdtemp(prefix="heron-companion-")
     test_live_files(tmp)
     test_server(tmp)
+    test_switch(tmp)
     test_no_way_to_an_ai()
     test_addin_side()
 

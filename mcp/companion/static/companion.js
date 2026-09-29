@@ -97,7 +97,7 @@ async function poll() {
     const res = await fetch("/api/state", { headers: HEADER, credentials: "same-origin" });
     if (res.status === 403) {
       pill("Not opened from the chat", "bad");
-      notice("Open this page from the chat: ask it to \"open the Heron Companion\".", true);
+      notice("Open this page with the Companion button in Revit, or ask the chat to \"open the Heron Companion\".", true);
       return;
     }
     const body = await res.json();
@@ -109,8 +109,9 @@ async function poll() {
     if (failures >= 3) {
       document.body.classList.add("closed");
       pill("Closed", "bad");
-      notice("The chat that opened this page has closed, so it can no longer update. " +
-             "Ask a chat to \"open the Heron Companion\" for a new one.", true);
+      notice("This page has stopped: the Companion was switched off in Revit, or the chat " +
+             "that opened it has closed. Heron itself is not affected. To open it again, " +
+             "press the Companion button in Revit.", true);
     }
   }
   setTimeout(poll, 1000);
@@ -124,8 +125,8 @@ async function start() {
     paired = await pair(code).catch(() => false);
     if (!paired) {
       pill("Link expired", "bad");
-      notice("This link has already been used or is too old. Ask the chat to " +
-             "\"open the Heron Companion\" again.", true);
+      notice("This link has already been used or is too old. Press the Companion button " +
+             "in Revit to open a fresh one.", true);
     }
   }
   poll();
