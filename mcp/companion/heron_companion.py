@@ -47,6 +47,7 @@ import http.server
 import io
 import json
 import os
+import re
 import secrets
 import socketserver
 import sys
@@ -177,10 +178,28 @@ class Changes(object):
         #: Set by the MCP server: (capability, [(name, value)]) -> answer text.
         self.apply_hook = None
 
+    #: A value that is a SETTING - a colour, an override string, a yes/no, a
+    #: number - rather than WHICH THING the setting is on.
+    _SETTING = re.compile(r"^(?:[0-9]{1,3} *, *[0-9]{1,3} *, *[0-9]{1,3}|.*=.*|true|false|"
+                          r"yes|no|on|off|both|surface|cut|none|-?[0-9]+(?:[.][0-9]+)?)$",
+                          re.IGNORECASE)
+
+    @classmethod
+    def subject(cls, pairs):
+        """WHICH THING a change is about - the view, the filter, the
+        categories - and never its settings. Two changes to the same thing
+        share one table; changes to different things each keep their own. The
+        first version keyed on the capability alone, so three filters offered
+        one after another left only the last (the owner, 2026-09-29)."""
+        return tuple((n, v) for n, v in pairs if not cls._SETTING.match(str(v).strip()))
+
     def offer(self, capability, document, pairs):
+        subject = self.subject(pairs)
         with self._lock:
             self._cards = [c for c in self._cards
-                           if not (c["capability"] == capability and c["document"] == document)]
+                           if not (c["capability"] == capability and c["document"] == document
+                                   and self.subject([(r["name"], r["value"]) for r in c["rows"]])
+                                   == subject)]
             self._next += 1
             self._cards.insert(0, {"id": self._next, "capability": capability,
                                    "document": document, "at": time.strftime("%H:%M:%S"),

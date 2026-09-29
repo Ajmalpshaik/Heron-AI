@@ -395,6 +395,18 @@ def test_changes():
           "and the table keeps the values that were applied")
     check(changes.apply(999, blue)["ok"] is False, "a table that is gone cannot be applied")
 
+    many = hc.Changes()
+    for name, rgb in (("Exhaust Air", "139,69,19"), ("Return Air", "255,0,255"),
+                      ("Supply Air", "0,0,255")):
+        many.offer("APPLY_VIEW_FILTER", "", [("view", "FloorPlan: 1 - Mech"), ("filter", name),
+                   ("overrides", "projection-line-colour=" + rgb), ("visible", "true")])
+    check(len(many.cards()) == 3,
+          "three filters offered one after another keep three tables, not the last one")
+    many.offer("APPLY_VIEW_FILTER", "", [("view", "FloorPlan: 1 - Mech"), ("filter", "Supply Air"),
+               ("overrides", "projection-line-colour=0,255,0"), ("visible", "true")])
+    check(len(many.cards()) == 3 and many.cards()[0]["rows"][2]["value"].endswith("0,255,0"),
+          "a new change to the SAME filter replaces its table rather than adding a fourth")
+
     marked = []
     for card_path in glob.glob(os.path.join(ROOT, "brain", "fragments", "*", "fragment.yaml")):
         with io.open(card_path, encoding="utf-8") as fh:
