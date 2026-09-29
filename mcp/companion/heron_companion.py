@@ -129,7 +129,7 @@ class Activity(object):
             return "refused"
         return "ok"
 
-    def record(self, tool, started, seconds, reply=None, error=None):
+    def record(self, tool, started, seconds, reply=None, error=None, outcome=None):
         first = str(error if error is not None else (reply or "")).strip().splitlines()
         line = first[0] if first else ""
         if len(line) > self.FIRST_LINE:
@@ -137,7 +137,7 @@ class Activity(object):
         with self._lock:
             self._seq += 1
             self._items.append({"seq": self._seq, "at": started, "tool": tool,
-                                "summary": line, "outcome": self.outcome(reply, error),
+                                "summary": line, "outcome": outcome or self.outcome(reply, error),
                                 "seconds": round(seconds, 1)})
             del self._items[:-self.LIMIT]
 
@@ -232,6 +232,99 @@ class Changes(object):
 
 #: This process's after-change tables - one chat's.
 CHANGES = Changes()
+
+
+class Tables(object):
+    """
+    PHASE 3: the element table a chat opens with revit_edit_table (docs/40
+    section 8) - one at a time, the newest replacing the last.
+
+    WHAT WAS SHOWN IS KEPT HERE, AND IT IS WHAT IS SENT AS "WAS". The page
+    says which cell and what the new value is; the old value comes from this
+    copy, never from the page. The write fragment then refuses the whole
+    Apply if Revit no longer holds it (Article 12c). Only a cell the reader
+    marked editable may be sent, and a value is one line of text.
+    """
+
+    LONGEST = 2000
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._table = None
+        self._next = 0
+        #: Set by the MCP server: [(id, uniqueId, name, was, new)] -> (text, result).
+        self.apply_hook = None
+
+    def open(self, document, table):
+        with self._lock:
+            self._next += 1
+            self._table = {"id": self._next, "document": document,
+                           "at": time.strftime("%H:%M:%S"),
+                           "columns": list(table.get("columns") or []),
+                           "rows": list(table.get("rows") or []),
+                           "truncated": table.get("truncated") or 0,
+                           "last": None}
+
+    def current(self):
+        with self._lock:
+            return json.loads(json.dumps(self._table)) if self._table else None
+
+    def check(self, table_id, changes):
+        """The rows to send, or (None, why)."""
+        with self._lock:
+            table = self._table
+            if table is None or table["id"] != table_id:
+                return None, "That table is no longer open - the chat has opened a newer one."
+            if not isinstance(changes, list) or not changes:
+                return None, "No cell was changed, so there is nothing to apply."
+            rows = {r.get("id"): r for r in table["rows"]}
+            out = []
+            for change in changes:
+                if not isinstance(change, dict):
+                    return None, "The changes could not be read."
+                row = rows.get(change.get("id"))
+                name, value = change.get("name"), change.get("value")
+                cell = (row or {}).get("cells", {}).get(name) if row else None
+                if cell is None:
+                    return None, "A changed cell is not in the table Heron opened."
+                if not cell.get("editable"):
+                    return None, "A changed cell is one Heron marked as not editable."
+                if not isinstance(value, str) or len(value) > self.LONGEST \
+                        or chr(10) in value or chr(13) in value:
+                    return None, "A value must be one line of text."
+                out.append((row["id"], row["uniqueId"], name, cell.get("value") or "", value))
+            return out, None
+
+    def apply(self, table_id, changes):
+        hook = self.apply_hook
+        if hook is None:
+            return {"ok": False, "error": "The chat is not ready to apply anything yet."}
+        rows, why = self.check(table_id, changes)
+        if rows is None:
+            return {"ok": False, "error": why}
+        text, result = hook(rows)
+        outcome = Activity.outcome(text)
+        applied = bool(result and result.get("applied"))
+        with self._lock:
+            table = self._table
+            if table is not None and table["id"] == table_id:
+                if applied:
+                    back = {(b.get("id"), b.get("name")): b.get("value")
+                            for b in result.get("readBack") or []}
+                    for row in table["rows"]:
+                        for name, cell in row.get("cells", {}).items():
+                            if (row["id"], name) in back:
+                                cell["value"] = back[(row["id"], name)]
+                table["last"] = {"at": time.strftime("%H:%M:%S"),
+                                 "outcome": "ok" if applied else ("refused" if outcome != "failed" else "failed"),
+                                 "reply": str(text)[:1500],
+                                 "stale": (result or {}).get("stale") or []}
+        return {"ok": True, "applied": applied, "outcome": outcome,
+                "reply": str(text)[:1500], "result": result}
+
+
+#: This process's editable table - one chat's.
+TABLES = Tables()
 
 
 def companion_dir():
@@ -344,6 +437,7 @@ class Companion(object):
         self._standing = None
         self._note = None
         self._note_text = None
+        self._seen = 0.0           # when a page last asked for the state
 
     # ------------------------------------------------------------ lifecycle
 
@@ -458,6 +552,14 @@ class Companion(object):
         # PER PORT. A cookie belongs to a host, not a port, so two chats'
         # Companions on 127.0.0.1 would otherwise overwrite each other's.
         return "heron_companion_%d" % self.port
+
+    def saw_page(self):
+        self._seen = time.time()
+
+    def recently_seen(self, seconds=10):
+        """Whether a page asked for the state in the last few seconds - so a
+        table opened from the chat need not open a second browser tab."""
+        return self.running and time.time() - self._seen < seconds
 
     def hosts(self):
         return ("127.0.0.1:%d" % self.port, "localhost:%d" % self.port)
@@ -579,6 +681,7 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             why = self._api_ok()
             if why:
                 return self._refuse(403, why)
+            self.owner.saw_page()
             return self._json(200, {"ok": True, "state": self.owner.state()})
         if path == "/api/activity":
             why = self._api_ok()
@@ -591,6 +694,11 @@ class _Handler(http.server.BaseHTTPRequestHandler):
                 if name == "since" and value.isdigit():
                     since = int(value)
             return self._json(200, {"ok": True, "items": ACTIVITY.since(since)})
+        if path == "/api/table":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "table": TABLES.current()})
         if path == "/api/changes":
             why = self._api_ok()
             if why:
@@ -617,6 +725,17 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             return self._json(200, {"ok": True}, extra=(
                 ("Set-Cookie", "%s=%s; HttpOnly; SameSite=Strict; Path=/"
                  % (self.owner.cookie_name(), session)),))
+        if path == "/api/table/apply":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 1048576)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+                table_id = int(body.get("id"))
+            except (ValueError, TypeError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            return self._json(200, TABLES.apply(table_id, body.get("changes")))
         if path == "/api/change/apply":
             why = self._api_ok()
             if why:

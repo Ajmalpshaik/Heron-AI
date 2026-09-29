@@ -8,14 +8,14 @@ in [docs/40](../../docs/40-heron-companion.md). The chat stays the only place to
 | Runs | inside the chat's MCP server process, started when the chat calls `heron_companion` |
 | Listens | `127.0.0.1` only, on a port Windows picks — never on the network |
 | Reads | the add-in's live file, `%LOCALAPPDATA%\Heron\live\pid-N.json` (written by `revit/Heron.Revit.Addin/HeronLiveState.cs` while the Heron button is connected) |
-| Changes | **nothing, in Phase 1** |
+| Changes | **only through the chat's own write path**: the page's Apply runs `revit_change`'s one body (`_change`) under the lock every tool call holds - the same gate, Changes switch, pin and single undo entry. Its risk is declared in `heron_tools.COMPANION_ACTIONS` |
 | Lives | as long as the chat that opened it |
 
 ## What's here
 
 | | Does |
 |---|---|
-| [`heron_companion.py`](heron_companion.py) | The server: pairing, the protection rules, and which Revit to show |
+| [`heron_companion.py`](heron_companion.py) | The server: pairing, the protection rules, which Revit to show, the keeper that follows the Companion switch (D-109), the activity list, the after-change tables and the element table |
 | [`static/index.html`](static/index.html), [`static/companion.js`](static/companion.js), [`static/companion.css`](static/companion.css) | The page. Nothing is loaded from the internet |
 
 ## Rules for this folder

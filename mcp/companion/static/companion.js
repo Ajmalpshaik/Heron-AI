@@ -265,6 +265,134 @@ async function changes() {
   } catch (e) { /* the state poll reports a closed page */ }
 }
 
+// ---------------------------------------------------------------- Phase 3
+// The element table (docs/40 section 8): one row per element, one column per
+// parameter the chat asked for. An editable cell is a text box; a cell Heron
+// marked not editable is plain text with the reason on hover. Only changed
+// cells are sent, and the old value is taken from Heron's own copy, never
+// from this page - so nothing here can claim a value Revit did not show.
+
+let tableShown = null;     // "<id>/<last.at>" of what is on screen
+
+function tableCell(row, name, cell, edits, count) {
+  const td = document.createElement("td");
+  if (!cell) return td;
+  if (!cell.editable) {
+    td.className = "fixed";
+    td.textContent = cell.value == null ? "" : cell.value;
+    td.title = cell.why || "";
+    return td;
+  }
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = cell.value == null ? "" : cell.value;
+  const key = row.id + "/" + name;
+  input.addEventListener("input", () => {
+    if (input.value === (cell.value == null ? "" : cell.value)) edits.delete(key);
+    else edits.set(key, { id: row.id, name: name, value: input.value });
+    td.classList.toggle("edited", edits.has(key));
+    count();
+  });
+  td.append(input);
+  return td;
+}
+
+function renderTable(t) {
+  const box = $("t-box");
+  box.replaceChildren();
+  $("t-empty").hidden = !!t;
+  if (!t) return;
+
+  const head = document.createElement("p");
+  head.className = "where";
+  head.textContent = t.rows.length + " element(s) in " + (t.document || "") + " · opened " + t.at +
+    (t.truncated ? " · " + t.truncated + " more were left out" : "");
+  box.append(head);
+
+  const stale = new Map((t.last && t.last.stale || []).map(s => [s.id + "/" + s.name, s.why]));
+  const edits = new Map();
+  const button = document.createElement("button");
+  const count = () => {
+    button.textContent = edits.size ? "Apply " + edits.size + " change(s)" : "Apply";
+    button.disabled = edits.size === 0;
+  };
+
+  const wrap = document.createElement("div");
+  wrap.className = "grid";
+  const table = document.createElement("table");
+  const hr = document.createElement("tr");
+  ["Element", "Category", "Type"].concat(t.columns).forEach(c => {
+    const th = document.createElement("th");
+    th.textContent = c;
+    hr.append(th);
+  });
+  table.append(hr);
+  for (const row of t.rows) {
+    const tr = document.createElement("tr");
+    [row.id, row.category, row.type].forEach(v => {
+      const td = document.createElement("td");
+      td.className = "fixed";
+      td.textContent = v == null ? "" : v;
+      tr.append(td);
+    });
+    for (const name of t.columns) {
+      const td = tableCell(row, name, (row.cells || {})[name], edits, count);
+      const why = stale.get(row.id + "/" + name);
+      if (why) { td.classList.add("stale"); td.title = why; }
+      tr.append(td);
+    }
+    table.append(tr);
+  }
+  wrap.append(table);
+  box.append(wrap);
+
+  const foot = document.createElement("footer");
+  const result = document.createElement("span");
+  result.className = "result";
+  if (t.last) {
+    result.className = "result " + t.last.outcome;
+    result.textContent = t.last.at + " · " + (t.last.outcome === "ok"
+      ? "Applied - the values shown are what Revit now holds. To take it back, press Ctrl+Z once in Revit."
+      : String(t.last.reply).split("\n").slice(0, 4).join("\n"));
+  }
+  count();
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    result.className = "result";
+    result.textContent = "Sending to Revit - it waits if the chat is using Revit right now…";
+    try {
+      const res = await fetch("/api/table/apply", {
+        method: "POST",
+        headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
+        credentials: "same-origin",
+        body: JSON.stringify({ id: t.id, changes: Array.from(edits.values()) }),
+      });
+      const body = await res.json();
+      if (!body.ok) { result.className = "result failed"; result.textContent = body.error || "Not applied."; count(); return; }
+      tableShown = null;   // re-read: Heron's copy now holds what Revit holds
+      await table_();
+    } catch (e) {
+      result.className = "result failed";
+      result.textContent = "The page could not reach the chat. Nothing was sent to Revit.";
+      count();
+    }
+  });
+  foot.append(button, result);
+  box.append(foot);
+}
+
+async function table_() {
+  try {
+    const res = await fetch("/api/table", { headers: HEADER, credentials: "same-origin" });
+    if (!res.ok) return;
+    const t = (await res.json()).table;
+    const key = t ? t.id + "/" + (t.last ? t.last.at + t.last.outcome : "") : "none";
+    if (key === tableShown) return;
+    tableShown = key;
+    renderTable(t);
+  } catch (e) { /* the state poll reports a closed page */ }
+}
+
 async function pair(code) {
   const res = await fetch("/api/pair", {
     method: "POST",
@@ -289,6 +417,7 @@ async function poll() {
     show(body.state);
     activity();
     changes();
+    table_();
   } catch (e) {
     failures += 1;
     if (failures >= 3) {

@@ -1,0 +1,25 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+
+positive:
+  - given: 3 fan coil units selected, parameterNames "Mark, Comments"
+    expect: >
+      rowCount 3; tableJson has columns Mark and Comments and three rows; each
+      row's Mark value matches the Properties palette, and both cells are
+      editable (instance parameters, writable text)
+
+  - given: the same 3 units, parameterNames "Mark, <a type parameter such as the size>"
+    expect: >
+      the type parameter's cell shows the TYPE's value and editable false, with
+      the reason "a type parameter - changing it changes every element of this
+      type". The instance cell stays editable
+
+negative:
+  - given: the same 3 units, parameterNames "ZZZNOTHINGHERE"
+    expect: >
+      rowCount 3; every cell reads editable false with "this element does not
+      have that parameter" - and it must not throw
+
+  - given: no parameter names at all
+    expect: >
+      rowCount 0 and a finding saying no parameter was named - never a table
+      of rows with no columns

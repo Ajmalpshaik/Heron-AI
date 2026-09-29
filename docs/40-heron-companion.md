@@ -798,3 +798,31 @@ only while the Heron button is connected, and that button is the switch.
 Built: `HeronLiveState.cs` and the `live` folder in `HeronPaths`; `mcp/companion/` and the
 `heron_companion` tool (READ); `tests/test_companion.py`. **Not yet run in Revit** - NEEDS-CHECKING
 [group BK](needs-checking/group-bk.md).
+
+### 21.3 Phases 2 and 3, as built (2026-09-29)
+
+The owner asked for the rest the same day: *"you can do that phase 2 and 3"*.
+
+- **The Companion button and switch** - [D-109](decisions/D-109.md). A button on the Heron tab opens the
+  page; its arrow turns the Companion off without touching Heron. While on, each chat keeps its page
+  ready and leaves a note the button reads.
+- **Phase 2, the activity list** (§7): every tool call this chat makes, in memory only, through the one
+  wrapper every tool already passes.
+- **Phase 3, settings** (§21.1): a change through a card marked `companion: settings`, whose inputs are
+  all typed values, leaves its values as a table; **Apply again** runs the same capability through
+  `_change`, revit_change's one body. Eight cards are marked. The §21.1 question - is this a preview
+  without counts? - is answered by the rule itself: every input is on the table, so the values ARE the
+  whole change.
+- **Phase 3, the element table** (§8): `revit_edit_table` (ANALYZE) reads the elements through
+  `READ_ELEMENT_TABLE` (FRG-PAR-026, DRAFT) - the selection or what an earlier fragment left - and the
+  page's Apply writes the edited cells in one `SET_PARAMETER_VALUES_BY_ID` run (FRG-PAR-027, DRAFT),
+  which writes NOTHING unless every row still holds what the table showed. **Parameters only** in this
+  release: the per-element colour writer of §8.5 was not built, because the owner's scope (§21.1) asks
+  for parameters and schedules, and colour already has its settings table.
+- **Not built:** Refresh of an element table (ask the chat to open it again); a Select-in-Revit button
+  (§18 question 7).
+
+**Proved without Revit:** `tests/test_companion.py`; a stand-in session driving the real server end to
+end; and the page itself, driven in a browser with sample data - edit two cells, Apply, the read-back
+shown; change a colour, Apply again. **Not yet run in Revit** - [group BK](needs-checking/group-bk.md)
+rows BK7 to BK12.

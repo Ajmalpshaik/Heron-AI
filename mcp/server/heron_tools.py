@@ -249,6 +249,12 @@ TOOLS = {
     # an edited table, that action gets its own row here at MODIFY, through
     # run_fragment_write, and this row stays READ.
     "heron_companion":          (READ,    None),
+
+    # The Companion's editable table (docs/40 section 8). ANALYZE through
+    # run_fragment_read, exactly revit_read's level: it reads the elements
+    # into a table and changes nothing. Writing the edited cells is the
+    # page's companion_table_apply below, never this tool.
+    "revit_edit_table":         (ANALYZE, "run_fragment_read"),
 }
 
 
@@ -259,6 +265,9 @@ TOOLS = {
 # so it is exactly revit_change's level and operation.
 COMPANION_ACTIONS = {
     "companion_apply":          (MODIFY,  "run_fragment_write"),
+    # The edited cells of an element table, in one SET_PARAMETER_VALUES_BY_ID
+    # run through the same body: revit_change's level and operation.
+    "companion_table_apply":    (MODIFY,  "run_fragment_write"),
 }
 
 

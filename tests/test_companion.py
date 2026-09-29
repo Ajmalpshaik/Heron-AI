@@ -407,6 +407,72 @@ def test_changes():
           "the Apply action's risk is declared in heron_tools, at MODIFY")
 
 
+def test_tables():
+    print()
+    print("Phase 3: the element table - the old value is Heron's, never the page's")
+    import yaml
+    tables = hc.Tables()
+    tables.open("Project1", {"columns": ["Mark", "Comments"], "truncated": 0, "rows": [
+        {"id": "101", "uniqueId": "u-101", "cells": {
+            "Mark": {"value": "FCU-01", "editable": True},
+            "Comments": {"value": "shown", "editable": False, "why": "read-only"}}}]})
+    tid = tables.current()["id"]
+    check(tables.apply(tid, [{"id": "101", "name": "Mark", "value": "X"}])["ok"] is False,
+          "with no chat ready to apply, nothing is sent")
+
+    sent = []
+    def hook(rows):
+        sent.append(rows)
+        return "SET_PARAMETER_VALUES_BY_ID ran in Project1.", {
+            "applied": True, "stale": [],
+            "readBack": [{"id": "101", "name": "Mark", "value": "FCU-1A"}]}
+    tables.apply_hook = hook
+    check(tables.apply(tid, [{"id": "101", "name": "Comments", "value": "x"}])["ok"] is False
+          and not sent, "a cell Heron marked not editable is refused and nothing is sent")
+    check(tables.apply(tid, [{"id": "999", "name": "Mark", "value": "x"}])["ok"] is False
+          and not sent, "a row that is not in the table is refused")
+    check(tables.apply(tid, [{"id": "101", "name": "Mark", "value": "a" + chr(10) + "b"}])["ok"]
+          is False and not sent, "a value with a line break is refused")
+    check(tables.apply(tid + 1, [{"id": "101", "name": "Mark", "value": "x"}])["ok"] is False,
+          "a table that is no longer open cannot be applied")
+
+    result = tables.apply(tid, [{"id": "101", "name": "Mark", "value": "FCU-1A", "was": "LIE"}])
+    check(result["applied"] and sent == [[("101", "u-101", "Mark", "FCU-01", "FCU-1A")]],
+          "the old value sent is the one Heron showed - a 'was' from the page is ignored")
+    check(tables.current()["rows"][0]["cells"]["Mark"]["value"] == "FCU-1A",
+          "after Apply the table shows what Revit read back")
+
+    tables.apply_hook = lambda rows: ("SET_PARAMETER_VALUES_BY_ID ran in Project1.", {
+        "applied": False, "readBack": [],
+        "stale": [{"id": "101", "name": "Mark", "why": "it was changed in Revit"}]})
+    stopped = tables.apply(tid, [{"id": "101", "name": "Mark", "value": "FCU-1B"}])
+    last = tables.current()["last"]
+    check(stopped["applied"] is False and last["outcome"] == "refused" and last["stale"]
+          and tables.current()["rows"][0]["cells"]["Mark"]["value"] == "FCU-1A",
+          "a stale row stops the Apply, is marked, and the table keeps what Revit holds")
+
+    folder = os.path.join(ROOT, "brain", "fragments")
+    writer = yaml.safe_load(io.open(os.path.join(folder, "set-parameter-values-by-id",
+                                                 "fragment.yaml"), encoding="utf-8"))
+    names = [n["name"] for n in writer["contract"]["needs"]]
+    check(writer["risk"] == "MODIFY" and "elements" not in names,
+          "the write takes its elements from the rows, never from the selection")
+    code = io.open(os.path.join(folder, "set-parameter-values-by-id", "impl", "any",
+                                "fragment.cs"), encoding="utf-8").read()
+    check(code.index("if (stale.Count > 0)") < code.index("p.SetValueString(")
+          and "throw new InvalidOperationException" in code,
+          "it checks every row before writing any, and a value Revit refuses rolls all back")
+    reader = io.open(os.path.join(folder, "read-element-table", "impl", "any", "fragment.cs"),
+                     encoding="utf-8").read()
+    check("a type parameter - changing it changes every element of this type" in reader
+          and "matches.Count > 1" in reader,
+          "the table marks type parameters and shared names as not editable")
+    check(tools.TOOLS.get("revit_edit_table") == (tools.ANALYZE, "run_fragment_read")
+          and tools.COMPANION_ACTIONS.get("companion_table_apply") == (tools.MODIFY,
+                                                                       "run_fragment_write"),
+          "opening a table reads (ANALYZE); applying it writes (MODIFY), each declared once")
+
+
 def main():
     tmp = tempfile.mkdtemp(prefix="heron-companion-")
     test_live_files(tmp)
@@ -414,6 +480,7 @@ def main():
     test_switch(tmp)
     test_activity()
     test_changes()
+    test_tables()
     test_no_way_to_an_ai()
     test_addin_side()
 

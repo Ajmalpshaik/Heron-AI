@@ -1,0 +1,23 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# Rows are id|uniqueId|parameter|was|new, each field percent-encoded, joined by ';'.
+
+positive:
+  - given: two fan coil units' Comments, each row's "was" equal to what Revit holds now, new values "A" and "B"
+    expect: >
+      written 2; resultJson applied true; readBack shows A and B; one entry in
+      Revit's undo list, and one Ctrl+Z puts both back
+
+  - given: a Yes/No instance parameter, new value "Yes"
+    expect: written 1 and the tick box ticked in the Properties palette
+
+negative:
+  - given: >
+      the same two rows, after one unit's Comments was changed by hand in Revit
+      (so its "was" no longer matches)
+    expect: >
+      written 0; resultJson applied false; stale names that unit and says it
+      was changed in Revit since the table was read; the OTHER unit is not
+      written either - all or nothing
+
+  - given: a row whose UniqueId names an element that was deleted
+    expect: written 0, stale "it is no longer in the model", nothing written

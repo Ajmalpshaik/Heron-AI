@@ -1,0 +1,89 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-027
+semantic-identity: "a different value for each named element, only if nothing moved since it was read"
+kind: action
+domain: revit.parameters
+capability: SET_PARAMETER_VALUES_BY_ID
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Writes a DIFFERENT value into a named instance parameter on each of several
+  elements, each element named by its id and UniqueId - the write half of the
+  Heron Companion's editable table (D-108, docs/40 section 8.4). Every row
+  carries the value the table SHOWED, and nothing is written unless every row
+  still holds exactly that.
+
+  **All or nothing, before anything is written (Article 12c, Golden Rule 21).**
+  The first pass only checks: the element is still there and is the same
+  element, the parameter is there once, it is not read-only, and it still
+  holds the value the table showed. One row failing any of that and the whole
+  run changes NOTHING and says which rows and why - the owner's choice on
+  2026-09-29, question 2 of docs/40 section 18. The page shows them and the
+  modeller presses Apply again.
+
+  **The elements come from the rows, never from the selection.** Applied
+  minutes after the table was read, a fragment that took the selection would
+  write onto whatever is selected then. So there is no `elements` input.
+
+  **Values are written the way write-element-parameters writes them**: text
+  as text; a number through SetValueString, in the document's own units, so
+  "300 mm" and "300" mean what the modeller sees; a Yes/No as 1 or 0 from Yes,
+  No, True, False, On, Off, 1 or 0. After ONE regeneration every row is read
+  back and `resultJson` carries what Revit now holds, not what was asked.
+
+  **Rows cross as text**: `id|uniqueId|parameter|was|new`, each field
+  percent-encoded so a value may hold a bar or a semicolon, rows separated by
+  semicolons.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one - the operation's
+  TransactionGroup makes the whole Apply one entry in Revit's undo list
+  (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: rows
+      type: string
+      source: request
+  provides:
+    # Rows written AND read back.
+    - name: written
+      role: result
+      type: int
+    # The whole answer as one JSON string, format 1 - applied or not, the stale
+    # rows with why, and the value Revit holds for each written row.
+    - name: resultJson
+      role: result
+      type: string
+    # Rows that stopped the run - changed in Revit, gone, read-only. Nothing
+    # was written when this is not empty. Turned down, never found (D-52).
+    - name: stale
+      role: accounting
+      type: IList<string>
+    # A sentence per thing turned down, in the modeller's words.
+    - name: findings
+      role: accounting
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release: GetElement by UniqueId, GetParameters,
+  AsValueString, AsString, SetValueString, Set(string), Set(int), Regenerate,
+  Uri.UnescapeDataString - all present from 2020 to 2027. A Yes/No is found by
+  its display string reading Yes or No on an integer parameter, which needs no
+  version-specific type API.
+
+utterances:
+  - apply the values edited in the Companion table
+  - write these edited parameter values back to the elements

@@ -89,3 +89,21 @@ body.closed main { opacity: .5; filter: grayscale(1); }
 .change .result { font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .change .result.ok { color: var(--ok); } .change .result.refused { color: var(--warn); }
 .change .result.failed { color: var(--bad); }
+#table .where { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
+#table .grid { overflow-x: auto; max-height: 520px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
+#table table { border-collapse: collapse; font-size: 13px; min-width: 100%; }
+#table th { position: sticky; top: 0; background: var(--card); text-align: left; padding: 6px 8px;
+  border-bottom: 1px solid var(--line); white-space: nowrap; }
+#table td { padding: 3px 6px; border-bottom: 1px dashed var(--line); white-space: nowrap; }
+#table td.fixed { color: var(--muted); }
+#table td input { width: 100%; min-width: 90px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 5px;
+  background: var(--bg); color: var(--ink); font: inherit; }
+#table td.edited input { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+#table td.stale { background: color-mix(in srgb, var(--bad) 14%, transparent); }
+#table footer { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+#table button { background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 7px 14px;
+  font: inherit; font-weight: 600; cursor: pointer; }
+#table button:disabled { opacity: .5; cursor: default; }
+#table .result { font-size: 13px; white-space: pre-wrap; }
+#table .result.ok { color: var(--ok); } #table .result.refused { color: var(--warn); }
+#table .result.failed { color: var(--bad); }
