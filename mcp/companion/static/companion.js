@@ -408,6 +408,10 @@ function tableCell(row, name, cell, edits, count) {
     td.classList.add("copyable");
     input.title = "Drag this cell onto another cell in the column to copy its value there";
     input.addEventListener("dragstart", e => e.preventDefault());   // not the browser's text drag
+    const handle = document.createElement("span");
+    handle.className = "fill";
+    handle.title = "Drag up or down to fill the cells you pass over with this value (like Excel)";
+    td.append(handle);
   }
   return td;
 }
@@ -471,9 +475,60 @@ function dragCells(tbody) {
   };
   tbody.addEventListener("pointerdown", e => {
     const td = e.button === 0 && e.target.closest && e.target.closest("td.copyable");
-    if (!td || from) return;
+    if (!td || from || e.target.closest(".fill")) return;
     from = td;
     start = { x: e.clientX, y: e.clientY };
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", up);
+    document.addEventListener("pointercancel", up);
+  });
+}
+
+// Fill like Excel: the square that shows only at a cell's bottom-right
+// corner. Dragged up or down its column, every cell passed over takes the
+// value - as edits, sent only by Apply. Read-only cells are passed over and
+// left alone; Mark and Type Mark have no square (NO_COPY above).
+function fillDown(tbody) {
+  let from = null, range = [];
+  const paint = td => {
+    range.forEach(c => c.classList.remove("fill-range"));
+    range = [];
+    if (!td || td.parentElement.parentElement !== tbody || td.cellIndex !== from.cellIndex) return;
+    const a = from.parentElement.sectionRowIndex, b = td.parentElement.sectionRowIndex;
+    for (let i = Math.min(a, b); i <= Math.max(a, b); i++) {
+      const c = tbody.rows[i].cells[from.cellIndex];
+      c.classList.add("fill-range");
+      range.push(c);
+    }
+  };
+  const move = e => {
+    e.preventDefault();
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    paint(el && el.closest("td"));
+  };
+  const up = () => {
+    const value = from.querySelector("input").value;
+    range.forEach(c => {
+      const input = c !== from && c.classList.contains("copyable") && c.querySelector("input");
+      if (!input || input.value === value) return;
+      input.value = value;
+      input.dispatchEvent(new Event("input"));
+    });
+    range.forEach(c => c.classList.remove("fill-range"));
+    range = [];
+    from = null;
+    document.body.classList.remove("filling");
+    document.removeEventListener("pointermove", move);
+    document.removeEventListener("pointerup", up);
+    document.removeEventListener("pointercancel", up);
+  };
+  tbody.addEventListener("pointerdown", e => {
+    const handle = e.button === 0 && e.target.closest && e.target.closest(".fill");
+    if (!handle || from) return;
+    e.preventDefault();
+    from = handle.closest("td");
+    document.body.classList.add("filling");
+    paint(from);
     document.addEventListener("pointermove", move);
     document.addEventListener("pointerup", up);
     document.addEventListener("pointercancel", up);
@@ -555,6 +610,7 @@ function renderTable(t) {
     tbody.append(tr);
   }
   dragCells(tbody);
+  fillDown(tbody);
   table.append(thead, tbody);
   wrap.append(table);
   box.append(wrap);
@@ -563,7 +619,8 @@ function renderTable(t) {
   legend.className = "legend";
   [["l-edit", "You can edit"], ["l-fixed", "Read-only - point at it for why"],
    ["l-edited", "Edited, not applied yet"],
-   ["l-copy", "Drag a cell onto another in its column to copy it (not Mark or Type Mark)"]].concat(stale.size ? [["l-stale", "Changed in Revit since it was read"]] : [])
+   ["l-copy", "Drag a cell onto another in its column to copy it"],
+   ["l-fill", "Or drag the square at a cell's bottom-right corner to fill up or down (not Mark or Type Mark)"]].concat(stale.size ? [["l-stale", "Changed in Revit since it was read"]] : [])
     .forEach(([cls, text]) => {
       const span = document.createElement("span");
       span.className = cls;

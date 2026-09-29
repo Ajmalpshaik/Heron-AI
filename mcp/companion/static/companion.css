@@ -401,3 +401,20 @@ body.dragging-cell, body.dragging-cell * { cursor: copy !important; user-select:
 .theme .i-sun { display: none; }
 :root[data-theme="dark"] .theme .i-sun { display: block; }
 :root[data-theme="dark"] .theme .i-moon { display: none; }
+
+/* ------------------------------------------------------------ fill like Excel */
+#table td.copyable { position: relative; }
+/* A 16 px corner zone: the square shows only while the pointer is in it. */
+#table td .fill {
+  position: absolute; right: 2px; bottom: 0; width: 16px; height: 16px; cursor: crosshair; touch-action: none;
+}
+#table td .fill::after {
+  content: ""; position: absolute; right: 4px; bottom: 5px; width: 8px; height: 8px;
+  background: var(--primary); border: 1.5px solid var(--surface); border-radius: 2px;
+  opacity: 0; transition: opacity .1s;
+}
+#table td .fill:hover::after { opacity: 1; }
+#table td.fill-range { background-color: color-mix(in srgb, var(--primary) 10%, transparent) !important; }
+#table td.fill-range input { border-style: dashed; border-color: var(--primary); }
+body.filling, body.filling * { cursor: crosshair !important; user-select: none; }
+.legend .l-fill::before { width: 8px; height: 8px; border-radius: 2px; background: var(--primary); border-color: var(--primary); }
