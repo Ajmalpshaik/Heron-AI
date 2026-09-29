@@ -1,6 +1,6 @@
-// NOT STANDALONE. Assumes `doc`, `accessories`, `envelope` and
-// `maxReachHeight` are in scope; leaves `findings`, `obstructed`,
-// `needAccessPanel` and `outOfReach` behind.
+// NOT STANDALONE. Assumes `doc`, `accessories`, `envelope`, `maxReachHeight`
+// and `includeLinks` are in scope; leaves `findings`, `obstructed`,
+// `needAccessPanel`, `outOfReach`, `linksSearched` and `linkedMatches` behind.
 //
 // READ ONLY. Opens no transaction and needs none. Distances are internal FEET.
 //
@@ -23,6 +23,20 @@
 // HEIGHT IS ABOVE THE ACCESSORY'S OWN LEVEL, using ProjectElevation. A level has
 // two heights and only one is in the same space as a point in the model. A
 // raised floor makes the real reach shorter than this number.
+//
+// THE ARCHITECTURE IS USUALLY A LINK, AND IT IS READ ONLY WHEN ASKED FOR - D-59.
+// With `includeLinks` set, the ROOM and CEILING questions are asked of every
+// loaded link too: the operating envelope is carried into each placement and
+// tested against that link's elements (rooms, spaces and areas are space, not
+// obstructions), and the upward ray is cast again with Revit's own
+// FindReferencesInRevitLinks. Each accessory the links answer for gets a line
+// in `linkedMatches` - the linked obstruction or ceiling, with its type, id IN
+// THE LINK and Fire Rating. `obstructed`, `needAccessPanel` and `outOfReach`
+// stay this model's answer, exactly as the proof measured - the linked verdict
+// is TEXT, so nothing from a link reaches the next step (FRAGMENT-ISSUES row
+// 75). THE RAY SEES A LINK ONLY WHERE THE 3D VIEW SHOWS IT. NESTED LINKS ARE
+// NOT READ, AND THE ANSWER COUNTS THEM. Only model elements are read from a
+// link, never its views or sheets.
 
 // MILLIMETRES IN, FEET INSIDE (D-71). Every length a caller types is
 // millimetres. The add-in converts an XYZ at the boundary and cannot convert a
@@ -38,6 +52,103 @@ maxReachHeight = maxReachHeight / MillimetresPerFoot;
 // building would have read as an obstruction, and the check that exists to
 // find crowded valves would have condemned all of them.
 envelope = envelope / MillimetresPerFoot;
+
+// ---- D-59: which links, only when asked for --------------------------------
+
+var linksSearched = 0;
+var linkedMatches = new List<string>();
+var linkedTotal = 0;
+var nestedLinks = 0;
+
+// One entry per link FILE, keyed by link type - a file placed twice is one
+// model placed twice, and counting placements would report a job with four
+// links as having nine. LIST_LINKED_MODELS' rule, as REPORT_AREAS applies it.
+var linkTypes = new List<ElementId>();
+var linkDocs = new List<Document>();
+var linkPlacements = new List<List<RevitLinkInstance>>();
+
+if (includeLinks)
+{
+    foreach (var instance in new FilteredElementCollector(doc)
+        .OfClass(typeof(RevitLinkInstance)).Cast<RevitLinkInstance>())
+    {
+        if (instance == null) continue;
+
+        var typeId = instance.GetTypeId();
+        if (typeId == null || typeId == ElementId.InvalidElementId) continue;
+
+        var known = linkTypes.IndexOf(typeId);
+        if (known >= 0) { linkPlacements[known].Add(instance); continue; }
+
+        // LOADED IS ESTABLISHED BY ASKING FOR THE DOCUMENT, never by a status.
+        Document linked = null;
+        try { linked = instance.GetLinkDocument(); }
+        catch (Exception) { linked = null; }
+        if (linked == null) continue;
+
+        linkTypes.Add(typeId);
+        linkDocs.Add(linked);
+        linkPlacements.Add(new List<RevitLinkInstance> { instance });
+
+        try
+        {
+            nestedLinks += new FilteredElementCollector(linked)
+                .OfClass(typeof(RevitLinkInstance)).GetElementCount();
+        }
+        catch (Exception) { }
+    }
+    linksSearched = linkDocs.Count;
+}
+
+
+// Fire Rating by the name Revit's own walls, floors and doors carry it under,
+// on the element first and then its type. Read as the palette shows it. A
+// family that calls it something else reads "not set" - said, never guessed.
+Func<Element, string> fireRatingOf = element =>
+{
+    Element type = null;
+    try { type = element.Document.GetElement(element.GetTypeId()); } catch (Exception) { }
+    foreach (var source in new[] { element, type })
+    {
+        if (source == null) continue;
+        Parameter parameter = null;
+        try { parameter = source.LookupParameter("Fire Rating"); } catch (Exception) { }
+        if (parameter == null || !parameter.HasValue) continue;
+        string text = null;
+        try
+        {
+            text = parameter.StorageType == StorageType.String
+                ? parameter.AsString() : parameter.AsValueString();
+        }
+        catch (Exception) { }
+        if (!string.IsNullOrEmpty(text)) return text;
+    }
+    return "not set";
+};
+
+// A linked element as text: the category, 'Family: Type', its id IN THE LINK
+// (never this model's), and its Fire Rating.
+Func<Document, Element, string> describeLinked = (linked, element) =>
+{
+    var typeName = "";
+    try
+    {
+        var type = linked.GetElement(element.GetTypeId()) as ElementType;
+        if (type != null)
+            typeName = string.IsNullOrEmpty(type.FamilyName)
+                ? type.Name : type.FamilyName + ": " + type.Name;
+    }
+    catch (Exception) { }
+    return string.Format("{0} '{1}' (id {2} in the link), Fire Rating {3}",
+        element.Category == null ? "element" : element.Category.Name,
+        typeName, element.Id, fireRatingOf(element));
+};
+
+var linkBlocked = "";
+var linkBlockedCount = 0;
+var linkPanelCount = 0;
+var notObstructions = new List<ElementId> { new ElementId(BuiltInCategory.OST_Rooms),
+    new ElementId(BuiltInCategory.OST_MEPSpaces), new ElementId(BuiltInCategory.OST_Areas) };
 
 var findings = new List<string>();
 var obstructed = new List<ElementId>();
@@ -184,6 +295,68 @@ foreach (var accessory in accessories)
         }
     }
 
+    // ---- THE LINKS: the same two questions. Text only - see the header.
+    if (linkDocs.Count > 0)
+    {
+        var linkSays = new List<string>();
+        if (zone != null)
+        {
+            var linkIntruders = new List<string>();
+            for (var i = 0; i < linkDocs.Count; i++)
+            {
+                var seen = new HashSet<ElementId>();
+                foreach (var placement in linkPlacements[i])
+                {
+                    try
+                    {
+                        var moved = SolidUtils.CreateTransformed(zone, placement.GetTotalTransform().Inverse);
+                        foreach (var found in new FilteredElementCollector(linkDocs[i])
+                            .WhereElementIsNotElementType()
+                            .WherePasses(new ElementIntersectsSolidFilter(moved)))
+                        {
+                            if (found.Category == null || notObstructions.Contains(found.Category.Id)) continue;
+                            if (!seen.Add(found.Id)) continue;
+                            if (linkIntruders.Count < 6)
+                                linkIntruders.Add(linkDocs[i].Title + " - " + describeLinked(linkDocs[i], found));
+                        }
+                    }
+                    catch (Exception) { }
+                }
+            }
+            if (linkIntruders.Count > 0)
+            {
+                linkBlockedCount++;
+                linkSays.Add("ROOM: BLOCKED by " + string.Join("; ", linkIntruders));
+            }
+        }
+        if (rayView != null)
+        {
+            try
+            {
+                var linkIntersector = new ReferenceIntersector(
+                    new ElementCategoryFilter(BuiltInCategory.OST_Ceilings), FindReferenceTarget.Element, rayView);
+                linkIntersector.FindReferencesInRevitLinks = true;
+                var linkHit = linkIntersector.FindNearest(centre, XYZ.BasisZ);
+                var reference = linkHit == null ? null : linkHit.GetReference();
+                if (reference != null && reference.LinkedElementId != ElementId.InvalidElementId)
+                {
+                    var placement = doc.GetElement(reference.ElementId) as RevitLinkInstance;
+                    Document linked = null;
+                    try { linked = placement == null ? null : placement.GetLinkDocument(); } catch { }
+                    var ceiling = linked == null ? null : linked.GetElement(reference.LinkedElementId);
+                    linkPanelCount++;
+                    linkSays.Add(string.Format("CEILING: {0:0} mm above it, {1} - NEEDS AN ACCESS PANEL",
+                        linkHit.Proximity * 304.8,
+                        ceiling == null ? "a linked ceiling" : linked.Title + " - " + describeLinked(linked, ceiling)));
+                }
+            }
+            catch (Exception) { }
+        }
+        if (linkSays.Count > 0)
+            linkedMatches.Add(string.Format("  {0} (id {1}) - {2}", accessory.Name, accessory.Id,
+                string.Join("  |  ", linkSays)));
+    }
+
     // ---- HEIGHT above its own level.
     var levelId = accessory.LevelId;
     var level = levelId == ElementId.InvalidElementId ? null : doc.GetElement(levelId) as Level;
@@ -211,6 +384,36 @@ foreach (var accessory in accessories)
 }
 
 findings.Insert(0, string.Format("{0} accessory(ies): {1} obstructed, {2} needing an access panel, {3} "
-    + "out of reach. LINKED models were NOT scanned - if the architecture is a link, the ceiling and "
-    + "room questions have not seen it",
-    accessories.Count, obstructed.Count, needAccessPanel.Count, outOfReach.Count));
+    + "out of reach. {4}",
+    accessories.Count, obstructed.Count, needAccessPanel.Count, outOfReach.Count,
+    linkDocs.Count > 0
+        ? "LINKED models were read too - see linkedMatches"
+        : "LINKED models were NOT scanned - if the architecture is a link, the ceiling and room "
+            + "questions have not seen it"));
+
+if (linkDocs.Count > 0)
+    linkedMatches.Insert(0, string.Format("{0} accessory(ies) blocked by something in a link, {1} under a "
+        + "linked ceiling and needing an access panel{2}", linkBlockedCount, linkPanelCount,
+        rayView == null ? ". The CEILING question was not asked - no 3D view"
+            : string.Format(". Ceiling ray cast in the 3D view '{0}'; a link hidden there is not seen", rayView.Name)));
+linkedTotal = linkBlockedCount + linkPanelCount;
+
+// THE ANSWER SAYS WHAT IT READ. Asked-and-found, asked-and-none-loaded and not
+// asked read differently on purpose - D-59's own worked example.
+if (!includeLinks)
+    linkedMatches.Insert(0, "Host model only - links not read");
+else if (linkBlocked.Length > 0)
+    linkedMatches.Insert(0, linkBlocked);
+else if (linksSearched == 0)
+    linkedMatches.Insert(0, "Links asked for, NONE loaded - host only");
+else
+    linkedMatches.Insert(0, string.Format("{0} link(s) read: {1} linked finding(s), NOT selected",
+        linksSearched, linkedTotal));
+
+if (includeLinks && nestedLinks > 0)
+    linkedMatches.Add(string.Format("{0} link placement(s) nested inside those links were NOT "
+        + "read", nestedLinks));
+
+if (linksSearched > 0)
+    linkedMatches.Add("What a link holds is reported here as text only - nothing from a link "
+        + "is carried to the next step, which would look it up in this model");

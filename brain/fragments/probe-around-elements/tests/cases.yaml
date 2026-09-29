@@ -14,6 +14,15 @@ positive:
     expect: >
       the middle of its bounding box used as the origin, and a result anyway
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      an AHU in this MEP model 400 mm from a wall of the architectural link,
+      directions the four horizontals, maxDistance 1000, includeLinks true
+    expect: >
+      `hits` unchanged from the host-only run; one line in `linkedMatches`
+      for the direction facing the wall, naming it and giving the distance
+      in mm - checked with a dimension in plan
+
 negative:
   - given: a 3D view with the WALLS category hidden
     expect: >
@@ -35,6 +44,29 @@ negative:
     expect: >
       the element in `nothingHit` - which means nothing within that distance,
       not nothing at all
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
+
+  - given: the architectural link hidden in the given 3D view, includeLinks true
+    expect: >
+      no linked line at all - the ray obeys the view - and the summary still
+      counting the loaded links, so the zero is visibly a view setting
 
 second_route:
   - >
