@@ -28,7 +28,7 @@ positive:
       the solids unlinked; the connectors left alone, and a finding that they
       lack at least one of "Visible" and "Material", grouped by what each one
       lacks and named - never "no Visible or Material" said of an element that
-      has Visible (version 2, row 5b-259)
+      has Visible (version 2, row 5b-260)
 
   - given: >
       system "Fire Protection Wet", "Fitting" or "Global", with a connector of
@@ -36,7 +36,7 @@ positive:
     expect: >
       that connector matched - Revit's own name for the system is read as its
       FireProtectWet, and Fitting and Global are classifications like any
-      other (version 2, row 5b-259)
+      other (version 2, row 5b-260)
 
 negative:
   - given: >
@@ -75,7 +75,7 @@ negative:
     expect: >
       refused as nothing matching on that system, with what the family has -
       not as "No system classification is called", which version 1 said of
-      all three (row 5b-259)
+      all three (row 5b-260)
 
   - given: >
       category "all", system "all", links "Flow=<an Air Flow parameter>;
@@ -83,7 +83,7 @@ negative:
     expect: >
       refused before anything changes, naming which of the two each element
       lacks - the solids "Flow", the duct connectors "Material" - never "no
-      Flow or Material" (version 2, row 5b-259)
+      Flow or Material" (version 2, row 5b-260)
 
   - given: >
       a read-only parameter of a connector that is not its Flow, and the Flow
@@ -91,7 +91,7 @@ negative:
     expect: >
       both refused as read-only, nothing changed; only the Flow carries
       "as a connector's flow is unless its Flow Configuration is Preset"
-      (version 2, row 5b-259)
+      (version 2, row 5b-260)
 
 second_route:
   - >

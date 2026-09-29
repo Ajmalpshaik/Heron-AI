@@ -79,7 +79,7 @@ Func<string, string, bool> sameWord = (said, label) =>
 // says SupplyHydronic, so the same words in another order are the same system.
 // And a modeller writes "Fire Protection Wet", the name of Revit's own piping
 // system, where the enum says FireProtectWet - so "protection" is read as
-// "protect" before either comparison (row 5b-259).
+// "protect" before either comparison (row 5b-260).
 Func<string, string> systemWords = said => (said ?? "").ToLowerInvariant().Replace("protection", "protect");
 Func<string, string, bool> sameSystem = (said, enumName) =>
 {
@@ -241,7 +241,7 @@ Func<Parameter, string> reads = p =>
 // A CONNECTOR'S OWN FLOW, by Revit's id for it rather than by the word "Flow":
 // it is the one parameter on a connector that is read-only until its Flow
 // Configuration is Preset, so the refusal says that of it and of nothing else
-// (row 5b-259). The duct and the pipe flow are the only two parameters Revit
+// (row 5b-260). The duct and the pipe flow are the only two parameters Revit
 // labels "Flow" that are not obsolete (RevitAPI.xml, 2020, 2024 and 2027).
 var ductFlow = new ElementId(BuiltInParameter.RBS_DUCT_FLOW_PARAM);
 var pipeFlow = new ElementId(BuiltInParameter.RBS_PIPE_FLOW_PARAM);
@@ -266,7 +266,7 @@ var lacking = new List<Tuple<Element, List<string>>>();
 
 // WHAT EACH ONE "all" LEFT OUT LACKS, grouped by what it lacks and named. With
 // two links an element can have one and lack the other, and version 1's "no
-// Visible or Material" was untrue of the one that has Visible (row 5b-259).
+// Visible or Material" was untrue of the one that has Visible (row 5b-260).
 Func<List<string>, string> quoted = names =>
 {
     var marked = names.Select(n => "\"" + n + "\"").ToList();
@@ -411,7 +411,7 @@ else
     // Undefined. "Global" and "Fitting" are "used for UI filtering in Family
     // Editor" in RevitAPI.xml's words, and a family's own connectors carry
     // them - the inventory below can print "Duct Connector (Fitting)" - so
-    // refusing them refused a name the refusal itself had offered (row 5b-259).
+    // refusing them refused a name the refusal itself had offered (row 5b-260).
     if (!everySystem && saidSystem.Length > 0)
     {
         var classifications = Enum.GetNames(typeof(MEPSystemClassification))
@@ -498,7 +498,7 @@ else
         // "all" TAKES ONLY WHAT HAS EVERY PARAMETER NAMED; a named category
         // must have them all, or the call is refused below. What each one left
         // out lacks is kept: with two links an element can have one and lack
-        // the other, and the finding names which (row 5b-259).
+        // the other, and the finding names which (row 5b-260).
         if (everyCategory)
         {
             var kept = new List<Element>();
@@ -729,7 +729,7 @@ if (refused == null)
         + " already as asked, on " + matched + " element(s) matching \"" + saidCategory + "\""
         + (everySystem ? "" : " on the system \"" + saidSystem + "\"") + " - read back from the family.");
     // With one link what the ones left out lack is that link; with more, which
-    // one each lacks is named (row 5b-259).
+    // one each lacks is named (row 5b-260).
     if (leftOut > 0 && asked.Count == 1)
         findings.Add(leftOut + " element(s) matched \"all\" but have no \"" + asked[0].Item1
             + "\" that can be linked, and were left alone.");
