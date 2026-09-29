@@ -8,7 +8,8 @@
 > document's.
 >
 > **Since then - read §21 first.** Question 1 was answered yes on 2026-09-29 and filed as
-> [D-108](decisions/D-108.md); the other questions are still open.
+> [D-108](decisions/D-108.md). Every other question was answered the same day, and the owner narrowed
+> what the tables are for - §21.1. **Nothing is built yet.**
 
 ---
 
@@ -743,4 +744,47 @@ will undo the move first.
 |---|---|---|---|
 | 2026-09-29 | 1 - reopen the door D-105 closed? | **Yes** - *"YES YOU CAN DO IT"* | [D-108](decisions/D-108.md), accepted. §19's draft is filed there; it leaves question 2 open and holds Article 12c as it stands |
 
-**Still open:** questions 2 to 7 in §18, asked one at a time. **Nothing is built yet.**
+| 2026-09-29 | 2 - a stale row | **A** - change nothing, mark the stale rows, Apply again (Article 12c as it stands) | this section |
+| 2026-09-29 | 3 to 7 | **The recommendation in each**, offered to the owner as *"use your recommendations"*: colour on projection **and** cut; undo entry keeps its current name; this chat's activity only; two new fragments; no Select-in-Revit button in V1 | this section |
+
+### 21.1 What the tables are for - the owner's scope, 2026-09-29
+
+The owner corrected the design in two ways, in the owner's words: *"not all the changes"* - and the table
+appears **by itself**, not only when Claude opens one.
+
+**A table comes with a SETTINGS or PARAMETER change, and with a schedule-style list:**
+
+| Kind | The owner's example | What the page shows |
+|---|---|---|
+| Colour and graphics | *"change all the category graphics to red"* | A small table of what was just set - e.g. **Ducts - line 255,0,0 - surface 255,0,0** - with a colour picker. Apply runs the same capability again with the new values |
+| Parameters | an instance parameter set on some elements | The elements and the parameter's value, editable |
+| A schedule-style list | *"give me the schedule for the FCUs"* | The chat answers in one line; the page shows the FCUs with their parameters, and the changeable ones (instance parameters) are editable |
+
+**No table for layout work.** Duct layouts, diffuser layouts, moving, placing and routing are
+changed in the chat or in Revit, never from the page: *"from the UI we cannot change it, that
+function no need"*.
+
+**What that changes in this design:**
+
+- **§8.1 - the table also opens by itself.** After a change through `revit_change` whose fragment is
+  a colour, graphics or parameter setting, the MCP process builds the table from the values that
+  change used - no extra Claude call, so no tokens beyond the change itself. Which fragments qualify
+  is declared on each card (`fragment.yaml`, for example `companion: settings`), never guessed from a
+  fragment's name; a card without it gets no table. `fragment.yaml` sits outside a proof's seal, so
+  adding the field does not make a proof stale.
+- **Apply on an after-change table re-runs the same capability with the edited values** - the same
+  operation, gate, switches, pin and single undo entry as `revit_change`. It is a new change, so it
+  is a new entry in Revit's undo list, and the page says so.
+- **§8.2's element table is the schedule-style list**, and its first real use is parameters (the FCU
+  example), not only colour. Writing a value per element widens `import-parameter-values` to take
+  rows from the request (§14). `Mark` and `Type Mark` never get fill-down.
+- **Category-level colour is its own kind of row.** *"Category graphics"* is `SET_CATEGORY_GRAPHICS`
+  (PROVEN) - one row per category, not per element.
+
+**Still to settle when it is built, and recorded rather than decided here:** whether Apply on an
+after-change table is covered by D-108 point 6 (the table is the preview) or needs the rolled-back
+preview run first ([D-55](decisions/D-55.md)) to show counts before keeping. The table shows the
+values that will be sent; for a category colour that is the whole change, for a parameter on many
+elements it is not the count.
+
+**Nothing is built yet.**
