@@ -6,6 +6,9 @@
 > **Phase 1 does not start until the owner has answered the questions in §18**, because §2 lists
 > places where the request and Heron's own rules disagree, and those are the owner's to settle, not this
 > document's.
+>
+> **Since then - read §21 first.** Question 1 was answered yes on 2026-09-29 and filed as
+> [D-108](decisions/D-108.md); the other questions are still open.
 
 ---
 
@@ -731,3 +734,13 @@ will undo the move first.
   packages in this PC's NuGet cache, one per release.
 - **No decision number was spent**, no register row was added, and no question was filed in
   [OPEN-QUESTIONS](OPEN-QUESTIONS.md) — §18 is asked in the chat first, one question at a time.
+
+---
+
+## 21. Decided since this was written
+
+| Date | Question | Answer | Recorded as |
+|---|---|---|---|
+| 2026-09-29 | 1 - reopen the door D-105 closed? | **Yes** - *"YES YOU CAN DO IT"* | [D-108](decisions/D-108.md), accepted. §19's draft is filed there; it leaves question 2 open and holds Article 12c as it stands |
+
+**Still open:** questions 2 to 7 in §18, asked one at a time. **Nothing is built yet.**

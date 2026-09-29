@@ -179,6 +179,7 @@ an edit.
 | [D-105](#d-105--talk-is-removed-and-the-modeller-works-with-heron-in-the-chat-only) | Talk is removed, and the modeller works with Heron in the chat only | ✅ Accepted · 2026-09-27 |
 | [D-106](#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on) | Admin and Publish each get a switch of their own, and only the owner turns them on | ✅ Accepted · 2026-09-28 |
 | [D-107](#d-107--the-ifc-and-dwg-exports-are-publish-so-the-publish-switch-guards-every-export) | The IFC and DWG exports are PUBLISH, so the Publish switch guards every export | ✅ Accepted · 2026-09-28 |
+| [D-108](#d-108--the-modeller-can-see-and-edit-herons-work-in-a-local-companion-page-and-the-chat-stays-the-only-place-to-talk-to-heron) | The modeller can see and edit Heron's work in a local Companion page, and the chat stays the only place to talk to Heron | ✅ Accepted · 2026-09-29 |
 
 ## Format
 
@@ -910,3 +911,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`export-model-to-ifc/fragment.yaml`](../brain/fragments/export-model-to-ifc/fragment.yaml), [`export-views-to-dwg/fragment.yaml`](../brain/fragments/export-views-to-dwg/fragment.yaml), [`tests/test_admin_publish.py`](../tests/test_admin_publish.py)
 
 **Full record:** [`decisions/D-107.md`](decisions/D-107.md)
+
+## D-108 — The modeller can see and edit Heron's work in a local Companion page, and the chat stays the only place to talk to Heron
+
+**Status:** Accepted · **Date:** 2026-09-29 · **Source:** Ajmal PS, 2026-09-29, in conversation: *"YES YOU CAN DO IT"*, answering question 1 of [40 §18](40-heron-companion.md)
+**Supersedes:** point 2 of [D-105](#d-105--talk-is-removed-and-the-modeller-works-with-heron-in-the-chat-only) only as far as *"works with Heron in the chat only"* - the chat stays the only place to **talk** to Heron · **Amends:** [D-09](#d-09--revit-thread-marshalling-externalevent) - a selection watch on `Idling` for Revit 2020, 2021 and 2022 only · **Keeps:** [D-01](#d-01--execution-host-claude-code-plugin), [D-02](#d-02--mcp--add-in-transport-named-pipes), [D-19](#d-19--writing-is-off-by-default-until-the-write-path-has-met-a-real-revit), [D-22](#d-22--a-second-chat-is-refused-not-allowed-to-take-over), [D-99](#d-99--a-change-asked-for-in-a-chat-is-kept-at-once-with-no-preview-and-article-9-says-so), [D-106](#d-106--admin-and-publish-each-get-a-switch-of-their-own-and-only-the-owner-turns-them-on), [Constitution Articles 7, 8, 9, 12a-12c](../HERON_CONSTITUTION.md)
+**Affects:** [40 — Heron Companion](40-heron-companion.md), which holds the design. Nothing is built yet
+
+**Full record:** [`decisions/D-108.md`](decisions/D-108.md)
