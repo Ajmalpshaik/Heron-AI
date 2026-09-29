@@ -242,6 +242,13 @@ TOOLS = {
     # reach the bridge, through revit_health's own discovery, but it asks
     # nothing of a model and can change nothing.
     "heron_diagnose":           (READ,    None),
+
+    # The Companion page (D-108, docs/40). READ, no operation: it opens a page
+    # on 127.0.0.1 that reads the add-in's live status FILE - never the pipe -
+    # and in Phase 1 the page changes nothing. When the page learns to apply
+    # an edited table, that action gets its own row here at MODIFY, through
+    # run_fragment_write, and this row stays READ.
+    "heron_companion":          (READ,    None),
 }
 
 

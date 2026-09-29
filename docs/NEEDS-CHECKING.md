@@ -401,6 +401,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bj.md`](needs-checking/group-bj.md)
 
+## Group BK - the Heron Companion, Phase 1: a page beside Revit shows the model, the view and the selection (2026-09-29)
+
+**Its own file:** [`needs-checking/group-bk.md`](needs-checking/group-bk.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

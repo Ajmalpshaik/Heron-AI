@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heron Companion</title>
+<link rel="stylesheet" href="/companion.css">
+<script src="/companion.js" defer></script>
+</head>
+<body>
+<header class="bar">
+  <span class="brand">Heron Companion</span>
+  <span id="link" class="pill wait">Starting…</span>
+</header>
+
+<main>
+  <section id="notice" class="notice" hidden></section>
+
+  <section class="card" id="revit">
+    <h2>Revit</h2>
+    <dl class="facts">
+      <dt>Revit</dt><dd id="f-version">—</dd>
+      <dt>Model</dt><dd id="f-model">—</dd>
+      <dt>View</dt><dd id="f-view">—</dd>
+      <dt>Updated</dt><dd id="f-updated">—</dd>
+    </dl>
+  </section>
+
+  <section class="card" id="selection">
+    <h2>Selected <span id="s-count" class="count">—</span></h2>
+    <ul id="s-categories" class="categories"></ul>
+    <p id="s-note" class="muted"></p>
+  </section>
+
+  <section class="card muted-card">
+    <h2>Coming next</h2>
+    <p class="muted">What the chat asks Heron to do will be listed here, and editable tables for
+      colours, parameters and schedules will open here. This page shows; it changes nothing yet.</p>
+  </section>
+</main>
+
+<footer class="foot muted">This page talks only to Heron on this PC. It never sends anything to Claude.</footer>
+</body>
+</html>

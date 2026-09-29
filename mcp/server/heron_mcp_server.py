@@ -2520,6 +2520,51 @@ def heron_diagnose() -> str:
     return diagnosis.describe(diagnosis.diagnose())
 
 
+# THIS CHAT'S COMPANION PAGE (D-108, docs/40). Made the first time it is asked
+# for and kept for the life of this process, which is the life of the chat.
+_companion = None
+
+
+@server.tool()
+def heron_companion() -> str:
+    """
+    Open the Heron Companion - a page in the user's browser, beside Revit,
+    that shows which model and view are in front and what is selected, live.
+
+    Use when the user asks to open, show or bring back the Companion (or
+    "the Heron page", "the live view"). It opens the page itself; there is
+    no address to pass on, and none is given here on purpose. It reads
+    nothing from Revit through the pipe and changes nothing - the page
+    reads a small status file the add-in writes while the Heron button is
+    connected. The page never sends anything to you or any AI.
+    """
+    global _companion
+    import webbrowser
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    "..", "companion"))
+    import heron_companion as companion_page
+
+    if _companion is None:
+        _companion = companion_page.Companion(bound_pid=lambda: binding.pid)
+    try:
+        address = _companion.pairing_address()
+    except OSError as why:
+        return "The Heron Companion could not start on this PC: %s" % why
+
+    # THE ADDRESS CARRIES A ONE-TIME CODE, SO IT GOES TO THE BROWSER AND
+    # NOWHERE ELSE - never into this reply, where it would sit in the chat.
+    try:
+        opened = webbrowser.open(address, new=2)
+    except webbrowser.Error:
+        opened = False
+    if not opened:
+        return ("The Heron Companion is running, but Windows would not open a "
+                "browser for it. Nothing in Revit was touched.")
+    return ("The Heron Companion is open in your browser. It shows the model, "
+            "the view and the selection of the Revit this chat uses, and "
+            "changes nothing.")
+
+
 @server.tool()
 def revit_phases() -> str:
     """

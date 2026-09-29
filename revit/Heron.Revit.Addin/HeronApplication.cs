@@ -191,6 +191,12 @@ namespace Heron.Revit.Addin
                 application.ViewActivated += OnViewActivated;
                 application.ControlledApplication.DocumentClosing += OnDocumentClosing;
 
+                // WHAT THE COMPANION PAGE READS (D-108): the model, view and
+                // selection, written to a file only while the bridge is
+                // connected. Before BuildRibbon, whose SetBridgeIcon(false)
+                // is what clears a file a crashed session left behind.
+                HeronLiveState.Attach(application);
+
                 BuildRibbon(application);
 
                 Log(string.Format(
@@ -248,6 +254,7 @@ namespace Heron.Revit.Addin
                 // dispatcher has already been dropped.
                 application.ViewActivated -= OnViewActivated;
                 application.ControlledApplication.DocumentClosing -= OnDocumentClosing;
+                HeronLiveState.Detach(application);
 
                 Dispatcher = null;
 
@@ -485,6 +492,10 @@ namespace Heron.Revit.Addin
         /// </summary>
         internal static void SetBridgeIcon(bool connected)
         {
+            // The Companion's live file follows the bridge, and this is
+            // called at every moment the bridge changes (D-108).
+            HeronLiveState.BridgeChanged(connected);
+
             var button = BridgeButton;
             if (button == null) return;
 
@@ -587,6 +598,8 @@ namespace Heron.Revit.Addin
 
                 var document = e == null ? null : e.Document;
                 dispatcher.NoteActiveModel(document == null ? null : document.Title);
+
+                HeronLiveState.ViewActivated(sender);
             }
             catch (Exception ex)
             {

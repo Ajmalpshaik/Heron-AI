@@ -15,6 +15,7 @@
 |---|---|
 | `client/` | Bridge discovery and the pipe client. Finds connected Revits, verifies each answers |
 | `server/` | The MCP server — Step 3 |
+| [`companion/`](companion/README.md) | **The Heron Companion page** ([D-108](../docs/DECISIONS.md), [docs/40](../docs/40-heron-companion.md)). A small web server started inside this process when the chat calls `heron_companion`, on `127.0.0.1` only. Phase 1 **shows** the model, view and selection from the add-in's live file and changes nothing. It never talks to any AI and never prints to stdout |
 | [`server/heron_tools.py`](server/heron_tools.py) | **What each tool can do, and the one place that says so.** Its risk is what the add-in's gate is checked against; the MCP safety labels a host sees and `revit_read`'s ceiling (nothing above `ANALYZE`) are **derived** from it, never typed at a tool ([docs/04 §8](../docs/04-heron-mcp.md)). The list: `python server/heron_tools.py` |
 | [`server/heron_brain.py`](server/heron_brain.py) | **The one place this side reaches `brain/`** — Step 14. It started with three tools on it — what Heron knows how to do, who provides a capability, and which capability a sentence needs — and there are more now. **Derive how many** rather than reading a figure here: `grep -c 'brain\.' server/heron_mcp_server.py` counts the calls, and the tools are the `@server.tool()` functions around them. It said *three* until 2026-09-21, when it was ten — row 5b-82 |
 

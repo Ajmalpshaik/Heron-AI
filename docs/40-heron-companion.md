@@ -787,4 +787,14 @@ preview run first ([D-55](decisions/D-55.md)) to show counts before keeping. The
 values that will be sent; for a category colour that is the whole change, for a parameter on many
 elements it is not the count.
 
-**Nothing is built yet.**
+### 21.2 Phase 1, as built (2026-09-29)
+
+**One change from §6.1:** the selection is watched on `Idling` on **every** release, not on
+`SelectionChanged` for 2023 and later. The version branch that needed failed
+`tools/check-api-surface.py`, and the house rule prefers what every release has - [D-108](decisions/D-108.md)
+point 4 records the revision. **The `ui.liveState` setting of §6.1 was not added:** the file is written
+only while the Heron button is connected, and that button is the switch.
+
+Built: `HeronLiveState.cs` and the `live` folder in `HeronPaths`; `mcp/companion/` and the
+`heron_companion` tool (READ); `tests/test_companion.py`. **Not yet run in Revit** - NEEDS-CHECKING
+[group BK](needs-checking/group-bk.md).

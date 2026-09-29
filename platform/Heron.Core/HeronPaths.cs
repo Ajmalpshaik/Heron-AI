@@ -78,6 +78,14 @@ namespace Heron.Core
         /// <summary>DERIVED - live bridges announce themselves here.</summary>
         public static string Bridges { get { return Ensure(Path.Combine(Derived, "bridges")); } }
 
+        /// <summary>
+        /// DERIVED - one small file per connected Revit saying which model,
+        /// which view and what is selected, for the Companion page to read
+        /// (D-108). Throwaway state: rewritten on every change, deleted when
+        /// the bridge disconnects.
+        /// </summary>
+        public static string Live { get { return Ensure(Path.Combine(Derived, "live")); } }
+
         /// <summary>DERIVED - logs. Verbose, rotated, disposable.</summary>
         public static string Logs { get { return Ensure(Path.Combine(Derived, "logs")); } }
 

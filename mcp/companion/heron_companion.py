@@ -1,0 +1,365 @@
+#!/usr/bin/env python3
+# Heron-Agent:  HERON-MCP-SRV-001, HERON-REVIT-CTX-007
+# Heron-Step:   6
+# Heron-Status: DRAFT
+# Heron-Since:  0.1.0
+# Heron-Layer:  bridge
+# See docs/29-metadata-standard.md
+
+"""
+The Heron Companion's server - a page beside Revit (D-108, docs/40).
+
+PHASE 1 SHOWS; IT CHANGES NOTHING. The page says which Revit this chat is
+using, which model and view are in front, and what is selected. It learns that
+from the small file the add-in writes on every change (HeronLiveState.cs,
+%LOCALAPPDATA%\\Heron\\live\\pid-N.json) - never by asking Revit through the
+pipe. docs/40 section 4.2 says why: a page asking through the pipe would raise
+the READING banner every second, queue work on Revit's own thread, and cut the
+chat's own connection.
+
+IT NEVER TALKS TO ANY AI. There are two doors and only two: HTTP from the page,
+on 127.0.0.1, and reading files on this PC. Nothing here opens an outgoing
+connection, and tests/test_companion.py fails if an import that could appears.
+
+IT LIVES INSIDE THE MCP SERVER'S PROCESS, which speaks MCP to Claude Code over
+STDOUT. So this file must never print. The standard library's request logging
+is switched off, and nothing here writes to sys.stdout; the test runs a real
+server and fails if one byte reaches it.
+
+PROTECTED FROM OTHER WEBSITES AND PROGRAMS (docs/40 section 11):
+
+  * 127.0.0.1 only, on a port Windows picks - no firewall prompt, no clash.
+  * The Host header must name this server exactly (DNS rebinding).
+  * The browser is opened by this process with a ONE-TIME code in the
+    address. The page removes it from the address bar at once and trades it,
+    once, within two minutes, for an HttpOnly SameSite=Strict cookie. The code
+    never appears in a tool's reply, so it never reaches the chat. (It is in
+    the query, not after #: Windows can drop the part after # when it hands an
+    address to the default browser.)
+  * Every /api call needs that cookie AND a custom header, which a page on
+    another site cannot send without a pre-flight this server never answers.
+    A POST must also carry this server's own Origin.
+  * The page may not be framed, loads nothing from anywhere else, and runs no
+    inline script (Content-Security-Policy).
+"""
+
+import http.server
+import io
+import json
+import os
+import secrets
+import socketserver
+import sys
+import threading
+import time
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+STATIC = os.path.join(HERE, "static")
+
+sys.path.insert(0, os.path.join(HERE, "..", "client"))
+import heron_bridge_client as bridge        # noqa: E402
+
+#: The header every /api request must carry. Its value is not a secret - its
+#: presence is the point: a cross-site request cannot add it without a
+#: CORS pre-flight, and this server answers no pre-flight.
+API_HEADER = "X-Heron-Companion"
+
+#: How long the one-time code in the opened address stays usable.
+PAIR_SECONDS = 120
+
+#: The three files the page is made of - and the only files served.
+PAGES = {
+    "/": ("index.html", "text/html; charset=utf-8"),
+    "/companion.js": ("companion.js", "text/javascript; charset=utf-8"),
+    "/companion.css": ("companion.css", "text/css; charset=utf-8"),
+}
+
+SECURITY_HEADERS = (
+    ("Content-Security-Policy",
+     "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
+     "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"),
+    ("X-Frame-Options", "DENY"),
+    ("X-Content-Type-Options", "nosniff"),
+    ("Referrer-Policy", "no-referrer"),
+    ("Cache-Control", "no-store"),
+)
+
+
+def live_dir():
+    """Where the add-in writes its live files - HeronPaths.Live, mirrored the
+    way DISCOVERY_DIR mirrors HeronPaths.Bridges."""
+    return os.path.join(bridge.local_app_data(), "Heron", "live")
+
+
+def connected_pids(discovery_dir=None):
+    """Process ids with a discovery file - Revits whose bridge is connected.
+    A live file whose Revit has no discovery file is left over from a crash."""
+    folder = discovery_dir or bridge.DISCOVERY_DIR
+    try:
+        names = os.listdir(folder)
+    except OSError:
+        return set()
+    found = set()
+    for name in names:
+        if name.endswith(".json"):
+            pid = bridge.pid_from_filename(name)
+            if pid is not None:
+                found.add(pid)
+    return found
+
+
+def read_live(folder=None, discovery_dir=None):
+    """Every readable live file whose Revit is still connected, by pid.
+
+    A file that is missing, half-written or not JSON is skipped rather than
+    shown: the add-in writes by replace, so a bad read is a race, and the next
+    poll a second later sees the whole file."""
+    folder = folder or live_dir()
+    alive = connected_pids(discovery_dir)
+    out = {}
+    try:
+        names = os.listdir(folder)
+    except OSError:
+        return out
+    for name in names:
+        if not (name.startswith("pid-") and name.endswith(".json")):
+            continue
+        try:
+            pid = int(name[4:-5])
+        except ValueError:
+            continue
+        if pid not in alive:
+            continue
+        path = os.path.join(folder, name)
+        try:
+            with io.open(path, encoding="utf-8") as fh:
+                record = json.load(fh)
+            modified = os.path.getmtime(path)
+        except (OSError, ValueError):
+            continue
+        if not isinstance(record, dict) or record.get("pid") != pid:
+            continue
+        record["updatedSecondsAgo"] = max(0, int(time.time() - modified))
+        out[pid] = record
+    return out
+
+
+def state(bound_pid, folder=None, discovery_dir=None):
+    """What the page shows: the Revit this chat uses, and how that was decided.
+
+    NEVER A GUESS AMONG SEVERAL (Article 12a). With this chat bound, it is that
+    Revit or nothing. Unbound, one connected Revit is shown and labelled as the
+    only one; several are listed and none is picked."""
+    live = read_live(folder, discovery_dir)
+    if bound_pid is not None:
+        record = live.get(bound_pid)
+        return {"choice": "bound" if record else "bound-gone", "revit": record,
+                "others": len(live) - (1 if record else 0)}
+    if len(live) == 1:
+        return {"choice": "only", "revit": list(live.values())[0], "others": 0}
+    if not live:
+        return {"choice": "none", "revit": None, "others": 0}
+    listed = [{"revitVersion": r.get("revitVersion"),
+               "document": (r.get("document") or {}).get("title")}
+              for r in live.values()]
+    return {"choice": "several", "revit": None, "others": len(live), "list": listed}
+
+
+class _Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
+    daemon_threads = True
+    allow_reuse_address = False
+
+
+class Companion(object):
+    """One chat's Companion. Started on request; lives as long as the chat."""
+
+    def __init__(self, bound_pid=lambda: None, folder=None, discovery_dir=None):
+        self._bound_pid = bound_pid
+        self._folder = folder
+        self._discovery_dir = discovery_dir
+        self._lock = threading.Lock()
+        self._codes = {}          # one-time code -> expiry (time.time())
+        self._sessions = set()    # cookie values issued
+        self._server = None
+        self._thread = None
+
+    # ------------------------------------------------------------ lifecycle
+
+    @property
+    def running(self):
+        return self._server is not None
+
+    @property
+    def port(self):
+        return self._server.server_address[1] if self._server else None
+
+    def start(self):
+        if self._server is not None:
+            return self.port
+        companion = self
+
+        class Handler(_Handler):
+            owner = companion
+
+        self._server = _Server(("127.0.0.1", 0), Handler)
+        self._thread = threading.Thread(target=self._server.serve_forever,
+                                        name="heron-companion", daemon=True)
+        self._thread.start()
+        return self.port
+
+    def stop(self):
+        server, self._server = self._server, None
+        if server is not None:
+            server.shutdown()
+            server.server_close()
+
+    def pairing_address(self):
+        """A fresh address carrying a one-time code. For the browser only -
+        never put it in a reply to the chat."""
+        self.start()
+        code = secrets.token_urlsafe(24)
+        with self._lock:
+            now = time.time()
+            self._codes = {c: t for c, t in self._codes.items() if t > now}
+            self._codes[code] = now + PAIR_SECONDS
+        return "http://127.0.0.1:%d/?pair=%s" % (self.port, code)
+
+    # --------------------------------------------------------------- checks
+
+    def redeem(self, code):
+        with self._lock:
+            expiry = self._codes.pop(code, None)
+            if expiry is None or expiry < time.time():
+                return None
+            session = secrets.token_urlsafe(32)
+            self._sessions.add(session)
+            return session
+
+    def knows(self, session):
+        with self._lock:
+            return bool(session) and session in self._sessions
+
+    def cookie_name(self):
+        # PER PORT. A cookie belongs to a host, not a port, so two chats'
+        # Companions on 127.0.0.1 would otherwise overwrite each other's.
+        return "heron_companion_%d" % self.port
+
+    def hosts(self):
+        return ("127.0.0.1:%d" % self.port, "localhost:%d" % self.port)
+
+    def origins(self):
+        return tuple("http://" + h for h in self.hosts())
+
+    def state(self):
+        try:
+            pid = self._bound_pid()
+        except Exception:                            # noqa: BLE001 - display only
+            pid = None
+        return state(pid, self._folder, self._discovery_dir)
+
+
+class _Handler(http.server.BaseHTTPRequestHandler):
+    owner = None                  # set per server by Companion.start
+    server_version = "HeronCompanion"
+    sys_version = ""
+
+    # NEVER PRINT. The base class logs every request to stderr, which is safe
+    # for MCP but noisy; silence is simpler to hold.
+    def log_message(self, fmt, *args):
+        return
+
+    # ------------------------------------------------------------- replies
+
+    def _send(self, status, body, content_type, extra=()):
+        data = body if isinstance(body, bytes) else body.encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(data)))
+        for name, value in SECURITY_HEADERS:
+            self.send_header(name, value)
+        for name, value in extra:
+            self.send_header(name, value)
+        self.end_headers()
+        if self.command != "HEAD":
+            self.wfile.write(data)
+
+    def _json(self, status, payload, extra=()):
+        self._send(status, json.dumps(payload), "application/json; charset=utf-8", extra)
+
+    def _refuse(self, status, why):
+        self._json(status, {"ok": False, "error": why})
+
+    # -------------------------------------------------------------- checks
+
+    def _host_ok(self):
+        return self.headers.get("Host", "") in self.owner.hosts()
+
+    def _cookie(self):
+        raw = self.headers.get("Cookie", "")
+        for part in raw.split(";"):
+            name, _, value = part.strip().partition("=")
+            if name == self.owner.cookie_name():
+                return value
+        return None
+
+    def _api_ok(self, needs_session=True):
+        if not self.headers.get(API_HEADER):
+            return "missing header"
+        if self.command == "POST" and self.headers.get("Origin", "") not in self.owner.origins():
+            return "wrong origin"
+        if needs_session and not self.owner.knows(self._cookie()):
+            return "not paired"
+        return None
+
+    # ------------------------------------------------------------- routes
+
+    def do_GET(self):
+        if not self._host_ok():
+            return self._refuse(421, "wrong host")
+        path = self.path.split("?", 1)[0]
+        if path in PAGES:
+            name, kind = PAGES[path]
+            try:
+                with io.open(os.path.join(STATIC, name), "rb") as fh:
+                    body = fh.read()
+            except OSError:
+                return self._refuse(500, "page missing")
+            return self._send(200, body, kind)
+        if path == "/api/state":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "state": self.owner.state()})
+        return self._refuse(404, "not found")
+
+    def do_POST(self):
+        if not self._host_ok():
+            return self._refuse(421, "wrong host")
+        path = self.path.split("?", 1)[0]
+        if path == "/api/pair":
+            why = self._api_ok(needs_session=False)
+            if why:
+                return self._refuse(403, why)
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 4096)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except (ValueError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            session = self.owner.redeem(str(body.get("code", "")))
+            if session is None:
+                return self._refuse(403, "code used or expired")
+            return self._json(200, {"ok": True}, extra=(
+                ("Set-Cookie", "%s=%s; HttpOnly; SameSite=Strict; Path=/"
+                 % (self.owner.cookie_name(), session)),))
+        return self._refuse(404, "not found")
+
+    def do_OPTIONS(self):
+        # No CORS, ever: a pre-flight is refused, so a page on another site
+        # can never send the custom header.
+        return self._refuse(405, "not allowed")
+
+    def do_PUT(self):
+        return self._refuse(405, "not allowed")
+
+    do_DELETE = do_PUT
+    do_PATCH = do_PUT
