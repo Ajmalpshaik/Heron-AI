@@ -95,6 +95,61 @@ def live_dir():
     return os.path.join(bridge.local_app_data(), "Heron", "live")
 
 
+class Activity(object):
+    """
+    PHASE 2: what this chat asked Heron to do, for the page (docs/40 section 7).
+
+    One line per tool call - when, which tool, the FIRST line of its answer
+    (at most 200 characters), how it ended, how long it took - in memory
+    only, the last 500. Nothing new reaches disk: the add-in's audit trail
+    already records every request that reached Revit (Golden Rule 14).
+
+    HOW IT ENDED IS READ FROM THE ANSWER'S OWN WORDS, and only for display:
+    an exception is "failed"; an answer saying nothing was sent to Revit, or
+    that it refused, is "refused"; anything else is "ok". The chat reads the
+    full answer; this is a label on a list.
+    """
+
+    LIMIT = 500
+    FIRST_LINE = 200
+    REFUSED = ("nothing has been sent to revit", "nothing was sent to revit",
+               "has refused", "is refused", "was refused", "refused rather")
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._items = []
+        self._seq = 0
+
+    @classmethod
+    def outcome(cls, reply, error=None):
+        if error is not None:
+            return "failed"
+        text = str(reply or "").lower()
+        if any(word in text for word in cls.REFUSED):
+            return "refused"
+        return "ok"
+
+    def record(self, tool, started, seconds, reply=None, error=None):
+        first = str(error if error is not None else (reply or "")).strip().splitlines()
+        line = first[0] if first else ""
+        if len(line) > self.FIRST_LINE:
+            line = line[:self.FIRST_LINE - 1] + "…"
+        with self._lock:
+            self._seq += 1
+            self._items.append({"seq": self._seq, "at": started, "tool": tool,
+                                "summary": line, "outcome": self.outcome(reply, error),
+                                "seconds": round(seconds, 1)})
+            del self._items[:-self.LIMIT]
+
+    def since(self, seq):
+        with self._lock:
+            return [dict(i) for i in self._items if i["seq"] > seq]
+
+
+#: This process's activity list - one chat's.
+ACTIVITY = Activity()
+
+
 def companion_dir():
     """Where each chat leaves the note the Companion button in Revit reads -
     HeronPaths.Companion, mirrored (D-109)."""
@@ -441,6 +496,17 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if why:
                 return self._refuse(403, why)
             return self._json(200, {"ok": True, "state": self.owner.state()})
+        if path == "/api/activity":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            query = self.path.split("?", 1)[1] if "?" in self.path else ""
+            since = 0
+            for part in query.split("&"):
+                name, _, value = part.partition("=")
+                if name == "since" and value.isdigit():
+                    since = int(value)
+            return self._json(200, {"ok": True, "items": ACTIVITY.since(since)})
         return self._refuse(404, "not found")
 
     def do_POST(self):

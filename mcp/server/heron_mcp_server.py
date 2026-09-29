@@ -85,10 +85,13 @@ over a same-named directory, verified rather than assumed. Do not "fix" this by
 renaming the folder.
 """
 
+import functools
 import inspect
 import io
 import os
 import sys
+import threading
+import time
 
 # The bridge client is the layer below this one. It stays dependency-free on
 # purpose, so `doctor` keeps working on a machine where nothing else does.
@@ -175,7 +178,7 @@ class _Labelled(_Server):
                 name = (args[0] if args else None) or options.get("name") or fn.__name__
                 options["annotations"] = _Annotations.model_validate(
                     tools.annotations(name))
-            return register(*args, **options)(fn)
+            return register(*args, **options)(_recorded(fn))
 
         return decorate
 
@@ -201,6 +204,48 @@ def _host_instructions():
         return ("Heron could not give this chat its rules: %s\n"
                 "They are in HERON_CONSTITUTION.md, and they bind this chat "
                 "whether or not they arrived here." % why)
+
+
+_depth = threading.local()
+
+
+def _recorded(fn):
+    """
+    The same tool, and a line on the Companion's activity list (D-108,
+    docs/40 section 7) - the tool's name, the first line of its answer, how
+    it ended and how long it took.
+
+    functools.wraps keeps the signature the SDK reads, which
+    tests/test_mcp_serves.py checks against the real SDK. The answer and any
+    exception pass through untouched, and a fault in the recording is
+    dropped: the list is display, and must never cost a tool its answer. A
+    tool called from inside another is not listed twice.
+    """
+    @functools.wraps(fn)
+    def run(*a, **k):
+        outer = not getattr(_depth, "busy", False)
+        _depth.busy = True
+        started, clock = time.strftime("%H:%M:%S"), time.time()
+        try:
+            reply = fn(*a, **k)
+        except Exception as error:
+            if outer:
+                _note(fn.__name__, started, time.time() - clock, error=error)
+            raise
+        finally:
+            if outer:
+                _depth.busy = False
+        if outer:
+            _note(fn.__name__, started, time.time() - clock, reply=reply)
+        return reply
+    return run
+
+
+def _note(tool, started, seconds, reply=None, error=None):
+    try:
+        _companion_module().ACTIVITY.record(tool, started, seconds, reply=reply, error=error)
+    except Exception:                                # noqa: BLE001 - display only
+        pass
 
 
 server = _Labelled("heron", instructions=_host_instructions())

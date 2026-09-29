@@ -82,6 +82,36 @@ function show(state) {
     : (sel.countCapped ? "Only the first 5,000 were sorted into categories." : "");
 }
 
+let lastSeq = 0;
+const WORDS = { ok: "OK", refused: "refused", failed: "failed" };
+
+async function activity() {
+  try {
+    const res = await fetch("/api/activity?since=" + lastSeq, { headers: HEADER, credentials: "same-origin" });
+    if (!res.ok) return;
+    const body = await res.json();
+    const list = $("a-list");
+    for (const item of body.items) {
+      lastSeq = Math.max(lastSeq, item.seq);
+      const li = document.createElement("li");
+      const cells = [
+        ["when", item.at],
+        ["tool", item.tool],
+        ["what", item.summary],
+        ["end " + item.outcome, (WORDS[item.outcome] || item.outcome) + " · " + item.seconds + " s"],
+      ];
+      for (const [cls, text] of cells) {
+        const span = document.createElement("span");
+        span.className = cls;
+        span.textContent = text;
+        li.append(span);
+      }
+      list.prepend(li);
+    }
+    $("a-empty").hidden = list.children.length > 0;
+  } catch (e) { /* the state poll reports a closed page */ }
+}
+
 async function pair(code) {
   const res = await fetch("/api/pair", {
     method: "POST",
@@ -104,6 +134,7 @@ async function poll() {
     failures = 0;
     document.body.classList.remove("closed");
     show(body.state);
+    activity();
   } catch (e) {
     failures += 1;
     if (failures >= 3) {

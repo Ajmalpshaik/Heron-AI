@@ -56,3 +56,17 @@ h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .6px; color: va
 .notice.bad { border-left-color: var(--bad); }
 .foot { text-align: center; font-size: 12px; padding: 18px 16px 28px; }
 body.closed main { opacity: .5; filter: grayscale(1); }
+.activity { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 360px; overflow-y: auto; }
+.activity li { display: grid; grid-template-columns: 64px 150px 1fr 120px; gap: 8px; align-items: baseline;
+  padding: 4px 0; border-bottom: 1px dashed var(--line); font-size: 13px; }
+.activity .when { color: var(--muted); font-variant-numeric: tabular-nums; }
+.activity .tool { font-family: Consolas, ui-monospace, monospace; overflow-wrap: anywhere; }
+.activity .what { overflow-wrap: anywhere; }
+.activity .end { text-align: right; font-weight: 600; }
+.activity .ok { color: var(--ok); }
+.activity .refused { color: var(--warn); }
+.activity .failed { color: var(--bad); }
+@media (max-width: 560px) {
+  .activity li { grid-template-columns: 56px 1fr 64px; }
+  .activity .what { grid-column: 1 / -1; }
+}

@@ -315,11 +315,39 @@ def test_switch(tmp):
           "and Idling stops before reading any element when nothing changed")
 
 
+def test_activity():
+    print()
+    print("Phase 2: the activity list")
+    act = hc.Activity()
+    act.record("revit_read", "10:00:00", 0.42, reply="Ducts: 24 in Level 1\nmore lines")
+    act.record("revit_change", "10:00:05", 1.2,
+               reply="add-project-parameter is declared risk: ADMIN ... Nothing was sent to Revit.")
+    act.record("revit_views", "10:00:09", 0.1, error=RuntimeError("pipe closed"))
+    items = act.since(0)
+    check([i["outcome"] for i in items] == ["ok", "refused", "failed"],
+          "ok / refused / failed, read from the answer's own words")
+    check(items[0]["summary"] == "Ducts: 24 in Level 1",
+          "only the first line of an answer is kept")
+    check(len(act.since(2)) == 1 and act.since(2)[0]["tool"] == "revit_views",
+          "the page asks only for what is newer than it has")
+    for n in range(hc.Activity.LIMIT + 20):
+        act.record("t", "x", 0, reply="x" * 400)
+    check(len(act.since(0)) == hc.Activity.LIMIT
+          and len(act.since(0)[-1]["summary"]) <= hc.Activity.FIRST_LINE,
+          "at most 500 kept, each line at most 200 characters")
+
+    server = io.open(SERVER, encoding="utf-8").read()
+    check("register(*args, **options)(_recorded(fn))" in server
+          and "@functools.wraps(fn)" in server,
+          "every tool is recorded through one wrapper that keeps its signature")
+
+
 def main():
     tmp = tempfile.mkdtemp(prefix="heron-companion-")
     test_live_files(tmp)
     test_server(tmp)
     test_switch(tmp)
+    test_activity()
     test_no_way_to_an_ai()
     test_addin_side()
 
