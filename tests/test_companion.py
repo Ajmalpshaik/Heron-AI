@@ -424,9 +424,10 @@ def test_changes():
           "category graphics is offered; per-element overrides (read from the selection) are not")
 
     server = io.open(SERVER, encoding="utf-8").read()
-    check("    return _change(capability, values, expect_from)" in server
-          and 'reply = _change(capability, values, origin="companion")' in server,
-          "Apply runs the one body revit_change runs - no second write path")
+    check('_through(revit_change, origin="companion")(capability, values)' in server
+          and '_through(revit_change, reply_out=out, origin="companion")(' in server
+          and 'body = getattr(tool, "__wrapped__", tool)' in server,
+          "Apply runs revit_change's OWN body - no second write path")
     check("with _revit_lock:" in server and "def _settings_card(folder):" in server,
           "and holds the same lock every tool call holds, so it never displaces the chat")
     check('"companion_apply":' in io.open(os.path.join(ROOT, "mcp", "server", "heron_tools.py"),

@@ -215,6 +215,38 @@ _depth = threading.local()
 # section 4). Re-entrant, because a tool may call another.
 _revit_lock = threading.RLock()
 
+# THE COMPANION'S SIDE CHANNEL INTO THE TWO DOORS. The page's Apply runs
+# revit_change itself, and a table read runs revit_read itself - their own
+# bodies, unchanged, so every rule the suites read in them holds for the page
+# too. What the page needs that the chat does not - the add-in's raw reply,
+# and not to be offered its own change back as a new table - travels here,
+# per thread, set only for the length of one call.
+_ctx = threading.local()
+
+
+def _ctx_reply(reply):
+    out = getattr(_ctx, "reply_out", None)
+    if out is not None:
+        out["reply"] = reply
+
+
+def _from_chat():
+    return getattr(_ctx, "origin", "chat") == "chat"
+
+
+def _through(tool, reply_out=None, origin="chat"):
+    """Call a tool's own body - not its registered wrapper, so the activity
+    list is not given a second line for it - with the side channel set."""
+    body = getattr(tool, "__wrapped__", tool)
+
+    def call(*a, **k):
+        _ctx.reply_out, _ctx.origin = reply_out, origin
+        try:
+            return body(*a, **k)
+        finally:
+            _ctx.reply_out, _ctx.origin = None, "chat"
+    return call
+
 
 def _recorded(fn):
     """
@@ -1146,18 +1178,6 @@ def revit_change(capability: str, values: str = "",
     One Ctrl+Z in Revit puts back what this did to the model - never a file it
     wrote, a save it made or a sync that has already reached other people.
     """
-    return _change(capability, values, expect_from)
-
-
-def _change(capability, values="", expect_from="", origin="chat", reply_out=None):
-    """
-    revit_change's body, and the ONLY one: the Companion's Apply calls this
-    same function (D-108 point 5), so a change from the page passes exactly
-    the checks a change from the chat passes - the risk refusal, the
-    operation named from the fragment's own card, the undeclared-value
-    warning, the binding, the pin, the add-in's gate and its switches.
-    `origin` changes nothing but the after-change table below.
-    """
     folder, status = _fragment_for(capability)
     if folder is None:
         return ("Heron has nothing that does '%s', so nothing has been sent to Revit. "
@@ -1288,8 +1308,7 @@ def _change(capability, values="", expect_from="", origin="chat", reply_out=None
                             idempotent=False,
                             response_timeout=configuration.fragment_timeout())
     session.close()
-    if reply_out is not None:
-        reply_out["reply"] = reply
+    _ctx_reply(reply)
 
     # `writes` comes from the registry rather than a literal True, so a write
     # can never be treated as a retryable read because two declarations drifted.
@@ -1361,9 +1380,8 @@ def _change(capability, values="", expect_from="", origin="chat", reply_out=None
                      % (capability, status))
 
     # THE AFTER-CHANGE TABLE (docs/40 section 21.1): a settings change from
-    # the chat leaves the values it used on the Companion page, where the
-    # modeller can edit them and apply again with no message to the chat.
-    if origin == "chat":
+    # the chat leaves the values it used on the Companion page.
+    if _from_chat():
         _offer_change(capability, folder, values, reply.get("document"))
 
     return "\n".join(lines)
@@ -1417,7 +1435,7 @@ def _apply_change(capability, pairs):
     started, clock = time.strftime("%H:%M:%S"), time.time()
     with _revit_lock:
         try:
-            reply = _change(capability, values, origin="companion")
+            reply = _through(revit_change, origin="companion")(capability, values)
         except Exception as error:                   # noqa: BLE001 - said on the page
             _note("companion_apply", started, time.time() - clock, error=error)
             return "Heron could not run it: %s" % error
@@ -1441,8 +1459,8 @@ def _apply_table(rows):
     started, clock = time.strftime("%H:%M:%S"), time.time()
     with _revit_lock:
         try:
-            text = _change("SET_PARAMETER_VALUES_BY_ID", "rows=" + line,
-                           origin="companion", reply_out=out)
+            text = _through(revit_change, reply_out=out, origin="companion")(
+                "SET_PARAMETER_VALUES_BY_ID", "rows=" + line)
         except Exception as error:                   # noqa: BLE001 - said on the page
             _note("companion_table_apply", started, time.time() - clock, error=error)
             return "Heron could not run it: %s" % error, None
@@ -1497,87 +1515,6 @@ def _proof_line(capability, folder):
             % (capability, status, where, when))
 
 
-class _Said(Exception):
-    """A sentence for the chat instead of a request - nothing was sent."""
-
-
-def _read_reply(capability, values="", expect_from=""):
-    """
-    revit_read's request, and the only copy: revit_edit_table sends its table
-    read through here too (docs/40 section 8.2), so both pass the same door
-    refusal, contract read, binding and pin. Raises _Said, carrying the
-    sentence, when nothing was sent.
-    """
-    folder, _status = _fragment_for(capability)
-    if folder is None:
-        raise _Said("Heron has nothing that does '%s', so nothing has been sent to Revit. "
-                "Ask heron_lookup in your own words and it will name the capability "
-                "Heron does have." % (capability or ""))
-
-    root = _repo_root()
-
-    # THE DOOR'S CEILING, FIRST - before any code is read or any session is
-    # bound, so a refusal costs nothing and touches nothing: the order
-    # revit_change keeps for risk_refusal, for the same reason. The ceiling is
-    # this tool's own declared risk (heron_tools.door_refusal says why that
-    # refuses EXECUTE too), and the fragment's risk is read by the client's
-    # one reader of that line, called and not reimplemented.
-    card = os.path.join(root, "brain", "fragments", folder, "fragment.yaml")
-    refusal = tools.door_refusal("revit_read", bridge.fragment_risk(card),
-                                 capability)
-    if refusal:
-        raise _Said(refusal)
-
-    source_path = os.path.join(root, "brain", "fragments", folder,
-                               "impl", "any", "fragment.cs")
-    if not os.path.isfile(source_path):
-        raise _Said("'%s' is described but has no code behind it yet. Nothing has been "
-                "sent to Revit." % capability)
-
-    # THE SOURCE TRAVELS, NOT A NAME - for revit_change's reason.
-    with io.open(source_path, "r", encoding="utf-8") as fh:
-        source = fh.read()
-
-    needs = bridge.fragment_needs(os.path.join(root, "brain", "fragments",
-                                               folder, "fragment.yaml"))
-    if needs is None:
-        raise _Said("'%s' could not be read with certainty - its contract is unclear, "
-                "so nothing has been sent to Revit." % capability)
-
-    # A NAME NOTHING DECLARES IS NAMED, NOT DROPPED IN SILENCE - row 71's rule,
-    # called from the client exactly as revit_change calls it.
-    undeclared, takeable = bridge.undeclared_values(_values_array(values), needs)
-
-    try:
-        session = binding.resolve()
-    except NotBound as unbound:
-        raise _Said(str(unbound))
-
-    # NO "apply", EVER, AND NOTHING FOR ONE TO KEEP. run_fragment_read opens no
-    # transaction, which is the whole of this door's guarantee. The chain
-    # resets unless the caller names what it means to consume - revit_change's
-    # rule and reason, and the add-in's refusal of the two together.
-    args = {"name": folder, "source": source, "needs": needs, "chain": "reset"}
-    _aim_at_pin(args)
-
-    supplied = _values_array(values)
-    if supplied:
-        args["values"] = supplied
-
-    if expect_from and expect_from.strip():
-        args.pop("chain", None)
-        args["expectChain"] = expect_from.strip()
-
-    # idempotent stays at its default, True: a read asked twice costs nothing,
-    # so a lost answer may be asked for again. The FRAGMENT timeout, because a
-    # fragment's first run in a session includes compiling it.
-    reply = session.request("run_fragment_read", op_args=args,
-                            response_timeout=configuration.fragment_timeout())
-    session.close()
-
-    return reply, folder, _status, undeclared, takeable
-
-
 @server.tool()
 def revit_read(capability: str, values: str = "",
                expect_from: str = "") -> str:
@@ -1606,11 +1543,73 @@ def revit_read(capability: str, values: str = "",
     says how far the capability is proven: PROVEN on a named model, PROVEN but
     its code changed since, or never proved.
     """
+    folder, _status = _fragment_for(capability)
+    if folder is None:
+        return ("Heron has nothing that does '%s', so nothing has been sent to Revit. "
+                "Ask heron_lookup in your own words and it will name the capability "
+                "Heron does have." % (capability or ""))
+
+    root = _repo_root()
+
+    # THE DOOR'S CEILING, FIRST - before any code is read or any session is
+    # bound, so a refusal costs nothing and touches nothing: the order
+    # revit_change keeps for risk_refusal, for the same reason. The ceiling is
+    # this tool's own declared risk (heron_tools.door_refusal says why that
+    # refuses EXECUTE too), and the fragment's risk is read by the client's
+    # one reader of that line, called and not reimplemented.
+    card = os.path.join(root, "brain", "fragments", folder, "fragment.yaml")
+    refusal = tools.door_refusal("revit_read", bridge.fragment_risk(card),
+                                 capability)
+    if refusal:
+        return refusal
+
+    source_path = os.path.join(root, "brain", "fragments", folder,
+                               "impl", "any", "fragment.cs")
+    if not os.path.isfile(source_path):
+        return ("'%s' is described but has no code behind it yet. Nothing has been "
+                "sent to Revit." % capability)
+
+    # THE SOURCE TRAVELS, NOT A NAME - for revit_change's reason.
+    with io.open(source_path, "r", encoding="utf-8") as fh:
+        source = fh.read()
+
+    needs = bridge.fragment_needs(os.path.join(root, "brain", "fragments",
+                                               folder, "fragment.yaml"))
+    if needs is None:
+        return ("'%s' could not be read with certainty - its contract is unclear, "
+                "so nothing has been sent to Revit." % capability)
+
+    # A NAME NOTHING DECLARES IS NAMED, NOT DROPPED IN SILENCE - row 71's rule,
+    # called from the client exactly as revit_change calls it.
+    undeclared, takeable = bridge.undeclared_values(_values_array(values), needs)
+
     try:
-        reply, folder, _status, undeclared, takeable = _read_reply(
-            capability, values, expect_from)
-    except _Said as said:
-        return str(said)
+        session = binding.resolve()
+    except NotBound as unbound:
+        return str(unbound)
+
+    # NO "apply", EVER, AND NOTHING FOR ONE TO KEEP. run_fragment_read opens no
+    # transaction, which is the whole of this door's guarantee. The chain
+    # resets unless the caller names what it means to consume - revit_change's
+    # rule and reason, and the add-in's refusal of the two together.
+    args = {"name": folder, "source": source, "needs": needs, "chain": "reset"}
+    _aim_at_pin(args)
+
+    supplied = _values_array(values)
+    if supplied:
+        args["values"] = supplied
+
+    if expect_from and expect_from.strip():
+        args.pop("chain", None)
+        args["expectChain"] = expect_from.strip()
+
+    # idempotent stays at its default, True: a read asked twice costs nothing,
+    # so a lost answer may be asked for again. The FRAGMENT timeout, because a
+    # fragment's first run in a session includes compiling it.
+    reply = session.request("run_fragment_read", op_args=args,
+                            response_timeout=configuration.fragment_timeout())
+    session.close()
+    _ctx_reply(reply)
 
     failure = analyse(reply, writes=tools.writes("revit_read"))
     if failure is not None:
@@ -1733,18 +1732,13 @@ def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 200
                 "Heron tab.")
     values = NEWLINE.join(["parameterNames=%s" % (parameters or "").replace(NEWLINE, " "),
                            "maxRows=%d" % max(1, int(max_rows or 2000))])
-    try:
-        reply, _folder, _status, _undeclared, _takeable = _read_reply(
-            "READ_ELEMENT_TABLE", values, expect_from)
-    except _Said as said:
-        return str(said)
-
-    failure = analyse(reply, writes=tools.writes("revit_edit_table"))
-    if failure is not None:
-        return explain(failure)
-    wrong_model = pinned.check(reply)
-    if wrong_model is not None:
-        return wrong_model
+    out = {}
+    said = _through(revit_read, reply_out=out)("READ_ELEMENT_TABLE", values, expect_from)
+    reply = out.get("reply")
+    # revit_read has already refused, classified any failure and checked the
+    # pin; when it did not get a good reply, its own sentence is the answer.
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return said
 
     import json
     provides = reply.get("provides") or {}

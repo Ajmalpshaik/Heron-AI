@@ -159,10 +159,16 @@ def main():
     check("on 2026-09-16" in doc.lower() and "flipped" in doc.lower(),
           "and the docstring records the day the old claim stopped being "
           "true, rather than quietly carrying the new numbers")
-    check(types.get("(no type)", 0) > types.get("Exception", 0),
-          "and a bare `catch` is still the commonest single kind: %d "
-          "against %d" % (types.get("(no type)", 0),
-                          types.get("Exception", 0)))
+    # "THE COMMONEST SINGLE KIND" WAS A LEAD OF ONE, AND IT FLIPPED ON
+    # 2026-09-29 when the Companion's seven must-catch-everything handlers
+    # arrived (heron_csharp's docstring says so). Checked now as the share
+    # that does not tip on one commit, exactly as broad-versus-narrow was.
+    bare = types.get("(no type)", 0)
+    check(bare * 4 >= broad,
+          "and bare `catch` remains a real share of the broad handlers: %d of %d "
+          "(%d are catch (Exception))" % (bare, broad, types.get("Exception", 0)))
+    check("2026-09-29" in doc and "46 against 51" in doc,
+          "and the docstring records the day the commonest-kind claim flipped")
     # THE FIRST SET WAS WRONG, and the reason is worth keeping: a scratch
     # expression counted `catch` inside comments and where no block
     # followed, and reported 83, 39 and 18.
