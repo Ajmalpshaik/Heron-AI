@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "link or unlink a parameter of elements already in the family
 kind: action
 domain: revit.families
 capability: LINK_FAMILY_PARAMETER
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -43,6 +43,12 @@ purpose: >
   back. The links live in the family: a project's placed units follow them
   only once the family is loaded into it again.
 
+  **VERSION 2 (2026-09-29, FRAGMENT-ISSUES 5b-260).** Three edge cases a
+  review found after version 1 was signed are fixed, and a fourth waits on a
+  measurement in Revit - NEEDS-CHECKING BD5. This is version 2; version 1's
+  proof no longer describes the code and is kept as a record, and the fragment
+  is DRAFT until it is proved again.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -58,9 +64,10 @@ contract:
       type: string
       source: request
     # For connectors, the system classification - "Supply Air", "Return Air",
-    # "Hydronic Supply" - or "all". Anything but "all" leaves out every element
-    # that is not a connector of that system. A blank is refused, never read
-    # as "all".
+    # "Hydronic Supply", "Fire Protection Wet", "Fitting" - or "all". Every
+    # classification Revit has is accepted but Undefined. Anything but "all"
+    # leaves out every element that is not a connector of that system. A blank
+    # is refused, never read as "all".
     - name: system
       type: string
       source: request

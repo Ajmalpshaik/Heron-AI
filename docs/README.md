@@ -5,7 +5,7 @@
 > ([B8](NEEDS-CHECKING.md)), and what is still owed is a tape measure on the result — `D3`. **Phase 2
 > (Steps 7 to 14) is built and barely proven.** This line said both *"have never loaded into Revit"*
 > until 2026-09-21, a fortnight after the first write ([row 5b-54](FRAGMENT-ISSUES.md)).
-> **All fourteen skills are `DRAFT`; 273 of the 429 fragments are `PROVEN`
+> **All fourteen skills are `DRAFT`; 272 of the 429 fragments are `PROVEN`
 > as of 2026-09-29** — this line said *every fragment is `DRAFT`* long after that stopped being true, so
 > derive it: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 >
@@ -168,7 +168,6 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | 37 | [The Provider Adapter](37-the-provider-adapter.md) | **A scope, not an implementation.** Three agents decide which model to use, whether it is reachable and what it cost; all three are built, all three are tested, and **not one of them has ever met a provider** |
 | 38 | [**The Cloud Environment**](38-the-cloud-environment.md) | **Where Heron work runs when it is not on the owner's PC.** The four fields to set; why **Custom** network access rather than Trusted, which does not carry `huggingface.co` and so silently costs retrieval its meaning; what a cloud session runs that CI does not — every suite in `tests/`, against the three CI leaves unrun — and the three things the setup script deliberately refuses to do |
 | 39 | [Three Downloaded Skill Sets, Studied](39-three-downloaded-skill-sets.md) | **Another product's Revit connector notes, an office master prompt and a studio toolkit index, read lesson by lesson against Heron's code.** Nothing copied. What came out: a roof slope Heron had named as missing in its own words, a step-by-step building-shell skill, a defect their same-name scar exposed in Heron's parameter fragments, and a list of what their connector does that Heron does not - left unbuilt on purpose. **Its best lesson is a scar whose cause was never isolated:** the same roof error Heron had already traced to a different one |
-| 40 | [Heron Companion](40-heron-companion.md) | **A design, not a decision — nothing is built.** A local page beside Revit that shows the live selection, every Heron call the chat makes, and an editable table the chat opens in one call and the modeller applies without the chat. Where it lives and why (inside each chat's MCP process, with Revit's state read from a file rather than the pipe); the ten places the request and Heron's rules disagree, each left for the owner; message formats, tools and risk levels, files by phase, the test plan, and the decision it would need |
 
 ## Working documents
 
