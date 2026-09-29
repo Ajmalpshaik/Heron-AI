@@ -186,6 +186,54 @@ def main():
           "person makes")
 
     print()
+    print("6. It asks a PRIVATE store unless told otherwise (row 116)")
+    print("   Four sweeps gave 7, 9, 8 and 8, and the outlier shared global.db")
+    print("   with another session. One writer is what makes two runs agree.")
+    # GUARDED, for the reason section 2 gives: a missing name must FAIL.
+    if getattr(tool, "_sweep", None) is None:
+        check(False, "the tool has a _sweep() that main() hands a store to")
+    else:
+        seen = {}
+        before = os.environ.get("HERON_KNOWLEDGE")
+        real, real_argv = tool._sweep, sys.argv
+
+        def spy(args, private):
+            seen["private"] = private
+            seen["store"] = os.environ.get("HERON_KNOWLEDGE")
+            seen["existed"] = bool(private) and os.path.isdir(private)
+            return 0
+
+        tool._sweep = spy
+        try:
+            sys.argv = ["check-risk-crossings.py"]
+            tool.main()
+            by_default = dict(seen)
+            if before is None:
+                os.environ.pop("HERON_KNOWLEDGE", None)
+            else:
+                os.environ["HERON_KNOWLEDGE"] = before
+            seen.clear()
+            sys.argv = ["check-risk-crossings.py", "--shared"]
+            tool.main()
+            shared = dict(seen)
+        finally:
+            tool._sweep, sys.argv = real, real_argv
+            if before is None:
+                os.environ.pop("HERON_KNOWLEDGE", None)
+            else:
+                os.environ["HERON_KNOWLEDGE"] = before
+
+        check(by_default.get("existed")
+              and by_default.get("store") == by_default.get("private")
+              and by_default.get("store") != before,
+              "by default it builds its own store and points "
+              "HERON_KNOWLEDGE there")
+        check(not os.path.exists(by_default.get("private") or "/nonexistent"),
+              "and removes it afterwards")
+        check(shared.get("private") is None and shared.get("store") == before,
+              "--shared asks the store the environment already names")
+
+    print()
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
         for line in FAILURES:

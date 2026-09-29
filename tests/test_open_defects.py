@@ -39,6 +39,7 @@ WHAT IT PROVES
      which is the rule every report in tools/ is written to.
 """
 
+import collections
 import importlib.util
 import os
 import re
@@ -180,6 +181,23 @@ def main():
           "no blank line sits between two table rows%s"
           % ("" if not split else " - %d in section(s) %s"
              % (len(split), ", ".join(sorted(set(split))))))
+
+    print("\n7. and no number is used twice in either table (5b-163)")
+    # A GATE, FOR THE REASON CHECK 5 IS ONE. Two sessions working at once each
+    # appended rows 158 and 159 to section 5b on 2026-09-23, and every gate
+    # and suite exited 0 on the tree that kept both - so "row 5b-158" named
+    # two rows. test_owner_queue already refuses the same clash in
+    # NEEDS-CHECKING; this is the register's half of it.
+    twice = []
+    for label, start, ends in OD.SECTIONS:
+        found = OD.rows(start, ends, label) or []
+        seen_ids = collections.Counter(number for number, _ in found)
+        twice.extend(OD.ident(label, number)
+                     for number, count in sorted(seen_ids.items())
+                     if count > 1)
+    check(not twice,
+          "every row number is used once%s"
+          % ("" if not twice else " - repeated: %s" % ", ".join(twice)))
 
     print()
     if FAILURES:

@@ -11,6 +11,7 @@ Does a QUESTION ever get answered by something that CHANGES THE MODEL?
     python tools/check-risk-crossings.py
     python tools/check-risk-crossings.py --revit 2024
     python tools/check-risk-crossings.py --list
+    python tools/check-risk-crossings.py --shared
 
 WHY THIS EXISTS ALONGSIDE check-routing.py
 -------------------------------------------
@@ -79,7 +80,9 @@ import argparse
 import hashlib
 import importlib.util
 import os
+import shutil
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
@@ -390,6 +393,10 @@ def main():
     parser.add_argument("--revit", default="2020")
     parser.add_argument("--list", action="store_true",
                         help="print the questions and run nothing")
+    parser.add_argument("--shared", action="store_true",
+                        help="ask the store HERON_KNOWLEDGE or %%APPDATA%% "
+                             "names - the one a host reads - instead of a "
+                             "private one built from this checkout")
     args = parser.parse_args()
 
     if args.list:
@@ -397,7 +404,38 @@ def main():
             print(question)
         return 0
 
+    # A PRIVATE STORE BY DEFAULT - FRAGMENT-ISSUES row 116. Four sweeps on one
+    # machine returned 7, 9, 8 and 8, two of them on byte-identical inputs, and
+    # the outlier was the one that shared global.db with another session: that
+    # file is ONE store for every worktree, and any of them re-indexing it
+    # moves this tool's answer with no commit here. A store built for this run
+    # from this checkout has one writer, so the count is a property of the
+    # library rather than of who else was working. `--shared` keeps the old
+    # question - what a host reading the shared store would really get.
+    private, before = None, os.environ.get("HERON_KNOWLEDGE")
+    if not args.shared:
+        private = tempfile.mkdtemp(prefix="heron-crossings-")
+        os.environ["HERON_KNOWLEDGE"] = private
+    try:
+        return _sweep(args, private)
+    finally:
+        if private:
+            shutil.rmtree(private, ignore_errors=True)
+            if before is None:
+                os.environ.pop("HERON_KNOWLEDGE", None)
+            else:
+                os.environ["HERON_KNOWLEDGE"] = before
+
+
+def _sweep(args, private):
+    """The sweep itself, against whichever store main() chose."""
     import heron_brain as brain
+
+    if private:
+        # BUILT BEFORE THE FINGERPRINT, or the block below would describe a
+        # store that did not exist yet.
+        with brain._Open():
+            pass
 
     # READ IT BEFORE ASKING ANYTHING. This tool is not read-only about the
     # store - measured 2026-09-17, one sweep against a private copy changed
@@ -443,6 +481,9 @@ def main():
             allowed.append(row)
 
     print("Revit %s   questions asked: %d" % (args.revit, len(QUESTIONS)))
+    print("store: %s" % ("PRIVATE, built from this checkout for this run - "
+                         "no other session can move it" if private else
+                         "SHARED (--shared) - another session can move it"))
     print("")
     print("HOW MANY OF THEM RANKING ACTUALLY DECIDED:")
     for line in denominator_lines(len(QUESTIONS), by_identity):
@@ -497,10 +538,14 @@ def main():
             print("THE STORE CHANGED WHILE THIS RAN:")
             print("  before   %s" % index["md5"])
             print("  after    %s" % after)
-            print("  Asking moved the index. That is this tool, another")
-            print("  session, or both - global.db is ONE file for every")
-            print("  worktree on the machine. It is why a count from here is a")
-            print("  sample rather than a measurement.")
+            if private:
+                print("  Asking moved the index, and this store has no other")
+                print("  writer - so that is this tool, as row 116 measured.")
+            else:
+                print("  Asking moved the index. That is this tool, another")
+                print("  session, or both - global.db is ONE file for every")
+                print("  worktree on the machine. It is why a count from the")
+                print("  shared store is a sample rather than a measurement.")
 
     print("")
     print("Exit 0 whatever this finds. A crossing is a judgement a person")

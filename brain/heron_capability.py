@@ -55,6 +55,7 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 
 import heron_scope as SCOPE                                   # noqa: E402
 import heron_fragment as FRAG                                 # noqa: E402
+import heron_search as SEARCH                                 # noqa: E402
 
 # Ordered least to most dangerous. Same vocabulary as the tool registry and the
 # fragment header, deliberately - a third spelling of one idea is a third thing
@@ -254,6 +255,7 @@ def resolve(store, name, revit=None):
             supported = set((row["revit"] or "").split(","))
             if str(revit) not in supported:
                 continue
+        row["status"] = _no_better_than_disk(row["id"], row["status"])
         rows.append(row)
 
     if not rows:
@@ -261,6 +263,29 @@ def resolve(store, name, revit=None):
 
     rows.sort(key=lambda r: (-TRUST.get(r["status"], 0), r["id"]))
     return Capability(name, rows)
+
+
+def _no_better_than_disk(fid, index_status):
+    """The status to trust: the index's, never above the fragment's own file.
+
+    FRAGMENT-ISSUES 5b-189. `heron_resolve` answered *"best state PROVEN"* for
+    four fragments that had been DRAFT on disk since #309, because the status
+    came from the store - a cache that one `global.db` shares across every
+    worktree (row 131). Row 127 closed the same hole in `ask()` and
+    `heron_retrieve.find()`; this is the third route, and it covers
+    `heron_capabilities` too, which reads the same function.
+
+    IT CAN ONLY EVER LOWER, the same one-way rule as `may_run_unasked`. The
+    hazard is a cache vouching for more than the file does. Where the index is
+    the stricter of the two, or the file says nothing, the index stands -
+    absence is a legitimate state for a store built from another root.
+    """
+    on_disk = SEARCH.disk_status(fid)
+    if on_disk is None:
+        return index_status
+    if TRUST.get(on_disk, 0) < TRUST.get(index_status, 0):
+        return on_disk
+    return index_status
 
 
 def best_provider(store, name, revit=None):
