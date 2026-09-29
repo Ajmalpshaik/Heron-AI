@@ -69,13 +69,20 @@ function show(state) {
   set("s-count", sel.count);
   const list = $("s-categories");
   const rows = Object.entries(sel.categories || {}).sort((a, b) => b[1] - a[1]);
+  const most = rows.length ? Math.max(1, rows[0][1]) : 1;
   list.replaceChildren(...rows.map(([name, n]) => {
     const li = document.createElement("li");
     const a = document.createElement("span");
     const b = document.createElement("span");
     a.textContent = name;
     b.textContent = n;
-    li.append(a, b);
+    // A bar showing each category's share of the largest - drawn only.
+    const share = document.createElement("span");
+    share.className = "share";
+    const bar = document.createElement("i");
+    bar.style.setProperty("--share", Math.round(100 * Number(n) / most) + "%");
+    share.append(bar);
+    li.append(a, b, share);
     return li;
   }));
   $("s-note").textContent = sel.count === 0 ? "Nothing is selected in Revit."
@@ -84,6 +91,53 @@ function show(state) {
 
 let lastSeq = 0;
 const WORDS = { ok: "OK", refused: "refused", failed: "failed" };
+
+// The activity list sits in a small button in the corner, like a chat
+// bubble, and opens into the full list when clicked (the owner's idea,
+// 2026-09-29). Closed, it shows the newest action and how many arrived since
+// it was last open. Open or closed is remembered in this browser only.
+let fresh = false;          // false while the first batch is being drawn
+let unseen = 0;
+
+function dockOpen() { return !$("a-panel").hidden; }
+
+function dockLatest(item, counts) {
+  const last = $("a-last");
+  const chip = document.createElement("span");
+  chip.className = "chip " + item.outcome;
+  chip.textContent = WORDS[item.outcome] || item.outcome;
+  const tool = document.createElement("span");
+  tool.className = "dock-tool";
+  tool.textContent = item.tool;
+  last.replaceChildren(chip, tool);
+  if (counts && !dockOpen()) {
+    unseen += 1;
+    const badge = $("a-new");
+    badge.hidden = false;
+    badge.textContent = unseen + " new";
+  }
+}
+
+function dockSet(open) {
+  $("a-panel").hidden = !open;
+  $("activity").classList.toggle("open", open);
+  const toggle = $("a-toggle");
+  toggle.setAttribute("aria-expanded", String(open));
+  toggle.title = open ? "Make it small again" : "What the chat asked Heron to do - click to open";
+  if (open) { unseen = 0; $("a-new").hidden = true; }
+  try { localStorage.setItem("heron-companion-activity", open ? "open" : "small"); } catch (e) { /* not kept */ }
+}
+
+function dock() {
+  let saved = null;
+  try { saved = localStorage.getItem("heron-companion-activity"); } catch (e) { /* not kept */ }
+  dockSet(saved === "open");
+  $("a-toggle").addEventListener("click", () => dockSet(!dockOpen()));
+  $("a-close").addEventListener("click", () => { dockSet(false); $("a-toggle").focus(); });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && dockOpen()) { dockSet(false); $("a-toggle").focus(); }
+  });
+}
 
 async function activity() {
   try {
@@ -98,7 +152,6 @@ async function activity() {
         ["when", item.at],
         ["tool", item.tool],
         ["what", item.summary],
-        ["end " + item.outcome, (WORDS[item.outcome] || item.outcome) + " · " + item.seconds + " s"],
       ];
       for (const [cls, text] of cells) {
         const span = document.createElement("span");
@@ -106,8 +159,18 @@ async function activity() {
         span.textContent = text;
         li.append(span);
       }
+      // How it ended, as a chip that says it in words, then how long it took.
+      const end = document.createElement("span");
+      end.className = "end " + item.outcome;
+      const chip = document.createElement("span");
+      chip.className = "chip " + item.outcome;
+      chip.textContent = WORDS[item.outcome] || item.outcome;
+      end.append(chip, item.seconds + " s");
+      li.append(end);
       list.prepend(li);
+      dockLatest(item, fresh);
     }
+    fresh = true;
     $("a-empty").hidden = list.children.length > 0;
   } catch (e) { /* the state poll reports a closed page */ }
 }
@@ -121,7 +184,7 @@ async function activity() {
 // ever reaches the page as text.
 
 const RGB = /^ *([0-9]{1,3}) *, *([0-9]{1,3}) *, *([0-9]{1,3}) *$/;
-const shown = new Map();   // card id -> { el, lastAt }
+const shown = new Map();   // card id -> { el, key }
 
 function isRgb(v) {
   const m = RGB.exec(v);
@@ -141,6 +204,68 @@ function isOverrides(v) {
   return v.includes("=") && v.split(";").every(p => p.trim() === "" || p.includes("="));
 }
 
+// Drag one colour onto another to copy it (the owner's idea, 2026-09-29).
+// A press that moves more than a few pixels is a drag; one that does not is
+// a click and opens the picker as before. Dropping only fills in the other
+// row's box - nothing is sent until Apply again is pressed.
+function colourUnder(x, y, from) {
+  const el = document.elementFromPoint(x, y);
+  const pair = el && el.closest(".change .pair");
+  const pick = pair && pair.querySelector("input[type=color]");
+  return pick && pick !== from ? pick : null;
+}
+
+function dragColour(pick) {
+  let start = null, ghost = null, over = null, dragged = false;
+  const mark = target => {
+    if (over) over.closest(".pair").classList.remove("drop-here");
+    over = target;
+    if (over) over.closest(".pair").classList.add("drop-here");
+  };
+  const end = () => {
+    if (ghost) ghost.remove();
+    mark(null);
+    document.body.classList.remove("dragging-colour");
+    start = ghost = null;
+  };
+  pick.addEventListener("pointerdown", e => {
+    if (e.button !== 0) return;
+    start = { x: e.clientX, y: e.clientY };
+    dragged = false;
+    try { pick.setPointerCapture(e.pointerId); } catch (err) { /* the drag still works without it */ }
+  });
+  pick.addEventListener("pointermove", e => {
+    if (!start) return;
+    if (!ghost) {
+      if (Math.abs(e.clientX - start.x) + Math.abs(e.clientY - start.y) < 6) return;
+      dragged = true;
+      ghost = document.createElement("div");
+      ghost.className = "colour-ghost";
+      ghost.style.setProperty("background-color", pick.value);
+      document.body.append(ghost);
+      document.body.classList.add("dragging-colour");
+    }
+    ghost.style.setProperty("left", e.clientX + "px");
+    ghost.style.setProperty("top", e.clientY + "px");
+    mark(colourUnder(e.clientX, e.clientY, pick));
+  });
+  pick.addEventListener("pointerup", e => {
+    if (!start) return;
+    const target = ghost ? colourUnder(e.clientX, e.clientY, pick) : null;
+    end();
+    if (target) {
+      target.value = pick.value;
+      target.dispatchEvent(new Event("input"));
+      const pair = target.closest(".pair");
+      pair.classList.add("dropped");
+      setTimeout(() => pair.classList.remove("dropped"), 900);
+    }
+  });
+  pick.addEventListener("pointercancel", end);
+  // A drag is not a click: keep the picker closed after one.
+  pick.addEventListener("click", e => { if (dragged) { e.preventDefault(); dragged = false; } });
+}
+
 function valueEditor(value) {
   const box = document.createElement("div");
   box.className = "pair";
@@ -153,6 +278,8 @@ function valueEditor(value) {
     pick.value = toHex(value);
     pick.addEventListener("input", () => { text.value = fromHex(pick.value); });
     text.addEventListener("input", () => { if (isRgb(text.value)) pick.value = toHex(text.value); });
+    pick.title = "Click to pick a colour, or drag it onto another colour to copy it there";
+    dragColour(pick);
     box.append(pick);
   }
   box.append(text);
@@ -215,6 +342,7 @@ function buildCard(card) {
 
   const foot = document.createElement("footer");
   const button = document.createElement("button");
+  button.className = "btn";
   button.textContent = "Apply again";
   const result = document.createElement("span");
   result.className = "result";
@@ -241,7 +369,26 @@ function buildCard(card) {
   });
   foot.append(button, result);
   box.append(head, table, foot);
+  // Unsent edits: any box that no longer holds what the card was built with.
+  const built = readers.map(r => r.read());
+  box.values = () => readers.map(r => r.read());
+  box.edited = () => box.values().some((v, i) => v !== built[i]);
   return box;
+}
+
+// What a card holds on the server; when it changes - an Apply from another
+// tab, or a newer change by the chat - the card on screen is redrawn.
+function cardKey(card) {
+  return card.id + "|" + JSON.stringify(card.rows) + "|" +
+    (card.last ? card.last.at + "/" + card.last.outcome : "");
+}
+
+function changedElsewhere(el) {
+  if (el.querySelector(".elsewhere")) return;
+  const note = document.createElement("p");
+  note.className = "elsewhere";
+  note.textContent = "Changed elsewhere - press Apply again only after checking.";
+  el.querySelector("header").after(note);
 }
 
 async function changes() {
@@ -255,10 +402,22 @@ async function changes() {
       if (!ids.has(id)) { item.el.remove(); shown.delete(id); }
     }
     body.cards.slice().reverse().forEach(card => {
-      if (!shown.has(card.id)) {
+      const key = cardKey(card);
+      const item = shown.get(card.id);
+      if (!item) {
         const el = buildCard(card);
         list.prepend(el);
-        shown.set(card.id, { el });
+        shown.set(card.id, { el, key });
+      } else if (item.key !== key) {
+        // Never throw away what the modeller is typing: a card with unsent
+        // edits keeps them and says it changed elsewhere; one being typed in
+        // waits for the next poll.
+        const same = item.el.values().every((v, i) => card.rows[i] && v === card.rows[i].value);
+        if (item.el.edited() && !same) { changedElsewhere(item.el); return; }
+        if (item.el.contains(document.activeElement)) return;
+        const el = buildCard(card);
+        item.el.replaceWith(el);
+        shown.set(card.id, { el, key });
       }
     });
     $("c-empty").hidden = shown.size > 0;
@@ -294,7 +453,135 @@ function tableCell(row, name, cell, edits, count) {
     count();
   });
   td.append(input);
+  if (!NO_COPY.test(name)) {
+    td.classList.add("copyable");
+    input.title = "Drag this cell onto another cell in the column to copy its value there";
+    input.addEventListener("dragstart", e => e.preventDefault());   // not the browser's text drag
+    const handle = document.createElement("span");
+    handle.className = "fill";
+    handle.title = "Drag up or down to fill the cells you pass over with this value (like Excel)";
+    td.append(handle);
+  }
   return td;
+}
+
+// Drag a cell onto another cell in its column to copy its value there, the
+// way a colour swatch is dragged (the owner's idea, 2026-09-29). A press
+// that stays inside its own cell is ordinary typing and selecting; leaving
+// the cell with the button held starts the drag. The cell dropped on becomes
+// an edit like typing makes it - nothing is sent until Apply. Read-only
+// cells take nothing. Mark and Type Mark are never copied (docs/40 section
+// 21.1): a Mark copied onto another would stop being unique.
+const NO_COPY = /^ *(type +)?mark *$/i;
+
+function dragCells(tbody) {
+  let from = null, start = null, ghost = null, over = null;
+  const target = (x, y) => {
+    const el = document.elementFromPoint(x, y);
+    const td = el && el.closest("td");
+    return td && td !== from && td.parentElement.parentElement === tbody &&
+      td.cellIndex === from.cellIndex && td.classList.contains("copyable") ? td : null;
+  };
+  const mark = td => {
+    if (over) over.classList.remove("drop-here");
+    over = td;
+    if (over) over.classList.add("drop-here");
+  };
+  const move = e => {
+    if (!ghost) {
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      if ((el && el.closest("td")) === from ||
+          Math.abs(e.clientX - start.x) + Math.abs(e.clientY - start.y) < 6) return;
+      const input = from.querySelector("input");
+      input.setSelectionRange(input.selectionStart, input.selectionStart);
+      ghost = document.createElement("div");
+      ghost.className = "cell-ghost";
+      ghost.textContent = input.value === "" ? "(empty)" : input.value;
+      document.body.append(ghost);
+      document.body.classList.add("dragging-cell");
+    }
+    e.preventDefault();
+    ghost.style.setProperty("left", e.clientX + "px");
+    ghost.style.setProperty("top", e.clientY + "px");
+    mark(target(e.clientX, e.clientY));
+  };
+  const up = e => {
+    const td = ghost ? target(e.clientX, e.clientY) : null;
+    if (td) {
+      const input = td.querySelector("input");
+      input.value = from.querySelector("input").value;
+      input.dispatchEvent(new Event("input"));
+      td.classList.add("dropped");
+      setTimeout(() => td.classList.remove("dropped"), 900);
+    }
+    if (ghost) ghost.remove();
+    mark(null);
+    document.body.classList.remove("dragging-cell");
+    from = start = ghost = null;
+    document.removeEventListener("pointermove", move);
+    document.removeEventListener("pointerup", up);
+    document.removeEventListener("pointercancel", up);
+  };
+  tbody.addEventListener("pointerdown", e => {
+    const td = e.button === 0 && e.target.closest && e.target.closest("td.copyable");
+    if (!td || from || e.target.closest(".fill")) return;
+    from = td;
+    start = { x: e.clientX, y: e.clientY };
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", up);
+    document.addEventListener("pointercancel", up);
+  });
+}
+
+// Fill like Excel: the square that shows only at a cell's bottom-right
+// corner. Dragged up or down its column, every cell passed over takes the
+// value - as edits, sent only by Apply. Read-only cells are passed over and
+// left alone; Mark and Type Mark have no square (NO_COPY above).
+function fillDown(tbody) {
+  let from = null, range = [];
+  const paint = td => {
+    range.forEach(c => c.classList.remove("fill-range"));
+    range = [];
+    if (!td || td.parentElement.parentElement !== tbody || td.cellIndex !== from.cellIndex) return;
+    const a = from.parentElement.sectionRowIndex, b = td.parentElement.sectionRowIndex;
+    for (let i = Math.min(a, b); i <= Math.max(a, b); i++) {
+      const c = tbody.rows[i].cells[from.cellIndex];
+      c.classList.add("fill-range");
+      range.push(c);
+    }
+  };
+  const move = e => {
+    e.preventDefault();
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    paint(el && el.closest("td"));
+  };
+  const up = () => {
+    const value = from.querySelector("input").value;
+    range.forEach(c => {
+      const input = c !== from && c.classList.contains("copyable") && c.querySelector("input");
+      if (!input || input.value === value) return;
+      input.value = value;
+      input.dispatchEvent(new Event("input"));
+    });
+    range.forEach(c => c.classList.remove("fill-range"));
+    range = [];
+    from = null;
+    document.body.classList.remove("filling");
+    document.removeEventListener("pointermove", move);
+    document.removeEventListener("pointerup", up);
+    document.removeEventListener("pointercancel", up);
+  };
+  tbody.addEventListener("pointerdown", e => {
+    const handle = e.button === 0 && e.target.closest && e.target.closest(".fill");
+    if (!handle || from) return;
+    e.preventDefault();
+    from = handle.closest("td");
+    document.body.classList.add("filling");
+    paint(from);
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", up);
+    document.addEventListener("pointercancel", up);
+  });
 }
 
 function renderTable(t) {
@@ -305,13 +592,19 @@ function renderTable(t) {
 
   const head = document.createElement("p");
   head.className = "where";
-  head.textContent = t.rows.length + " element(s) in " + (t.document || "") + " · opened " + t.at +
-    (t.truncated ? " · " + t.truncated + " more were left out" : "");
+  [t.rows.length + " element(s) in " + (t.document || ""), "opened " + t.at]
+    .concat(t.truncated ? [t.truncated + " more were left out"] : [])
+    .forEach(text => {
+      const span = document.createElement("span");
+      span.textContent = text;
+      head.append(span);
+    });
   box.append(head);
 
   const stale = new Map((t.last && t.last.stale || []).map(s => [s.id + "/" + s.name, s.why]));
   const edits = new Map();
   const button = document.createElement("button");
+  button.className = "btn";
   const count = () => {
     button.textContent = edits.size ? "Apply " + edits.size + " change(s)" : "Apply";
     button.disabled = edits.size === 0;
@@ -319,34 +612,74 @@ function renderTable(t) {
 
   const wrap = document.createElement("div");
   wrap.className = "grid";
+  // How a column is drawn: right-aligned when every value in it is a number,
+  // marked as editable when any of its cells is. Presentation only.
+  const NUM = /^ *-?[0-9]+(?:[.,][0-9]+)? *$/;
+  const cellsOf = name => t.rows.map(r => (r.cells || {})[name]).filter(c => c);
+  const numeric = {}, editable = {};
+  for (const name of t.columns) {
+    const cells = cellsOf(name);
+    const values = cells.map(c => c.value).filter(v => v != null && v !== "");
+    numeric[name] = values.length > 0 && values.every(v => NUM.test(String(v)));
+    editable[name] = cells.some(c => c.editable);
+  }
+
   const table = document.createElement("table");
+  const thead = document.createElement("thead");
   const hr = document.createElement("tr");
-  ["Element", "Category", "Type"].concat(t.columns).forEach(c => {
+  ["Element", "Category", "Family", "Type"].concat(t.columns).forEach((c, i) => {
     const th = document.createElement("th");
+    th.scope = "col";
     th.textContent = c;
+    if (i === 0) th.className = "num";
+    if (i >= 4) {
+      const name = t.columns[i - 4];
+      if (numeric[name]) th.classList.add("num");
+      if (editable[name]) { th.classList.add("edit"); th.title = "You can edit this column"; }
+    }
     hr.append(th);
   });
-  table.append(hr);
+  thead.append(hr);
+  const tbody = document.createElement("tbody");
   for (const row of t.rows) {
     const tr = document.createElement("tr");
-    [row.id, row.category, row.type].forEach(v => {
+    [row.id, row.category, row.family, row.type].forEach((v, i) => {
       const td = document.createElement("td");
-      td.className = "fixed";
+      td.className = i === 0 ? "fixed id num" : "fixed";
       td.textContent = v == null ? "" : v;
       tr.append(td);
     });
     for (const name of t.columns) {
       const td = tableCell(row, name, (row.cells || {})[name], edits, count);
+      if (numeric[name]) td.classList.add("num");
       const why = stale.get(row.id + "/" + name);
       if (why) { td.classList.add("stale"); td.title = why; }
       tr.append(td);
     }
-    table.append(tr);
+    tbody.append(tr);
   }
+  dragCells(tbody);
+  fillDown(tbody);
+  table.append(thead, tbody);
   wrap.append(table);
   box.append(wrap);
 
+  const legend = document.createElement("p");
+  legend.className = "legend";
+  [["l-edit", "You can edit"], ["l-fixed", "Read-only - point at it for why"],
+   ["l-edited", "Edited, not applied yet"],
+   ["l-copy", "Drag a cell onto another in its column to copy it"],
+   ["l-fill", "Or drag the square at a cell's bottom-right corner to fill up or down (not Mark or Type Mark)"]].concat(stale.size ? [["l-stale", "Changed in Revit since it was read"]] : [])
+    .forEach(([cls, text]) => {
+      const span = document.createElement("span");
+      span.className = cls;
+      span.textContent = text;
+      legend.append(span);
+    });
+  box.append(legend);
+
   const foot = document.createElement("footer");
+  foot.className = "actions";
   const result = document.createElement("span");
   result.className = "result";
   if (t.last) {
@@ -431,7 +764,31 @@ async function poll() {
   setTimeout(poll, 1000);
 }
 
+// The light / dark switch. It starts from Windows' own setting; a choice made
+// with the button is remembered in this browser only.
+function theme() {
+  const system = window.matchMedia("(prefers-color-scheme: dark)");
+  let saved = null;
+  try { saved = localStorage.getItem("heron-companion-theme"); } catch (e) { /* not kept */ }
+  const button = $("theme");
+  const use = mode => {
+    document.documentElement.dataset.theme = mode;
+    const next = mode === "dark" ? "light" : "dark";
+    button.title = "Switch to " + next;
+    button.setAttribute("aria-label", "Switch to " + next);
+  };
+  use(saved === "dark" || saved === "light" ? saved : (system.matches ? "dark" : "light"));
+  system.addEventListener("change", e => { if (!saved) use(e.matches ? "dark" : "light"); });
+  button.addEventListener("click", () => {
+    saved = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    try { localStorage.setItem("heron-companion-theme", saved); } catch (e) { /* not kept */ }
+    use(saved);
+  });
+}
+
 async function start() {
+  theme();
+  dock();
   const code = new URLSearchParams(location.search).get("pair");
   if (code) {
     // The one-time code leaves the address bar at once, whatever happens next.

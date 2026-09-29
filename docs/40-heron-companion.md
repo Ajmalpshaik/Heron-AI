@@ -831,3 +831,5 @@ The owner asked for the rest the same day: *"you can do that phase 2 and 3"*.
 end; and the page itself, driven in a browser with sample data - edit two cells, Apply, the read-back
 shown; change a colour, Apply again. **Not yet run in Revit** - [group BK](needs-checking/group-bk.md)
 rows BK7 to BK12.
+
+**Restyled 2026-09-29, the page files only** (`index.html`, `companion.css`, and how `companion.js` draws its results): same requests, same behaviour, still nothing loaded from the internet. One addition the owner asked for: drag a colour swatch onto another row's swatch to copy it there - it only fills in that box; nothing is sent until **Apply again**. Also: a **Family** column; **drag a cell onto another in its column** to copy its value, like the colours, or drag the square that shows at a cell's corner to **fill up or down like Excel** (neither on Mark or Type Mark, per 21.1); a card changed from another tab is redrawn, or, holding unsent edits, keeps them and says so; a light / dark switch in the header; and the activity list moved into a small button in the corner, like a chat bubble, that opens into the full list - still a record, not a chat.
