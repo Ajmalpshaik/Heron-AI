@@ -245,7 +245,8 @@ def test_no_way_to_an_ai():
     check(returns and not any("address" in l for l in returns),
           "heron_companion never puts the one-time address in its reply to the chat")
     check("return binding.pid if binding.was_chosen else None" in server
-          and server.count("bound_pid=_companion_revit") == 3,
+          and "bound_pid=_companion_revit" in server
+          and "bound_pid=lambda: binding.pid" not in server,
           "the page calls a Revit this chat's only when the modeller CHOSE it")
     check(tools.TOOLS.get("heron_companion") == (tools.READ, None),
           "heron_companion is declared READ with no Revit operation")
@@ -485,6 +486,12 @@ def test_tables():
           and tools.COMPANION_ACTIONS.get("companion_table_apply") == (tools.MODIFY,
                                                                        "run_fragment_write"),
           "opening a table reads (ANALYZE); applying it writes (MODIFY), each declared once")
+    server = io.open(SERVER, encoding="utf-8").read()
+    offer = server[server.index("def revit_offer_settings("):server.index("def revit_edit_table(")]
+    check(tools.TOOLS.get("revit_offer_settings") == (tools.READ, None)
+          and "session.request" not in offer and "_change(" not in offer
+          and "if not _settings_card(folder):" in offer,
+          "offering a settings table sends nothing to Revit, and only for a settings card")
 
 
 def main():

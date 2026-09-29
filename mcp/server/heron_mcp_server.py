@@ -1650,6 +1650,60 @@ def revit_read(capability: str, values: str = "",
 
 
 @server.tool()
+def revit_offer_settings(capability: str, values: str) -> str:
+    """
+    Put a SETTINGS capability's current values on the Heron Companion page as
+    an editable table - WITHOUT changing anything - so the modeller can adjust
+    and apply them there, with no further message to you.
+
+    Use when the user wants to SEE a setting in the Companion and adjust it
+    there - "show the filters and their colours in the Companion", "give me
+    that as a table" - after you have READ the current values (for a view's
+    filters, REPORT_VIEW_FILTERS). Offer one table per thing: for three
+    filters, call this three times with APPLY_VIEW_FILTER, one filter each.
+
+    `capability` must be one the Companion offers tables for (its card says
+    companion: settings, and every input is a typed value). `values` is
+    exactly what revit_change would take, one "name=value" per line, and
+    should state the CURRENT values you read. Nothing is sent to Revit here.
+    Apply on the page runs the capability through revit_change's own path:
+    the Changes switch, the pin, one undo entry.
+    """
+    companion_page = _companion_module()
+    if not companion_page.enabled():
+        return ("The Heron Companion is switched off in Revit, so nothing was offered. "
+                "To turn it on, click the arrow under the Companion button on the "
+                "Heron tab.")
+    folder, _status = _fragment_for(capability)
+    if folder is None:
+        return ("Heron has nothing that does '%s', so nothing was offered." % (capability or ""))
+    if not _settings_card(folder):
+        return ("'%s' is not a setting the Companion offers as a table - its card is not "
+                "marked companion: settings, or it takes the selection. Nothing was offered."
+                % capability)
+    needs = bridge.fragment_needs(os.path.join(_repo_root(), "brain", "fragments",
+                                               folder, "fragment.yaml"))
+    supplied = _values_array(values)
+    undeclared, _takeable = bridge.undeclared_values(supplied, needs or [])
+    if needs is None or undeclared or not supplied:
+        return ("Those values do not fit '%s'%s, so nothing was offered. heron_resolve "
+                "names the values it takes."
+                % (capability, (" - not taken: %s" % ", ".join(undeclared)) if undeclared else ""))
+
+    companion_page.CHANGES.offer(capability, pinned.title or "",
+                                 [(v["name"], v["value"]) for v in supplied])
+    companion = companion_page.shared(bound_pid=_companion_revit)
+    if not companion.recently_seen():
+        try:
+            import webbrowser
+            webbrowser.open(companion.pairing_address(), new=2)
+        except Exception:                            # noqa: BLE001 - the button still works
+            pass
+    return ("Offered on the Heron Companion page: %s, %d value(s), to adjust and apply "
+            "there. Nothing in the model was changed." % (capability, len(supplied)))
+
+
+@server.tool()
 def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 2000) -> str:
     """
     Open an editable table of elements and their parameters in the Heron

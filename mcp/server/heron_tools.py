@@ -255,6 +255,11 @@ TOOLS = {
     # into a table and changes nothing. Writing the edited cells is the
     # page's companion_table_apply below, never this tool.
     "revit_edit_table":         (ANALYZE, "run_fragment_read"),
+
+    # Puts a settings capability's CURRENT values on the Companion page as an
+    # editable table, sending nothing to Revit. READ, no operation. The
+    # page's Apply is companion_apply below, at MODIFY - never this tool.
+    "revit_offer_settings":     (READ,    None),
 }
 
 
