@@ -284,9 +284,20 @@ namespace Heron.Revit.Addin
             }
             catch (Exception ex)
             {
-                HeronApplication.Log("Live state could not be written: " + ex.Message);
+                // TRIED AGAIN ON THE NEXT IDLING: the fingerprint was already
+                // taken as seen, and would otherwise hold the page stale until
+                // something visible changed (Codex review of #362). Logged
+                // once per distinct fault, not five times a second.
+                _lastSeen = null;
+                if (ex.Message != _lastFault)
+                {
+                    _lastFault = ex.Message;
+                    HeronApplication.Log("Live state could not be written: " + ex.Message);
+                }
             }
         }
+
+        private static string _lastFault;
 
         private static void Delete()
         {

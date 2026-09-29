@@ -123,7 +123,10 @@ namespace Heron.Revit.Addin
                 var born = long.TryParse(Json.ReadString(text, "started"), NumberStyles.Integer,
                                          CultureInfo.InvariantCulture, out started)
                     ? DateTime.SpecifyKind(new DateTime(1970, 1, 1), DateTimeKind.Utc).AddSeconds(started)
-                    : File.GetLastWriteTimeUtc(path);
+                    // A NOTE WITHOUT "started" WAS WRITTEN BY AN OLDER HERON, so
+                    // its chat started before any chat that writes the field;
+                    // its heartbeat must not outrank them (Codex review).
+                    : File.GetLastWriteTimeUtc(path).AddYears(-100);
                 if (born > newestTime) { newestTime = born; newest = address; }
             }
             return best ?? newest;

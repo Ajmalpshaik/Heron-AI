@@ -1381,7 +1381,7 @@ def revit_change(capability: str, values: str = "",
 
     # THE AFTER-CHANGE TABLE (docs/40 section 21.1): a settings change from
     # the chat leaves the values it used on the Companion page.
-    if _from_chat():
+    if _from_chat() and _took(reply):
         _offer_change(capability, folder, values, reply.get("document"))
 
     return "\n".join(lines)
@@ -1441,12 +1441,46 @@ def _moved_since(identity):
     table was made in; None when it is the same, or when none was recorded."""
     if not identity:
         return None
+    # THE LIVE BINDING, NOT THE CACHED ONE: an assumed Revit that has closed
+    # leaves its pid in the binding until something resolves it, and the
+    # comparison below would approve against that stale pid while
+    # revit_change then slides onto the surviving Revit (Codex's fourth
+    # review of #362). resolve() re-decides it by the four-case table - a
+    # CHOSEN Revit that closed is a refusal, never a slide.
+    try:
+        binding.resolve()
+    except NotBound as unbound:
+        return ("The Revit this table was made in is no longer the one this chat can "
+                "reach, so nothing was sent to Revit. %s" % unbound)
     now = _pin_identity()
     if tuple(identity) == now:
         return None
     return ("This table was made in %s, and the chat is now working on %s, so nothing "
             "was sent to Revit. Ask the chat for the table again in this model."
             % (identity[0] or "another model", now[0] or "no model yet"))
+
+
+#: What a settings fragment says it did, most telling first. A table shows
+#: the values Revit now holds, so a change it did not take - a formula-driven
+#: global parameter, a category it cannot override - leaves none (Codex's
+#: fourth review of #362).
+_TOOK = ("applied", "changed", "overridden", "shown", "hidden",
+         "alreadyThatWay", "alreadyThat", "alreadySet")
+
+
+def _took(reply):
+    """True unless the fragment's own answer says nothing was done."""
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return False
+    provides = reply.get("provides") or {}
+    said = [provides[k] for k in _TOOK if k in provides]
+    if not said:
+        return True
+
+    def done(value):
+        text = str(value).strip().lower()
+        return text not in ("", "0", "false", "none", "[]", "{}")
+    return any(done(v) for v in said)
 
 
 def _offer_change(capability, folder, values, document):

@@ -528,9 +528,20 @@ def test_tables():
     tab = hc.Tables()
     tab.open("A", {"columns": ["Mark"], "rows": [{"id": 1, "uniqueId": "u",
                "cells": {"Mark": {"value": "x", "editable": True}}}]}, ("A", "", "11"))
-    rows, why, identity = tab.snapshot(1, [{"id": 1, "name": "Mark", "value": "y"}])
+    rows, why, identity = tab.rows_and_model(1, [{"id": 1, "name": "Mark", "value": "y"}])
     check(rows and identity == ["A", "", "11"],
           "a table's rows and its model come from one locked snapshot")
+    tab.apply_hook = lambda rows, identity: ("1 row changed in Revit. Nothing was sent.",
+                                             {"applied": False, "stale": [
+                                                 {"id": 1, "name": "Mark", "why": "w", "now": "z"}]})
+    tab.apply(1, [{"id": 1, "name": "Mark", "value": "y"}])
+    check(tab.current()["rows"][0]["cells"]["Mark"]["value"] == "z",
+          "a cell changed in Revit becomes the table's new baseline, so Apply again can pass")
+    check("binding.resolve()" in server[server.index("def _moved_since("):
+                                       server.index("def _offer_change(")],
+          "the model guard asks which Revit is live NOW, never the cached one")
+    check("if _from_chat() and _took(reply):" in server,
+          "a change Revit did not take leaves no table")
 
 
 def test_model_guard():
@@ -560,7 +571,8 @@ def test_model_guard():
           "the button ignores a stale note, and the switch reads the SHARED setting before flipping")
     live = io.open(os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronLiveState.cs"),
                    encoding="utf-8").read()
-    check('Json.ReadString(text, "started")' in cs and 'view.Id + "|" + view.Name' in live,
+    check('Json.ReadString(text, "started")' in cs and 'view.Id + "|" + view.Name' in live
+          and "AddYears(-100)" in cs and "_lastSeen = null;" in live,
           "the button picks the newest chat by when it started; a renamed view refreshes the page")
 
 

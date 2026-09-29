@@ -152,6 +152,7 @@ foreach (var raw in (rows ?? "").Split(';'))
     var want = Uri.UnescapeDataString(f[4]);
 
     string why = null;
+    string now = null;
     Element element = null;
     try { element = doc.GetElement(uniqueId); } catch { }
 
@@ -169,15 +170,21 @@ foreach (var raw in (rows ?? "").Split(';'))
                  || target.StorageType == StorageType.None)
             why = name + " holds a reference to another element, which cannot be typed as text";
         else if (!unchanged(target, was))
-            why = "it was changed in Revit since the table was read - it now reads '"
-                  + (readValue(target) ?? "") + "'";
+        {
+            now = readValue(target) ?? "";
+            why = "it was changed in Revit since the table was read - it now reads '" + now + "'";
+        }
     }
 
     if (why != null)
     {
         stale.Add(id + ": " + why);
+        // WHAT REVIT HOLDS NOW, for a cell that was changed there: the table
+        // takes it as its new "was", so the next Apply is checked against
+        // the model as it is, not refused for ever (Codex review of #362).
         staleJson.Add("{" + esc("id") + ": " + esc(id) + ", " + esc("name") + ": " + esc(name)
-                      + ", " + esc("why") + ": " + esc(why) + "}");
+                      + ", " + esc("why") + ": " + esc(why)
+                      + (now == null ? "" : ", " + esc("now") + ": " + esc(now)) + "}");
         continue;
     }
     plan.Add(Tuple.Create(element, name, want));

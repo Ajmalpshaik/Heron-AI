@@ -319,10 +319,10 @@ class Tables(object):
 
     def check(self, table_id, changes):
         """The rows to send, or (None, why)."""
-        rows, why, _identity = self.snapshot(table_id, changes)
+        rows, why, _identity = self.rows_and_model(table_id, changes)
         return rows, why
 
-    def snapshot(self, table_id, changes):
+    def rows_and_model(self, table_id, changes):
         """(rows, why, identity) - the rows and the model they were read in,
         taken under ONE hold of the lock. Looked up separately, a table the
         chat opened in between could pair these rows with ITS model, and the
@@ -355,7 +355,7 @@ class Tables(object):
         hook = self.apply_hook
         if hook is None:
             return {"ok": False, "error": "The chat is not ready to apply anything yet."}
-        rows, why, identity = self.snapshot(table_id, changes)
+        rows, why, identity = self.rows_and_model(table_id, changes)
         if rows is None:
             return {"ok": False, "error": why}
         text, result = hook(rows, identity)
@@ -364,6 +364,18 @@ class Tables(object):
         with self._lock:
             table = self._table
             if table is not None and table["id"] == table_id:
+                if not applied:
+                    # A cell changed in Revit since the table was read: what
+                    # Revit holds now becomes the value this table checks
+                    # against. The page keeps the modeller's edits, so Apply
+                    # again sends them against the model as it is now.
+                    for s in (result or {}).get("stale") or []:
+                        if "now" not in s:
+                            continue
+                        for row in table["rows"]:
+                            cell = row.get("cells", {}).get(s.get("name"))
+                            if str(row["id"]) == str(s.get("id")) and cell is not None:
+                                cell["value"] = s["now"]
                 if applied:
                     back = {(b.get("id"), b.get("name")): b.get("value")
                             for b in result.get("readBack") or []}
