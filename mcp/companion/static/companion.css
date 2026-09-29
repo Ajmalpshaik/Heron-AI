@@ -30,8 +30,10 @@
   --mono: "Cascadia Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
   color-scheme: light;
 }
+/* Dark: from Windows' setting, unless the switch in the header chose light;
+   or chosen with the switch. The same tokens twice, because CSS cannot share them. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #0c121c;
     --surface: #131b27;
     --surface-2: #0f1620;
@@ -59,6 +61,34 @@
     color-scheme: dark;
   }
 }
+:root[data-theme="dark"] {
+  --bg: #0c121c;
+  --surface: #131b27;
+  --surface-2: #0f1620;
+  --head: #1a2432;
+  --ink: #e6ebf2;
+  --muted: #a3b0c0;
+  --faint: #8391a3;
+  --line: #243044;
+  --line-strong: #33415a;
+  --primary: #3b78e7;
+  --primary-hover: #5189ee;
+  --on-primary: #ffffff;
+  --ring: #7aa7ff;
+  --field: #1b2533;
+  --fixed: rgba(148, 163, 184, .05);
+  --zebra: rgba(148, 163, 184, .035);
+  --hover: rgba(122, 167, 255, .07);
+  --ok: #5fd08a;
+  --ok-bg: rgba(95, 208, 138, .12);
+  --warn: #f0b64c;
+  --warn-bg: rgba(240, 182, 76, .12);
+  --bad: #ff8a80;
+  --bad-bg: rgba(255, 138, 128, .12);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+  color-scheme: dark;
+}
+:root[data-theme="light"] { color-scheme: light; }
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -339,3 +369,35 @@ body.dragging-colour, body.dragging-colour * { cursor: grabbing !important; user
 .change .pair.drop-here input[type=color] { outline: 2px dashed var(--ring); outline-offset: 2px; }
 .change .pair.drop-here input[type=text] { border-color: var(--ring); }
 .change .pair.dropped input[type=text] { border-color: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+
+/* ------------------------------------------------------------ drag a cell onto another */
+body.dragging-cell, body.dragging-cell * { cursor: copy !important; user-select: none; }
+.cell-ghost {
+  position: fixed; z-index: 20; pointer-events: none; transform: translate(12px, 10px);
+  max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 4px 9px; border-radius: 6px; font-size: 12.5px; font-weight: 600;
+  background: var(--primary); color: var(--on-primary); box-shadow: 0 4px 12px rgba(0, 0, 0, .3);
+}
+#table td.drop-here { background-color: color-mix(in srgb, var(--primary) 12%, transparent) !important; }
+#table td.drop-here input { border-style: dashed; border-color: var(--primary); }
+#table td.dropped input { border-color: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+.legend .l-copy::before { content: "\2195"; width: auto; height: auto; border: 0; color: var(--primary); font-weight: 700; }
+.change .elsewhere {
+  margin: 0; padding: 7px 12px; font-size: 12.5px; font-weight: 600; color: var(--ink);
+  background: var(--warn-bg); border-bottom: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+}
+.change .elsewhere::before { content: "!"; display: inline-grid; place-items: center; width: 16px; height: 16px; margin-right: 7px;
+  border-radius: 50%; background: var(--warn); color: var(--surface); font-size: 11px; }
+
+/* ------------------------------------------------------------ light / dark switch */
+.bar-end { display: flex; align-items: center; gap: 10px; }
+.theme {
+  display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0;
+  border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); color: var(--muted);
+  cursor: pointer; transition: background-color .15s, color .15s;
+}
+.theme:hover { background: var(--head); color: var(--ink); }
+.theme .ico { width: 17px; height: 17px; }
+.theme .i-sun { display: none; }
+:root[data-theme="dark"] .theme .i-sun { display: block; }
+:root[data-theme="dark"] .theme .i-moon { display: none; }

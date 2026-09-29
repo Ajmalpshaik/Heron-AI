@@ -135,7 +135,7 @@ async function activity() {
 // ever reaches the page as text.
 
 const RGB = /^ *([0-9]{1,3}) *, *([0-9]{1,3}) *, *([0-9]{1,3}) *$/;
-const shown = new Map();   // card id -> { el, lastAt }
+const shown = new Map();   // card id -> { el, key }
 
 function isRgb(v) {
   const m = RGB.exec(v);
@@ -320,7 +320,26 @@ function buildCard(card) {
   });
   foot.append(button, result);
   box.append(head, table, foot);
+  // Unsent edits: any box that no longer holds what the card was built with.
+  const built = readers.map(r => r.read());
+  box.values = () => readers.map(r => r.read());
+  box.edited = () => box.values().some((v, i) => v !== built[i]);
   return box;
+}
+
+// What a card holds on the server; when it changes - an Apply from another
+// tab, or a newer change by the chat - the card on screen is redrawn.
+function cardKey(card) {
+  return card.id + "|" + JSON.stringify(card.rows) + "|" +
+    (card.last ? card.last.at + "/" + card.last.outcome : "");
+}
+
+function changedElsewhere(el) {
+  if (el.querySelector(".elsewhere")) return;
+  const note = document.createElement("p");
+  note.className = "elsewhere";
+  note.textContent = "Changed elsewhere - press Apply again only after checking.";
+  el.querySelector("header").after(note);
 }
 
 async function changes() {
@@ -334,10 +353,22 @@ async function changes() {
       if (!ids.has(id)) { item.el.remove(); shown.delete(id); }
     }
     body.cards.slice().reverse().forEach(card => {
-      if (!shown.has(card.id)) {
+      const key = cardKey(card);
+      const item = shown.get(card.id);
+      if (!item) {
         const el = buildCard(card);
         list.prepend(el);
-        shown.set(card.id, { el });
+        shown.set(card.id, { el, key });
+      } else if (item.key !== key) {
+        // Never throw away what the modeller is typing: a card with unsent
+        // edits keeps them and says it changed elsewhere; one being typed in
+        // waits for the next poll.
+        const same = item.el.values().every((v, i) => card.rows[i] && v === card.rows[i].value);
+        if (item.el.edited() && !same) { changedElsewhere(item.el); return; }
+        if (item.el.contains(document.activeElement)) return;
+        const el = buildCard(card);
+        item.el.replaceWith(el);
+        shown.set(card.id, { el, key });
       }
     });
     $("c-empty").hidden = shown.size > 0;
@@ -373,7 +404,80 @@ function tableCell(row, name, cell, edits, count) {
     count();
   });
   td.append(input);
+  if (!NO_COPY.test(name)) {
+    td.classList.add("copyable");
+    input.title = "Drag this cell onto another cell in the column to copy its value there";
+    input.addEventListener("dragstart", e => e.preventDefault());   // not the browser's text drag
+  }
   return td;
+}
+
+// Drag a cell onto another cell in its column to copy its value there, the
+// way a colour swatch is dragged (the owner's idea, 2026-09-29). A press
+// that stays inside its own cell is ordinary typing and selecting; leaving
+// the cell with the button held starts the drag. The cell dropped on becomes
+// an edit like typing makes it - nothing is sent until Apply. Read-only
+// cells take nothing. Mark and Type Mark are never copied (docs/40 section
+// 21.1): a Mark copied onto another would stop being unique.
+const NO_COPY = /^ *(type +)?mark *$/i;
+
+function dragCells(tbody) {
+  let from = null, start = null, ghost = null, over = null;
+  const target = (x, y) => {
+    const el = document.elementFromPoint(x, y);
+    const td = el && el.closest("td");
+    return td && td !== from && td.parentElement.parentElement === tbody &&
+      td.cellIndex === from.cellIndex && td.classList.contains("copyable") ? td : null;
+  };
+  const mark = td => {
+    if (over) over.classList.remove("drop-here");
+    over = td;
+    if (over) over.classList.add("drop-here");
+  };
+  const move = e => {
+    if (!ghost) {
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      if ((el && el.closest("td")) === from ||
+          Math.abs(e.clientX - start.x) + Math.abs(e.clientY - start.y) < 6) return;
+      const input = from.querySelector("input");
+      input.setSelectionRange(input.selectionStart, input.selectionStart);
+      ghost = document.createElement("div");
+      ghost.className = "cell-ghost";
+      ghost.textContent = input.value === "" ? "(empty)" : input.value;
+      document.body.append(ghost);
+      document.body.classList.add("dragging-cell");
+    }
+    e.preventDefault();
+    ghost.style.setProperty("left", e.clientX + "px");
+    ghost.style.setProperty("top", e.clientY + "px");
+    mark(target(e.clientX, e.clientY));
+  };
+  const up = e => {
+    const td = ghost ? target(e.clientX, e.clientY) : null;
+    if (td) {
+      const input = td.querySelector("input");
+      input.value = from.querySelector("input").value;
+      input.dispatchEvent(new Event("input"));
+      td.classList.add("dropped");
+      setTimeout(() => td.classList.remove("dropped"), 900);
+    }
+    if (ghost) ghost.remove();
+    mark(null);
+    document.body.classList.remove("dragging-cell");
+    from = start = ghost = null;
+    document.removeEventListener("pointermove", move);
+    document.removeEventListener("pointerup", up);
+    document.removeEventListener("pointercancel", up);
+  };
+  tbody.addEventListener("pointerdown", e => {
+    const td = e.button === 0 && e.target.closest && e.target.closest("td.copyable");
+    if (!td || from) return;
+    from = td;
+    start = { x: e.clientX, y: e.clientY };
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", up);
+    document.addEventListener("pointercancel", up);
+  });
 }
 
 function renderTable(t) {
@@ -419,13 +523,13 @@ function renderTable(t) {
   const table = document.createElement("table");
   const thead = document.createElement("thead");
   const hr = document.createElement("tr");
-  ["Element", "Category", "Type"].concat(t.columns).forEach((c, i) => {
+  ["Element", "Category", "Family", "Type"].concat(t.columns).forEach((c, i) => {
     const th = document.createElement("th");
     th.scope = "col";
     th.textContent = c;
     if (i === 0) th.className = "num";
-    if (i >= 3) {
-      const name = t.columns[i - 3];
+    if (i >= 4) {
+      const name = t.columns[i - 4];
       if (numeric[name]) th.classList.add("num");
       if (editable[name]) { th.classList.add("edit"); th.title = "You can edit this column"; }
     }
@@ -435,7 +539,7 @@ function renderTable(t) {
   const tbody = document.createElement("tbody");
   for (const row of t.rows) {
     const tr = document.createElement("tr");
-    [row.id, row.category, row.type].forEach((v, i) => {
+    [row.id, row.category, row.family, row.type].forEach((v, i) => {
       const td = document.createElement("td");
       td.className = i === 0 ? "fixed id num" : "fixed";
       td.textContent = v == null ? "" : v;
@@ -450,6 +554,7 @@ function renderTable(t) {
     }
     tbody.append(tr);
   }
+  dragCells(tbody);
   table.append(thead, tbody);
   wrap.append(table);
   box.append(wrap);
@@ -457,7 +562,8 @@ function renderTable(t) {
   const legend = document.createElement("p");
   legend.className = "legend";
   [["l-edit", "You can edit"], ["l-fixed", "Read-only - point at it for why"],
-   ["l-edited", "Edited, not applied yet"]].concat(stale.size ? [["l-stale", "Changed in Revit since it was read"]] : [])
+   ["l-edited", "Edited, not applied yet"],
+   ["l-copy", "Drag a cell onto another in its column to copy it (not Mark or Type Mark)"]].concat(stale.size ? [["l-stale", "Changed in Revit since it was read"]] : [])
     .forEach(([cls, text]) => {
       const span = document.createElement("span");
       span.className = cls;
@@ -552,7 +658,30 @@ async function poll() {
   setTimeout(poll, 1000);
 }
 
+// The light / dark switch. It starts from Windows' own setting; a choice made
+// with the button is remembered in this browser only.
+function theme() {
+  const system = window.matchMedia("(prefers-color-scheme: dark)");
+  let saved = null;
+  try { saved = localStorage.getItem("heron-companion-theme"); } catch (e) { /* not kept */ }
+  const button = $("theme");
+  const use = mode => {
+    document.documentElement.dataset.theme = mode;
+    const next = mode === "dark" ? "light" : "dark";
+    button.title = "Switch to " + next;
+    button.setAttribute("aria-label", "Switch to " + next);
+  };
+  use(saved === "dark" || saved === "light" ? saved : (system.matches ? "dark" : "light"));
+  system.addEventListener("change", e => { if (!saved) use(e.matches ? "dark" : "light"); });
+  button.addEventListener("click", () => {
+    saved = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    try { localStorage.setItem("heron-companion-theme", saved); } catch (e) { /* not kept */ }
+    use(saved);
+  });
+}
+
 async function start() {
+  theme();
   const code = new URLSearchParams(location.search).get("pair");
   if (code) {
     // The one-time code leaves the address bar at once, whatever happens next.
