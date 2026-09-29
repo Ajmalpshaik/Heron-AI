@@ -47,6 +47,18 @@ def add(store, fid, capability, status="DRAFT", risk="READ",
     store.db.commit()
 
 
+def _top_level_id(path):
+    """The fragment's own `id:` line, or None."""
+    try:
+        with open(path) as handle:
+            for line in handle:
+                if line.startswith("id:"):
+                    return line.split(":", 1)[1].strip()
+    except (IOError, OSError):
+        return None
+    return None
+
+
 def main():
     home = tempfile.mkdtemp(prefix="heron-cap-")
     os.environ["HERON_KNOWLEDGE"] = home
@@ -209,6 +221,30 @@ def main():
             check(none_2021 is None,
                   "and on 2021, where neither works, it returns nothing "
                   "rather than a provider that would fail")
+
+            print()
+            print("7. The fragment's FILE caps the status, never the index "
+                  "(5b-189)")
+            import heron_search as SEARCH
+            draft = None
+            for folder in sorted(os.listdir(CAP.FRAG.FRAGMENTS_DIR)):
+                fid = _top_level_id(os.path.join(
+                    CAP.FRAG.FRAGMENTS_DIR, folder, "fragment.yaml"))
+                if fid and SEARCH.disk_status(fid) == "DRAFT":
+                    draft = fid
+                    break
+            if draft is None:
+                check(False, "no DRAFT fragment on disk to stage the case with")
+            else:
+                # A stale index: the store vouches PROVEN, the file says DRAFT.
+                add(store, draft, "STALE_INDEX_CASE", status="PROVEN")
+                stale = CAP.resolve(store, "STALE_INDEX_CASE")
+                check(stale is not None and stale.status == "DRAFT",
+                      "index says PROVEN, %s's file says DRAFT -> %s"
+                      % (draft, stale.status if stale else "nothing"))
+                check(stale is not None and
+                      stale.rows[0]["status"] == "DRAFT",
+                      "and the provider row says DRAFT too")
         finally:
             store.close()
     finally:

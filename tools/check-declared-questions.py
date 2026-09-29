@@ -131,6 +131,20 @@ TELLS = re.compile(
     r"make it|make them|and change|then change|and set|then set)\b", re.I)
 
 
+def _shown(folder):
+    """A folder as the report prints it: repo-relative, with `/`.
+
+    FRAGMENT-ISSUES 5b-151. `frag.folder` is absolute, so every fragment row
+    named `/home/user/Heron-AI/...` - a container gone by the time anybody
+    reads the CI summary - while the skill rows two blocks below were already
+    relative. A folder that is relative already is left as it is.
+    """
+    folder = str(folder)
+    if os.path.isabs(folder):
+        folder = os.path.relpath(folder, ROOT)
+    return folder.replace(os.sep, "/")
+
+
 def questions_on_writes(fragments, threshold, ladder):
     """(asked, told, unranked) over the fragments handed in.
 
@@ -154,7 +168,8 @@ def questions_on_writes(fragments, threshold, ladder):
             phrase = str(said).strip()
             if not ASKS.match(phrase):
                 continue
-            row = (capability, risk, phrase, frag.data.get("id"), frag.folder)
+            row = (capability, risk, phrase, frag.data.get("id"),
+                   _shown(frag.folder))
             (told if TELLS.search(phrase) else asked).append(row)
     return asked, told, unranked
 
@@ -246,14 +261,18 @@ def main():
         out("  move, and this tool does not ask for it.\n")
 
     out("\n")
+    # BOTH LISTS, ON ALL THREE LINES (5b-151). The header counted both while
+    # the next two lines read `told` alone, so a skill that asks and then
+    # tells would print a number above the word `none`.
+    all_told = list(told) + list(s_told)
     out("ASKS AND THEN SAYS WHAT TO DO (%d) - not findings:\n"
-        % (len(told) + len(s_told)))
-    if not told:
+        % len(all_told))
+    if not all_told:
         out("  none\n")
     elif not args.all:
-        out("  %d, hidden. --all prints them.\n" % len(told))
+        out("  %d, hidden. --all prints them.\n" % len(all_told))
     else:
-        for capability, risk, phrase, fid, folder in list(told) + list(s_told):
+        for capability, risk, phrase, fid, folder in all_told:
             out("  %-30s %-7s %s\n" % (capability, risk, repr(phrase)))
 
     unranked = list(unranked) + list(s_unranked)

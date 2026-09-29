@@ -71,6 +71,35 @@ class Card(object):
         self.folder = folder
 
 
+class _Skill(object):
+    """What `_AsCard` reads off a skill, and nothing else."""
+
+    id = "test-skill"
+    data = {"risk": "MODIFY"}
+
+    def utterances(self):
+        return ["which elbow this type inserts, change it"]
+
+
+def _printed_by_main(threshold, ladder):
+    """main()'s whole report, over one fragment and one skill staged here."""
+    import io
+    folder = os.path.join(ROOT, "brain", "fragments", "set-something")
+    saved = (TOOL.FRAG.load_all, TOOL.SKILL.load_all, TOOL.GJ.write_threshold,
+             sys.stdout, sys.argv)
+    TOOL.FRAG.load_all = lambda: ({"a": Card(
+        "SET_SOMETHING", "MODIFY", ["what scale is this view"], folder)}, [])
+    TOOL.SKILL.load_all = lambda: ({"s": _Skill()}, [])
+    TOOL.GJ.write_threshold = lambda: ("MODIFY", threshold, ladder)
+    sys.stdout, sys.argv = io.StringIO(), ["check-declared-questions.py"]
+    try:
+        TOOL.main()
+        return sys.stdout.getvalue()
+    finally:
+        (TOOL.FRAG.load_all, TOOL.SKILL.load_all, TOOL.GJ.write_threshold,
+         sys.stdout, sys.argv) = saved
+
+
 def main():
     ladder = {"READ": 0, "ANALYZE": 1, "SUGGEST": 2, "EXECUTE": 3,
               "MODIFY": 4, "PUBLISH": 5, "ADMIN": 6}
@@ -176,6 +205,19 @@ def main():
     check(True, "printed either way - some of these are probably RIGHT, and "
                 "deleting a sentence a modeller says to shorten the list is "
                 "row 113's forbidden move mirrored")
+
+    print("\n8. what main() PRINTS - the half nothing above reads (5b-151)")
+    printed = _printed_by_main(threshold, real_ladder)
+    check(ROOT not in printed and ROOT.replace(os.sep, "/") not in printed,
+          "no absolute container path in the report")
+    check(" brain/fragments/set-something/fragment.yaml" in printed,
+          "a fragment's file is named repo-relative, with /")
+    check("ASKS AND THEN SAYS WHAT TO DO (1)" in printed
+          and "  1, hidden. --all prints them." in printed
+          and "ASKS AND THEN SAYS WHAT TO DO (1) - not findings:\n  none"
+          not in printed,
+          "a SKILL that asks and then tells is counted and listed, not "
+          "printed as 'none' under a count of one")
 
     print()
     if FAILURES:
