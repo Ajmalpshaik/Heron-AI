@@ -242,7 +242,9 @@ namespace Heron.Revit.Addin
                 foreach (var id in ids) hash = hash * 31 + id.GetHashCode();
             }
             var view = doc.ActiveView;
-            return doc.Title + "|" + doc.PathName + "|" + (view == null ? "" : view.Id.ToString())
+            // THE NAME TOO: a view renamed while it stays active raises no
+            // ViewActivated, and the id alone would never see it (Codex review).
+            return doc.Title + "|" + doc.PathName + "|" + (view == null ? "" : view.Id + "|" + view.Name)
                  + "|" + ids.Count.ToString(CultureInfo.InvariantCulture)
                  + "|" + hash.ToString(CultureInfo.InvariantCulture);
         }

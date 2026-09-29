@@ -1393,7 +1393,9 @@ _HOST_SUPPLIED = frozenset(("Document", "UIDocument", "UIApplication", "Applicat
 
 
 def _settings_card(folder):
-    """True when this fragment may get an after-change table: its card says
+    """The card's `companion-subject` names - the inputs that say WHICH THING
+    a table is about - when this fragment may get an after-change table, or
+    None. Its card says
     `companion: settings`, and EVERY input it takes is a typed value. A
     fragment that reads the selection or the chain is never offered - applied
     again later it would act on whatever is selected THEN, not on what the
@@ -1404,12 +1406,21 @@ def _settings_card(folder):
         with io.open(path, encoding="utf-8") as fh:
             card = yaml.safe_load(fh) or {}
     except (OSError, yaml.YAMLError):
-        return False
+        return None
     if card.get("companion") != "settings" or card.get("risk") != "MODIFY":
-        return False
+        return None
     needs = (card.get("contract") or {}).get("needs") or []
-    return all(n.get("source") == "request" or n.get("type") in _HOST_SUPPLIED
-               for n in needs)
+    if not all(n.get("source") == "request" or n.get("type") in _HOST_SUPPLIED
+               for n in needs):
+        return None
+    subject = [s.strip() for s in str(card.get("companion-subject") or "").split(",")
+               if s.strip()]
+    requested = set(n.get("name") for n in needs if n.get("source") == "request")
+    # A card that names no subject, or one it does not take, is not offered:
+    # without it two tables for different things would replace each other.
+    if not subject or not set(subject) <= requested:
+        return None
+    return subject
 
 
 def _pin_identity():
@@ -1417,8 +1428,12 @@ def _pin_identity():
     models apart - title and path. A card or a table carries the identity it
     was made under, and its Apply is refused if the chat has since moved
     (Codex review of #362): an old table must never write into the model the
-    chat is on NOW, least of all a copy whose ids and UniqueIds all match."""
-    return (pinned.title or "", pinned.document_path or "")
+    chat is on NOW, least of all a copy whose ids and UniqueIds all match.
+
+    THE REVIT SESSION TOO: two Revits can each hold an unsaved Project1, whose
+    title and path are the same, and revit_use_session moves the chat between
+    them (Codex's third review of #362)."""
+    return (pinned.title or "", pinned.document_path or "", str(binding.pid or ""))
 
 
 def _moved_since(identity):
@@ -1438,12 +1453,13 @@ def _offer_change(capability, folder, values, document):
     """Leave a settings change's values on the Companion page (docs/40 21.1).
     Display only: a fault here never reaches the chat's answer."""
     try:
-        if not _settings_card(folder):
+        subject = _settings_card(folder)
+        if not subject or not pinned.is_pinned:
             return
         pairs = [(v["name"], v["value"]) for v in _values_array(values)]
         if pairs:
             companion_page = _companion_module()
-            companion_page.CHANGES.offer(capability, document, pairs, _pin_identity())
+            companion_page.CHANGES.offer(capability, document, pairs, _pin_identity(), subject)
     except Exception:                                # noqa: BLE001 - display only
         pass
 
@@ -1716,7 +1732,8 @@ def revit_offer_settings(capability: str, values: str) -> str:
     folder, _status = _fragment_for(capability)
     if folder is None:
         return ("Heron has nothing that does '%s', so nothing was offered." % (capability or ""))
-    if not _settings_card(folder):
+    subject = _settings_card(folder)
+    if not subject:
         return ("'%s' is not a setting the Companion offers as a table - its card is not "
                 "marked companion: settings, or it takes the selection. Nothing was offered."
                 % capability)
@@ -1729,9 +1746,15 @@ def revit_offer_settings(capability: str, values: str) -> str:
                 "names the values it takes."
                 % (capability, (" - not taken: %s" % ", ".join(undeclared)) if undeclared else ""))
 
+    # NO CARD WITHOUT A MODEL: a card with no identity would apply to
+    # whichever model the chat reaches at Apply time (Codex review of #362).
+    if not pinned.is_pinned:
+        return ("No model is pinned to this chat yet, so nothing was offered - a table "
+                "must know which model it belongs to. Read something from the model "
+                "first, then offer it again.")
     companion_page.CHANGES.offer(capability, pinned.title or "",
                                  [(v["name"], v["value"]) for v in supplied],
-                                 _pin_identity() if pinned.title else None)
+                                 _pin_identity(), subject)
     companion = companion_page.shared(bound_pid=_companion_revit)
     if not companion.recently_seen():
         try:

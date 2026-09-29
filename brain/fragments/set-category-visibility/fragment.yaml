@@ -15,6 +15,7 @@ risk: MODIFY
 # A settings change: after it runs from the chat, the Companion page offers its values
 # as a table the modeller can edit and apply again (docs/40 section 21.1).
 companion: settings
+companion-subject: view, categories
 
 purpose: >
   Turns entire categories on or off in one view - the visibility column in

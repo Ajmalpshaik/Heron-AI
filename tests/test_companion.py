@@ -344,6 +344,10 @@ def test_activity():
     check(hc.Activity.outcome("Revit 2024 did not answer.") == "failed"
           and hc.Activity.outcome("Heron could not read its own session list") == "failed",
           "an answer saying the work did not happen is failed, not OK")
+    check(hc.Activity.outcome("12 gaps: 3 were refused or failed", tool="heron_gaps") == "ok"
+          and hc.Activity.outcome("Filters read.\n'X' failed its check", tool="revit_read") == "ok"
+          and hc.Activity.outcome("Revit 2024 did not answer.", tool="revit_read") == "failed",
+          "only a Revit-facing tool's FIRST line decides failed - a report may quote the word")
     check(items[0]["summary"] == "Ducts: 24 in Level 1",
           "only the first line of an answer is kept")
     check(len(act.since(2)) == 1 and act.since(2)[0]["tool"] == "revit_views",
@@ -409,6 +413,12 @@ def test_changes():
                ("overrides", "projection-line-colour=0,255,0"), ("visible", "true")])
     check(len(many.cards()) == 3 and many.cards()[0]["rows"][2]["value"].endswith("0,255,0"),
           "a new change to the SAME filter replaces its table rather than adding a fourth")
+    mats = hc.Changes()
+    for name in ("100", "200"):
+        mats.offer("SET_MATERIAL_COLOUR", "", [("materialName", name), ("colour", "255,0,0")],
+                   None, ["materialName"])
+    check(len(mats.cards()) == 2,
+          "the card names its subject: materials called 100 and 200 keep two tables")
 
     marked = []
     for card_path in glob.glob(os.path.join(ROOT, "brain", "fragments", "*", "fragment.yaml")):
@@ -419,6 +429,11 @@ def test_changes():
         data = yaml.safe_load(text)
         needs = (data.get("contract") or {}).get("needs") or []
         marked.append(os.path.basename(os.path.dirname(card_path)))
+        subject = [s.strip() for s in str(data.get("companion-subject") or "").split(",")
+                   if s.strip()]
+        check(subject and set(subject) <= set(n.get("name") for n in needs),
+              "%s: names which of its inputs say WHICH THING a table is about"
+              % marked[-1])
         check(data.get("risk") == "MODIFY" and all(
             n.get("source") == "request" or n.get("type") in
             ("Document", "UIDocument", "UIApplication", "Application") for n in needs),
@@ -506,8 +521,16 @@ def test_tables():
     offer = server[server.index("def revit_offer_settings("):server.index("def revit_edit_table(")]
     check(tools.TOOLS.get("revit_offer_settings") == (tools.READ, None)
           and "session.request" not in offer and "_change(" not in offer
-          and "if not _settings_card(folder):" in offer,
-          "offering a settings table sends nothing to Revit, and only for a settings card")
+          and "subject = _settings_card(folder)" in offer
+          and "if not pinned.is_pinned:" in offer,
+          "offering a settings table sends nothing to Revit, only for a settings card, "
+          "and never before a model is pinned")
+    tab = hc.Tables()
+    tab.open("A", {"columns": ["Mark"], "rows": [{"id": 1, "uniqueId": "u",
+               "cells": {"Mark": {"value": "x", "editable": True}}}]}, ("A", "", "11"))
+    rows, why, identity = tab.snapshot(1, [{"id": 1, "name": "Mark", "value": "y"}])
+    check(rows and identity == ["A", "", "11"],
+          "a table's rows and its model come from one locked snapshot")
 
 
 def test_model_guard():
@@ -521,15 +544,24 @@ def test_model_guard():
               and body.index("moved = _moved_since(identity)") < body.index("_through(revit_change"),
               "%s refuses when the chat has moved to another model, BEFORE anything is sent"
               % name[4:-1])
-    check("CHANGES.offer(capability, document, pairs, _pin_identity())" in server
+    check("CHANGES.offer(capability, document, pairs, _pin_identity(), subject)" in server
+          and 'str(binding.pid or "")' in server
           and "TABLES.open(document, table, _pin_identity())" in server,
-          "every table and card records the model it was made in")
+          "every table and card records the model it was made in - and which Revit holds it")
+    page = io.open(os.path.join(ROOT, "mcp", "companion", "heron_companion.py"),
+                   encoding="utf-8").read()
+    check("with self._life:" in page and page.count("with self._life:") == 2,
+          "starting and stopping the page are one step each, never two servers at once")
     check("if len(line) > 700000:" in server,
           "a change set too big for the bridge's one line is refused whole, never split")
     cs = io.open(os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronCompanionCommands.cs"),
                  encoding="utf-8").read()
     check("AddSeconds(-NoteSeconds)" in cs and "HeronConfig.Load().GetBool(HeronLiveState.EnabledKey" in cs,
           "the button ignores a stale note, and the switch reads the SHARED setting before flipping")
+    live = io.open(os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronLiveState.cs"),
+                   encoding="utf-8").read()
+    check('Json.ReadString(text, "started")' in cs and 'view.Id + "|" + view.Name' in live,
+          "the button picks the newest chat by when it started; a renamed view refreshes the page")
 
 
 def main():

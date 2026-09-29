@@ -622,7 +622,11 @@ async function changes() {
 // cells are sent, and the old value is taken from Heron's own copy, never
 // from this page - so nothing here can claim a value Revit did not show.
 
-let tableShown = null;     // "<id>/<last.at>" of what is on screen
+let tableShown = null;
+// Edits the modeller typed that Revit has NOT taken - kept when a stale row
+// refuses the whole Apply, so the table redraws with them still in it and
+// the stale cells marked (Codex review of #362). {id, map}, or null.
+let keptEdits = null;     // "<id>/<last.at>" of what is on screen
 
 function tableCell(row, name, cell, edits, count) {
   const td = document.createElement("td");
@@ -637,6 +641,7 @@ function tableCell(row, name, cell, edits, count) {
   input.type = "text";
   input.value = cell.value == null ? "" : cell.value;
   const key = row.id + "/" + name;
+  if (edits.has(key)) { input.value = edits.get(key).value; td.classList.add("edited"); }
   input.addEventListener("input", () => {
     if (input.value === (cell.value == null ? "" : cell.value)) edits.delete(key);
     else edits.set(key, { id: row.id, name: name, value: input.value });
@@ -793,7 +798,8 @@ function renderTable(t) {
   box.append(head);
 
   const stale = new Map((t.last && t.last.stale || []).map(s => [s.id + "/" + s.name, s.why]));
-  const edits = new Map();
+  const edits = keptEdits && keptEdits.id === t.id ? new Map(keptEdits.map) : new Map();
+  keptEdits = null;
   const button = document.createElement("button");
   button.className = "btn";
   const count = () => {
@@ -893,6 +899,8 @@ function renderTable(t) {
       });
       const body = await res.json();
       if (!body.ok) { result.className = "result failed"; result.textContent = body.error || "Not applied."; count(); return; }
+      // Not applied (a row changed in Revit): redraw with the edits kept.
+      if (!body.applied) keptEdits = { id: t.id, map: new Map(edits) };
       tableShown = null;   // re-read: Heron's copy now holds what Revit holds
       await table_();
     } catch (e) {

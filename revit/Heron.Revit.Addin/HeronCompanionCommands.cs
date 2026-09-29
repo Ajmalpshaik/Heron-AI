@@ -115,8 +115,16 @@ namespace Heron.Revit.Addin
                             + "/?pair=" + code;
                 if (Json.ReadString(text, "revitPid") == mine) best = address;
 
-                var written = File.GetLastWriteTimeUtc(path);
-                if (written > newestTime) { newestTime = written; newest = address; }
+                // NEWEST BY WHEN THE CHAT STARTED, which the note carries and
+                // never changes. The file's own time is a heartbeat every
+                // chat refreshes each two seconds, so it names whichever
+                // beat last (Codex's third review of #362).
+                long started;
+                var born = long.TryParse(Json.ReadString(text, "started"), NumberStyles.Integer,
+                                         CultureInfo.InvariantCulture, out started)
+                    ? DateTime.SpecifyKind(new DateTime(1970, 1, 1), DateTimeKind.Utc).AddSeconds(started)
+                    : File.GetLastWriteTimeUtc(path);
+                if (born > newestTime) { newestTime = born; newest = address; }
             }
             return best ?? newest;
         }

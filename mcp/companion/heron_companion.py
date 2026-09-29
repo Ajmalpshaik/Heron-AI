@@ -125,11 +125,21 @@ class Activity(object):
         self._items = []
         self._seq = 0
 
+    #: The tools whose answer says whether Revit did the work. Every other
+    #: tool is a report, and a report may quote "failed" as content - the
+    #: gaps report's first line always does (Codex review of #362).
+    REVIT_FACING = ("revit_", "companion_")
+
     @classmethod
-    def outcome(cls, reply, error=None):
+    def outcome(cls, reply, error=None, tool=None):
         if error is not None:
             return "failed"
-        text = str(reply or "").lower()
+        if tool is not None and not str(tool).startswith(cls.REVIT_FACING):
+            return "ok"
+        # THE FIRST LINE ONLY: it is where a tool says what happened; the
+        # lines after it are the answer, and may quote any word at all.
+        lines = str(reply or "").strip().splitlines()
+        text = (lines[0] if lines else "").lower()
         if any(word in text for word in cls.REFUSED):
             return "refused"
         if any(word in text for word in cls.FAILED):
@@ -144,7 +154,7 @@ class Activity(object):
         with self._lock:
             self._seq += 1
             self._items.append({"seq": self._seq, "at": started, "tool": tool,
-                                "summary": line, "outcome": outcome or self.outcome(reply, error),
+                                "summary": line, "outcome": outcome or self.outcome(reply, error, tool),
                                 "seconds": round(seconds, 1)})
             del self._items[:-self.LIMIT]
 
@@ -191,26 +201,37 @@ class Changes(object):
                           re.IGNORECASE)
 
     @classmethod
-    def subject(cls, pairs):
+    def subject(cls, pairs, names=None):
         """WHICH THING a change is about - the view, the filter, the
         categories - and never its settings. Two changes to the same thing
         share one table; changes to different things each keep their own. The
         first version keyed on the capability alone, so three filters offered
-        one after another left only the last (the owner, 2026-09-29)."""
+        one after another left only the last (the owner, 2026-09-29).
+
+        WHICH INPUTS NAME THE THING is the fragment card's to say, in
+        `companion-subject` - never guessed from a value's spelling, which
+        took two materials named 100 and 200 for settings and merged their
+        tables (Codex review of #362). The guess is kept only for a card that
+        does not say."""
+        if names:
+            return tuple((n, v) for n, v in pairs if n in names)
         return tuple((n, v) for n, v in pairs if not cls._SETTING.match(str(v).strip()))
 
-    def offer(self, capability, document, pairs, identity=None):
-        subject = self.subject(pairs)
+    def offer(self, capability, document, pairs, identity=None, subject_names=None):
+        names = list(subject_names) if subject_names else None
+        subject = self.subject(pairs, names)
         with self._lock:
             self._cards = [c for c in self._cards
                            if not (c["capability"] == capability and c["document"] == document
-                                   and self.subject([(r["name"], r["value"]) for r in c["rows"]])
+                                   and self.subject([(r["name"], r["value"]) for r in c["rows"]],
+                                                    c.get("subject"))
                                    == subject)]
             self._next += 1
             self._cards.insert(0, {"id": self._next, "capability": capability,
                                    "document": document, "at": time.strftime("%H:%M:%S"),
                                    "rows": [{"name": n, "value": v} for n, v in pairs],
                                    "identity": list(identity) if identity else None,
+                                   "subject": names,
                                    "last": None})
             del self._cards[self.KEEP:]
 
@@ -298,39 +319,45 @@ class Tables(object):
 
     def check(self, table_id, changes):
         """The rows to send, or (None, why)."""
+        rows, why, _identity = self.snapshot(table_id, changes)
+        return rows, why
+
+    def snapshot(self, table_id, changes):
+        """(rows, why, identity) - the rows and the model they were read in,
+        taken under ONE hold of the lock. Looked up separately, a table the
+        chat opened in between could pair these rows with ITS model, and the
+        model guard would approve the wrong target (Codex review of #362)."""
         with self._lock:
             table = self._table
             if table is None or table["id"] != table_id:
-                return None, "That table is no longer open - the chat has opened a newer one."
+                return None, "That table is no longer open - the chat has opened a newer one.", None
             if not isinstance(changes, list) or not changes:
-                return None, "No cell was changed, so there is nothing to apply."
+                return None, "No cell was changed, so there is nothing to apply.", None
             rows = {r.get("id"): r for r in table["rows"]}
             out = []
             for change in changes:
                 if not isinstance(change, dict):
-                    return None, "The changes could not be read."
+                    return None, "The changes could not be read.", None
                 row = rows.get(change.get("id"))
                 name, value = change.get("name"), change.get("value")
                 cell = (row or {}).get("cells", {}).get(name) if row else None
                 if cell is None:
-                    return None, "A changed cell is not in the table Heron opened."
+                    return None, "A changed cell is not in the table Heron opened.", None
                 if not cell.get("editable"):
-                    return None, "A changed cell is one Heron marked as not editable."
+                    return None, "A changed cell is one Heron marked as not editable.", None
                 if not isinstance(value, str) or len(value) > self.LONGEST \
                         or chr(10) in value or chr(13) in value:
-                    return None, "A value must be one line of text."
+                    return None, "A value must be one line of text.", None
                 out.append((row["id"], row["uniqueId"], name, cell.get("value") or "", value))
-            return out, None
+            return out, None, (list(table["identity"]) if table.get("identity") else None)
 
     def apply(self, table_id, changes):
         hook = self.apply_hook
         if hook is None:
             return {"ok": False, "error": "The chat is not ready to apply anything yet."}
-        rows, why = self.check(table_id, changes)
+        rows, why, identity = self.snapshot(table_id, changes)
         if rows is None:
             return {"ok": False, "error": why}
-        with self._lock:
-            identity = (self._table or {}).get("identity")
         text, result = hook(rows, identity)
         outcome = Activity.outcome(text)
         applied = bool(result and result.get("applied"))
@@ -485,6 +512,15 @@ class Companion(object):
         self._folder = folder
         self._discovery_dir = discovery_dir
         self._lock = threading.Lock()
+        # START AND STOP ARE ONE STEP EACH: the keeper thread and a tool call
+        # may both start the page at once, and two servers bound with only
+        # one recorded would leave the other reachable after the switch
+        # turns the Companion off (Codex review of #362).
+        self._life = threading.RLock()
+        # WHEN THIS CHAT STARTED, which never changes - the Revit button
+        # picks the newest chat by it. The note's own file time is a
+        # heartbeat, refreshed every two seconds, so it cannot say that.
+        self._born = int(time.time())
         self._codes = {}          # one-time code -> expiry (time.time())
         self._sessions = set()    # cookie values issued
         self._server = None
@@ -508,24 +544,26 @@ class Companion(object):
         return self._server.server_address[1] if self._server else None
 
     def start(self):
-        if self._server is not None:
+        with self._life:
+            if self._server is not None:
+                return self.port
+            companion = self
+
+            class Handler(_Handler):
+                owner = companion
+
+            self._server = _Server(("127.0.0.1", 0), Handler)
+            self._thread = threading.Thread(target=self._server.serve_forever,
+                                            name="heron-companion", daemon=True)
+            self._thread.start()
             return self.port
-        companion = self
-
-        class Handler(_Handler):
-            owner = companion
-
-        self._server = _Server(("127.0.0.1", 0), Handler)
-        self._thread = threading.Thread(target=self._server.serve_forever,
-                                        name="heron-companion", daemon=True)
-        self._thread.start()
-        return self.port
 
     def stop(self):
-        server, self._server = self._server, None
-        if server is not None:
-            server.shutdown()
-            server.server_close()
+        with self._life:
+            server, self._server = self._server, None
+            if server is not None:
+                server.shutdown()
+                server.server_close()
 
     def pairing_address(self):
         """A fresh address carrying a one-time code. For the browser only -
@@ -569,6 +607,7 @@ class Companion(object):
                 bound = None
             text = json.dumps({"format": "1", "mcpPid": str(os.getpid()),
                                "port": str(self.port), "code": self._standing,
+                               "started": str(self._born),
                                "revitPid": "" if bound is None else str(bound)})
             path = os.path.join(folder, "chat-%d.json" % os.getpid())
             if text == self._note_text and os.path.exists(path):
