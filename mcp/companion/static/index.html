@@ -66,27 +66,40 @@
       their Mark and Comments in a table". It opens here; you edit the white cells and press Apply.</p>
   </section>
 
-  <div class="bottom">
-    <section class="card" id="changes" aria-labelledby="h-changes">
-      <h2 id="h-changes">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
-        Changes you can adjust
-      </h2>
-      <div id="c-list"></div>
-      <p id="c-empty" class="empty">When the chat changes a setting - a category's colour, a material, a
-        view filter - its values appear here. Edit them and press Apply again; the chat is not involved.</p>
-    </section>
+  <section class="card" id="changes" aria-labelledby="h-changes">
+    <h2 id="h-changes">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+      Changes you can adjust
+    </h2>
+    <div id="c-list"></div>
+    <p id="c-empty" class="empty">When the chat changes a setting - a category's colour, a material, a
+      view filter - its values appear here. Edit them and press Apply again; the chat is not involved.</p>
+  </section>
+</main>
 
-    <section class="card" id="activity" aria-labelledby="h-activity">
+<aside class="dock" id="activity" aria-label="What the chat asked Heron to do">
+  <div class="dock-panel" id="a-panel" hidden>
+    <header class="dock-head">
       <h2 id="h-activity">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
         What the chat asked Heron to do
       </h2>
-      <ol id="a-list" class="activity"></ol>
-      <p id="a-empty" class="empty">Nothing yet. Each Heron action this chat takes appears here.</p>
-    </section>
+      <button type="button" class="dock-close" id="a-close" aria-label="Make it small again" title="Make it small again (Esc)">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </header>
+    <ol id="a-list" class="activity"></ol>
+    <p id="a-empty" class="empty">Nothing yet. Each Heron action this chat takes appears here.</p>
+    <p class="dock-note">A record of what the chat did - you talk to Heron in the chat, not here.</p>
   </div>
-</main>
+  <button type="button" class="dock-toggle" id="a-toggle" aria-expanded="false" aria-controls="a-panel"
+          title="What the chat asked Heron to do - click to open">
+    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    <span class="dock-label">Activity</span>
+    <span class="dock-last" id="a-last"></span>
+    <span class="dock-new" id="a-new" hidden></span>
+  </button>
+</aside>
 
 <footer class="foot">
   <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>

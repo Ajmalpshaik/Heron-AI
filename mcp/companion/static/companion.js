@@ -92,6 +92,53 @@ function show(state) {
 let lastSeq = 0;
 const WORDS = { ok: "OK", refused: "refused", failed: "failed" };
 
+// The activity list sits in a small button in the corner, like a chat
+// bubble, and opens into the full list when clicked (the owner's idea,
+// 2026-09-29). Closed, it shows the newest action and how many arrived since
+// it was last open. Open or closed is remembered in this browser only.
+let fresh = false;          // false while the first batch is being drawn
+let unseen = 0;
+
+function dockOpen() { return !$("a-panel").hidden; }
+
+function dockLatest(item, counts) {
+  const last = $("a-last");
+  const chip = document.createElement("span");
+  chip.className = "chip " + item.outcome;
+  chip.textContent = WORDS[item.outcome] || item.outcome;
+  const tool = document.createElement("span");
+  tool.className = "dock-tool";
+  tool.textContent = item.tool;
+  last.replaceChildren(chip, tool);
+  if (counts && !dockOpen()) {
+    unseen += 1;
+    const badge = $("a-new");
+    badge.hidden = false;
+    badge.textContent = unseen + " new";
+  }
+}
+
+function dockSet(open) {
+  $("a-panel").hidden = !open;
+  $("activity").classList.toggle("open", open);
+  const toggle = $("a-toggle");
+  toggle.setAttribute("aria-expanded", String(open));
+  toggle.title = open ? "Make it small again" : "What the chat asked Heron to do - click to open";
+  if (open) { unseen = 0; $("a-new").hidden = true; }
+  try { localStorage.setItem("heron-companion-activity", open ? "open" : "small"); } catch (e) { /* not kept */ }
+}
+
+function dock() {
+  let saved = null;
+  try { saved = localStorage.getItem("heron-companion-activity"); } catch (e) { /* not kept */ }
+  dockSet(saved === "open");
+  $("a-toggle").addEventListener("click", () => dockSet(!dockOpen()));
+  $("a-close").addEventListener("click", () => { dockSet(false); $("a-toggle").focus(); });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && dockOpen()) { dockSet(false); $("a-toggle").focus(); }
+  });
+}
+
 async function activity() {
   try {
     const res = await fetch("/api/activity?since=" + lastSeq, { headers: HEADER, credentials: "same-origin" });
@@ -121,7 +168,9 @@ async function activity() {
       end.append(chip, item.seconds + " s");
       li.append(end);
       list.prepend(li);
+      dockLatest(item, fresh);
     }
+    fresh = true;
     $("a-empty").hidden = list.children.length > 0;
   } catch (e) { /* the state poll reports a closed page */ }
 }
@@ -739,6 +788,7 @@ function theme() {
 
 async function start() {
   theme();
+  dock();
   const code = new URLSearchParams(location.search).get("pair");
   if (code) {
     // The one-time code leaves the address bar at once, whatever happens next.
