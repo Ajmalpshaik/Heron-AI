@@ -832,4 +832,4 @@ end; and the page itself, driven in a browser with sample data - edit two cells,
 shown; change a colour, Apply again. **Not yet run in Revit** - [group BK](needs-checking/group-bk.md)
 rows BK7 to BK12.
 
-**Restyled 2026-09-29, the page files only** (`index.html`, `companion.css`, and how `companion.js` draws its results): same requests, same behaviour, still nothing loaded from the internet.
+**Restyled 2026-09-29, the page files only** (`index.html`, `companion.css`, and how `companion.js` draws its results): same requests, same behaviour, still nothing loaded from the internet. One addition the owner asked for: drag a colour swatch onto another row's swatch to copy it there - it only fills in that box; nothing is sent until **Apply again**.

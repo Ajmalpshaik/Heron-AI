@@ -155,6 +155,68 @@ function isOverrides(v) {
   return v.includes("=") && v.split(";").every(p => p.trim() === "" || p.includes("="));
 }
 
+// Drag one colour onto another to copy it (the owner's idea, 2026-09-29).
+// A press that moves more than a few pixels is a drag; one that does not is
+// a click and opens the picker as before. Dropping only fills in the other
+// row's box - nothing is sent until Apply again is pressed.
+function colourUnder(x, y, from) {
+  const el = document.elementFromPoint(x, y);
+  const pair = el && el.closest(".change .pair");
+  const pick = pair && pair.querySelector("input[type=color]");
+  return pick && pick !== from ? pick : null;
+}
+
+function dragColour(pick) {
+  let start = null, ghost = null, over = null, dragged = false;
+  const mark = target => {
+    if (over) over.closest(".pair").classList.remove("drop-here");
+    over = target;
+    if (over) over.closest(".pair").classList.add("drop-here");
+  };
+  const end = () => {
+    if (ghost) ghost.remove();
+    mark(null);
+    document.body.classList.remove("dragging-colour");
+    start = ghost = null;
+  };
+  pick.addEventListener("pointerdown", e => {
+    if (e.button !== 0) return;
+    start = { x: e.clientX, y: e.clientY };
+    dragged = false;
+    try { pick.setPointerCapture(e.pointerId); } catch (err) { /* the drag still works without it */ }
+  });
+  pick.addEventListener("pointermove", e => {
+    if (!start) return;
+    if (!ghost) {
+      if (Math.abs(e.clientX - start.x) + Math.abs(e.clientY - start.y) < 6) return;
+      dragged = true;
+      ghost = document.createElement("div");
+      ghost.className = "colour-ghost";
+      ghost.style.setProperty("background-color", pick.value);
+      document.body.append(ghost);
+      document.body.classList.add("dragging-colour");
+    }
+    ghost.style.setProperty("left", e.clientX + "px");
+    ghost.style.setProperty("top", e.clientY + "px");
+    mark(colourUnder(e.clientX, e.clientY, pick));
+  });
+  pick.addEventListener("pointerup", e => {
+    if (!start) return;
+    const target = ghost ? colourUnder(e.clientX, e.clientY, pick) : null;
+    end();
+    if (target) {
+      target.value = pick.value;
+      target.dispatchEvent(new Event("input"));
+      const pair = target.closest(".pair");
+      pair.classList.add("dropped");
+      setTimeout(() => pair.classList.remove("dropped"), 900);
+    }
+  });
+  pick.addEventListener("pointercancel", end);
+  // A drag is not a click: keep the picker closed after one.
+  pick.addEventListener("click", e => { if (dragged) { e.preventDefault(); dragged = false; } });
+}
+
 function valueEditor(value) {
   const box = document.createElement("div");
   box.className = "pair";
@@ -167,6 +229,8 @@ function valueEditor(value) {
     pick.value = toHex(value);
     pick.addEventListener("input", () => { text.value = fromHex(pick.value); });
     text.addEventListener("input", () => { if (isRgb(text.value)) pick.value = toHex(text.value); });
+    pick.title = "Click to pick a colour, or drag it onto another colour to copy it there";
+    dragColour(pick);
     box.append(pick);
   }
   box.append(text);
