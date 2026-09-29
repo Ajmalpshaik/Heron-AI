@@ -1,6 +1,7 @@
-// NOT STANDALONE. Assumes `elements` (Rooms and/or Spaces) and `doc` are in
-// scope, and leaves `mainCeiling`, `mainHeight`, `ceilingsOver`, `heights`,
-// `coverage` and `noCeiling` behind.
+// NOT STANDALONE. Assumes `elements` (Rooms and/or Spaces), `doc` and
+// `includeLinks` are in scope, and leaves `mainCeiling`, `mainHeight`,
+// `ceilingsOver`, `heights`, `coverage`, `noCeiling`, `linksSearched` and
+// `linkedMatches` behind.
 //
 // READ ONLY, AND THAT COST SOMETHING. See the last section.
 //
@@ -43,6 +44,18 @@
 // plan area can choose differently from a volume test where a large thin soffit
 // competes with a smaller main grid. `coverage` comes back per ceiling so a
 // close call is visible instead of settled in silence.
+//
+// THE CEILINGS ARE USUALLY THE ARCHITECT'S, IN A LINK, AND THEY ARE READ ONLY
+// WHEN ASKED FOR - D-59. An MEP model's spaces sit under ceilings it does not
+// contain. With `includeLinks` set, every loaded link's ceilings are measured
+// the same way - their own height above their own level - carried through
+// each placement into THIS model's space, and tested against each room or
+// space by the same plan-overlap rule. The main linked ceiling per room is
+// TEXT in `linkedMatches`, with its clear height, coverage and type. Every
+// dictionary above stays this model's own: they are keyed and valued by ids
+// the next step would look up here, and a linked ceiling's id is not one
+// (FRAGMENT-ISSUES row 75). NESTED LINKS ARE NOT READ, AND THE ANSWER COUNTS
+// THEM. Only model elements are read from a link, never its views or sheets.
 
 var mainCeiling = new Dictionary<ElementId, ElementId>();
 var mainHeight = new Dictionary<ElementId, double>();
@@ -141,3 +154,188 @@ foreach (var element in elements)
     mainCeiling[element.Id] = best;
     mainHeight[element.Id] = heights[best];
 }
+
+// ---- D-59: the linked ceilings over the same rooms ------------------------
+
+// ---- D-59: which links, only when asked for --------------------------------
+
+var linksSearched = 0;
+var linkedMatches = new List<string>();
+var linkedTotal = 0;
+var nestedLinks = 0;
+
+// One entry per link FILE, keyed by link type - a file placed twice is one
+// model placed twice, and counting placements would report a job with four
+// links as having nine. LIST_LINKED_MODELS' rule, as REPORT_AREAS applies it.
+var linkTypes = new List<ElementId>();
+var linkDocs = new List<Document>();
+var linkPlacements = new List<List<RevitLinkInstance>>();
+
+if (includeLinks)
+{
+    foreach (var instance in new FilteredElementCollector(doc)
+        .OfClass(typeof(RevitLinkInstance)).Cast<RevitLinkInstance>())
+    {
+        if (instance == null) continue;
+
+        var typeId = instance.GetTypeId();
+        if (typeId == null || typeId == ElementId.InvalidElementId) continue;
+
+        var known = linkTypes.IndexOf(typeId);
+        if (known >= 0) { linkPlacements[known].Add(instance); continue; }
+
+        // LOADED IS ESTABLISHED BY ASKING FOR THE DOCUMENT, never by a status.
+        Document linked = null;
+        try { linked = instance.GetLinkDocument(); }
+        catch (Exception) { linked = null; }
+        if (linked == null) continue;
+
+        linkTypes.Add(typeId);
+        linkDocs.Add(linked);
+        linkPlacements.Add(new List<RevitLinkInstance> { instance });
+
+        try
+        {
+            nestedLinks += new FilteredElementCollector(linked)
+                .OfClass(typeof(RevitLinkInstance)).GetElementCount();
+        }
+        catch (Exception) { }
+    }
+}
+
+var linkBlocked = "";
+
+// Every linked ceiling as a box in THIS model's space and an underside height
+// here, with a name for the answer. One entry per placement.
+var linkedBoxes = new List<Outline>();
+var linkedUndersides = new List<double>();
+var linkedNames = new List<string>();
+
+for (var i = 0; i < linkDocs.Count; i++)
+{
+    var linked = linkDocs[i];
+    var count = 0;
+    IList<Element> ceilings = new List<Element>();
+    try
+    {
+        ceilings = new FilteredElementCollector(linked)
+            .OfCategory(BuiltInCategory.OST_Ceilings).WhereElementIsNotElementType().ToElements();
+    }
+    catch (Exception) { }
+
+    foreach (var placement in linkPlacements[i])
+    {
+        Transform placed = null;
+        try { placed = placement.GetTotalTransform(); } catch (Exception) { }
+        if (placed == null) continue;
+
+        foreach (var ceiling in ceilings)
+        {
+            BoundingBoxXYZ box = null;
+            try { box = ceiling.get_BoundingBox(null); } catch { }
+            if (box == null) continue;
+
+            double aboveLevel = 0.0;
+            try
+            {
+                var p = ceiling.get_Parameter(BuiltInParameter.CEILING_HEIGHTABOVELEVEL_PARAM);
+                if (p != null && p.HasValue) aboveLevel = p.AsDouble();
+            }
+            catch { }
+            double levelElevation = 0.0;
+            try
+            {
+                var level = linked.GetElement(ceiling.LevelId) as Level;
+                if (level != null) levelElevation = level.ProjectElevation;
+            }
+            catch { }
+
+            // The box's eight corners, carried here.
+            var low = new XYZ(double.MaxValue, double.MaxValue, double.MaxValue);
+            var high = new XYZ(double.MinValue, double.MinValue, double.MinValue);
+            foreach (var x in new[] { box.Min.X, box.Max.X })
+                foreach (var y in new[] { box.Min.Y, box.Max.Y })
+                    foreach (var z in new[] { box.Min.Z, box.Max.Z })
+                    {
+                        var corner = placed.OfPoint(new XYZ(x, y, z));
+                        low = new XYZ(Math.Min(low.X, corner.X), Math.Min(low.Y, corner.Y), Math.Min(low.Z, corner.Z));
+                        high = new XYZ(Math.Max(high.X, corner.X), Math.Max(high.Y, corner.Y), Math.Max(high.Z, corner.Z));
+                    }
+
+            var typeName = "";
+            try
+            {
+                var type = linked.GetElement(ceiling.GetTypeId()) as ElementType;
+                if (type != null) typeName = type.Name;
+            }
+            catch { }
+
+            linkedBoxes.Add(new Outline(low, high));
+            linkedUndersides.Add(placed.OfPoint(new XYZ(0, 0, levelElevation + aboveLevel)).Z);
+            linkedNames.Add(string.Format("{0} - Ceilings '{1}' (id {2} in the link)",
+                linked.Title, typeName, ceiling.Id));
+            count++;
+        }
+    }
+    linksSearched++;
+    linkedMatches.Add(string.Format("{0}: {1} ceiling placement(s) read", linked.Title, count));
+}
+
+foreach (var element in linkDocs.Count > 0 ? elements : new List<Element>())
+{
+    var spatial = element as SpatialElement;
+    if (spatial == null) continue;
+    BoundingBoxXYZ roomBox = null;
+    try { roomBox = spatial.get_BoundingBox(null); } catch { }
+    if (roomBox == null) continue;
+
+    var roomFloor = roomBox.Min.Z;
+    var roomArea = (roomBox.Max.X - roomBox.Min.X) * (roomBox.Max.Y - roomBox.Min.Y);
+    var best = -1;
+    var bestOverlap = 0.0;
+    var over = 0;
+    for (var c = 0; c < linkedBoxes.Count; c++)
+    {
+        var box = linkedBoxes[c];
+        var wide = Math.Min(roomBox.Max.X, box.MaximumPoint.X) - Math.Max(roomBox.Min.X, box.MinimumPoint.X);
+        var deep = Math.Min(roomBox.Max.Y, box.MaximumPoint.Y) - Math.Max(roomBox.Min.Y, box.MinimumPoint.Y);
+        if (wide <= 0.0 || deep <= 0.0) continue;
+        var underside = linkedUndersides[c];
+        if (underside <= roomFloor || underside > roomBox.Max.Z) continue;
+        over++;
+        if (wide * deep > bestOverlap) { bestOverlap = wide * deep; best = c; }
+    }
+
+    var roomName = "";
+    try { roomName = spatial.Name ?? ""; } catch { }
+    if (best < 0)
+    {
+        linkedMatches.Add(string.Format("  '{0}' (id {1}): no linked ceiling over it", roomName, element.Id));
+        continue;
+    }
+    linkedTotal++;
+    linkedMatches.Add(string.Format("  '{0}' (id {1}): {2:0} mm clear under {3}, covering {4:0}% in plan"
+        + "{5}", roomName, element.Id, (linkedUndersides[best] - roomFloor) * 304.8, linkedNames[best],
+        roomArea > 0.0 ? bestOverlap / roomArea * 100.0 : 0.0,
+        over > 1 ? string.Format("; {0} linked ceilings over it in all", over) : ""));
+}
+
+// THE ANSWER SAYS WHAT IT READ. Asked-and-found, asked-and-none-loaded and not
+// asked read differently on purpose - D-59's own worked example.
+if (!includeLinks)
+    linkedMatches.Insert(0, "Host model only - links not read");
+else if (linkBlocked.Length > 0)
+    linkedMatches.Insert(0, linkBlocked);
+else if (linksSearched == 0)
+    linkedMatches.Insert(0, "Links asked for, NONE loaded - host only");
+else
+    linkedMatches.Insert(0, string.Format("{0} link(s) read: {1} room(s) or space(s) under a linked ceiling, NOT selected",
+        linksSearched, linkedTotal));
+
+if (includeLinks && nestedLinks > 0)
+    linkedMatches.Add(string.Format("{0} link placement(s) nested inside those links were NOT "
+        + "read", nestedLinks));
+
+if (linksSearched > 0)
+    linkedMatches.Add("What a link holds is reported here as text only - nothing from a link "
+        + "is carried to the next step, which would look it up in this model");

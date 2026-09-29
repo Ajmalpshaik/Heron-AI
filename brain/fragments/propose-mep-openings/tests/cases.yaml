@@ -29,6 +29,16 @@ positive:
       200 x 200 mm proposed, and the squaring-off said out loud so nobody thinks
       a round core was specified
 
+  # D-59, added 2026-09-28 with version 2. NOT RUN.
+  - given: >
+      pipes in this MEP model crossing a wall of the architectural link,
+      hosts EMPTY, allowanceMm 25, includeLinks true
+    expect: >
+      `proposals`, `hostIds` and `runIds` empty - nothing in this model was
+      given as a host - and each crossing proposed in `linkedMatches` with the
+      linked wall's type, id in the link, Fire Rating, hole size and a centre
+      that lands on the wall in a section of THIS model
+
 negative:
   - given: a model where no service crosses any host
     expect: >
@@ -54,6 +64,34 @@ negative:
     expect: >
       NOTHING CREATED, NO OPENING CUT, NO TRANSACTION. This proposes. Creating is
       a separate operation somebody has to approve
+
+  # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
+  - given: includeLinks ABSENT, on a model that HAS loaded links
+    expect: >
+      the same answer as version 1, and linksSearched 0 with the first
+      line of linkedMatches reading "Host model only - links not read". The
+      switch left out must bind false, not refuse - if the run refuses with
+      needs_request_values, the add-in in Revit is older than this change
+
+  - given: includeLinks true on a model with NO links, or with every link unloaded
+    expect: >
+      linksSearched 0 and "Links asked for, NONE loaded - host only". It must
+      NOT read like the absent case: one means there was nothing else to read,
+      the other means reload them in Manage Links and ask again
+
+  - given: one linked file placed TWICE, with includeLinks true
+    expect: >
+      linksSearched 1, not 2 - it counts files, not placements
+
+  - given: hosts EMPTY and includeLinks ABSENT
+    expect: >
+      the version-1 refusal - "Both services and hosts are needed" and
+      nothing proposed. Only reading the links lifts it
+
+  - given: a pipe running alongside a linked wall without crossing it, includeLinks true
+    expect: >
+      no line for that pipe - the test is the centre line through the solid,
+      not the two boxes touching
 
 second_route:
   - >
