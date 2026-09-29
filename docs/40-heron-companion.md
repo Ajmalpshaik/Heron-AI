@@ -843,3 +843,35 @@ rows BK7 to BK12.
 **Codex's sixth review, 2026-09-30 - four notes, all fixed.** A table read that the model pin refuses is never opened; "0 item(s)" is read as nothing, so a successful category change gets its table again; a settings table missing one of its inputs is not offered; and switching the page off forgets that a page was open, so the next table opens a new tab.
 
 **Codex's seventh review, 2026-09-30 - four notes, all fixed.** A settings Apply is checked again once it holds Revit, so a card the chat replaced while it waited is refused; only the live server's page counts as seen; a name the fragment does not take never becomes a row; and a lost answer is reported as an unknown outcome - look at the model and its undo list - never as "nothing was sent". No further Codex round was asked for before merging; anything a later review finds is a follow-up.
+
+### 21.4 Load from Revit and Clear tables (2026-09-30)
+
+The owner asked for the tables to come from the page itself, not from the chat each time: *"can we
+add the fixed tools ... if it will come all the filters like that"*. Three buttons sit at the top of
+**Changes you can adjust**:
+
+- **Load filters** reads the view active in Revit with `REPORT_VIEW_FILTERS` and offers one
+  `APPLY_VIEW_FILTER` table per filter, with `keepOtherSettings=true` and `solidFill` blank.
+- **Load category colours** reads it with `REPORT_CATEGORY_OVERRIDES` and offers one
+  `SET_CATEGORY_GRAPHICS` table per category that carries an override. A category with none is not
+  shown - there is nothing to read back for it.
+- **Clear tables** forgets every table. Nothing reaches Revit.
+
+Both loads READ only, through `revit_read` with no transaction open, under the same lock and pin as
+a chat's call; Apply on the tables they leave is the ordinary Apply. The readers parse the one
+string each fragment returns (`filterSettings`, `overrideList`), so **a change to either fragment's
+wording must be matched in `filter_cards` / `category_cards`** - `tests/test_companion.py` holds
+the text a real view returned. A part the parser does not recognise is left off the table, never
+guessed, and with other settings kept it is left as it is. The table limit rose from 10 to 30 so a
+view's filters do not push each other off the page.
+
+Why `solidFill` is blank: a hand-offered filter table on 2026-09-30 carried `solidFill=true`, which
+the fragment refuses (it takes surface, cut or both), so every Apply came back NOTHING CHANGED while
+the audit log said ok.
+
+**Run in Revit 2024 on 2026-09-30** (heron ai bulding, `{3D}`): both Load buttons read the view about
+thirty times and nine category Applies were kept. **One fault is open:** after three filter Applies
+the three filters in `{3D}` had no override at all, while the same values sent through `revit_change`
+applied correctly. Two other chats were driving the same Revit with their own Companion pages, and
+the audit log does not say which client sent a write, so the cause is not established. A filter
+Apply from this page, read back, is owed before this is relied on.
