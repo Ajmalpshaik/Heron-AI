@@ -62,6 +62,28 @@ Func<Parameter, string> readValue = p =>
     return text;
 };
 
+// ONE NAME, SEVERAL PARAMETERS - AND WHEN ONLY ONE OF THEM CAN BE WRITTEN, THAT
+// ONE IS MEANT. A sheet carries its own Sheet Number and, being a view, a second
+// read-only "Sheet Number" saying which sheet it sits on; version 1 refused
+// both, so no sheet number could be edited (the owner, 2026-09-29, on the
+// first table he opened). D-54 s3 forbids GUESSING between parameters that
+// could each be written; when every one but one is read-only there is nothing
+// to guess, because a write can only land on that one. Two or more writable
+// still refuses, exactly as before (FRAGMENT-ISSUES 5b-203).
+Func<Element, string, Parameter> theOne = (element, parameterName) =>
+{
+    var found = element.GetParameters(parameterName);
+    if (found.Count == 1) return found[0];
+    Parameter writable = null;
+    foreach (var candidate in found)
+    {
+        if (candidate.IsReadOnly) continue;
+        if (writable != null) return null;       // two could be written: refuse
+        writable = candidate;
+    }
+    return writable;
+};
+
 var rows = new List<string>();
 foreach (var e in elements)
 {
@@ -84,14 +106,16 @@ foreach (var e in elements)
         string why = null;
 
         var matches = e.GetParameters(name);
-        if (matches.Count > 1)
+        var chosen = matches.Count > 0 ? theOne(e, name) : null;
+        if (matches.Count > 1 && chosen == null)
         {
-            why = "two parameters on this element share the name - which one is meant is yours to say";
+            why = "two parameters on this element share the name and more than one can be " +
+                  "written - which one is meant is yours to say";
             value = readValue(matches[0]);
         }
-        else if (matches.Count == 1)
+        else if (matches.Count >= 1)
         {
-            var p = matches[0];
+            var p = chosen ?? matches[0];
             value = readValue(p);
             if (p.IsReadOnly) why = "read-only - Revit sets it";
             else if (p.StorageType == StorageType.ElementId || p.StorageType == StorageType.None)

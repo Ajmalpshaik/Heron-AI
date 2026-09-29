@@ -52,6 +52,28 @@ Func<string, string> same = text => (text ?? "").Trim();
 var ticked = new[] { "yes", "true", "on", "1", "ticked" };
 var unticked = new[] { "no", "false", "off", "0", "unticked" };
 
+// ONE NAME, SEVERAL PARAMETERS - AND WHEN ONLY ONE OF THEM CAN BE WRITTEN, THAT
+// ONE IS MEANT. A sheet carries its own Sheet Number and, being a view, a second
+// read-only "Sheet Number" saying which sheet it sits on; version 1 refused
+// both, so no sheet number could be edited (the owner, 2026-09-29, on the
+// first table he opened). D-54 s3 forbids GUESSING between parameters that
+// could each be written; when every one but one is read-only there is nothing
+// to guess, because a write can only land on that one. Two or more writable
+// still refuses, exactly as before (FRAGMENT-ISSUES 5b-203).
+Func<Element, string, Parameter> theOne = (element, parameterName) =>
+{
+    var found = element.GetParameters(parameterName);
+    if (found.Count == 1) return found[0];
+    Parameter writable = null;
+    foreach (var candidate in found)
+    {
+        if (candidate.IsReadOnly) continue;
+        if (writable != null) return null;       // two could be written: refuse
+        writable = candidate;
+    }
+    return writable;
+};
+
 // ------------------------------------------------------------------ parse
 var plan = new List<Tuple<Element, string, string>>();   // element, parameter, new value
 var staleJson = new List<string>();
@@ -82,15 +104,17 @@ foreach (var raw in (rows ?? "").Split(';'))
     else
     {
         var matches = element.GetParameters(name);
+        var target = matches.Count > 0 ? theOne(element, name) : null;
         if (matches.Count == 0) why = "it no longer has a parameter called " + name;
-        else if (matches.Count > 1) why = "two parameters on it are called " + name;
-        else if (matches[0].IsReadOnly) why = name + " is read-only";
-        else if (matches[0].StorageType == StorageType.ElementId
-                 || matches[0].StorageType == StorageType.None)
+        else if (target == null)
+            why = "two parameters on it are called " + name + " and more than one can be written";
+        else if (target.IsReadOnly) why = name + " is read-only";
+        else if (target.StorageType == StorageType.ElementId
+                 || target.StorageType == StorageType.None)
             why = name + " holds a reference to another element, which cannot be typed as text";
-        else if (same(readValue(matches[0])) != same(was))
+        else if (same(readValue(target)) != same(was))
             why = "it was changed in Revit since the table was read - it now reads '"
-                  + (readValue(matches[0]) ?? "") + "'";
+                  + (readValue(target) ?? "") + "'";
     }
 
     if (why != null)
@@ -122,7 +146,7 @@ else
     var refusedHere = new List<string>();
     foreach (var step in plan)
     {
-        var p = step.Item1.GetParameters(step.Item2)[0];
+        var p = theOne(step.Item1, step.Item2);
         var want = step.Item3;
         var shown = same(readValue(p)).ToLowerInvariant();
         var ok = false;
@@ -157,8 +181,8 @@ else
 
     foreach (var step in plan)
     {
-        var matches = step.Item1.GetParameters(step.Item2);
-        var now = matches.Count == 1 ? readValue(matches[0]) : null;
+        var again = theOne(step.Item1, step.Item2);
+        var now = again == null ? null : readValue(again);
         written++;
         readBack.Add("{" + esc("id") + ": " + esc(step.Item1.Id.ToString()) + ", "
                      + esc("name") + ": " + esc(step.Item2) + ", "
