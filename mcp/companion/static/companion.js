@@ -266,7 +266,31 @@ function dragColour(pick) {
   pick.addEventListener("click", e => { if (dragged) { e.preventDefault(); dragged = false; } });
 }
 
+// A true / false value is a tick box (the owner's idea, 2026-09-29), with
+// the word beside it. It sends back the same word in the same case it came
+// with - "true" stays lower case, "True" stays capitalised.
+const BOOL = /^(true|false)$/i;
+
+function tickEditor(value) {
+  const box = document.createElement("label");
+  box.className = "pair tick";
+  const tick = document.createElement("input");
+  tick.type = "checkbox";
+  tick.checked = value.toLowerCase() === "true";
+  const word = document.createElement("span");
+  const capital = value[0] === value[0].toUpperCase();
+  const read = () => {
+    const w = tick.checked ? "true" : "false";
+    return capital ? w[0].toUpperCase() + w.slice(1) : w;
+  };
+  word.textContent = read();
+  tick.addEventListener("change", () => { word.textContent = read(); });
+  box.append(tick, word);
+  return { box, read };
+}
+
 function valueEditor(value) {
+  if (BOOL.test(value.trim())) return tickEditor(value.trim());
   const box = document.createElement("div");
   box.className = "pair";
   const text = document.createElement("input");
