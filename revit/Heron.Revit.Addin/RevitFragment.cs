@@ -811,14 +811,15 @@ namespace Heron.Revit.Addin
 
         /// <summary>
         /// A throwaway script that touches what a real fragment touches - the
-        /// globals, a Revit type, LINQ and a lambda for the stack guard to
-        /// rewrite - so the warm-up loads the same parts of Roslyn a first
+        /// globals, a Revit type, LINQ and a BLOCK-bodied lambda, the shape the
+        /// stack guard rewrites (it leaves expression lambdas alone) - so the
+        /// warm-up loads the same parts of Roslyn a first
         /// fragment would. It is compiled and emitted, never run.
         /// </summary>
         private const string WarmUpSource =
             "var names = new List<string>();\n" +
             "ElementId none = ElementId.InvalidElementId;\n" +
-            "int count = names.Where(n => n.Length > 0).Count() + (doc == null ? 0 : 1);\n";
+            "int count = names.Where(n => { return n.Length > 0; }).Count() + (doc == null ? 0 : 1);\n";
 
         /// <summary>
         /// Pay Roslyn's first-use cost while Revit starts, not on the

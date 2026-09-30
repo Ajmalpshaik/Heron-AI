@@ -262,8 +262,8 @@ namespace Heron.Revit.Addin
         /// The warm-up is an optimisation, so it may never be the reason
         /// Heron does not start. Its own try cannot cover loading RevitFragment
         /// and Roslyn - that happens before WarmUp's first line - so the call
-        /// is caught here, in a method of its own so the JIT resolves those
-        /// types inside this try and not while compiling OnStartup.
+        /// is caught here, and the type is named only in CallFragmentWarmUp,
+        /// so the JIT resolves it inside this try and not before it.
         /// </summary>
         [System.Runtime.CompilerServices.MethodImpl(
             System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
@@ -271,13 +271,25 @@ namespace Heron.Revit.Addin
         {
             try
             {
-                RevitFragment.WarmUp(Log);
+                CallFragmentWarmUp();
             }
             catch (Exception failure)
             {
                 Log("Fragment warm-up could not load, so the first fragment will be slow as before: " +
                     failure.Message);
             }
+        }
+
+        /// <summary>
+        /// The only method that names RevitFragment, so a Roslyn that fails to
+        /// load fails while THIS is JIT-compiled - which happens at the call
+        /// inside StartFragmentWarmUp's try, not before it.
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(
+            System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static void CallFragmentWarmUp()
+        {
+            RevitFragment.WarmUp(Log);
         }
 
         public Result OnShutdown(UIControlledApplication application)
