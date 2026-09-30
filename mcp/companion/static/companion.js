@@ -554,7 +554,8 @@ function buildCard(card) {
       else { result.className = "result failed"; result.textContent = body.error || "Not applied."; }
     } catch (e) {
       result.className = "result failed";
-      result.textContent = "The page could not reach the chat. Nothing was sent to Revit.";
+      result.textContent = "The page lost the answer, so it cannot say whether Revit made the " +
+        "change. Look at the model, and at Revit's undo list, before pressing Apply again.";
     }
     button.disabled = false;
   });
@@ -923,7 +924,8 @@ function renderTable(t) {
       await table_();
     } catch (e) {
       result.className = "result failed";
-      result.textContent = "The page could not reach the chat. Nothing was sent to Revit.";
+      result.textContent = "The page lost the answer, so it cannot say whether Revit made the " +
+        "change. Look at the model, and at Revit's undo list, before pressing Apply again.";
       count();
     }
   });

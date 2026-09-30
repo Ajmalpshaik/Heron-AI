@@ -378,7 +378,7 @@ def test_changes():
           "with no chat ready to apply, nothing is sent")
 
     sent = []
-    changes.apply_hook = lambda capability, pairs, identity=None: (sent.append((capability, pairs))
+    changes.apply_hook = lambda capability, pairs, identity=None, still=None: (sent.append((capability, pairs))
                                                      or "SET_CATEGORY_GRAPHICS ran in Project1.")
     same = [{"name": r["name"], "value": r["value"]} for r in card["rows"]]
     renamed = [dict(v) for v in same]
@@ -555,6 +555,9 @@ def test_tables():
           "a change Revit did not take leaves no table")
     check('"REVIT DID NOT KEEP" in str(provides)' in server and "_PARTIAL" in server,
           "nor does a change Revit kept only part of")
+    check("if still is not None and not still():" in server
+          and 'if v["name"] in taken]' in server,
+          "a card the chat replaced while Apply waited is refused; a typo never becomes a row")
     check("if pinned.check(reply):" in server and "missing = [" in server,
           "a table read from another model is never opened; a card lacking an input is never offered")
 
@@ -576,7 +579,7 @@ def test_model_guard():
           "every table and card records the model it was made in - and which Revit holds it")
     page = io.open(os.path.join(ROOT, "mcp", "companion", "heron_companion.py"),
                    encoding="utf-8").read()
-    check("with self._life:" in page and page.count("with self._life:") == 2,
+    check("with self._life:" in page and page.count("with self._life:") >= 2,
           "starting and stopping the page are one step each, never two servers at once")
     check("if len(line) > 700000:" in server,
           "a change set too big for the bridge's one line is refused whole, never split")

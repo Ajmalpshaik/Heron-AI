@@ -1508,7 +1508,13 @@ def _offer_change(capability, folder, values, document):
         subject = _settings_card(folder)
         if not subject or not pinned.is_pinned:
             return
-        pairs = [(v["name"], v["value"]) for v in _values_array(values)]
+        needs = bridge.fragment_needs(os.path.join(_repo_root(), "brain", "fragments",
+                                                   folder, "fragment.yaml")) or []
+        taken = set(n.get("name") for n in needs if n.get("source") == "request")
+        # ONLY WHAT THE FRAGMENT TAKES: revit_change drops an undeclared name
+        # and carries on, so a typo must not become an editable row that can
+        # never reach Revit (Codex review of #362).
+        pairs = [(v["name"], v["value"]) for v in _values_array(values) if v["name"] in taken]
         if pairs:
             companion_page = _companion_module()
             companion_page.CHANGES.offer(capability, document, pairs, _pin_identity(), subject)
@@ -1516,7 +1522,7 @@ def _offer_change(capability, folder, values, document):
         pass
 
 
-def _apply_change(capability, pairs, identity=None):
+def _apply_change(capability, pairs, identity=None, still=None):
     """The Companion's Apply: the same capability again, with the modeller's
     values, through _change - the one body revit_change uses - under the same
     lock every tool call holds. Called from the page's thread, never the
@@ -1524,6 +1530,14 @@ def _apply_change(capability, pairs, identity=None):
     values = NEWLINE.join("%s=%s" % (name, value) for name, value in pairs)
     started, clock = time.strftime("%H:%M:%S"), time.time()
     with _revit_lock:
+        # RE-CHECKED ONCE REVIT IS OURS: the chat may have changed the same
+        # thing while this Apply waited for the lock, replacing the card; its
+        # old values must not overwrite that newer change (Codex review).
+        if still is not None and not still():
+            said = ("The chat changed this while your Apply was waiting, so this table is "
+                    "out of date. Nothing was sent to Revit - use the newer table.")
+            _note("companion_apply", started, 0, reply=said, outcome="refused")
+            return said
         moved = _moved_since(identity)
         if moved:
             _note("companion_apply", started, 0, reply=moved, outcome="refused")

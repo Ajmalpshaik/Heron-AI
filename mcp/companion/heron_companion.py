@@ -265,7 +265,10 @@ class Changes(object):
         card, pairs = self.check(card_id, values)
         if card is None:
             return {"ok": False, "error": pairs}
-        reply = hook(card["capability"], pairs, card.get("identity"))
+        def still():
+            with self._lock:
+                return any(c["id"] == card_id for c in self._cards)
+        reply = hook(card["capability"], pairs, card.get("identity"), still)
         outcome = Activity.outcome(reply)
         with self._lock:
             for c in self._cards:
@@ -673,8 +676,14 @@ class Companion(object):
         # Companions on 127.0.0.1 would otherwise overwrite each other's.
         return "heron_companion_%d" % self.port
 
-    def saw_page(self):
-        self._seen = time.time()
+    def saw_page(self, server=None):
+        """A page polled - through THIS server. A request still in flight on
+        a server the switch just stopped must not mark the new one as seen
+        (Codex review of #362)."""
+        with self._life:
+            if server is not None and server is not self._server:
+                return
+            self._seen = time.time()
 
     def recently_seen(self, seconds=10):
         """Whether a page asked for the state in the last few seconds - so a
@@ -801,7 +810,7 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             why = self._api_ok()
             if why:
                 return self._refuse(403, why)
-            self.owner.saw_page()
+            self.owner.saw_page(self.server)
             return self._json(200, {"ok": True, "state": self.owner.state()})
         if path == "/api/activity":
             why = self._api_ok()
