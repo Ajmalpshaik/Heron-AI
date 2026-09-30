@@ -16,6 +16,9 @@ validator, and this proves the three things the build order asks it to:
   1. Identity survives the folder being renamed.
   2. Two contracts are checkably composable, as DATA rather than as prose.
   3. A promotion whose proof has no negative case is REFUSED, by name.
+  4. A card's parse is kept only while its BYTES are unchanged: a same-size
+     rewrite inside one mtime tick is read afresh, and a caller that edits
+     what it was given cannot change what the next caller reads.
 
 WHAT IT DOES NOT PROVE. Nothing about whether either fragment's C# works. They
 have never run against a model and are both DRAFT, which is what DRAFT means.
@@ -156,6 +159,47 @@ def cases_gate():
         fires("a missing cases.yaml is refused", None)
     finally:
         shutil.rmtree(work, ignore_errors=True)
+
+
+def parse_cache():
+    """load() keeps a parse, keyed on the file's bytes. Measured 2026-09-30:
+    every heron_lookup re-parsed all 429 cards, 1.87 s of a 1.95 s answer."""
+    print()
+    print("4. A kept parse is only ever the file as it is now")
+    data = well_formed()
+    base, folder = scratch(data)
+    card = os.path.join(folder, "fragment.yaml")
+    try:
+        first = F.load(folder)
+        before = first.data.get("purpose")
+        stat = os.stat(card)
+
+        first.data["purpose"] = "changed by a caller, not by the file"
+        first.data["capability"] = "ALSO_CHANGED_BY_A_CALLER"
+        check(F.load(folder).data.get("purpose") == before,
+              "a caller editing what it was given does not change the next load")
+
+        # SAME SIZE, SAME MTIME: the one rewrite a stat key would miss.
+        raw = io.open(card, encoding="utf-8").read()
+        cap = str(F.load(folder).data.get("capability") or "")
+        swapped = raw.replace("capability: " + cap, "capability: Z" + cap[1:], 1)
+        check(len(swapped) == len(raw), "(the fixture rewrite keeps the size)")
+        io.open(card, "w", encoding="utf-8").write(swapped)
+        os.utime(card, ns=(stat.st_atime_ns, stat.st_mtime_ns))
+        again = F.load(folder)
+        check(str(again.data.get("capability", "")).startswith("Z"),
+              "a same-size rewrite with the same mtime is read afresh")
+
+        io.open(card, "w", encoding="utf-8").write("capability: [unclosed")
+        try:
+            F.load(folder)
+            check(False, "a card broken after a good load is refused, not served "
+                         "from the kept parse")
+        except ValueError:
+            check(True, "a card broken after a good load is refused, not served "
+                        "from the kept parse")
+    finally:
+        shutil.rmtree(base, ignore_errors=True)
 
 
 def main():
@@ -389,6 +433,7 @@ def main():
         shutil.rmtree(base_i, ignore_errors=True)
 
     cases_gate()
+    parse_cache()
 
     print()
     if FAILURES:

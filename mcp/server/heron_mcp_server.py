@@ -1125,16 +1125,146 @@ def _aim_at_pin(args):
             args["documentPath"] = pinned.document_path
 
 
+def _missing_values(folder, values):
+    """The `source: request` values this fragment cannot run without and the
+    caller did not give - [] when none are missing, None when its contract
+    cannot be read with certainty.
+
+    THE ADD-IN'S RULE, CALLED NOT RETYPED: heron_fragment.need_may_be_absent
+    already mirrors which request need may be left out. Asked here only on the
+    words path, so a request that would be refused for want of a value is
+    handed back BEFORE it costs a Revit round trip.
+    """
+    needs = bridge.fragment_needs(os.path.join(_repo_root(), "brain",
+                                               "fragments", folder,
+                                               "fragment.yaml"))
+    if needs is None:
+        return None
+    brain_path = os.path.join(_repo_root(), "brain")
+    if brain_path not in sys.path:
+        sys.path.insert(0, brain_path)
+    try:
+        import heron_fragment as HF
+    except Exception:
+        return None
+    given = set(v["name"] for v in _values_array(values))
+    return [n.get("name") for n in needs
+            if HF.need_source(n) == "request"
+            and not HF.need_may_be_absent(n)
+            and n.get("name") not in given]
+
+
+def _by_words(request, door, values):
+    """
+    The user's own words to ONE capability - or the list, handed back.
+
+    (capability, "") when the words settle it on their own, and
+    (None, reply) when they do not, in which case NOTHING is sent to Revit.
+
+    WHY THIS EXISTS. One request used to take four host turns: heron_lookup,
+    heron_resolve, then revit_read or revit_change, then a read to verify.
+    Each is a full model turn of seconds, while the lookup itself is
+    milliseconds. The common case - the user said exactly what a proven
+    capability says it does - needs none of the turns in between.
+
+    WHAT "SETTLES IT" MEANS, AND IT IS NOT A SCORE. Only the IDENTITY route
+    with the run-unasked permission: the words ARE a phrasing a fragment
+    declares, that fragment is PROVEN, and the index and its file agree
+    (heron_search.may_run_unasked, row 127). A ranked search never settles
+    it, however wide its lead - heron_retrieve.Contest measured that the lead
+    does not separate a real question from an unreal one ("how do I bake
+    sourdough bread" had the widest), and a threshold invented here would be
+    the dial D-33 and R-55 forbid.
+
+    D-01: THE HOST DECIDES WHAT THE USER MEANT. An exact declared phrasing
+    is the one case with no meaning left to decide - it is what the
+    fragment's author wrote down as meaning this. Every other case goes back
+    to the host with the candidates AND what each needs typed, so the next
+    call is the run itself rather than another lookup.
+    """
+    revit, _how = _revit_version()
+    try:
+        found = brain.lookup(request, revit=revit)
+    except brain.BrainUnavailable as why:
+        return None, str(why)
+
+    capability = found.get("capability")
+    if not capability:
+        return None, ("Heron has no way of doing \"%s\", so nothing has been "
+                      "sent to Revit. Run heron_capabilities to see what it "
+                      "does know." % request)
+
+    exact = found.get("route") == "identity" and found.get("autorun")
+    missing = []
+    if exact:
+        folder, _status = _fragment_for(capability)
+        missing = _missing_values(folder, values) if folder else None
+        if missing == []:
+            return capability, ""
+
+    lines = ["Nothing has been sent to Revit: the words \"%s\" did not settle "
+             "one capability on their own." % request]
+    if exact and missing is None:
+        lines.append("  They match %s exactly, but what it needs could not be "
+                     "read with certainty." % capability)
+    elif exact:
+        lines.append("  They match %s exactly, and it needs %s, which was not "
+                     "given." % (capability, ", ".join(missing)))
+    elif found.get("route") == "identity":
+        lines.append("  %s." % found.get("note"))
+    else:
+        lines.append("  They are not a phrasing any proven capability declares, "
+                     "so this is a ranked guess - and which one the user meant "
+                     "is yours to decide, not Heron's (D-01).")
+
+    lines.append("")
+    lines.append("  best match   %s   (%s)"
+                 % (capability, found.get("risk") or "risk unread"))
+    lines.extend(_contract_lines(capability))
+
+    seen = set([capability])
+    others = []
+    for c in found.get("candidates") or []:
+        if c["capability"] in seen:
+            continue
+        seen.add(c["capability"])
+        others.append("    %-30s %-8s %s" % (c["capability"], c.get("risk") or "",
+                                             c["why"]))
+    if others:
+        lines.append("")
+        lines.append("  Others that came close:")
+        lines.extend(others[:5])
+
+    lines.append("")
+    lines.append("  If one of these is what the user meant, call %s again with "
+                 "capability=<it> and its values. If none is, ask the user."
+                 % door)
+    return None, "\n".join(lines)
+
+
+def _matched_line(request, capability):
+    """Said on every run the words chose, so the host can see it was not
+    the host that named the capability."""
+    return ("  chosen by: the words \"%s\" are a phrasing %s declares, and it "
+            "is PROVEN" % (request, capability))
+
+
 @server.tool()
-def revit_change(capability: str, values: str = "",
-                 expect_from: str = "") -> str:
+def revit_change(capability: str = "", values: str = "",
+                 expect_from: str = "", request: str = "") -> str:
     """
     Change the open Revit model, and KEEP the change.
 
     Use when the user asks for something that alters the model - duplicate a
-    type, rename, change an element's type, set a parameter. Ask for the
-    CAPABILITY, never a fragment id: heron_lookup turns the user's own words
-    into one.
+    type, rename, change an element's type, set a parameter.
+
+    THE SHORT PATH: pass the user's own words as `request` and leave
+    `capability` empty. When the words are a phrasing a PROVEN capability
+    declares, and every value it needs is in `values`, it runs in THIS call -
+    no heron_lookup, no heron_resolve first. When they are not, NOTHING is
+    sent to Revit and the reply is the candidate list with what each needs
+    typed: pick the one the user meant and call again with `capability`. If
+    none fits, ask the user. `capability`, when given, always wins.
 
     `values` is one "name=value" per line, e.g. newTypeName=TRG_PIP_Copper_CDP
 
@@ -1179,6 +1309,13 @@ def revit_change(capability: str, values: str = "",
     One Ctrl+Z in Revit puts back what this did to the model - never a file it
     wrote, a save it made or a sync that has already reached other people.
     """
+    matched = ""
+    if not (capability or "").strip() and (request or "").strip():
+        capability, handed_back = _by_words(request, "revit_change", values)
+        if capability is None:
+            return handed_back
+        matched = capability
+
     folder, status = _fragment_for(capability)
     if folder is None:
         return ("Heron has nothing that does '%s', so nothing has been sent to Revit. "
@@ -1330,6 +1467,8 @@ def revit_change(capability: str, values: str = "",
         return wrong_model
 
     lines = ["%s ran in %s." % (capability, reply.get("document"))]
+    if matched:
+        lines.append(_matched_line(request, matched))
 
     # WHERE THE INPUTS CAME FROM. The same line a proof is judged on
     # (fragment-proving rule 5) - a fragment that ran on the selection and one
@@ -1638,16 +1777,23 @@ def _proof_line(capability, folder):
 
 
 @server.tool()
-def revit_read(capability: str, values: str = "",
-               expect_from: str = "") -> str:
+def revit_read(capability: str = "", values: str = "",
+               expect_from: str = "", request: str = "") -> str:
     """
     Answer a question about the open Revit model with one of Heron's
     capabilities that READS - and change nothing.
 
     Use when the user asks something a capability answers - "which views have
     no template", "find the ducts connected to nothing", "list the untagged
-    doors". Ask heron_lookup for the CAPABILITY in the user's own words, and
-    heron_resolve for the values it takes; never ask for a fragment id.
+    doors". Never ask for a fragment id.
+
+    THE SHORT PATH: pass the user's own words as `request` and leave
+    `capability` empty. When the words are a phrasing a PROVEN capability
+    declares, and every value it needs is in `values`, it runs in THIS call.
+    When they are not, NOTHING is sent to Revit and the reply is the
+    candidate list with what each needs typed: pick the one the user meant
+    and call again with `capability`. If none fits, ask the user.
+    `capability`, when given, always wins.
 
     It works with Changes OFF. The fragment runs with no transaction open, so
     Revit itself refuses any change it attempts. A capability declared above
@@ -1665,6 +1811,13 @@ def revit_read(capability: str, values: str = "",
     says how far the capability is proven: PROVEN on a named model, PROVEN but
     its code changed since, or never proved.
     """
+    matched = ""
+    if not (capability or "").strip() and (request or "").strip():
+        capability, handed_back = _by_words(request, "revit_read", values)
+        if capability is None:
+            return handed_back
+        matched = capability
+
     folder, _status = _fragment_for(capability)
     if folder is None:
         return ("Heron has nothing that does '%s', so nothing has been sent to Revit. "
@@ -1746,6 +1899,8 @@ def revit_read(capability: str, values: str = "",
 
     document = reply.get("document")
     lines = ["%s read %s." % (capability, document)]
+    if matched:
+        lines.append(_matched_line(request, matched))
 
     # THE PINNED MODEL NEED NOT BE THE ONE ON SCREEN - that is what aiming at
     # the pin means - and an answer about a window nobody is looking at is
@@ -2253,10 +2408,15 @@ def heron_resolve(capability: str) -> str:
     id: which fragment serves it is Heron's to decide and can change without
     any plan changing.
 
-    CALL THIS BEFORE revit_change RATHER THAN READING THE FRAGMENT. It names
-    every value the caller supplies, with its type and how to write one -
-    which is the question that otherwise sends somebody into fragment.yaml
-    and the add-in's parser. It touches nothing and needs no Revit.
+    It names every value the caller supplies, with its type and how to write
+    one - which is the question that otherwise sends somebody into
+    fragment.yaml and the add-in's parser. It touches nothing and needs no
+    Revit.
+
+    NOT NEEDED FOR THE CAPABILITY heron_lookup ALREADY NAMED, nor after a
+    revit_read or revit_change handed back a list: both already carry these
+    same lines. Call it for a capability named some other way, or for the
+    risk, releases and providers.
     """
     revit, how = _revit_version()
 
@@ -2319,8 +2479,13 @@ def heron_lookup(request: str) -> str:
     words - "select all the ducts", "how many air terminals".
 
     Use when the user asks for Revit work and you need to know whether Heron
-    has a way of doing it. It answers with the capability, so a plan never
-    depends on which fragment happens to serve it today. Touches nothing.
+    has a way of doing it. It answers with the capability AND the values it
+    needs typed, so the next call can be revit_read or revit_change itself -
+    no heron_resolve in between. A plan never depends on which fragment
+    happens to serve it today. Touches nothing.
+
+    To run it as well, skip this: revit_read or revit_change with `request`
+    set to the user's words does this lookup inside the same call.
     """
     revit, how = _revit_version()
 
@@ -2348,6 +2513,12 @@ def heron_lookup(request: str) -> str:
              "  provided by  %s" % found["provider"],
              "",
              "  %s" % found["note"]]
+
+    # WHAT TO TYPE, IN THE SAME REPLY. This was heron_resolve's to say, and
+    # asking for it cost the host a whole extra turn on every request -
+    # lookup, then resolve, then the run. One copy of the wording: the
+    # function heron_resolve prints is called, not retyped.
+    lines.extend(_contract_lines(found["capability"]))
 
     # A QUESTION ANSWERED BY SOMETHING THAT WRITES.
     #

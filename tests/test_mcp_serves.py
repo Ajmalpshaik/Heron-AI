@@ -56,6 +56,12 @@ WHAT IT PROVES, when an SDK is installed
      read goes out as run_fragment_read with no `apply`, aims at the pin once
      there is one, names an ignored value and a model not in front, and says
      how far the capability is proven.
+ 10. THE SHORT PATH, `request` IN PLACE OF `capability`. The user's words run
+     in the same call ONLY when they are a phrasing a PROVEN capability
+     declares and nothing it needs is missing. A DRAFT exact match, a ranked
+     guess, and a proven match missing a value each send NOTHING and hand the
+     candidates back with what to type - on both doors. A capability given
+     alongside the words wins.
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -183,7 +189,8 @@ async def exercise(server):
         "revit_use_session": ["session"],
         "revit_select_by_category": ["category"],
         "revit_preview_move": ["category", "distance"],
-        "revit_read": ["capability", "values", "expect_from"],
+        "revit_read": ["capability", "values", "expect_from", "request"],
+        "revit_change": ["capability", "values", "expect_from", "request"],
     }
     for name, args in sorted(expected.items()):
         if name not in served:
@@ -396,6 +403,117 @@ async def exercise_door(module):
         module.pinned.forget()
 
 
+def _phrases():
+    """(phrase, capability, status, risk, folder) for every declared phrasing."""
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    import heron_fragment as HF
+    found, _problems = HF.load_all()
+    out = []
+    for frag in found.values():
+        data = frag.data
+        for said in frag.utterances():
+            out.append((said, data.get("capability"), data.get("heron-status"),
+                        data.get("risk"), os.path.basename(frag.folder)))
+    return sorted(out)
+
+
+def _pick(module, status, risk, wants_values):
+    """The first phrasing of that status and risk that the words path reads as
+    exact, and whose missing values are - or are not - empty."""
+    for phrase, capability, st, rk, folder in _phrases():
+        if st != status or rk != risk:
+            continue
+        found = module.brain.lookup(phrase)
+        if found.get("route") != "identity" or found.get("capability") != capability:
+            continue
+        missing = module._missing_values(folder, "")
+        if missing is None or bool(missing) != wants_values:
+            continue
+        return phrase, capability, missing
+    return None, None, None
+
+
+async def exercise_words(module):
+    server = module.server
+
+    print()
+    print("  the short path: the user's words in place of a capability")
+    if not hasattr(module, "_by_words"):
+        check(False, "the server has a words path at all")
+        return
+
+    reply = {"ok": True, "ran": "x", "document": "Project1",
+             "documentPath": "C:/jobs/Project1.rvt", "projectKey": "key-1",
+             "wasActiveDocument": True, "bound": "all as given",
+             "provides": {"found": "2 item(s) [Level 1, Level 2]"},
+             "providesCount": 1}
+    revit = StandIn(reply)
+    resolved = []
+
+    def resolve():
+        resolved.append(1)
+        return revit
+
+    async def call(tool, arguments):
+        try:
+            return text_of(await server.call_tool(tool, arguments)) or ""
+        except Exception as exc:                                # noqa: BLE001
+            return "(%s could not be called: %s: %s)" % (tool, type(exc).__name__, exc)
+
+    module.binding.resolve = resolve
+    module.pinned.forget()
+    try:
+        phrase, capability, _ = _pick(module, "PROVEN", "READ", False)
+        check(phrase is not None, "the library has a PROVEN read with a declared "
+              "phrasing that needs nothing typed")
+        if phrase:
+            said = await call("revit_read", {"request": phrase})
+            check(len(revit.asked) == 1 and revit.asked[-1][0] == "run_fragment_read",
+                  "its exact words (%r) run %s in ONE call" % (phrase, capability))
+            check("%s read Project1." % capability in said and "chosen by" in said,
+                  "and the answer says the words chose it")
+
+        for label, arguments in (
+                ("a ranked guess", {"request": "what is the best food for a cat"}),
+                ("a DRAFT exact match", {"request": (_pick(module, "DRAFT", "READ", False)[0]
+                                                    or "select all ducts")})):
+            revit.asked[:] = []
+            del resolved[:]
+            said = await call("revit_read", arguments)
+            check(not revit.asked and not resolved
+                  and "Nothing has been sent to Revit" in said,
+                  "%s (%r) sends nothing and binds no session" % (label, arguments["request"]))
+            check("capability=" in said and ("YOU SUPPLY" in said
+                                            or "asks you for nothing" in said
+                                            or "no way of doing" in said),
+                  "and hands back the candidates with what to type")
+
+        phrase, capability, missing = _pick(module, "PROVEN", "READ", True)
+        if phrase:
+            revit.asked[:] = []
+            del resolved[:]
+            said = await call("revit_read", {"request": phrase})
+            check(not revit.asked and not resolved and missing[0] in said,
+                  "a PROVEN match missing %s (%s) sends nothing and names it"
+                  % (missing[0], capability))
+
+        revit.asked[:] = []
+        del resolved[:]
+        said = await call("revit_change", {"request": "what is the best food for a cat"})
+        check(not revit.asked and not resolved and "Nothing has been sent to Revit" in said,
+              "revit_change with a ranked guess sends nothing and binds no session")
+
+        capability, _folder = first_with("READ", "PROVEN")
+        revit.asked[:] = []
+        said = await call("revit_read", {"capability": capability,
+                                         "request": "what is the best food for a cat"})
+        check(len(revit.asked) == 1 and "chosen by" not in said,
+              "a capability given beside the words wins, and the words choose nothing")
+    finally:
+        del module.binding.resolve
+        module.pinned.forget()
+
+
 def main():
     version, broken = sdk_version()
     print("Heron's MCP server, served by a real SDK")
@@ -449,6 +567,7 @@ def main():
 
         asyncio.run(exercise(server))
         asyncio.run(exercise_door(server_module))
+        asyncio.run(exercise_words(server_module))
 
         print()
         if FAILURES:

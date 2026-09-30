@@ -279,3 +279,42 @@ Every tool carries MCP's `readOnlyHint`, `destructiveHint` and `idempotentHint`,
 `openWorldHint` is not set: risk says what a tool can change, not where it reaches. A host may call a
 read-only tool without asking, which is why a **write labelled read-only** is the one wrong label that
 matters, and why the labels are derived rather than written. **The gate stays in the add-in (§4).**
+
+### 8.5 One request, fewer turns — built 2026-09-30
+
+**The cost was the turns, not the brain.** One chat request was four tool calls — `heron_lookup`, then
+`heron_resolve` for what to type, then `revit_read` or `revit_change`, then a read to check — and each
+call is a whole host turn of seconds. On top of that, every lookup re-parsed every `fragment.yaml`
+before it searched: measured 1.87 s of a 1.95 s `heron_lookup`, where the search itself took 13 ms.
+
+What changed, and what did not:
+
+- **`revit_read` and `revit_change` take `request`**, the user's own words, in place of `capability`.
+  They run in that one call **only** when the words are a phrasing a `PROVEN` capability declares (the
+  identity route with its run-unasked permission, `heron_search.may_run_unasked`) **and** every value it
+  needs is in `values`. Anything else — a `DRAFT` exact match, a ranked guess, a missing value — sends
+  **nothing** to Revit and hands back the candidates with what each needs typed. **Never a score
+  margin:** `heron_retrieve.Contest` measured that a wide lead does not separate a real question from
+  an unreal one, and a threshold set here would be the dial D-33 forbids. **D-01 holds:** an exact
+  declared phrasing leaves no meaning to decide, and every other case goes back to the host.
+- **`heron_lookup` now carries what to type** for its top match, so `heron_resolve` is no longer a
+  step of its own.
+- **`heron_fragment.load` keeps a card's parse** until the file's bytes change (a content hash, never
+  the mtime), and hands every caller a copy.
+- **Every gate is where it was**, called in the same order: `risk_refusal`, `door_refusal`, the
+  Changes switch in the add-in, the pinned model, one undo entry, D-99. The words path only chooses the
+  capability; the door does the rest exactly as if the host had named it.
+
+Measured in a container with no Revit — the bridge stubbed at the point a request would cross
+(`tests/test_mcp_serves.py` §10 holds the behaviour). The sample: *select all ducts*, *how many doors on
+level 1*, *set Comments on selected pipes to X*, *list sheets with no views*, *colour supply ducts blue*,
+and one exact proven phrasing, *how many metres of duct is there*. A write's count includes the host's
+read to check it:
+
+| | tool calls, a read | tool calls, a write | Heron-side time, per request |
+|---|---|---|---|
+| before | 3 | 4 | 3.7 – 4.1 s |
+| after, exact proven phrasing | **1** | 2 — derived, not measured: no write in the sample was one | ~0.09 s |
+| after, anything else | 2 | 3 | ~0.09 s |
+
+**NEEDS REAL REVIT:** the time Revit itself takes, and the host's own turn time, were not measured here.
