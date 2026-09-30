@@ -483,7 +483,7 @@ def test_tables():
           "a table that is no longer open cannot be applied")
 
     result = tables.apply(tid, [{"id": "101", "name": "Mark", "value": "FCU-1A", "was": "LIE"}])
-    check(result["applied"] and sent == [[("101", "u-101", "Mark", "FCU-01", "FCU-1A")]],
+    check(result["applied"] and sent == [[("101", "u-101", "Mark", "FCU-01", "FCU-1A", "")]],
           "the old value sent is the one Heron showed - a 'was' from the page is ignored")
     check(tables.current()["rows"][0]["cells"]["Mark"]["value"] == "FCU-1A",
           "after Apply the table shows what Revit read back")
@@ -513,6 +513,17 @@ def test_tables():
     check("a type parameter - changing it changes every element of this type" in reader
           and "matches.Count > 1" in reader,
           "the table marks type parameters and shared names as not editable")
+    writer_cs = io.open(os.path.join(folder, "set-parameter-values-by-id", "impl", "any",
+                                     "fragment.cs"), encoding="utf-8").read()
+    check("VariesAcrossGroups" in reader and "groupLocked(e, p)" in reader
+          and "groupLocked(element, target)" in writer_cs,
+          "a model-group member that would change in every copy is never editable, "
+          "and the writer refuses it too")
+    check("storedValue(target) != wasStored" in writer_cs and 'esc("raw")' in reader,
+          "numbers are checked by the value Revit stores, not only the rounded display")
+    check("BuiltInParameter.ALL_MODEL_MARK" in reader and "cell.noCopy" in io.open(
+        os.path.join(ROOT, "mcp", "companion", "static", "companion.js"), encoding="utf-8").read(),
+          "Mark is recognised by what it is, in any Revit language, and never copied")
     check(tools.TOOLS.get("revit_edit_table") == (tools.ANALYZE, "run_fragment_read")
           and tools.COMPANION_ACTIONS.get("companion_table_apply") == (tools.MODIFY,
                                                                        "run_fragment_write"),
@@ -542,6 +553,8 @@ def test_tables():
           "the model guard asks which Revit is live NOW, never the cached one")
     check("if _from_chat() and _took(reply):" in server,
           "a change Revit did not take leaves no table")
+    check('"REVIT DID NOT KEEP" in str(provides)' in server and "_PARTIAL" in server,
+          "nor does a change Revit kept only part of")
 
 
 def test_model_guard():

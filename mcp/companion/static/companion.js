@@ -582,6 +582,20 @@ function changedElsewhere(el) {
   el.querySelector("header").after(note);
 }
 
+function replacedHere(el, gone) {
+  const note = document.createElement("p");
+  note.className = "elsewhere";
+  note.textContent = "The chat has made a newer change to this - it is the card above. " +
+    "Your unsent values stay here to copy across; this one can no longer be applied.";
+  el.querySelector("header").after(note);
+  el.querySelectorAll("button.btn").forEach(b => { b.disabled = true; });
+  const dismiss = document.createElement("button");
+  dismiss.className = "btn";
+  dismiss.textContent = "Dismiss";
+  dismiss.addEventListener("click", () => { el.remove(); gone(); });
+  note.after(dismiss);
+}
+
 async function changes() {
   try {
     const res = await fetch("/api/changes", { headers: HEADER, credentials: "same-origin" });
@@ -590,7 +604,11 @@ async function changes() {
     const list = $("c-list");
     const ids = new Set(body.cards.map(c => c.id));
     for (const [id, item] of shown) {
-      if (!ids.has(id)) { item.el.remove(); shown.delete(id); }
+      if (ids.has(id) || item.replaced) continue;
+      // A card the chat replaced while the modeller had unsent values in it
+      // stays, saying so, so nothing typed is lost (Codex review of #362).
+      if (item.el.edited()) { replacedHere(item.el, () => shown.delete(id)); item.replaced = true; continue; }
+      item.el.remove(); shown.delete(id);
     }
     body.cards.slice().reverse().forEach(card => {
       const key = cardKey(card);
@@ -622,11 +640,11 @@ async function changes() {
 // cells are sent, and the old value is taken from Heron's own copy, never
 // from this page - so nothing here can claim a value Revit did not show.
 
-let tableShown = null;
+let tableShown = null;     // "<id>/<last.at>" of what is on screen
 // Edits the modeller typed that Revit has NOT taken - kept when a stale row
 // refuses the whole Apply, so the table redraws with them still in it and
 // the stale cells marked (Codex review of #362). {id, map}, or null.
-let keptEdits = null;     // "<id>/<last.at>" of what is on screen
+let keptEdits = null;
 
 function tableCell(row, name, cell, edits, count) {
   const td = document.createElement("td");
@@ -649,7 +667,7 @@ function tableCell(row, name, cell, edits, count) {
     count();
   });
   td.append(input);
-  if (!NO_COPY.test(name)) {
+  if (!NO_COPY.test(name) && !cell.noCopy) {
     td.classList.add("copyable");
     input.title = "Drag this cell onto another cell in the column to copy its value there";
     input.addEventListener("dragstart", e => e.preventDefault());   // not the browser's text drag

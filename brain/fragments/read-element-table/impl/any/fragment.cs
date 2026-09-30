@@ -84,6 +84,55 @@ Func<Element, string, Parameter> theOne = (element, parameterName) =>
     return writable;
 };
 
+
+// THE STORED VALUE, beside the display text. A length shown as "1000 mm" can
+// hold two different raw values that round to the same text, and comparing
+// only the text would miss a change made in Revit between the two (Codex
+// review of #362). Numbers are compared by what Revit stores.
+Func<Parameter, string> storedValue = p =>
+{
+    try
+    {
+        if (p.StorageType == StorageType.Double)
+            return p.AsDouble().ToString("R", System.Globalization.CultureInfo.InvariantCulture);
+        if (p.StorageType == StorageType.Integer)
+            return p.AsInteger().ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (p.StorageType == StorageType.String) return p.AsString() ?? "";
+    }
+    catch { }
+    return null;
+};
+
+// A MEMBER OF A MODEL GROUP whose parameter does not vary across groups: a
+// change to it is copied into the same element in every placement of the
+// group, so one row would silently edit elements the table never showed
+// (Codex review of #362). Such a cell is not editable.
+Func<Element, Parameter, bool> groupLocked = (element, p) =>
+{
+    if (element.GroupId == null || element.GroupId == ElementId.InvalidElementId) return false;
+    try
+    {
+        var definition = p.Definition as InternalDefinition;
+        return definition == null || !definition.VariesAcrossGroups;
+    }
+    catch { return true; }
+};
+
+// MARK AND TYPE MARK BY WHAT THEY ARE, not by their English names: the page
+// never copies or fills them down, and a Revit in another language names them
+// differently (Codex review of #362).
+Func<Parameter, bool> isMark = p =>
+{
+    try
+    {
+        var definition = p.Definition as InternalDefinition;
+        return definition != null
+            && (definition.BuiltInParameter == BuiltInParameter.ALL_MODEL_MARK
+                || definition.BuiltInParameter == BuiltInParameter.ALL_MODEL_TYPE_MARK);
+    }
+    catch { return false; }
+};
+
 var rows = new List<string>();
 foreach (var e in elements)
 {
@@ -102,7 +151,9 @@ foreach (var e in elements)
     foreach (var name in names)
     {
         string value = null;
+        string stored = null;
         var editable = false;
+        var noCopy = false;
         string why = null;
 
         var matches = e.GetParameters(name);
@@ -117,9 +168,14 @@ foreach (var e in elements)
         {
             var p = chosen ?? matches[0];
             value = readValue(p);
+            stored = storedValue(p);
+            noCopy = isMark(p);
             if (p.IsReadOnly) why = "read-only - Revit sets it";
             else if (p.StorageType == StorageType.ElementId || p.StorageType == StorageType.None)
                 why = "it holds a reference to another element, which cannot be typed as text";
+            else if (groupLocked(e, p))
+                why = "this element is in a model group - changing it changes the same element " +
+                      "in every copy of the group";
             else editable = true;
         }
         else
@@ -142,6 +198,8 @@ foreach (var e in elements)
         }
 
         cells.Add(esc(name) + ": {" + esc("value") + ": " + esc(value) + ", "
+                  + esc("raw") + ": " + esc(stored) + ", "
+                  + esc("noCopy") + ": " + (noCopy ? "true" : "false") + ", "
                   + esc("editable") + ": " + (editable ? "true" : "false") + ", "
                   + esc("why") + ": " + esc(why) + "}");
     }

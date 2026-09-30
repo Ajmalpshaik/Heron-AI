@@ -130,6 +130,40 @@ Func<Element, string, Parameter> theOne = (element, parameterName) =>
     return writable;
 };
 
+
+// THE STORED VALUE, beside the display text. A length shown as "1000 mm" can
+// hold two different raw values that round to the same text, and comparing
+// only the text would miss a change made in Revit between the two (Codex
+// review of #362). Numbers are compared by what Revit stores.
+Func<Parameter, string> storedValue = p =>
+{
+    try
+    {
+        if (p.StorageType == StorageType.Double)
+            return p.AsDouble().ToString("R", System.Globalization.CultureInfo.InvariantCulture);
+        if (p.StorageType == StorageType.Integer)
+            return p.AsInteger().ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (p.StorageType == StorageType.String) return p.AsString() ?? "";
+    }
+    catch { }
+    return null;
+};
+
+// A MEMBER OF A MODEL GROUP whose parameter does not vary across groups: a
+// change to it is copied into the same element in every placement of the
+// group, so one row would silently edit elements the table never showed
+// (Codex review of #362). Such a cell is not editable.
+Func<Element, Parameter, bool> groupLocked = (element, p) =>
+{
+    if (element.GroupId == null || element.GroupId == ElementId.InvalidElementId) return false;
+    try
+    {
+        var definition = p.Definition as InternalDefinition;
+        return definition == null || !definition.VariesAcrossGroups;
+    }
+    catch { return true; }
+};
+
 // ------------------------------------------------------------------ parse
 var plan = new List<Tuple<Element, string, string>>();   // element, parameter, new value
 var staleJson = new List<string>();
@@ -138,10 +172,10 @@ foreach (var raw in (rows ?? "").Split(';'))
 {
     if (raw.Trim().Length == 0) continue;
     var f = raw.Split('|');
-    if (f.Length != 5)
+    if (f.Length != 5 && f.Length != 6)
     {
         findings.Add("A row did not have its five parts - id, UniqueId, parameter, old value, " +
-                     "new value - so nothing was written.");
+                     "new value, and optionally the stored old value - so nothing was written.");
         stale.Add("(unreadable row)");
         continue;
     }
@@ -150,9 +184,11 @@ foreach (var raw in (rows ?? "").Split(';'))
     var name = Uri.UnescapeDataString(f[2]);
     var was = Uri.UnescapeDataString(f[3]);
     var want = Uri.UnescapeDataString(f[4]);
+    var wasStored = f.Length == 6 ? Uri.UnescapeDataString(f[5]) : "";
 
     string why = null;
     string now = null;
+    string nowStored = null;
     Element element = null;
     try { element = doc.GetElement(uniqueId); } catch { }
 
@@ -169,9 +205,14 @@ foreach (var raw in (rows ?? "").Split(';'))
         else if (target.StorageType == StorageType.ElementId
                  || target.StorageType == StorageType.None)
             why = name + " holds a reference to another element, which cannot be typed as text";
-        else if (!unchanged(target, was))
+        else if (groupLocked(element, target))
+            why = "it is in a model group, and " + name + " would change in every copy of the group";
+        else if (!unchanged(target, was)
+                 || (wasStored.Length > 0 && target.StorageType != StorageType.String
+                     && storedValue(target) != wasStored))
         {
             now = readValue(target) ?? "";
+            nowStored = storedValue(target);
             why = "it was changed in Revit since the table was read - it now reads '" + now + "'";
         }
     }
@@ -184,7 +225,8 @@ foreach (var raw in (rows ?? "").Split(';'))
         // the model as it is, not refused for ever (Codex review of #362).
         staleJson.Add("{" + esc("id") + ": " + esc(id) + ", " + esc("name") + ": " + esc(name)
                       + ", " + esc("why") + ": " + esc(why)
-                      + (now == null ? "" : ", " + esc("now") + ": " + esc(now)) + "}");
+                      + (now == null ? "" : ", " + esc("now") + ": " + esc(now)
+                         + ", " + esc("nowRaw") + ": " + esc(nowStored)) + "}");
         continue;
     }
     plan.Add(Tuple.Create(element, name, want));
@@ -245,10 +287,12 @@ else
     {
         var again = theOne(step.Item1, step.Item2);
         var now = again == null ? null : readValue(again);
+        var nowRaw = again == null ? null : storedValue(again);
         written++;
         readBack.Add("{" + esc("id") + ": " + esc(step.Item1.Id.ToString()) + ", "
                      + esc("name") + ": " + esc(step.Item2) + ", "
-                     + esc("value") + ": " + esc(now) + "}");
+                     + esc("value") + ": " + esc(now) + ", "
+                     + esc("raw") + ": " + esc(nowRaw) + "}");
     }
 }
 

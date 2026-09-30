@@ -348,7 +348,8 @@ class Tables(object):
                 if not isinstance(value, str) or len(value) > self.LONGEST \
                         or chr(10) in value or chr(13) in value:
                     return None, "A value must be one line of text.", None
-                out.append((row["id"], row["uniqueId"], name, cell.get("value") or "", value))
+                out.append((row["id"], row["uniqueId"], name, cell.get("value") or "", value,
+                            cell.get("raw") or ""))
             return out, None, (list(table["identity"]) if table.get("identity") else None)
 
     def apply(self, table_id, changes):
@@ -376,13 +377,15 @@ class Tables(object):
                             cell = row.get("cells", {}).get(s.get("name"))
                             if str(row["id"]) == str(s.get("id")) and cell is not None:
                                 cell["value"] = s["now"]
+                                cell["raw"] = s.get("nowRaw")
                 if applied:
-                    back = {(b.get("id"), b.get("name")): b.get("value")
+                    back = {(b.get("id"), b.get("name")): b
                             for b in result.get("readBack") or []}
                     for row in table["rows"]:
                         for name, cell in row.get("cells", {}).items():
                             if (row["id"], name) in back:
-                                cell["value"] = back[(row["id"], name)]
+                                cell["value"] = back[(row["id"], name)].get("value")
+                                cell["raw"] = back[(row["id"], name)].get("raw")
                 table["last"] = {"at": time.strftime("%H:%M:%S"),
                                  "outcome": "ok" if applied else ("refused" if outcome != "failed" else "failed"),
                                  "reply": str(text)[:1500],

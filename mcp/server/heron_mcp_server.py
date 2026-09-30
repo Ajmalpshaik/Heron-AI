@@ -1468,11 +1468,23 @@ _TOOK = ("applied", "changed", "overridden", "shown", "hidden",
          "alreadyThatWay", "alreadyThat", "alreadySet")
 
 
+_PARTIAL = ("refused", "notControllable", "notFound", "leftOut", "notCuttable")
+
+
 def _took(reply):
     """True unless the fragment's own answer says nothing was done."""
     if not isinstance(reply, dict) or not reply.get("ok"):
         return False
     provides = reply.get("provides") or {}
+    # PARTLY DONE IS NOT DONE: a table shows the values as if Revit holds them,
+    # so a change Revit kept only some of - a filter override it did not keep,
+    # a category it refused - leaves none (Codex's fifth review of #362).
+    if "REVIT DID NOT KEEP" in str(provides):
+        return False
+    for key in _PARTIAL:
+        if key in provides and str(provides[key]).strip().lower() not in (
+                "", "0", "false", "none", "[]", "{}"):
+            return False
     said = [provides[k] for k in _TOOK if k in provides]
     if not said:
         return True
