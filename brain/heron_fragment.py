@@ -42,6 +42,7 @@ real model may set it past VALIDATED. This file is the shape; NEEDS-CHECKING.md
 is the truth.
 """
 
+import copy
 import io
 import os
 import re
@@ -1012,16 +1013,41 @@ def load(folder, root=None):
     path = os.path.join(folder, "fragment.yaml")
     if not os.path.exists(path):
         raise ValueError("%s has no fragment.yaml" % folder)
+
+    # THE PARSE IS KEPT UNTIL THE FILE'S BYTES CHANGE. heron_brain._Open runs
+    # heron_embed.index on EVERY lookup, and that calls load_all() before it
+    # can tell nothing changed - measured 2026-09-30 at 1.87 s of a 1.95 s
+    # heron_lookup, 429 cards, pure-Python YAML; the search itself was 13 ms.
+    # Keyed on the CONTENT, not the mtime, for docs/05 s7's reason and because
+    # a same-size rewrite inside one mtime tick would otherwise be served the
+    # old card: reading and hashing all 429 costs ~8 ms. A miss parses exactly
+    # as before; a hit is handed a DEEP COPY, so no caller can change what the
+    # next one reads.
     try:
-        data = yaml.safe_load(io.open(path, encoding="utf-8").read())
+        with io.open(path, "rb") as handle:
+            raw = handle.read()
+    except (IOError, OSError) as exc:
+        raise ValueError("%s: fragment.yaml could not be read - %s" % (folder, exc))
+    mark = hashlib.blake2b(raw, digest_size=16).digest()
+    held = _PARSED.get(path)
+    if held is not None and held[0] == mark:
+        return Fragment(copy.deepcopy(held[1]), folder, root)
+
+    try:
+        data = yaml.safe_load(raw.decode("utf-8"))
+    except UnicodeDecodeError as exc:
+        raise ValueError("%s: fragment.yaml could not be read - %s" % (folder, exc))
     except yaml.YAMLError as exc:
         raise ValueError("%s: fragment.yaml could not be parsed - %s"
                          % (folder, " ".join(str(exc).split())))
-    except (IOError, OSError) as exc:
-        raise ValueError("%s: fragment.yaml could not be read - %s" % (folder, exc))
     if not isinstance(data, dict):
         raise ValueError("%s: fragment.yaml is not a mapping" % folder)
+    _PARSED[path] = (mark, copy.deepcopy(data))
     return Fragment(data, folder, root)
+
+
+#: path -> (blake2b of the file's bytes, parsed mapping). See load().
+_PARSED = {}
 
 
 def load_all(root=None):

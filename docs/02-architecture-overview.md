@@ -192,6 +192,8 @@ Rules that follow from this:
 
 Rough target for a warm, cached "select all ducts": **one T2 call (intent), zero others.**
 
+How far the chat path has got towards that, measured, is [04 §8.5](04-heron-mcp.md#85-one-request-fewer-turns--built-2026-09-30).
+
 ## 7. Where the orchestration runs — **decided**
 
 > **[D-01](DECISIONS.md), 2026-08-27: Heron AI runs as a Claude Code plugin.**
