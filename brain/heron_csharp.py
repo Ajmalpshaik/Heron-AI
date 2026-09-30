@@ -69,6 +69,20 @@ Whether this module should now begin asserting the rule is a question
 for a person, and it is written up as F37 in docs/PROPOSALS.md rather
 than decided here.
 
+AND A SECOND ONE-COMMIT CLAIM FLIPPED, ON 2026-09-29
+------------------------------------------------------
+The suite also said a bare `catch` was the commonest single kind, and on
+main it led catch (Exception) by a handful. The Heron Companion (D-108,
+D-109) added catch (Exception) handlers - HeronLiveState and the Companion
+button's two commands, each of which must catch everything so that a status
+file or a button can never take Revit down - and, measured by this module,
+the order flipped to 46 against 51. Nothing about the refusal changed, for the reason
+the section above gives, and a lead of one was the same wrong kind of claim.
+
+So that check too became the part that does not tip: bare handlers remain
+a real share of the broad ones - at least a quarter - which only a
+deliberate rewrite of most of them would end.
+
 AND THE FIRST SET WAS WRONG FOR A DIFFERENT REASON
 ----------------------------------------------------
 A scratch expression written to survey the code before this module

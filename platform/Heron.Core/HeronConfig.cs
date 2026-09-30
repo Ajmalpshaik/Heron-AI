@@ -92,6 +92,15 @@ namespace Heron.Core
                 // explanation reads as a crash, and somebody who does not know
                 // the banner exists is exactly who needs it.
                 { "ui.activityBanner", "true" },
+
+                // THE COMPANION PAGE (D-108, D-109). On by default for the
+                // banner's reason, and like the banner it can only SHOW - the
+                // page changes nothing on its own authority, and every change
+                // it ever sends still needs Changes. Off stops the add-in's
+                // live file and the chat's page, and leaves the chat and the
+                // bridge exactly as they are. The Companion button's arrow on
+                // the ribbon is the switch.
+                { "companion.enabled", "true" },
             };
 
         public static string FilePath { get { return Path.Combine(HeronPaths.Config, FileName); } }

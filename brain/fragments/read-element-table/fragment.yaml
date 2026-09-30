@@ -1,0 +1,88 @@
+heron-agent: HERON-REVIT-PAR-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-026
+semantic-identity: "these elements and the named parameters, as rows the Companion can edit"
+kind: action
+domain: revit.parameters
+capability: READ_ELEMENT_TABLE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads the named parameters of the given elements into ONE table, for the
+  Heron Companion page (D-108, docs/40 section 8.2): one row per element -
+  its id, UniqueId, category, family and type - and for each parameter the
+  value as the modeller sees it, and whether that cell can be edited, with the
+  reason when it cannot.
+
+  **It is the table a chat opens with revit_edit_table, and the chat is told
+  only how many rows it holds.** The rows go to the page; that is what keeps a
+  schedule of ninety units from costing the chat ninety rows of tokens.
+
+  **Why one string.** A fragment's list output reaches the caller as its first
+  three names (FRAGMENT-ISSUES 5b-195), and a table needs every row. So the
+  table crosses as one JSON string, `tableJson`, format 1 - the workaround
+  report-category-overrides already uses - until a central reply fix lands.
+
+  **Editable means an INSTANCE parameter this element carries once**, which
+  is not read-only and holds text, a number or a Yes/No. A TYPE parameter is
+  shown and marked not editable here: changing it changes every element of
+  that type, which is a different question from editing a row. A name two
+  parameters share is marked not editable, never guessed between (D-54 s3,
+  FRAGMENT-ISSUES 5b-203). An element reference cannot be typed as text.
+
+  **Values are read the way read-element-parameters reads them**: the display
+  string first, in the project's own units, then the raw text. That display
+  string is also what the write half compares against before it writes
+  anything (set-parameter-values-by-id, Article 12c).
+
+  Caps at maxRows rows (2,000 when not given) and says so in `truncated`.
+
+contract:
+  needs:
+    - name: elements
+      type: IList<Element>
+    - name: parameterNames
+      type: string
+      source: request
+    - name: maxRows
+      type: int
+      source: request
+  provides:
+    # The whole table as one JSON string, format 1 - the rows the page shows.
+    - name: tableJson
+      role: result
+      type: string
+    # How many rows are in it. What the chat is told.
+    - name: rowCount
+      role: result
+      type: int
+    # Elements past maxRows, left out and counted - never silently dropped.
+    - name: truncated
+      role: accounting
+      type: int
+    # A sentence per thing turned down - a blank name list, say.
+    - name: findings
+      role: accounting
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. It uses LookupParameter,
+  GetParameters, AsValueString, AsString, StorageType, IsReadOnly,
+  ElementId.ToString and UniqueId, all present from 2020 to 2027, and never
+  ElementId.IntegerValue, which 2026 removed.
+
+utterances:
+  - open these in an editable table
+  - show these elements with their parameters in the Companion
+  - put the selected units in a table I can edit
+  - let me edit these parameters in a table

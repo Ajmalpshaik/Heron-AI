@@ -26,6 +26,8 @@
    Enforced by `tools/check-structure.py`.
 3. **No network.** No `HttpClient`, no sockets. The bridge is a local named pipe and nothing else —
    see [docs/03 §1a](../docs/03-heron-revit.md).
+   The Heron Companion page ([D-108](../docs/DECISIONS.md)) does not change this: its web server lives
+   in `mcp/companion/`, and all the add-in gives it is a status file, `HeronLiveState.cs`.
 4. **Version-conditional code lives in adapters**, never in logic. [docs/16](../docs/16-version-support-strategy.md)
 
 ## Fix things here when

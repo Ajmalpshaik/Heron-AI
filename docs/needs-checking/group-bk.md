@@ -1,0 +1,40 @@
+# Needs checking — Group BK
+
+> One group of [the register](../NEEDS-CHECKING.md), in its own file since 2026-09-29 so that it can be read
+> alone. **The register's rules, and every group's place in it, are on that page.** A new row
+> for this group goes in this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py)
+> reads it back into the register for every tool that reads the register, so a row here is seen
+> exactly as it was seen there.
+
+## Group BK - the Heron Companion, Phase 1: a page beside Revit shows the model, the view and the selection (2026-09-29)
+
+**What was built** ([D-108](../DECISIONS.md), [40 §6](../40-heron-companion.md)): the add-in writes a small file,
+`%LOCALAPPDATA%\Heron\live\pid-N.json`, whenever the model, view or selection changes - only while the Heron
+button is connected - and the chat's `heron_companion` tool opens a page in the browser that reads it. The page
+changes nothing, and nothing is asked of Revit through the pipe for it.
+
+**Compiled, never run in Revit.** `tests/test_companion.py` holds the page's protection, its silence on stdout
+and the file rules on this machine. Whether Revit writes the file, and what it costs, is what this group asks.
+
+**The model is a test copy** - the owner's *heron ai bulding* copy or `Snowdon-scratch_ajmal.al`. Revit must be
+closed for the deploy, and the Claude app restarted so the chat loads the new tool.
+
+| ID | Do this | Pass looks like |
+|---|---|---|
+| **BK1** | Revit 2024, test copy open, press Heron to connect. In a new chat ask *"open the Heron Companion"* | The browser opens a page reading **Connected**, Revit 2024, the model's name and the active view. The chat's reply is one or two lines with **no address in it**. **Negative:** press Heron again to disconnect - within about a second the page says Revit is not connected, and `%LOCALAPPDATA%\Heron\live` holds no file for that Revit |
+| **BK2** | Select 3 ducts | The page shows **3 - Ducts 3** within a second. **Negative:** press Esc - it shows **0**, not the old 3 |
+| **BK3** | The same as BK1 and BK2 in **Revit 2020**, the oldest release | The same answers. **Negative:** leave Revit idle for 5 minutes with nothing changing - the live file's modified time does not move |
+| **BK4** | Select about 5,000 elements (a busy MEP level, window-select) | Revit stays responsive - no pause you can feel beyond Revit's own; the page shows the count and says only the first 5,000 were sorted into categories. **Negative:** close the model - the page no longer names it |
+| **BK5** | With the page open, close the chat (or quit the Claude app) | Within about three seconds the page turns grey and says the chat that opened it has closed. **Negative, while a chat is still running:** copy the page's first address (with `?pair=` in it) from the browser's history into a private window - it reads *link already used or too old* and shows nothing. After the chat closes nothing is left to answer that address, so the browser's own "can't reach this page" is the pass there |
+| **BK6** | **Recorded 2026-09-29, from the owner:** BK1 and BK2 passed in Revit 2024 on *Project1* - the page read **Connected** and **3 ducts**. Revit felt slow; the owner disconnected Heron and found it **just as slow**, so the Companion was not the cause ([D-109](../DECISIONS.md)) | **PASSED** for BK1 and BK2's positive halves; their negative halves (Esc shows 0, disconnect clears the page) still owed |
+| **BK7** | After the D-109 deploy: press the **Companion** button on the Heron tab with a Claude chat running | The page opens in the browser, already showing this Revit. **Negative:** close every Claude chat, press it again - a Revit message says no chat is running and nothing opens |
+| **BK8** | Click the arrow under Companion, choose **Turn Companion off** | The button turns grey and reads *Companion off*; within about two seconds the page stops, and a chat question such as *"how many ducts"* still answers. **Negative:** ask the chat to *"open the Heron Companion"* - it says the Companion is switched off, and nothing opens. Turn it back on - the button is blue again and the Companion button opens the page |
+| **BK9** | **Phase 2.** With the page open, ask the chat *"how many ducts are there"* | A line appears under *What the chat asked Heron to do* with the time, the tool, the answer's first line and **OK**. **Negative:** turn Changes off and ask the chat to colour something - the line reads **refused**, not OK |
+| **BK10** | **Phase 3, settings.** Changes ON. Ask the chat *"make the Ducts category red in this view"* | Revit's ducts go red; under *Changes you can adjust* a table shows the view, the category and two red colour swatches. Change both to blue, press **Apply again** - the ducts go blue, and Edit - Undo shows one Heron entry. **Negative:** ask the chat to colour only the SELECTED ducts - no table appears, because that change reads the selection |
+| **BK11** | **Phase 3, a table.** Ask *"give me the FCUs with their Mark and Comments in a table"* | The chat answers in one line; the table lists every FCU with Mark and Comments as white boxes and any type parameter grey. Type a Comment on two units, press **Apply 2 change(s)** - Revit shows both Comments, Edit - Undo shows one entry, and the table shows what Revit now holds. **Negative:** open the table, change one unit's Mark by hand in Revit, then edit that unit on the page and press Apply - **nothing** changes and that cell is marked red with *changed in Revit since the table was read* |
+| **BK12** | The two new fragments, proved the usual way ([fragment-proving](../../.claude/skills/fragment-proving/SKILL.md)): `read-element-table` (FRG-PAR-026) and `set-parameter-values-by-id` (FRG-PAR-027) on the test copy | Positive: the table's values match Revit's Properties palette for three elements; a write reads back. **Negative:** a stale row writes nothing; a type parameter is marked not editable |
+| **BK13** | **Recorded 2026-09-29, from the owner and the audit trail** - Revit 2024, *heron ai bulding* (test copy), view *Level 1 - Ducting Layout* | **BK10 PASSED:** the chat set Ducts and Duct Fittings green (read back 0,255,0); on the page the owner changed the colour and pressed Apply again - *"color its working"* - audit 19:11:38Z `run_fragment_write set-category-graphics ok`. **BK11 PASSED, on sheets rather than FCUs:** the chat opened the 9 sheets with Sheet Number and Sheet Name; Sheet Number was first grey (a sheet carries a second, read-only "Sheet Number" - fixed in 74bf7e7f, only one writable same-named parameter is the one meant); after the fix the owner edited and applied - *"now I can edit the sheet number"* - audit 19:13:28Z and 19:16:01Z `set-parameter-values-by-id ok`. **Still owed:** BK11's stale-row negative, BK7, BK8, BK9, BK12 |
+
+**What cannot be answered here.** Every row needs a Revit. What was checked without one: the add-in compiles on
+2020 to 2027, and `tests/test_companion.py`, `test_tool_registry.py`, `test_mcp_serves.py` and
+`test_paths.py` pass.

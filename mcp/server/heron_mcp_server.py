@@ -85,10 +85,14 @@ over a same-named directory, verified rather than assumed. Do not "fix" this by
 renaming the folder.
 """
 
+import functools
 import inspect
 import io
 import os
+import re
 import sys
+import threading
+import time
 
 # The bridge client is the layer below this one. It stays dependency-free on
 # purpose, so `doctor` keeps working on a machine where nothing else does.
@@ -175,7 +179,7 @@ class _Labelled(_Server):
                 name = (args[0] if args else None) or options.get("name") or fn.__name__
                 options["annotations"] = _Annotations.model_validate(
                     tools.annotations(name))
-            return register(*args, **options)(fn)
+            return register(*args, **options)(_recorded(fn))
 
         return decorate
 
@@ -201,6 +205,92 @@ def _host_instructions():
         return ("Heron could not give this chat its rules: %s\n"
                 "They are in HERON_CONSTITUTION.md, and they bind this chat "
                 "whether or not they arrived here." % why)
+
+
+_depth = threading.local()
+
+# ONE CONVERSATION WITH REVIT AT A TIME, from this process. Every tool call
+# holds it (through _recorded) and so does the Companion's Apply, so a change
+# from the page can never open a second pipe connection while the chat's
+# request is in flight - which would displace it and lose its answer (docs/40
+# section 4). Re-entrant, because a tool may call another.
+_revit_lock = threading.RLock()
+
+# THE COMPANION'S SIDE CHANNEL INTO THE TWO DOORS. The page's Apply runs
+# revit_change itself, and a table read runs revit_read itself - their own
+# bodies, unchanged, so every rule the suites read in them holds for the page
+# too. What the page needs that the chat does not - the add-in's raw reply,
+# and not to be offered its own change back as a new table - travels here,
+# per thread, set only for the length of one call.
+_ctx = threading.local()
+
+
+def _ctx_reply(reply):
+    out = getattr(_ctx, "reply_out", None)
+    if out is not None:
+        out["reply"] = reply
+
+
+def _from_chat():
+    return getattr(_ctx, "origin", "chat") == "chat"
+
+
+def _through(tool, reply_out=None, origin="chat"):
+    """Call a tool's own body - not its registered wrapper, so the activity
+    list is not given a second line for it - with the side channel set."""
+    body = getattr(tool, "__wrapped__", tool)
+
+    def call(*a, **k):
+        _ctx.reply_out, _ctx.origin = reply_out, origin
+        try:
+            return body(*a, **k)
+        finally:
+            _ctx.reply_out, _ctx.origin = None, "chat"
+    return call
+
+
+def _recorded(fn):
+    """
+    The same tool, and a line on the Companion's activity list (D-108,
+    docs/40 section 7) - the tool's name, the first line of its answer, how
+    it ended and how long it took.
+
+    functools.wraps keeps the signature the SDK reads, which
+    tests/test_mcp_serves.py checks against the real SDK. The answer and any
+    exception pass through untouched, and a fault in the recording is
+    dropped: the list is display, and must never cost a tool its answer. A
+    tool called from inside another is not listed twice.
+    """
+    @functools.wraps(fn)
+    def run(*a, **k):
+        with _revit_lock:
+            return _run(*a, **k)
+
+    def _run(*a, **k):
+        outer = not getattr(_depth, "busy", False)
+        _depth.busy = True
+        started, clock = time.strftime("%H:%M:%S"), time.time()
+        try:
+            reply = fn(*a, **k)
+        except Exception as error:
+            if outer:
+                _note(fn.__name__, started, time.time() - clock, error=error)
+            raise
+        finally:
+            if outer:
+                _depth.busy = False
+        if outer:
+            _note(fn.__name__, started, time.time() - clock, reply=reply)
+        return reply
+    return run
+
+
+def _note(tool, started, seconds, reply=None, error=None, outcome=None):
+    try:
+        _companion_module().ACTIVITY.record(tool, started, seconds, reply=reply, error=error,
+                                            outcome=outcome)
+    except Exception:                                # noqa: BLE001 - display only
+        pass
 
 
 server = _Labelled("heron", instructions=_host_instructions())
@@ -1219,6 +1309,7 @@ def revit_change(capability: str, values: str = "",
                             idempotent=False,
                             response_timeout=configuration.fragment_timeout())
     session.close()
+    _ctx_reply(reply)
 
     # `writes` comes from the registry rather than a literal True, so a write
     # can never be treated as a retryable read because two declarations drifted.
@@ -1289,7 +1380,225 @@ def revit_change(capability: str, values: str = "",
                      "negative case. Look at what it did before trusting it."
                      % (capability, status))
 
+    # THE AFTER-CHANGE TABLE (docs/40 section 21.1): a settings change from
+    # the chat leaves the values it used on the Companion page.
+    if _from_chat() and _took(reply):
+        _offer_change(capability, folder, values, reply.get("document"))
+
     return "\n".join(lines)
+
+
+#: A need Revit fills itself, never the caller - the only kind an
+#: after-change table may leave unshown.
+_HOST_SUPPLIED = frozenset(("Document", "UIDocument", "UIApplication", "Application"))
+
+
+def _settings_card(folder):
+    """The card's `companion-subject` names - the inputs that say WHICH THING
+    a table is about - when this fragment may get an after-change table, or
+    None. Its card says
+    `companion: settings`, and EVERY input it takes is a typed value. A
+    fragment that reads the selection or the chain is never offered - applied
+    again later it would act on whatever is selected THEN, not on what the
+    table showed."""
+    import yaml
+    path = os.path.join(_repo_root(), "brain", "fragments", folder, "fragment.yaml")
+    try:
+        with io.open(path, encoding="utf-8") as fh:
+            card = yaml.safe_load(fh) or {}
+    except (OSError, yaml.YAMLError):
+        return None
+    if card.get("companion") != "settings" or card.get("risk") != "MODIFY":
+        return None
+    needs = (card.get("contract") or {}).get("needs") or []
+    if not all(n.get("source") == "request" or n.get("type") in _HOST_SUPPLIED
+               for n in needs):
+        return None
+    subject = [s.strip() for s in str(card.get("companion-subject") or "").split(",")
+               if s.strip()]
+    requested = set(n.get("name") for n in needs if n.get("source") == "request")
+    # A card that names no subject, or one it does not take, is not offered:
+    # without it two tables for different things would replace each other.
+    if not subject or not set(subject) <= requested:
+        return None
+    return subject
+
+
+def _pin_identity():
+    """The model this chat is pinned to, by the two things that tell two
+    models apart - title and path. A card or a table carries the identity it
+    was made under, and its Apply is refused if the chat has since moved
+    (Codex review of #362): an old table must never write into the model the
+    chat is on NOW, least of all a copy whose ids and UniqueIds all match.
+
+    THE REVIT SESSION TOO: two Revits can each hold an unsaved Project1, whose
+    title and path are the same, and revit_use_session moves the chat between
+    them (Codex's third review of #362)."""
+    return (pinned.title or "", pinned.document_path or "", str(binding.pid or ""))
+
+
+def _moved_since(identity):
+    """A sentence when the chat's pinned model is no longer the one the
+    table was made in; None when it is the same, or when none was recorded."""
+    if not identity:
+        return None
+    # THE LIVE BINDING, NOT THE CACHED ONE: an assumed Revit that has closed
+    # leaves its pid in the binding until something resolves it, and the
+    # comparison below would approve against that stale pid while
+    # revit_change then slides onto the surviving Revit (Codex's fourth
+    # review of #362). resolve() re-decides it by the four-case table - a
+    # CHOSEN Revit that closed is a refusal, never a slide.
+    try:
+        binding.resolve()
+    except NotBound as unbound:
+        return ("The Revit this table was made in is no longer the one this chat can "
+                "reach, so nothing was sent to Revit. %s" % unbound)
+    now = _pin_identity()
+    if tuple(identity) == now:
+        return None
+    return ("This table was made in %s, and the chat is now working on %s, so nothing "
+            "was sent to Revit. Ask the chat for the table again in this model."
+            % (identity[0] or "another model", now[0] or "no model yet"))
+
+
+#: What a settings fragment says it did, most telling first. A table shows
+#: the values Revit now holds, so a change it did not take - a formula-driven
+#: global parameter, a category it cannot override - leaves none (Codex's
+#: fourth review of #362).
+_TOOK = ("applied", "changed", "overridden", "shown", "hidden",
+         "alreadyThatWay", "alreadyThat", "alreadySet")
+
+
+_PARTIAL = ("refused", "notControllable", "notFound", "leftOut", "notCuttable")
+
+
+def _took(reply):
+    """True unless the fragment's own answer says nothing was done."""
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return False
+    provides = reply.get("provides") or {}
+    # PARTLY DONE IS NOT DONE: a table shows the values as if Revit holds them,
+    # so a change Revit kept only some of - a filter override it did not keep,
+    # a category it refused - leaves none (Codex's fifth review of #362).
+    if "REVIT DID NOT KEEP" in str(provides):
+        return False
+    for key in _PARTIAL:
+        if key in provides and _something(provides[key]):
+            return False
+    said = [provides[k] for k in _TOOK if k in provides]
+    if not said:
+        return True
+    return any(_something(v) for v in said)
+
+
+def _something(value):
+    """Whether a reported value says something happened. The add-in reports
+    an empty list as "0 item(s)", which is nothing (Codex review of #362 -
+    reading it as something hid every successful category change's table)."""
+    text = str(value).strip().lower()
+    if text in ("", "0", "false", "none", "[]", "{}"):
+        return False
+    return not re.match(r"^0( |$)", text)
+
+
+def _offer_change(capability, folder, values, document):
+    """Leave a settings change's values on the Companion page (docs/40 21.1).
+    Display only: a fault here never reaches the chat's answer."""
+    try:
+        subject = _settings_card(folder)
+        if not subject or not pinned.is_pinned:
+            return
+        needs = bridge.fragment_needs(os.path.join(_repo_root(), "brain", "fragments",
+                                                   folder, "fragment.yaml")) or []
+        taken = set(n.get("name") for n in needs if n.get("source") == "request")
+        # ONLY WHAT THE FRAGMENT TAKES: revit_change drops an undeclared name
+        # and carries on, so a typo must not become an editable row that can
+        # never reach Revit (Codex review of #362).
+        pairs = [(v["name"], v["value"]) for v in _values_array(values) if v["name"] in taken]
+        if pairs:
+            companion_page = _companion_module()
+            companion_page.CHANGES.offer(capability, document, pairs, _pin_identity(), subject)
+    except Exception:                                # noqa: BLE001 - display only
+        pass
+
+
+def _apply_change(capability, pairs, identity=None, still=None):
+    """The Companion's Apply: the same capability again, with the modeller's
+    values, through _change - the one body revit_change uses - under the same
+    lock every tool call holds. Called from the page's thread, never the
+    chat's."""
+    values = NEWLINE.join("%s=%s" % (name, value) for name, value in pairs)
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    with _revit_lock:
+        # RE-CHECKED ONCE REVIT IS OURS: the chat may have changed the same
+        # thing while this Apply waited for the lock, replacing the card; its
+        # old values must not overwrite that newer change (Codex review).
+        if still is not None and not still():
+            said = ("The chat changed this while your Apply was waiting, so this table is "
+                    "out of date. Nothing was sent to Revit - use the newer table.")
+            _note("companion_apply", started, 0, reply=said, outcome="refused")
+            return said
+        moved = _moved_since(identity)
+        if moved:
+            _note("companion_apply", started, 0, reply=moved, outcome="refused")
+            return moved
+        try:
+            reply = _through(revit_change, origin="companion")(capability, values)
+        except Exception as error:                   # noqa: BLE001 - said on the page
+            _note("companion_apply", started, time.time() - clock, error=error)
+            return "Heron could not run it: %s" % error
+    _note("companion_apply", started, time.time() - clock, reply=reply)
+    return reply
+
+
+def _apply_table(rows, identity=None):
+    """
+    The Companion's element-table Apply (docs/40 section 8.4): one run of
+    SET_PARAMETER_VALUES_BY_ID with every edited cell, through _change - the
+    one body revit_change uses - under the same lock. Each row carries the
+    value the table SHOWED, and the fragment writes nothing unless every one
+    still matches (Article 12c). Returns (answer text, the fragment's own
+    resultJson parsed, or None).
+    """
+    import json
+    from urllib.parse import quote
+    line = ";".join("|".join(quote(str(field), safe="") for field in row) for row in rows)
+    out = {}
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    # THE BRIDGE READS AT MOST ONE MEBIBYTE A LINE (BridgeServer.MaxRequestChars)
+    # and the fragment's source travels with the rows. Splitting the Apply
+    # would break all-or-nothing and the single undo entry, so a change set
+    # that cannot fit is refused whole, here, before anything is sent.
+    if len(line) > 700000:
+        said = ("That is too many changes, or values too long, to send to Revit as one "
+                "change (%d characters once encoded). Nothing was sent. Apply them in "
+                "smaller groups." % len(line))
+        _note("companion_table_apply", started, 0, reply=said, outcome="refused")
+        return said, None
+    with _revit_lock:
+        moved = _moved_since(identity)
+        if moved:
+            _note("companion_table_apply", started, 0, reply=moved, outcome="refused")
+            return moved, None
+        try:
+            text = _through(revit_change, reply_out=out, origin="companion")(
+                "SET_PARAMETER_VALUES_BY_ID", "rows=" + line)
+        except Exception as error:                   # noqa: BLE001 - said on the page
+            _note("companion_table_apply", started, time.time() - clock, error=error)
+            return "Heron could not run it: %s" % error, None
+    result = None
+    reply = out.get("reply")
+    if isinstance(reply, dict):
+        raw = (reply.get("provides") or {}).get("resultJson")
+        try:
+            result = json.loads(raw) if raw else None
+        except ValueError:
+            result = None
+    # A stale table is a refusal, whatever the answer's words: nothing was written.
+    stopped = result is not None and not result.get("applied")
+    _note("companion_table_apply", started, time.time() - clock, reply=text,
+          outcome="refused" if stopped else None)
+    return text, result
 
 
 def _proof_line(capability, folder):
@@ -1422,6 +1731,7 @@ def revit_read(capability: str, values: str = "",
     reply = session.request("run_fragment_read", op_args=args,
                             response_timeout=configuration.fragment_timeout())
     session.close()
+    _ctx_reply(reply)
 
     failure = analyse(reply, writes=tools.writes("revit_read"))
     if failure is not None:
@@ -1458,6 +1768,144 @@ def revit_read(capability: str, values: str = "",
     lines.append("Nothing in the model was changed: this runs with no transaction "
                  "open, so Revit itself refuses any change.")
     return "\n".join(lines)
+
+
+@server.tool()
+def revit_offer_settings(capability: str, values: str) -> str:
+    """
+    Put a SETTINGS capability's current values on the Heron Companion page as
+    an editable table - WITHOUT changing anything - so the modeller can adjust
+    and apply them there, with no further message to you.
+
+    Use when the user wants to SEE a setting in the Companion and adjust it
+    there - "show the filters and their colours in the Companion", "give me
+    that as a table" - after you have READ the current values (for a view's
+    filters, REPORT_VIEW_FILTERS). Offer one table per thing: for three
+    filters, call this three times with APPLY_VIEW_FILTER, one filter each.
+
+    `capability` must be one the Companion offers tables for (its card says
+    companion: settings, and every input is a typed value). `values` is
+    exactly what revit_change would take, one "name=value" per line, and
+    should state the CURRENT values you read. Nothing is sent to Revit here.
+    Apply on the page runs the capability through revit_change's own path:
+    the Changes switch, the pin, one undo entry.
+    """
+    companion_page = _companion_module()
+    if not companion_page.enabled():
+        return ("The Heron Companion is switched off in Revit, so nothing was offered. "
+                "To turn it on, click the arrow under the Companion button on the "
+                "Heron tab.")
+    folder, _status = _fragment_for(capability)
+    if folder is None:
+        return ("Heron has nothing that does '%s', so nothing was offered." % (capability or ""))
+    subject = _settings_card(folder)
+    if not subject:
+        return ("'%s' is not a setting the Companion offers as a table - its card is not "
+                "marked companion: settings, or it takes the selection. Nothing was offered."
+                % capability)
+    needs = bridge.fragment_needs(os.path.join(_repo_root(), "brain", "fragments",
+                                               folder, "fragment.yaml"))
+    supplied = _values_array(values)
+    undeclared, _takeable = bridge.undeclared_values(supplied, needs or [])
+    given = set(v["name"] for v in supplied)
+    missing = [n.get("name") for n in (needs or []) if n.get("source") == "request"
+               and n.get("name") not in given]
+    if needs is None or undeclared or not supplied or missing:
+        return ("Those values do not fit '%s'%s, so nothing was offered. heron_resolve "
+                "names the values it takes."
+                % (capability, (" - not taken: %s" % ", ".join(undeclared)) if undeclared
+                   else (" - missing: %s" % ", ".join(missing)) if missing else ""))
+
+    # NO CARD WITHOUT A MODEL: a card with no identity would apply to
+    # whichever model the chat reaches at Apply time (Codex review of #362).
+    if not pinned.is_pinned:
+        return ("No model is pinned to this chat yet, so nothing was offered - a table "
+                "must know which model it belongs to. Read something from the model "
+                "first, then offer it again.")
+    companion_page.CHANGES.offer(capability, pinned.title or "",
+                                 [(v["name"], v["value"]) for v in supplied],
+                                 _pin_identity(), subject)
+    companion = companion_page.shared(bound_pid=_companion_revit)
+    if not companion.recently_seen():
+        try:
+            import webbrowser
+            webbrowser.open(companion.pairing_address(), new=2)
+        except Exception:                            # noqa: BLE001 - the button still works
+            pass
+    return ("Offered on the Heron Companion page: %s, %d value(s), to adjust and apply "
+            "there. Nothing in the model was changed." % (capability, len(supplied)))
+
+
+@server.tool()
+def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 2000) -> str:
+    """
+    Open an editable table of elements and their parameters in the Heron
+    Companion page - a schedule the modeller edits and applies there, with no
+    further message to you and no tokens spent on it.
+
+    Use when the user asks for elements "in a table", "as a schedule I can
+    edit", or to change parameter values on many elements one by one - "give
+    me the FCUs with their Mark and Comments", "let me edit the airflow of
+    these terminals". Only for PARAMETERS; never for layout work.
+
+    `parameters` is the column list, comma separated: "Mark, Comments, Flow".
+    The rows are the elements selected in Revit - or, with `expect_from`, the
+    elements an earlier fragment left, e.g. find them first with
+    revit_read("FILTER_ELEMENTS_BY_CATEGORY", ...) and pass
+    expect_from="filter-elements-by-category".
+
+    You are told only how many rows the table holds. The modeller edits it on
+    the page and applies it there: each Apply is one entry in Revit's undo
+    list, needs the Changes switch like any change, and writes nothing if any
+    row changed in Revit since the table was read.
+    """
+    companion_page = _companion_module()
+    if not companion_page.enabled():
+        return ("The Heron Companion is switched off in Revit, so no table was opened. "
+                "To turn it on, click the arrow under the Companion button on the "
+                "Heron tab.")
+    values = NEWLINE.join(["parameterNames=%s" % (parameters or "").replace(NEWLINE, " "),
+                           "maxRows=%d" % max(1, int(max_rows or 2000))])
+    out = {}
+    said = _through(revit_read, reply_out=out)("READ_ELEMENT_TABLE", values, expect_from)
+    reply = out.get("reply")
+    # revit_read has already refused, classified any failure and checked the
+    # pin; when it did not get a good reply, its own sentence is the answer.
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return said
+    # THE PIN'S REFUSAL STANDS: revit_read hands over the raw reply before it
+    # checks the model, so a good reply from ANOTHER model would otherwise
+    # open a table whose Apply targets the pinned one (Codex review of #362).
+    if pinned.check(reply):
+        return said
+
+    import json
+    provides = reply.get("provides") or {}
+    try:
+        table = json.loads(provides.get("tableJson") or "")
+    except ValueError:
+        table = None
+    if not isinstance(table, dict) or not table.get("rows"):
+        found = provides.get("findings")
+        return ("No table was opened: nothing came back to put in it%s. Nothing in the "
+                "model was changed." % (" - %s" % found if found else ""))
+
+    document = reply.get("document")
+    companion = companion_page.shared(bound_pid=_companion_revit)
+    companion_page.TABLES.open(document, table, _pin_identity())
+    shown = companion.recently_seen()
+    if not shown:
+        try:
+            import webbrowser
+            webbrowser.open(companion.pairing_address(), new=2)
+        except Exception:                            # noqa: BLE001 - the button still works
+            pass
+    rows = len(table.get("rows") or [])
+    more = table.get("truncated") or 0
+    return ("Table opened in the Heron Companion: %d element(s), columns %s, in %s.%s "
+            "The modeller edits and applies it there."
+            % (rows, ", ".join(table.get("columns") or []), document,
+               (" %d more were left out." % more) if more else ""))
 
 
 @server.tool()
@@ -2518,6 +2966,68 @@ def heron_diagnose() -> str:
     """
     import heron_diagnose as diagnosis
     return diagnosis.describe(diagnosis.diagnose())
+
+
+def _companion_revit():
+    """
+    The Revit the Companion page may call THIS chat's - only one the modeller
+    CHOSE (Codex review of #362). An ASSUMED binding is not sticky: the next
+    tool call re-decides it when a second Revit appears (heron_session's four
+    cases), so reading the cached pid would show the first Revit as this
+    chat's after it no longer is. Unchosen, the page follows its own rule -
+    one connected Revit shown as the only one, several listed and none picked
+    (Article 12a).
+    """
+    return binding.pid if binding.was_chosen else None
+
+
+def _companion_module():
+    """mcp/companion, imported on first use - it is not on the server's path."""
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    "..", "companion"))
+    import heron_companion as companion_page
+    return companion_page
+
+
+@server.tool()
+def heron_companion() -> str:
+    """
+    Open the Heron Companion - a page in the user's browser, beside Revit,
+    that shows which model and view are in front and what is selected, live.
+
+    Use when the user asks to open, show or bring back the Companion (or
+    "the Heron page", "the live view"). It opens the page itself; there is
+    no address to pass on, and none is given here on purpose. It reads
+    nothing from Revit through the pipe and changes nothing - the page
+    reads a small status file the add-in writes while the Heron button is
+    connected. The page never sends anything to you or any AI.
+    """
+    import webbrowser
+    companion_page = _companion_module()
+
+    # THE SWITCH IS THE OWNER'S (D-109): the Companion button's arrow in Revit.
+    if not companion_page.enabled():
+        return ("The Heron Companion is switched off in Revit, so it was not opened. "
+                "Heron itself is working as normal. To turn it on, click the arrow "
+                "under the Companion button on the Heron tab.")
+    companion = companion_page.shared(bound_pid=_companion_revit)
+    try:
+        address = companion.pairing_address()
+    except OSError as why:
+        return "The Heron Companion could not start on this PC: %s" % why
+
+    # THE ADDRESS CARRIES A ONE-TIME CODE, SO IT GOES TO THE BROWSER AND
+    # NOWHERE ELSE - never into this reply, where it would sit in the chat.
+    try:
+        opened = webbrowser.open(address, new=2)
+    except webbrowser.Error:
+        opened = False
+    if not opened:
+        return ("The Heron Companion is running, but Windows would not open a "
+                "browser for it. Nothing in Revit was touched.")
+    return ("The Heron Companion is open in your browser. It shows the model, "
+            "the view and the selection of the Revit this chat uses, and "
+            "changes nothing.")
 
 
 @server.tool()
@@ -4174,5 +4684,17 @@ if __name__ == "__main__":
     # event loop - the host waited and no reply ever came. Until it finishes,
     # every answer uses the lexical backend and says so. See heron_embed.warm().
     brain.warm()
+
+    # THE COMPANION KEEPER (D-109): follows the Companion switch every two
+    # seconds so the Companion button in Revit finds this chat's page. It
+    # reads a settings file and writes one note; it never touches the pipe,
+    # and a fault in it never reaches the chat.
+    try:
+        companion_page = _companion_module()
+        companion_page.CHANGES.apply_hook = _apply_change
+        companion_page.TABLES.apply_hook = _apply_table
+        companion_page.keep(bound_pid=_companion_revit)
+    except Exception as why:                         # noqa: BLE001 - never cost the chat
+        sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)
 
     server.run()

@@ -242,6 +242,37 @@ TOOLS = {
     # reach the bridge, through revit_health's own discovery, but it asks
     # nothing of a model and can change nothing.
     "heron_diagnose":           (READ,    None),
+
+    # The Companion page (D-108, docs/40). READ, no operation: it opens a page
+    # on 127.0.0.1 that reads the add-in's live status FILE - never the pipe -
+    # and in Phase 1 the page changes nothing. When the page learns to apply
+    # an edited table, that action gets its own row here at MODIFY, through
+    # run_fragment_write, and this row stays READ.
+    "heron_companion":          (READ,    None),
+
+    # The Companion's editable table (docs/40 section 8). ANALYZE through
+    # run_fragment_read, exactly revit_read's level: it reads the elements
+    # into a table and changes nothing. Writing the edited cells is the
+    # page's companion_table_apply below, never this tool.
+    "revit_edit_table":         (ANALYZE, "run_fragment_read"),
+
+    # Puts a settings capability's CURRENT values on the Companion page as an
+    # editable table, sending nothing to Revit. READ, no operation. The
+    # page's Apply is companion_apply below, at MODIFY - never this tool.
+    "revit_offer_settings":     (READ,    None),
+}
+
+
+# WHAT THE COMPANION PAGE CAN DO THAT THE CHAT CANNOT CALL (D-108, docs/40
+# section 13). Not MCP tools - the host never sees them - but their risk is
+# declared here, the one place a risk lives. companion_apply runs a settings
+# change again with the modeller's values through revit_change's own body,
+# so it is exactly revit_change's level and operation.
+COMPANION_ACTIONS = {
+    "companion_apply":          (MODIFY,  "run_fragment_write"),
+    # The edited cells of an element table, in one SET_PARAMETER_VALUES_BY_ID
+    # run through the same body: revit_change's level and operation.
+    "companion_table_apply":    (MODIFY,  "run_fragment_write"),
 }
 
 

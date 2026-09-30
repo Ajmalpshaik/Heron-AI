@@ -12,6 +12,10 @@ capability: SET_VIEW_WORKSET_VISIBILITY
 version: 1
 source: OFFICIAL
 risk: MODIFY
+# A settings change: after it runs from the chat, the Companion page offers its values
+# as a table the modeller can edit and apply again (docs/40 section 21.1).
+companion: settings
+companion-subject: view
 
 purpose: >
   Turns worksets on and off in ONE view - the Worksets tab of

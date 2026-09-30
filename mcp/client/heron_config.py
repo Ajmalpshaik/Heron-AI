@@ -54,6 +54,9 @@ DEFAULTS = {
     "publish.enabled": "false",
     "log.retainDays": "14",
     "ui.activityBanner": "true",
+    # The Companion page (D-108, D-109): on by default, switched from the
+    # Companion button's arrow in Revit. Off leaves Heron itself untouched.
+    "companion.enabled": "true",
 }
 
 # How far the client's deadline must sit beyond the add-in's, in seconds.
