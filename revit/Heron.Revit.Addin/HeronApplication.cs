@@ -206,6 +206,12 @@ namespace Heron.Revit.Addin
 
                 BuildRibbon(application);
 
+                // ROSLYN'S FIRST-USE COST, PAID NOW rather than on the
+                // modeller's first request (D-56 measured ~4.5 s of it). A
+                // background thread that touches no Revit API - see WarmUp.
+                if (config.GetBool("fragments.warmUp", true))
+                    RevitFragment.WarmUp(Log);
+
                 Log(string.Format(
                     "Heron loaded. Revit {0}, add-in {1}, pid {2}.",
                     revitVersion, addinVersion, Process.GetCurrentProcess().Id));
