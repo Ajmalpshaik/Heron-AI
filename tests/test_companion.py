@@ -555,6 +555,8 @@ def test_tables():
           "a change Revit did not take leaves no table")
     check('"REVIT DID NOT KEEP" in str(provides)' in server and "_PARTIAL" in server,
           "nor does a change Revit kept only part of")
+    check("if pinned.check(reply):" in server and "missing = [" in server,
+          "a table read from another model is never opened; a card lacking an input is never offered")
 
 
 def test_model_guard():

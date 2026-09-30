@@ -575,6 +575,9 @@ class Companion(object):
 
     def stop(self):
         with self._life:
+            # The page that was polling is gone with its server; the next
+            # offer must open a new tab (Codex review of #362).
+            self._seen = 0.0
             server, self._server = self._server, None
             if server is not None:
                 server.shutdown()

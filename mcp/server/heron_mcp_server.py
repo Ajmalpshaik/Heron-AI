@@ -89,6 +89,7 @@ import functools
 import inspect
 import io
 import os
+import re
 import sys
 import threading
 import time
@@ -1482,17 +1483,22 @@ def _took(reply):
     if "REVIT DID NOT KEEP" in str(provides):
         return False
     for key in _PARTIAL:
-        if key in provides and str(provides[key]).strip().lower() not in (
-                "", "0", "false", "none", "[]", "{}"):
+        if key in provides and _something(provides[key]):
             return False
     said = [provides[k] for k in _TOOK if k in provides]
     if not said:
         return True
+    return any(_something(v) for v in said)
 
-    def done(value):
-        text = str(value).strip().lower()
-        return text not in ("", "0", "false", "none", "[]", "{}")
-    return any(done(v) for v in said)
+
+def _something(value):
+    """Whether a reported value says something happened. The add-in reports
+    an empty list as "0 item(s)", which is nothing (Codex review of #362 -
+    reading it as something hid every successful category change's table)."""
+    text = str(value).strip().lower()
+    if text in ("", "0", "false", "none", "[]", "{}"):
+        return False
+    return not re.match(r"^0( |$)", text)
 
 
 def _offer_change(capability, folder, values, document):
@@ -1787,10 +1793,14 @@ def revit_offer_settings(capability: str, values: str) -> str:
                                                folder, "fragment.yaml"))
     supplied = _values_array(values)
     undeclared, _takeable = bridge.undeclared_values(supplied, needs or [])
-    if needs is None or undeclared or not supplied:
+    given = set(v["name"] for v in supplied)
+    missing = [n.get("name") for n in (needs or []) if n.get("source") == "request"
+               and n.get("name") not in given]
+    if needs is None or undeclared or not supplied or missing:
         return ("Those values do not fit '%s'%s, so nothing was offered. heron_resolve "
                 "names the values it takes."
-                % (capability, (" - not taken: %s" % ", ".join(undeclared)) if undeclared else ""))
+                % (capability, (" - not taken: %s" % ", ".join(undeclared)) if undeclared
+                   else (" - missing: %s" % ", ".join(missing)) if missing else ""))
 
     # NO CARD WITHOUT A MODEL: a card with no identity would apply to
     # whichever model the chat reaches at Apply time (Codex review of #362).
@@ -1848,6 +1858,11 @@ def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 200
     # revit_read has already refused, classified any failure and checked the
     # pin; when it did not get a good reply, its own sentence is the answer.
     if not isinstance(reply, dict) or not reply.get("ok"):
+        return said
+    # THE PIN'S REFUSAL STANDS: revit_read hands over the raw reply before it
+    # checks the model, so a good reply from ANOTHER model would otherwise
+    # open a table whose Apply targets the pinned one (Codex review of #362).
+    if pinned.check(reply):
         return said
 
     import json
