@@ -184,7 +184,10 @@ class Changes(object):
     so a break would smuggle in a second value.
     """
 
-    KEEP = 10
+    #: Thirty, not ten: Load from Revit offers one table per filter on the
+    #: view, and a view with a dozen filters must not push its own first
+    #: tables off the page.
+    KEEP = 30
     LONGEST = 2000
 
     def __init__(self):
@@ -193,6 +196,26 @@ class Changes(object):
         self._next = 0
         #: Set by the MCP server: (capability, [(name, value)]) -> answer text.
         self.apply_hook = None
+        #: Set by the MCP server: kind -> (answer text, [(capability, pairs)]).
+        #: The page's Load from Revit - it READS the active view and nothing more.
+        self.load_hook = None
+
+    def clear(self):
+        """The page's Clear tables: forget every table. Nothing reaches Revit."""
+        with self._lock:
+            self._cards = []
+
+    def load(self, kind):
+        """The page's Load from Revit: read the active view's settings of one
+        kind - "filters" or "categories" - and put each on the page as its own
+        table, replacing any table about the same thing. Reads only."""
+        hook = self.load_hook
+        if hook is None:
+            return {"ok": False, "error": "The chat is not ready to read Revit yet."}
+        if kind not in LOADS:
+            return {"ok": False, "error": "Heron cannot load '%s' as tables." % kind}
+        said, cards = hook(kind)
+        return {"ok": True, "count": len(cards), "reply": str(said)[:1500]}
 
     #: A value that is a SETTING - a colour, an override string, a yes/no, a
     #: number - rather than WHICH THING the setting is on.
@@ -282,6 +305,147 @@ class Changes(object):
 
 #: This process's after-change tables - one chat's.
 CHANGES = Changes()
+
+
+# ------------------------------------------------------------ Load from Revit
+# The page's Load buttons turn what two READ fragments say about the active
+# view into the values the matching SETTINGS capability takes. Both readers
+# answer as one string of fixed shape, written by Heron's own fragments:
+# REPORT_VIEW_FILTERS' filterSettings and REPORT_CATEGORY_OVERRIDES'
+# overrideList. A part neither reader below recognises is left out of the
+# table, never guessed at - and every table is applied with the filter's
+# other settings kept, so a part left out is a part left as it is.
+
+#: What each Load button reads, and the capability its tables apply.
+LOADS = {"filters": ("REPORT_VIEW_FILTERS", "APPLY_VIEW_FILTER"),
+         "categories": ("REPORT_CATEGORY_OVERRIDES", "SET_CATEGORY_GRAPHICS")}
+
+_RGB = re.compile(r"^(?:RGB)?\(?([0-9]{1,3}),([0-9]{1,3}),([0-9]{1,3})\)?$")
+
+
+def _pattern(name):
+    """A pattern as the override parser takes it: Revit's solid fill and
+    solid line as `solid`, anything else by its name."""
+    name = name.strip()
+    return "solid" if name.lower() in ("<solid fill>", "solid", "solid fill") else name
+
+
+def _colour(text):
+    m = _RGB.match(text.strip())
+    return "%s,%s,%s" % m.groups() if m else None
+
+
+def _cell(text, colour_key, pattern_key, weight_key=None, visible_key=None):
+    """One cell of the Filters tab - "pattern X, colour r,g,b, weight n" or
+    "<Solid fill>, colour r,g,b, Visible UNTICKED" - as override settings."""
+    out = []
+    text = text.strip()
+    if text == "no override":
+        return out
+    for bit in [b.strip() for b in text.split(", ") if b.strip()]:
+        if bit.startswith("colour "):
+            rgb = _colour(bit[7:])
+            if rgb:
+                out.append("%s=%s" % (colour_key, rgb))
+        elif bit.startswith("weight ") and weight_key:
+            if bit[7:].strip().isdigit():
+                out.append("%s=%s" % (weight_key, bit[7:].strip()))
+        elif bit == "Visible UNTICKED" and visible_key:
+            out.append("%s=false" % visible_key)
+        elif bit.startswith("pattern "):
+            # A line cell names its pattern "pattern X"...
+            out.append("%s=%s" % (pattern_key, _pattern(bit[8:])))
+        else:
+            # ...a fill cell names it bare, first: "<Solid fill>, colour ...".
+            out.append("%s=%s" % (pattern_key, _pattern(bit)))
+    return out
+
+
+def filter_cards(view, text):
+    """REPORT_VIEW_FILTERS' filterSettings -> one APPLY_VIEW_FILTER table per
+    filter: [(capability, [(name, value)])]."""
+    cards = []
+    for line in (text or "").splitlines():
+        m = re.match(r"^  '(.+)' - (.*)\.$", line)
+        if not m or m.group(2).startswith("could not be read"):
+            continue
+        name, parts = m.group(1), m.group(2).split("; ")
+        overrides, enabled, visible = [], "", "true"
+        cut_applies = not any(p.startswith("cut not applicable") for p in parts)
+        for part in parts:
+            if part.startswith("Enable Filter "):
+                enabled = {"ON": "true", "OFF": "false"}.get(part[14:], "")
+            elif part.startswith("Visibility "):
+                visible = "true" if part[11:].startswith("ON") else "false"
+            elif part.startswith("Projection/Surface Lines: "):
+                overrides += _cell(part[26:], "projection-line-colour", "projection-line-pattern",
+                                   "projection-line-weight")
+            elif part.startswith("Surface Patterns: foreground "):
+                fore, _, back = part[29:].partition(" / background ")
+                overrides += _cell(fore, "surface-foreground-colour", "surface-foreground-pattern",
+                                   visible_key="surface-foreground-visible")
+                overrides += _cell(back, "surface-background-colour", "surface-background-pattern",
+                                   visible_key="surface-background-visible")
+            elif part.startswith("Transparency ") and part[13:].isdigit():
+                overrides.append("transparency=%s" % part[13:])
+            elif part.startswith("Cut Lines: ") and cut_applies:
+                overrides += _cell(part[11:], "cut-line-colour", "cut-line-pattern", "cut-line-weight")
+            elif part.startswith("Cut Patterns: foreground ") and cut_applies:
+                fore, _, back = part[25:].partition(" / background ")
+                overrides += _cell(fore, "cut-foreground-colour", "cut-foreground-pattern",
+                                   visible_key="cut-foreground-visible")
+                overrides += _cell(back, "cut-background-colour", "cut-background-pattern",
+                                   visible_key="cut-background-visible")
+            elif part.startswith("Halftone "):
+                overrides.append("halftone=%s" % ("true" if part[9:] == "ON" else "false"))
+        cards.append(("APPLY_VIEW_FILTER", [
+            ("view", view), ("filter", name),
+            ("overrides", "; ".join(overrides) or "none"),
+            ("visible", visible), ("enabled", enabled),
+            ("keepOtherSettings", "true"), ("solidFill", "")]))
+    return cards
+
+
+#: REPORT_CATEGORY_OVERRIDES' words -> the override parser's. Longest first,
+#: so "cut line RGB" is never read as "line RGB".
+_CATEGORY_PARTS = (("cut line RGB", "cut-line-colour"), ("line RGB", "projection-line-colour"),
+                   ("surface pattern ", "surface-foreground-pattern"),
+                   ("surface RGB", "surface-foreground-colour"),
+                   ("cut pattern ", "cut-foreground-pattern"), ("cut RGB", "cut-foreground-colour"),
+                   ("line weight ", "projection-line-weight"))
+
+
+def category_cards(view, text):
+    """REPORT_CATEGORY_OVERRIDES' overrideList -> one SET_CATEGORY_GRAPHICS
+    table per overridden category."""
+    cards = []
+    for entry in (text or "").split("  ||  "):
+        name, sep, rest = entry.strip().partition(": ")
+        if not sep or not name:
+            continue
+        overrides = []
+        for bit in [b.strip() for b in rest.split(", ") if b.strip()]:
+            if bit == "halftone":
+                overrides.append("halftone=true")
+                continue
+            m = re.match(r"^([0-9]{1,3})% transparent$", bit)
+            if m:
+                overrides.append("transparency=%s" % m.group(1))
+                continue
+            for words, key in _CATEGORY_PARTS:
+                if bit.startswith(words):
+                    value = bit[len(words):].strip()
+                    if key.endswith("-colour"):
+                        value = _colour(value)
+                    elif key.endswith("-pattern"):
+                        value = None if value == "set" else _pattern(value)
+                    if value:
+                        overrides.append("%s=%s" % (key, value))
+                    break
+        if overrides:
+            cards.append(("SET_CATEGORY_GRAPHICS", [
+                ("view", view), ("categories", name), ("overrides", "; ".join(overrides))]))
+    return cards
 
 
 class Tables(object):
@@ -876,6 +1040,22 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             except (ValueError, TypeError, UnicodeDecodeError):
                 return self._refuse(400, "unreadable")
             return self._json(200, CHANGES.apply(card_id, body.get("values")))
+        if path == "/api/changes/clear":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            CHANGES.clear()
+            return self._json(200, {"ok": True})
+        if path == "/api/changes/load":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 4096)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except (ValueError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            return self._json(200, CHANGES.load(str(body.get("kind", ""))))
         return self._refuse(404, "not found")
 
     def do_OPTIONS(self):

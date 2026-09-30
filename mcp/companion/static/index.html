@@ -71,9 +71,16 @@
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
       Changes you can adjust
     </h2>
+    <div class="c-tools">
+      <button type="button" class="btn" id="c-load-filters" title="Read every filter on Revit's active view and show each as a table">Load filters</button>
+      <button type="button" class="btn" id="c-load-categories" title="Read every category with a colour set in Revit's active view and show each as a table">Load category colours</button>
+      <button type="button" class="btn-lite" id="c-clear" title="Remove every table from this page - nothing in Revit changes">Clear tables</button>
+      <span class="result" id="c-said" role="status" aria-live="polite"></span>
+    </div>
     <div id="c-list"></div>
-    <p id="c-empty" class="empty">When the chat changes a setting - a category's colour, a material, a
-      view filter - its values appear here. Edit them and press Apply again; the chat is not involved.</p>
+    <p id="c-empty" class="empty">Press <b>Load filters</b> or <b>Load category colours</b> to read the view
+      that is active in Revit - or ask the chat to change a setting. Edit the values and press Apply again;
+      the chat is not involved.</p>
   </section>
 </main>
 

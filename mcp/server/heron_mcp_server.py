@@ -1740,6 +1740,65 @@ def _apply_table(rows, identity=None):
     return text, result
 
 
+def _load_settings(kind):
+    """
+    The Companion's Load from Revit: READ the active view's filters or
+    category overrides and put each on the page as its own settings table, so
+    the modeller does not have to ask the chat for them. It reads only - the
+    read fragment runs through revit_read, with no transaction open - and the
+    tables it leaves apply exactly as a chat-offered one does. Called from the
+    page's thread, under the same lock every tool call holds. Returns
+    (answer text, the tables offered).
+    """
+    companion_page = _companion_module()
+    reader, _applier = companion_page.LOADS[kind]
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    with _revit_lock:
+        try:
+            session = binding.resolve()
+        except NotBound as unbound:
+            return str(unbound), []
+        views = session.request("list_views")
+        session.close()
+        if not isinstance(views, dict) or not views.get("ok"):
+            return "Revit did not say which view is active, so nothing was loaded.", []
+        wrong_model = pinned.check(views)
+        if wrong_model is not None:
+            return wrong_model, []
+        view = views.get("activeView")
+        if not view:
+            return "Revit has no active view, so nothing was loaded.", []
+        out = {}
+        values = ("viewName=%s: %s" % (views.get("activeViewType"), view)
+                  if kind == "filters" and views.get("activeViewType") else
+                  ("viewName=%s" % view if kind == "filters" else "view=%s" % view))
+        said = _through(revit_read, reply_out=out, origin="companion")(reader, values)
+        reply = out.get("reply")
+        if not isinstance(reply, dict) or not reply.get("ok"):
+            _note("companion_load", started, time.time() - clock, reply=said, outcome="refused")
+            return said, []
+        provides = reply.get("provides") or {}
+        if kind == "filters":
+            cards = companion_page.filter_cards(view, provides.get("filterSettings") or "")
+        else:
+            cards = companion_page.category_cards(view, provides.get("overrideList") or "")
+        # WHICH THING each table is about - the view and the filter, or the
+        # view and the categories - named by the applier's own card, exactly
+        # as a chat-offered table is, so a reload replaces a table rather
+        # than stacking a second one beside it.
+        folder, _status = _fragment_for(_applier)
+        subject = _settings_card(folder) if folder else None
+        for capability, pairs in cards:
+            companion_page.CHANGES.offer(capability, reply.get("document") or pinned.title or "",
+                                         pairs, _pin_identity(), subject or None)
+    what = "filter(s)" if kind == "filters" else "category(ies) with a colour set"
+    text = ("Loaded %d %s from the active view '%s'. Nothing in the model was changed."
+            % (len(cards), what, view) if cards else
+            "The active view '%s' has no %s. Nothing in the model was changed." % (view, what))
+    _note("companion_load", started, time.time() - clock, reply=text)
+    return text, cards
+
+
 def _proof_line(capability, folder):
     """
     How far what just ran is proven, in one sentence, read from its own files.
@@ -4863,6 +4922,7 @@ if __name__ == "__main__":
     try:
         companion_page = _companion_module()
         companion_page.CHANGES.apply_hook = _apply_change
+        companion_page.CHANGES.load_hook = _load_settings
         companion_page.TABLES.apply_hook = _apply_table
         companion_page.keep(bound_pid=_companion_revit)
     except Exception as why:                         # noqa: BLE001 - never cost the chat
