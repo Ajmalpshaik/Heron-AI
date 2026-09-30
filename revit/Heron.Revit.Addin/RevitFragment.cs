@@ -944,7 +944,9 @@ namespace Heron.Revit.Addin
                 if (Compiled.TryGetValue(source, out script)) return null;
             }
 
-            WarmUpFinished.Wait(WarmUpPatience);
+            // A warm-up that overran its patience is given up on for good:
+            // opening the gate means the NEXT compile does not wait again.
+            if (!WarmUpFinished.Wait(WarmUpPatience)) WarmUpFinished.Set();
 
             ScriptOptions options;
             try
