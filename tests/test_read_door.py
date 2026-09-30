@@ -48,6 +48,10 @@ MCP SDK, so CI runs it:
      FRAGMENT-ISSUES 5b-195). `_provides_lines` is lifted out of the server
      and RUN, the way tests/test_parameter_clash.py runs its helper, and must
      name every dictionary that held something on one NOT SENT line.
+  7. THE WORDS PATH, READ AS TEXT. `_by_words` lets a capability run only
+     after `_runs_as_matched` has checked the door would run the matched
+     provider and that its proof is not stale, and every candidate it hands
+     back carries its contract.
 
 WHAT IT CANNOT DO
 -----------------
@@ -360,6 +364,23 @@ def main():
         check(not any("NOT SENT" in line for line in prose),
               "and a fragment's own sentence that says entry(ies) is not "
               "taken for a dictionary")
+
+    print()
+    print("8. The words path runs only what was matched, and only while proven")
+    # Read as TEXT so CI checks it; tests/test_mcp_serves.py section 10 calls
+    # it through a real SDK. Three findings from review on PR #369.
+    words = body_of(text, "_by_words") or ""
+    gate = words.find("_runs_as_matched(")
+    runs = words.find('return capability, ""')
+    check(gate >= 0 and runs >= 0 and gate < runs,
+          "_by_words asks _runs_as_matched BEFORE it lets a capability run")
+    matched = body_of(text, "_runs_as_matched") or ""
+    check("proof_status(" in matched and '["stale"]' in matched,
+          "and that asks the fragment's own proof whether it is STALE")
+    check("provider" in matched and "runs != provider" in matched,
+          "and whether the door would run the provider that was matched")
+    check(words.count("_contract_lines(") >= 2,
+          "and every candidate handed back carries its contract, not only the first")
 
     print()
     if FAILURES:

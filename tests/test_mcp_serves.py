@@ -61,7 +61,10 @@ WHAT IT PROVES, when an SDK is installed
      declares and nothing it needs is missing. A DRAFT exact match, a ranked
      guess, and a proven match missing a value each send NOTHING and hand the
      candidates back with what to type - on both doors. A capability given
-     alongside the words wins.
+     alongside the words wins. A PROVEN match whose proof is STALE, or whose
+     door would run a different provider than the one matched, sends nothing
+     either; and EVERY candidate handed back carries what it needs typed
+     (three findings from review on PR #369).
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -502,6 +505,47 @@ async def exercise_words(module):
         said = await call("revit_change", {"request": "what is the best food for a cat"})
         check(not revit.asked and not resolved and "Nothing has been sent to Revit" in said,
               "revit_change with a ranked guess sends nothing and binds no session")
+
+        # A STALE PROOF, AND A DIFFERENT PROVIDER: both withheld before Revit.
+        phrase, capability, _ = _pick(module, "PROVEN", "READ", False)
+        if phrase:
+            real_status, real_for = module.brain.proof_status, module._fragment_for
+            try:
+                def stale(folder):
+                    got = real_status(folder)
+                    return dict(got, stale=True) if got else got
+                module.brain.proof_status = stale
+                revit.asked[:] = []
+                del resolved[:]
+                said = await call("revit_read", {"request": phrase})
+                check(not revit.asked and not resolved and "changed since" in said,
+                      "a PROVEN match whose proof is STALE sends nothing and says why")
+            finally:
+                module.brain.proof_status = real_status
+            try:
+                other, other_folder = first_with("READ", "DRAFT")
+                module._fragment_for = lambda cap: ((other_folder, "DRAFT")
+                                                    if cap == capability
+                                                    else real_for(cap))
+                revit.asked[:] = []
+                del resolved[:]
+                said = await call("revit_read", {"request": phrase})
+                check(not revit.asked and not resolved
+                      and "not the one they were matched to" in said,
+                      "a PROVEN match the door would run as ANOTHER provider "
+                      "sends nothing and says why")
+            finally:
+                module._fragment_for = real_for
+
+        # EVERY CANDIDATE CARRIES ITS CONTRACT.
+        said = await call("revit_read", {"request": "list sheets with no views"})
+        blocks = said.split("  also close   ")[1:]
+        check(blocks and all(("YOU SUPPLY" in b or "asks you for nothing" in b
+                              or "could not be read" in b) for b in blocks),
+              "every other candidate handed back (%d) carries what it needs typed"
+              % len(blocks))
+        check(said.count("A NEWLINE separates") == 1,
+              "and the separator is said once, not once per candidate")
 
         capability, _folder = first_with("READ", "PROVEN")
         revit.asked[:] = []

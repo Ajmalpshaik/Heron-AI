@@ -293,7 +293,10 @@ What changed, and what did not:
   They run in that one call **only** when the words are a phrasing a `PROVEN` capability declares (the
   identity route with its run-unasked permission, `heron_search.may_run_unasked`) **and** every value it
   needs is in `values`. Anything else — a `DRAFT` exact match, a ranked guess, a missing value — sends
-  **nothing** to Revit and hands back the candidates with what each needs typed. **Never a score
+  **nothing** to Revit and hands back the candidates, **every one** with what it needs typed. Two more
+  hand it back too (review on PR #369): a card still marked `PROVEN` whose **code changed since its
+  proof** (D-30), and a match where the fragment the door would run is **not the provider** the words
+  were matched to. **Never a score
   margin:** `heron_retrieve.Contest` measured that a wide lead does not separate a real question from
   an unreal one, and a threshold set here would be the dial D-33 forbids. **D-01 holds:** an exact
   declared phrasing leaves no meaning to decide, and every other case goes back to the host.
