@@ -798,23 +798,6 @@ namespace Heron.Revit.Addin
             return Json.ReadObjectArray("{\"needs\":" + needsText + "}", "needs");
         }
 
-        /// <summary>
-        /// Compile once, keep it. Returns null on success, or the refusal.
-        ///
-        /// A COMPILE FAILURE HERE IS NOT THE SAME AS A FAILURE IN THE GATE.
-        /// tools/check-fragments-compile.py builds against the reference
-        /// assemblies for a release; this builds against the assemblies Revit
-        /// has actually loaded. When those two disagree, this one is right -
-        /// and the disagreement is worth reporting rather than smoothing over,
-        /// because it means the gate is checking something the model is not.
-        ///
-        /// THIS PARAGRAPH SPENT ITS LIFE ABOVE THE WRONG METHOD. It sat as a
-        /// second, adjacent summary in front of RunSetupSteps, which C#
-        /// accepts - the last one wins - so it compiled clean while Compile
-        /// itself had no documentation at all and RunSetupSteps was headed by
-        /// a paragraph about compiling. Nothing catches that; it was found by
-        /// reading the file. FRAGMENT-ISSUES section 5b.
-        /// </summary>
         private static ScriptOptions BuildOptions()
         {
             return ScriptOptions.Default
@@ -866,6 +849,8 @@ namespace Heron.Revit.Addin
         {
             try
             {
+                WarmUpFinished.Reset();
+
                 var thread = new System.Threading.Thread(() =>
                 {
                     var clock = System.Diagnostics.Stopwatch.StartNew();
@@ -892,7 +877,7 @@ namespace Heron.Revit.Addin
                         script.CreateDelegate();
 
                         log(string.Format(CultureInfo.InvariantCulture,
-                            "Fragment warm-up done in {0} ms - the first fragment no longer pays Roslyn's start-up.",
+                            "Fragment warm-up compiled and emitted a throwaway script in {0} ms.",
                             clock.ElapsedMilliseconds));
                     }
                     catch (Exception failure)
@@ -900,6 +885,10 @@ namespace Heron.Revit.Addin
                         log("Fragment warm-up failed after " +
                             clock.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture) +
                             " ms, so the first fragment will be slow as before: " + Innermost(failure).Message);
+                    }
+                    finally
+                    {
+                        WarmUpFinished.Set();
                     }
                 });
 
@@ -910,10 +899,41 @@ namespace Heron.Revit.Addin
             }
             catch (Exception failure)
             {
+                WarmUpFinished.Set();
                 log("Fragment warm-up could not start: " + failure.Message);
             }
         }
 
+        /// <summary>
+        /// Set while no warm-up is running. A request that arrives mid-warm-up
+        /// - bridge.autoConnect starts the pipe straight after OnStartup -
+        /// waits on this rather than starting a SECOND cold compile on Revit's
+        /// thread, which would pay the whole cost again while fighting the
+        /// warm-up for the CPU. Bounded, so a warm-up that hangs costs one
+        /// wait and never a stuck Revit.
+        /// </summary>
+        private static readonly System.Threading.ManualResetEventSlim WarmUpFinished =
+            new System.Threading.ManualResetEventSlim(true);
+
+        private static readonly TimeSpan WarmUpPatience = TimeSpan.FromSeconds(30);
+
+        /// <summary>
+        /// Compile once, keep it. Returns null on success, or the refusal.
+        ///
+        /// A COMPILE FAILURE HERE IS NOT THE SAME AS A FAILURE IN THE GATE.
+        /// tools/check-fragments-compile.py builds against the reference
+        /// assemblies for a release; this builds against the assemblies Revit
+        /// has actually loaded. When those two disagree, this one is right -
+        /// and the disagreement is worth reporting rather than smoothing over,
+        /// because it means the gate is checking something the model is not.
+        ///
+        /// THIS PARAGRAPH SPENT ITS LIFE ABOVE THE WRONG METHOD. It sat as a
+        /// second, adjacent summary in front of RunSetupSteps, which C#
+        /// accepts - the last one wins - so it compiled clean while Compile
+        /// itself had no documentation at all and RunSetupSteps was headed by
+        /// a paragraph about compiling. Nothing catches that; it was found by
+        /// reading the file. FRAGMENT-ISSUES section 5b.
+        /// </summary>
         private static string Compile(string source, int prologueLines, out Script<object> script)
         {
             script = null;
@@ -922,6 +942,8 @@ namespace Heron.Revit.Addin
             {
                 if (Compiled.TryGetValue(source, out script)) return null;
             }
+
+            WarmUpFinished.Wait(WarmUpPatience);
 
             ScriptOptions options;
             try

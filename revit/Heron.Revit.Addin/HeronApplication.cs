@@ -210,7 +210,7 @@ namespace Heron.Revit.Addin
                 // modeller's first request (D-56 measured ~4.5 s of it). A
                 // background thread that touches no Revit API - see WarmUp.
                 if (config.GetBool("fragments.warmUp", true))
-                    RevitFragment.WarmUp(Log);
+                    StartFragmentWarmUp();
 
                 Log(string.Format(
                     "Heron loaded. Revit {0}, add-in {1}, pid {2}.",
@@ -255,6 +255,28 @@ namespace Heron.Revit.Addin
                     "The log that says why is in " + (LogDirectory ?? HeronPaths.Logs) + "\n\n" +
                     "Windows said: " + ex.Message);
                 return Result.Failed;
+            }
+        }
+
+        /// <summary>
+        /// The warm-up is an optimisation, so it may never be the reason
+        /// Heron does not start. Its own try cannot cover loading RevitFragment
+        /// and Roslyn - that happens before WarmUp's first line - so the call
+        /// is caught here, in a method of its own so the JIT resolves those
+        /// types inside this try and not while compiling OnStartup.
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(
+            System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static void StartFragmentWarmUp()
+        {
+            try
+            {
+                RevitFragment.WarmUp(Log);
+            }
+            catch (Exception failure)
+            {
+                Log("Fragment warm-up could not load, so the first fragment will be slow as before: " +
+                    failure.Message);
             }
         }
 
