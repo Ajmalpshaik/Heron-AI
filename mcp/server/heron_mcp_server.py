@@ -1154,6 +1154,58 @@ def _missing_values(folder, values):
             and n.get("name") not in given]
 
 
+def _runs_as_matched(folder, provider, capability):
+    """
+    "" when the fragment the door WILL run is the one the words were matched
+    to, and its proof still describes its code; otherwise the sentence saying
+    why the words path hands back instead. Two findings from review on PR #369.
+
+    THE PROVIDER THAT WAS AUTHORISED IS THE ONE THAT MUST RUN. The lookup
+    grants its run-unasked permission to one FRAGMENT, and the door picks a
+    fragment again, by capability. With two providers for one capability -
+    the transition while one replaces another - those can differ, and a DRAFT
+    or wrong-release provider would run on a permission granted to another.
+    So the door's own choice is checked against the matched id; nothing about
+    how the door chooses is changed.
+
+    A STALE PROOF IS NOT A PROOF (D-30). `may_run_unasked` reads the status
+    line, and a card can still say PROVEN after its code moved. _proof_line
+    already calls that unproven - but only after the run. Here it is asked
+    BEFORE, from the fragment's own files, and anything but a current PROVEN
+    goes back to the host.
+    """
+    if folder is None:
+        return "Heron could not find which fragment would run %s." % capability
+    card = os.path.join(_repo_root(), "brain", "fragments", folder,
+                        "fragment.yaml")
+    runs = None
+    try:
+        with io.open(card, "r", encoding="utf-8", errors="replace") as fh:
+            for line in fh:
+                if line.startswith("id:"):
+                    runs = line.split(":", 1)[1].strip().strip("\"'")
+                    break
+    except OSError:
+        runs = None
+    if not provider or runs != provider:
+        return ("They match %s exactly, but the fragment that would run it is "
+                "not the one they were matched to, so it is not run unasked."
+                % capability)
+
+    found = brain.proof_status(folder)
+    if found is None:
+        return ("They match %s exactly, but how far it is proven could not be "
+                "read, so it is not run unasked." % capability)
+    if found["status"] not in ("PROVEN", "PRODUCTION"):
+        return ("They match %s exactly, but its own file says %s, so it is "
+                "not run unasked." % (capability, found["status"] or "no status"))
+    if found["stale"]:
+        return ("They match %s exactly, but its code has changed since it was "
+                "proven, so that proof no longer describes it (D-30) and it is "
+                "not run unasked." % capability)
+    return ""
+
+
 def _by_words(request, door, values):
     """
     The user's own words to ONE capability - or the list, handed back.
@@ -1195,12 +1247,16 @@ def _by_words(request, door, values):
                       "does know." % request)
 
     exact = found.get("route") == "identity" and found.get("autorun")
-    missing = []
+    missing, withheld = [], ""
     if exact:
         folder, _status = _fragment_for(capability)
-        missing = _missing_values(folder, values) if folder else None
-        if missing == []:
-            return capability, ""
+        withheld = _runs_as_matched(folder, found.get("provider"), capability)
+        if withheld:
+            exact = False
+        else:
+            missing = _missing_values(folder, values)
+            if missing == []:
+                return capability, ""
 
     lines = ["Nothing has been sent to Revit: the words \"%s\" did not settle "
              "one capability on their own." % request]
@@ -1210,6 +1266,8 @@ def _by_words(request, door, values):
     elif exact:
         lines.append("  They match %s exactly, and it needs %s, which was not "
                      "given." % (capability, ", ".join(missing)))
+    elif withheld:
+        lines.append("  %s" % withheld)
     elif found.get("route") == "identity":
         lines.append("  %s." % found.get("note"))
     else:
@@ -1220,21 +1278,28 @@ def _by_words(request, door, values):
     lines.append("")
     lines.append("  best match   %s   (%s)"
                  % (capability, found.get("risk") or "risk unread"))
-    lines.extend(_contract_lines(capability))
+    lines.extend(_contract_lines(capability, separator=False))
 
+    # EVERY CANDIDATE CARRIES WHAT IT NEEDS TYPED, not only the first. A host
+    # that picks the second was otherwise one heron_resolve short of the run -
+    # the very turn this path exists to remove. Found by review on PR #369.
     seen = set([capability])
     others = []
     for c in found.get("candidates") or []:
         if c["capability"] in seen:
             continue
         seen.add(c["capability"])
-        others.append("    %-30s %-8s %s" % (c["capability"], c.get("risk") or "",
-                                             c["why"]))
-    if others:
+        others.append(c)
+    for c in others[:5]:
         lines.append("")
-        lines.append("  Others that came close:")
-        lines.extend(others[:5])
+        lines.append("  also close   %s   (%s)   %s"
+                     % (c["capability"], c.get("risk") or "risk unread", c["why"]))
+        lines.extend("  " + line if line else line
+                     for line in _contract_lines(c["capability"], separator=False))
 
+    lines.append("")
+    lines.append("  A NEWLINE separates one value from the next. A SEMICOLON "
+                 "does not - it belongs to the value it sits inside.")
     lines.append("")
     lines.append("  If one of these is what the user meant, call %s again with "
                  "capability=<it> and its values. If none is, ask the user."
@@ -2369,7 +2434,7 @@ def heron_capabilities() -> str:
     return "\n".join(lines)
 
 
-def _contract_lines(capability):
+def _contract_lines(capability, separator=True):
     """
     What the CALLER has to type to run this capability, and how to write each.
 
@@ -2446,9 +2511,12 @@ def _contract_lines(capability):
     # 2026-09-22 because a value got split on one, and the caller was told the
     # whole thing had been applied. Naming the inputs without naming the
     # separator leaves somebody one line away from that same afternoon.
-    out.append("")
-    out.append("  A NEWLINE separates one value from the next. A SEMICOLON "
-               "does not - it belongs to the value it sits inside.")
+    # `separator=False` only where a caller lists SEVERAL contracts and says
+    # the separator once itself, after the last - _by_words' candidate list.
+    if separator:
+        out.append("")
+        out.append("  A NEWLINE separates one value from the next. A SEMICOLON "
+                   "does not - it belongs to the value it sits inside.")
     if elsewhere:
         out.append("  %d other need(s) come from the model, the selection or "
                    "the fragment before it. You do not supply those."
