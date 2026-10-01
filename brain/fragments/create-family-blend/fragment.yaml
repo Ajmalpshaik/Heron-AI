@@ -1,0 +1,127 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-040
+semantic-identity: "blend one closed shape into another parallel to it on a family plane, solid or void"
+kind: action
+domain: revit.families
+capability: CREATE_FAMILY_BLEND
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Builds a BLEND in the family open in the Family Editor - one closed shape on
+  a named plane changing into another shape parallel to it: a rectangular duct
+  neck turning round, a tapered leg, a hopper, a pyramid. Create, Blend in the
+  Family Editor, with the base and top boundaries typed rather than drawn, as a
+  SOLID or a VOID.
+
+  **EACH PROFILE IS ONE LOOP**, no holes, written in the plane's own two model
+  coordinates, millimetres from the family origin - X,Y on a level or a
+  horizontal plane, X,Z on a plane facing front or back, Y,Z on a plane facing
+  left or right: `circle CX,CY R`, `rect X1,Y1 X2,Y2`, `polygon CX,CY R N`, or
+  corners `X,Y; X,Y; arc MX,MY X,Y` closed back to the first.
+
+  **THE BASE LIES ON THE PLANE AND THE TOP `topMm` FROM IT**, along the axis
+  the plane faces - up (+Z), back (+Y) or right (+X), negative the other way.
+  A blend starting off the plane is drawn on a plane where it starts.
+
+  **A CIRCLE IS ALWAYS TWO HALVES.** NewBlend's remarks refuse a loop of one
+  closed curve, because Revit pairs corners across the two profiles - so every
+  circle is split before Revit sees it. Revit pairs the corners itself; a
+  twist it chose is undone by hand with Edit Vertices.
+
+  **WHICH PROFILE IS "FIRST" IS REVIT'S CALL.** Its remarks warn that the
+  orientation of the loops and the plane decides which profile lands on the
+  sketch plane, and the SDK's own sample passes the top first - so the base is
+  offered first and, if Revit refuses, the top first, and the result says
+  which. Either way the extent is READ BACK, and a blend that does not run
+  from the plane to the top fails the call.
+
+  **A VOID CUTS NOTHING BY BEING MADE.** Through the API a void in an ordinary
+  family cuts a solid only once the two are combined - Revit's Cut Geometry.
+
+  **READ BACK, ALL OR NOTHING.** Along the axis it must run from the plane to
+  the top; across it, cover both profiles; a solid must hold a volume.
+  Anything else, or any refusal from Revit, fails the call and nothing is
+  kept.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The reference plane or level the base profile lies on, by name - "Ref.
+    # Level", "Box Top".
+    - name: workPlane
+      type: string
+      source: request
+    # The base profile, one loop - "rect -300,-200 300,200".
+    - name: baseProfile
+      type: string
+      source: request
+    # The top profile, one loop, in the same two coordinates - "circle 0,0 125".
+    - name: topProfile
+      type: string
+      source: request
+    # How far the top profile is from the plane, in millimetres along the axis
+    # the plane faces - 300 for 300 mm up from a level.
+    - name: topMm
+      type: double
+      source: request
+    # true for a solid, false for a void.
+    - name: solid
+      type: bool
+      source: request
+  provides:
+    - name: formId
+      # The new form's unique id - what a later step names it by.
+      role: result
+      type: string
+    - name: built
+      # The form as Revit now holds it: solid or void, the plane, how far the
+      # top is, its extent on all three axes in millimetres and a solid's
+      # volume.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was built, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyItemFactory.NewBlend(isSolid, profile1, profile2, sketchPlane)` - each
+  profile a single planar loop, the two in parallel planes - with
+  `SketchPlane.Create(Document, ElementId)`, `Arc.Create(end0, end1,
+  pointOnArc)` and `Element.UniqueId`, reads the same 2020 through 2027 (the
+  RevitAPI reference assemblies and their own XML remarks, read 2026-10-01).
+  `Blend.TopOffset` and `BottomOffset` exist on every release too; they are not
+  set here, because the remarks say their order depends on orientation - the
+  extent is read instead.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "blend a rectangle into a circle"            -> here
+#   "make a square to round transition in the family" -> here
+#   "sweep one shape into another along a path"  -> CREATE_FAMILY_SWEPT_BLEND
+
+utterances:
+  - blend a rectangle into a circle
+  - make a blend in the family
+  - make a square to round transition in the family
+  - create a tapered blend from this base to this top
+  - make a void blend

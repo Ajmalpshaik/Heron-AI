@@ -1,0 +1,143 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-038
+semantic-identity: "extrude any closed shape drawn on a family plane, solid or void"
+kind: action
+domain: revit.families
+capability: CREATE_FAMILY_EXTRUSION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Builds an EXTRUSION of any closed shape in the family open in the Family
+  Editor - a cylinder, a hexagon, an L-shaped bracket, a plate with holes - on
+  a named reference plane or level, from a start to an end, as a SOLID or a
+  VOID. Create, Extrusion in the Family Editor, with the sketch typed rather
+  than drawn. A rectangular box locked between four planes is
+  EXTRUDE_BETWEEN_PLANES; this is every other shape.
+
+  **THE SHAPE IS TYPED AS LOOPS**, `|` between them, the first the outline
+  and any inside it a hole:
+  `circle CX,CY R`, `rect X1,Y1 X2,Y2`, `polygon CX,CY R N` (a regular
+  polygon, first corner along the first coordinate), or corners
+  `X,Y; X,Y; arc MX,MY X,Y; X,Y` - a straight side to each corner, an arc
+  through MX,MY to X,Y, and the loop closed back to its first corner.
+
+  **IN THE PLANE'S OWN TWO MODEL COORDINATES, MILLIMETRES FROM THE FAMILY
+  ORIGIN.** On a level or a horizontal plane they are X,Y as seen in plan; on
+  a plane facing front or back, X,Z; on a plane facing left or right, Y,Z.
+  Never relative to the plane and never mirrored by the way it faces, so the
+  same numbers mean the same place whichever plane is named. A plane at an
+  angle is refused.
+
+  **START AND END RUN ALONG THE AXIS THE PLANE FACES** - up (+Z), back (+Y)
+  or right (+X), negative the other way - in millimetres from the plane, as
+  Extrusion Start and Extrusion End do. Revit measures along the plane's own
+  normal, which can point the other way, so both are turned onto it, and the
+  extent is READ BACK along the model axis to prove the turn was right.
+
+  **SKETCHED ON THE PLANE ITSELF**, from its element id, so the shape moves
+  with the plane. Nothing else ties it to the family's planes or parameters:
+  its flat faces are locked, and a round size labelled, by later steps.
+
+  **A VOID CUTS NOTHING BY BEING MADE.** Through the API a void in an ordinary
+  family cuts a solid only once the two are combined - Revit's Cut Geometry.
+  The solid-cut utilities refuse an ordinary family document outright (their
+  own remarks say so, 2020 to 2027), and a void reported as a hole that is not
+  one is the defect an earlier family build found. So a void is built and
+  said to cut nothing yet.
+
+  **READ BACK, ALL OR NOTHING.** The extent along the plane's axis must be
+  the start and end asked for, and across it the extent of the profile; a
+  solid must hold a volume. Anything else, or any refusal from Revit, fails
+  the call and nothing is kept.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The reference plane or level the shape is sketched on, by name - "Ref.
+    # Level", "Center (Front/Back)", "Box Top".
+    - name: workPlane
+      type: string
+      source: request
+    # The shape, as loops with `|` between - "circle 0,0 150",
+    # "rect -300,-200 300,200 | circle 0,0 50", "0,0; 600,0; 600,100; 100,100;
+    # 100,400; 0,400". Millimetres, in the plane's two model coordinates.
+    - name: profile
+      type: string
+      source: request
+    # Extrusion Start: millimetres from the plane along the axis it faces. 0
+    # starts on the plane.
+    - name: startMm
+      type: double
+      source: request
+    # Extrusion End, the same way - 500 for 500 mm up from a level.
+    - name: endMm
+      type: double
+      source: request
+    # true for a solid, false for a void.
+    - name: solid
+      type: bool
+      source: request
+  provides:
+    - name: formId
+      # The new form's unique id - what a later step names it by.
+      role: result
+      type: string
+    - name: built
+      # The form as Revit now holds it: solid or void, the plane, the loops, its
+      # extent on all three axes in millimetres and a solid's volume.
+      role: result
+      type: string
+    - name: notAFamily
+      # That the document in front is a project, not a family being edited.
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was built, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyItemFactory.NewExtrusion(isSolid, profile, sketchPlane, end)`,
+  `SketchPlane.Create(Document, ElementId)`, `Extrusion.StartOffset`,
+  `Arc.Create(end0, end1, pointOnArc)`, `Application.ShortCurveTolerance` and
+  `Element.UniqueId` read the same 2020 through 2027 (the RevitAPI reference
+  assemblies and their own XML remarks, read 2026-10-01). NewExtrusion's remarks
+  say an extrusion profile may hold several loops and that a whole circle is
+  split in two; it is split here before Revit sees it, so the same loop text
+  works for a blend, which refuses a loop of one curve.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "extrude a circle 300 diameter 500 high"     -> here
+#   "make a void extrusion"                      -> here, solid false
+#   "make a box between these planes"            -> EXTRUDE_BETWEEN_PLANES,
+#                                                   a box locked to four planes
+#   "make an opening in this wall"               -> CREATE_OPENING, a project
+#                                                   wall or floor, not a family
+
+utterances:
+  - extrude a circle 300 diameter 500 high in the family
+  - make a cylinder on the ref level
+  - extrude this shape on the reference plane
+  - make an extrusion with this profile
+  - create a void extrusion in the family
+  - extrude a hexagon 20 mm thick
+  - make an L shaped extrusion
+  - extrude a circle 300 diameter 500 high
+  - make a void extrusion

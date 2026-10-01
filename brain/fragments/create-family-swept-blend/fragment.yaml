@@ -1,0 +1,123 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-042
+semantic-identity: "sweep one closed shape into another along one path piece on a family plane, solid or void"
+kind: action
+domain: revit.families
+capability: CREATE_FAMILY_SWEPT_BLEND
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Builds a SWEPT BLEND in the family open in the Family Editor - one closed
+  shape changing into another along a single straight or curved piece of path:
+  a reducing bend, a rectangular-to-round elbow, a horn. Create, Swept Blend
+  in the Family Editor, with the path and both profiles typed rather than
+  drawn, as a SOLID or a VOID.
+
+  **THE PATH IS ONE PIECE** - Revit's own rule for a swept blend - written in
+  the plane's own two model coordinates, millimetres from the family origin: a
+  straight `X,Y; X,Y` or an arc `X,Y; arc MX,MY X,Y`. X,Y on a level or a
+  horizontal plane, X,Z on a plane facing front or back, Y,Z on a plane facing
+  left or right. A longer path is CREATE_FAMILY_SWEEP, which carries one
+  profile.
+
+  **EACH PROFILE IS ONE LOOP IN ITS OWN TWO COORDINATES**, millimetres, with
+  its origin where the path passes through it: the bottom profile sits square
+  to the path's start and the top square to its end - a rectangle at the start
+  and a circle at the end make a rectangular-to-round piece. Revit's remarks: each lies in its XY plane and is
+  moved onto the path by Revit, and a circle must be at least two pieces for
+  the corners to pair - so every circle is split before Revit sees it. A
+  profile symmetric about its origin comes out the same whichever way Revit
+  turns it;
+  an asymmetric one must be LOOKED AT.
+
+  **SKETCHED ON THE PLANE ITSELF**, from its element id, so the path moves
+  with it. Nothing else ties it to the family's planes or parameters.
+
+  **A VOID CUTS NOTHING BY BEING MADE.** Through the API a void in an ordinary
+  family cuts a solid only once the two are combined - Revit's Cut Geometry.
+
+  **READ BACK, ALL OR NOTHING.** The form must have an extent and a solid a
+  volume, both reported. Any refusal from Revit fails the call and nothing is
+  kept.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The reference plane or level the path is drawn on, by name.
+    - name: workPlane
+      type: string
+      source: request
+    # One piece of path - "0,0; 600,0" or "0,0; arc 424,176 600,600".
+    # Millimetres, in the plane's two model coordinates.
+    - name: path
+      type: string
+      source: request
+    # The profile at the path's start, one loop in its own coordinates -
+    # "rect -150,-100 150,100".
+    - name: bottomProfile
+      type: string
+      source: request
+    # The profile at the path's end, one loop - "circle 0,0 100".
+    - name: topProfile
+      type: string
+      source: request
+    # true for a solid, false for a void.
+    - name: solid
+      type: bool
+      source: request
+  provides:
+    - name: formId
+      # The new form's unique id - what a later step names it by.
+      role: result
+      type: string
+    - name: built
+      # The form as Revit now holds it: solid or void, the plane, the path's
+      # kind and length, its extent on all three axes in millimetres and a
+      # solid's volume.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was built, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyItemFactory.NewSweptBlend(isSolid, path, pathPlane, bottomProfile,
+  topProfile)` with a single Curve path, `Application.NewCurveLoopsProfile`,
+  `SketchPlane.Create(Document, ElementId)` and `Element.UniqueId` read the
+  same 2020 through 2027 (the RevitAPI reference assemblies and their own XML
+  remarks, read 2026-10-01). The remarks say each profile is one loop in the XY
+  plane, and that a cyclic profile must be split into at least two segments.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "sweep one shape into another along a path"  -> here
+#   "make a reducing elbow in the family"        -> here
+#   "sweep a profile along a path"               -> CREATE_FAMILY_SWEEP, one
+#                                                   profile, any length of path
+
+utterances:
+  - sweep one shape into another along a path
+  - make a swept blend in the family
+  - make a reducing elbow in the family
+  - make a rectangular to round bend with a swept blend
+  - create a void swept blend

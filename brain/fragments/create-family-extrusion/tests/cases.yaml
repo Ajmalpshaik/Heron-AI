@@ -1,0 +1,42 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template, open in front;
+      workPlane "Ref. Level", profile "circle 0,0 150", startMm 0, endMm 500,
+      solid true
+    expect: >
+      a solid cylinder read back as X -150 to 150, Y -150 to 150, Z 0 to 500
+      mm, volume about 35.343 L (pi x 0.15 x 0.15 x 0.5 m), and formId set -
+      LOOKED AT in 3D as one round body standing on the level
+
+  - given: >
+      workPlane "Center (Front/Back)", profile "0,0; 600,0; 600,100; 100,100;
+      100,400; 0,400", startMm -50, endMm 50, solid true
+    expect: >
+      an L-shaped plate 100 mm thick: X 0 to 600, Y -50 to 50, Z 0 to 400 mm -
+      the profile read in X,Z because the plane faces front and back
+
+  - given: >
+      workPlane "Ref. Level", profile "rect -300,-200 300,200 | circle 0,0 50",
+      startMm 0, endMm 20, solid true
+    expect: >
+      a 600 x 400 x 20 plate with a 100 mm round hole through it, volume
+      600 x 400 x 20 less the hole - about 4.643 L
+
+negative:
+  - given: profile "circle 0,0 150" with workPlane "Ref Lvl", a name the family does not have
+    expect: refused listing the family's named planes and levels, and no form made
+
+  - given: profile "0,0; 600,0; 1200,0", three corners on one line
+    expect: refused as enclosing no area, and no form made
+
+  - given: startMm 200 and endMm 200
+    expect: refused as having no depth, and no form made
+
+  - given: a project in front
+    expect: notAFamily true and nothing built anywhere
+
+second_route:
+  - >
+      Create, Extrusion in the Family Editor by hand, on the same work plane,
+      with the same sketch, Extrusion Start and End; the two forms' extents
+      and volumes read side by side in Properties and a section

@@ -101,6 +101,12 @@ compatibility-note: >
 #   "add reference planes at 300 each side"   -> CREATE_REFERENCE_PLANES
 #   "label the width with the Width parameter"-> LABEL_FAMILY_DIMENSION
 #   "make a box between these planes"         -> EXTRUDE_BETWEEN_PLANES
+#   "extrude a circle 300 diameter 500 high"  -> CREATE_FAMILY_EXTRUSION -
+#                                                any other shape, solid or void
+#   "make a revolve in the family"            -> CREATE_FAMILY_REVOLUTION
+#   "blend a rectangle into a circle"         -> CREATE_FAMILY_BLEND
+#   "sweep a profile along a path"            -> CREATE_FAMILY_SWEEP
+#   "sweep one shape into another along a path" -> CREATE_FAMILY_SWEPT_BLEND
 #   "put a supply air connector on the neck"  -> ADD_FAMILY_CONNECTOR
 #   "link the connector flow to a parameter"  -> LINK_FAMILY_PARAMETER - an
 #                                                element already in the family
