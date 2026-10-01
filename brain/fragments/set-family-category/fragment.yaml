@@ -116,6 +116,11 @@ compatibility-note: >
 #   "set the subcategory of these forms"      -> SET_FAMILY_FORM_SUBCATEGORY
 #   "link the body material to Body Material" -> SET_FAMILY_FORM_MATERIAL -
 #                                                one form, not every one
+#   "link the handle's visible to Show_Handle" -> LINK_FAMILY_FORM_PARAMETER -
+#                                                a form's Visible, angles or
+#                                                extrusion ends, one form
+#   "make this plane the left reference"      -> SET_FAMILY_PLANE_REFERENCE -
+#                                                Is Reference, Defines Origin
 #   "put a supply air connector on the neck"  -> ADD_FAMILY_CONNECTOR
 #   "link the connector flow to a parameter"  -> LINK_FAMILY_PARAMETER - an
 #                                                element already in the family

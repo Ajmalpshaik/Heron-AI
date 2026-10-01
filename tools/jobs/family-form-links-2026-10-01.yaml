@@ -1,0 +1,50 @@
+# The proof of link-family-form-parameter (LINK_FAMILY_FORM_PARAMETER,
+# FRG-PAR-029) and set-family-plane-reference (SET_FAMILY_PLANE_REFERENCE,
+# FRG-GEO-047) - NEEDS-CHECKING Group BP, rows BP1 and BP4.
+#
+#     python tools/batch-prove.py tools/jobs/family-form-links-2026-10-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/family-form-links-2026-10-01.yaml
+#
+# THE ARRANGEMENT IS MADE ONCE: the family "Heron Family Constraints Test" from
+# Group BM's job file, with one thing added by hand in Family Types - a YES/NO
+# TYPE parameter called "Show_Handle". Its solid cylinder's id is SOLID-ID, as
+# there - type the real one in before running. THE DRY RUN DOES NOT CATCH A
+# PLACEHOLDER LEFT IN (row 5b-264). "Body Top" is the horizontal plane at 500
+# that arrangement already has.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at the rows in Properties afterwards anyway (BD1).
+#
+# POSITIVE, link-family-form-parameter: the cylinder's Visible linked to
+# "Show_Handle" - `changed` 1, `linkReport` reading Visible not linked ->
+# "Show_Handle".
+# NEGATIVE: the same cylinder's Visible given "Neck Diameter", a LENGTH
+# parameter - refused naming both kinds, `changed` 0.
+#
+# POSITIVE, set-family-plane-reference: Body Top made Top - `changed` 1, and
+# the finding naming the number Revit stored for Top (BP4).
+# NEGATIVE: Body Top given Left, which goes on a plane facing left or right -
+# refused, `changed` 0.
+
+model: Heron Family Constraints Test (Group BM's arrangement, plus a Yes/No parameter "Show_Handle"), Revit 2024
+
+defaults:
+  in: "Heron Family Constraints Test"
+  write: true
+
+jobs:
+  - fragment: link-family-form-parameter
+    expect: changed
+    set:
+      forms: "SOLID-ID"
+      links: "Visible=Show_Handle"
+    negative-set:
+      forms: "SOLID-ID"
+      links: "Visible=Neck Diameter"
+
+  - fragment: set-family-plane-reference
+    expect: changed
+    set:
+      planes: "Body Top=Top"
+    negative-set:
+      planes: "Body Top=Left"

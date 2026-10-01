@@ -4,7 +4,7 @@
 > |---|---|
 > | **Type** | One-time plan, being executed. Retires as described at the bottom |
 > | **Asked for** | By the owner, 2026-10-01: *"do we have any capability to create family? ... extrude, revolve, all modelling capability ... the parameters, dimensioning, locking, all kind of thing ... maybe I will give only an image"* |
-> | **Owner of this note** | The session building it; after that, whoever proves Groups BL, BM and BN |
+> | **Owner of this note** | The session building it; after that, whoever proves Groups BL to BP |
 > | **Authority** | None of its own. The fragment cards, [NEEDS-CHECKING](../../NEEDS-CHECKING.md) and [FRAGMENT-ISSUES](../../FRAGMENT-ISSUES.md) row 5b-261 are where each fact lives |
 
 ## Where it started
@@ -29,6 +29,8 @@ next NEEDS-CHECKING letters; two opened from `main` at once would conflict on bo
 are opened against the branch before them, and say so.
 
 **A fourth, the same day:** `set-family-form-material` (FRG-PAR-028, [Group BO](../../needs-checking/group-bo.md)) - one form's material, linked to a family material parameter or set - because the widened skill's own NOT YET line named materials and nothing could give two forms of one family different ones. Row 5b-266.
+
+**A fifth, the same day:** `link-family-form-parameter` (FRG-PAR-029) - one form's Visible, a revolve's angles or an extrusion's ends linked to family parameters - and `set-family-plane-reference` (FRG-GEO-047) - Is Reference and Defines Origin - [Group BP](../../needs-checking/group-bp.md), because the skill's NOT YET line named Is Reference, and a part only some types have, or a bend whose angle the types choose, could not be built on one form. Row 5b-267. **Still NOT YET after it:** reference lines and angles - a part that swings about a pivot - and nested families.
 
 ## What was decided, and where each decision is recorded
 
@@ -55,7 +57,7 @@ from them. The Autodesk forum was out of reach from the cloud session.
 
 ## Closes when
 
-Every row of Groups BL, BM and BN has been run on the owner's PC - passed, or turned into a defect row -
+Every row of Groups BL to BP has been run on the owner's PC - passed, or turned into a defect row -
 and the skill's order has been followed once from a picture (BN). At that point the durable half is
 already in the cards, the register and row 5b-261; this note is deleted and its row in the
 [work-notes index](../README.md) struck.
