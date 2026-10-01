@@ -1,0 +1,32 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template; a length type
+      parameter "Neck Diameter" holding 300 in type "300"; a solid extrusion
+      "circle 0,0 150" on Ref. Level from 0 to 500 made by
+      create-family-extrusion; form = its id, parameterName "Neck Diameter",
+      diameter true
+    expect: >
+      a diameter dimension in the floor plan on the cylinder's top edge,
+      labelled "Neck Diameter" and reading 300 mm, valueMm 300 - LOOKED AT in
+      the plan; then FLEX_FAMILY with "Neck Diameter=400" and the cylinder
+      MEASURED 400 across. Whether it does is the open question this case
+      exists to answer - record either result
+
+  - given: the same cylinder, a length parameter "Radius" holding 150, diameter false
+    expect: a radial dimension labelled "Radius" reading 150 mm
+
+negative:
+  - given: the parameter "Neck Diameter" holding 250 while the cylinder is 300 across
+    expect: refused as no round edge of radius 125 mm, listing the radius 150, and nothing labelled
+
+  - given: parameterName "Neck Diameter" while it already labels a dimension
+    expect: refused as already labelling one, and nothing labelled
+
+  - given: a project in front
+    expect: notAFamily true and nothing labelled anywhere
+
+second_route:
+  - >
+      By hand on a copy: Edit Extrusion, a diameter dimension on the sketched
+      circle, labelled "Neck Diameter", Finish; both copies flexed with the same
+      value and their diameters read side by side

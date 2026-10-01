@@ -1,0 +1,30 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template with one solid
+      extrusion made by create-family-extrusion; forms = its id, subcategory
+      "Casing", which the family does not have
+    expect: >
+      createdSubcategory true; changed reads the form going from "Generic
+      Models" to "Casing" - and Object Styles, opened by hand, lists "Casing"
+      under Generic Models, and the form's Properties reads Subcategory Casing
+
+  - given: the same form, subcategory "none"
+    expect: >
+      createdSubcategory false; the form back on the family's own category,
+      read back the same way
+
+negative:
+  - given: forms = the id of a reference plane rather than a form
+    expect: refused as not a form, nothing changed and no subcategory made
+
+  - given: subcategory "" (nothing)
+    expect: refused as naming no subcategory, and nothing changed
+
+  - given: a project in front
+    expect: notAFamily true and nothing changed anywhere
+
+second_route:
+  - >
+      Manage, Object Styles in the Family Editor by hand on a copy: New
+      Subcategory "Casing"; then the form's Subcategory set in Properties; the
+      two copies' Object Styles and Properties read side by side

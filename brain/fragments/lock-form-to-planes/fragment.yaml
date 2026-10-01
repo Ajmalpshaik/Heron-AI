@@ -1,0 +1,104 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-044
+semantic-identity: "align and lock the flat faces of a family form to the named planes they lie on"
+kind: action
+domain: revit.families
+capability: LOCK_FORM_TO_PLANES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  ALIGNS AND LOCKS a form's flat faces to named reference planes and levels in
+  the family open in the Family Editor - the closed padlock after Align - so
+  the form follows the planes when a labelled dimension moves them. Any form:
+  an extrusion of any shape, a blend, the flat ends of a revolve or a sweep.
+  The step that makes a form parametric; EXTRUDE_BETWEEN_PLANES does it for its
+  own boxes, and this is every other form.
+
+  **A FACE IS LOCKED ONLY WHERE IT ALREADY LIES.** The alignment call's own
+  remarks: the two references must already be aligned, and the call will not
+  force them. So for each plane named, every flat face of the form lying on it
+  - parallel and within half a millimetre - is locked, and a plane with no face
+  on it refuses the whole call, naming where the form's faces facing that way
+  do lie.
+
+  **IN THE VIEW THAT SEES THE FACE EDGE ON**, as it is done by hand: a face
+  facing left-right or front-back in a floor plan, one facing up or down in an
+  elevation. A face Revit gives no reference for is named, not skipped -
+  reported from an earlier family build for a form sketched on a vertical
+  plane.
+
+  **THE FORM IS NAMED BY ITS ID** - the one its form tool gave back - or
+  SELECTED in the family's window and called `selected`. Exactly one.
+
+  **ALL OR NOTHING, READ BACK.** After the locks the form's extent must not
+  have moved - a lock never moves what it locks - and any refusal from Revit
+  fails the call with nothing kept. Locked is not yet proved to FOLLOW:
+  FLEX_FAMILY moves the planes and reads the form back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+    # The form, by the id its form tool gave back, or `selected`.
+    - name: form
+      type: string
+      source: request
+    # The reference planes and levels to lock it to, by name, commas between -
+    # "Box Left, Box Right, Box Top".
+    - name: planes
+      type: IList<string>
+      source: request
+  provides:
+    - name: locked
+      # Each lock made: which face, at which position, to which plane, in which
+      # view.
+      role: result
+      type: IList<string>
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was locked, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ItemFactoryBase.NewAlignment(view, reference1, reference2)` - whose remarks
+  list a planar face with a reference plane, and say the two must already be
+  aligned - `Dimension.IsLocked`, `Options.ComputeReferences`,
+  `PlanarFace.FaceNormal`, `ReferencePlane.GetReference()` and
+  `Level.GetPlaneReference()` read the same 2020 through 2027 (the RevitAPI
+  reference assemblies and their own XML remarks, read 2026-10-01).
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "lock the cylinder's top to Body Top"        -> here
+#   "align and lock this form to the planes"     -> here
+#   "make a box between these planes"            -> EXTRUDE_BETWEEN_PLANES,
+#                                                   which locks its own box
+#   "pin these elements"                         -> SET_PIN_STATE, a pin, not
+#                                                   a lock to a plane
+
+utterances:
+  - lock the cylinder's top to Body Top
+  - align and lock this form to the planes
+  - lock this extrusion to the reference planes
+  - lock the faces of this form to Box Left and Box Right
+  - make this blend follow the reference planes

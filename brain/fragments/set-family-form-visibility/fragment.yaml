@@ -1,0 +1,96 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-114
+semantic-identity: "set at which coarse, medium or fine level, and in which kinds of project view, a family form appears"
+kind: action
+domain: revit.families
+capability: SET_FAMILY_FORM_VISIBILITY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets a family form's VISIBILITY SETTINGS in the family open in the Family
+  Editor - the Visibility Settings dialog there: at which level, and in which
+  kinds of project view, a placed family draws the form. A 3D body hidden in a
+  coarse plan; a small part drawn only at the most precise level.
+
+  **BOTH LISTS ARE NAMED IN FULL** - levels from coarse, medium and fine, kinds
+  from plan, front and left, either one "all". What is not named is switched
+  OFF, so the call states the whole setting, never half of it. A list naming
+  nothing is refused: a form drawn at no level, or in no plan or elevation,
+  vanishes from them with no trace in the family. There is no switch for 3D,
+  which shows the form at the levels named.
+
+  **THE FORMS ARE NAMED BY THEIR IDS** - the ones the form tools gave back,
+  commas between - or SELECTED in the family's window and called `selected`.
+
+  **READ BACK, ALL OR NOTHING.** Each form's setting is read again after it is
+  written, and is reported before and after; one that does not read as asked
+  fails the call and nothing is kept. The Family Editor itself keeps showing
+  every form - this is what a project shows.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+    # The forms, by the ids the form tools gave back, commas between - or
+    # `selected`.
+    - name: forms
+      type: string
+      source: request
+    # The detail levels it shows in - "medium, fine", or "all".
+    - name: detailLevels
+      type: string
+      source: request
+    # The kinds of project view it shows in - "plan, front, left", or "all".
+    - name: views
+      type: string
+      source: request
+  provides:
+    - name: changed
+      # Each form, with its setting before and after.
+      role: result
+      type: IList<string>
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `new FamilyElementVisibility(FamilyElementVisibilityType.Model)` with
+  `IsShownInCoarse`, `IsShownInMedium`, `IsShownInFine`, `IsShownInTopBottom`,
+  `IsShownInFrontBack` and `IsShownInLeftRight`, and `GenericForm.SetVisibility`
+  / `GetVisibility`, read the same 2020 through 2027 (the RevitAPI reference
+  assemblies, read 2026-10-01).
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "show this form only in fine"                -> here
+#   "hide the body in plan views in the family"  -> here
+#   "hide ducts in this view"                    -> SET_CATEGORY_VISIBILITY,
+#                                                   a project view setting
+
+utterances:
+  - show this form only in fine
+  - hide the body in plan views in the family
+  - set the family element visibility of these forms
+  - show this extrusion in medium and fine only
+  - make this form visible only in front and side views

@@ -38,12 +38,15 @@ purpose: >
   matter. The size is read back from the box after it is locked and must match
   the planes, or nothing is kept.
 
-  **SOLID ONLY.** A void is not built here: a void cut made this way has never
-  been shown to remove anything - reported from an earlier family build, where
-  five different measurements found no volume change - and a cut that cannot
-  be proved is not offered. Round shapes are not built either: a circle's size
-  cannot be driven by a parameter through the API on the oldest release Heron
-  supports.
+  **SOLID ONLY, AND BOXES ONLY.** A void is not built here: a void made through
+  the API cuts nothing on its own - an earlier family build measured five ways
+  and found no volume change - and the cut is COMBINE_FAMILY_FORMS's, which
+  measures it. Any other shape, round ones included, is
+  CREATE_FAMILY_EXTRUSION's, and a round size is labelled by
+  LABEL_FAMILY_RADIUS. This card said until 2026-10-01 that a circle's size
+  cannot be driven through the API on Revit 2020; that was measured for a
+  PROJECT, and in a family the calls exist on every release - whether the
+  label drives the circle is NEEDS-CHECKING BM3 (row 5b-261).
 
   **IT BUILDS GEOMETRY AND NOTHING ELSE.** Material, visibility and
   subcategory are set in Properties; the planes' positions are decided by
@@ -107,7 +110,9 @@ compatibility-note: >
 #
 #   "make a box between these planes"          -> here
 #   "extrude the neck on top of the body"      -> here, the body's top as base
-#   "cut a hole with a void"                   -> not offered; see purpose
+#   "cut a hole with a void"                   -> CREATE_FAMILY_EXTRUSION with
+#                                                 solid false, then
+#                                                 COMBINE_FAMILY_FORMS
 #   "make a floor from these room boundaries"  -> CREATE_FROM_ROOM_BOUNDARIES,
 #                                                 project geometry, not a family
 

@@ -451,10 +451,11 @@ if (refused == null)
     findings.Add("Revit took the profiles " + order + ", and paired their corners itself - a twist it chose is "
         + "undone by hand with Edit Vertices.");
     findings.Add("Its base sketch is hosted on \"" + plane.Item4 + "\" and moves with it. Nothing else ties it to "
-        + "the family's planes or parameters yet.");
+        + "the family's planes or parameters yet - LOCK_FORM_TO_PLANES locks its flat faces to planes.");
     if (!solid)
         findings.Add("A void CUTS NOTHING by being made. In a family built through the API it cuts a solid only "
-            + "once the two are combined - Revit's Cut Geometry.");
+            + "once the two are combined - Revit's Cut Geometry, which COMBINE_FAMILY_FORMS does with this "
+            + "id and the solid's.");
 }
 
 if (refused != null) findings.Add(refused);

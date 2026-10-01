@@ -1,0 +1,34 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template with a reference
+      plane "Body Top" at height 500; a solid extrusion "circle 0,0 150" on Ref.
+      Level from 0 to 500 made by create-family-extrusion; form = its id,
+      planes "Body Top, Ref. Level"
+    expect: >
+      two locks - the top face to "Body Top" and the bottom face to "Ref.
+      Level", both in an elevation - LOOKED AT as closed padlocks; then "Body
+      Top" moved to 800 by hand and the cylinder measured 800 tall
+
+  - given: >
+      an L-shaped extrusion "0,0; 600,0; 600,100; 100,100; 100,400; 0,400" on
+      Ref. Level from 0 to 200, and planes "Leg End" at X 600 and "Leg Side" at
+      Y 0 (left-right and front-back); planes "Leg End, Leg Side"
+    expect: >
+      two locks in the floor plan - the end face at X 600 and the long side at
+      Y 0 - and the L's extent unchanged
+
+negative:
+  - given: planes "Body Top" placed at 450 while the cylinder's top is at 500
+    expect: refused as no flat face lying on "Body Top", naming the face at 500, and nothing locked
+
+  - given: form = the id of a reference plane rather than a form
+    expect: refused as not a form, and nothing locked
+
+  - given: a project in front
+    expect: notAFamily true and nothing locked anywhere
+
+second_route:
+  - >
+      Modify, Align in the Family Editor by hand on a copy: the plane, then the
+      face, then the padlock; the two copies flexed side by side with the plane
+      moved the same distance

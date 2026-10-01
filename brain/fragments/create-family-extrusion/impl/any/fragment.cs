@@ -441,10 +441,12 @@ if (refused == null)
 
     findings.Add("Built: " + built + " Its id is " + formId + ".");
     findings.Add("Its sketch is hosted on \"" + plane.Item4 + "\" and moves with it. Nothing else ties it to the "
-        + "family's planes or parameters yet - move a plane one of its edges lines up with and it stays where it is.");
+        + "family's planes or parameters yet - move a plane one of its edges lines up with and it stays where it is. "
+        + "LOCK_FORM_TO_PLANES locks its flat faces to planes, and LABEL_FAMILY_RADIUS labels a round size.");
     if (!solid)
         findings.Add("A void CUTS NOTHING by being made. In a family built through the API it cuts a solid only "
-            + "once the two are combined - Revit's Cut Geometry.");
+            + "once the two are combined - Revit's Cut Geometry, which COMBINE_FAMILY_FORMS does with this "
+            + "id and the solid's.");
 }
 
 if (refused != null) findings.Add(refused);

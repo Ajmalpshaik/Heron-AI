@@ -1,0 +1,29 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template with one solid
+      extrusion made by create-family-extrusion; forms = its id, detailLevels
+      "medium, fine", views "front, left"
+    expect: >
+      changed reads the form going from "coarse, medium, fine | plan,
+      front/back, left/right" to "medium, fine | front/back, left/right" - and
+      Visibility Settings on the form, opened by hand, shows exactly those
+      boxes ticked
+
+  - given: the same form, detailLevels "all", views "all"
+    expect: every box ticked again, read back the same way
+
+negative:
+  - given: detailLevels "rough"
+    expect: refused as not a detail level, and no form changed
+
+  - given: views "" (nothing)
+    expect: refused as naming no kind of view, and no form changed
+
+  - given: a project in front
+    expect: notAFamily true and nothing changed anywhere
+
+second_route:
+  - >
+      Select the form in the Family Editor, Visibility Settings, tick the same
+      boxes by hand; load the family into a project and look at it in a coarse
+      plan, a fine plan and an elevation

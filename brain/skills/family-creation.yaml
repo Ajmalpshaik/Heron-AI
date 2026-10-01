@@ -51,9 +51,14 @@ purpose: >
   never assumed (D-33). The family is saved by the modeller: Revit will not
   save the document open in its window while Heron holds it.
 
-  NOT YET: void cuts (never shown to cut when made this way), round shapes (a
-  circle's size cannot be driven through the API on Revit 2020), materials,
-  subcategories and Is Reference (set in Properties), and nested families.
+  NOT YET: materials and Is Reference (set in Properties), and nested
+  families. Voids, round shapes, every other form, subcategories and
+  visibility have their own tools now - COMBINE_FAMILY_FORMS,
+  CREATE_FAMILY_EXTRUSION and the other form tools, LABEL_FAMILY_RADIUS,
+  SET_FAMILY_FORM_SUBCATEGORY, SET_FAMILY_FORM_VISIBILITY - and are not yet
+  steps of this skill. This line said until 2026-10-01 that a circle's size
+  cannot be driven through the API on Revit 2020; that was measured for a
+  project, not a family (row 5b-261).
 
 # The words people say when they want a family made.
 utterances:

@@ -469,10 +469,12 @@ if (refused == null)
         findings.Add("A part-turn: which way it swept is Revit's rule for the plane's normal - LOOK at it, and if it "
             + "went the wrong way, run it again with the angles moved by 180 degrees.");
     findings.Add("Its sketch is hosted on \"" + plane.Item4 + "\" and moves with it. Nothing else ties it to the "
-        + "family's planes or parameters yet.");
+        + "family's planes or parameters yet - LOCK_FORM_TO_PLANES locks its flat ends, and LABEL_FAMILY_RADIUS "
+        + "labels a round size.");
     if (!solid)
         findings.Add("A void CUTS NOTHING by being made. In a family built through the API it cuts a solid only "
-            + "once the two are combined - Revit's Cut Geometry.");
+            + "once the two are combined - Revit's Cut Geometry, which COMBINE_FAMILY_FORMS does with this "
+            + "id and the solid's.");
 }
 
 if (refused != null) findings.Add(refused);

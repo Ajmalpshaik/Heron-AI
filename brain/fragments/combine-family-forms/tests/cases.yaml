@@ -1,0 +1,36 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template; a solid extrusion
+      "rect -300,-200 300,200" on Ref. Level from 0 to 20 and a VOID extrusion
+      "circle 0,0 50" on Ref. Level from -10 to 30, both made by
+      create-family-extrusion; forms = the two ids it gave back
+    expect: >
+      cut true; the solid measured 4.800 L before and about 4.643 L after -
+      0.157 L, the hole, taken away; combinationId set - LOOKED AT in 3D as a
+      plate with a round hole right through it
+
+  - given: >
+      two overlapping solid boxes, "rect 0,0 400,400" and "rect 200,200 600,600"
+      on Ref. Level from 0 to 100; forms = both ids
+    expect: >
+      cut false; 32.000 L apart and 28.000 L joined - the 4.000 L overlap
+      counted once - and no line between them in 3D
+
+negative:
+  - given: the same solid with a VOID that misses it, "circle 1000,0 50"
+    expect: refused as the void taking nothing away, cut false and no combination left in the family
+
+  - given: forms = two voids and no solid
+    expect: refused as every form a void, and nothing combined
+
+  - given: forms = one id only
+    expect: refused as needing two forms, and nothing combined
+
+  - given: a project in front
+    expect: notAFamily true and nothing combined anywhere
+
+second_route:
+  - >
+      Modify, Cut Geometry in the Family Editor by hand on a copy, picking the
+      same solid and the same void; the two solids' volumes read side by side
+      in a schedule or Properties

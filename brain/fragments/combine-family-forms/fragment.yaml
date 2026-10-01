@@ -1,0 +1,109 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-043
+semantic-identity: "join solid forms, or cut a solid form with a void, in the family being edited"
+kind: action
+domain: revit.families
+capability: COMBINE_FAMILY_FORMS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  CUTS a solid form with a void, or JOINS solid forms, in the family open in
+  the Family Editor, by combining the forms named into one combination: a void
+  in it cuts the solids, and the solids are made one. The step that turns a
+  void built by a form tool into a hole.
+
+  **THE ONLY ROUTE THE API HAS IN AN ORDINARY FAMILY.** The solid-cut utility
+  refuses any document that is not a project, a conceptual mass, a curtain
+  panel or an adaptive component, and the project utility's own remarks say it
+  is not available for family documents, 2020 to 2027. A combination is what
+  the Family Editor's own Cut and Join make, and Document.CombineElements makes
+  one. A void made through the API cuts nothing until this - a void drawn by
+  hand cuts what it touches when its sketch is finished, one made by the API
+  does not, which an earlier family build measured five ways.
+
+  **THE FORMS ARE NAMED BY THEIR IDS** - the ones the form tools gave back,
+  commas between - or SELECTED in the family's window and called `selected`.
+  At least two, and at least one a solid.
+
+  **THE CUT IS MEASURED, NOT ASSUMED.** The solids' volume is read before and
+  the combination's after: a void that took nothing away fails the call -
+  it misses the solid, or Revit did not cut with it - and so does a join that
+  came out bigger than its parts.
+
+  **A SOLID ALREADY IN A COMBINATION IS NAMED BY ITS COMBINATION.** Revit's
+  remarks: a solid belongs to at most one, so naming a member would quietly
+  merge two; it is refused with the combination's id. A void may cut several -
+  run this once per body to cut two bodies with one void and keep them apart.
+
+  Nothing from a call that fails is kept, and Undo, Unjoin Geometry or Uncut
+  Geometry take a combination apart again.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+    # The forms, by the ids the form tools gave back, commas between - or
+    # `selected` for what is selected in the family's own window.
+    - name: forms
+      type: string
+      source: request
+  provides:
+    - name: combinationId
+      # The combination's unique id - what a later step names it by.
+      role: result
+      type: string
+    - name: combined
+      # What was joined or cut, and the solids' volume before and after.
+      role: result
+      type: string
+    - name: cut
+      # True when a void was among the forms and took volume away.
+      role: result
+      type: bool
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was joined or cut, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Document.CombineElements(CombinableElementArray)` returning a
+  `GeomCombination`, `CombinableElement.Combinations`, `GenericForm.IsSolid`,
+  `Selection.GetElementIds` and `Document.GetElement(string)` read the same
+  2020 through 2027 (the RevitAPI reference assemblies and their own XML
+  remarks, read 2026-10-01). The same remarks are the evidence that
+  `SolidSolidCutUtils.AddCutBetweenSolids` and `JoinGeometryUtils.JoinGeometry`
+  refuse an ordinary family document on every release.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "cut the solid with the void"                -> here
+#   "join these solids in the family"            -> here
+#   "join these walls together"                  -> JOIN_GEOMETRY, a project
+#                                                   join, not a family form
+#   "make an opening in this wall"               -> CREATE_OPENING
+
+utterances:
+  - cut the solid with the void
+  - join these solids in the family
+  - cut geometry in the family
+  - join these family forms
