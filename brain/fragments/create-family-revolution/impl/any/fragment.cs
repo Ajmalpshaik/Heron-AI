@@ -404,10 +404,55 @@ if (refused == null)
 
     doc.Regenerate();
 
+    // THE EXTENT IS MEASURED ON THE SOLID ITSELF, never taken from the form's
+    // bounding box. That box comes from Revit's tessellation: a 32 mm sphere
+    // read 1.57 mm short on each side and was refused (5b-277). Every edge is
+    // walked, and every face is sampled on its own surface inside its trim, so
+    // the extent sits within a sampling step of the true curved surface.
+    var volume = 0.0;
+    var low = new[] { double.MaxValue, double.MaxValue, double.MaxValue };
+    var high = new[] { double.MinValue, double.MinValue, double.MinValue };
+    var measured = false;
+    Action<XYZ> take = p =>
+    {
+        for (var i = 0; i < 3; i++)
+        {
+            low[i] = Math.Min(low[i], along(p, i));
+            high[i] = Math.Max(high[i], along(p, i));
+        }
+        measured = true;
+    };
+    var geometry = form.get_Geometry(new Options());
+    if (geometry != null)
+        foreach (GeometryObject piece in geometry)
+        {
+            var body = piece as Solid;
+            if (body == null || body.Faces.Size == 0) continue;
+            if (body.Volume > 0) volume += body.Volume;
+            foreach (Edge edge in body.Edges)
+                for (var k = 0; k <= 256; k++)
+                    take(edge.Evaluate(k / 256.0));
+            foreach (Face face in body.Faces)
+            {
+                var box = face.GetBoundingBox();
+                for (var i = 0; i <= 128; i++)
+                    for (var j = 0; j <= 64; j++)
+                    {
+                        var uv = new UV(box.Min.U + (box.Max.U - box.Min.U) * i / 128.0,
+                            box.Min.V + (box.Max.V - box.Min.V) * j / 64.0);
+                        if (face.IsInside(uv)) take(face.Evaluate(uv));
+                    }
+            }
+        }
+
+    // A FORM WITH NO FACES TO MEASURE - a void can come back with none - falls
+    // back to its bounding box, and to the allowance a tessellated box needs.
     var bounds = form.get_BoundingBox(null);
-    if (bounds == null)
+    if (!measured && bounds == null)
         throw new InvalidOperationException("The revolve was built and has no extent to read back. NOTHING from "
             + "this call was kept.");
+    Func<int, double> readLow = i => measured ? low[i] : along(bounds.Min, i);
+    Func<int, double> readHigh = i => measured ? high[i] : along(bounds.Max, i);
 
     // A FULL TURN ABOUT AN AXIS LYING ALONG A MODEL AXIS HAS AN EXTENT THAT CAN
     // BE WORKED OUT: along the axis, what the profile covers; across it, the
@@ -427,30 +472,26 @@ if (refused == null)
                 var off = p - origin;
                 reach = Math.Max(reach, (off - direction.Multiply(off.DotProduct(direction))).GetLength());
             }
-        // A CURVED FACE'S EXTENT MAY BE READ FROM ITS TESSELLATION, a little inside
-        // the true arc, so the allowance grows with the size: half a percent, plus a
-        // millimetre. Enough for that, far too little for a profile on the wrong axes.
-        var slack = 1.0 / 304.8 + 0.005 * Math.Max(hi - lo, 2 * reach);
+        // MEASURED ON THE SURFACE, the extent is short of the true one by no more
+        // than a sampling step - under 0.06 percent of the size at 128 steps round
+        // and 64 along - so the allowance is half a millimetre plus a tenth of a
+        // percent: under 0.6 mm on a 32 mm sphere, still far too little for a
+        // profile on the wrong axes. Only a tessellated box keeps the old, wider
+        // one: a millimetre plus half a percent.
+        var size = Math.Max(hi - lo, 2 * reach);
+        var slack = measured ? halfMillimetre + 0.001 * size : 1.0 / 304.8 + 0.005 * size;
         var expected = new List<Tuple<int, double, double>> { Tuple.Create(spin, lo, hi) };
         foreach (var index in new[] { 0, 1, 2 }.Where(i => i != spin))
             expected.Add(Tuple.Create(index, along(origin, index) - reach, along(origin, index) + reach));
         foreach (var e in expected)
-            if (Math.Abs(along(bounds.Min, e.Item1) - e.Item2) > slack
-                || Math.Abs(along(bounds.Max, e.Item1) - e.Item3) > slack)
+            if (Math.Abs(readLow(e.Item1) - e.Item2) > slack
+                || Math.Abs(readHigh(e.Item1) - e.Item3) > slack)
                 throw new InvalidOperationException("The revolve reads " + axisLetters[e.Item1] + " "
-                    + mm(along(bounds.Min, e.Item1)) + " to " + mm(along(bounds.Max, e.Item1)) + " mm, and a full "
+                    + mm(readLow(e.Item1)) + " to " + mm(readHigh(e.Item1)) + " mm, and a full "
                     + "turn of this profile about this axis covers " + mm(e.Item2) + " to " + mm(e.Item3) + " mm. "
                     + "NOTHING from this call was kept.");
     }
 
-    var volume = 0.0;
-    var geometry = form.get_Geometry(new Options());
-    if (geometry != null)
-        foreach (GeometryObject piece in geometry)
-        {
-            var body = piece as Solid;
-            if (body != null && body.Volume > 0) volume += body.Volume;
-        }
     if (solid && volume <= 0)
         throw new InvalidOperationException("The revolve was built and holds no solid to measure. NOTHING from "
             + "this call was kept.");
@@ -460,8 +501,8 @@ if (refused == null)
         + axisLetters[axis] + " " + mm(at) + " mm): " + loops.Count + " loop(s) turned from " + plain(startDegrees)
         + " to " + plain(endDegrees) + " degrees about the axis " + plain(axisFrom[0]) + "," + plain(axisFrom[1])
         + " to " + plain(axisTo[0]) + "," + plain(axisTo[1]) + ". Reads "
-        + string.Join(", ", new[] { 0, 1, 2 }.Select(i => axisLetters[i] + " " + mm(along(bounds.Min, i)) + " to "
-            + mm(along(bounds.Max, i)))) + " mm"
+        + string.Join(", ", new[] { 0, 1, 2 }.Select(i => axisLetters[i] + " " + mm(readLow(i)) + " to "
+            + mm(readHigh(i)))) + " mm"
         + (solid ? "; volume " + Math.Round(volume * 28.316846592, 3).ToString(invariant) + " L." : ".");
 
     findings.Add("Built: " + built + " Its id is " + formId + ".");
