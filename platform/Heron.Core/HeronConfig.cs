@@ -101,6 +101,12 @@ namespace Heron.Core
                 // bridge exactly as they are. The Companion button's arrow on
                 // the ribbon is the switch.
                 { "companion.enabled", "true" },
+
+                // ROSLYN WARMED WHILE REVIT STARTS (RevitFragment.WarmUp). On
+                // by default: it only compiles a throwaway script on a
+                // background thread and touches no model. Off puts the first
+                // fragment's ~4.5 s back on the modeller's first request.
+                { "fragments.warmUp", "true" },
             };
 
         public static string FilePath { get { return Path.Combine(HeronPaths.Config, FileName); } }
