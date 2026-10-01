@@ -1,0 +1,101 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-075
+semantic-identity: "place a loaded component in the family being edited, nested in it"
+kind: action
+domain: revit.families
+capability: PLACE_NESTED_FAMILY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  PLACES A NESTED COMPONENT - one type of a family already loaded into the
+  family open in the Family Editor, placed in it: a motor in an air handler, a
+  handle on a valve, a fixing on a bracket. PLACE_FAMILY_INSTANCES places in a
+  project and cannot reach a family; Revit refuses its call there.
+
+  **HOW IT SITS IS THE NESTED FAMILY'S OWN KIND.** A Work Plane-Based one sits
+  on the reference plane or level named as its host, and moves with it - the
+  way a nested family is best made. A level-based one sits on the level named;
+  the API places one in a family only from Revit 2024, and on an earlier
+  release the answer says to make it Work Plane-Based and load it again. Any
+  other kind is refused by name.
+
+  **THE POINT** is in millimetres from the family's origin, written X,Y,Z, and
+  must lie on the plane or level named. It is READ BACK from the placed
+  family, with its type, and its id comes back for every later step.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The nested family's name, as loaded into this family.
+    - name: family
+      type: string
+      source: request
+    # One of its types, by name.
+    - name: type
+      type: string
+      source: request
+    # Millimetres from this family's origin, "X,Y,Z".
+    - name: point
+      type: string
+      source: request
+    # The reference plane or level it sits on - "Ref. Level" - or "none".
+    - name: host
+      type: string
+      source: request
+  provides:
+    - name: instanceId
+      # The placed family's unique id - what a later step names it by.
+      role: result
+      type: string
+    - name: placed
+      # What was placed, on what, and where it reads back.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was placed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ItemFactoryBase.NewFamilyInstance(Reference, XYZ, XYZ, FamilySymbol)` for a
+  Work Plane-Based family and `NewFamilyInstance(XYZ, FamilySymbol,
+  StructuralType)` read the same 2020 through 2027; the second's own remark
+  says it throws for a level-based family. `NewFamilyInstance(XYZ,
+  FamilySymbol, Level, StructuralType)` is on the project's creation object
+  2020 to 2023 and on the family's from 2024 (the RevitAPI reference
+  assemblies and their XML remarks, read 2026-10-01) - reached by reflection,
+  so every release compiles. `Document.Create` "throws when the current
+  document is family document", which is why PLACE_FAMILY_INSTANCES cannot
+  nest.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "put the motor family into this air handler"  -> here
+#   "place the nested handle on the front plane"  -> here
+#   "place these families in the project"         -> PLACE_FAMILY_INSTANCES
+#   "what families are nested in this one"        -> REPORT_NESTED_FAMILIES
+
+utterances:
+  - put the motor family into this air handler
+  - place the nested handle on the front plane
+  - nest this family in the one I am editing
+  - place a nested family at the origin of this family

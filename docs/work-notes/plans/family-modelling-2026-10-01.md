@@ -4,7 +4,7 @@
 > |---|---|
 > | **Type** | One-time plan, being executed. Retires as described at the bottom |
 > | **Asked for** | By the owner, 2026-10-01: *"do we have any capability to create family? ... extrude, revolve, all modelling capability ... the parameters, dimensioning, locking, all kind of thing ... maybe I will give only an image"* |
-> | **Owner of this note** | The session building it; after that, whoever proves Groups BL to BQ |
+> | **Owner of this note** | The session building it; after that, whoever proves Groups BL to BR |
 > | **Authority** | None of its own. The fragment cards, [NEEDS-CHECKING](../../NEEDS-CHECKING.md) and [FRAGMENT-ISSUES](../../FRAGMENT-ISSUES.md) row 5b-261 are where each fact lives |
 
 ## Where it started
@@ -30,7 +30,11 @@ are opened against the branch before them, and say so.
 
 **A fourth, the same day:** `set-family-form-material` (FRG-PAR-028, [Group BO](../../needs-checking/group-bo.md)) - one form's material, linked to a family material parameter or set - because the widened skill's own NOT YET line named materials and nothing could give two forms of one family different ones. Row 5b-266.
 
-**A fifth, the same day:** `link-family-form-parameter` (FRG-PAR-029) - one form's Visible, a revolve's angles or an extrusion's ends linked to family parameters - and `set-family-plane-reference` (FRG-GEO-047) - Is Reference and Defines Origin - [Group BP](../../needs-checking/group-bp.md), because the skill's NOT YET line named Is Reference, and a part only some types have, or a bend whose angle the types choose, could not be built on one form. Row 5b-267. **A sixth, the same day:** `draw-family-symbolic-lines` (FRG-VIEW-116) - a plan or elevation symbol - and `array-family-forms` (FRG-GEO-048) - one form repeated in a row, its count an Integer parameter - [Group BQ](../../needs-checking/group-bq.md), for the grilles, louvres and fans a picture shows. Row 5b-268. **Still NOT YET after it:** reference lines and angles - a part that swings about a pivot - and nested families.
+**A fifth, the same day:** `link-family-form-parameter` (FRG-PAR-029) - one form's Visible, a revolve's angles or an extrusion's ends linked to family parameters - and `set-family-plane-reference` (FRG-GEO-047) - Is Reference and Defines Origin - [Group BP](../../needs-checking/group-bp.md), because the skill's NOT YET line named Is Reference, and a part only some types have, or a bend whose angle the types choose, could not be built on one form. Row 5b-267.
+
+**A sixth, the same day:** `draw-family-symbolic-lines` (FRG-VIEW-116) - a plan or elevation symbol - and `array-family-forms` (FRG-GEO-048) - one form repeated in a row, its count an Integer parameter - [Group BQ](../../needs-checking/group-bq.md), for the grilles, louvres and fans a picture shows. Row 5b-268.
+
+**A seventh, the same day:** `place-nested-family` (FRG-ELE-075), `lock-nested-family-to-planes` (FRG-GEO-049) and `link-nested-type-parameter` (FRG-PAR-030) - a family inside a family - [Group BR](../../needs-checking/group-br.md). Row 5b-269. **Still NOT YET after it:** reference lines and angles - a part that swings about a pivot, because no documented call puts a form on a reference line's own plane - and a Family Type parameter that swaps a nested family's type.
 
 ## What was decided, and where each decision is recorded
 
@@ -57,7 +61,7 @@ from them. The Autodesk forum was out of reach from the cloud session.
 
 ## Closes when
 
-Every row of Groups BL to BQ has been run on the owner's PC - passed, or turned into a defect row -
+Every row of Groups BL to BR has been run on the owner's PC - passed, or turned into a defect row -
 and the skill's order has been followed once from a picture (BN). At that point the durable half is
 already in the cards, the register and row 5b-261; this note is deleted and its row in the
 [work-notes index](../README.md) struck.
