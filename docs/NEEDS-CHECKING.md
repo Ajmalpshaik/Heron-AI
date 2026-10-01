@@ -409,6 +409,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bl.md`](needs-checking/group-bl.md)
 
+## Group BM - what makes a family's forms parametric and makes a void cut: join and cut, face locks, a round size labelled, visibility, subcategory, and a list of the forms (2026-10-01)
+
+**Its own file:** [`needs-checking/group-bm.md`](needs-checking/group-bm.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

@@ -496,7 +496,8 @@ if (refused == null)
         + "asymmetric one. The path's sketch is hosted on \"" + plane.Item4 + "\" and moves with it.");
     if (!solid)
         findings.Add("A void CUTS NOTHING by being made. In a family built through the API it cuts a solid only "
-            + "once the two are combined - Revit's Cut Geometry.");
+            + "once the two are combined - Revit's Cut Geometry, which COMBINE_FAMILY_FORMS does with this "
+            + "id and the solid's.");
 }
 
 if (refused != null) findings.Add(refused);

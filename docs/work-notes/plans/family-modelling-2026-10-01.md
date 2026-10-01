@@ -21,7 +21,7 @@ from).
 | # | What | Group | State |
 |---|---|---|---|
 | 1 | **The forms.** `create-family-extrusion` (any shape, holes, solid or void), `-revolution`, `-blend`, `-sweep`, `-swept-blend` - FRG-GEO-038 to 042 | [BL](../../needs-checking/group-bl.md) | built, DRAFT, compiles 2020-2027 |
-| 2 | **What makes them parametric, and makes a void cut.** Join or cut forms through the family editor's own geometry combination; lock any form's flat faces to named planes; label a round form's radius or diameter; set a form's visibility by detail level and view | BM | next |
+| 2 | **What makes them parametric, and makes a void cut.** `combine-family-forms` (join, or cut with a void), `lock-form-to-planes`, `label-family-radius`, `set-family-form-visibility`, `set-family-form-subcategory`, and `report-family-forms` to read every form's id - FRG-GEO-043 to 046, FRG-VIEW-114 and 115 | [BM](../../needs-checking/group-bm.md) | built, DRAFT, compiles 2020-2027 |
 | 3 | **A family from a picture or a sketch.** The `family-creation` skill widened to every form, and the order a host follows from an image: category, template, sizes, planes, parameters, forms, locks, labels, flex | BN | after 2 |
 
 **Stacked, not side by side.** Each adds fragments, so each changes the same derived counts and takes the

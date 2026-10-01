@@ -1,0 +1,91 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-046
+semantic-identity: "what forms this open family is modelled from, with their ids, sizes and settings"
+kind: action
+domain: revit.families
+capability: REPORT_FAMILY_FORMS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists the FORMS a family is made of - every extrusion, revolve, blend, sweep
+  and swept blend in the family open in the Family Editor, solid or void, with
+  its id, its plane, its extent in millimetres, a solid's volume, its
+  subcategory, where it shows, and the cut or join it is in. Read before
+  locking, labelling, cutting or hiding forms.
+
+  **THE ONLY WAY TO NAME A FORM MADE BY HAND** - the form tools give back their
+  forms' ids, and one drawn by hand has none until this reads it.
+
+  **ONE LINE**, as REPORT_FAMILY_PARAMETERS answers: a list is cut to three
+  entries before anyone reads it.
+
+  **`which` NARROWS IT** - "all", or kinds and sides with commas between:
+  "void", "solid, revolve". A word that is neither is refused by name.
+
+  It reads only; nothing is changed.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # "all", or kinds and sides with commas between - "void", "solid, revolve".
+    - name: which
+      type: string
+      source: request
+  provides:
+    - name: formCount
+      # How many forms matched `which`.
+      role: result
+      type: int
+    - name: formList
+      # Every matching form on ONE line: solid or void, kind, id, plane,
+      # extent, volume, subcategory, visibility, and its join or cut.
+      role: result
+      type: string
+    - name: combinationList
+      # Every join or cut in the family, with its members, on one line.
+      role: result
+      type: string
+    - name: scanned
+      # How many forms the family holds before `which` narrowed them. Work done,
+      # never a thing found (D-52).
+      role: accounting
+      type: int
+    - name: notAFamily
+      # That the document in front is a project, not a family being edited.
+      role: accounting
+      type: bool
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `GenericForm` with `IsSolid`, `Subcategory`, `GetVisibility()` and
+  `CombinableElement.Combinations`; `Extrusion.Sketch`, `Revolution.Sketch`,
+  `Blend.BottomSketch`, `Sweep.PathSketch` and `SweptBlend.PathSketch`;
+  `Sketch.SketchPlane` and `GeomCombination.AllMembers` read the same 2020
+  through 2027 (the RevitAPI reference assemblies, read 2026-10-01).
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "what forms are in this family"              -> here
+#   "list the voids in this family with their ids" -> here
+#   "what parameters does this family have"      -> REPORT_FAMILY_PARAMETERS
+#   "what is inside this family"                 -> REPORT_NESTED_FAMILIES,
+#                                                   the families nested in it
+
+utterances:
+  - what forms are in this family
+  - list the voids in this family with their ids
+  - show me the extrusions in this family
+  - which solids and voids is this family made of

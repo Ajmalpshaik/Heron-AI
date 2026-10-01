@@ -1,0 +1,29 @@
+positive:
+  - given: >
+      a family with one solid extrusion "circle 0,0 150" on Ref. Level from 0
+      to 500 and one void extrusion "circle 0,0 50" from -10 to 510, both made
+      by create-family-extrusion; which "all"
+    expect: >
+      formCount 2; formList names the solid extrusion with the same id
+      create-family-extrusion gave back, "on Level : Ref. Level" or Revit's own
+      name for that sketch plane, X and Y -150 to 150, Z 0 to 500 mm, 35.343 L,
+      and the void beside it; scanned 2
+
+  - given: the same family, which "void"
+    expect: formCount 1, the void alone, and scanned still 2
+
+negative:
+  - given: which "revolve" on the same family, which holds no revolve
+    expect: formCount 0, formList empty, scanned 2 - the forms were looked at and none matched
+
+  - given: which "cylinder"
+    expect: refused by name as not a kind or a side, nothing read, formCount 0
+
+  - given: a project in front
+    expect: notAFamily true and nothing read
+
+second_route:
+  - >
+      In the Family Editor, select each form and read its Properties and its
+      Visibility Settings by hand; the extents measured with a dimension in a
+      plan and an elevation

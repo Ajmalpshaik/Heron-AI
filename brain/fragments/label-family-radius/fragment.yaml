@@ -1,0 +1,120 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-045
+semantic-identity: "tie the radius or diameter of a round family form to a length parameter"
+kind: action
+domain: revit.families
+capability: LABEL_FAMILY_RADIUS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  LABELS the radius or the diameter of a round form in the family open in the
+  Family Editor with a length parameter - a radial or diameter dimension on
+  one of the form's round edges, labelled - so the parameter can drive how big
+  the round part is: a duct neck's diameter, a knob's radius, a pipe stub's
+  size. LABEL_FAMILY_DIMENSION is the straight distance between two planes;
+  this is the round size.
+
+  **IN A FAMILY THE CALLS EXIST ON EVERY RELEASE.** The family editor's own
+  radial and diameter dimension calls read the same 2020 to 2027 in the
+  reference assemblies. CREATE_RADIAL_DIMENSION is 2025 and later because a
+  PROJECT cannot reach those calls - a family can.
+
+  **WHETHER THE LABEL DRIVES THE SHAPE IS NOT YET KNOWN.** By hand a circle is
+  labelled inside its sketch; through the API a family's sketch cannot be
+  edited on any release - the sketch-editing scope refuses a document that is
+  not a project, and will not start inside a transaction. So the label goes on
+  the finished form's round EDGE, and FLEX_FAMILY is what shows whether moving
+  the parameter then moves the circle. Revit refusing the label is reported in
+  its own words, and nothing is kept.
+
+  **THE PARAMETER MUST ALREADY HOLD THE SIZE.** A label moves the geometry to
+  the parameter's value - a new length reads zero - so the edge labelled is the
+  one whose radius the parameter already holds (half of it, for a diameter),
+  and a form with no such edge is refused, listing the radii it has. Of several,
+  the one seen as a circle in a plan or an elevation, nearest the viewer.
+
+  **ONE LABEL PER PARAMETER**, as LABEL_FAMILY_DIMENSION: a second dimension
+  driving the same parameter fights the first.
+
+  **THE FORM IS NAMED BY ITS ID** - the one its form tool gave back - or
+  SELECTED in the family's window and called `selected`.
+
+  **ALL OR NOTHING, READ BACK** after Revit regenerates: the dimension must
+  carry the parameter and read its value.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+    # The round form, by the id its form tool gave back, or `selected`.
+    - name: form
+      type: string
+      source: request
+    # The length parameter to label with - "Neck Diameter". It must already
+    # hold the size: SET_FAMILY_TYPE_VALUES first.
+    - name: parameterName
+      type: string
+      source: request
+    # true for a diameter dimension, false for a radius.
+    - name: diameter
+      type: bool
+      source: request
+  provides:
+    - name: labelled
+      # The dimension made, read back: radius or diameter, the edge's centre,
+      # the parameter, the view and the value it reads.
+      role: result
+      type: string
+    - name: valueMm
+      # What the labelled dimension reads after the write, in millimetres.
+      role: result
+      type: double
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was labelled, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyItemFactory.NewRadialDimension(view, arcRef, origin)` and
+  `NewDiameterDimension(view, arcRef, origin)`, `Dimension.FamilyLabel` (whose
+  remarks say a dimension is labelled by a family parameter in a family
+  document), `Dimension.Value`, `Edge.AsCurve()`, `Edge.Reference` and
+  `Arc.Radius` read the same 2020 through 2027 (the RevitAPI reference
+  assemblies and their own XML remarks, read 2026-10-01). `SketchEditScope`
+  exists only from 2022, and its constructor refuses a document that is not a
+  project. A parameter's kind is read by reflection, because it moved at 2022.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "label the neck diameter with Neck Diameter"   -> here
+#   "drive the radius of this cylinder by Radius"  -> here
+#   "label the width with the Width parameter"     -> LABEL_FAMILY_DIMENSION
+#   "put a radial dimension on this arc"           -> CREATE_RADIAL_DIMENSION,
+#                                                     a project annotation
+
+utterances:
+  - label the neck diameter with Neck Diameter
+  - drive the radius of this cylinder by Radius
+  - make the circle size parametric
+  - label the diameter of this round form
+  - tie the cylinder radius to a parameter

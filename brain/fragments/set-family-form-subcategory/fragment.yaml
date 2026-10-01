@@ -1,0 +1,99 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-115
+semantic-identity: "put family forms on a subcategory of the family's category, making it if it is new"
+kind: action
+domain: revit.families
+capability: SET_FAMILY_FORM_SUBCATEGORY
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Puts forms on a SUBCATEGORY of the family's own category in the family open
+  in the Family Editor - the Subcategory field in Properties - so a project can
+  colour, hide or line-weight that part of the family on its own: the
+  insulation, the hidden parts, the casing, the frame.
+
+  **A SUBCATEGORY THE FAMILY DOES NOT HAVE YET IS MADE**, under the family's
+  category, and the answer says it was made - Object Styles in the Family
+  Editor is where a modeller makes one by hand. A name that differs only by
+  case from one already there is that one, never a second. "none" puts the
+  forms back on the family's category itself, which Revit's remarks name as
+  the field's other value.
+
+  **A CATEGORY THAT TAKES NO SUBCATEGORIES IS REFUSED BY NAME**, from Revit's
+  own flag for it, before anything is made.
+
+  **THE FORMS ARE NAMED BY THEIR IDS** - the ones the form tools gave back,
+  commas between - or SELECTED in the family's window and called `selected`.
+
+  **READ BACK, ALL OR NOTHING.** Each form's subcategory is read again after it
+  is set, and reported before and after; one that does not read as asked fails
+  the call and nothing is kept - the new subcategory included.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+    # The forms, by the ids the form tools gave back, commas between - or
+    # `selected`.
+    - name: forms
+      type: string
+      source: request
+    # The subcategory's name - "Insulation", "Hidden Lines" - or "none" for the
+    # family's own category.
+    - name: subcategory
+      type: string
+      source: request
+  provides:
+    - name: changed
+      # Each form, with its subcategory before and after.
+      role: result
+      type: IList<string>
+    - name: createdSubcategory
+      # True when the subcategory was new and made here.
+      role: result
+      type: bool
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `GenericForm.Subcategory { get; set; }` - whose remarks say it takes the
+  family category or one of its subcategories - `Family.FamilyCategory`,
+  `Category.SubCategories`, `Category.CanAddSubcategory` and
+  `Categories.NewSubcategory(parent, name)` read the same 2020 through 2027
+  (the RevitAPI reference assemblies and their own XML remarks, read
+  2026-10-01).
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "put the insulation on its own subcategory"  -> here
+#   "set the subcategory of these forms"         -> here
+#   "make this family an air terminal"           -> SET_FAMILY_CATEGORY, the
+#                                                   family's own category
+
+utterances:
+  - put the insulation on its own subcategory
+  - set the subcategory of these forms
+  - make a subcategory for the frame and put it on it
+  - put this extrusion on the Hidden Lines subcategory

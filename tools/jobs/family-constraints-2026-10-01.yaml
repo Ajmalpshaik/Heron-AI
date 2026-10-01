@@ -1,0 +1,111 @@
+# The proof of what makes a family's forms parametric, and makes a void cut -
+# NEEDS-CHECKING Group BM, rows BM1 to BM6:
+#
+#   combine-family-forms          COMBINE_FAMILY_FORMS          FRG-GEO-043
+#   lock-form-to-planes           LOCK_FORM_TO_PLANES           FRG-GEO-044
+#   label-family-radius           LABEL_FAMILY_RADIUS           FRG-GEO-045
+#   set-family-form-visibility    SET_FAMILY_FORM_VISIBILITY    FRG-VIEW-114
+#   set-family-form-subcategory   SET_FAMILY_FORM_SUBCATEGORY   FRG-VIEW-115
+#   report-family-forms           REPORT_FAMILY_FORMS           FRG-GEO-046
+#
+#     python tools/batch-prove.py tools/jobs/family-constraints-2026-10-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/family-constraints-2026-10-01.yaml
+#
+# THE ARRANGEMENT IS MADE BY HAND ONCE, THEN EVERY JOB IS ROLLED BACK. File,
+# New, Family, the metric Generic Model template, saved as "Heron Family
+# Constraints Test", then in it - the two forms made with Group BL's
+# create-family-extrusion APPLIED, not by hand, because each run gives back its
+# form's id as `formId` and no reading tool reports a hand-made form's id yet:
+#
+#   a reference plane "Body Top", horizontal, at 500
+#   a length TYPE parameter "Neck Diameter" holding 300, in a type "300"
+#   a solid extrusion: circle 0,0 150 on Ref. Level, 0 to 500
+#   a void extrusion:  circle 0,0 50 on Ref. Level, -10 to 510
+#
+# Then type the two forms' ids - each `formId` - where the values below say
+# SOLID-ID and VOID-ID. (A single run by hand can say `selected` instead, with
+# the forms selected in the family's window.) THE DRY
+# RUN DOES NOT CATCH A PLACEHOLDER LEFT IN: it said "WOULD RUN" with SOLID-ID
+# still typed, on 2026-10-01. Revit refuses it by name at run time, which
+# proves nothing, so fill them in first.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK,
+# so the family is the same arrangement for every job - LOOK at it after the run
+# anyway: rollback has failed before on this PC (BD1).
+#
+# REPORT_FAMILY_FORMS IS FIRST AND READS ONLY - run it on its own before the
+# rest, and its `formList` gives both ids, which is how a form made by hand gets
+# one.
+#
+# NEGATIVES, ONE PER JOB: the void named twice, which is one form and is
+# refused as too few to join or cut (a void that misses its solid is BM1's
+# second case, by hand); a plane the cylinder has no flat face on; a radius
+# label asked of a parameter holding the diameter; a detail level that is not
+# one; no subcategory named; and the report asked for revolves, which this
+# family has none of.
+#
+# With two Revits connected to Heron, add `--session <process id>` to both
+# commands.
+
+model: Heron Family Constraints Test (a new family, metric Generic Model template), Revit 2024
+
+defaults:
+  in: "Heron Family Constraints Test"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: report-family-forms
+    expect: formList
+    write: false
+    set:
+      which: "all"
+    negative-set:
+      which: "revolve"
+
+  - fragment: combine-family-forms
+    expect: combinationId
+    set:
+      forms: "SOLID-ID, VOID-ID"
+    negative-set:
+      forms: "VOID-ID, VOID-ID"
+
+  - fragment: lock-form-to-planes
+    expect: locked
+    set:
+      form: "SOLID-ID"
+      planes: "Body Top, Ref. Level"
+    negative-set:
+      form: "SOLID-ID"
+      planes: "Center (Left/Right)"
+
+  - fragment: label-family-radius
+    expect: labelled
+    set:
+      form: "SOLID-ID"
+      parameterName: "Neck Diameter"
+      diameter: true
+    negative-set:
+      form: "SOLID-ID"
+      parameterName: "Neck Diameter"
+      diameter: false
+
+  - fragment: set-family-form-visibility
+    expect: changed
+    set:
+      forms: "SOLID-ID"
+      detailLevels: "medium, fine"
+      views: "front, left"
+    negative-set:
+      forms: "SOLID-ID"
+      detailLevels: "rough"
+      views: "front, left"
+
+  - fragment: set-family-form-subcategory
+    expect: changed
+    set:
+      forms: "SOLID-ID"
+      subcategory: "Casing"
+    negative-set:
+      forms: "SOLID-ID"
+      subcategory: ""
