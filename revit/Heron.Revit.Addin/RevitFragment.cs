@@ -798,6 +798,150 @@ namespace Heron.Revit.Addin
             return Json.ReadObjectArray("{\"needs\":" + needsText + "}", "needs");
         }
 
+        private static ScriptOptions BuildOptions()
+        {
+            return ScriptOptions.Default
+                .WithReferences(
+                    typeof(object).Assembly,                    // mscorlib
+                    typeof(Enumerable).Assembly,                // System.Core
+                    typeof(Document).Assembly,                  // RevitAPI
+                    typeof(UIDocument).Assembly)                // RevitAPIUI
+                .WithImports(HeronFragmentImports.Namespaces);
+        }
+
+        /// <summary>
+        /// A throwaway script that touches what a real fragment touches - the
+        /// globals, a Revit type, LINQ and a BLOCK-bodied lambda, the shape the
+        /// stack guard rewrites (it leaves expression lambdas alone) - so the
+        /// warm-up loads the same parts of Roslyn a first
+        /// fragment would. It is compiled and emitted, never run.
+        /// </summary>
+        private const string WarmUpSource =
+            "var names = new List<string>();\n" +
+            "ElementId none = ElementId.InvalidElementId;\n" +
+            "int count = names.Where(n => { return n.Length > 0; }).Count() + (doc == null ? 0 : 1);\n";
+
+        /// <summary>
+        /// Pay Roslyn's first-use cost while Revit starts, not on the
+        /// modeller's first request.
+        ///
+        /// WHY. D-56 measured it on Revit 2024: the FIRST fragment after Revit
+        /// opened took 5,193 ms to compile and the SECOND different fragment
+        /// 757 ms - so about four and a half seconds of that first wait was
+        /// Roslyn loading and JIT-compiling itself, not the fragment. Every
+        /// Revit restart paid it again, on whatever the modeller asked first.
+        ///
+        /// ON A BACKGROUND THREAD, AND IT TOUCHES NO REVIT API. Compiling reads
+        /// RevitAPI.dll's metadata as a file; it never calls into the model,
+        /// so it needs neither Revit's thread nor an open document, and it
+        /// cannot hold Revit up while it opens. BelowNormal priority so a
+        /// model opening at the same moment wins the CPU.
+        ///
+        /// NOT PUT IN THE CACHE. The cache is keyed by a fragment's source, and
+        /// this source is no fragment's - storing it would only be an entry
+        /// nothing can ever hit.
+        ///
+        /// IT MUST NEVER BE THE REASON HERON DOES NOT START. Everything is
+        /// caught and logged; a failed warm-up leaves the first fragment
+        /// exactly as slow as it was before this existed, and no worse.
+        /// Switched by fragments.warmUp, on by default.
+        /// </summary>
+        public static void WarmUp(Action<string> log, int operationTimeoutSeconds)
+        {
+            try
+            {
+                // NEVER LONGER THAN HALF A REVIT JOB'S OWN LIMIT, and never
+                // more than 30 s: a request that waits on a stalled warm-up
+                // must still finish inside revit.operationTimeoutSeconds.
+                WarmUpPatience = TimeSpan.FromSeconds(
+                    Math.Min(30, Math.Max(1, operationTimeoutSeconds / 2)));
+
+                WarmUpFinished.Reset();
+
+                // THE THREAD'S OWN BODY NAMES NO ROSLYN TYPE. An exception on a
+                // background thread that nothing catches ends the PROCESS -
+                // Revit itself. The Roslyn work is JIT-compiled only when
+                // WarmUpBody is called, which is inside this try.
+                var thread = new System.Threading.Thread(() =>
+                {
+                    var clock = System.Diagnostics.Stopwatch.StartNew();
+                    try
+                    {
+                        WarmUpBody(log, clock);
+                    }
+                    catch (Exception failure)
+                    {
+                        try
+                        {
+                            log("Fragment warm-up failed after " +
+                                clock.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture) +
+                                " ms, so the first fragment will be slow as before: " + failure.Message);
+                        }
+                        catch (Exception)
+                        {
+                            // A log that cannot be written must not take Revit with it.
+                        }
+                    }
+                    finally
+                    {
+                        WarmUpFinished.Set();
+                    }
+                });
+
+                thread.IsBackground = true;
+                thread.Priority = System.Threading.ThreadPriority.BelowNormal;
+                thread.Name = "Heron fragment warm-up";
+                thread.Start();
+            }
+            catch (Exception failure)
+            {
+                WarmUpFinished.Set();
+                log("Fragment warm-up could not start: " + failure.Message);
+            }
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(
+            System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static void WarmUpBody(Action<string> log, System.Diagnostics.Stopwatch clock)
+        {
+            var guarded = HeronStackGuard.Apply(WarmUpSource);
+            var script = CSharpScript.Create<object>(
+                guarded, BuildOptions(), typeof(HeronFragmentGlobals));
+
+            var errors = script.Compile()
+                .Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+                .Select(d => d.ToString())
+                .ToList();
+
+            if (errors.Count > 0)
+            {
+                log("Fragment warm-up did not compile, so the first fragment will be slow as before: " +
+                    string.Join("; ", errors.Take(3)));
+                return;
+            }
+
+            // Emit as well as compile: a real run emits, and that is Roslyn
+            // code a compile alone never JIT-compiles.
+            script.CreateDelegate();
+
+            log(string.Format(CultureInfo.InvariantCulture,
+                "Fragment warm-up compiled and emitted a throwaway script in {0} ms.",
+                clock.ElapsedMilliseconds));
+        }
+
+        /// <summary>
+        /// Set while no warm-up is running. A request that arrives mid-warm-up
+        /// - bridge.autoConnect starts the pipe straight after OnStartup -
+        /// waits on this rather than starting a SECOND cold compile on Revit's
+        /// thread, which would pay the whole cost again while fighting the
+        /// warm-up for the CPU. Bounded, so a warm-up that hangs costs one
+        /// wait and never a stuck Revit.
+        /// </summary>
+        private static readonly System.Threading.ManualResetEventSlim WarmUpFinished =
+            new System.Threading.ManualResetEventSlim(true);
+
+        private static TimeSpan WarmUpPatience = TimeSpan.FromSeconds(30);
+
         /// <summary>
         /// Compile once, keep it. Returns null on success, or the refusal.
         ///
@@ -824,16 +968,14 @@ namespace Heron.Revit.Addin
                 if (Compiled.TryGetValue(source, out script)) return null;
             }
 
+            // A warm-up that overran its patience is given up on for good:
+            // opening the gate means the NEXT compile does not wait again.
+            if (!WarmUpFinished.Wait(WarmUpPatience)) WarmUpFinished.Set();
+
             ScriptOptions options;
             try
             {
-                options = ScriptOptions.Default
-                    .WithReferences(
-                        typeof(object).Assembly,                    // mscorlib
-                        typeof(Enumerable).Assembly,                // System.Core
-                        typeof(Document).Assembly,                  // RevitAPI
-                        typeof(UIDocument).Assembly)                // RevitAPIUI
-                    .WithImports(HeronFragmentImports.Namespaces);
+                options = BuildOptions();
             }
             catch (Exception failure)
             {

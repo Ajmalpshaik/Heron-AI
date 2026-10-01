@@ -206,6 +206,12 @@ namespace Heron.Revit.Addin
 
                 BuildRibbon(application);
 
+                // ROSLYN'S FIRST-USE COST, PAID NOW rather than on the
+                // modeller's first request (D-56 measured ~4.5 s of it). A
+                // background thread that touches no Revit API - see WarmUp.
+                if (config.GetBool("fragments.warmUp", true))
+                    StartFragmentWarmUp();
+
                 Log(string.Format(
                     "Heron loaded. Revit {0}, add-in {1}, pid {2}.",
                     revitVersion, addinVersion, Process.GetCurrentProcess().Id));
@@ -250,6 +256,41 @@ namespace Heron.Revit.Addin
                     "Windows said: " + ex.Message);
                 return Result.Failed;
             }
+        }
+
+        /// <summary>
+        /// The warm-up is an optimisation, so it may never be the reason
+        /// Heron does not start. Its own try cannot cover loading RevitFragment
+        /// and Roslyn - that happens before WarmUp's first line - so the call
+        /// is caught here, and the type is named only in CallFragmentWarmUp,
+        /// so the JIT resolves it inside this try and not before it.
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(
+            System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static void StartFragmentWarmUp()
+        {
+            try
+            {
+                CallFragmentWarmUp();
+            }
+            catch (Exception failure)
+            {
+                Log("Fragment warm-up could not load, so the first fragment will be slow as before: " +
+                    failure.Message);
+            }
+        }
+
+        /// <summary>
+        /// The only method that names RevitFragment, so a Roslyn that fails to
+        /// load fails while THIS is JIT-compiled - which happens at the call
+        /// inside StartFragmentWarmUp's try, not before it.
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(
+            System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static void CallFragmentWarmUp()
+        {
+            RevitFragment.WarmUp(Log,
+                HeronConfig.Load().GetInt("revit.operationTimeoutSeconds", 60));
         }
 
         public Result OnShutdown(UIControlledApplication application)
