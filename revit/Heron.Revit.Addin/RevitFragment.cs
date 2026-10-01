@@ -846,46 +846,41 @@ namespace Heron.Revit.Addin
         /// exactly as slow as it was before this existed, and no worse.
         /// Switched by fragments.warmUp, on by default.
         /// </summary>
-        public static void WarmUp(Action<string> log)
+        public static void WarmUp(Action<string> log, int operationTimeoutSeconds)
         {
             try
             {
+                // NEVER LONGER THAN HALF A REVIT JOB'S OWN LIMIT, and never
+                // more than 30 s: a request that waits on a stalled warm-up
+                // must still finish inside revit.operationTimeoutSeconds.
+                WarmUpPatience = TimeSpan.FromSeconds(
+                    Math.Min(30, Math.Max(1, operationTimeoutSeconds / 2)));
+
                 WarmUpFinished.Reset();
 
+                // THE THREAD'S OWN BODY NAMES NO ROSLYN TYPE. An exception on a
+                // background thread that nothing catches ends the PROCESS -
+                // Revit itself. The Roslyn work is JIT-compiled only when
+                // WarmUpBody is called, which is inside this try.
                 var thread = new System.Threading.Thread(() =>
                 {
                     var clock = System.Diagnostics.Stopwatch.StartNew();
                     try
                     {
-                        var guarded = HeronStackGuard.Apply(WarmUpSource);
-                        var script = CSharpScript.Create<object>(
-                            guarded, BuildOptions(), typeof(HeronFragmentGlobals));
-
-                        var errors = script.Compile()
-                            .Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
-                            .Select(d => d.ToString())
-                            .ToList();
-
-                        if (errors.Count > 0)
-                        {
-                            log("Fragment warm-up did not compile, so the first fragment will be slow as before: " +
-                                string.Join("; ", errors.Take(3)));
-                            return;
-                        }
-
-                        // Emit as well as compile: a real run emits, and that
-                        // is Roslyn code a compile alone never JIT-compiles.
-                        script.CreateDelegate();
-
-                        log(string.Format(CultureInfo.InvariantCulture,
-                            "Fragment warm-up compiled and emitted a throwaway script in {0} ms.",
-                            clock.ElapsedMilliseconds));
+                        WarmUpBody(log, clock);
                     }
                     catch (Exception failure)
                     {
-                        log("Fragment warm-up failed after " +
-                            clock.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture) +
-                            " ms, so the first fragment will be slow as before: " + Innermost(failure).Message);
+                        try
+                        {
+                            log("Fragment warm-up failed after " +
+                                clock.ElapsedMilliseconds.ToString(CultureInfo.InvariantCulture) +
+                                " ms, so the first fragment will be slow as before: " + failure.Message);
+                        }
+                        catch (Exception)
+                        {
+                            // A log that cannot be written must not take Revit with it.
+                        }
                     }
                     finally
                     {
@@ -905,6 +900,35 @@ namespace Heron.Revit.Addin
             }
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(
+            System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static void WarmUpBody(Action<string> log, System.Diagnostics.Stopwatch clock)
+        {
+            var guarded = HeronStackGuard.Apply(WarmUpSource);
+            var script = CSharpScript.Create<object>(
+                guarded, BuildOptions(), typeof(HeronFragmentGlobals));
+
+            var errors = script.Compile()
+                .Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+                .Select(d => d.ToString())
+                .ToList();
+
+            if (errors.Count > 0)
+            {
+                log("Fragment warm-up did not compile, so the first fragment will be slow as before: " +
+                    string.Join("; ", errors.Take(3)));
+                return;
+            }
+
+            // Emit as well as compile: a real run emits, and that is Roslyn
+            // code a compile alone never JIT-compiles.
+            script.CreateDelegate();
+
+            log(string.Format(CultureInfo.InvariantCulture,
+                "Fragment warm-up compiled and emitted a throwaway script in {0} ms.",
+                clock.ElapsedMilliseconds));
+        }
+
         /// <summary>
         /// Set while no warm-up is running. A request that arrives mid-warm-up
         /// - bridge.autoConnect starts the pipe straight after OnStartup -
@@ -916,7 +940,7 @@ namespace Heron.Revit.Addin
         private static readonly System.Threading.ManualResetEventSlim WarmUpFinished =
             new System.Threading.ManualResetEventSlim(true);
 
-        private static readonly TimeSpan WarmUpPatience = TimeSpan.FromSeconds(30);
+        private static TimeSpan WarmUpPatience = TimeSpan.FromSeconds(30);
 
         /// <summary>
         /// Compile once, keep it. Returns null on success, or the refusal.

@@ -289,7 +289,8 @@ namespace Heron.Revit.Addin
             System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static void CallFragmentWarmUp()
         {
-            RevitFragment.WarmUp(Log);
+            RevitFragment.WarmUp(Log,
+                HeronConfig.Load().GetInt("revit.operationTimeoutSeconds", 60));
         }
 
         public Result OnShutdown(UIControlledApplication application)
