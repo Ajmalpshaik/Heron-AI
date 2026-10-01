@@ -1,0 +1,36 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template, open in front;
+      workPlane "Ref. Level", baseProfile "rect -300,-200 300,200", topProfile
+      "circle 0,0 125", topMm 300, solid true
+    expect: >
+      a square-to-round transition read back as X -300 to 300, Y -200 to 200,
+      Z 0 to 300 mm with a volume above zero, and which profile Revit took
+      first said in the findings - LOOKED AT in 3D as a rectangle at the
+      bottom turning into a circle 250 across at the top
+
+  - given: >
+      workPlane "Ref. Level", baseProfile "rect -200,-200 200,200", topProfile
+      "rect -50,-50 50,50", topMm 400, solid true
+    expect: >
+      a frustum of a square pyramid: X and Y -200 to 200, Z 0 to 400 mm, volume
+      about 28.0 L (0.4 x (0.16 + 0.01 + 0.04) / 3 m cubed)
+
+negative:
+  - given: baseProfile "rect -300,-200 300,200 | circle 0,0 50", a loop with a hole
+    expect: refused as more than one loop, and no form made
+
+  - given: topMm 0
+    expect: refused as having no height, and no form made
+
+  - given: workPlane "Ref. Level" and topProfile "0,0; 100,0; 200,0", a loop with no area
+    expect: refused as enclosing no area, and no form made
+
+  - given: a project in front
+    expect: notAFamily true and nothing built anywhere
+
+second_route:
+  - >
+      Create, Blend in the Family Editor by hand on the same work plane, with
+      the same base and top boundaries and Second End at the same height; the
+      two forms' extents and volumes read side by side

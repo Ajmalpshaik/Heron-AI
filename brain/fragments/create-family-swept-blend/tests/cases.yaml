@@ -1,0 +1,33 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template, open in front;
+      workPlane "Ref. Level", path "0,0; 600,0", bottomProfile "circle 0,0 100",
+      topProfile "circle 0,0 50", solid true
+    expect: >
+      a straight cone frustum 600 mm long along X, 200 across at its start and
+      100 at its end, read back as X 0 to 600 mm with a volume about 10.996 L
+      (pi x 0.6 x (0.01 + 0.0025 + 0.005) / 3 m cubed)
+
+  - given: >
+      workPlane "Ref. Level", path "0,0; arc 424.26,175.74 600,600",
+      bottomProfile "rect -150,-100 150,100", topProfile "circle 0,0 100",
+      solid true
+    expect: >
+      a rectangular-to-round quarter bend of 600 mm radius - LOOKED AT in 3D as
+      one piece, rectangular where the path starts and round where it ends
+
+negative:
+  - given: path "0,0; 600,0; 600,600", two pieces
+    expect: refused as more than one piece, naming CREATE_FAMILY_SWEEP, and no form made
+
+  - given: bottomProfile "rect -150,-100 150,100 | circle 0,0 50", two loops
+    expect: refused as more than one loop, and no form made
+
+  - given: a project in front
+    expect: notAFamily true and nothing built anywhere
+
+second_route:
+  - >
+      Create, Swept Blend in the Family Editor by hand on the same work plane,
+      with the same one-piece path and the two profiles drawn at its ends; the
+      two forms' extents and volumes read side by side

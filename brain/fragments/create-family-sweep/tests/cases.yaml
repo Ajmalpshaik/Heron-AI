@@ -1,0 +1,37 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template, open in front;
+      workPlane "Ref. Level", path "0,0; 1000,0", profile "circle 0,0 25",
+      solid true
+    expect: >
+      a straight rod 1000 mm long and 50 mm across, read back as X 0 to 1000,
+      Y -25 to 25 mm and 50 mm tall about the level whichever way Revit turned
+      the profile, volume about 1.963 L (pi x 0.025 x 0.025 x 1 m) - the
+      findings giving the same figure from area x length
+
+  - given: >
+      workPlane "Ref. Level", path "0,0; 1000,0; arc 1300,300 1000,600",
+      profile "circle 0,0 25 | circle 0,0 20", solid true
+    expect: >
+      a tube 50 mm across with a 40 mm bore, running 1000 mm and bending round
+      a 300 mm arc - LOOKED AT in 3D as one hollow piece with no kink at the
+      join
+
+negative:
+  - given: path "0,0" alone
+    expect: refused as a path with no length, and no form made
+
+  - given: path "0,0; 1000,0; arc 2000,0 3000,0", an arc whose three points lie on a line
+    expect: refused as not an arc, and no form made
+
+  - given: profile "rect 0,0 0,50", a rectangle with no width
+    expect: refused, and no form made
+
+  - given: a project in front
+    expect: notAFamily true and nothing built anywhere
+
+second_route:
+  - >
+      Create, Sweep in the Family Editor by hand on the same work plane, Sketch
+      Path with the same lines and arc and the same profile drawn at the path's
+      start; the two forms' extents and volumes read side by side

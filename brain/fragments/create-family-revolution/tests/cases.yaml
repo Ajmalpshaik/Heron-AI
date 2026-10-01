@@ -1,0 +1,35 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template, open in front;
+      workPlane "Center (Front/Back)", profile "0,0; 150,0; 150,300; 0,300",
+      axisLine "0,0 0,1000", startDegrees 0, endDegrees 360, solid true
+    expect: >
+      a solid cylinder read back as X -150 to 150, Y -150 to 150, Z 0 to 300
+      mm, volume about 21.206 L (pi x 0.15 x 0.15 x 0.3 m) - LOOKED AT in 3D
+      as one round body standing on Ref. Level
+
+  - given: >
+      the same plane, profile "0,0; 200,0; 0,400" (a triangle against the
+      axis), axisLine "0,0 0,1000", 0 to 360, solid true
+    expect: >
+      a cone 400 across and 400 high, X and Y -200 to 200, Z 0 to 400 mm,
+      volume about 16.755 L (pi x 0.2 x 0.2 x 0.4 / 3 m)
+
+negative:
+  - given: profile "-100,0; 100,0; 100,300; -100,300" with axisLine "0,0 0,1000"
+    expect: refused as crossing its axis, and no form made
+
+  - given: startDegrees 90 and endDegrees 45
+    expect: refused as the end angle not past the start, and no form made
+
+  - given: axisLine "0,0 0,0"
+    expect: refused as an axis with no direction, and no form made
+
+  - given: a project in front
+    expect: notAFamily true and nothing built anywhere
+
+second_route:
+  - >
+      Create, Revolve in the Family Editor by hand on the same work plane, with
+      the same boundary and axis line and the same angles; the two forms'
+      extents and volumes read side by side

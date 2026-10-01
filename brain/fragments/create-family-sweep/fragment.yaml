@@ -1,0 +1,121 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-041
+semantic-identity: "sweep a closed shape along a path drawn on a family plane, solid or void"
+kind: action
+domain: revit.families
+capability: CREATE_FAMILY_SWEEP
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Builds a SWEEP in the family open in the Family Editor - a closed shape
+  carried along a path drawn on a named plane: a handrail, a pipe run with its
+  bends, a frame, a gasket, a ring, a skirting. Create, Sweep in the Family
+  Editor, with the path and the profile typed rather than drawn, as a SOLID or
+  a VOID.
+
+  **THE PATH IS WRITTEN IN THE PLANE'S OWN TWO MODEL COORDINATES**,
+  millimetres from the family origin - X,Y on a level or a horizontal plane,
+  X,Z on a plane facing front or back, Y,Z on a plane facing left or right:
+  corners `X,Y; X,Y; arc MX,MY X,Y`. It is NOT closed back to its start; the
+  first corner written again at the end makes a closed path.
+
+  **THE PROFILE IS DRAWN ABOUT ITS OWN ORIGIN**, in millimetres, the origin
+  being where the path passes through it - a circle about that origin is a
+  rod, and a smaller circle within it makes a tube. Loops `|` between, as for
+  an extrusion. Revit's own remarks: the profile lies in its XY plane and is laid
+  square to the path where the path starts. A profile symmetric about its
+  origin comes out the same whichever way Revit turns it; an asymmetric one must be
+  LOOKED AT.
+
+  **SKETCHED ON THE PLANE ITSELF**, from its element id, so the path moves
+  with it. Nothing else ties it to the family's planes or parameters.
+
+  **A VOID CUTS NOTHING BY BEING MADE.** Through the API a void in an ordinary
+  family cuts a solid only once the two are combined - Revit's Cut Geometry.
+
+  **READ BACK, ALL OR NOTHING.** The form must have an extent and a solid a
+  volume; the profile's area and the path's length are reported beside it, so
+  a sweep that came out far from area x length is visible at once. Any refusal
+  from Revit fails the call and nothing is kept.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The reference plane or level the path is drawn on, by name.
+    - name: workPlane
+      type: string
+      source: request
+    # The path, corners and arcs with semicolons between - "0,0; 1000,0; arc
+    # 1300,300 1000,600". Millimetres, in the plane's two model coordinates.
+    - name: path
+      type: string
+      source: request
+    # The profile, loops with `|` between, in its own coordinates with 0,0 on
+    # the path - "circle 0,0 25".
+    - name: profile
+      type: string
+      source: request
+    # true for a solid, false for a void.
+    - name: solid
+      type: bool
+      source: request
+  provides:
+    - name: formId
+      # The new form's unique id - what a later step names it by.
+      role: result
+      type: string
+    - name: built
+      # The form as Revit now holds it: solid or void, the plane, the path's
+      # pieces and length, its extent on all three axes in millimetres and a
+      # solid's volume.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was built, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyItemFactory.NewSweep(isSolid, path, pathPlane, profile,
+  profileLocationCurveIndex, profilePlaneLocation)` with a CurveArray path,
+  `Application.NewCurveLoopsProfile(CurveArrArray)` for the profile,
+  `ProfilePlaneLocation.Start`, `SketchPlane.Create(Document, ElementId)` and
+  `Element.UniqueId` read the same 2020 through 2027 (the RevitAPI reference
+  assemblies and their own XML remarks, read 2026-10-01). The remarks say the
+  path is 2D, in one plane, and the profile lies in the XY plane and is moved
+  onto the profile plane by Revit.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "sweep a profile along a path"               -> here
+#   "make a handrail sweep in the family"        -> here
+#   "sweep one shape into another along a path"  -> CREATE_FAMILY_SWEPT_BLEND
+#   "draw a duct along this route"               -> CREATE_DUCT, a project
+#                                                   duct, not a family form
+
+utterances:
+  - sweep a profile along a path
+  - make a sweep in the family
+  - make a handrail sweep in the family
+  - sweep a circle along this path
+  - create a void sweep
+  - make a ring with a sweep

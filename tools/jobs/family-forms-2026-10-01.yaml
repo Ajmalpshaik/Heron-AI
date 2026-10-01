@@ -1,0 +1,117 @@
+# The proof of the five family form tools - NEEDS-CHECKING Group BL, rows BL1
+# to BL5:
+#
+#   create-family-extrusion     CREATE_FAMILY_EXTRUSION     FRG-GEO-038
+#   create-family-revolution    CREATE_FAMILY_REVOLUTION    FRG-GEO-039
+#   create-family-blend         CREATE_FAMILY_BLEND         FRG-GEO-040
+#   create-family-sweep         CREATE_FAMILY_SWEEP         FRG-GEO-041
+#   create-family-swept-blend   CREATE_FAMILY_SWEPT_BLEND   FRG-GEO-042
+#
+#     python tools/batch-prove.py tools/jobs/family-forms-2026-10-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/family-forms-2026-10-01.yaml
+#
+# THE ARRANGEMENT IS ONE EMPTY FAMILY, made by hand before the run: File, New,
+# Family, the metric Generic Model template, saved once as "Heron Family Forms
+# Test" so it has that title, and left OPEN in the Family Editor. `in:` names
+# it, so no run can land on a project. Nothing in it is needed beyond what the
+# template gives: Ref. Level, Center (Left/Right) and Center (Front/Back).
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK,
+# so the family stays empty between jobs - LOOK at it after the run anyway:
+# rollback has failed before on this PC (BD1).
+#
+# ZERO SETUP. Every value is typed; nothing is selected and nothing is chained.
+#
+# POSITIVE: a form is built and `formId` comes back set. The volumes each row
+# of the group names are the arithmetic check - a cylinder 300 across and 500
+# tall is 35.343 L, whatever any tool says.
+#
+# NEGATIVE: an input that must be REFUSED with nothing built - a profile that
+# crosses its axis, a loop with no area, a path of two pieces where one is
+# allowed. `formId` must come back empty and `refused` must say why.
+#
+# With two Revits connected to Heron, add `--session <process id>` to both
+# commands.
+
+model: Heron Family Forms Test (a new family, metric Generic Model template), Revit 2024
+
+defaults:
+  in: "Heron Family Forms Test"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: create-family-extrusion
+    expect: formId
+    set:
+      workPlane: "Ref. Level"
+      profile: "circle 0,0 150"
+      startMm: 0
+      endMm: 500
+      solid: true
+    negative-set:
+      workPlane: "Ref. Level"
+      profile: "0,0; 600,0; 1200,0"
+      startMm: 0
+      endMm: 500
+      solid: true
+
+  - fragment: create-family-revolution
+    expect: formId
+    set:
+      workPlane: "Center (Front/Back)"
+      profile: "0,0; 150,0; 150,300; 0,300"
+      axisLine: "0,0 0,1000"
+      startDegrees: 0
+      endDegrees: 360
+      solid: true
+    negative-set:
+      workPlane: "Center (Front/Back)"
+      profile: "-100,0; 100,0; 100,300; -100,300"
+      axisLine: "0,0 0,1000"
+      startDegrees: 0
+      endDegrees: 360
+      solid: true
+
+  - fragment: create-family-blend
+    expect: formId
+    set:
+      workPlane: "Ref. Level"
+      baseProfile: "rect -300,-200 300,200"
+      topProfile: "circle 0,0 125"
+      topMm: 300
+      solid: true
+    negative-set:
+      workPlane: "Ref. Level"
+      baseProfile: "rect -300,-200 300,200 | circle 0,0 50"
+      topProfile: "circle 0,0 125"
+      topMm: 300
+      solid: true
+
+  - fragment: create-family-sweep
+    expect: formId
+    set:
+      workPlane: "Ref. Level"
+      path: "0,0; 1000,0; arc 1300,300 1000,600"
+      profile: "circle 0,0 25 | circle 0,0 20"
+      solid: true
+    negative-set:
+      workPlane: "Ref. Level"
+      path: "0,0"
+      profile: "circle 0,0 25"
+      solid: true
+
+  - fragment: create-family-swept-blend
+    expect: formId
+    set:
+      workPlane: "Ref. Level"
+      path: "0,0; 600,0"
+      bottomProfile: "circle 0,0 100"
+      topProfile: "circle 0,0 50"
+      solid: true
+    negative-set:
+      workPlane: "Ref. Level"
+      path: "0,0; 600,0; 600,600"
+      bottomProfile: "circle 0,0 100"
+      topProfile: "circle 0,0 50"
+      solid: true
