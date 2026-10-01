@@ -22,7 +22,7 @@ from).
 |---|---|---|---|
 | 1 | **The forms.** `create-family-extrusion` (any shape, holes, solid or void), `-revolution`, `-blend`, `-sweep`, `-swept-blend` - FRG-GEO-038 to 042 | [BL](../../needs-checking/group-bl.md) | built, DRAFT, compiles 2020-2027 |
 | 2 | **What makes them parametric, and makes a void cut.** `combine-family-forms` (join, or cut with a void), `lock-form-to-planes`, `label-family-radius`, `set-family-form-visibility`, `set-family-form-subcategory`, and `report-family-forms` to read every form's id - FRG-GEO-043 to 046, FRG-VIEW-114 and 115 | [BM](../../needs-checking/group-bm.md) | built, DRAFT, compiles 2020-2027 |
-| 3 | **A family from a picture or a sketch.** The `family-creation` skill widened to every form, and the order a host follows from an image: category, template, sizes, planes, parameters, forms, locks, labels, flex | BN | after 2 |
+| 3 | **A family from a picture or a sketch.** The `family-creation` skill widened to every form, with a step zero - read the thing first, ask for every size once - and the order a host follows from an image: category, parameters, values, planes, labels, forms, locks, round labels, voids, connector, report, flex. Row 5b-265 | [BN](../../needs-checking/group-bn.md) | written, DRAFT |
 
 **Stacked, not side by side.** Each adds fragments, so each changes the same derived counts and takes the
 next NEEDS-CHECKING letters; two opened from `main` at once would conflict on both. The second and third
