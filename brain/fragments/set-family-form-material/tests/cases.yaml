@@ -1,0 +1,32 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template with a material type
+      parameter "Body Material" and two solid extrusions made by
+      create-family-extrusion; forms = the first form's id, material
+      "Body Material"
+    expect: >
+      linked true; changed reads the form going from "<By Category>" to
+      "linked to \"Body Material\"" - and in Properties the form's Material
+      field greyed, with the associate button showing Body Material; the
+      second form untouched
+
+  - given: the second form's id, material "Default" (a material the template holds)
+    expect: >
+      linked false; the second form going from "<By Category>" to "Default",
+      the first still linked
+
+negative:
+  - given: material "Width", a LENGTH parameter
+    expect: refused as not a material parameter, and no form changed
+
+  - given: forms = the id of a VOID extrusion
+    expect: refused as a void having no material, and nothing changed
+
+  - given: a project in front
+    expect: notAFamily true and nothing changed anywhere
+
+second_route:
+  - >
+      Select the form in the Family Editor, the small button at the end of the
+      Material row in Properties, pick Body Material; the two copies' Material
+      rows read side by side

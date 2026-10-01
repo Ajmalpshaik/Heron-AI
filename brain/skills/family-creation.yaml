@@ -73,9 +73,12 @@ purpose: >
       one piece are joined the same way.
   11. ADD_FAMILY_CONNECTOR on the face its service leaves by, sized by the
       parameters so the port follows the neck - for MEP families.
-  12. SET_FAMILY_FORM_SUBCATEGORY and SET_FAMILY_FORM_VISIBILITY where a
-      project must show or style a part on its own - the body hidden in a
-      coarse plan, the insulation on its own subcategory.
+  12. SET_FAMILY_FORM_MATERIAL for each form's material - linked to a family
+      material parameter when a project must set it per type, the body and
+      the neck apart - then SET_FAMILY_FORM_SUBCATEGORY and
+      SET_FAMILY_FORM_VISIBILITY where a project must show or style a part on
+      its own: the body hidden in a coarse plan, the insulation on its own
+      subcategory.
   13. REPORT_FAMILY_FORMS - every form read back with its size, against the
       list from step 0, before the proof.
   14. FLEX_FAMILY last, at sizes that are really different and not square - the
@@ -85,8 +88,7 @@ purpose: >
   The family is saved by the modeller: Revit will not save the document open
   in its window while Heron holds it.
 
-  NOT YET: materials (set in Properties, or LINK_FAMILY_PARAMETER for every
-  form of one kind), Is Reference (set in Properties), reference lines and
+  NOT YET: Is Reference (set in Properties), reference lines and
   angles - a part that swings or tilts - and nested families. Whether a label
   on a round form's edge DRIVES the circle is not yet known on any release:
   step 14 is where that is found out (NEEDS-CHECKING BM3). This line said
@@ -123,6 +125,7 @@ needs:
   - LABEL_FAMILY_RADIUS
   - COMBINE_FAMILY_FORMS
   - ADD_FAMILY_CONNECTOR
+  - SET_FAMILY_FORM_MATERIAL
   - SET_FAMILY_FORM_SUBCATEGORY
   - SET_FAMILY_FORM_VISIBILITY
   - REPORT_FAMILY_FORMS

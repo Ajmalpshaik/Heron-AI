@@ -28,6 +28,8 @@ from).
 next NEEDS-CHECKING letters; two opened from `main` at once would conflict on both. The second and third
 are opened against the branch before them, and say so.
 
+**A fourth, the same day:** `set-family-form-material` (FRG-PAR-028, [Group BO](../../needs-checking/group-bo.md)) - one form's material, linked to a family material parameter or set - because the widened skill's own NOT YET line named materials and nothing could give two forms of one family different ones. Row 5b-266.
+
 ## What was decided, and where each decision is recorded
 
 - **One tool per form, not one tool with a `kind`** - a request need cannot be left out unless it is a
