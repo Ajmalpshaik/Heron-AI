@@ -1,0 +1,34 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template; workPlane "Ref.
+      Level", shapes "circle 0,0 150 | path -150,-150; 150,150 | path
+      -150,150; 150,-150", detailLevels "coarse, medium", subcategory "Plan
+      Symbol"
+    expect: >
+      five lines - two halves of the circle and two diagonals - lineIds five
+      ids; the subcategory "Plan Symbol" made under Generic Models; in the Ref.
+      Level floor plan at Coarse and Medium the circle and cross show, at Fine
+      they do not; none shows in 3D
+
+  - given: the same with subcategory "none" and detailLevels "all"
+    expect: the lines on Generic Models itself, shown at every level
+
+negative:
+  - given: workPlane "No Such Plane"
+    expect: refused naming the planes and levels the family has, and nothing drawn
+
+  - given: shapes "path 0,0"
+    expect: refused - one point and no length - and nothing drawn
+
+  - given: detailLevels "sometimes"
+    expect: refused - not a detail level - and nothing drawn
+
+  - given: a project in front
+    expect: notAFamily true and nothing drawn anywhere
+
+second_route:
+  - >
+      The Ref. Level floor plan in the Family Editor at Coarse, Medium and Fine
+      in turn, the lines selected to read Subcategory in Properties and the
+      Visibility Settings dialog; then loaded into a test project and placed,
+      the plan at Coarse showing the symbol

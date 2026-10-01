@@ -1,0 +1,27 @@
+positive:
+  - given: >
+      the nested box from place-nested-family's first case, its own centre
+      planes set to Center (Left/Right) and Center (Front/Back); instance =
+      its id, locks "Center (Left/Right)=Center (Left/Right); Center
+      (Front/Back)=Center (Front/Back)"
+    expect: >
+      two sides locked, in the floor plan; padlocks shown closed when the
+      nested box is selected; its extent unchanged
+
+  - given: a host plane "Box Left" moved by a labelled dimension after the box's Center (Left/Right) is locked to a plane on it, then FLEX_FAMILY
+    expect: the nested box follows the plane it is locked to
+
+negative:
+  - given: locks "Left=Center (Left/Right)" where the nested family has no plane that is Left
+    expect: refused, naming the sides it does show, and nothing locked
+
+  - given: locks "Center (Left/Right)=Center (Front/Back)"
+    expect: refused - they face different ways - and nothing locked
+
+  - given: a project in front
+    expect: notAFamily true and nothing locked
+
+second_route:
+  - >
+      Select the nested family and the plane in the Family Editor: the
+      padlock on the alignment reads closed; FLEX_FAMILY moves both together

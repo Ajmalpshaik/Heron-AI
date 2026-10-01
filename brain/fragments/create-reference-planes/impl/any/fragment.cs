@@ -214,8 +214,8 @@ if (refused == null)
 
     if (created.Count > 0)
         findings.Add("Made " + created.Count + " reference plane(s) in \"" + view.Name + "\", each read "
-            + "back: " + string.Join("; ", created) + ". Is Reference is Revit's default - set it in "
-            + "Properties where a project must dimension to a plane.");
+            + "back: " + string.Join("; ", created) + ". Is Reference is Revit's default - "
+            + "SET_FAMILY_PLANE_REFERENCE sets it where a project must dimension to a plane.");
 
     if (alreadyThere.Count > 0)
         findings.Add(alreadyThere.Count + " were already in the family where they were asked for, and "

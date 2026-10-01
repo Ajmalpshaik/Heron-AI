@@ -1,0 +1,121 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-029
+semantic-identity: "link a particular form's own fields - Visible, a revolve's angles, an extrusion's ends - to family parameters in the family being edited"
+kind: action
+domain: revit.families
+capability: LINK_FAMILY_FORM_PARAMETER
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  LINKS a particular form's own fields to the family's parameters, in the
+  family open in the Family Editor - the Associate Family Parameter button at
+  the end of a row in Properties, for the forms named and no others. An
+  optional part, shown only in the types where its checkbox parameter is
+  ticked (Visible); a revolve whose sweep is an angle the types choose (Start Angle,
+  End Angle); an extrusion whose depth follows a length (Extrusion Start,
+  Extrusion End). Whatever else Revit lets be linked on a form, the same way.
+
+  **ONE FORM AT A TIME IS THE POINT.** LINK_FAMILY_PARAMETER links a field on
+  every element of a kind at once - every extrusion together - and a handle
+  that may be left out is one extrusion among several.
+
+  **MATERIAL IS LEFT TO SET_FAMILY_FORM_MATERIAL**, which also sets one or puts
+  it back to <By Category>, and is refused here by name.
+
+  **THE LINKS ARE PAIRS**, field = family parameter, semicolons between; "none"
+  in place of a family parameter unlinks. The field is the name in Properties.
+
+  **A LINK REVIT WOULD REFUSE IS REFUSED FIRST**: a family parameter that does
+  not exist, holds another kind of value - Revit's own remark, the two must be
+  the same type - or only reports; a field the form lacks, or that Revit will
+  not let be linked. Each refusal names the ones that could.
+
+  **THE FORMS ARE NAMED BY THEIR IDS** - the ones the form tools gave back, or
+  REPORT_FAMILY_FORMS read - or SELECTED in the family's window and called
+  `selected`.
+
+  **EVERY LINK IS READ BACK**, before and after, with what the field reads;
+  one that does not read as asked fails the call, and Heron rolls it all back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+    # The forms, by the ids the form tools gave back, commas between - or
+    # `selected`.
+    - name: forms
+      type: string
+      source: request
+    # Field = family parameter, SEMICOLONS between - "Visible=Show_Handle;
+    # End Angle=Bend_Angle". "Visible=none" unlinks. The left name is the one
+    # in Properties, the right one the one in Family Types.
+    - name: links
+      type: IDictionary<string, string>
+      source: request
+  provides:
+    - name: linkReport
+      # Every link asked for, form by form, before and after and what the field
+      # reads, on ONE line - a list is cut to three entries before anyone reads
+      # it.
+      role: result
+      type: string
+    - name: changed
+      # Links that read differently after the call than before it.
+      role: result
+      type: int
+    - name: alreadyLinked
+      # Asked for and already so: looked at, nothing done (D-52).
+      role: accounting
+      type: int
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyManager.AssociateElementParameterToFamilyParameter` (whose remarks say
+  the two parameters must be the same type, and which takes a null to unlink),
+  `CanElementParameterBeAssociated` and `GetAssociatedFamilyParameter`, and
+  `BuiltInParameter.IS_VISIBLE_PARAM`, `REVOLUTION_START_ANGLE`,
+  `REVOLUTION_END_ANGLE`, `EXTRUSION_START_PARAM` and `EXTRUSION_END_PARAM`
+  read the same 2020 through 2027 (the RevitAPI reference assemblies and their
+  XML remarks, read 2026-10-01). A parameter's KIND moved at 2022 -
+  `Definition.ParameterType` before, `GetDataType()` from - so both are read by
+  reflection, newest first, as LINK_FAMILY_PARAMETER reads them.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "link the handle's visible to Show_Handle"    -> here, one form
+#   "link the elbow's end angle to Bend Angle"    -> here, one form
+#   "link the connector flow to a parameter"      -> LINK_FAMILY_PARAMETER,
+#                                                    every element of a kind
+#   "link the body material to Body Material"     -> SET_FAMILY_FORM_MATERIAL
+#   "show this form only in fine"                 -> SET_FAMILY_FORM_VISIBILITY,
+#                                                    detail levels, no parameter
+
+utterances:
+  - link the handle's visible to Show_Handle
+  - link the elbow's end angle to Bend Angle
+  - drive this extrusion's end with the Depth parameter
+  - link this form's visible field to a family parameter
+  - make this part optional in some types

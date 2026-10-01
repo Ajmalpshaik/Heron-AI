@@ -1,0 +1,100 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-030
+semantic-identity: "drive a nested component's type sizes from the parameters of the family it sits in"
+kind: action
+domain: revit.families
+capability: LINK_NESTED_TYPE_PARAMETER
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  DRIVES A NESTED COMPONENT'S TYPE SIZES from the family open in the Family
+  Editor - the small button at the end of a row in the nested type's Type
+  Properties: the motor's Width following the air handler's Motor Width.
+  LINK_FAMILY_PARAMETER reaches a nested component's INSTANCE values, on the
+  copy that was placed; a TYPE value lives on the nested type, named here by
+  its own name and its type's.
+
+  **THE LINKS ARE PAIRS**, nested parameter = this family's parameter,
+  semicolons between; "none" unlinks.
+
+  **A LINK REVIT WOULD REFUSE IS REFUSED FIRST**: a family parameter that does
+  not exist, holds another kind of value, or only reports; a parameter the
+  nested type lacks, or that Revit will not let be linked - each with the ones
+  that could. Revit's own words are passed on for anything else.
+
+  **EVERY LINK IS READ BACK**, before and after, with what the parameter reads;
+  one that does not read as asked fails the call, and Heron rolls it all back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The nested family's name, as loaded into this family.
+    - name: family
+      type: string
+      source: request
+    # The nested type whose parameters are linked.
+    - name: type
+      type: string
+      source: request
+    # Nested parameter = this family's parameter, SEMICOLONS between -
+    # "Width=Motor Width; Height=Motor Height". "Width=none" unlinks.
+    - name: links
+      type: IDictionary<string, string>
+      source: request
+  provides:
+    - name: linkReport
+      # Every link, before and after and what it reads, on ONE line.
+      role: result
+      type: string
+    - name: changed
+      role: result
+      type: int
+    - name: alreadyLinked
+      # Asked for and already so: looked at, nothing done (D-52).
+      role: accounting
+      type: int
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyManager.AssociateElementParameterToFamilyParameter` ("the parameter
+  of an element in family"; the two must be the same type),
+  `CanElementParameterBeAssociated`, `GetAssociatedFamilyParameter`,
+  `Family.GetFamilySymbolIds` and `FamilySymbol.FamilyName` read the same 2020
+  through 2027 (the RevitAPI reference assemblies and their XML remarks, read
+  2026-10-01). A parameter's kind is read by reflection across 2022, as
+  LINK_FAMILY_PARAMETER reads it.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "link the motor type's width to Motor Width"  -> here
+#   "drive the nested type's size from this family" -> here
+#   "link the connector flow to a parameter"      -> LINK_FAMILY_PARAMETER,
+#                                                    an instance parameter
+
+utterances:
+  - link the motor type's width to Motor Width
+  - drive the nested type's size from this family
+  - drive the nested motor's sizes from the air handler
+  - make the nested part's size follow this family's parameters

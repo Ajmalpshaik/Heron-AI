@@ -1,0 +1,67 @@
+# The proof of the nested-family tools - NEEDS-CHECKING Group BR, rows BR1 to
+# BR3:
+#
+#   place-nested-family           PLACE_NESTED_FAMILY           FRG-ELE-075
+#   lock-nested-family-to-planes  LOCK_NESTED_FAMILY_TO_PLANES  FRG-GEO-049
+#   link-nested-type-parameter    LINK_NESTED_TYPE_PARAMETER    FRG-PAR-030
+#
+#     python tools/batch-prove.py tools/jobs/family-nested-2026-10-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/family-nested-2026-10-01.yaml
+#
+# THE ARRANGEMENT IS MADE BY HAND ONCE: Group BM's family "Heron Family
+# Constraints Test", plus a Length TYPE parameter "Motor Width" holding 450,
+# plus a Work Plane-Based generic model "Heron Nested Box" - one type "300",
+# with a Length TYPE parameter "Width" and its centre planes' Is Reference set
+# to Center (Left/Right) and Center (Front/Back) - loaded into it AND placed
+# once by hand at the origin on Ref. Level. That placed copy's id is
+# NESTED-ID: REPORT_NESTED_FAMILIES or the Properties of the selected copy
+# give it. Type the real one in before running. THE DRY RUN DOES NOT CATCH A
+# PLACEHOLDER LEFT IN (row 5b-264).
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at the family afterwards anyway (BD1).
+#
+# POSITIVE: a second copy placed at the origin on Ref. Level; the hand-placed
+# copy's centres locked to the centre planes; the nested type's Width linked
+# to Motor Width. NEGATIVES: a point 300 mm off Ref. Level; centres crossed to
+# planes facing the other way; Width given a Yes/No parameter.
+
+model: Heron Family Constraints Test (Group BM's arrangement, plus "Motor Width" = 450 and the nested "Heron Nested Box" placed once), Revit 2024
+
+defaults:
+  in: "Heron Family Constraints Test"
+  write: true
+
+jobs:
+  - fragment: place-nested-family
+    expect: instanceId
+    set:
+      family: "Heron Nested Box"
+      type: "300"
+      point: "0,0,0"
+      host: "Ref. Level"
+    negative-set:
+      family: "Heron Nested Box"
+      type: "300"
+      point: "0,0,300"
+      host: "Ref. Level"
+
+  - fragment: lock-nested-family-to-planes
+    expect: locked
+    set:
+      instance: "NESTED-ID"
+      locks: "Center (Left/Right)=Center (Left/Right); Center (Front/Back)=Center (Front/Back)"
+    negative-set:
+      instance: "NESTED-ID"
+      locks: "Center (Left/Right)=Center (Front/Back)"
+
+  - fragment: link-nested-type-parameter
+    expect: changed
+    set:
+      family: "Heron Nested Box"
+      type: "300"
+      links: "Width=Motor Width"
+    negative-set:
+      family: "Heron Nested Box"
+      type: "300"
+      links: "Width=Show_Handle"

@@ -1,0 +1,107 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-028
+semantic-identity: "link or set the Material field of particular forms in the family being edited"
+kind: action
+domain: revit.families
+capability: SET_FAMILY_FORM_MATERIAL
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  LINKS or SETS the Material field of particular forms in the family open in the
+  Family Editor - linked to a family parameter of that kind, so each type
+  decides it ("Body Material"), or set to one the family holds ("Steel"), or
+  put back to <By Category>.
+
+  **ONE FORM AT A TIME IS THE POINT.** LINK_FAMILY_PARAMETER links a parameter
+  on every element of a category at once - every extrusion together - and a
+  family whose body and neck differ needs them apart.
+
+  **WHICH IS MEANT IS READ FROM THE FAMILY, NEVER GUESSED.** The name given is
+  looked for among the family's parameters and among what it holds. A
+  parameter of another kind is refused - Revit's own remark: the two
+  parameters must be the same type - and so is a name that is both, or
+  neither, with what the family does have listed.
+
+  **A LINKED FIELD IS UNLINKED BEFORE A VALUE IS WRITTEN**, and the answer says
+  so. A void shows nothing and is refused by name.
+
+  **FORMS ARE NAMED BY THEIR IDS** - the ones the form tools gave back, or
+  REPORT_FAMILY_FORMS read - or SELECTED in the family's window and called
+  `selected`.
+
+  **READ BACK, ALL OR NOTHING**, each form before and after; one that does not
+  read as asked fails the call and nothing is kept. A linked field's value per
+  type is picked in Family Types.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+    # The forms, by the ids the form tools gave back, commas between - or
+    # `selected`.
+    - name: forms
+      type: string
+      source: request
+    # A family material parameter ("Body Material"), a material in the family
+    # ("Steel"), or "by category".
+    - name: material
+      type: string
+      source: request
+  provides:
+    - name: changed
+      # Each form, with its material or its link before and after.
+      role: result
+      type: IList<string>
+    - name: linked
+      # True when the forms were linked to a parameter rather than set.
+      role: result
+      type: bool
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyManager.AssociateElementParameterToFamilyParameter` (whose remarks say
+  the two parameters must be the same type, and which takes a null to unlink),
+  `CanElementParameterBeAssociated`, `GetAssociatedFamilyParameter` and
+  `BuiltInParameter.MATERIAL_ID_PARAM` read the same 2020 through 2027 (the
+  RevitAPI reference assemblies and their own XML remarks, read 2026-10-01). A
+  parameter's kind is read by reflection: `SpecTypeId.Reference.Material` from
+  2022, `ParameterType.Material` before, gone from 2023.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "link the body material to Body Material"     -> here
+#   "make this extrusion steel"                   -> here
+#   "link the connector flow to a parameter"      -> LINK_FAMILY_PARAMETER,
+#                                                    every element of a kind
+#   "what material is this wall"                  -> READ_ELEMENT_MATERIAL, a
+#                                                    project read
+
+utterances:
+  - link the body material to Body Material
+  - make this extrusion steel
+  - give the neck its own material parameter
+  - set the material of these forms
+  - put this form back to by category material

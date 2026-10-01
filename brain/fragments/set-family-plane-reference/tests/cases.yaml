@@ -1,0 +1,40 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template with planes "Box
+      Left" and "Box Right" made by create-reference-planes; planes "Box
+      Left=Left; Box Right=Right"
+    expect: >
+      changed 2; planeReport reads each going from Revit's default to Left and
+      Right; in Properties each plane's Is Reference reads so; every other
+      plane reads as it did
+
+  - given: planes "Box Left=Strong Reference, origin" in the same family
+    expect: >
+      Box Left's Is Reference Strong Reference and Defines Origin Yes; "Center
+      (Left/Right)" reported as giving up the origin, its Defines Origin No in
+      Properties; changed 2
+
+  - given: the first case run a second time
+    expect: changed 0, alreadySet 2, and nothing changed
+
+negative:
+  - given: planes "Box Left=Top", a plane facing left or right
+    expect: refused - Top goes on a horizontal plane - and nothing changed
+
+  - given: >
+      planes "Box Right=Center (Left/Right)" while the template's centre plane
+      still holds it
+    expect: refused naming "Center (Left/Right)" as the holder, and nothing changed
+
+  - given: planes "Box Left=sideways"
+    expect: refused, listing Revit's Is Reference values, and nothing changed
+
+  - given: a project in front
+    expect: notAFamily true and nothing changed anywhere
+
+second_route:
+  - >
+      Select each plane in the Family Editor and read Is Reference and Defines
+      Origin in Properties; load the family into a test project and dimension
+      to the plane made Left - it is offered, and one made Not a Reference is
+      not
