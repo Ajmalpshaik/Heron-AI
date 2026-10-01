@@ -1998,17 +1998,33 @@ def revit_read(capability: str = "", values: str = "",
     if supplied:
         args["values"] = supplied
 
-    if expect_from and expect_from.strip():
+    consumes = (expect_from or "").strip()
+    if consumes:
         args.pop("chain", None)
-        args["expectChain"] = expect_from.strip()
+        args["expectChain"] = consumes
 
-    # idempotent stays at its default, True: a read asked twice costs nothing,
-    # so a lost answer may be asked for again. The FRAGMENT timeout, because a
-    # fragment's first run in a session includes compiling it.
+    # A read asked twice costs nothing - UNLESS it consumes the carried chain.
+    # Running it replaces the chain, so a resend after a lost answer is refused
+    # on expect_from, and the chat hears "nothing was bound" for a fragment
+    # that ran (the A20 run, 2026-10-01: two audit entries for one call). So a
+    # consuming read is sent idempotent=False, as a write is, and a lost answer
+    # comes back as unknown_outcome instead of being asked for again. The
+    # FRAGMENT timeout, because a fragment's first run in a session includes
+    # compiling it.
     reply = session.request("run_fragment_read", op_args=args,
-                            response_timeout=configuration.fragment_timeout())
+                            response_timeout=configuration.fragment_timeout(),
+                            idempotent=not consumes)
     session.close()
     _ctx_reply(reply)
+
+    # The client's unknown_outcome sentence is written for a change. Here the
+    # model cannot have changed - no transaction is open - but the chain may
+    # have, so say that instead.
+    if consumes and reply and reply.get("error") == "unknown_outcome":
+        return ("The read reached Revit but its answer was lost, so Heron cannot tell "
+                "whether %s ran. Nothing in the model was changed - a read opens no "
+                "transaction - but if it ran, the result %s left has been used up. "
+                "Run %s again, then this read." % (capability, consumes, consumes))
 
     failure = analyse(reply, writes=tools.writes("revit_read"))
     if failure is not None:

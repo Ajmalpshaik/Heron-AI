@@ -401,6 +401,31 @@ async def exercise_door(module):
         said = await ask(server, {"capability": capability})
         check("DRAFT" in said and "claim" in said,
               "a DRAFT read (%s) says it is a claim, not a proof" % capability)
+
+        # A READ THAT CONSUMES THE CARRIED CHAIN IS NOT SAFE TO ASK TWICE. The
+        # first run replaces the chain, so a resend after a lost answer is
+        # refused on expect_from and the chat hears a refusal for a fragment
+        # that ran. Seen on the A20 run, 2026-10-01: two audit entries, one
+        # tool call, the second's refusal as the reply.
+        capability, _folder = first_with("READ", "PROVEN")
+        revit.asked[:] = []
+        said = await ask(server, {"capability": capability,
+                                  "expect_from": "find-views"})
+        op, args, idempotent = revit.asked[-1] if revit.asked else (None, {}, None)
+        check(args.get("expectChain") == "find-views" and "chain" not in args,
+              "a read with expect_from names the chain it consumes, and no reset")
+        check(idempotent is False,
+              "and is sent NOT safe to ask again, because running it replaces the "
+              "chain - found idempotent=%r" % idempotent)
+
+        revit.reply = {"ok": False, "error": "unknown_outcome",
+                       "message": "The request reached Revit but the answer was lost."}
+        said = await ask(server, {"capability": capability,
+                                  "expect_from": "find-views"})
+        check("find-views" in said and "again" in said
+              and "could do the work twice" not in said,
+              "a lost answer on that read says to run find-views again, not that "
+              "the model may have been changed twice")
     finally:
         del module.binding.resolve
         module.pinned.forget()
