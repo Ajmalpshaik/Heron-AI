@@ -57,6 +57,9 @@ DEFAULTS = {
     # The Companion page (D-108, D-109): on by default, switched from the
     # Companion button's arrow in Revit. Off leaves Heron itself untouched.
     "companion.enabled": "true",
+    # Roslyn compiled once on a background thread while Revit starts, so the
+    # first fragment does not pay its start-up (RevitFragment.WarmUp).
+    "fragments.warmUp": "true",
 }
 
 # How far the client's deadline must sit beyond the add-in's, in seconds.
