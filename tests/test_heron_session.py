@@ -19,8 +19,9 @@ and the answer read back off stdout.
 WHAT THIS PROVES
   0. THE SESSION LINE says where the branch stands against origin/main and
      how many fragments are PROVEN and DRAFT, both DERIVED; it does NOT fetch;
-     it is silent, exit 0, when there is nothing it can derive; and it is
-     fast on this repository.
+     it is silent, exit 0, when there is nothing it can derive, and in a
+     modeller's chat - the main checkout on branch main; and it is fast on
+     this repository.
   1. "HAS MAIN MOVED?" fires on a merge and a "ready" - by gh, by gh api, and
      by the GitHub MCP tools - fetches origin/main, and names the commits the
      branch does not have. It stays silent for everything else, including
@@ -322,6 +323,24 @@ def run_all(home):
     parsed, raw, code = hook(LINE, "this is not json", env)
     check(code == 0 and raw == "",
           "a payload that will not parse is silence too, not a traceback")
+
+    # A MODELLER'S CHAT: the main checkout with branch main out. The same
+    # commit, cards and git as the line above - only the branch's name differs
+    # - so the silence can only come from the rule, not from a missing part.
+    git(work, "checkout", "-q", "-B", "main", "claude/some-work")
+    try:
+        parsed, raw, code = hook(LINE, start, env)
+        check(code == 0 and raw == "",
+              "in the main checkout on branch main - a modeller's chat - it "
+              "prints NOTHING, though git and the cards are both there")
+        parsed, raw, code = hook(LINE, dict(start, cwd=os.path.join(work, "brain")), env)
+        check(code == 0 and raw == "",
+              "and nothing from a folder inside that checkout either")
+    finally:
+        git(work, "checkout", "-q", "claude/some-work")
+    parsed, raw, code = hook(LINE, start, env)
+    check("claude/some-work" in context_of(parsed),
+          "back on a branch, the line is said again")
 
     proven = 0
     for card in glob.glob(os.path.join(ROOT, "brain", "fragments", "*",

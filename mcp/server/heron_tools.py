@@ -298,6 +298,26 @@ ALSO_REACHES = {
 }
 
 
+# THE TOOLS A CHAT IS GIVEN BEFORE IT ASKS, so its first Heron call is not
+# preceded by a turn spent searching for the tool. With many MCP servers
+# connected, Claude Code defers every tool behind a ToolSearch step; on the
+# owner's PC that step came first in most Revit chats read back from the
+# transcripts on 2026-10-01, about 5-10 s before the first Heron call. A tool
+# named here is served with `_meta["anthropic/alwaysLoad"]`, which Claude
+# Code documents as loading that one tool at session start
+# (code.claude.com/docs/en/mcp, "Exempt a server from deferral").
+#
+# FEW, ON PURPOSE. Every tool here is paid for in context in every chat,
+# asked or not - about 9,000 characters of descriptions for these five,
+# measured 2026-10-01 - and every other tool is still one search away. The
+# two doors and the lookup cover almost any request (#369); health and levels
+# are the first-time checks a modeller's chat makes. Loading a tool's
+# description changes nothing about what it may do: its risk and labels above
+# are unchanged, and the host still asks before a tool it was told can write.
+ALWAYS_LOADED = ("heron_lookup", "revit_read", "revit_change",
+                 "revit_health", "revit_levels")
+
+
 class NotDeclared(Exception):
     """A tool nobody declared. Never treated as harmless."""
 

@@ -272,6 +272,21 @@ async def exercise(server):
           "and the two tools that change the model are among the ones a host "
           "sees as NOT read-only")
 
+    print()
+    print("  the tools a chat is given before it asks, against the registry")
+    wanted = set(getattr(registry, "ALWAYS_LOADED", None) or ())
+    check(wanted, "the registry names the tools to load at session start")
+    marked = set(n for n, t in served.items()
+                 if (getattr(t, "meta", None) or {}).get("anthropic/alwaysLoad") is True)
+    check(wanted and marked == wanted,
+          "exactly those are served with _meta anthropic/alwaysLoad: %s"
+          % ", ".join(sorted(marked)) if marked else "none is marked")
+    unlabelled = [n for n in wanted if n in served
+                  and getattr(served[n], "annotations", None) is None]
+    check(not unlabelled,
+          "and each keeps its safety labels - loading early changes nothing "
+          "a host is told about what the tool can do")
+
     return answers
 
 
