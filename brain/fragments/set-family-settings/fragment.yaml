@@ -1,0 +1,92 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-036
+semantic-identity: "set the family's own Work Plane-Based, Shared, Always Vertical or Room Calculation Point switch in the family being edited"
+kind: action
+domain: revit.families
+capability: SET_FAMILY_SETTINGS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets the switches in Family Category and Parameters for the family open in
+  the Family Editor: WORK PLANE-BASED - placed on any plane or face and moving
+  with it, the way a family nested in another is best made; SHARED - a nested
+  copy that a project schedules and tags as an element of its own; ALWAYS
+  VERTICAL - a Work Plane-Based family that stays upright on a slope; and ROOM
+  CALCULATION POINT.
+
+  **ONE VALUE FOR THE WHOLE FAMILY**, not per type. A switch this family's
+  category does not have, or that Revit holds read-only here, is refused by
+  name.
+
+  **WORK PLANE-BASED IS WRITTEN FIRST**, because Always Vertical belongs to a
+  Work Plane-Based family; anything Revit changes on its own as a result is
+  reported as Revit's.
+
+  **READ BACK, ALL OR NOTHING**: every switch is read again after the last
+  write. Copies already placed elsewhere take a change when the family is
+  loaded there again.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Setting = yes or no, SEMICOLONS between - "Work Plane-Based=yes;
+    # Shared=yes". Settings: Work Plane-Based, Always Vertical, Shared, Room
+    # Calculation Point.
+    - name: settings
+      type: IDictionary<string, string>
+      source: request
+  provides:
+    - name: settingReport
+      # Every setting that changed, before and after, on ONE line.
+      role: result
+      type: string
+    - name: changed
+      role: result
+      type: int
+    - name: alreadySet
+      # Asked for and already so: looked at, nothing done (D-52).
+      role: accounting
+      type: int
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `BuiltInParameter.FAMILY_WORK_PLANE_BASED`, `FAMILY_SHARED`,
+  `FAMILY_ALWAYS_VERTICAL` and `ROOM_CALCULATION_POINT`, read from
+  `Document.OwnerFamily`, are the same 2020 through 2027 (the RevitAPI
+  reference assemblies, read 2026-10-01). Which categories carry each switch,
+  and when Revit holds Always Vertical read-only, are Revit's - read at run
+  time, never listed here (NEEDS-CHECKING BS1 and BS2).
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "make this family work plane based"           -> here
+#   "make the motor family shared"                -> here
+#   "set the family category to air terminal"     -> SET_FAMILY_CATEGORY
+
+utterances:
+  - make this family work plane based
+  - make the motor family shared
+  - turn on always vertical for this family
+  - set the family to shared and work plane based

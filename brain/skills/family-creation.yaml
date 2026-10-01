@@ -44,9 +44,13 @@ purpose: >
   1. SET_FAMILY_CATEGORY first, when the template's category is not the one
      wanted - a Generic Model that should be an Air Terminal. The category
      brings its own built-in parameters, and everything after it builds on
-     them.
+     them. Then SET_FAMILY_SETTINGS when the family will be nested in another
+     one: Work Plane-Based, so it is placed on a plane and moves with it, and
+     Shared when a project must schedule or tag it on its own.
   2. ADD_FAMILY_PARAMETERS - the sizes the family is driven by, as TYPE
-     lengths when they describe the product; a diameter is a length too.
+     lengths when they describe the product; a diameter is a length too. Any
+     value a project must TAG or SCHEDULE is a shared parameter instead, from
+     the office's shared parameter file: ADD_FAMILY_SHARED_PARAMETERS.
   3. SET_FAMILY_TYPE_VALUES - make the first type and write the real sizes into
      it. BEFORE any dimension is labelled: a new length reads 0, and a label on
      a 0 drives its planes onto each other.
@@ -115,8 +119,8 @@ purpose: >
   in its window while Heron holds it.
 
   NOT YET: reference lines and angles - a part that swings or tilts
-  about a pivot - and a Family Type parameter that swaps a nested family's
-  type. Whether a label
+  about a pivot - a Family Type parameter that swaps a nested family's
+  type, a type catalog, and masking or filled regions inside a family. Whether a label
   on a round form's edge DRIVES the circle is not yet known on any release:
   step 14 is where that is found out (NEEDS-CHECKING BM3). This line said
   until 2026-10-01 that a circle's size cannot be driven through the API on
@@ -136,7 +140,9 @@ utterances:
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:
   - SET_FAMILY_CATEGORY
+  - SET_FAMILY_SETTINGS
   - ADD_FAMILY_PARAMETERS
+  - ADD_FAMILY_SHARED_PARAMETERS
   # Values BEFORE labels - see step 3.
   - SET_FAMILY_TYPE_VALUES
   - SET_FAMILY_FORMULA
@@ -183,5 +189,6 @@ note: >
   widened 2026-10-01, on the owner's word "extrude, revolve, all modelling
   capability ... maybe I will give only an image", to every form, the locks, a
   round size, voids that cut, a form's own fields linked, Is Reference,
-  arrays, plan symbols, nested families, and a family read from a picture. Every step is DRAFT
+  arrays, plan symbols, nested families, the family's own settings, shared
+  parameters, and a family read from a picture. Every step is DRAFT
   until it has been run on a real family with a negative case (D-30).
