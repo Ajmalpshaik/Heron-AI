@@ -1,0 +1,55 @@
+# The proof of draw-family-symbolic-lines (DRAW_FAMILY_SYMBOLIC_LINES,
+# FRG-VIEW-116) and array-family-forms (ARRAY_FAMILY_FORMS, FRG-GEO-048) -
+# NEEDS-CHECKING Group BQ, rows BQ1 and BQ3.
+#
+#     python tools/batch-prove.py tools/jobs/family-symbols-arrays-2026-10-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/family-symbols-arrays-2026-10-01.yaml
+#
+# THE ARRANGEMENT IS MADE ONCE: the family "Heron Family Constraints Test" from
+# Group BM's job file, with one thing added by hand in Family Types - an
+# INTEGER TYPE parameter called "Blade Count" holding 5 - and Group BP's Yes/No
+# parameter "Show_Handle". Its solid cylinder's id is SOLID-ID, as there - type
+# the real one in before running. THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT
+# IN (row 5b-264).
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at the family afterwards anyway (BD1).
+#
+# POSITIVE, draw-family-symbolic-lines: a circle and a cross on Ref. Level, at
+# coarse and medium, on a new subcategory "Plan Symbol" - `lineIds` five ids.
+# NEGATIVE: a plane the family does not have - refused, `lineIds` empty.
+#
+# POSITIVE, array-family-forms: the cylinder arrayed Blade Count times, 400 mm
+# apart along Y - `members` four ids. NEGATIVE: the count given as
+# "Show_Handle", a Yes/No - refused, `members` empty.
+
+model: Heron Family Constraints Test (Group BM's arrangement, plus Integer "Blade Count" = 5 and Yes/No "Show_Handle"), Revit 2024
+
+defaults:
+  in: "Heron Family Constraints Test"
+  write: true
+
+jobs:
+  - fragment: draw-family-symbolic-lines
+    expect: lineIds
+    set:
+      workPlane: "Ref. Level"
+      shapes: "circle 0,0 150 | path -150,-150; 150,150 | path -150,150; 150,-150"
+      detailLevels: "coarse, medium"
+      subcategory: "Plan Symbol"
+    negative-set:
+      workPlane: "No Such Plane"
+      shapes: "circle 0,0 150"
+      detailLevels: "coarse, medium"
+      subcategory: "Plan Symbol"
+
+  - fragment: array-family-forms
+    expect: members
+    set:
+      form: "SOLID-ID"
+      count: "Blade Count"
+      step: "Y 400"
+    negative-set:
+      form: "SOLID-ID"
+      count: "Show_Handle"
+      step: "Y 400"

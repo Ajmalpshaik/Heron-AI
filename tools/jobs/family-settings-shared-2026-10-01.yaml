@@ -1,0 +1,46 @@
+# The proof of set-family-settings (SET_FAMILY_SETTINGS, FRG-DOC-036) and
+# add-family-shared-parameters (ADD_FAMILY_SHARED_PARAMETERS, FRG-PAR-031) -
+# NEEDS-CHECKING Group BS, rows BS1 and BS3.
+#
+#     python tools/batch-prove.py tools/jobs/family-settings-shared-2026-10-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/family-settings-shared-2026-10-01.yaml
+#
+# THE ARRANGEMENT: Group BM's family "Heron Family Constraints Test", and
+# Revit's shared parameter file (Manage > Shared Parameters) set to one that
+# holds a Text parameter "Heron Test Tag". The tool only READS that file.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at Family Category and Parameters and Family Types afterwards anyway
+# (BD1).
+#
+# POSITIVE, set-family-settings: Work Plane-Based and Shared switched on -
+# `changed` 2. NEGATIVE: Work Plane-Based "maybe" - refused, `changed` 0.
+#
+# POSITIVE, add-family-shared-parameters: "Heron Test Tag" added as a type
+# parameter under Identity Data - `added` one entry with the file's GUID.
+# NEGATIVE: a name the file does not hold - refused, `added` empty.
+
+model: Heron Family Constraints Test (Group BM's arrangement, with a shared parameter file holding "Heron Test Tag"), Revit 2024
+
+defaults:
+  in: "Heron Family Constraints Test"
+  write: true
+
+jobs:
+  - fragment: set-family-settings
+    expect: changed
+    set:
+      settings: "Work Plane-Based=yes; Shared=yes"
+    negative-set:
+      settings: "Work Plane-Based=maybe"
+
+  - fragment: add-family-shared-parameters
+    expect: added
+    set:
+      parameterNames: "Heron Test Tag"
+      instance: false
+      parameterGroup: "Identity Data"
+    negative-set:
+      parameterNames: "Not In The File"
+      instance: false
+      parameterGroup: "Identity Data"

@@ -114,6 +114,24 @@ compatibility-note: >
 #   "label the neck diameter with Neck Diameter" -> LABEL_FAMILY_RADIUS
 #   "show this form only in fine"             -> SET_FAMILY_FORM_VISIBILITY
 #   "set the subcategory of these forms"      -> SET_FAMILY_FORM_SUBCATEGORY
+#   "link the body material to Body Material" -> SET_FAMILY_FORM_MATERIAL -
+#                                                one form, not every one
+#   "link the handle's visible to Show_Handle" -> LINK_FAMILY_FORM_PARAMETER -
+#                                                a form's Visible, angles or
+#                                                extrusion ends, one form
+#   "make this plane the left reference"      -> SET_FAMILY_PLANE_REFERENCE -
+#                                                Is Reference, Defines Origin
+#   "draw the valve symbol in plan"           -> DRAW_FAMILY_SYMBOLIC_LINES -
+#                                                2D lines, no 3D body
+#   "array the blade along X with Blade Count" -> ARRAY_FAMILY_FORMS - one form
+#                                                in a row, its count a parameter
+#   "put the motor family into this air handler" -> PLACE_NESTED_FAMILY
+#   "lock the motor's centre to the centre planes" -> LOCK_NESTED_FAMILY_TO_PLANES
+#   "link the motor type's width to Motor Width" -> LINK_NESTED_TYPE_PARAMETER -
+#                                                a nested TYPE's parameter
+#   "make this family work plane based"       -> SET_FAMILY_SETTINGS
+#   "add the shared parameter Equipment Tag to this family"
+#                                             -> ADD_FAMILY_SHARED_PARAMETERS
 #   "put a supply air connector on the neck"  -> ADD_FAMILY_CONNECTOR
 #   "link the connector flow to a parameter"  -> LINK_FAMILY_PARAMETER - an
 #                                                element already in the family

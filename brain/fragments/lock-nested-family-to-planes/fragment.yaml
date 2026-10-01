@@ -1,0 +1,93 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-049
+semantic-identity: "align and lock a nested family's own reference planes to the planes of the family it sits in"
+kind: action
+domain: revit.families
+capability: LOCK_NESTED_FAMILY_TO_PLANES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  ALIGNS AND LOCKS a nested family to the planes of the family it sits in - the
+  padlock after Align - so it follows the planes a labelled dimension moves
+  instead of staying where it was dropped.
+
+  **ITS SIDES ARE ITS OWN PLANES' IS REFERENCE** - Left, Right, Front, Back,
+  Top, Bottom and the three centres - which are the only planes a nested
+  component shows to the family around it. A side it does not have is refused with the
+  sides it does; SET_FAMILY_PLANE_REFERENCE, run in the nested family, gives a
+  plane one.
+
+  **A SIDE IS LOCKED ONLY TO A PLANE IT ALREADY LIES ON** - Revit's own rule
+  for the alignment call. A side turned the other way is refused before
+  anything is locked; Revit refuses the rest by its own words.
+
+  **THE LOCKS ARE PAIRS**, nested side = this family's plane or level,
+  semicolons between. The nested component is named by its id, or SELECTED
+  and called `selected`.
+
+  **ALL OR NOTHING, READ BACK**: a lock never moves what it locks, so the
+  nested family's extent is read before and after, and any move fails the
+  call.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+    # The nested family, by the id PLACE_NESTED_FAMILY gave back, or
+    # `selected`.
+    - name: instance
+      type: string
+      source: request
+    # Nested side = this family's plane or level, SEMICOLONS between -
+    # "Center (Left/Right)=Center (Left/Right); Bottom=Ref. Level".
+    - name: locks
+      type: IDictionary<string, string>
+      source: request
+  provides:
+    - name: locked
+      # Each side locked, to which plane, in which view.
+      role: result
+      type: IList<string>
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was locked, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyInstance.GetReferences(FamilyInstanceReferenceType)` - whose remark
+  says a plane that is Not a Reference makes no reference - `GetTransform`,
+  `FamilyItemFactory.NewAlignment` and `Dimension.IsLocked` read the same 2020
+  through 2027 (the RevitAPI reference assemblies and their XML remarks, read
+  2026-10-01).
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "lock the motor's centre to the centre planes" -> here
+#   "lock the nested family to the reference planes" -> here
+#   "lock this extrusion to the planes"           -> LOCK_FORM_TO_PLANES, a form
+
+utterances:
+  - lock the motor's centre to the centre planes
+  - lock the nested family to the reference planes
+  - align and lock this nested component to the planes
+  - make the nested handle follow the front plane

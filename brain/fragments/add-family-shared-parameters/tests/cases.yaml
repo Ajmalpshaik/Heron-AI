@@ -1,0 +1,30 @@
+positive:
+  - given: >
+      a family open in the Family Editor, and Revit's shared parameter file set
+      to one holding "Heron Test Tag" (Text); parameterNames "Heron Test Tag",
+      instance false, parameterGroup "Identity Data"
+    expect: >
+      added 1, reading the parameter, Text, type, and the file's GUID; Family
+      Types showing it with the shared marker; a tag in a test project reading
+      it once the family is loaded
+
+  - given: the same call again
+    expect: added empty, alreadyThere 1
+
+negative:
+  - given: parameterNames "Not In The File"
+    expect: refused, naming the file and the close names, and nothing added
+
+  - given: no shared parameter file set in Revit
+    expect: refused - set the office's file in Manage > Shared Parameters - nothing added
+
+  - given: the family already has a family (not shared) parameter "Heron Test Tag"
+    expect: refused - two under one name - and nothing added
+
+  - given: a project in front
+    expect: notAFamily true, pointing to ADD_PROJECT_PARAMETER
+
+second_route:
+  - >
+      Family Types in the Family Editor: the parameter listed as shared; Manage
+      > Shared Parameters shows the same name in the office's file

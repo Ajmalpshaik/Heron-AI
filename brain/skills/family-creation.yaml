@@ -4,7 +4,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: family-creation
-name: Build a new parametric family
+name: Build a new parametric family, from sizes, a sketch or a picture
 domain: revit.families
 # Heron wrote this one. D-66: a unit that ships with Heron says where it
 # came from, so an IMPORTED one that says nothing stands out.
@@ -14,51 +14,117 @@ risk: MODIFY
 
 purpose: >
   Builds a parametric component family in the Family Editor from an empty
-  template - the body of an air terminal with a neck and a duct connector, a
-  casing, any family made of boxes - so that it RESIZES correctly from its
-  parameters. The modeller opens the template (File, New, Family); Heron builds
-  inside it. A family is its method, so the steps are listed below in the
-  order they have to happen, and the order is not a preference: taking two of
-  them the other way round breaks the family in a way that looks fine until
-  somebody resizes it.
+  template - a box, a diffuser with a round neck, a valve, a pump, a bracket,
+  a light fitting - so that it RESIZES correctly from its parameters. It may
+  start from a list of sizes, a sketch, or only a PICTURE of the thing. The
+  modeller opens the template (File, New, Family); Heron builds inside it. A
+  family is its method, so the steps are listed in the order they have to
+  happen, and the order is not a preference: taking two of them the other way
+  round breaks the family in a way that looks fine until somebody resizes it.
 
+  0. READ THE THING FIRST, before anything is built - from the picture, the
+     sketch or the words. Say back, in one list: what it is and the category
+     it belongs to; the FORMS it is made of, each as the form that builds it -
+     a box between planes, a round or any other shape pushed straight
+     (extrusion), a shape turned about an axis (revolve: cones, domes, knobs,
+     round bodies), one shape changing into another (blend: square-to-round
+     necks, tapered legs), a shape carried along a path (sweep: rails, pipe
+     runs, frames, rings), one shape changing along one bend (swept blend:
+     reducers, elbows), every hole or notch as a void, every part that
+     repeats in a row - blades, fins, slots - as one form and a count, and
+     every part that is a family of its own - a motor, a handle - nested; every
+     SIZE that
+     describes them, marking which change between types - those become
+     parameters - and which never do; and every PART only some types have,
+     which becomes a Yes/No parameter. A PICTURE GIVES SHAPE AND PROPORTION,
+     NEVER SIZE: every size, parameter name and type name is the modeller's,
+     asked for once, in that one list, and never assumed or scaled off the
+     image (D-33). Where the picture cannot show something - the back, the
+     inside, a hidden neck - ask rather than invent it.
   1. SET_FAMILY_CATEGORY first, when the template's category is not the one
      wanted - a Generic Model that should be an Air Terminal. The category
-     brings its own built-in parameters, and everything after it builds on them.
-  2. ADD_FAMILY_PARAMETERS - the sizes the family is driven by, as TYPE lengths
-     when they describe the product.
+     brings its own built-in parameters, and everything after it builds on
+     them. Then SET_FAMILY_SETTINGS when the family will be nested in another
+     one: Work Plane-Based, so it is placed on a plane and moves with it, and
+     Shared when a project must schedule or tag it on its own.
+  2. ADD_FAMILY_PARAMETERS - the sizes the family is driven by, as TYPE
+     lengths when they describe the product; a diameter is a length too. Any
+     value a project must TAG or SCHEDULE is a shared parameter instead, from
+     the office's shared parameter file: ADD_FAMILY_SHARED_PARAMETERS.
   3. SET_FAMILY_TYPE_VALUES - make the first type and write the real sizes into
      it. BEFORE any dimension is labelled: a new length reads 0, and a label on
      a 0 drives its planes onto each other.
   4. SET_FAMILY_FORMULA where one size follows another - "Neck Width = Width -
-     100 mm". Names are written bare, spaces and all.
+     100 mm", "Radius = Diameter / 2". Names are written bare, spaces and all.
   5. CREATE_REFERENCE_PLANES - the skeleton, at the positions the sizes put
-     them: left-right planes, front-back planes, height planes.
-  6. LABEL_FAMILY_DIMENSION for every size - with the family's centre plane for
-     left-right and front-back, so the box stays centred on its insertion point;
-     from Ref. Level for a height.
-  7. EXTRUDE_BETWEEN_PLANES for each box - the body on Ref. Level, a neck with
-     the body's top plane as its base. Every face is locked, which is the
-     difference between a family that follows its planes and one that only
-     looks as if it does.
-  8. ADD_FAMILY_CONNECTOR on the face its service leaves by, sized by the
-     parameters so the port follows the neck.
-  9. FLEX_FAMILY last, at sizes that are really different and not square - the
-     only step that PROVES the family follows. "The calls did not fail" is not
-     the proof; the geometry read back at another size is.
+     them: left-right planes, front-back planes, height planes. One plane for
+     every face whose position a parameter drives. Then
+     SET_FAMILY_PLANE_REFERENCE: Left, Right, Front, Back, Top and Bottom on
+     the outer planes a project dimensions to, Strong or Weak Reference on any
+     other it should reach, Not a Reference on planes only the build needs,
+     and Defines Origin where the family is placed from - before anything is
+     placed in a project, because a project's units take a moved origin when
+     the family is loaded again.
+  6. LABEL_FAMILY_DIMENSION for every straight size - with the family's centre
+     plane for left-right and front-back, so the shape stays centred on its
+     insertion point; from Ref. Level for a height.
+  7. THE FORMS, each drawn exactly where the planes are NOW, so that its faces
+     lie on them: EXTRUDE_BETWEEN_PLANES for a box, which locks itself;
+     CREATE_FAMILY_EXTRUSION for any other shape pushed straight;
+     CREATE_FAMILY_REVOLUTION, CREATE_FAMILY_BLEND, CREATE_FAMILY_SWEEP and
+     CREATE_FAMILY_SWEPT_BLEND for the rest. Every one gives back its form's
+     id, which every later step names it by. Shapes are typed in millimetres
+     in the work plane's own two model coordinates.
+  8. LOCK_FORM_TO_PLANES for every form that is not a box from step 7 - each
+     flat face that lies on a plane a parameter moves. A face not locked stays
+     where it was drawn when its plane moves, and looks parametric until the
+     first flex. Where the size is the form's OWN field rather than a plane,
+     LINK_FAMILY_FORM_PARAMETER instead: an extrusion's end to a length, a
+     revolve's end angle to an angle - a bend whose angle the types choose.
+     Never both on one face.
+  9. LABEL_FAMILY_RADIUS for every round size - the parameter holding the size
+     first, as in step 3.
+  10. THE VOIDS, built as void forms in step 7, each cut into the solid it must
+      cut with COMBINE_FAMILY_FORMS - a void made through the API cuts NOTHING
+      until it is combined, and the cut is measured. Solids that should read as
+      one piece are joined the same way. A part that repeats in a row is ONE
+      form made in step 7 and ARRAY_FAMILY_FORMS, its count an Integer
+      parameter given its value in step 3; an arrayed void's copies are each
+      combined in turn, by the ids the array gives back.
+  11. ADD_FAMILY_CONNECTOR on the face its service leaves by, sized by the
+      parameters so the port follows the neck - for MEP families. A part that
+      is a family of its own, loaded in with LOAD_FAMILY: PLACE_NESTED_FAMILY
+      on the plane it sits on - a Work Plane-Based family is placed on every
+      release, a level-based one only from Revit 2024 - then
+      LOCK_NESTED_FAMILY_TO_PLANES by its own Left, Right, Front, Back, Top,
+      Bottom or centres, then LINK_NESTED_TYPE_PARAMETER for its type's sizes
+      and LINK_FAMILY_PARAMETER for its instance's.
+  12. SET_FAMILY_FORM_MATERIAL for each form's material - linked to a family
+      material parameter when a project must set it per type, the body and
+      the neck apart - then SET_FAMILY_FORM_SUBCATEGORY and
+      SET_FAMILY_FORM_VISIBILITY where a project must show or style a part on
+      its own: the body hidden in a coarse plan, the insulation on its own
+      subcategory. A part only some types have from step 0:
+      LINK_FAMILY_FORM_PARAMETER, its Visible to that Yes/No parameter. Where a
+      plan must show a SYMBOL rather than the body - a valve's bow tie, a fan's
+      circle and cross - DRAW_FAMILY_SYMBOLIC_LINES on Ref. Level at the levels
+      the body is hidden at.
+  13. REPORT_FAMILY_FORMS - every form read back with its size, against the
+      list from step 0, before the proof.
+  14. FLEX_FAMILY last, at sizes that are really different and not square - the
+      only step that PROVES the family follows. "The calls did not fail" is not
+      the proof; the geometry read back at another size is.
 
-  Every size, parameter name and type name is the modeller's, asked for and
-  never assumed (D-33). The family is saved by the modeller: Revit will not
-  save the document open in its window while Heron holds it.
+  The family is saved by the modeller: Revit will not save the document open
+  in its window while Heron holds it.
 
-  NOT YET: materials and Is Reference (set in Properties), and nested
-  families. Voids, round shapes, every other form, subcategories and
-  visibility have their own tools now - COMBINE_FAMILY_FORMS,
-  CREATE_FAMILY_EXTRUSION and the other form tools, LABEL_FAMILY_RADIUS,
-  SET_FAMILY_FORM_SUBCATEGORY, SET_FAMILY_FORM_VISIBILITY - and are not yet
-  steps of this skill. This line said until 2026-10-01 that a circle's size
-  cannot be driven through the API on Revit 2020; that was measured for a
-  project, not a family (row 5b-261).
+  NOT YET: reference lines and angles - a part that swings or tilts
+  about a pivot - a Family Type parameter that swaps a nested family's
+  type, a type catalog, and masking or filled regions inside a family. Whether a label
+  on a round form's edge DRIVES the circle is not yet known on any release:
+  step 14 is where that is found out (NEEDS-CHECKING BM3). This line said
+  until 2026-10-01 that a circle's size cannot be driven through the API on
+  Revit 2020; that was measured for a project, not a family (row 5b-261).
 
 # The words people say when they want a family made.
 utterances:
@@ -66,18 +132,45 @@ utterances:
   - make an air terminal family with a duct connector
   - create this family from these sizes
   - make this family parametric and flex it
+  - build a parametric family from this picture
+  - make a family from this photo
+  - make a revit family that looks like this image
+  - make a parametric family from my sketch
 
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:
   - SET_FAMILY_CATEGORY
+  - SET_FAMILY_SETTINGS
   - ADD_FAMILY_PARAMETERS
+  - ADD_FAMILY_SHARED_PARAMETERS
   # Values BEFORE labels - see step 3.
   - SET_FAMILY_TYPE_VALUES
   - SET_FAMILY_FORMULA
   - CREATE_REFERENCE_PLANES
+  - SET_FAMILY_PLANE_REFERENCE
   - LABEL_FAMILY_DIMENSION
   - EXTRUDE_BETWEEN_PLANES
+  - CREATE_FAMILY_EXTRUSION
+  - CREATE_FAMILY_REVOLUTION
+  - CREATE_FAMILY_BLEND
+  - CREATE_FAMILY_SWEEP
+  - CREATE_FAMILY_SWEPT_BLEND
+  - LOCK_FORM_TO_PLANES
+  - LINK_FAMILY_FORM_PARAMETER
+  - LABEL_FAMILY_RADIUS
+  - COMBINE_FAMILY_FORMS
+  - ARRAY_FAMILY_FORMS
   - ADD_FAMILY_CONNECTOR
+  - LOAD_FAMILY
+  - PLACE_NESTED_FAMILY
+  - LOCK_NESTED_FAMILY_TO_PLANES
+  - LINK_NESTED_TYPE_PARAMETER
+  - LINK_FAMILY_PARAMETER
+  - SET_FAMILY_FORM_MATERIAL
+  - SET_FAMILY_FORM_SUBCATEGORY
+  - SET_FAMILY_FORM_VISIBILITY
+  - DRAW_FAMILY_SYMBOLIC_LINES
+  - REPORT_FAMILY_FORMS
   # The proof, and never skipped.
   - FLEX_FAMILY
 
@@ -85,12 +178,17 @@ needs:
 # useful instead of deep inside a transaction (docs/09 s2).
 preconditions:
   - a family document is open in front in the Family Editor, started by the modeller from the template the job needs - Heron does not choose a template
-  - every size, parameter name and type name has been given for THIS request
+  - every size, parameter name and type name has been given for THIS request - a picture or a sketch alone gives none of them
   - the family is not yet built - rebuilding one that already has labelled dimensions leaves the old labels behind to fight the new ones
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
   Each step is one entry in the Family Editor's undo list. Built 2026-09-24 on
-  the owner's instruction to bring family creation into Heron; every step is
-  DRAFT until it has been run on a real family with a negative case (D-30).
+  the owner's instruction to bring family creation into Heron, as boxes only;
+  widened 2026-10-01, on the owner's word "extrude, revolve, all modelling
+  capability ... maybe I will give only an image", to every form, the locks, a
+  round size, voids that cut, a form's own fields linked, Is Reference,
+  arrays, plan symbols, nested families, the family's own settings, shared
+  parameters, and a family read from a picture. Every step is DRAFT
+  until it has been run on a real family with a negative case (D-30).

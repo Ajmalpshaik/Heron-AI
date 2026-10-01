@@ -413,6 +413,30 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bm.md`](needs-checking/group-bm.md)
 
+## Group BN - a family built from a picture: the `family-creation` skill widened to every form, the locks, a round size and voids that cut (2026-10-01)
+
+**Its own file:** [`needs-checking/group-bn.md`](needs-checking/group-bn.md)
+
+## Group BO - one form's material: linked to a family material parameter, or set to a material, one form at a time (2026-10-01)
+
+**Its own file:** [`needs-checking/group-bo.md`](needs-checking/group-bo.md)
+
+## Group BP - one form's Visible, angles and extrusion ends linked to parameters; Is Reference and Defines Origin on planes (2026-10-01)
+
+**Its own file:** [`needs-checking/group-bp.md`](needs-checking/group-bp.md)
+
+## Group BQ - plan symbols drawn as symbolic lines, and one form repeated in a row with its count a parameter (2026-10-01)
+
+**Its own file:** [`needs-checking/group-bq.md`](needs-checking/group-bq.md)
+
+## Group BR - a nested family placed in a family, locked to its planes, and its type's parameters linked (2026-10-01)
+
+**Its own file:** [`needs-checking/group-br.md`](needs-checking/group-br.md)
+
+## Group BS - the family's own settings (Work Plane-Based, Shared, Always Vertical) and the office's shared parameters in a family (2026-10-01)
+
+**Its own file:** [`needs-checking/group-bs.md`](needs-checking/group-bs.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
