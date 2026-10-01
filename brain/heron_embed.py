@@ -248,7 +248,16 @@ def _load_model():
     try:
         from model2vec import StaticModel
         which = name or "minishlab/potion-base-8M"
-        model = StaticModel.from_pretrained(_on_disk(which) or which)
+        folder = _on_disk(which)
+        try:
+            model = StaticModel.from_pretrained(folder or which)
+        except Exception:                              # noqa: BLE001 - a half-downloaded copy
+            # A first download cut off part-way leaves the folder with files
+            # missing, and loading it fails. By NAME fetches what is missing,
+            # as before - review on PR #379.
+            if not folder:
+                raise
+            model = StaticModel.from_pretrained(which)
         _WHICH_MODEL[0] = "model2vec:%s" % which
         _MODEL_CACHE.append(lambda t: list(model.encode([t])[0]))
         return _MODEL_CACHE[0]
