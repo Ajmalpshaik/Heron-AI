@@ -1,0 +1,50 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template with a Yes/No type
+      parameter "Show_Handle" and a Length type parameter "Depth", and two
+      solid extrusions made by create-family-extrusion; forms = the second
+      form's id, links "Visible=Show_Handle"
+    expect: >
+      changed 1; linkReport reads Visible going from not linked to linked to
+      "Show_Handle"; in Properties that form's Visible greyed, with the
+      associate button showing Show_Handle; the first form untouched
+
+  - given: the same form's id, links "Extrusion End=Depth"
+    expect: >
+      changed 1 and the field reading the value Depth holds; the form's top
+      moved to that height - read with REPORT_FAMILY_FORMS, and again after
+      FLEX_FAMILY sets another Depth
+
+  - given: >
+      a solid revolve made by create-family-revolution and an Angle type
+      parameter "Bend_Angle" holding a value that is not its present sweep;
+      links "End Angle=Bend_Angle"
+    expect: >
+      changed 1; the revolve's sweep now ends at that angle, read back by
+      REPORT_FAMILY_FORMS
+
+  - given: the first case run a second time
+    expect: changed 0, alreadyLinked 1, and nothing changed
+
+negative:
+  - given: links "Visible=Depth", a LENGTH parameter
+    expect: >
+      refused naming Depth (Length) and Visible (Yes/No) and the Yes/No
+      parameters that could drive it, and no form changed
+
+  - given: links "Material=Body Material"
+    expect: refused, pointing to SET_FAMILY_FORM_MATERIAL, and nothing changed
+
+  - given: links "End Angle=Bend_Angle" on an EXTRUSION's id
+    expect: >
+      refused - the extrusion has no End Angle - listing what can be linked on
+      it, and nothing changed
+
+  - given: a project in front
+    expect: notAFamily true and nothing changed anywhere
+
+second_route:
+  - >
+      Select the form in the Family Editor, the small button at the end of the
+      Visible row in Properties: it shows Show_Handle; in a test project, a
+      type with Show_Handle cleared shows no handle

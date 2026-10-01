@@ -1,0 +1,105 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-047
+semantic-identity: "set Is Reference and Defines Origin on the reference planes of the family being edited"
+kind: action
+domain: revit.families
+capability: SET_FAMILY_PLANE_REFERENCE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets IS REFERENCE and DEFINES ORIGIN on named reference planes in the family
+  open in the Family Editor - the two rows of a plane's Properties that decide
+  how the family behaves once placed: which of its planes a project can
+  dimension and snap to, and which planes fix its insertion point, the point
+  it is placed by.
+
+  **WHAT EACH PLANE IS GIVEN** - Left, Right, Front, Back, Top, Bottom or one of
+  the three centres, each held by one plane at a time; Strong or Weak
+  Reference for any other plane a project should reach; Not a Reference for a
+  plane only the build needs. Sides and centres go on planes that face their
+  way - Left on a plane facing left or right, Top on a horizontal one.
+
+  **ONE ALREADY HELD IS REFUSED**, naming the plane that holds it: what that
+  plane becomes is said in the same call, never decided here.
+
+  **"origin" MOVES THE ORIGIN** onto a plane, from the one facing the same way
+  that had it, and both are reported. A project's units already placed take
+  the new origin when the family is loaded into it again.
+
+  **NONE OF REVIT'S NUMBERS IS ASSUMED.** Each value is written and read back
+  in Revit's own words, and one whose words never come back fails the call.
+  Every other plane is read before and after, and anything the call did not
+  ask that moved is put back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Plane name = what it becomes, SEMICOLONS between - "Box Left=Left;
+    # Box Right=Right; Insert=Strong Reference, origin". Short forms: strong,
+    # weak, none. "origin" alone moves the origin and leaves Is Reference.
+    - name: planes
+      type: IDictionary<string, string>
+      source: request
+  provides:
+    - name: planeReport
+      # Every plane that changed, before and after, on ONE line - a list is cut
+      # to three entries before anyone reads it.
+      role: result
+      type: string
+    - name: changed
+      # Planes that read differently after the call, the plane that gave up
+      # the origin among them.
+      role: result
+      type: int
+    - name: alreadySet
+      # Settings asked for and already so: looked at, nothing done (D-52).
+      role: accounting
+      type: int
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `BuiltInParameter.ELEM_REFERENCE_NAME` and `ELEM_REFERENCE_NAME_2D_XZ` ("Is
+  Reference"), `DATUM_PLANE_DEFINES_ORIGIN` ("Defines Origin") and
+  `DATUM_TEXT`, `ReferencePlane.Normal`, and the `FamilyInstanceReferenceType`
+  enum - Left 0 to Top 8, Strong 9, Weak 10, Not a Reference 11 - read the same
+  2020 through 2027 (the RevitAPI reference assemblies, read 2026-10-01 with
+  tools/api-surface). Whether the parameter STORES those numbers is not
+  documented, so they are a first try and never trusted: every write is read
+  back in Revit's words (NEEDS-CHECKING BP4).
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "set the left plane's is reference to left"   -> here
+#   "set this plane to not a reference"           -> here
+#   "add reference planes at these distances"     -> CREATE_REFERENCE_PLANES,
+#                                                    which leaves Is Reference
+#                                                    at Revit's default
+
+utterances:
+  - set the left plane's is reference to left
+  - set the reference planes' is reference to strong
+  - make this plane not a reference
+  - move the family origin to the Insert plane
+  - set is reference left right front and back on these planes

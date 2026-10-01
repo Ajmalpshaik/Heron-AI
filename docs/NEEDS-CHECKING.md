@@ -421,6 +421,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bo.md`](needs-checking/group-bo.md)
 
+## Group BP - one form's Visible, angles and extrusion ends linked to parameters; Is Reference and Defines Origin on planes (2026-10-01)
+
+**Its own file:** [`needs-checking/group-bp.md`](needs-checking/group-bp.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

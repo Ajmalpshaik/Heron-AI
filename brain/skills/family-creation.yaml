@@ -30,9 +30,10 @@ purpose: >
      round bodies), one shape changing into another (blend: square-to-round
      necks, tapered legs), a shape carried along a path (sweep: rails, pipe
      runs, frames, rings), one shape changing along one bend (swept blend:
-     reducers, elbows), and every hole or notch as a void; and every SIZE that
+     reducers, elbows), and every hole or notch as a void; every SIZE that
      describes them, marking which change between types - those become
-     parameters - and which never do. A PICTURE GIVES SHAPE AND PROPORTION,
+     parameters - and which never do; and every PART only some types have,
+     which becomes a Yes/No parameter. A PICTURE GIVES SHAPE AND PROPORTION,
      NEVER SIZE: every size, parameter name and type name is the modeller's,
      asked for once, in that one list, and never assumed or scaled off the
      image (D-33). Where the picture cannot show something - the back, the
@@ -50,7 +51,13 @@ purpose: >
      100 mm", "Radius = Diameter / 2". Names are written bare, spaces and all.
   5. CREATE_REFERENCE_PLANES - the skeleton, at the positions the sizes put
      them: left-right planes, front-back planes, height planes. One plane for
-     every face whose position a parameter drives.
+     every face whose position a parameter drives. Then
+     SET_FAMILY_PLANE_REFERENCE: Left, Right, Front, Back, Top and Bottom on
+     the outer planes a project dimensions to, Strong or Weak Reference on any
+     other it should reach, Not a Reference on planes only the build needs,
+     and Defines Origin where the family is placed from - before anything is
+     placed in a project, because a project's units take a moved origin when
+     the family is loaded again.
   6. LABEL_FAMILY_DIMENSION for every straight size - with the family's centre
      plane for left-right and front-back, so the shape stays centred on its
      insertion point; from Ref. Level for a height.
@@ -64,7 +71,10 @@ purpose: >
   8. LOCK_FORM_TO_PLANES for every form that is not a box from step 7 - each
      flat face that lies on a plane a parameter moves. A face not locked stays
      where it was drawn when its plane moves, and looks parametric until the
-     first flex.
+     first flex. Where the size is the form's OWN field rather than a plane,
+     LINK_FAMILY_FORM_PARAMETER instead: an extrusion's end to a length, a
+     revolve's end angle to an angle - a bend whose angle the types choose.
+     Never both on one face.
   9. LABEL_FAMILY_RADIUS for every round size - the parameter holding the size
      first, as in step 3.
   10. THE VOIDS, built as void forms in step 7, each cut into the solid it must
@@ -78,7 +88,8 @@ purpose: >
       the neck apart - then SET_FAMILY_FORM_SUBCATEGORY and
       SET_FAMILY_FORM_VISIBILITY where a project must show or style a part on
       its own: the body hidden in a coarse plan, the insulation on its own
-      subcategory.
+      subcategory. A part only some types have from step 0:
+      LINK_FAMILY_FORM_PARAMETER, its Visible to that Yes/No parameter.
   13. REPORT_FAMILY_FORMS - every form read back with its size, against the
       list from step 0, before the proof.
   14. FLEX_FAMILY last, at sizes that are really different and not square - the
@@ -88,8 +99,8 @@ purpose: >
   The family is saved by the modeller: Revit will not save the document open
   in its window while Heron holds it.
 
-  NOT YET: Is Reference (set in Properties), reference lines and
-  angles - a part that swings or tilts - and nested families. Whether a label
+  NOT YET: reference lines and angles - a part that swings or tilts
+  about a pivot - and nested families. Whether a label
   on a round form's edge DRIVES the circle is not yet known on any release:
   step 14 is where that is found out (NEEDS-CHECKING BM3). This line said
   until 2026-10-01 that a circle's size cannot be driven through the API on
@@ -114,6 +125,7 @@ needs:
   - SET_FAMILY_TYPE_VALUES
   - SET_FAMILY_FORMULA
   - CREATE_REFERENCE_PLANES
+  - SET_FAMILY_PLANE_REFERENCE
   - LABEL_FAMILY_DIMENSION
   - EXTRUDE_BETWEEN_PLANES
   - CREATE_FAMILY_EXTRUSION
@@ -122,6 +134,7 @@ needs:
   - CREATE_FAMILY_SWEEP
   - CREATE_FAMILY_SWEPT_BLEND
   - LOCK_FORM_TO_PLANES
+  - LINK_FAMILY_FORM_PARAMETER
   - LABEL_FAMILY_RADIUS
   - COMBINE_FAMILY_FORMS
   - ADD_FAMILY_CONNECTOR
@@ -144,7 +157,8 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 note: >
   Each step is one entry in the Family Editor's undo list. Built 2026-09-24 on
   the owner's instruction to bring family creation into Heron, as boxes only;
-  widened 2026-10-01, on his word "extrude, revolve, all modelling capability
-  ... maybe I will give only an image", to every form, the locks, a round
-  size, voids that cut, and a family read from a picture. Every step is DRAFT
+  widened 2026-10-01, on the owner's word "extrude, revolve, all modelling
+  capability ... maybe I will give only an image", to every form, the locks, a
+  round size, voids that cut, a form's own fields linked, Is Reference, and a
+  family read from a picture. Every step is DRAFT
   until it has been run on a real family with a negative case (D-30).

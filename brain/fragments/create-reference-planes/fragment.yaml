@@ -44,7 +44,7 @@ purpose: >
   runs is a model property that shows in every view at once, and judging it
   is done by eye in Revit - reported from an earlier family build, where
   changes to plane extents were undone by hand both times. Is Reference is left
-  at Revit's default and can be set in Properties.
+  at Revit's default; SET_FAMILY_PLANE_REFERENCE sets it, and Defines Origin.
 
   **ALL OR NOTHING.** Every name is checked before the first plane is made, and
   a refusal from Revit afterwards fails the call with nothing kept.
