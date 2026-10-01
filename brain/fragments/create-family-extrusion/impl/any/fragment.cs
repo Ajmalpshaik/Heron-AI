@@ -7,8 +7,10 @@
 // ANY CLOSED SHAPE, NOT ONLY A BOX. A profile is one or more loops, `|`
 // between them: "circle CX,CY R", "rect X1,Y1 X2,Y2", "polygon CX,CY R N", or
 // corners "X,Y; X,Y; arc MX,MY X,Y; X,Y" - a straight line to each corner, an
-// arc through MX,MY to X,Y, and the loop closed back to its first corner. The
-// first loop is the outline; a loop inside it is a hole.
+// arc through MX,MY to X,Y, and the loop closed back to its first corner. A
+// loop inside another is a hole; a loop beside the others is a second outline,
+// a second body - Revit decides by where the loops lie, not by their order, and
+// so does the report (5b-275).
 //
 // THE PLANE'S OWN TWO MODEL COORDINATES, IN MILLIMETRES FROM THE FAMILY ORIGIN.
 // On a level or a horizontal plane they are X,Y as seen in plan; on a plane
@@ -334,6 +336,8 @@ if (refused == null)
 
     Extrusion form;
     var curves = new List<Curve>();
+    // Each loop as points in the plane's two coordinates, to say which lies inside which.
+    var rings = new List<List<double[]>>();
     double sign;
 
     try
@@ -348,6 +352,7 @@ if (refused == null)
         foreach (var loop in loops)
         {
             var array = new CurveArray();
+            var ring = new List<double[]>();
             foreach (var s in loop)
             {
                 var a = onPlane(s[1], s[2]);
@@ -355,8 +360,14 @@ if (refused == null)
                 Curve piece = s[0] == 0.0 ? (Curve)Line.CreateBound(a, b) : Arc.Create(a, b, onPlane(s[3], s[4]));
                 array.Append(piece);
                 curves.Add(piece);
+                for (var k = 0; k < 16; k++)
+                {
+                    var p = piece.Evaluate(k / 16.0, true);
+                    ring.Add(new[] { along(p, u), along(p, v) });
+                }
             }
             outline.Append(array);
+            rings.Add(ring);
         }
 
         // Along the sketch plane's own normal: a start and an end along the model
@@ -430,11 +441,46 @@ if (refused == null)
         throw new InvalidOperationException("The extrusion was built and holds no solid to measure. NOTHING from "
             + "this call was kept.");
 
+    // WHICH LOOP IS A HOLE, by where it lies: inside an odd number of the others
+    // it is a hole, inside none or an even number it is an outline of its own.
+    // Every point of it is tested, so a loop half in and half out is named as
+    // crossing rather than guessed at. Never by its place in the list (5b-275).
+    Func<double[], List<double[]>, bool> inside = (point, ring) =>
+    {
+        var odd = false;
+        for (int i = 0, j = ring.Count - 1; i < ring.Count; j = i++)
+            if ((ring[i][1] > point[1]) != (ring[j][1] > point[1])
+                && point[0] < (ring[j][0] - ring[i][0]) * (point[1] - ring[i][1]) / (ring[j][1] - ring[i][1]) + ring[i][0])
+                odd = !odd;
+        return odd;
+    };
+    var outlines = 0;
+    var holes = 0;
+    var crossing = 0;
+    for (var i = 0; i < rings.Count; i++)
+    {
+        var within = 0;
+        var crosses = false;
+        for (var j = 0; j < rings.Count; j++)
+        {
+            if (j == i) continue;
+            var count = rings[i].Count(point => inside(point, rings[j]));
+            if (count == rings[i].Count) within++;
+            else if (count > 0) crosses = true;
+        }
+        if (crosses) crossing++;
+        else if (within % 2 == 1) holes++;
+        else outlines++;
+    }
+    var parts = new List<string>();
+    if (outlines > 0) parts.Add(outlines + (outlines == 1 ? " outline" : holes == 0 ? " separate outlines" : " outlines"));
+    if (holes > 0) parts.Add(holes + (holes == 1 ? " hole" : " holes") + " inside " + (outlines == 1 ? "it" : "them"));
+    if (crossing > 0) parts.Add(crossing + " crossing another loop");
+
     formId = form.UniqueId;
-    var holes = loops.Count - 1;
     built = (solid ? "Solid" : "Void") + " extrusion on \"" + plane.Item4 + "\" (" + facing[axis] + ", "
-        + axisLetters[axis] + " " + mm(at) + " mm): " + loops.Count + " loop(s)" + (holes > 0 ? " (" + holes
-        + " inside the first)" : "") + ", " + axisLetters[axis] + " " + mm(low) + " to " + mm(high) + " mm. Reads "
+        + axisLetters[axis] + " " + mm(at) + " mm): " + loops.Count + " loop(s)"
+        + (loops.Count > 1 ? " (" + string.Join(", ", parts) + ")" : "") + ", " + axisLetters[axis] + " " + mm(low) + " to " + mm(high) + " mm. Reads "
         + string.Join(", ", new[] { 0, 1, 2 }.Select(i => axisLetters[i] + " " + mm(along(bounds.Min, i)) + " to "
             + mm(along(bounds.Max, i)))) + " mm"
         + (solid ? "; volume " + Math.Round(volume * 28.316846592, 3).ToString(invariant) + " L." : ".");

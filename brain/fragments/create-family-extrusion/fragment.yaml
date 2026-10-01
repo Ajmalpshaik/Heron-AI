@@ -21,8 +21,10 @@ purpose: >
   than drawn. A rectangular box locked between four planes is
   EXTRUDE_BETWEEN_PLANES; this is every other shape.
 
-  **THE SHAPE IS TYPED AS LOOPS**, `|` between them, the first the outline
-  and any inside it a hole:
+  **THE SHAPE IS TYPED AS LOOPS**, `|` between them. A loop inside another
+  is a hole; a loop beside the others is an outline of its own, a second
+  body in the same form - Revit goes by where the loops lie, not their order,
+  and the read-back says which each is:
   `circle CX,CY R`, `rect X1,Y1 X2,Y2`, `polygon CX,CY R N` (a regular
   polygon, first corner along the first coordinate), or corners
   `X,Y; X,Y; arc MX,MY X,Y; X,Y` - a straight side to each corner, an arc
@@ -93,8 +95,9 @@ contract:
       role: result
       type: string
     - name: built
-      # The form as Revit now holds it: solid or void, the plane, the loops, its
-      # extent on all three axes in millimetres and a solid's volume.
+      # The form as Revit now holds it: solid or void, the plane, the loops - how
+      # many are outlines and how many holes inside them - its extent on all
+      # three axes in millimetres and a solid's volume.
       role: result
       type: string
     - name: notAFamily
