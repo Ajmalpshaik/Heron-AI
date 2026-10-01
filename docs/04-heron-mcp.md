@@ -364,6 +364,10 @@ ordinary case.
   `_meta["anthropic/alwaysLoad"]`. Most Revit chats spent their first turn searching for a Heron tool
   (5 - 10 s). The cost is about 9,000 characters of descriptions in every chat; every other tool is
   still one search away, and nothing about what a tool may do changes.
+- **A connection check is answered and nothing more is done.** The owner, 2026-10-01: when he asks
+  first whether Heron is connected he wants that answer and then to say what is next - *"only need to
+  check the connected or not"*. The chat's rules (`host.chat`) and `revit_health`'s own description
+  now say so. Its WARNING about Changes being on is unchanged: it is a safety notice.
 - **The developer's session line is silent in a modeller's chat** - the main checkout on `main` - and
   runs no git there ([`heron-session`](../.claude/skills/heron-session/SKILL.md)).
 

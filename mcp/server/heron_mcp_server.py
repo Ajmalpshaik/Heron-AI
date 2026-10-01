@@ -352,6 +352,9 @@ def revit_health() -> str:
     answering, and which model it has open. Use it when the user asks whether
     Revit is working or connected, before relying on any other Revit answer,
     or when a Revit request has failed and the reason is not obvious.
+
+    When the user asked only whether it is connected, say what this found and
+    stop: it is not a request to read the model or check anything else.
     """
     try:
         live, starting, stale, mismatched = bridge.discover()
