@@ -1367,8 +1367,13 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
         if writing and apply_it:
             args["apply"] = "true"
 
+        # NOT SAFE TO ASK TWICE when it consumes the chain - the first run
+        # replaces it, so a resend is refused on the expectation that run
+        # satisfied (the A20 run, 2026-10-01) - nor when it keeps a change,
+        # which request()'s own docstring already says MUST pass False.
         reply = bridge.request(operation, op_args=args,
-                               response_timeout=heron_config.fragment_timeout())
+                               response_timeout=heron_config.fragment_timeout(),
+                               idempotent=not (expect or (writing and apply_it)))
 
         if reply is None:
             print("No reply from Revit %s (session %s)." % (bridge.revit_version, bridge.pid))

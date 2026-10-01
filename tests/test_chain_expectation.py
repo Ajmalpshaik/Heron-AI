@@ -197,6 +197,28 @@ def main():
     check('args.pop("chain", None)' in server,
           "which also drops the reset rather than sending the contradiction")
 
+    # ------------------------------------------------------------------
+    # AND NEVER SENT TWICE - added 2026-10-01, from the A20 run.
+    #
+    # Running a consumer replaces the chain, so a resend after a lost answer
+    # is refused on the very expectation the first run satisfied, and the
+    # caller hears "nothing was bound" for a fragment that ran. The bridge
+    # client resends a lost answer only for a request marked idempotent, so
+    # every door that sends expectChain must mark it not.
+    # ------------------------------------------------------------------
+    sender = client[client.index("def cmd_fragment("):]
+    sender = sender[:sender.index("\ndef ")]
+    check("idempotent=" in sender and "expect" in
+          sender[sender.index("idempotent="):sender.index("idempotent=") + 80],
+          "the command line sends a consuming run NOT idempotent, so a lost "
+          "answer is reported rather than resent")
+
+    reader = server[server.index("def revit_read("):]
+    reader = reader[:reader.index("\n@server.tool()")]
+    check("idempotent=not consumes" in reader,
+          "and so does revit_read, whose default of 'a read is safe to ask "
+          "twice' is false for a read that consumes the chain")
+
     if FAILURES:
         print("FAILED")
         for failure in FAILURES:
