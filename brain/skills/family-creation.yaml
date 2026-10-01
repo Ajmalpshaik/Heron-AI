@@ -30,7 +30,9 @@ purpose: >
      round bodies), one shape changing into another (blend: square-to-round
      necks, tapered legs), a shape carried along a path (sweep: rails, pipe
      runs, frames, rings), one shape changing along one bend (swept blend:
-     reducers, elbows), and every hole or notch as a void; every SIZE that
+     reducers, elbows), every hole or notch as a void, and every part that
+     repeats in a row - blades, fins, slots - as one form and a count; every
+     SIZE that
      describes them, marking which change between types - those become
      parameters - and which never do; and every PART only some types have,
      which becomes a Yes/No parameter. A PICTURE GIVES SHAPE AND PROPORTION,
@@ -80,7 +82,10 @@ purpose: >
   10. THE VOIDS, built as void forms in step 7, each cut into the solid it must
       cut with COMBINE_FAMILY_FORMS - a void made through the API cuts NOTHING
       until it is combined, and the cut is measured. Solids that should read as
-      one piece are joined the same way.
+      one piece are joined the same way. A part that repeats in a row is ONE
+      form made in step 7 and ARRAY_FAMILY_FORMS, its count an Integer
+      parameter given its value in step 3; an arrayed void's copies are each
+      combined in turn, by the ids the array gives back.
   11. ADD_FAMILY_CONNECTOR on the face its service leaves by, sized by the
       parameters so the port follows the neck - for MEP families.
   12. SET_FAMILY_FORM_MATERIAL for each form's material - linked to a family
@@ -89,7 +94,10 @@ purpose: >
       SET_FAMILY_FORM_VISIBILITY where a project must show or style a part on
       its own: the body hidden in a coarse plan, the insulation on its own
       subcategory. A part only some types have from step 0:
-      LINK_FAMILY_FORM_PARAMETER, its Visible to that Yes/No parameter.
+      LINK_FAMILY_FORM_PARAMETER, its Visible to that Yes/No parameter. Where a
+      plan must show a SYMBOL rather than the body - a valve's bow tie, a fan's
+      circle and cross - DRAW_FAMILY_SYMBOLIC_LINES on Ref. Level at the levels
+      the body is hidden at.
   13. REPORT_FAMILY_FORMS - every form read back with its size, against the
       list from step 0, before the proof.
   14. FLEX_FAMILY last, at sizes that are really different and not square - the
@@ -137,10 +145,12 @@ needs:
   - LINK_FAMILY_FORM_PARAMETER
   - LABEL_FAMILY_RADIUS
   - COMBINE_FAMILY_FORMS
+  - ARRAY_FAMILY_FORMS
   - ADD_FAMILY_CONNECTOR
   - SET_FAMILY_FORM_MATERIAL
   - SET_FAMILY_FORM_SUBCATEGORY
   - SET_FAMILY_FORM_VISIBILITY
+  - DRAW_FAMILY_SYMBOLIC_LINES
   - REPORT_FAMILY_FORMS
   # The proof, and never skipped.
   - FLEX_FAMILY
@@ -159,6 +169,6 @@ note: >
   the owner's instruction to bring family creation into Heron, as boxes only;
   widened 2026-10-01, on the owner's word "extrude, revolve, all modelling
   capability ... maybe I will give only an image", to every form, the locks, a
-  round size, voids that cut, a form's own fields linked, Is Reference, and a
-  family read from a picture. Every step is DRAFT
+  round size, voids that cut, a form's own fields linked, Is Reference,
+  arrays, plan symbols, and a family read from a picture. Every step is DRAFT
   until it has been run on a real family with a negative case (D-30).

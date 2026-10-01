@@ -1,0 +1,36 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template with an Integer type
+      parameter "Blade Count" holding 5, and one solid extrusion made by
+      create-family-extrusion, rect -300,-10 300,10 on Ref. Level from 0 to
+      50; form = its id, count "Blade Count", step "Y 100"
+    expect: >
+      labelled true; members four ids; five blades 100 mm apart along +Y in the
+      Ref. Level plan; selecting the array shows its count labelled Blade Count
+
+  - given: Blade Count set to 8 in Family Types (FLEX_FAMILY)
+    expect: eight blades, the copies' ids different from before
+
+  - given: the same form, count "3", step "Y 400 last"
+    expect: >
+      labelled false; three blades, the last 400 mm from the first, 200 mm
+      apart
+
+negative:
+  - given: count "Show_Handle", a Yes/No parameter
+    expect: refused - not an Integer parameter - and nothing arrayed
+
+  - given: count "1"
+    expect: refused - not an array - and nothing arrayed
+
+  - given: two forms' ids, commas between
+    expect: refused - one form per array - and nothing arrayed
+
+  - given: a project in front
+    expect: notAFamily true and nothing arrayed anywhere
+
+second_route:
+  - >
+      The Ref. Level plan and the 3D view in the Family Editor: count the
+      blades and dimension two neighbours by hand; select the array and read
+      its label; flex Blade Count in Family Types and count again

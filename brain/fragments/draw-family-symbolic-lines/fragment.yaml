@@ -1,0 +1,110 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-116
+semantic-identity: "draw symbolic lines - a 2D plan or elevation symbol - in the family being edited"
+kind: action
+domain: revit.families
+capability: DRAW_FAMILY_SYMBOLIC_LINES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws SYMBOLIC LINES in the family open in the Family Editor - the 2D symbol
+  a family shows in plan or elevation instead of its 3D body: a valve's bow
+  tie, a fan's circle and cross, a door's swing. The Family Editor's Symbolic
+  Line. They show only in views parallel to the plane they are drawn on, never
+  in 3D.
+
+  **THE SAME SHAPE LANGUAGE AS THE FORM TOOLS**, millimetres in the plane's own
+  two model coordinates: closed shapes - circle, rect, polygon, or corners
+  closed back to the first - and OPEN lines written "path X,Y; X,Y; arc MX,MY
+  X,Y". Pieces with `|` between.
+
+  **THE DETAIL LEVELS ARE NAMED IN FULL** - coarse, medium, fine, or all - so a
+  symbol for coarse plans stands in for a body hidden there with
+  SET_FAMILY_FORM_VISIBILITY.
+
+  **ON A SUBCATEGORY** of the family's category, made when new, or "none" for
+  the category itself.
+
+  **READ BACK, ALL OR NOTHING**: every line's ends, its subcategory and its
+  levels are read again; one that does not read as asked fails the call. The
+  lines' ids come back, commas between.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # A named reference plane or level, facing left-right, front-back or up -
+    # "Ref. Level" for a plan symbol.
+    - name: workPlane
+      type: string
+      source: request
+    # Shapes in millimetres, `|` between: "circle 0,0 150 | path -150,0; 150,0".
+    - name: shapes
+      type: string
+      source: request
+    # "coarse, medium", or "all".
+    - name: detailLevels
+      type: string
+      source: request
+    # A subcategory of the family's category, made when new - or "none".
+    - name: subcategory
+      type: string
+      source: request
+  provides:
+    - name: lineIds
+      # Every line's unique id, commas between.
+      role: result
+      type: string
+    - name: drawn
+      # How many lines on which plane, their length, subcategory and levels.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was drawn, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyItemFactory.NewSymbolicCurve(Curve, SketchPlane)`,
+  `SymbolicCurve.SetVisibility` and `GetVisibility`,
+  `FamilyElementVisibilityType.ViewSpecific` and `Model`,
+  `Categories.NewSubcategory` and `SketchPlane.Create(Document, ElementId)` read
+  the same 2020 through 2027 (the RevitAPI reference assemblies and their XML
+  remarks, read 2026-10-01). `SymbolicCurve.Subcategory` is a LINE STYLE, a
+  `GraphicsStyle`, on every release - the first compile said so - so the
+  subcategory's projection style (`Category.GetGraphicsStyle`) is what is set,
+  and its `GraphicsStyleCategory` what is read back. Which visibility kind a
+  symbolic line takes is not in the remarks; both are tried and the setting
+  read back (NEEDS-CHECKING BQ2).
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "draw the valve symbol in plan"               -> here
+#   "draw a circle and a cross as the plan symbol" -> here
+#   "hide the body in plan views in the family"   -> SET_FAMILY_FORM_VISIBILITY
+#   "draw detail lines in this view"              -> CREATE_LINE, a project
+#                                                    view's lines
+
+utterances:
+  - draw the valve symbol in plan
+  - draw a circle and a cross as the plan symbol
+  - add symbolic lines to this family
+  - draw the fan symbol for coarse plans
