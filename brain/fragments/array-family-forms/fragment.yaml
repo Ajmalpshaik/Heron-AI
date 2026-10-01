@@ -1,0 +1,112 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-048
+semantic-identity: "repeat one form in a row - a linear array - in the family being edited, its count driven by a parameter"
+kind: action
+domain: revit.families
+capability: ARRAY_FAMILY_FORMS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  REPEATS ONE FORM IN A ROW in the family open in the Family Editor - a
+  grille's blades, a radiator's fins, a louvre's slots, a rack's shelves - as a
+  linear array: the Family Editor's Array, with its count LABELLED to an
+  Integer family parameter when the types must choose how many.
+
+  **A LINKED REVIT ARRAY, the kind ARRAY_ELEMENTS leaves out on purpose** -
+  that tool's loose copies cannot follow a count a type chooses.
+
+  **ONE FORM PER ARRAY.** Several at once would make every member a group;
+  a second form takes a second call, and both may follow one count.
+
+  **THE COUNT** is a whole number, or an Integer family parameter's name -
+  its value in the current type is the count, and the label lets every type
+  choose. Revit labels an array only with an Integer parameter; a Yes/No is
+  refused by its kind.
+
+  **THE STEP** is an axis and a distance in millimetres: each member that far
+  on from the one before - or, ending "last", the last member that far from
+  the first and the rest spread evenly between, the one to lock to a plane so
+  the spacing follows a length.
+
+  **READ BACK, ALL OR NOTHING**: the count, the label and every copy's place
+  are read again. The array's id and the copies' ids come back; copies of a
+  void cut nothing until COMBINE_FAMILY_FORMS combines them.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+    # ONE form, by the id the form tools gave back - or `selected`, with it
+    # selected alone.
+    - name: form
+      type: string
+      source: request
+    # A whole number 2 to 200, or an Integer family parameter's name -
+    # "Blade Count".
+    - name: count
+      type: string
+      source: request
+    # An axis and millimetres - "X 150", or "X 900 last".
+    - name: step
+      type: string
+      source: request
+  provides:
+    - name: arrayId
+      # The array's unique id.
+      role: result
+      type: string
+    - name: members
+      # The copies' unique ids, commas between - the original form is not one
+      # of them.
+      role: result
+      type: string
+    - name: labelled
+      # True when the count follows a family parameter.
+      role: result
+      type: bool
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was arrayed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `LinearArray.Create(Document, View, ElementId, int, XYZ, ArrayAnchorMember)`
+  - "between 0 and 200 in family documents" - and `BaseArray.Label`,
+  `NumMembers` and `GetCopiedMemberIds` read the same 2020 through 2027 (the
+  RevitAPI reference assemblies and their XML remarks, read 2026-10-01). The
+  label's own remark: only in a family, and only an Integer parameter. That
+  kind is read by reflection: `SpecTypeId.Int.Integer` from 2022,
+  `ParameterType.Integer` before, gone from 2023.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "array the blade along X with Blade Count"    -> here
+#   "repeat this fin along the width"             -> here
+#   "array them along the corridor"               -> ARRAY_ELEMENTS, loose
+#                                                    copies in a project
+
+utterances:
+  - array the blade along X with Blade Count
+  - repeat this fin along the width
+  - make a row of these slots with a count parameter
+  - array this form so the types choose how many
