@@ -29,6 +29,9 @@ WHAT IT PROVES
   7. With nowhere to keep knowledge it REFUSES, rather than answering with
      an empty catalogue - "knows nothing" and "cannot read what it knows"
      send a user in opposite directions.
+  8. THE STORE IS PREPARED BEFORE ANYBODY ASKS: warm_store() builds a
+     private store on its own thread, once; a question arriving meanwhile
+     waits for it; and it is never started from a branch or a worktree.
 
 WHAT IT CANNOT DO
   It does not import the MCP server. So clause 6 reads the server as TEXT, the
@@ -397,6 +400,80 @@ def main():
             ok = BRAIN.gaps(real)
             check("found" in ok,
                   "%r is still a real window and still answers" % (real,))
+
+        # --- 8. the store is prepared before anybody asks ---------------------
+        # Numbered after 7 and run before it, because 7 takes the knowledge
+        # folder away. A FRESH folder, so the only thing that can have built
+        # the store is the warm-up.
+        print()
+        print("The store, prepared at start-up rather than at the first question")
+        import threading
+        fresh = tempfile.mkdtemp(prefix="heron-warm-")
+        kept = os.environ["HERON_KNOWLEDGE"]
+        os.environ["HERON_KNOWLEDGE"] = fresh
+        try:
+            warm = getattr(BRAIN, "warm_store", None)
+            check(warm is not None, "the brain has a store warm-up at all")
+            if warm is not None:
+                warm()
+                thread = BRAIN._STORE_WARM[0]
+                check(thread is not None,
+                      "a private store is warmed - nobody else reads it")
+                if thread is not None:
+                    thread.join(300)
+                probe = SCOPE.open_scope(SCOPE.GLOBAL)
+                try:
+                    built = probe.count()
+                finally:
+                    probe.close()
+                check(built > 0,
+                      "and when it finishes the store holds the library "
+                      "(%d fragments) with nobody having asked" % built)
+                warm()
+                check(BRAIN._STORE_WARM[0] is thread,
+                      "a second call starts nothing - it is once per process")
+
+            preparing = getattr(BRAIN, "_PREPARING", None)
+            check(preparing is not None, "there is one lock for preparing a store")
+            if preparing is not None:
+                done = []
+                with preparing:
+                    asker = threading.Thread(
+                        target=lambda: done.append(BRAIN.catalogue()))
+                    asker.start()
+                    asker.join(1.0)
+                    check(not done,
+                          "a question that arrives while a preparation runs "
+                          "WAITS for it, rather than doing the same work beside it")
+                asker.join(120)
+                check(done, "and is answered the moment the preparation ends")
+
+            on_main = getattr(BRAIN, "_on_main_branch", None)
+            check(on_main is not None, "the branch is read without running git")
+            if on_main is not None:
+                tree = tempfile.mkdtemp(prefix="heron-head-")
+                try:
+                    check(on_main(tree), "an install with no git at all is warmed")
+                    os.makedirs(os.path.join(tree, ".git"))
+                    for head, want, what in (
+                            ("ref: refs/heads/main\n", True,
+                             "the main checkout on main - a modeller's chat - is warmed"),
+                            ("ref: refs/heads/claude/x\n", False,
+                             "on any other branch it is NOT: those cards may be unmerged"),
+                            ("0123abcd\n", False, "nor on a detached HEAD")):
+                        with io.open(os.path.join(tree, ".git", "HEAD"), "w") as fh:
+                            fh.write(head)
+                        check(on_main(tree) is want, what)
+                    shutil.rmtree(os.path.join(tree, ".git"))
+                    with io.open(os.path.join(tree, ".git"), "w") as fh:
+                        fh.write("gitdir: elsewhere\n")
+                    check(on_main(tree) is False,
+                          "and a linked worktree, whose .git is a file, never is")
+                finally:
+                    shutil.rmtree(tree, ignore_errors=True)
+        finally:
+            os.environ["HERON_KNOWLEDGE"] = kept
+            shutil.rmtree(fresh, ignore_errors=True)
 
         # --- 7. it refuses rather than answering "nothing" ------------------
         # Last, because it takes the knowledge folder away. "Heron knows how to

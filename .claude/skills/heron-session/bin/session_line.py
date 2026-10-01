@@ -36,6 +36,9 @@ WHAT IT DELIBERATELY DOES NOT DO
     be, nothing is printed and the exit is 0. A status line that errors at the
     start of every session is a status line somebody switches off.
   * IT CHANGES NOTHING. Two read-only git questions and some file reads.
+  * IT SAYS NOTHING IN A MODELLER'S CHAT - the main checkout with branch main
+    out, where the owner's Revit chats run - and runs no git there either.
+    See modeller_checkout(). Since 2026-10-01.
 
 WINDOWS
 -------
@@ -129,11 +132,46 @@ def fragment_part(top):
     return "Fragments: %s of %d" % (", ".join(named), total)
 
 
+def modeller_checkout(where):
+    """True when `where` is inside the main checkout with branch main out.
+
+    That is where the owner's Revit chats run - every one read back from the
+    transcripts on 2026-10-01 was there - and a modeller is helped by neither
+    half of this line. Each costs time (0.9 s measured, two git processes and
+    a read of every card) and puts development words in front of the AI
+    before a Revit question, which is how a chat ends up thinking about the
+    repository instead of the model. A developer works on a branch, in a
+    worktree (AGENTS.md), and gets the line as before.
+
+    Decided from files, never by running git: walk up to the first .git; a
+    linked worktree's .git is a FILE, so only a real directory whose HEAD
+    names main counts.
+    """
+    here = os.path.abspath(where)
+    while True:
+        dot_git = os.path.join(here, ".git")
+        if os.path.exists(dot_git):
+            if not os.path.isdir(dot_git):
+                return False
+            try:
+                with io.open(os.path.join(dot_git, "HEAD"), encoding="utf-8") as handle:
+                    return handle.read().strip() == "ref: refs/heads/main"
+            except OSError:
+                return False
+        parent = os.path.dirname(here)
+        if parent == here:
+            return False
+        here = parent
+
+
 def line_for(payload):
-    """The whole line, or None when nothing could be derived."""
+    """The whole line, or None when nothing could be derived or nothing is
+    wanted - a modeller's chat, see modeller_checkout()."""
     where = payload.get("cwd") if isinstance(payload, dict) else None
     if not isinstance(where, str) or not os.path.isdir(where):
         where = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+    if modeller_checkout(where):
+        return None
     first, top = branch_part(where)
     second = fragment_part(top or where)
     parts = [p for p in (first, second) if p]

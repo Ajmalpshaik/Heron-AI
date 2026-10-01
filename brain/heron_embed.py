@@ -182,6 +182,20 @@ def warm():
         return
     _WARMING.set()
 
+    # NUMPY'S NATIVE CORE IS LOADED HERE, ON THE CALLING THREAD, BEFORE THE
+    # BACKGROUND ONE STARTS. Measured 2026-10-01 in the MCP server on the owner's
+    # PC: on the warm-up thread, `numpy._core.multiarray` sat inside
+    # create_module - Windows loading the DLL - for 9 to 14 s while the server's
+    # other threads started and blocked on the stdin pipe; the same load in a
+    # plain process takes 1.5 s. Loaded here first (0.24-0.36 s, measured), the
+    # whole encoder then loads in 0.7-0.8 s on the thread. This is very likely
+    # the slow half of the 2026-09-06 "still inside create_module" hang above.
+    # Only numpy, which is small; the heavy rest stays off this thread.
+    try:
+        import numpy                                   # noqa: F401 - loaded for its DLL
+    except ImportError:
+        pass
+
     def run():
         try:
             _load_model()
@@ -191,6 +205,19 @@ def warm():
     t = threading.Thread(target=run, name="heron-embed-warm", daemon=True)
     _WARM_THREAD[0] = t
     t.start()
+
+
+def warmed(timeout=None):
+    """Wait for warm() to finish, up to `timeout` seconds. Never raises.
+
+    For another BACKGROUND thread only - heron_brain.warm_store(), which wants
+    the trained vectors written the first time rather than lexical ones written
+    and then replaced. Never call it on a request thread: waiting there is the
+    hang warm() exists to prevent.
+    """
+    t = _WARM_THREAD[0]
+    if t is not None and t is not threading.current_thread():
+        t.join(timeout)
 
 
 def _load_model():
@@ -221,7 +248,16 @@ def _load_model():
     try:
         from model2vec import StaticModel
         which = name or "minishlab/potion-base-8M"
-        model = StaticModel.from_pretrained(which)
+        folder = _on_disk(which)
+        try:
+            model = StaticModel.from_pretrained(folder or which)
+        except Exception:                              # noqa: BLE001 - a half-downloaded copy
+            # A first download cut off part-way leaves the folder with files
+            # missing, and loading it fails. By NAME fetches what is missing,
+            # as before - review on PR #379.
+            if not folder:
+                raise
+            model = StaticModel.from_pretrained(which)
         _WHICH_MODEL[0] = "model2vec:%s" % which
         _MODEL_CACHE.append(lambda t: list(model.encode([t])[0]))
         return _MODEL_CACHE[0]
@@ -240,6 +276,33 @@ def _load_model():
 
     _MODEL_CACHE.append(None)
     return None
+
+
+def _on_disk(which):
+    """The folder this machine already holds the model in, or None.
+
+    Loaded by NAME, model2vec asks the Hugging Face hub for the latest revision
+    on every start - one request, even when every file is on disk. Measured
+    2026-10-01 in the MCP server on the owner's PC: the load took 1.7 s in one
+    start and 13.8-14.0 s in four of the next five, the request waiting out its
+    timeout. A chat's first lookup then found no encoder and answered lexically.
+    A FOLDER is loaded with no request at all.
+
+    PER CALL, NEVER PROCESS-WIDE: `local_files_only` on this one lookup, not
+    HF_HUB_OFFLINE, which heron_rerank records reaching across into another
+    loader on another thread. A name already pointing at a folder is that
+    folder; a model not on disk returns None, and the caller loads by name as
+    before - the first start on a new machine still downloads. Pinning to the
+    copy on disk also keeps a vector's stamp honest: the stamp names the model,
+    not its revision, so a silent upstream update would wear the same label.
+    """
+    if os.path.isdir(which):
+        return which
+    try:
+        from huggingface_hub import snapshot_download
+        return snapshot_download(which, local_files_only=True)
+    except Exception:                                  # noqa: BLE001 - not on disk: load by name
+        return None
 
 
 # WHICH trained model, not just THAT one is trained - and the difference is a
