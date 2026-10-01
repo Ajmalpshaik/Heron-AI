@@ -417,6 +417,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bn.md`](needs-checking/group-bn.md)
 
+## Group BO - one form's material: linked to a family material parameter, or set to a material, one form at a time (2026-10-01)
+
+**Its own file:** [`needs-checking/group-bo.md`](needs-checking/group-bo.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

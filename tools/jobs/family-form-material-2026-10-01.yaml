@@ -1,0 +1,36 @@
+# The proof of set-family-form-material (SET_FAMILY_FORM_MATERIAL,
+# FRG-PAR-028) - NEEDS-CHECKING Group BO, row BO1.
+#
+#     python tools/batch-prove.py tools/jobs/family-form-material-2026-10-01.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/family-form-material-2026-10-01.yaml
+#
+# THE ARRANGEMENT IS MADE ONCE: the family "Heron Family Constraints Test" from
+# Group BM's job file, with one thing added by hand in Family Types - a MATERIAL
+# TYPE parameter called "Body Material". Its solid cylinder's id is SOLID-ID,
+# as there - type the real one in before running. THE DRY RUN DOES NOT CATCH A
+# PLACEHOLDER LEFT IN (row 5b-264).
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at the cylinder's Material row afterwards anyway (BD1).
+#
+# POSITIVE: the cylinder's Material linked to "Body Material" - `linked` true,
+# `changed` reading "<By Category> -> linked to "Body Material"".
+#
+# NEGATIVE: the same cylinder given "Neck Diameter", a LENGTH parameter -
+# refused as not a material parameter, `changed` empty.
+
+model: Heron Family Constraints Test (Group BM's arrangement, plus a material parameter "Body Material"), Revit 2024
+
+defaults:
+  in: "Heron Family Constraints Test"
+  write: true
+
+jobs:
+  - fragment: set-family-form-material
+    expect: changed
+    set:
+      forms: "SOLID-ID"
+      material: "Body Material"
+    negative-set:
+      forms: "SOLID-ID"
+      material: "Neck Diameter"
