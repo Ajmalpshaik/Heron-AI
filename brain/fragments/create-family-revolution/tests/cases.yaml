@@ -15,6 +15,16 @@ positive:
       a cone 400 across and 400 high, X and Y -200 to 200, Z 0 to 400 mm,
       volume about 16.755 L (pi x 0.2 x 0.2 x 0.4 / 3 m)
 
+  - given: >
+      the same plane, profile "1180,748; arc 1212,780 1180,812" (a half-disc
+      of radius 32 against the axis), axisLine "1180,0 1180,2000", 0 to 360,
+      solid true - the small sphere that was refused on 2026-10-02 because
+      the read-back took Revit's tessellated bounding box (5b-277)
+    expect: >
+      a sphere of radius 32 kept, read back as X 1148 to 1212, Y -32 to 32,
+      Z 748 to 812 mm each within 0.56 mm, volume about 0.137 L
+      (4/3 x pi x 0.032^3 m) - NOT refused with X 1149.57 to 1210.43
+
 negative:
   - given: profile "-100,0; 100,0; 100,300; -100,300" with axisLine "0,0 0,1000"
     expect: refused as crossing its axis, and no form made
