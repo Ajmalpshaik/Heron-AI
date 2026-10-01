@@ -1,0 +1,27 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template with a Work
+      Plane-Based generic model "Heron Nested Box" (one type "300") loaded
+      into it; family "Heron Nested Box", type "300", point "0,0,0", host
+      "Ref. Level"
+    expect: >
+      instanceId an id; placed reading it on "Ref. Level" at 0, 0, 0 mm; the
+      nested box seen in the Ref. Level plan at the origin
+
+  - given: the same on Revit 2024 with a LEVEL-BASED nested family, host "Ref. Level"
+    expect: placed on the level "Ref. Level", read back at the point
+
+negative:
+  - given: family "No Such Family"
+    expect: refused, listing the families loaded into this one, and nothing placed
+
+  - given: the Work Plane-Based family with point "0,0,300" and host "Ref. Level"
+    expect: refused - the point is 300 mm off the plane - and nothing placed
+
+  - given: a project in front
+    expect: notAFamily true, pointing to PLACE_FAMILY_INSTANCES, and nothing placed
+
+second_route:
+  - >
+      Select the nested family in the Family Editor: Properties names its type
+      and Work Plane; the plan shows it where the point says

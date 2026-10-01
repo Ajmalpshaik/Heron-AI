@@ -1,0 +1,28 @@
+positive:
+  - given: >
+      the nested box from place-nested-family, whose type "300" has a Length
+      type parameter "Width"; this family has a Length type parameter "Motor
+      Width" holding 450; family "Heron Nested Box", type "300", links
+      "Width=Motor Width"
+    expect: >
+      changed 1; linkReport reading Width not linked -> "Motor Width" (reads
+      450); the nested box 450 wide in the plan; in its Type Properties the
+      Width row greyed with the associate button on Motor Width
+
+  - given: the same call again
+    expect: changed 0, alreadyLinked 1
+
+negative:
+  - given: links "Width=Show_Handle", a Yes/No parameter
+    expect: refused naming both kinds and the Length parameters that could, nothing changed
+
+  - given: links "Colour=Motor Width" where the nested type has no Colour
+    expect: refused, listing what can be linked on the nested type, nothing changed
+
+  - given: a project in front
+    expect: notAFamily true and nothing changed
+
+second_route:
+  - >
+      Edit Type on the nested family in the Family Editor: the Width row reads
+      450 and greyed, its associate button showing Motor Width

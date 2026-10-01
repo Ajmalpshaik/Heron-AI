@@ -30,8 +30,9 @@ purpose: >
      round bodies), one shape changing into another (blend: square-to-round
      necks, tapered legs), a shape carried along a path (sweep: rails, pipe
      runs, frames, rings), one shape changing along one bend (swept blend:
-     reducers, elbows), every hole or notch as a void, and every part that
-     repeats in a row - blades, fins, slots - as one form and a count; every
+     reducers, elbows), every hole or notch as a void, every part that
+     repeats in a row - blades, fins, slots - as one form and a count, and
+     every part that is a family of its own - a motor, a handle - nested; every
      SIZE that
      describes them, marking which change between types - those become
      parameters - and which never do; and every PART only some types have,
@@ -87,7 +88,13 @@ purpose: >
       parameter given its value in step 3; an arrayed void's copies are each
       combined in turn, by the ids the array gives back.
   11. ADD_FAMILY_CONNECTOR on the face its service leaves by, sized by the
-      parameters so the port follows the neck - for MEP families.
+      parameters so the port follows the neck - for MEP families. A part that
+      is a family of its own, loaded in with LOAD_FAMILY: PLACE_NESTED_FAMILY
+      on the plane it sits on - a Work Plane-Based family is placed on every
+      release, a level-based one only from Revit 2024 - then
+      LOCK_NESTED_FAMILY_TO_PLANES by its own Left, Right, Front, Back, Top,
+      Bottom or centres, then LINK_NESTED_TYPE_PARAMETER for its type's sizes
+      and LINK_FAMILY_PARAMETER for its instance's.
   12. SET_FAMILY_FORM_MATERIAL for each form's material - linked to a family
       material parameter when a project must set it per type, the body and
       the neck apart - then SET_FAMILY_FORM_SUBCATEGORY and
@@ -108,7 +115,8 @@ purpose: >
   in its window while Heron holds it.
 
   NOT YET: reference lines and angles - a part that swings or tilts
-  about a pivot - and nested families. Whether a label
+  about a pivot - and a Family Type parameter that swaps a nested family's
+  type. Whether a label
   on a round form's edge DRIVES the circle is not yet known on any release:
   step 14 is where that is found out (NEEDS-CHECKING BM3). This line said
   until 2026-10-01 that a circle's size cannot be driven through the API on
@@ -147,6 +155,11 @@ needs:
   - COMBINE_FAMILY_FORMS
   - ARRAY_FAMILY_FORMS
   - ADD_FAMILY_CONNECTOR
+  - LOAD_FAMILY
+  - PLACE_NESTED_FAMILY
+  - LOCK_NESTED_FAMILY_TO_PLANES
+  - LINK_NESTED_TYPE_PARAMETER
+  - LINK_FAMILY_PARAMETER
   - SET_FAMILY_FORM_MATERIAL
   - SET_FAMILY_FORM_SUBCATEGORY
   - SET_FAMILY_FORM_VISIBILITY
@@ -170,5 +183,5 @@ note: >
   widened 2026-10-01, on the owner's word "extrude, revolve, all modelling
   capability ... maybe I will give only an image", to every form, the locks, a
   round size, voids that cut, a form's own fields linked, Is Reference,
-  arrays, plan symbols, and a family read from a picture. Every step is DRAFT
+  arrays, plan symbols, nested families, and a family read from a picture. Every step is DRAFT
   until it has been run on a real family with a negative case (D-30).
