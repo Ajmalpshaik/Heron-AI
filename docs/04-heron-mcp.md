@@ -321,3 +321,55 @@ read to check it:
 | after, anything else | 2 | 3 | ~0.09 s |
 
 **NEEDS REAL REVIT:** the time Revit itself takes, and the host's own turn time, were not measured here.
+
+### 8.6 A chat starts ready — built 2026-10-01
+
+**What the owner asked:** *"when a chat starts the first time, agents check things like levels - that is
+OK - but it also thinks and does other things. It should start the first-time checks as soon as
+possible; for the rest, why do we need to check?"* Revit was never the wait: `revit_levels` answered in
+0.11 - 0.14 s every time below. What a chat waited on was Heron's own start-up, one search turn, and
+words that had nothing to do with Revit.
+
+**Measured on the owner's PC with Revit 2024 open on *heron ai bulding*** - a fresh server each run, the
+same store, three runs each, `revit_levels` read-only (the select was not run, so as not to replace a
+selection he was working with):
+
+| first `heron_lookup`, asked this long after the server is ready | `main` | this change |
+|---|---|---|
+| at once | **3 of 3 never answered** (cut off at 200 s) | 5.3 - 7.6 s |
+| 8 s | 6.0 - 7.4 s | 1.8 - 2.3 s |
+| 15 s | 7.1 - 7.5 s | 1.8 s |
+
+A chat's first Heron call comes 5 - 12 s after the modeller's first message (twelve Revit chats read
+back from the transcripts), and the server starts when the chat opens, so the middle row is the
+ordinary case.
+
+**What changed:**
+
+- **The server freezes no more when it is asked straight away** (row 5b-272). The encoder's warm-up
+  thread loaded numpy's DLL; a lookup on the event loop asked Revit its version, which starts a reader
+  thread; Windows cannot start a thread while another holds its loader lock, and the two waited on each
+  other. A stack dump of a frozen `main` shows exactly that. `heron_embed.warm()` now loads numpy on the
+  calling thread first (0.24 - 0.36 s), after which the whole encoder loads in 0.7 - 0.8 s instead of
+  9 - 14 s.
+- **The encoder loads from the copy on disk** (`heron_embed._on_disk`) - no request to the hub, which
+  waited out its timeout in four starts of five.
+- **The store is prepared before anybody asks** (`heron_brain.warm_store`): the one-time part of a
+  lookup - every card parsed, rows refreshed, the first encoder pass - runs on a background thread
+  behind the encoder, and a lookup arriving meanwhile waits for it rather than doing it twice. **Only**
+  for a private store, an install with no git, or the main checkout on branch `main`: a worktree's
+  cards are unmerged work and the shared store is every chat's (rows 131, 136).
+- **Five tools are given to the chat before it asks** - `heron_lookup`, `revit_read`, `revit_change`,
+  `revit_health`, `revit_levels` (`heron_tools.ALWAYS_LOADED`), served with Claude Code's documented
+  `_meta["anthropic/alwaysLoad"]`. Most Revit chats spent their first turn searching for a Heron tool
+  (5 - 10 s). The cost is about 9,000 characters of descriptions in every chat; every other tool is
+  still one search away, and nothing about what a tool may do changes.
+- **The developer's session line is silent in a modeller's chat** - the main checkout on `main` - and
+  runs no git there ([`heron-session`](../.claude/skills/heron-session/SKILL.md)).
+
+**Not changed, and why:** every gate; the per-lookup check that the cards have not moved - it still
+costs about 2 s a lookup on this PC, not the 0.09 s §8.5 measured in a container, and fixing it reopens
+#369's content-not-mtime choice (row 5b-271); the owner's own plugins and settings, which are his.
+
+**NEEDS REAL REVIT, IN A REAL CHAT:** the seconds from a modeller's first message to the first answer,
+which includes Claude's own turns - [A21](needs-checking/group-a.md).

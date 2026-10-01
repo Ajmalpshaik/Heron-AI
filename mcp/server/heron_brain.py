@@ -62,9 +62,11 @@ carries the `status` of what it found, and a reader who wants to know whether
 something works reads that rather than trusting this paragraph.
 """
 
+import io
 import os
 import sqlite3
 import sys
+import threading
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 BRAIN = os.path.join(ROOT, "brain")
@@ -166,6 +168,102 @@ def warm():
         pass
 
 
+# THE FIRST LOOKUP OF A CHAT PAID FOR THE WHOLE STORE, AND NOW NOBODY WAITS FOR IT.
+#
+# Measured 2026-10-01 on the owner's PC, fresh process, store already built:
+# the first heron_lookup took 6.4-7.3 s and the ones after it about 2 s. The
+# difference is one-time work inside _Open - parsing every card once (3 s),
+# refreshing changed rows (1.8 s), the first encoder pass (2.5 s) - and the
+# chat sat on all of it after the modeller had asked. The owner's words: "start
+# the first-time checks as soon as possible".
+#
+# So the same _Open runs once on a background thread when the server starts,
+# behind the encoder's own warm-up so the vectors it writes are the trained
+# ones, and _PREPARING makes a lookup that arrives early wait for it rather
+# than do the same work a second time beside it. Nothing is skipped: every
+# later _Open still checks the files, exactly as before.
+#
+# ONLY WHERE IT CANNOT SPREAD UNMERGED WORK. The shared store is one file for
+# every chat on the machine, and a worktree's cards are that session's
+# unmerged edits (rows 131, 136). A chat there that never asks Heron anything
+# must not rebuild it at start-up, so the warm-up runs only for a private
+# store, or for the main checkout on branch main - where a modeller's chat
+# runs - or for an install that has no git at all. Anywhere else the first
+# lookup does the work, as it always did.
+_PREPARING = threading.RLock()
+_STORE_WARM = [None]
+
+#: How long the store warm-up waits for the encoder before going on without it.
+#: The encoder loads in about 1.5 s here; a minute means "something is wrong".
+ENCODER_WAIT_S = 60
+
+
+def _on_main_branch(root):
+    """True when `root` is a checkout of branch main, or has no git at all.
+
+    Read from .git/HEAD rather than by running git - this is asked at
+    start-up, and a process per question is what start-up is short of. A
+    linked worktree has a .git FILE, and is never the main checkout.
+    """
+    dot_git = os.path.join(root, ".git")
+    if not os.path.exists(dot_git):
+        return True
+    if not os.path.isdir(dot_git):
+        return False
+    try:
+        with io.open(os.path.join(dot_git, "HEAD"), encoding="utf-8") as handle:
+            head = handle.read().strip()
+    except (IOError, OSError):
+        return False
+    return head == "ref: refs/heads/main"
+
+
+def _store_warm_allowed():
+    """May the store be prepared before anybody asks? See _PREPARING above."""
+    SCOPE = _brain()[0]
+    import heron_fragment as FRAG
+    base, shared = SCOPE.knowledge_dir(), SCOPE.shared_dir()
+    if not base:
+        return False
+    if not shared or not SCOPE._same_folder(base, shared):
+        return True                       # a private store: nobody else reads it
+    if SCOPE.refreshes_from() != (FRAG.FRAGMENTS_DIR, None):
+        return False                      # a worktree, or main cannot be found
+    return _on_main_branch(FRAG.ROOT)
+
+
+def warm_store():
+    """Prepare the knowledge store on a background thread, and return at once.
+
+    Called once at server start-up, after warm(). Never raises, and a failure
+    costs nothing but the head start: the first lookup prepares the store
+    itself and says why it could not, as before.
+    """
+    if _STORE_WARM[0] is not None:
+        return
+    try:
+        if not _store_warm_allowed():
+            return
+    except Exception:                                  # noqa: BLE001 - a head start, not a gate
+        return
+
+    def run():
+        try:
+            import heron_embed as EMBED
+            EMBED.warmed(ENCODER_WAIT_S)
+        except Exception:                              # noqa: BLE001 - go on lexically
+            pass
+        try:
+            with _Open():
+                pass
+        except Exception:                              # noqa: BLE001 - the first lookup says why
+            pass
+
+    thread = threading.Thread(target=run, name="heron-store-warm", daemon=True)
+    _STORE_WARM[0] = thread
+    thread.start()
+
+
 # THE SOURCES ARE RECONCILED ONCE PER PROCESS, NOT ONCE PER REQUEST.
 #
 # Two things were built in Stage 6 and reachable from nothing: refresh(), which
@@ -260,6 +358,12 @@ class _Open(object):
         self.store = None
 
     def __enter__(self):
+        # One preparation at a time, so a lookup that arrives while warm_store()
+        # is still working waits for it and then finds nothing left to do.
+        with _PREPARING:
+            return self._prepare()
+
+    def _prepare(self):
         SCOPE, CAP, _SKILL, SEARCH, EMBED, _R = _brain()
         try:
             if SCOPE.knowledge_dir() is None:

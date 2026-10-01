@@ -183,6 +183,21 @@ class _Labelled(_Server):
 
         return decorate
 
+    async def list_tools(self, *args, **kwargs):
+        """The SDK's list, with heron_tools.ALWAYS_LOADED marked to be loaded
+        at session start rather than found by a search (see that list for
+        why). The SDK's tool() takes no _meta in 1.x, so it is added here; a
+        list that cannot be marked is served unmarked, which only costs the
+        chat the search step it already had."""
+        listed = await super(_Labelled, self).list_tools(*args, **kwargs)
+        for tool in listed:
+            if getattr(tool, "name", None) in tools.ALWAYS_LOADED:
+                try:
+                    tool.meta = dict(tool.meta or {}, **{"anthropic/alwaysLoad": True})
+                except (AttributeError, TypeError, ValueError):
+                    pass
+        return listed
+
 
 def _host_instructions():
     """
@@ -4982,6 +4997,10 @@ if __name__ == "__main__":
     # event loop - the host waited and no reply ever came. Until it finishes,
     # every answer uses the lexical backend and says so. See heron_embed.warm().
     brain.warm()
+    # And the knowledge store, behind it, so the chat's first lookup finds the
+    # one-time work done (6.4-7.3 s measured 2026-10-01). Only where it cannot
+    # spread a worktree's unmerged cards - see heron_brain.warm_store().
+    brain.warm_store()
 
     # THE COMPANION KEEPER (D-109): follows the Companion switch every two
     # seconds so the Companion button in Revit finds this chat's page. It
