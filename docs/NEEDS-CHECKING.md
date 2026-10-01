@@ -413,6 +413,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bm.md`](needs-checking/group-bm.md)
 
+## Group BN - a family built from a picture: the `family-creation` skill widened to every form, the locks, a round size and voids that cut (2026-10-01)
+
+**Its own file:** [`needs-checking/group-bn.md`](needs-checking/group-bn.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
