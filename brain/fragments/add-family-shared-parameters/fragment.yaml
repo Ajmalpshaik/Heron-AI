@@ -1,0 +1,105 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-031
+semantic-identity: "add the office's shared parameters, from its shared parameter file, to the family being edited"
+kind: action
+domain: revit.families
+capability: ADD_FAMILY_SHARED_PARAMETERS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Adds SHARED parameters to the family open in the Family Editor - Family
+  Types' New Parameter with Shared parameter chosen, several at a time. A
+  project schedules a family's own value, and its labels read it, only when it
+  is a shared parameter with the same GUID in both; ADD_FAMILY_PARAMETERS
+  makes family parameters, which a project cannot read that way.
+
+  **THE OFFICE'S FILE IS THE ONLY SOURCE, AND IT IS ONLY READ.** Each name is
+  found in the shared parameter file Revit is set to (Manage > Shared
+  Parameters). Nothing is written to that file and the setting is never
+  changed: a GUID made here would be a different parameter under the office's
+  name. No file set, or a name not in it, is refused with the close names.
+
+  **THE KIND COMES FROM THE FILE.** Type or instance, and the Properties
+  palette heading, are asked for.
+
+  **A NAME ALREADY IN THE FAMILY** is left alone when it is this same shared
+  parameter, and refused when it is anything else.
+
+  **READ BACK, ALL OR NOTHING**: each is found again by name, shared, with the
+  file's GUID and the scope asked.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The shared parameters' names as the office's file has them, commas
+    # between.
+    - name: parameterNames
+      type: IList<string>
+      source: request
+    # true for instance parameters, false for type parameters.
+    - name: instance
+      type: bool
+      source: request
+    # The Properties palette heading - "Mechanical", "Identity Data".
+    - name: parameterGroup
+      type: string
+      source: request
+  provides:
+    - name: added
+      # Each one added, with its kind, scope and GUID, read back.
+      role: result
+      type: IList<string>
+    - name: alreadyThere
+      # Already in the family as this same shared parameter: looked at,
+      # nothing done (D-52).
+      role: accounting
+      type: IList<string>
+    - name: sharedFile
+      # The shared parameter file that was read.
+      role: accounting
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was added, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Application.SharedParametersFilename` - whose remark says the file is reached
+  only once that is set - `OpenSharedParameterFile`, `DefinitionFile.Groups`,
+  `ExternalDefinition.GUID`, `FamilyParameter.IsShared` and `GUID` read the
+  same 2020 through 2027. `FamilyManager.AddParameter(ExternalDefinition,
+  group, bool)` takes a BuiltInParameterGroup 2020 to 2024 and a ForgeTypeId
+  from 2022 (the RevitAPI reference assemblies and their XML remarks, read
+  2026-10-01), so the overload is picked by reflection, newest first.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "add the shared parameter Equipment Tag to this family" -> here
+#   "add shared parameters from our file to this family"    -> here
+#   "add a shared parameter to the project"       -> ADD_PROJECT_PARAMETER
+#   "add width and depth parameters to the family" -> ADD_FAMILY_PARAMETERS
+
+utterances:
+  - add the shared parameter Equipment Tag to this family
+  - add shared parameters from our file to this family
+  - put the office shared parameters into this family
+  - add these shared parameters as type parameters under mechanical

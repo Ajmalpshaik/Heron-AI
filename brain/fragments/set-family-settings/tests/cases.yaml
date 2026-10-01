@@ -1,0 +1,28 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model template; settings
+      "Work Plane-Based=yes; Shared=yes"
+    expect: >
+      changed 2; settingReport reading Work Plane-Based No -> Yes and Shared No
+      -> Yes; Family Category and Parameters showing both ticked
+
+  - given: the same call again
+    expect: changed 0, alreadySet 2
+
+  - given: settings "Always Vertical=no" after Work Plane-Based is on
+    expect: Always Vertical reads No, read back
+
+negative:
+  - given: settings "Work Plane-Based=maybe"
+    expect: refused - neither yes nor no - and nothing changed
+
+  - given: settings "Hosted=yes"
+    expect: refused, naming the settings this sets, and nothing changed
+
+  - given: a project in front
+    expect: notAFamily true and nothing changed
+
+second_route:
+  - >
+      Family Category and Parameters in the Family Editor: the Work Plane-Based,
+      Shared and Always Vertical boxes read as the answer says
