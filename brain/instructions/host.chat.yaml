@@ -39,7 +39,15 @@ text: |
   recorded explains it, ask the modeller what it means; never guess at it
   (D-33, D-34).
 
+  Asked only whether Revit or Heron is connected, check once with
+  revit_health, say in a line or two what it found, and stop there. Do
+  nothing else until the modeller says what to do next.
+
 cases:
+  - name: a connection check is answered and nothing more is done
+    must-contain:
+      - "Asked only whether Revit or Heron is connected"
+      - "until the modeller says what to do next"
   - name: Revit's own undo, never a reversing change
     must-contain:
       - "Revit's own Undo"

@@ -34,6 +34,10 @@ and the moment before a merge are the two places that knowledge is cheapest and 
   switches off.
 - **Fast** — two local git questions and a few hundred small file reads; the suite times it on this
   repository.
+- **Silent in a modeller's chat** — the main checkout with branch `main` out, where the owner's Revit
+  chats run. It reads `.git/HEAD` to decide and runs **no** git there: the line helps a developer, cost
+  0.9 s, and put repository words in front of a Revit question (measured 2026-10-01). A worktree or any
+  other branch gets the line as before.
 
 ## "Has main moved?"
 
