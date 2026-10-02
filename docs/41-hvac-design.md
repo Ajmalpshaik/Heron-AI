@@ -205,7 +205,8 @@ month's peak, the peak month and hour, the peak day hour by hour, and the lowest
 - **People, lights, equipment and partitions** are taken as they are given, every hour; infiltration
   and outdoor air at that hour's outdoor state.
 - **The weather is named or given, never chosen for you.** Name a set Heron holds (`doha-0.4`, the
-  `design_weather` table of §10) or give your own months; with neither it asks, with both it refuses.
+  `design_weather` table of §10) or give your own months; with neither it asks, with both it refuses,
+  and a month whose wet bulb is above its dry bulb is refused rather than capped into sense.
   ASHRAE's workbook lists the daily ranges beside the **5 %** dry bulb; Heron applies them to the 0.4 %
   values it holds, and the answer says so.
 
@@ -213,7 +214,9 @@ It is **hour-by-hour steady state**: each gain counts at its own hour, with no s
 finds the month and the hour that govern, but the radiant part of a gain is not delayed - an hourly
 method with radiant time series or a heat balance moves the peak later and lowers it. Every answer
 says so (`STEADY_HOURS` in the code). **The lowest monthly peak is not a part-load figure** - part load
-is how a unit and its plant run, and the maker's data says it.
+is how a unit and its plant run, and the maker's data says it. A room whose load nothing outdoors
+changes - people and lights only - is the same at every hour, and the answer says the hour it names
+as the peak is only the first.
 
 The suite's Doha room - one 4 m2 west window, two people, 8 W/m2 of lights - peaks on a June
 afternoon and is lowest in December. Its July 15:00 hour is **1,368 W** sensible, the hand sum of

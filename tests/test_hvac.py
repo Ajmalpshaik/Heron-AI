@@ -725,6 +725,18 @@ def month_by_month():
     check(both["status"] == "refused" and twice["status"] == "refused",
           "a weather set named AND the modeller's own months are refused, and so is a month "
           "given twice")
+    # Both inside their own ranges, so only the rule that a wet bulb is never
+    # above its dry bulb can refuse it.
+    wet = H.run("monthly_load", dict(DOHA_ROOM, months=[dict(DOHA_JULY, db_c=30, mcwb_c=32)]))
+    check(wet["status"] == "refused" and any("above the dry bulb" in r for r in wet["refused"]),
+          "a month whose wet bulb is above its dry bulb is refused, never capped into sense")
+    inside = dict((k, v) for k, v in DOHA_ROOM.items() if k != "windows")
+    flat = H.run("monthly_load", dict(inside, design_weather="doha-0.4"))
+    check(flat["status"] == "ok" and any(level == "WARN" and "same at every hour" in text
+                                         for level, text in flat["checks"]),
+          "a room whose load nothing outdoors changes is told its peak hour is only the first")
+    check(not any("same at every hour" in text for _l, text in year["checks"]),
+          "and a room the sun reaches is not")
 
     fcu = H.run("unit_select", {"unit_type": "fan-coil", "load_kw": 2.5, "sensible_kw": 2.2,
                                 "flow_ls": 120, "max_oversize_pct": 25,

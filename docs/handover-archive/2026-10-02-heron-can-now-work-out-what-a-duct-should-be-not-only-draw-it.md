@@ -79,8 +79,12 @@ to add, add it and merge the PR"*.
 - **`diffuser_select` now names its way into the model**: `CHANGE_ELEMENT_TYPE` to the chosen size's
   type, then `SET_AIR_TERMINAL_FLOW`. A new check reads every `into_revit` line from the source and
   holds each tool it names to a real capability in `brain/fragments`.
-- **Section 8 of the suite** holds all of it; against the engine before this, twenty of its checks fail
-  with no traceback and the one that does not is that guard.
+- **Two edge cases found re-reading the sweep, both fixed:** a modeller's own month with its wet bulb
+  above its dry bulb was capped into saturated air instead of refused, and a room with nothing
+  weather-dependent in it named its first hour as the peak. It refuses the first now, and warns on the
+  second.
+- **Section 8 of the suite** holds all of it; against the engine before this, twenty-two of its checks
+  fail with no traceback, and the two that hold are guards that must hold either way.
 - **Still not built:** part load and unit part-load data, refrigerant piping, an hourly method with
   storage - [docs/41 §13](../41-hvac-design.md).
 

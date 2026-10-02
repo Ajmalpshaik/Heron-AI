@@ -2330,10 +2330,15 @@ def _design_months(a):
     for row in a.records("months", "each month to run: month, db_c, mcwb_c, db_range_k, "
                          "wb_range_k, tau_b, tau_d") or []:
         month = row.integer("month", "the month, 1 to 12", 1, 12)
+        db = row.number("db_c", "C", "the month's design dry bulb", -30, 60)
+        mcwb = row.number("mcwb_c", "C", "its mean coincident wet bulb", -30, 40)
+        if None not in (db, mcwb) and mcwb > db + 1e-9:
+            # Impossible air, so refused - capping it at the dry bulb would
+            # quietly turn it into saturated air nobody gave.
+            a.refuse("%s: the wet bulb %s C is above the dry bulb %s C - a wet bulb is "
+                     "never above its dry bulb" % (row.prefix, _g(mcwb), _g(db)))
         months.append({
-            "month": month,
-            "db": row.number("db_c", "C", "the month's design dry bulb", -30, 60),
-            "mcwb": row.number("mcwb_c", "C", "its mean coincident wet bulb", -30, 40),
+            "month": month, "db": db, "mcwb": mcwb,
             "dbr": row.number("db_range_k", "K", "its mean daily dry-bulb range", 0, 30),
             "wbr": row.number("wb_range_k", "K", "its coincident wet-bulb range", 0, 30),
             "tau_b": row.number("tau_b", "-", "its clear-sky beam optical depth", 0.1, 2.0),
@@ -2499,6 +2504,12 @@ def calc_monthly_load(a):
             row.append(_f(max(h["coil"] for h in hrs), 0))
         rows.append(row)
     a.table("Each month's peak - the 21st, local standard time", columns, rows)
+    totals = [h["total"] for _m, hs, _pk in peaks for h in hs]
+    if max(totals) - min(totals) < 1e-6:
+        a.check("WARN", "the room's load is the same at every hour of every month - nothing "
+                        "given changes with the weather or the sun - so the hour named as its "
+                        "peak is only the first; give its walls, roof, windows or "
+                        "infiltration to find the hour that governs")
     top_m, top_hours, top = max(peaks, key=lambda x: x[2]["total"])
     low_m, _low_hours, low = min(peaks, key=lambda x: x[2]["total"])
 
