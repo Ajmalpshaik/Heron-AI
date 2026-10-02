@@ -50,6 +50,15 @@ WHAT IT PROVES
   8. IT REACHES NOTHING, and a project's standards are kept as D-111 says -
      asked once, in that project's own FIRE record, never its HVAC one.
 
+  9. ONE STANDARD AT A TIME. EN 12845, FM Global and the UAE's authority are
+     read however they are written; a class is read only in the project's own
+     standard and never across; each standard's figures are offered beside
+     its questions; adjustments are added on the area first selected, as
+     NFPA 13's own example; and the round-two calculations - temperature
+     ratings, fittings, hose reels, a detector radius, BS 5306-8's
+     extinguishers, coverage by two devices - come out against sums done
+     here, with their tables agreeing with their own units.
+
 WHAT IT DOES NOT PROVE
   That any answer is right for a building, or that a held figure is NFPA's
   current text - docs/42 s10 says how far each was checked. Nothing here has
@@ -588,12 +597,23 @@ def no_design_value():
                                      above_and_below_ceiling=True, above=16, below=16))
     check(ohab["status"] == "refused" and "not read" in ohab["refused"][0],
           "32 above and below an ordinary hazard ceiling reach the 3 in row left out - refused")
+    near_ok = run("obstruction", dict(STD, sprinkler_type="standard-upright-pendent",
+                                      distance_to_obstruction_mm=1500,
+                                      deflector_above_bottom_mm=400))
+    near_bad = run("obstruction", dict(STD, sprinkler_type="standard-upright-pendent",
+                                       distance_to_obstruction_mm=1500,
+                                       deflector_above_bottom_mm=420))
+    check(checks(near_ok, "OK") and checks(near_bad, "FAIL")
+          and "419.1" in (result(near_ok, "Beam rule at A = 1500 mm") or ""),
+          "a beam 1.5 m away reads the 4 ft 6 in row - 16 1/2 in, 419.1 mm: 400 passes, "
+          "420 fails")
     far = run("obstruction", dict(STD, sprinkler_type="standard-upright-pendent",
-                                  distance_to_obstruction_mm=1500,
-                                  deflector_above_bottom_mm=400))
-    check("not read" in (result(far, "Beam rule at A = 1500 mm") or "")
+                                  distance_to_obstruction_mm=1800,
+                                  deflector_above_bottom_mm=500))
+    check("disagree" in (result(far, "Beam rule at A = 1800 mm") or "")
           and any("NOT CHECKED" in t for t in checks(far, "WARN")),
-          "a beam 1.5 m away is past the rows held - said, and the height NOT CHECKED")
+          "a beam 1.8 m away is past the rows held, where the sources disagree - said, and "
+          "the height NOT CHECKED")
     ask_c = run("hydraulic", dict(STD, source="S",
                                   nodes=[{"id": "S", "elevation_m": 0},
                                          {"id": "A", "elevation_m": 3, "k_lpm_bar": 80,
@@ -601,13 +621,18 @@ def no_design_value():
                                   pipes=[{"from": "S", "to": "A", "length_m": 10,
                                           "bore_mm": 26.64}]))
     asked_c = [m for m in ask_c["missing"] if m["input"] == "c_factor"]
-    check(asked_c and "not read in this work" in asked_c[0]["why"]
-          and any(m["input"] == "min_pressure_bar" for m in ask_c["missing"]),
-          "a hydraulic calculation asks for C and the minimum pressure - neither is filled in")
+    asked_p = [m for m in ask_c["missing"] if m["input"] == "min_pressure_bar"]
+    check(ask_c["status"] == "missing" and asked_c and asked_p
+          and "wet or deluge 120" in asked_c[0].get("reference", "")
+          and "7 psi (0.5 bar)" in asked_p[0].get("reference", ""),
+          "a hydraulic calculation asks for C and the minimum pressure, NFPA 13's figures "
+          "offered beside each - neither is filled in")
     office = F.REFERENCES["office_firefighting"]
     clear = F.lookup("sprinkler_rules", "clearance below a deflector to storage")
-    check(clear and "owner's file only" in clear[2] and len(office["rows"]) >= 10,
-          "the owner's own figures are held beside NFPA's and labelled, never applied")
+    check(clear and "457 mm" in clear[1] and "450 mm" in clear[1]
+          and "owner's file" in clear[2] and len(office["rows"]) >= 10,
+          "the owner's own figures are held beside NFPA's and labelled, never applied - the "
+          "storage clearance carries both, each with where it came from")
     text = F.describe(run("pipe_schedule", dict(STD, hazard="light", material="steel",
                                                  sprinklers=10)))
     check("QCDD" in text and "fire consultant" in text and "DRAFT" in text,
@@ -847,6 +872,245 @@ def reaches_nothing_and_keeps_once():
     print()
 
 
+def beyond_nfpa():
+    print("9. beyond NFPA 13 - one standard at a time, and the round-two figures")
+    sv = F.standard_value
+    check(sv("sprinkler_standard", "BS EN 12845:2015+A1:2019") == "EN 12845:2015"
+          and sv("sprinkler_standard", "EN12845") == "EN 12845"
+          and sv("sprinkler_standard", "fm global") == "FM Global"
+          and sv("fire_authority", "Dubai Civil Defence") == F.UAE
+          and sv("fire_authority", "UAE") == F.UAE,
+          "EN 12845, FM Global and the UAE's authority are read however they are written")
+    try:
+        sv("sprinkler_standard", "NFPA 13R 2019")
+        residential = None
+    except F.Refused as why:
+        residential = str(why)
+    check(residential is not None and "residential" in residential,
+          "NFPA 13R is refused as a project standard, saying why - its figures are reference "
+          "rows only")
+
+    en = dict(STD, sprinkler_standard="EN 12845:2015")
+    fm = dict(STD, sprinkler_standard="FM Global", fire_authority="other")
+    oh3 = run("design_area", dict(STD, hazard="OH3"))
+    check(oh3["status"] == "refused" and "BS EN 12845 class" in oh3["refused"][0]
+          and "NFPA 13-2022" in oh3["refused"][0],
+          "OH3 under an NFPA 13 project is refused - an EN 12845 class is never read across")
+    eh1 = run("design_area", dict(en, hazard="EH1"))
+    check(eh1["status"] == "refused" and "NFPA 13 class" in eh1["refused"][0],
+          "EH1 under an EN 12845 project is refused the same way")
+    hc = run("design_area", dict(STD, sprinkler_standard=None, hazard="HC-2"))
+    check(hc["status"] == "refused" and "FM Global class" in hc["refused"][0]
+          and "not known" in hc["refused"][0],
+          "HC-2 with the standard unknown is refused, saying which standard it belongs to")
+
+    en_oh2 = run("design_area", dict(en, hazard="OH2", area_per_sprinkler_m2=12,
+                                     system_type="dry"))
+    offers = dict((m["input"], m.get("reference", "")) for m in en_oh2["missing"])
+    check(en_oh2["status"] == "missing" and "5 mm/min for OH2" in offers["density_mm_min"]
+          and "144 m2 for OH2" in offers["design_area_m2"]
+          and "180 m2 dry against 144 m2 wet - 25 %" in offers["dry_area_increase_pct"]
+          and "spacing_along_branch_m" not in offers,
+          "EN 12845 OH2: 5 mm/min, 144 m2 and its dry 180 m2 (25 %) OFFERED - and NFPA's "
+          "1.2 sqrt A spacing not asked")
+    fm_hc3 = run("design_area", dict(fm, hazard="HC-3", area_per_sprinkler_m2=9))
+    fm_offers = dict((m["input"], m.get("reference", "")) for m in fm_hc3["missing"])
+    check("12.22 mm/min for HC-3" in fm_offers.get("density_mm_min", "")
+          and "232.3 m2 for HC-3" in fm_offers.get("design_area_m2", "")
+          and "not read in this work for HC-3, a ceiling up to 60 ft" in
+          fm_offers.get("density_mm_min", ""),
+          "FM Global HC-3: 0.30 gpm/ft2 = 12.22 mm/min over 2500 ft2 = 232.3 m2 offered, its "
+          "30-60 ft row said not read")
+    nf_dry = run("design_area", dict(STD, hazard="OH1", area_per_sprinkler_m2=12,
+                                     spacing_along_branch_m=3.4, system_type="dry"))
+    dry_offer = [m for m in nf_dry["missing"] if m["input"] == "dry_area_increase_pct"]
+    check(dry_offer and "dry pipe - the design area increased 30 %" in dry_offer[0]["reference"],
+          "NFPA 13's 30 % for a dry system is OFFERED beside the question, never applied")
+    lh_dry = run("design_area", dict(en, hazard="LH", density_mm_min=2.25, design_area_m2=84,
+                                     area_per_sprinkler_m2=21, system_type="dry",
+                                     dry_area_increase_pct=25))
+    check(lh_dry["status"] == "ok" and result(lh_dry, "Along a branch line") is None
+          and any("does not allow a dry system at LH" in t for t in checks(lh_dry, "FAIL")),
+          "a dry LH system under EN 12845 FAILS - the standard designs it as OH1 - and no "
+          "NFPA branch count is given")
+
+    # Adjustments are taken on the area FIRST selected and added: NFPA 13's own
+    # example, 2500 + 30 % - 25 % = 2625 ft2. In turn it would be 2437.5.
+    ft2 = F.M2_PER_FT2
+    adj = run("design_area", dict(STD, hazard="EH1", density_mm_min=12.2,
+                                  design_area_m2=2500 * ft2, area_per_sprinkler_m2=9.3,
+                                  spacing_along_branch_m=3.0, system_type="dry",
+                                  dry_area_increase_pct=30, high_temp_reduction_pct=25))
+    check(near(first_number(result(adj, "Design area")), 2625 * ft2, 1e-4),
+          "a dry system with high-temperature sprinklers: 2500 + 750 - 625 = 2625 ft2, each "
+          "on the area first selected - not 2437.5 in turn")
+    floor = run("design_area", dict(STD, hazard="EH2", density_mm_min=16.3,
+                                    design_area_m2=2500 * ft2, area_per_sprinkler_m2=9.3,
+                                    spacing_along_branch_m=3.0, high_temp_reduction_pct=25))
+    check(any("2000 ft2" in t for t in checks(floor, "FAIL")),
+          "the high-temperature reduction below 2000 ft2 FAILS")
+    few = run("design_area", dict(STD, hazard="light", density_mm_min=4.1,
+                                  design_area_m2=50, area_per_sprinkler_m2=12,
+                                  spacing_along_branch_m=3.4, system_type="wet",
+                                  qr_reduction_pct=40))
+    check(any("never takes the design area below five" in t for t in checks(few, "FAIL")),
+          "a quick-response reduction leaving fewer than five sprinklers FAILS")
+    hot_lh = run("design_area", dict(STD, hazard="light", density_mm_min=4.1,
+                                     design_area_m2=140, area_per_sprinkler_m2=12,
+                                     spacing_along_branch_m=3.4, high_temp_reduction_pct=25))
+    check(hot_lh["status"] == "refused", "the high-temperature reduction at light hazard is "
+          "refused - it is extra hazard's")
+    after = run("design_area", dict(STD, hazard="light", density_mm_min=2.9,
+                                    design_area_m2=280, area_per_sprinkler_m2=12,
+                                    spacing_along_branch_m=3.4, system_type="wet",
+                                    concealed_space="unsprinklered-combustible",
+                                    qr_reduction_pct=20))
+    check(any("after its adjustments, is below" in t for t in checks(after, "WARN")),
+          "the unsprinklered concealed space rule is checked AFTER the other adjustments")
+
+    for name, inputs in (("pipe_schedule", dict(en, hazard="OH1", material="steel",
+                                                 sprinklers=10)),
+                         ("obstruction", {"sprinkler_standard": "FM Global",
+                                          "sprinkler_type": "standard-upright-pendent",
+                                          "distance_to_obstruction_mm": 600})):
+        got = run(name, inputs)
+        check(got["status"] == "refused" and not got["ignored"],
+              "%s under %s is refused, its own inputs not called ignored"
+              % (name, inputs["sprinkler_standard"]))
+
+    t_n = run("temperature_rating", dict(STD, ceiling_temperature_c=38))
+    t_o = run("temperature_rating", dict(STD, ceiling_temperature_c=37))
+    t_v = run("temperature_rating", dict(STD, ceiling_temperature_f=302))
+    check((result(t_n, "Lowest allowed") or "").startswith("intermediate")
+          and (result(t_o, "Lowest allowed") or "").startswith("ordinary")
+          and (result(t_v, "Lowest allowed") or "").startswith("very extra high"),
+          "38 C is past ordinary's 100 F (37.8 C) - intermediate; 37 C ordinary; 302 F past "
+          "extra high's 300 F")
+    t_en = run("temperature_rating", dict(en, ceiling_temperature_c=45))
+    t_hot = run("temperature_rating", dict(en, ceiling_temperature_c=115))
+    t_fm = run("temperature_rating", dict(fm, ceiling_temperature_c=45))
+    check("79 C, yellow" in (result(t_en, "Nearest bulb") or "")
+          and "none of the bulbs" in (result(t_hot, "Bulbs") or "")
+          and t_fm["status"] == "refused",
+          "EN 12845: 45 C + 30 C asks 75 C - the 79 C yellow bulb; 145 C reaches no bulb held; "
+          "FM Global's guidance not read - refused")
+
+    eq = run("equivalent_length", {"fittings": [{"fitting": "tee", "nominal": "2", "count": 2},
+                                                {"fitting": "gate valve", "nominal": "DN150"}],
+                                   "c_factor": 120, "schedule": "40"})
+    check(near(first_number(result(eq, "Equivalent length")), 23 * F.M_PER_FT, 1e-3),
+          "two 2 in tees and a 6 in gate valve, schedule 40 at C 120: 10 + 10 + 3 = 23 ft")
+    eq10 = run("equivalent_length", {"fittings": [{"fitting": "tee", "nominal": "2"}],
+                                     "c_factor": 150, "schedule": "10"})
+    bore10 = F.lookup("steel_pipe_bores", "10")
+    factor = (150 / 120.0) ** 1.85 * (54.76 / 52.48) ** 4.87
+    check(bore10 is not None
+          and near(first_number(result(eq10, "Equivalent length")), 10 * F.M_PER_FT * factor,
+                   1e-3),
+          "a 2 in tee in schedule 10 at C 150: 10 ft x (150/120)^1.85 x (54.76/52.48)^4.87")
+    check(abs((100 / 120.0) ** 1.85 - 0.714) < 0.001,
+          "(C/120)^1.85 at C 100 is 0.714 - the 0.713 multiplier remembered beside the chart")
+    e45 = run("equivalent_length", {"fittings": [{"fitting": "45 elbow", "nominal": "2"}],
+                                    "c_factor": 120, "schedule": "40"})
+    check(e45["status"] == "refused" and "not read" in e45["refused"][0],
+          "a 45 degree elbow, not read in the chart, is refused - never remembered")
+
+    reels = run("hose_reels", {"reels_operating": 2, "reel_flow_lpm": 24,
+                               "reel_pressure_bar": 2, "height_m": 30, "duration_min": 15,
+                               "fire_authority": "QCDD"})
+    check(near(first_number(result(reels, "Flow")), 48.0, 1e-9)
+          and near(first_number(result(reels, "Pressure at the source")),
+                   2 + 30 * F.BAR_PER_M, 1e-3)
+          and any("TWO hoses" in t for t in checks(reels, "WARN")),
+          "two reels at 24 L/min: 48 L/min, 2 bar + 30 m of rise at the source, and QCDD's "
+          "two hoses said")
+
+    room = [[0, 0], [10000, 0], [10000, 10000], [0, 10000]]
+    pts = [{"id": "A", "x": 0, "y": 0}, {"id": "B", "x": 10000, "y": 10000}]
+    one = run("coverage_check", {"outline_mm": room, "points_mm": pts, "radius_m": 12})
+    two = run("coverage_check", {"outline_mm": room, "points_mm": pts, "radius_m": 12,
+                                 "reached_by": 2})
+    many = run("coverage_check", {"outline_mm": room, "points_mm": pts, "radius_m": 12,
+                                  "reached_by": 3})
+    check(checks(one, "OK") and not checks(one, "FAIL") and checks(two, "FAIL")
+          and many["status"] == "refused",
+          "two opposite corners reach every point within 12 m once, not twice - the far "
+          "corner is 14.1 m from its second; three asked of two devices is refused")
+
+    det = run("detector_layout", {"room_length_m": 20, "room_width_m": 12,
+                                  "detector_type": "smoke", "radius_m": 7.5,
+                                  "min_wall_distance_m": 0.5, "ceiling_height_m": 11,
+                                  "max_ceiling_height_m": 10.5, "fire_authority": "QCDD"})
+    check(first_number(result(det, "Detectors")) == 3
+          and first_number(result(det, "Farthest point")) <= 7.5
+          and any("ceiling against" in t for t in checks(det, "FAIL")),
+          "BS 5839-1's 7.5 m radius covers a 20 x 12 m ceiling with 3 smoke detectors, and an "
+          "11 m ceiling against 10.5 m FAILS")
+    both = run("detector_layout", {"room_length_m": 20, "room_width_m": 12,
+                                   "detector_type": "smoke", "radius_m": 7.5, "spacing_m": 9.1,
+                                   "max_wall_distance_m": 4.55})
+    check(both["status"] == "refused", "a radius AND a spacing is refused - one decides")
+    worst = []
+    for length, width, r in ((20, 12, 7.5), (31, 9, 5.3), (7, 7, 6.4), (45, 30, 7.5)):
+        rows, cols = F.grid(length, width, rmax=r)
+        fewer = [(a_, b_) for a_ in range(1, rows * cols) for b_ in range(1, rows * cols)
+                 if a_ * b_ < rows * cols
+                 and math.hypot(length / b_, width / a_) / 2.0 <= r + 1e-9]
+        worst.append(math.hypot(length / cols, width / rows) / 2.0 <= r + 1e-9 and not fewer)
+    check(all(worst), "every radius layout keeps the farthest point within the radius, and no "
+          "grid with fewer detectors does (%d rooms)" % len(worst))
+
+    bs = run("extinguishers", {"floor_area_m2": 1000, "rating_a": 13, "rating_per_m2": 0.065,
+                               "min_total_rating": 26, "min_count": 2, "fire_authority": "none"})
+    small = run("extinguishers", {"floor_area_m2": 40, "rating_a": 13, "rating_per_m2": 0.065,
+                                  "min_total_rating": 26, "min_count": 1,
+                                  "fire_authority": "none"})
+    mixed = run("extinguishers", {"floor_area_m2": 40, "rating_a": 13, "rating_per_m2": 0.065,
+                                  "area_per_a_m2": 100, "max_area_m2": 1000})
+    check(first_number(result(bs, "Extinguishers")) == 5
+          and first_number(result(small, "Extinguishers")) == 2
+          and mixed["status"] == "refused",
+          "BS 5306-8: 1000 m2 x 0.065 = 65A, five 13A; 40 m2 still 26A, two; the two methods "
+          "mixed are refused - their ratings are different scales")
+
+    store = run("water_storage", {"sprinkler_flow_lpm": 1500, "duration_min": 60,
+                                  "fire_authority": "QCDD", "sprinkler_standard": "NFPA 13-2022"})
+    said = " ".join(checks(store, "WARN"))
+    check("two compartments of 45.00 m3" in said and "250.0 L/min" in said,
+          "QCDD's tank: 90 m3 as two compartments of 45 m3, refilled in 6 h at 250 L/min - "
+          "said, as reported")
+
+    fmt = F.REFERENCES["fm_criteria"]
+    cf = fmt["columns"]
+    fm_ok = all((r[cf.index("density gpm/ft2")] == F.NOT_HELD
+                 or abs(r[cf.index("density mm/min")]
+                        - r[cf.index("density gpm/ft2")] * F.MM_MIN_PER_GPM_FT2) < 0.005)
+                and (r[cf.index("area wet ft2")] == F.NOT_HELD
+                     or abs(r[cf.index("area wet m2")] - r[cf.index("area wet ft2")]
+                            * F.M2_PER_FT2) < 0.05)
+                and abs(r[cf.index("hose L/min")] - r[cf.index("hose gpm")]
+                        * F.LPM_PER_GPM) < 0.05 for r in fmt["rows"])
+    check(fm_ok, "FM Global's SI is its US figures converted, every row")
+    enc = F.REFERENCES["en12845_criteria"]
+    ce = enc["columns"]
+    en_ok = all(abs(r[ce.index("area dry m2")] - 1.25 * r[ce.index("area wet m2")]) < 1e-9
+                for r in enc["rows"] if isinstance(r[ce.index("area dry m2")], (int, float)))
+    check(en_ok, "every EN 12845 dry area held is its wet area x 1.25 - the table read, not a "
+          "rule applied")
+    eqt = F.REFERENCES["equivalent_lengths"]["rows"]
+    check(all(abs(r[3] - r[2] * F.M_PER_FT) < 0.0005 for r in eqt),
+          "every equivalent length in metres is its feet converted")
+    temps = F.REFERENCES["temperature_ratings"]["rows"]
+    check(all(abs(r[2] - (r[1] - 32) * 5 / 9.0) < 0.05 for r in temps)
+          and [r[1] for r in temps] == sorted(r[1] for r in temps),
+          "every most ceiling temperature in C is its F converted, and they only rise")
+    cvals = [r[1] for t in ("c_factors_nfpa", "c_factors_en12845")
+             for r in F.REFERENCES[t]["rows"] if r[1] != F.NOT_HELD]
+    check(cvals and all(100 <= c <= 150 for c in cvals),
+          "every C held is between 100 and 150, and the conflicting ones are not held")
+    print()
+
+
 def main():
     physics()
     solver()
@@ -856,6 +1120,7 @@ def main():
     never_undersizes()
     refusals()
     reaches_nothing_and_keeps_once()
+    beyond_nfpa()
 
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))

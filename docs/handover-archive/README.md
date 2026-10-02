@@ -30,6 +30,7 @@ this folder exists to remove.
 
 | Date | Sitting |
 |---|---|
+| 2026-10-02 | [HERON'S FIRE ENGINE NOW READS EN 12845, FM GLOBAL AND BS 5839](2026-10-02-heron-s-fire-engine-now-reads-en-12845-fm-global-and-bs-5839.md) |
 | 2026-10-02 | [HERON CAN NOW WORK OUT A SPRINKLER SYSTEM, NOT ONLY PLACE ITS HEADS](2026-10-02-heron-can-now-work-out-a-sprinkler-system-not-only-place-its-heads.md) |
 | 2026-10-02 | [HERON CAN NOW WORK OUT WHAT A DUCT SHOULD BE, NOT ONLY DRAW IT](2026-10-02-heron-can-now-work-out-what-a-duct-should-be-not-only-draw-it.md) |
 | 2026-09-28 | [REVIT'S OWN DUCT SIZING TORE UP HERON'S MAIN, AND THE FIX PUTS THE TRANSITION ON THE UNIT](2026-09-28-revit-s-own-duct-sizing-tore-up-heron-s-main-and-the-fix.md) |

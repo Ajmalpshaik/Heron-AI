@@ -41,9 +41,10 @@ output:
   missing:
     type: list
     description: >
-      What to ask the modeller for, each with the reason and - where NFPA
-      holds a figure for it that was checked - that figure OFFERED with its
-      table and edition, never applied.
+      What to ask the modeller for, each with the reason and - where the
+      project's standard (NFPA 13, BS EN 12845 or FM Global) holds a figure
+      for it that was checked - that figure OFFERED with its table and
+      edition, never applied.
   refused:
     type: list
     description: >
@@ -57,9 +58,10 @@ output:
   ask_once:
     type: list
     description: >
-      The project's governing standards still to be asked - the NFPA 13
-      edition and the approving authority, each only where the calculation
-      uses it - asked once per project and kept for it (D-111).
+      The project's governing standards still to be asked - the sprinkler
+      standard (an NFPA 13 edition, EN 12845 or FM Global) and the approving
+      authority, each only where the calculation uses it - asked once per
+      project and kept for it (D-111).
   standards:
     type: map
     description: >
