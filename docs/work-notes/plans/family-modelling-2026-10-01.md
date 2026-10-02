@@ -38,6 +38,8 @@ are opened against the branch before them, and say so.
 
 **An eighth, the same day, asked for by the owner after a gap review:** `set-family-settings` (FRG-DOC-036) - Work Plane-Based, Shared, Always Vertical - and `add-family-shared-parameters` (FRG-PAR-031) - the office's shared parameters in a family - [Group BS](../../needs-checking/group-bs.md). Row 5b-270. The skill's NOT YET line now also names a type catalog and masking or filled regions inside a family.
 
+**A ninth, 2026-10-02, asked for by the owner on 2026-10-01:** *"line based family, ceiling based, patterns, floor based, wall based, all kind ... do the deep research"*. Six research passes and a reading of every Revit member used, across all eight releases, written up as [41 — Building Revit families](../../41-building-revit-families.md); eleven new tools - the template report, a type catalog, adaptive points, curves through points, conceptual forms, a hosted family's opening, a sweep drawn with a loaded profile, a Family Type parameter, filled and masking regions, flip controls, 2D lines for profiles and detail items - and `set-family-settings` widened to Part Type, Profile Usage and Cut with Voids When Loaded; seven new skills, one per kind, and `family-creation` widened - [Group BT](../../needs-checking/group-bt.md). Rows 5b-278 to 5b-280. **Still NOT YET after it, with the reason in row 5b-278:** a part that rotates about a reference line - no documented call gives a reference line's planes - and a label, which Revit's API cannot make on any release.
+
 ## What was decided, and where each decision is recorded
 
 - **One tool per form, not one tool with a `kind`** - a request need cannot be left out unless it is a
@@ -63,7 +65,7 @@ from them. The Autodesk forum was out of reach from the cloud session.
 
 ## Closes when
 
-Every row of Groups BL to BS has been run on the owner's PC - passed, or turned into a defect row -
+Every row of Groups BL to BT has been run on the owner's PC - passed, or turned into a defect row -
 and the skill's order has been followed once from a picture (BN). At that point the durable half is
 already in the cards, the register and row 5b-261; this note is deleted and its row in the
 [work-notes index](../README.md) struck.

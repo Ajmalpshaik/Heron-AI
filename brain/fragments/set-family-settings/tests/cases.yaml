@@ -12,12 +12,30 @@ positive:
   - given: settings "Always Vertical=no" after Work Plane-Based is on
     expect: Always Vertical reads No, read back
 
+  - given: >
+      a new family from the metric Generic Model face based template with a
+      void built in it; settings "Cut with Voids When Loaded=yes"
+    expect: >
+      changed 1, Cut with Voids When Loaded No -> Yes read back, and the
+      finding naming Cut Geometry in a project
+
+  - given: >
+      a Generic Model family switched to the Pipe Fittings category; settings
+      "Part Type=Elbow"
+    expect: Part Type Normal -> Elbow, read back in Family Category and Parameters
+
+  - given: a new family from the metric Profile template; settings "Profile Usage=Mullion"
+    expect: Profile Usage reads Mullion, read back
+
 negative:
   - given: settings "Work Plane-Based=maybe"
     expect: refused - neither yes nor no - and nothing changed
 
   - given: settings "Hosted=yes"
     expect: refused, naming the settings this sets, and nothing changed
+
+  - given: settings "Part Type=Sprocket" in the Pipe Fittings family
+    expect: refused, naming the Part Types this Revit has, and nothing changed
 
   - given: a project in front
     expect: notAFamily true and nothing changed

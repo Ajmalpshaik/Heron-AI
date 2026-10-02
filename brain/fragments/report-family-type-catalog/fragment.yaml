@@ -1,0 +1,87 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-038
+semantic-identity: "write this family's types as a type catalog - the .txt beside the family that makes Revit ask which types to load"
+kind: action
+domain: revit.families
+capability: REPORT_FAMILY_TYPE_CATALOG
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads every type of the family open in the Family Editor and gives back a
+  TYPE CATALOG - the text file, with the family's name and .txt, kept beside
+  the .rfa, that makes Revit show "Specify Types" when the family is loaded,
+  so a project takes the five sizes it needs out of fifty. The header line
+  starts with the delimiter and names each column "Name##KIND##UNIT"; each
+  next line is a type and its values.
+
+  **THE HEADER WORDS ARE REVIT'S, NEVER TYPED HERE.** Each column's kind and
+  unit come from Revit's own "string used in type catalogs" for the
+  parameter's kind and for the unit the family displays it in - Revit renamed
+  some unit words in 2021, which is why they are asked for rather than written
+  down.
+
+  **WHAT IS LEFT OUT IS SAID**: instance parameters, values a formula or a
+  dimension drives, values holding an element - a material, a nested type -
+  and a parameter blank in every type, each named.
+
+  **IT WRITES NOTHING.** The text and the file name come back; the family's own
+  path with .txt when it has been saved. It reads only; nothing is changed.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: catalogText
+      # The whole catalog, the header line first, lines ending CR LF.
+      role: result
+      type: string
+    - name: fileName
+      # Where it belongs: the family's path with .txt, or its name when unsaved.
+      role: result
+      type: string
+    - name: typeCount
+      role: result
+      type: int
+    - name: leftOut
+      # Every parameter left out and why, on ONE line.
+      role: accounting
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `UnitUtils.GetTypeCatalogStringForSpec` and `GetTypeCatalogStringForUnit`
+  with `Units.GetFormatOptions(ForgeTypeId)` from 2021, and
+  `UnitUtils.GetTypeCatalogString(UnitType)` and `(DisplayUnitType)` with
+  `FormatOptions.DisplayUnits` in 2020 and 2021 - the RevitAPI reference
+  assemblies and XML remarks, read 2026-10-01 - are picked by signature, so
+  2020 takes the older path. Revit has no call that writes or reads a type
+  catalog; how it reads Yes/No and integer cells, quoted cells and the file's
+  encoding are NEEDS-CHECKING BT10.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "make a type catalog for this family"         -> here
+#   "what parameters does this family have"       -> REPORT_FAMILY_PARAMETERS
+#   "make a 600 x 600 type"                       -> SET_FAMILY_TYPE_VALUES
+
+utterances:
+  - make a type catalog for this family
+  - write the type catalog txt for this family
+  - export the family types to a catalog
+  - create a type catalogue so I can pick types when loading

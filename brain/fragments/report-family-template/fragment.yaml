@@ -1,0 +1,109 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-037
+semantic-identity: "what kind of family is open - wall, ceiling, floor, roof or face based, line based, adaptive, pattern based, profile, detail or annotation - and what its template already holds"
+kind: action
+domain: revit.families
+capability: REPORT_FAMILY_TEMPLATE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Says what KIND of family is open in the Family Editor, and what its template
+  already holds, before anything is built in it: level-based, work-plane-based,
+  face-based, wall-, ceiling-, floor- or roof-based, line-based, a line-based
+  or ordinary detail item, an adaptive component, a pattern-based curtain
+  panel, a conceptual mass, a profile, an annotation or a title block.
+
+  **THE TEMPLATE DECIDED IT AND NOTHING CHANGES IT.** A wall-based family cannot
+  become a face-based one, a line-based family takes its Length from two clicks,
+  a pattern-based panel is driven by its tile pattern's points. The method that
+  builds each kind differs, so the kind is READ - from the family's own
+  placement, its category, Revit's own flags and the host element the template
+  carries - never guessed from the name.
+
+  **WITH WHAT IS ALREADY THERE**, each on ONE line: the named reference planes,
+  where each sits, what it faces, its Is Reference and Defines Origin; the host
+  wall, ceiling, floor or roof; the built-in parameters with their values - a
+  line-based family's Length, a door's Width and Height; the family's own
+  switches, Host and Part Type and Profile Usage among them; the reference
+  lines and the lines drawn through points, with their ids; the adaptive
+  points with their placement numbers and ids; a pattern panel's tile pattern
+  and spacing; the views; the types.
+
+  It reads only; nothing is changed.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: familyKind
+      # The kind in a modeller's words - "wall-based - placed only on a wall,
+      # which the template carries".
+      role: result
+      type: string
+    - name: templateReport
+      # Category, kind, placement, host elements, the family's switches, the
+      # built-in parameters, counts of planes, lines, points, types, and the
+      # views - on ONE line.
+      role: result
+      type: string
+    - name: planeList
+      # Every reference plane on ONE line: name, the axis it faces, where it
+      # sits in millimetres, Is Reference, defines origin, pinned.
+      role: result
+      type: string
+    - name: pointList
+      # Every adaptive point on ONE line, in placement order: its kind, number,
+      # id and position in millimetres. Empty for a family with none.
+      role: result
+      type: string
+    - name: lineList
+      # Every reference line, and every line drawn through points, on ONE line:
+      # its id, the points it runs through by placement number, its length. The
+      # ids a form on lines is built from.
+      role: result
+      type: string
+    - name: notAFamily
+      # That the document in front is a project, not a family being edited.
+      role: accounting
+      type: bool
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Family.FamilyPlacementType`, `IsCurtainPanelFamily`, `IsConceptualMassFamily`,
+  `CurtainPanelTilePattern` and its two spacings, the
+  `AdaptiveComponentFamilyUtils` point queries, `ModelCurve.IsReferenceLine`,
+  and the built-in parameters `FAMILY_HOSTING_BEHAVIOR` ("Host"),
+  `FAMILY_ALLOW_CUT_WITH_VOIDS`, `FAMILY_CONTENT_PART_TYPE` and
+  `FAM_PROFILE_USAGE` read the same 2020 through 2027 (the RevitAPI reference
+  assemblies and their XML documentation, read 2026-10-01). Which words Revit
+  shows for Host, and whether a face-based template's placement reads
+  WorkPlaneBased with the Work Plane-Based switch off, are Revit's - recorded
+  in NEEDS-CHECKING BT1.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "what kind of family is this"                 -> here
+#   "is this a wall based or a face based family" -> here
+#   "what reference planes does this family template have" -> here
+#   "what parameters does this family have"       -> REPORT_FAMILY_PARAMETERS
+#   "what forms are in this family"               -> REPORT_FAMILY_FORMS
+
+utterances:
+  - what kind of family is this
+  - is this a wall based or a face based family
+  - which template was this family made from
+  - what reference planes does this family template have
+  - is this family line based or hosted

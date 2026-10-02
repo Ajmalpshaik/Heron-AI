@@ -8,8 +8,19 @@
 // Work Plane-Based (placed on any plane or face, and moving with it - the way a
 // family nested in another is best made), Shared (a nested copy that shows in a
 // project's schedules and tags as an element of its own), Always Vertical (a
-// Work Plane-Based family that stays upright on a sloped plane) and Room
-// Calculation Point (the point that says which room a placed unit is in).
+// Work Plane-Based family that stays upright on a sloped plane), Room
+// Calculation Point (the point that says which room a placed unit is in), Cut
+// with Voids When Loaded (its unattached voids cut walls, floors and the rest
+// in a project), Maintain Annotation Orientation (a nested symbol stays
+// readable in plan), Rotate with Component and Keep Text Readable (an
+// annotation's), and Enable Cutting in Views.
+//
+// AND TWO THAT ARE NOT YES OR NO: PART TYPE - Elbow, Tee, Transition, Breaks
+// Into, Damper... - which decides how an MEP fitting or accessory behaves and
+// which routing preference group offers it; and PROFILE USAGE - Wall Sweep,
+// Mullion, Railing... - which decides where a profile family is offered. Each
+// is matched to Revit's own list, read from the running Revit, and the words
+// Revit shows are accepted with their spaces and dashes.
 //
 // THEY BELONG TO THE FAMILY, NOT TO A TYPE: one value for the whole family, read
 // from the family document's own Family element. A switch this family's
@@ -42,6 +53,46 @@ var switches = new List<Tuple<string, string, BuiltInParameter>>
     Tuple.Create("alwaysvertical", "Always Vertical", BuiltInParameter.FAMILY_ALWAYS_VERTICAL),
     Tuple.Create("shared", "Shared", BuiltInParameter.FAMILY_SHARED),
     Tuple.Create("roomcalculationpoint", "Room Calculation Point", BuiltInParameter.ROOM_CALCULATION_POINT),
+    Tuple.Create("cutwithvoidswhenloaded", "Cut with Voids When Loaded", BuiltInParameter.FAMILY_ALLOW_CUT_WITH_VOIDS),
+    Tuple.Create("maintainannotationorientation", "Maintain Annotation Orientation",
+        BuiltInParameter.FAMILY_ELECTRICAL_MAINTAIN_ANNOTATION_ORIENTATION),
+    Tuple.Create("rotatewithcomponent", "Rotate with Component", BuiltInParameter.FAMILY_ROTATE_WITH_COMPONENT),
+    Tuple.Create("keeptextreadable", "Keep Text Readable", BuiltInParameter.FAMILY_KEEP_TEXT_READABLE),
+    Tuple.Create("enablecuttinginviews", "Enable Cutting in Views", BuiltInParameter.FAMILY_ENABLE_CUTTING_IN_VIEWS),
+    Tuple.Create("parttype", "Part Type", BuiltInParameter.FAMILY_CONTENT_PART_TYPE),
+    Tuple.Create("profileusage", "Profile Usage", BuiltInParameter.FAM_PROFILE_USAGE),
+};
+
+// THE TWO SETTINGS THAT TAKE A NAME, NOT YES OR NO: each value Revit's own list
+// holds, read from the enum on the running Revit, with the words Revit shows
+// that the enum spells differently.
+var named = new Dictionary<string, Dictionary<string, int>>();
+Func<Type, Dictionary<string, string>, Dictionary<string, int>> listOf = (enumType, aliases) =>
+{
+    var values = new Dictionary<string, int>();
+    foreach (var name in Enum.GetNames(enumType))
+        values[squash(name)] = Convert.ToInt32(Enum.Parse(enumType, name));
+    foreach (var alias in aliases)
+        if (values.ContainsKey(alias.Value)) values[alias.Key] = values[alias.Value];
+    return values;
+};
+named["parttype"] = listOf(typeof(PartType), new Dictionary<string, string>
+{
+    { "flange", "pipeflange" }, { "mechanicalcoupling", "pipemechanicalcoupling" },
+});
+named["profileusage"] = listOf(typeof(ProfileFamilyUsage), new Dictionary<string, string>
+{
+    { "generic", "any" },
+});
+// A stored value back in words: the enum's own name for a named setting.
+Func<string, int?, string> wordsFor = (key, value) =>
+{
+    if (!value.HasValue) return "unread";
+    if (key == "parttype" && Enum.IsDefined(typeof(PartType), value.Value)) return ((PartType)value.Value).ToString();
+    if (key == "profileusage" && Enum.IsDefined(typeof(ProfileFamilyUsage), value.Value))
+        return ((ProfileFamilyUsage)value.Value).ToString();
+    if (named.ContainsKey(key)) return value.Value.ToString();
+    return value == 1 ? "Yes" : value == 0 ? "No" : "unread";
 };
 
 Func<Parameter, int?> stored = p =>
@@ -89,7 +140,17 @@ else
             }
             var said = squash(pair.Value);
             int value;
-            if (said == "yes" || said == "true" || said == "on" || said == "1") value = 1;
+            if (named.ContainsKey(match.Item1))
+            {
+                if (!named[match.Item1].TryGetValue(said, out value))
+                {
+                    problems.Add("\"" + (pair.Value ?? "") + "\" is not a " + match.Item2 + " this Revit has - it has "
+                        + string.Join(", ", Enum.GetNames(match.Item1 == "parttype" ? typeof(PartType)
+                            : typeof(ProfileFamilyUsage))) + ".");
+                    continue;
+                }
+            }
+            else if (said == "yes" || said == "true" || said == "on" || said == "1") value = 1;
             else if (said == "no" || said == "false" || said == "off" || said == "0") value = 0;
             else
             {
@@ -133,7 +194,8 @@ if (refused == null)
         catch (Exception ex)
         {
             throw new InvalidOperationException("Revit would not set " + plan.Item1.Item2 + " to "
-                + yesNo(plan.Item2) + ": " + ex.Message + " The call failed, and Heron rolls the whole call back.");
+                + wordsFor(plan.Item1.Item1, plan.Item2) + ": " + ex.Message + " The call failed, and Heron rolls the "
+                + "whole call back.");
         }
         // A plane switch decides what the next switch may be; Revit's view of
         // it is brought up to date before the next one is written.
@@ -144,8 +206,9 @@ if (refused == null)
     {
         var now = stored(family.get_Parameter(plan.Item1.Item3));
         if (now != plan.Item2)
-            throw new InvalidOperationException(plan.Item1.Item2 + " reads " + yesNo(now) + " after the call, not "
-                + yesNo(plan.Item2) + ". The call failed, and Heron rolls the whole call back.");
+            throw new InvalidOperationException(plan.Item1.Item2 + " reads " + wordsFor(plan.Item1.Item1, now)
+                + " after the call, not " + wordsFor(plan.Item1.Item1, plan.Item2) + ". The call failed, and Heron "
+                + "rolls the whole call back.");
     }
 
     foreach (var was in before)
@@ -153,7 +216,8 @@ if (refused == null)
         var now = stored(family.get_Parameter(was.Item1.Item3));
         if (now == was.Item2) continue;
         var asked = plans.Any(p => p.Item1.Item1 == was.Item1.Item1);
-        rows.Add(was.Item1.Item2 + " " + yesNo(was.Item2) + " -> " + yesNo(now) + (asked ? "" : " (Revit's own change)"));
+        rows.Add(was.Item1.Item2 + " " + wordsFor(was.Item1.Item1, was.Item2) + " -> " + wordsFor(was.Item1.Item1, now)
+            + (asked ? "" : " (Revit's own change)"));
         if (asked) changed++;
     }
 
@@ -166,6 +230,13 @@ if (refused == null)
     if (plans.Any(p => p.Item1.Item1 == "shared") && changed > 0)
         findings.Add("Shared decides whether a copy nested in another family shows in a project as an element of "
             + "its own. It takes effect where this family is nested, when it is loaded there again.");
+    if (plans.Any(p => p.Item1.Item1 == "cutwithvoidswhenloaded" && p.Item2 == 1) && changed > 0)
+        findings.Add("Cut with Voids When Loaded lets the family's UNATTACHED voids cut walls, floors, roofs, "
+            + "ceilings, generic models and structural elements in a project - with Cut Geometry there, once the "
+            + "family is loaded again. A void already cut into the family's own solid cuts nothing outside it.");
+    if (plans.Any(p => p.Item1.Item1 == "parttype") && changed > 0)
+        findings.Add("Part Type decides how an MEP fitting or accessory behaves and which routing preference "
+            + "group offers it; a fitting's connectors must match it - an elbow two, a tee three.");
 }
 
 if (refused != null) findings.Add(refused);

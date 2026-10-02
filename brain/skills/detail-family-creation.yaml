@@ -1,0 +1,78 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: detail-family-creation
+name: Build a detail item, a line-based detail or an annotation symbol family
+domain: revit.families
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Builds a 2D family drawn in one view - a DETAIL ITEM (a steel section, a
+  blocking, a fixing), a LINE-BASED DETAIL ITEM (insulation, a membrane, a
+  run of brick, placed with two clicks), or an ANNOTATION SYMBOL - and makes
+  it resize from its parameters. Made from the Detail Item, the line-based
+  Detail Item or a Generic Annotation template.
+
+  0. REPORT_FAMILY_TEMPLATE FIRST - confirm a detail item, a line-based detail
+     item or an annotation; read its view and its planes, and for a line-based
+     one the built-in Length and the planes it is measured between - the
+     template's own, never moved.
+  1. READ THE THING: the lines, the solid or hatched fills, the masks, and
+     which sizes change between types.
+  2. The sizes as parameters, their values FIRST, formulas, planes on every
+     edge a size moves, and labels between them - FAMILY-CREATION steps 2 to
+     6, in the family's one view.
+  3. DRAW_FAMILY_DETAIL_LINES with lockToPlanes true, so the lines move with
+     the planes; a subcategory for each line weight the drawing needs.
+  4. DRAW_FAMILY_FILLED_REGION for every fill: a filled region type by name -
+     the family's own Solid Black or a hatch - or "masking", which Revit makes
+     through its API only from 2024; before that a filled region type with its
+     Masking box ticked hides what is behind it the same way.
+  5. A part only some types show is linked to a Yes/No by the button beside
+     its Visible in Properties.
+  6. FLEX_FAMILY at two really different sizes - for a line-based detail, two
+     lengths.
+
+  NOT POSSIBLE THROUGH REVIT'S API ON ANY RELEASE 2020 TO 2027: a LABEL - the
+  text that shows a parameter's value in a tag, a symbol or a title block.
+  Revit 2027 reads labels and cannot make them. A tag or title block is built
+  by hand, or from a seed family that already holds its labels; say so before
+  starting rather than after.
+
+utterances:
+  - make a detail item family
+  - build a line based detail component for insulation
+  - make a parametric detail component of a steel section
+  - create a generic annotation symbol family
+
+needs:
+  - REPORT_FAMILY_TEMPLATE
+  - ADD_FAMILY_PARAMETERS
+  - SET_FAMILY_TYPE_VALUES
+  - SET_FAMILY_FORMULA
+  - CREATE_REFERENCE_PLANES
+  - SET_FAMILY_PLANE_REFERENCE
+  - LABEL_FAMILY_DIMENSION
+  - DRAW_FAMILY_DETAIL_LINES
+  - DRAW_FAMILY_FILLED_REGION
+  # The proof, and never skipped.
+  - FLEX_FAMILY
+
+preconditions:
+  - a family document is open in the Family Editor, started by the modeller from a Detail Item, line-based Detail Item or Generic Annotation template - Heron does not choose a template
+  - every size, parameter name and type name has been given for THIS request
+  - nothing asked for needs a label - a label is made by hand
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Written 2026-10-02 on the owner's request for every kind of family
+  creation, from the research recorded in docs/41-building-revit-families.md.
+  Every step is DRAFT until it has been run on a real family with a negative
+  case (D-30).

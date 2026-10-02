@@ -1,0 +1,33 @@
+positive:
+  - given: >
+      the Curtain Panel Pattern Based family with four reference lines drawn
+      through points 1 to 4 by draw-family-point-curves; profiles their four
+      ids, depthMm "", solid true
+    expect: >
+      a flat surface filling the 4 points, its area read back equal to the
+      tile's area; LOOKED AT - moving point 3 up bends the surface with it
+
+  - given: the same four lines; depthMm "50", solid true
+    expect: >
+      a solid extrusion 50 mm deep along the panel's normal, its volume read
+      back as area x 50 mm
+
+  - given: >
+      an adaptive family with two closed profiles of curves, one above the
+      other; profiles "a,b,c,d | e,f,g,h", depthMm "", solid true
+    expect: a loft between them, its volume read back
+
+negative:
+  - given: profiles of three of the four lines (one side missing), depthMm ""
+    expect: refused - the profile does not close - nothing made
+
+  - given: one closed profile, depthMm "", solid false
+    expect: refused - a void needs a volume - nothing made
+
+  - given: a project in front
+    expect: notAFamily true and nothing made
+
+second_route:
+  - >
+      In the Family Editor, select the form: it highlights on the curves, and
+      Properties shows it as a Form; moving a point flexes it

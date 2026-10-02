@@ -1,0 +1,108 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-119
+semantic-identity: "draw the lines of a profile, detail item, annotation or title block family in its view, locked to the planes they lie on"
+kind: action
+domain: revit.families
+capability: DRAW_FAMILY_DETAIL_LINES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws the LINES of a 2D family - a profile, a detail item, an annotation
+  symbol, a title block - in its view, as the Family Editor's Line tool does
+  there: detail lines. In a PROFILE family every line is part of the profile,
+  so the loops given ARE the profile - closed loops that do not cross, a loop
+  inside another a hole - and an open path is refused there.
+
+  **THE SAME SHAPE LANGUAGE AS THE FORM TOOLS**, millimetres in the view's own
+  two model coordinates: closed "circle", "rect", "polygon" or corners, and
+  open "path X,Y; X,Y" pieces, `|` between.
+
+  **LOCKED TO THE PLANES THEY LIE ON, WHEN ASKED** - every straight line lying
+  along a NAMED reference plane is aligned and locked to it, so the profile
+  resizes when a labelled dimension moves the plane. That is the step that
+  makes a profile parametric. A line is locked only where it already lies; one
+  on no named plane is left free and counted.
+
+  **ON A SUBCATEGORY** of the family's category for its line weight, made when
+  new, or "none" for the category itself.
+
+  **A 3D MODEL FAMILY IS REFUSED** - its 2D symbol is DRAW_FAMILY_SYMBOLIC_LINES.
+  READ BACK, ALL OR NOTHING: every line's ends, its style and every lock are
+  read again. Their ids come back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The family's view, as the Project Browser names it - "Ref. Level".
+    - name: view
+      type: string
+      source: request
+    # Closed loops and open "path ..." pieces, `|` between. Millimetres.
+    - name: shapes
+      type: string
+      source: request
+    # A subcategory of the family's category, made when new, or "none".
+    - name: subcategory
+      type: string
+      source: request
+    # True to lock every straight line to the named reference plane it lies
+    # along.
+    - name: lockToPlanes
+      type: bool
+      source: request
+  provides:
+    - name: lineIds
+      # The new lines' unique ids, commas between.
+      role: result
+      type: string
+    - name: drawn
+      # How many lines, where, how long in all, their style and their locks -
+      # read back.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was drawn, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ItemFactoryBase.NewDetailCurve(View, Curve)` and
+  `ItemFactoryBase.NewAlignment(View, Reference, Reference)` - "a new locked
+  alignment", which Autodesk's remarks allow between a line and a reference
+  plane already aligned - read the same 2020 through 2027 (the RevitAPI
+  reference assemblies and XML remarks, read 2026-10-01). That a profile
+  family's lines are detail lines drawn this way is from a published Revit
+  API answer read 2026-10-01, and is NEEDS-CHECKING BT11, not a promise.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "draw the profile in this profile family"     -> here
+#   "draw the lines of this detail item family"   -> here
+#   "draw the valve symbol in plan"               -> DRAW_FAMILY_SYMBOLIC_LINES -
+#                                                    a 3D family's 2D symbol
+#   "draw a line between these points"            -> CREATE_LINE - a project's view
+
+utterances:
+  - draw the profile in this profile family
+  - draw the lines of this detail item family
+  - draw the outline of the handrail profile and lock it to the planes
+  - draw lines in this annotation symbol family

@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-036
-semantic-identity: "set the family's own Work Plane-Based, Shared, Always Vertical or Room Calculation Point switch in the family being edited"
+semantic-identity: "set the family's own Work Plane-Based, Shared, Always Vertical, Room Calculation Point, Cut with Voids When Loaded, Part Type or Profile Usage in the family being edited"
 kind: action
 domain: revit.families
 capability: SET_FAMILY_SETTINGS
@@ -18,8 +18,18 @@ purpose: >
   the Family Editor: WORK PLANE-BASED - placed on any plane or face and moving
   with it, the way a family nested in another is best made; SHARED - a nested
   copy that a project schedules and tags as an element of its own; ALWAYS
-  VERTICAL - a Work Plane-Based family that stays upright on a slope; and ROOM
-  CALCULATION POINT.
+  VERTICAL - a Work Plane-Based family that stays upright on a slope; ROOM
+  CALCULATION POINT; CUT WITH VOIDS WHEN LOADED - its unattached voids cut
+  walls, floors and the rest in a project; MAINTAIN ANNOTATION ORIENTATION - a
+  nested symbol stays readable in plan; ROTATE WITH COMPONENT and KEEP TEXT
+  READABLE for an annotation; ENABLE CUTTING IN VIEWS.
+
+  **AND TWO THAT TAKE A NAME**: PART TYPE - Elbow, Tee, Transition, Breaks
+  Into, Damper - which decides how an MEP fitting or accessory behaves and
+  which routing preference group offers it; and PROFILE USAGE - Wall Sweep,
+  Mullion, Railing - which decides where a profile family is offered. Each is
+  matched to Revit's own list, read from the running Revit, and the words
+  Revit shows are accepted with their spaces and dashes.
 
   **ONE VALUE FOR THE WHOLE FAMILY**, not per type. A switch this family's
   category does not have, or that Revit holds read-only here, is refused by
@@ -39,9 +49,12 @@ contract:
   needs:
     - name: doc
       type: Document
-    # Setting = yes or no, SEMICOLONS between - "Work Plane-Based=yes;
-    # Shared=yes". Settings: Work Plane-Based, Always Vertical, Shared, Room
-    # Calculation Point.
+    # Setting = value, SEMICOLONS between - "Work Plane-Based=yes;
+    # Shared=yes", "Part Type=Elbow", "Profile Usage=Mullion". Yes or no for
+    # Work Plane-Based, Always Vertical, Shared, Room Calculation Point, Cut with
+    # Voids When Loaded, Maintain Annotation Orientation, Rotate with Component,
+    # Keep Text Readable and Enable Cutting in Views; a name from Revit's own
+    # list for Part Type and Profile Usage.
     - name: settings
       type: IDictionary<string, string>
       source: request
@@ -73,16 +86,25 @@ tests: tests/
 
 compatibility-note: >
   `BuiltInParameter.FAMILY_WORK_PLANE_BASED`, `FAMILY_SHARED`,
-  `FAMILY_ALWAYS_VERTICAL` and `ROOM_CALCULATION_POINT`, read from
-  `Document.OwnerFamily`, are the same 2020 through 2027 (the RevitAPI
-  reference assemblies, read 2026-10-01). Which categories carry each switch,
-  and when Revit holds Always Vertical read-only, are Revit's - read at run
-  time, never listed here (NEEDS-CHECKING BS1 and BS2).
+  `FAMILY_ALWAYS_VERTICAL`, `ROOM_CALCULATION_POINT`,
+  `FAMILY_ALLOW_CUT_WITH_VOIDS`,
+  `FAMILY_ELECTRICAL_MAINTAIN_ANNOTATION_ORIENTATION`,
+  `FAMILY_ROTATE_WITH_COMPONENT`, `FAMILY_KEEP_TEXT_READABLE`,
+  `FAMILY_ENABLE_CUTTING_IN_VIEWS`, `FAMILY_CONTENT_PART_TYPE` and
+  `FAM_PROFILE_USAGE`, read from `Document.OwnerFamily`, and the `PartType`
+  and `ProfileFamilyUsage` enums are the same 2020 through 2027 (the RevitAPI
+  reference assemblies and their XML labels, read 2026-10-01). Which
+  categories carry each switch, which Part Types a category accepts, and when
+  Revit holds Always Vertical read-only, are Revit's - read at run time, never
+  listed here (NEEDS-CHECKING BS1, BS2 and BT7). Widened 2026-10-01, before any
+  proof, from four switches to eleven settings (row 5b-278).
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "make this family work plane based"           -> here
 #   "make the motor family shared"                -> here
+#   "set the part type of this fitting to elbow"  -> here
+#   "turn on cut with voids when loaded"          -> here
 #   "set the family category to air terminal"     -> SET_FAMILY_CATEGORY
 
 utterances:
@@ -90,3 +112,6 @@ utterances:
   - make the motor family shared
   - turn on always vertical for this family
   - set the family to shared and work plane based
+  - set the part type of this fitting to elbow
+  - turn on cut with voids when loaded
+  - set the profile usage to mullion

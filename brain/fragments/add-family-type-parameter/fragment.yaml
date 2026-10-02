@@ -1,0 +1,117 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-032
+semantic-identity: "make a Family Type parameter so each type of this family chooses which type of a nested part, or which loaded profile, it uses"
+kind: action
+domain: revit.families
+capability: ADD_FAMILY_TYPE_PARAMETER
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes a FAMILY TYPE parameter in the family open in the Family Editor - the
+  Family Types dialog's "Family Type" kind - and links nested parts to it, so
+  each type of this family chooses WHICH TYPE of the nested part it uses: the
+  5 kW or the 7 kW motor, the lever or the wheel handle, the round or the
+  square profile a sweep is drawn with.
+
+  **ONE CATEGORY**: only a family of that category already loaded into this one
+  can be its value, which is Revit's rule - a category with nothing loaded is
+  refused, naming LOAD_FAMILY.
+
+  **IN THE ORDER THAT KEEPS THE GEOMETRY STILL**: the parameter is made, its
+  value in the current type is set to the type the parts already show, and only
+  then are the parts linked - the Label in their Properties. Revit's remarks do
+  not say which of a nested copy's parameters carries that link, so each
+  candidate is offered to Revit's own "can it be linked" test and the one it
+  takes is reported. Then each family type named takes its nested type, chosen
+  only from Revit's own list of what the parameter can hold.
+
+  **ALL OR NOTHING, READ BACK**: every link and every type's value are read
+  again; the current type is put back as it was.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: parameterName
+      type: string
+      source: request
+    # The nested part's category, as Revit names it - "Mechanical Equipment",
+    # "Profiles".
+    - name: category
+      type: string
+      source: request
+    - name: instance
+      type: bool
+      source: request
+    # The Properties palette heading. Empty is Construction.
+    - name: parameterGroup
+      type: string
+      source: request
+    # What to link: a nested family's name - every copy of it placed here - or
+    # unique ids of nested copies or sweeps, commas between.
+    - name: elements
+      type: string
+      source: request
+    # Family type = nested type, as "Family : Type" or the type's own name -
+    # "550 x 550=Motor : 5 kW". Empty leaves every type but the current one
+    # unset.
+    - name: typeValues
+      type: IDictionary<string, string>
+      source: request
+  provides:
+    - name: parameterReport
+      # The parameter, its category and scope, what is linked by which of its
+      # parameters, and every type's value - on ONE line.
+      role: result
+      type: string
+    - name: linked
+      role: result
+      type: int
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyManager.AddParameter(string, BuiltInParameterGroup, Category, bool)`
+  2020 to 2024 and `AddParameter(string, ForgeTypeId, Category, bool)` 2022 to
+  2027 - "add a new family type parameter to control the type of a nested
+  family", which Autodesk's remarks say throws when no family of the category
+  is in the document - are picked by signature, so 2020 is a different path,
+  not a repeat. `Family.GetFamilyTypeParameterValues`,
+  `CanElementParameterBeAssociated`, `AssociateElementParameterToFamilyParameter`
+  and `GetAssociatedFamilyParameter` read the same 2020 through 2027 (the
+  RevitAPI reference assemblies and XML remarks, read 2026-10-01). Which of a
+  nested copy's parameters Revit links is NEEDS-CHECKING BT8.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "let each type choose which motor it uses"    -> here
+#   "make the nested family swappable by type"    -> here
+#   "link the motor type's width to Motor Width"  -> LINK_NESTED_TYPE_PARAMETER -
+#                                                    a nested TYPE's parameter
+#   "put the motor family into this air handler"  -> PLACE_NESTED_FAMILY
+
+utterances:
+  - let each type choose which motor it uses
+  - add a family type parameter for the nested handle
+  - make the nested family swappable by type
+  - make the sweep profile a family type parameter

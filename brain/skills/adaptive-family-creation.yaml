@@ -1,0 +1,72 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: adaptive-family-creation
+name: Build an adaptive component placed by clicking its numbered points
+domain: revit.families
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Builds an ADAPTIVE COMPONENT - a family placed by clicking its numbered
+  points, whose shape follows wherever they land: a two-point fin or strut, a
+  three-point bracket, a four-point panel placed by hand, a canopy that
+  spans between points. Made from the Generic Model Adaptive template, in the
+  conceptual Family Editor, where shapes are built on POINTS and LINES.
+
+  0. REPORT_FAMILY_TEMPLATE FIRST - confirm an adaptive component; read the
+     points and lines it already holds.
+  1. READ THE THING: how many points the modeller clicks, IN WHAT ORDER, and
+     what spans between them. The click order is the placement order and
+     cannot be guessed.
+  2. PLACE_ADAPTIVE_POINTS as PLACEMENT points in click order - the numbers
+     Revit gave are read back. A SHAPE HANDLE point only where the shape must
+     be adjusted after placing, and never in a family that will be repeated
+     along a divided path: Revit's Repeat refuses a family with shape handles.
+  3. DRAW_FAMILY_POINT_CURVES between the points - reference lines to build
+     on, model lines where the line itself is the part.
+  4. CREATE_CONCEPTUAL_FORM on those lines: a closed loop and no depth is a
+     surface; a depth pushes it; two or more profiles loft.
+  5. SET_FAMILY_FORM_MATERIAL; ADD_FAMILY_PARAMETERS for what the types
+     choose.
+  6. REPORT_FAMILY_FORMS, then the flex an adaptive family takes: the modeller
+     drags each point in the Family Editor and the form must follow, then
+     places it in a test project by clicking the points in order.
+
+  KNOWN HERE AND SET BY HAND: each placement point's ORIENTATION (Instance
+  (xyz) by default; Host and Loop System is the one panels placed on a
+  surface usually need) is a Properties choice no Heron tool sets yet.
+  NOT YET: a profile drawn on a point's own plane - the cross-section of a
+  two-point beam - and points hosted on a line at a ratio.
+
+utterances:
+  - make an adaptive component family
+  - build a two point adaptive family
+  - make an adaptive family placed by four points
+  - create an adaptive component for a canopy strut
+
+needs:
+  - REPORT_FAMILY_TEMPLATE
+  - PLACE_ADAPTIVE_POINTS
+  - DRAW_FAMILY_POINT_CURVES
+  - CREATE_CONCEPTUAL_FORM
+  - SET_FAMILY_FORM_MATERIAL
+  - ADD_FAMILY_PARAMETERS
+  - REPORT_FAMILY_FORMS
+
+preconditions:
+  - a family document is open in the Family Editor, started by the modeller from the Generic Model Adaptive template - Heron does not choose a template
+  - the number of points, their click order and every size have been given for THIS request
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Written 2026-10-02 on the owner's request for every kind of family
+  creation, from the research recorded in docs/41-building-revit-families.md.
+  Every step is DRAFT until it has been run on a real family with a negative
+  case (D-30).

@@ -1,0 +1,113 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: hosted-family-creation
+name: Build a wall-, ceiling-, floor-, roof- or face-based family
+domain: revit.families
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Builds a HOSTED family - one placed only on a wall, a ceiling, a floor or a
+  roof, or on any face - from the template the modeller opened: a wall grille,
+  a wall-mounted fan coil, a recessed light, a floor drain, a roof fan, an
+  outlet on any face. The steps of FAMILY-CREATION still hold, in their order;
+  this skill is what changes when the family has a host.
+
+  0. REPORT_FAMILY_TEMPLATE FIRST - read which host the template carries (a
+     wall, a ceiling, a floor, a roof, or a face-based placeholder), its own
+     planes, and Host as Family Category and Parameters shows it. THE TEMPLATE
+     DECIDED THE HOST AND NOTHING CHANGES IT: a wall-based family cannot be
+     turned face-based; that is starting again in the other template, or
+     nesting this one in it. Say so before building if the job wants a
+     different host. A family that must sit on walls or ceilings in a LINKED
+     model is FACE-BASED - wall- and ceiling-based families cannot host on a
+     linked element, a face-based one can. Never move or delete the
+     template's own planes: they carry the origin, the named references and,
+     in a door or window, the labelled Width and Height.
+  1. READ THE THING, as FAMILY-CREATION step 0 - and which SIDE of the host
+     the body sits on: in front of the wall's face, below the ceiling, on top
+     of the floor or roof - and what is cut OUT of the host.
+  2. SET_FAMILY_CATEGORY when the template's category is not the one wanted -
+     a face-based Generic Model made a Lighting Fixture or an Air Terminal is
+     the usual route where a category has no face-based template of its own.
+  3. The parameters, values, formulas, planes and labels as FAMILY-CREATION
+     steps 2 to 6 - each size measured from the template's host face or its
+     centre planes, never from the edge of a form.
+  4. THE FORMS on the host's side, each locked to its planes - FAMILY-CREATION
+     steps 7 and 8.
+  5. WHAT IS CUT OUT OF THE HOST. In a wall- or ceiling-based family,
+     CREATE_FAMILY_HOST_OPENING cuts an opening of a FIXED size in the
+     template's wall or ceiling, and every placement cuts it in its own host.
+     A cut that must resize with a parameter is a VOID form locked to planes -
+     whether a void cuts the template's host by itself, without Cut Geometry,
+     is not yet known (NEEDS-CHECKING BT12). A floor- or roof-based family
+     has no opening call; its cut is a void.
+     In a FACE-BASED family an UNATTACHED void cuts nothing on placement: turn
+     on Cut with Voids When Loaded with SET_FAMILY_SETTINGS and the modeller
+     cuts with Cut Geometry in the project.
+  6. ADD_FAMILY_CONNECTOR for MEP, on the face the service leaves by; Maintain
+     Annotation Orientation (SET_FAMILY_SETTINGS) keeps a nested symbol
+     readable in plan on a wall. ADD_FAMILY_FLIP_CONTROL where the family must
+     flip left-right or front-back once placed.
+  7. Visibility, subcategories, materials and plan symbols as FAMILY-CREATION
+     step 12.
+  8. REPORT_FAMILY_FORMS, then FLEX_FAMILY at sizes really different - and,
+     because a hosted family also lives with its HOST, the modeller places it
+     on two walls (or ceilings) of different thickness in a test project.
+
+  NOT YET: cutting a face-based family's host in the Family Editor itself (Cut
+  Geometry with the host extrusion, so every placement cuts automatically);
+  the plane a reference line carries; a door's or window's own opening cut
+  locked to its planes - an opening's sketch cannot be locked through the API.
+
+# The words people say when they want a hosted family made.
+utterances:
+  - make a wall based family
+  - build a ceiling based light fitting family
+  - make a floor based family for a floor drain
+  - create a face based family so it hosts on linked walls
+  - make a wall hosted grille family with an opening in the wall
+  - make a roof based family for a roof fan
+
+# CAPABILITIES, never fragment ids - in the order the purpose gives.
+needs:
+  - REPORT_FAMILY_TEMPLATE
+  - SET_FAMILY_CATEGORY
+  - ADD_FAMILY_PARAMETERS
+  - ADD_FAMILY_SHARED_PARAMETERS
+  - SET_FAMILY_TYPE_VALUES
+  - SET_FAMILY_FORMULA
+  - CREATE_REFERENCE_PLANES
+  - SET_FAMILY_PLANE_REFERENCE
+  - LABEL_FAMILY_DIMENSION
+  - EXTRUDE_BETWEEN_PLANES
+  - CREATE_FAMILY_EXTRUSION
+  - LOCK_FORM_TO_PLANES
+  - CREATE_FAMILY_HOST_OPENING
+  - SET_FAMILY_SETTINGS
+  - ADD_FAMILY_CONNECTOR
+  - ADD_FAMILY_FLIP_CONTROL
+  - SET_FAMILY_FORM_VISIBILITY
+  - DRAW_FAMILY_SYMBOLIC_LINES
+  - REPORT_FAMILY_FORMS
+  # The proof, and never skipped.
+  - FLEX_FAMILY
+
+preconditions:
+  - a family document is open in the Family Editor, started by the modeller from a wall-, ceiling-, floor-, roof- or face-based template - Heron does not choose a template
+  - every size, parameter name and type name has been given for THIS request
+  - the template's own reference planes and host are as the template made them
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Written 2026-10-02 on the owner's request for "line based, ceiling based,
+  floor based, wall based ... all kind" of family creation, from the research
+  recorded in docs/41-building-revit-families.md. Every step is DRAFT until
+  it has been run on a real family with a negative case (D-30).

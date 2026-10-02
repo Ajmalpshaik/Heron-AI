@@ -1,0 +1,80 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: pattern-based-family-creation
+name: Build a pattern-based curtain panel that fits every cell of a divided surface
+domain: revit.families
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Builds a PATTERN-BASED PANEL - the family that fills each cell of a divided
+  surface on a mass and bends to fit it: a glass panel, a solid cladding
+  panel, a panel with a thickness. Made from the Curtain Panel Pattern Based
+  template (or Generic Model Pattern Based), in the conceptual Family Editor,
+  where shapes are built on POINTS and LINES rather than on reference planes
+  and labelled dimensions - so the classic form tools of FAMILY-CREATION do
+  not apply here.
+
+  0. REPORT_FAMILY_TEMPLATE FIRST - confirm a pattern-based panel; read its
+     TILE PATTERN (Rectangle in a new one) and spacing, the placement points
+     the template brings with their numbers (1 to 4 for a rectangle), and the
+     lines already drawn between them, with their ids, in lineList. USE THE
+     TILE PATTERN OF THE DIVIDED SURFACE THE PANEL WILL FILL - Rectangle,
+     Rhomboid, Hexagon, Triangle, Arrows, ZigZag, Octagon and the rest. Revit
+     has no call to set it: the modeller picks it by hand, selecting the grid
+     and choosing the pattern in the Type Selector, and this step reads it
+     back. The spacing is the template's own grid; each cell's real size
+     comes from the surface the panel is applied to.
+  1. READ THE THING: what the panel is - a flat surface, a solid of a
+     thickness, a frame - and its material. A picture gives shape, never size
+     (D-33).
+  2. THE EDGES: the template's own lines between the points, by their ids from
+     step 0 - or DRAW_FAMILY_POINT_CURVES, "1,2 | 2,3 | 3,4 | 4,1", as
+     reference lines, when the template has none to build on. Lines drawn
+     THROUGH the points move with them, which is what makes the panel follow
+     each cell.
+  3. CREATE_CONCEPTUAL_FORM on that closed profile: no depth is a flat SURFACE
+     (the glass); a depth is a panel that THICK along its normal.
+  4. SET_FAMILY_FORM_MATERIAL on the form - a family material parameter when
+     the types must choose it.
+  5. REPORT_FAMILY_FORMS, then the flex a pattern-based panel takes: in the
+     Family Editor the modeller drags one point and the form must bend with it
+     (FLEX_FAMILY changes parameters, not points); then the panel is loaded
+     into a test mass and applied to a divided surface of the same pattern.
+
+  NOT YET: points hosted ON the edges at a ratio (an inset frame, an opening
+  that scales with the cell), a profile drawn on a point's own plane, and
+  setting the tile pattern - each has a call Heron has not built, or none.
+
+utterances:
+  - make a curtain panel pattern based family
+  - build a pattern based panel for a divided surface
+  - make a glass panel that fits the divided surface pattern
+  - create a pattern based cladding panel with a thickness
+
+needs:
+  - REPORT_FAMILY_TEMPLATE
+  - DRAW_FAMILY_POINT_CURVES
+  - CREATE_CONCEPTUAL_FORM
+  - ADD_FAMILY_PARAMETERS
+  - SET_FAMILY_FORM_MATERIAL
+  - REPORT_FAMILY_FORMS
+
+preconditions:
+  - a family document is open in the Family Editor, started by the modeller from a pattern-based template - Heron does not choose a template
+  - the tile pattern of the grid is the one the divided surface will use, set by hand in the Type Selector
+  - the panel's build-up and material have been given for THIS request
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Written 2026-10-02 on the owner's request for pattern-based family
+  creation, from the research recorded in docs/41-building-revit-families.md.
+  Every step is DRAFT until it has been run on a real family with a negative
+  case (D-30).

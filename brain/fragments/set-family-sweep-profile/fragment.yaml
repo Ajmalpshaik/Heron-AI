@@ -1,0 +1,97 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-054
+semantic-identity: "draw a family sweep with a loaded profile family instead of a sketched shape, flipped or not"
+kind: action
+domain: revit.families
+capability: SET_FAMILY_SWEEP_PROFILE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets the PROFILE of one or more sweeps in the family open in the Family
+  Editor to a PROFILE FAMILY loaded into it - the sweep's Profile in its
+  Properties - instead of a shape sketched in place: a handrail's section, a
+  skirting, a gasket, an insulation ring. One profile then serves many sweeps,
+  a change to it reaches them all when it is loaded again, and a Family Type
+  parameter can swap it per type (ADD_FAMILY_TYPE_PARAMETER).
+
+  **THE SWEEPS ARE NAMED BY ID** - the id CREATE_FAMILY_SWEEP gives back or
+  REPORT_FAMILY_FORMS reads. A swept blend has two profiles and is refused by
+  name rather than half set.
+
+  **THE PROFILE IS A TYPE OF A PROFILE FAMILY LOADED HERE**, "Family : Type",
+  or its type name when unique; a name not loaded is refused with the profiles
+  the family holds - LOAD_FAMILY first. A Profile Revit holds read-only is
+  refused, never forced.
+
+  **READ BACK, ALL OR NOTHING**: each sweep's Profile, its flip, and that it
+  still holds a solid are read again - a profile that does not sweep along the
+  path fails the call.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Sweep ids, commas between.
+    - name: sweeps
+      type: string
+      source: request
+    # A loaded profile: "Family : Type", or its type name when unique.
+    - name: profile
+      type: string
+      source: request
+    # True to flip the profile left-right on the path.
+    - name: flipped
+      type: bool
+      source: request
+  provides:
+    - name: changed
+      role: result
+      type: int
+    - name: profileReport
+      # Every sweep with its new profile and its volume - read back - on ONE
+      # line.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `BuiltInParameter.PROFILE_FAM_TYPE` ("Profile") and `PROFILE_FLIPPED_HOR`
+  ("Profile Is Flipped") on a sweep, and `Sweep.ProfileSymbol` and
+  `ProfileSketch`, read the same 2020 through 2027 (the RevitAPI reference
+  assemblies and their XML labels, read 2026-10-01). Whether Revit lets the
+  Profile of a sweep made with a SKETCHED profile be set this way is
+  NEEDS-CHECKING BT13; a read-only Profile is refused by name.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "use the handrail profile family for this sweep" -> here
+#   "sweep a profile along a path"                -> CREATE_FAMILY_SWEEP - a
+#                                                    typed shape
+#   "make the sweep profile a family type parameter" -> ADD_FAMILY_TYPE_PARAMETER
+
+utterances:
+  - use the handrail profile family for this sweep
+  - set the sweep profile to the loaded profile family
+  - change this sweep to use a profile family
+  - flip the profile of this sweep

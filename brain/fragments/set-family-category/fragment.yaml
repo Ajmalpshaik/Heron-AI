@@ -137,6 +137,24 @@ compatibility-note: >
 #                                                element already in the family
 #   "flex the family"                         -> FLEX_FAMILY
 #   "start a new family from a template"      -> CREATE_FAMILY_DOCUMENT
+#   "what kind of family is this"             -> REPORT_FAMILY_TEMPLATE - read
+#                                                first, every kind
+#   "set the part type of this fitting to elbow" -> SET_FAMILY_SETTINGS
+#   "let each type choose which motor it uses" -> ADD_FAMILY_TYPE_PARAMETER -
+#                                                a nested TYPE swapped by type
+#   "add flip arrows to this family"          -> ADD_FAMILY_FLIP_CONTROL
+#   "add a solid fill to this detail item family" -> DRAW_FAMILY_FILLED_REGION
+#   "draw the profile in this profile family" -> DRAW_FAMILY_DETAIL_LINES -
+#                                                a 2D family's lines
+#   "cut an opening in the host wall of this family"
+#                                             -> CREATE_FAMILY_HOST_OPENING
+#   "use the handrail profile family for this sweep"
+#                                             -> SET_FAMILY_SWEEP_PROFILE
+#   "add four adaptive points to this family" -> PLACE_ADAPTIVE_POINTS
+#   "draw lines between the adaptive points"  -> DRAW_FAMILY_POINT_CURVES
+#   "make a surface from these lines"         -> CREATE_CONCEPTUAL_FORM - an
+#                                                adaptive or pattern family
+#   "make a type catalog for this family"     -> REPORT_FAMILY_TYPE_CATALOG
 
 utterances:
   - make this family an air terminal

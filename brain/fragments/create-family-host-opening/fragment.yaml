@@ -1,0 +1,86 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-053
+semantic-identity: "cut an opening in the template's own wall or ceiling, in a wall-based or ceiling-based family"
+kind: action
+domain: revit.families
+capability: CREATE_FAMILY_HOST_OPENING
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Cuts an OPENING in the host of a wall-based or ceiling-based family open in
+  the Family Editor - the Opening tool those templates offer. The template
+  carries a sample wall or ceiling; an opening cut in it is cut in every wall
+  or ceiling the family is placed on in a project: a wall grille's hole, a
+  recessed light's cut in the ceiling. Revit's call takes a wall or a ceiling
+  only, so a floor- or roof-based family is refused by name.
+
+  **ONE CLOSED LOOP** in the host's own two coordinates, millimetres from the
+  family origin: along the wall and up it for a wall - X,Z for a wall running
+  along X, Y,Z for one along Y - and X,Y in plan for a ceiling.
+
+  **ITS SIZE IS FIXED AS DRAWN, AND IT SAYS SO.** An opening's sketch cannot be
+  locked to planes through Revit's API, so it does not follow a parameter. An
+  opening that must resize is a VOID form locked to planes instead; whether
+  such a void cuts the template's host by itself is NEEDS-CHECKING BT12.
+
+  **READ BACK, ALL OR NOTHING**: the opening's host and its outline's extent
+  are read again, to a millimetre. Its id comes back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # ONE closed loop - "rect -300,600 300,1200" on a wall along X is 600 wide
+    # and 600 high, its sill at 600. Millimetres.
+    - name: shape
+      type: string
+      source: request
+  provides:
+    - name: openingId
+      # The new opening's unique id.
+      role: result
+      type: string
+    - name: built
+      # The host and the opening's extent - read back.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was cut, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyItemFactory.NewOpening(Element, CurveArray)` - "an opening to cut the
+  wall or ceiling", which Autodesk's remarks say throws when the host is
+  neither - and `Opening.Host` and `BoundaryCurves` read the same 2020 through
+  2027 (the RevitAPI reference assemblies and XML remarks, read 2026-10-01).
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "cut an opening in the host wall of this family" -> here
+#   "cut an opening in this wall"                 -> CREATE_OPENING - a project
+#   "cut the solid with the void"                 -> COMBINE_FAMILY_FORMS
+
+utterances:
+  - cut an opening in the host wall of this family
+  - add an opening to the wall based family
+  - cut the ceiling opening in this ceiling based family
+  - make the opening in the template wall

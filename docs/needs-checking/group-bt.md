@@ -1,0 +1,56 @@
+# Needs checking — Group BT
+
+> One group of [the register](../NEEDS-CHECKING.md), in its own file since 2026-10-02 so that it can be read
+> alone. **The register's rules, and every group's place in it, are on that page.** A new row
+> for this group goes in this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py)
+> reads it back into the register for every tool that reads the register, so a row here is seen
+> exactly as it was seen there. Written by hand, in the shape
+> [`tools/split-needs-checking.py`](../../tools/split-needs-checking.py) gives every group.
+
+## Group BT - every other kind of family: the template report, hosted, line-based, pattern-based, adaptive, profile and detail families, a Family Type parameter, flip controls, filled regions and a type catalog (2026-10-02)
+
+**The owner's PC, Revit 2024 first, then 2020.** Eleven new tools and one widened, asked for by the owner on
+2026-10-01 - *"line based family, ceiling based, patterns, floor based, wall based, all kind ... do the deep
+research"* - with seven new skills and the research in
+[41 — Building Revit families](../41-building-revit-families.md):
+
+- [`report-family-template`](../../brain/fragments/report-family-template/fragment.yaml) - `REPORT_FAMILY_TEMPLATE`, FRG-DOC-037
+- [`report-family-type-catalog`](../../brain/fragments/report-family-type-catalog/fragment.yaml) - `REPORT_FAMILY_TYPE_CATALOG`, FRG-DOC-038
+- [`place-adaptive-points`](../../brain/fragments/place-adaptive-points/fragment.yaml) - `PLACE_ADAPTIVE_POINTS`, FRG-GEO-050
+- [`draw-family-point-curves`](../../brain/fragments/draw-family-point-curves/fragment.yaml) - `DRAW_FAMILY_POINT_CURVES`, FRG-GEO-051
+- [`create-conceptual-form`](../../brain/fragments/create-conceptual-form/fragment.yaml) - `CREATE_CONCEPTUAL_FORM`, FRG-GEO-052
+- [`create-family-host-opening`](../../brain/fragments/create-family-host-opening/fragment.yaml) - `CREATE_FAMILY_HOST_OPENING`, FRG-GEO-053
+- [`set-family-sweep-profile`](../../brain/fragments/set-family-sweep-profile/fragment.yaml) - `SET_FAMILY_SWEEP_PROFILE`, FRG-GEO-054
+- [`add-family-type-parameter`](../../brain/fragments/add-family-type-parameter/fragment.yaml) - `ADD_FAMILY_TYPE_PARAMETER`, FRG-PAR-032
+- [`draw-family-filled-region`](../../brain/fragments/draw-family-filled-region/fragment.yaml) - `DRAW_FAMILY_FILLED_REGION`, FRG-VIEW-117
+- [`add-family-flip-control`](../../brain/fragments/add-family-flip-control/fragment.yaml) - `ADD_FAMILY_FLIP_CONTROL`, FRG-VIEW-118
+- [`draw-family-detail-lines`](../../brain/fragments/draw-family-detail-lines/fragment.yaml) - `DRAW_FAMILY_DETAIL_LINES`, FRG-VIEW-119
+- widened: [`set-family-settings`](../../brain/fragments/set-family-settings/fragment.yaml) - `SET_FAMILY_SETTINGS`, FRG-DOC-036 - Cut with Voids When Loaded, Maintain Annotation Orientation, Rotate with Component, Keep Text Readable, Enable Cutting in Views, Part Type, Profile Usage
+
+**What is already known, and it is NOT a proof.** All of them compile on all eight releases
+(`tools/check-fragments-compile.py`, 2026-10-02), and every Revit member they call was read in the reference
+assemblies and XML remarks of all eight on 2026-10-01: the filled region on a 3D family's plane exists from
+2023, the masking region from 2024, and both are found by signature, so 2020 to 2022 REFUSE where 2024 runs;
+the Family Type parameter and the type catalog take an older call on 2020 than on 2027. **None has met a
+model.** Every one is `DRAFT`. The proof plan is
+[`tools/jobs/family-kinds-2026-10-02.yaml`](../../tools/jobs/family-kinds-2026-10-02.yaml); its arrangements
+are new families from the metric templates the owner's Revit ships, saved once and left open in front.
+
+| # | Check | Expected |
+|---|---|---|
+| **BT1** | `report-family-template` in a new family from each of: Generic Model, Generic Model wall based, ceiling based, floor based, roof based, face based, line based, Generic Model Adaptive, Curtain Panel Pattern Based, Detail Item, Profile, Generic Annotation | Each kind named as the card says, and **record**: the words Revit shows for Host in each; whether the face-based one reads `WorkPlaneBased` with the Work Plane-Based switch off - the card's rule for calling it face-based; the line-based template's Length and the planes it is measured between; the pattern-based template's points 1 to 4 and its reference lines with their ids. **Negative:** the plain Generic Model reads level-based, no host, no points |
+| **BT2** | `draw-family-filled-region`: Detail Item, `Ref. Level`, `rect -300,-50 300,50`, `Solid Black`; then `rect -300,-200 300,200 \| circle 0,0 50`; then, on 2024, a Generic Model, `Ref. Level`, `circle 0,0 150`, `masking` | A 600 x 100 region, a plate with a hole (2 loops), a masking region seen in the Ref. Level plan and not in 3D - each LOOKED AT. **Negative:** `Not A Type` refused naming the family's region types; on **2020**, the Generic Model's filled region refused as arriving in 2023 |
+| **BT3** | `add-family-flip-control`: a Generic Model with a 600 x 400 box, `Ref. Level`, `single horizontal 0,-400 \| single vertical 400,0`; the family loaded into a test project and one copy placed | Both read back; then **RECORD which way each arrow flips the placed copy** - the card only expects horizontal = left-right, vertical = front-back. **Negative:** `diagonal 0,0` refused |
+| **BT4** | `place-adaptive-points`: Generic Model Adaptive, `0,0,0; 1000,0,0; 1000,1000,0; 0,1000,0`, `placement` | Points 1 to 4 in that order, read back. **Record** whether `IsConceptualMassFamily` reads true in the adaptive and the pattern-based templates as well as a mass - the card accepts any of three flags. **Negative:** the plain Generic Model refused before anything is made |
+| **BT5** | `draw-family-point-curves`: BT4's family, `1,2 \| 2,3 \| 3,4 \| 4,1`, reference lines; then `1,2,3`, model lines | Four reference lines and one spline, each through its points; dragging point 1 drags the lines on it. **Negative:** `1,9` refused naming the numbers the family has |
+| **BT6** | `create-conceptual-form`: BT5's four line ids, depth empty; then depth `50`; then in the Curtain Panel Pattern Based family on the template's own lines from BT1 | A flat surface of the tile's area; a 50 mm panel; the pattern panel's surface - dragging a point bends each. **Record which conceptual families take each call** - Autodesk's remark on the extrusion form names the families it refuses in words copied from another call. **Negative:** three of the four lines, refused as not closing |
+| **BT7** | `set-family-settings`: a face-based Generic Model with a void, `Cut with Voids When Loaded=yes`; a Generic Model switched to Pipe Fittings, `Part Type=Elbow`; a Profile family, `Profile Usage=Mullion` | Each read back in Family Category and Parameters. **Record** which Part Types the Pipe Fittings category takes. **Negative:** `Part Type=Sprocket` refused naming Revit's list |
+| **BT8** | `add-family-type-parameter`: Group BR's family with `Heron Nested Box` placed and types `300` and `450` loaded, host types `Small` and `Large`; `Box Type`, `Generic Models`, type, group empty, elements `Heron Nested Box`, `Small=300; Large=450` | Made under Construction, the copy linked, Small reading 300 and Large 450; switching type swaps the box, LOOKED AT. **Record which of the copy's parameters Revit took the link on** - the card tries Family and Type, then Type, then the symbol id. **Negative:** `Lighting Fixtures` with none loaded, refused naming LOAD_FAMILY |
+| **BT9** | BT8's parameter linked to a SWEEP's profile: after BT13, category `Profiles`, elements the sweep's id | The sweep's profile swaps with the type. **Negative:** a sweep still drawn with a sketched profile, refused |
+| **BT10** | `report-family-type-catalog` on a family with Width, Height (lengths), a Text Description, a Yes/No and an Integer, three types; the text saved beside the .rfa; the family loaded into a test project | Specify Types lists the three with their values. **Compare the header line with File > Export > Family Types** for the same family, and **record** how Revit reads the Yes/No and Integer cells, a value with a comma in quotes, and a file saved with and without a byte-order mark. **Negative:** a family whose only type parameter is a Material - left out by name, no column invented |
+| **BT11** | `draw-family-detail-lines` in a Profile family with four planes Left Edge, Right Edge, Bottom Edge, Top Edge: `rect -25,0 25,50`, `none`, lock true; then a Width labelled between Left Edge and Right Edge and flexed | Four lines, four locks; the profile follows the flex. **Record** that these ARE detail lines in a profile family, and whether `label-family-dimension` and `create-reference-planes` work in a profile's one plan view. **Negative:** an open path refused - every line in a profile is the profile |
+| **BT12** | `create-family-host-opening`: a Generic Model wall based family, `rect -300,600 300,1200`; a ceiling based one, `circle 0,0 100` | Each opening hosted by the template's host, read back, and cut in a test project's wall or ceiling. Then **record whether a VOID extrusion through the template's wall cuts it by itself** - the route for an opening that must resize. **Negative:** a floor based family refused, naming the void route |
+| **BT13** | `set-family-sweep-profile`: a Generic Model with a sweep made by `create-family-sweep`, BT11's profile family loaded, `Heron Test Profile : 50x50`, not flipped; then flipped | The sweep drawn with the profile, about 2.5 L, then mirrored. **Record whether Revit lets a sweep first drawn with a SKETCHED profile take a loaded one this way** - if not, the card's refusal is the answer and the sweep tool is widened instead. **Negative:** `Not Loaded : 1` refused |
+| **BT14** | `set-family-formula` in a line-based family: `Bracket Count = rounddown(Length / Bracket Spacing) + 1`, then the same with `/ 1 mm` | **Record which Revit accepts** - the API's remarks on a global parameter forbid a length feeding an Integer formula, family practice says it works ([41 §4](../41-building-revit-families.md)) |
+| **BT15** | A lookup table whose FIRST column holds row names and whose second holds the key: `size_lookup(T, "OD", 1 mm, ND)` for an ND in the second column, then for an ND only in the first | **Record which column Revit searches** - Heron's `write-family-size-table` card says the first is the key; the sources say the first is never searched (row 5b-279) |
+| **BT16** | BT1 to BT13 on **Revit 2020** | The same answers where the call exists; the filled region in a 3D family and the masking region REFUSED by name; the Family Type parameter and the type catalog on their older calls |

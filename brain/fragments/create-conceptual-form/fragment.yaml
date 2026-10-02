@@ -1,0 +1,104 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-052
+semantic-identity: "make a surface, an extrusion or a loft on lines in an adaptive, pattern-based or mass family, so it follows the points"
+kind: action
+domain: revit.families
+capability: CREATE_CONCEPTUAL_FORM
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes a FORM ON LINES in an adaptive component, a pattern-based panel or a
+  mass open in the Family Editor - its Create Form. Built on curves that run
+  through the family's points, the form follows them: the flat glass of a
+  panel that fits every cell of a divided surface, an adaptive fin, a lofted
+  canopy. These families do not take the classic extrusion, blend, revolve and
+  sweep; this is the form they have.
+
+  **WHAT IS MADE FOLLOWS FROM WHAT IS GIVEN**, so no kind is asked: ONE closed
+  profile and no depth makes a flat SURFACE filling it; ONE closed profile and
+  a depth makes an EXTRUSION that far along its normal; TWO OR MORE profiles
+  make a LOFT through them in the order given. A profile is curve ids, commas
+  between - the ids DRAW_FAMILY_POINT_CURVES gives back - with `|` between
+  profiles.
+
+  **A PROFILE TO BE FILLED OR PUSHED MUST CLOSE**, and one to be pushed must be
+  flat; either is refused by name. A void must enclose a volume.
+
+  **READ BACK, ALL OR NOTHING**: the form, its extent and what it encloses - a
+  solid's volume or a surface's area - are read again; a form holding no
+  geometry fails the call. Its id comes back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Curve ids, commas between, `|` between profiles.
+    - name: profiles
+      type: string
+      source: request
+    # Millimetres to push one closed profile along its normal - negative for
+    # the other side. Empty or 0 for a surface or a loft.
+    - name: depthMm
+      type: string
+      source: request
+    # True for a solid form, false for a void.
+    - name: solid
+      type: bool
+      source: request
+  provides:
+    - name: formId
+      # The new form's unique id.
+      role: result
+      type: string
+    - name: built
+      # Solid or void, surface, extrusion or loft, its profiles, its extent, and
+      # its volume or area - read back.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was made, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyItemFactory.NewFormByCap(bool, ReferenceArray)`,
+  `NewExtrusionForm(bool, ReferenceArray, XYZ)` and
+  `NewLoftForm(bool, ReferenceArrayArray)` read the same 2020 through 2027
+  (the RevitAPI reference assemblies, read 2026-10-01). Autodesk's own remark
+  on the extrusion call names the families it refuses in words that read the
+  wrong way round - "Conceptual Mass, 2D, or other family where extrusions
+  cannot be created" - so which conceptual families take each call is
+  NEEDS-CHECKING BT6, not a promise here.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "make a surface from these lines"             -> here
+#   "extrude the adaptive panel outline 50 mm"    -> here, in an adaptive or
+#                                                    pattern-based family
+#   "extrude a circle 300 diameter 500 high"      -> CREATE_FAMILY_EXTRUSION -
+#                                                    any other family
+#   "draw lines between the adaptive points"      -> DRAW_FAMILY_POINT_CURVES
+
+utterances:
+  - make a surface from these lines
+  - create a form on the panel outline
+  - loft a form through these two profiles
+  - extrude the adaptive panel outline 50 mm

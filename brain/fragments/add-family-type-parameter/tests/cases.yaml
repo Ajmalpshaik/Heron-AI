@@ -1,0 +1,33 @@
+positive:
+  - given: >
+      Group BR's arrangement - the Work Plane-Based generic model "Heron Nested
+      Box" loaded and one copy placed (BR1), its type "300", with a second type
+      "450" added to it and loaded again, and two family types "Small" and
+      "Large" in the host family. parameterName "Box Type", category "Generic
+      Models", instance false, parameterGroup "", elements "Heron Nested Box",
+      typeValues "Small=300; Large=450"
+    expect: >
+      the Family Type parameter made under Construction, the copy linked - the
+      finding naming which of its parameters Revit took - Small reading
+      "Heron Nested Box : 300" and Large "Heron Nested Box : 450"; LOOKED AT -
+      switching to Large in Family Types swaps the box
+
+  - given: the same call again
+    expect: linked 0, the link already as asked, values unchanged
+
+negative:
+  - given: category "Lighting Fixtures" with no lighting family loaded in the host family
+    expect: >
+      refused - no family of that category is loaded, naming LOAD_FAMILY - and
+      nothing made
+
+  - given: typeValues "Large=900" where no 900 type is loaded
+    expect: refused naming the types it can take; nothing kept
+
+  - given: a project in front
+    expect: notAFamily true and nothing changed
+
+second_route:
+  - >
+      Family Types: the parameter shows with a list of nested types; select the
+      nested copy and its Label in Properties reads the parameter
