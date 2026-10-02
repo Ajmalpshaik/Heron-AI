@@ -1,0 +1,71 @@
+# HVAC Design Agent - HERON-MEP-HVD-001
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+#
+# The module is brain/heron_hvac.py, with brain/heron_psychro.py under it.
+# docs/41-hvac-design.md is what it was written from and what it is not.
+
+agent: HERON-MEP-HVD-001
+version: 0.1.0
+
+input:
+  calculation:
+    type: string
+    required: false
+    description: >
+      Which calculation - duct_size, cooling_load, ventilation and the rest.
+      Empty asks for the list of them and what each one needs, derived by
+      running each on nothing.
+  inputs:
+    type: map
+    required: false
+    description: >
+      Named values in the units their names carry - flow_ls, area_m2,
+      max_friction_pa_m. Every design criterion arrives here or is asked
+      for; none is supplied by the agent (D-33).
+
+output:
+  status:
+    type: string
+    description: >
+      ok, missing, refused or unknown. Only ok carries results; a calculation
+      that did not complete shows nothing, so a partial answer is never read
+      as a smaller one.
+  results:
+    type: list
+    description: >
+      The figures, each in the modeller's units with its IP equivalent.
+  missing:
+    type: list
+    description: >
+      What to ask the modeller for, each with the reason and - where a
+      standard holds a figure for it - that figure OFFERED with its table and
+      edition, never applied.
+  ignored:
+    type: list
+    description: >
+      Inputs given that this calculation does not read. A mistyped name is
+      reported, never quietly dropped.
+  sources:
+    type: list
+    description: >
+      The standard, edition and section every method and reference came from.
+  next:
+    type: list
+    description: >
+      The capability that would put the result into Revit. Naming one sends
+      nothing.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NEEDS_REQUEST_VALUES
+  - UNUSABLE_REQUEST_VALUES
+  - UNKNOWN_CALCULATION
+
+retry:
+  attempts: 0
+  on-failures: []

@@ -194,6 +194,7 @@ async def exercise(server):
         "revit_preview_move": ["category", "distance"],
         "revit_read": ["capability", "values", "expect_from", "request"],
         "revit_change": ["capability", "values", "expect_from", "request"],
+        "heron_hvac": ["calculation", "inputs"],
     }
     for name, args in sorted(expected.items()):
         if name not in served:
@@ -214,6 +215,25 @@ async def exercise(server):
             check(bool(answers[name].strip()), "%s answered" % name)
         except Exception as exc:
             check(False, "%s raised %s: %s" % (name, type(exc).__name__, exc))
+
+    print()
+    print("  the HVAC engine, called through the SDK's own dispatch")
+    try:
+        listed = text_of(await server.call_tool("heron_hvac", {}))
+        check("duct_size" in listed and "needs:" in listed,
+              "heron_hvac with no calculation lists them and what each needs")
+        worked = text_of(await server.call_tool(
+            "heron_hvac", {"calculation": "convert",
+                           "inputs": '{"value": 1, "from": "TR", "to": "kW"}'}))
+        check("3.51685 kw" in worked.lower(),
+              "and works one out: a ton of refrigeration is 3.51685 kW")
+        asked = text_of(await server.call_tool(
+            "heron_hvac", {"calculation": "duct_size", "inputs": "{}"}))
+        check("supplies no design value" in asked and "Nothing was calculated" in asked,
+              "and a calculation missing its design values ASKS, through the "
+              "round trip - D-33 survives the transport")
+    except Exception as exc:
+        check(False, "heron_hvac raised %s: %s" % (type(exc).__name__, exc))
 
     print()
     print("  and both refusals survived the round trip")

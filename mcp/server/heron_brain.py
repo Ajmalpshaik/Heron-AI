@@ -1338,6 +1338,62 @@ def research_check(answer):
     }
 
 
+# ---------------------------------------------------------------------------
+# HVAC design - the numbers a modeller puts into the model (docs/41)
+# ---------------------------------------------------------------------------
+
+# How an HVAC answer that did not complete is recorded, in the codes
+# heron_gaps.analyse() classifies by. Every one is a CORRECT refusal: the
+# engine asked for what it was not given, refused a value that cannot be a
+# design figure, or was asked for a calculation it does not have.
+_HVAC_REFUSALS = {
+    "missing": "needs_request_values",
+    "refused": "unusable_request_values",
+    "unknown": "unknown_op",
+}
+
+
+def hvac(calculation, inputs):
+    """
+    One HVAC design calculation - HERON-MEP-HVD-001, docs/41 - or, for an
+    empty `calculation`, the list of them and what each needs.
+
+    `inputs` is a dict or a JSON object string. The answer is the engine's
+    dict plus `text`, the answer as a modeller reads it.
+
+    The engine reads no model, opens no file and changes nothing. One audit
+    line per call (D-62) carries the calculation's name and how it ended, and
+    NEVER its inputs - a room's people count and a client's design figures
+    are project information, and the trail is never pruned.
+    """
+    try:
+        import heron_hvac as HVAC
+    except ImportError as exc:
+        raise BrainUnavailable(
+            "Heron's HVAC engine could not be imported: %s. It needs nothing "
+            "beyond Python itself, so this is a broken install rather than a "
+            "missing package." % exc)
+
+    if not (calculation or "").strip():
+        _audit().record("design.hvac", True, fields={"calculation": "(list)"},
+                        numbers={"calculations": len(HVAC.CALCULATIONS)})
+        return {"status": "catalogue", "calculation": "",
+                "catalogue": HVAC.catalogue(), "text": HVAC.describe_catalogue()}
+
+    answer = HVAC.run(calculation, inputs)
+    status = answer["status"]
+    _audit().record("design.hvac", status == "ok",
+                    fields={"calculation": answer["calculation"], "status": status,
+                            "error": _HVAC_REFUSALS.get(status)},
+                    numbers={"missing": len(answer["missing"]),
+                             "refused": len(answer["refused"]),
+                             "ignored": len(answer["ignored"]),
+                             "failed_checks": sum(1 for level, _text in answer["checks"]
+                                                  if level == "FAIL")})
+    answer["text"] = HVAC.describe(answer)
+    return answer
+
+
 def _with_text(asked, project=None):
     """One scope's candidates, each carrying the clause a person has to read.
 

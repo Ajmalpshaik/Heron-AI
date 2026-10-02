@@ -141,7 +141,17 @@ def main():
 
     print("\n3. Every agent id in docs/28 passes")
     known = FRAG.registry_agents()
-    check(len(known) == 250, "the register declares %d agents" % len(known))
+    # THE EXPECTED TOTAL IS THE REGISTER'S OWN, NOT A NUMBER TYPED HERE. This
+    # read `== 250` until the register gained HERON-MEP-HVD-001 on 2026-10-02,
+    # and a deliberate new agent turned the suite red over a literal. The
+    # totals line is what tools/recount-agent-registry.py rewrites from the
+    # rows, so reading every row still has to agree with it.
+    stated = re.search(r"\*\*Totals: (\d+) agents",
+                       io.open(os.path.join(ROOT, "docs", "28-agent-registry.md"),
+                               encoding="utf-8").read())
+    check(stated is not None and len(known) == int(stated.group(1)),
+          "the register declares %d agents, which is its own totals line"
+          % len(known))
     wrong = [aid for aid in sorted(known)
              if not NAM.check("agent-id", aid).get("ok")]
     check(not wrong,

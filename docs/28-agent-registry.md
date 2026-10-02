@@ -19,7 +19,7 @@
 | **Risk** | Highest permission level it can require ([12 §1](12-security-and-permissions.md)) |
 | **Step** | Build step it first appears in ([27](27-build-order.md)). `—` = not in Phase 0/1 |
 
-**Totals: 250 agents · 167 T1 · 63 T2 · 20 T3.**
+**Totals: 251 agents · 168 T1 · 63 T2 · 20 T3.**
 Roughly two thirds never call a model at all.
 
 > **Correction, 2026-08-27:** an earlier version of this page stated 166. The departments actually
@@ -79,6 +79,21 @@ Roughly two thirds never call a model at all.
 | `HERON-REVIT-DIM-031` | **Revit Dimension & Annotation Agent** | Dimensions, tags, text, keynotes. *"Create dimensions"* is one of the founding examples ↗. **Built 2026-09-17**, read-only — [`RevitAnnotation.cs`](../revit/Heron.Revit.Addin/RevitAnnotation.cs), `list_annotation`. It finds the **overridden dimension**, which nothing in Revit lists. Compiles 2020–2027; never run in Revit | T1 | MODIFY | — |
 | `HERON-REVIT-PHS-032` | **Revit Phase & Design Option Agent** | Phases and design options — both change what *"all ducts"* even means ↗ | T1 | MODIFY | — |
 | `HERON-REVIT-GRP-033` | **Revit Group & Assembly Agent** | Groups and assemblies. They behave unusually and break naive element edits ↗ | T1 | MODIFY | — |
+
+## 2a. MEP Design Engineering — 1 *(new department)*
+
+**[NOTE]** Added 2026-10-02, top-down, on the owner's request: *"you have capability on the ducting ...
+but you are not aware of the designing part ... study HAP and ASHRAE ... make it part of our project,
+like airflow, duct sizing, diffuser sizing"*. Revit Engineering acts ON the model; this department
+works out the numbers a modeller puts INTO it, and reads no model at all - which is why it is not a
+Revit agent. [`HERON-AHR-WFP-015`](../brain/heron_workforce.py) answered `ALREADY_A_CAPABILITY` -
+`SET_AIR_TERMINAL_FLOW`, on word overlap - and that fragment says of itself *"it does not work out what
+the flow should be"*, so the verdict was weighed and set aside, on the record, in
+[41 §2](41-hvac-design.md).
+
+| ID | Agent | Does | Tier | Risk | Step |
+|---|---|---|---|---|---|
+| `HERON-MEP-HVD-001` | **HVAC Design Agent** | Calculates what an HVAC system needs before it is modelled - room cooling and heating loads, supply airflow, ASHRAE 62.1 outdoor air, psychrometrics and coil loads, duct friction and sizing, index-run pressure and fan power, diffuser layout and selection, chilled-water flow and pipe sizing - from the modeller's own design criteria, each answer carrying its equation and the standard it comes from. **Built 2026-10-02** - [`brain/heron_hvac.py`](../brain/heron_hvac.py) and [`brain/heron_psychro.py`](../brain/heron_psychro.py), served as `heron_hvac`. **It supplies no design value it was not given** ([D-33](DECISIONS.md)): a missing one is asked for, with the figure a standard lists OFFERED beside the question. Reads no model and changes nothing; its answers name the fragment that puts a result into Revit. **Not HAP**: a load here is a peak component estimate, not an hourly simulation, and says so ↗ | T1 | READ | — |
 
 ## 3. MCP / Bridge — 12
 
@@ -277,7 +292,7 @@ fragment-side one.
 | `HERON-AHR-GAP-001` | **Capability Gap Agent** | *"X is needed repeatedly and no capability covers it."* A read-only report over the audit log. **Built 2026-09-07** - `brain/heron_gaps.py`, served as the `heron_gaps` MCP tool. It splits failures into DEFECTS and CORRECT REFUSALS, because the loudest error in the trail (`needs_unbound`, 38 of 176) is the executor behaving correctly, and counting it as a gap would commission a fragment that already exists. Its first run found 131 `compile_failed` on 2026-09-06 and none on 2026-09-07 | T1 | READ | — |
 | `HERON-AHR-WFP-015` | **Workforce Planning Agent** | The agent that says **no**. Before anything is hired: does a capability already cover this, can an existing agent be extended, is this a fragment rather than an agent? **This is the guard against agent explosion** ↗ | T2 | SUGGEST | — |
 | `HERON-AHR-SBX-016` | **Agent Sandbox Agent** | **Watches** a newly built agent's first run — the Revit door and the production scopes shut, every attempt to open one written down, the run marked so it can never count as evidence. **Watched, not contained**: it holds a cooperating agent and does not contain a hostile one, which is what [D-84](DECISIONS.md) settled rather than built ↗ | T1 | READ | — |
-| `HERON-AHR-CON-017` | **Agent Contract Agent** | Owns the interface between agents: input and output schema, permissions, allowed tools, timeout, failure states, retry rules, version. Detects breaking contract changes across 250 agents ↗ | T1 | READ | — |
+| `HERON-AHR-CON-017` | **Agent Contract Agent** | Owns the interface between agents: input and output schema, permissions, allowed tools, timeout, failure states, retry rules, version. Detects breaking contract changes across 251 agents ↗ | T1 | READ | — |
 | `HERON-AHR-HR-002` | Agent HR Agent | Writes the job description — responsibility, capabilities, dependencies, tools | T2 | — | — |
 | `HERON-AHR-ARC-003` | Agent Architect | Designs the agent and its contract | T3 | — | — |
 | `HERON-AHR-BLD-004` | Agent Builder | Implements it | T3 | — | — |
@@ -500,6 +515,7 @@ keeps discovering it believed.
 |---|---|---|---|---|
 | Orchestration & Communication | 6 | 1 | 4 | 1 |
 | Revit Engineering | 36 | 34 | 2 | 0 |
+| **MEP Design Engineering** | **1** | 1 | 0 | 0 |
 | MCP / Bridge | 12 | 12 | 0 | 0 |
 | Session & Bridge Management | 5 | 5 | 0 | 0 |
 | Knowledge & RAG | 17 | 11 | 4 | 2 |
@@ -519,11 +535,11 @@ keeps discovering it believed.
 | Operations, Health & Resilience | 12 | 12 | 0 | 0 |
 | Documentation | 9 | 6 | 3 | 0 |
 | **Reporting & Output** | **4** | 2 | 2 | 0 |
-| **Total** | **250** | **167** | **63** | **20** |
+| **Total** | **251** | **168** | **63** | **20** |
 
 > ### Nine of these need no building, and that is not the same as missing
 >
-> **The host provides nine of the 250**, and this table counts them like any other row because they
+> **The host provides nine of the 251**, and this table counts them like any other row because they
 > are part of the architecture — something *does* orchestrate, classify intent and write the reply.
 > It is simply not a file in this repository.
 >
@@ -550,10 +566,10 @@ keeps discovering it believed.
 > HOST and LEFT in separate columns, and only LEFT is work.
 
 
-**[NOTE]** The distribution is the point. **167 of 250 agents never call a model** — they are ordinary
+**[NOTE]** The distribution is the point. **168 of 251 agents never call a model** — they are ordinary
 classes with a method or two. Of the rest, 63 make one scoped call and 20 run a real agentic loop.
 
-Read that way, the platform is a normal application with about 167 services, 63 narrow model calls, and
+Read that way, the platform is a normal application with about 168 services, 63 narrow model calls, and
 20 genuine agentic workflows. That is a tractable system, not an intimidating one.
 
 **Phase 0 and Phase 1 need 49 of these** — the ones carrying a step number in the tables above.
@@ -666,7 +682,7 @@ concept is precisely the six-competing-vocabularies problem that
 
 | Company role | Heron | Count | What it means in practice |
 |---|---|---|---|
-| **Worker** | **T1** — deterministic service | 167 | Does one job, the same way every time. No judgement, no model call, no cost |
+| **Worker** | **T1** — deterministic service | 168 | Does one job, the same way every time. No judgement, no model call, no cost |
 | **Pro / skilled** | **T2** — one scoped model call | 63 | One judgement over ambiguous input, then out of the way |
 | **Senior / lead** | **T3** — agentic loop | 20 | Owns a hard problem end to end, decides its own steps |
 | **Manager** | **Orchestrator** + **Workflow Engine** | 2 | Decides *what* happens and ensures it *happens correctly*. Deliberately **not** one manager per department — [Part 2 §83](00b-master-specification-agent-os.md) forbids the extra hops |

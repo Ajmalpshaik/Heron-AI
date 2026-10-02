@@ -3163,6 +3163,41 @@ def heron_research_check(answer: str) -> str:
 
 
 @server.tool()
+def heron_hvac(calculation: str = "", inputs: str = "") -> str:
+    """
+    HVAC design calculations - cooling and heating loads, supply airflow,
+    ASHRAE 62.1 outdoor air, psychrometrics, coil load, duct friction and
+    duct sizing, system pressure and fan power, diffuser layout and
+    selection, chilled-water flow and pipe sizing, unit conversion.
+
+    Use it when the modeller asks what a number SHOULD be: "how much air
+    does this office need", "size this duct for 800 L/s at 1 Pa/m", "how
+    many diffusers for this room", "fresh air for 20 people", "what pressure
+    does the fan need", "convert 500 cfm to L/s". Leave `calculation` empty
+    for every calculation and the inputs each one needs.
+
+    `calculation` names one - duct_size, cooling_load, ventilation,
+    diffuser_layout and so on. `inputs` is a JSON object of named values in
+    the units their names carry: {"flow_ls": 800, "max_friction_pa_m": 1}.
+
+    HERON SUPPLIES NO DESIGN VALUE THE MODELLER DID NOT GIVE (D-33). A
+    missing one comes back as a question, with the figure a standard lists
+    offered beside it - put that question to the modeller and never fill it
+    in yourself.
+
+    It reads no model and changes nothing; an answer names the capability
+    that would put its result into Revit. A cooling load here is a peak
+    estimate, not an hourly simulation like HAP, and every load answer says
+    so.
+    """
+    try:
+        got = brain.hvac(calculation, inputs)
+    except brain.BrainUnavailable as why:
+        return str(why)
+    return got["text"]
+
+
+@server.tool()
 def heron_gaps(days: int = 0) -> str:
     """
     What Heron has been asked to do lately, what failed, and what is slow.
