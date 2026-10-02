@@ -12,22 +12,37 @@
 # is kept per tool, and a second job for one tool in one file would overwrite
 # the first's.
 #
-# THE ARRANGEMENT: "Heron Beam Test", a new family from the metric Generic
-# Model Adaptive template with placement points 1 and 2 at 0,0,0 and
-# 3000,0,0 (place-adaptive-points) and a reference line 1-2
-# (draw-family-point-curves), saved once under that title and left OPEN.
+# THE ARRANGEMENT IS TWO FAMILIES, each new from the metric Generic Model
+# Adaptive template with placement points 1 and 2 at 0,0,0 and 3000,0,0
+# (place-adaptive-points) and a reference line 1-2 (draw-family-point-curves),
+# saved once under its title and left OPEN:
 #
-# SOME VALUES ARE IDS THAT ONLY AN EARLIER RUN CAN GIVE, and are written here
-# as PLACEHOLDERS: the 1-2 line's id (BEAM-LINE-ID), and the four ids of the
-# loop draw-family-point-curves draws through the four points the first job
-# places (LOOP-ID-1 to 4) - run that between the two jobs. `--dry-run` says
-# WOULD RUN with a placeholder still in - replace each before the real run.
+#   "Heron Beam Test"        nothing more - the first job places its four
+#                            points here, and the run rolls them back
+#   "Heron Beam Form Test"   ALSO the four points on point 1's YZ plane, at
+#                            -100,0; 100,0; 100,200; -100,200, and the closed
+#                            loop of four reference lines through them, made
+#                            BEFORE the run and KEPT - by hand, or by
+#                            place-adaptive-points and draw-family-point-curves
+#                            run through Heron as usual, never through this
+#                            runner, whose write: true rolls everything back.
+#                            The second job sweeps that loop along the 1-2 line
+#
+# The two jobs run one after the other with nothing between them, so the
+# second cannot use what the first placed - that is why it has a family of
+# its own.
+#
+# SOME VALUES ARE IDS, written here as PLACEHOLDERS: the 1-2 line's id in each
+# family (BEAM-LINE-ID, FORM-LINE-ID) and the loop's four ids in "Heron Beam
+# Form Test" (LOOP-ID-1 to 4) - report-family-template's `lineList` gives
+# them. `--dry-run` says WOULD RUN with a placeholder still in - replace each
+# before the real run.
 #
 # `write: true` runs both legs inside a transaction group and ROLLS THEM BACK -
 # LOOK at the family afterwards anyway: rollback has failed before on this PC
 # (BD1).
 
-model: Heron Beam Test - a new family from the metric Generic Model Adaptive template, Revit 2024
+model: Heron Beam Test and Heron Beam Form Test - two new families from the metric Generic Model Adaptive template, Revit 2024
 
 defaults:
   write: true
@@ -48,20 +63,21 @@ jobs:
       Negative: a hosted point asked for as a placement point, refused.
 
   - fragment: create-conceptual-form
-    in: "Heron Beam Test"
+    in: "Heron Beam Form Test"
     expect: formId
     set:
-      # PLACEHOLDERS - the loop through the four points above, and the 1-2 line.
+      # PLACEHOLDERS - the kept loop through the four YZ points, and that
+      # family's 1-2 line.
       profiles: "LOOP-ID-1,LOOP-ID-2,LOOP-ID-3,LOOP-ID-4"
       depthMm: ""
-      path: "BEAM-LINE-ID"
+      path: "FORM-LINE-ID"
       axis: ""
       angleDegrees: ""
       solid: true
     negative-set:
       profiles: "LOOP-ID-1,LOOP-ID-2,LOOP-ID-3,LOOP-ID-4"
       depthMm: "50"
-      path: "BEAM-LINE-ID"
+      path: "FORM-LINE-ID"
       axis: ""
       angleDegrees: ""
       solid: true

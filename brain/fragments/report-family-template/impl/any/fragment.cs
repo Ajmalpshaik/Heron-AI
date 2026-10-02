@@ -119,10 +119,11 @@ else
     // Revit's own flags, everything else by how it is placed.
     // -----------------------------------------------------------------------
     var hostOfTemplate = walls > 0 ? "wall" : ceilings > 0 ? "ceiling" : floors > 0 ? "floor" : roofs > 0 ? "roof" : "";
+    // Each named category before the annotation test, which is the broad one:
+    // whichever CategoryType Revit gives Detail Items or Profiles, they are
+    // read as what they are.
     if (isCategory(BuiltInCategory.OST_TitleBlocks))
         familyKind = "a title block - 2D, placed on a sheet";
-    else if (isAnnotation)
-        familyKind = "an annotation family - 2D, drawn in a view: a tag, a symbol or a generic annotation";
     else if (isCategory(BuiltInCategory.OST_DetailComponents))
         familyKind = placement == FamilyPlacementType.CurveBasedDetail
             ? "a line-based detail item - 2D, placed in a view with two clicks, its Length set by them"
@@ -130,6 +131,8 @@ else
     else if (isCategory(BuiltInCategory.OST_ProfileFamilies))
         familyKind = "a profile - a closed 2D shape that a sweep, a wall sweep, a reveal, a slab edge, a railing or a "
             + "mullion is drawn with";
+    else if (isAnnotation)
+        familyKind = "an annotation family - 2D, drawn in a view: a tag, a symbol or a generic annotation";
     else if (isCategory(BuiltInCategory.OST_CurtainWallPanels) && referencePoints == 0)
         familyKind = "a curtain wall panel - the classic kind, sized by the curtain grid cell it is placed in, not by "
             + "parameters of its own; not pattern-based";

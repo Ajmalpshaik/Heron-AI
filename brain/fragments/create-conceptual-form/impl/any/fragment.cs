@@ -126,7 +126,15 @@ else
     var panel = false;
     try { conceptual = family != null && family.IsConceptualMassFamily; } catch (Exception) { }
     try { adaptive = family != null && AdaptiveComponentFamilyUtils.IsAdaptiveComponentFamily(family); } catch (Exception) { }
-    try { panel = family != null && family.IsCurtainPanelFamily; } catch (Exception) { }
+    // A curtain-panel family counts only WITH reference points - the pattern-based
+    // kind; a classic curtain wall panel holds none (the rule REPORT_FAMILY_TEMPLATE
+    // reads, since the flag alone is not trusted to tell the two apart).
+    try
+    {
+        panel = family != null && family.IsCurtainPanelFamily
+            && new FilteredElementCollector(doc).OfClass(typeof(ReferencePoint)).GetElementCount() > 0;
+    }
+    catch (Exception) { }
     if (!conceptual && !adaptive && !panel)
         problems.Add("This family is not an adaptive component, a pattern-based panel or a mass, which are the families "
             + "that make forms on lines. A classic family's forms are CREATE_FAMILY_EXTRUSION, CREATE_FAMILY_SWEEP and "
@@ -141,6 +149,11 @@ else
             problems.Add("\"" + said + "\" is not a depth in millimetres - a number, or empty for a surface, a loft or a "
                 + "sweep.");
         else if (Math.Abs(value) >= 0.5) { depth = value / 304.8; hasDepth = true; }
+        // Only empty or 0 means a surface; a thinner depth is refused, never
+        // quietly made into one.
+        else if (value != 0)
+            problems.Add("\"" + said + "\" mm is thinner than Heron extrudes - give 0.5 mm or more, or 0 or empty for "
+                + "a surface.");
     }
 
     var texts = (profiles ?? "").Split('|').Select(t => t.Trim()).Where(t => t.Length > 0).ToList();

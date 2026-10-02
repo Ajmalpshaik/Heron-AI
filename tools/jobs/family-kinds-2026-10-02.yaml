@@ -20,10 +20,10 @@
 #     python tools/batch-prove.py tools/jobs/family-kinds-2026-10-02.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/family-kinds-2026-10-02.yaml
 #
-# THE ARRANGEMENT IS SEVEN NEW FAMILIES, each made by hand before the run with
-# File, New, Family and the metric template named, saved once under the title
-# below so `in:` can name it, and left OPEN in the Family Editor - nothing
-# built in them beyond what is said:
+# THE ARRANGEMENT IS THE NEW FAMILIES BELOW AND ONE PROJECT, each made by
+# hand before the run with File, New, Family (or Project) and the metric
+# template named, saved once under the title below so `in:` can name it,
+# and left OPEN - nothing built in them beyond what is said:
 #
 #   "Heron Family Forms Test"    Generic Model - Group BL's, with a 600 x 400
 #                                box and one sweep (create-family-sweep, path
@@ -49,13 +49,24 @@
 #   "Heron Lighting Test"        Lighting Fixture, Light Source ticked by
 #                                hand in Family Category and Parameters,
 #                                one type (BV18)
+#   "Heron Kinds Project"        a PROJECT, new from the metric Architectural
+#                                template and saved under this title - the
+#                                negative for the two READ reports, which in a
+#                                project say it is not a family and return
+#                                nothing else. Another family will not do: a
+#                                report there returns its own content, and the
+#                                runner's judge reads that as NEG NOT EMPTY
 #
-# SOME VALUES ARE IDS THAT ONLY AN EARLIER RUN CAN GIVE, and are written here
-# as PLACEHOLDERS: the four line ids create-conceptual-form is built on (from
-# draw-family-point-curves' `curveIds`, or report-family-template's
-# `lineList`), and the sweep's id set-family-sweep-profile names (from
-# report-family-forms). `--dry-run` says WOULD RUN with a placeholder still in -
-# replace each before the real run.
+# SOME VALUES ARE IDS, written here as PLACEHOLDERS: the four line ids
+# create-conceptual-form is built on, and the sweep's id set-family-sweep-profile
+# names (from report-family-forms). THE FOUR LINES MUST BE IN "Heron Pattern
+# Panel Test" BEFORE THE RUN AND KEPT - the template's own lines between its
+# tile pattern points, which report-family-template's `lineList` gives, or
+# lines drawn through Heron as usual or by hand. Never the ones the
+# draw-family-point-curves job below draws: the jobs run one after the other
+# with nothing between them, and write: true rolls that job back.
+# `--dry-run` says WOULD RUN with a placeholder still in - replace each before
+# the real run.
 #
 # `write: true` runs both legs inside a transaction group and ROLLS THEM BACK -
 # LOOK at each family afterwards anyway: rollback has failed before on this PC
@@ -64,7 +75,7 @@
 # With two Revits connected to Heron, add `--session <process id>` to both
 # commands.
 
-model: Seven new families from the metric templates (named above), Revit 2024
+model: The new families and the one project named above, from the metric templates, Revit 2024
 
 defaults:
   write: true
@@ -72,12 +83,14 @@ defaults:
 jobs:
   - fragment: report-family-template
     in: "Heron Wall Based Test"
-    negative-in: "Heron Family Forms Test"
+    negative-in: "Heron Kinds Project"
     write: false
     expect: familyKind
     note: >
-      Positive reads wall-based with one wall; negative must read level-based,
-      no host. Run again in each template BV1 names and record Host's words.
+      Positive reads wall-based with one wall; negative, in the project, says
+      it is not a family and returns nothing else. Run again in each template
+      BV1 names - the plain Generic Model reading level-based, no host - and
+      record Host's words.
 
   - fragment: draw-family-filled-region
     in: "Heron Detail Item Test"
@@ -167,12 +180,12 @@ jobs:
 
   - fragment: report-family-type-catalog
     in: "Heron Family Constraints Test"
-    negative-in: "Heron Adaptive Test"
+    negative-in: "Heron Kinds Project"
     write: false
     expect: catalogText
     note: >
-      Positive: one line per host type, Small and Large; negative: a family
-      with no type values to catalog - a header with nothing invented.
+      Positive: one line per host type, Small and Large; negative, in the
+      project, says it is not a family and returns nothing else.
 
   - fragment: draw-family-detail-lines
     in: "Heron Profile Test"

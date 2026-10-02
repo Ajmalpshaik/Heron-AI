@@ -74,7 +74,15 @@ else
     var panel = false;
     try { conceptual = family != null && family.IsConceptualMassFamily; } catch (Exception) { }
     try { adaptive = family != null && AdaptiveComponentFamilyUtils.IsAdaptiveComponentFamily(family); } catch (Exception) { }
-    try { panel = family != null && family.IsCurtainPanelFamily; } catch (Exception) { }
+    // A curtain-panel family counts only WITH reference points - the pattern-based
+    // kind; a classic curtain wall panel holds none (the rule REPORT_FAMILY_TEMPLATE
+    // reads, since the flag alone is not trusted to tell the two apart).
+    try
+    {
+        panel = family != null && family.IsCurtainPanelFamily
+            && new FilteredElementCollector(doc).OfClass(typeof(ReferencePoint)).GetElementCount() > 0;
+    }
+    catch (Exception) { }
     if (!conceptual && !adaptive && !panel)
         problems.Add("This family is not an adaptive component, a pattern-based panel or a mass - Revit places "
             + "reference points only in those. Start one from the Generic Model Adaptive or a pattern-based "

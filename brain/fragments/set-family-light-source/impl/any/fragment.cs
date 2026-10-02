@@ -340,14 +340,20 @@ if (refused == null)
                         + "° asked - the angle's unit is not the one Revit's reference names.");
             }
             if (distributionStyle == "PhotometricWeb")
+            {
                 must(string.Equals((string)spread.GetType().GetProperty("PhotometricWebFile").GetValue(spread),
                     (string)distributionArgs[0], StringComparison.OrdinalIgnoreCase), "reads another IES file.");
+                // A web's tilt is read back too - in DEGREES, the reference's
+                // unit for this one, where a spot's is in radians.
+                must(near(number0f(spread, "TiltAngle"), (double)distributionArgs[1]), "reads another tilt.");
+            }
         }
         said.Add(spreadName == "Spot"
             ? "spot, beam " + plain(number0f(spread, "SpotBeamAngle") * 180 / Math.PI) + "°, field "
                 + plain(number0f(spread, "SpotFieldAngle") * 180 / Math.PI) + "°, tilt " + plain(number0f(spread, "TiltAngle") * 180 / Math.PI) + "°"
             : spreadName == "PhotometricWeb"
                 ? "photometric web " + System.IO.Path.GetFileName((string)spread.GetType().GetProperty("PhotometricWebFile").GetValue(spread))
+                    + ", tilt " + plain(number0f(spread, "TiltAngle")) + "°"
                 : spreadName.ToLowerInvariant());
 
         var start = call(data, "GetInitialIntensity", new object[0]);
