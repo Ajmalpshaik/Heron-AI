@@ -284,7 +284,9 @@ pattern decides how many cells one panel takes (Rectangle 1 x 1, Hexagon 2 x 3, 
 the rest), the panels are adaptive and schedule as curtain panels. **Mass Floors** are cut at chosen levels in
 the PROJECT and report area, perimeter, volume and exterior surface; Gross Volume, Gross Surface Area and Gross
 Floor Area are read-only and schedulable. An in-place mass is for one-off massing, a mass family for repeats.
-**API:** `DividedSurface.Create` and `NewRevolveForms` exist 2020 to 2027 and are **not wrapped yet** (§11).
+**API:** `DividedSurface.Create` with each direction's `SpacingRule` - a number or a distance - and
+`NewRevolveForms` exist 2020 to 2027; `DIVIDE_FAMILY_SURFACE` and `CREATE_CONCEPTUAL_FORM`'s axis wrap them, owed
+BT21 and BT22.
 
 ---
 
@@ -395,8 +397,9 @@ unjoined end) and Start/End Join Cutback (a joined end) are built-in instance pa
 a pre-2014 family carries are deleted, or they add to the built-in ones. At Coarse a beam shows a stick symbol,
 and **Symbolic Representation** (`FAMILY_SYMBOLIC_REP`) chooses the family's own lines or the project's
 settings (two sources). **Material for Model Behavior** (`FAMILY_STRUCT_MATERIAL_TYPE`) gives Steel and Wood
-cutback and shape handles, Concrete auto-join and rebar without handles, Precast both, Other neither. **Section
-Shape** adds schedulable dimension parameters; a custom steel section is Not Defined and has no connection
+cutback and shape handles, Concrete auto-join and rebar without handles, Precast both, Other neither -
+`SET_FAMILY_SETTINGS` sets it, and **Section Shape** too (BT23). **Section Shape** adds schedulable dimension
+parameters; a custom steel section is Not Defined and has no connection
 geometry. The analytical model was made automatically before 2023 and separately from 2023. A CUSTOM SECTION is
 the template extrusion's profile edited in the Left view with planes and size parameters, sketched clear of the
 planes and then aligned and locked (two sources) - Heron cannot edit a sketch, so its route is a NEW extrusion of
@@ -528,13 +531,14 @@ source on more than one axis by parameters is a forum question (**UNSURE**).
 | Level- and work-plane-based | [`family-creation`](../brain/skills/family-creation.yaml), widened | `REPORT_FAMILY_TEMPLATE`, `ADD_FAMILY_TYPE_PARAMETER`, `DRAW_FAMILY_FILLED_REGION`, `ADD_FAMILY_FLIP_CONTROL`, `REPORT_FAMILY_TYPE_CATALOG` |
 | Wall-, ceiling-, floor-, roof-, face-based | [`hosted-family-creation`](../brain/skills/hosted-family-creation.yaml) | `CREATE_FAMILY_HOST_OPENING`, `SET_FAMILY_SETTINGS` (Cut with Voids When Loaded, Maintain Annotation Orientation) |
 | Line-based | [`line-based-family-creation`](../brain/skills/line-based-family-creation.yaml) | `REPORT_FAMILY_TEMPLATE` with the arrays and locks already built |
-| Pattern-based panel | [`pattern-based-family-creation`](../brain/skills/pattern-based-family-creation.yaml) | `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM`, `PLACE_ADAPTIVE_POINTS` for points hosted on its edges |
+| Pattern-based panel | [`pattern-based-family-creation`](../brain/skills/pattern-based-family-creation.yaml) | `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM`, `PLACE_ADAPTIVE_POINTS` for points hosted on its edges, `DIVIDE_FAMILY_SURFACE` in the mass it fills |
+| Conceptual mass | the conceptual tools, with no skill of its own | `CREATE_CONCEPTUAL_FORM` (every form, a revolve too), `DIVIDE_FAMILY_SURFACE` |
 | Adaptive component | [`adaptive-family-creation`](../brain/skills/adaptive-family-creation.yaml) | `PLACE_ADAPTIVE_POINTS` (free or hosted), `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM` (a sweep along a path for a two-point beam) |
 | Profile | [`profile-family-creation`](../brain/skills/profile-family-creation.yaml) | `DRAW_FAMILY_DETAIL_LINES`, `SET_FAMILY_SETTINGS` (Profile Usage), `SET_FAMILY_SWEEP_PROFILE` |
 | Detail item, annotation symbol | [`detail-family-creation`](../brain/skills/detail-family-creation.yaml) | `DRAW_FAMILY_DETAIL_LINES`, `DRAW_FAMILY_FILLED_REGION` |
 | Duct or pipe fitting | [`mep-fitting-family-creation`](../brain/skills/mep-fitting-family-creation.yaml) | `SET_FAMILY_SETTINGS` (Part Type) with the size table and connector tools already built, `SET_FAMILY_CONNECTOR_ROLES` |
 | Door, window, curtain wall door | [`door-window-family-creation`](../brain/skills/door-window-family-creation.yaml) | `REPORT_FAMILY_TEMPLATE`, `ADD_FAMILY_TYPE_PARAMETER`, `ADD_FAMILY_FLIP_CONTROL` with the form, symbol and nesting tools already built |
-| Structural framing, structural column | [`structural-family-creation`](../brain/skills/structural-family-creation.yaml) | `REPORT_FAMILY_TEMPLATE` with the extrusion, lock and delete tools already built |
+| Structural framing, structural column | [`structural-family-creation`](../brain/skills/structural-family-creation.yaml) | `REPORT_FAMILY_TEMPLATE`, `SET_FAMILY_SETTINGS` (Material for Model Behavior, Section Shape) with the extrusion, lock and delete tools already built |
 | Lighting fixture | [`lighting-fixture-family-creation`](../brain/skills/lighting-fixture-family-creation.yaml) | `SET_FAMILY_LIGHT_SOURCE`, `ADD_FAMILY_CONNECTOR` |
 
 **NOT YET, and why - so that nobody reads this table as more than it is:**
@@ -547,8 +551,9 @@ source on more than one axis by parameters is a forum question (**UNSURE**).
 | A point hosted on a line at a ratio; a profile on a point's plane | **Built 2026-10-02** - `PLACE_ADAPTIVE_POINTS` hosts points on a line (`NewPointOnEdge`) or on a point's own plane (`PointOnPlane.NewPointOnPlane`), and `CREATE_CONCEPTUAL_FORM` sweeps a profile along a path (`NewSweptBlendForm`) - the two-point beam; owed BT19 and BT20 |
 | A connector's primary flag, linked connectors, a light source | **Built 2026-10-02** - `SET_FAMILY_CONNECTOR_ROLES` and `SET_FAMILY_LIGHT_SOURCE`, owed BT17 and BT18. Still by hand: the Light Source tick box, and a wattage (§10) |
 | A hosted opening whose size follows a parameter | An opening's sketch cannot be locked through the API; a void is the route, owed BT12 |
-| Divide Surface on a mass, a revolve form in a conceptual family | Calls exist (`DividedSurface.Create`, `NewRevolveForms`) and are not wrapped yet |
-| A structural family's Material for Model Behavior, Symbolic Representation, Section Shape | Built-in parameters exist (§7) and `SET_FAMILY_SETTINGS` does not take them yet |
+| Divide Surface on a mass, a revolve form in a conceptual family | **Built 2026-10-02** - `DIVIDE_FAMILY_SURFACE` (a number or a distance each way, and a tile pattern or a loaded panel family) and `CREATE_CONCEPTUAL_FORM` with an axis; owed BT21 and BT22 |
+| A structural family's Material for Model Behavior and Section Shape | **Built 2026-10-02** - `SET_FAMILY_SETTINGS`, owed BT23 |
+| A structural family's Symbolic Representation | Its built-in parameter exists, but no source gave the values it stores - set by hand until one does |
 | Editing a template's own sketch - a beam's section, a door's opening | No Heron tool edits a sketch; a new form locked to the planes is the route |
 
 ---

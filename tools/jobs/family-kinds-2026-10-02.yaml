@@ -127,12 +127,16 @@ jobs:
       profiles: "LINE-ID-1,LINE-ID-2,LINE-ID-3,LINE-ID-4"
       depthMm: ""
       path: ""
+      axis: ""
+      angleDegrees: ""
       solid: true
     negative-set:
       # PLACEHOLDER - three of the four, so the profile does not close.
       profiles: "LINE-ID-1,LINE-ID-2,LINE-ID-3"
       depthMm: ""
       path: ""
+      axis: ""
+      angleDegrees: ""
       solid: true
 
   - fragment: set-family-settings

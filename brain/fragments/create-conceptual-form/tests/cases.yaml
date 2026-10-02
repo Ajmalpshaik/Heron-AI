@@ -27,6 +27,14 @@ positive:
       a solid sweep about 120 L (0.2 x 0.2 x 3 m) along the line; dragging
       point 2 lengthens it (BT20)
 
+  - given: >
+      a mass family with a closed profile drawn beside a vertical reference
+      line; profiles the profile's ids, axis the line's id, angleDegrees "",
+      depthMm "", path ""
+    expect: >
+      a solid revolve, a full turn about the line, its volume read back; then
+      angleDegrees "90" makes a quarter turn (BT22)
+
   - given: a mass family with a closed circle drawn as one reference line; depthMm "3000"
     expect: >
       a cylinder 3000 mm tall upward, the circle's own normal taken - or
@@ -52,6 +60,9 @@ negative:
 
   - given: two profiles and a path of three curves
     expect: refused - a swept blend needs a path of one curve - nothing made
+
+  - given: an axis that is an arc, or angleDegrees "400"
+    expect: refused - the axis is one straight line, the angle up to 360 - nothing made
 
   - given: a project in front
     expect: notAFamily true and nothing made

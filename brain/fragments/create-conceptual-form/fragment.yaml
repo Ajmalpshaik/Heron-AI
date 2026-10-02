@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-052
-semantic-identity: "make a surface, an extrusion, a loft or a sweep on lines in an adaptive, pattern-based or mass family, so it follows the points"
+semantic-identity: "make a surface, an extrusion, a loft, a sweep or a revolve on lines in an adaptive, pattern-based or mass family, so it follows the points"
 kind: action
 domain: revit.families
 capability: CREATE_CONCEPTUAL_FORM
@@ -27,7 +27,9 @@ purpose: >
   a depth makes an EXTRUSION that far along its normal; TWO OR MORE profiles
   make a LOFT through them in the order given; a PATH makes a SWEEP of one
   profile along it, or a SWEPT BLEND of several - Revit's rule is a path in one
-  plane, of one curve for a blend, with each profile square to it. A profile is
+  plane, of one curve for a blend, with each profile square to it; an AXIS - one
+  straight line - makes a REVOLVE of one profile about it, a full turn or the
+  angle given, which Revit may return as more than one form. A profile is
   curve ids, commas between - the ids DRAW_FAMILY_POINT_CURVES gives back -
   with `|` between profiles; a path is curve ids too.
 
@@ -64,6 +66,15 @@ contract:
     - name: path
       type: string
       source: request
+    # One straight line's id to revolve about. Empty for none.
+    - name: axis
+      type: string
+      source: request
+    # A revolve's angle in degrees, more than 0 and up to 360. Empty for a full
+    # turn.
+    - name: angleDegrees
+      type: string
+      source: request
     # True for a solid form, false for a void.
     - name: solid
       type: bool
@@ -74,7 +85,7 @@ contract:
       role: result
       type: string
     - name: built
-      # Solid or void; surface, extrusion, loft, sweep or swept blend; its
+      # Solid or void; surface, extrusion, loft, sweep, swept blend or revolve; its
       # profiles and path, an extrusion's direction, its extent, and its volume
       # or area - read back.
       role: result
@@ -105,7 +116,9 @@ compatibility-note: >
   ReferenceArray, ReferenceArrayArray)` reads the same 2020 through 2027 too
   (the RevitAPI XML, read 2026-10-02), with its rule in its parameter remarks:
   a path in one plane, a single curve when there is more than one profile,
-  each profile one loop in a plane square to the path - BT20.
+  each profile one loop in a plane square to the path - BT20; and
+  `NewRevolveForms(bool, ReferenceArray, Reference, double, double)`, whose
+  remark says some arguments make several forms from one profile - BT22.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
@@ -122,3 +135,4 @@ utterances:
   - loft a form through these two profiles
   - extrude the adaptive panel outline 50 mm
   - sweep this profile along the line between the adaptive points
+  - revolve this profile around the axis line

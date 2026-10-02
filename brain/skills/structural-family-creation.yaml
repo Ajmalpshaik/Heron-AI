@@ -42,18 +42,19 @@ purpose: >
      REPORT_FAMILY_FORMS. A COLUMN: EXTRUDE_BETWEEN_PLANES or an extrusion in
      plan, its bottom face locked to the lower reference level and its top to
      the upper one, so Base and Top Level drive the height.
-  5. SET_FAMILY_FORM_MATERIAL to a material parameter; SET_FAMILY_FORM_
-     VISIBILITY where the 3D form should not show at Coarse.
+  5. SET_FAMILY_SETTINGS "Material for Model Behavior=Steel" (or Concrete,
+     Precast Concrete, Wood, Other) - steel and wood get cutback and shape
+     handles, concrete auto-joins - and "Section Shape=..." from Revit's own
+     list. SET_FAMILY_FORM_MATERIAL to a material parameter;
+     SET_FAMILY_FORM_VISIBILITY where the 3D form should not show at Coarse.
   6. REPORT_FAMILY_FORMS, then FLEX_FAMILY at the smallest and largest
      sections - then LOAD_FAMILY into a test project: a beam placed between two
      supports must stretch with them and read its Cut Length; a column placed
      between two levels must follow both.
 
-  SET BY HAND IN FAMILY CATEGORY AND PARAMETERS, NOT YET BY A HERON TOOL:
-  Material for Model Behavior (steel and wood get cutback and shape handles,
-  concrete auto-joins), Symbolic Representation, Section Shape - their
-  built-in parameters exist (docs/41 §7) and SET_FAMILY_SETTINGS does not take
-  them yet. Analytical settings are the project's from 2023.
+  SET BY HAND IN FAMILY CATEGORY AND PARAMETERS: Symbolic Representation -
+  its built-in parameter exists, but no source gave the values it stores
+  (docs/41 §11). Analytical settings are the project's from 2023.
 
 utterances:
   - make a structural beam family with a custom section
@@ -74,6 +75,7 @@ needs:
   - EXTRUDE_BETWEEN_PLANES
   - LOCK_FORM_TO_PLANES
   - DELETE_ELEMENTS
+  - SET_FAMILY_SETTINGS
   - SET_FAMILY_FORM_MATERIAL
   - SET_FAMILY_FORM_VISIBILITY
   - REPORT_FAMILY_FORMS

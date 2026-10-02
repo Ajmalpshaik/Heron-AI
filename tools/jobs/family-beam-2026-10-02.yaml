@@ -55,11 +55,15 @@ jobs:
       profiles: "LOOP-ID-1,LOOP-ID-2,LOOP-ID-3,LOOP-ID-4"
       depthMm: ""
       path: "BEAM-LINE-ID"
+      axis: ""
+      angleDegrees: ""
       solid: true
     negative-set:
       profiles: "LOOP-ID-1,LOOP-ID-2,LOOP-ID-3,LOOP-ID-4"
       depthMm: "50"
       path: "BEAM-LINE-ID"
+      axis: ""
+      angleDegrees: ""
       solid: true
     note: >
       Positive: a solid sweep about 120 L along the line - the two-point beam.

@@ -159,6 +159,8 @@ compatibility-note: >
 #                                                primary and linked connectors
 #   "set the light source of this fixture family"
 #                                             -> SET_FAMILY_LIGHT_SOURCE
+#   "divide the surface of this mass into panels"
+#                                             -> DIVIDE_FAMILY_SURFACE
 
 utterances:
   - make this family an air terminal

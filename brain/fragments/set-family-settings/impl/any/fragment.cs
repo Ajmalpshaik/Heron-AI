@@ -61,11 +61,24 @@ var switches = new List<Tuple<string, string, BuiltInParameter>>
     Tuple.Create("enablecuttinginviews", "Enable Cutting in Views", BuiltInParameter.FAMILY_ENABLE_CUTTING_IN_VIEWS),
     Tuple.Create("parttype", "Part Type", BuiltInParameter.FAMILY_CONTENT_PART_TYPE),
     Tuple.Create("profileusage", "Profile Usage", BuiltInParameter.FAM_PROFILE_USAGE),
+    Tuple.Create("materialformodelbehavior", "Material for Model Behavior", BuiltInParameter.FAMILY_STRUCT_MATERIAL_TYPE),
+    Tuple.Create("sectionshape", "Section Shape", BuiltInParameter.STRUCTURAL_SECTION_SHAPE),
 };
 
-// THE TWO SETTINGS THAT TAKE A NAME, NOT YES OR NO: each value Revit's own list
+// THE SETTINGS THAT TAKE A NAME, NOT YES OR NO: each value Revit's own list
 // holds, read from the enum on the running Revit, with the words Revit shows
-// that the enum spells differently.
+// that the enum spells differently. A structural family's Section Shape enum
+// lives in a namespace the executor does not import, so it is read from the
+// Family property that carries it.
+var namedTypes = new Dictionary<string, Type>
+{
+    { "parttype", typeof(PartType) },
+    { "profileusage", typeof(ProfileFamilyUsage) },
+    { "materialformodelbehavior", typeof(StructuralMaterialType) },
+};
+var sectionShapeProperty = typeof(Family).GetProperty("StructuralSectionShape");
+if (sectionShapeProperty != null && sectionShapeProperty.PropertyType.IsEnum)
+    namedTypes["sectionshape"] = sectionShapeProperty.PropertyType;
 var named = new Dictionary<string, Dictionary<string, int>>();
 Func<Type, Dictionary<string, string>, Dictionary<string, int>> listOf = (enumType, aliases) =>
 {
@@ -84,13 +97,18 @@ named["profileusage"] = listOf(typeof(ProfileFamilyUsage), new Dictionary<string
 {
     { "generic", "any" },
 });
+named["materialformodelbehavior"] = listOf(typeof(StructuralMaterialType), new Dictionary<string, string>
+{
+    { "precast", "precastconcrete" },
+});
+if (namedTypes.ContainsKey("sectionshape"))
+    named["sectionshape"] = listOf(namedTypes["sectionshape"], new Dictionary<string, string>());
 // A stored value back in words: the enum's own name for a named setting.
 Func<string, int?, string> wordsFor = (key, value) =>
 {
     if (!value.HasValue) return "unread";
-    if (key == "parttype" && Enum.IsDefined(typeof(PartType), value.Value)) return ((PartType)value.Value).ToString();
-    if (key == "profileusage" && Enum.IsDefined(typeof(ProfileFamilyUsage), value.Value))
-        return ((ProfileFamilyUsage)value.Value).ToString();
+    if (namedTypes.ContainsKey(key) && Enum.IsDefined(namedTypes[key], value.Value))
+        return Enum.GetName(namedTypes[key], value.Value);
     if (named.ContainsKey(key)) return value.Value.ToString();
     return value == 1 ? "Yes" : value == 0 ? "No" : "unread";
 };
@@ -145,8 +163,7 @@ else
                 if (!named[match.Item1].TryGetValue(said, out value))
                 {
                     problems.Add("\"" + (pair.Value ?? "") + "\" is not a " + match.Item2 + " this Revit has - it has "
-                        + string.Join(", ", Enum.GetNames(match.Item1 == "parttype" ? typeof(PartType)
-                            : typeof(ProfileFamilyUsage))) + ".");
+                        + string.Join(", ", Enum.GetNames(namedTypes[match.Item1])) + ".");
                     continue;
                 }
             }

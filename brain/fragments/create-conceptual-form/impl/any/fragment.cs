@@ -1,6 +1,6 @@
-// NOT STANDALONE. Assumes `doc`, `profiles`, `depthMm`, `path` and `solid` are
-// in scope; leaves `formId`, `built`, `notAFamily`, `refused` and `findings`
-// behind.
+// NOT STANDALONE. Assumes `doc`, `profiles`, `depthMm`, `path`, `axis`,
+// `angleDegrees` and `solid` are in scope; leaves `formId`, `built`,
+// `notAFamily`, `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -16,7 +16,9 @@
 //   ONE closed profile and a depth         -> an EXTRUSION that far along its normal;
 //   TWO OR MORE profiles, no path          -> a LOFT through them in the order given;
 //   a PATH and one profile                 -> a SWEEP of the profile along it;
-//   a PATH and two or more profiles        -> a SWEPT BLEND along it.
+//   a PATH and two or more profiles        -> a SWEPT BLEND along it;
+//   an AXIS and one profile                -> a REVOLVE about it, a full turn
+//                                             or the angle given.
 // A profile is curve ids, commas between - the ids DRAW_FAMILY_POINT_CURVES
 // gives back - and profiles have `|` between them; a path is curve ids too.
 //
@@ -43,6 +45,8 @@ var problems = new List<string>();
 // Each profile's curves, and the path's.
 var groups = new List<List<CurveElement>>();
 var route = new List<CurveElement>();
+CurveElement pivot = null;
+var turn = 2 * Math.PI;
 double depth = 0;
 var hasDepth = false;
 XYZ normal = null;
@@ -150,6 +154,35 @@ else
     if ((path ?? "").Trim().Length > 0) route = curvesOf(path);
     var sweeping = route.Count > 0;
 
+    // A REVOLVE: one straight line to turn about, and the angle - a full turn
+    // when none is given.
+    if ((axis ?? "").Trim().Length > 0)
+    {
+        var lines = curvesOf(axis);
+        if (lines.Count != 1 || !(lines[0].GeometryCurve is Line))
+            problems.Add("The axis is ONE straight line's id - \"" + axis.Trim() + "\" is not.");
+        else pivot = lines[0];
+        var angleText = (angleDegrees ?? "").Trim();
+        double angle;
+        if (angleText.Length > 0)
+        {
+            if (!double.TryParse(angleText, System.Globalization.NumberStyles.Float, invariant, out angle)
+                || double.IsNaN(angle) || angle <= 0 || angle > 360)
+                problems.Add("\"" + angleText + "\" is not an angle of a revolve - degrees, more than 0 and up to 360.");
+            else turn = angle * Math.PI / 180;
+        }
+        if (sweeping || hasDepth)
+            problems.Add("An axis was given with a " + (sweeping ? "path" : "depth") + " - an axis makes a revolve; give "
+                + "one of the three.");
+        if (groups.Count != 1)
+            problems.Add("A revolve turns ONE profile about its axis; " + groups.Count + " were given.");
+        if (pivot != null && groups.Any(g => g.Any(c => c.Id == pivot.Id)))
+            problems.Add("The axis is also in the profile - a revolve's axis is a line of its own.");
+    }
+    else if ((angleDegrees ?? "").Trim().Length > 0)
+        problems.Add("An angle was given without an axis - the angle belongs to a revolve.");
+    var revolving = pivot != null;
+
     if (sweeping && hasDepth)
         problems.Add("A depth and a path were both given. A path makes a sweep along it; a depth pushes one profile "
             + "straight - give one.");
@@ -158,15 +191,15 @@ else
             + "it; this path has " + route.Count + ".");
     if (sweeping && route.Any(c => groups.Any(g => g.Any(p => p.Id == c.Id))))
         problems.Add("A curve is in the path and in a profile - a sweep's path and its profile are different lines.");
-    if (!sweeping && groups.Count == 1 && !closes(groups[0]))
+    if (!sweeping && !revolving && groups.Count == 1 && !closes(groups[0]))
         problems.Add("The profile does not close - a surface or an extrusion needs every end to meet another. Draw "
             + "the missing side, or give two profiles for a loft.");
     if (!sweeping && groups.Count > 1 && hasDepth)
         problems.Add("A depth was given with " + groups.Count + " profiles. Two or more profiles make a loft through "
             + "them; a depth goes with one profile.");
-    if (!sweeping && groups.Count == 1 && !hasDepth && !solid)
-        problems.Add("A void needs a volume - a flat surface cannot cut. Give a depth to extrude it, or a path to "
-            + "sweep it.");
+    if (!sweeping && !revolving && groups.Count == 1 && !hasDepth && !solid)
+        problems.Add("A void needs a volume - a flat surface cannot cut. Give a depth to extrude it, a path to sweep "
+            + "it or an axis to revolve it.");
 
     // THE NORMAL OF A PROFILE TO BE PUSHED - from its curves in order, by
     // Newell's method, or a closed circle's or ellipse's own. Refused by name
@@ -240,12 +273,21 @@ if (refused == null)
         return array;
     };
 
-    var kind = route.Count > 0 ? (groups.Count > 1 ? "swept blend" : "sweep")
+    var kind = pivot != null ? "revolve" : route.Count > 0 ? (groups.Count > 1 ? "swept blend" : "sweep")
         : groups.Count > 1 ? "loft" : hasDepth ? "extrusion" : "surface";
-    Form form;
+    Form form = null;
+    // A revolve can come back as more than one form, by Revit's own remark.
+    var made = new List<Form>();
     try
     {
-        if (route.Count > 0)
+        if (pivot != null)
+        {
+            var forms = doc.FamilyCreate.NewRevolveForms(solid, referencesOf(groups[0]), pivot.GeometryCurve.Reference,
+                0, turn);
+            if (forms != null) foreach (Form f in forms) made.Add(f);
+            form = made.FirstOrDefault();
+        }
+        else if (route.Count > 0)
         {
             var all = new ReferenceArrayArray();
             foreach (var g in groups) all.Append(referencesOf(g));
@@ -271,13 +313,16 @@ if (refused == null)
     if (form == null)
         throw new InvalidOperationException("Revit made no " + kind + ". The call failed, and Heron rolls the whole call "
             + "back.");
+    if (made.Count == 0) made.Add(form);
 
     doc.Regenerate();
 
     var volume = 0.0;
     var area = 0.0;
-    var geometry = form.get_Geometry(new Options());
-    if (geometry != null)
+    foreach (var each in made)
+    {
+        var geometry = each.get_Geometry(new Options());
+        if (geometry == null) continue;
         foreach (GeometryObject piece in geometry)
         {
             var body = piece as Solid;
@@ -285,15 +330,18 @@ if (refused == null)
             if (body.Volume > 0) volume += body.Volume;
             foreach (Face face in body.Faces) area += face.Area;
         }
+    }
     if (area <= 0)
         throw new InvalidOperationException("The " + kind + " was made and holds no geometry to measure. The call failed, "
             + "and Heron rolls the whole call back.");
 
     var box = form.get_BoundingBox(null);
-    formId = form.UniqueId;
-    built = (solid ? "Solid" : "Void") + " " + kind + " " + form.UniqueId + " on " + groups.Count + " profile(s) of "
+    formId = string.Join(",", made.Select(f => f.UniqueId));
+    built = (solid ? "Solid" : "Void") + " " + kind + " " + formId + " on " + groups.Count + " profile(s) of "
         + groups.Sum(g => g.Count) + " curve(s)"
         + (route.Count > 0 ? " along a path of " + route.Count + " curve(s)" : "")
+        + (pivot != null ? " about the line " + pivot.UniqueId + ", " + Math.Round(turn * 180 / Math.PI, 1).ToString(invariant)
+            + "°" + (made.Count > 1 ? " - Revit made " + made.Count + " forms" : "") : "")
         + (kind == "extrusion" ? ", " + mm(Math.Abs(depth)) + " mm deep toward (" + Math.Round(normal.X * Math.Sign(depth), 3)
             .ToString(invariant) + ", " + Math.Round(normal.Y * Math.Sign(depth), 3).ToString(invariant) + ", "
             + Math.Round(normal.Z * Math.Sign(depth), 3).ToString(invariant) + ")" : "")

@@ -65,7 +65,7 @@ python tools/check-gaps.py                                  # unfinished, versus
 
 ## What is still to come
 
-**Proof, mostly.** **272 fragments are `PROVEN`; the other 191 and all twenty-four skills are `DRAFT`** — derive
+**Proof, mostly.** **272 fragments are `PROVEN`; the other 192 and all twenty-four skills are `DRAFT`** — derive
 both with `python brain/heron_fragment.py` rather than reading them here. **This line said 167 and 193
 until 2026-09-19**, which was wrong by 149 in one direction and 114 in the other and had been for weeks
 (and 306 and 120 until 2026-10-02, the same mistake a third time):

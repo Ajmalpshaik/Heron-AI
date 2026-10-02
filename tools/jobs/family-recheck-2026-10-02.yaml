@@ -1,0 +1,90 @@
+# The proof of the last NOT YET rows of docs/41 §11 that had documented calls -
+# NEEDS-CHECKING Group BT, rows BT21 to BT23:
+#
+#   divide-family-surface           DIVIDE_FAMILY_SURFACE    FRG-GEO-055  (BT21)
+#   create-conceptual-form, revolve CREATE_CONCEPTUAL_FORM   FRG-GEO-052  (BT22)
+#   set-family-settings, structural SET_FAMILY_SETTINGS      FRG-DOC-036  (BT23)
+#
+#     python tools/batch-prove.py tools/jobs/family-recheck-2026-10-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/family-recheck-2026-10-02.yaml
+#
+# Its own file, because a run's record is kept per tool and the other two
+# family job files already run create-conceptual-form and set-family-settings.
+#
+# THE ARRANGEMENT IS TWO NEW FAMILIES, each made by hand before the run with
+# File, New, Family and the metric template named, saved once under the title
+# below so `in:` can name it, and left OPEN in the Family Editor:
+#
+#   "Heron Mass Test"      Mass, with a box made by create-conceptual-form - a
+#                          6000 x 3000 closed profile of reference lines pushed
+#                          9000 mm - and, beside it, a closed 500 x 1000 profile
+#                          of reference lines and a vertical reference line to
+#                          revolve it about
+#   "Heron Framing Test"   Structural Framing - Beams and Braces
+#
+# SOME VALUES ARE IDS THAT ONLY AN EARLIER RUN CAN GIVE, and are written here
+# as PLACEHOLDERS: the box form's id (MASS-FORM-ID, from create-conceptual-form
+# or report-family-forms), the revolve profile's four line ids (REV-ID-1 to 4)
+# and the axis line's id (AXIS-ID). `--dry-run` says WOULD RUN with a
+# placeholder still in - replace each before the real run.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK -
+# LOOK at each family afterwards anyway: rollback has failed before on this PC
+# (BD1).
+
+model: Two new families from the metric Mass and Structural Framing templates, Revit 2024
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: divide-family-surface
+    in: "Heron Mass Test"
+    expect: surfaceId
+    set:
+      # PLACEHOLDER - the box form's id.
+      form: "MASS-FORM-ID"
+      face: "front"
+      uGrid: "6"
+      vGrid: "3000 mm"
+      pattern: ""
+    negative-set:
+      form: "MASS-FORM-ID"
+      face: "front"
+      uGrid: "6"
+      vGrid: "3000 mm"
+      pattern: "Not A Pattern"
+    note: >
+      Positive: the front face divided, the gridline counts recorded (does
+      Number 6 give six cells?). Negative: an unknown pattern refused, nothing
+      kept.
+
+  - fragment: create-conceptual-form
+    in: "Heron Mass Test"
+    expect: formId
+    set:
+      # PLACEHOLDERS - the revolve profile's four lines, and the axis line.
+      profiles: "REV-ID-1,REV-ID-2,REV-ID-3,REV-ID-4"
+      depthMm: ""
+      path: ""
+      axis: "AXIS-ID"
+      angleDegrees: "90"
+      solid: true
+    negative-set:
+      profiles: "REV-ID-1,REV-ID-2,REV-ID-3,REV-ID-4"
+      depthMm: ""
+      path: ""
+      axis: "AXIS-ID"
+      angleDegrees: "400"
+      solid: true
+    note: >
+      Positive: a quarter-turn revolve about the line - record how many forms
+      Revit returned. Negative: 400 degrees refused before anything is made.
+
+  - fragment: set-family-settings
+    in: "Heron Framing Test"
+    expect: changed
+    set:
+      settings: "Material for Model Behavior=Precast Concrete; Section Shape=Rectangle Parameterized"
+    negative-set:
+      settings: "Material for Model Behavior=Granite"

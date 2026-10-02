@@ -27,6 +27,14 @@ positive:
   - given: a new family from the metric Profile template; settings "Profile Usage=Mullion"
     expect: Profile Usage reads Mullion, read back
 
+  - given: >
+      a new family from the metric Structural Framing - Beams and Braces
+      template; settings "Material for Model Behavior=Precast Concrete; Section
+      Shape=Rectangle Parameterized"
+    expect: >
+      both read back by their enum names in the report; Family Category and
+      Parameters shows Precast Concrete and the section shape - LOOKED AT (BT23)
+
 negative:
   - given: settings "Work Plane-Based=maybe"
     expect: refused - neither yes nor no - and nothing changed
@@ -39,6 +47,9 @@ negative:
 
   - given: a project in front
     expect: notAFamily true and nothing changed
+
+  - given: settings "Material for Model Behavior=Granite"
+    expect: refused naming the materials Revit has - nothing changed
 
 second_route:
   - >

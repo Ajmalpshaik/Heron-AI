@@ -1,0 +1,111 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-055
+semantic-identity: "divide a face of a form in a mass or conceptual family into a U and V grid, and give it a tile pattern or a panel family"
+kind: action
+domain: revit.families
+capability: DIVIDE_FAMILY_SURFACE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  DIVIDES A SURFACE in a mass, an adaptive component or a pattern-based panel
+  open in the Family Editor - the conceptual Family Editor's Divide Surface:
+  a U and a V grid laid on one face of a form, so a pattern-based panel family
+  can fill every cell - a facade's panels, a canopy's glazing.
+
+  **THE FORM BY ITS ID, THE FACE BY WHICH WAY IT FACES.** The form is the id
+  CREATE_CONCEPTUAL_FORM gave back; the face is top, bottom, front, back, left
+  or right, or "largest" when not said - chosen only from the faces Revit's own
+  CanBeDivided accepts. A face already divided is refused with its surface's id.
+
+  **EACH GRID A NUMBER OR A DISTANCE.** "10" is Revit's Number for that
+  direction, "1500 mm" a fixed distance; empty leaves Revit's default layout.
+  Both centred, unrotated, with no offset. Whether Number counts the cells or
+  the lines between them is not promised: the gridline count Revit made is
+  reported, and BT21 records it.
+
+  **THE PATTERN OR PANEL, OPTIONAL**: a tile pattern by name - Rectangle,
+  Hexagon - or a loaded pattern-based panel family's type, "Panel : Glass",
+  chosen only from the types Revit lists as valid for this surface.
+
+  **READ BACK, ALL OR NOTHING**: the surface's host, each grid's layout and
+  value, its gridline counts and its type are read again; one that does not
+  read as asked fails the call. The surface's id comes back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The form's unique id, from CREATE_CONCEPTUAL_FORM or REPORT_FAMILY_FORMS.
+    - name: form
+      type: string
+      source: request
+    # top, bottom, front, back, left, right - or empty for the largest face.
+    - name: face
+      type: string
+      source: request
+    # "10" (Revit's Number) or "1500 mm" (a fixed distance). Empty: Revit's default.
+    - name: uGrid
+      type: string
+      source: request
+    - name: vGrid
+      type: string
+      source: request
+    # A tile pattern - "Rectangle" - or a loaded panel family's "Family : Type".
+    # Empty leaves Revit's default.
+    - name: pattern
+      type: string
+      source: request
+  provides:
+    - name: surfaceId
+      # The divided surface's unique id.
+      role: result
+      type: string
+    - name: divided
+      # The face, each grid's layout and gridline count, and the pattern - read
+      # back, on ONE line.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was divided, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `DividedSurface.Create`, `CanBeDivided`, `GetDividedSurfaceForReference`,
+  `USpacingRule`, `VSpacingRule`, `NumberOfUGridlines`, `NumberOfVGridlines`
+  and `Host`, and `SpacingRule.SetLayoutFixedNumber` and
+  `SetLayoutFixedDistance` - whose remarks say a layout's number or distance,
+  justification, rotation and offset are set together - read the same 2020
+  through 2027 (the RevitAPI XML and reference assemblies, read 2026-10-02).
+  `SpacingRuleJustification` is Center, Beginning or End on every release.
+  The pattern is the element's type, from `GetValidTypes` and `ChangeTypeId`.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "divide the surface of this mass into panels" -> here
+#   "make a surface from these lines"             -> CREATE_CONCEPTUAL_FORM -
+#                                                    the form to divide
+
+utterances:
+  - divide the surface of this mass into panels
+  - divide the top face into a 10 by 8 grid
+  - apply the glass panel family to the divided surface
+  - set the divided surface spacing to 1500 mm
