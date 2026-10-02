@@ -43,13 +43,14 @@ purpose: >
      then LINK_FAMILY_PARAMETER for each connector's Angle to the elbow's
      Angle. An elbow whose connector angle is not linked does not flex in a
      run.
-  7. REPORT_FAMILY_FORMS, FLEX_FAMILY at sizes in the table and angles 30, 45
+  7. SET_FAMILY_CONNECTOR_ROLES: the PRIMARY connector - Autodesk's help puts
+     a fitting's on the face lying on the X axis, and the tool reports one
+     that is not. A pump, coil or valve body that a system passes THROUGH
+     links its two connectors here too - as Global, which the tool reports
+     and never sets.
+  8. REPORT_FAMILY_FORMS, FLEX_FAMILY at sizes in the table and angles 30, 45
      and 90 - then LOAD_FAMILY into a test project, SET_ROUTING_PREFERENCE to
      put it in a pipe or duct type's rules, and the modeller draws a run.
-
-  NOT YET: choosing which connector is PRIMARY - Autodesk's help says a
-  fitting's must be on the face lying on the X axis, and no Heron tool sets
-  it; linking connectors for flow passing through.
 
 utterances:
   - make a pipe elbow fitting family
@@ -76,6 +77,7 @@ needs:
   - LINK_FAMILY_FORM_PARAMETER
   - ADD_FAMILY_CONNECTOR
   - LINK_FAMILY_PARAMETER
+  - SET_FAMILY_CONNECTOR_ROLES
   - REPORT_FAMILY_FORMS
   # The proof, and never skipped.
   - FLEX_FAMILY

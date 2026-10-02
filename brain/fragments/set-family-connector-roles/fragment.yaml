@@ -1,0 +1,107 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-055
+semantic-identity: "choose which connector of the family being edited is primary, and link connector pairs so a system passes through it"
+kind: action
+domain: revit.families
+capability: SET_FAMILY_CONNECTOR_ROLES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Sets the two connector settings a new connector is left at by Revit, in the
+  family open in the Family Editor: which connector is PRIMARY, and which pairs
+  are LINKED.
+
+  **ONE PRIMARY PER DOMAIN.** `AssignAsPrimary` promotes the connector named
+  and, in Revit's own remark, makes the rest of its system secondary. A
+  fitting's primary connector belongs on the face lying on the X axis
+  (Autodesk's help, as the mep-fitting skill records) - one that does not is
+  reported, not refused.
+
+  **A LINKED PAIR PASSES A SYSTEM THROUGH THE FAMILY** - a coil, a pump, a valve
+  body - so the run on one side and the run on the other become one system. The
+  sources docs/41 §10 records say it does so only when both connectors' system
+  is Global; a pair that is not is reported with the words to fix it, and its
+  system is never changed here. `"Inlet > none"` removes a link.
+
+  **A CONNECTOR IS NAMED BY THE PLANE ITS FACE LIES ON** - "Neck Top", the way
+  ADD_FAMILY_CONNECTOR places one - or by its id from the report. A plane that
+  holds more than one connector is refused with their ids.
+
+  **CHECKED FIRST, READ BACK AFTER, ALL OR NOTHING.** A pair of two domains, a
+  connector linked to itself or in two pairs, or a connector already linked to a
+  third one is refused before anything changes. After the change the primary
+  must read primary and each link must read linked BOTH ways; where Revit set
+  only one end, the other is set to match and the report says so. Every
+  connector is reported before and after.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The connector to make primary: the plane its face lies on, "Neck Top", or
+    # its id. Empty leaves the primary as it is.
+    - name: primary
+      type: string
+      source: request
+    # Pairs to link, `|` between - "Inlet > Outlet". "Inlet > none" unlinks.
+    # Each end is a plane name or an id. Empty links nothing.
+    - name: links
+      type: string
+      source: request
+  provides:
+    - name: connectorReport
+      # Every connector as read back: domain, id, the plane it lies on, system,
+      # direction, primary or secondary, what it is linked to - on ONE line.
+      role: result
+      type: string
+    - name: changed
+      # Each change made, in order.
+      role: result
+      type: IList<string>
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ConnectorElement.AssignAsPrimary`, `IsPrimary`, `GetLinkedConnectorElement`,
+  `SetLinkedConnectorElement`, `Origin`, `Direction`, `Domain` and
+  `SystemClassification`, and `MEPSystemClassification.Global`, read the same
+  2020 through 2027 (the RevitAPI XML of all eight releases, read 2026-10-02).
+  `SetLinkedConnectorElement` throws for two domains or one connector twice,
+  and for "a connector type that does not support linked connectors" - the
+  first two are refused here before Revit is asked.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "set the primary connector of this family"   -> here
+#   "put a supply air connector on the neck"     -> ADD_FAMILY_CONNECTOR - a
+#                                                   new connector
+#   "link the connector flow to a family parameter"
+#                                                -> LINK_FAMILY_PARAMETER - a
+#                                                   connector's VALUE to a
+#                                                   family parameter
+
+utterances:
+  - set the primary connector of this family
+  - make the neck connector the primary connector
+  - link the inlet and outlet connectors so the system passes through
+  - pair the two connectors of this coil family

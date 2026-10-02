@@ -1,0 +1,120 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-056
+semantic-identity: "define the light source of the lighting fixture family being edited - its shape, distribution, intensity and colour"
+kind: action
+domain: revit.families
+capability: SET_FAMILY_LIGHT_SOURCE
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Defines the LIGHT SOURCE of a lighting fixture family open in the Family
+  Editor - the Light Source Definition and the photometric values in Type
+  Properties - through Revit's LightFamily and LightType.
+
+  **FOUR THINGS, EACH OPTIONAL.** The SHAPE light leaves - point, line,
+  rectangle or circle, sizes in millimetres; the DISTRIBUTION - spherical,
+  hemispherical, spot (beam and field angles, tilt) or a photometric web from an
+  IES file on this computer; the initial INTENSITY - lumens, candelas, or lux at
+  a distance; and the initial COLOUR TEMPERATURE in kelvin. The shape and
+  distribution styles are the family's; the sizes, angles, intensity and colour
+  are set on every type, or on the one type named.
+
+  **LIGHT SOURCE MUST ALREADY BE TICKED** in Family Category and Parameters -
+  Revit's GetLightFamily refuses a family without it, and Heron does not tick it.
+  The refusal says where the tick box is.
+
+  **A WATTAGE IS NOT TAKEN.** Revit's reference calls a wattage and an efficacy
+  "universal unit" values and names no unit; rather than guess one, a wattage is
+  refused with the units that are taken. A light's position is read back, not
+  set - the light source is moved in the Family Editor.
+
+  **READ BACK, AND WHAT TYPE PROPERTIES SHOWS IS THE TEST.** The styles and
+  every type's shape, distribution, intensity and colour are read again, and
+  the Spot Beam Angle and the intensity Type Properties shows are compared with
+  what was asked, wherever the display can be read one way only - a value shown
+  differently fails the call, because the reference's units would be wrong.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # "point", "line 1200", "rectangle 1200 x 600" (length by width), "circle
+    # 200" - millimetres. Empty leaves the shape as it is.
+    - name: shape
+      type: string
+      source: request
+    # "spherical", "hemispherical", "spot 30 60" (beam, field, degrees) with an
+    # optional "tilt 10", or "web C:\Lights\downlight.ies". Empty leaves it.
+    - name: distribution
+      type: string
+      source: request
+    # "1500 lm", "1200 cd" or "500 lx at 1000 mm". Empty leaves it.
+    - name: intensity
+      type: string
+      source: request
+    # "4000 K", from 1800 to 20000. Empty leaves it.
+    - name: colorTemperature
+      type: string
+      source: request
+    # The one type to change. Empty changes every type.
+    - name: typeName
+      type: string
+      source: request
+  provides:
+    - name: lightReport
+      # Every type changed as read back - shape, distribution, intensity as
+      # Type Properties shows it, colour - and where the light source sits, on
+      # ONE line.
+      role: result
+      type: string
+    - name: changed
+      # Each change made.
+      role: result
+      type: IList<string>
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `LightFamily.GetLightFamily`, `SetLightShapeStyle`, `SetLightDistributionStyle`,
+  `GetNumberOfLightTypes`, `GetLightType`, `GetLightTypeName`,
+  `GetLightSourceTransform`, `LightType.SetLightShape`, `SetLightDistribution`,
+  `SetInitialIntensity`, `SetInitialColor` and their Get pairs, the four shape,
+  four distribution and four intensity classes and `CustomInitialColor` read
+  the same 2020 through 2027 (the RevitAPI XML of all eight releases, read
+  2026-10-02). Their parameter remarks give the units used: emit sizes in feet,
+  spot angles in radians, a photometric web's tilt in degrees, illuminance in
+  lux at a distance in feet, colour 1800 to 20000. They live in a namespace the
+  fragment executor does not import, so they are reached by name at run time.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "set the light source of this fixture family" -> here
+#   "add an electrical connector to the family"  -> ADD_FAMILY_CONNECTOR - the
+#                                                   fixture's power
+#   "set the family category"                    -> SET_FAMILY_CATEGORY
+
+utterances:
+  - set the light source of this fixture family
+  - make the light source a spot light with a 30 degree beam
+  - use this IES file for the light distribution
+  - set the lumens and colour temperature of the light fixture

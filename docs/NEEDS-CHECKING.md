@@ -437,7 +437,7 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bs.md`](needs-checking/group-bs.md)
 
-## Group BT - every other kind of family: the template report, hosted, line-based, pattern-based, adaptive, profile and detail families, a Family Type parameter, flip controls, filled regions and a type catalog (2026-10-02)
+## Group BT - every other kind of family: the template report, hosted, line-based, pattern-based, adaptive, profile and detail families, a Family Type parameter, flip controls, filled regions, a type catalog, a connector's primary flag and links, and a light source (2026-10-02)
 
 **Its own file:** [`needs-checking/group-bt.md`](needs-checking/group-bt.md)
 

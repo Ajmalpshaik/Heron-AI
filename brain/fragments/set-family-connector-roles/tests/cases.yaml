@@ -1,0 +1,47 @@
+positive:
+  - given: >
+      a duct fitting family - Part Type Elbow - with two round duct connectors
+      made by ADD_FAMILY_CONNECTOR on faces lying on "Inlet" and "Outlet";
+      primary "Inlet"
+    expect: >
+      the Inlet connector reads PRIMARY and the Outlet one secondary in the
+      report; a finding when the Inlet connector does not point along X
+      (Autodesk's help puts a fitting's primary on the X axis); LOOKED AT in
+      the Family Editor - the primary connector's Properties (BT17)
+
+  - given: >
+      a mechanical equipment family (a coil) with two pipe connectors whose
+      System Classification is Global, on "Water In" and "Water Out"; links
+      "Water In > Water Out"
+    expect: >
+      both connectors read linked to each other; RECORD whether Revit linked
+      both ends or Heron set the second (BT17); then loaded into a test project
+      and piped on both sides - the two pipe runs read as ONE system
+
+  - given: links "Water In > none" on the same family
+    expect: both connectors read not linked; the change names the former partner
+
+negative:
+  - given: links "Water In > Neck Top", where Neck Top holds a duct connector
+    expect: refused - a pipe connector paired with a duct one - and nothing changed
+
+  - given: >
+      primary "Ref. Level" in a family with two connectors on faces lying on
+      Ref. Level
+    expect: refused - two connectors lie on that plane, naming both ids - nothing changed
+
+  - given: >
+      links "Water In > Water Out" where both connectors are Hydronic Supply,
+      not Global
+    expect: >
+      linked, read back both ways, and a finding that a linked pair passes a
+      system through only as Global - their system NOT changed
+
+  - given: a project in front
+    expect: notAFamily true and nothing changed
+
+second_route:
+  - >
+      In the Family Editor, select each connector: Properties shows System
+      Classification, and the ribbon's connector tools show which is primary
+      and which are linked

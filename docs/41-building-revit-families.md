@@ -364,7 +364,10 @@ points OUT of its face, and the arrow says which way a duct or pipe is drawn fro
 along it, where an edge loop fixes it at the loop - **which puts a sentence of Heron's
 [`add-family-connector`](../brain/fragments/add-family-connector/fragment.yaml) card in doubt** ("at that face's
 centre"), recorded in [row 5b-280](FRAGMENT-ISSUES.md) and not fixed here. A family has one PRIMARY connector
-per domain (`AssignAsPrimary`); linked connectors pass flow through only when their system is Global. A
+per domain (`AssignAsPrimary`); linked connectors pass flow through only when their system is Global.
+[`SET_FAMILY_CONNECTOR_ROLES`](../brain/fragments/set-family-connector-roles/fragment.yaml) sets both - it
+reports a linked pair that is not Global rather than changing its system, and whether Revit links the second
+end by itself is BT17's question. A
 FITTING's connectors take the Fitting system, which is what shows their Angle - and an elbow whose connector
 Angle is not linked to its Angle parameter does not flex in a run.
 
@@ -378,7 +381,13 @@ Equipment Switch.
 **Fixtures and equipment (SOURCED).** Plumbing fixtures take cold and hot water IN and sanitary OUT; a supply
 terminal is In and its source Out. Lighting fixtures define their light source - shape and distribution,
 including a photometric web (IES) - in the Family Editor; **API** `LightFamily` sets the shape and
-distribution styles (not wrapped by any Heron tool). Revit 2022 added the Fire Protection, Medical Equipment and
+distribution styles and `LightType` each type's emit size, spot angles, IES file, intensity and colour, all
+2020 to 2027 - [`SET_FAMILY_LIGHT_SOURCE`](../brain/fragments/set-family-light-source/fragment.yaml). **API,
+and UNSURE where it matters:** the reference gives emit sizes in feet, spot angles in RADIANS but a photometric
+web's tilt in DEGREES, illuminance in lux at a distance in feet - and a wattage or efficacy only as "a universal
+unit value", naming no unit, so the tool takes lumens, candelas or lux and refuses a wattage; it compares what
+Type Properties shows with what was asked (BT18). The Light Source tick box itself is set by hand: no call sets
+it, and `GetLightFamily` refuses a family without it. Revit 2022 added the Fire Protection, Medical Equipment and
 Audio Visual Devices categories and 2023 Mechanical Control Devices and Plumbing Equipment - none exists on
 2020 or 2021. Room Calculation Point keeps a family at a room's edge in the right room. **API:** an
 electrical connector's "Apparent Load" was renamed "Apparent Power" in 2025 - parameters are found by their
@@ -407,7 +416,7 @@ built-in id, never their name.
 | A label in a tag, symbol or title block | Revit's API cannot make one on any release (§8.3) |
 | Setting a pattern-based panel's tile pattern | `CurtainPanelTilePattern` is read-only (§7) |
 | A point hosted on a line at a ratio; a profile on a point's plane | Calls exist (`PointOnEdge`, a point's coordinate planes) and are not wrapped yet |
-| A connector's primary flag, linked connectors, a light source | Calls exist and are not wrapped yet |
+| A connector's primary flag, linked connectors, a light source | **Built 2026-10-02** - `SET_FAMILY_CONNECTOR_ROLES` and `SET_FAMILY_LIGHT_SOURCE`, owed BT17 and BT18. Still by hand: the Light Source tick box, and a wattage (§10) |
 | A hosted opening whose size follows a parameter | An opening's sketch cannot be locked through the API; a void is the route, owed BT12 |
 
 ---

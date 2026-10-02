@@ -155,6 +155,10 @@ compatibility-note: >
 #   "make a surface from these lines"         -> CREATE_CONCEPTUAL_FORM - an
 #                                                adaptive or pattern family
 #   "make a type catalog for this family"     -> REPORT_FAMILY_TYPE_CATALOG
+#   "set the primary connector of this family" -> SET_FAMILY_CONNECTOR_ROLES -
+#                                                primary and linked connectors
+#   "set the light source of this fixture family"
+#                                             -> SET_FAMILY_LIGHT_SOURCE
 
 utterances:
   - make this family an air terminal
