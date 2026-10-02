@@ -45,12 +45,13 @@ modeller ── Claude Code ── heron_hvac (MCP, READ, no bridge operation)
                                │
                        brain/heron_hvac.py         the calculations, the references, the answer
                        brain/heron_psychro.py      moist air and water - physics only
+                       brain/heron_hvac_project.py a project's standards, kept once said (D-111)
 ```
 
 | | |
 |---|---|
-| Layer | `brain/` - Python, standard library only. It imports nothing outside Python itself, and [`tests/test_hvac.py`](../tests/test_hvac.py) parses both files to hold that |
-| Risk | **READ.** Arithmetic over what it is handed - no model, no file, no network, no store |
+| Layer | `brain/` - Python. The engine's two files import nothing outside Python itself, and [`tests/test_hvac.py`](../tests/test_hvac.py) parses both to hold that; the project memory borrows `heron_scope`'s knowledge folder and project key |
+| Risk | **READ.** Arithmetic over what it is handed - no model, no network. The one thing kept is a project's governing standards once the modeller has said them ([D-111](decisions/D-111.md)): one small file per project in Heron's own knowledge folder, never the model |
 | Agent | `HERON-MEP-HVD-001`, the first row of a new department, *MEP Design Engineering* - Revit Engineering acts ON a model, this works out what goes INTO one |
 | Audit | `design.hvac`, one line per call: the calculation and how it ended. **Never the inputs** - a people count or a client's design figure is project information, and the trail is never pruned |
 | Refusals | recorded with the codes [`heron_gaps.py`](../brain/heron_gaps.py) classifies: `needs_request_values` (asked), `unusable_request_values` (refused), `unknown_op` (no such calculation) - all three are correct refusals, not gaps |
@@ -90,8 +91,14 @@ that is the whole shape of the thing:
 - **What is built in is what no designer chooses** - D-33's own boundary, *"a technical choice is not
   an assumption"*. Constants of nature and definitions (the Hyland-Wexler coefficients, the exact
   foot), and the constants that belong to a published METHOD (Colebrook's 3.7 and 2.51, Huebscher's
-  1.30, the 0.25 m/s that defines a T50 throw, ASHRAE's 3.9 K long-wave term for a roof). Every answer
-  names its method and sources so the choice can be checked.
+  1.30, the 0.25 m/s that defines a T50 throw, the 3.7 K long-wave term for a roof that ASHRAE's 2017
+  workbook computes - §12 row 8). Every answer names its method and sources so the choice can be
+  checked.
+- **The owner's own figures are the owner's answers, kept as decisions.** A supply diffuser neck in an
+  NC/RC 30 room is held to **2.5 m/s** ([D-110](decisions/D-110.md)) - applied only at that criterion,
+  named as the office's own figure every time, and given way to by any figure the modeller states.
+- **A project's governing standards are asked once, and kept for that project**
+  ([D-111](decisions/D-111.md)) - §11 says which four, and what each one changes.
 - **The air is asked for too.** *"Standard air"* (ASHRAE's 1.204 kg/m3, 20 C, 101.325 kPa) or a
   temperature **and** an altitude - an airflow is a different mass of air in Doha in August than in a
   test lab, and that is a design condition.
@@ -275,7 +282,11 @@ office check value is 0.57 L/s per m2) were worked from the equations, and repro
 - **`diffuser_select`** sizes a neck to a velocity limit - and says NC and throw are the product's -
   or, given the manufacturer's own catalogue rows, interpolates NC and T50 at the design flow and picks
   the first size that meets the NC limit and the throw range. NC at the same neck velocity ranges from
-  18 to 41 between products, which is why Heron holds no velocity rule as if it were an NC.
+  18 to 41 between products, which is why Heron holds no velocity rule as if it were an NC - **with one
+  exception the owner made**: given `max_nc` 30, a supply neck is held to the office's own **2.5 m/s**
+  ([D-110](decisions/D-110.md)), not the 2.2 ASHRAE's table prints, and the answer says whose figure it
+  is. Any other criterion is asked, with ASHRAE's row for it offered; a `max_neck_velocity_ms` the
+  modeller gives always wins; and the product's catalogue NC still governs the product.
 - **`throw`** is the free-jet decay Vx/V0 = K.sqrt(A0)/x solved for x at 0.75, 0.5 and 0.25 m/s, with
   the product's own throw constant K.
 - **`terminal_flows`** splits a room's air across its terminals so the shares add up **exactly**, and
@@ -336,7 +347,8 @@ before it governs a project.** No standard's text is reproduced here; the figure
 | | What is known |
 |---|---|
 | QCS | QCS 2014 Section 22 is *"Air Conditioning, Refrigeration and Ventilation"* - title level only, from two sources. QCS 2024 exists, approved by Ministerial Decision 15/2024 as an optional standard |
-| Which 62.1 edition | **Not established.** Nothing readable says which edition QCS, Civil Defence, Kahramaa or GSAS requires. It is a project input |
+| Which 62.1 edition | **Not established.** Nothing readable says which edition QCS, Civil Defence, Kahramaa or GSAS requires. It is a project input, asked once per project (next row) |
+| Which standards govern a project | **Asked once per project and kept for it** ([D-111](decisions/D-111.md)): `ventilation_standard` (a 62.1 edition, or other), `energy_standard` (a 90.1 edition, other or none), `qcs_edition` (a QCS edition, or none), `cibse_beside_ashrae`. Asked by `ventilation`, `exhaust`, `cooling_load`, `chw_flow`, `fan_power` and `pipe_size`, never as a blocker - the four sit at the top of the answer until known, and each check that needs one says it was not run. Kept in `projects/<key>.hvac.json` in Heron's knowledge folder, named by the open model's Project Information UniqueId; a chat that has not read the model keeps nothing and says so. What they change: an edition other than 62.1-2022 or 90.1-2022 is named beside every figure and check it touches; a project not governed by 62.1 is told the procedure is a comparison; 90.1's coil, fan power and pipe-size limits are raised only on a 90.1 project; QCS 2014 brings the reported conditions below into the load answer, marked unread |
 | District cooling temperatures | **Not established** - Qatar Cool and Kahramaa hosts were blocked. The utility's interface letter is the source; Heron asks for supply and return every time |
 | Climate zone | Doha works out as ASHRAE 169 zone **0B** (extremely hot, dry) from the zone definitions - derived, not looked up in the station list |
 | Design weather | ASHRAE 2017 **monthly** design data for Doha International (WMO 411700) is held as a reference: July 0.4 % is 45.7 C DB with 22.2 C mean coincident WB, heating 11.8 C at 99.6 %, and each month's clear-sky optical depths. Offered, never applied; the annual and dehumidification conditions could not be read |
@@ -348,7 +360,7 @@ before it governs a project.** No standard's text is reproduced here; the figure
 
 | | One side | The other | Who resolves |
 |---|---|---|---|
-| 1 | A supply diffuser neck at **2.5 m/s** for NC/RC 30, in the owner's own AJ-Tools knowledge file | ASHRAE HVAC Applications (2019) Ch. 49 Table 9 as transcribed: **2.2 m/s** supply at RC 30 - 2.5 is RC 35, or RC 30 for a return | the owner, against the Handbook page |
+| 1 | A supply diffuser neck at **2.5 m/s** for NC/RC 30, in the owner's own AJ-Tools knowledge file | ASHRAE HVAC Applications (2019) Ch. 49 Table 9 as transcribed: **2.2 m/s** supply at RC 30 - 2.5 is RC 35, or RC 30 for a return | **resolved 2026-10-02 by the owner: 2.5 m/s governs** ([D-110](decisions/D-110.md)). ASHRAE's table is kept as it prints |
 | 2 | The SI effective draft temperature coefficient **7.66** (the exact conversion of ASHRAE's 0.07 F/fpm) | **8**, in a 2020 journal article | the Fundamentals SI edition, Ch. 20 |
 | 3 | 62.1-2022's stratified Ez rows print **"60 fpm (0.25 m/s)"** | 0.25 m/s is **49 fpm** | ASHRAE's errata |
 | 4 | Public toilet exhaust: the higher rate where **heavy use** is expected (62.1-2022 note D) | the higher rate where the fan runs **intermittently** (IMC-based codes) | the project's adopted code |
@@ -395,6 +407,12 @@ handed nothing computing nothing; refusals; and that the two modules import only
 dispatch - where the SDK is installed, which CI's runner is not, so CI reports that suite as not
 runnable.
 
+Section 7 of the same suite holds the owner's two answers: the office's 2.5 m/s at NC/RC 30 and nowhere
+else ([D-110](decisions/D-110.md)), and a project's standards asked once, kept for that project only,
+replaced with a record of the old, set aside rather than overwritten when unreadable, and not kept at all
+when no project is known ([D-111](decisions/D-111.md)) - against stand-in project keys. The key Revit
+itself reports is NEEDS-CHECKING [Group BT](needs-checking/group-bt.md).
+
 **None of that is a proof in [D-30](decisions/D-30.md)'s sense**, and this engine has no fragment to
 prove. What would carry weight is a **comparison against an engineer's own run**: one real room in HAP
 or TRACE, the same inputs here, and the difference explained - expected to be higher here, for the
@@ -408,7 +426,9 @@ reason §4.2 gives. Until then every answer is marked a design aid.
    but a figure shown beside a question is still a figure shown. Keep it, or show only the table's name?
 2. **Which standards govern a Qatari project** - the 62.1 edition, 90.1 or not, CIBSE alongside ASHRAE -
    is the project's to state. Should Heron ask once per project and remember it (D-33's *asks once*)?
+   **Answered 2026-10-02: yes** - [D-111](decisions/D-111.md), built as §11 describes.
 3. **A friction-sizing fragment in Revit** (§13) - worth the second copy of the arithmetic?
 4. **Skills** - should `space-airflow` and its neighbours name `heron_hvac`, and if so, how does a skill
    name a brain-side calculation?
 5. **Conflict 1 in §12** is your own file against ASHRAE's table - which governs your work?
+   **Answered 2026-10-02: your 2.5 m/s** - [D-110](decisions/D-110.md), built as §8 describes.

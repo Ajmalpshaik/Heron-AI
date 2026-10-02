@@ -44,6 +44,14 @@ WHAT IT PROVES
      other and nothing else - no network, no file, no Revit - and the MCP
      registry declares the tool READ with no bridge operation.
 
+  7. THE OWNER'S TWO ANSWERS HOLD. A supply neck in an NC/RC 30 room is held
+     to the office's 2.5 m/s and the answer says whose figure it is, while
+     any other criterion is still asked (D-110). A project's standards are
+     asked once, never block the arithmetic, are kept for THAT project only,
+     replace an old answer while recording it, survive an unreadable file
+     without overwriting it, and are not kept at all when no project is
+     known (D-111).
+
 WHAT IT DOES NOT PROVE
   That any answer is right for a building. A design value is the engineer's;
   this proves the arithmetic agrees with its sources, not that the inputs
@@ -436,6 +444,186 @@ def reaches_nothing():
     print()
 
 
+FOUR = ("ventilation_standard", "energy_standard", "qcs_edition", "cibse_beside_ashrae")
+STANDARDS = {"ventilation_standard": "ASHRAE 62.1-2022", "energy_standard": "90.1-2022",
+             "qcs_edition": "QCS 2014", "cibse_beside_ashrae": False}
+
+
+def checks_text(answer):
+    return " | ".join(text for _level, text in answer["checks"])
+
+
+def owners_answers():
+    print("7. the owner's two answers hold (D-110, D-111)")
+    # ASKED, NOT CALLED BLIND (.claude/skills/heron-ship s2a): against an engine
+    # without these, every check below must FAIL and say which, not stop the
+    # suite at the first unknown keyword.
+    takes_record = "recorded" in H.run.__code__.co_varnames
+    check(takes_record, "the engine takes a project's record at all - run(..., recorded=)")
+    H_run = H.run
+
+    def run(name, inputs, recorded=None):
+        if takes_record:
+            return H_run(name, inputs, recorded=recorded)
+        return dict(H_run(name, inputs), ask_once=None, standards={})
+
+    def asks(answer):
+        return [q["input"] for q in (answer.get("ask_once") or [])]
+
+    def std_of(answer, name):
+        return (answer.get("standards") or {}).get(name) or {}
+
+    neck = {"flow_ls": 120, "neck_sizes_mm": [150, 200, 250, 300], "neck_shape": "round"}
+
+    at_30 = run("diffuser_select", dict(neck, max_nc=30))
+    limit = result(at_30, "Neck velocity limit") or ""
+    check(at_30["status"] == "ok" and result(at_30, "Neck size") == "250 mm round"
+          and "2.5 m/s" in limit and "D-110" in limit and "2.2" in limit,
+          "an NC/RC 30 room's supply neck is held to the office's 2.5 m/s, and the answer "
+          "says whose figure it is and what ASHRAE prints instead: %s" % limit)
+    at_35 = run("diffuser_select", dict(neck, max_nc=35))
+    asked = [m for m in at_35["missing"] if m["input"] == "max_neck_velocity_ms"]
+    check(at_35["status"] == "missing" and asked and "RC/NC 35" in asked[0].get("reference", ""),
+          "NC 35 is not the office's figure's condition: the limit is ASKED, with ASHRAE's "
+          "row for NC 35 offered beside it")
+    given = run("diffuser_select", dict(neck, max_nc=30, max_neck_velocity_ms=2.0))
+    check(given["status"] == "ok" and result(given, "Neck size") == "300 mm round"
+          and "as given" in (result(given, "Neck velocity limit") or ""),
+          "a figure the modeller states wins over the office's own")
+    nothing = run("diffuser_select", neck)
+    check(nothing["status"] == "missing"
+          and any(m["input"] == "max_neck_velocity_ms" for m in nothing["missing"]),
+          "with no criterion and no limit, nothing is applied - it asks")
+    check(H.reference_lookup("air_terminal_guidance", "RC/NC 30")[1] == 2.2,
+          "ASHRAE's table is kept as ASHRAE prints it - the office's figure sits beside it")
+
+    office = {"system": "single-zone", "zones": [{"name": "office", "area_m2": 100,
+                                                  "people": 5, "rp_ls_per_person": 2.5,
+                                                  "ra_ls_per_m2": 0.3, "ez": 1.0}]}
+    unknown = run("ventilation", office)
+    check(unknown["status"] == "ok" and asks(unknown) == list(FOUR)
+          and "not checked" in checks_text(unknown)
+          and "ASK ONCE FOR THIS PROJECT" in H.describe(unknown),
+          "with the project's standards unknown it still calculates, asks all four ONCE at "
+          "the top of the answer, and says the check it could not run")
+    recorded = dict((k, {"value": v, "recorded": "2026-10-02T00:00:00Z"})
+                    for k, v in STANDARDS.items())
+    kept = run("ventilation", office, recorded=recorded)
+    check(kept.get("ask_once") == [] and std_of(kept, "ventilation_standard").get("from") == "record"
+          and "62.1-2022 governs" in checks_text(kept),
+          "with the project's record handed in, nothing is asked and the check is made")
+    told = run("ventilation", dict(office, ventilation_standard="62.1-2019"), recorded=recorded)
+    check(std_of(told, "ventilation_standard") == {"value": "62.1-2019", "from": "request"}
+          and "follows ASHRAE 62.1-2019" in checks_text(told),
+          "a standard said in the request wins over the record, and an edition Heron's "
+          "tables are not from is said beside the answer")
+    other = run("ventilation", dict(office, ventilation_standard="other"), recorded=recorded)
+    check("a comparison and not the project's requirement" in checks_text(other),
+          "a project not governed by 62.1 is told the procedure is only a comparison")
+
+    coil = {"load_kw": 100, "supply_temp_c": 6, "return_temp_c": 12}
+    none = run("chw_flow", dict(coil, energy_standard="none"), recorded=recorded)
+    check(none["status"] == "ok" and "not this project's" in checks_text(none)
+          and "Section 6.5.4.7) - this one" not in checks_text(none),
+          "a project with no energy code is not held to 90.1's coil rule")
+    applies = run("chw_flow", coil, recorded=recorded)
+    check(any(level == "WARN" and "90.1-2022 applies" in text for level, text in applies["checks"]),
+          "a 90.1 project's 6 K coil is flagged against the 8.33 K rule")
+    loads = run("cooling_load", {"floor_area_m2": 20, "room_dry_bulb_c": 23,
+                                 "people": {"count": 2, "sensible_w_each": 75,
+                                            "latent_w_each": 55}},
+                recorded=recorded)
+    reported = getattr(H, "QCS_2014_REPORTED", "46 C DB / 30 C WB")
+    check(reported in checks_text(loads) and "search summaries" in checks_text(loads),
+          "a QCS 2014 project's load answer carries what QCS 2014 is reported to set, and "
+          "that it was never read in the text")
+    bad = run("ventilation", dict(office, ventilation_standard="62.1"))
+    check(bad["status"] == "refused", "an edition with no year is refused, not guessed")
+    odd = dict(recorded, energy_standard={"value": "Part L", "recorded": "2026-10-02"})
+    again = run("chw_flow", coil, recorded=odd)
+    check(asks(again) == ["energy_standard"],
+          "a recorded answer the engine cannot read is ASKED AGAIN, never repaired")
+    ducts = run("duct_friction", {"flow_ls": 500, "diameter_mm": 300, "standard_air": True,
+                                  "roughness_mm": 0.09, "energy_standard": "90.1-2022"})
+    check("energy_standard" in ducts["ignored"],
+          "a calculation no standard changes names a standard given to it IGNORED")
+
+    import tempfile
+    import shutil
+    try:
+        import heron_hvac_project as KEEP
+    except ImportError:
+        KEEP = None
+    check(KEEP is not None, "the project's record has a module to keep it - heron_hvac_project")
+    import heron_brain as BRAIN
+    seam_takes_project = "project" in BRAIN.hvac.__code__.co_varnames
+    check(seam_takes_project, "the brain seam takes the open model's project - hvac(..., project=)")
+    if KEEP is None or not seam_takes_project:
+        print()
+        return
+    home = tempfile.mkdtemp()
+    was = dict((k, os.environ.get(k)) for k in ("HERON_KNOWLEDGE", "HERON_AUDIT"))
+    os.environ["HERON_KNOWLEDGE"] = home
+    os.environ["HERON_AUDIT"] = os.path.join(home, "audit")
+    try:
+        changes, _note = KEEP.record("PROJECT-A", {"ventilation_standard": "62.1-2022"})
+        check(changes == [("ventilation_standard", None, "62.1-2022")]
+              and KEEP.read("PROJECT-A")[0]["ventilation_standard"]["value"] == "62.1-2022",
+              "an answer is kept for its project and read back")
+        check(KEEP.read("PROJECT-B") == ({}, None)
+              and KEEP.path_for("PROJECT-A") != KEEP.path_for("PROJECT-B"),
+              "another project has its own file and sees nothing of the first's")
+        check(KEEP.record("PROJECT-A", {"ventilation_standard": "62.1-2022"})[0] == [],
+              "the same answer again changes nothing")
+        changes, _note = KEEP.record("PROJECT-A", {"ventilation_standard": "62.1-2019"})
+        held = json.loads(open(KEEP.path_for("PROJECT-A")).read())
+        check(changes == [("ventilation_standard", "62.1-2022", "62.1-2019")]
+              and held["history"][0]["value"] == "62.1-2022",
+              "a changed answer replaces the old one and records the replacement")
+        path = KEEP.path_for("PROJECT-C")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        open(path, "w").write("{not json")
+        values, note = KEEP.read("PROJECT-C")
+        check(values == {} and note and "could not be read" in note,
+              "an unreadable record is reported, and nothing in it is used")
+        KEEP.record("PROJECT-C", {"qcs_edition": "QCS 2014"})
+        aside = [n for n in os.listdir(os.path.dirname(path)) if ".unreadable-" in n]
+        check(len(aside) == 1 and open(os.path.join(os.path.dirname(path), aside[0])).read()
+              == "{not json", "and it is set aside whole, never overwritten, when a new one starts")
+        try:
+            KEEP.path_for(None)
+            named = True
+        except ValueError:
+            named = False
+        check(not named, "no project key, no file - a project is never guessed")
+
+        first = BRAIN.hvac("ventilation", dict(office, **STANDARDS), project="PROJECT-D",
+                           project_name="Tower D")
+        check("kept for this project: ventilation_standard = 62.1-2022" in first["text"]
+              and first["ask_once"] == [],
+              "through the seam, the four answers given once are kept for the open project")
+        second = BRAIN.hvac("ventilation", office, project="PROJECT-D")
+        check(second["ask_once"] == []
+              and second["standards"]["qcs_edition"]["from"] == "record"
+              and "recorded for this project" in second["text"],
+              "and the next answer there asks nothing and says where each came from")
+        elsewhere = BRAIN.hvac("ventilation", office, project="PROJECT-E")
+        check(asks(elsewhere) == list(FOUR),
+              "a different project is asked afresh - nothing crosses between projects")
+        nowhere = BRAIN.hvac("ventilation", dict(office, **STANDARDS), project=None)
+        check("NOT KEPT" in nowhere["text"]
+              and not os.path.exists(os.path.join(home, "projects", "None" + KEEP.SUFFIX)),
+              "with no project known, nothing is kept and the answer says why")
+    finally:
+        for key, value in was.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        shutil.rmtree(home, ignore_errors=True)
+    print()
+
+
 def main():
     physics()
     worked_examples()
@@ -443,6 +631,7 @@ def main():
     never_rounds_down()
     refusals()
     reaches_nothing()
+    owners_answers()
 
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))

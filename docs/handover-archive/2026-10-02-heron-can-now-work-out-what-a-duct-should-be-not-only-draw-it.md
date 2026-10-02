@@ -51,9 +51,23 @@ airflow, duct sizing, diffuser sizing, all kind of things."*
   it produced. The suite now carries ASHRAE's Examples 1 and 4 and water against IAPWS, and docs/41
   says plainly that 1.23 / 3010 / 1.20 were checked by unit conversion, never against the Handbook's page.
 
+**THE OWNER ANSWERED TWO OF F42 THE SAME DAY** - *"Use 2.5 m/s, ask standards once per project."*
+
+- **[D-110](../decisions/D-110.md):** a supply diffuser neck in an NC/RC 30 room is held to the owner's
+  2.5 m/s, not ASHRAE's 2.2 - at that criterion only, named as the office's own figure every time, and
+  given way to by any figure the modeller states. ASHRAE's table is kept as it prints.
+- **[D-111](../decisions/D-111.md):** a project's four governing standards - the 62.1 edition, 90.1 or
+  not, the QCS edition, CIBSE beside ASHRAE - are asked once and kept for that project in
+  [`brain/heron_hvac_project.py`](../../brain/heron_hvac_project.py)'s one file per project. They never
+  block a calculation, and a chat that has not read the model keeps nothing and says so. The real
+  project key is NEEDS-CHECKING [Group BT](../needs-checking/group-bt.md).
+- **Built so a new check FAILS on the old code rather than crashing** - fifteen of section 7's checks
+  go red against the engine before this, with no traceback, and the three that do not are guards that
+  must hold either way.
+
 **WAITING.**
 
-- [F42](../proposals/f42.md) - five owner decisions.
+- [F42](../proposals/f42.md) - three owner decisions left of five.
 - **A comparison against an engineer's own HAP or TRACE run** on one real room is what would carry
   weight; nothing in this session could do it.
 - `tests/test_mcp_serves.py` still fails one check on `main` too - row 5b-263, recorded before this

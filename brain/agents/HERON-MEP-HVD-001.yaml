@@ -47,6 +47,17 @@ output:
     description: >
       Inputs given that this calculation does not read. A mistyped name is
       reported, never quietly dropped.
+  ask_once:
+    type: list
+    description: >
+      The project's governing standards still to be asked - asked once per
+      project and kept for it (D-111). A question, never a blocker: the
+      calculation still runs, and each check that needs one says it was not.
+  standards:
+    type: map
+    description: >
+      The project standards the answer used, each with where it came from -
+      this request, or the project's own record.
   sources:
     type: list
     description: >

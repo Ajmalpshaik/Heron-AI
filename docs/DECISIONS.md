@@ -181,6 +181,8 @@ an edit.
 | [D-107](#d-107--the-ifc-and-dwg-exports-are-publish-so-the-publish-switch-guards-every-export) | The IFC and DWG exports are PUBLISH, so the Publish switch guards every export | ✅ Accepted · 2026-09-28 |
 | [D-108](#d-108--the-modeller-can-see-and-edit-herons-work-in-a-local-companion-page-and-the-chat-stays-the-only-place-to-talk-to-heron) | The modeller can see and edit Heron's work in a local Companion page, and the chat stays the only place to talk to Heron | ✅ Accepted · 2026-09-29 |
 | [D-109](#d-109--a-companion-button-in-revit-opens-the-page-and-a-companion-switch-turns-it-off-without-touching-heron) | A Companion button in Revit opens the page, and a Companion switch turns it off without touching Heron | ✅ Accepted · 2026-09-29 |
+| [D-110](#d-110--a-supply-diffuser-neck-in-an-ncrc-30-room-is-held-to-the-owners-25-ms-not-ashraes-22) | A supply diffuser neck in an NC/RC 30 room is held to the owner's 2.5 m/s, not ASHRAE's 2.2 | ✅ Accepted · 2026-10-02 |
+| [D-111](#d-111--a-projects-governing-standards-are-asked-once-and-kept-for-that-project) | A project's governing standards are asked once and kept for that project | ✅ Accepted · 2026-10-02 |
 
 ## Format
 
@@ -928,3 +930,19 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`HeronCompanionCommands.cs`](../revit/Heron.Revit.Addin/HeronCompanionCommands.cs), [`HeronApplication.cs`](../revit/Heron.Revit.Addin/HeronApplication.cs), [`HeronLiveState.cs`](../revit/Heron.Revit.Addin/HeronLiveState.cs), [`HeronConfig.cs`](../platform/Heron.Core/HeronConfig.cs), [`HeronPaths.cs`](../platform/Heron.Core/HeronPaths.cs), [`heron_config.py`](../mcp/client/heron_config.py), [`heron_companion.py`](../mcp/companion/heron_companion.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py)
 
 **Full record:** [`decisions/D-109.md`](decisions/D-109.md)
+
+## D-110 — A supply diffuser neck in an NC/RC 30 room is held to the owner's 2.5 m/s, not ASHRAE's 2.2
+
+**Status:** Accepted · **Date:** 2026-10-02 · **Answers:** [F42](proposals/f42.md) item 5 · **Source:** Ajmal PS, 2026-10-02, in conversation: *"Use 2.5 m/s, ask standards once per project"*
+**Keeps:** [D-33](#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once) - the figure is the owner's, given once, and named wherever it is used · [D-83](#d-83--an-ingest-may-cross-and-it-carries-the-practice-not-the-count)'s reservation for the first multi-user install
+**Affects:** [`heron_hvac.py`](../brain/heron_hvac.py) - `diffuser_select` and the `air_terminal_guidance` table's note, [`tests/test_hvac.py`](../tests/test_hvac.py), [41 §8 and §12](41-hvac-design.md)
+
+**Full record:** [`decisions/D-110.md`](decisions/D-110.md)
+
+## D-111 — A project's governing standards are asked once and kept for that project
+
+**Status:** Accepted · **Date:** 2026-10-02 · **Answers:** [F42](proposals/f42.md) item 2 · **Source:** Ajmal PS, 2026-10-02, in conversation: *"Use 2.5 m/s, ask standards once per project"*
+**Keeps:** [D-33](#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once) - *it asks once*, scoped to something real: the project · [D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) and Golden Rule 5 - one file per project, never shared sideways
+**Affects:** [`heron_hvac.py`](../brain/heron_hvac.py), [`heron_hvac_project.py`](../brain/heron_hvac_project.py), [`heron_brain.py`](../mcp/server/heron_brain.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py) (its comment only - the risk stays READ), [`tests/test_hvac.py`](../tests/test_hvac.py), [41 §11](41-hvac-design.md)
+
+**Full record:** [`decisions/D-111.md`](decisions/D-111.md)

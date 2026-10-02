@@ -1353,7 +1353,7 @@ _HVAC_REFUSALS = {
 }
 
 
-def hvac(calculation, inputs):
+def hvac(calculation, inputs, project=None, project_name=None):
     """
     One HVAC design calculation - HERON-MEP-HVD-001, docs/41 - or, for an
     empty `calculation`, the list of them and what each needs.
@@ -1361,10 +1361,19 @@ def hvac(calculation, inputs):
     `inputs` is a dict or a JSON object string. The answer is the engine's
     dict plus `text`, the answer as a modeller reads it.
 
-    The engine reads no model, opens no file and changes nothing. One audit
-    line per call (D-62) carries the calculation's name and how it ended, and
-    NEVER its inputs - a room's people count and a client's design figures
-    are project information, and the trail is never pruned.
+    `project` is the open model's project key - DocumentPin.project_key - or
+    None. With one, the project's governing standards are read from what was
+    kept for it and handed to the engine, and any the modeller has just given
+    are kept for it in their place (D-111: asked once per project). With none
+    they serve this answer only, and the answer says so: Heron does not guess
+    which project this is, and filing one client's answer under another's is a
+    breach rather than a bug.
+
+    The engine reads no model and changes nothing; the one file written is
+    that project's own record in Heron's knowledge folder. One audit line per
+    call (D-62) carries the calculation's name and how it ended, and NEVER its
+    inputs - a room's people count and a client's design figures are project
+    information, and the trail is never pruned.
     """
     try:
         import heron_hvac as HVAC
@@ -1380,7 +1389,44 @@ def hvac(calculation, inputs):
         return {"status": "catalogue", "calculation": "",
                 "catalogue": HVAC.catalogue(), "text": HVAC.describe_catalogue()}
 
-    answer = HVAC.run(calculation, inputs)
+    import heron_hvac_project as KEEP
+    memory = []
+    recorded = {}
+    if project:
+        try:
+            recorded, note = KEEP.read(project)
+        except (ValueError, OSError) as why:
+            recorded, note = {}, "nothing kept for this project could be read - %s" % why
+        if note:
+            memory.append(note)
+
+    answer = HVAC.run(calculation, inputs, recorded=recorded)
+    given = dict((name, entry["value"]) for name, entry in answer["standards"].items()
+                 if entry["from"] == "request")
+    kept = 0
+    if (given or answer["ask_once"]) and not project:
+        memory.append("NOT KEPT - Heron does not know which project this is yet. It learns "
+                      "that from the open model: ask it to select or count something in "
+                      "Revit first, and the project's standards are kept for it from then "
+                      "on (D-111). It will not guess (D-33).")
+    elif given:
+        try:
+            changes, note = KEEP.record(project, given, project_name)
+        except (ValueError, OSError) as why:
+            changes, note = [], "NOT KEPT - %s" % why
+        if note:
+            memory.append(note)
+        for name, old, new in changes:
+            if old is None:
+                memory.append("kept for this project: %s = %s - not asked again here"
+                              % (name, HVAC.standard_text(new)))
+            else:
+                memory.append("changed for this project: %s %s -> %s - the old answer "
+                              "stays in the project's record" % (
+                                  name, HVAC.standard_text(old), HVAC.standard_text(new)))
+        kept = len(changes)
+    answer["memory"] = memory
+
     status = answer["status"]
     _audit().record("design.hvac", status == "ok",
                     fields={"calculation": answer["calculation"], "status": status,
@@ -1389,7 +1435,9 @@ def hvac(calculation, inputs):
                              "refused": len(answer["refused"]),
                              "ignored": len(answer["ignored"]),
                              "failed_checks": sum(1 for level, _text in answer["checks"]
-                                                  if level == "FAIL")})
+                                                  if level == "FAIL"),
+                             "asked_once": len(answer["ask_once"]),
+                             "standards_kept": kept})
     answer["text"] = HVAC.describe(answer)
     return answer
 

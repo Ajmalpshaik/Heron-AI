@@ -47,6 +47,18 @@ A factor that would REDUCE a load - a lighting use factor, a diversity, a
 safety margin taken off - is never invented either. Not given means not
 applied, and the answer says so, so an omission errs toward the larger number.
 
+TWO THINGS THE OWNER HAS ANSWERED, AND BOTH ARE SAID OUT LOUD
+--------------------------------------------------------------
+A supply diffuser's neck in an NC/RC 30 room is held to the owner's own
+2.5 m/s, not the 2.2 ASHRAE's table prints (D-110): a figure the owner gave
+once, applied only where its condition holds, named every time it is, and
+given way to by any figure the modeller states. And a project's governing
+standards - its 62.1 and 90.1 editions, its QCS edition, CIBSE beside ASHRAE -
+are asked ONCE per project and kept for it (D-111). They never block a
+calculation; until they are known, the checks that need them say so. The
+caller keeps them and hands them back as `recorded`, so this file still reads
+no store.
+
 IT READS NO MODEL AND CHANGES NOTHING
 -------------------------------------
 Pure arithmetic over what it is handed: no Revit, no network, no file, no
@@ -435,10 +447,17 @@ _WATER_UNITS = (("ls", 1.0, "L/s"), ("m3h", 1.0 / 3.6, "m3/h"),
 class Answer(object):
     """One calculation's answer, built while it runs."""
 
-    def __init__(self, name, inputs):
+    def __init__(self, name, inputs, recorded=None):
         self.name = name
         self.views = []
         self.top = Inputs(self, "", inputs if isinstance(inputs, dict) else {})
+        # The project's governing standards as RECORDED for it, handed in by
+        # the caller (D-111) - this file reads no store. What this answer used
+        # goes in `standards`, with where each came from; what is still not
+        # known goes in `ask_once`, which is a question and never a blocker.
+        self.recorded = recorded if isinstance(recorded, dict) else {}
+        self.standards = collections.OrderedDict()
+        self.ask_once = []       # dicts: input, unit, why
         self.missing = []        # dicts: input, unit, why, reference
         self.refused = []        # sentences
         self.results = []        # (label, text)
@@ -995,6 +1014,11 @@ _ref("chilled_water_practice", "Chilled-water coil selection",
           "utility's to state - no Qatar Cool or Kahramaa figure could be checked here.")
 
 
+# What QCS 2014 Section 22 Part 1 is REPORTED to set - read only in search
+# summaries, never in the QCS text. One home, used by the table below and by
+# the check a QCS 2014 project gets (D-111).
+QCS_2014_REPORTED = ("46 C DB / 30 C WB outdoors and 23 +/- 1 C, 50 +/- 5 % indoors")
+
 _ref("design_weather", "Design weather - Doha International (WMO 411700)",
      "ASHRAE Handbook - Fundamentals 2017, climatic design data, as ASHRAE's own "
      "2017 load-calculation workbook carries it",
@@ -1010,8 +1034,8 @@ _ref("design_weather", "Design weather - Doha International (WMO 411700)",
           "10.7 m, UTC+3. The peak dry bulb is DRY air - July's 45.7/22.2 C holds 7.1 g/kg, "
           "less than a 23 C 50 % room - so latent and coil loads need the "
           "dehumidification design condition. QCS 2014 Section 22 Part 1 is reported to "
-          "specify 46 C DB / 30 C WB outdoors and 23 +/- 1 C, 50 +/- 5 % indoors - read "
-          "only in search summaries; confirm against the QCS text.")
+          "specify " + QCS_2014_REPORTED + " - read only in search summaries; confirm "
+          "against the QCS text.")
 
 _ref("sol_air", "Absorptance over outside surface coefficient, for sol-air temperature",
      "ASHRAE Handbook - Fundamentals Ch. 18, as ASHRAE's own 2017 worked example uses it",
@@ -1155,7 +1179,18 @@ _ref("air_terminal_guidance", "Neck velocity for a room criterion, when no produ
       ("RC/NC 30", 2.2, 2.5), ("RC/NC 25", 1.8, 2.2)],
      note="a screening limit for ONE outlet with no damper in its neck; the product's own "
           "catalogue NC governs, and NC at the same neck velocity ranges widely between "
-          "products. Read from a transcription that cites the Handbook page.")
+          "products. Read from a transcription that cites the Handbook page. For a SUPPLY "
+          "neck at NC/RC 30 the owner's own figure, 2.5 m/s, is used instead of this "
+          "table's 2.2 (D-110); the table is kept as ASHRAE prints it.")
+
+# The office's own figures. Each is the OWNER's answer, recorded as a decision -
+# not a standard's figure and not Heron's. Applied only where its condition
+# holds, said out loud every time it is, and given way to by any figure the
+# modeller states. It is the owner's, so it goes with the owner to every
+# project; the day a second office uses Heron it is theirs to replace (D-110,
+# as D-83 reserves for the same day).
+OFFICE_SUPPLY_NECK_NC = 30         # the room criterion the figure is for, NC/RC
+OFFICE_SUPPLY_NECK_MS = 2.5        # supply diffuser neck velocity at it, m/s - D-110
 
 _ref("comfort_air_speed", "Average air speed limits without occupant control",
      "ANSI/ASHRAE 55-2023 Section 5.3.4.2",
@@ -1165,6 +1200,174 @@ _ref("comfort_air_speed", "Average air speed limits without occupant control",
       ("below 23.0 C", "0.2 m/s (unless clothing above 0.7 clo or activity above 1.3 met)")],
      note="ankle draft (Section 5.3.5.3): air speed 0.1 m above the floor below "
           "0.35 TS + 0.39 m/s, TS being the whole-body thermal sensation.")
+
+
+# ---------------------------------------------------------------------------
+# The project's governing standards - asked ONCE per project and kept for it
+# (D-111). None of the four could be established from any source this engine
+# was built from, and each changes what an answer may check. They never block
+# a calculation: one that depends on them still calculates, puts the questions
+# at the top of its answer, and says which checks it could not run. The caller
+# keeps the answers (heron_hvac_project.py, through the brain seam) and hands
+# them back as `recorded` - this file still reads no store.
+# ---------------------------------------------------------------------------
+
+PROJECT_STANDARDS = collections.OrderedDict([
+    ("ventilation_standard",
+     ("62.1-<year>, or other",
+      "which edition of ASHRAE 62.1 governs this project's outdoor air - other if "
+      "something else does")),
+    ("energy_standard",
+     ("90.1-<year>, other or none",
+      "whether ASHRAE 90.1 applies to this project, and which edition - other for "
+      "another energy code, none for none")),
+    ("qcs_edition",
+     ("QCS <year>, or none",
+      "which edition of the Qatar Construction Specifications governs - none "
+      "outside Qatar")),
+    ("cibse_beside_ashrae",
+     ("true or false", "whether CIBSE guidance is used beside ASHRAE on this project")),
+])
+
+# The editions this engine's tables and clauses were taken from. A project that
+# follows another edition is told so beside every figure and check it touches.
+HELD_62_1 = "62.1-2022"
+HELD_90_1 = "90.1-2022"
+NO_STANDARD = "none"
+OTHER_STANDARD = "other"
+
+# Each standard as (the publishers' words a person may put before it, the
+# number that names it, how an edition of it is written).
+_EDITIONS = {
+    "ventilation_standard": (("ansi", "ashrae", "ies"), "62.1", "62.1-%d"),
+    "energy_standard": (("ansi", "ashrae", "ies"), "90.1", "90.1-%d"),
+    "qcs_edition": (("qcs",), "", "QCS %d"),
+}
+_WORDS = {"ventilation_standard": (OTHER_STANDARD,),
+          "energy_standard": (OTHER_STANDARD, NO_STANDARD),
+          "qcs_edition": (NO_STANDARD,)}
+
+
+def _edition_year(text, publishers, number):
+    """The year in "ASHRAE 62.1-2022", "62.1 2022" or "QCS 2014", or None."""
+    words = [w for w in text.replace("/", " ").replace("-", " ").split()
+             if w not in publishers]
+    rest = "".join(words)
+    if not rest.startswith(number):
+        return None
+    rest = rest[len(number):]
+    if len(rest) == 4 and rest.isdigit() and 1980 <= int(rest) <= 2099:
+        return int(rest)
+    return None
+
+
+def standard_value(name, raw):
+    """One project standard as said, normalised - or Refused saying what is accepted."""
+    unit = PROJECT_STANDARDS[name][0]
+    if name == "cibse_beside_ashrae":
+        if isinstance(raw, bool):
+            return raw
+        word = str(raw).strip().lower()
+        if word in ("true", "yes", "y", "1"):
+            return True
+        if word in ("false", "no", "n", "0"):
+            return False
+        raise Refused("%s must be true or false - got %r" % (name, raw))
+    text = " ".join(str(raw).strip().lower().replace("_", " ").split())
+    if text in _WORDS[name]:
+        return text
+    publishers, number, form = _EDITIONS[name]
+    year = _edition_year(text, publishers, number)
+    if year is not None:
+        return form % year
+    raise Refused("%s must be %s - got %r" % (name, unit, raw))
+
+
+def standard_text(value):
+    """A project standard as a person reads it."""
+    if value is True:
+        return "yes"
+    if value is False:
+        return "no"
+    return str(value)
+
+
+def project_standards(a):
+    """
+    The four project standards for this answer - each from this request, else
+    from the project's record, else None, and every None put to the modeller
+    as an ask-once question. A value given here wins over the record, and the
+    caller keeps it in the record's place, the old one in its history.
+    """
+    out = collections.OrderedDict()
+    for name, (unit, why) in PROJECT_STANDARDS.items():
+        raw = a.raw(name)
+        if raw is not None and raw != "":
+            try:
+                out[name] = standard_value(name, raw)
+            except Refused as why_not:
+                a.refuse(str(why_not))
+                out[name] = None
+                continue
+            a.standards[name] = {"value": out[name], "from": "request"}
+            continue
+        kept = a.recorded.get(name)
+        value = None
+        if isinstance(kept, dict) and "value" in kept:
+            try:
+                value = standard_value(name, kept["value"])
+            except Refused:
+                # A record this engine cannot read is ASKED AGAIN, never
+                # repaired into the nearest thing it might have meant.
+                value = None
+        if value is None:
+            a.ask_once.append({"input": name, "unit": unit, "why": why})
+        else:
+            a.standards[name] = {"value": value, "from": "record",
+                                 "recorded": kept.get("recorded")}
+        out[name] = value
+    if out.get("cibse_beside_ashrae"):
+        a.check("WARN", "this project uses CIBSE beside ASHRAE and Heron holds no CIBSE "
+                        "data - where CIBSE sets a figure, take it from the CIBSE guide")
+    return out
+
+
+def _applies_90_1(energy):
+    """True if ASHRAE 90.1 applies to the project, False if not, None if not known yet."""
+    return None if energy is None else energy.startswith("90.1-")
+
+
+def _edition_said(edition, held):
+    """'' when the project follows the edition Heron holds, else the clause saying it does not."""
+    if edition is None or edition == held:
+        return ""
+    return "; this project follows %s, so confirm it in that edition" % edition
+
+
+def _for_project(sentence, edition, held, family):
+    """An offered figure, with the project's own edition beside it when that differs."""
+    if not sentence or edition is None or edition == held:
+        return sentence
+    if edition in (OTHER_STANDARD, NO_STANDARD):
+        return "%s; %s does not govern this project" % (sentence, family)
+    return "%s; this project follows %s - read that edition's figure" % (sentence, edition)
+
+
+def _check_62_1(a, edition, what):
+    """The answer's line on which standard governs the outdoor air it was worked to."""
+    if edition is None:
+        a.check("WARN", "not checked: which standard governs this project's outdoor air is "
+                        "not known yet - %s ASHRAE %s's" % (what, HELD_62_1))
+    elif edition == OTHER_STANDARD:
+        a.check("WARN", "this project's outdoor air is governed by something other than "
+                        "ASHRAE 62.1 - this is 62.1's procedure, a comparison and not the "
+                        "project's requirement")
+    elif edition != HELD_62_1:
+        a.check("WARN", "this project follows ASHRAE %s and %s ASHRAE %s's - confirm each "
+                        "figure in %s" % (edition, what, HELD_62_1, edition))
+    else:
+        a.check("OK", "ASHRAE %s governs this project's outdoor air, and %s that edition's"
+                % (edition, what))
 
 
 # ---------------------------------------------------------------------------
@@ -1826,6 +2029,7 @@ def calc_cooling_load(a):
 
     Not an hourly simulation. Every answer says so (NOT_HAP).
     """
+    qcs = project_standards(a)["qcs_edition"]
     area = a.number("floor_area_m2", "m2", "floor area of the room", 0.5, 1e6, positive=True)
     height = a.number("room_height_m", "m", "room height - for the volume, ACH and an "
                       "infiltration rate given in ACH", 1.5, 60, required=False, positive=True)
@@ -1933,6 +2137,17 @@ def calc_cooling_load(a):
         a.result("Coil load (room + outdoor air)", power_text(total + oqs + oql))
         a.uses("coil load = room load + outdoor air brought from the outdoor to the room "
                "condition; duct heat gain and return-air gains are not included")
+    if qcs is None:
+        a.check("WARN", "not checked: which edition of the QCS governs this project is "
+                        "not known yet")
+    elif qcs == "QCS 2014":
+        a.check("WARN", "QCS 2014 governs this project: its Section 22 is reported - in "
+                        "search summaries only - to set %s. Heron could not read the QCS "
+                        "text, so confirm the conditions used here against it"
+                % QCS_2014_REPORTED)
+    elif qcs != NO_STANDARD:
+        a.check("WARN", "%s governs this project and Heron holds nothing from it - take "
+                        "its design conditions from the text" % qcs)
     a.uses(NOT_HAP)
     a.cite(SRC_LOADS)
     if out.standard:
@@ -2145,6 +2360,7 @@ def calc_ventilation(a):
 
     Every rate is the modeller's: name a zone's `occupancy` and the 62.1 figures Heron holds for it are OFFERED beside the question, never applied.
     """
+    edition = project_standards(a)["ventilation_standard"]
     system = a.choice("system", SYSTEMS, "the kind of system serving the zones - one zone, "
                       "100 % outdoor air (a DOAS), or several zones on one recirculating unit")
     zones = a.records("zones", "each zone: name, occupancy, area_m2, people, "
@@ -2177,18 +2393,24 @@ def calc_ventilation(a):
                       "and column enclosures out, furniture in", 0, 1e6, positive=True)
         pz = z.number("people", "people", "the zone's design population - the peak "
                       "expected during typical use", 0, 1e5,
-                      reference=_default_people(occupancy, az))
+                      reference=_for_project(_default_people(occupancy, az), edition,
+                                             HELD_62_1, "ASHRAE 62.1"))
         rp = z.number("rp_ls_per_person", "L/s per person", "outdoor air per person for "
                       "this occupancy", 0, 50,
-                      reference=offer("ventilation_rates", occupancy, "Rp L/s per person",
-                                      "L/s per person") or offer_table("ventilation_rates"))
+                      reference=_for_project(
+                          offer("ventilation_rates", occupancy, "Rp L/s per person",
+                                "L/s per person") or offer_table("ventilation_rates"),
+                          edition, HELD_62_1, "ASHRAE 62.1"))
         ra = z.number("ra_ls_per_m2", "L/s per m2", "outdoor air per floor area for this "
                       "occupancy", 0, 10,
-                      reference=offer("ventilation_rates", occupancy, "Ra L/s per m2",
-                                      "L/s per m2") or offer_table("ventilation_rates"))
+                      reference=_for_project(
+                          offer("ventilation_rates", occupancy, "Ra L/s per m2",
+                                "L/s per m2") or offer_table("ventilation_rates"),
+                          edition, HELD_62_1, "ASHRAE 62.1"))
         ez = z.number("ez", "factor", "zone air distribution effectiveness for how air "
                       "is supplied and returned", 0.5, 1.5,
-                      reference=offer_table("zone_air_distribution"))
+                      reference=_for_project(offer_table("zone_air_distribution"), edition,
+                                             HELD_62_1, "ASHRAE 62.1"))
         vpz = None
         if system == "multiple-zone" and method == "appendix-a":
             vpz = z.flow("the zone's LOWEST primary (supply) airflow at the design "
@@ -2208,6 +2430,7 @@ def calc_ventilation(a):
                     "vbz": vbz, "voz": voz, "vpz": vpz})
     a.uses("Vbz = Rp.Pz + Ra.Az (breathing zone);  Voz = Vbz / Ez (zone)")
     a.cite(SRC_6221)
+    _check_62_1(a, edition, "the procedure and the rates Heron offers are")
     sum_pz = sum(z["pz"] for z in out)
     if system == "single-zone":
         vot = out[0]["voz"]
@@ -2294,6 +2517,8 @@ def calc_ventilation(a):
 @calculation("exhaust", "Exhaust airflow and pressure balance", "ventilation")
 def calc_exhaust(a):
     """Exhaust airflow summed from fixture counts or floor areas at the modeller's rates - toilets, kitchens, stores - and how it balances against the air supplied to the same space."""
+    edition = project_standards(a)["ventilation_standard"]
+    rates = _for_project(offer_table("exhaust_rates"), edition, HELD_62_1, "ASHRAE 62.1")
     items = a.records("items", "each: name, and count with rate_ls_each, or area_m2 with "
                       "rate_ls_per_m2")
     supply = a.flow("air supplied to the same space - for the balance", prefix="supply_flow",
@@ -2304,13 +2529,13 @@ def calc_exhaust(a):
         if item.has("count") or item.has("rate_ls_each"):
             n = item.number("count", "fixtures", "how many", 0, 1e5)
             r = item.number("rate_ls_each", "L/s each", "exhaust per fixture", 0, 5000,
-                            reference=offer_table("exhaust_rates"))
+                            reference=rates)
             if None not in (n, r):
                 rows.append([name, n * r, "%s x %s L/s" % (_g(n), _g(r))])
         else:
             ar = item.number("area_m2", "m2", "floor area exhausted (or count)", 0, 1e6)
             r = item.number("rate_ls_per_m2", "L/s per m2", "exhaust per floor area", 0, 100,
-                            reference=offer_table("exhaust_rates"))
+                            reference=rates)
             if None not in (ar, r):
                 rows.append([name, ar * r, "%s m2 x %s L/s.m2" % (_g(ar), _g(r))])
     if a.incomplete():
@@ -2328,6 +2553,7 @@ def calc_exhaust(a):
             a.result("Balance", "%s L/s more supply than exhaust - positive pressure"
                      % _f(net, 1))
     a.cite(SRC_6221)
+    _check_62_1(a, edition, "the exhaust rates Heron offers are")
 
 
 # --- ducts -------------------------------------------------------------------
@@ -2688,6 +2914,7 @@ def calc_duct_pressure(a):
 @calculation("fan_power", "Fan power and specific fan power", "fan")
 def calc_fan_power(a):
     """The power a fan draws for an airflow and a total pressure through its fan, motor and drive efficiencies, and the specific fan power that results."""
+    energy = project_standards(a)["energy_standard"]
     q = a.flow("fan airflow")
     dp = a.number("total_pressure_pa", "Pa", "fan total pressure", 1, 10000,
                   reference="duct_pressure sums it along the index run")
@@ -2715,6 +2942,17 @@ def calc_fan_power(a):
         a.check("OK" if sfp <= limit else "FAIL",
                 "specific fan power %s W per L/s against the %s given"
                 % (_f(sfp, 3), _g(limit)))
+    elif _applies_90_1(energy) is None:
+        a.check("WARN", "not checked against an energy code: whether one applies to this "
+                        "project is not known yet")
+    elif _applies_90_1(energy):
+        a.check("WARN", "ASHRAE %s applies to this project and limits the fan power of a "
+                        "system above 5 hp - `reference fan_power_limits` holds %s's "
+                        "limits; give sfp_limit_w_per_ls to check against one%s"
+                % (energy, HELD_90_1, _edition_said(energy, HELD_90_1)))
+    elif energy == OTHER_STANDARD:
+        a.check("WARN", "this project's energy code is not ASHRAE 90.1 - give its fan power "
+                        "limit as sfp_limit_w_per_ls to check against it")
     a.uses("air power = Q x dp; shaft = air / fan efficiency; input = shaft / (motor x drive)")
     a.cite(SRC_FAN)
 
@@ -2858,6 +3096,41 @@ def _interpolate(points, x):
     return None
 
 
+def _neck_limit(a):
+    """
+    (limit in m/s, the sentence saying whose it is) for a supply neck: the
+    modeller's own figure when given; else the office's own for an NC/RC 30
+    room (D-110); else a question, with ASHRAE's row for the room's criterion
+    offered beside it. (None, None) when it is still a question.
+    """
+    nc = a.number("max_nc", "NC", "the room's noise criterion, NC or RC - for an NC/RC %d "
+                  "room the office's own %s m/s neck limit applies (D-110)"
+                  % (OFFICE_SUPPLY_NECK_NC, _g(OFFICE_SUPPLY_NECK_MS)), 10, 70,
+                  required=False)
+    if a.has("max_neck_velocity_ms"):
+        given = a.number("max_neck_velocity_ms", "m/s", "the neck velocity not to exceed",
+                         0.5, 15)
+        return given, None if given is None else "%s m/s, as given" % _g(given)
+    ashrae = reference_lookup("air_terminal_guidance", "RC/NC %d" % OFFICE_SUPPLY_NECK_NC)
+    if nc is not None and abs(nc - OFFICE_SUPPLY_NECK_NC) < 1e-9:
+        return OFFICE_SUPPLY_NECK_MS, (
+            "%s m/s - the office's own figure for a supply neck at NC/RC %d (D-110), not "
+            "the %s m/s in %s; give max_neck_velocity_ms to use another"
+            % (_g(OFFICE_SUPPLY_NECK_MS), OFFICE_SUPPLY_NECK_NC,
+               _g(ashrae[1]) if ashrae else "-",
+               REFERENCES["air_terminal_guidance"]["source"]))
+    row = None
+    if nc is not None and abs(nc - round(nc)) < 1e-9:
+        row = offer("air_terminal_guidance", "RC/NC %d" % int(round(nc)),
+                    "supply outlet neck m/s", "m/s")
+    a.need("max_neck_velocity_ms", "m/s (or max_nc)",
+           "the neck velocity not to exceed - the manufacturer's guidance for the NC "
+           "wanted. For an NC/RC %d room give max_nc instead: the office's own %s m/s "
+           "applies (D-110)" % (OFFICE_SUPPLY_NECK_NC, _g(OFFICE_SUPPLY_NECK_MS)),
+           row or offer_table("air_terminal_guidance"))
+    return None, None
+
+
 @calculation("diffuser_select", "Diffuser or grille selection", "diffuser")
 def calc_diffuser_select(a):
     """Picks a diffuser size for a flow - from neck sizes and a neck-velocity limit, or from the manufacturer's own catalogue rows with an NC limit and a throw range.
@@ -2871,9 +3144,7 @@ def calc_diffuser_select(a):
         sizes = a.numbers("neck_sizes_mm", "mm", "the neck sizes the product comes in",
                           25, 2000)
         neck = a.choice("neck_shape", ("round", "square"), "round or square necks")
-        vmax = a.number("max_neck_velocity_ms", "m/s", "the neck velocity not to exceed - "
-                        "the manufacturer's guidance for the NC wanted", 0.5, 15,
-                        reference=offer_table("air_terminal_guidance"))
+        vmax, limit_said = _neck_limit(a)
         if a.incomplete():
             return
         for s in sorted(sizes):
@@ -2882,6 +3153,7 @@ def calc_diffuser_select(a):
             if v <= vmax + 1e-12:
                 a.result("Neck size", "%s mm %s" % (_f(s, 0), neck))
                 a.result("Neck velocity", velocity_text(v))
+                a.result("Neck velocity limit", limit_said)
                 a.result("Neck velocity pressure", pressure_text(1.2 * v * v / 2.0)
                          + " (at 1.2 kg/m3)")
                 a.check("WARN", "NC and throw are the product's - check this size at "
@@ -3039,6 +3311,7 @@ def calc_grille_velocity(a):
 @calculation("chw_flow", "Chilled-water flow for a coil load", "water")
 def calc_chw_flow(a):
     """The chilled-water flow a coil load needs between the supply and return temperatures given - in L/s, m3/h and US gpm."""
+    energy = project_standards(a)["energy_standard"]
     load = a.power_w("coil load", prefix="load")
     ts = a.number("supply_temp_c", "C", "chilled-water supply temperature", 0.5, 30,
                   reference=offer_table("chilled_water_practice"))
@@ -3060,16 +3333,27 @@ def calc_chw_flow(a):
     a.uses("m = Q / (cp dT), with density and cp at the mean water temperature")
     a.cite(SRC_WATER)
     rise_ok, leaving_ok = tr - ts >= 8.33 - 1e-9, tr >= 13.89 - 1e-9
-    a.check("OK" if rise_ok and leaving_ok else "WARN",
-            "where the project follows ASHRAE 90.1-2022 (Section 6.5.4.7), a coil is selected "
-            "for at least 8.33 K rise and 13.89 C leaving water, with exceptions: this one is "
-            "%s K and %s C" % (_f(tr - ts, 2), _f(tr, 2)))
+    rule = ("a coil is selected for at least 8.33 K rise and 13.89 C leaving water, with "
+            "exceptions (%s Section 6.5.4.7) - this one is %s K and %s C"
+            % (HELD_90_1, _f(tr - ts, 2), _f(tr, 2)))
+    applies = _applies_90_1(energy)
+    if applies is None:
+        a.check("WARN", "not checked: whether ASHRAE 90.1 applies to this project is not "
+                        "known yet. Where it does, " + rule)
+    elif applies:
+        a.check("OK" if rise_ok and leaving_ok else "WARN",
+                "ASHRAE %s applies to this project: %s%s"
+                % (energy, rule, _edition_said(energy, HELD_90_1)))
+    else:
+        a.check("OK", "ASHRAE 90.1's coil selection rule is not this project's - its energy "
+                      "standard is %s" % energy)
     a.check("OK", "next: pipe_size with this flow")
 
 
 @calculation("pipe_size", "Water pipe sizing", "water")
 def calc_pipe_size(a):
     """Sizes a water pipe - or several - to a friction rate, a velocity limit or both, from the internal diameters of the pipe the project uses."""
+    energy = project_standards(a)["energy_standard"]
     items = a.records("items", "several pipes at once: id and flow_ls for each",
                       required=False)
     q = None if items else a.flow("water flow in the pipe (or items for several)", water=True)
@@ -3144,6 +3428,15 @@ def calc_pipe_size(a):
         a.table("Pipe sizes", ("id", "L/s", "pipe", "m/s", "Pa/m", "m/100 m"), table)
     a.result("Water", "%s C - %s kg/m3, %s mPa.s" % (_f(t, 1), _f(rho, 2), _f(mu * 1000.0, 4)))
     a.result("Roughness", rough_note)
+    if _applies_90_1(energy) is None:
+        a.check("WARN", "not checked: whether ASHRAE 90.1 applies to this project is not "
+                        "known yet - where it does, it caps a pipe's flow by its size and "
+                        "operating hours")
+    elif _applies_90_1(energy):
+        a.check("WARN", "ASHRAE %s applies to this project: it caps a pipe's flow by its "
+                        "size and operating hours - `reference pipe_design_guidance` holds "
+                        "%s's Table 6.5.4.6; check each size chosen against it%s"
+                % (energy, HELD_90_1, _edition_said(energy, HELD_90_1)))
     a.uses("smallest bore meeting every limit given; Darcy-Weisbach with Colebrook")
     a.cite(SRC_WATER)
     a.into_revit("SET_MEP_SIZE sets a pipe's diameter; AUTO_SIZE_PIPE is the in-model method")
@@ -3200,27 +3493,34 @@ def parse_inputs(text):
     return value
 
 
-def run(name, inputs=None):
+def run(name, inputs=None, recorded=None):
     """
     One calculation, as a dict whose `status` is ok, missing, refused or unknown.
 
     A calculation that did not complete carries no results at all - a partial
     answer is not shown as a smaller one.
+
+    `recorded` is the project's governing standards as kept for it - a dict of
+    name to {"value", "recorded"} - and the caller's to keep (D-111). The answer
+    says which standards it used and where each came from (`standards`), and
+    which are still to be asked once (`ask_once`), whatever its status: an
+    answer given in a call that is missing something else is still an answer.
     """
     key = (name or "").strip().lower().replace("-", "_").replace(" ", "_")
     if key not in CALCULATIONS:
         return {"calculation": key, "status": "unknown", "title": None,
                 "known": list(CALCULATIONS), "missing": [], "refused": [],
                 "ignored": [], "results": [], "tables": [], "checks": [], "method": [],
-                "sources": [], "assumed": [], "next": [], "csv": None}
+                "sources": [], "assumed": [], "next": [], "csv": None,
+                "standards": {}, "ask_once": [], "memory": []}
     if not isinstance(inputs, dict):
         try:
             inputs = parse_inputs(inputs)
         except Refused as why:
-            answer = Answer(key, {})
+            answer = Answer(key, {}, recorded)
             answer.refuse(str(why))
             return _as_dict(answer, CALCULATIONS[key])
-    answer = Answer(key, inputs)
+    answer = Answer(key, inputs, recorded)
     try:
         CALCULATIONS[key]["run"](answer)
     except (Refused, PSY.PsychroRangeError) as why:
@@ -3246,6 +3546,11 @@ def _as_dict(answer, entry):
         "assumed": answer.assumed if done else [],
         "next": answer.next if done else [],
         "csv": answer.csv if done else None,
+        "standards": dict(answer.standards),
+        "ask_once": answer.ask_once,
+        # What the caller did with the project's standards - kept, changed, or
+        # not kept for want of a project. The caller's to fill in (D-111).
+        "memory": [],
     }
 
 
@@ -3264,7 +3569,8 @@ def catalogue():
         needs = [m["input"] for m in answer.missing]
         out.append({"calculation": key, "title": entry["title"], "group": entry["group"],
                     "purpose": entry["purpose"], "needs": needs,
-                    "optional": [o[0] for o in answer.optional if o[0] not in needs]})
+                    "optional": [o[0] for o in answer.optional if o[0] not in needs],
+                    "asks_once": [q["input"] for q in answer.ask_once]})
     return out
 
 
@@ -3278,6 +3584,19 @@ def _table_text(table):
         if n == 0:
             lines.append("    " + "  ".join("-" * w for w in widths))
     return lines
+
+
+def _standards_lines(answer):
+    """The project standards an answer used, where each came from, and what was kept."""
+    out = []
+    for name, entry in (answer.get("standards") or {}).items():
+        if entry.get("from") == "record":
+            where = "recorded for this project %s" % (entry.get("recorded") or "")[:10]
+        else:
+            where = "given in this request"
+        out.append("  %-21s %-10s %s" % (name, standard_text(entry["value"]), where))
+    out.extend("  %s" % line for line in answer.get("memory") or [])
+    return out
 
 
 def describe(answer):
@@ -3304,11 +3623,22 @@ def describe(answer):
             lines.append("  - %s  [%s]  %s" % (m["input"], m["unit"], m["why"]))
             if m.get("reference"):
                 lines.append("      reference: %s" % m["reference"])
+    if answer.get("ask_once"):
+        lines.append("")
+        lines.append("ASK ONCE FOR THIS PROJECT - which standards govern it. Heron keeps the "
+                     "answers for the project and does not ask again (D-111); until then the "
+                     "checks that depend on them are not run:")
+        for q in answer["ask_once"]:
+            lines.append("  - %s  [%s]  %s" % (q["input"], q["unit"], q["why"]))
     if answer["ignored"]:
         lines.append("")
         lines.append("IGNORED - not an input of this calculation, so nothing was worked out "
                      "from it: %s" % ", ".join(answer["ignored"]))
     if status != "ok":
+        if answer.get("memory"):
+            lines.append("")
+            lines.append("PROJECT STANDARDS")
+            lines.extend(_standards_lines(answer))
         lines.append("")
         lines.append("Nothing was calculated.")
         return "\n".join(lines)
@@ -3328,6 +3658,10 @@ def describe(answer):
         lines.append("")
         lines.append("CHECKS")
         lines.extend("  %-4s  %s" % (level, text) for level, text in answer["checks"])
+    if answer.get("standards") or answer.get("memory"):
+        lines.append("")
+        lines.append("PROJECT STANDARDS")
+        lines.extend(_standards_lines(answer))
     if answer["assumed"]:
         lines.append("")
         lines.append("NOT GIVEN, SO NOT APPLIED")
@@ -3364,6 +3698,13 @@ def describe_catalogue():
             lines.append("      needs: %s" % ", ".join(entry["needs"]))
         if entry["optional"]:
             lines.append("      may take: %s" % ", ".join(entry["optional"]))
+        if entry["asks_once"]:
+            lines.append("      asks once per project: %s" % ", ".join(entry["asks_once"]))
+    lines.append("")
+    lines.append("A project's governing standards are asked once and kept for that project "
+                 "(D-111). A supply diffuser neck in an NC/RC %d room is held to the "
+                 "office's own %s m/s (D-110)." % (OFFICE_SUPPLY_NECK_NC,
+                                                   _g(OFFICE_SUPPLY_NECK_MS)))
     lines.append("")
     lines.append(DISCLAIMER)
     return "\n".join(lines)
