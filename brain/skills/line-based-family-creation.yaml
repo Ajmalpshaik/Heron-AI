@@ -30,8 +30,10 @@ purpose: >
      SET_FAMILY_TYPE_VALUES); a count that follows the length is an Integer
      with a FORMULA (SET_FAMILY_FORMULA) - "Bracket Count =
      rounddown(Length / Bracket Spacing) + 1" - guarded so it never falls
-     below what an array accepts: "if(n < 2, 2, n)" on Revit 2020 to 2024,
-     where an array keeps at least two members. Revit's own help says its
+     below what an array accepts on Revit 2020 to 2024, where an array keeps
+     at least two members: "Bracket Count = if(Length < Bracket Spacing, 2,
+     rounddown(Length / Bracket Spacing) + 1)". A formula names no value of its
+     own, so the guard tests the parameters themselves. Revit's own help says its
      formulas compare with <, > and = and that <= and >= are not implemented,
      so "a <= b" is written "not(a > b)"; a parameter's name is matched with
      its case and spaces exactly. Whether a length divided by a length may

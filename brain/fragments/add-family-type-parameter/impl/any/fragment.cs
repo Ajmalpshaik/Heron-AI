@@ -165,6 +165,12 @@ else
         if (existing != null && existing.StorageType != StorageType.ElementId)
             problems.Add("\"" + name + "\" is already in this family and holds a " + existing.StorageType + ", not a "
                 + "family type. Use another name.");
+        // Reused with the other scope, every link after it would work and give
+        // the behaviour that was not asked for.
+        else if (existing != null && existing.IsInstance != instance)
+            problems.Add("\"" + name + "\" is already in this family as " + (existing.IsInstance ? "an INSTANCE" : "a TYPE")
+                + " parameter, and " + (instance ? "an instance" : "a type") + " one was asked. Use another name, or ask "
+                + "for it as " + (existing.IsInstance ? "an instance" : "a type") + " parameter.");
     }
 
     // THE ELEMENTS TO LINK: unique ids, or a nested family's name for every copy

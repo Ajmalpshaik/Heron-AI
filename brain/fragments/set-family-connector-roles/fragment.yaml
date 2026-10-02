@@ -28,7 +28,9 @@ purpose: >
   body - so the run on one side and the run on the other become one system. The
   sources docs/43 §10 records say it does so only when both connectors' system
   is Global; a pair that is not is reported with the words to fix it, and its
-  system is never changed here. `"Inlet > none"` removes a link.
+  system is never changed here. `"Inlet > none"` removes a link, and
+  `"Inlet > none | Inlet > Branch"` moves one to a new partner in one call -
+  the unlinks run first.
 
   **A CONNECTOR IS NAMED BY THE PLANE ITS FACE LIES ON** - "Neck Top", the way
   ADD_FAMILY_CONNECTOR places one - or by its id from the report. A plane that
@@ -36,7 +38,8 @@ purpose: >
 
   **CHECKED FIRST, READ BACK AFTER, ALL OR NOTHING.** A pair of two domains, a
   connector linked to itself or in two pairs, or a connector already linked to a
-  third one is refused before anything changes. After the change the primary
+  third one and not unlinked in the same call, is refused before anything
+  changes. After the change the primary
   must read primary and each link must read linked BOTH ways; where Revit set
   only one end, the other is set to match and the report says so. Every
   connector is reported before and after.

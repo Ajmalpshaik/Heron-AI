@@ -184,15 +184,22 @@ else
         }
 
         // A connector in two pairs would be linked twice; the second would
-        // silently undo the first.
-        var used = asked.SelectMany(a => a.Item2 == null ? new[] { a.Item1 } : new[] { a.Item1, a.Item2 })
-            .GroupBy(c => c.Id).Where(g => g.Count() > 1).Select(g => g.Key.ToString()).ToList();
+        // silently undo the first. ONE unlink beside ONE link is allowed - it is
+        // how a connector moves to a new partner, "A > none | A > C" - because
+        // the unlinks run first.
+        var unlinking = new HashSet<ElementId>(asked.Where(a => a.Item2 == null).Select(a => a.Item1.Id));
+        var used = asked.Where(a => a.Item2 != null).SelectMany(a => new[] { a.Item1, a.Item2 })
+            .GroupBy(c => c.Id).Where(g => g.Count() > 1).Select(g => g.Key)
+            .Concat(asked.Where(a => a.Item2 == null).GroupBy(a => a.Item1.Id).Where(g => g.Count() > 1).Select(g => g.Key))
+            .Distinct().Select(id => id.ToString()).ToList();
         if (used.Count > 0)
             problems.Add("Connector " + string.Join(", ", used) + " appears in more than one pair - each connector "
-                + "links to one other.");
+                + "links to one other; to move one to a new partner, unlink and link it in the same call, \"A > none | "
+                + "A > C\".");
 
         // A connector already linked to a THIRD one, not changed by this call,
-        // would be left pointing at a connector that points elsewhere.
+        // would be left pointing at a connector that points elsewhere - unless
+        // that end is unlinked in this call, which frees both.
         var touched = new HashSet<ElementId>(asked.SelectMany(a => a.Item2 == null
             ? new[] { a.Item1.Id } : new[] { a.Item1.Id, a.Item2.Id }));
         foreach (var a in asked.Where(a => a.Item2 != null))
@@ -200,7 +207,7 @@ else
             {
                 var other = end == a.Item1 ? a.Item2 : a.Item1;
                 var now = end.GetLinkedConnectorElement();
-                if (now != null && now.Id != other.Id && !touched.Contains(now.Id))
+                if (now != null && now.Id != other.Id && !touched.Contains(now.Id) && !unlinking.Contains(end.Id))
                     problems.Add(label(end) + " is already linked to connector " + now.Id.ToString() + " - unlink "
                         + "it first, \"" + end.Id.ToString() + " > none\", in the same call or before.");
             }
@@ -276,8 +283,11 @@ if (refused == null)
     if (wantPrimary != null && !wantPrimary.IsPrimary)
         throw new InvalidOperationException(label(wantPrimary) + " does not read primary after AssignAsPrimary. The "
             + "call failed, and Heron rolls the whole call back.");
+    var relinked = new HashSet<ElementId>(asked.Where(x => x.Item2 != null).SelectMany(x => new[] { x.Item1.Id, x.Item2.Id }));
     foreach (var a in asked)
     {
+        // An unlink followed by a link of the same connector is read back by the link.
+        if (a.Item2 == null && relinked.Contains(a.Item1.Id)) continue;
         var now = a.Item1.GetLinkedConnectorElement();
         var back = a.Item2 == null ? null : a.Item2.GetLinkedConnectorElement();
         var right = a.Item2 == null ? now == null

@@ -335,7 +335,17 @@ if (refused == null)
         throw new InvalidOperationException("The " + kind + " was made and holds no geometry to measure. The call failed, "
             + "and Heron rolls the whole call back.");
 
-    var box = form.get_BoundingBox(null);
+    // The extent of EVERY form made - a revolve may return several.
+    XYZ low = null, high = null;
+    foreach (var each in made)
+    {
+        var box = each.get_BoundingBox(null);
+        if (box == null) continue;
+        low = low == null ? box.Min
+            : new XYZ(Math.Min(low.X, box.Min.X), Math.Min(low.Y, box.Min.Y), Math.Min(low.Z, box.Min.Z));
+        high = high == null ? box.Max
+            : new XYZ(Math.Max(high.X, box.Max.X), Math.Max(high.Y, box.Max.Y), Math.Max(high.Z, box.Max.Z));
+    }
     formId = string.Join(",", made.Select(f => f.UniqueId));
     built = (solid ? "Solid" : "Void") + " " + kind + " " + formId + " on " + groups.Count + " profile(s) of "
         + groups.Sum(g => g.Count) + " curve(s)"
@@ -345,8 +355,8 @@ if (refused == null)
         + (kind == "extrusion" ? ", " + mm(Math.Abs(depth)) + " mm deep toward (" + Math.Round(normal.X * Math.Sign(depth), 3)
             .ToString(invariant) + ", " + Math.Round(normal.Y * Math.Sign(depth), 3).ToString(invariant) + ", "
             + Math.Round(normal.Z * Math.Sign(depth), 3).ToString(invariant) + ")" : "")
-        + (box == null ? "" : ", X " + mm(box.Min.X) + " to " + mm(box.Max.X) + ", Y " + mm(box.Min.Y) + " to "
-            + mm(box.Max.Y) + ", Z " + mm(box.Min.Z) + " to " + mm(box.Max.Z) + " mm")
+        + (low == null ? "" : ", X " + mm(low.X) + " to " + mm(high.X) + ", Y " + mm(low.Y) + " to "
+            + mm(high.Y) + ", Z " + mm(low.Z) + " to " + mm(high.Z) + " mm")
         + (volume > 0 ? "; volume " + Math.Round(volume * 28.316846592, 3).ToString(invariant) + " L"
             : "; surface area " + Math.Round(area * 0.09290304, 4).ToString(invariant) + " m2")
         + ". Read back.";

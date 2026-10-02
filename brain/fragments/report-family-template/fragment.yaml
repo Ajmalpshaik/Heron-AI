@@ -18,7 +18,9 @@ purpose: >
   already holds, before anything is built in it: level-based, work-plane-based,
   face-based, wall-, ceiling-, floor- or roof-based, line-based, a line-based
   or ordinary detail item, an adaptive component, a pattern-based curtain
-  panel, a conceptual mass, a profile, an annotation or a title block.
+  panel or a classic curtain wall panel - told apart by the reference points
+  only the pattern-based one can hold - a conceptual mass, a profile, an
+  annotation or a title block.
 
   **THE TEMPLATE DECIDED IT AND NOTHING CHANGES IT.** A wall-based family cannot
   become a face-based one, a line-based family takes its Length from two clicks,
@@ -31,7 +33,8 @@ purpose: >
   where each sits, what it faces, its Is Reference and Defines Origin; the host
   wall, ceiling, floor or roof; the built-in parameters with their values - a
   line-based family's Length, a door's Width and Height; the family's own
-  switches, Host and Part Type and Profile Usage among them; the reference
+  switches, Host, Part Type, Profile Usage and a structural family's Material
+  for Model Behavior and Section Shape among them; the reference
   lines and the lines drawn through points, with their ids; the adaptive
   points with their placement numbers and ids; a pattern panel's tile pattern
   and spacing; the views; the types.
@@ -86,12 +89,15 @@ compatibility-note: >
   `CurtainPanelTilePattern` and its two spacings, the
   `AdaptiveComponentFamilyUtils` point queries, `ModelCurve.IsReferenceLine`,
   and the built-in parameters `FAMILY_HOSTING_BEHAVIOR` ("Host"),
-  `FAMILY_ALLOW_CUT_WITH_VOIDS`, `FAMILY_CONTENT_PART_TYPE` and
-  `FAM_PROFILE_USAGE` read the same 2020 through 2027 (the RevitAPI reference
-  assemblies and their XML documentation, read 2026-10-01). Which words Revit
-  shows for Host, and whether a face-based template's placement reads
-  WorkPlaneBased with the Work Plane-Based switch off, are Revit's - recorded
-  in NEEDS-CHECKING BV1.
+  `FAMILY_ALLOW_CUT_WITH_VOIDS`, `FAMILY_CONTENT_PART_TYPE`,
+  `FAM_PROFILE_USAGE`, `FAMILY_STRUCT_MATERIAL_TYPE` and
+  `STRUCTURAL_SECTION_SHAPE` read the same 2020 through 2027 (the RevitAPI
+  reference assemblies and their XML documentation, read 2026-10-01 and
+  2026-10-02). Which words Revit shows for Host, whether a face-based
+  template's placement reads WorkPlaneBased with the Work Plane-Based switch
+  off, and whether `IsCurtainPanelFamily` reads true for a classic curtain wall
+  panel as well as a pattern-based one, are Revit's - recorded in
+  NEEDS-CHECKING BV1.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #

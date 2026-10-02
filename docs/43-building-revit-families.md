@@ -91,7 +91,7 @@ built.
 | Door, window | `OneLevelBasedHosted` | in a wall | a host wall with an opening already cut, Width and Height (**SOURCED**, §7) | `door-window-family-creation` |
 | Lighting fixture | as its template - free, ceiling-, wall- or face-based | as its host | a light source (**SOURCED**, §10) | `lighting-fixture-family-creation` |
 | Adaptive component | `Adaptive` | its numbered points clicked in order | whatever points are placed | `adaptive-family-creation` |
-| Pattern-based curtain panel | `IsCurtainPanelFamily` true | applied to a divided surface, one per cell | a tile pattern grid, its points and lines (**SOURCED**) | `pattern-based-family-creation` |
+| Pattern-based curtain panel | `IsCurtainPanelFamily` true, with reference points in it - only a conceptual family holds them, and the flag alone is not trusted to tell it from a classic curtain wall panel (BV1) | applied to a divided surface, one per cell | a tile pattern grid, its points and lines (**SOURCED**) | `pattern-based-family-creation` |
 | Detail item / line-based detail | `ViewBased` / `CurveBasedDetail` | in one view; the line-based one with two clicks | its view, its planes | `detail-family-creation` |
 | Profile | the Profiles category | chosen in a sweep, wall sweep, reveal, railing or mullion | one plan view and two planes (**SOURCED**) | `profile-family-creation` |
 | Annotation, tag, title block | an annotation category | in a view or on a sheet | its view | `detail-family-creation` - labels are by hand, §8.3 |
@@ -218,7 +218,9 @@ Revit took.
 
 **Patterns built from that syntax - not proven in Revit:** keep a size from collapsing,
 `if(L < 1 mm, 1 mm, L)`; clamp, `if(W < 300 mm, 300 mm, if(W > 1200 mm, 1200 mm, W))`; a count that follows a
-length, `rounddown(Length / Spacing) + 1`, guarded `if(n < 2, 2, n)` on 2020 to 2024.
+length, `rounddown(Length / Spacing) + 1`, guarded on 2020 to 2024 as
+`if(Length < Spacing, 2, rounddown(Length / Spacing) + 1)` - a formula names no value of its own, so the
+guard tests the parameters themselves.
 
 **Two sources disagree, and both are recorded.** The API's own remarks for a global parameter's formula say a
 Length may not feed an Integer or Number formula, while `Count = Length / Spacing` is everyday family practice.

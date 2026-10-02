@@ -96,6 +96,14 @@ else
     try { curtainPanel = family != null && family.IsCurtainPanelFamily; } catch (Exception) { }
     try { adaptive = family != null && AdaptiveComponentFamilyUtils.IsAdaptiveComponentFamily(family); } catch (Exception) { }
     try { conceptual = family != null && family.IsConceptualMassFamily; } catch (Exception) { }
+    // Reference points live only in a conceptual family - a mass, an adaptive
+    // component, a pattern-based panel (Revit's remark on NewReferencePoint) -
+    // so a curtain-panel family WITH them is the pattern-based kind, and one
+    // without is the classic panel a curtain grid sizes. The flag alone is not
+    // trusted to tell the two apart (BV1).
+    var referencePoints = 0;
+    try { referencePoints = new FilteredElementCollector(doc).OfClass(typeof(ReferencePoint)).GetElementCount(); }
+    catch (Exception) { }
 
     var walls = countOf(BuiltInCategory.OST_Walls);
     var ceilings = countOf(BuiltInCategory.OST_Ceilings);
@@ -122,7 +130,10 @@ else
     else if (isCategory(BuiltInCategory.OST_ProfileFamilies))
         familyKind = "a profile - a closed 2D shape that a sweep, a wall sweep, a reveal, a slab edge, a railing or a "
             + "mullion is drawn with";
-    else if (curtainPanel)
+    else if (isCategory(BuiltInCategory.OST_CurtainWallPanels) && referencePoints == 0)
+        familyKind = "a curtain wall panel - the classic kind, sized by the curtain grid cell it is placed in, not by "
+            + "parameters of its own; not pattern-based";
+    else if (curtainPanel && referencePoints > 0)
         familyKind = "a pattern-based curtain panel - its shape driven by the points of its tile pattern, so it fits "
             + "each cell of a divided surface";
     else if (adaptive)
@@ -171,7 +182,20 @@ else
         Tuple.Create("Keep text readable", BuiltInParameter.FAMILY_KEEP_TEXT_READABLE, true),
         Tuple.Create("Part Type", BuiltInParameter.FAMILY_CONTENT_PART_TYPE, false),
         Tuple.Create("Profile Usage", BuiltInParameter.FAM_PROFILE_USAGE, false),
+        Tuple.Create("Material for Model Behavior", BuiltInParameter.FAMILY_STRUCT_MATERIAL_TYPE, false),
+        Tuple.Create("Section Shape", BuiltInParameter.STRUCTURAL_SECTION_SHAPE, false),
     };
+    // A structural family's two named settings, read as the enum's own name
+    // where the palette's words come back blank. Section Shape's enum lives in
+    // a namespace the executor does not import, so it is read from the Family
+    // property that carries it, as SET_FAMILY_SETTINGS does.
+    var enumOf = new Dictionary<BuiltInParameter, Type>
+    {
+        { BuiltInParameter.FAMILY_STRUCT_MATERIAL_TYPE, typeof(StructuralMaterialType) },
+    };
+    var sectionShapeProperty = typeof(Family).GetProperty("StructuralSectionShape");
+    if (sectionShapeProperty != null && sectionShapeProperty.PropertyType.IsEnum)
+        enumOf[BuiltInParameter.STRUCTURAL_SECTION_SHAPE] = sectionShapeProperty.PropertyType;
     var settingRows = new List<string>();
     if (family != null)
         foreach (var s in switches)
@@ -179,6 +203,9 @@ else
             var row = family.get_Parameter(s.Item2);
             if (row == null) continue;
             var value = s.Item3 ? (stored(row) == 1 ? "Yes" : stored(row) == 0 ? "No" : shown(row)) : shown(row);
+            var code = stored(row);
+            if (value.Length == 0 && code.HasValue && enumOf.ContainsKey(s.Item2) && Enum.IsDefined(enumOf[s.Item2], code.Value))
+                value = Enum.GetName(enumOf[s.Item2], code.Value);
             settingRows.Add(s.Item1 + " " + (value.Length == 0 ? "(blank)" : value));
         }
 
@@ -297,7 +324,7 @@ else
     // A PATTERN-BASED PANEL'S GRID: the tile pattern and its spacing.
     // -----------------------------------------------------------------------
     var grid = "";
-    if (curtainPanel)
+    if (curtainPanel && referencePoints > 0)
     {
         try
         {
