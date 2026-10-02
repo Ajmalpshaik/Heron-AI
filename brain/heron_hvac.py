@@ -1208,7 +1208,7 @@ _ref("comfort_air_speed", "Average air speed limits without occupant control",
 # was built from, and each changes what an answer may check. They never block
 # a calculation: one that depends on them still calculates, puts the questions
 # at the top of its answer, and says which checks it could not run. The caller
-# keeps the answers (heron_hvac_project.py, through the brain seam) and hands
+# keeps the answers (heron_designbasis.py, through the brain seam) and hands
 # them back as `recorded` - this file still reads no store.
 # ---------------------------------------------------------------------------
 

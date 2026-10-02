@@ -1389,7 +1389,7 @@ def hvac(calculation, inputs, project=None, project_name=None):
         return {"status": "catalogue", "calculation": "",
                 "catalogue": HVAC.catalogue(), "text": HVAC.describe_catalogue()}
 
-    import heron_hvac_project as KEEP
+    import heron_designbasis as KEEP
     memory = []
     recorded = {}
     if project:

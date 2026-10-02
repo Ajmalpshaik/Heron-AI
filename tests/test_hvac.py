@@ -551,10 +551,10 @@ def owners_answers():
     import tempfile
     import shutil
     try:
-        import heron_hvac_project as KEEP
+        import heron_designbasis as KEEP
     except ImportError:
         KEEP = None
-    check(KEEP is not None, "the project's record has a module to keep it - heron_hvac_project")
+    check(KEEP is not None, "the project's record has a module to keep it - heron_designbasis")
     import heron_brain as BRAIN
     seam_takes_project = "project" in BRAIN.hvac.__code__.co_varnames
     check(seam_takes_project, "the brain seam takes the open model's project - hvac(..., project=)")

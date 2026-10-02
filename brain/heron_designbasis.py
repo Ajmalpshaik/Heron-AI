@@ -7,10 +7,15 @@
 # See docs/29-metadata-standard.md
 
 """
-A project's governing standards for HVAC design - asked once, kept for that
-project, and never carried to another (D-111).
+A project's design basis - the standards that govern its HVAC design - asked
+once, kept for that project, and never carried to another (D-111).
 
-    python brain/heron_hvac_project.py <project-key>    what is recorded for it
+"Design basis" is the MEP name for it: the codes and criteria a project is
+designed to, written down once at the start. Here it is four answers, and the
+file is named for that rather than for the engine that asks them, so no
+module name in brain/ is the start of another's (tests/test_references.py).
+
+    python brain/heron_designbasis.py <project-key>    what is recorded for it
 
 WHY IT EXISTS
 -------------
@@ -177,7 +182,7 @@ def record(project_key, given, project_name=None, when=None):
 
 def main(argv):
     if len(argv) < 2:
-        print("usage: python brain/heron_hvac_project.py <project-key>")
+        print("usage: python brain/heron_designbasis.py <project-key>")
         return 2
     try:
         standards, note = read(argv[1])

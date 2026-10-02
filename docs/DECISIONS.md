@@ -943,6 +943,6 @@ What this makes easy. What this makes hard. What it locks in.
 
 **Status:** Accepted · **Date:** 2026-10-02 · **Answers:** [F42](proposals/f42.md) item 2 · **Source:** Ajmal PS, 2026-10-02, in conversation: *"Use 2.5 m/s, ask standards once per project"*
 **Keeps:** [D-33](#d-33--heron-never-assumes-an-input-it-asks--and-it-asks-once) - *it asks once*, scoped to something real: the project · [D-23](#d-23--the-knowledge-store-is-sqlite-one-file-per-scope) and Golden Rule 5 - one file per project, never shared sideways
-**Affects:** [`heron_hvac.py`](../brain/heron_hvac.py), [`heron_hvac_project.py`](../brain/heron_hvac_project.py), [`heron_brain.py`](../mcp/server/heron_brain.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py) (its comment only - the risk stays READ), [`tests/test_hvac.py`](../tests/test_hvac.py), [41 §11](41-hvac-design.md)
+**Affects:** [`heron_hvac.py`](../brain/heron_hvac.py), [`heron_designbasis.py`](../brain/heron_designbasis.py), [`heron_brain.py`](../mcp/server/heron_brain.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py) (its comment only - the risk stays READ), [`tests/test_hvac.py`](../tests/test_hvac.py), [41 §11](41-hvac-design.md)
 
 **Full record:** [`decisions/D-111.md`](decisions/D-111.md)

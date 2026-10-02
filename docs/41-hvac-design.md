@@ -45,7 +45,7 @@ modeller ── Claude Code ── heron_hvac (MCP, READ, no bridge operation)
                                │
                        brain/heron_hvac.py         the calculations, the references, the answer
                        brain/heron_psychro.py      moist air and water - physics only
-                       brain/heron_hvac_project.py a project's standards, kept once said (D-111)
+                       brain/heron_designbasis.py  a project's design basis, kept once said (D-111)
 ```
 
 | | |
