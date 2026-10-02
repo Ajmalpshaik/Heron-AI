@@ -8,7 +8,7 @@
 // primary connector per domain; `ConnectorElement.AssignAsPrimary` promotes one
 // and, in Revit's own remark, makes the rest of its system secondary. A LINKED
 // pair passes a system through the family - a coil, a pump, a valve body - and
-// the sources docs/41 §10 records say it does so only when the pair's system is
+// the sources docs/43 §10 records say it does so only when the pair's system is
 // Global, so a pair that is not is reported, never quietly changed.
 //
 // A CONNECTOR IS NAMED BY THE PLANE ITS FACE LIES ON - "Neck Top", the way
@@ -245,7 +245,7 @@ if (refused == null)
         doc.Regenerate();
         // THE LINK IS A PAIR. Where Revit set only the end it was asked about,
         // the other end is set to match, so neither points at a connector that
-        // does not point back; which of the two Revit does is BT17's question.
+        // does not point back; which of the two Revit does is BV17's question.
         if (a.Item2 != null)
         {
             var back = a.Item2.GetLinkedConnectorElement();
@@ -297,12 +297,12 @@ if (refused == null)
                 + "per domain is what Revit keeps; look at them in the Family Editor.");
     }
 
-    // A LINKED PAIR PASSES A SYSTEM THROUGH ONLY AS GLOBAL (docs/41 §10).
+    // A LINKED PAIR PASSES A SYSTEM THROUGH ONLY AS GLOBAL (docs/43 §10).
     foreach (var a in asked.Where(x => x.Item2 != null))
         if (a.Item1.SystemClassification != MEPSystemClassification.Global
             || a.Item2.SystemClassification != MEPSystemClassification.Global)
             findings.Add("\"" + a.Item3 + "\" is linked, but its connectors are " + spaced(a.Item1.SystemClassification.ToString())
-                + " and " + spaced(a.Item2.SystemClassification.ToString()) + ". The sources docs/41 §10 records say "
+                + " and " + spaced(a.Item2.SystemClassification.ToString()) + ". The sources docs/43 §10 records say "
                 + "linked connectors pass a system through only when both are Global - set System Classification "
                 + "to Global in each connector's Properties if the system must pass through. Heron did not change it.");
 

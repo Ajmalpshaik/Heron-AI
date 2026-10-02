@@ -31,7 +31,7 @@ purpose: >
   4. CREATE_REFERENCE_PLANES on every edge a size moves, then
      LABEL_FAMILY_DIMENSION between them. Whether that tool, written for a 3D
      family's plan and elevation, labels a profile's two directions in its
-     one plan is NEEDS-CHECKING BT11.
+     one plan is NEEDS-CHECKING BV11.
   5. DRAW_FAMILY_DETAIL_LINES with lockToPlanes true. EVERY LINE IN A PROFILE
      FAMILY IS THE PROFILE: closed loops only, not crossing, a loop inside
      another a hole - no construction lines, which would become part of it.
@@ -73,6 +73,6 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
   Written 2026-10-02 on the owner's request for every kind of family
-  creation, from the research recorded in docs/41-building-revit-families.md.
+  creation, from the research recorded in docs/43-building-revit-families.md.
   Every step is DRAFT until it has been run on a real family with a negative
   case (D-30).

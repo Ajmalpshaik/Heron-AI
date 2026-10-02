@@ -33,7 +33,7 @@ purpose: >
      REPORT_FAMILY_SIZE_TABLE reads it back; then SET_FAMILY_FORMULA with
      size_lookup(Table, "Column", default, Nominal Diameter) for every size
      the table drives. Which column a lookup searches is recorded two ways -
-     NEEDS-CHECKING BT15 settles it with a negative case.
+     NEEDS-CHECKING BV15 settles it with a negative case.
   5. GEOMETRY: a pipe elbow is CREATE_FAMILY_REVOLUTION with its end angle
      linked to Angle by LINK_FAMILY_FORM_PARAMETER; a duct elbow or a
      transition CREATE_FAMILY_SWEEP or CREATE_FAMILY_SWEPT_BLEND; straight
@@ -92,6 +92,6 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
   Written 2026-10-02 on the owner's request for every kind of family
-  creation, from the research recorded in docs/41-building-revit-families.md.
+  creation, from the research recorded in docs/43-building-revit-families.md.
   Every step is DRAFT until it has been run on a real family with a negative
   case (D-30).

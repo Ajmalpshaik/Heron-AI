@@ -46,7 +46,7 @@ purpose: >
      template's wall or ceiling, and every placement cuts it in its own host.
      A cut that must resize with a parameter is a VOID form locked to planes -
      whether a void cuts the template's host by itself, without Cut Geometry,
-     is not yet known (NEEDS-CHECKING BT12). A floor- or roof-based family
+     is not yet known (NEEDS-CHECKING BV12). A floor- or roof-based family
      has no opening call; its cut is a void.
      In a FACE-BASED family an UNATTACHED void cuts nothing on placement: turn
      on Cut with Voids When Loaded with SET_FAMILY_SETTINGS and the modeller
@@ -109,5 +109,5 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 note: >
   Written 2026-10-02 on the owner's request for "line based, ceiling based,
   floor based, wall based ... all kind" of family creation, from the research
-  recorded in docs/41-building-revit-families.md. Every step is DRAFT until
+  recorded in docs/43-building-revit-families.md. Every step is DRAFT until
   it has been run on a real family with a negative case (D-30).

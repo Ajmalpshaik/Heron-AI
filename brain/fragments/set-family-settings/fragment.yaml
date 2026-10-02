@@ -100,13 +100,13 @@ compatibility-note: >
   reference assemblies and their XML labels, read 2026-10-01). Which
   categories carry each switch, which Part Types a category accepts, and when
   Revit holds Always Vertical read-only, are Revit's - read at run time, never
-  listed here (NEEDS-CHECKING BS1, BS2 and BT7). Widened 2026-10-01, before any
-  proof, from four switches to eleven settings (row 5b-278), and on
+  listed here (NEEDS-CHECKING BS1, BS2 and BV7). Widened 2026-10-01, before any
+  proof, from four switches to eleven settings (row 5b-279), and on
   2026-10-02 to thirteen: `FAMILY_STRUCT_MATERIAL_TYPE` with the
   `StructuralMaterialType` enum, and `STRUCTURAL_SECTION_SHAPE` with the enum
   `Family.StructuralSectionShape` carries - read from that property, because
   its namespace is not one the executor imports (the RevitAPI XML and
-  assemblies, read 2026-10-02; BT23).
+  assemblies, read 2026-10-02; BV23).
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #

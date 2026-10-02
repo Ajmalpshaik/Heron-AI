@@ -437,9 +437,17 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bs.md`](needs-checking/group-bs.md)
 
-## Group BT - every other kind of family: the template report, hosted, line-based, pattern-based, adaptive, profile and detail families, a Family Type parameter, flip controls, filled regions, a type catalog, a connector's primary flag and links, and a light source (2026-10-02)
+## Group BT - an HVAC answer asks a project's standards once, and keeps them for that project only (2026-10-02)
 
 **Its own file:** [`needs-checking/group-bt.md`](needs-checking/group-bt.md)
+
+## Group BU - a fire protection answer keeps a project's standards in its own fire record, and its figures need a person with the standards (2026-10-02)
+
+**Its own file:** [`needs-checking/group-bu.md`](needs-checking/group-bu.md)
+
+## Group BV - every other kind of family: the template report, hosted, line-based, pattern-based, adaptive, profile and detail families, a Family Type parameter, flip controls, filled regions, a type catalog, a connector's primary flag and links, and a light source (2026-10-02)
+
+**Its own file:** [`needs-checking/group-bv.md`](needs-checking/group-bv.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

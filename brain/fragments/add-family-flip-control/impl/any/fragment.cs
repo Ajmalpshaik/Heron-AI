@@ -17,7 +17,7 @@
 //
 // A FLOOR PLAN OR A CEILING PLAN, AND NO OTHER VIEW - NewControl's own words for
 // its view. Where a floor plan and a ceiling plan share the name the floor plan
-// is taken; whether a template's "Ref. Level" is both is what BT1's view list
+// is taken; whether a template's "Ref. Level" is both is what BV1's view list
 // shows.
 //
 // READ BACK, ALL OR NOTHING: every control's shape, view and position are read
@@ -180,7 +180,7 @@ if (refused == null)
     placed = made.Count + " flip control(s) in \"" + target.Name + "\": " + string.Join("; ", rows) + " - read back.";
     findings.Add(placed);
     findings.Add("What each control does to a placed copy is Revit's: Autodesk's remark on Control says a single "
-        + "arrow rotates it 180 degrees and a double one mirrors it, and NEEDS-CHECKING BT3 records what a placed copy "
+        + "arrow rotates it 180 degrees and a double one mirrors it, and NEEDS-CHECKING BV3 records what a placed copy "
         + "does. Copies already placed in a project take the controls when the family is loaded there again.");
 }
 

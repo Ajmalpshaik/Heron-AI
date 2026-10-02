@@ -72,7 +72,7 @@ compatibility-note: >
   assemblies and XML remarks, read 2026-10-01 - are picked by signature, so
   2020 takes the older path. Revit has no call that writes or reads a type
   catalog; how it reads Yes/No and integer cells, quoted cells and the file's
-  encoding are NEEDS-CHECKING BT10.
+  encoding are NEEDS-CHECKING BV10.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #

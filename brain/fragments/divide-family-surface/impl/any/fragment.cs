@@ -244,7 +244,7 @@ if (refused == null)
             ? ((FamilySymbol)typeNow).Family.Name + " : " + typeNow.Name : typeNow.Name)) + " - surface " + surface.UniqueId
         + ", read back.";
     findings.Add(divided);
-    findings.Add("Whether Revit's Number counts the divisions or the lines between them is NEEDS-CHECKING BT21 - the "
+    findings.Add("Whether Revit's Number counts the divisions or the lines between them is NEEDS-CHECKING BV21 - the "
         + "gridline count above is what Revit made. A pattern-based panel family of the same tile pattern fills the "
         + "cells: PATTERN-BASED-FAMILY-CREATION builds one.");
 }

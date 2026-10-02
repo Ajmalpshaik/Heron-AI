@@ -33,7 +33,7 @@ positive:
       Shape=Rectangle Parameterized"
     expect: >
       both read back by their enum names in the report; Family Category and
-      Parameters shows Precast Concrete and the section shape - LOOKED AT (BT23)
+      Parameters shows Precast Concrete and the section shape - LOOKED AT (BV23)
 
 negative:
   - given: settings "Work Plane-Based=maybe"

@@ -35,7 +35,7 @@ purpose: >
      formulas compare with <, > and = and that <= and >= are not implemented,
      so "a <= b" is written "not(a > b)"; a parameter's name is matched with
      its case and spaces exactly. Whether a length divided by a length may
-     feed an Integer without "/ 1 mm" is NEEDS-CHECKING BT14.
+     feed an Integer without "/ 1 mm" is NEEDS-CHECKING BV14.
   3. CREATE_REFERENCE_PLANES for the section, SET_FAMILY_PLANE_REFERENCE,
      LABEL_FAMILY_DIMENSION - across the line, never along it.
   4. THE BODY RUNS THE FULL LENGTH by being locked to the start and end
@@ -91,5 +91,5 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
   Written 2026-10-02 on the owner's request for line-based family creation,
-  from the research recorded in docs/41-building-revit-families.md. Every step
+  from the research recorded in docs/43-building-revit-families.md. Every step
   is DRAFT until it has been run on a real family with a negative case (D-30).

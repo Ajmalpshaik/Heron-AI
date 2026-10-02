@@ -24,13 +24,13 @@ purpose: >
   or CEILING PLAN of the family, the only views Revit's NewControl takes, at a
   point in millimetres in the plan's own X,Y. Several at once, `|` between.
   Where a floor plan and a ceiling plan share the name, the floor plan is
-  taken - whether a template's "Ref. Level" is both is what BT1's view list
+  taken - whether a template's "Ref. Level" is both is what BV1's view list
   shows.
 
   **WHAT EACH DOES TO A PLACED COPY IS REVIT'S.** Autodesk's remark on Control,
   2020 to 2027: a single arrow, horizontal or vertical, ROTATES the copy 180
   degrees; a double arrow MIRRORS it - horizontally or vertically. NEEDS-
-  CHECKING BT3 records what a placed copy does.
+  CHECKING BV3 records what a placed copy does.
 
   **READ BACK, ALL OR NOTHING**: every control's shape, view and position are
   read again; one that does not read as asked fails the call. Their ids come

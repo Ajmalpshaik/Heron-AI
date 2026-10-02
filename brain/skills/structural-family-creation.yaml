@@ -16,7 +16,7 @@ purpose: >
   Builds a STRUCTURAL FRAMING family - a beam or a brace of any section - or a
   STRUCTURAL COLUMN, from the framing or column template the modeller opened.
   The steps of FAMILY-CREATION still hold; this is what a structural family
-  adds. What every step rests on is in docs/41 §7.
+  adds. What every step rests on is in docs/43 §7.
 
   0. REPORT_FAMILY_TEMPLATE FIRST. A framing template carries Left and Right
      planes - the location line's ends, which the placement drives - and
@@ -54,7 +54,7 @@ purpose: >
 
   SET BY HAND IN FAMILY CATEGORY AND PARAMETERS: Symbolic Representation -
   its built-in parameter exists, but no source gave the values it stores
-  (docs/41 §11). Analytical settings are the project's from 2023.
+  (docs/43 §11). Analytical settings are the project's from 2023.
 
 utterances:
   - make a structural beam family with a custom section
@@ -91,6 +91,6 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
   Written 2026-10-02 when the owner asked for everything to be checked again
-  and docs/41 §1 still said structural framing was not covered, from the
-  research recorded in docs/41 §7. Every step is DRAFT until it has been run on
+  and docs/43 §1 still said structural framing was not covered, from the
+  research recorded in docs/43 §7. Every step is DRAFT until it has been run on
   a real family with a negative case (D-30).

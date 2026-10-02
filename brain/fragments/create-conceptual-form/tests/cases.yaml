@@ -25,7 +25,7 @@ positive:
       four ids, path the line's id, depthMm "", solid true
     expect: >
       a solid sweep about 120 L (0.2 x 0.2 x 3 m) along the line; dragging
-      point 2 lengthens it (BT20)
+      point 2 lengthens it (BV20)
 
   - given: >
       a mass family with a closed profile drawn beside a vertical reference
@@ -33,12 +33,12 @@ positive:
       depthMm "", path ""
     expect: >
       a solid revolve, a full turn about the line, its volume read back; then
-      angleDegrees "90" makes a quarter turn (BT22)
+      angleDegrees "90" makes a quarter turn (BV22)
 
   - given: a mass family with a closed circle drawn as one reference line; depthMm "3000"
     expect: >
       a cylinder 3000 mm tall upward, the circle's own normal taken - or
-      Revit's own refusal of an extrusion in a mass, wrapped (BT6) - never a
+      Revit's own refusal of an extrusion in a mass, wrapped (BV6) - never a
       raw error about a curve with no ends
 
   - given: >

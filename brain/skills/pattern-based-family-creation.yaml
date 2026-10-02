@@ -52,7 +52,7 @@ purpose: >
   AN INSET FRAME OR AN OPENING THAT SCALES WITH THE CELL: PLACE_ADAPTIVE_POINTS
   "on <edge line id> at 0.2" hosts reference points on the template's edges,
   DRAW_FAMILY_POINT_CURVES joins them into the inner loop, and
-  CREATE_CONCEPTUAL_FORM fills or pushes it - built 2026-10-02, owed BT19.
+  CREATE_CONCEPTUAL_FORM fills or pushes it - built 2026-10-02, owed BV19.
   NOT POSSIBLE THROUGH THE API: setting the tile pattern - Revit's
   CurtainPanelTilePattern is read-only; the modeller picks it by hand.
 
@@ -81,6 +81,6 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
   Written 2026-10-02 on the owner's request for pattern-based family
-  creation, from the research recorded in docs/41-building-revit-families.md.
+  creation, from the research recorded in docs/43-building-revit-families.md.
   Every step is DRAFT until it has been run on a real family with a negative
   case (D-30).

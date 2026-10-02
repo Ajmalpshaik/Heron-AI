@@ -7,13 +7,13 @@ positive:
       two controls in the Ref. Level FLOOR plan, read back at X 0, Y -400 and
       X 400, Y 0 mm; LOOKED AT; then the family loaded into a test project and
       one copy placed - RECORD what each arrow does to it: Autodesk's remark
-      says a single arrow rotates it 180 degrees (BT3)
+      says a single arrow rotates it 180 degrees (BV3)
 
   - given: controls "double horizontal 0, 500" in the same family
     expect: >
       one double horizontal control at X 0, Y 500 mm, read back - the space
       after the comma read as none; a placed copy MIRRORED by it, by Autodesk's
-      remark (BT3)
+      remark (BV3)
 
 negative:
   - given: controls "diagonal 0,0"

@@ -48,7 +48,7 @@ purpose: >
   KNOWN HERE AND SET BY HAND: each placement point's ORIENTATION (Instance
   (xyz) by default; Host and Loop System is the one panels placed on a
   surface usually need) is a Properties choice no Heron tool sets yet.
-  Built 2026-10-02, owed BT19 and BT20: points hosted on a line or on a
+  Built 2026-10-02, owed BV19 and BV20: points hosted on a line or on a
   point's plane, and the sweep along a path.
 
 utterances:
@@ -74,6 +74,6 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
   Written 2026-10-02 on the owner's request for every kind of family
-  creation, from the research recorded in docs/41-building-revit-families.md.
+  creation, from the research recorded in docs/43-building-revit-families.md.
   Every step is DRAFT until it has been run on a real family with a negative
   case (D-30).

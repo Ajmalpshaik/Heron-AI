@@ -383,7 +383,7 @@ if (refused == null)
     findings.Add(linked + " link(s) made and " + already + " already as asked. It can take "
         + offered.Count + " type(s): " + string.Join(", ", offered.Select(typeLabel).Take(12))
         + (offered.Count > 12 ? ", ..." : "") + ".");
-    findings.Add("Revit took the link on " + string.Join(", ", carriersTaken.Distinct()) + " (NEEDS-CHECKING BT8). "
+    findings.Add("Revit took the link on " + string.Join(", ", carriersTaken.Distinct()) + " (NEEDS-CHECKING BV8). "
         + "A nested type added later is offered here once it is loaded into this family.");
 }
 

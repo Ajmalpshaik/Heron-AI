@@ -7,7 +7,7 @@ positive:
       the Inlet connector reads PRIMARY and the Outlet one secondary in the
       report; a finding when the Inlet connector does not point along X
       (Autodesk's help puts a fitting's primary on the X axis); LOOKED AT in
-      the Family Editor - the primary connector's Properties (BT17)
+      the Family Editor - the primary connector's Properties (BV17)
 
   - given: >
       a mechanical equipment family (a coil) with two pipe connectors whose
@@ -15,7 +15,7 @@ positive:
       "Water In > Water Out"
     expect: >
       both connectors read linked to each other; RECORD whether Revit linked
-      both ends or Heron set the second (BT17); then loaded into a test project
+      both ends or Heron set the second (BV17); then loaded into a test project
       and piped on both sides - the two pipe runs read as ONE system
 
   - given: links "Water In > none" on the same family

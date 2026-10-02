@@ -6,10 +6,10 @@ positive:
     expect: >
       the front face divided - U by Number 6, V 3000 mm apart - with the
       gridline counts Revit made, read back; RECORD whether Number 6 gave six
-      cells or six lines (BT21); LOOKED AT in the Family Editor
+      cells or six lines (BV21); LOOKED AT in the Family Editor
 
   - given: >
-      the same mass with "Heron Pattern Panel Test" (BT1's pattern-based
+      the same mass with "Heron Pattern Panel Test" (BV1's pattern-based
       panel) loaded; form the same, face "back", uGrid "4", vGrid "4",
       pattern "Heron Pattern Panel Test : Heron Pattern Panel Test"
     expect: >

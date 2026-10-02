@@ -7,7 +7,7 @@ positive:
       the report reads circle 200 mm, spot beam 30°, field 60°, tilt 0°,
       Luminous Flux as Type Properties shows it (1500 lm), 3000 K, and the
       light source's position; Type Properties LOOKED AT - Spot Beam Angle 30°,
-      Spot Field Angle 60° (BT18); then loaded into a test project and one copy
+      Spot Field Angle 60° (BV18); then loaded into a test project and one copy
       rendered or shown in a lighting analysis
 
   - given: >

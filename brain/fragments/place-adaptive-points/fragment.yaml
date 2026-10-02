@@ -87,7 +87,7 @@ compatibility-note: >
   `IsAdaptivePlacementPoint` and `GetNumberOfPlacementPoints` read the same
   2020 through 2027 (the RevitAPI reference assemblies and XML remarks, read
   2026-10-01). Whether Revit's conceptual flag reads true for the adaptive and
-  pattern-based templates as well as a mass is NEEDS-CHECKING BT4; the check
+  pattern-based templates as well as a mass is NEEDS-CHECKING BV4; the check
   here accepts any of the three flags. A hosted point is
   `FamilyItemFactory.NewReferencePoint(PointElementReference)` on
   `Application.NewPointOnEdge` with a `PointLocationOnCurve`, or on

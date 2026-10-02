@@ -17,7 +17,7 @@ purpose: >
   a wall light - from the Lighting Fixture template the modeller opened, with
   the light it gives and the power it takes. The steps of FAMILY-CREATION, and
   of HOSTED-FAMILY-CREATION for a ceiling-, wall- or face-based fixture, still
-  hold; this is what a light adds. What every step rests on is in docs/41 §10.
+  hold; this is what a light adds. What every step rests on is in docs/43 §10.
 
   0. REPORT_FAMILY_TEMPLATE FIRST - free-standing, ceiling-based or
      wall-based, and Lighting Fixtures as its category. A fixture that must
@@ -48,7 +48,7 @@ purpose: >
   BY HAND, NOT YET BY A HERON TOOL: the Light Source tick; MOVING or AIMING
   the light source - it is placed below the opening touching no geometry in
   the Family Editor, and SET_FAMILY_LIGHT_SOURCE reports where it is; a
-  wattage, until BT18 settles its unit.
+  wattage, until BV18 settles its unit.
 
 utterances:
   - make a lighting fixture family
@@ -85,5 +85,5 @@ revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 note: >
   Written 2026-10-02 when the owner asked for everything to be checked again,
   with SET_FAMILY_LIGHT_SOURCE built the same day, from the research recorded
-  in docs/41 §10. Every step is DRAFT until it has been run on a real family
+  in docs/43 §10. Every step is DRAFT until it has been run on a real family
   with a negative case (D-30).

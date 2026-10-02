@@ -15,7 +15,7 @@ positive:
       "1,2"; points "on <that line's id> at 0.5", pointKind "reference"
     expect: >
       one reference point at 500,0,0, read back; dragging point 2 to 2000,0,0
-      in the Family Editor moves it to 1000,0,0 - it is hosted (BT19)
+      in the Family Editor moves it to 1000,0,0 - it is hosted (BV19)
 
   - given: >
       a Generic Model Adaptive family with points 1 and 2 at 0,0,0 and
@@ -24,7 +24,7 @@ positive:
     expect: >
       four reference points on point 1's YZ plane - a 200 x 200 square from Y
       -100 to 100 and Z 0 to 200 - read back; rotating point 1 turns them with
-      it (BT19)
+      it (BV19)
 
 negative:
   - given: a new family from the plain metric Generic Model template

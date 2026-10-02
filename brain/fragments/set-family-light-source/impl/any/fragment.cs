@@ -400,7 +400,7 @@ if (refused == null)
     lightReport = chosen.Count + " type(s), read back: " + string.Join("; ", rows) + ". The light source sits at X "
         + plain(at.X * 304.8) + ", Y " + plain(at.Y * 304.8) + ", Z " + plain(at.Z * 304.8) + " mm.";
     findings.Add(lightReport);
-    findings.Add("What Type Properties shows for each value is what the modeller sees; BT18 compares it with what "
+    findings.Add("What Type Properties shows for each value is what the modeller sees; BV18 compares it with what "
         + "was asked on a real fixture, and renders one copy.");
 }
 

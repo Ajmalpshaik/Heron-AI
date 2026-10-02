@@ -91,7 +91,7 @@ compatibility-note: >
   assemblies and their XML documentation, read 2026-10-01). Which words Revit
   shows for Host, and whether a face-based template's placement reads
   WorkPlaneBased with the Work Plane-Based switch off, are Revit's - recorded
-  in NEEDS-CHECKING BT1.
+  in NEEDS-CHECKING BV1.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #

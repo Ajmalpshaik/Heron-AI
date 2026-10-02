@@ -18,7 +18,7 @@ positive:
   - given: parameterGroup "Other" on Revit 2024, a new parameterName
     expect: >
       "Other" found - the empty group id from 2022, offered as on 2020 - and
-      the parameter made under Other, or Revit's own refusal rolled back (BT8)
+      the parameter made under Other, or Revit's own refusal rolled back (BV8)
 
 negative:
   - given: category "Lighting Fixtures" with no lighting family loaded in the host family

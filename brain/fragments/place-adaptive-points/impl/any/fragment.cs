@@ -298,7 +298,7 @@ if (refused == null)
             + placementBefore + " the family had. Revit numbered them; check the order before placing the family.");
     if (made.Any(m => m.Item3.StartsWith("on ", StringComparison.OrdinalIgnoreCase)))
         findings.Add("A hosted point follows its host: drag the line or the point it is on in the Family Editor and it "
-            + "moves with it (NEEDS-CHECKING BT19).");
+            + "moves with it (NEEDS-CHECKING BV19).");
     if (kind.Value == AdaptivePointType.PlacementPoint)
         findings.Add("Lines through these points are DRAW_FAMILY_POINT_CURVES, and a surface or solid on those lines "
             + "CREATE_CONCEPTUAL_FORM - geometry built on the points follows them when the family is placed.");

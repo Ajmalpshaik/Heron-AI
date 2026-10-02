@@ -106,7 +106,7 @@ compatibility-note: >
   `CanElementParameterBeAssociated`, `AssociateElementParameterToFamilyParameter`
   and `GetAssociatedFamilyParameter` read the same 2020 through 2027 (the
   RevitAPI reference assemblies and XML remarks, read 2026-10-01). Which of a
-  nested copy's parameters Revit links is NEEDS-CHECKING BT8.
+  nested copy's parameters Revit links is NEEDS-CHECKING BV8.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #

@@ -136,6 +136,14 @@
 
 **Its own file:** [`proposals/f41.md`](proposals/f41.md)
 
+## F42 — the HVAC design engine leaves five things only the owner can settle
+
+**Its own file:** [`proposals/f42.md`](proposals/f42.md)
+
+## F43 — the fire protection design engine leaves five things only the owner can settle
+
+**Its own file:** [`proposals/f43.md`](proposals/f43.md)
+
 ## 2026-09-19 — what is left after twenty-three gaps were closed, and the two that never can be
 
 **Its own file:** [`proposals/2026-09-19-what-is-left-after-twenty-three.md`](proposals/2026-09-19-what-is-left-after-twenty-three.md)

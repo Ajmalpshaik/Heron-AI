@@ -102,6 +102,14 @@ CORRECT_REFUSALS = {
         "right, because 0 results reads as 'nothing to find'",
     "needs_request_values":
         "asked for something without saying what",
+    # The HVAC engine's (docs/41): a value given that cannot be a design
+    # figure - negative, not a number, outside the range its equation holds
+    # over, or two readings of one thing at once. Refusing is right for the
+    # reason heron_psychro.py gives: a number past its equation's range is
+    # the most convincing wrong answer there is.
+    "unusable_request_values":
+        "a value was given that cannot be a design figure - refusing beats "
+        "calculating from it",
     "revit_busy":
         "Revit was mid-command; interrupting it is not on offer",
     "write_disabled":

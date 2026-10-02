@@ -91,7 +91,7 @@ compatibility-note: >
   plane already aligned - read the same 2020 through 2027 (the RevitAPI
   reference assemblies and XML remarks, read 2026-10-01). That a profile
   family's lines are detail lines drawn this way is from a published Revit
-  API answer read 2026-10-01, and is NEEDS-CHECKING BT11, not a promise.
+  API answer read 2026-10-01, and is NEEDS-CHECKING BV11, not a promise.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #

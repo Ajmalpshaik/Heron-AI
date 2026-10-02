@@ -1,5 +1,5 @@
-# The proof of every other kind of family - NEEDS-CHECKING Group BT, rows BT1
-# to BT13, BT17 and BT18 - BT19 and BT20 are family-beam-2026-10-02.yaml, because
+# The proof of every other kind of family - NEEDS-CHECKING Group BV, rows BV1
+# to BV13, BV17 and BV18 - BV19 and BV20 are family-beam-2026-10-02.yaml, because
 # a record is kept per tool and a second job for one tool would overwrite it:
 #
 #   report-family-template        REPORT_FAMILY_TEMPLATE        FRG-DOC-037
@@ -14,8 +14,8 @@
 #   add-family-flip-control       ADD_FAMILY_FLIP_CONTROL       FRG-VIEW-118
 #   draw-family-detail-lines      DRAW_FAMILY_DETAIL_LINES      FRG-VIEW-119
 #   set-family-settings, widened  SET_FAMILY_SETTINGS           FRG-DOC-036
-#   set-family-connector-roles    SET_FAMILY_CONNECTOR_ROLES    FRG-MEP-055  (BT17)
-#   set-family-light-source       SET_FAMILY_LIGHT_SOURCE       FRG-MEP-056  (BT18)
+#   set-family-connector-roles    SET_FAMILY_CONNECTOR_ROLES    FRG-MEP-055  (BV17)
+#   set-family-light-source       SET_FAMILY_LIGHT_SOURCE       FRG-MEP-056  (BV18)
 #
 #     python tools/batch-prove.py tools/jobs/family-kinds-2026-10-02.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/family-kinds-2026-10-02.yaml
@@ -45,10 +45,10 @@
 #   "Heron Coil Test"            Mechanical Equipment, with two pipe
 #                                connectors on faces lying on planes "Water
 #                                In" and "Water Out", System
-#                                Classification Global (BT17)
+#                                Classification Global (BV17)
 #   "Heron Lighting Test"        Lighting Fixture, Light Source ticked by
 #                                hand in Family Category and Parameters,
-#                                one type (BT18)
+#                                one type (BV18)
 #
 # SOME VALUES ARE IDS THAT ONLY AN EARLIER RUN CAN GIVE, and are written here
 # as PLACEHOLDERS: the four line ids create-conceptual-form is built on (from
@@ -77,7 +77,7 @@ jobs:
     expect: familyKind
     note: >
       Positive reads wall-based with one wall; negative must read level-based,
-      no host. Run again in each template BT1 names and record Host's words.
+      no host. Run again in each template BV1 names and record Host's words.
 
   - fragment: draw-family-filled-region
     in: "Heron Detail Item Test"

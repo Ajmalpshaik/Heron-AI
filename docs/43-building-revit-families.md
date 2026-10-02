@@ -7,7 +7,7 @@ Heron-Layer:  brain
 See docs/29-metadata-standard.md
 -->
 
-# 41 — Building Revit families: every kind, and what makes one parametric
+# 43 — Building Revit families: every kind, and what makes one parametric
 
 **Asked 2026-10-01 by the owner:** *"you have very good for family creation but i need parametric family
 creation also ... line based family, ceiling based, patterns, floor based, wall based, all kind of this
@@ -24,15 +24,15 @@ disagrees with a sentence here, the more specific source wins and the sentence i
 
 **Nothing here is proven.** Every tool and skill this page names is `DRAFT` until it has been run on a real
 family with a negative case ([D-30](DECISIONS.md)). The register rows that owe those runs are
-[NEEDS-CHECKING Group BT](needs-checking/group-bt.md).
+[NEEDS-CHECKING Group BV](needs-checking/group-bv.md).
 
 | What it produced | Where it lives |
 |---|---|
 | **Eleven new tools** for the kinds of family the library could not build or could not read: the template report, filled and masking regions, flip controls, adaptive points, curves through points, conceptual forms, a Family Type parameter, a type catalog, 2D lines for profiles and detail items, an opening in a hosted family's host, a sweep drawn with a loaded profile | §11, and each card in [`brain/fragments/`](../brain/fragments/) |
 | **One tool widened**: `set-family-settings` takes Cut with Voids When Loaded, Maintain Annotation Orientation, Rotate with Component, Keep Text Readable, Enable Cutting in Views, Part Type and Profile Usage as well as its four switches | [its card](../brain/fragments/set-family-settings/fragment.yaml) |
 | **Seven new skills**, one per kind, and `family-creation` widened | §11 |
-| **What to measure in Revit** | [Group BT](needs-checking/group-bt.md) |
-| **What disagrees, and a possible defect found on the way** | [FRAGMENT-ISSUES rows 5b-278 to 5b-280](FRAGMENT-ISSUES.md) |
+| **What to measure in Revit** | [Group BV](needs-checking/group-bv.md) |
+| **What disagrees, and a possible defect found on the way** | [FRAGMENT-ISSUES rows 5b-279 to 5b-281](FRAGMENT-ISSUES.md) |
 
 ---
 
@@ -83,7 +83,7 @@ built.
 |---|---|---|---|---|
 | Level-based (Generic Model, furniture, equipment) | `OneLevelBased` | one click, on a level | Center (Left/Right), Center (Front/Back), Ref. Level | `family-creation` |
 | Work-plane-based | `WorkPlaneBased`, with the Work Plane-Based switch on | on a level, plane or face, and moves with it | as above | `family-creation` |
-| Face-based | `WorkPlaneBased`, the switch off - the rule BT1 checks | on any face, any angle, in a linked model too | a placeholder host the project never shows (**SOURCED**) | `hosted-family-creation` |
+| Face-based | `WorkPlaneBased`, the switch off - the rule BV1 checks | on any face, any angle, in a linked model too | a placeholder host the project never shows (**SOURCED**) | `hosted-family-creation` |
 | Wall-, ceiling-, floor-, roof-based | `OneLevelBasedHosted` | only on that host | a sample wall, ceiling, floor or roof | `hosted-family-creation` |
 | Line-based | `CurveBased` | two clicks; they set its Length | the built-in instance Length (`FAMILY_LINE_LENGTH_PARAM`) and the planes it is measured between | `line-based-family-creation` |
 | Two-level (a column) | `TwoLevelsBased` | between a base and a top level | a lower and an upper reference level | `structural-family-creation` for a structural column, `family-creation` for an architectural one |
@@ -222,7 +222,7 @@ length, `rounddown(Length / Spacing) + 1`, guarded `if(n < 2, 2, n)` on 2020 to 
 
 **Two sources disagree, and both are recorded.** The API's own remarks for a global parameter's formula say a
 Length may not feed an Integer or Number formula, while `Count = Length / Spacing` is everyday family practice.
-**NEEDS-CHECKING BT14** settles it in Revit.
+**NEEDS-CHECKING BV14** settles it in Revit.
 
 ---
 
@@ -235,7 +235,7 @@ reads it with `size_lookup(Table, "Column", default, key1, key2, ...)`, the defa
 matches. **SOURCED, and in conflict with a Heron card:** several sources say the FIRST column holds row names
 and is never searched - the first key is matched against the second column - while
 [`write-family-size-table`](../brain/fragments/write-family-size-table/fragment.yaml)'s purpose calls the first
-column the key. Both are recorded ([row 5b-279](FRAGMENT-ISSUES.md)); **NEEDS-CHECKING BT15** settles it with
+column the key. Both are recorded ([row 5b-280](FRAGMENT-ISSUES.md)); **NEEDS-CHECKING BV15** settles it with
 a negative case. **SOURCED (Autodesk's developers, via The Building Coder):** from Revit 2021.1 a UTF-8 or
 UTF-16 CSV is read as such only WITH a byte-order mark; without one it is read as ANSI. **API:**
 `FamilySizeTableManager` creates, imports, exports and removes tables, in a family or a project document.
@@ -248,7 +248,7 @@ and `GetTypeCatalogStringForUnit` from 2021, `GetTypeCatalogString` before - whi
 Revit renamed some unit words in 2021 and older catalogs stopped loading.
 [`REPORT_FAMILY_TYPE_CATALOG`](../brain/fragments/report-family-type-catalog/fragment.yaml) builds the text
 from those calls and writes nothing; File > Export > Family Types is Revit's own way and the comparison its
-proof uses. How Revit reads Yes/No cells, quoted cells and the file's encoding are **UNSURE** (BT10).
+proof uses. How Revit reads Yes/No cells, quoted cells and the file's encoding are **UNSURE** (BV10).
 
 ---
 
@@ -271,7 +271,7 @@ family cannot be used in a conceptual family; a small nested adaptive family sta
 
 Autodesk's remark on `NewExtrusionForm` names the families it refuses as *"Conceptual Mass, 2D, or other
 family where extrusions cannot be created"* - the same words as the classic blend's, and very likely copied:
-which conceptual families take each call is **NEEDS-CHECKING BT6**.
+which conceptual families take each call is **NEEDS-CHECKING BV6**.
 
 **Conceptual masses (SOURCED unless marked).** A mass family starts from the Mass template; Create Form makes
 an extrusion, a revolve (a profile and an axis), a sweep (along a path in one plane), a swept blend (several
@@ -286,7 +286,7 @@ the PROJECT and report area, perimeter, volume and exterior surface; Gross Volum
 Floor Area are read-only and schedulable. An in-place mass is for one-off massing, a mass family for repeats.
 **API:** `DividedSurface.Create` with each direction's `SpacingRule` - a number or a distance - and
 `NewRevolveForms` exist 2020 to 2027; `DIVIDE_FAMILY_SURFACE` and `CREATE_CONCEPTUAL_FORM`'s axis wrap them, owed
-BT21 and BT22.
+BV21 and BV22.
 
 ---
 
@@ -297,7 +297,7 @@ a host exists; its template carries a sample host. The Family Editor's **Opening
 templates; **API** `FamilyItemFactory.NewOpening(host, profile)` takes a wall or a ceiling and nothing else,
 and an opening's sketch cannot be locked to planes through the API - so an API-made opening is a fixed size.
 Whether a VOID in a wall-, ceiling-, floor- or roof-based template cuts the host without Cut Geometry: no
-source said - **UNSURE**, BT12. In a FACE-BASED family an unattached void does not cut the host on placement:
+source said - **UNSURE**, BV12. In a FACE-BASED family an unattached void does not cut the host on placement:
 either the void is cut into the template's host extrusion with Cut Geometry in the Family Editor, so every
 placement cuts its host, or **Cut with Voids When Loaded** is switched on and the modeller cuts in the project.
 **API:** `InstanceVoidCutUtils` is the project's half - a copy with unattached voids and that switch on cuts
@@ -328,8 +328,8 @@ normalised distance from its start (`Application.NewPointOnEdge` with a `PointLo
 point's own three planes (`PointOnPlane.NewPointOnPlane` on `ReferencePoint.GetCoordinatePlaneReferenceXY`, `YZ`
 or `XZ`) - and follows its host. That is how a two-point beam gets its section: points on point 1's plane square
 to the line, a loop through them, and `NewSweptBlendForm` along the line, whose remarks ask for a path in one
-plane and each profile square to it. Built into `PLACE_ADAPTIVE_POINTS` and `CREATE_CONCEPTUAL_FORM`, owed BT19
-and BT20.
+plane and each profile square to it. Built into `PLACE_ADAPTIVE_POINTS` and `CREATE_CONCEPTUAL_FORM`, owed BV19
+and BV20.
 
 **Doors (SOURCED unless marked).** The Door template is wall-hosted, Doors category, with a host wall and an
 opening already cut in it (two sources agree). That its opening is sized by the Width and Height planes out of the
@@ -398,7 +398,7 @@ a pre-2014 family carries are deleted, or they add to the built-in ones. At Coar
 and **Symbolic Representation** (`FAMILY_SYMBOLIC_REP`) chooses the family's own lines or the project's
 settings (two sources). **Material for Model Behavior** (`FAMILY_STRUCT_MATERIAL_TYPE`) gives Steel and Wood
 cutback and shape handles, Concrete auto-join and rebar without handles, Precast both, Other neither -
-`SET_FAMILY_SETTINGS` sets it, and **Section Shape** too (BT23). **Section Shape** adds schedulable dimension
+`SET_FAMILY_SETTINGS` sets it, and **Section Shape** too (BV23). **Section Shape** adds schedulable dimension
 parameters; a custom steel section is Not Defined and has no connection
 geometry. The analytical model was made automatically before 2023 and separately from 2023. A CUSTOM SECTION is
 the template extrusion's profile edited in the Left view with planes and size parameters, sketched clear of the
@@ -462,7 +462,7 @@ labelled (`NewAngularDimension` in a family, `Dimension.FamilyLabel`). **But no 
 reference to one of the line's own planes**, so no form can be put on one. **SOURCED:** the only route found,
 by a forum user's trial, builds such a reference out of the line's stable representation with a numeric suffix -
 a string Autodesk's own remarks say is not meant to be parsed. Heron does not build on an undocumented string;
-reference-line angles stay **NOT YET**, recorded in [row 5b-278](FRAGMENT-ISSUES.md). The documented route to a
+reference-line angles stay **NOT YET**, recorded in [row 5b-279](FRAGMENT-ISSUES.md). The documented route to a
 bend whose angle the types choose is a REVOLVE whose end angle is linked to an Angle parameter
 (`LINK_FAMILY_FORM_PARAMETER`). **SOURCED:** since 2019 users report errors at angles below 0 or above 180
 degrees with the line's end locked.
@@ -477,11 +477,11 @@ points OUT of its face, and the arrow says which way a duct or pipe is drawn fro
 `ChangeHostReference` (2023+) says a connector on a face alone sits at the face's PLANE ORIGIN and can be moved
 along it, where an edge loop fixes it at the loop - **which puts a sentence of Heron's
 [`add-family-connector`](../brain/fragments/add-family-connector/fragment.yaml) card in doubt** ("at that face's
-centre"), recorded in [row 5b-280](FRAGMENT-ISSUES.md) and not fixed here. A family has one PRIMARY connector
+centre"), recorded in [row 5b-281](FRAGMENT-ISSUES.md) and not fixed here. A family has one PRIMARY connector
 per domain (`AssignAsPrimary`); linked connectors pass flow through only when their system is Global.
 [`SET_FAMILY_CONNECTOR_ROLES`](../brain/fragments/set-family-connector-roles/fragment.yaml) sets both - it
 reports a linked pair that is not Global rather than changing its system, and whether Revit links the second
-end by itself is BT17's question. A
+end by itself is BV17's question. A
 FITTING's connectors take the Fitting system, which is what shows their Angle - and an elbow whose connector
 Angle is not linked to its Angle parameter does not flex in a run.
 
@@ -500,7 +500,7 @@ distribution styles and `LightType` each type's emit size, spot angles, IES file
 and UNSURE where it matters:** the reference gives emit sizes in feet, spot angles in RADIANS but a photometric
 web's tilt in DEGREES, illuminance in lux at a distance in feet - and a wattage or efficacy only as "a universal
 unit value", naming no unit, so the tool takes lumens, candelas or lux and refuses a wattage; it compares what
-Type Properties shows with what was asked (BT18). The Light Source tick box itself is set by hand: no call sets
+Type Properties shows with what was asked (BV18). The Light Source tick box itself is set by hand: no call sets
 it, and `GetLightFamily` refuses a family without it. Revit 2022 added the Fire Protection, Medical Equipment and
 Audio Visual Devices categories and 2023 Mechanical Control Devices and Plumbing Equipment - none exists on
 2020 or 2021. Room Calculation Point keeps a family at a room's edge in the right room. **API:** an
@@ -515,7 +515,7 @@ nested fixture families. The **Light Source Definition** picks the shape (point,
 distribution (spherical, hemispherical, spot, photometric web); the source shows as a yellow outline and belongs
 just below the opening, touching no geometry. A spot's beam, field and tilt angles are type values; the help's
 extracts give their range as up to 160° while the API remarks give the tilt from -180° to 180° (**UNSURE**,
-BT18). **Initial Intensity** is wattage with efficacy, luminous flux, luminous intensity, or illuminance at a
+BV18). **Initial Intensity** is wattage with efficacy, luminous flux, luminous intensity, or illuminance at a
 distance - lumens give the most predictable renderings; **Initial Color** a preset or a kelvin value, with a
 separate Color Filter; **Light Loss Factor** a single value or the product of seven factors, 1 meaning no loss.
 The fixture's ELECTRICAL connector sits on the Ref. Level, its Load Classification, Voltage and Apparent Load
@@ -548,11 +548,11 @@ source on more than one axis by parameters is a forum question (**UNSURE**).
 | A part that rotates about a reference line | No documented call gives a reference line's planes (§9) |
 | A label in a tag, symbol or title block | Revit's API cannot make one on any release (§8.3) |
 | Setting a pattern-based panel's tile pattern | `CurtainPanelTilePattern` is read-only (§7) |
-| A point hosted on a line at a ratio; a profile on a point's plane | **Built 2026-10-02** - `PLACE_ADAPTIVE_POINTS` hosts points on a line (`NewPointOnEdge`) or on a point's own plane (`PointOnPlane.NewPointOnPlane`), and `CREATE_CONCEPTUAL_FORM` sweeps a profile along a path (`NewSweptBlendForm`) - the two-point beam; owed BT19 and BT20 |
-| A connector's primary flag, linked connectors, a light source | **Built 2026-10-02** - `SET_FAMILY_CONNECTOR_ROLES` and `SET_FAMILY_LIGHT_SOURCE`, owed BT17 and BT18. Still by hand: the Light Source tick box, and a wattage (§10) |
-| A hosted opening whose size follows a parameter | An opening's sketch cannot be locked through the API; a void is the route, owed BT12 |
-| Divide Surface on a mass, a revolve form in a conceptual family | **Built 2026-10-02** - `DIVIDE_FAMILY_SURFACE` (a number or a distance each way, and a tile pattern or a loaded panel family) and `CREATE_CONCEPTUAL_FORM` with an axis; owed BT21 and BT22 |
-| A structural family's Material for Model Behavior and Section Shape | **Built 2026-10-02** - `SET_FAMILY_SETTINGS`, owed BT23 |
+| A point hosted on a line at a ratio; a profile on a point's plane | **Built 2026-10-02** - `PLACE_ADAPTIVE_POINTS` hosts points on a line (`NewPointOnEdge`) or on a point's own plane (`PointOnPlane.NewPointOnPlane`), and `CREATE_CONCEPTUAL_FORM` sweeps a profile along a path (`NewSweptBlendForm`) - the two-point beam; owed BV19 and BV20 |
+| A connector's primary flag, linked connectors, a light source | **Built 2026-10-02** - `SET_FAMILY_CONNECTOR_ROLES` and `SET_FAMILY_LIGHT_SOURCE`, owed BV17 and BV18. Still by hand: the Light Source tick box, and a wattage (§10) |
+| A hosted opening whose size follows a parameter | An opening's sketch cannot be locked through the API; a void is the route, owed BV12 |
+| Divide Surface on a mass, a revolve form in a conceptual family | **Built 2026-10-02** - `DIVIDE_FAMILY_SURFACE` (a number or a distance each way, and a tile pattern or a loaded panel family) and `CREATE_CONCEPTUAL_FORM` with an axis; owed BV21 and BV22 |
+| A structural family's Material for Model Behavior and Section Shape | **Built 2026-10-02** - `SET_FAMILY_SETTINGS`, owed BV23 |
 | A structural family's Symbolic Representation | Its built-in parameter exists, but no source gave the values it stores - set by hand until one does |
 | Editing a template's own sketch - a beam's section, a door's opening | No Heron tool edits a sketch; a new form locked to the planes is the route |
 
@@ -605,10 +605,10 @@ source on more than one axis by parameters is a forum question (**UNSURE**).
 
 | What | Where |
 |---|---|
-| The runs every new tool owes, with negative cases | [NEEDS-CHECKING Group BT](needs-checking/group-bt.md) and [`tools/jobs/family-kinds-2026-10-02.yaml`](../tools/jobs/family-kinds-2026-10-02.yaml) |
-| The new tools and skills, and reference-line angles left NOT YET | [Row 5b-278](FRAGMENT-ISSUES.md) |
-| A lookup table's first column: a Heron card and the sources disagree | [Row 5b-279](FRAGMENT-ISSUES.md) |
-| A connector's position on its face: a Heron card and Autodesk's remark disagree | [Row 5b-280](FRAGMENT-ISSUES.md) |
+| The runs every new tool owes, with negative cases | [NEEDS-CHECKING Group BV](needs-checking/group-bv.md) and [`tools/jobs/family-kinds-2026-10-02.yaml`](../tools/jobs/family-kinds-2026-10-02.yaml) |
+| The new tools and skills, and reference-line angles left NOT YET | [Row 5b-279](FRAGMENT-ISSUES.md) |
+| A lookup table's first column: a Heron card and the sources disagree | [Row 5b-280](FRAGMENT-ISSUES.md) |
+| A connector's position on its face: a Heron card and Autodesk's remark disagree | [Row 5b-281](FRAGMENT-ISSUES.md) |
 
 ---
 

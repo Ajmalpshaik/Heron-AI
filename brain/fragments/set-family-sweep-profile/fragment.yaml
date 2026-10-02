@@ -81,7 +81,7 @@ compatibility-note: >
   `ProfileSketch`, read the same 2020 through 2027 (the RevitAPI reference
   assemblies and their XML labels, read 2026-10-01). Whether Revit lets the
   Profile of a sweep made with a SKETCHED profile be set this way is
-  NEEDS-CHECKING BT13; a read-only Profile is refused by name.
+  NEEDS-CHECKING BV13; a read-only Profile is refused by name.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #

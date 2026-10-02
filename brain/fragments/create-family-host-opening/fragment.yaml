@@ -28,7 +28,7 @@ purpose: >
   **ITS SIZE IS FIXED AS DRAWN, AND IT SAYS SO.** An opening's sketch cannot be
   locked to planes through Revit's API, so it does not follow a parameter. An
   opening that must resize is a VOID form locked to planes instead; whether
-  such a void cuts the template's host by itself is NEEDS-CHECKING BT12.
+  such a void cuts the template's host by itself is NEEDS-CHECKING BV12.
 
   **READ BACK, ALL OR NOTHING**: the opening's host and its outline's extent
   are read again, to a millimetre. Its id comes back.

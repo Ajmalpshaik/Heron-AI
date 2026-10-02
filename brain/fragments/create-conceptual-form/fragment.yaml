@@ -112,13 +112,13 @@ compatibility-note: >
   on the extrusion call names the families it refuses in words that read the
   wrong way round - "Conceptual Mass, 2D, or other family where extrusions
   cannot be created" - so which conceptual families take each call is
-  NEEDS-CHECKING BT6, not a promise here. `NewSweptBlendForm(bool,
+  NEEDS-CHECKING BV6, not a promise here. `NewSweptBlendForm(bool,
   ReferenceArray, ReferenceArrayArray)` reads the same 2020 through 2027 too
   (the RevitAPI XML, read 2026-10-02), with its rule in its parameter remarks:
   a path in one plane, a single curve when there is more than one profile,
-  each profile one loop in a plane square to the path - BT20; and
+  each profile one loop in a plane square to the path - BV20; and
   `NewRevolveForms(bool, ReferenceArray, Reference, double, double)`, whose
-  remark says some arguments make several forms from one profile - BT22.
+  remark says some arguments make several forms from one profile - BV22.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #

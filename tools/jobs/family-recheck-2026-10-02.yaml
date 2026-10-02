@@ -1,9 +1,9 @@
-# The proof of the last NOT YET rows of docs/41 §11 that had documented calls -
-# NEEDS-CHECKING Group BT, rows BT21 to BT23:
+# The proof of the last NOT YET rows of docs/43 §11 that had documented calls -
+# NEEDS-CHECKING Group BV, rows BV21 to BV23:
 #
-#   divide-family-surface           DIVIDE_FAMILY_SURFACE    FRG-GEO-055  (BT21)
-#   create-conceptual-form, revolve CREATE_CONCEPTUAL_FORM   FRG-GEO-052  (BT22)
-#   set-family-settings, structural SET_FAMILY_SETTINGS      FRG-DOC-036  (BT23)
+#   divide-family-surface           DIVIDE_FAMILY_SURFACE    FRG-GEO-055  (BV21)
+#   create-conceptual-form, revolve CREATE_CONCEPTUAL_FORM   FRG-GEO-052  (BV22)
+#   set-family-settings, structural SET_FAMILY_SETTINGS      FRG-DOC-036  (BV23)
 #
 #     python tools/batch-prove.py tools/jobs/family-recheck-2026-10-02.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/family-recheck-2026-10-02.yaml

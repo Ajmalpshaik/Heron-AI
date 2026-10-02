@@ -28,7 +28,7 @@ purpose: >
   direction, "1500 mm" a fixed distance; empty leaves Revit's default layout.
   Both centred, unrotated, with no offset. Whether Number counts the cells or
   the lines between them is not promised: the gridline count Revit made is
-  reported, and BT21 records it.
+  reported, and BV21 records it.
 
   **THE PATTERN OR PANEL, OPTIONAL**: a tile pattern by name - Rectangle,
   Hexagon - or a loaded pattern-based panel family's type, "Panel : Glass",

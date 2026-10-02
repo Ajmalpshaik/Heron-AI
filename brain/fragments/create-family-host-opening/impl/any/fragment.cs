@@ -18,7 +18,7 @@
 // ITS SIZE IS FIXED AS DRAWN. An opening's sketch cannot be locked to planes
 // through Revit's API, so this opening does not follow a parameter; an opening
 // that must resize is a VOID form locked to planes instead - whether a void
-// cuts the host of these templates by itself is NEEDS-CHECKING BT12. Said in
+// cuts the host of these templates by itself is NEEDS-CHECKING BV12. Said in
 // the findings every time.
 //
 // READ BACK, ALL OR NOTHING: the opening's host and its outline's extent are
@@ -381,7 +381,7 @@ if (refused == null)
     findings.Add(built);
     findings.Add("Its size is FIXED as drawn: an opening's sketch cannot be locked to planes through Revit's API. An "
         + "opening that must follow a parameter is a void form locked to planes instead - whether that void cuts the "
-        + "template's host by itself is NEEDS-CHECKING BT12.");
+        + "template's host by itself is NEEDS-CHECKING BV12.");
     findings.Add("Placed in a project, the family cuts this opening in the " + hostKind + " it is placed on.");
 }
 

@@ -1,9 +1,9 @@
-# The proof of the two-point adaptive beam - NEEDS-CHECKING Group BT, rows
-# BT19 and BT20: points hosted on a point's own plane, then a sweep of the
+# The proof of the two-point adaptive beam - NEEDS-CHECKING Group BV, rows
+# BV19 and BV20: points hosted on a point's own plane, then a sweep of the
 # loop through them along the line between the two placement points.
 #
-#   place-adaptive-points, hosted  PLACE_ADAPTIVE_POINTS   FRG-GEO-050  (BT19)
-#   create-conceptual-form, sweep  CREATE_CONCEPTUAL_FORM  FRG-GEO-052  (BT20)
+#   place-adaptive-points, hosted  PLACE_ADAPTIVE_POINTS   FRG-GEO-050  (BV19)
+#   create-conceptual-form, sweep  CREATE_CONCEPTUAL_FORM  FRG-GEO-052  (BV20)
 #
 #     python tools/batch-prove.py tools/jobs/family-beam-2026-10-02.yaml --dry-run
 #     python tools/batch-prove.py tools/jobs/family-beam-2026-10-02.yaml

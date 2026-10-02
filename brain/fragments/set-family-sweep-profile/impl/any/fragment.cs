@@ -112,7 +112,7 @@ if (refused == null)
         }
         // THE FLIP IS READ AGAIN AFTER THE PROFILE IS SET: whether a sweep drawn
         // with a sketched profile carries Profile Is Flipped at all, or only once
-        // a loaded profile is in, no remark says (BT13).
+        // a loaded profile is in, no remark says (BV13).
         var flipRow = sweep.get_Parameter(BuiltInParameter.PROFILE_FLIPPED_HOR);
         var flipNow = flipRow == null ? (int?)null : flipRow.AsInteger();
         if (flipNow != (flipped ? 1 : 0))

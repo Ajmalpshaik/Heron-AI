@@ -183,5 +183,5 @@ else
     if (skipped.Count > 0)
         findings.Add(skipped.Count + " parameter(s) left out: " + leftOut + ".");
     findings.Add("Yes/No and whole-number values are written as numbers, under OTHER; how Revit reads each is "
-        + "NEEDS-CHECKING BT10 - File > Export > Family Types in Revit writes its own catalog to compare against.");
+        + "NEEDS-CHECKING BV10 - File > Export > Family Types in Revit writes its own catalog to compare against.");
 }
