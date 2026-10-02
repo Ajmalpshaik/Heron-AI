@@ -123,6 +123,9 @@ echo '{"tool_name": "Bash", "tool_input": {"command": "gh pr merge 1"}, "cwd": "
   | python .claude/skills/heron-session/bin/main_moved.py
 ```
 
+The first prints nothing in the main checkout with `main` out — the rule above — so try it from a
+worktree or another branch; the suite checks it on this repository with that rule set aside, and holds
+the rule to whatever checkout runs it ([row 5b-279](../../../docs/fragment-issues/section-5b-rows-176-200.md)).
 The second fetches `origin/main` for real. [`tests/test_heron_session.py`](../../../tests/test_heron_session.py)
 pipes JSON into both against a throwaway repository with its own `origin`, so the suite never needs the
 network; [`tests/test_hook_report.py`](../../../tests/test_hook_report.py) holds the report to a diary

@@ -20,8 +20,10 @@ WHAT THIS PROVES
   0. THE SESSION LINE says where the branch stands against origin/main and
      how many fragments are PROVEN and DRAFT, both DERIVED; it does NOT fetch;
      it is silent, exit 0, when there is nothing it can derive, and in a
-     modeller's chat - the main checkout on branch main; and it is fast on
-     this repository.
+     modeller's chat - the main checkout on branch main. On this repository
+     it states the count grep derives, and fast, with that rule set aside;
+     with the rule in place it keeps it, whichever checkout this is - CI
+     checks a push to main out on branch main.
   1. "HAS MAIN MOVED?" fires on a merge and a "ready" - by gh, by gh api, and
      by the GitHub MCP tools - fetches origin/main, and names the commits the
      branch does not have. It stays silent for everything else, including
@@ -226,6 +228,36 @@ def diary_path(env):
         return None, "hook_log.path() did not answer: %s" % got.stderr.strip()
 
 
+def main_checkout_on_main(where):
+    """True when `where` is the main checkout - .git a folder, not a linked
+    worktree's file - with branch main out. Asked of git, not read the way
+    session_line.py reads it, so the suite's answer does not share its code.
+    """
+    if not os.path.isdir(os.path.join(where, ".git")):
+        return False
+    done = subprocess.run(["git", "symbolic-ref", "-q", "HEAD"], cwd=where,
+                          capture_output=True, text=True, encoding="utf-8",
+                          timeout=60)
+    return done.returncode == 0 and done.stdout.strip() == "refs/heads/main"
+
+
+def rule_set_aside(home):
+    """A script, written in `home`, that runs the session line as the host
+    does with one thing changed: the modeller's-chat rule is switched off. So
+    the count and the time are measured on this repository whatever it has
+    checked out - CI checks a push to main out on branch main, where the line
+    as it is says nothing (row 5b-279).
+    """
+    path = os.path.join(home, "rule_set_aside.py")
+    with io.open(path, "w", encoding="utf-8") as handle:
+        handle.write("import sys\n"
+                     "sys.path.insert(0, %r)\n"
+                     "import session_line\n"
+                     "session_line.modeller_checkout = lambda where: False\n"
+                     "sys.exit(session_line.main())\n" % BIN)
+    return path
+
+
 def world(home):
     """A throwaway origin, a seed that pushes to it, and a working clone."""
     origin = os.path.join(home, "origin.git")
@@ -342,21 +374,38 @@ def run_all(home):
     check("claude/some-work" in context_of(parsed),
           "back on a branch, the line is said again")
 
+    # THIS REPOSITORY, in whatever checkout runs the suite. A pull request is
+    # checked out as a detached merge and the line speaks; a push to main is
+    # checked out on branch main, a modeller's chat by the rule above, and a
+    # check that expected the line there failed on every push from #379 on
+    # (row 5b-279). So the count and the time are measured with the rule set
+    # aside, and the rule is held to whichever checkout this is.
     proven = 0
     for card in glob.glob(os.path.join(ROOT, "brain", "fragments", "*",
                                        "fragment.yaml")):
         with io.open(card, encoding="utf-8") as handle:
             if re.search(r"^heron-status:\s*PROVEN\b", handle.read(), re.M):
                 proven += 1
+    real = {"cwd": ROOT, "session_id": "s-real"}
     t0 = time.time()
-    parsed, raw, code = hook(LINE, {"cwd": ROOT, "session_id": "s-real"}, env)
+    parsed, raw, code = hook(rule_set_aside(home), real, env)
     took = time.time() - t0
-    check("%d PROVEN" % proven in context_of(parsed),
-          "on this repository it states the PROVEN count grep derives (%d)"
-          % proven)
+    check("Fragments: %d PROVEN" % proven in context_of(parsed),
+          "on this repository, with the modeller's-chat rule set aside, it "
+          "states the PROVEN count grep derives (%d)" % proven)
     check(took < 5.0,
           "and it is fast: %.2f s on this repository, well inside the "
           "settings' timeout" % took)
+    parsed, raw, code = hook(LINE, real, env)
+    if main_checkout_on_main(ROOT):
+        check(code == 0 and raw == "",
+              "with the rule in place it prints NOTHING here: this repository "
+              "is the main checkout with branch main out, as CI checks out a "
+              "push to main")
+    else:
+        check("Fragments: %d PROVEN" % proven in context_of(parsed),
+              "with the rule in place it says the same count here: this "
+              "repository is not the main checkout with branch main out")
 
     print()
     print("1. Has main moved? - fires on a merge or a 'ready', and only then")
