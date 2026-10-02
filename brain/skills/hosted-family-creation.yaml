@@ -58,8 +58,9 @@ purpose: >
   7. Visibility, subcategories, materials and plan symbols as FAMILY-CREATION
      step 12.
   8. REPORT_FAMILY_FORMS, then FLEX_FAMILY at sizes really different - and,
-     because a hosted family also lives with its HOST, the modeller places it
-     on two walls (or ceilings) of different thickness in a test project.
+     because a hosted family also lives with its HOST, LOAD_FAMILY into a test
+     project, where the modeller places it on two walls (or ceilings) of
+     different thickness.
 
   NOT YET: cutting a face-based family's host in the Family Editor itself (Cut
   Geometry with the host extrusion, so every placement cuts automatically);
@@ -96,6 +97,15 @@ needs:
   - SET_FAMILY_FORM_VISIBILITY
   - DRAW_FAMILY_SYMBOLIC_LINES
   - REPORT_FAMILY_FORMS
+  - CREATE_FAMILY_BLEND
+  - CREATE_FAMILY_REVOLUTION
+  - CREATE_FAMILY_SWEEP
+  - CREATE_FAMILY_SWEPT_BLEND
+  - LINK_FAMILY_FORM_PARAMETER
+  - SET_FAMILY_FORM_MATERIAL
+  - SET_FAMILY_FORM_SUBCATEGORY
+  - DRAW_FAMILY_FILLED_REGION
+  - LOAD_FAMILY
   # The proof, and never skipped.
   - FLEX_FAMILY
 

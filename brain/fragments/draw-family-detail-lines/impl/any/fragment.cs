@@ -392,6 +392,62 @@ else
         }
     }
 
+    // A PROFILE'S LOOPS MAY NEST - a loop inside another is a hole - BUT NEVER
+    // CROSS OR TOUCH, or the profile fails in a sweep or a project however well
+    // each line was drawn. Every edge of one loop is tested against every edge
+    // of the others, in the shape's own millimetres, an arc as short chords.
+    if (profile && pieces.Count > 1 && problems.Count == 0)
+    {
+        Func<double[], List<double[]>> chords = s =>
+        {
+            var points = new List<double[]>();
+            if (s[0] == 0.0) { points.Add(new[] { s[1], s[2] }); points.Add(new[] { s[5], s[6] }); return points; }
+            double ax = s[1], ay = s[2], bx = s[3], by = s[4], cx = s[5], cy = s[6];
+            var d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
+            if (Math.Abs(d) < 1e-9) { points.Add(new[] { ax, ay }); points.Add(new[] { cx, cy }); return points; }
+            var ox = ((ax * ax + ay * ay) * (by - cy) + (bx * bx + by * by) * (cy - ay) + (cx * cx + cy * cy) * (ay - by)) / d;
+            var oy = ((ax * ax + ay * ay) * (cx - bx) + (bx * bx + by * by) * (ax - cx) + (cx * cx + cy * cy) * (bx - ax)) / d;
+            var r = Math.Sqrt((ax - ox) * (ax - ox) + (ay - oy) * (ay - oy));
+            Func<double, double> turn = x => { while (x < 0) x += 2 * Math.PI; while (x >= 2 * Math.PI) x -= 2 * Math.PI; return x; };
+            var a0 = Math.Atan2(ay - oy, ax - ox);
+            var toEnd = turn(Math.Atan2(cy - oy, cx - ox) - a0);
+            var toMid = turn(Math.Atan2(by - oy, bx - ox) - a0);
+            var sweep = toMid <= toEnd ? toEnd : toEnd - 2 * Math.PI;
+            for (var k = 0; k <= 64; k++)
+            {
+                var t = a0 + sweep * k / 64;
+                points.Add(new[] { ox + r * Math.Cos(t), oy + r * Math.Sin(t) });
+            }
+            return points;
+        };
+        Func<double[], double[], double[], double> side = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+        Func<double[], double[], double[], bool> within = (a, b, c) =>
+            Math.Min(a[0], b[0]) - 1e-6 <= c[0] && c[0] <= Math.Max(a[0], b[0]) + 1e-6
+            && Math.Min(a[1], b[1]) - 1e-6 <= c[1] && c[1] <= Math.Max(a[1], b[1]) + 1e-6;
+        Func<double[], double[], double[], double[], bool> meet = (p, q, m, n) =>
+        {
+            var d1 = side(m, n, p);
+            var d2 = side(m, n, q);
+            var d3 = side(p, q, m);
+            var d4 = side(p, q, n);
+            if (((d1 > 1e-9 && d2 < -1e-9) || (d1 < -1e-9 && d2 > 1e-9))
+                && ((d3 > 1e-9 && d4 < -1e-9) || (d3 < -1e-9 && d4 > 1e-9))) return true;
+            return (Math.Abs(d1) <= 1e-9 && within(m, n, p)) || (Math.Abs(d2) <= 1e-9 && within(m, n, q))
+                || (Math.Abs(d3) <= 1e-9 && within(p, q, m)) || (Math.Abs(d4) <= 1e-9 && within(p, q, n));
+        };
+        var traced = pieces.Select(pc => pc.Item1.Select(chords).ToList()).ToList();
+        for (var i = 0; i < traced.Count; i++)
+            for (var j = i + 1; j < traced.Count; j++)
+            {
+                var hit = traced[i].Any(ca => traced[j].Any(cb =>
+                    Enumerable.Range(0, ca.Count - 1).Any(x => Enumerable.Range(0, cb.Count - 1)
+                        .Any(y => meet(ca[x], ca[x + 1], cb[y], cb[y + 1])))));
+                if (hit)
+                    problems.Add("Shapes " + (i + 1) + " and " + (j + 1) + " cross or touch. A profile's loops may sit "
+                        + "one inside another - a hole - but never cross or touch.");
+            }
+    }
+
     if (wantedName.Length == 0)
         problems.Add("No subcategory was named. Name one for the lines' weight, or \"none\" for the family's own "
             + "category, " + (category == null ? "" : category.Name) + ".");
@@ -517,6 +573,28 @@ if (refused == null)
                     && Math.Abs(plane.Normal.DotProduct(target.ViewDirection)) < 1e-6;
             }).ToList();
             if (onIt.Count == 0) { free++; continue; }
+            // ONE PLANE PER LINE. Where named planes coincide - a template's
+            // centre plane under an edge plane - the one that does not define
+            // the origin is the one a size moves, so the line follows it alone.
+            // Two such planes are ambiguous and refused, never both locked: a
+            // label moving one apart would leave the line held by both.
+            if (onIt.Count > 1)
+            {
+                var movable = onIt.Where(rp =>
+                {
+                    var origin = rp.get_Parameter(BuiltInParameter.DATUM_PLANE_DEFINES_ORIGIN);
+                    return origin == null || origin.StorageType != StorageType.Integer || origin.AsInteger() != 1;
+                }).ToList();
+                if (movable.Count != 1)
+                    throw new InvalidOperationException("A line lies along " + string.Join(" and ",
+                        onIt.Select(rp => "\"" + ownName(rp) + "\"")) + ", which coincide, and lockToPlanes cannot tell "
+                        + "which it should follow. Move one plane apart, or draw without locks and lock the line by hand. "
+                        + "The call failed, and Heron rolls the whole call back.");
+                findings.Add("A line along \"" + ownName(movable[0]) + "\" also lies on " + string.Join(", ",
+                    onIt.Where(rp => rp.Id != movable[0].Id).Select(rp => "\"" + ownName(rp) + "\""))
+                    + ", which defines the origin - it is locked to \"" + ownName(movable[0]) + "\" only.");
+                onIt = movable;
+            }
             foreach (var rp in onIt)
             {
                 Dimension alignment;

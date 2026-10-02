@@ -43,7 +43,8 @@ purpose: >
      choose.
   6. REPORT_FAMILY_FORMS, then the flex an adaptive family takes: the modeller
      drags each point in the Family Editor and the form must follow, then
-     places it in a test project by clicking the points in order.
+     LOAD_FAMILY into a test project, where the modeller places it by clicking
+     the points in order.
 
   KNOWN HERE AND SET BY HAND: each placement point's ORIENTATION (Instance
   (xyz) by default; Host and Loop System is the one panels placed on a
@@ -65,6 +66,7 @@ needs:
   - SET_FAMILY_FORM_MATERIAL
   - ADD_FAMILY_PARAMETERS
   - REPORT_FAMILY_FORMS
+  - LOAD_FAMILY
 
 preconditions:
   - a family document is open in the Family Editor, started by the modeller from the Generic Model Adaptive template - Heron does not choose a template

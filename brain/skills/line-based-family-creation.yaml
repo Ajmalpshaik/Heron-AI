@@ -53,8 +53,8 @@ purpose: >
   6. Materials, visibility and a plan symbol as FAMILY-CREATION step 12 - a
      single line at coarse is the usual plan symbol of a run.
   7. REPORT_FAMILY_FORMS, then FLEX_FAMILY at TWO LENGTHS as well as two
-     sections - the length is the size that moves most - and the modeller
-     places it with two clicks in a test project.
+     sections - the length is the size that moves most - then LOAD_FAMILY
+     into a test project, where the modeller places it with two clicks.
 
   A 2D line-based DETAIL ITEM is DETAIL-FAMILY-CREATION.
 
@@ -81,6 +81,12 @@ needs:
   - SET_FAMILY_FORM_MATERIAL
   - DRAW_FAMILY_SYMBOLIC_LINES
   - REPORT_FAMILY_FORMS
+  - LINK_FAMILY_FORM_PARAMETER
+  - SET_FAMILY_FORM_SUBCATEGORY
+  - SET_FAMILY_FORM_VISIBILITY
+  - DRAW_FAMILY_FILLED_REGION
+  - ADD_FAMILY_FLIP_CONTROL
+  - LOAD_FAMILY
   # The proof, and never skipped.
   - FLEX_FAMILY
 

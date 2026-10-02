@@ -45,9 +45,9 @@ purpose: >
      the types must choose it.
   5. REPORT_FAMILY_FORMS, then the flex a pattern-based panel takes: in the
      Family Editor the modeller drags one point and the form must bend with it
-     (FLEX_FAMILY changes parameters, not points); then the panel is loaded
-     into a test mass and DIVIDE_FAMILY_SURFACE divides a face of it with this
-     panel as the pattern - every cell takes one.
+     (FLEX_FAMILY changes parameters, not points); then LOAD_FAMILY puts the
+     panel into a test mass and DIVIDE_FAMILY_SURFACE divides a face of it with
+     this panel as the pattern - every cell takes one.
 
   AN INSET FRAME OR AN OPENING THAT SCALES WITH THE CELL: PLACE_ADAPTIVE_POINTS
   "on <edge line id> at 0.2" hosts reference points on the template's edges,
@@ -71,6 +71,7 @@ needs:
   - SET_FAMILY_FORM_MATERIAL
   - REPORT_FAMILY_FORMS
   - DIVIDE_FAMILY_SURFACE
+  - LOAD_FAMILY
 
 preconditions:
   - a family document is open in the Family Editor, started by the modeller from a pattern-based template - Heron does not choose a template

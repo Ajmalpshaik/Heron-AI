@@ -65,7 +65,9 @@ contract:
     - name: colorTemperature
       type: string
       source: request
-    # The one type to change. Empty changes every type.
+    # The one type to change. Empty changes every type. A CHANGE of shape or
+    # distribution STYLE is the whole family's in Revit, so with one type named
+    # it is refused; that type's values within the style are its own.
     - name: typeName
       type: string
       source: request

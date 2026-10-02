@@ -18,7 +18,8 @@ purpose: >
   symbol, a title block - in its view, as the Family Editor's Line tool does
   there: detail lines. In a PROFILE family every line is part of the profile,
   so the loops given ARE the profile - closed loops that do not cross, a loop
-  inside another a hole - and an open path is refused there.
+  inside another a hole - and an open path is refused there, as are loops
+  that cross or touch, checked edge by edge before anything is drawn.
 
   **THE SAME SHAPE LANGUAGE AS THE FORM TOOLS**, millimetres in the view's own
   two model coordinates: closed "circle", "rect", "polygon" or corners, and
@@ -28,7 +29,9 @@ purpose: >
   along a NAMED reference plane is aligned and locked to it, so the profile
   resizes when a labelled dimension moves the plane. That is the step that
   makes a profile parametric. A line is locked only where it already lies; one
-  on no named plane is left free and counted.
+  on no named plane is left free and counted. ONE PLANE PER LINE: where named
+  planes coincide, the one that does not define the origin is the one locked
+  to, and two such planes are refused as ambiguous rather than both locked.
 
   **ON A SUBCATEGORY** of the family's category for its line weight, made when
   new, or "none" for the category itself.

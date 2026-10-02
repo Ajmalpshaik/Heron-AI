@@ -240,6 +240,21 @@ if (refused == null && !notAFamily)
     else if (chosen.Count == 0)
         problems.Add("No type is called \"" + wanted + "\" - this family's types: " + string.Join(", ", typeNames) + ".");
 
+    // THE STYLES ARE THE FAMILY'S. Revit keeps one shape style and one
+    // distribution style for every type, so a CHANGE of style with one type
+    // named would change the others too - refused. The same style with new
+    // values is that type's alone.
+    if (chosen.Count > 0 && chosen.Count < count)
+    {
+        var shapeNow = call(light, "GetLightShapeStyle", new object[0]).ToString();
+        var spreadNow = call(light, "GetLightDistributionStyle", new object[0]).ToString();
+        if ((shapeStyle != null && shapeStyle != shapeNow) || (distributionStyle != null && distributionStyle != spreadNow))
+            problems.Add("Revit keeps a light's shape and distribution STYLE for the whole family - every type takes "
+                + "it - so it cannot change for \"" + wanted + "\" alone. Leave the type empty to change it for all "
+                + count + " types, or keep the style (" + shapeNow + ", " + spreadNow + ") and change only its values "
+                + "for this one.");
+    }
+
     if (problems.Count > 0) refused = "Nothing was changed. " + string.Join(" ", problems);
 }
 
