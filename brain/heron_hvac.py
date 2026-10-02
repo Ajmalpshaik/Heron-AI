@@ -1022,15 +1022,19 @@ QCS_2014_REPORTED = ("46 C DB / 30 C WB outdoors and 23 +/- 1 C, 50 +/- 5 % indo
 _ref("design_weather", "Design weather - Doha International (WMO 411700)",
      "ASHRAE Handbook - Fundamentals 2017, climatic design data, as ASHRAE's own "
      "2017 load-calculation workbook carries it",
-     ("month", "0.4 % DB C", "mean coincident WB C", "daily DB range K", "tau_b", "tau_d"),
-     [("jan", 26.5, 17.1, 7.8, 0.503, 1.892), ("feb", 29.9, 17.4, 9.1, 0.551, 1.782),
-      ("mar", 34.1, 18.1, 10.9, 0.617, 1.644), ("apr", 39.2, 20.1, 11.8, 0.664, 1.593),
-      ("may", 44.1, 21.1, 12.2, 0.654, 1.595), ("jun", 45.8, 21.5, 12.4, 0.630, 1.636),
-      ("jul", 45.7, 22.2, 11.7, 0.686, 1.592), ("aug", 44.9, 23.2, 10.7, 0.647, 1.673),
-      ("sep", 42.2, 22.5, 10.3, 0.569, 1.800), ("oct", 39.6, 21.5, 10.4, 0.511, 1.916),
-      ("nov", 34.2, 20.3, 8.6, 0.505, 1.936), ("dec", 28.9, 18.9, 8.1, 0.483, 1.955)],
+     ("month", "0.4 % DB C", "mean coincident WB C", "daily DB range K",
+      "coincident WB range K", "tau_b", "tau_d"),
+     [("jan", 26.5, 17.1, 7.8, 3.8, 0.503, 1.892), ("feb", 29.9, 17.4, 9.1, 3.9, 0.551, 1.782),
+      ("mar", 34.1, 18.1, 10.9, 4.5, 0.617, 1.644), ("apr", 39.2, 20.1, 11.8, 5.0, 0.664, 1.593),
+      ("may", 44.1, 21.1, 12.2, 5.8, 0.654, 1.595), ("jun", 45.8, 21.5, 12.4, 6.2, 0.630, 1.636),
+      ("jul", 45.7, 22.2, 11.7, 6.6, 0.686, 1.592), ("aug", 44.9, 23.2, 10.7, 6.4, 0.647, 1.673),
+      ("sep", 42.2, 22.5, 10.3, 5.8, 0.569, 1.800), ("oct", 39.6, 21.5, 10.4, 5.6, 0.511, 1.916),
+      ("nov", 34.2, 20.3, 8.6, 4.2, 0.505, 1.936), ("dec", 28.9, 18.9, 8.1, 3.7, 0.483, 1.955)],
      note="MONTHLY 0.4 % values, not the annual 0.4/1/2 % ones, which could not be "
-          "checked. Heating: 11.8 C at 99.6 %, 13.0 C at 99 %. Site 25.261 N, 51.565 E, "
+          "checked. The two ranges are the workbook's own, which it lists beside the "
+          "5 % dry bulb and ASHRAE's example uses with it; monthly_load applies them to "
+          "these 0.4 % values and says so. Heating: 11.8 C at 99.6 %, 13.0 C at 99 %. "
+          "Site 25.261 N, 51.565 E, "
           "10.7 m, UTC+3. The peak dry bulb is DRY air - July's 45.7/22.2 C holds 7.1 g/kg, "
           "less than a 23 C 50 % room - so latent and coil loads need the "
           "dehumidification design condition. QCS 2014 Section 22 Part 1 is reported to "
@@ -1748,7 +1752,8 @@ def on_surface(altitude, azimuth, beam, diffuse, surface_azimuth, tilt, rho):
 def _facing(view):
     raw = view.raw("facing")
     if raw is None or str(raw).strip() == "":
-        view.answer.need("facing", "a compass word (N, NE, E ... NW) or degrees from north",
+        view.answer.need(view.name("facing"),
+                         "a compass word (N, NE, E ... NW) or degrees from north",
                          "the way the surface faces - west is 270; a roof's facing does "
                          "not matter when its tilt is 0")
         return None
@@ -1756,8 +1761,8 @@ def _facing(view):
     if word in _FACING:
         return _FACING[word]
     try:
-        value = _to_number(raw, "facing")
-        _within(value, "facing", "degrees", 0, 360, False)
+        value = _to_number(raw, view.name("facing"))
+        _within(value, view.name("facing"), "degrees", 0, 360, False)
     except Refused as why:
         view.answer.refuse(str(why) + " - or a compass word, N to NW")
         return None
@@ -1914,16 +1919,40 @@ class _Outside(object):
         if wo is None or wr is None:
             self.a.assume("outdoor or room humidity not given, so the latent load of "
                           "outdoor air is not counted")
-        if self.standard:
-            qs = STANDARD_SENSIBLE * flow_ls * (self.to - self.tr)
-            ql = STANDARD_LATENT * flow_ls * (wo - wr) if None not in (wo, wr) else 0.0
-            return qs, ql
-        w_v = wo if wo is not None else 0.0
-        m = flow_ls / 1000.0 / PSY.specific_volume(self.to, w_v, self.p)
-        qs = m * (1.006 + 1.86 * w_v) * (self.to - self.tr) * 1000.0
-        ql = (m * (wo - wr) * (2501.0 + 1.86 * self.tr) * 1000.0
-              if None not in (wo, wr) else 0.0)
+        return air_heat(self.standard, flow_ls, self.to, self.tr, wo, wr, self.p)
+
+
+def air_heat(standard, flow_ls, to, tr, wo, wr, p):
+    """
+    (sensible W, latent W) of `flow_ls` of outdoor air at `to` C and humidity
+    ratio `wo` brought to the room's `tr` and `wr` - in standard air by ASHRAE's
+    coefficients, otherwise by the air's own mass and enthalpy at `p` kPa.
+    Latent is 0 when either humidity is None; the caller says so.
+    """
+    if standard:
+        qs = STANDARD_SENSIBLE * flow_ls * (to - tr)
+        ql = STANDARD_LATENT * flow_ls * (wo - wr) if None not in (wo, wr) else 0.0
         return qs, ql
+    w_v = wo if wo is not None else 0.0
+    m = flow_ls / 1000.0 / PSY.specific_volume(to, w_v, p)
+    qs = m * (1.006 + 1.86 * w_v) * (to - tr) * 1000.0
+    ql = m * (wo - wr) * (2501.0 + 1.86 * tr) * 1000.0 if None not in (wo, wr) else 0.0
+    return qs, ql
+
+
+def _check_qcs(a, qcs):
+    """A load answer's line on the QCS edition the project follows (D-111)."""
+    if qcs is None:
+        a.check("WARN", "not checked: which edition of the QCS governs this project is "
+                        "not known yet")
+    elif qcs == "QCS 2014":
+        a.check("WARN", "QCS 2014 governs this project: its Section 22 is reported - in "
+                        "search summaries only - to set %s. Heron could not read the QCS "
+                        "text, so confirm the conditions used here against it"
+                % QCS_2014_REPORTED)
+    elif qcs != NO_STANDARD:
+        a.check("WARN", "%s governs this project and Heron holds nothing from it - take "
+                        "its design conditions from the text" % qcs)
 
 
 def _surface_needs_outdoor(view):
@@ -1974,6 +2003,18 @@ def _opaque(a, out, view, label, horizontal, rows):
             return
         q, how = u * area * (out.to - out.tr), "shaded, outdoor air temperature"
     rows.append([view.text("name") or view.prefix, q, 0.0, how])
+
+
+def _partitions(views, tr, rows):
+    """Each partition to an unconditioned space, as a row of the room's load."""
+    for view in views or []:
+        p_area = view.number("area_m2", "m2", "partition area", 0, 100000, positive=True)
+        u = view.number("u_w_m2k", "W/m2.K", "U-value of the partition", 0.01, 10)
+        ta = view.number("adjacent_temp_c", "C", "temperature of the space beyond it", -30, 70)
+        if None in (p_area, u, ta) or tr is None:
+            continue
+        rows.append([view.text("name") or view.prefix, u * p_area * (ta - tr), 0.0,
+                     "U.A.(tadjacent - troom)"])
 
 
 def _internal_gains(a, area, rows):
@@ -2077,14 +2118,7 @@ def calc_cooling_load(a):
         rows.append([(view.text("name") or view.prefix) + " solar",
                      g_area * shgc * e * (1.0 if iac is None else iac), 0.0,
                      "A x SHGC x E x IAC"])
-    for view in partitions or []:
-        p_area = view.number("area_m2", "m2", "partition area", 0, 100000, positive=True)
-        u = view.number("u_w_m2k", "W/m2.K", "U-value of the partition", 0.01, 10)
-        ta = view.number("adjacent_temp_c", "C", "temperature of the space beyond it", -30, 70)
-        if None in (p_area, u, ta) or out.tr is None:
-            continue
-        rows.append([view.text("name") or view.prefix, u * p_area * (ta - out.tr), 0.0,
-                     "U.A.(tadjacent - troom)"])
+    _partitions(partitions, out.tr, rows)
     _internal_gains(a, area, rows)
     infiltration_ls = None
     if infiltration is not None:
@@ -2137,17 +2171,7 @@ def calc_cooling_load(a):
         a.result("Coil load (room + outdoor air)", power_text(total + oqs + oql))
         a.uses("coil load = room load + outdoor air brought from the outdoor to the room "
                "condition; duct heat gain and return-air gains are not included")
-    if qcs is None:
-        a.check("WARN", "not checked: which edition of the QCS governs this project is "
-                        "not known yet")
-    elif qcs == "QCS 2014":
-        a.check("WARN", "QCS 2014 governs this project: its Section 22 is reported - in "
-                        "search summaries only - to set %s. Heron could not read the QCS "
-                        "text, so confirm the conditions used here against it"
-                % QCS_2014_REPORTED)
-    elif qcs != NO_STANDARD:
-        a.check("WARN", "%s governs this project and Heron holds nothing from it - take "
-                        "its design conditions from the text" % qcs)
+    _check_qcs(a, qcs)
     a.uses(NOT_HAP)
     a.cite(SRC_LOADS)
     if out.standard:
@@ -2227,6 +2251,315 @@ def _supply_from_load(a, out, sensible, latent, supply_t, area, height):
                  "was not worked out")
     a.into_revit("terminal_flows splits this airflow across the room's diffusers as a "
                  "file SET_AIR_TERMINAL_FLOW reads")
+
+
+# --- month by month ----------------------------------------------------------
+
+# The design day's hourly shape - ASHRAE Fundamentals' procedure, as ASHRAE's
+# own 2017 load-calculation workbook carries it ("Weather Data - OA", column
+# O): the fraction of the daily range the dry bulb sits below its design value
+# at each hour, 1 to 24, local standard time. The same fraction of the
+# coincident wet-bulb range takes the wet bulb down, and the wet bulb is never
+# above the dry bulb. Reproduced against the workbook's own Atlanta table within
+# its 0.1 F display rounding (docs/41 s4). Part of the METHOD, not a design
+# value.
+DESIGN_DAY_FRACTION = (0.88, 0.92, 0.95, 0.98, 1.00, 0.98, 0.91, 0.74, 0.55, 0.38,
+                       0.23, 0.13, 0.05, 0.00, 0.00, 0.06, 0.14, 0.24, 0.39, 0.50,
+                       0.59, 0.68, 0.75, 0.82)
+
+SRC_DESIGN_DAY = ("ASHRAE Handbook - Fundamentals (SI), Ch. 14 Climatic Design "
+                  "Information - the design-day temperature profile, as ASHRAE's own "
+                  "2017 load-calculation workbook carries it")
+
+STEADY_HOURS = ("HOUR-BY-HOUR STEADY STATE: on each month's design day every gain is "
+                "taken at its own hour and summed, which finds the peak month and hour - "
+                "but with no thermal storage or time lag, so the radiant part of a gain "
+                "is not delayed. An hourly method with radiant time series or heat "
+                "balance (Carrier HAP, Trane TRACE, IES) shifts the peak later and "
+                "lowers it - use one to select plant.")
+
+# The weather sets Heron holds, by the name a modeller says. Naming one is the
+# modeller choosing the design data AND its percentile (D-33) - nothing runs on
+# a set nobody named.
+WEATHER_SETS = collections.OrderedDict([("doha-0.4", "design_weather")])
+
+_MONTH_NAMES = ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct",
+                "nov", "dec")
+
+
+def design_day(db_c, mcwb_c, db_range_k, wb_range_k):
+    """[(hour, dry bulb C, wet bulb C)] for hours 1 to 24 of one design day."""
+    out = []
+    for hour, f in enumerate(DESIGN_DAY_FRACTION, 1):
+        t = db_c - f * db_range_k
+        out.append((hour, t, min(mcwb_c - f * wb_range_k, t)))
+    return out
+
+
+def _design_months(a):
+    """
+    (months, source) - each month a dict of its design-day figures - from a
+    weather set Heron holds that the modeller NAMED, or from the modeller's own
+    rows. (None, None) while that is still a question.
+    """
+    named, own = a.has("design_weather"), a.has("months")
+    if named and own:
+        a.refuse("give design_weather or months, not both - two sets of weather would "
+                 "usually disagree, and preferring one would hide it")
+        return None, None
+    if not named and not own:
+        a.need("design_weather", "one of: %s (or months)" % ", ".join(WEATHER_SETS),
+               "the design weather each month is run on - a set Heron holds, named, or "
+               "months: [{month, db_c, mcwb_c, db_range_k, wb_range_k, tau_b, tau_d}]",
+               offer_table("design_weather"))
+        return None, None
+    if named:
+        key = a.choice("design_weather", tuple(WEATHER_SETS), "the design weather set")
+        if key is None:
+            return None, None
+        data = REFERENCES[WEATHER_SETS[key]]
+        months = []
+        for row in data["rows"]:
+            got = dict(zip(data["columns"], row))
+            months.append({"month": _MONTH_NAMES.index(row[0]) + 1,
+                           "db": got["0.4 % DB C"], "mcwb": got["mean coincident WB C"],
+                           "dbr": got["daily DB range K"], "wbr": got["coincident WB range K"],
+                           "tau_b": got["tau_b"], "tau_d": got["tau_d"]})
+        return months, data["source"]
+    months, seen = [], set()
+    for row in a.records("months", "each month to run: month, db_c, mcwb_c, db_range_k, "
+                         "wb_range_k, tau_b, tau_d") or []:
+        month = row.integer("month", "the month, 1 to 12", 1, 12)
+        months.append({
+            "month": month,
+            "db": row.number("db_c", "C", "the month's design dry bulb", -30, 60),
+            "mcwb": row.number("mcwb_c", "C", "its mean coincident wet bulb", -30, 40),
+            "dbr": row.number("db_range_k", "K", "its mean daily dry-bulb range", 0, 30),
+            "wbr": row.number("wb_range_k", "K", "its coincident wet-bulb range", 0, 30),
+            "tau_b": row.number("tau_b", "-", "its clear-sky beam optical depth", 0.1, 2.0),
+            "tau_d": row.number("tau_d", "-", "its clear-sky diffuse optical depth",
+                                0.5, 4.0)})
+        if month is not None and month in seen:
+            a.refuse("month %d is given twice" % month)
+        seen.add(month)
+    return (sorted(months, key=lambda m: m["month"] or 0),
+            "the modeller's own design weather")
+
+
+def _sweep_surfaces(views, kind):
+    """
+    The surfaces of one kind, read once, as dicts. A wall and a window are
+    vertical and a roof and a skylight are flat - what each word means - and
+    the long-wave correction is a roof's alone, as in cooling_load.
+    """
+    out = []
+    for view in views or []:
+        opaque = kind in ("wall", "roof")
+        area = view.number("area_m2", "m2", "net area of this %s" % kind, 0, 100000,
+                           positive=True)
+        u = view.number("u_w_m2k", "W/m2.K", "U-value of this %s" % kind,
+                        0.01 if opaque else 0.1, 10)
+        facing = _facing(view) if kind in ("wall", "window") else 180.0
+        aho = shgc = iac = None
+        if opaque:
+            aho = view.number("absorptance_over_ho", "m2.K/W", "solar absorptance over the "
+                              "outside surface coefficient", 0, 0.2,
+                              reference=offer_table("sol_air"))
+        else:
+            shgc = view.number("shgc", "0-1", "solar heat gain coefficient", 0, 1)
+            iac = view.number("iac", "0-1", "interior attenuation from blinds - not "
+                              "applied if not given", 0, 1, required=False)
+        shaded = view.flag("no_direct_sun", "true when no direct sun reaches this %s - "
+                           "sky and ground light still count" % kind)
+        if None in (area, u, facing) or (opaque and aho is None) or \
+                (not opaque and shgc is None):
+            continue
+        out.append({"name": view.text("name") or view.prefix, "kind": kind, "area": area,
+                    "u": u, "facing": facing, "tilt": 90.0 if kind in ("wall", "window") else 0.0,
+                    "aho": aho, "shgc": shgc, "iac": iac, "direct": not shaded,
+                    "said": shaded is not None})
+    return out
+
+
+def _sun_on(surfaces, sun, beam, diffuse, rho):
+    """The irradiance on each surface at one hour, W/m2 - beam left out where no direct sun reaches."""
+    if sun["altitude"] <= 0:
+        return [0.0] * len(surfaces)
+    out = []
+    for s in surfaces:
+        here = on_surface(sun["altitude"], sun["azimuth"], beam, diffuse, s["facing"] - 180.0,
+                          s["tilt"], rho)
+        out.append(here["total"] - (0.0 if s["direct"] else here["beam"]))
+    return out
+
+
+@calculation("monthly_load", "Room cooling load month by month - the peak month and hour",
+             "load")
+def calc_monthly_load(a):
+    """A room's cooling load on each month's design day, hour by hour - outdoor temperature and humidity from ASHRAE's design-day profile, the sun on every wall, roof and window by the clear-sky model - with each month's peak, the peak month and hour, and the lowest month.
+
+    Hour-by-hour steady state with no storage or time lag, so not HAP either, and every answer says so.
+    """
+    qcs = project_standards(a)["qcs_edition"]
+    area = a.number("floor_area_m2", "m2", "floor area of the room", 0.5, 1e6, positive=True)
+    height = a.number("room_height_m", "m", "room height - for an infiltration rate given "
+                      "in ACH", 1.5, 60, required=False, positive=True)
+    lat = a.number("latitude_deg", "degrees", "site latitude, north positive", -90, 90)
+    lon = a.number("longitude_deg", "degrees", "site longitude, EAST positive - Doha is "
+                   "about 51.6", -180, 180)
+    tz = a.number("utc_offset_h", "hours", "the site's STANDARD time zone - Qatar is +3",
+                  -12, 14)
+    rho = a.number("ground_reflectance", "0-1", "the ground's solar reflectance in front "
+                   "of the walls and windows", 0, 1,
+                   reference="ASHRAE's own 2017 worked example uses 0.2 - offer it, do not "
+                             "assume it")
+    months, source = _design_months(a)
+    tr = a.number("room_dry_bulb_c", "C", "room design dry bulb", 5, 40)
+    surfaces = []
+    for key, kind in (("walls", "wall"), ("roofs", "roof"), ("windows", "window"),
+                      ("skylights", "skylight")):
+        surfaces += _sweep_surfaces(a.records(key, "%s: area_m2, u_w_m2k and the rest"
+                                              % key, required=False), kind)
+    constant = []
+    _partitions(a.records("partitions", "partitions to unconditioned space: area_m2, "
+                          "u_w_m2k, adjacent_temp_c", required=False), tr, constant)
+    _internal_gains(a, area, constant)
+    infiltration = a.record("infiltration", "infiltration: flow_ls or ach", required=False)
+    oa = a.flow("outdoor air through the unit serving the room - a COIL load, not a "
+                "room load", prefix="outdoor_air", required=False)
+    need_air = bool(infiltration is not None or oa is not None)
+    hr = a.humidity("room_", "room design humidity", required=need_air)
+    standard = p = None
+    if need_air:
+        standard = a.flag("standard_air", "true for ASHRAE's standard-air coefficients "
+                          "1.23 / 3010 / 1.20 instead of the air's own properties at the "
+                          "site altitude")
+        if standard:
+            if a.has("altitude_m") or a.has("pressure_kpa"):
+                a.refuse("standard_air was asked for AND an altitude or pressure was "
+                         "given - say which is meant")
+            p = PSY.STANDARD_PRESSURE_KPA
+        else:
+            p = a.pressure_kpa("site altitude, for air density")
+    infiltration_ls = None
+    if infiltration is not None:
+        infiltration_ls = _infiltration(a, infiltration, area, height)
+    if a.incomplete():
+        return
+    if not surfaces and not constant and not need_air:
+        a.refuse("nothing in the room gains heat - give walls, roofs, windows, people, "
+                 "lighting, equipment, partitions, infiltration or outdoor air")
+        return
+    wr = None
+    if need_air:
+        room = _state(a, tr, p, hr)
+        if room is None:
+            return
+        wr = room["w"]
+    base_s = sum(r[1] for r in constant)
+    base_l = sum(r[2] for r in constant)
+
+    peaks = []
+    for m in months:
+        n = day_of_year(m["month"], 21)
+        hours = []
+        for hour, t, twb in design_day(m["db"], m["mcwb"], m["dbr"], m["wbr"]):
+            sun = sun_position(lat, lon, tz, n, float(hour))
+            beam, diffuse, _m = (clear_sky(sun["eo"], sun["altitude"], m["tau_b"], m["tau_d"])
+                                 if sun["altitude"] > 0 else (0.0, 0.0, None))
+            sens, lat_ = base_s, base_l
+            for s, e in zip(surfaces, _sun_on(surfaces, sun, beam, diffuse, rho)):
+                if s["kind"] in ("wall", "roof"):
+                    te = t + s["aho"] * e - (LONGWAVE_HORIZONTAL_K if s["kind"] == "roof"
+                                             else 0.0)
+                    sens += s["u"] * s["area"] * (te - tr)
+                else:
+                    sens += s["u"] * s["area"] * (t - tr)
+                    sens += s["area"] * s["shgc"] * e * (1.0 if s["iac"] is None else s["iac"])
+            wo = PSY.humidity_ratio_from_wet_bulb(t, twb, p) if need_air else None
+            if infiltration_ls is not None:
+                qs, ql = air_heat(standard, infiltration_ls, t, tr, wo, wr, p)
+                sens, lat_ = sens + qs, lat_ + ql
+            coil = None
+            if oa is not None:
+                oqs, oql = air_heat(standard, oa, t, tr, wo, wr, p)
+                coil = sens + lat_ + oqs + oql
+            hours.append({"hour": hour, "t": t, "twb": twb, "s": sens, "l": lat_,
+                          "total": sens + lat_, "coil": coil, "w": wo})
+        peaks.append((m, hours, max(hours, key=lambda h: h["total"])))
+
+    columns = ["month", "hour", "DB C", "WB C", "sensible W", "latent W", "total W"]
+    if oa is not None:
+        columns.append("peak coil W")
+    rows = []
+    for m, hrs, pk in peaks:
+        row = [_MONTH_NAMES[m["month"] - 1], "%02d:00" % pk["hour"], _f(pk["t"], 1),
+               _f(pk["twb"], 1), _f(pk["s"], 0), _f(pk["l"], 0), _f(pk["total"], 0)]
+        if oa is not None:
+            row.append(_f(max(h["coil"] for h in hrs), 0))
+        rows.append(row)
+    a.table("Each month's peak - the 21st, local standard time", columns, rows)
+    top_m, top_hours, top = max(peaks, key=lambda x: x[2]["total"])
+    low_m, _low_hours, low = min(peaks, key=lambda x: x[2]["total"])
+
+    def when(m, h):
+        return "%s 21 at %02d:00" % (_MONTH_NAMES[m["month"] - 1], h["hour"])
+
+    a.result("Peak room load", "%s - %s, %s C DB / %s C WB outdoors"
+             % (power_text(top["total"]), when(top_m, top), _f(top["t"], 1), _f(top["twb"], 1)))
+    a.result("At the peak", "%s W sensible, %s W latent - sensible heat ratio %s"
+             % (_f(top["s"], 0), _f(top["l"], 0),
+                _f(top["s"] / top["total"], 3) if top["total"] > 0 else "-"))
+    if top["total"] > 0:
+        a.result("Load density at the peak", "%s W/m2  (%s m2 per TR)"
+                 % (_f(top["total"] / area, 1), _f(area / (top["total"] / W_PER_TR), 1)))
+    if len(peaks) > 1:
+        a.result("Lowest monthly peak", "%s - %s; the smallest of the months run, not a "
+                 "part-load figure" % (power_text(low["total"]), when(low_m, low)))
+    if oa is not None:
+        coil_m, coil_h = max(((m, h) for m, hs, _pk in peaks for h in hs),
+                             key=lambda x: x[1]["coil"])
+        a.result("Peak coil load (room + outdoor air)", "%s - %s"
+                 % (power_text(coil_h["coil"]), when(coil_m, coil_h)))
+    day = [[("%02d:00" % h["hour"]), _f(h["t"], 1), _f(h["twb"], 1), _f(h["s"], 0),
+            _f(h["l"], 0), _f(h["total"], 0)] + ([_f(h["coil"], 0)] if oa is not None else [])
+           for h in top_hours]
+    a.table("The peak day hour by hour - %s 21" % _MONTH_NAMES[top_m["month"] - 1],
+            ["hour", "DB C", "WB C", "sensible W", "latent W", "total W"]
+            + (["coil W"] if oa is not None else []), day)
+    if wr is not None and top["w"] is not None and top["w"] < wr:
+        a.check("WARN", "the outdoor air at the peak hour is DRIER than the room (%s against "
+                        "%s g/kg), so its latent load is negative. A peak dry-bulb day is the "
+                        "wrong basis for latent and coil sizing - use the site's "
+                        "dehumidification design condition, as ASHRAE's climatic data gives "
+                        "it" % (_f(top["w"] * 1000, 2), _f(wr * 1000, 2)))
+    _check_qcs(a, qcs)
+    for s in surfaces:
+        if s["kind"] in ("window", "skylight") and s["iac"] is None:
+            a.assume("glazing: no interior attenuation (iac) given, so no blinds are credited")
+    if any(not s["said"] for s in surfaces):
+        a.assume("a surface not marked no_direct_sun takes the full clear-sky sun - no "
+                 "shading is credited")
+    for missing in ("people", "lighting", "equipment", "infiltration"):
+        if not a.has(missing):
+            a.assume("no %s given, so none is counted" % missing)
+    a.uses(STEADY_HOURS)
+    a.uses("outdoor t(h) = DB - f(h).DR and wet bulb = min(MCWB - f(h).WBR, t(h)), with "
+           "ASHRAE's design-day fractions f(h), hours 1 to 24 local standard time")
+    if source != "the modeller's own design weather":
+        a.uses("design weather doha-0.4: each month's 0.4 % dry bulb and mean coincident wet "
+               "bulb, with the daily ranges ASHRAE's workbook lists beside its 5 % dry bulb")
+    a.uses("the sun on the 21st of each month at every hour by the clear-sky model, from that "
+           "month's optical depths; a roof and a skylight flat, a wall and a window vertical")
+    a.uses("sol-air te = to + (a/ho).E - 3.7 K for a roof, 0 for a wall, then U.A.(te - "
+           "troom); glass A x SHGC x E x IAC plus U.A.(to - troom)")
+    a.cite(SRC_LOADS, SRC_DESIGN_DAY, SRC_SOLAR, source)
+    if any(s["kind"] in ("wall", "roof") for s in surfaces):
+        a.cite(SRC_SOLAIR)
+    if need_air:
+        a.cite(SRC_STANDARD_AIR if standard else SRC_PSYCHRO)
+    a.into_revit("READ_SPACE_LOADS reads what Revit's own analysis put on the Space, to "
+                 "compare; WRITE_ELEMENT_PARAMETERS sets a Space's design airflow")
 
 
 @calculation("heating_load", "Room heating load", "load")
@@ -3096,6 +3429,12 @@ def _interpolate(points, x):
     return None
 
 
+# What puts a chosen terminal into the model: its TYPE carries the size.
+TERMINAL_INTO_REVIT = ("CHANGE_ELEMENT_TYPE swaps a placed terminal to the type of the size "
+                       "chosen, where the family carries that size; SET_AIR_TERMINAL_FLOW "
+                       "sets its flow")
+
+
 def _neck_limit(a):
     """
     (limit in m/s, the sentence saying whose it is) for a supply neck: the
@@ -3160,6 +3499,7 @@ def calc_diffuser_select(a):
                                 "%s L/s in the manufacturer's table" % _f(q, 1))
                 a.uses("smallest neck with velocity Q / A at or below the limit")
                 a.cite(SRC_DIFFUSION)
+                a.into_revit(TERMINAL_INTO_REVIT)
                 return
         a.refuse("%s L/s needs more than the largest neck given (%s mm) at %s m/s"
                  % (_f(q, 1), _f(max(sizes), 0), _g(vmax)))
@@ -3209,6 +3549,7 @@ def calc_diffuser_select(a):
         first = winners[0]
         a.result("Selected", "%s - NC %s%s" % (first[0], _f(first[1], 0),
                  ", T50 %s m" % _f(first[2], 1) if first[2] is not None else ""))
+        a.into_revit(TERMINAL_INTO_REVIT)
         a.uses("the first size, in the catalogue's own order, that meets the NC limit and "
                "the throw range - so list the sizes smallest first")
     a.uses("NC, T50 and pressure interpolated linearly between the catalogue's flow points "
@@ -3440,6 +3781,96 @@ def calc_pipe_size(a):
     a.uses("smallest bore meeting every limit given; Darcy-Weisbach with Colebrook")
     a.cite(SRC_WATER)
     a.into_revit("SET_MEP_SIZE sets a pipe's diameter; AUTO_SIZE_PIPE is the in-model method")
+
+
+@calculation("unit_select", "Fan coil or split unit selection", "equipment")
+def calc_unit_select(a):
+    """Picks a fan coil or split unit for a room from the manufacturer's own catalogue rows - the smallest that covers the total load, and the sensible load and the airflow where given - and says how far each is over the load.
+
+    Capacity belongs to the product, at the conditions its maker rates it at; Heron holds no catalogue and picks nothing without one.
+    """
+    kind = a.choice("unit_type", ("fan-coil", "split"),
+                    "fan-coil (chilled water) or split (refrigerant)")
+    total = a.power_w("the room's total cooling load - cooling_load or monthly_load gives "
+                      "it", prefix="load")
+    sensible = a.power_w("the room's sensible load - given, a unit must cover it too",
+                         prefix="sensible", required=False)
+    flow = a.flow("the supply airflow the room needs - given, a unit must move it",
+                  prefix="flow", required=False)
+    over = a.number("max_oversize_pct", "%", "how far over the total load a unit may be "
+                    "before it is flagged", 0, 500, required=False)
+    units = []
+    for row in a.records("catalogue", "the maker's rows, smallest first: model and "
+                         "total_kw, with sensible_kw and airflow_ls where the maker lists "
+                         "them - at the conditions the maker rates them") or []:
+        model = row.word("model", "the model, as the maker names it")
+        tot = row.number("total_kw", "kW", "total cooling capacity", 0.1, 5000, positive=True)
+        sen = row.number("sensible_kw", "kW", "sensible cooling capacity", 0.1, 5000,
+                         required=False, positive=True)
+        air = row.flow("rated airflow", prefix="airflow", required=False)
+        if None not in (model, tot):
+            units.append((model, tot * 1000.0, None if sen is None else sen * 1000.0, air))
+    if a.incomplete():
+        return
+    if sensible is not None and sensible > total + 1e-9:
+        a.refuse("the sensible load %s W is more than the total %s W" % (_f(sensible, 0),
+                                                                         _f(total, 0)))
+        return
+    rows, chosen = [], None
+    for model, tot, sen, air in units:
+        short = []
+        if tot < total - 1e-9:
+            short.append("total %s kW short" % _f((total - tot) / 1000.0, 2))
+        if sensible is not None:
+            if sen is None:
+                short.append("no sensible capacity listed")
+            elif sen < sensible - 1e-9:
+                short.append("sensible %s kW short" % _f((sensible - sen) / 1000.0, 2))
+        if flow is not None:
+            if air is None:
+                short.append("no airflow listed")
+            elif air < flow - 1e-9:
+                short.append("airflow %s L/s short" % _f(flow - air, 1))
+        rows.append([model, _f(tot / 1000.0, 2), "-" if sen is None else _f(sen / 1000.0, 2),
+                     "-" if air is None else _f(air, 0),
+                     "%+.0f %%" % ((tot - total) / total * 100.0) if total > 0 else "-",
+                     ", ".join(short) or "meets"])
+        if not short and chosen is None:
+            chosen = (model, tot, sen, air)
+    a.table("The catalogue against a %s kW load" % _f(total / 1000.0, 2),
+            ("model", "total kW", "sensible kW", "airflow L/s", "over the load", "verdict"),
+            rows)
+    if chosen is None:
+        a.check("FAIL", "no unit in the catalogue covers the load%s%s"
+                % (" and the sensible load" if sensible is not None else "",
+                   " and the airflow" if flow is not None else ""))
+    else:
+        model, tot, sen, air = chosen
+        margin = (tot - total) / total * 100.0 if total > 0 else 0.0
+        a.result("Selected", "%s - %s kW total against a %s kW load, %s %% over"
+                 % (model, _f(tot / 1000.0, 2), _f(total / 1000.0, 2), _f(margin, 0)))
+        if sensible is not None:
+            a.result("Sensible", "%s kW against %s kW" % (_f(sen / 1000.0, 2),
+                                                          _f(sensible / 1000.0, 2)))
+        if flow is not None:
+            a.result("Airflow", "%s L/s against %s L/s" % (_f(air, 0), _f(flow, 0)))
+        if over is not None and margin > over + 1e-9:
+            a.check("WARN", "%s is %s %% over the load, past the %s %% given"
+                    % (model, _f(margin, 0), _g(over)))
+    a.uses("the first unit, in the catalogue's own order, that covers the total load%s%s - "
+           "so list the units smallest first"
+           % (", the sensible load" if sensible is not None else "",
+              " and the airflow" if flow is not None else ""))
+    a.cite("the manufacturer's own catalogue, as given - each capacity at the conditions "
+           "its maker rates it at")
+    if kind == "fan-coil":
+        a.check("OK", "next: chw_flow with this load for the coil's chilled water, then "
+                      "pipe_size")
+    else:
+        a.check("WARN", "refrigerant piping - its length, lift and line sizes - is the "
+                        "maker's to state, and Heron does not size it")
+    a.into_revit("CHANGE_ELEMENT_TYPE swaps a placed unit to the selected model's type, "
+                 "where the family carries it")
 
 
 # --- reference ---------------------------------------------------------------

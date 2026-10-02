@@ -19,12 +19,14 @@ diffuser's flow. It could not say what any of those numbers **should be**. Now i
 |---|---|---|
 | *"How much sun is on this west wall at 3 pm?"* | clear-sky irradiance on the surface, hour by hour, from the site's own sky (`solar`) | the figure goes into `cooling_load` |
 | *"How much air does this office need?"* | the room's cooling load and its supply airflow (`cooling_load`, `supply_airflow`) | `SET_AIR_TERMINAL_FLOW` per diffuser, after `terminal_flows` splits it |
+| *"Which month is worst, and at what hour?"* | the room's load on every month's design day, hour by hour, with the peak month and hour and the lowest month (`monthly_load`) | `READ_SPACE_LOADS` reads Revit's own figure to compare |
 | *"Fresh air for this floor?"* | ASHRAE 62.1 outdoor air, zone by zone (`ventilation`) | the figure goes on the Space; `REPORT_SPACE_AIRFLOW` reads it back |
 | *"How many diffusers, and where?"* | a grid, each one's flow, and the throw to look for (`diffuser_layout`) | `PLACE_FAMILY_INSTANCES` at the points it lists |
-| *"Which neck size?"* | the smallest neck under a velocity, or the catalogue row under an NC (`diffuser_select`) | `CHANGE_ELEMENT_TYPE` |
+| *"Which neck size?"* | the smallest neck under a velocity, or the catalogue row under an NC (`diffuser_select`) | `CHANGE_ELEMENT_TYPE` to that size's type, then `SET_AIR_TERMINAL_FLOW` |
 | *"Size this duct for 800 L/s at 1 Pa/m"* | equal friction, velocity, or both, snapped UP to your sizes (`duct_size`) | `SET_MEP_SIZE`, one call per size |
 | *"What pressure does the fan need?"* | the index run's total pressure (`duct_pressure`), then the power (`fan_power`) | `REPORT_MEP_PRESSURE_DROP` reads Revit's own figure to compare |
 | *"Chilled water for this AHU?"* | the coil load (`coil_load`), the water flow (`chw_flow`), the pipe (`pipe_size`) | `SET_MEP_SIZE` on the pipe |
+| *"Which FCU, or which split, for this room?"* | the first unit in the maker's own catalogue that covers the total load, the sensible load and the airflow, and how far over it is (`unit_select`) | `CHANGE_ELEMENT_TYPE` to that model's type |
 | *"500 cfm in L/s?"* | `convert` - exact factors, every HVAC unit | - |
 
 `python brain/heron_hvac.py` lists every calculation and what it needs. That list is **derived** - each
@@ -92,8 +94,8 @@ that is the whole shape of the thing:
   an assumption"*. Constants of nature and definitions (the Hyland-Wexler coefficients, the exact
   foot), and the constants that belong to a published METHOD (Colebrook's 3.7 and 2.51, Huebscher's
   1.30, the 0.25 m/s that defines a T50 throw, the 3.7 K long-wave term for a roof that ASHRAE's 2017
-  workbook computes - §12 row 8). Every answer names its method and sources so the choice can be
-  checked.
+  workbook computes - §12 row 8 - and the design day's hourly fractions of §4.4). Every answer names
+  its method and sources so the choice can be checked.
 - **The owner's own figures are the owner's answers, kept as decisions.** A supply diffuser neck in an
   NC/RC 30 room is held to **2.5 m/s** ([D-110](decisions/D-110.md)) - applied only at that criterion,
   named as the office's own figure every time, and given way to by any figure the modeller states.
@@ -188,7 +190,37 @@ position in spring and autumn and within 0.1 degree in July; the answer says so.
 For Doha on 21 July, with ASHRAE's 2017 optical depths for the month, a west wall takes **670 W/m2 at
 15:00** - 383 beam, 228 sky, 59 ground - and the suite holds every one of those figures.
 
-### 4.4 What it would take to be HAP-like
+### 4.4 Month by month - the peak month and hour
+
+`monthly_load` runs one room through **every month's design day, hour by hour**, and reports each
+month's peak, the peak month and hour, the peak day hour by hour, and the lowest monthly peak:
+
+- **The outdoor air at each hour** comes from ASHRAE's design-day profile: t(h) = DB - f(h).DR, and the
+  wet bulb MCWB - f(h).WBR, never above the dry bulb. The fractions f(h) are ASHRAE's, as its own 2017
+  load-calculation workbook carries them, and the suite reproduces that workbook's Atlanta table
+  within its 0.1 F print - including the small hours of December, where the wet bulb is held at the
+  dry bulb.
+- **The sun at each hour** is §4.3's, on every wall, roof and window, from that month's optical
+  depths.
+- **People, lights, equipment and partitions** are taken as they are given, every hour; infiltration
+  and outdoor air at that hour's outdoor state.
+- **The weather is named or given, never chosen for you.** Name a set Heron holds (`doha-0.4`, the
+  `design_weather` table of §10) or give your own months; with neither it asks, with both it refuses.
+  ASHRAE's workbook lists the daily ranges beside the **5 %** dry bulb; Heron applies them to the 0.4 %
+  values it holds, and the answer says so.
+
+It is **hour-by-hour steady state**: each gain counts at its own hour, with no storage and no lag. That
+finds the month and the hour that govern, but the radiant part of a gain is not delayed - an hourly
+method with radiant time series or a heat balance moves the peak later and lowers it. Every answer
+says so (`STEADY_HOURS` in the code). **The lowest monthly peak is not a part-load figure** - part load
+is how a unit and its plant run, and the maker's data says it.
+
+The suite's Doha room - one 4 m2 west window, two people, 8 W/m2 of lights - peaks on a June
+afternoon and is lowest in December. Its July 15:00 hour is **1,368 W** sensible, the hand sum of
+150 W of people, 160 W of lights, 254 W through the glass and 804 W of sun - the last from §4.3's
+670 W/m2.
+
+### 4.5 What it would take to be HAP-like
 
 An hourly method needs, per wall and roof, a **conduction time series** for its construction and, per
 room, a **radiant time series** for its mass - ASHRAE Fundamentals Ch. 18 Tables 16, 17, 19 and 20, or
@@ -303,6 +335,13 @@ office check value is 0.57 L/s per m2) were worked from the equations, and repro
 - **`pipe_size`**: Darcy-Weisbach with Colebrook, water density by **Kell (1975)** and viscosity by
   **Laliberte (2007)** - both checked against the IAPWS reference values for every degree from 0 to
   99 C, within 0.0015 % and 0.32 % - against the bores the project uses, or ASME B36.10M schedule 40.
+- **`unit_select`** picks a **fan coil** or a **split** for a room from the maker's own catalogue rows,
+  listed smallest first: the first that covers the total load, and the sensible load and the airflow
+  where they are given - **never on its total alone**, because a unit with enough total and too little
+  sensible leaves the room warm. Each row shows how far over the load it is, and a margin past the
+  `max_oversize_pct` given is flagged. **Heron holds no unit's capacity**: without a catalogue it
+  asks, and when no row covers the load it says FAIL rather than offering the biggest. A fan coil's
+  answer points on to `chw_flow` and `pipe_size`; a split's says its refrigerant piping is the maker's.
 
 ---
 
@@ -329,7 +368,7 @@ it.** Each table names its source in the code; this is how far each was checked:
 | `pipe_sizes` | ASME B36.10M schedule 40 | one machine-readable reproduction, and every row checks as OD - 2t |
 | `pipe_design_guidance` | 90.1-2022 Table 6.5.4.6 | the 2022 text |
 | `chilled_water_practice` | 90.1-2022 Section 6.5.4.7 | the 2022 text |
-| `design_weather` | ASHRAE Fundamentals 2017 climatic data, Doha International | read from ASHRAE's own 2017 workbook; its optical depths reproduce ASHRAE's tabulated noon irradiance for Doha within the table's rounding. **Monthly** values only - the annual 0.4/1/2 % and the dehumidification condition could not be read |
+| `design_weather` | ASHRAE Fundamentals 2017 climatic data, Doha International | read from ASHRAE's own 2017 workbook, with each month's daily dry-bulb and coincident wet-bulb ranges, which it lists beside the 5 % dry bulb; its optical depths reproduce ASHRAE's tabulated noon irradiance for Doha within the table's rounding. **Monthly** values only - the annual 0.4/1/2 % and the dehumidification condition could not be read |
 | `sol_air` | Fundamentals Ch. 18, as ASHRAE's 2017 example uses it | the example's inputs, absorptance 0.45 and 0.9 over 17 W/m2.K |
 | `people_heat_gain` | Fundamentals Ch. 18 Table 1 | **two rows only** - moderately active office work and seated very light work - against ASHRAE's own example and an open implementation |
 
@@ -348,10 +387,10 @@ before it governs a project.** No standard's text is reproduced here; the figure
 |---|---|
 | QCS | QCS 2014 Section 22 is *"Air Conditioning, Refrigeration and Ventilation"* - title level only, from two sources. QCS 2024 exists, approved by Ministerial Decision 15/2024 as an optional standard |
 | Which 62.1 edition | **Not established.** Nothing readable says which edition QCS, Civil Defence, Kahramaa or GSAS requires. It is a project input, asked once per project (next row) |
-| Which standards govern a project | **Asked once per project and kept for it** ([D-111](decisions/D-111.md)): `ventilation_standard` (a 62.1 edition, or other), `energy_standard` (a 90.1 edition, other or none), `qcs_edition` (a QCS edition, or none), `cibse_beside_ashrae`. Asked by `ventilation`, `exhaust`, `cooling_load`, `chw_flow`, `fan_power` and `pipe_size`, never as a blocker - the four sit at the top of the answer until known, and each check that needs one says it was not run. Kept in `projects/<key>.hvac.json` in Heron's knowledge folder, named by the open model's Project Information UniqueId; a chat that has not read the model keeps nothing and says so. What they change: an edition other than 62.1-2022 or 90.1-2022 is named beside every figure and check it touches; a project not governed by 62.1 is told the procedure is a comparison; 90.1's coil, fan power and pipe-size limits are raised only on a 90.1 project; QCS 2014 brings the reported conditions below into the load answer, marked unread |
+| Which standards govern a project | **Asked once per project and kept for it** ([D-111](decisions/D-111.md)): `ventilation_standard` (a 62.1 edition, or other), `energy_standard` (a 90.1 edition, other or none), `qcs_edition` (a QCS edition, or none), `cibse_beside_ashrae`. Asked by `cooling_load`, `monthly_load`, `ventilation`, `exhaust`, `fan_power`, `chw_flow` and `pipe_size` - `python brain/heron_hvac.py` marks each one *asks once per project* - never as a blocker - the four sit at the top of the answer until known, and each check that needs one says it was not run. Kept in `projects/<key>.hvac.json` in Heron's knowledge folder, named by the open model's Project Information UniqueId; a chat that has not read the model keeps nothing and says so. What they change: an edition other than 62.1-2022 or 90.1-2022 is named beside every figure and check it touches; a project not governed by 62.1 is told the procedure is a comparison; 90.1's coil, fan power and pipe-size limits are raised only on a 90.1 project; QCS 2014 brings the reported conditions below into the load answer, marked unread |
 | District cooling temperatures | **Not established** - Qatar Cool and Kahramaa hosts were blocked. The utility's interface letter is the source; Heron asks for supply and return every time |
 | Climate zone | Doha works out as ASHRAE 169 zone **0B** (extremely hot, dry) from the zone definitions - derived, not looked up in the station list |
-| Design weather | ASHRAE 2017 **monthly** design data for Doha International (WMO 411700) is held as a reference: July 0.4 % is 45.7 C DB with 22.2 C mean coincident WB, heating 11.8 C at 99.6 %, and each month's clear-sky optical depths. Offered, never applied; the annual and dehumidification conditions could not be read |
+| Design weather | ASHRAE 2017 **monthly** design data for Doha International (WMO 411700) is held as a reference: July 0.4 % is 45.7 C DB with 22.2 C mean coincident WB, heating 11.8 C at 99.6 %, and each month's daily ranges and clear-sky optical depths. Offered, and used only where the modeller names it - `monthly_load` with `design_weather: doha-0.4`; the annual and dehumidification conditions could not be read |
 | QCS design conditions | QCS 2014 Section 22 Part 1 is reported to set **46 C DB / 30 C WB** outdoors and **23 +/- 1 C, 50 +/- 5 %** indoors - from search summaries of the text, not the text. 46/30 C is a far more humid pair than ASHRAE's peak (20.3 g/kg against 7.1), a conservative combined condition rather than a coincident statistic; per 100 L/s of outdoor air brought to a 23 C, 50 % room it is about 3.5 kW of latent load, where ASHRAE's July peak gives a negative one |
 
 ---
@@ -375,8 +414,12 @@ before it governs a project.** No standard's text is reproduced here; the figure
 ## 13. What is not built
 
 - **An hourly load method** - the radiant and conduction time series of RTS, or a heat balance. The sun
-  hour by hour is built (§4.3); the time series need ASHRAE's tables or a layer-by-layer calculation
-  (§4.4).
+  hour by hour is built (§4.3), and so is a month-by-month sweep in steady state (§4.4); the time
+  series need ASHRAE's tables or a layer-by-layer calculation (§4.5).
+- **Part load.** `monthly_load`'s lowest month is the smallest design-day peak, not a part-load
+  condition, and Heron holds no unit's part-load data.
+- **Refrigerant piping** for a split or a VRF system - line sizes, lengths and lift are the maker's to
+  state.
 - **A dehumidification design case** run alongside the peak dry bulb. The engine warns when the outdoor
   air is drier than the room; the site's dehumidification condition is the project's to give.
 - **Static regain and the T-method** for duct sizing.
@@ -412,6 +455,12 @@ else ([D-110](decisions/D-110.md)), and a project's standards asked once, kept f
 replaced with a record of the old, set aside rather than overwritten when unreadable, and not kept at all
 when no project is known ([D-111](decisions/D-111.md)) - against stand-in project keys. The key Revit
 itself reports is NEEDS-CHECKING [Group BT](needs-checking/group-bt.md).
+
+Section 8 holds the month-by-month sweep and the unit: the design day's hourly shape against ASHRAE's
+own 2017 workbook; the Doha room above over twelve months, and its July 15:00 hour against the hand
+sum; `unit_select` refusing to pick on the total alone, picking nothing without a catalogue and
+failing when nothing fits; and that every Revit tool an answer names is a capability in
+[`brain/fragments`](../brain/fragments), read from the source so a line no test reaches is held too.
 
 **None of that is a proof in [D-30](decisions/D-30.md)'s sense**, and this engine has no fragment to
 prove. What would carry weight is a **comparison against an engineer's own run**: one real room in HAP

@@ -65,6 +65,25 @@ airflow, duct sizing, diffuser sizing, all kind of things."*
   go red against the engine before this, with no traceback, and the three that do not are guards that
   must hold either way.
 
+**THEN THE BALANCE, BEFORE MERGING** - the owner asked whether it covers every month, sizes a duct and
+a diffuser from a flow, and picks a room's FCU or split; then: *"check once more if there is any balance
+to add, add it and merge the PR"*.
+
+- **`monthly_load`** runs a room through every month's design day, hour by hour, and gives the peak
+  month and hour and the lowest month. The hourly shape is ASHRAE's own, reproduced against its 2017
+  workbook's Atlanta table; the sun is the clear-sky chain already held. It is steady state with no
+  storage, and every answer says so ([docs/41 §4.4](../41-hvac-design.md)). It asks the project's
+  standards too, so D-111's list gained it.
+- **`unit_select`** picks a fan coil or a split from the maker's own catalogue rows - never on the total
+  alone, nothing without a catalogue, FAIL when nothing fits. Refrigerant piping stays the maker's.
+- **`diffuser_select` now names its way into the model**: `CHANGE_ELEMENT_TYPE` to the chosen size's
+  type, then `SET_AIR_TERMINAL_FLOW`. A new check reads every `into_revit` line from the source and
+  holds each tool it names to a real capability in `brain/fragments`.
+- **Section 8 of the suite** holds all of it; against the engine before this, twenty of its checks fail
+  with no traceback and the one that does not is that guard.
+- **Still not built:** part load and unit part-load data, refrigerant piping, an hourly method with
+  storage - [docs/41 §13](../41-hvac-design.md).
+
 **WAITING.**
 
 - [F42](../proposals/f42.md) - three owner decisions left of five.

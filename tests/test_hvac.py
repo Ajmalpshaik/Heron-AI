@@ -52,6 +52,14 @@ WHAT IT PROVES
      without overwriting it, and are not kept at all when no project is
      known (D-111).
 
+  8. MONTH BY MONTH, A UNIT, AND THE WAY INTO REVIT. The design day's hourly
+     shape reproduces ASHRAE's own 2017 workbook. A Doha room run on all
+     twelve months peaks on a summer afternoon, and its July 15:00 hour comes
+     out as summed by hand. A fan coil or split is picked only from its
+     maker's catalogue, never on its total alone, and nothing is picked
+     without one. Every Revit tool an answer names is a capability in the
+     fragment library.
+
 WHAT IT DOES NOT PROVE
   That any answer is right for a building. A design value is the engineer's;
   this proves the arithmetic agrees with its sources, not that the inputs
@@ -65,9 +73,10 @@ import ast
 import json
 import math
 import os
+import re
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT =os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
 
@@ -624,6 +633,168 @@ def owners_answers():
     print()
 
 
+# ASHRAE's own 2017 load-calculation workbook, sheet "Weather Data - OA":
+# Atlanta's monthly 5 % design day as the sheet prints it, in F to 0.1 F - the
+# month's design DB, mean coincident WB, daily DB range and daily WB range,
+# then {hour: (DB, WB)}. In December's small hours the wet bulb is held at the
+# dry bulb. The profile is linear, so the same function serves F and C alike.
+ATLANTA = (("July", (91.6, 74.3, 20.2, 6.1),
+            {2: (73.0, 68.7), 5: (71.4, 68.2), 8: (76.7, 69.8), 12: (89.0, 73.5),
+             15: (91.6, 74.3), 18: (86.8, 72.8), 24: (75.0, 69.3)}),
+           ("December", (64.6, 59.0, 19.5, 13.2),
+            {2: (46.7, 46.7), 5: (45.1, 45.1), 8: (50.2, 49.2), 12: (62.1, 57.3),
+             15: (64.6, 59.0), 18: (59.9, 55.8), 24: (48.6, 48.2)}))
+
+# A Doha room with one west window - the room the sweep was checked on by hand.
+DOHA_ROOM = {"floor_area_m2": 20, "room_dry_bulb_c": 23, "latitude_deg": 25.261,
+             "longitude_deg": 51.565, "utc_offset_h": 3, "ground_reflectance": 0.2,
+             "windows": [{"area_m2": 4, "u_w_m2k": 2.8, "shgc": 0.3, "facing": "W"}],
+             "people": {"count": 2, "sensible_w_each": 75, "latent_w_each": 55},
+             "lighting": {"w_per_m2": 8}}
+DOHA_JULY = {"month": 7, "db_c": 45.7, "mcwb_c": 22.2, "db_range_k": 11.7,
+             "wb_range_k": 6.6, "tau_b": 0.686, "tau_d": 1.592}
+
+FCU_ROWS = [{"model": "FCU-02", "total_kw": 2.0, "sensible_kw": 1.6, "airflow_ls": 90},
+            {"model": "FCU-03", "total_kw": 3.0, "sensible_kw": 2.1, "airflow_ls": 130},
+            {"model": "FCU-04", "total_kw": 4.0, "sensible_kw": 3.0, "airflow_ls": 170}]
+
+
+def table_of(answer, title):
+    for got in answer["tables"]:
+        if got["title"].startswith(title):
+            return got
+    return {"rows": []}
+
+
+def month_by_month():
+    print("8. month by month, a unit from its maker's catalogue, and the way into Revit")
+    # ASKED, NOT CALLED BLIND (.claude/skills/heron-ship s2a): against an engine
+    # without these, a missing function is looked up rather than called and an
+    # unknown calculation answers "unknown" - each check FAILS and says which.
+    day = getattr(H, "design_day", None)
+    check(day is not None, "the engine has the design day's hourly shape - design_day()")
+    for month, inputs, hours in ATLANTA:
+        got = dict((h, (t, wb)) for h, t, wb in day(*inputs)) if day else {}
+        off = [h for h, (t, wb) in sorted(hours.items())
+               if h not in got or abs(got[h][0] - t) > 0.05 + 1e-9
+               or abs(got[h][1] - wb) > 0.05 + 1e-9]
+        check(day is not None and not off,
+              "ASHRAE's own workbook, Atlanta's %s design day at seven hours: dry and wet "
+              "bulb within its 0.1 F print%s" % (month, "" if not off else " - off at %s" % off))
+
+    year = H.run("monthly_load", dict(DOHA_ROOM, design_weather="doha-0.4"))
+    peaks = table_of(year, "Each month's peak")["rows"]
+    check(year["status"] == "ok" and len(peaks) == 12,
+          "a Doha room is run on all twelve months of the 0.4 % design weather held")
+    by_total = sorted(peaks, key=lambda row: float(row[6]))
+    top, low = (by_total[-1], by_total[0]) if by_total else ([None] * 7, [None] * 7)
+    check(top[0] in ("may", "jun", "jul", "aug") and top[1] in ("13:00", "14:00", "15:00",
+                                                                 "16:00"),
+          "its west window peaks on a summer afternoon - %s at %s" % (top[0], top[1]))
+    check(low[0] in ("nov", "dec", "jan", "feb"),
+          "and its lowest monthly peak is in winter - %s" % low[0])
+    # By hand: at 15:00 the profile is at the design dry bulb, and section 1
+    # checked 670.0 W/m2 on a west wall then. 2 people x 75 + 8 W/m2 x 20 m2 +
+    # 2.8 x 4 x (45.7 - 23) + 4 x 0.3 x 670.0 = 1368.2 W; the table prints whole watts.
+    hand = 2 * 75 + 8 * 20 + 2.8 * 4 * (45.7 - 23) + 4 * 0.3 * 670.0
+    july = [row for row in peaks if row[0] == "jul"]
+    check(bool(july) and july[0][1] == "15:00" and abs(float(july[0][4]) - hand) <= 1.5
+          and july[0][5] == "110",
+          "July peaks at 15:00 with %s W sensible - %.1f W by hand - and 2 x 55 = 110 W latent"
+          % (july[0][4] if july else "-", hand))
+    check(len(table_of(year, "The peak day hour by hour")["rows"]) == 24
+          and getattr(H, "STEADY_HOURS", None) in year["method"],
+          "the peak day is shown hour by hour, and the answer says it is steady state with "
+          "no storage - not HAP")
+    check("not a part-load figure" in (result(year, "Lowest monthly peak") or ""),
+          "the lowest month is said to be the smallest peak, not a part-load figure")
+    own = H.run("monthly_load", dict(DOHA_ROOM, months=[DOHA_JULY]))
+    at_15 = [row for row in table_of(own, "The peak day hour by hour")["rows"]
+             if row[0] == "15:00"]
+    check(own["status"] == "ok" and bool(at_15) and bool(july) and at_15[0][3] == july[0][4],
+          "the same July given as the modeller's own row gives the same 15:00 hour")
+    asked = H.run("monthly_load", DOHA_ROOM)
+    weather = [m for m in asked["missing"] if m["input"] == "design_weather"]
+    check(asked["status"] == "missing" and not asked["results"] and bool(weather)
+          and "doha-0.4" in weather[0]["unit"] and bool(weather[0].get("reference")),
+          "with no design weather named nothing is run - the set held is offered and asked "
+          "for, never chosen for the modeller")
+    both = H.run("monthly_load", dict(DOHA_ROOM, design_weather="doha-0.4",
+                                      months=[DOHA_JULY]))
+    twice = H.run("monthly_load", dict(DOHA_ROOM, months=[DOHA_JULY, DOHA_JULY]))
+    check(both["status"] == "refused" and twice["status"] == "refused",
+          "a weather set named AND the modeller's own months are refused, and so is a month "
+          "given twice")
+
+    fcu = H.run("unit_select", {"unit_type": "fan-coil", "load_kw": 2.5, "sensible_kw": 2.2,
+                                "flow_ls": 120, "max_oversize_pct": 25,
+                                "catalogue": FCU_ROWS})
+    verdicts = dict((row[0], row[-1]) for row in table_of(fcu, "The catalogue")["rows"])
+    check(fcu["status"] == "ok" and (result(fcu, "Selected") or "").startswith("FCU-04")
+          and verdicts.get("FCU-03", "").startswith("sensible")
+          and "total" not in verdicts.get("FCU-03", "total"),
+          "FCU-03 covers the 2.5 kW total but not the 2.2 kW sensible, so FCU-04 is chosen - "
+          "a unit is never picked on its total alone")
+    check(any(level == "WARN" and "60 % over" in text for level, text in fcu["checks"]),
+          "and FCU-04, 60 % over the load, is flagged past the 25 % the modeller gave")
+    check(any(level == "OK" and "chw_flow" in text for level, text in fcu["checks"]),
+          "a fan coil's answer points on to its chilled water - chw_flow, then pipe_size")
+    big = H.run("unit_select", {"unit_type": "fan-coil", "load_kw": 5, "catalogue": FCU_ROWS})
+    check(big["status"] == "ok" and result(big, "Selected") is None
+          and any(level == "FAIL" for level, _t in big["checks"]),
+          "a load no unit in the catalogue covers selects nothing and FAILS - the biggest is "
+          "never offered as near enough")
+    bare = H.run("unit_select", {"unit_type": "split", "load_kw": 2.5})
+    check(bare["status"] == "missing" and any(m["input"] == "catalogue" for m in bare["missing"]),
+          "with no maker's catalogue nothing is picked - Heron holds no unit's capacity")
+    split = H.run("unit_select", {"unit_type": "split", "load_kw": 2.5,
+                                  "catalogue": [{"model": "SPL-09", "total_kw": 2.6}]})
+    check(split["status"] == "ok" and any(level == "WARN" and "refrigerant piping" in text
+                                          for level, text in split["checks"]),
+          "a split unit's answer says its refrigerant piping is the maker's to state")
+    worse = H.run("unit_select", {"unit_type": "split", "load_kw": 2.5, "sensible_kw": 3,
+                                  "catalogue": [{"model": "SPL-09", "total_kw": 2.6}]})
+    check(worse["status"] == "refused", "a sensible load bigger than the total is refused")
+
+    neck = H.run("diffuser_select", {"flow_ls": 120, "neck_sizes_mm": [150, 200, 250, 300],
+                                     "neck_shape": "round", "max_neck_velocity_ms": 2.5})
+    listed = H.run("diffuser_select", {"flow_ls": 120, "max_nc": 30, "catalogue": [
+        {"size": "300x300", "flow_ls": 100, "nc": 20},
+        {"size": "300x300", "flow_ls": 150, "nc": 28}]})
+    check(neck["status"] == listed["status"] == "ok"
+          and all(any("CHANGE_ELEMENT_TYPE" in line and "SET_AIR_TERMINAL_FLOW" in line
+                      for line in got["next"]) for got in (neck, listed)),
+          "a diffuser chosen either way names what puts it in the model - CHANGE_ELEMENT_TYPE "
+          "to the size's type, SET_AIR_TERMINAL_FLOW for its flow")
+
+    # Every tool an INTO REVIT line names is a capability the library has, read
+    # from the source so a line no test reaches is checked too.
+    capabilities = set()
+    fragments = os.path.join(ROOT, "brain", "fragments")
+    for folder in os.listdir(fragments):
+        path = os.path.join(fragments, folder, "fragment.yaml")
+        if os.path.isfile(path):
+            for line in open(path):
+                if line.startswith("capability:"):
+                    capabilities.add(line.split(":", 1)[1].strip().strip("'\""))
+    named = set()
+    tree = ast.parse(open(os.path.join(ROOT, "brain", "heron_hvac.py")).read())
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and getattr(node.func, "attr", None) == "into_revit":
+            for part in ast.walk(node):
+                text = ""
+                if isinstance(part, ast.Constant) and isinstance(part.value, str):
+                    text = part.value
+                elif isinstance(part, ast.Name) and isinstance(getattr(H, part.id, None), str):
+                    text = getattr(H, part.id)
+                named.update(re.findall(r"\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b", text))
+    unknown = sorted(named - capabilities)
+    check(len(named) >= 5 and not unknown,
+          "each of the %d Revit tools the answers name is a capability in brain/fragments%s"
+          % (len(named), "" if not unknown else " - not found: %s" % ", ".join(unknown)))
+    print()
+
+
 def main():
     physics()
     worked_examples()
@@ -632,6 +803,7 @@ def main():
     refusals()
     reaches_nothing()
     owners_answers()
+    month_by_month()
 
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
