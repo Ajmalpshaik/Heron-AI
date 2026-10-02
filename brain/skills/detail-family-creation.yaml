@@ -34,8 +34,11 @@ purpose: >
      the family's own Solid Black or a hatch - or "masking", which Revit makes
      through its API only from 2024; before that a filled region type with its
      Masking box ticked hides what is behind it the same way.
-  5. A part only some types show is linked to a Yes/No by the button beside
-     its Visible in Properties.
+  5. A part only some types show: ADD_FAMILY_PARAMETERS makes a Yes/No, then
+     LINK_FAMILY_PARAMETER links the part's Visible to it - the part named by
+     its category, or a nested detail component by its family name. It links
+     every element so named, so a part that switches on its own is best a
+     nested detail component of its own.
   6. FLEX_FAMILY at two really different sizes - for a line-based detail, two
      lengths.
 
@@ -61,6 +64,7 @@ needs:
   - LABEL_FAMILY_DIMENSION
   - DRAW_FAMILY_DETAIL_LINES
   - DRAW_FAMILY_FILLED_REGION
+  - LINK_FAMILY_PARAMETER
   # The proof, and never skipped.
   - FLEX_FAMILY
 

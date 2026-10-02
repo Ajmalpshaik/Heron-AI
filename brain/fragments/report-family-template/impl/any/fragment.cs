@@ -136,9 +136,14 @@ else
     else if (isCategory(BuiltInCategory.OST_CurtainWallPanels) && referencePoints == 0)
         familyKind = "a curtain wall panel - the classic kind, sized by the curtain grid cell it is placed in, not by "
             + "parameters of its own; not pattern-based";
+    // A Generic Model Pattern Based family is the same kind in another
+    // category - Revit's remark on DividedSurface takes "a FamilySymbol element
+    // from a Curtain Panel family" as a divided surface's type - so the
+    // category is named rather than every one called a curtain panel (BV1).
     else if (curtainPanel && referencePoints > 0)
-        familyKind = "a pattern-based curtain panel - its shape driven by the points of its tile pattern, so it fits "
-            + "each cell of a divided surface";
+        familyKind = "a pattern-based " + (isCategory(BuiltInCategory.OST_CurtainWallPanels) ? "curtain panel"
+                : "family of the " + (category == null ? "(no)" : category.Name) + " category")
+            + " - its shape driven by the points of its tile pattern, so it fits each cell of a divided surface";
     else if (adaptive)
         familyKind = "an adaptive component - placed by clicking its adaptive points in order, its shape following them";
     else if (conceptual)

@@ -96,8 +96,8 @@ compatibility-note: >
   2026-10-02). Which words Revit shows for Host, whether a face-based
   template's placement reads WorkPlaneBased with the Work Plane-Based switch
   off, and whether `IsCurtainPanelFamily` reads true for a classic curtain wall
-  panel as well as a pattern-based one, are Revit's - recorded in
-  NEEDS-CHECKING BV1.
+  panel, and for a Generic Model Pattern Based family as well as a Curtain
+  Panel Pattern Based one, are Revit's - recorded in NEEDS-CHECKING BV1.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
