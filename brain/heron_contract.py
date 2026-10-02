@@ -444,7 +444,10 @@ def main(argv):
                  len(_fields(data, "input")), len(_fields(data, "output")),
                  len(data.get("failures") or [])))
     print()
-    print("  %d contract(s) of the 250 agents in the register" % len(found))
+    # The register's size is read, never typed: this line said "of the 250"
+    # until the register gained a row on 2026-10-02 and the sentence went on
+    # printing a number that was no longer true.
+    print("  %d contract(s) of the %d agents in the register" % (len(found), len(known)))
     if problems:
         print()
         for line in problems:

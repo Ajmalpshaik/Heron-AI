@@ -1338,6 +1338,110 @@ def research_check(answer):
     }
 
 
+# ---------------------------------------------------------------------------
+# HVAC design - the numbers a modeller puts into the model (docs/41)
+# ---------------------------------------------------------------------------
+
+# How an HVAC answer that did not complete is recorded, in the codes
+# heron_gaps.analyse() classifies by. Every one is a CORRECT refusal: the
+# engine asked for what it was not given, refused a value that cannot be a
+# design figure, or was asked for a calculation it does not have.
+_HVAC_REFUSALS = {
+    "missing": "needs_request_values",
+    "refused": "unusable_request_values",
+    "unknown": "unknown_op",
+}
+
+
+def hvac(calculation, inputs, project=None, project_name=None):
+    """
+    One HVAC design calculation - HERON-MEP-HVD-001, docs/41 - or, for an
+    empty `calculation`, the list of them and what each needs.
+
+    `inputs` is a dict or a JSON object string. The answer is the engine's
+    dict plus `text`, the answer as a modeller reads it.
+
+    `project` is the open model's project key - DocumentPin.project_key - or
+    None. With one, the project's governing standards are read from what was
+    kept for it and handed to the engine, and any the modeller has just given
+    are kept for it in their place (D-111: asked once per project). With none
+    they serve this answer only, and the answer says so: Heron does not guess
+    which project this is, and filing one client's answer under another's is a
+    breach rather than a bug.
+
+    The engine reads no model and changes nothing; the one file written is
+    that project's own record in Heron's knowledge folder. One audit line per
+    call (D-62) carries the calculation's name and how it ended, and NEVER its
+    inputs - a room's people count and a client's design figures are project
+    information, and the trail is never pruned.
+    """
+    try:
+        import heron_hvac as HVAC
+    except ImportError as exc:
+        raise BrainUnavailable(
+            "Heron's HVAC engine could not be imported: %s. It needs nothing "
+            "beyond Python itself, so this is a broken install rather than a "
+            "missing package." % exc)
+
+    if not (calculation or "").strip():
+        _audit().record("design.hvac", True, fields={"calculation": "(list)"},
+                        numbers={"calculations": len(HVAC.CALCULATIONS)})
+        return {"status": "catalogue", "calculation": "",
+                "catalogue": HVAC.catalogue(), "text": HVAC.describe_catalogue()}
+
+    import heron_designbasis as KEEP
+    memory = []
+    recorded = {}
+    if project:
+        try:
+            recorded, note = KEEP.read(project)
+        except (ValueError, OSError) as why:
+            recorded, note = {}, "nothing kept for this project could be read - %s" % why
+        if note:
+            memory.append(note)
+
+    answer = HVAC.run(calculation, inputs, recorded=recorded)
+    given = dict((name, entry["value"]) for name, entry in answer["standards"].items()
+                 if entry["from"] == "request")
+    kept = 0
+    if (given or answer["ask_once"]) and not project:
+        memory.append("NOT KEPT - Heron does not know which project this is yet. It learns "
+                      "that from the open model: ask it to select or count something in "
+                      "Revit first, and the project's standards are kept for it from then "
+                      "on (D-111). It will not guess (D-33).")
+    elif given:
+        try:
+            changes, note = KEEP.record(project, given, project_name)
+        except (ValueError, OSError) as why:
+            changes, note = [], "NOT KEPT - %s" % why
+        if note:
+            memory.append(note)
+        for name, old, new in changes:
+            if old is None:
+                memory.append("kept for this project: %s = %s - not asked again here"
+                              % (name, HVAC.standard_text(new)))
+            else:
+                memory.append("changed for this project: %s %s -> %s - the old answer "
+                              "stays in the project's record" % (
+                                  name, HVAC.standard_text(old), HVAC.standard_text(new)))
+        kept = len(changes)
+    answer["memory"] = memory
+
+    status = answer["status"]
+    _audit().record("design.hvac", status == "ok",
+                    fields={"calculation": answer["calculation"], "status": status,
+                            "error": _HVAC_REFUSALS.get(status)},
+                    numbers={"missing": len(answer["missing"]),
+                             "refused": len(answer["refused"]),
+                             "ignored": len(answer["ignored"]),
+                             "failed_checks": sum(1 for level, _text in answer["checks"]
+                                                  if level == "FAIL"),
+                             "asked_once": len(answer["ask_once"]),
+                             "standards_kept": kept})
+    answer["text"] = HVAC.describe(answer)
+    return answer
+
+
 def _with_text(asked, project=None):
     """One scope's candidates, each carrying the clause a person has to read.
 

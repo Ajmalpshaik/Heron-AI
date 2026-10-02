@@ -46,7 +46,7 @@ P = os.path.join(ROOT, 'docs', '28-agent-registry.md')
 
 TIERS = ('T1', 'T2', 'T3')
 BOLD = ('Reporting & Output', 'Skill Lifecycle', 'User & Personalization',
-        'Learning & Self-Growth')
+        'Learning & Self-Growth', 'MEP Design Engineering')
 
 
 def w(s):

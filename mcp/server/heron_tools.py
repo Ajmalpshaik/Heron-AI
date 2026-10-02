@@ -218,6 +218,18 @@ TOOLS = {
     "heron_research":           (READ,    None),
     "heron_research_check":     (READ,    None),
 
+    # HVAC design (HERON-MEP-HVD-001, docs/41). READ, operation None: it is
+    # arithmetic over the values the caller hands it - loads, airflow,
+    # ASHRAE 62.1 outdoor air, duct and pipe sizes, diffusers, fan power - and
+    # it reads no model. The one thing it keeps is a project's governing
+    # standards once the modeller has said them (D-111): one small file per
+    # project in Heron's OWN knowledge folder, the kind of bookkeeping the
+    # project label index already does on a read - never the model, never a
+    # file of the modeller's. Its answers NAME the fragments that would put a
+    # result into Revit; sending one is revit_change's, at revit_change's own
+    # level.
+    "heron_hvac":               (READ,    None),
+
     # The Capability Gap report (HERON-AHR-GAP-001, docs/06 s6). READ, and the
     # operation is None for the same reason as the three above - it sends
     # nothing to Revit. What it reads is Heron's OWN audit trail, which is a
