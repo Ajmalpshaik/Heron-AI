@@ -42,6 +42,15 @@ any another also you can consider."*
   session line on the repository, and #379 made that line silent in the main checkout on branch main,
   which is what CI's push checkout is. Pull requests are detached and pass. Reproduced both ways here.
 
+**MISTAKE WORTH NOT REPEATING.**
+
+- **A restored mutation kept running from Python's cache.** The last of six deliberate mutations
+  turned a `FAIL` into a `WARN` - the same length - and the restore landed in the same second. Python
+  checks a cached `.pyc` against its source's size and whole-second time, both unchanged, so it kept
+  running the MUTATED engine: the full-suite evidence run went red on a source file that was right.
+  Deleting `brain/__pycache__/heron_fire*.pyc` and running again gave the true result. After
+  mutation testing, clear `__pycache__` before trusting any run.
+
 **TO DO.**
 
 - NEEDS-CHECKING [Group BU](../needs-checking/group-bu.md) BU4 to BU8: EN 12845 against A2:2026, FM
