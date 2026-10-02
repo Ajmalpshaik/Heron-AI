@@ -230,6 +230,16 @@ TOOLS = {
     # level.
     "heron_hvac":               (READ,    None),
 
+    # Fire protection design (HERON-MEP-FPD-002, docs/42). READ, operation
+    # None, for every reason heron_hvac is: arithmetic over the values the
+    # caller hands it - hazard classes, sprinkler spacing and counts, pipe
+    # schedules, hydraulics, supply, pumps, standpipes - reading no model. Its
+    # one kept thing is a project's governing standards (D-111), in that
+    # project's own FIRE record in Heron's knowledge folder, never a file of
+    # the modeller's. Its answers NAME the fragments that would put a result
+    # into Revit; sending one is revit_change's.
+    "heron_fire":               (READ,    None),
+
     # The Capability Gap report (HERON-AHR-GAP-001, docs/06 s6). READ, and the
     # operation is None for the same reason as the three above - it sends
     # nothing to Revit. What it reads is Heron's OWN audit trail, which is a

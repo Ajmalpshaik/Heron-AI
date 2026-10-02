@@ -53,6 +53,7 @@ modeller ── Claude Code ── heron_hvac (MCP, READ, no bridge operation)
 | | |
 |---|---|
 | Layer | `brain/` - Python. The engine's two files import nothing outside Python itself, and [`tests/test_hvac.py`](../tests/test_hvac.py) parses both to hold that; the project memory borrows `heron_scope`'s knowledge folder and project key |
+| Shared | the answer machinery - reading inputs, refusing, offering a cited figure, rendering - serves the fire protection engine too ([42](42-fire-protection-design.md)): `run`, `catalogue`, `describe` and the reference helpers take another engine's registry and tables, defaulting to this one's, and both go through one brain seam |
 | Risk | **READ.** Arithmetic over what it is handed - no model, no network. The one thing kept is a project's governing standards once the modeller has said them ([D-111](decisions/D-111.md)): one small file per project in Heron's own knowledge folder, never the model |
 | Agent | `HERON-MEP-HVD-001`, the first row of a new department, *MEP Design Engineering* - Revit Engineering acts ON a model, this works out what goes INTO one |
 | Audit | `design.hvac`, one line per call: the calculation and how it ended. **Never the inputs** - a people count or a client's design figure is project information, and the trail is never pruned |

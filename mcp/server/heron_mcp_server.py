@@ -3207,6 +3207,56 @@ def heron_hvac(calculation: str = "", inputs: str = "") -> str:
 
 
 @server.tool()
+def heron_fire(calculation: str = "", inputs: str = "") -> str:
+    """
+    Fire protection design calculations - hazard classes, sprinkler spacing,
+    count and layout, the design area, pipe sizes by NFPA 13's pipe schedule
+    (sprinklers above and below a ceiling too), the beam and three-times
+    obstruction rules, sprinkler flow and pressure, pipe friction, a full
+    hydraulic calculation of a tree or a grid, the water supply against a flow
+    test, fire water storage, fire pumps, standpipes, extinguishers and
+    detectors.
+
+    Use it when the modeller asks what a fire protection number SHOULD be:
+    "what hazard class is a car park", "how many sprinklers for this room",
+    "check my sprinkler spacing", "what pipe size for 10 sprinklers, light
+    hazard", "sprinklers above and below the ceiling on one branch", "can the
+    deflector sit 120 mm above the beam", "what pressure does the riser need",
+    "how big is the fire tank". Leave `calculation` empty for every
+    calculation and the inputs each one needs.
+
+    `calculation` names one - pipe_schedule, sprinkler_layout, design_area,
+    hydraulic and so on. `inputs` is a JSON object of named values in the
+    units their names carry: {"hazard": "light", "material": "steel",
+    "sprinklers": 10}.
+
+    HERON SUPPLIES NO DESIGN VALUE THE MODELLER DID NOT GIVE (D-33). The
+    hazard class is the engineer's, never inferred from a room's name. A
+    missing value comes back as a question with NFPA's figure offered beside
+    it - put that question to the modeller and never fill it in yourself. A
+    figure that could not be checked is not held at all, and the answer says
+    so.
+
+    A PROJECT'S GOVERNING STANDARDS ARE ASKED ONCE (D-111): an answer headed
+    ASK ONCE FOR THIS PROJECT wants sprinkler_standard (the NFPA 13 edition)
+    and fire_authority (QCDD on a Qatar project). Put them to the modeller,
+    pass the answer in the next call's inputs, and Heron keeps them for the
+    open model's project.
+
+    It reads no model and changes nothing in it; the one thing it keeps is that
+    project's standards, in Heron's own knowledge folder. An answer names the
+    capability that would put its result into Revit. Every answer is a design
+    aid: the fire consultant and the authority - QCDD in Qatar - approve it.
+    """
+    try:
+        got = brain.fire(calculation, inputs, project=pinned.project_key,
+                         project_name=pinned.title)
+    except brain.BrainUnavailable as why:
+        return str(why)
+    return got["text"]
+
+
+@server.tool()
 def heron_gaps(days: int = 0) -> str:
     """
     What Heron has been asked to do lately, what failed, and what is slow.

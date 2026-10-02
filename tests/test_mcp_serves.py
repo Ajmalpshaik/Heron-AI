@@ -195,6 +195,7 @@ async def exercise(server):
         "revit_read": ["capability", "values", "expect_from", "request"],
         "revit_change": ["capability", "values", "expect_from", "request"],
         "heron_hvac": ["calculation", "inputs"],
+        "heron_fire": ["calculation", "inputs"],
     }
     for name, args in sorted(expected.items()):
         if name not in served:
@@ -234,6 +235,27 @@ async def exercise(server):
               "round trip - D-33 survives the transport")
     except Exception as exc:
         check(False, "heron_hvac raised %s: %s" % (type(exc).__name__, exc))
+
+    print()
+    print("  the fire protection engine, called through the SDK's own dispatch")
+    try:
+        listed = text_of(await server.call_tool("heron_fire", {}))
+        check("pipe_schedule" in listed and "needs:" in listed,
+              "heron_fire with no calculation lists them and what each needs")
+        worked = text_of(await server.call_tool(
+            "heron_fire", {"calculation": "pipe_schedule",
+                           "inputs": '{"hazard": "light", "material": "steel", '
+                                     '"sprinklers": 10}'}))
+        check("DN50 (2 in) steel" in worked,
+              "and answers a table's own question: ten light hazard sprinklers on steel, 2 in")
+        asked = text_of(await server.call_tool(
+            "heron_fire", {"calculation": "design_area", "inputs": '{"hazard": "OH1"}'}))
+        check("supplies no design value" in asked and "Nothing was calculated" in asked
+              and "6.1" in asked,
+              "and a calculation missing its design values ASKS with NFPA's figure offered, "
+              "through the round trip - naming the hazard does not fill the density in")
+    except Exception as exc:
+        check(False, "heron_fire raised %s: %s" % (type(exc).__name__, exc))
 
     print()
     print("  and both refusals survived the round trip")
