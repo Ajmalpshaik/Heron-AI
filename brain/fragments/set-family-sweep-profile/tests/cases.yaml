@@ -9,8 +9,15 @@ positive:
       (50 x 50 x 1000 mm); LOOKED AT - RECORD whether Revit took the Profile on
       a sweep first drawn with a sketched one (BT13)
 
-  - given: the same call with flipped true
-    expect: the profile reads flipped; the solid mirrored across the path
+  - given: >
+      a LOPSIDED profile - a second profile family drawn "rect 0,0 50,50", all
+      on one side of its origin, loaded as "Heron Lopsided Profile : 50x50" -
+      first flipped false, then the same call with flipped true
+    expect: >
+      the profile reads flipped, and the solid's box has moved to the OTHER
+      side of the path - a symmetric profile cannot show a flip, so BT11's is
+      not used for this case; flipped false afterwards reads unflipped and the
+      finding says so
 
 negative:
   - given: >

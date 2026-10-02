@@ -10,7 +10,28 @@ positive:
   - given: the same four lines; depthMm "50", solid true
     expect: >
       a solid extrusion 50 mm deep along the panel's normal, its volume read
-      back as area x 50 mm
+      back as area x 50 mm - toward +Z for a panel lying flat, WHICHEVER way
+      the four lines were drawn; the report names the direction
+
+  - given: >
+      the same four lines drawn the other way round, "2,1 | 3,2 | 4,3 | 1,4";
+      depthMm "50"
+    expect: the same extrusion as before, toward +Z - the rule, not the drawing order
+
+  - given: >
+      a two-point adaptive family: a reference line "1,2" from 0,0,0 to
+      3000,0,0 and a closed 200 x 200 loop of four lines through points
+      hosted on point 1's YZ plane (PLACE_ADAPTIVE_POINTS); profiles the loop's
+      four ids, path the line's id, depthMm "", solid true
+    expect: >
+      a solid sweep about 120 L (0.2 x 0.2 x 3 m) along the line; dragging
+      point 2 lengthens it (BT20)
+
+  - given: a mass family with a closed circle drawn as one reference line; depthMm "3000"
+    expect: >
+      a cylinder 3000 mm tall upward, the circle's own normal taken - or
+      Revit's own refusal of an extrusion in a mass, wrapped (BT6) - never a
+      raw error about a curve with no ends
 
   - given: >
       an adaptive family with two closed profiles of curves, one above the
@@ -23,6 +44,14 @@ negative:
 
   - given: one closed profile, depthMm "", solid false
     expect: refused - a void needs a volume - nothing made
+
+  - given: a plain Generic Model family with four model lines
+    expect: >
+      refused - not an adaptive, pattern-based or mass family, naming
+      CREATE_FAMILY_EXTRUSION - nothing made
+
+  - given: two profiles and a path of three curves
+    expect: refused - a swept blend needs a path of one curve - nothing made
 
   - given: a project in front
     expect: notAFamily true and nothing made

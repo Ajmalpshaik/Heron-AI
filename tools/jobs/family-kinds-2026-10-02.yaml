@@ -1,5 +1,6 @@
 # The proof of every other kind of family - NEEDS-CHECKING Group BT, rows BT1
-# to BT13, BT17 and BT18:
+# to BT13, BT17 and BT18 - BT19 and BT20 are family-beam-2026-10-02.yaml, because
+# a record is kept per tool and a second job for one tool would overwrite it:
 #
 #   report-family-template        REPORT_FAMILY_TEMPLATE        FRG-DOC-037
 #   report-family-type-catalog    REPORT_FAMILY_TYPE_CATALOG    FRG-DOC-038
@@ -49,7 +50,7 @@
 #                                hand in Family Category and Parameters,
 #                                one type (BT18)
 #
-# THREE VALUES ARE IDS THAT ONLY AN EARLIER RUN CAN GIVE, and are written here
+# SOME VALUES ARE IDS THAT ONLY AN EARLIER RUN CAN GIVE, and are written here
 # as PLACEHOLDERS: the four line ids create-conceptual-form is built on (from
 # draw-family-point-curves' `curveIds`, or report-family-template's
 # `lineList`), and the sweep's id set-family-sweep-profile names (from
@@ -125,11 +126,13 @@ jobs:
       # PLACEHOLDER - the four line ids, commas between.
       profiles: "LINE-ID-1,LINE-ID-2,LINE-ID-3,LINE-ID-4"
       depthMm: ""
+      path: ""
       solid: true
     negative-set:
       # PLACEHOLDER - three of the four, so the profile does not close.
       profiles: "LINE-ID-1,LINE-ID-2,LINE-ID-3"
       depthMm: ""
+      path: ""
       solid: true
 
   - fragment: set-family-settings

@@ -87,6 +87,10 @@ if (groupType != null)
                 catch (Exception) { }
                 groups.Add(new KeyValuePair<string, object>(text ?? property.Name, value));
             }
+        // "OTHER" HAS NO GroupTypeId PROPERTY - it is the EMPTY id, where the
+        // older releases had INVALID (LabelUtils.GetLabelForGroup's remark), so
+        // it is offered as ADD_FAMILY_PARAMETERS offers it.
+        groups.Add(new KeyValuePair<string, object>("Other", Activator.CreateInstance(groupType)));
     }
 }
 
@@ -218,6 +222,29 @@ else
         else targets.Add(Tuple.Create(element, carrier, shows));
     }
 
+    // A PARAMETER ALREADY HERE IS REUSED ONLY WHEN NOTHING IT DRIVES MOVES. It
+    // must take the type the named parts show, and where it already drives
+    // parts it must already hold that type - setting it would swap them.
+    var showingNow = targets.Select(t => t.Item3).Distinct().ToList();
+    if (existing != null && problems.Count == 0 && showingNow.Count == 1)
+    {
+        List<ElementId> canTake = null;
+        try { canTake = doc.OwnerFamily.GetFamilyTypeParameterValues(existing.Id).ToList(); } catch (Exception) { }
+        ElementId holds = null;
+        try { holds = fm.CurrentType == null ? null : fm.CurrentType.AsElementId(existing); } catch (Exception) { }
+        var drives = existing.AssociatedParameters == null ? 0 : existing.AssociatedParameters.Size;
+        if (canTake == null)
+            problems.Add("\"" + name + "\" is already in this family but is not a Family Type parameter. Use another name.");
+        else if (!canTake.Contains(showingNow[0]))
+            problems.Add("\"" + name + "\" is already in this family and takes another category's types than "
+                + typeLabel(showingNow[0]) + ". Use another name.");
+        else if (drives > 0 && (holds == null || holds != showingNow[0]))
+            problems.Add("\"" + name + "\" is already in this family, holds "
+                + (holds == null || holds == ElementId.InvalidElementId ? "nothing" : typeLabel(holds))
+                + " in the current type and already drives " + drives + " part(s); linking parts that show "
+                + typeLabel(showingNow[0]) + " would swap those. Use another name, or give the parts the same type first.");
+    }
+
     if (problems.Count > 0) refused = "Nothing was changed. " + string.Join(" ", problems);
 }
 
@@ -274,7 +301,11 @@ if (refused == null)
             foreach (FamilyType t in fm.Types)
                 if (string.Equals(t.Name, (pair.Key ?? "").Trim(), StringComparison.OrdinalIgnoreCase)) { familyType = t; break; }
             var value = offeredNamed(pair.Value);
-            if (familyType == null) unknown.Add("no family type is called \"" + pair.Key + "\"");
+            // "Small" and "small" are one type; two values for it would leave the
+            // second and report the first as Revit's failure.
+            if (familyType != null && plans.Any(p => p.Item1.Name == familyType.Name))
+                unknown.Add("the type \"" + familyType.Name + "\" is given twice");
+            else if (familyType == null) unknown.Add("no family type is called \"" + pair.Key + "\"");
             else if (value == null) unknown.Add("\"" + pair.Value + "\" is not one of the types it can take - "
                 + string.Join(", ", offered.Select(typeLabel).Take(15)));
             else plans.Add(Tuple.Create(familyType, value, pair.Value));

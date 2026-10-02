@@ -32,6 +32,13 @@ purpose: >
      on, model lines where the line itself is the part.
   4. CREATE_CONCEPTUAL_FORM on those lines: a closed loop and no depth is a
      surface; a depth pushes it; two or more profiles loft.
+     A TWO-POINT BEAM OR STRUT: PLACE_ADAPTIVE_POINTS "on point 1 yz ..." puts
+     reference points on point 1's own plane square to the line, the section's
+     corners; DRAW_FAMILY_POINT_CURVES closes a loop through them; then
+     CREATE_CONCEPTUAL_FORM with that loop as the profile and the 1-2 line as
+     the PATH sweeps the section along it - it turns and stretches with the
+     two points. A point "on <line id> at 0.5" slides along a line: a
+     mid-point bracing, an inset.
   5. SET_FAMILY_FORM_MATERIAL; ADD_FAMILY_PARAMETERS for what the types
      choose.
   6. REPORT_FAMILY_FORMS, then the flex an adaptive family takes: the modeller
@@ -41,8 +48,8 @@ purpose: >
   KNOWN HERE AND SET BY HAND: each placement point's ORIENTATION (Instance
   (xyz) by default; Host and Loop System is the one panels placed on a
   surface usually need) is a Properties choice no Heron tool sets yet.
-  NOT YET: a profile drawn on a point's own plane - the cross-section of a
-  two-point beam - and points hosted on a line at a ratio.
+  Built 2026-10-02, owed BT19 and BT20: points hosted on a line or on a
+  point's plane, and the sweep along a path.
 
 utterances:
   - make an adaptive component family

@@ -441,8 +441,19 @@ if (refused == null)
                 + category.Name + ": " + ex.Message + " The call failed, and Heron rolls the whole call back.");
         }
     }
+    // A NAMED SUBCATEGORY'S STYLE IS ITS PROJECTION STYLE, offered to Revit only
+    // where Revit lists it as one this line may take (CurveElement.LineStyle's
+    // remark ties line styles to the Lines category, so the line's own list is
+    // the test), then READ BACK. "none" leaves Revit's default, which is read
+    // back and reported by name rather than assumed.
     GraphicsStyle style = null;
-    try { style = wanted.GetGraphicsStyle(GraphicsStyleType.Projection); } catch (Exception) { style = null; }
+    if (!onCategory)
+    {
+        try { style = wanted.GetGraphicsStyle(GraphicsStyleType.Projection); } catch (Exception) { style = null; }
+        if (style == null)
+            throw new InvalidOperationException("\"" + wanted.Name + "\" has no projection line style for detail lines "
+                + "to take. The call failed, and Heron rolls the whole call back.");
+    }
 
     var made = new List<Tuple<DetailCurve, XYZ, XYZ>>();
     foreach (var piece in pieces)
@@ -465,13 +476,19 @@ if (refused == null)
             if (line == null)
                 throw new InvalidOperationException("Revit made no line from " + plain(s[1]) + "," + plain(s[2]) + " to "
                     + plain(s[5]) + "," + plain(s[6]) + ". The call failed, and Heron rolls the whole call back.");
-            if (style != null && !onCategory)
+            if (style != null)
             {
+                var allowed = line.GetLineStyleIds();
+                if (allowed != null && allowed.Count > 0 && !allowed.Contains(style.Id))
+                    throw new InvalidOperationException("Revit does not offer \"" + wanted.Name + "\" as a style for a "
+                        + "detail line here - it offers " + string.Join(", ", allowed.Select(id => doc.GetElement(id))
+                            .Where(e => e != null).Select(e => e.Name).Take(15)) + ". The call failed, and Heron rolls the "
+                        + "whole call back.");
                 try { line.LineStyle = style; }
                 catch (Exception ex)
                 {
-                    throw new InvalidOperationException("Revit would not put a line on \"" + wanted.Name + "\": " + ex.Message
-                        + " The call failed, and Heron rolls the whole call back.");
+                    throw new InvalidOperationException("Revit would not put a line on \"" + wanted.Name + "\": "
+                        + ex.Message + " The call failed, and Heron rolls the whole call back.");
                 }
             }
             made.Add(Tuple.Create(line, a, b));
@@ -524,6 +541,7 @@ if (refused == null)
 
     // READ BACK: ends, then style.
     var ids = new List<string>();
+    var styleNames = new List<string>();
     var length = 0.0;
     foreach (var m in made)
     {
@@ -537,18 +555,21 @@ if (refused == null)
             || (p0.DistanceTo(m.Item3) <= halfMillimetre && p1.DistanceTo(m.Item2) <= halfMillimetre);
         if (!asked)
             throw new InvalidOperationException("A line reads from " + mm(along(p0, u)) + "," + mm(along(p0, v)) + " to "
-                + mm(along(p1, u)) + "," + mm(along(p1, v)) + " mm, not where it was drawn - locking moved it. The call "
+                + mm(along(p1, u)) + "," + mm(along(p1, v)) + " mm, not where it was drawn"
+                + (lockToPlanes ? " - locking moved it" : "") + ". The call failed, and Heron rolls the whole call back.");
+        if (style != null && (m.Item1.LineStyle == null || m.Item1.LineStyle.Id != style.Id))
+            throw new InvalidOperationException("A line reads the line style \""
+                + (m.Item1.LineStyle == null ? "none" : m.Item1.LineStyle.Name) + "\", not \"" + wanted.Name + "\". The call "
                 + "failed, and Heron rolls the whole call back.");
-        if (style != null && !onCategory && (m.Item1.LineStyle == null || m.Item1.LineStyle.Id != style.Id))
-            throw new InvalidOperationException("A line does not read on \"" + wanted.Name + "\". The call failed, and "
-                + "Heron rolls the whole call back.");
+        styleNames.Add(m.Item1.LineStyle == null ? "none" : m.Item1.LineStyle.Name);
         ids.Add(m.Item1.UniqueId);
         length += curve.Length;
     }
 
     lineIds = string.Join(",", ids);
     drawn = made.Count + " detail line(s) in " + pieces.Count + " shape(s) in \"" + target.Name + "\", " + mm(length)
-        + " mm in all, on " + (onCategory ? "the family's category" : "\"" + wanted.Name + "\"")
+        + " mm in all, on " + (style != null ? "\"" + wanted.Name + "\""
+            : "Revit's default style, \"" + string.Join("\", \"", styleNames.Distinct()) + "\"")
         + (lockToPlanes ? ", " + locks.Count + " lock(s) to " + string.Join(", ", locks.Distinct()) + " and " + free
             + " straight line(s) on no named plane" : "") + " - read back.";
     findings.Add(drawn);

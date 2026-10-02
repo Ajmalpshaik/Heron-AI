@@ -322,16 +322,35 @@ else
         try { isBuiltIn = definition != null && definition.BuiltInParameter != BuiltInParameter.INVALID; }
         catch (Exception) { }
         if (!isBuiltIn) { ownParameters++; continue; }
+        // BY STORAGE, as REPORT_FAMILY_PARAMETERS reads them: AsValueString is
+        // null for text and for an element, which would show a filled Type
+        // Comments or Description as blank.
         var value = "";
-        try { value = current == null ? "" : (current.AsValueString(p) ?? ""); } catch (Exception) { }
+        try
+        {
+            if (current == null) value = "";
+            else if (p.StorageType == StorageType.String) value = current.AsString(p) ?? "";
+            else if (p.StorageType == StorageType.ElementId)
+            {
+                var id = current.AsElementId(p);
+                var referenced = id == null ? null : doc.GetElement(id);
+                value = referenced == null ? "" : referenced.Name;
+            }
+            else value = current.AsValueString(p) ?? "";
+        }
+        catch (Exception) { }
         builtIn.Add(p.Definition.Name + " [" + (p.IsInstance ? "instance" : "type") + (p.IsReporting ? ", reporting" : "")
             + "]" + (value.Length > 0 ? " = " + value : ""));
     }
 
+    // The family's own views - not the browser panes and housekeeping views,
+    // which are View elements too (FIND_VIEWS leaves the same ones out).
     var views = new List<string>();
     foreach (var v in new FilteredElementCollector(doc).OfClass(typeof(View)).Cast<View>())
     {
         if (v.IsTemplate) continue;
+        if (v.ViewType == ViewType.ProjectBrowser || v.ViewType == ViewType.SystemBrowser
+            || v.ViewType == ViewType.Internal || v.ViewType == ViewType.Undefined) continue;
         views.Add(v.Name + " (" + v.ViewType + ")");
     }
 

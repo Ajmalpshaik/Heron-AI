@@ -25,12 +25,20 @@ purpose: >
   adaptive component, a pattern-based panel or a mass; any other family is
   refused before anything is made, naming the templates that make one.
 
-  **IN MILLIMETRES FROM THE FAMILY ORIGIN**, "X,Y,Z" each, semicolons between,
-  made in the order given - so placement points take the next numbers in that
-  order, and the numbers Revit gave are READ BACK rather than assumed.
+  **THREE WAYS TO SAY WHERE**, semicolons between, made in the order given:
+  FREE - "X,Y,Z" in millimetres from the family origin; HOSTED ON A LINE -
+  "on <line id> at 0.25", that far along it from its start (Revit's normalised
+  curve parameter), so it slides with the line: an inset frame, a mid-point,
+  an opening that scales with the cell; HOSTED ON A POINT'S OWN PLANE - "on
+  point 1 yz 0,150", millimetres along that plane's two axes, so a profile
+  drawn through such points turns with the point: a two-point beam's section.
+  A hosted point is a REFERENCE point that follows its host; placement and
+  shape handle points are free ones, so the two are not mixed in one call.
 
   **ALL OR NOTHING**: every point's position, kind and number are read again;
-  one that does not read as asked fails the call. Their ids come back.
+  placement numbers must rise in the order given, and numbers that are not the
+  next ones after the family's own are reported. A point where another
+  already is - in this call or in the family - is refused. Their ids come back.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -39,7 +47,8 @@ contract:
     - name: doc
       type: Document
     # "X,Y,Z" in millimetres, semicolons between, in placement order -
-    # "0,0,0; 1000,0,0; 1000,1000,0; 0,1000,0".
+    # "0,0,0; 1000,0,0; 1000,1000,0; 0,1000,0" - or hosted: "on <line id> at
+    # 0.5", "on point 1 yz 0,150".
     - name: points
       type: string
       source: request
@@ -79,7 +88,11 @@ compatibility-note: >
   2020 through 2027 (the RevitAPI reference assemblies and XML remarks, read
   2026-10-01). Whether Revit's conceptual flag reads true for the adaptive and
   pattern-based templates as well as a mass is NEEDS-CHECKING BT4; the check
-  here accepts any of the three flags.
+  here accepts any of the three flags. A hosted point is
+  `FamilyItemFactory.NewReferencePoint(PointElementReference)` on
+  `Application.NewPointOnEdge` with a `PointLocationOnCurve`, or on
+  `PointOnPlane.NewPointOnPlane` with `ReferencePoint.GetCoordinatePlaneReference
+  XY/YZ/XZ` - all 2020 through 2027 (the RevitAPI XML, read 2026-10-02).
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
@@ -89,6 +102,8 @@ compatibility-note: >
 
 utterances:
   - add four adaptive points to this family
+  - host a point on this line at its midpoint
+  - add points on the yz plane of point 1 for the beam profile
   - place adaptive placement points
   - make these points adaptive
   - add a shape handle point to the adaptive component

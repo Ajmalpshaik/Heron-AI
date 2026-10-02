@@ -32,6 +32,12 @@ purpose: >
   takes is reported. Then each family type named takes its nested type, chosen
   only from Revit's own list of what the parameter can hold.
 
+  **A PARAMETER OF THAT NAME ALREADY HERE IS USED AGAIN ONLY WHEN NOTHING IT
+  DRIVES MOVES**: it must be a Family Type parameter that takes the type the
+  named parts show, and where it already drives parts it must already hold
+  that type - otherwise setting it would swap them unasked, so it is refused
+  naming what it holds. A type named twice ("Small" and "small") is refused.
+
   **ALL OR NOTHING, READ BACK**: every link and every type's value are read
   again; the current type is put back as it was.
 

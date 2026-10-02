@@ -10,16 +10,27 @@
 // SHAPE HANDLE point moves the shape after placement and is not clicked; a
 // plain REFERENCE point is a point to build on that nobody clicks.
 //
+// THREE WAYS TO SAY WHERE, semicolons between, made in the order given:
+//   "X,Y,Z"                    FREE, in millimetres from the family origin;
+//   "on <line id> at 0.25"     HOSTED ON A LINE, that far along it from its
+//                              start (0 to 1, Revit's normalised curve
+//                              parameter) - it slides with the line, which is
+//                              what makes an inset frame or a mid-point;
+//   "on point 1 yz 0,150"      HOSTED ON A POINT'S OWN PLANE - xy, yz or xz -
+//                              at millimetres along that plane's two axes, so
+//                              a profile drawn through such points turns with
+//                              the point: a two-point beam's section.
+// A hosted point is a REFERENCE point and follows its host; a placement or
+// shape handle point is a free one, so hosted points and those kinds are not
+// mixed in one call.
+//
 // ONLY IN A CONCEPTUAL FAMILY - an adaptive component, a pattern-based panel
 // or a mass. Revit makes reference points nowhere else, and says so; that is
 // read before anything is made, and refused by name.
 //
-// IN MILLIMETRES FROM THE FAMILY ORIGIN, "X,Y,Z" each, semicolons between, made
-// in the order given - so placement points take the next numbers in that order,
-// and the numbers Revit gave are READ BACK rather than assumed.
-//
-// ALL OR NOTHING: every point's position, kind and number are read again; one
-// that does not read as asked fails the call, and the host rolls it back.
+// ALL OR NOTHING: every point's position, kind and number are read again -
+// placement numbers must rise in the order given; one that does not read as
+// asked fails the call, and the host rolls it back.
 
 var findings = new List<string>();
 var pointIds = "";
@@ -42,9 +53,12 @@ Func<string, double?> number = text =>
 };
 
 var problems = new List<string>();
-var wanted = new List<XYZ>();
+// Each point asked for: the words as given, where it should land, and how it is
+// hosted - null for a free point.
+var wanted = new List<Tuple<string, XYZ, Func<PointElementReference>>>();
 AdaptivePointType? kind = null;
 var kindWords = "";
+var placementBefore = -1;
 
 if (!doc.IsFamilyDocument)
 {
@@ -65,6 +79,8 @@ else
         problems.Add("This family is not an adaptive component, a pattern-based panel or a mass - Revit places "
             + "reference points only in those. Start one from the Generic Model Adaptive or a pattern-based "
             + "template (REPORT_FAMILY_TEMPLATE says which this is).");
+    if (adaptive)
+        try { placementBefore = AdaptiveComponentFamilyUtils.GetNumberOfPlacementPoints(family); } catch (Exception) { }
 
     var said = squash(pointKind);
     if (said == "placement" || said == "placementpoint" || said == "adaptive" || said == "adaptivepoint")
@@ -75,27 +91,127 @@ else
     { kind = AdaptivePointType.ReferencePoint; kindWords = "reference point"; }
     else problems.Add("\"" + (pointKind ?? "") + "\" is not a kind of point - placement, shape handle or reference.");
 
+    // The family's points as they stand: by placement number and by id.
+    var existing = new FilteredElementCollector(doc).OfClass(typeof(ReferencePoint)).Cast<ReferencePoint>().ToList();
+    Func<string, ReferencePoint> pointNamed = token =>
+    {
+        int n;
+        if (int.TryParse(token, out n))
+            foreach (var p in existing)
+            {
+                var placementNumber = -1;
+                try
+                {
+                    if (AdaptiveComponentFamilyUtils.IsAdaptivePlacementPoint(doc, p.Id))
+                        placementNumber = AdaptiveComponentFamilyUtils.GetPlacementNumber(doc, p.Id);
+                }
+                catch (Exception) { }
+                if (placementNumber == n) return p;
+            }
+        return doc.GetElement(token) as ReferencePoint;
+    };
+
     var items = (points ?? "").Split(';').Select(s => s.Trim()).Where(s => s.Length > 0).ToList();
-    if (items.Count == 0) problems.Add("No points were given - \"0,0,0; 1000,0,0\", millimetres, semicolons between.");
+    if (items.Count == 0)
+        problems.Add("No points were given - \"0,0,0; 1000,0,0\" in millimetres, \"on <line id> at 0.5\", or \"on point 1 "
+            + "yz 0,150\", semicolons between.");
     foreach (var item in items)
     {
+        var words = System.Text.RegularExpressions.Regex.Replace(item, @"\s*,\s*", ",")
+            .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+        if (words.Count > 0 && words[0].ToLowerInvariant() == "on")
+        {
+            // HOSTED ON A POINT'S PLANE: on point <number or id> <xy|yz|xz> <u>,<v>
+            if (words.Count == 5 && words[1].ToLowerInvariant() == "point")
+            {
+                var host = pointNamed(words[2]);
+                var plane = words[3].ToLowerInvariant();
+                var uv = words[4].Split(',');
+                var u = uv.Length == 2 ? number(uv[0]) : null;
+                var v = uv.Length == 2 ? number(uv[1]) : null;
+                if (host == null)
+                    problems.Add("\"" + item + "\": no point " + words[2] + " - a placement number or a point's id.");
+                else if (plane != "xy" && plane != "yz" && plane != "xz")
+                    problems.Add("\"" + item + "\": \"" + words[3] + "\" is not one of a point's planes - xy, yz or xz.");
+                else if (!u.HasValue || !v.HasValue)
+                    problems.Add("\"" + item + "\" does not end with where on the plane, \"U,V\" in millimetres.");
+                else
+                {
+                    var frame = host.GetCoordinateSystem();
+                    var first = plane == "yz" ? frame.BasisY : frame.BasisX;
+                    var second = plane == "xy" ? frame.BasisY : frame.BasisZ;
+                    var at = frame.Origin + first.Multiply(u.Value / 304.8) + second.Multiply(v.Value / 304.8);
+                    var hostPoint = host;
+                    var planeWord = plane;
+                    wanted.Add(Tuple.Create(item, at, (Func<PointElementReference>)(() =>
+                    {
+                        var reference = planeWord == "xy" ? hostPoint.GetCoordinatePlaneReferenceXY()
+                            : planeWord == "yz" ? hostPoint.GetCoordinatePlaneReferenceYZ()
+                            : hostPoint.GetCoordinatePlaneReferenceXZ();
+                        return PointOnPlane.NewPointOnPlane(doc, reference, at, XYZ.BasisX);
+                    })));
+                }
+                continue;
+            }
+            // HOSTED ON A LINE: on <line id> at <0 to 1>
+            if (words.Count == 4 && words[2].ToLowerInvariant() == "at")
+            {
+                var line = doc.GetElement(words[1]) as CurveElement;
+                var ratio = number(words[3]);
+                var curve = line == null ? null : line.GeometryCurve;
+                if (curve == null || curve.Reference == null)
+                    problems.Add("\"" + item + "\": \"" + words[1] + "\" is not the id of a line in this family a point can "
+                        + "be hosted on.");
+                else if (!curve.IsBound)
+                    problems.Add("\"" + item + "\": that line is a closed circle or ellipse, which has no start to measure "
+                        + "from - host the point on a line with two ends.");
+                else if (!ratio.HasValue || ratio < 0 || ratio > 1)
+                    problems.Add("\"" + item + "\": how far along is a number from 0 (its start) to 1 (its end).");
+                else
+                {
+                    var at = curve.Evaluate(ratio.Value, true);
+                    var edge = curve.Reference;
+                    var along = ratio.Value;
+                    wanted.Add(Tuple.Create(item, at, (Func<PointElementReference>)(() =>
+                        doc.Application.Create.NewPointOnEdge(edge, new PointLocationOnCurve(
+                            PointOnCurveMeasurementType.NormalizedCurveParameter, along, PointOnCurveMeasureFrom.Beginning)))));
+                }
+                continue;
+            }
+            problems.Add("\"" + item + "\" is not a hosted point - \"on <line id> at 0.5\" or \"on point 1 yz 0,150\".");
+            continue;
+        }
+
         var parts = item.Split(',');
         var x = parts.Length == 3 ? number(parts[0]) : null;
         var y = parts.Length == 3 ? number(parts[1]) : null;
         var z = parts.Length == 3 ? number(parts[2]) : null;
         if (!x.HasValue || !y.HasValue || !z.HasValue)
         {
-            problems.Add("\"" + item + "\" is not a point \"X,Y,Z\" in millimetres.");
+            problems.Add("\"" + item + "\" is not a point \"X,Y,Z\" in millimetres, nor \"on ...\" a line or a point.");
             continue;
         }
-        var at = new XYZ(x.Value / 304.8, y.Value / 304.8, z.Value / 304.8);
-        if (wanted.Any(w => w.DistanceTo(at) < halfMillimetre))
-            problems.Add("\"" + item + "\" is where another point already is - two points in one place cannot be "
-                + "told apart when clicked.");
-        else wanted.Add(at);
+        wanted.Add(Tuple.Create(item, new XYZ(x.Value / 304.8, y.Value / 304.8, z.Value / 304.8),
+            (Func<PointElementReference>)null));
     }
 
-    if (problems.Count > 0) refused = "Nothing was placed. " + string.Join(" ", problems);
+    if (kind.HasValue && kind.Value != AdaptivePointType.ReferencePoint && wanted.Any(w => w.Item3 != null))
+        problems.Add("A point hosted on a line or a plane is placed as a REFERENCE point and follows its host; a "
+            + kindWords + " is a free one. Give pointKind reference for hosted points, and place the others in a "
+            + "call of their own.");
+
+    // Two points in one place cannot be told apart when clicked - against each
+    // other AND against the points already in the family.
+    for (var i = 0; i < wanted.Count; i++)
+    {
+        var at = wanted[i].Item2;
+        if (wanted.Take(i).Any(w => w.Item2.DistanceTo(at) < halfMillimetre)
+            || existing.Any(p => p.Position != null && p.Position.DistanceTo(at) < halfMillimetre))
+            problems.Add("\"" + wanted[i].Item1 + "\" is where another point already is - two points in one place cannot "
+                + "be told apart when clicked.");
+    }
+
+    if (problems.Count > 0) refused = "Nothing was placed. " + string.Join(" ", problems.Distinct());
 }
 
 // ---------------------------------------------------------------------------
@@ -104,60 +220,85 @@ else
 
 if (refused == null)
 {
-    var made = new List<Tuple<ReferencePoint, XYZ>>();
-    foreach (var at in wanted)
+    var made = new List<Tuple<ReferencePoint, XYZ, string>>();
+    foreach (var w in wanted)
     {
         ReferencePoint point;
-        try { point = doc.FamilyCreate.NewReferencePoint(at); }
+        try
+        {
+            point = w.Item3 == null ? doc.FamilyCreate.NewReferencePoint(w.Item2)
+                : doc.FamilyCreate.NewReferencePoint(w.Item3());
+        }
         catch (Exception ex)
         {
-            throw new InvalidOperationException("Revit would not place a point at " + mm(at.X) + ", " + mm(at.Y) + ", "
-                + mm(at.Z) + " mm: " + ex.Message + " The call failed, and Heron rolls the whole call back.");
+            throw new InvalidOperationException("Revit would not place the point \"" + w.Item1 + "\": " + ex.Message
+                + " The call failed, and Heron rolls the whole call back.");
         }
+        if (point == null)
+            throw new InvalidOperationException("Revit made no point for \"" + w.Item1 + "\". The call failed, and Heron "
+                + "rolls the whole call back.");
         if (kind.Value != AdaptivePointType.ReferencePoint)
         {
             try { AdaptiveComponentFamilyUtils.MakeAdaptivePoint(doc, point.Id, kind.Value); }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("Revit would not make the point at " + mm(at.X) + ", " + mm(at.Y)
-                    + ", " + mm(at.Z) + " mm a " + kindWords + ": " + ex.Message + " The call failed, and Heron rolls "
-                    + "the whole call back.");
+                throw new InvalidOperationException("Revit would not make the point \"" + w.Item1 + "\" a " + kindWords
+                    + ": " + ex.Message + " The call failed, and Heron rolls the whole call back.");
             }
         }
-        made.Add(Tuple.Create(point, at));
+        made.Add(Tuple.Create(point, w.Item2, w.Item1));
     }
 
     doc.Regenerate();
 
     var ids = new List<string>();
     var rows = new List<string>();
+    var numbers = new List<int>();
     foreach (var m in made)
     {
         var at = m.Item1.Position;
         if (at == null || at.DistanceTo(m.Item2) > halfMillimetre)
-            throw new InvalidOperationException("A point reads at " + (at == null ? "nowhere" : mm(at.X) + ", " + mm(at.Y)
-                + ", " + mm(at.Z) + " mm") + ", not where it was placed. The call failed, and Heron rolls the whole "
-                + "call back.");
+            throw new InvalidOperationException("The point \"" + m.Item3 + "\" reads at " + (at == null ? "nowhere"
+                : mm(at.X) + ", " + mm(at.Y) + ", " + mm(at.Z) + " mm") + ", not at " + mm(m.Item2.X) + ", " + mm(m.Item2.Y)
+                + ", " + mm(m.Item2.Z) + " mm where it was asked. The call failed, and Heron rolls the whole call back.");
         var isPlacement = AdaptiveComponentFamilyUtils.IsAdaptivePlacementPoint(doc, m.Item1.Id);
         var isHandle = AdaptiveComponentFamilyUtils.IsAdaptiveShapeHandlePoint(doc, m.Item1.Id);
         var asKind = isPlacement ? AdaptivePointType.PlacementPoint : isHandle ? AdaptivePointType.ShapeHandlePoint
             : AdaptivePointType.ReferencePoint;
         if (asKind != kind.Value)
-            throw new InvalidOperationException("The point at " + mm(at.X) + ", " + mm(at.Y) + ", " + mm(at.Z)
-                + " mm reads as a different kind from the " + kindWords + " asked. The call failed, and Heron rolls the "
-                + "whole call back.");
+            throw new InvalidOperationException("The point \"" + m.Item3 + "\" reads as a different kind from the "
+                + kindWords + " asked. The call failed, and Heron rolls the whole call back.");
         var label = kindWords;
-        if (isPlacement) label += " " + AdaptiveComponentFamilyUtils.GetPlacementNumber(doc, m.Item1.Id);
+        if (isPlacement)
+        {
+            var n = AdaptiveComponentFamilyUtils.GetPlacementNumber(doc, m.Item1.Id);
+            // THE NUMBERS RISE IN THE ORDER GIVEN - the order a modeller clicks.
+            if (numbers.Count > 0 && n <= numbers[numbers.Count - 1])
+                throw new InvalidOperationException("The point \"" + m.Item3 + "\" reads placement number " + n + ", after "
+                    + numbers[numbers.Count - 1] + " for the point before it - not the order given. The call failed, and "
+                    + "Heron rolls the whole call back.");
+            numbers.Add(n);
+            label += " " + n;
+        }
         ids.Add(m.Item1.UniqueId);
-        rows.Add(label + " " + m.Item1.UniqueId + " at " + mm(at.X) + ", " + mm(at.Y) + ", " + mm(at.Z) + " mm");
+        rows.Add(label + " " + m.Item1.UniqueId + " at " + mm(at.X) + ", " + mm(at.Y) + ", " + mm(at.Z) + " mm"
+            + (m.Item3.StartsWith("on ", StringComparison.OrdinalIgnoreCase) ? " (" + m.Item3 + ")" : ""));
     }
 
     pointIds = string.Join(",", ids);
     placedPoints = string.Join("  ||  ", rows);
-    var total = 0;
+    var total = -1;
     try { total = AdaptiveComponentFamilyUtils.GetNumberOfPlacementPoints(doc.OwnerFamily); } catch (Exception) { }
-    findings.Add(made.Count + " " + kindWords + "(s) placed and read back. The family now has " + total
-        + " placement point(s) - a modeller clicks them in their number order to place it.");
+    findings.Add(made.Count + " " + kindWords + "(s) placed and read back."
+        + (total >= 0 ? " The family now has " + total + " placement point(s) - a modeller clicks them in their number "
+            + "order to place it." : ""));
+    if (numbers.Count > 0 && placementBefore >= 0
+        && !numbers.Select((n, i) => n == placementBefore + 1 + i).All(ok => ok))
+        findings.Add("The new placement points read " + string.Join(", ", numbers) + " - not the next numbers after the "
+            + placementBefore + " the family had. Revit numbered them; check the order before placing the family.");
+    if (made.Any(m => m.Item3.StartsWith("on ", StringComparison.OrdinalIgnoreCase)))
+        findings.Add("A hosted point follows its host: drag the line or the point it is on in the Family Editor and it "
+            + "moves with it (NEEDS-CHECKING BT19).");
     if (kind.Value == AdaptivePointType.PlacementPoint)
         findings.Add("Lines through these points are DRAW_FAMILY_POINT_CURVES, and a surface or solid on those lines "
             + "CREATE_CONCEPTUAL_FORM - geometry built on the points follows them when the family is placed.");

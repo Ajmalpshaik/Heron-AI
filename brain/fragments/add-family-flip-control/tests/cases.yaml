@@ -4,19 +4,28 @@ positive:
       built in it; view "Ref. Level", controls "single horizontal 0,-400 |
       single vertical 400,0"
     expect: >
-      two controls in the Ref. Level plan, read back at X 0, Y -400 and X 400,
-      Y 0 mm; LOOKED AT; then the family loaded into a test project and one
-      copy placed - RECORD which way each arrow flips it (BT3)
+      two controls in the Ref. Level FLOOR plan, read back at X 0, Y -400 and
+      X 400, Y 0 mm; LOOKED AT; then the family loaded into a test project and
+      one copy placed - RECORD what each arrow does to it: Autodesk's remark
+      says a single arrow rotates it 180 degrees (BT3)
 
-  - given: controls "double horizontal 0,500" in the same family
-    expect: one double horizontal control at X 0, Y 500 mm, read back
+  - given: controls "double horizontal 0, 500" in the same family
+    expect: >
+      one double horizontal control at X 0, Y 500 mm, read back - the space
+      after the comma read as none; a placed copy MIRRORED by it, by Autodesk's
+      remark (BT3)
 
 negative:
   - given: controls "diagonal 0,0"
     expect: refused - not a control shape, naming the four - and nothing added
 
   - given: view "3D View 1"
-    expect: refused - no plan or elevation by that name, naming the family's views - nothing added
+    expect: refused - no floor or ceiling plan by that name, naming the family's plans - nothing added
+
+  - given: view "Front" - an elevation
+    expect: >
+      refused - Revit puts a control in a floor or ceiling plan only, naming
+      the family's plans - nothing added, and no Revit error
 
   - given: a project in front
     expect: notAFamily true and nothing added

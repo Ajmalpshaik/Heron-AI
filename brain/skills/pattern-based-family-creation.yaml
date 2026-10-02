@@ -48,9 +48,12 @@ purpose: >
      (FLEX_FAMILY changes parameters, not points); then the panel is loaded
      into a test mass and applied to a divided surface of the same pattern.
 
-  NOT YET: points hosted ON the edges at a ratio (an inset frame, an opening
-  that scales with the cell), a profile drawn on a point's own plane, and
-  setting the tile pattern - each has a call Heron has not built, or none.
+  AN INSET FRAME OR AN OPENING THAT SCALES WITH THE CELL: PLACE_ADAPTIVE_POINTS
+  "on <edge line id> at 0.2" hosts reference points on the template's edges,
+  DRAW_FAMILY_POINT_CURVES joins them into the inner loop, and
+  CREATE_CONCEPTUAL_FORM fills or pushes it - built 2026-10-02, owed BT19.
+  NOT POSSIBLE THROUGH THE API: setting the tile pattern - Revit's
+  CurtainPanelTilePattern is read-only; the modeller picks it by hand.
 
 utterances:
   - make a curtain panel pattern based family
@@ -60,6 +63,7 @@ utterances:
 
 needs:
   - REPORT_FAMILY_TEMPLATE
+  - PLACE_ADAPTIVE_POINTS
   - DRAW_FAMILY_POINT_CURVES
   - CREATE_CONCEPTUAL_FORM
   - ADD_FAMILY_PARAMETERS

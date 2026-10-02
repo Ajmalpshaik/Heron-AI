@@ -4,15 +4,21 @@
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
 // FLIP CONTROLS - the small arrows a placed door, window or piece of equipment
-// shows when selected, which flip it left-right or front-back in one click. The
+// shows when selected, which turn or mirror it in one click. The
 // Family Editor's Control tool. A family has none until they are added, and a
 // modeller then flips it by mirroring, which moves it.
 //
 // FOUR SHAPES, AS THE CONTROL TOOL NAMES THEM: single horizontal, double
-// horizontal, single vertical, double vertical. A horizontal arrow flips the
-// placed family left-right, a vertical one front-back; a double arrow is the
-// same flip drawn with two heads. Each is placed in a view at a point given in
-// millimetres in the view's own two model coordinates - X,Y in a plan.
+// horizontal, single vertical, double vertical. What each does to a placed copy
+// is Autodesk's remark on Control, 2020 to 2027: a SINGLE arrow, horizontal or
+// vertical, ROTATES the copy 180 degrees; a DOUBLE arrow MIRRORS it, a double
+// horizontal one horizontally and a double vertical one vertically. Each is
+// placed at a point given in millimetres in the plan's own X,Y.
+//
+// A FLOOR PLAN OR A CEILING PLAN, AND NO OTHER VIEW - NewControl's own words for
+// its view. Where a floor plan and a ceiling plan share the name the floor plan
+// is taken; whether a template's "Ref. Level" is both is what BT1's view list
+// shows.
 //
 // READ BACK, ALL OR NOTHING: every control's shape, view and position are read
 // again; one that does not read as asked fails the call, and the host rolls the
@@ -74,12 +80,16 @@ if (!doc.IsFamilyDocument)
 else
 {
     var said = (view ?? "").Trim();
-    var views = new FilteredElementCollector(doc).OfClass(typeof(View)).Cast<View>()
-        .Where(v => !v.IsTemplate && v.ViewType != ViewType.ThreeD).ToList();
-    var found = views.Where(v => string.Equals(v.Name, said, StringComparison.OrdinalIgnoreCase)).ToList();
+    var plans = new FilteredElementCollector(doc).OfClass(typeof(View)).Cast<View>()
+        .Where(v => !v.IsTemplate && (v.ViewType == ViewType.FloorPlan || v.ViewType == ViewType.CeilingPlan)).ToList();
+    var found = plans.Where(v => string.Equals(v.Name, said, StringComparison.OrdinalIgnoreCase)).ToList();
+    // The floor plan, where a floor plan and a ceiling plan share the name.
+    if (found.Count > 1 && found.Count(v => v.ViewType == ViewType.FloorPlan) == 1)
+        found = found.Where(v => v.ViewType == ViewType.FloorPlan).ToList();
     if (said.Length == 0 || found.Count != 1)
-        problems.Add((said.Length == 0 ? "No view was named." : "No single plan or elevation is called \"" + said + "\".")
-            + " This family's views: " + string.Join(", ", views.Select(v => v.Name).Take(12)) + ".");
+        problems.Add((said.Length == 0 ? "No view was named." : "No single floor or ceiling plan is called \"" + said + "\".")
+            + " Revit puts a control in a floor plan or a ceiling plan only. This family's plans: "
+            + (plans.Count == 0 ? "none" : string.Join(", ", plans.Select(v => v.Name + " (" + v.ViewType + ")").Take(12))) + ".");
     else if (axisOf(found[0].ViewDirection) < 0)
         problems.Add("The view \"" + said + "\" looks at an angle; a control is placed in model coordinates.");
     else target = found[0];
@@ -90,7 +100,9 @@ else
             + "then where, in millimetres.");
     foreach (var entry in entries)
     {
-        var words = entry.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+        // "0, -400" reads as "0,-400".
+        var words = System.Text.RegularExpressions.Regex.Replace(entry, @"\s*,\s*", ",")
+            .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries).ToList();
         var point = words.Count == 0 ? null : words[words.Count - 1].Split(',');
         var name = squash(string.Join(" ", words.Take(Math.Max(0, words.Count - 1))));
         ControlShape shape;
@@ -167,9 +179,9 @@ if (refused == null)
     controlIds = string.Join(",", ids);
     placed = made.Count + " flip control(s) in \"" + target.Name + "\": " + string.Join("; ", rows) + " - read back.";
     findings.Add(placed);
-    findings.Add("Which way each control flips a placed copy - a horizontal one left-right, a vertical one "
-        + "front-back - is Revit's, and is what NEEDS-CHECKING BT3 records. Copies already placed in a project take "
-        + "the controls when the family is loaded there again.");
+    findings.Add("What each control does to a placed copy is Revit's: Autodesk's remark on Control says a single "
+        + "arrow rotates it 180 degrees and a double one mirrors it, and NEEDS-CHECKING BT3 records what a placed copy "
+        + "does. Copies already placed in a project take the controls when the family is loaded there again.");
 }
 
 if (refused != null) findings.Add(refused);

@@ -40,7 +40,11 @@ family with a negative case ([D-30](DECISIONS.md)). The register rows that owe t
 
 Six research passes ran on 2026-10-01, one per subject: templates and hosting; pattern-based and adaptive
 families; parameters, formulas, lookup tables and type catalogs; profile, detail and annotation families;
-reference lines, arrays, constraints, nesting and best practice; and MEP families. A seventh pass read
+reference lines, arrays, constraints, nesting and best practice; and MEP families. Two more ran on 2026-10-02 when
+the owner asked for everything to be checked again: doors, windows, curtain panels and railings; and structural
+framing and columns, masses, lighting and best practice. On those two, every page except GitHub was refused for
+direct fetch, so they rest on search extracts and on Autodesk's own SDK samples and The Building Coder's archive
+read in full on GitHub. A seventh pass read
 **every Revit API member a tool here calls in the reference assemblies and XML documentation of all eight
 releases, 2020 to 2027** - the `Nice3point.Revit.Api.RevitAPI` NuGet packages, the same source
 [`tools/check-api-surface.py`](../tools/check-api-surface.py) downloads - with
@@ -82,8 +86,10 @@ built.
 | Face-based | `WorkPlaneBased`, the switch off - the rule BT1 checks | on any face, any angle, in a linked model too | a placeholder host the project never shows (**SOURCED**) | `hosted-family-creation` |
 | Wall-, ceiling-, floor-, roof-based | `OneLevelBasedHosted` | only on that host | a sample wall, ceiling, floor or roof | `hosted-family-creation` |
 | Line-based | `CurveBased` | two clicks; they set its Length | the built-in instance Length (`FAMILY_LINE_LENGTH_PARAM`) and the planes it is measured between | `line-based-family-creation` |
-| Two-level (a column) | `TwoLevelsBased` | between a base and a top level | a base and a top level | `family-creation` |
-| Structural framing | `CurveDrivenStructural` | between two points | - | not covered here |
+| Two-level (a column) | `TwoLevelsBased` | between a base and a top level | a lower and an upper reference level | `structural-family-creation` for a structural column, `family-creation` for an architectural one |
+| Structural framing | `CurveDrivenStructural` | between two points | Member Left and Member Right planes and a sample extrusion locked to them (**SOURCED**, §7) | `structural-family-creation` |
+| Door, window | `OneLevelBasedHosted` | in a wall | a host wall with an opening already cut, Width and Height (**SOURCED**, §7) | `door-window-family-creation` |
+| Lighting fixture | as its template - free, ceiling-, wall- or face-based | as its host | a light source (**SOURCED**, §10) | `lighting-fixture-family-creation` |
 | Adaptive component | `Adaptive` | its numbered points clicked in order | whatever points are placed | `adaptive-family-creation` |
 | Pattern-based curtain panel | `IsCurtainPanelFamily` true | applied to a divided surface, one per cell | a tile pattern grid, its points and lines (**SOURCED**) | `pattern-based-family-creation` |
 | Detail item / line-based detail | `ViewBased` / `CurveBasedDetail` | in one view; the line-based one with two clicks | its view, its planes | `detail-family-creation` |
@@ -267,6 +273,19 @@ Autodesk's remark on `NewExtrusionForm` names the families it refuses as *"Conce
 family where extrusions cannot be created"* - the same words as the classic blend's, and very likely copied:
 which conceptual families take each call is **NEEDS-CHECKING BT6**.
 
+**Conceptual masses (SOURCED unless marked).** A mass family starts from the Mass template; Create Form makes
+an extrusion, a revolve (a profile and an axis), a sweep (along a path in one plane), a swept blend (several
+profiles along one curve), a loft (profiles on two or more planes) or a surface (from an open line). MODEL lines
+are consumed by the form they make; REFERENCE lines stay and drive it (two sources) - which is why Heron's
+point-curve tool draws reference lines by default. Reference points are free, hosted or driving. **Divide
+Surface** lays U and V grids on a face - both on by default, each by number or by distance, or by intersecting
+levels, planes or lines - and a pattern-based panel family is applied to the divided surface's cells; the tile
+pattern decides how many cells one panel takes (Rectangle 1 x 1, Hexagon 2 x 3, Octagon 3 x 3, Arrows 3 x 4 and
+the rest), the panels are adaptive and schedule as curtain panels. **Mass Floors** are cut at chosen levels in
+the PROJECT and report area, perimeter, volume and exterior surface; Gross Volume, Gross Surface Area and Gross
+Floor Area are read-only and schedulable. An in-place mass is for one-off massing, a mass family for repeats.
+**API:** `DividedSurface.Create` and `NewRevolveForms` exist 2020 to 2027 and are **not wrapped yet** (§11).
+
 ---
 
 ## 7. Hosted, line-based, pattern-based and adaptive families
@@ -301,6 +320,98 @@ order) or a Shape Handle Point (moved after placement). Each placement point's *
 (xyz) by default, Instance (z) then Host (xy), Host (xyz), Host and Loop System (xyz), Global (xyz), Global (z)
 then Host (xy) - maps to `AdaptivePointOrientationType`. **Repeat** spreads copies along a divided path or
 surface, and refuses a family with shape handles.
+
+**Points that follow a line or a point (API, 2026-10-02).** A reference point can be HOSTED - on a line at a
+normalised distance from its start (`Application.NewPointOnEdge` with a `PointLocationOnCurve`), or on one of a
+point's own three planes (`PointOnPlane.NewPointOnPlane` on `ReferencePoint.GetCoordinatePlaneReferenceXY`, `YZ`
+or `XZ`) - and follows its host. That is how a two-point beam gets its section: points on point 1's plane square
+to the line, a loop through them, and `NewSweptBlendForm` along the line, whose remarks ask for a path in one
+plane and each profile square to it. Built into `PLACE_ADAPTIVE_POINTS` and `CREATE_CONCEPTUAL_FORM`, owed BT19
+and BT20.
+
+**Doors (SOURCED unless marked).** The Door template is wall-hosted, Doors category, with a host wall and an
+opening already cut in it (two sources agree). That its opening is sized by the Width and Height planes out of the
+box is implied by practitioners' guides and by code that sets only Width and Height - **UNSURE**, no official
+statement found. With a frame, the opening is re-locked to the Rough Width and Rough Height planes (one author,
+twice). **API** names the door's built-in parameters: Width, Height, Thickness, Rough Width, Rough Height, Wall
+Closure, Fire Rating, Function, Operation, Construction Type, Frame Type, Frame Material, Finish, Cost - the
+first six are also Autodesk's documented door type properties, and Rough Width and Height serve schedules and
+export. **Wall Closure** is a type parameter that overrides the wall's Wrapping at Inserts ("By Host" defers to
+the wall), and a reference plane's own Wall Closure property marks where the layers wrap. The plan swing is
+symbolic lines on a "Plan Swing" subcategory, the elevation swing an "Elevation Swing" subcategory - neither is a
+built-in category, and whether the template ships them was not found (**UNSURE**); the built-in door
+subcategories are Frame/Mullion, Glass, Opening, Panel and Hidden Lines (**API**). The modeller adds a frame
+sweep along the opening's edges, a panel extrusion locked to the Width and Height planes with its own Thickness
+plane, and material parameters; the plan swing and the hardware are commonly NESTED and a swappable panel is a
+nested family chosen by a Family Type parameter (two sources), with a reference line driving a swing angle -
+which Heron cannot build (§9). In plan the 3D panel and frame are hidden and symbolic lines shown. The process
+practitioners give: origin, planes, parameters, several host thicknesses, two or more types, flex, then
+geometry, then test. Reference-plane names inside the Door template: **not found**.
+
+**Windows (SOURCED unless marked).** The Window template is wall-hosted, Windows category - Autodesk's own SDK
+sample refuses any other category - with a stand-in host wall, an opening cut, the exterior and interior sides
+marked, and a few starting parameters. **API:** Width and Height are built-in; the instance parameters are Sill
+Height and Head Height, and the template's Default Sill Height is the bottom's height above the level, so Head =
+Default Sill Height + Height (two sources). Rough Width and Height, Wall Closure and Construction Type as for a
+door. The SDK sample, unchanged 2010 to 2025, looks for planes "Exterior", "Center (Front/Back)", "Top" or
+"Head" and "Sill" or "Bottom", and views "Exterior" and "Right" - whether every release keeps those names was not
+verified (**UNSURE**). Built-in window subcategories: Frame/Mullion, Glass, Opening, Sill/Head, Hidden Lines
+(**API**). The Opening tool exists only in host-based templates and is sketched to reference planes.
+
+**Curtain wall panels, and curtain wall doors and windows (SOURCED unless marked).** A classic curtain panel -
+not the pattern-based one - is sized by the CURTAIN GRID: it cannot be sized by dragging or by its properties,
+takes its cell's size when loaded, and resizes with the wall (two sources). Its four template planes stand for
+the bounding grid lines and geometry is locked to them, with no Width or Height of its own to add - a forum
+answer, **UNSURE**; **API** has built-in `CURTAIN_WALL_PANELS_WIDTH` and `_HEIGHT`. Its category is Curtain
+Panels, which can be changed to Doors or Windows - the panel then still lists in panel schedules and lacks the
+standard door and window parameters (a forum answer). A CURTAIN WALL DOOR is a panel family swapped in by the
+Type Selector, sized by the panel, the base mullion deleted to reach the wall's base; an ordinary door's geometry
+is moved into one by pasting it into a curtain-panel door family and locking it to the template's planes. The
+exact template file names were not confirmed (**UNSURE**), and that a curtain wall door has no host opening is
+an inference (**UNSURE**).
+
+**Railings: balusters, posts, panels and rails (SOURCED unless marked).** Three baluster templates - Baluster,
+Baluster - Panel and Baluster - Post - in their own "Railings > Balusters" folder (2024, a forum answer), each a
+special-function template. Posts go at the start, corners and end and at divisions; panels span between them,
+and the panel template carries a slope angle. **API** built-ins: Baluster Height, Top Cut Angle, Bottom Cut Angle,
+Slope Angle, Post, and Baluster Width. The cut angles trim the baluster to the slope it stands on (**UNSURE**);
+the Post template has "Top" and "Top of Post" planes whose difference is a forum question (**UNSURE**). A
+panel's centre plane is the pattern's location line and must stay pinned; Width is a type parameter. The
+RAILING TYPE places balusters (family, base and top attachment with offsets, spacing) - that it drives Baluster
+Height is an inference (**UNSURE**) - and its Rail Structure gives each rail a PROFILE family, height, offset and
+material: the profile's Defines Origin crossing lands at the rail's height, and Profile Usage filters which
+profiles each list offers, `<Generic>` showing everywhere (two sources) - `SET_FAMILY_SETTINGS` sets Profile
+Usage. A continuous Top Rail or Handrail type takes a Supports family and beginning and end Terminations; a
+termination's Extension Length cuts the rail back. Template names for supports and terminations: **not found**.
+
+**Structural framing - beams and braces (SOURCED unless marked).** Two framing templates exist, Beams and
+Braces and Complex and Trusses (a forum answer). The beam is placed by two points: its **Left** and **Right**
+planes are the location line's ends at the join and set its length, so the beam stretches with its supports,
+while **Member Left** and **Member Right** are the geometry's ends - the template's sample extrusion is locked to
+them, and so are Autodesk's own steel sweeps (two sources). **API** built-ins: Length runs handle to handle and
+is read-only; **Cut Length** (`STRUCTURAL_FRAME_CUT_LENGTH`) is the physical length, read-only (two sources);
+whether Cut Length can feed a formula is a forum question (**UNSURE**). Since 2014 Start/End Extension (an
+unjoined end) and Start/End Join Cutback (a joined end) are built-in instance parameters - extension parameters
+a pre-2014 family carries are deleted, or they add to the built-in ones. At Coarse a beam shows a stick symbol,
+and **Symbolic Representation** (`FAMILY_SYMBOLIC_REP`) chooses the family's own lines or the project's
+settings (two sources). **Material for Model Behavior** (`FAMILY_STRUCT_MATERIAL_TYPE`) gives Steel and Wood
+cutback and shape handles, Concrete auto-join and rebar without handles, Precast both, Other neither. **Section
+Shape** adds schedulable dimension parameters; a custom steel section is Not Defined and has no connection
+geometry. The analytical model was made automatically before 2023 and separately from 2023. A CUSTOM SECTION is
+the template extrusion's profile edited in the Left view with planes and size parameters, sketched clear of the
+planes and then aligned and locked (two sources) - Heron cannot edit a sketch, so its route is a NEW extrusion of
+the section on a plane facing left or right, its end faces locked to Member Left and Member Right, and the
+template's sample deleted (`structural-family-creation`).
+
+**Columns (SOURCED unless marked).** The column template opens with a front elevation showing the lower and
+upper reference levels, a plan with two sets of EQ dimensions, and a 3D view; a Generic Model changed to the
+column category does NOT get the two levels (two sources). The geometry's top is locked to the upper level and
+its bottom to the lower one, so Base and Top Level and their offsets drive the height. **API** built-ins:
+**Moves With Grids** (`INSTANCE_MOVES_WITH_GRID_PARAM`) ties a vertical column, or a slanted one's ends, to the
+grids; **Column Style** (`SLANTED_COLUMN_TYPE_PARAM`) is Vertical, Slanted - End Point Driven or Slanted - Angle
+Driven, with Top and Base Cut Style and Extension; only STRUCTURAL columns slant. A structural column takes a
+Structural Material; an architectural column takes the material of the walls it joins, and framing and isolated
+foundations join only structural columns (two sources). What a family needs in order to slant: **not found**.
 
 ---
 
@@ -393,6 +504,21 @@ Audio Visual Devices categories and 2023 Mechanical Control Devices and Plumbing
 electrical connector's "Apparent Load" was renamed "Apparent Power" in 2025 - parameters are found by their
 built-in id, never their name.
 
+**Lighting fixtures (SOURCED unless marked).** The Lighting Fixture templates come free-standing, ceiling-based
+and wall-based, each with its host, planes and a light source; a fixture that must sit on faces in a LINKED
+model is a face-based Generic Model changed to Lighting Fixtures, as §1 says of any category. The **Light
+Source** box in Family Category and Parameters is usually on; a family has ONE light source - more lights are
+nested fixture families. The **Light Source Definition** picks the shape (point, line, rectangle, circle) and the
+distribution (spherical, hemispherical, spot, photometric web); the source shows as a yellow outline and belongs
+just below the opening, touching no geometry. A spot's beam, field and tilt angles are type values; the help's
+extracts give their range as up to 160° while the API remarks give the tilt from -180° to 180° (**UNSURE**,
+BT18). **Initial Intensity** is wattage with efficacy, luminous flux, luminous intensity, or illuminance at a
+distance - lumens give the most predictable renderings; **Initial Color** a preset or a kelvin value, with a
+separate Color Filter; **Light Loss Factor** a single value or the product of seven factors, 1 meaning no loss.
+The fixture's ELECTRICAL connector sits on the Ref. Level, its Load Classification, Voltage and Apparent Load
+linked to family parameters - `ADD_FAMILY_CONNECTOR` with a power system, then `LINK_FAMILY_PARAMETER`. Aiming a
+source on more than one axis by parameters is a forum question (**UNSURE**).
+
 ---
 
 ## 11. What Heron can build now, kind by kind
@@ -402,11 +528,14 @@ built-in id, never their name.
 | Level- and work-plane-based | [`family-creation`](../brain/skills/family-creation.yaml), widened | `REPORT_FAMILY_TEMPLATE`, `ADD_FAMILY_TYPE_PARAMETER`, `DRAW_FAMILY_FILLED_REGION`, `ADD_FAMILY_FLIP_CONTROL`, `REPORT_FAMILY_TYPE_CATALOG` |
 | Wall-, ceiling-, floor-, roof-, face-based | [`hosted-family-creation`](../brain/skills/hosted-family-creation.yaml) | `CREATE_FAMILY_HOST_OPENING`, `SET_FAMILY_SETTINGS` (Cut with Voids When Loaded, Maintain Annotation Orientation) |
 | Line-based | [`line-based-family-creation`](../brain/skills/line-based-family-creation.yaml) | `REPORT_FAMILY_TEMPLATE` with the arrays and locks already built |
-| Pattern-based panel | [`pattern-based-family-creation`](../brain/skills/pattern-based-family-creation.yaml) | `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM` |
-| Adaptive component | [`adaptive-family-creation`](../brain/skills/adaptive-family-creation.yaml) | `PLACE_ADAPTIVE_POINTS`, `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM` |
+| Pattern-based panel | [`pattern-based-family-creation`](../brain/skills/pattern-based-family-creation.yaml) | `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM`, `PLACE_ADAPTIVE_POINTS` for points hosted on its edges |
+| Adaptive component | [`adaptive-family-creation`](../brain/skills/adaptive-family-creation.yaml) | `PLACE_ADAPTIVE_POINTS` (free or hosted), `DRAW_FAMILY_POINT_CURVES`, `CREATE_CONCEPTUAL_FORM` (a sweep along a path for a two-point beam) |
 | Profile | [`profile-family-creation`](../brain/skills/profile-family-creation.yaml) | `DRAW_FAMILY_DETAIL_LINES`, `SET_FAMILY_SETTINGS` (Profile Usage), `SET_FAMILY_SWEEP_PROFILE` |
 | Detail item, annotation symbol | [`detail-family-creation`](../brain/skills/detail-family-creation.yaml) | `DRAW_FAMILY_DETAIL_LINES`, `DRAW_FAMILY_FILLED_REGION` |
-| Duct or pipe fitting | [`mep-fitting-family-creation`](../brain/skills/mep-fitting-family-creation.yaml) | `SET_FAMILY_SETTINGS` (Part Type) with the size table and connector tools already built |
+| Duct or pipe fitting | [`mep-fitting-family-creation`](../brain/skills/mep-fitting-family-creation.yaml) | `SET_FAMILY_SETTINGS` (Part Type) with the size table and connector tools already built, `SET_FAMILY_CONNECTOR_ROLES` |
+| Door, window, curtain wall door | [`door-window-family-creation`](../brain/skills/door-window-family-creation.yaml) | `REPORT_FAMILY_TEMPLATE`, `ADD_FAMILY_TYPE_PARAMETER`, `ADD_FAMILY_FLIP_CONTROL` with the form, symbol and nesting tools already built |
+| Structural framing, structural column | [`structural-family-creation`](../brain/skills/structural-family-creation.yaml) | `REPORT_FAMILY_TEMPLATE` with the extrusion, lock and delete tools already built |
+| Lighting fixture | [`lighting-fixture-family-creation`](../brain/skills/lighting-fixture-family-creation.yaml) | `SET_FAMILY_LIGHT_SOURCE`, `ADD_FAMILY_CONNECTOR` |
 
 **NOT YET, and why - so that nobody reads this table as more than it is:**
 
@@ -415,9 +544,12 @@ built-in id, never their name.
 | A part that rotates about a reference line | No documented call gives a reference line's planes (§9) |
 | A label in a tag, symbol or title block | Revit's API cannot make one on any release (§8.3) |
 | Setting a pattern-based panel's tile pattern | `CurtainPanelTilePattern` is read-only (§7) |
-| A point hosted on a line at a ratio; a profile on a point's plane | Calls exist (`PointOnEdge`, a point's coordinate planes) and are not wrapped yet |
+| A point hosted on a line at a ratio; a profile on a point's plane | **Built 2026-10-02** - `PLACE_ADAPTIVE_POINTS` hosts points on a line (`NewPointOnEdge`) or on a point's own plane (`PointOnPlane.NewPointOnPlane`), and `CREATE_CONCEPTUAL_FORM` sweeps a profile along a path (`NewSweptBlendForm`) - the two-point beam; owed BT19 and BT20 |
 | A connector's primary flag, linked connectors, a light source | **Built 2026-10-02** - `SET_FAMILY_CONNECTOR_ROLES` and `SET_FAMILY_LIGHT_SOURCE`, owed BT17 and BT18. Still by hand: the Light Source tick box, and a wattage (§10) |
 | A hosted opening whose size follows a parameter | An opening's sketch cannot be locked through the API; a void is the route, owed BT12 |
+| Divide Surface on a mass, a revolve form in a conceptual family | Calls exist (`DividedSurface.Create`, `NewRevolveForms`) and are not wrapped yet |
+| A structural family's Material for Model Behavior, Symbolic Representation, Section Shape | Built-in parameters exist (§7) and `SET_FAMILY_SETTINGS` does not take them yet |
+| Editing a template's own sketch - a beam's section, a door's opening | No Heron tool edits a sketch; a new form locked to the planes is the route |
 
 ---
 
@@ -440,8 +572,27 @@ built-in id, never their name.
   as family documents through the API (SOURCED).
 - **Author in the oldest release the office uses** - a family cannot be saved back to an earlier release
   (practice; the rule as a rule is UNSURE).
-- The Autodesk Revit Model Content Style Guide and the NBS BIM Object Standard could not be reached this
-  session; nothing here is attributed to them.
+- **Visibility settings** decide where a form shows: Plan/RCP, Front/Back, Left/Right, "when cut in Plan/RCP" where
+  the category allows, and Coarse, Medium and Fine; a form always shows in 3D (two sources). **Symbolic lines**
+  are not geometry and show only in views parallel to the one they were drawn in - 2D at Coarse, 3D at Fine is
+  the common split (one blog).
+- **Subcategories** carry line weight, colour, pattern and material in Object Styles - one per part a project
+  will want to switch off or restyle.
+- **Defines Origin** on the two perpendicular planes at the insertion point (two sources). **Is Reference:** Not a
+  Reference cannot be dimensioned or snapped to, Weak is reached with Tab, Strong and the named values (Left,
+  Right, Top, the Centers...) are strong - each named value used once, and a plane's Name has no effect;
+  labelled instance parameters on weak or strong planes get shape handles (two sources).
+- **The build order** Autodesk's content team gives: template, insertion point, planes, parameters and
+  constraints, host thicknesses, two or more types, flex, THEN geometry, then a project test; constrain to
+  planes, never geometry, and flex early (two sources).
+- **File size:** native geometry only - a 94 kB DWG has been measured adding over 500 kB; few voids; nest rather
+  than array many copies; no groups; purge, nested families included (one blog). A nesting depth limit: **not
+  found**.
+- **Naming:** the NBS BIM Object Standard names an object by fields - Type, Subtype, Source, Product or Range,
+  Differentiator - PascalCase inside a field, underscores between (its own page, read as an extract); drafts
+  differ on the order and on a Role field (**UNSURE**). The office's own standard wins where it has one.
+- **Level of development is not level of detail:** BIMForum's LOD 100 is a symbol, 200 generic, 300 specific, 350
+  adds interfaces, 400 fabrication; Coarse, Medium and Fine are a VIEW's setting.
 
 ---
 
@@ -475,3 +626,18 @@ Read through the extract or mirror each line says. None is quoted at length; the
   reference line planes; line-based families; Family Type parameter association; rotation limits since 2019.
 - **AUGI, Arkance, Imaginit, Novedge and practitioners' notes** (search extracts) for practice, each marked
   where used.
+- **The 2026-10-02 passes** (search extracts unless said): Autodesk Help on door and window type properties,
+  Wall Closure, curtain panels and curtain wall doors, baluster placement and rail structure, continuous rail
+  supports and terminations, Profile Usage, the Opening tool and Elevation Swing; **Autodesk's Revit SDK sample
+  WindowWizard**, read in full in Jeremy Tammik's `RevitSdkSamples` archive on GitHub (the window template's
+  planes, views and category); a public mirror of the Revit 2026 API help on GitHub (built-in parameter and
+  subcategory names); Autodesk University handouts on family basics, railing panels and rail profiles; and
+  practitioners' guides to door, window and curtain-door families and forum answers on curtain panels,
+  baluster planes and cut angles - each marked where used. The second pass added Autodesk Help on framing and
+  column parameters, extensions and cutbacks, symbolic representation, slanted columns, analytical models,
+  conceptual forms, divided surfaces and surface patterns, mass floors, lighting fixture templates, the light
+  source definition, initial intensity, colour and light loss, visibility settings, symbolic lines,
+  subcategories, Defines Origin and Is Reference; Autodesk's 2023 blog post on analytical model automation;
+  Autodesk Learn units on structural and lighting fixture families; the NBS page on its BIM Object Standard and
+  BIMForum's LOD specification; and practitioners' notes on family origins, flexing, symbolic geometry and
+  file size.

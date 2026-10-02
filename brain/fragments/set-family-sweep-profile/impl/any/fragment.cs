@@ -94,23 +94,49 @@ if (refused == null)
 {
     if (!chosen.IsActive) chosen.Activate();
     var rows = new List<string>();
+    var unflipped = 0;
     foreach (var sweep in targets)
     {
         var row = sweep.get_Parameter(BuiltInParameter.PROFILE_FAM_TYPE);
         var before = row.AsElementId();
-        var flipRow = sweep.get_Parameter(BuiltInParameter.PROFILE_FLIPPED_HOR);
-        var flipBefore = flipRow == null ? (int?)null : flipRow.AsInteger();
+        var flipBefore = sweep.get_Parameter(BuiltInParameter.PROFILE_FLIPPED_HOR);
+        var wasFlipped = flipBefore != null && flipBefore.AsInteger() == 1;
         try
         {
             if (before != chosen.Id) row.Set(chosen.Id);
-            if (flipRow != null && !flipRow.IsReadOnly && flipBefore != (flipped ? 1 : 0)) flipRow.Set(flipped ? 1 : 0);
         }
         catch (Exception ex)
         {
             throw new InvalidOperationException("Revit would not set the sweep " + sweep.UniqueId + "'s profile to "
                 + label(chosen) + ": " + ex.Message + " The call failed, and Heron rolls the whole call back.");
         }
-        if (before != chosen.Id || (flipBefore.HasValue && flipBefore != (flipped ? 1 : 0))) changed++;
+        // THE FLIP IS READ AGAIN AFTER THE PROFILE IS SET: whether a sweep drawn
+        // with a sketched profile carries Profile Is Flipped at all, or only once
+        // a loaded profile is in, no remark says (BT13).
+        var flipRow = sweep.get_Parameter(BuiltInParameter.PROFILE_FLIPPED_HOR);
+        var flipNow = flipRow == null ? (int?)null : flipRow.AsInteger();
+        if (flipNow != (flipped ? 1 : 0))
+        {
+            if (flipRow == null || flipRow.IsReadOnly)
+            {
+                if (flipped || flipNow == 1)
+                    throw new InvalidOperationException("The sweep " + sweep.UniqueId + " has no Profile Is Flipped "
+                        + "Revit lets be " + (flipped ? "set" : "cleared") + " - the profile is set, the flip cannot be. "
+                        + "The call failed, and Heron rolls the whole call back.");
+            }
+            else
+            {
+                try { flipRow.Set(flipped ? 1 : 0); }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException("Revit would not " + (flipped ? "flip" : "unflip") + " the sweep "
+                        + sweep.UniqueId + "'s profile: " + ex.Message + " The call failed, and Heron rolls the whole call "
+                        + "back.");
+                }
+            }
+        }
+        if (wasFlipped && !flipped) unflipped++;
+        if (before != chosen.Id || wasFlipped != flipped) changed++;
     }
 
     doc.Regenerate();
@@ -122,7 +148,7 @@ if (refused == null)
             throw new InvalidOperationException("The sweep " + sweep.UniqueId + " reads another profile after the call, "
                 + "not " + label(chosen) + ". The call failed, and Heron rolls the whole call back.");
         var flipRow = sweep.get_Parameter(BuiltInParameter.PROFILE_FLIPPED_HOR);
-        if (flipRow != null && flipRow.AsInteger() != (flipped ? 1 : 0))
+        if ((flipRow == null && flipped) || (flipRow != null && flipRow.AsInteger() != (flipped ? 1 : 0)))
             throw new InvalidOperationException("The sweep " + sweep.UniqueId + " does not read "
                 + (flipped ? "flipped" : "unflipped") + " as asked. The call failed, and Heron rolls the whole call back.");
         var volume = 0.0;
@@ -144,6 +170,8 @@ if (refused == null)
     profileReport = targets.Count + " sweep(s) drawn with " + label(chosen) + (flipped ? ", flipped" : "") + ": "
         + string.Join("; ", rows) + " - read back.";
     findings.Add(profileReport);
+    if (unflipped > 0)
+        findings.Add(unflipped + " sweep(s) were flipped before and are NOT flipped now, as asked.");
     findings.Add(changed + " changed. A Family Type parameter of the Profiles category can now swap this profile per "
         + "type - ADD_FAMILY_TYPE_PARAMETER, naming these sweeps.");
 }

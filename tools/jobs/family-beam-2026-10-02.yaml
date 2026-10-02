@@ -1,0 +1,66 @@
+# The proof of the two-point adaptive beam - NEEDS-CHECKING Group BT, rows
+# BT19 and BT20: points hosted on a point's own plane, then a sweep of the
+# loop through them along the line between the two placement points.
+#
+#   place-adaptive-points, hosted  PLACE_ADAPTIVE_POINTS   FRG-GEO-050  (BT19)
+#   create-conceptual-form, sweep  CREATE_CONCEPTUAL_FORM  FRG-GEO-052  (BT20)
+#
+#     python tools/batch-prove.py tools/jobs/family-beam-2026-10-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/family-beam-2026-10-02.yaml
+#
+# Its own file, apart from family-kinds-2026-10-02.yaml, because a run's record
+# is kept per tool, and a second job for one tool in one file would overwrite
+# the first's.
+#
+# THE ARRANGEMENT: "Heron Beam Test", a new family from the metric Generic
+# Model Adaptive template with placement points 1 and 2 at 0,0,0 and
+# 3000,0,0 (place-adaptive-points) and a reference line 1-2
+# (draw-family-point-curves), saved once under that title and left OPEN.
+#
+# SOME VALUES ARE IDS THAT ONLY AN EARLIER RUN CAN GIVE, and are written here
+# as PLACEHOLDERS: the 1-2 line's id (BEAM-LINE-ID), and the four ids of the
+# loop draw-family-point-curves draws through the four points the first job
+# places (LOOP-ID-1 to 4) - run that between the two jobs. `--dry-run` says
+# WOULD RUN with a placeholder still in - replace each before the real run.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK -
+# LOOK at the family afterwards anyway: rollback has failed before on this PC
+# (BD1).
+
+model: Heron Beam Test - a new family from the metric Generic Model Adaptive template, Revit 2024
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: place-adaptive-points
+    in: "Heron Beam Test"
+    expect: pointIds
+    set:
+      points: "on point 1 yz -100,0; on point 1 yz 100,0; on point 1 yz 100,200; on point 1 yz -100,200"
+      pointKind: "reference"
+    negative-set:
+      # PLACEHOLDER - the 1-2 line's id.
+      points: "on BEAM-LINE-ID at 0.5"
+      pointKind: "placement"
+    note: >
+      Positive: four reference points on point 1's YZ plane, turning with it.
+      Negative: a hosted point asked for as a placement point, refused.
+
+  - fragment: create-conceptual-form
+    in: "Heron Beam Test"
+    expect: formId
+    set:
+      # PLACEHOLDERS - the loop through the four points above, and the 1-2 line.
+      profiles: "LOOP-ID-1,LOOP-ID-2,LOOP-ID-3,LOOP-ID-4"
+      depthMm: ""
+      path: "BEAM-LINE-ID"
+      solid: true
+    negative-set:
+      profiles: "LOOP-ID-1,LOOP-ID-2,LOOP-ID-3,LOOP-ID-4"
+      depthMm: "50"
+      path: "BEAM-LINE-ID"
+      solid: true
+    note: >
+      Positive: a solid sweep about 120 L along the line - the two-point beam.
+      Negative: a depth and a path together, refused before anything is made.

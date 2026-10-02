@@ -15,6 +15,11 @@ positive:
   - given: the same call again
     expect: linked 0, the link already as asked, values unchanged
 
+  - given: parameterGroup "Other" on Revit 2024, a new parameterName
+    expect: >
+      "Other" found - the empty group id from 2022, offered as on 2020 - and
+      the parameter made under Other, or Revit's own refusal rolled back (BT8)
+
 negative:
   - given: category "Lighting Fixtures" with no lighting family loaded in the host family
     expect: >
@@ -23,6 +28,16 @@ negative:
 
   - given: typeValues "Large=900" where no 900 type is loaded
     expect: refused naming the types it can take; nothing kept
+
+  - given: >
+      after the positive case, Box Type driving copy A at 300; a second copy B
+      placed showing 450, elements B's id, the same parameterName
+    expect: >
+      refused - Box Type already drives a part and holds 300, so linking B,
+      which shows 450, would swap copy A - nothing changed, copy A still 300
+
+  - given: typeValues "Small=300; small=450"
+    expect: refused - the type Small is given twice - nothing kept
 
   - given: a project in front
     expect: notAFamily true and nothing changed

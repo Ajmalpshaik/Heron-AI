@@ -15,18 +15,22 @@ risk: MODIFY
 
 purpose: >
   Adds FLIP CONTROLS to the family open in the Family Editor - the small arrows
-  a placed door, window, fan coil or valve shows when selected, which flip it
-  left-right or front-back in one click instead of a mirror that moves it. The
-  Family Editor's Control tool.
+  a placed door, window, fan coil or valve shows when selected, which turn or
+  mirror it in one click instead of a mirror that moves it. The Family
+  Editor's Control tool.
 
   **FOUR SHAPES, AS THE CONTROL TOOL NAMES THEM** - single horizontal, double
-  horizontal, single vertical, double vertical - each placed in a plan or
-  elevation of the family at a point in millimetres, in the view's own two
-  model coordinates: X,Y in a plan. Several at once, `|` between.
+  horizontal, single vertical, double vertical - each placed in a FLOOR PLAN
+  or CEILING PLAN of the family, the only views Revit's NewControl takes, at a
+  point in millimetres in the plan's own X,Y. Several at once, `|` between.
+  Where a floor plan and a ceiling plan share the name, the floor plan is
+  taken - whether a template's "Ref. Level" is both is what BT1's view list
+  shows.
 
-  **WHICH WAY EACH FLIPS A PLACED COPY IS REVIT'S** - a horizontal arrow is
-  expected to flip it left-right and a vertical one front-back - and is
-  recorded in NEEDS-CHECKING BT3 rather than promised here.
+  **WHAT EACH DOES TO A PLACED COPY IS REVIT'S.** Autodesk's remark on Control,
+  2020 to 2027: a single arrow, horizontal or vertical, ROTATES the copy 180
+  degrees; a double arrow MIRRORS it - horizontally or vertically. NEEDS-
+  CHECKING BT3 records what a placed copy does.
 
   **READ BACK, ALL OR NOTHING**: every control's shape, view and position are
   read again; one that does not read as asked fails the call. Their ids come
@@ -38,8 +42,8 @@ contract:
   needs:
     - name: doc
       type: Document
-    # The plan or elevation to place them in, as the Project Browser names it -
-    # "Ref. Level".
+    # The floor or ceiling plan to place them in, as the Project Browser names
+    # it - "Ref. Level". The floor plan where both share the name.
     - name: view
       type: string
       source: request

@@ -27,8 +27,11 @@ purpose: >
      work-plane-based has a skill of its own: HOSTED-FAMILY-CREATION for a
      wall-, ceiling-, floor-, roof- or face-based one, LINE-BASED-FAMILY-CREATION,
      PATTERN-BASED-FAMILY-CREATION, ADAPTIVE-FAMILY-CREATION,
-     PROFILE-FAMILY-CREATION, DETAIL-FAMILY-CREATION, and
-     MEP-FITTING-FAMILY-CREATION for a duct or pipe fitting. Then read the
+     PROFILE-FAMILY-CREATION, DETAIL-FAMILY-CREATION,
+     MEP-FITTING-FAMILY-CREATION for a duct or pipe fitting,
+     DOOR-WINDOW-FAMILY-CREATION, STRUCTURAL-FAMILY-CREATION for a beam, a
+     brace or a structural column, and LIGHTING-FIXTURE-FAMILY-CREATION for a
+     light with its light source. Then read the
      thing before anything is built - from the picture, the
      sketch or the words. Say back, in one list: what it is and the category
      it belongs to; the FORMS it is made of, each as the form that builds it -
