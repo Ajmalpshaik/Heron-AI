@@ -101,7 +101,7 @@ compatibility-note: >
   categories carry each switch, which Part Types a category accepts, and when
   Revit holds Always Vertical read-only, are Revit's - read at run time, never
   listed here (NEEDS-CHECKING BS1, BS2 and BV7). Widened 2026-10-01, before any
-  proof, from four switches to eleven settings (row 5b-279), and on
+  proof, from four switches to eleven settings (row 5b-280), and on
   2026-10-02 to thirteen: `FAMILY_STRUCT_MATERIAL_TYPE` with the
   `StructuralMaterialType` enum, and `STRUCTURAL_SECTION_SHAPE` with the enum
   `Family.StructuralSectionShape` carries - read from that property, because

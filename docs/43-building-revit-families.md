@@ -32,7 +32,7 @@ family with a negative case ([D-30](DECISIONS.md)). The register rows that owe t
 | **One tool widened**: `set-family-settings` takes Cut with Voids When Loaded, Maintain Annotation Orientation, Rotate with Component, Keep Text Readable, Enable Cutting in Views, Part Type and Profile Usage as well as its four switches | [its card](../brain/fragments/set-family-settings/fragment.yaml) |
 | **Seven new skills**, one per kind, and `family-creation` widened | §11 |
 | **What to measure in Revit** | [Group BV](needs-checking/group-bv.md) |
-| **What disagrees, and a possible defect found on the way** | [FRAGMENT-ISSUES rows 5b-279 to 5b-281](FRAGMENT-ISSUES.md) |
+| **What disagrees, and a possible defect found on the way** | [FRAGMENT-ISSUES rows 5b-280 to 5b-282](FRAGMENT-ISSUES.md) |
 
 ---
 
@@ -235,7 +235,7 @@ reads it with `size_lookup(Table, "Column", default, key1, key2, ...)`, the defa
 matches. **SOURCED, and in conflict with a Heron card:** several sources say the FIRST column holds row names
 and is never searched - the first key is matched against the second column - while
 [`write-family-size-table`](../brain/fragments/write-family-size-table/fragment.yaml)'s purpose calls the first
-column the key. Both are recorded ([row 5b-280](FRAGMENT-ISSUES.md)); **NEEDS-CHECKING BV15** settles it with
+column the key. Both are recorded ([row 5b-281](FRAGMENT-ISSUES.md)); **NEEDS-CHECKING BV15** settles it with
 a negative case. **SOURCED (Autodesk's developers, via The Building Coder):** from Revit 2021.1 a UTF-8 or
 UTF-16 CSV is read as such only WITH a byte-order mark; without one it is read as ANSI. **API:**
 `FamilySizeTableManager` creates, imports, exports and removes tables, in a family or a project document.
@@ -462,7 +462,7 @@ labelled (`NewAngularDimension` in a family, `Dimension.FamilyLabel`). **But no 
 reference to one of the line's own planes**, so no form can be put on one. **SOURCED:** the only route found,
 by a forum user's trial, builds such a reference out of the line's stable representation with a numeric suffix -
 a string Autodesk's own remarks say is not meant to be parsed. Heron does not build on an undocumented string;
-reference-line angles stay **NOT YET**, recorded in [row 5b-279](FRAGMENT-ISSUES.md). The documented route to a
+reference-line angles stay **NOT YET**, recorded in [row 5b-280](FRAGMENT-ISSUES.md). The documented route to a
 bend whose angle the types choose is a REVOLVE whose end angle is linked to an Angle parameter
 (`LINK_FAMILY_FORM_PARAMETER`). **SOURCED:** since 2019 users report errors at angles below 0 or above 180
 degrees with the line's end locked.
@@ -477,7 +477,7 @@ points OUT of its face, and the arrow says which way a duct or pipe is drawn fro
 `ChangeHostReference` (2023+) says a connector on a face alone sits at the face's PLANE ORIGIN and can be moved
 along it, where an edge loop fixes it at the loop - **which puts a sentence of Heron's
 [`add-family-connector`](../brain/fragments/add-family-connector/fragment.yaml) card in doubt** ("at that face's
-centre"), recorded in [row 5b-281](FRAGMENT-ISSUES.md) and not fixed here. A family has one PRIMARY connector
+centre"), recorded in [row 5b-282](FRAGMENT-ISSUES.md) and not fixed here. A family has one PRIMARY connector
 per domain (`AssignAsPrimary`); linked connectors pass flow through only when their system is Global.
 [`SET_FAMILY_CONNECTOR_ROLES`](../brain/fragments/set-family-connector-roles/fragment.yaml) sets both - it
 reports a linked pair that is not Global rather than changing its system, and whether Revit links the second
@@ -606,9 +606,9 @@ source on more than one axis by parameters is a forum question (**UNSURE**).
 | What | Where |
 |---|---|
 | The runs every new tool owes, with negative cases | [NEEDS-CHECKING Group BV](needs-checking/group-bv.md) and [`tools/jobs/family-kinds-2026-10-02.yaml`](../tools/jobs/family-kinds-2026-10-02.yaml) |
-| The new tools and skills, and reference-line angles left NOT YET | [Row 5b-279](FRAGMENT-ISSUES.md) |
-| A lookup table's first column: a Heron card and the sources disagree | [Row 5b-280](FRAGMENT-ISSUES.md) |
-| A connector's position on its face: a Heron card and Autodesk's remark disagree | [Row 5b-281](FRAGMENT-ISSUES.md) |
+| The new tools and skills, and reference-line angles left NOT YET | [Row 5b-280](FRAGMENT-ISSUES.md) |
+| A lookup table's first column: a Heron card and the sources disagree | [Row 5b-281](FRAGMENT-ISSUES.md) |
+| A connector's position on its face: a Heron card and Autodesk's remark disagree | [Row 5b-282](FRAGMENT-ISSUES.md) |
 
 ---
 

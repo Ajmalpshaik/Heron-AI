@@ -3214,8 +3214,10 @@ def heron_fire(calculation: str = "", inputs: str = "") -> str:
     (sprinklers above and below a ceiling too), the beam and three-times
     obstruction rules, sprinkler flow and pressure, pipe friction, a full
     hydraulic calculation of a tree or a grid, the water supply against a flow
-    test, fire water storage, fire pumps, standpipes, extinguishers and
-    detectors.
+    test, fire water storage, fire pumps, standpipes, hose reels, extinguishers,
+    detectors, temperature ratings and fittings' equivalent lengths - to NFPA
+    13, BS EN 12845 or FM Global as the project follows, with BS 5839-1, BS
+    5306 and BS 9990 beside NFPA's own.
 
     Use it when the modeller asks what a fire protection number SHOULD be:
     "what hazard class is a car park", "how many sprinklers for this room",
@@ -3232,14 +3234,15 @@ def heron_fire(calculation: str = "", inputs: str = "") -> str:
 
     HERON SUPPLIES NO DESIGN VALUE THE MODELLER DID NOT GIVE (D-33). The
     hazard class is the engineer's, never inferred from a room's name. A
-    missing value comes back as a question with NFPA's figure offered beside
-    it - put that question to the modeller and never fill it in yourself. A
+    missing value comes back as a question with the standard's figure offered
+    beside it - put that question to the modeller and never fill it in yourself. A
     figure that could not be checked is not held at all, and the answer says
     so.
 
     A PROJECT'S GOVERNING STANDARDS ARE ASKED ONCE (D-111): an answer headed
-    ASK ONCE FOR THIS PROJECT wants sprinkler_standard (the NFPA 13 edition)
-    and fire_authority (QCDD on a Qatar project). Put them to the modeller,
+    ASK ONCE FOR THIS PROJECT wants sprinkler_standard (an NFPA 13 edition, EN
+    12845 or FM Global) and fire_authority (QCDD on a Qatar project, UAE Civil
+    Defence in the UAE). Put them to the modeller,
     pass the answer in the next call's inputs, and Heron keeps them for the
     open model's project.
 
