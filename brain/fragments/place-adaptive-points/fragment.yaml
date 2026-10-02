@@ -23,7 +23,9 @@ purpose: >
 
   **ONLY IN A CONCEPTUAL FAMILY.** Revit makes reference points only in an
   adaptive component, a pattern-based panel or a mass; any other family is
-  refused before anything is made, naming the templates that make one.
+  refused before anything is made, naming the templates that make one. A
+  PLACEMENT or SHAPE HANDLE point is an adaptive point, which Revit makes only
+  in an adaptive family - a mass is refused them and takes reference points.
 
   **THREE WAYS TO SAY WHERE**, semicolons between, made in the order given:
   FREE - "X,Y,Z" in millimetres from the family origin; HOSTED ON A LINE -

@@ -396,7 +396,7 @@ else
     // CROSS OR TOUCH, or the profile fails in a sweep or a project however well
     // each line was drawn. Every edge of one loop is tested against every edge
     // of the others, in the shape's own millimetres, an arc as short chords.
-    if (profile && pieces.Count > 1 && problems.Count == 0)
+    if (profile && pieces.Count > 0 && problems.Count == 0)
     {
         Func<double[], List<double[]>> chords = s =>
         {
@@ -436,6 +436,25 @@ else
                 || (Math.Abs(d3) <= 1e-9 && within(p, q, m)) || (Math.Abs(d4) <= 1e-9 && within(p, q, n));
         };
         var traced = pieces.Select(pc => pc.Item1.Select(chords).ToList()).ToList();
+        // A LOOP MAY NOT CROSS ITSELF EITHER: every pair of its edges that do
+        // not meet at a corner - not neighbours, nor the last and the first.
+        for (var i = 0; i < traced.Count; i++)
+        {
+            var edges = traced[i];
+            var crossed = false;
+            for (var e = 0; e < edges.Count && !crossed; e++)
+                for (var f = e + 2; f < edges.Count && !crossed; f++)
+                {
+                    if (e == 0 && f == edges.Count - 1) continue;
+                    var ca = edges[e];
+                    var cb = edges[f];
+                    crossed = Enumerable.Range(0, ca.Count - 1).Any(x => Enumerable.Range(0, cb.Count - 1)
+                        .Any(y => meet(ca[x], ca[x + 1], cb[y], cb[y + 1])));
+                }
+            if (crossed)
+                problems.Add((traced.Count == 1 ? "The shape" : "Shape " + (i + 1)) + " crosses itself. A profile's "
+                    + "loop goes round once, never over its own edges.");
+        }
         for (var i = 0; i < traced.Count; i++)
             for (var j = i + 1; j < traced.Count; j++)
             {

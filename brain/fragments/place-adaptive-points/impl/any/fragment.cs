@@ -98,6 +98,14 @@ else
     else if (said == "reference" || said == "referencepoint" || said == "plain")
     { kind = AdaptivePointType.ReferencePoint; kindWords = "reference point"; }
     else problems.Add("\"" + (pointKind ?? "") + "\" is not a kind of point - placement, shape handle or reference.");
+    // A placement or shape handle point is an ADAPTIVE point, and Revit's
+    // remark on MakeAdaptivePoint refuses one outside an adaptive family - so
+    // a mass, or a panel Revit does not read as adaptive, takes reference
+    // points only, refused here rather than half-made and rolled back.
+    if (kind.HasValue && kind.Value != AdaptivePointType.ReferencePoint && (conceptual || panel) && !adaptive)
+        problems.Add("A " + kindWords + " is an adaptive point, and Revit makes those only in an adaptive family - "
+            + "this " + (conceptual ? "mass" : "panel") + " takes reference points only (pointKind \"reference\"). "
+            + "Adaptive points are placed in a family started from Generic Model Adaptive.");
 
     // The family's points as they stand: by placement number and by id.
     var existing = new FilteredElementCollector(doc).OfClass(typeof(ReferencePoint)).Cast<ReferencePoint>().ToList();
