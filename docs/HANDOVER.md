@@ -206,6 +206,7 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 
 | Date | Sitting |
 |---|---|
+| 2026-10-02 | [HERON CAN NOW WORK OUT A SPRINKLER SYSTEM, NOT ONLY PLACE ITS HEADS](handover-archive/2026-10-02-heron-can-now-work-out-a-sprinkler-system-not-only-place-its-heads.md) |
 | 2026-10-02 | [HERON CAN NOW WORK OUT WHAT A DUCT SHOULD BE, NOT ONLY DRAW IT](handover-archive/2026-10-02-heron-can-now-work-out-what-a-duct-should-be-not-only-draw-it.md) |
 | 2026-09-28 | [REVIT'S OWN DUCT SIZING TORE UP HERON'S MAIN, AND THE FIX PUTS THE TRANSITION ON THE UNIT](handover-archive/2026-09-28-revit-s-own-duct-sizing-tore-up-heron-s-main-and-the-fix.md) |
 | 2026-09-24 | [THE RE-RANKER RAN FOR THE FIRST TIME, AND IT MAKES PICKING A TOOL WORSE](handover-archive/2026-09-24-the-re-ranker-ran-for-the-first-time-and-it-makes-picking-a.md) |
@@ -217,7 +218,6 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 | 2026-09-22 | [FOUR HINTS TOLD A CALLER TO TYPE WHAT REVIT REFUSES, AND FOURTEEN SAID NOTHING](handover-archive/2026-09-22-four-hints-told-a-caller-to-type-what-revit-refuses-and.md) |
 | 2026-09-22 | [SESSION CLOSED. THE READING SWEEP THROUGH `tools/`, AND WHERE IT STOPPED](handover-archive/2026-09-22-session-closed-the-reading-sweep-through-tools-and-where-it.md) |
 | 2026-09-22 | [IT SUPPRESSED 52 PRODUCTION FUNCTIONS AND NOT ONE REAL DISPATCH](handover-archive/2026-09-22-it-suppressed-52-production-functions-and-not-one-real.md) |
-| 2026-09-22 | [ELEVEN OF FOURTEEN REPORT `0`, AND THAT ZERO MEANS THREE THINGS](handover-archive/2026-09-22-eleven-of-fourteen-report-0-and-that-zero-means-three-things.md) |
 
 ## The session archive — what happened before today
 

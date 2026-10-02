@@ -7,15 +7,17 @@
 # See docs/29-metadata-standard.md
 
 """
-A project's design basis - the standards that govern its HVAC design - asked
-once, kept for that project, and never carried to another (D-111).
+A project's design basis - the standards that govern its HVAC and its fire
+protection design - asked once, kept for that project, and never carried to
+another (D-111).
 
 "Design basis" is the MEP name for it: the codes and criteria a project is
-designed to, written down once at the start. Here it is four answers, and the
-file is named for that rather than for the engine that asks them, so no
-module name in brain/ is the start of another's (tests/test_references.py).
+designed to, written down once at the start. For HVAC it is four answers, for
+fire protection two, and the module is named for the basis rather than for an
+engine that asks it, so no module name in brain/ is the start of another's
+(tests/test_references.py).
 
-    python brain/heron_designbasis.py <project-key>    what is recorded for it
+    python brain/heron_designbasis.py <project-key> [hvac|fire]    what is recorded
 
 WHY IT EXISTS
 -------------
@@ -26,18 +28,21 @@ changes what an answer may check. D-33 says ask, and ask ONCE, because
 "always ask" without memory becomes noise that is clicked through. The owner,
 2026-10-02: "ask standards once per project". The answers are kept here.
 
-What the questions ARE, and what a valid answer looks like, is the engine's
-(heron_hvac.PROJECT_STANDARDS). This module only keeps what the engine has
-already accepted - it stores names and values and judges neither.
+What the questions ARE, and what a valid answer looks like, is each engine's
+(heron_hvac.PROJECT_STANDARDS, heron_fire.PROJECT_STANDARDS). This module only
+keeps what an engine has already accepted - it stores names and values and
+judges neither.
 
 ONE FILE PER PROJECT, AND THE PROJECT IS NEVER GUESSED
 -------------------------------------------------------
-knowledge/projects/<key>.hvac.json - beside the project's own store and named
-by the same key, the Project Information UniqueId the add-in reports
-(heron_scope._safe_key says why it is that and never the file name). No key,
-no file: a project this chat has not seen is asked again rather than filed
-under a guess, because one client's answer in another client's file is a
-breach, not a bug (docs/10 s2, Golden Rule 5).
+knowledge/projects/<key>.hvac.json, and <key>.fire.json beside it - one file per
+project and discipline, beside the project's own store and named by the same
+key, the Project Information UniqueId the add-in reports (heron_scope._safe_key
+says why it is that and never the file name). A discipline's answers never
+land in another's file, so an HVAC question is never answered from a fire
+record. No key, no file: a project this chat has not seen is asked again
+rather than filed under a guess, because one client's answer in another
+client's file is a breach, not a bug (docs/10 s2, Golden Rule 5).
 
 THIS IS DATA, NOT AN INDEX
 --------------------------
@@ -58,7 +63,9 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "brain"))
 
-SUFFIX = ".hvac.json"
+# One file per discipline. SUFFIX is HVAC's, as it was before fire had one.
+SUFFIXES = {"hvac": ".hvac.json", "fire": ".fire.json"}
+SUFFIX = SUFFIXES["hvac"]
 FORMAT = 1
 
 
@@ -75,8 +82,11 @@ def _scope():
     return heron_scope
 
 
-def path_for(project_key):
-    """The one file this project's answers live in."""
+def path_for(project_key, discipline="hvac"):
+    """The one file this project's answers for one discipline live in."""
+    if discipline not in SUFFIXES:
+        raise ValueError("no design basis is kept for %r - only for %s"
+                         % (discipline, ", ".join(sorted(SUFFIXES))))
     if not project_key:
         raise ValueError(
             "No project key, so there is no file to name. Heron does not guess "
@@ -87,7 +97,7 @@ def path_for(project_key):
         raise ValueError(
             "No %APPDATA% and no HERON_KNOWLEDGE, so there is nowhere to keep a "
             "project's answers. Set HERON_KNOWLEDGE to a folder.")
-    return os.path.join(base, "projects", scope._safe_key(project_key) + SUFFIX)
+    return os.path.join(base, "projects", scope._safe_key(project_key) + SUFFIXES[discipline])
 
 
 def _now():
@@ -108,15 +118,15 @@ def _load(path):
     return data
 
 
-def read(project_key):
+def read(project_key, discipline="hvac"):
     """
-    (standards, note) for one project. `standards` maps each recorded name to
-    {"value", "recorded"}; `note` is None, or the sentence saying why nothing
-    recorded could be used.
+    (standards, note) for one project and discipline. `standards` maps each
+    recorded name to {"value", "recorded"}; `note` is None, or the sentence
+    saying why nothing recorded could be used.
     """
     if not project_key:
         return {}, None
-    path = path_for(project_key)
+    path = path_for(project_key, discipline)
     if not os.path.exists(path):
         return {}, None
     try:
@@ -126,11 +136,12 @@ def read(project_key):
                     "none was used - the file is kept as it is: %s" % (why, path))
 
 
-def record(project_key, given, project_name=None, when=None):
+def record(project_key, given, project_name=None, when=None, discipline="hvac"):
     """
-    Keep what was given for one project. Returns (changes, note): `changes` is
-    a list of (name, old value or None, new value), empty when nothing differed
-    from the record; `note` is None or a sentence about the file itself.
+    Keep what was given for one project and discipline. Returns (changes,
+    note): `changes` is a list of (name, old value or None, new value), empty
+    when nothing differed from the record; `note` is None or a sentence about
+    the file itself.
 
     A value equal to the one recorded changes nothing and writes nothing. A
     different one replaces it, and the replaced value goes into the record's
@@ -138,7 +149,7 @@ def record(project_key, given, project_name=None, when=None):
     """
     if not project_key or not given:
         return [], None
-    path = path_for(project_key)
+    path = path_for(project_key, discipline)
     note = None
     data = {"format": FORMAT, "project_key": str(project_key), "standards": {},
             "history": []}
@@ -182,11 +193,12 @@ def record(project_key, given, project_name=None, when=None):
 
 def main(argv):
     if len(argv) < 2:
-        print("usage: python brain/heron_designbasis.py <project-key>")
+        print("usage: python brain/heron_designbasis.py <project-key> [hvac|fire]")
         return 2
+    discipline = argv[2] if len(argv) > 2 else "hvac"
     try:
-        standards, note = read(argv[1])
-        path = path_for(argv[1])
+        standards, note = read(argv[1], discipline)
+        path = path_for(argv[1], discipline)
     except ValueError as why:
         print(str(why))
         return 2

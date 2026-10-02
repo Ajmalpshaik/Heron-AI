@@ -832,9 +832,9 @@ def _ref(table, title, source, columns, rows, note=None):
                          "note": note}
 
 
-def reference_lookup(table, key):
+def reference_lookup(table, key, refs=None):
     """The row of a reference table whose first column is `key`, or None."""
-    data = REFERENCES.get(table)
+    data = (REFERENCES if refs is None else refs).get(table)
     if not data or key is None:
         return None
     wanted = " ".join(str(key).strip().lower().replace("_", " ").replace("-", " ").split())
@@ -845,10 +845,10 @@ def reference_lookup(table, key):
     return None
 
 
-def offer(table, key, column, unit):
+def offer(table, key, column, unit, refs=None):
     """The sentence offering ONE reference value beside a missing input, or None."""
-    data = REFERENCES.get(table)
-    row = reference_lookup(table, key)
+    data = (REFERENCES if refs is None else refs).get(table)
+    row = reference_lookup(table, key, refs)
     if not data or row is None or column not in data["columns"]:
         return None
     value = row[data["columns"].index(column)]
@@ -858,18 +858,18 @@ def offer(table, key, column, unit):
             % (data["source"], _g(value), unit, row[0]))
 
 
-def offer_table(table):
+def offer_table(table, refs=None):
     """The sentence pointing at a whole reference table, or None if Heron holds none."""
-    data = REFERENCES.get(table)
+    data = (REFERENCES if refs is None else refs).get(table)
     if not data:
         return None
     return ("see `reference %s` - %s (%s); offer a row, do not assume one"
             % (table, data["title"], data["source"]))
 
 
-def reference_rows(table, key):
+def reference_rows(table, key, refs=None):
     """Every row of a reference table whose first column is `key` - one per load, say."""
-    data = REFERENCES.get(table)
+    data = (REFERENCES if refs is None else refs).get(table)
     if not data or key is None:
         return []
     wanted = " ".join(str(key).strip().lower().replace("_", " ").replace("-", " ").split())
@@ -3889,19 +3889,28 @@ def calc_unit_select(a):
 @calculation("reference", "Reference tables from the standards", "reference")
 def calc_reference(a):
     """The cited reference tables Heron holds - ventilation rates, zone air distribution effectiveness, exhaust rates, people heat gains, duct roughness, ADPI throw ratios and the rest - shown so a figure can be OFFERED, never applied by themselves."""
+    show_reference(a, REFERENCES)
+
+
+def show_reference(a, refs):
+    """
+    One engine's reference tables as an answer - the list of them, or one
+    table's rows. Shared by every design engine that keeps cited tables
+    (heron_fire.py has its own set), so the shape of a shown table has one home.
+    """
     table = a.word("table", "which table - left out, the list of tables", required=False)
     search = a.word("search", "only the rows containing this text", required=False)
     if a.incomplete():
         return
     if not table:
         a.table("Reference tables", ("table", "what it holds", "source"),
-                [[k, v["title"], v["source"]] for k, v in REFERENCES.items()])
+                [[k, v["title"], v["source"]] for k, v in refs.items()])
         return
     key = table.strip().lower().replace("-", "_").replace(" ", "_")
-    if key not in REFERENCES:
-        a.refuse("no reference table %r - Heron holds: %s" % (table, ", ".join(REFERENCES)))
+    if key not in refs:
+        a.refuse("no reference table %r - Heron holds: %s" % (table, ", ".join(refs)))
         return
-    data = REFERENCES[key]
+    data = refs[key]
     rows = data["rows"]
     if search:
         wanted = search.lower()
@@ -3935,7 +3944,7 @@ def parse_inputs(text):
     return value
 
 
-def run(name, inputs=None, recorded=None):
+def run(name, inputs=None, recorded=None, calculations=None):
     """
     One calculation, as a dict whose `status` is ok, missing, refused or unknown.
 
@@ -3947,11 +3956,16 @@ def run(name, inputs=None, recorded=None):
     says which standards it used and where each came from (`standards`), and
     which are still to be asked once (`ask_once`), whatever its status: an
     answer given in a call that is missing something else is still an answer.
+
+    `calculations` is another engine's registry - heron_fire.py runs its own
+    calculations through here, so every engine's answer has one shape.
     """
+    if calculations is None:
+        calculations = CALCULATIONS
     key = (name or "").strip().lower().replace("-", "_").replace(" ", "_")
-    if key not in CALCULATIONS:
+    if key not in calculations:
         return {"calculation": key, "status": "unknown", "title": None,
-                "known": list(CALCULATIONS), "missing": [], "refused": [],
+                "known": list(calculations), "missing": [], "refused": [],
                 "ignored": [], "results": [], "tables": [], "checks": [], "method": [],
                 "sources": [], "assumed": [], "next": [], "csv": None,
                 "standards": {}, "ask_once": [], "memory": []}
@@ -3961,13 +3975,13 @@ def run(name, inputs=None, recorded=None):
         except Refused as why:
             answer = Answer(key, {}, recorded)
             answer.refuse(str(why))
-            return _as_dict(answer, CALCULATIONS[key])
+            return _as_dict(answer, calculations[key])
     answer = Answer(key, inputs, recorded)
     try:
-        CALCULATIONS[key]["run"](answer)
+        calculations[key]["run"](answer)
     except (Refused, PSY.PsychroRangeError) as why:
         answer.refuse(str(why))
-    return _as_dict(answer, CALCULATIONS[key])
+    return _as_dict(answer, calculations[key])
 
 
 def _as_dict(answer, entry):
@@ -3996,13 +4010,14 @@ def _as_dict(answer, entry):
     }
 
 
-def catalogue():
+def catalogue(calculations=None):
     """
     Every calculation, and what it needs - DERIVED by running each on nothing,
     so it is the list the code reads rather than a description of it.
+    `calculations` is another engine's registry, as for run().
     """
     out = []
-    for key, entry in CALCULATIONS.items():
+    for key, entry in (CALCULATIONS if calculations is None else calculations).items():
         answer = Answer(key, {})
         try:
             entry["run"](answer)
@@ -4041,18 +4056,21 @@ def _standards_lines(answer):
     return out
 
 
-def describe(answer):
-    """The answer as the text a modeller reads."""
+def describe(answer, discipline="HVAC", disclaimer=None):
+    """
+    The answer as the text a modeller reads. `discipline` and `disclaimer`
+    name the engine it came from - heron_fire.py renders through here too.
+    """
     title = answer.get("title") or answer["calculation"]
     status = answer["status"]
     lines = []
     if status == "unknown":
-        lines.append("Heron has no HVAC calculation called %r." % answer["calculation"])
+        lines.append("Heron has no %s calculation called %r." % (discipline, answer["calculation"]))
         lines.append("It has: %s." % ", ".join(answer["known"]))
         lines.append("Call with no calculation for the list and what each one needs.")
         return "\n".join(lines)
-    lines.append("HVAC design - %s%s" % (title, "" if status == "ok" else
-                                         " - NOT CALCULATED"))
+    lines.append("%s design - %s%s" % (discipline, title, "" if status == "ok" else
+                                       " - NOT CALCULATED"))
     if answer["refused"]:
         lines.append("")
         lines.append("REFUSED - an input cannot be a design figure as given:")
@@ -4121,7 +4139,7 @@ def describe(answer):
         lines.append("INTO REVIT")
         lines.extend("  - %s" % x for x in answer["next"])
     lines.append("")
-    lines.append(DISCLAIMER)
+    lines.append(DISCLAIMER if disclaimer is None else disclaimer)
     return "\n".join(lines)
 
 
