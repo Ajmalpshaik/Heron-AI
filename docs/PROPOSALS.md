@@ -140,7 +140,7 @@
 
 **Its own file:** [`proposals/f42.md`](proposals/f42.md)
 
-## F43 — the fire protection design engine leaves five things only the owner can settle
+## F43 — the fire protection design engine leaves six things only the owner can settle
 
 **Its own file:** [`proposals/f43.md`](proposals/f43.md)
 
