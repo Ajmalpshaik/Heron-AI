@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -99,6 +99,35 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-04'
+  by: Ajmal PS
+  model: Family15, Revit 2024, session 8804 - the count is NOT recorded because 3,545 elements
+    was measured on Project1, the document in front, and this ran against another one (row
+    15)
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned blocked 0 item(s), deleted 1 item(s)
+    [Heron Del A (type)], distance Func`3, findings 2 item(s) [Deleted 1 parameter(s), and
+    read back that the family no lon..., One Undo puts them all back, with their values in
+    every type...], fm FamilyManager, formulaUses Func`4, names 1 item(s) [Heron Del A], notAFamily
+    false, notFound 0 item(s), refused (null), squash Func`2, targets 1 entry(ies). inputs
+    came parameterNames as given (1). on Family15
+  negative_case: 'run with parameterNames=Heron Del B instead - chosen because it should not
+    contain what this fragment reports - run inside a transaction, and Revit reported the
+    transaction group ROLLED BACK afterwards. returned blocked 1 item(s) ["Heron Del B" was
+    NOT deleted, because another parameter''s f...], deleted 0 item(s), distance Func`3, findings
+    1 item(s) [Nothing was deleted - every name is checked before the first...], fm FamilyManager,
+    formulaUses Func`4, names 1 item(s) [Heron Del B], notAFamily false, notFound 0 item(s),
+    refused Nothing was deleted - every name is checked before the first one goes, and 1 of
+    1 could not go. "Heron Del B" was NOT deleted, because another parameter''s formula uses
+    it: "Heron Del D" = Heron Del B * 2 - change or clear that formula first (SET_FAMILY_FORMULA).
+    Nothing was unhooked: deleting a parameter never takes what uses it along with it., squash
+    Func`2, targets 1 entry(ies). inputs came parameterNames as given (1). on Family15'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 6228dbeedea3a82a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

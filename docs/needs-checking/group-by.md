@@ -13,7 +13,7 @@ parameters in a PPR check valve family had to be deleted by hand, because no too
 - [`delete-family-parameters`](../../brain/fragments/delete-family-parameters/fragment.yaml) -
   `DELETE_FAMILY_PARAMETERS`, FRG-PAR-033
 
-**What is already measured, and it is not yet signed.** 2026-10-04, Revit 2024 session 8804, scratch
+**What was measured, and signed on 2026-10-04 (BY1).** 2026-10-04, Revit 2024 session 8804, scratch
 `Family15` made by CREATE_FAMILY_DOCUMENT from Metric Generic Model and never saved: four type lengths
 `Heron Del A` 100, `B` 200, `C` 300, `D` with the formula `Heron Del B * 2`; `C` labelling the
 dimension between two reference planes 300 apart. Run by `validate --in Family15 --write`, rolled back:
@@ -25,7 +25,7 @@ KEPT in the scratch family: `A, D` deleted, and REPORT_FAMILY_PARAMETERS read ba
 
 | # | Check | Expected |
 |---|---|---|
-| **BY1** | The owner signs the recorded run - `python brain/heron_validate.py accept delete-family-parameters --by "Ajmal PS"` in this worktree | The proof block written; the card promoted to PROVEN |
+| **BY1** | The owner signs the recorded run - `python brain/heron_validate.py accept delete-family-parameters --by "Ajmal PS"` in this worktree | The proof block written; the card promoted to PROVEN - **DONE 2026-10-04**, signed by Ajmal PS, fingerprint `6228dbeedea3a82a` |
 | **BY2** | The second route: the same family by hand, Family Types, the same parameter, Delete Parameter | Revit's dialog agrees with what this deleted or refused |
 | **BY3** | A parameter linked to a form field (Extrusion End, Visible or Material), to a nested family's parameter, and to a connector's size | Each refused naming the link - only the formula and label refusals have been seen in Revit |
 | **BY4** | The same on Revit 2020 | Same answers - every call it makes reads the same 2020 to 2027, but no older Revit has run it |
