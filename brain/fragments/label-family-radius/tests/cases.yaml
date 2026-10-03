@@ -26,6 +26,34 @@ positive:
       labelled the same way and followed by the flex - a form already built
       can be labelled. Measured 2026-10-03 on Family1's valve stem (300 and 40)
 
+  - given: >
+      a new metric Generic Model family; length parameters "Tube Diameter" 40
+      and "Ring Radius" 200; a solid revolve "circle 200,0 20" about
+      "0,-100 0,100" on Center (Front/Back) - a torus; form = its id, "Tube
+      Diameter", diameter true
+    expect: >
+      a diameter dimension on the profile circle's arc, inside the revolve's
+      sketch, reading 40 mm; FLEX_FAMILY "Tube Diameter=80" MEASURED 480 x 480
+      x 80 mm. Ran 2026-10-03, scratch Family7, kept there, flex rolled back
+
+  - given: the same torus, "Ring Radius", diameter false, no plane through the circle's centre
+    expect: >
+      a reference plane "Ring Radius" made through the circle's centre, the
+      centre locked to it, the axis locked to "Center (Left/Right)", and the
+      dimension between the two planes labelled "Ring Radius" reading 200;
+      FLEX_FAMILY "Ring Radius=400" MEASURED 840 across, "Ring Radius=60" 160,
+      and "Tube Diameter=10; Ring Radius=150" 310. Ran 2026-10-03, scratch Family7
+
+  - given: >
+      the same torus with a plane "Rim Centre" at X 200 already labelled from
+      "Center (Left/Right)" with "Ring Radius" by LABEL_FAMILY_DIMENSION -
+      Family4's rim as built by hand
+    expect: >
+      that dimension used as it is - "already labelled" - and the circle's
+      centre locked to "Rim Centre"; FLEX_FAMILY 400 and 60 MEASURED 840 and
+      160. The ring had followed at those sizes before the lock as well. Ran
+      2026-10-03, scratch Family8
+
 negative:
   - given: a revolve about "1000,300 1000,500" - no reference plane runs through its axis
     expect: >
@@ -43,6 +71,15 @@ negative:
 
   - given: a project in front
     expect: notAFamily true and nothing labelled anywhere
+
+  - given: the torus, "Tube Diameter" (40) with diameter false
+    expect: >
+      refused - nothing in the profile is 40 mm: the circle's radius 20 and its
+      centre 200 from the axis listed - and nothing labelled. Ran 2026-10-03,
+      scratch Family8, rolled back
+
+  - given: a torus whose circle's radius equals its centre's distance from the axis
+    expect: refused as more than one size of the revolve, naming Edit Revolve, and nothing labelled
 
 second_route:
   - >
