@@ -1,0 +1,83 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-057
+semantic-identity: "what connectors this open family has, where each points, its system, size and flow"
+kind: action
+domain: revit.families
+capability: REPORT_FAMILY_CONNECTORS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists every connector of the family open in the Family Editor, with nothing
+  selected: its domain, System Classification, its size and the family
+  parameters driving it, Flow Direction and Flow Configuration, which way it
+  points - "right (+X)" - where it sits in millimetres, and the plane its
+  face lies on.
+
+  **THE PLANE IS ITS NAME.** ADD_FAMILY_CONNECTOR places a connector on the
+  face lying on a named plane, and SET_FAMILY_CONNECTOR_ROLES finds it by that
+  plane again - "Port Left". Two connectors on one plane are named, so they
+  can be given by id instead.
+
+  **READ BEFORE CHANGING.** A port left pointing into the body after its
+  face moved, or a valve port still Domestic Cold Water rather than Global,
+  shows here. REPORT_CONNECTORS is for placed elements in a project.
+
+  **ONE LINE**, as REPORT_FAMILY_FORMS answers: a list is cut to three entries
+  before anyone reads it.
+
+  It reads only; nothing is changed.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: connectorCount
+      role: result
+      type: int
+    - name: connectorList
+      # Every connector on ONE line: domain, id, the plane it lies on, system,
+      # size and driving parameters, flow, pointing, position, primary,
+      # linked.
+      role: result
+      type: string
+    - name: notAFamily
+      # That the document in front is a project, not a family being edited.
+      role: accounting
+      type: bool
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `ConnectorElement` `Origin`, `Direction`, `Domain`, `Shape`, `Radius`,
+  `Width`, `Height`, `SystemClassification`, `IsPrimary` and
+  `GetLinkedConnectorElement`, `FamilyManager.GetAssociatedFamilyParameter`,
+  and the built-in parameters RBS_DUCT/PIPE_FLOW_DIRECTION_PARAM,
+  RBS_DUCT/PIPE_FLOW_CONFIGURATION_PARAM, RBS_DUCT/PIPE_FITTING_LOSS_METHOD_PARAM
+  and RBS_CONNECTOR_DESCRIPTION are present 2020, 2024 and 2027 (api-surface,
+  read 2026-10-04).
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "list this family's connectors"              -> here
+#   "which way does the connector point"         -> here
+#   "set the connectors to Global", "flip it"    -> SET_FAMILY_CONNECTOR_ROLES
+#   "put a connector on this face"               -> ADD_FAMILY_CONNECTOR
+#   "what connectors are on these ducts"         -> REPORT_CONNECTORS, placed
+#                                                   elements in a project
+
+utterances:
+  - list the connectors in this family
+  - which way does each connector in this family point
+  - what system is each connector of this family

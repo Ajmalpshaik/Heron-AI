@@ -1,5 +1,29 @@
 positive:
   - given: >
+      a Pipe Accessories valve family with pipe connectors on faces lying on
+      Port Left and Port Right (x = -49 and +49 mm), sized by Nominal
+      Diameter, plus a third Domestic Cold Water connector added on Port Left
+      by ADD_FAMILY_CONNECTOR as a setup step; connectors "all", settings
+      "system=Global"
+    expect: >
+      the Domestic Cold Water connector reads Global, the two already Global
+      are reported "already Global", nothing else changes. MEASURED
+      2026-10-04, Revit 2024, rolled back in TRG_PLMB_VLV_PPR Gate Valve_GV_R0
+
+  - given: >
+      the same family; connectors "Port Right", settings "flowDirection=Out;
+      flowConfiguration=Preset; sizeParameters=Nominal Diameter;
+      description=Outlet; flip=true", primary "Port Right", links "Port Left >
+      Port Right"
+    expect: >
+      Port Right reads flow Out, Preset, described "Outlet", pointing left (-X)
+      where it pointed right (+X), still found on "Port Right", PRIMARY, and
+      the pair linked both ways. MEASURED 2026-10-04, as above
+
+  - given: the same family, connectors, settings, primary and links all empty
+    expect: every connector listed, nothing changed - the read mode
+
+  - given: >
       a duct fitting family - Part Type Elbow - with two round duct connectors
       made by ADD_FAMILY_CONNECTOR on faces lying on "Inlet" and "Outlet";
       primary "Inlet"
@@ -22,6 +46,21 @@ positive:
     expect: both connectors read not linked; the change names the former partner
 
 negative:
+  - given: connectors "Port Middle", where no connector lies on such a plane
+    expect: refused, naming the family's connectors - nothing changed. MEASURED 2026-10-04
+
+  - given: connectors "all", settings "system=Supply Air" on the pipe connectors
+    expect: >
+      refused per connector with the systems a pipe connector takes (Revit's
+      IsSystemClassificationValid) - nothing changed. MEASURED 2026-10-04
+
+  - given: an electrical connector (Power Balanced) and settings "system=Global"
+    expect: >
+      NOT A NEGATIVE ON REVIT 2024: Revit accepts Global on an electrical
+      connector and it reads back Global (measured 2026-10-04). Kept here so a
+      release that refuses it is noticed; the refusal would name the systems
+      that connector takes
+
   - given: links "Water In > Neck Top", where Neck Top holds a duct connector
     expect: refused - a pipe connector paired with a duct one - and nothing changed
 
