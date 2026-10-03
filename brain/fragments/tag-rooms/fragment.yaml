@@ -5,19 +5,24 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-108
-semantic-identity: "put a room tag on each of these rooms, in this view"
+semantic-identity: "put a room tag on each of these rooms, a space tag on each space or a zone tag on each hvac zone, in this view"
 kind: action
 domain: revit.annotation
 capability: TAG_ROOMS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Places one room tag on each room handed in, in one floor or ceiling plan, at
-  the room's own reference point, and gives every tag the room tag type the
-  caller named. It makes Revit's own room-tag element, with the document's
-  room-tag call (NewRoomTag). TAG_ELEMENTS makes the kind of tag every other
+  Places one room tag on each room handed in - or one SPACE tag on each MEP
+  space, or one ZONE tag on each HVAC zone - in one floor or ceiling plan, and
+  gives every tag the tag type the caller named. That type decides which: a
+  Room Tags type tags the rooms, a Space Tags type the spaces, a Zone Tags
+  type the zones, and one call tags one kind. Rooms and spaces get Revit's own
+  tag elements, from the document's own calls - NewRoomTag, NewSpaceTag - at
+  their own reference point. Version 2, 2026-10-03, added spaces and zones:
+  nothing else in Heron placed either, and TAG_ELEMENTS' category map has
+  neither. TAG_ELEMENTS makes the kind of tag every other
   category takes, and that is NOT the same element: it did tag rooms on
   2026-09-23 - "tagged 5, refused 0" in Project1's "1 - Mech" - but as
   IndependentTags (revit_annotation's count rose 0 to 5). Whether those act as
@@ -25,47 +30,68 @@ purpose: >
   kind - is NOT yet checked. Until it is, rooms are tagged here. Those three
   only move room tags that already exist.
 
-  **THE ROOMS COME FROM THE FRAGMENT BEFORE, COLLECTED FROM THE WHOLE MODEL.**
-  A collector scoped to a view returns only what Visibility/Graphics shows, and
-  mechanical templates hide Rooms: on 2026-09-19 one found 0 of a model's 7
-  rooms in every view, a plan made for rooms included. So this never looks for
-  rooms in the view. FILTER_ELEMENTS_BY_CATEGORY, with Rooms and the plan's
-  level, hands them in.
+  **THE ROOMS OR SPACES COME FROM THE FRAGMENT BEFORE, COLLECTED FROM THE WHOLE
+  MODEL.** A collector scoped to a view returns only what Visibility/Graphics
+  shows, and mechanical templates hide Rooms: on 2026-09-19 one found 0 of a
+  model's 7 rooms in every view, a plan made for rooms included. So this never
+  looks for them in the view. FILTER_ELEMENTS_BY_CATEGORY, with Rooms, Spaces
+  or HVAC Zones and the plan's level, hands them in.
 
   **THE TAG TYPE IS AN INPUT AND IS NEVER GUESSED (D-33).** "Room Tag", "Room
-  Tag With Area" and "Room Tag With Volume" print different drawings, and which
-  one the office issues is the modeller's call. A type that is not a room tag
+  Tag With Area" and "Room Tag With Volume" print different drawings, and an
+  office's space or zone tag is its own family; which one is issued is the
+  modeller's call. A type that is not a Room Tags, Space Tags or Zone Tags
   type - a duct tag, a door tag - is refused before anything is placed, and so
   is a view that is not a plan of one level.
 
-  **ONE TAG PER ROOM PER VIEW, AND A ROOM ALREADY TAGGED IS LEFT ALONE.** The
-  room tags already in this plan are read from the whole model by the view that
-  owns them, never from what the view shows, so a tag the view hides still
-  counts. A re-run adds nothing on top of the last one; a duplicate would land
-  exactly on the first and stay invisible until somebody dragged one.
+  **ONE TAG PER ROOM OR SPACE PER VIEW, AND ONE ALREADY TAGGED IS LEFT ALONE.**
+  The room or space tags already in this plan are read from the whole model by
+  the view that owns them, never from what the view shows, so a tag the view
+  hides still counts. A re-run adds nothing on top of the last one; a duplicate
+  would land exactly on the first and stay invisible until somebody dragged
+  one.
 
-  **EVERY ROOM IT DOES NOT TAG IS NAMED, WITH ITS REASON** - not a room at all,
-  already tagged here, not placed, not enclosed or redundant (no area), on
-  another level from this plan, or refused by Revit. A count that drops with no
-  reason given reads as rooms the tool could not handle.
+  **EVERYTHING IT DOES NOT TAG IS NAMED, WITH ITS REASON** - not the kind the
+  tag type tags (a duct, or a room handed in with a space tag type), already
+  tagged here, not placed, not enclosed or redundant (no area), on another
+  level from this plan, or refused by Revit. A count that drops with no reason
+  given reads as rooms the tool could not handle.
 
   **EVERY TAG IS READ BACK.** A tag counts only when it carries the type asked
-  for and points at the room it was made for. One that does not is removed
-  again, inside the same undo, and its room is named: a tag on the wrong room
-  still prints a confident name.
+  for and points at the room or space it was made for. One that does not is
+  removed again, inside the same undo, and its room or space is named: a tag
+  on the wrong room still prints a confident name.
 
-  **IT PLACES, IT DOES NOT LAY OUT.** The reference point is where the room was
-  placed and is normally inside it, but a room re-shaped since can leave it
-  outside. CENTER_ROOM_TAGS puts tags back in the middle of their rooms.
+  **IT PLACES, IT DOES NOT LAY OUT.** The reference point is where the room or
+  space was placed and is normally inside it, but one re-shaped since can leave
+  it outside. CENTER_ROOM_TAGS puts room tags back in the middle of their rooms.
 
-  **A TAG IN A PLAN THAT HIDES ROOM TAGS IS PLACED AND NOT SHOWN.** When Room
-  Tags are off in the plan's Visibility/Graphics, or its template's, `findings`
-  says so - the tags are in the model and the drawing looks unchanged.
+  **A TAG IN A PLAN THAT HIDES ITS CATEGORY IS PLACED AND NOT SHOWN.** When Room
+  Tags or Space Tags are off in the plan's Visibility/Graphics, or its
+  template's, `findings` says so - the tags are in the model and the drawing
+  looks unchanged.
 
-  **LINKED ROOMS ARE NOT TAGGED HERE.** A room in the architect's link needs the
-  link as well as the room, and nothing hands that pair in yet. A room from
-  another model is refused, never tagged by an id that means something else in
-  this one.
+  **LINKED ROOMS AND SPACES ARE NOT TAGGED HERE.** One in the architect's link
+  needs the link as well as the room, and nothing hands that pair in yet. One
+  from another model is refused, never tagged by an id that means something
+  else in this one.
+
+  **A ZONE HAS NO TAG CALL OF ITS OWN, AND ITS TAG IS THE OTHER KIND.** The
+  API has NewRoomTag and NewSpaceTag and nothing for a zone. What does tag one
+  is IndependentTag.Create on a reference to the zone with the Zone Tags type -
+  measured 2026-10-03 on Project2 (unsaved, Revit 2024, session 41260), rolled
+  back: it made a Zone Tags tag on "L1 - West Wing" that read back pointing at
+  that zone and showing its name, and this fragment then tagged all 3 of Level
+  1's zones in "Level 1 - HVAC Zones" (spaces handed in with the same Zone Tags
+  type: 37 named not-zones, nothing placed). Before a Zone Tags family was
+  loaded the same call refused with "There is no loaded tag type that can be
+  used" - so a model with no zone tag family loaded cannot be tagged, by this
+  or by hand. A zone has no point of its own, so its tag goes at the reference
+  point of its LARGEST space on the plan's level, which lies inside the zone by
+  construction - and on top of that space's tag if both are shown in one plan.
+  The Default zone and a zone holding no spaces are named `unplaced`. Zones
+  were made visible in plans at Revit 2021; on 2020 the call is expected to
+  refuse, and `refused` names it with Revit's own words. NOT measured on 2020.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so a whole
   plan's worth of room tags is one undo entry.
@@ -77,22 +103,25 @@ contract:
     - name: view
       # The floor or ceiling plan the tags go in, BY NAME. A floor plan and a
       # ceiling plan often share one; "FloorPlan: 1 - Mech" says which. Its
-      # level decides which rooms are tagged.
+      # level decides which rooms or spaces are tagged.
       type: View
       source: request
     - name: elements
-      # The rooms, left by the fragment before - FILTER_ELEMENTS_BY_CATEGORY
-      # with category=Rooms and levelId set to the plan's level. That one
+      # The rooms or spaces, left by the fragment before -
+      # FILTER_ELEMENTS_BY_CATEGORY with category=Rooms (or Spaces) and
+      # levelId set to the plan's level. That one
       # collects from the whole model. A view-scoped collector returns only
       # what Visibility/Graphics shows, which was 0 of 7 rooms in every view of
       # one model on 2026-09-19.
       type: IList<Element>
     - name: tagTypeId
-      # The room tag type, BY NAME: "Room Tag With Area", or with its family -
-      # "M_Room Tag: Room Tag With Area" - when the short name is not unique.
-      # The add-in looks it up among the loaded family types and REFUSES a
-      # name that matches twice rather than picking one. Never guessed (D-33),
-      # and refused before anything is placed unless it is a Room Tags type.
+      # The room, space or zone tag type, BY NAME: "Room Tag With Area", or
+      # with its family - "M_Room Tag: Room Tag With Area" - when the short
+      # name is not unique. A Room Tags type tags the rooms handed in, a Space
+      # Tags type the spaces, a Zone Tags type the zones. The add-in looks it
+      # up among the loaded family types and REFUSES a name that matches twice
+      # rather than picking one. Never guessed (D-33), and refused before
+      # anything is placed unless it is one of those three.
       type: ElementId
       source: request
   provides:
@@ -100,44 +129,49 @@ contract:
       role: result
       type: int
     - name: newTags
-      # The room tags this placed - each read back carrying the type asked for
-      # and pointing at its own room.
+      # The room, space or zone tags this placed - each read back carrying the
+      # type asked for and pointing at its own room, space or zone.
       role: result
       type: IList<ElementId>
     - name: mismatched
-      # Rooms whose new tag read back pointing at a DIFFERENT room. That tag is
+      # Rooms, spaces or zones whose new tag read back pointing at a DIFFERENT one.
+      # That tag is
       # removed again inside the same undo. A fact about what it made, like
       # PLACE_ROOM_AT_POINT's `unenclosed`, not an input it could not use.
       role: result
       type: IList<ElementId>
     - name: alreadyTaggedHere
-      # Rooms that already carry a room tag in this plan, so there was nothing
+      # Rooms, spaces or zones that already carry their tag in this plan, so there was nothing
       # to do. The evidence it looked, never a tag it placed (D-52).
       role: accounting
       type: IList<ElementId>
-    - name: notRooms
-      # Handed in and not rooms - a duct, a space, an area - and left alone.
-      # What it was GIVEN and could not use, never a thing it found (D-52).
+    - name: notTaggable
+      # Handed in and not the kind the tag type tags - a duct, an area, a
+      # space handed in with a room or zone tag type, a room with a space tag
+      # type -
+      # and left alone. Called `notRooms` in version 1. What it was GIVEN and
+      # could not use, never a thing it found (D-52).
       role: accounting
       type: IList<ElementId>
     - name: unplaced
-      # Rooms with no location: in the schedule, in no plan, so nowhere to put
+      # Rooms or spaces with no location, and zones holding no spaces - the
+      # Default zone among them: in the schedule, in no plan, so nowhere to put
       # a tag. The same word MEASURE_ROOM_DIMENSIONS uses (D-52).
       role: accounting
       type: IList<ElementId>
     - name: notEnclosed
-      # Placed rooms with no area - not enclosed by walls or separation lines,
-      # or redundant with another room. Given and unusable (D-52).
+      # Placed rooms or spaces with no area - not enclosed by walls or
+      # separation lines, or redundant with another. Given and unusable (D-52).
       role: accounting
       type: IList<ElementId>
     - name: otherLevel
-      # Rooms on a different level from the plan's. Left for that level's plan
+      # Rooms or spaces on a different level from the plan's. Left for that level's plan
       # rather than tagged where they are not drawn (D-52).
       role: accounting
       type: IList<ElementId>
     - name: refused
-      # Rooms Revit would not tag, or whose tag would not take the type asked
-      # for (that tag removed again), and rooms of another model. Why it
+      # Rooms or spaces Revit would not tag, or whose tag would not take the
+      # type asked for (that tag removed again), and ones of another model. Why it
       # declined, never a thing it FOUND (D-52). `findings` quotes Revit's
       # first refusal.
       role: accounting
@@ -152,6 +186,12 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. The room-tag creation call
   NewRoomTag(LinkElementId, UV, ElementId), RoomTag.TaggedLocalRoomId,
+  the space-tag creation call NewSpaceTag(Space, UV, View) and SpaceTag.Space
+  the zone tag's IndependentTag.Create(Document, ElementId, ElementId,
+  Reference, bool, TagOrientation, XYZ), the Zone Tags category OST_ZoneTags,
+  and Zone.Spaces (read 2026-10-03 off the 2020 to 2026 SDK reference
+  packages and the 2020 to 2027 RevitAPI reference packages, every one
+  carrying the same signature),
   Element.GetTypeId and ChangeTypeId, View.GenLevel, GetPrimaryViewId,
   GetDependentViewIds and GetCategoryHidden, and FamilySymbol.IsActive and
   Activate carry the same signatures 2020 to 2027 - read off every release's
@@ -160,10 +200,28 @@ compatibility-note: >
   the whole model, because Revit's class filter refuses the room tag class and
   a view-scoped collector misses the tags a view hides. No ElementId is built
   from a number and none is read as one, so 2024's move to 64-bit ids and the
-  removal of IntegerValue after 2025 do not reach this code.
+  removal of IntegerValue after 2025 do not reach this code. What a zone tag
+  points at is read with GetTaggedLocalElementIds where Revit has it (2022 on)
+  and TaggedLocalElementId where it does not (2020, 2021, removed later),
+  found BY NAME at run time, because the add-in compiles fragments with no
+  release symbols (row 5b-181) - OFFSET_TAGS_FROM_HOST's pattern.
+  Zone.IsDefaultZone is read the same way: REVIT 2027 REMOVED IT, with the
+  zone's setpoint and load properties - found by the 2027 compile on
+  2026-10-03, not by reading - so on 2027 no zone is treated as the Default
+  one and a zone holding no spaces is still named `unplaced`.
 
 # ROUTING - the rows about room tags are also in TAG_ELEMENTS and
 # CENTER_ROOM_TAGS.
+#
+#   "tag the spaces"                       -> here, after FILTER_ELEMENTS_BY_
+#                                            CATEGORY with category=Spaces and
+#                                            the plan's level, and a Space Tags
+#                                            type as tagTypeId. TAG_ELEMENTS
+#                                            has no space entry
+#   "tag the hvac zones"                   -> here, after FILTER_ELEMENTS_BY_
+#                                            CATEGORY with category=HVAC Zones
+#                                            and the plan's level, and a Zone
+#                                            Tags type as tagTypeId
 #
 #   "tag all the rooms in the active view" -> here, after FILTER_ELEMENTS_BY_
 #                                            CATEGORY with category=Rooms and
@@ -191,8 +249,23 @@ compatibility-note: >
 # the floor, not the fix. And that read cannot answer the question either: it
 # reads only the other tag class, so to it every room is untagged. No read sees
 # room tags yet. Recorded for the owner, not repaired by rewording this card.
+#
+# VERSION 2 SPREAD IT TO SPACES. Measured 2026-10-03 with heron_brain.lookup on
+# scratch stores built from this tree and from main before it: "which spaces
+# are not tagged" ranked FIND_UNTAGGED_ELEMENTS first before and THIS card
+# first after, with FIND_UNTAGGED_ELEMENTS second. That read cannot see space
+# tags either - they are not IndependentTags - so its first place was not a
+# right answer being lost. The same 20 questions otherwise moved only towards
+# this card for "tag the spaces", "tag the hvac zones", "tag the zones", "put
+# space tags on every space in this view" and "add zone tags to the zones
+# plan" (before: CREATE_HVAC_ZONE, MOVE_ANNOTATION or OFFSET_TAGS_FROM_HOST
+# first); "put tags on these", "tag all the ducts in this view", "tag
+# everything in this view" and "centre the room tags" kept their tools.
 
 utterances:
   - tag all the rooms in the active view
   - tag the rooms
   - put room tags on every room in this view
+  - tag the spaces
+  - put space tags on every space in this view
+  - tag the hvac zones

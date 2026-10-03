@@ -24,7 +24,7 @@
 #
 # NEGATIVE: THE SAME CALL WITH category=Ducts - the ducts on Level 1, the same
 # plan, the same tag type. None is a room, so nothing may be tagged and every
-# duct must land in `notRooms`. A different set, not an empty one: a fragment
+# duct must land in `notTaggable`. A different set, not an empty one: a fragment
 # that tagged whatever it was handed, or fell back to the rooms in the plan,
 # shows here as NEG NOT EMPTY.
 #

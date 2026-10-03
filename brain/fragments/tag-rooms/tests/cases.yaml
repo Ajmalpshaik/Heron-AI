@@ -42,13 +42,48 @@ positive:
       Revit shares annotation between a primary view and its dependents, and
       NOT yet seen through this fragment - check it before relying on it
 
+  - given: >
+      the SPACES on one level, from FILTER_ELEMENTS_BY_CATEGORY (category=Spaces,
+      levelId=that level), that level's floor plan as `view`, and `tagTypeId`
+      naming a SPACE tag type the model has, with no space tagged in that plan
+    expect: >
+      one space tag on every placed, enclosed space of that level, each
+      pointing at its own space; `tagged` equal to that count. Version 2,
+      2026-10-03. In Project2 (unsaved, Revit 2024) a rolled-back measurement
+      that day made one space tag with NewSpaceTag on "Library 22", read back
+      pointing at that space
+
+  - given: >
+      the HVAC ZONES on one level, from FILTER_ELEMENTS_BY_CATEGORY
+      (category=HVAC Zones, levelId=that level), that level's floor plan as
+      `view`, and `tagTypeId` naming a ZONE tag type the model has
+    expect: >
+      one zone tag on every zone of that level holding enclosed spaces there,
+      at its largest space's point, each pointing at its own zone. Measured
+      2026-10-03 on Project2 (Revit 2024), rolled back: 3 of Level 1's 3 zones
+      tagged in "Level 1 - HVAC Zones"
+
 negative:
+  - given: >
+      the SPACES on the same level handed in with the same ZONE tag type
+    expect: >
+      `tagged` 0 and every space in `notTaggable`. Measured 2026-10-03 on
+      Project2: 37 spaces, 0 placed
+
+  - given: >
+      the ROOMS on the same level - FILTER_ELEMENTS_BY_CATEGORY with
+      category=Rooms - with the same plan and the same SPACE tag type
+    expect: >
+      `tagged` 0, `newTags` empty, every room in `notTaggable`. A space tag type
+      tags spaces; a fragment that fell back to room tags, or tagged whatever
+      it was handed, shows here
+
   - given: >
       the Ducts on the same level instead - FILTER_ELEMENTS_BY_CATEGORY with
       category=Ducts, levelId=that level - with the same plan and the same tag
       type
     expect: >
-      `tagged` 0, `newTags` empty, and every duct in `notRooms`. No tag of any
+      `tagged` 0, `newTags` empty, and every duct in `notTaggable`. No tag of any
       kind placed. This is the leg D-30 exists for: a fragment that tagged
       whatever it was handed, or fell back to the rooms in the view, shows here
 
