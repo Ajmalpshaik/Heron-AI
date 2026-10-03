@@ -308,7 +308,14 @@ def ask(fid, name, doc, raw, code):
 
     # 4 and 5 - transactions
     opens_own = code is not None and "new transaction(" in code.lower()
-    if opens_own:
+    edit_mode = "editScopeFailures" in names
+    if opens_own and edit_mode:
+        say(BY_DESIGN,
+            "opens its own transactions because it works in one of Revit's "
+            "edit modes, and declares editScopeFailures to say so - D-112. "
+            "The add-in runs it inside the fragment's TransactionGroup with "
+            "none of its own open, so it is still one undo")
+    elif opens_own:
         say(LOOK,
             "this fragment opens its OWN Transaction. Golden Rule 16 gives the "
             "whole job one TransactionGroup and one undo; a fragment opening "

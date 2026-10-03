@@ -449,6 +449,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bv.md`](needs-checking/group-bv.md)
 
+## Group BX - a stair between two levels, and the opening over it, through Revit's stair edit mode (2026-10-03)
+
+**Its own file:** [`needs-checking/group-bx.md`](needs-checking/group-bx.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
