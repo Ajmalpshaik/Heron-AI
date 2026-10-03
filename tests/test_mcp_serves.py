@@ -64,7 +64,8 @@ WHAT IT PROVES, when an SDK is installed
      alongside the words wins. A PROVEN match whose proof is STALE, or whose
      door would run a different provider than the one matched, sends nothing
      either; and EVERY candidate handed back carries what it needs typed
-     (three findings from review on PR #369).
+     (three findings from review on PR #369). The text served is the text
+     the tool returned, read once (row 5b-263).
 
 WHAT IT CANNOT DO
   It does not start a transport and it is not Claude Code. It calls the
@@ -157,7 +158,18 @@ def text_of(result):
     1.x hands back a list of content blocks; 2.x hands back a result object
     carrying `.content`. Both are read here rather than one being assumed,
     for exactly the reason this file exists.
+
+    And a later 1.x - 1.28.1, measured - hands back a PAIR for a tool whose
+    return is annotated, which is every Heron tool (`-> str`): that list, and
+    the same answer again as structured content, {"result": ...}. Only the
+    list is text. Read whole, the pair was flattened as a Python repr, so
+    every reply was read twice and without one real newline, and the check
+    that counts a sentence failed on a reply that says it once (FRAGMENT-ISSUES
+    row 5b-263).
     """
+    if (isinstance(result, tuple) and len(result) == 2
+            and isinstance(result[1], dict)):
+        result = result[0]
     blocks = getattr(result, "content", None)
     if blocks is None:
         blocks = result if isinstance(result, (list, tuple)) else [result]
@@ -621,6 +633,9 @@ async def exercise_words(module):
 
         # EVERY CANDIDATE CARRIES ITS CONTRACT.
         said = await call("revit_read", {"request": "list sheets with no views"})
+        check(said == module.revit_read(request="list sheets with no views"),
+              "the reply is read as the tool returned it, once - the SDK's "
+              "structured copy is not read as a second text (row 5b-263)")
         blocks = said.split("  also close   ")[1:]
         check(blocks and all(("YOU SUPPLY" in b or "asks you for nothing" in b
                               or "could not be read" in b) for b in blocks),
