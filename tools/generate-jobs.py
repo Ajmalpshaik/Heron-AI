@@ -264,9 +264,10 @@ RECEIVABLE = frozenset([
     # this shape since 2026-09-14 and whose own refusal calls a pair "a line".
     # `rotate-elements-about-axis.axis` and `place-line-based-family.curves`.
     #
-    # THE DIMENSIONS DO NOT COME BACK WITH IT. `create-linear-dimension` wants
-    # a Line AND an `IList<Reference>`, and a face is not a rule waiting to be
-    # written. It stays blocked, and this row must not be read as freeing it.
+    # THE DIMENSIONS DID NOT COME BACK WITH IT. `create-linear-dimension` wanted
+    # a Line AND an `IList<Reference>` until 2026-10-03, when version 2 took
+    # typed references instead (grid, level, plane, line id, wall face). This
+    # row never freed it, and must not be read as having done so.
     "Line",
     "IList<Curve>", "List<Curve>", "ICollection<Curve>", "IEnumerable<Curve>",
     # AN ELECTRICAL PANEL, BY ITS OWN PANEL NAME - added 2026-09-19. The same
