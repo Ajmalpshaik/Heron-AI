@@ -1,0 +1,30 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model wall based template, its
+      sample wall running along X; shape "rect -300,600 300,1200"
+    expect: >
+      an opening hosted by the template's wall, read back X -300 to 300 and Z
+      600 to 1200 mm; LOOKED AT in the elevation - then the family placed on a
+      wall in a test project cuts the same hole there
+
+  - given: >
+      a new family from the metric Generic Model ceiling based template; shape
+      "circle 0,0 100"
+    expect: an opening in the template's ceiling, X and Y -100 to 100 mm by its ends
+
+negative:
+  - given: a new family from the metric Generic Model floor based template
+    expect: >
+      refused - Revit's opening call takes only a wall or a ceiling; cut a floor
+      with a void form - nothing cut
+
+  - given: shape "rect 0,0 100,100 | rect 200,0 300,100" in the wall based family
+    expect: refused - an opening takes one closed loop - nothing cut
+
+  - given: a project in front
+    expect: notAFamily true and nothing cut
+
+second_route:
+  - >
+      In the Family Editor, select the opening: Edit Sketch shows its boundary
+      in the template's wall or ceiling

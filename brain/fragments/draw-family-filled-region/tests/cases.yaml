@@ -1,0 +1,43 @@
+positive:
+  - given: >
+      a new family from the metric Detail Item template; workPlane "Ref.
+      Level", shapes "rect -300,-50 300,50", regionType "Solid Black"
+    expect: >
+      one filled region 600 x 100 in the Ref. Level view, its type Solid Black,
+      1 loop and 1400 mm of boundary read back, regionId a unique id; LOOKED AT
+      in the view
+
+  - given: >
+      the same family; shapes "rect -300,-200 300,200 | circle 0,0 50",
+      regionType "Solid Black"
+    expect: a plate with a round hole - 2 loops read back - LOOKED AT
+
+  - given: >
+      on Revit 2024 or later, a new family from the metric Generic Model
+      template; workPlane "Ref. Level", shapes "circle 0,0 150", regionType
+      "masking"
+    expect: >
+      a masking region on the Ref. Level plane, read back as masking, seen in
+      the Ref. Level plan and not in 3D
+
+negative:
+  - given: shapes "path 0,0; 600,0" in the Detail Item family
+    expect: refused as an open path - a region is closed loops only - and nothing drawn
+
+  - given: regionType "Not A Type" in the Detail Item family
+    expect: refused naming the filled region types the family holds, nothing drawn
+
+  - given: >
+      on Revit 2020, a Generic Model family; workPlane "Ref. Level", shapes
+      "circle 0,0 150", regionType "Solid Black"
+    expect: >
+      refused - this Revit has no call to draw a filled region in a 3D model
+      family, it arrived in 2023 - and nothing drawn
+
+  - given: a project in front
+    expect: notAFamily true and nothing drawn
+
+second_route:
+  - >
+      The Family Editor: select the region and read its type in Properties;
+      Edit Boundary shows its loops

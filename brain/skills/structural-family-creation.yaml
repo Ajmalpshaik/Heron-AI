@@ -1,0 +1,118 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: structural-family-creation
+name: Build a parametric structural framing or structural column family
+domain: revit.families
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Builds a STRUCTURAL FRAMING family - a beam or a brace of any section - or a
+  STRUCTURAL COLUMN, from the framing or column template the modeller opened.
+  The steps of FAMILY-CREATION still hold; this is what a structural family
+  adds. What every step rests on is in docs/43 §7.
+
+  0. REPORT_FAMILY_TEMPLATE FIRST. A framing template carries Left and Right
+     planes - the location line's ends, which the placement drives - and
+     Member Left and Member Right, the geometry's ends, with a SAMPLE
+     extrusion already locked to them. A column template carries a lower and
+     an upper reference level; a Generic Model changed to a column category
+     does NOT get them, so a column always starts from the column template.
+  1. READ THE THING: the section and its sizes - usually a manufacturer's
+     table - and the material. A picture gives shape, never size (D-33).
+  2. Section parameters as TYPE lengths (depth, width, web and flange
+     thickness) with ADD_FAMILY_PARAMETERS and their values with
+     SET_FAMILY_TYPE_VALUES; a whole steel range is WRITE_FAMILY_SIZE_TABLE
+     with SET_FAMILY_FORMULA size_lookup, or one type per line of a type
+     catalog (REPORT_FAMILY_TYPE_CATALOG).
+  3. Planes for the section - CREATE_REFERENCE_PLANES - in the view that sees
+     it: the Left elevation for a beam, the plan for a column; then
+     LABEL_FAMILY_DIMENSION each size.
+  4. A BEAM'S SECTION: Heron cannot edit the sample's sketch, so the section
+     is a NEW CREATE_FAMILY_EXTRUSION on a plane facing left or right (the
+     section in Y,Z), its two end faces locked to Member Left and Member Right
+     and its sides to the section planes with LOCK_FORM_TO_PLANES - then
+     DELETE_ELEMENTS removes the template's sample, its id from
+     REPORT_FAMILY_FORMS. A COLUMN: EXTRUDE_BETWEEN_PLANES or an extrusion in
+     plan, its bottom face locked to the lower reference level and its top to
+     the upper one, so Base and Top Level drive the height.
+  5. SET_FAMILY_SETTINGS "Material for Model Behavior=Steel" (or Concrete,
+     Precast Concrete, Wood, Other) - steel and wood get cutback and shape
+     handles, concrete auto-joins - and "Section Shape=..." from Revit's own
+     list. SET_FAMILY_FORM_MATERIAL to a material parameter;
+     SET_FAMILY_FORM_VISIBILITY where the 3D form should not show at Coarse.
+  6. REPORT_FAMILY_FORMS, then FLEX_FAMILY at the smallest and largest
+     sections - then LOAD_FAMILY into a test project: a beam placed between two
+     supports must stretch with them and read its Cut Length; a column placed
+     between two levels must follow both.
+
+  SET BY HAND IN FAMILY CATEGORY AND PARAMETERS: Symbolic Representation -
+  its built-in parameter exists, but no source gave the values it stores
+  (docs/43 §11). Analytical settings are the project's from 2023.
+
+utterances:
+  - make a structural beam family with a custom section
+  - build a steel column family
+  - create a structural framing family for a brace
+  - make a parametric precast beam family
+
+needs:
+  - REPORT_FAMILY_TEMPLATE
+  - ADD_FAMILY_PARAMETERS
+  - SET_FAMILY_TYPE_VALUES
+  - WRITE_FAMILY_SIZE_TABLE
+  - SET_FAMILY_FORMULA
+  - REPORT_FAMILY_TYPE_CATALOG
+  - CREATE_REFERENCE_PLANES
+  - LABEL_FAMILY_DIMENSION
+  - CREATE_FAMILY_EXTRUSION
+  - EXTRUDE_BETWEEN_PLANES
+  - LOCK_FORM_TO_PLANES
+  - DELETE_ELEMENTS
+  - SET_FAMILY_SETTINGS
+  - SET_FAMILY_FORM_MATERIAL
+  - SET_FAMILY_FORM_VISIBILITY
+  - REPORT_FAMILY_FORMS
+  # FAMILY-CREATION's steps, which this skill says still hold.
+  - SET_FAMILY_CATEGORY
+  - ADD_FAMILY_SHARED_PARAMETERS
+  - SET_FAMILY_PLANE_REFERENCE
+  - CREATE_FAMILY_REVOLUTION
+  - CREATE_FAMILY_BLEND
+  - CREATE_FAMILY_SWEEP
+  - CREATE_FAMILY_SWEPT_BLEND
+  - LINK_FAMILY_FORM_PARAMETER
+  - LABEL_FAMILY_RADIUS
+  - COMBINE_FAMILY_FORMS
+  - ARRAY_FAMILY_FORMS
+  - ADD_FAMILY_CONNECTOR
+  - PLACE_NESTED_FAMILY
+  - LOCK_NESTED_FAMILY_TO_PLANES
+  - LINK_NESTED_TYPE_PARAMETER
+  - ADD_FAMILY_TYPE_PARAMETER
+  - LINK_FAMILY_PARAMETER
+  - SET_FAMILY_FORM_SUBCATEGORY
+  - DRAW_FAMILY_SYMBOLIC_LINES
+  - DRAW_FAMILY_FILLED_REGION
+  - ADD_FAMILY_FLIP_CONTROL
+  # The proof, and never skipped.
+  - FLEX_FAMILY
+  - LOAD_FAMILY
+
+preconditions:
+  - a family document is open in the Family Editor, started by the modeller from a structural framing or structural column template - Heron does not choose a template
+  - the section, its sizes and its material have been given for THIS request
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Written 2026-10-02 when the owner asked for everything to be checked again
+  and docs/43 §1 still said structural framing was not covered, from the
+  research recorded in docs/43 §7. Every step is DRAFT until it has been run on
+  a real family with a negative case (D-30).

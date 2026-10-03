@@ -1,0 +1,113 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: lighting-fixture-family-creation
+name: Build a lighting fixture family with its light source and its power connector
+domain: revit.families
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Builds a LIGHTING FIXTURE - a downlight, a linear pendant, a recessed panel,
+  a wall light - from the Lighting Fixture template the modeller opened, with
+  the light it gives and the power it takes. The steps of FAMILY-CREATION, and
+  of HOSTED-FAMILY-CREATION for a ceiling-, wall- or face-based fixture, still
+  hold; this is what a light adds. What every step rests on is in docs/43 §10.
+
+  0. REPORT_FAMILY_TEMPLATE FIRST - free-standing, ceiling-based or
+     wall-based, and Lighting Fixtures as its category. A fixture that must
+     sit on faces in a LINKED model is a face-based Generic Model changed to
+     Lighting Fixtures with SET_FAMILY_CATEGORY.
+  1. READ THE THING: the body's sizes, the light's shape (a point for a
+     downlight, a line for a linear fitting, a rectangle for a panel), its
+     lumens and colour temperature from the datasheet, and an IES file if the
+     manufacturer gives one.
+  2. THE BODY as FAMILY-CREATION steps 2 to 8 - parameters, planes, labels,
+     forms locked to planes - with the opening the light leaves by.
+  3. THE LIGHT SOURCE BOX: the modeller ticks Light Source in Family Category
+     and Parameters by hand - no call sets it. Then SET_FAMILY_LIGHT_SOURCE:
+     the shape and its size, the distribution (spot angles, or the IES file),
+     the lumens and the colour temperature; it reads back what Type
+     Properties shows. A WATTAGE IS NOT TAKEN - Revit's reference names no
+     unit for it; give lumens. One light source per family - more lights are
+     nested fixtures (PLACE_NESTED_FAMILY).
+  4. THE POWER: ADD_FAMILY_CONNECTOR with a power system on the face the
+     supply enters by, then LINK_FAMILY_PARAMETER for its Voltage, Load
+     Classification and Apparent Load, so the types carry them.
+  5. Plan symbol and visibility as FAMILY-CREATION step 12;
+     SET_FAMILY_FORM_MATERIAL for the body and diffuser.
+  6. REPORT_FAMILY_FORMS, then FLEX_FAMILY - then LOAD_FAMILY into a test
+     project: placed on its host, the light renders or shows in a lighting
+     analysis, and the fixture joins a circuit.
+
+  BY HAND, NOT YET BY A HERON TOOL: the Light Source tick; MOVING or AIMING
+  the light source - it is placed below the opening touching no geometry in
+  the Family Editor, and SET_FAMILY_LIGHT_SOURCE reports where it is; a
+  wattage, until BV18 settles its unit.
+
+utterances:
+  - make a lighting fixture family
+  - build a downlight family with a light source
+  - create a linear light fitting family with lumens and colour temperature
+  - make a ceiling light family that connects to a circuit
+
+needs:
+  - REPORT_FAMILY_TEMPLATE
+  - SET_FAMILY_CATEGORY
+  - ADD_FAMILY_PARAMETERS
+  - SET_FAMILY_TYPE_VALUES
+  - CREATE_REFERENCE_PLANES
+  - LABEL_FAMILY_DIMENSION
+  - EXTRUDE_BETWEEN_PLANES
+  - CREATE_FAMILY_EXTRUSION
+  - LOCK_FORM_TO_PLANES
+  - SET_FAMILY_LIGHT_SOURCE
+  - PLACE_NESTED_FAMILY
+  - ADD_FAMILY_CONNECTOR
+  - LINK_FAMILY_PARAMETER
+  - SET_FAMILY_FORM_MATERIAL
+  - REPORT_FAMILY_FORMS
+  - ADD_FAMILY_SHARED_PARAMETERS
+  - SET_FAMILY_FORMULA
+  - SET_FAMILY_PLANE_REFERENCE
+  - CREATE_FAMILY_BLEND
+  - CREATE_FAMILY_REVOLUTION
+  - CREATE_FAMILY_SWEEP
+  - CREATE_FAMILY_SWEPT_BLEND
+  - LINK_FAMILY_FORM_PARAMETER
+  - SET_FAMILY_FORM_SUBCATEGORY
+  - SET_FAMILY_FORM_VISIBILITY
+  - DRAW_FAMILY_SYMBOLIC_LINES
+  - DRAW_FAMILY_FILLED_REGION
+  - ADD_FAMILY_FLIP_CONTROL
+  # FAMILY-CREATION's and HOSTED-FAMILY-CREATION's steps, which this skill says
+  # still hold.
+  - SET_FAMILY_SETTINGS
+  - LABEL_FAMILY_RADIUS
+  - COMBINE_FAMILY_FORMS
+  - ARRAY_FAMILY_FORMS
+  - LOCK_NESTED_FAMILY_TO_PLANES
+  - LINK_NESTED_TYPE_PARAMETER
+  - ADD_FAMILY_TYPE_PARAMETER
+  - REPORT_FAMILY_TYPE_CATALOG
+  - CREATE_FAMILY_HOST_OPENING
+  # The proof, and never skipped.
+  - FLEX_FAMILY
+  - LOAD_FAMILY
+
+preconditions:
+  - a family document is open in the Family Editor, started by the modeller from a Lighting Fixture template or a face-based Generic Model - Heron does not choose a template
+  - the body's sizes and the light's lumens and colour have been given for THIS request
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Written 2026-10-02 when the owner asked for everything to be checked again,
+  with SET_FAMILY_LIGHT_SOURCE built the same day, from the research recorded
+  in docs/43 §10. Every step is DRAFT until it has been run on a real family
+  with a negative case (D-30).

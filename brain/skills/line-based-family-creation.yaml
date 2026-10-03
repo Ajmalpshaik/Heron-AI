@@ -1,0 +1,119 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: line-based-family-creation
+name: Build a line-based family whose length is set by two clicks
+domain: revit.families
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Builds a LINE-BASED family - placed with two clicks, its LENGTH set by them:
+  a lintel, a skirting, a kerb, a cable ladder run, a pipe rack, a row of
+  brackets along a wall. The steps of FAMILY-CREATION still hold, in their
+  order; this skill is what changes when the length comes from the clicks.
+
+  0. REPORT_FAMILY_TEMPLATE FIRST - confirm the family is line-based and read
+     the built-in LENGTH (an instance parameter) and the template's own
+     planes the length is measured between. Those planes and that dimension
+     are the template's: never moved, deleted or labelled again.
+  1. READ THE THING, as FAMILY-CREATION step 0 - its CROSS-SECTION, which
+     sizes change between types, and every part that repeats along the
+     length (brackets, posts, slots) with its spacing. The length is never
+     asked for as a type size: it is the placed copy's own.
+  2. The section's parameters and values first (ADD_FAMILY_PARAMETERS,
+     SET_FAMILY_TYPE_VALUES); a count that follows the length is an Integer
+     with a FORMULA (SET_FAMILY_FORMULA) - "Bracket Count =
+     rounddown(Length / Bracket Spacing) + 1" - guarded so it never falls
+     below what an array accepts on Revit 2020 to 2024, where an array keeps
+     at least two members: "Bracket Count = if(Length < Bracket Spacing, 2,
+     rounddown(Length / Bracket Spacing) + 1)". A formula names no value of its
+     own, so the guard tests the parameters themselves. Revit's own help says its
+     formulas compare with <, > and = and that <= and >= are not implemented,
+     so "a <= b" is written "not(a > b)"; a parameter's name is matched with
+     its case and spaces exactly. Whether a length divided by a length may
+     feed an Integer without "/ 1 mm" is NEEDS-CHECKING BV14.
+  3. CREATE_REFERENCE_PLANES for the section, SET_FAMILY_PLANE_REFERENCE,
+     LABEL_FAMILY_DIMENSION - across the line, never along it.
+  4. THE BODY RUNS THE FULL LENGTH by being locked to the start and end
+     planes: EXTRUDE_BETWEEN_PLANES for a rectangular section, with the two
+     length planes as its left and right; any other section drawn with
+     CREATE_FAMILY_EXTRUSION on the plane at the start and its far face locked
+     to the end plane with LOCK_FORM_TO_PLANES - or CREATE_FAMILY_SWEEP along
+     the line, its path ends on those planes.
+  5. A PART THAT REPEATS ALONG THE LENGTH is one form and ARRAY_FAMILY_FORMS,
+     stepping to the "last" member, the count labelled with the Integer from
+     step 2; the first member is locked to the start plane and the last to the
+     end plane, so the spacing follows the length.
+  6. Materials, visibility and a plan symbol as FAMILY-CREATION step 12 - a
+     single line at coarse is the usual plan symbol of a run.
+  7. REPORT_FAMILY_FORMS, then FLEX_FAMILY at TWO LENGTHS as well as two
+     sections - the length is the size that moves most - then LOAD_FAMILY
+     into a test project, where the modeller places it with two clicks.
+
+  A 2D line-based DETAIL ITEM is DETAIL-FAMILY-CREATION.
+
+utterances:
+  - make a line based family
+  - build a line based lintel family
+  - make a line based family for a cable ladder run
+  - create a skirting family that I draw with two clicks
+  - make a line based family with brackets along its length
+
+needs:
+  - REPORT_FAMILY_TEMPLATE
+  - ADD_FAMILY_PARAMETERS
+  - SET_FAMILY_TYPE_VALUES
+  - SET_FAMILY_FORMULA
+  - CREATE_REFERENCE_PLANES
+  - SET_FAMILY_PLANE_REFERENCE
+  - LABEL_FAMILY_DIMENSION
+  - EXTRUDE_BETWEEN_PLANES
+  - CREATE_FAMILY_EXTRUSION
+  - CREATE_FAMILY_SWEEP
+  - LOCK_FORM_TO_PLANES
+  - ARRAY_FAMILY_FORMS
+  - SET_FAMILY_FORM_MATERIAL
+  - DRAW_FAMILY_SYMBOLIC_LINES
+  - REPORT_FAMILY_FORMS
+  - LINK_FAMILY_FORM_PARAMETER
+  - SET_FAMILY_FORM_SUBCATEGORY
+  - SET_FAMILY_FORM_VISIBILITY
+  - DRAW_FAMILY_FILLED_REGION
+  - ADD_FAMILY_FLIP_CONTROL
+  - LOAD_FAMILY
+  # FAMILY-CREATION's steps, which this skill says still hold.
+  - SET_FAMILY_CATEGORY
+  - SET_FAMILY_SETTINGS
+  - ADD_FAMILY_SHARED_PARAMETERS
+  - CREATE_FAMILY_REVOLUTION
+  - CREATE_FAMILY_BLEND
+  - CREATE_FAMILY_SWEPT_BLEND
+  - LABEL_FAMILY_RADIUS
+  - COMBINE_FAMILY_FORMS
+  - ADD_FAMILY_CONNECTOR
+  - PLACE_NESTED_FAMILY
+  - LOCK_NESTED_FAMILY_TO_PLANES
+  - LINK_NESTED_TYPE_PARAMETER
+  - ADD_FAMILY_TYPE_PARAMETER
+  - LINK_FAMILY_PARAMETER
+  - REPORT_FAMILY_TYPE_CATALOG
+  # The proof, and never skipped.
+  - FLEX_FAMILY
+
+preconditions:
+  - a family document is open in the Family Editor, started by the modeller from a line-based template - Heron does not choose a template
+  - every section size, parameter name and type name has been given for THIS request
+  - the template's own length planes and Length dimension are as the template made them
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Written 2026-10-02 on the owner's request for line-based family creation,
+  from the research recorded in docs/43-building-revit-families.md. Every step
+  is DRAFT until it has been run on a real family with a negative case (D-30).

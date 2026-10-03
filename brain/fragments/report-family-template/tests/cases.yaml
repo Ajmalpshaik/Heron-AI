@@ -1,0 +1,39 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model wall based template, nothing
+      built in it yet
+    expect: >
+      familyKind "wall-based - placed only on a wall, which the template
+      carries"; templateReport naming 1 wall among the host elements and Host
+      as Family Category and Parameters shows it; planeList naming the
+      template's own planes - Center (Left/Right) and Center (Front/Back) among
+      them - each with where it sits and its Is Reference
+
+  - given: a new family from the metric Generic Model line based template
+    expect: >
+      familyKind "line-based ..."; the built-in parameters naming Length as an
+      instance parameter with its value in the current type; the planes the
+      Length is measured between in planeList
+
+  - given: a new family from the metric Curtain Panel Pattern Based template
+    expect: >
+      familyKind "a pattern-based curtain panel ..."; templateReport naming the
+      tile pattern (Rectangle in a new one) and its spacing; pointList naming
+      the placement points 1 to 4 with ids and positions; lineList naming the
+      template's lines between them with their ids - the ids a form is built on
+
+negative:
+  - given: >
+      a new family from the plain metric Generic Model template - not hosted
+    expect: >
+      familyKind "level-based - not hosted, placed on a level", host elements
+      none, pointList empty - it must NOT read as wall-based or face-based
+
+  - given: a project in front
+    expect: notAFamily true and nothing read
+
+second_route:
+  - >
+      Family Category and Parameters in the Family Editor - the Host row and the
+      switches - and the Family Types dialog for the built-in parameters; the
+      reference planes read by selecting each and reading Properties

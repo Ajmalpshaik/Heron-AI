@@ -1,0 +1,86 @@
+# The proof of the two-point adaptive beam - NEEDS-CHECKING Group BV, rows
+# BV19 and BV20: points hosted on a point's own plane, then a sweep of the
+# loop through them along the line between the two placement points.
+#
+#   place-adaptive-points, hosted  PLACE_ADAPTIVE_POINTS   FRG-GEO-050  (BV19)
+#   create-conceptual-form, sweep  CREATE_CONCEPTUAL_FORM  FRG-GEO-052  (BV20)
+#
+#     python tools/batch-prove.py tools/jobs/family-beam-2026-10-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/family-beam-2026-10-02.yaml
+#
+# Its own file, apart from family-kinds-2026-10-02.yaml, because a run's record
+# is kept per tool, and a second job for one tool in one file would overwrite
+# the first's.
+#
+# THE ARRANGEMENT IS TWO FAMILIES, each new from the metric Generic Model
+# Adaptive template with placement points 1 and 2 at 0,0,0 and 3000,0,0
+# (place-adaptive-points) and a reference line 1-2 (draw-family-point-curves),
+# saved once under its title and left OPEN:
+#
+#   "Heron Beam Test"        nothing more - the first job places its four
+#                            points here, and the run rolls them back
+#   "Heron Beam Form Test"   ALSO the four points on point 1's YZ plane, at
+#                            -100,0; 100,0; 100,200; -100,200, and the closed
+#                            loop of four reference lines through them, made
+#                            BEFORE the run and KEPT - by hand, or by
+#                            place-adaptive-points and draw-family-point-curves
+#                            run through Heron as usual, never through this
+#                            runner, whose write: true rolls everything back.
+#                            The second job sweeps that loop along the 1-2 line
+#
+# The two jobs run one after the other with nothing between them, so the
+# second cannot use what the first placed - that is why it has a family of
+# its own.
+#
+# SOME VALUES ARE IDS, written here as PLACEHOLDERS: the 1-2 line's id in each
+# family (BEAM-LINE-ID, FORM-LINE-ID) and the loop's four ids in "Heron Beam
+# Form Test" (LOOP-ID-1 to 4) - report-family-template's `lineList` gives
+# them. `--dry-run` says WOULD RUN with a placeholder still in - replace each
+# before the real run.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK -
+# LOOK at the family afterwards anyway: rollback has failed before on this PC
+# (BD1).
+
+model: Heron Beam Test and Heron Beam Form Test - two new families from the metric Generic Model Adaptive template, Revit 2024
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: place-adaptive-points
+    in: "Heron Beam Test"
+    expect: pointIds
+    set:
+      points: "on point 1 yz -100,0; on point 1 yz 100,0; on point 1 yz 100,200; on point 1 yz -100,200"
+      pointKind: "reference"
+    negative-set:
+      # PLACEHOLDER - the 1-2 line's id.
+      points: "on BEAM-LINE-ID at 0.5"
+      pointKind: "placement"
+    note: >
+      Positive: four reference points on point 1's YZ plane, turning with it.
+      Negative: a hosted point asked for as a placement point, refused.
+
+  - fragment: create-conceptual-form
+    in: "Heron Beam Form Test"
+    expect: formId
+    set:
+      # PLACEHOLDERS - the kept loop through the four YZ points, and that
+      # family's 1-2 line.
+      profiles: "LOOP-ID-1,LOOP-ID-2,LOOP-ID-3,LOOP-ID-4"
+      depthMm: ""
+      path: "FORM-LINE-ID"
+      axis: ""
+      angleDegrees: ""
+      solid: true
+    negative-set:
+      profiles: "LOOP-ID-1,LOOP-ID-2,LOOP-ID-3,LOOP-ID-4"
+      depthMm: "50"
+      path: "FORM-LINE-ID"
+      axis: ""
+      angleDegrees: ""
+      solid: true
+    note: >
+      Positive: a solid sweep about 120 L along the line - the two-point beam.
+      Negative: a depth and a path together, refused before anything is made.

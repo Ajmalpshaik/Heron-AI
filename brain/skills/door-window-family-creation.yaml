@@ -1,0 +1,138 @@
+heron-status: DRAFT
+heron-step: 17
+heron-since: 0.1.0
+heron-layer: brain
+
+id: door-window-family-creation
+name: Build a parametric door or window family in the wall that hosts it
+domain: revit.families
+# Heron wrote this one. D-66: a unit that ships with Heron says where it
+# came from, so an IMPORTED one that says nothing stands out.
+source: OFFICIAL
+
+risk: MODIFY
+
+purpose: >
+  Builds a DOOR or a WINDOW - the wall-hosted families a modeller makes most -
+  from the Door or Window template the modeller opened: a single or double
+  door, a sliding door, a casement or fixed window, and the curtain wall door
+  that fills a panel. The steps of HOSTED-FAMILY-CREATION and FAMILY-CREATION
+  still hold; this is what a door or a window adds. What every step rests on
+  is in docs/43 §7.
+
+  0. REPORT_FAMILY_TEMPLATE FIRST - a Door or Window template carries a host
+     wall with an OPENING ALREADY CUT in it, and Width and Height as built-in
+     parameters (a window also its Default Sill Height); read the template's
+     planes and views before drawing anything. NEVER MOVE OR DELETE THE
+     TEMPLATE'S PLANES OR ITS OPENING - they carry the hosting and the cut.
+     Whether the template's opening follows Width and Height out of the box
+     is what the report and a first FLEX_FAMILY show (docs/43 §7, UNSURE).
+  1. READ THE THING: a door's leaf count and swing, its frame and leaf
+     thicknesses, Rough Width and Height if the opening is larger than the
+     door; a window's sill height, frame and sash sizes, glass. A picture
+     gives shape, never size (D-33).
+  2. Parameters and values (FAMILY-CREATION steps 2 and 3): Frame Width,
+     Frame Depth, Leaf Thickness, sash sizes as TYPE lengths; Width, Height,
+     Rough Width and Rough Height are already there. SET_FAMILY_FORMULA ties
+     them - Rough Width = Width + 2 * Frame Width.
+  3. Planes and labels (FAMILY-CREATION steps 4 to 6), measured from the
+     template's own centre and wall-face planes, never from a form: a plane
+     each side of the frame, the leaf's thickness plane, a window's head and
+     sill.
+  4. THE FRAME that follows Width and Height: three EXTRUDE_BETWEEN_PLANES
+     boxes - two jambs and a head - each between its own planes. A moulded
+     frame section is CREATE_FAMILY_SWEEP along the sides and head on the
+     wall's centre plane, but a swept path keeps the size it was drawn at
+     unless LOCK_FORM_TO_PLANES holds its faces - flex it before trusting it.
+     THE LEAF OR SASH: EXTRUDE_BETWEEN_PLANES between the frame's inner
+     planes, its thickness plane and the floor or sill. THE GLASS: a thin
+     extrusion on the Glass subcategory.
+  5. SUBCATEGORIES AND VISIBILITY: SET_FAMILY_FORM_SUBCATEGORY puts each form
+     on Frame/Mullion, Panel or Glass - the door and window subcategories Revit
+     has built in. In PLAN the 3D leaf and frame are usually hidden
+     (SET_FAMILY_FORM_VISIBILITY) and drawn as symbolic lines instead:
+     DRAW_FAMILY_SYMBOLIC_LINES for the leaf and the SWING ARC on a "Plan
+     Swing" subcategory, and in elevation the opening lines on "Elevation
+     Swing". SET_FAMILY_FORM_MATERIAL links each to a material parameter.
+  6. A LEAF THAT SWAPS: PLACE_NESTED_FAMILY for the leaf, LOCK_NESTED_FAMILY_
+     TO_PLANES, then ADD_FAMILY_TYPE_PARAMETER so each type chooses its leaf
+     (glazed, solid, louvred). Hardware is usually nested too.
+  7. ADD_FAMILY_FLIP_CONTROL in the floor plan - Autodesk's remark: a single
+     arrow rotates the placed door 180 degrees, a double one mirrors it.
+  8. Types with SET_FAMILY_TYPE_VALUES, then FLEX_FAMILY at the smallest and
+     largest sizes, and the modeller places it in walls of DIFFERENT
+     THICKNESS in a test project: the frame must follow the wall, the swing
+     must read in plan, and Rough Width must schedule.
+
+  A CURTAIN WALL DOOR OR WINDOW is a different family: started from the
+  curtain wall door or window template, it is a curtain PANEL sized by the
+  grid cell, with no host opening and no Width of its own to drive - its
+  forms are locked to the template's four planes and it is swapped into a
+  panel with the Type Selector (docs/43 §7).
+
+  NOT YET, AND WHY: re-locking the template's opening sketch to the Rough
+  planes - Revit's API cannot lock an opening's sketch, so that stays a
+  modeller's step in the Family Editor; a swing ANGLE that rotates the leaf -
+  a reference line's planes have no documented call (docs/43 §9); Wall
+  Closure planes - set by hand on a plane's Properties.
+
+utterances:
+  - make a door family
+  - build a parametric window family
+  - create a double door family with a frame and swing
+  - make a curtain wall door family
+
+needs:
+  - REPORT_FAMILY_TEMPLATE
+  - ADD_FAMILY_PARAMETERS
+  - SET_FAMILY_TYPE_VALUES
+  - SET_FAMILY_FORMULA
+  - CREATE_REFERENCE_PLANES
+  - LABEL_FAMILY_DIMENSION
+  - CREATE_FAMILY_SWEEP
+  - EXTRUDE_BETWEEN_PLANES
+  - LOCK_FORM_TO_PLANES
+  - SET_FAMILY_FORM_SUBCATEGORY
+  - SET_FAMILY_FORM_VISIBILITY
+  - DRAW_FAMILY_SYMBOLIC_LINES
+  - SET_FAMILY_FORM_MATERIAL
+  - PLACE_NESTED_FAMILY
+  - LOCK_NESTED_FAMILY_TO_PLANES
+  - ADD_FAMILY_TYPE_PARAMETER
+  - ADD_FAMILY_FLIP_CONTROL
+  - REPORT_FAMILY_FORMS
+  - ADD_FAMILY_SHARED_PARAMETERS
+  - SET_FAMILY_PLANE_REFERENCE
+  # FAMILY-CREATION's and HOSTED-FAMILY-CREATION's steps, which this skill says
+  # still hold.
+  - SET_FAMILY_CATEGORY
+  - SET_FAMILY_SETTINGS
+  - CREATE_FAMILY_EXTRUSION
+  - CREATE_FAMILY_REVOLUTION
+  - CREATE_FAMILY_BLEND
+  - CREATE_FAMILY_SWEPT_BLEND
+  - LINK_FAMILY_FORM_PARAMETER
+  - LABEL_FAMILY_RADIUS
+  - COMBINE_FAMILY_FORMS
+  - ARRAY_FAMILY_FORMS
+  - ADD_FAMILY_CONNECTOR
+  - LINK_NESTED_TYPE_PARAMETER
+  - LINK_FAMILY_PARAMETER
+  - DRAW_FAMILY_FILLED_REGION
+  - REPORT_FAMILY_TYPE_CATALOG
+  - CREATE_FAMILY_HOST_OPENING
+  # The proof, and never skipped.
+  - FLEX_FAMILY
+  - LOAD_FAMILY
+
+preconditions:
+  - a family document is open in the Family Editor, started by the modeller from a Door, Window or curtain wall door or window template - Heron does not choose a template
+  - the leaf count, swing, frame and every size have been given for THIS request
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+
+note: >
+  Written 2026-10-02 when the owner asked for everything to be checked again
+  and doors and windows were found missing, from the research recorded in
+  docs/43-building-revit-families.md §7. Every step is DRAFT until it has been
+  run on a real family with a negative case (D-30).

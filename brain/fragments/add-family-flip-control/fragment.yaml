@@ -1,0 +1,93 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-118
+semantic-identity: "add flip arrows to the family being edited, so a placed copy flips left-right or front-back in one click"
+kind: action
+domain: revit.families
+capability: ADD_FAMILY_FLIP_CONTROL
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Adds FLIP CONTROLS to the family open in the Family Editor - the small arrows
+  a placed door, window, fan coil or valve shows when selected, which turn or
+  mirror it in one click instead of a mirror that moves it. The Family
+  Editor's Control tool.
+
+  **FOUR SHAPES, AS THE CONTROL TOOL NAMES THEM** - single horizontal, double
+  horizontal, single vertical, double vertical - each placed in a FLOOR PLAN
+  or CEILING PLAN of the family, the only views Revit's NewControl takes, at a
+  point in millimetres in the plan's own X,Y. Several at once, `|` between.
+  Where a floor plan and a ceiling plan share the name, the floor plan is
+  taken - whether a template's "Ref. Level" is both is what BV1's view list
+  shows.
+
+  **WHAT EACH DOES TO A PLACED COPY IS REVIT'S.** Autodesk's remark on Control,
+  2020 to 2027: a single arrow, horizontal or vertical, ROTATES the copy 180
+  degrees; a double arrow MIRRORS it - horizontally or vertically. NEEDS-
+  CHECKING BV3 records what a placed copy does.
+
+  **READ BACK, ALL OR NOTHING**: every control's shape, view and position are
+  read again; one that does not read as asked fails the call. Their ids come
+  back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The floor or ceiling plan to place them in, as the Project Browser names
+    # it - "Ref. Level". The floor plan where both share the name.
+    - name: view
+      type: string
+      source: request
+    # Shape then where, `|` between - "single horizontal 0,-400 | single
+    # vertical 400,0". Millimetres, in the view's two model coordinates.
+    - name: controls
+      type: string
+      source: request
+  provides:
+    - name: controlIds
+      # The new controls' unique ids, commas between.
+      role: result
+      type: string
+    - name: placed
+      # Every control's shape and position as read back, on ONE line.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was added, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyItemFactory.NewControl(ControlShape, View, XYZ)`, the four
+  `ControlShape` values and `Control.Shape`, `Origin` and `View` read the same
+  2020 through 2027 (the RevitAPI reference assemblies, read 2026-10-01).
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "add flip arrows to this family"              -> here
+#   "the door opens the wrong way"                -> FLIP_ELEMENTS - placed
+#                                                    copies in a project
+
+utterances:
+  - add flip arrows to this family
+  - add a flip control to the family
+  - put flip controls on this door family
+  - add the horizontal and vertical flip arrows
