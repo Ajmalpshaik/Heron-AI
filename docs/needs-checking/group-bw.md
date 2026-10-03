@@ -17,7 +17,18 @@ enclosed ([row 5b-298](../FRAGMENT-ISSUES.md#)). It now places every point, rege
 measures. **It was PROVEN and is DRAFT now**: the change is inside `impl/`, so the 2026-09-13 proof no
 longer matches the code and is kept in the card as the record of the old code ([D-30](../DECISIONS.md)).
 That proof itself recorded `unenclosed 5` of 5 rooms, which the same early read probably explains.
-**What is already known, and it is NOT a proof:** it compiles on every release from 2020 to 2027.
+**What is already known, and it is NOT yet a signed proof:** it compiles on every release from 2020 to 2027, and on 2026-10-03 BW1 and BW2 were both RUN on Project2 saved as *c bulding test* (Revit 2024, session 41260), each leg rolled back, against an 8000 x 6000 mm box of four `Generic - 200mm` walls built on the empty Roof level 300 m from the building and deleted afterwards on the owner's word:
+
+| Run | Points | created | unenclosed |
+|---|---|---|---|
+| Rooms, new code | inside + outside | 2 | 1 - the outside one only |
+| Rooms, new code | inside only | 1 | 0 |
+| Spaces, new code | inside + outside | 2 | 1 - the outside one only |
+| Spaces, new code | inside only | 1 | 0 |
+| Spaces, OLD code, same box | inside + outside | 2 | **2** - the defect |
+| Spaces, OLD code, same box | inside only | 1 | **1** - the defect |
+
+**Why it is not signed:** `heron_validate accept` takes an empty negative leg, which this fragment cannot give because it always places something, or a D-53 tracking set, and `validate --vary` splits its values on commas, which every point is written with.
 
 | # | Check | Expected |
 |---|---|---|
