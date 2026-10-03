@@ -1,25 +1,44 @@
 positive:
   - given: >
-      a new family from the metric Generic Model template; a length type
-      parameter "Neck Diameter" holding 300 in type "300"; a solid extrusion
-      "circle 0,0 150" on Ref. Level from 0 to 500 made by
-      create-family-extrusion; form = its id, parameterName "Neck Diameter",
-      diameter true
+      a new family from the metric Generic Model template; length type
+      parameters "Pipe Diameter" 100 and "Bell Radius" 60 in type "DN100"; a
+      solid extrusion "circle 0,0 50" on Ref. Level from 0 to 200, and a solid
+      revolve "0,300; 60,300; 60,500; 0,500" about "0,300 0,500" on
+      Center (Front/Back), both made by their form tools; form = the
+      extrusion's id, parameterName "Pipe Diameter", diameter true
     expect: >
-      a diameter dimension in the floor plan on the cylinder's top edge,
-      labelled "Neck Diameter" and reading 300 mm, valueMm 300 - LOOKED AT in
-      the plan; then FLEX_FAMILY with "Neck Diameter=400" and the cylinder
-      MEASURED 400 across. Whether it does is the open question this case
-      exists to answer - record either result
+      a diameter dimension INSIDE the extrusion's sketch, labelled "Pipe
+      Diameter" and reading 100 mm, valueMm 100; then FLEX_FAMILY with
+      "Pipe Diameter=300 | Pipe Diameter=40" and the cylinder MEASURED 300 and
+      40 across. Ran 2026-10-03, Revit 2024, scratch Family2, rolled back: the
+      family 300 deep at 300, the label read 100
 
-  - given: the same cylinder, a length parameter "Radius" holding 150, diameter false
-    expect: a radial dimension labelled "Radius" reading 150 mm
+  - given: the same family, form = the revolve's id, "Bell Radius", diameter false
+    expect: >
+      a straight dimension in the revolve's sketch from "Center (Left/Right)"
+      to the profile line 60 mm out, labelled "Bell Radius", the axis locked
+      to that plane; FLEX_FAMILY "Bell Radius=300 | Bell Radius=40" and the
+      revolve MEASURED 600 and 80 across. Ran 2026-10-03, rolled back: the
+      family 600 deep at 300
+
+  - given: an extrusion built in an earlier session, its circle 26 mm across, a parameter holding 26
+    expect: >
+      labelled the same way and followed by the flex - a form already built
+      can be labelled. Measured 2026-10-03 on Family1's valve stem (300 and 40)
 
 negative:
-  - given: the parameter "Neck Diameter" holding 250 while the cylinder is 300 across
-    expect: refused as no round edge of radius 125 mm, listing the radius 150, and nothing labelled
+  - given: a revolve about "1000,300 1000,500" - no reference plane runs through its axis
+    expect: >
+      refused as no reference plane through the axis, naming
+      CREATE_REFERENCE_PLANES, and nothing labelled. Ran 2026-10-03, rolled back
 
-  - given: parameterName "Neck Diameter" while it already labels a dimension
+  - given: the parameter "Pipe Diameter" holding 250 while the cylinder is 100 across
+    expect: refused as no sketched circle of radius 125 mm, listing the radius 50, and nothing labelled
+
+  - given: the revolve with diameter true
+    expect: refused as a revolve's size being a radius, naming the halving formula
+
+  - given: parameterName "Pipe Diameter" while it already labels a dimension
     expect: refused as already labelling one, and nothing labelled
 
   - given: a project in front
@@ -27,6 +46,6 @@ negative:
 
 second_route:
   - >
-      By hand on a copy: Edit Extrusion, a diameter dimension on the sketched
-      circle, labelled "Neck Diameter", Finish; both copies flexed with the same
-      value and their diameters read side by side
+      By hand on the same family: Edit Extrusion shows the diameter dimension
+      in the sketch, labelled "Pipe Diameter"; Family Types to 300 and the
+      cylinder measured 300 across with the Measure tool
