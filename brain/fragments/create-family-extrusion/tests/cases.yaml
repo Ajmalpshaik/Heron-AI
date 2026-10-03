@@ -20,7 +20,20 @@ positive:
       startMm 0, endMm 20, solid true
     expect: >
       a 600 x 400 x 20 plate with a 100 mm round hole through it, volume
-      600 x 400 x 20 less the hole - about 4.643 L
+      600 x 400 x 20 less the hole - about 4.643 L, and built reading "2
+      loop(s) (1 outline, 1 hole inside it)"
+
+  - given: >
+      a new family from the metric Generic Model template; workPlane "Center
+      (Left/Right)", profile "circle -150,424 6 | circle 100,424 6", startMm
+      -240, endMm 240, solid true - two circles side by side, neither inside
+      the other
+    expect: >
+      two solid rods 12 mm across and 480 mm long, X -240 to 240 mm, volume
+      about 0.109 L (2 x pi x 6 x 6 mm2 x 480 mm), and built reading "2
+      loop(s) (2 separate outlines)" - never "inside the first". Seen wrong on
+      2026-10-01 in Revit 2024, Family1: the geometry was right and the report
+      called the second rod a hole (5b-275)
 
 negative:
   - given: profile "circle 0,0 150" with workPlane "Ref Lvl", a name the family does not have

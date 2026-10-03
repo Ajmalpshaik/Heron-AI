@@ -1,0 +1,45 @@
+positive:
+  - given: >
+      a new family from the metric Lighting Fixture template, Light Source
+      ticked in Family Category and Parameters, one type; shape "circle 200",
+      distribution "spot 30 60", intensity "1500 lm", colorTemperature "3000 K"
+    expect: >
+      the report reads circle 200 mm, spot beam 30°, field 60°, tilt 0°,
+      Luminous Flux as Type Properties shows it (1500 lm), 3000 K, and the
+      light source's position; Type Properties LOOKED AT - Spot Beam Angle 30°,
+      Spot Field Angle 60° (BV18); then loaded into a test project and one copy
+      rendered or shown in a lighting analysis
+
+  - given: >
+      the same family with two types; typeName "600x600", shape "rectangle 600
+      x 600", distribution "web <a real .ies file>"
+    expect: >
+      the shape and distribution STYLES change for the family; only type
+      600x600 takes the 600 x 600 emit size and the web file - read back by name
+
+negative:
+  - given: >
+      a Generic Model family, Light Source not ticked; shape "point"
+    expect: >
+      refused - no light source to define, naming the Light Source tick box in
+      Family Category and Parameters - and nothing changed
+
+  - given: intensity "60 W"
+    expect: >
+      refused - a wattage is a "universal unit" value in Revit's reference, so
+      it is not taken; lumens, candelas or lux named - nothing changed
+
+  - given: distribution "spot 30 200"
+    expect: refused - a field angle over 160° - nothing changed
+
+  - given: distribution "web C:\nowhere\missing.ies"
+    expect: refused - no IES file at that path - nothing changed
+
+  - given: a project in front
+    expect: notAFamily true and nothing changed
+
+second_route:
+  - >
+      In the Family Editor, Family Category and Parameters shows Light Source
+      ticked; the Light Source Definition button and Type Properties show the
+      shape, distribution, intensity and colour

@@ -5,8 +5,8 @@
 > ([B8](NEEDS-CHECKING.md)), and what is still owed is a tape measure on the result — `D3`. **Phase 2
 > (Steps 7 to 14) is built and barely proven.** This line said both *"have never loaded into Revit"*
 > until 2026-09-21, a fortnight after the first write ([row 5b-54](FRAGMENT-ISSUES.md)).
-> **All fourteen skills are `DRAFT`; 272 of the 450 fragments are `PROVEN`
-> as of 2026-10-01** — this line said *every fragment is `DRAFT`* long after that stopped being true, so
+> **All twenty-four skills are `DRAFT`; 272 of the 464 fragments are `PROVEN`
+> as of 2026-10-02** — this line said *every fragment is `DRAFT`* long after that stopped being true, so
 > derive it: `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 >
 > **Do not trust this paragraph over the tool.** `python tools/check-gaps.py` is computed from disk on
@@ -171,6 +171,7 @@ Review of all four parts: [PROPOSALS](PROPOSALS.md).
 | 40 | [Heron Companion](40-heron-companion.md) | **Built, not proven in Revit - allowed by D-108 and D-109.** A local page beside Revit that shows the live selection and every Heron call the chat makes, and gives editable tables - a settings change's values, or elements and their parameters - that the modeller applies there with no message to the chat. Where it lives and why (inside each chat's MCP process, with Revit's state read from a file, never the pipe); the ten places the request and Heron's rules disagreed and how each was settled; and in §21 what was built |
 | 41 | [**HVAC Design**](41-hvac-design.md) | **Built, not proven against a project.** What Heron now works out before a duct is drawn - loads, supply air, ASHRAE 62.1 outdoor air, psychrometrics, duct friction and sizing, fan power, diffusers, chilled water - read from HAP, ASHRAE, SMACNA and the rest and re-authored as the `heron_hvac` tool. Why every design value is ASKED for and a standard's figure only OFFERED (D-33); why a load here is a peak estimate and not HAP; how far each reference table was checked; what is known about Qatar; seven conflicts recorded, not resolved; and what is not built |
 | 42 | [**Fire Protection Design**](42-fire-protection-design.md) | **Built, not proven against a project.** What Heron now works out before a sprinkler is placed - hazard classes looked up and never decided, sprinkler spacing, counts and a drawn layout checked as NFPA 13 measures it, the design area, pipe schedules including sprinklers above and below a ceiling, the obstruction rules, a hydraulic solve of a tree or a grid, the water supply, storage, pumps, standpipes, extinguishers and detectors - as the `heron_fire` tool. Why a criterion is ASKED and a table asked about is answered; why a figure nobody could check is not held at all; what is known about Qatar; ten conflicts, six of them the owner's own file against NFPA; and what is not built |
+| 43 | [Building Revit Families](43-building-revit-families.md) | **Every kind of family, and what makes one parametric** - which template makes which kind and why nothing changes it later, the planes-labels-locks method, parameters, formulas, lookup tables and type catalogs, hosted, line-based, pattern-based, adaptive, profile, detail and annotation families, MEP fittings, and exactly where Revit's API stops: no label on any release, no reference line's planes. Each fact marked API, SOURCED or UNSURE; researched 2026-10-01 with the Autodesk hosts out of the cloud session's reach |
 
 ## Working documents
 

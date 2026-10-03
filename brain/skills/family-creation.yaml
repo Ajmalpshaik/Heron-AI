@@ -22,7 +22,17 @@ purpose: >
   happen, and the order is not a preference: taking two of them the other way
   round breaks the family in a way that looks fine until somebody resizes it.
 
-  0. READ THE THING FIRST, before anything is built - from the picture, the
+  0. REPORT_FAMILY_TEMPLATE, then READ THE THING. The report says which KIND
+     of family the modeller opened - and a family that is not level-based or
+     work-plane-based has a skill of its own: HOSTED-FAMILY-CREATION for a
+     wall-, ceiling-, floor-, roof- or face-based one, LINE-BASED-FAMILY-CREATION,
+     PATTERN-BASED-FAMILY-CREATION, ADAPTIVE-FAMILY-CREATION,
+     PROFILE-FAMILY-CREATION, DETAIL-FAMILY-CREATION,
+     MEP-FITTING-FAMILY-CREATION for a duct or pipe fitting,
+     DOOR-WINDOW-FAMILY-CREATION, STRUCTURAL-FAMILY-CREATION for a beam, a
+     brace or a structural column, and LIGHTING-FIXTURE-FAMILY-CREATION for a
+     light with its light source. Then read the
+     thing before anything is built - from the picture, the
      sketch or the words. Say back, in one list: what it is and the category
      it belongs to; the FORMS it is made of, each as the form that builds it -
      a box between planes, a round or any other shape pushed straight
@@ -98,7 +108,9 @@ purpose: >
       release, a level-based one only from Revit 2024 - then
       LOCK_NESTED_FAMILY_TO_PLANES by its own Left, Right, Front, Back, Top,
       Bottom or centres, then LINK_NESTED_TYPE_PARAMETER for its type's sizes
-      and LINK_FAMILY_PARAMETER for its instance's.
+      and LINK_FAMILY_PARAMETER for its instance's. A nested part whose TYPE
+      the family's types choose - the 5 kW or the 7 kW motor - is
+      ADD_FAMILY_TYPE_PARAMETER, which also swaps a sweep's loaded profile.
   12. SET_FAMILY_FORM_MATERIAL for each form's material - linked to a family
       material parameter when a project must set it per type, the body and
       the neck apart - then SET_FAMILY_FORM_SUBCATEGORY and
@@ -108,23 +120,35 @@ purpose: >
       LINK_FAMILY_FORM_PARAMETER, its Visible to that Yes/No parameter. Where a
       plan must show a SYMBOL rather than the body - a valve's bow tie, a fan's
       circle and cross - DRAW_FAMILY_SYMBOLIC_LINES on Ref. Level at the levels
-      the body is hidden at.
+      the body is hidden at, with DRAW_FAMILY_FILLED_REGION for a solid or
+      masked part of the symbol (in a 3D family from Revit 2023, a masking
+      region from 2024). A family that must flip once placed gets
+      ADD_FAMILY_FLIP_CONTROL.
   13. REPORT_FAMILY_FORMS - every form read back with its size, against the
       list from step 0, before the proof.
   14. FLEX_FAMILY last, at sizes that are really different and not square - the
       only step that PROVES the family follows. "The calls did not fail" is not
       the proof; the geometry read back at another size is.
+  15. A family with many types gets a TYPE CATALOG - REPORT_FAMILY_TYPE_CATALOG
+      gives the text, saved beside the .rfa with its name and .txt, so a
+      project loads only the types it picks.
 
   The family is saved by the modeller: Revit will not save the document open
   in its window while Heron holds it.
 
-  NOT YET: reference lines and angles - a part that swings or tilts
-  about a pivot - a Family Type parameter that swaps a nested family's
-  type, a type catalog, and masking or filled regions inside a family. Whether a label
-  on a round form's edge DRIVES the circle is not yet known on any release:
-  step 14 is where that is found out (NEEDS-CHECKING BM3). This line said
-  until 2026-10-01 that a circle's size cannot be driven through the API on
-  Revit 2020; that was measured for a project, not a family (row 5b-261).
+  NOT YET: reference lines and angles - a part that swings or tilts about a
+  pivot. A reference line can be made through the API, and an angle labelled,
+  but no DOCUMENTED call gives the planes a reference line carries, so a form
+  cannot be put on one; the only route found reads a reference out of an
+  undocumented string Autodesk says is not meant to be parsed (row 5b-280).
+  A revolve whose angle the types choose is the documented route for a bend.
+  A Family Type parameter, a type catalog, flip controls and filled and
+  masking regions were on this line until 2026-10-02 and are built now.
+  Whether a label on a round form's edge DRIVES the circle is not yet known
+  on any release: step 14 is where that is found out (NEEDS-CHECKING BM3).
+  This line said until 2026-10-01 that a circle's size cannot be driven
+  through the API on Revit 2020; that was measured for a project, not a
+  family (row 5b-261).
 
 # The words people say when they want a family made.
 utterances:
@@ -139,6 +163,7 @@ utterances:
 
 # CAPABILITIES, never fragment ids - in the order the purpose gives.
 needs:
+  - REPORT_FAMILY_TEMPLATE
   - SET_FAMILY_CATEGORY
   - SET_FAMILY_SETTINGS
   - ADD_FAMILY_PARAMETERS
@@ -165,14 +190,18 @@ needs:
   - PLACE_NESTED_FAMILY
   - LOCK_NESTED_FAMILY_TO_PLANES
   - LINK_NESTED_TYPE_PARAMETER
+  - ADD_FAMILY_TYPE_PARAMETER
   - LINK_FAMILY_PARAMETER
   - SET_FAMILY_FORM_MATERIAL
   - SET_FAMILY_FORM_SUBCATEGORY
   - SET_FAMILY_FORM_VISIBILITY
   - DRAW_FAMILY_SYMBOLIC_LINES
+  - DRAW_FAMILY_FILLED_REGION
+  - ADD_FAMILY_FLIP_CONTROL
   - REPORT_FAMILY_FORMS
   # The proof, and never skipped.
   - FLEX_FAMILY
+  - REPORT_FAMILY_TYPE_CATALOG
 
 # What must be true BEFORE it runs, so it fails early with something
 # useful instead of deep inside a transaction (docs/09 s2).
@@ -190,5 +219,9 @@ note: >
   capability ... maybe I will give only an image", to every form, the locks, a
   round size, voids that cut, a form's own fields linked, Is Reference,
   arrays, plan symbols, nested families, the family's own settings, shared
-  parameters, and a family read from a picture. Every step is DRAFT
-  until it has been run on a real family with a negative case (D-30).
+  parameters, and a family read from a picture. Widened again 2026-10-02, on
+  the owner's word "line based, ceiling based, patterns, floor based, wall
+  based ... all kind", with the template report as its first step, a Family
+  Type parameter, filled regions, flip controls and a type catalog, and with
+  a skill of its own for each other kind of family (docs/43). Every step is
+  DRAFT until it has been run on a real family with a negative case (D-30).

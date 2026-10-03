@@ -8,10 +8,10 @@ people who actually do BIM work are worth more than contributions from people wh
 > add-in has since been deployed to Revit 2020, 2024 and 2027, and D-28's executor compiles a
 > fragment's C# inside Revit's own process, so fragments do now meet real models.
 >
-> **272 of the 450 fragments are `PROVEN`** — each on a recorded run against a named model.
-> **178 of the 450 fragments are `DRAFT`**, which is Heron's word for *not proven as it stands* - most
+> **272 of the 464 fragments are `PROVEN`** — each on a recorded run against a named model.
+> **192 of the 464 fragments are `DRAFT`**, which is Heron's word for *not proven as it stands* - most
 > have never met a model, and some were proved before their code changed.
-> **All fourteen skills are still `DRAFT`.** Derived 2026-10-01.
+> **All twenty-four skills are still `DRAFT`.** Derived 2026-10-02.
 >
 > Derive it rather than believing this line —
 > `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.

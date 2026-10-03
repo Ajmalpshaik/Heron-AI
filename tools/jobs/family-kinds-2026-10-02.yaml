@@ -1,0 +1,248 @@
+# The proof of every other kind of family - NEEDS-CHECKING Group BV, rows BV1
+# to BV13, BV17 and BV18 - BV19 and BV20 are family-beam-2026-10-02.yaml, because
+# a record is kept per tool and a second job for one tool would overwrite it:
+#
+#   report-family-template        REPORT_FAMILY_TEMPLATE        FRG-DOC-037
+#   report-family-type-catalog    REPORT_FAMILY_TYPE_CATALOG    FRG-DOC-038
+#   place-adaptive-points         PLACE_ADAPTIVE_POINTS         FRG-GEO-050
+#   draw-family-point-curves      DRAW_FAMILY_POINT_CURVES      FRG-GEO-051
+#   create-conceptual-form        CREATE_CONCEPTUAL_FORM        FRG-GEO-052
+#   create-family-host-opening    CREATE_FAMILY_HOST_OPENING    FRG-GEO-053
+#   set-family-sweep-profile      SET_FAMILY_SWEEP_PROFILE      FRG-GEO-054
+#   add-family-type-parameter     ADD_FAMILY_TYPE_PARAMETER     FRG-PAR-032
+#   draw-family-filled-region     DRAW_FAMILY_FILLED_REGION     FRG-VIEW-117
+#   add-family-flip-control       ADD_FAMILY_FLIP_CONTROL       FRG-VIEW-118
+#   draw-family-detail-lines      DRAW_FAMILY_DETAIL_LINES      FRG-VIEW-119
+#   set-family-settings, widened  SET_FAMILY_SETTINGS           FRG-DOC-036
+#   set-family-connector-roles    SET_FAMILY_CONNECTOR_ROLES    FRG-MEP-055  (BV17)
+#   set-family-light-source       SET_FAMILY_LIGHT_SOURCE       FRG-MEP-056  (BV18)
+#
+#     python tools/batch-prove.py tools/jobs/family-kinds-2026-10-02.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/family-kinds-2026-10-02.yaml
+#
+# THE ARRANGEMENT IS THE NEW FAMILIES BELOW AND ONE PROJECT, each made by
+# hand before the run with File, New, Family (or Project) and the metric
+# template named, saved once under the title below so `in:` can name it,
+# and left OPEN - nothing built in them beyond what is said:
+#
+#   "Heron Family Forms Test"    Generic Model - Group BL's, with a 600 x 400
+#                                box and one sweep (create-family-sweep, path
+#                                "0,0; 1000,0" on Ref. Level)
+#   "Heron Wall Based Test"      Generic Model wall based
+#   "Heron Floor Based Test"     Generic Model floor based
+#   "Heron Face Based Test"      Generic Model face based, with one void box
+#   "Heron Adaptive Test"        Generic Model Adaptive
+#   "Heron Pattern Panel Test"   Curtain Panel Pattern Based
+#   "Heron Detail Item Test"     Detail Item
+#   "Heron Profile Test"         Profile, with four planes Left Edge, Right
+#                                Edge, Bottom Edge, Top Edge at X -25, X 25,
+#                                Y 0, Y 50; loaded into "Heron Family Forms
+#                                Test" afterwards as "Heron Test Profile",
+#                                type "50x50"
+#   "Heron Family Constraints Test"  Group BM's and BR's, with "Heron Nested
+#                                Box" types 300 and 450 loaded and one copy
+#                                placed, and host types Small and Large
+#   "Heron Coil Test"            Mechanical Equipment, with two pipe
+#                                connectors on faces lying on planes "Water
+#                                In" and "Water Out", System
+#                                Classification Global (BV17)
+#   "Heron Lighting Test"        Lighting Fixture, Light Source ticked by
+#                                hand in Family Category and Parameters,
+#                                one type (BV18)
+#   "Heron Kinds Project"        a PROJECT, new from the metric Architectural
+#                                template and saved under this title - the
+#                                negative for the two READ reports, which in a
+#                                project say it is not a family and return
+#                                nothing else. Another family will not do: a
+#                                report there returns its own content, and the
+#                                runner's judge reads that as NEG NOT EMPTY
+#
+# SOME VALUES ARE IDS, written here as PLACEHOLDERS: the four line ids
+# create-conceptual-form is built on, and the sweep's id set-family-sweep-profile
+# names (from report-family-forms). THE FOUR LINES MUST BE IN "Heron Pattern
+# Panel Test" BEFORE THE RUN AND KEPT - the template's own lines between its
+# tile pattern points, which report-family-template's `lineList` gives, or
+# lines drawn through Heron as usual or by hand. Never the ones the
+# draw-family-point-curves job below draws: the jobs run one after the other
+# with nothing between them, and write: true rolls that job back.
+# `--dry-run` says WOULD RUN with a placeholder still in - replace each before
+# the real run.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK -
+# LOOK at each family afterwards anyway: rollback has failed before on this PC
+# (BD1). The two reports are READ and run with `write: false`.
+#
+# With two Revits connected to Heron, add `--session <process id>` to both
+# commands.
+
+model: The new families and the one project named above, from the metric templates, Revit 2024
+
+defaults:
+  write: true
+
+jobs:
+  - fragment: report-family-template
+    in: "Heron Wall Based Test"
+    negative-in: "Heron Kinds Project"
+    write: false
+    expect: familyKind
+    note: >
+      Positive reads wall-based with one wall; negative, in the project, says
+      it is not a family and returns nothing else. Run again in each template
+      BV1 names - the plain Generic Model reading level-based, no host - and
+      record Host's words.
+
+  - fragment: draw-family-filled-region
+    in: "Heron Detail Item Test"
+    expect: regionId
+    set:
+      workPlane: "Ref. Level"
+      shapes: "rect -300,-50 300,50"
+      regionType: "Solid Black"
+    negative-set:
+      workPlane: "Ref. Level"
+      shapes: "rect -300,-50 300,50"
+      regionType: "Not A Type"
+
+  - fragment: add-family-flip-control
+    in: "Heron Family Forms Test"
+    expect: controlIds
+    set:
+      view: "Ref. Level"
+      controls: "single horizontal 0,-400 | single vertical 400,0"
+    negative-set:
+      view: "Ref. Level"
+      controls: "diagonal 0,0"
+
+  - fragment: place-adaptive-points
+    in: "Heron Adaptive Test"
+    negative-in: "Heron Family Forms Test"
+    expect: pointIds
+    set:
+      points: "0,0,0; 1000,0,0; 1000,1000,0; 0,1000,0"
+      pointKind: "placement"
+
+  - fragment: draw-family-point-curves
+    in: "Heron Pattern Panel Test"
+    expect: curveIds
+    set:
+      curves: "1,2 | 2,3 | 3,4 | 4,1"
+      referenceLines: true
+    negative-set:
+      curves: "1,9"
+      referenceLines: true
+
+  - fragment: create-conceptual-form
+    in: "Heron Pattern Panel Test"
+    expect: formId
+    set:
+      # PLACEHOLDER - the four line ids, commas between.
+      profiles: "LINE-ID-1,LINE-ID-2,LINE-ID-3,LINE-ID-4"
+      depthMm: ""
+      path: ""
+      axis: ""
+      angleDegrees: ""
+      solid: true
+    negative-set:
+      # PLACEHOLDER - three of the four, so the profile does not close.
+      profiles: "LINE-ID-1,LINE-ID-2,LINE-ID-3"
+      depthMm: ""
+      path: ""
+      axis: ""
+      angleDegrees: ""
+      solid: true
+
+  - fragment: set-family-settings
+    in: "Heron Face Based Test"
+    expect: changed
+    set:
+      settings: "Cut with Voids When Loaded=yes"
+    negative-set:
+      settings: "Part Type=Sprocket"
+
+  - fragment: add-family-type-parameter
+    in: "Heron Family Constraints Test"
+    expect: linked
+    set:
+      parameterName: "Box Type"
+      category: "Generic Models"
+      instance: false
+      parameterGroup: ""
+      elements: "Heron Nested Box"
+      typeValues: "Small=300; Large=450"
+    negative-set:
+      parameterName: "Light Type"
+      category: "Lighting Fixtures"
+      instance: false
+      parameterGroup: ""
+      elements: "Heron Nested Box"
+      typeValues: ""
+
+  - fragment: report-family-type-catalog
+    in: "Heron Family Constraints Test"
+    negative-in: "Heron Kinds Project"
+    write: false
+    expect: catalogText
+    note: >
+      Positive: one line per host type, Small and Large; negative, in the
+      project, says it is not a family and returns nothing else.
+
+  - fragment: draw-family-detail-lines
+    in: "Heron Profile Test"
+    expect: lineIds
+    set:
+      view: "Ref. Level"
+      shapes: "rect -25,0 25,50"
+      subcategory: "none"
+      lockToPlanes: true
+    negative-set:
+      view: "Ref. Level"
+      shapes: "path 0,0; 100,0"
+      subcategory: "none"
+      lockToPlanes: true
+
+  - fragment: create-family-host-opening
+    in: "Heron Wall Based Test"
+    negative-in: "Heron Floor Based Test"
+    expect: openingId
+    set:
+      shape: "rect -300,600 300,1200"
+
+  - fragment: set-family-sweep-profile
+    in: "Heron Family Forms Test"
+    expect: changed
+    set:
+      # PLACEHOLDER - the sweep's id, from report-family-forms.
+      sweeps: "SWEEP-ID"
+      profile: "Heron Test Profile : 50x50"
+      flipped: false
+    negative-set:
+      sweeps: "SWEEP-ID"
+      profile: "Not Loaded : 1"
+      flipped: false
+
+  - fragment: set-family-connector-roles
+    in: "Heron Coil Test"
+    negative-in: "Heron Family Forms Test"
+    expect: connectorReport
+    set:
+      primary: "Water In"
+      links: "Water In > Water Out"
+    note: >
+      Positive: Water In PRIMARY, the pair linked both ways - record whether
+      the card's finding says it set the second end itself. Negative: a family
+      with no connectors, refused with nothing changed.
+
+  - fragment: set-family-light-source
+    in: "Heron Lighting Test"
+    negative-in: "Heron Family Forms Test"
+    expect: lightReport
+    set:
+      shape: "circle 200"
+      distribution: "spot 30 60"
+      intensity: "1500 lm"
+      colorTemperature: "3000 K"
+      typeName: ""
+    note: >
+      Positive: Type Properties shows 30 and 60 degrees, 1500 lm, 3000 K -
+      record each display. Negative: no Light Source tick, refused naming it.

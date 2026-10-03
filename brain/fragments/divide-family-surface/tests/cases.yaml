@@ -1,0 +1,36 @@
+positive:
+  - given: >
+      a new family from the metric Mass template with a box made by
+      create-conceptual-form - a 6000 x 3000 profile pushed 9000 mm up; form
+      its id, face "front", uGrid "6", vGrid "3000 mm", pattern ""
+    expect: >
+      the front face divided - U by Number 6, V 3000 mm apart - with the
+      gridline counts Revit made, read back; RECORD whether Number 6 gave six
+      cells or six lines (BV21); LOOKED AT in the Family Editor
+
+  - given: >
+      the same mass with "Heron Pattern Panel Test" (BV1's pattern-based
+      panel) loaded; form the same, face "back", uGrid "4", vGrid "4",
+      pattern "Heron Pattern Panel Test : Heron Pattern Panel Test"
+    expect: >
+      the back face divided and filled with the panel family, its type read
+      back; each cell holds a panel
+
+negative:
+  - given: face "front" again on the same form
+    expect: refused - that face is already divided, naming its surface - nothing changed
+
+  - given: pattern "Not A Pattern"
+    expect: refused naming the patterns and panels Revit offers - nothing kept
+
+  - given: a plain Generic Model family with an extrusion's id
+    expect: refused - not a mass, adaptive or pattern-based family - nothing made
+
+  - given: a project in front
+    expect: notAFamily true and nothing divided
+
+second_route:
+  - >
+      In the Family Editor, select the divided surface: Properties shows its
+      U Grid and V Grid layout, number or distance, and the Type Selector its
+      pattern or panel

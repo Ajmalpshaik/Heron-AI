@@ -1,0 +1,92 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-051
+semantic-identity: "draw lines or splines through the points of an adaptive or pattern-based family, so they move with the points"
+kind: action
+domain: revit.families
+capability: DRAW_FAMILY_POINT_CURVES
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws LINES AND SPLINES THROUGH POINTS in an adaptive component, a
+  pattern-based panel or a mass open in the Family Editor - Spline Through
+  Points, or a line picked between two points. A curve drawn through the
+  points is hosted by them and moves when they move, which is what makes a
+  panel follow the cell it is placed in and an adaptive beam follow its two
+  clicks. A form built on these curves follows in turn.
+
+  **THE POINTS ARE NAMED BY PLACEMENT NUMBER** - "1,2" - or by unique id, one
+  curve per group, `|` between groups: "1,2 | 2,3 | 3,4 | 4,1" is the four
+  edges of a panel. Two points make a line, three or more a spline through all
+  of them in the order given.
+
+  **REFERENCE LINES OR MODEL LINES, THE CALLER'S CHOICE.** A reference line
+  builds geometry and is not seen in a project; a model line is.
+
+  **READ BACK, ALL OR NOTHING**: each curve's points are read again in order;
+  one that does not run through the points asked fails the call. The curves'
+  ids come back for CREATE_CONCEPTUAL_FORM.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Points by placement number or id, commas between, `|` between curves -
+    # "1,2 | 2,3 | 3,4 | 4,1".
+    - name: curves
+      type: string
+      source: request
+    # True for reference lines, false for model lines.
+    - name: referenceLines
+      type: bool
+      source: request
+  provides:
+    - name: curveIds
+      # The new curves' unique ids, commas between, in the order given.
+      role: result
+      type: string
+    - name: drawnCurves
+      # Every curve as read back - line or spline, id, the points, length - on
+      # ONE line.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was drawn, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyItemFactory.NewCurveByPoints(ReferencePointArray)` - which Autodesk's
+  remarks say throws outside a conceptual family - and
+  `CurveByPoints.IsReferenceLine` and `GetPoints` read the same 2020 through
+  2027 (the RevitAPI reference assemblies and XML remarks, read 2026-10-01).
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "draw lines between the adaptive points"      -> here
+#   "draw a spline through these points"          -> here
+#   "add four adaptive points to this family"     -> PLACE_ADAPTIVE_POINTS
+#   "make a surface from these lines"             -> CREATE_CONCEPTUAL_FORM
+
+utterances:
+  - draw lines between the adaptive points
+  - connect points 1 2 3 and 4 with reference lines
+  - draw a spline through these points
+  - join the panel points with lines

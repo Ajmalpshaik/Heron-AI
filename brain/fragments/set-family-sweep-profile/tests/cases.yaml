@@ -1,0 +1,35 @@
+positive:
+  - given: >
+      a Generic Model family with a sweep made by create-family-sweep (path
+      "0,0; 1000,0" on Ref. Level), and the profile family "Heron Test Profile"
+      (type "50x50") from BV11 loaded into it; sweeps the sweep's id, profile
+      "Heron Test Profile : 50x50", flipped false
+    expect: >
+      changed 1; the sweep reading that profile and a solid of about 2.5 L
+      (50 x 50 x 1000 mm); LOOKED AT - RECORD whether Revit took the Profile on
+      a sweep first drawn with a sketched one (BV13)
+
+  - given: >
+      a LOPSIDED profile - a second profile family drawn "rect 0,0 50,50", all
+      on one side of its origin, loaded as "Heron Lopsided Profile : 50x50" -
+      first flipped false, then the same call with flipped true
+    expect: >
+      the profile reads flipped, and the solid's box has moved to the OTHER
+      side of the path - a symmetric profile cannot show a flip, so BV11's is
+      not used for this case; flipped false afterwards reads unflipped and the
+      finding says so
+
+negative:
+  - given: >
+      profile "Not Loaded : 1"
+    expect: refused naming the profiles the family holds, nothing changed
+
+  - given: sweeps the id of a swept blend
+    expect: refused - a swept blend has two profiles - nothing changed
+
+  - given: a project in front
+    expect: notAFamily true and nothing changed
+
+second_route:
+  - >
+      In the Family Editor, select the sweep and read Profile in its Properties

@@ -1,0 +1,30 @@
+positive:
+  - given: >
+      a Generic Model family in a metric project template's units with Length
+      type parameters Width and Height and a Text type parameter Description,
+      and three types "600 x 400", "900 x 400" and "1200 x 600" with their
+      sizes
+    expect: >
+      catalogText's first line ",Width##LENGTH##MILLIMETERS,Height##LENGTH##MILLIMETERS,Description##OTHER##"
+      - the kind and unit words as Revit gives them - and one line per type,
+      "1200 x 600,1200,600,..."; typeCount 3; fileName the family's path with
+      .txt
+
+  - given: the same family with a formula "Depth = Width / 2"
+    expect: Depth named in leftOut as formula-driven, and not a column
+
+negative:
+  - given: >
+      a family whose only type parameter is a Material parameter - nothing a
+      catalog spells
+    expect: >
+      a header line with no columns, the type names alone, and leftOut naming
+      the material parameter as holding an element - nothing invented for it
+
+  - given: a project in front
+    expect: notAFamily true and nothing read
+
+second_route:
+  - >
+      File > Export > Family Types in the Family Editor writes Revit's own
+      catalog of the same family - its header words compared with these
