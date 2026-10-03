@@ -1257,7 +1257,7 @@ def report_undeclared(fragment, values, needs):
 
 
 def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
-                 expect=None):
+                 expect=None, in_document=None):
     """
     Run one fragment's C# against the open model - D-28's executor, reached.
 
@@ -1284,6 +1284,13 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
     `writing` it is refused here, and the refusal names the switch. Rolling
     back does not unwrite a file: an export sent without `apply_it` has still
     written what it wrote.
+
+    `in_document` NAMES THE MODEL, kept writes included. The add-in honours a
+    `document` key on every run (RevitFragment.cs, "THE ACTIVE DOCUMENT IS A
+    CHOICE, NOT A LIMIT"); this is the command line saying it the way
+    `validate --in` and `prove --in` already do. Without it the run lands on
+    whatever window is in front, which is how a family editor two windows
+    back could only be reached by patching Bridge.request (2026-10-04).
     """
     # This one needs a pipe. Said here rather than in main(), so that a
     # command line nobody could run anywhere is refused on its own terms
@@ -1362,6 +1369,8 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
             args["chain"] = "reset"
         if values:
             args["values"] = values
+        if in_document:
+            args["document"] = in_document
         # A STRING, because Heron's own JSON reader reads strings and nothing
         # else - the same reason a distance crosses as one. See ReadDistance.
         if writing and apply_it:
@@ -1390,6 +1399,13 @@ def cmd_fragment(name, values=None, writing=False, apply_it=False, session=None,
             continue
 
         print("%s - ran on Revit %s (session %s)" % (name, bridge.revit_version, bridge.pid))
+
+        # WHICH MODEL IT LANDED ON, said every time. A kept write is only
+        # checkable if the line above it names the document it changed, and
+        # with --in that is a model nobody is looking at.
+        print("    document: %s" % (reply.get("document") or "(unnamed)"))
+        if reply.get("wasActiveDocument") is False:
+            print("    NOT the document on screen - reached by name.")
 
         # WHETHER THE MODEL WAS LEFT CHANGED. A rolled-back write and a kept
         # one report identical counts, because the fragment did the work in
@@ -2569,6 +2585,9 @@ def main(argv):
             rest = [r for r in rest if r not in ("--write", "--apply")]
         if rest is None or not rest:
             print("Which fragment? e.g. list-levels")
+            print("  --in \"Doc\"              run against a model that is open but not")
+            print("                          in front - before the fragment name, as")
+            print("                          with validate. Writes too, --apply included")
             print("  --view \"Level 1\"        a view the fragment asks the caller for")
             print("  --set name=value        any other value it asks for")
             print("  --session <pid>         which Revit, when more than one is connected")
@@ -2587,14 +2606,31 @@ def main(argv):
             print("--apply only means something with --write. A read leaves nothing to keep.")
             return 2
         rest, session = pull_session(rest)
+        # fragment --in "Doc" <name> ...  the same place validate and prove
+        # read it: in front of the fragment name.
+        in_document = None
+        if rest and rest[0] == "--in":
+            if len(rest) < 2:
+                print("--in needs the title of an open document after it")
+                return 2
+            in_document = rest[1]
+            rest = rest[2:]
+        # --in AFTER the name is refused, not ignored. Ignored, it would send
+        # the run - a kept write among them - to whatever window is in front.
+        if "--in" in rest[1:]:
+            print("--in goes before the fragment name:")
+            print("  fragment --in \"Project1\" %s ..." % rest[0])
+            print("Nothing was sent to Revit.")
+            return 2
         if not rest:
             print("Which fragment? e.g. list-levels")
+            print("               or  fragment --in \"Project1\" list-levels")
             return 2
         values = caller_values(pairs)
         if values is None:
             return 2
         return cmd_fragment(rest[0], values, writing, apply_it, session=session,
-                            expect=expect)
+                            expect=expect, in_document=in_document)
     if argv[1] == "validate":
         rest, pairs, negatives, setup_pairs, negative_setup_pairs = pull_values(argv[2:])
         if rest is None:
