@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -92,6 +92,46 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
+    Revit 2024, session 32340'
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned addParameter RuntimeMethodInfo,
+    added 1 item(s) [Neck Width (Length, instance, under Dimensions)], alreadyThere 0 item(s),
+    dbNamespace Autodesk.Revit.DB, describe Func`2, findings 2 item(s) [Added 1 parameter(s),
+    read back from the family: Neck Width ..., They hold NO value yet - a new length reads
+    0 in every type....], flags BindingFlags, groupInternalNames 124 entry(ies), groupLabel
+    Func`2, groupNamed Func`3, groupType RuntimeType, groupValue ForgeTypeId, groups 124 item(s)
+    [[Cross-Section Definition, Autodesk.Revit.DB.ForgeTypeId], [Visibility, Autodesk.Revit.DB.ForgeTypeId],
+    [Extents, Autodesk.Revit.DB.ForgeTypeId], ...], idText Func`2, instance true, kindKey
+    length, kindLabel Func`2, kindNames 3 item(s) [Length, SpecTypeId, Length], kinds 10 entry(ies),
+    names 1 item(s) [Neck Width], notAFamily false, refused (null), repeated 0 item(s), revitAssembly
+    RuntimeAssembly, sameKind Func`3, specFor Func`2, specOf Func`2, specType RuntimeType,
+    specValue ForgeTypeId, squash Func`2, wantedGroup Dimensions. inputs came parameterNames
+    as given (1); kind as given; instance as given; parameterGroup as given. on Family1'
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned addParameter RuntimeMethodInfo, added 0 item(s), alreadyThere
+    0 item(s), dbNamespace Autodesk.Revit.DB, describe Func`2, findings 1 item(s) [The document
+    in front is a project, not a family open in the...], flags BindingFlags, groupInternalNames
+    124 entry(ies), groupLabel Func`2, groupNamed Func`3, groupType RuntimeType, groupValue
+    (null), groups 124 item(s) [[Cross-Section Definition, Autodesk.Revit.DB.ForgeTypeId],
+    [Visibility, Autodesk.Revit.DB.ForgeTypeId], [Extents, Autodesk.Revit.DB.ForgeTypeId],
+    ...], idText Func`2, instance true, kindKey length, kindLabel Func`2, kindNames 3 item(s)
+    [Length, SpecTypeId, Length], kinds 10 entry(ies), names 1 item(s) [Neck Width], notAFamily
+    true, refused The document in front is a project, not a family open in the Family Editor,
+    so it takes no family parameters. A project parameter is ADD_PROJECT_PARAMETER's job;
+    to work on a family, open it first., repeated 0 item(s), revitAssembly RuntimeAssembly,
+    sameKind Func`3, specFor Func`2, specOf Func`2, specType RuntimeType, specValue (null),
+    squash Func`2, wantedGroup Dimensions. inputs came parameterNames as given (1); kind as
+    given; instance as given; parameterGroup as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: cd90fcf6f08df8aa
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

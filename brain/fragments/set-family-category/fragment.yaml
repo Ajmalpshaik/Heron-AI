@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -81,6 +81,30 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
+    Revit 2024, session 32340'
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned category Mechanical Equipment,
+    changed true, findings 2 item(s) [The family was "Generic Models" and is now "Mechanical
+    Equip..., The parameter count did not change.], notAFamily false, parametersGained 0,
+    refused (null), wanted Mechanical Equipment, wasCategory Generic Models. inputs came categoryName
+    as given. on Family1
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned category , changed false, findings 1 item(s) [The document
+    in front is a project, not a family open in the...], notAFamily true, parametersGained
+    0, refused The document in front is a project, not a family open in the Family Editor,
+    so it has no family category to change. Open the family first - OPEN_FAMILY_FOR_EDITING
+    for one loaded in the project, or File, New, Family for a new one., wanted Mechanical
+    Equipment, wasCategory . inputs came categoryName as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 0e673500166b6b37
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

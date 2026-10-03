@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -64,6 +64,39 @@ contract:
       type: bool
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
+    Revit 2024, session 32340'
+  positive_case: 'run as it would normally be run. returned combinationList , findings 1 item(s)
+    [4 form(s) of 4 in the family; 0 join(s) or cut(s).], formCount 4, formList solid extrusion
+    bfa50ce5-921a-49fe-86b2-5220cec4d34a-00000b71 (on Ref. Level): X -300 to 300, Y -200 to
+    200, Z 0 to 500 mm, 120 L, subcategory (the family''s own), shows in coarse, medium, fine
+    | plan, front/back, left/right  ||  void extrusion bfa50ce5-921a-49fe-86b2-5220cec4d34a-00000b80
+    (on Ref. Level): X -50 to 50, Y -50 to 50, Z 0 to 500 mm, subcategory (the family''s own),
+    shows in coarse, medium, fine | plan, front/back, left/right  ||  solid extrusion bfa50ce5-921a-49fe-86b2-5220cec4d34a-00000b85
+    (on Ref. Level): X -1500 to -1300, Y -100 to 100, Z 0 to 200 mm, 8 L, subcategory (the
+    family''s own), shows in coarse, medium, fine | plan, front/back, left/right  ||  solid
+    revolve bfa50ce5-921a-49fe-86b2-5220cec4d34a-00000b78 (on Center (Front/Back)): X 700
+    to 900, Y -98.5 to 98.5, Z 0 to 300 mm, 9.424 L, subcategory (the family''s own), shows
+    in coarse, medium, fine | plan, front/back, left/right, invariant CultureInfo, joins 0
+    item(s), kindOf Func`2, known 8 item(s) [solid, void, extrusion, ...], mm Func`2, notAFamily
+    false, planeOf Func`2, rows 4 item(s) [solid extrusion bfa50ce5-921a-49fe-86b2-5220cec4d34a-00000b7...,
+    void extrusion bfa50ce5-921a-49fe-86b2-5220cec4d34a-00000b80..., solid extrusion bfa50ce5-921a-49fe-86b2-5220cec4d34a-00000b8...,
+    ...], scanned 4, squash Func`2, unknown 0 item(s), words 0 item(s). inputs came which
+    as given. on Family1'
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports. returned combinationList , findings 1 item(s) [The document in
+    front is a project, not a family open in the...], formCount 0, formList , invariant CultureInfo,
+    joins 0 item(s), kindOf Func`2, known 8 item(s) [solid, void, extrusion, ...], mm Func`2,
+    notAFamily true, planeOf Func`2, rows 0 item(s), scanned 0, squash Func`2, unknown 0 item(s),
+    words 0 item(s). inputs came which as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 618a2699859aa0af
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

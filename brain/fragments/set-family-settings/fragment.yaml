@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -83,6 +83,39 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
+    Revit 2024, session 32340'
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadySet 0, changed 2, family
+    Family, findings 3 item(s) [2 setting(s) changed and 0 already as asked, on the family
+    "..., A Work Plane-Based family is placed on a plane or face and m..., Shared decides
+    whether a copy nested in another family shows...], listOf Func`3, named 4 entry(ies),
+    namedTypes 4 entry(ies), notAFamily false, plans 2 item(s) [((workplanebased, Work Plane-Based,
+    FAMILY_WORK_PLANE_BASED)..., ((shared, Shared, FAMILY_SHARED), 1)], problems 0 item(s),
+    refused (null), sectionShapeProperty RuntimePropertyInfo, settingReport Work Plane-Based
+    No -> Yes; Shared No -> Yes, squash Func`2, stored Func`2, switches 13 item(s) [(workplanebased,
+    Work Plane-Based, FAMILY_WORK_PLANE_BASED), (alwaysvertical, Always Vertical, FAMILY_ALWAYS_VERTICAL),
+    (shared, Shared, FAMILY_SHARED), ...], wordsFor Func`3, yesNo Func`2. inputs came settings
+    as given (2). on Family1
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned alreadySet 0, changed 0, family (null), findings 1 item(s)
+    [The document in front, "Project1", is a project, not a famil...], listOf Func`3, named
+    4 entry(ies), namedTypes 4 entry(ies), notAFamily true, plans 0 item(s), problems 0 item(s),
+    refused The document in front, "Project1", is a project, not a family open in the Family
+    Editor. A family's own settings are set inside it - open it for editing first (OPEN_FAMILY_FOR_EDITING).
+    Nothing was changed., sectionShapeProperty RuntimePropertyInfo, settingReport , squash
+    Func`2, stored Func`2, switches 13 item(s) [(workplanebased, Work Plane-Based, FAMILY_WORK_PLANE_BASED),
+    (alwaysvertical, Always Vertical, FAMILY_ALWAYS_VERTICAL), (shared, Shared, FAMILY_SHARED),
+    ...], wordsFor Func`3, yesNo Func`2. inputs came settings as given (2). on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: a5169244ceba81e9
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

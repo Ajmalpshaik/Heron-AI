@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -101,6 +101,43 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
+    Revit 2024, session 32340'
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, chosen
+    Tuple`3, connector pipe connector, Domestic Cold Water, round 200 mm, at X 300, Y 0, Z
+    250, pointing right (+X), on the face lying on "Box Right", dbNamespace Autodesk.Revit.DB,
+    face PlanarFace, faceName Box Right, findings 2 item(s) [Made a pipe connector, Domestic
+    Cold Water, round 200 mm, at..., Flow direction, description and electrical load are Revit's
+    ...], flags BindingFlags, halfMillimetre 0.00164041994750656, invariant CultureInfo, isLength
+    Func`2, mm Func`2, notAFamily false, notOffered 4 item(s) [Fitting, Global, UndefinedSystemType,
+    ...], ownName Func`2, pointing Func`2, refused (null), revitAssembly RuntimeAssembly,
+    sameKind Func`3, shownAs 6 entry(ies), sizedBy 1 item(s) [connector diameter <- Neck Diameter],
+    sizes 1 item(s) [Autodesk.Revit.DB.FamilyParameter], spaced Func`2, squash Func`2, systems
+    25 item(s) [(duct, SupplyAir, SupplyAir), (duct, ReturnAir, ReturnAir), (duct, ExhaustAir,
+    ExhaustAir), ...]. inputs came facePlane as given; system as given; sizeParameters as
+    given. on Family1
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, chosen (null), connector
+    , dbNamespace Autodesk.Revit.DB, face (null), faceName Box Right, findings 1 item(s) [The
+    document in front is a project, not a family open in the...], flags BindingFlags, halfMillimetre
+    0.00164041994750656, invariant CultureInfo, isLength Func`2, mm Func`2, notAFamily true,
+    notOffered 4 item(s) [Fitting, Global, UndefinedSystemType, ...], ownName Func`2, pointing
+    Func`2, refused The document in front is a project, not a family open in the Family Editor.
+    A connector is added inside the family - open it first., revitAssembly RuntimeAssembly,
+    sameKind Func`3, shownAs 6 entry(ies), sizedBy 0 item(s), sizes 0 item(s), spaced Func`2,
+    squash Func`2, systems 25 item(s) [(duct, SupplyAir, SupplyAir), (duct, ReturnAir, ReturnAir),
+    (duct, ExhaustAir, ExhaustAir), ...]. inputs came facePlane as given; system as given;
+    sizeParameters as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 1b7f5b610b537227
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -77,6 +77,39 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family3, Project1 - active was Family1,
+    Revit 2024, session 32340'
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned findings 2 item(s) [4 placement
+    point(s) placed and read back. The family now ha..., Lines through these points are DRAW_FAMILY_POINT_CURVES,
+    and...], halfMillimetre 0.00164041994750656, invariant CultureInfo, kind AdaptivePointType,
+    kindWords placement point, mm Func`2, notAFamily false, number Func`2, placedPoints placement
+    point 1 6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d8a at 2000, 0, 0 mm  ||  placement
+    point 2 6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d8b at 3000, 0, 0 mm  ||  placement
+    point 3 6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d8c at 3000, 1000, 0 mm  ||  placement
+    point 4 6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d8d at 2000, 1000, 0 mm, placementBefore
+    0, pointIds 6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d8a,6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d8b,6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d8c,6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d8d,
+    problems 0 item(s), refused (null), squash Func`2, wanted 4 item(s) [(2000,0,0, (6.561679790,
+    0.000000000, 0.000000000), ), (3000,0,0, (9.842519685, 0.000000000, 0.000000000), ), (3000,1000,0,
+    (9.842519685, 3.280839895, 0.000000000), ), ...]. inputs came points as given; pointKind
+    as given. on Family3
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned findings 1 item(s) [The document in front, "Project1",
+    is a project, not a famil...], halfMillimetre 0.00164041994750656, invariant CultureInfo,
+    kind (null), kindWords , mm Func`2, notAFamily true, number Func`2, placedPoints , placementBefore
+    -1, pointIds , problems 0 item(s), refused The document in front, "Project1", is a project,
+    not a family open in the Family Editor. Adaptive points are placed inside an adaptive
+    or pattern-based family - open it first., squash Func`2, wanted 0 item(s). inputs came
+    points as given; pointKind as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: af86a61f0d74ad1e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -69,6 +69,31 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
+    Revit 2024, session 32340'
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned changed 1 item(s) [extrusion bfa50ce5-921a-49fe-86b2-5220cec4d34a-00000b71:
+    coa...], coarse false, findings 2 item(s) [Set 1 form(s) to show in medium, fine, in plan,
+    front/back v..., This is what a PLACED family shows in a project''s views; the...], fine
+    true, front true, kindOf Func`2, medium true, notAFamily false, problems 0 item(s), refused
+    (null), side false, squash Func`2, targets 1 item(s) [Extrusion], top true. inputs came
+    forms as given; detailLevels as given; views as given. on Family1'
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned changed 0 item(s), coarse false, findings 1 item(s) [The
+    document in front is a project, not a family open in the...], fine false, front false,
+    kindOf Func`2, medium false, notAFamily true, problems 0 item(s), refused The document
+    in front is a project, not a family open in the Family Editor. A form's visibility is
+    set inside the family - open it first., side false, squash Func`2, targets 0 item(s),
+    top false. inputs came forms as given; detailLevels as given; views as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 030d066e48dcf787
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

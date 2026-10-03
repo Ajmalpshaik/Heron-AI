@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -83,6 +83,36 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family5, Project1 - active was Family1,
+    Revit 2024, session 32340'
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned chosenFace Reference, divided Divided
+    its front face, 7.5 m2 of form 0a109695-8496-4a0f-90a1-0856ccd2ba77-00007bdf: U number
+    6, 9 gridline(s); V 500 mm apart, 9 gridline(s); pattern Rectangle - surface 0a109695-8496-4a0f-90a1-0856ccd2ba77-00007c0c,
+    read back., faceWords its front face, 7.5 m2, findings 2 item(s) [Divided its front face,
+    7.5 m2 of form 0a109695-8496-4a0f-90..., Whether Revit''s Number counts the divisions
+    or the lines bet...], gridOf Func`3, host Form, invariant CultureInfo, mm Func`2, notAFamily
+    false, patternWord Rectangle, problems 0 item(s), refused (null), squash Func`2, surfaceId
+    0a109695-8496-4a0f-90a1-0856ccd2ba77-00007c0c, uAsked Tuple`3, vAsked Tuple`3. inputs
+    came form as given; face as given; uGrid as given; vGrid as given; pattern as given. on
+    Family5'
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned chosenFace (null), divided , faceWords , findings 1 item(s)
+    [The document in front, "Project1", is a project, not a famil...], gridOf Func`3, host
+    (null), invariant CultureInfo, mm Func`2, notAFamily true, patternWord Rectangle, problems
+    0 item(s), refused The document in front, "Project1", is a project, not a family open
+    in the Family Editor. A surface is divided inside a mass, adaptive or pattern-based family
+    - open it first., squash Func`2, surfaceId , uAsked (null), vAsked (null). inputs came
+    form as given; face as given; uGrid as given; vGrid as given; pattern as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: eaa8d2032972f35e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -111,50 +111,45 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-09-29'
+  date: '2026-10-03'
   by: Ajmal PS
-  model: TRG_MECH_EQP_Fan Coil Unit_FCU_R0, Revit 2024, session 27288 - the count is NOT recorded
-    because 4,949 elements was measured on heron ai bulding, the document in front, and this
-    ran against another one (row 15)
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
+    Revit 2024, session 32340'
   positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned alreadyLinked 0, asked 1 item(s)
-    [(Flow, Designed_Supply_Air_Flow, False)], changed 1, chosen 1 item(s) [Supply Air], classificationOf
-    Func`2, dbNamespace Autodesk.Revit.DB, describe Func`2, everyCategory false, everySystem
-    false, findings 2 item(s) [Family ''TRG_MECH_EQP_Fan Coil Unit_FCU_R0'': 1 link(s) change...,
-    The links are in the family only. Placed units in a project ...], flags BindingFlags,
-    kindName Func`2, kindOf Func`2, leftOut 0, linkReport Duct Connector (Supply Air) id 930423:
-    Flow Actual_Supply_Air_Flow -> Designed_Supply_Air_Flow (reads 250.0 L/s), matched 1,
-    nameOf Func`2, notAFamily false, plans 1 item(s) [(Autodesk.Revit.DB.ConnectorElement,
-    Autodesk.Revit.DB.Param...], reads Func`2, refused (null), revitAssembly RuntimeAssembly,
-    saidCategory Duct Connector, saidSystem Supply Air, sameKind Func`3, sameSystem Func`3,
-    sameWord Func`3, spaced Func`2, squash Func`2. inputs came category as given; system as
-    given; links as given (1). on TRG_MECH_EQP_Fan Coil Unit_FCU_R0'
-  negative_case: 'run with category=Duct Connector, system=Supply Air, links=Flow=Unit_Length
-    instead - chosen because it should not contain what this fragment reports - run inside
-    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
-    alreadyLinked 0, asked 1 item(s) [(Flow, Unit_Length, False)], changed 0, chosen 1 item(s)
-    [Supply Air], classificationOf Func`2, dbNamespace Autodesk.Revit.DB, describe Func`2,
-    everyCategory false, everySystem false, findings 1 item(s) [Nothing was changed. "Unit_Length"
-    (Length) cannot drive "Fl...], flags BindingFlags, kindName Func`2, kindOf Func`2, leftOut
-    0, linkReport , matched 1, nameOf Func`2, notAFamily false, plans 0 item(s), reads Func`2,
-    refused Nothing was changed. "Unit_Length" (Length) cannot drive "Flow" (Air Flow) on
-    Duct Connector (Supply Air) id 930423 - Revit links two parameters only when they hold
-    the same kind of value. The ones that could drive it: Actual_Return_Air_Flow, Actual_Supply_Air_Flow,
-    Designed_Fresh_Air_Flow, Designed_Return_Air_Flow, Designed_Supply_Air_Flow., revitAssembly
-    RuntimeAssembly, saidCategory Duct Connector, saidSystem Supply Air, sameKind Func`3,
-    sameSystem Func`3, sameWord Func`3, spaced Func`2, squash Func`2. inputs came category
-    as given; system as given; links as given (1). on TRG_MECH_EQP_Fan Coil Unit_FCU_R0'
-  second_route: 'BY HAND, in Revit''s own dialog, by Ajmal PS. On 2026-09-28, before this
-    fragment existed, he re-linked the supply duct connector''s Flow to Actual_Supply_Air_Flow
-    and the return duct connector''s Flow to Actual_Return_Air_Flow with the Family Editor''s
-    Associate Family Parameter button - his words, relayed by the session that planned the
-    work, and confirmed by him in this chat on 2026-09-29 ("for the family I already change
-    it"). This fragment''s own read of the same two connectors, with no transaction open,
-    answered exactly those two parameters before any proof ran on 2026-09-28 and after every
-    proof on both days, and the positive case read the supply connector as linked to Actual_Supply_Air_Flow
-    before changing it. What this route cannot see is the rolled-back change itself: after
-    a rollback there is nothing left in the dialog to look at.'
-  fingerprint: ec38de660815c7c6
+    [(Flow, Supply Flow, False)], changed 2, chosen 2 item(s) [Supply Air, Return Air], classificationOf
+    Func`2, dbNamespace Autodesk.Revit.DB, describe Func`2, ductFlow 1 item(s) [id -1013405],
+    everyCategory false, everySystem true, findings 2 item(s) [Family ''Family1'': 2 link(s)
+    changed and 0 already as asked, ..., The links are in the family only. Placed units in
+    a project ...], flags BindingFlags, isFlow Func`2, kindName Func`2, kindOf Func`2, lacking
+    0 item(s), leftOut 0, linkReport Duct Connector (Supply Air) id 2954: Flow not linked
+    -> Supply Flow (reads 0.0 L/s)  ||  Duct Connector (Return Air) id 2955: Flow not linked
+    -> Supply Flow (reads 0.0 L/s), matched 2, nameOf Func`2, notAFamily false, pipeFlow 1
+    item(s) [id -1140213], plans 2 item(s) [(Autodesk.Revit.DB.ConnectorElement, Autodesk.Revit.DB.Param...,
+    (Autodesk.Revit.DB.ConnectorElement, Autodesk.Revit.DB.Param...], quoted Func`2, reads
+    Func`2, refused (null), revitAssembly RuntimeAssembly, saidCategory Duct Connector, saidSystem
+    all, sameKind Func`3, sameSystem Func`3, sameWord Func`3, spaced Func`2, squash Func`2,
+    systemWords Func`2, whatEachLacks Func`1. inputs came category as given; system as given;
+    links as given (1). on Family1'
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned alreadyLinked 0, asked 0 item(s), changed 0, chosen 0
+    item(s), classificationOf Func`2, dbNamespace Autodesk.Revit.DB, describe Func`2, ductFlow
+    1 item(s) [id -1013405], everyCategory false, everySystem true, findings 1 item(s) [The
+    document in front, "Project1", is a project, not a famil...], flags BindingFlags, isFlow
+    Func`2, kindName Func`2, kindOf Func`2, lacking 0 item(s), leftOut 0, linkReport , matched
+    0, nameOf Func`2, notAFamily true, pipeFlow 1 item(s) [id -1140213], plans 0 item(s),
+    quoted Func`2, reads Func`2, refused The document in front, "Project1", is a project,
+    not a family open in the Family Editor. A link between an element's parameter and a family
+    parameter lives inside the family - open it for editing first (OPEN_FAMILY_FOR_EDITING).
+    Nothing was changed., revitAssembly RuntimeAssembly, saidCategory Duct Connector, saidSystem
+    all, sameKind Func`3, sameSystem Func`3, sameWord Func`3, spaced Func`2, squash Func`2,
+    systemWords Func`2, whatEachLacks Func`1. inputs came category as given; system as given;
+    links as given (1). on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 98be486c00c237c2
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

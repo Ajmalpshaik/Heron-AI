@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -80,6 +80,40 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family6, Project1 - active was Family1,
+    Revit 2024, session 32340'
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, call
+    RuntimeMethodInfo, category Category, drawn A masking region on the view "Ref. Level":
+    1 loop(s), 800 mm of boundary - read back., family Family, fillType (null), findings 2
+    item(s) [A masking region on the view "Ref. Level": 1 loop(s), 800 mm..., Its boundary
+    lines take Revit''s thin lines. A region only so...], inPlane 3 item(s) [System.Int32[],
+    System.Int32[], System.Int32[]], invariant CultureInfo, isCategory Func`2, loopOf Func`3,
+    loops 1 item(s) [System.Collections.Generic.List`1[System.Double[]]], masking true, mm
+    Func`2, notAFamily false, number Func`2, ownName Func`2, pair Func`2, plain Func`2, plane
+    (null), problems 0 item(s), refused (null), regionId acf0fdea-d4a9-4233-8640-8550d6407a48-000008fa,
+    shortest 0.7803686370625, squash Func`2, twoD true, view ViewPlan. inputs came workPlane
+    as given; shapes as given; regionType as given. on Family6'
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, call (null), category (null),
+    drawn , family (null), fillType (null), findings 1 item(s) [The document in front, "Project1",
+    is a project, not a famil...], inPlane 3 item(s) [System.Int32[], System.Int32[], System.Int32[]],
+    invariant CultureInfo, isCategory Func`2, loopOf Func`3, loops 0 item(s), masking true,
+    mm Func`2, notAFamily true, number Func`2, ownName Func`2, pair Func`2, plain Func`2,
+    plane (null), problems 0 item(s), refused The document in front, "Project1", is a project,
+    not a family open in the Family Editor. A region in a project's view is CREATE_FILLED_REGION;
+    this one draws inside a family - open it first., regionId , shortest 0.7803686370625,
+    squash Func`2, twoD false, view (null). inputs came workPlane as given; shapes as given;
+    regionType as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 2057037ad6d1ea1f
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

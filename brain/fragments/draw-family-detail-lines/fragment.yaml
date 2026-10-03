@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -82,6 +82,43 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family6, Project1 - active was Family1,
+    Revit 2024, session 32340'
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, category
+    Category, drawn 5 detail line(s) in 2 shape(s) in "Ref. Level", 1200 mm in all, on Revit's
+    default style, "Detail Items", 1 lock(s) to Center (Front/Back) and 4 straight line(s)
+    on no named plane - read back., family Family, findings 1 item(s) [5 detail line(s) in
+    2 shape(s) in "Ref. Level", 1200 mm in a...], halfMillimetre 0.00164041994750656, inPlane
+    3 item(s) [System.Int32[], System.Int32[], System.Int32[]], invariant CultureInfo, isCategory
+    Func`2, lineIds acf0fdea-d4a9-4233-8640-8550d6407a48-000008f2,acf0fdea-d4a9-4233-8640-8550d6407a48-000008f3,acf0fdea-d4a9-4233-8640-8550d6407a48-000008f4,acf0fdea-d4a9-4233-8640-8550d6407a48-000008f5,acf0fdea-d4a9-4233-8640-8550d6407a48-000008f6,
+    lockToPlanes true, loopOf Func`3, mm Func`2, notAFamily false, number Func`2, onCategory
+    true, openOf Func`3, ownName Func`2, pair Func`2, pieces 2 item(s) [(System.Collections.Generic.List`1[System.Double[]],
+    True), (System.Collections.Generic.List`1[System.Double[]], False)], plain Func`2, problems
+    0 item(s), profile false, refused (null), shortest 0.7803686370625, squash Func`2, target
+    ViewPlan, twoD true, wanted Category, wantedName none. inputs came view as given; shapes
+    as given; subcategory as given; lockToPlanes as given. on Family6
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, category (null), drawn ,
+    family (null), findings 1 item(s) [The document in front, "Project1", is a project, not
+    a famil...], halfMillimetre 0.00164041994750656, inPlane 3 item(s) [System.Int32[], System.Int32[],
+    System.Int32[]], invariant CultureInfo, isCategory Func`2, lineIds , lockToPlanes true,
+    loopOf Func`3, mm Func`2, notAFamily true, number Func`2, onCategory true, openOf Func`3,
+    ownName Func`2, pair Func`2, pieces 0 item(s), plain Func`2, problems 0 item(s), profile
+    false, refused The document in front, "Project1", is a project, not a family open in the
+    Family Editor. Lines in a project's view are CREATE_LINE; these are drawn inside a 2D
+    family - open it first., shortest 0.7803686370625, squash Func`2, target (null), twoD
+    false, wanted (null), wantedName none. inputs came view as given; shapes as given; subcategory
+    as given; lockToPlanes as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 4a8b59b8ff1c56b1
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
