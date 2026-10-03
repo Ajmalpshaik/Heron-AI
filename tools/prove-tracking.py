@@ -297,6 +297,19 @@ def judge(rows):
                   "input" % (len(rows), len(seen)))
 
 
+def split_values(text):
+    """The values to vary, in order.
+
+    A PIPE SEPARATES THEM WHEN ANY IS THERE, because some values carry commas
+    of their own: a point is "304000,303000,0", and a list of points split on
+    commas became six numbers rather than two points. Without a pipe it is
+    commas, as it always was. Same rule as `validate --vary`, row 5b-298.
+    """
+    text = text or ""
+    separator = "|" if "|" in text else ","
+    return [v.strip() for v in text.split(separator) if v.strip()]
+
+
 def run_rows(runner, need_name, values, held, field):
     """(rows, refused). Run once per value and read the declared result.
 
@@ -476,7 +489,8 @@ def main(argv=None):
     parser.add_argument("--vary", required=True, metavar="NEED",
                         help="the `source: request` need to vary")
     parser.add_argument("--values", required=True,
-                        help="at least three DISTINCT values, comma separated")
+                        help="at least three DISTINCT values, comma separated - "
+                             "or separated by | when a value has commas in it")
     parser.add_argument("--expect", metavar="NAME",
                         help="the declared result to track. Needed when the "
                              "fragment declares more than one")
@@ -504,7 +518,7 @@ def main(argv=None):
         return 2
 
     GJ = _sibling("generate-jobs.py")
-    values = [v.strip() for v in args.values.split(",") if v.strip()]
+    values = split_values(args.values)
 
     held, bad = {}, []
     for pair in args.held:

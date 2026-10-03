@@ -42,14 +42,24 @@ foreach (var point in points)
     if (placed == null) { refused++; continue; }
 
     created.Add(placed.Id);
+}
 
-    // Measured, not assumed. A room with no area was placed somewhere the
-    // boundaries do not close, and it looks like every other room in the
-    // schedule.
-    var spatial = placed as SpatialElement;
+// A ROOM OR SPACE HAS NO AREA UNTIL REVIT WORKS ONE OUT, and it does that on
+// regeneration, not on creation. Measured straight after NewSpace, every space
+// read 0 and was named "not enclosed" - 37 of 37 and 42 of 42 on Project2,
+// 2026-10-03, while REPORT_ROOM_SPACE_DATA read the same spaces a moment later
+// as enclosed (5b-298). PLACE_ROOMS learned the same thing on 2026-09-13. So
+// everything is placed first, Revit regenerates once, and then each is measured.
+if (created.Count > 0) doc.Regenerate();
+
+// Measured, not assumed. A room with no area was placed somewhere the
+// boundaries do not close, and it looks like every other room in the schedule.
+foreach (var id in created)
+{
+    var spatial = doc.GetElement(id) as SpatialElement;
     if (spatial == null) continue;
 
     double area = 0;
     try { area = spatial.Area; } catch { }
-    if (area <= 0) unenclosed.Add(placed.Id);
+    if (area <= 0) unenclosed.Add(id);
 }
