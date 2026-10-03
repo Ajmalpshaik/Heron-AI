@@ -15,8 +15,10 @@
 // it, as Revit places it.
 //
 // THE SYSTEM NAME DECIDES DUCT, PIPE OR ELECTRICAL, matched to Revit's own enum
-// names with the spaces taken out. The three enums are read at run time, so a
-// system a later release adds is offered there with no change here.
+// names with the spaces taken out, AND to the name Revit's System
+// Classification list shows where that differs - "Fire Protection Wet" for
+// FireProtectWet. The three enums are read at run time, so a system a later
+// release adds is offered there with no change here.
 //
 // A CONNECTOR THAT CANNOT BE TIED TO ITS SIZE IS NOT LEFT BEHIND AT ONE FOOT.
 // Any refusal after the checks THROWS, and the host rolls the call back.
@@ -37,9 +39,26 @@ var halfMillimetre = 0.5 / 304.8;
 Func<string, string> squash = text =>
     new string((text ?? "").ToLowerInvariant().Where(c => char.IsLetterOrDigit(c)).ToArray());
 
-// "SupplyAir" read as "Supply Air", the way a modeller writes it.
+// WHERE REVIT'S LIST SAYS SOMETHING THE ENUM DOES NOT. The enum says
+// FireProtectWet; System Classification says "Fire Protection Wet", and a
+// modeller types what Revit shows (row 5b-297). A name here is used only when
+// the enum value exists in the release running. Pipe "Other" is left out on
+// purpose: a duct has Other Air, and a bare "Other" would pick the kind.
+var shownAs = new Dictionary<string, string>
+{
+    { "FireProtectWet", "Fire Protection Wet" },
+    { "FireProtectDry", "Fire Protection Dry" },
+    { "FireProtectPreaction", "Fire Protection Pre-Action" },
+    { "FireProtectOther", "Fire Protection Other" },
+    { "SupplyHydronic", "Hydronic Supply" },
+    { "ReturnHydronic", "Hydronic Return" },
+};
+
+// "SupplyAir" read as "Supply Air", the way a modeller writes it - or, where
+// Revit shows it otherwise, as Revit shows it.
 Func<string, string> spaced = name =>
 {
+    if (shownAs.ContainsKey(name)) return shownAs[name];
     var text = new System.Text.StringBuilder();
     for (var i = 0; i < name.Length; i++)
     {
@@ -139,14 +158,16 @@ else
 
     // THE SYSTEM.
     var said = squash(system);
-    var systemMatches = systems.Where(s => squash(s.Item2) == said).ToList();
+    // Either the enum's own name or the name Revit shows for it.
+    var systemMatches = systems.Where(s => squash(s.Item2) == said || squash(spaced(s.Item2)) == said).ToList();
     if (said.Length == 0) problems.Add("No system was named - \"Supply Air\", \"Domestic Cold Water\", \"Power Balanced\".");
     else if (systemMatches.Count == 0)
     {
-        var near = systems.Where(s => squash(s.Item2).Contains(said) || said.Contains(squash(s.Item2)))
+        var near = systems.Where(s => squash(spaced(s.Item2)).Contains(said) || said.Contains(squash(spaced(s.Item2)))
+                || squash(s.Item2).Contains(said) || said.Contains(squash(s.Item2)))
             .Select(s => spaced(s.Item2) + " (" + s.Item1 + ")").Take(8).ToList();
         problems.Add("No connector system is called \"" + system.Trim() + "\"."
-            + (near.Count > 0 ? " Close: " + string.Join(", ", near) + "." : " Revit's names are used - Supply Air, Return Air, Exhaust Air, Domestic Cold Water, Sanitary, Other Pipe, Power Balanced."));
+            + (near.Count > 0 ? " Close: " + string.Join(", ", near) + "." : " Revit's names are used - Supply Air, Return Air, Exhaust Air, Domestic Cold Water, Domestic Hot Water, Hydronic Supply, Hydronic Return, Sanitary, Vent, Fire Protection Wet, Fire Protection Dry, Fire Protection Pre-Action, Fire Protection Other, Other Pipe, Power Balanced."));
     }
     else if (systemMatches.Count > 1)
         problems.Add("\"" + system.Trim() + "\" is a " + string.Join(" and a ", systemMatches.Select(s => s.Item1))

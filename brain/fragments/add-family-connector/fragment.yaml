@@ -36,8 +36,12 @@ purpose: >
 
   **THE SYSTEM DECIDES THE KIND.** "Supply Air" makes a duct connector,
   "Domestic Cold Water" a pipe one, "Power Balanced" an electrical one - matched
-  to Revit's own system names, spaces ignored, never guessed. Revit has no steam
-  system; a steam connection is Other Pipe.
+  to Revit's own system names, spaces ignored, never guessed. The name Revit's
+  System Classification list shows is taken too where it differs from the API's
+  - "Fire Protection Wet", "Fire Protection Pre-Action", "Hydronic Supply" - so
+  what the modeller reads in Revit is what they can type (row 5b-297). A bare
+  "Other" is not taken: a duct has Other Air and a pipe Other Pipe. Revit has no
+  steam system; a steam connection is Other Pipe.
 
   **WHICH WAY ROUND IS MEASURED, NOT ASSUMED.** Revit takes a connector's own
   width direction from the face, not from the family's X, so a parameter named
@@ -67,7 +71,7 @@ contract:
       type: string
       source: request
     # The system, as Revit names it - "Supply Air", "Return Air", "Domestic
-    # Cold Water", "Sanitary", "Power Balanced".
+    # Cold Water", "Sanitary", "Fire Protection Wet", "Power Balanced".
     - name: system
       type: string
       source: request
@@ -130,4 +134,5 @@ utterances:
   - add a connector to this family sized by Neck Width and Neck Depth
   - add a domestic cold water pipe connector on this face
   - add an electrical connector to the family
+  - add a fire protection wet pipe connector to the sprinkler family
   - put a supply air connector on the neck

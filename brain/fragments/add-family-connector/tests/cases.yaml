@@ -17,6 +17,16 @@ positive:
       system "Sanitary", sizeParameters "Drain Size" holding 50
     expect: a pipe connector of 50 mm diameter, pointing out of the stub
 
+  - given: >
+      a Sprinklers family with a pipe stub, its end on the plane Inlet End,
+      system "Fire Protection Wet" - the name Revit's System Classification
+      list shows, not the API's FireProtectWet - sizeParameters "Inlet Size"
+      holding 25
+    expect: >
+      a pipe connector of 25 mm diameter whose System Classification reads
+      Fire Protection Wet in Properties, and the report naming it Fire
+      Protection Wet (row 5b-297)
+
 negative:
   - given: system "Supply Air" and sizeParameters empty
     expect: >
@@ -30,6 +40,17 @@ negative:
 
   - given: system "Suply Air" (misspelt)
     expect: refused with close system names offered, nothing made
+
+  - given: system "Fire Protection Wett" (misspelt) on the Sprinklers family
+    expect: >
+      refused with Fire Protection Wet offered as close, nothing made. Checked:
+      no connector in the family
+
+  - given: system "Other"
+    expect: >
+      refused, nothing made, with Other Air (duct) and Other Pipe (pipe)
+      offered - both read as "Other" in Revit's lists, so the kind is not
+      picked for the modeller
 
   - given: >
       sizeParameters holding 600 and 600 on a 400 x 300 neck face
