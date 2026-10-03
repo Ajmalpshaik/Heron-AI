@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -115,40 +115,45 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-03'
+  date: '2026-10-04'
   by: Ajmal PS
-  model: Family2, Revit 2024, session 8804 - the count is NOT recorded because 1,722 elements
-    was measured on Family3, the document in front, and this ran against another one (row
-    15)
+  model: Family16, Revit 2024, session 8804 - the count is NOT recorded because 1,893 elements
+    was measured on TRG_PLMB_VLV_PPR Gate Valve_GV_R0, the document in front, and this ran
+    against another one (row 15)
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned along (null), arc Arc, axisOf Func`2,
-    axisPlane (null), dbNamespace Autodesk.Revit.DB, diameter true, findings 2 item(s) [The
-    diameter of the extrusion's sketched circle (radius 50 m..., The dimension is in the sketch,
-    where Edit Extrusion shows i...], flags BindingFlags, halfMillimetre 0.00164041994750656,
-    invariant CultureInfo, isLength Func`2, labelled The diameter of the extrusion's sketched
-    circle (radius 50 mm), labelled "Pipe Diameter" inside the form's sketch, reading 100
-    mm., mm Func`2, notAFamily false, parameter FamilyParameter, problems 0 item(s), refused
-    (null), revitAssembly RuntimeAssembly, sameKind Func`3, sideLine (null), target Extrusion,
-    valueMm 100, view ViewPlan, wanted 0.164041994750656. inputs came form as given; parameterName
-    as given; diameter as given. on Family2
-  negative_case: run with form=5e72a335-0753-4019-a299-4915e84c03bd-00000b74, parameterName=Hub
-    Radius, diameter=false instead - chosen because it should not contain what this fragment
+    the transaction group ROLLED BACK afterwards. returned along Line, already (null), arc
+    (null), axisOf Func`2, axisPlane ReferencePlane, centreArc Arc, centrePlane ReferencePlane,
+    centreReference Reference, dbNamespace Autodesk.Revit.DB, diameter false, findings 2 item(s)
+    [The distance of the revolve's profile circle from its axis, ..., The dimension is in
+    the sketch, where Edit Revolve shows it....], flags BindingFlags, halfMillimetre 0.00164041994750656,
+    invariant CultureInfo, isLength Func`2, joins Func`4, labelled The distance of the revolve's
+    profile circle from its axis, from "Center (Left/Right)" to a new reference plane through
+    the circle's centre, 200 mm out, labelled "Ring Radius" inside the form's sketch, reading
+    200 mm. Its axis is locked to "Center (Left/Right)". A reference plane "Ring Radius" was
+    made through the circle's centre. The circle's centre is locked to "Ring Radius"., mm
+    Func`2, notAFamily false, parameter FamilyParameter, problems 0 item(s), refused (null),
+    revitAssembly RuntimeAssembly, sameKind Func`3, sideLine (null), target Revolution, valueMm
+    200, view ViewSection, wanted 0.656167979002625. inputs came form as given; parameterName
+    as given; diameter as given. on Family16
+  negative_case: 'run with form=3a0dc021-0802-4ba3-8ef1-83ac6eaa4bff-00000b66, parameterName=Tube
+    Diameter, diameter=false instead - chosen because it should not contain what this fragment
     reports - run inside a transaction, and Revit reported the transaction group ROLLED BACK
-    afterwards. returned along (null), arc (null), axisOf Func`2, axisPlane (null), dbNamespace
-    Autodesk.Revit.DB, diameter false, findings 1 item(s) [Nothing was labelled. No reference
-    plane runs through the re...], flags BindingFlags, halfMillimetre 0.00164041994750656,
-    invariant CultureInfo, isLength Func`2, labelled , mm Func`2, notAFamily false, parameter
-    FamilyParameter, problems 1 item(s) [No reference plane runs through the revolve's axis.
-    Measured...], refused Nothing was labelled. No reference plane runs through the revolve's
-    axis. Measured from the axis line itself, Revit moves the axis when the size changes and
-    the revolve breaks - make a reference plane through the axis first (CREATE_REFERENCE_PLANES),
-    then label., revitAssembly RuntimeAssembly, sameKind Func`3, sideLine Line, target Revolution,
-    valueMm 0, view (null), wanted 0.196850393700787. inputs came form as given; parameterName
-    as given; diameter as given. on Family2
+    afterwards. returned along (null), already (null), arc (null), axisOf Func`2, axisPlane
+    (null), centreArc (null), centrePlane (null), centreReference (null), dbNamespace Autodesk.Revit.DB,
+    diameter false, findings 1 item(s) [Nothing was labelled. Nothing in the revolve''s profile
+    is 40...], flags BindingFlags, halfMillimetre 0.00164041994750656, invariant CultureInfo,
+    isLength Func`2, joins Func`4, labelled , mm Func`2, notAFamily false, parameter FamilyParameter,
+    problems 1 item(s) [Nothing in the revolve''s profile is 40 mm in size: no circle...],
+    refused Nothing was labelled. Nothing in the revolve''s profile is 40 mm in size: no circle
+    of that radius, no circle centred that far from the axis, no line alongside the axis that
+    far from it. In the profile, its circles have radii of 20 mm and centres 200 mm from the
+    axis - set the parameter to one of those first., revitAssembly RuntimeAssembly, sameKind
+    Func`3, sideLine (null), target Revolution, valueMm 0, view (null), wanted 0.131233595800525.
+    inputs came form as given; parameterName as given; diameter as given. on Family16'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 4a45eb40efd381a4
+  fingerprint: 6d07e66111e6e4f5
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
