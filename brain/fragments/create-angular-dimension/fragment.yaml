@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -76,6 +76,30 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: Project1 (3,208 elements), Revit 2024, session 32340
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned armOf Func`2, byId Func`3, created
+    1 item(s) [id 352521], findings 1 item(s) [Angular dimension drawn on 'Level 1' between
+    grid 1 and grid...], measured 60 degrees, plan ViewPlan, problems 0 item(s), radiusMm
+    3000, refused (null). inputs came view as given; between as given; radiusMm as given.
+    on Project1
+  negative_case: 'run with view=FloorPlan: Level 1, between=grid A | grid B, radiusMm=3000
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    armOf Func`2, byId Func`3, created (null), findings 1 item(s) [Nothing was drawn. "grid
+    A" and "grid B" are parallel in pla...], measured , plan ViewPlan, problems 1 item(s)
+    ["grid A" and "grid B" are parallel in plan, so they never me...], radiusMm 3000, refused
+    Nothing was drawn. "grid A" and "grid B" are parallel in plan, so they never meet and
+    make no angle - a distance between them is CREATE_LINEAR_DIMENSION''s.. inputs came view
+    as given; between as given; radiusMm as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: a336cf29bf76930c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
