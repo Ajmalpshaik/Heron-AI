@@ -92,6 +92,9 @@ compatibility-note: >
 #   "are the holes already cut right"-> AUDIT_MEP_OPENINGS
 #   "are the sleeves big enough"     -> CHECK_SLEEVE_SIZE
 #   "where are the shafts"           -> SELECT_OPENINGS - a READ
+#   "make the stair and its opening" -> CREATE_STAIRS with cutOpening=true; it
+#                                       cuts the top level's slab itself, over
+#                                       the stair it made
 
 utterances:
   - cut an opening in this wall
