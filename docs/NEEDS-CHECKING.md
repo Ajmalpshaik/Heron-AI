@@ -457,6 +457,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bx.md`](needs-checking/group-bx.md)
 
+## Group BY - deleting family parameters by name, refused while anything still uses them (2026-10-04)
+
+**Its own file:** [`needs-checking/group-by.md`](needs-checking/group-by.md)
+
 ## Group BZ - every setting of a family connector already made, Global included, and a list of a family's connectors (2026-10-04)
 
 **Its own file:** [`needs-checking/group-bz.md`](needs-checking/group-bz.md)
