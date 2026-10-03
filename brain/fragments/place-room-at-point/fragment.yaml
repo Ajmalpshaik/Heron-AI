@@ -70,26 +70,31 @@ contract:
       type: int
 
 proof:
-  date: '2026-09-13'
+  date: '2026-10-03'
   by: Ajmal PS
-  model: test projject (3,562 elements), Revit 2024, session 40932
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned asSpace false, created 5 item(s)
-    [926552, 926553, 926554, ...], refused 0, unenclosed 5 item(s) [926552, 926553, 926554,
-    ...]. inputs came level as given; points as given (5); asSpace as given. on test projject
+  model: c bulding test (4,961 elements), Revit 2024, session 41260
+  positive_case: 'run with points=320000,320000,0 - the first of 3 tracked inputs - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    asSpace true, created 1 item(s) [355644], refused 0, unenclosed 1 item(s) [355644]. inputs
+    came level as given; points as given (1); asSpace as given. on c bulding test. ALSO, the
+    point of the 5b-298 fix, same model and day, each leg rolled back, against an 8000 x 6000
+    mm box of four Generic - 200mm walls on the empty Roof level, built for the run and deleted
+    after: one point inside and one outside gave created 2, unenclosed 1 naming only the outside
+    one, and the inside point alone gave unenclosed 0, for rooms AND for spaces; the code
+    before the fix gave unenclosed 2 and 1 for spaces on the same box.'
   negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). place-room-at-point\
     \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
     \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
     \ about a set it was not given - is caught here by the answer following the input exactly\
-    \ across 4 different inputs:\n\n      1 point -> created 1\n      2 points -> created\
-    \ 2\n      3 points -> created 3\n      5 points -> created 5\n\n    Different inputs,\
-    \ exact matches every time. A fragment falling back to the active view, the whole model,\
-    \ or a previous run could not do that."
+    \ across 3 different inputs:\n\n      points=320000,320000,0 -> created 1 item(s) [355644]\n\
+    \      points=320000,320000,0; 325000,320000,0 -> created 2 item(s) [355647, 355648]\n\
+    \      points=320000,320000,0; 325000,320000,0; 330000,320000,0 -> created 3 item(s) [355652,\
+    \ 355653, 355654]\n\n    Different inputs, exact matches every time. A fragment falling\
+    \ back to the active view, the whole model, or a previous run could not do that."
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 84f7310db260ce9b
-
+  fingerprint: 14cb5adf38100d2a
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

@@ -2181,7 +2181,13 @@ def cmd_validate(name, session=None, in_document=None, cross=None, negative_in=N
     if vary:
         vary_name, _, listed = vary.partition("=")
         vary_name = vary_name.strip()
-        vary_values = [v.strip() for v in listed.split(",") if v.strip()]
+        # A PIPE SEPARATES THE VALUES WHEN ANY IS THERE, because some values
+        # carry commas of their own: a point is "304000,303000,0", and a list of
+        # points split on commas became six numbers rather than two points.
+        # Without a pipe nothing changes. 5b-298, where PLACE_ROOM_AT_POINT
+        # could not be tracked across point lists for exactly this reason.
+        separator = "|" if "|" in listed else ","
+        vary_values = [v.strip() for v in listed.split(separator) if v.strip()]
 
         def with_value(one):
             """The caller's values with `vary_name` set to `one`."""
@@ -2640,7 +2646,8 @@ def main(argv):
                 continue
             if token == "--vary":
                 if index + 1 >= len(rest):
-                    print("--vary needs NAME=value,value,value after it")
+                    print("--vary needs NAME=value,value,value after it -")
+                    print("or NAME=a|b|c when a value has commas in it")
                     return 2
                 vary = rest[index + 1]
                 skip = True
