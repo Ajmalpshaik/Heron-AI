@@ -431,6 +431,8 @@ if (refused == null)
         }
 
         var shape = new CurveArrArray();
+        var rings = new List<List<XYZ>>();
+        var areas = new List<double>();
         foreach (var loop in loops)
         {
             var array = new CurveArray();
@@ -447,8 +449,28 @@ if (refused == null)
             var twice = 0.0;
             for (var k = 0; k < ring.Count; k++)
                 twice += ring[k].X * ring[(k + 1) % ring.Count].Y - ring[(k + 1) % ring.Count].X * ring[k].Y;
-            // The first loop is the outline; the others are holes in it.
-            profileArea += (loops.IndexOf(loop) == 0 ? 1 : -1) * Math.Abs(twice) / 2;
+            rings.Add(ring);
+            areas.Add(Math.Abs(twice) / 2);
+        }
+
+        // A LOOP IS A HOLE ONLY WHEN IT LIES INSIDE ANOTHER - inside an odd number
+        // of the others, every point of it. A loop beside the others is an outline
+        // of its own and adds its area; never by its place in the list (5b-276).
+        Func<XYZ, List<XYZ>, bool> inside = (point, ring) =>
+        {
+            var odd = false;
+            for (int i = 0, j = ring.Count - 1; i < ring.Count; j = i++)
+                if ((ring[i].Y > point.Y) != (ring[j].Y > point.Y)
+                    && point.X < (ring[j].X - ring[i].X) * (point.Y - ring[i].Y) / (ring[j].Y - ring[i].Y) + ring[i].X)
+                    odd = !odd;
+            return odd;
+        };
+        for (var i = 0; i < rings.Count; i++)
+        {
+            var within = 0;
+            for (var j = 0; j < rings.Count; j++)
+                if (j != i && rings[i].All(point => inside(point, rings[j]))) within++;
+            profileArea += (within % 2 == 1 ? -1 : 1) * areas[i];
         }
 
         var carried = doc.Application.Create.NewCurveLoopsProfile(shape);

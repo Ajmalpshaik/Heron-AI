@@ -17,6 +17,16 @@ positive:
       a 300 mm arc - LOOKED AT in 3D as one hollow piece with no kink at the
       join
 
+  - given: >
+      workPlane "Ref. Level", path "0,0; 1000,0", profile "circle -40,0 10 |
+      circle 40,0 10", solid true - two circles side by side, neither inside
+      the other
+    expect: >
+      two rods 20 mm across and 1000 mm long, volume about 0.628 L (2 x pi x
+      10 x 10 mm2 x 1000 mm), and the comparison finding giving the same -
+      about 628.3 square millimetres and 0.628 L. Before 5b-276 it took the
+      second circle away and said 0 square millimetres and 0 L
+
 negative:
   - given: path "0,0" alone
     expect: refused as a path with no length, and no form made
