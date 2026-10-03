@@ -183,6 +183,7 @@ an edit.
 | [D-109](#d-109--a-companion-button-in-revit-opens-the-page-and-a-companion-switch-turns-it-off-without-touching-heron) | A Companion button in Revit opens the page, and a Companion switch turns it off without touching Heron | ✅ Accepted · 2026-09-29 |
 | [D-110](#d-110--a-supply-diffuser-neck-in-an-ncrc-30-room-is-held-to-the-owners-25-ms-not-ashraes-22) | A supply diffuser neck in an NC/RC 30 room is held to the owner's 2.5 m/s, not ASHRAE's 2.2 | ✅ Accepted · 2026-10-02 |
 | [D-111](#d-111--a-projects-governing-standards-are-asked-once-and-kept-for-that-project) | A project's governing standards are asked once and kept for that project | ✅ Accepted · 2026-10-02 |
+| [D-112](#d-112--a-fragment-that-must-work-in-one-of-revits-edit-modes-opens-its-own-transactions-inside-herons-group) | A fragment that must work in one of Revit's edit modes opens its own transactions inside Heron's group | ⏳ Proposed · 2026-10-03 |
 
 ## Format
 
@@ -946,3 +947,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`heron_hvac.py`](../brain/heron_hvac.py), [`heron_designbasis.py`](../brain/heron_designbasis.py), [`heron_brain.py`](../mcp/server/heron_brain.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py), [`heron_tools.py`](../mcp/server/heron_tools.py) (its comment only - the risk stays READ), [`tests/test_hvac.py`](../tests/test_hvac.py), [41 §11](41-hvac-design.md)
 
 **Full record:** [`decisions/D-111.md`](decisions/D-111.md)
+
+## D-112 — A fragment that must work in one of Revit's edit modes opens its own transactions inside Heron's group
+
+**Status:** Proposed · **Date:** 2026-10-03 · **Source:** the school in Project2, 2026-10-03: *"make the stair also"*, and Revit refusing a stair inside Heron's transaction, measured the same day
+**Keeps:** Golden Rule 16 - one TransactionGroup, one undo, rolled back on a preview · the read path's guarantee that nothing there can open a transaction
+**Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`heron_fragment.py`](../brain/heron_fragment.py) (`AMBIENT`), [`check-revit-gate.py`](../tools/check-revit-gate.py), `create-stairs`
+
+**Full record:** [`decisions/D-112.md`](decisions/D-112.md)

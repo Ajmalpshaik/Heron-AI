@@ -145,6 +145,10 @@ AMBIENT = {
     "doc":   "Document",
     "uidoc": "UIDocument",
     "app":   "Application",
+    # D-112. Declaring it is what makes the add-in run the fragment with no
+    # transaction of its own open, so the fragment can start one of Revit's
+    # edit modes - a stair's - and hand this to every transaction it opens.
+    "editScopeFailures": "IFailuresPreprocessor",
 }
 
 # WHERE A NEEDED NAME CAN COME FROM. Found the same way AMBIENT was - by writing

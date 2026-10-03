@@ -219,6 +219,10 @@ _KNOWN = {
     "needs_unbound":     (REFUSED, FIX_FIRST,
                           "something the fragment needs was never supplied, and running "
                           "anyway would report 0 and read as 'nothing to find'"),
+    # D-112: an edit-mode fragment asked for as a read. Nothing ran.
+    "needs_write_path":  (REFUSED, FIX_FIRST,
+                          "this fragment works in one of Revit's edit modes and opens its "
+                          "own transactions, so it runs only as a change - nothing ran"),
     "not_implemented":   (REFUSED, STOP,
                           "the operation is declared and not built yet"),
     "worksets_unreadable": (REFUSED, FIX_FIRST,
