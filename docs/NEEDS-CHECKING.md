@@ -457,6 +457,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bx.md`](needs-checking/group-bx.md)
 
+## Group BY - deleting family parameters by name, refused while anything still uses them (2026-10-04)
+
+**Its own file:** [`needs-checking/group-by.md`](needs-checking/group-by.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

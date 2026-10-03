@@ -120,6 +120,8 @@ compatibility-note: >
 #
 #   "make this family an air terminal"       -> here
 #   "add Width and Depth parameters"          -> ADD_FAMILY_PARAMETERS
+#   "delete the Cap R Start parameter"       -> DELETE_FAMILY_PARAMETERS -
+#                                                only what nothing uses
 #   "make a 600 x 600 type"                   -> SET_FAMILY_TYPE_VALUES
 #   "neck top is height plus neck depth"      -> SET_FAMILY_FORMULA
 #   "add reference planes at 300 each side"   -> CREATE_REFERENCE_PLANES
