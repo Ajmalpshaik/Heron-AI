@@ -65,7 +65,7 @@ python tools/check-gaps.py                                  # unfinished, versus
 
 ## What is still to come
 
-**Proof, mostly.** **272 fragments are `PROVEN`; the other 192 and all twenty-four skills are `DRAFT`** — derive
+**Proof, mostly.** **271 fragments are `PROVEN`; the other 193 and all twenty-four skills are `DRAFT`** — derive
 both with `python brain/heron_fragment.py` rather than reading them here. **This line said 167 and 193
 until 2026-09-19**, which was wrong by 149 in one direction and 114 in the other and had been for weeks
 (and 306 and 120 until 2026-10-02, the same mistake a third time):
@@ -80,7 +80,7 @@ everything else.
 `run_fragment_write` is a **separate** operation from the read, deliberately — `MODIFY` in the
 registry, wrapping the run in a `TransactionGroup` assimilated only on `apply=true` and rolled back
 otherwise, so a preview is the run itself undone rather than a simulation that could lie
-([D-55](../docs/DECISIONS.md)). **150 `MODIFY` fragments are `PROVEN`** — derive that with
+([D-55](../docs/DECISIONS.md)). **149 `MODIFY` fragments are `PROVEN`** — derive that with
 `heron_fragment.py` — so this is built *and* met a model. `write.enabled` still defaults to `false`
 until a real Revit has been through [NEEDS-CHECKING.md](../docs/NEEDS-CHECKING.md). So a request resolves to *this capability,
 provided by that fragment*, and can be READ all the way through — and no answer here may imply more
