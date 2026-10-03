@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -77,6 +77,41 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family1,
+    Revit 2024, session 32340'
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned addParameter RuntimeMethodInfo,
+    added 1 item(s) [HERON_ASSET_TAG (Text, type, GUID 5cda9c6d-e92a-4d03-8f03-44...], alreadyThere
+    0 item(s), dbNamespace Autodesk.Revit.DB, findings 2 item(s) [Added 1 shared parameter(s)
+    from "C:\Users\AJMALA~1\AppData\..., They hold no value yet - SET_FAMILY_TYPE_VALUES writes
+    it. A...], flags BindingFlags, groupType RuntimeType, groupValue ForgeTypeId, groups 123
+    item(s) [[Cross-Section Definition, Autodesk.Revit.DB.ForgeTypeId], [Visibility, Autodesk.Revit.DB.ForgeTypeId],
+    [Extents, Autodesk.Revit.DB.ForgeTypeId], ...], instance false, kindLabel Func`2, names
+    1 item(s) [HERON_ASSET_TAG], notAFamily false, plans 1 item(s) [(HERON_ASSET_TAG, Autodesk.Revit.DB.ExternalDefinition)],
+    problems 0 item(s), refused (null), revitAssembly RuntimeAssembly, sharedFile C:\Users\AJMALA~1\AppData\Local\Temp\claude\D--Ajmal-Aj-Programs-Heron-Ai\b7dd5897-0db3-4fc5-b8aa-33f89dd8c419\scratchpad\exports\heron-shared.txt,
+    squash Func`2. inputs came parameterNames as given (1); instance as given; parameterGroup
+    as given. on Family1
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned addParameter RuntimeMethodInfo, added 0 item(s), alreadyThere
+    0 item(s), dbNamespace Autodesk.Revit.DB, findings 1 item(s) [The document in front is
+    a project, not a family open in the...], flags BindingFlags, groupType RuntimeType, groupValue
+    (null), groups 123 item(s) [[Cross-Section Definition, Autodesk.Revit.DB.ForgeTypeId],
+    [Visibility, Autodesk.Revit.DB.ForgeTypeId], [Extents, Autodesk.Revit.DB.ForgeTypeId],
+    ...], instance false, kindLabel Func`2, names 1 item(s) [HERON_ASSET_TAG], notAFamily
+    true, plans 0 item(s), problems 0 item(s), refused The document in front is a project,
+    not a family open in the Family Editor. A shared parameter is added to a project with
+    ADD_PROJECT_PARAMETER; to add one to a family, open it first., revitAssembly RuntimeAssembly,
+    sharedFile , squash Func`2. inputs came parameterNames as given (1); instance as given;
+    parameterGroup as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: afdd4feb12db137e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

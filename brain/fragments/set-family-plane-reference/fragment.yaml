@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -74,6 +74,44 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
+    Revit 2024, session 32340'
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadySet 0, axisOf Func`2, before
+    8 item(s) [(Autodesk.Revit.DB.ReferencePlane, Center (Front/Back), 1, 4..., (Autodesk.Revit.DB.ReferencePlane,
+    , 2, 12, Not a Reference,..., (Autodesk.Revit.DB.ReferencePlane, Center (Left/Right),
+    0, 1..., ...], changed 2, facing 3 item(s) [faces left or right, faces front or back,
+    is horizontal], findings 2 item(s) [2 plane(s) changed and 0 setting(s) already as asked
+    - every..., Is Reference was written as Left 0, Right 2 - the numbers Re...], isReferenceOf
+    Func`2, notAFamily false, originOf Func`2, ownName Func`2, planeReport "Box Left": Is
+    Reference Weak Reference -> Left  ||  "Box Right": Is Reference Weak Reference -> Right,
+    plans 2 item(s) [(Autodesk.Revit.DB.ReferencePlane, Box Left, (left, Left, 0,..., (Autodesk.Revit.DB.ReferencePlane,
+    Box Right, (right, Right,...], problems 0 item(s), refused (null), settings 12 item(s)
+    [(notareference, Not a Reference, -1, NotAReference), (strongreference, Strong Reference,
+    -1, StrongReference), (weakreference, Weak Reference, -1, WeakReference), ...], shorthand
+    4 entry(ies), squash Func`2, stored Func`2, words Func`2, yesNo Func`2. inputs came planes
+    as given (2). on Family1'
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned alreadySet 0, axisOf Func`2, before 0 item(s), changed
+    0, facing 3 item(s) [faces left or right, faces front or back, is horizontal], findings
+    1 item(s) [The document in front, "Project1", is a project, not a famil...], isReferenceOf
+    Func`2, notAFamily true, originOf Func`2, ownName Func`2, planeReport , plans 0 item(s),
+    problems 0 item(s), refused The document in front, "Project1", is a project, not a family
+    open in the Family Editor. A reference plane's Is Reference is set inside the family -
+    open it for editing first (OPEN_FAMILY_FOR_EDITING). Nothing was changed., settings 12
+    item(s) [(notareference, Not a Reference, -1, NotAReference), (strongreference, Strong
+    Reference, -1, StrongReference), (weakreference, Weak Reference, -1, WeakReference), ...],
+    shorthand 4 entry(ies), squash Func`2, stored Func`2, words Func`2, yesNo Func`2. inputs
+    came planes as given (2). on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: dd0a3c86e4ed7b9a
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

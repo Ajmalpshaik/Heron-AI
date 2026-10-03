@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -96,6 +96,41 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
+    Revit 2024, session 32340'
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned a Tuple`5, along Func`3, axisOf
+    Func`2, axisWords 3 item(s) [left-right, front-back, height], b Tuple`5, centre Tuple`5,
+    datums 9 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
+    ...], dbNamespace Autodesk.Revit.DB, distanceMm 600, equalised true, findings 2 item(s)
+    [Width drives "Box Left" to "Box Right", reading 600 mm, in "..., The planes now follow
+    "Width". Geometry follows only if it i...], flags BindingFlags, halfMillimetre 0.00164041994750656,
+    invariant CultureInfo, isLength Func`2, labelled Width drives "Box Left" to "Box Right",
+    reading 600 mm, mm Func`2, named Func`2, notAFamily false, ownName Func`2, parameter FamilyParameter,
+    refused (null), revitAssembly RuntimeAssembly, sameKind Func`3, view ViewPlan. inputs
+    came fromPlane as given; toPlane as given; parameterName as given; centrePlane as given.
+    on Family1
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned a (null), along Func`3, axisOf Func`2, axisWords 3 item(s)
+    [left-right, front-back, height], b (null), centre (null), datums 0 item(s), dbNamespace
+    Autodesk.Revit.DB, distanceMm 0, equalised false, findings 1 item(s) [The document in
+    front is a project, not a family open in the...], flags BindingFlags, halfMillimetre 0.00164041994750656,
+    invariant CultureInfo, isLength Func`2, labelled , mm Func`2, named Func`2, notAFamily
+    true, ownName Func`2, parameter (null), refused The document in front is a project, not
+    a family open in the Family Editor. A family dimension is labelled inside the family -
+    open it first., revitAssembly RuntimeAssembly, sameKind Func`3, view (null). inputs came
+    fromPlane as given; toPlane as given; parameterName as given; centrePlane as given. on
+    Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 00382f323428a209
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

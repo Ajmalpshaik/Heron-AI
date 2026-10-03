@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -62,6 +62,36 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family2, Project1 - active was Family1,
+    Revit 2024, session 32340'
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, built
+    An opening in the template''s wall, X -300 to 300, Z 600 to 1200 mm - read back., facing
+    1, findings 3 item(s) [An opening in the template''s wall, X -300 to 300, Z 600 to 1...,
+    Its size is FIXED as drawn: an opening''s sketch cannot be lo..., Placed in a project,
+    the family cuts this opening in the wal...], host Wall, hostKind wall, invariant CultureInfo,
+    letters 3 item(s) [X, Y, Z], loopOf Func`3, mm Func`2, notAFamily false, number Func`2,
+    openingId b00d8af6-5e2a-44ce-9e03-0ea8f8386c4e-0000122d, pair Func`2, plain Func`2, planeAt
+    0, problems 0 item(s), refused (null), shapeLoop 4 item(s) [System.Double[], System.Double[],
+    System.Double[], ...], shortest 0.7803686370625. inputs came shape as given. on Family2'
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, built , facing -1, findings
+    1 item(s) [The document in front, "Project1", is a project, not a famil...], host (null),
+    hostKind , invariant CultureInfo, letters 3 item(s) [X, Y, Z], loopOf Func`3, mm Func`2,
+    notAFamily true, number Func`2, openingId , pair Func`2, plain Func`2, planeAt 0, problems
+    0 item(s), refused The document in front, "Project1", is a project, not a family open
+    in the Family Editor. An opening in a project's wall or floor is CREATE_OPENING; this
+    one is cut in a hosted family's template host - open the family first., shapeLoop (null),
+    shortest 0.7803686370625. inputs came shape as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 912ddd82767d5581
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

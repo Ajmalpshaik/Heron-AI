@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -99,6 +99,38 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family3, Project1 - active was Family1,
+    Revit 2024, session 32340'
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned built Solid extrusion 6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d9a
+    on 1 profile(s) of 4 curve(s), 300 mm deep toward (0, 0, 1), X 2000 to 3000, Y 0 to 1000,
+    Z 0 to 300 mm; volume 300 L. Read back., closes Func`2, curvesOf Func`2, depth 0.984251968503937,
+    findings 2 item(s) [Solid extrusion 6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d9..., Built
+    on curves that run through the family's points, the fo...], formId 6259fe7f-66c3-4c54-9f5f-1cb8c3f8520b-00001d9a,
+    groups 1 item(s) [System.Collections.Generic.List`1[Autodesk.Revit.DB.CurveEle...], halfMillimetre
+    0.00164041994750656, hasDepth true, invariant CultureInfo, mm Func`2, normal XYZ, notAFamily
+    false, pivot (null), problems 0 item(s), refused (null), ringOf Func`2, route 0 item(s),
+    solid true, turn 6.28318530717959. inputs came profiles as given; depthMm as given; path
+    as given; axis as given; angleDegrees as given; solid as given. on Family3
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned built , closes Func`2, curvesOf Func`2, depth 0, findings
+    1 item(s) [The document in front, "Project1", is a project, not a famil...], formId ,
+    groups 0 item(s), halfMillimetre 0.00164041994750656, hasDepth false, invariant CultureInfo,
+    mm Func`2, normal (null), notAFamily true, pivot (null), problems 0 item(s), refused The
+    document in front, "Project1", is a project, not a family open in the Family Editor. A
+    form on lines is made inside an adaptive or pattern-based family - open it first., ringOf
+    Func`2, route 0 item(s), solid true, turn 6.28318530717959. inputs came profiles as given;
+    depthMm as given; path as given; axis as given; angleDegrees as given; solid as given.
+    on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 138df60ac45626a9
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

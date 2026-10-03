@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -103,6 +103,46 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
+    Revit 2024, session 32340'
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned along Func`3, axisFrom 2 item(s)
+    [1200, 0], axisLetters 3 item(s) [X, Y, Z], axisOf Func`2, axisTo 2 item(s) [1200, 500],
+    built Solid revolve on "Center (Front/Back)" (facing front or back, Y 0 mm): 1 loop(s)
+    turned from 0 to 360 degrees about the axis 1200,0 to 1200,500. Reads X 1100 to 1300,
+    Y -100 to 100, Z 0 to 200 mm; volume 6.283 L., datums 8 item(s) [(Autodesk.Revit.DB.ReferencePlane,
+    1, 0, Center (Front/Back)..., (Autodesk.Revit.DB.ReferencePlane, 0, 0, Center (Left/Right)...,
+    (Autodesk.Revit.DB.ReferencePlane, 0, -0.984251968503937, Bo..., ...], endDegrees 360,
+    facing 3 item(s) [facing left or right, facing front or back, horizontal], findings 2
+    item(s) [Built: Solid revolve on "Center (Front/Back)" (facing front ..., Its sketch is
+    hosted on "Center (Front/Back)" and moves with...], formId bfa50ce5-921a-49fe-86b2-5220cec4d34a-00000bbd,
+    halfMillimetre 0.00164041994750656, inPlane 3 item(s) [System.Int32[], System.Int32[],
+    System.Int32[]], invariant CultureInfo, loopOf Func`3, loops 1 item(s) [System.Collections.Generic.List`1[System.Double[]]],
+    mm Func`2, notAFamily false, number Func`2, ownName Func`2, pair Func`2, plain Func`2,
+    plane Tuple`4, problems 0 item(s), refused (null), shortest 0.7803686370625, solid true,
+    startDegrees 0. inputs came workPlane as given; profile as given; axisLine as given; startDegrees
+    as given; endDegrees as given; solid as given. on Family1'
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned along Func`3, axisFrom (null), axisLetters 3 item(s)
+    [X, Y, Z], axisOf Func`2, axisTo (null), built , datums 0 item(s), endDegrees 360, facing
+    3 item(s) [facing left or right, facing front or back, horizontal], findings 1 item(s)
+    [The document in front is a project, not a family open in the...], formId , halfMillimetre
+    0.00164041994750656, inPlane 3 item(s) [System.Int32[], System.Int32[], System.Int32[]],
+    invariant CultureInfo, loopOf Func`3, loops 0 item(s), mm Func`2, notAFamily true, number
+    Func`2, ownName Func`2, pair Func`2, plain Func`2, plane (null), problems 0 item(s), refused
+    The document in front is a project, not a family open in the Family Editor. A family's
+    forms are built inside the family - open it first., shortest 0.7803686370625, solid true,
+    startDegrees 0. inputs came workPlane as given; profile as given; axisLine as given; startDegrees
+    as given; endDegrees as given; solid as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: bc8137ab465d2f19
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

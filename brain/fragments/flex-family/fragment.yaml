@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -81,6 +81,40 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family1,
+    Revit 2024, session 32340'
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned allHeld true, dbNamespace Autodesk.Revit.DB,
+    findings 4 item(s) [Flexed 2 size(s) and put the family back: solid 2500 x 1725 ..., Trial
+    1 (Width=900, Depth=500): solid 2800 x 1825 x 525 mm, ..., Trial 2 (Width=400, Depth=700):
+    solid 2300 x 2025 x 525 mm, ..., ...], flags BindingFlags, invariant CultureInfo, kindOf
+    Func`2, kindsNew 5 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId], [angle, Autodesk.Revit.DB.ForgeTypeId],
+    [number, Autodesk.Revit.DB.ForgeTypeId], ...], kindsOld 5 entry(ies), mm Func`2, notAFamily
+    false, originals 2 entry(ies), planned 2 item(s) [System.Collections.Generic.List`1[System.Tuple`3[Autodesk.Re...,
+    System.Collections.Generic.List`1[System.Tuple`3[Autodesk.Re...], refused (null), restored
+    true, revitAssembly RuntimeAssembly, sameKind Func`3, specNamed Func`3, tolerance 3.28083989501312E-05,
+    touched 2 entry(ies), trialResults 2 item(s) [Trial 1 (Width=900, Depth=500): solid 2800
+    x 1825 x 525 mm, ..., Trial 2 (Width=400, Depth=700): solid 2300 x 2025 x 525 mm, ...].
+    inputs came trials as given. on Family1'
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned allHeld false, dbNamespace Autodesk.Revit.DB, findings
+    1 item(s) [The document in front is a project, not a family open in the...], flags BindingFlags,
+    invariant CultureInfo, kindOf Func`2, kindsNew 5 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId],
+    [angle, Autodesk.Revit.DB.ForgeTypeId], [number, Autodesk.Revit.DB.ForgeTypeId], ...],
+    kindsOld 5 entry(ies), mm Func`2, notAFamily true, originals 0 entry(ies), planned 0 item(s),
+    refused The document in front is a project, not a family open in the Family Editor, so
+    there is nothing to flex. Open the family first., restored false, revitAssembly RuntimeAssembly,
+    sameKind Func`3, specNamed Func`3, tolerance 3.28083989501312E-05, touched 0 entry(ies),
+    trialResults 0 item(s). inputs came trials as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 43f8329704623c37
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
