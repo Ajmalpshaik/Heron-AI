@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "tie the radius or diameter of a round family form to a lengt
 kind: action
 domain: revit.families
 capability: LABEL_FAMILY_RADIUS
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -35,9 +35,22 @@ purpose: >
   profile line running alongside the axis, with the axis locked to that plane.
   Measured from the revolve's own axis line, Revit moved the axis and the
   revolve broke, so a revolve with no plane through its axis is refused - make
-  one with CREATE_REFERENCE_PLANES first. A revolve's size is a radius: give
-  it a radius parameter whose formula halves the diameter. Other forms are
-  refused.
+  one with CREATE_REFERENCE_PLANES first. A distance from the axis is a
+  radius: give it a radius parameter whose formula halves the diameter. Other
+  forms are refused.
+
+  **A TORUS - A REVOLVE WHOSE PROFILE IS A CIRCLE - HAS TWO MORE** (version 3,
+  row 5b-306). The TUBE: the circle's own radius or diameter, labelled on its
+  sketched arc as an extrusion's is. The RING: the circle centre's distance
+  from the axis, labelled the way a modeller does it by hand - from the plane
+  the axis lies on to a reference plane through the circle's centre, with the
+  centre locked to that plane. The plane is made, named after the parameter,
+  when the family has none. A plane already labelled with the same parameter
+  is used as it is, not refused as a second label. A dimension straight to the
+  centre point is refused by Revit, so it is never tried. Measured 2026-10-03
+  on scratch families: a tube from 40 to 80 and 10, a ring from 200 to 400
+  and 60. When one value is more than one size of the revolve, the call is
+  refused and the label is left for Edit Revolve.
 
   **ONE FAMILY RESIZES WITH THE PIPE SIZE.** With the round sizes labelled,
   one body follows Nominal Diameter through formulas, instead of one shape set
@@ -75,8 +88,9 @@ contract:
     - name: parameterName
       type: string
       source: request
-    # true for a diameter dimension, false for a radius. A revolve takes a
-    # radius only.
+    # true for a diameter dimension, false for a radius. A distance from a
+    # revolve's axis takes a radius only; a profile circle's own size takes
+    # either.
     - name: diameter
       type: bool
       source: request
@@ -144,8 +158,11 @@ compatibility-note: >
   `NewDiameterDimension(view, arcRef, origin)`, `NewDimension(view, line,
   references)` and `NewAlignment(view, reference, reference)`,
   `Dimension.FamilyLabel`, `Dimension.Value`, `Sketch.Profile`,
-  `Sketch.SketchPlane`, `Revolution.Axis`, `ReferencePlane.GetPlane()` and
-  `Curve.Reference` read the same 2020 through 2027 (the RevitAPI reference
+  `Sketch.SketchPlane`, `Revolution.Axis`, `ReferencePlane.GetPlane()`,
+  `Curve.Reference`, `CurveElement.CenterPointReference`,
+  `Reference.ConvertToStableRepresentation` / `ParseFromStableRepresentation`,
+  `FamilyItemFactory.NewReferencePlane` and `Dimension.References` read the
+  same 2020 through 2027 (the RevitAPI reference
   assemblies, read 2026-10-01 and 2026-10-03). No `SketchEditScope` is used -
   it exists only from 2022 and refuses a family document. A parameter's kind is
   read by reflection, because it moved at 2022.
@@ -166,3 +183,5 @@ utterances:
   - tie the cylinder radius to a parameter
   - make the revolve radius follow a parameter
   - make this round family resize with the pipe size
+  - label the tube diameter of this torus
+  - make the rim ring radius follow a parameter
