@@ -224,6 +224,18 @@ proof:
     own count by hand (Select All Instances) was not done; this is the model's data read
     another way, not a person's eye.
   fingerprint: d4fc04e00926c473
+  caveat: >-
+    The signed run above is the SPACE case. The other two kinds were proved on the same
+    test copy, the same day, against the SAME code (fingerprint d4fc04e00926c473), each
+    with its own negative, rolled back, and signed off by Ajmal PS with this one. ZONES -
+    plan "Level 1 - Spaces", type Family3 (Zone Tags):
+    positive 3 of 3 Level 1 zones tagged, 0 refused, 0 mismatched; negative, the 37 Level 1
+    spaces with the same zone tag type, 0 placed and all 37 in notTaggable. ROOMS - plan
+    "Level 1 - HVAC Zones", type Room Tag With Area: positive 37 of 37 Level 1 rooms tagged,
+    0 refused, 0 mismatched; negative, the 37 Level 1 spaces with the same room tag type, 0
+    placed and all 37 in notTaggable. The second route above also read the 6 kept zone tags
+    and the 79 room tags in the model: no duplicates, every text its own zone's or room's,
+    every point inside it. The three tag counts read 79, 6 and 79 before and after every run.
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
