@@ -1,20 +1,22 @@
 positive:
   - given: >
-      a floor plan, two walls meeting at a known splay, their face references,
-      and an arc centred on the point where they meet, on Revit 2024
+      a floor plan, "grid 1 | grid Skew" - grid 1 along X and Skew drawn at 60
+      degrees through the same point - radius 3000, on Revit 2024
     expect: >
-      one angular dimension reading the real angle - checked against the angle
-      the walls were drawn at, not read off the report
+      one angular dimension reading 60 degrees, the angle Skew was drawn at; and
+      "grid A | grid Skew" reading 30 degrees, so the answer follows the arms.
+      Proved 2026-10-03 in Project1
 
 negative:
   - given: one reference
     expect: refused by name, nothing created
 
-  - given: an arc whose centre is NOT where the two references meet
+  - given: >
+      two parallel arms - "grid A | grid B"
     expect: >
-      either a refusal or a dimension reading the wrong angle. THIS IS THE CASE
-      WORTH ARRANGING: it is the mistake somebody will actually make, and the
-      wrong-angle outcome is silent
+      refused in words: they never meet and make no angle. Version 1's worst case,
+      an arc centred somewhere other than the apex, cannot be typed any more: the
+      arc is struck here, on the apex
 
   - given: a view template handed in as the view
     expect: refused by name, not a silent empty answer
