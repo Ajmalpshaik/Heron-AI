@@ -1,0 +1,56 @@
+# The proof plan for CREATE_STAIRS (FRG-ELE-076), NEEDS-CHECKING group BX.
+# Written 2026-10-03 and NOT RUN as a proof - the owner runs it, on a TEST COPY.
+#
+#     python tools/batch-prove.py tools/jobs/create-stairs-project2-2026-10-03.yaml --dry-run
+#
+# IT NEEDS THE ADD-IN FROM ITS PULL REQUEST, DEPLOYED AND REVIT RESTARTED.
+# Before D-112 no fragment could start a stair's edit mode - measured on
+# Project2 the same day - so on an older add-in every run here is refused with
+# "not permitted to start", which says nothing about this fragment.
+#
+# THE VALUES ARE PROJECT2'S, read off the model 2026-10-03 (Revit 2024,
+# session 41260): Stair 1's walls are centrelines at X 0 (429 mm exterior),
+# X 7500, Y 35000 and Y 42500 (124 mm blockwork), so its CLEAR inside is
+# X 214.5..7438, Y 35062..42438 mm. 'Monolithic Stair' is loaded with a 180 mm
+# maximum riser and a 280 mm tread, so 4000 mm takes 23 risers of 173.9 mm.
+
+model: Project2 (the C-shaped school), Revit 2024 - a SAVED TEST COPY
+
+defaults:
+  in: Project2
+  write: true
+  set:
+    baseLevel: Level 1
+    topLevel: Level 2
+    stairType: Monolithic Stair
+    shape: u
+    runWidth: 1500
+    area: "215,35062,0; 7438,42438,0"
+    entrySide: north
+    firstRunSide: east
+    startOffset: 1500
+    cutOpening: "true"
+  negative-set:
+    # THE SAME HALL AND A STAIR TYPE THE MODEL DOES NOT HAVE. Not an empty
+    # request: the refusal must list the six types Project2 does have, and
+    # nothing may be made.
+    baseLevel: Level 1
+    topLevel: Level 2
+    stairType: Spiral Feature Stair
+    shape: u
+    runWidth: 1500
+    area: "215,35062,0; 7438,42438,0"
+    entrySide: north
+    firstRunSide: east
+    startOffset: 1500
+    cutOpening: "true"
+
+jobs:
+  - fragment: create-stairs
+    expect: created
+    note: >
+      Positive: created an id, risers 23, riserHeightMm 173.9, runCount 2,
+      landingCount 1, one opening, and a finding saying how many m3 of the
+      Level 2 slab it removed (about 0.15 x the footprint). Check it in 3D and
+      in a section through the hall. Negative: refused naming the six loaded
+      types; created invalid, risers 0, no opening.
