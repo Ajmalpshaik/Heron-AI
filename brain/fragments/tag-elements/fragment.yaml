@@ -134,6 +134,10 @@ compatibility-note: >
 #                                           5). Whether those act as room tags
 #                                           (CENTER_ROOM_TAGS wants the RoomTag
 #                                           kind) is NOT yet checked
+#   "tag the spaces", "tag the hvac      -> TAG_ROOMS too, given a Space Tags
+#    zones"                                 or Zone Tags type (version 2,
+#                                           2026-10-03). This one's category
+#                                           map has neither
 #   "stack the tags at the side"         -> STACK_TAGS, for tags that already
 #                                           exist
 
