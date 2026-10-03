@@ -588,17 +588,25 @@ def test_a_line_is_two_points_and_curves_are_pairs_of_them():
           "a Line frees the rotation axis and nothing else: %s"
           % (freed or "nothing"))
 
-    # AND THE DIMENSION DOES NOT COME BACK WITH IT. `create-linear-dimension`
-    # declares a Line AND an `IList<Reference>`, and a face is not a rule
-    # waiting to be written. This is the assertion that stops the Line rule
-    # being sold as having freed the dimensions - PR #190 said so in words and
-    # a word is not a check.
+    # THE DIMENSION WAS NOT FREED BY THE LINE RULE, AND IS FREE NOW FOR ANOTHER
+    # REASON. Until 2026-10-03 `create-linear-dimension` declared a Line AND an
+    # `IList<Reference>`, and this asserted it stayed blocked on the face so the
+    # Line rule could not be sold as having freed it (PR #190 said so in words).
+    # Version 2 of the fragment takes typed references instead - `grid A`,
+    # `level L2`, `plane X`, `line <id>`, `wall <id> exterior` - so nothing
+    # blocks it. What still holds, and is checked: no fragment in the library
+    # asks for a Reference any more by way of a dimension, so the Line rule is
+    # still not what freed one.
     found = library()
     supply = GJ.chain_provides(found)
     _, ordinal, ladder = GJ.write_threshold()
     still = GJ.blockers(found["create-linear-dimension"], supply, ordinal, ladder)
-    check(any("face" in r.lower() for r in still),
-          "a linear dimension is still blocked, on the face: %s" % (still or "nothing"))
+    check(not still,
+          "a linear dimension takes typed references now and is not blocked: %s" % (still or "nothing"))
+    dims = sorted(slug for slug in ("create-linear-dimension", "create-angular-dimension",
+                                    "create-radial-dimension")
+                  if any("Reference" in (need.get("type") or "") for need in found[slug].needs()))
+    check(dims == [], "and no dimension fragment asks for a Reference: %s" % (dims or "none"))
 
     freed = unblocked_by("IList<Curve>")
     check(freed == ["place-line-based-family"],
@@ -640,11 +648,13 @@ def test_an_arc_was_left_unwritten_and_the_reason_still_holds():
 
     # THE SIXTH PROPOSAL WAS TO WRITE NOTHING, and this test is what keeps that
     # decision honest rather than merely recorded. An Arc is three points and a
-    # day's work; the argument against it is that its ONLY customer in the
-    # library also needs a face, so the resolver would ship reachable by
-    # nobody. That argument is true of the library as it stands and stops being
-    # true the moment a second fragment declares an Arc - at which point this
-    # fails and the decision gets made again with the new fact in hand.
+    # day's work; the argument against it was that its ONLY customer,
+    # `create-angular-dimension`, also needed a face. On 2026-10-03 version 2 of
+    # that fragment stopped asking for either: it takes two typed arms and
+    # strikes the arc itself, centred on their apex. So the library now has NO
+    # customer for an Arc at all - a stronger reason to write nothing - and this
+    # fails the moment one appears, so the decision is made again with that
+    # fragment in hand.
     ok, why = GJ.receivable("Arc")
     check(not ok and why, "an Arc is still refused, with a reason")
 
@@ -653,13 +663,8 @@ def test_an_arc_was_left_unwritten_and_the_reason_still_holds():
                    for need in frag.needs()
                    if HF.need_source(need) == "request"
                    and (need.get("type") or "").replace(" ", "") == "Arc")
-    check(wants == ["create-angular-dimension"],
-          "one fragment in the library asks for one: %s" % (wants or "none"))
-
-    faces = [need.get("name") for need in found["create-angular-dimension"].needs()
-             if "Reference" in (need.get("type") or "")]
-    check(faces,
-          "and it also needs a face, which no rule can ever supply: %s" % faces)
+    check(wants == [],
+          "no fragment in the library asks for one: %s" % (wants or "none"))
 
 
 def test_every_shape_with_a_new_syntax_has_a_hint():

@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-102
-semantic-identity: "dimension the angle between these two"
+semantic-identity: "dimension the angle between two grids, planes, lines or wall faces, in a plan"
 kind: action
 domain: revit.annotation
 capability: CREATE_ANGULAR_DIMENSION
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -32,25 +32,43 @@ purpose: >
   somewhere convenient gives a dimension that reads a different angle from the one
   intended, with no error.
 
+  **VERSION 2 TAKES WHAT CAN BE TYPED, AND STRIKES THE ARC ITSELF (2026-10-03).**
+  Version 1 asked for a Revit `Arc` and `Reference` objects, which no request can
+  carry - FRAGMENT-ISSUES section 6 and D-72. Now the two arms are named, `|`
+  between them - `grid A`, `plane Skew`, `line <id>`, `wall <id> exterior` or
+  `interior` - and the arc is made here, centred where the arms meet in plan, so
+  its centre IS the apex. Only the radius is asked for. It spans the angle under
+  180 degrees between the arms' far ends. Plans only: that is where the arms meet.
+
+  **READ BACK.** `measured` is the angle Revit reads off the dimension, in degrees.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
   needs:
     - name: doc
       type: Document
+    # The plan to draw it in, as the Project Browser names it - "Level 1".
     - name: view
       type: View
       source: request
-    - name: arc
-      type: Arc
+    # The two arms, `|` between: "grid A | grid Skew", "plane Ramp | line 123456",
+    # "wall 234567 exterior | grid 1".
+    - name: between
+      type: string
       source: request
-    - name: references
-      type: IList<Reference>
+    # How far from the apex the dimension's arc sits, in millimetres - 1500.
+    - name: radiusMm
+      type: double
       source: request
   provides:
     - name: created
       role: result
       type: ElementId
+    - name: measured
+      # The angle Revit measured, read back - "30 degrees".
+      role: result
+      type: string
     - name: refused
       # Why it declined, in the user's words - evidence it looked and said no.
       # Never a thing it FOUND (D-52).
@@ -58,6 +76,30 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: Project1 (3,208 elements), Revit 2024, session 32340
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned armOf Func`2, byId Func`3, created
+    1 item(s) [id 352521], findings 1 item(s) [Angular dimension drawn on 'Level 1' between
+    grid 1 and grid...], measured 60 degrees, plan ViewPlan, problems 0 item(s), radiusMm
+    3000, refused (null). inputs came view as given; between as given; radiusMm as given.
+    on Project1
+  negative_case: 'run with view=FloorPlan: Level 1, between=grid A | grid B, radiusMm=3000
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    armOf Func`2, byId Func`3, created (null), findings 1 item(s) [Nothing was drawn. "grid
+    A" and "grid B" are parallel in pla...], measured , plan ViewPlan, problems 1 item(s)
+    ["grid A" and "grid B" are parallel in plan, so they never me...], radiusMm 3000, refused
+    Nothing was drawn. "grid A" and "grid B" are parallel in plan, so they never meet and
+    make no angle - a distance between them is CREATE_LINEAR_DIMENSION''s.. inputs came view
+    as given; between as given; radiusMm as given. on Project1'
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: a336cf29bf76930c
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -82,6 +124,7 @@ compatibility-note: >
 #                                   library made
 
 utterances:
+  - dimension the angle between grid A and grid 1
   - dimension the angle between these
   - put an angular dimension here
   - dimension this splay

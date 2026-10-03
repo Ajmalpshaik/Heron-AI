@@ -287,6 +287,15 @@ alone would leave all three dimension fragments refusing at run time, having loo
 them. The refusal above is unchanged and correct for every one of the four; only the scope of the
 eventual fix is wider than the word *face* suggests.
 
+> **SUPERSEDED FOR THE THREE DIMENSIONS, 2026-10-03 - the picker is still unbuilt.** Version 2 of
+> `create-linear-dimension`, `create-angular-dimension` and `create-radial-dimension` stopped asking for
+> a `Reference` at all: each takes the references that HAVE a name or an id - `grid A`, `level L2`,
+> `plane Box Left`, `line <id>`, `wall <id> exterior` - and the angular one strikes its own arc on the
+> apex of its two arms. That reaches what a drawing dimensions to most of the time, and the linear and
+> angular ones were proved on Revit 2024 that day. A face or an edge of a solid is still not typeable and
+> is not offered; `place-family-on-face` is unchanged, and the policy question above - whether Heron
+> grows a picker - is still the owner's.
+
 ---
 
 #### What this does NOT do

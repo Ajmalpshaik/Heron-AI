@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-103
-semantic-identity: "dimension the radius or the diameter of this arc"
+semantic-identity: "dimension the radius or diameter of an arc grid or an arc line, on this view"
 kind: action
 domain: revit.annotation
 capability: CREATE_RADIAL_DIMENSION
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -34,18 +34,30 @@ purpose: >
   says so itself and throws otherwise; the message is caught and repeated in
   words rather than surfaced as an exception.
 
+  **VERSION 2 TAKES WHAT CAN BE TYPED (2026-10-03).** Version 1 asked for a Revit
+  `Reference`, which no request can carry - FRAGMENT-ISSUES section 6 and D-72 -
+  so it could be run by nobody. Now the arc is `grid NAME` for an arc grid or
+  `line <id>` for an arc model or detail line. An arc edge of a solid still has
+  to be picked with the mouse and is not offered.
+
+  **READ BACK.** `measured` is what the dimension reads, and it must equal the
+  arc's own radius or diameter to half a millimetre or the call fails.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
   needs:
     - name: doc
       type: Document
+    # The view to draw it in, as the Project Browser names it - "Level 1".
     - name: view
       type: View
       source: request
-    - name: arcReference
-      type: Reference
+    # The arc: "grid C1" for an arc grid, "line 123456" for an arc model or detail line.
+    - name: arc
+      type: string
       source: request
+    # true for a diameter dimension, false for a radius.
     - name: isDiameter
       type: bool
       source: request
@@ -53,6 +65,10 @@ contract:
     - name: created
       role: result
       type: ElementId
+    - name: measured
+      # What the dimension reads, read back - "radius 3000 mm".
+      role: result
+      type: string
     - name: refused
       # Why it declined, in the user's words - evidence it looked and said no.
       # Never a thing it FOUND (D-52).
