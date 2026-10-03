@@ -449,6 +449,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bv.md`](needs-checking/group-bv.md)
 
+## Group BW - `place-room-at-point` measures a space after Revit regenerates, so an enclosed space is no longer called not enclosed (2026-10-03)
+
+**Its own file:** [`needs-checking/group-bw.md`](needs-checking/group-bw.md)
+
 ## Group BX - a stair between two levels, and the opening over it, through Revit's stair edit mode (2026-10-03)
 
 **Its own file:** [`needs-checking/group-bx.md`](needs-checking/group-bx.md)

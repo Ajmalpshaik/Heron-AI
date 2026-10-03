@@ -225,6 +225,13 @@ def main():
     check(VALIDATE._as_count("0 item(s)") == 0,
           "which is heron_validate's own function, not a copy")
 
+    check(T.split_values("Ducts, Pipes,Walls") == ["Ducts", "Pipes", "Walls"],
+          "values are split on commas, as they always were")
+    check(T.split_values("1,2,0 | 1,2,0; 9,9,0|5,5,0")
+          == ["1,2,0", "1,2,0; 9,9,0", "5,5,0"],
+          "A PIPE splits instead when there is one - a point list keeps its "
+          "commas (5b-298)")
+
     print()
     print("3b. the run loop, on a FAKE runner - no Revit anywhere")
     # `runner` is injected precisely so this can be proved here. The only line
