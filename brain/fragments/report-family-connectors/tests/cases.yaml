@@ -1,0 +1,24 @@
+positive:
+  - given: >
+      a scratch Pipe Accessories family made by CREATE_FAMILY_DOCUMENT, planes
+      Port Left and Port Right at -49 and +49 mm, a thin cap extrusion on each,
+      a Nominal Diameter parameter, and a pipe connector on each cap made by
+      ADD_FAMILY_CONNECTOR sized by Nominal Diameter
+    expect: >
+      connectorCount 2; connectorList names a pipe connector on "Port Left"
+      pointing left (-X) at X -49 and one on "Port Right" pointing right (+X)
+      at X 49, each round with "diameter <- Nominal Diameter", their system and
+      flow direction
+
+negative:
+  - given: the same family with one connector flipped by SET_FAMILY_CONNECTOR_ROLES in the same rolled-back run
+    expect: that connector reads pointing the other way - the report reads the connector, not the face
+
+  - given: a project in front
+    expect: notAFamily true, connectorCount 0, nothing read
+
+second_route:
+  - >
+      In the Family Editor, select each connector and read its Properties -
+      System Classification, Flow Direction, Diameter and the small
+      associate-parameter button beside it - and see its arrow in a 3D view
