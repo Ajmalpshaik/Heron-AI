@@ -1,0 +1,32 @@
+positive:
+  - given: >
+      Project2 on Revit 2024 (the C-shaped school, unsaved, or a saved copy):
+      Level 1 at 0 and Level 2 at 4000, Stair 1's clear inside X 215..7438,
+      Y 35062..42438 mm, stair type 'Monolithic Stair' (max riser 180, tread
+      280), shape u, run width 1500, entry north, first run east, start offset
+      1500, cutOpening true
+    expect: >
+      one stair with two runs and one landing, 23 risers of 173.9 mm, its plan
+      extent inside the hall, and an opening in the Level 2 slab over it with
+      the slab's volume down by the opening's footprint times 150 mm - checked
+      in a 3D view and a section through the hall, not read off the report
+
+  - given: the same hall, shape straight, entry south, first run centre, run width 1200, start offset 300
+    expect: one run of 23 risers along the hall's length, no landing, no opening
+
+negative:
+  - given: the same values with stairType=Spiral Feature Stair, a name Project2 does not have
+    expect: refused by name with the six loaded stair types listed, nothing made
+
+  - given: the same values with run width 4000 on the U
+    expect: >
+      refused before the model is touched - two 4000 mm runs need 8000 mm
+      across and the hall is 7223 mm - nothing made
+
+  - given: run as a read (no --write)
+    expect: refused by the add-in, D-112 - an edit-mode fragment never runs on the read path
+
+second_route:
+  - >
+      Revit's own Architecture then Stair on the same levels and hall, and the
+      two compared in plan and section: risers, riser height, run widths

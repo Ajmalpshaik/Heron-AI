@@ -344,6 +344,31 @@ namespace Heron.Revit.Addin
             // the fragment.
             var needs = Json.ReadObjectArray(request, "needs");
 
+            // A FRAGMENT THAT HAS TO WORK IN ONE OF REVIT'S EDIT MODES - D-112.
+            //
+            // A stair is made only inside a StairsEditScope, and Revit refuses
+            // to start one while a transaction is open: "not permitted to start
+            // ... the document is currently modifiable". MEASURED 2026-10-03 on
+            // Project2, Revit 2024, inside this method's own transaction. So a
+            // fragment that declares the ambient `editScopeFailures` need runs
+            // inside the GROUP with no transaction open, opens its own edit
+            // scope and transactions, and hands every one of them this
+            // method's failure discipline through that need - so Revit's words
+            // still reach the verdict, and the group still makes the whole job
+            // one undo (Golden Rule 16) that rolls back on a preview.
+            var ownsTransactions = DeclaresNeed(needs, EditScopeNeed);
+
+            // NEVER ON THE READ PATH. That path's whole guarantee is that no
+            // transaction is open, so Revit itself refuses every change - and
+            // a fragment that opens its own would walk straight through it.
+            if (ownsTransactions && !writing)
+            {
+                return Json.Error("needs_write_path",
+                    "This fragment works in one of Revit's edit modes and opens its own "
+                    + "transactions inside Heron's, so it runs only as a change - never as "
+                    + "a read, where nothing is allowed to open one. Nothing was run.");
+            }
+
             // THE CALLER'S HALF. A contract may declare a need as
             // `source: request` - a view, a category, a name to match, a
             // distance - and nothing could supply one, so 288 of the 308
@@ -581,6 +606,30 @@ namespace Heron.Revit.Addin
                         }
                     }
 
+                    // THE EDIT-MODE FRAGMENT: no transaction of ours, see D-112
+                    // where ownsTransactions is read. Whatever it opened it
+                    // must have closed - a transaction left open is a group
+                    // that can be neither kept nor rolled back, so it is named.
+                    if (ownsTransactions)
+                    {
+                        globals.__heron[EditScopeNeed] = new FailureDiscipline(said, null);
+
+                        threw = RunScript(script, globals, name, out state);
+
+                        if (target.IsModifiable)
+                        {
+                            return Json.Error("operation_failed",
+                                "'" + name + "' left a transaction of its own open, so Heron "
+                                + "cannot keep or roll back its work. Press Undo in Revit and "
+                                + "look at the model before trusting it.");
+                        }
+                        if (threw != null)
+                        {
+                            SafeRollBack(group);
+                            return threw;
+                        }
+                    }
+                    else
                     using (var transaction = new Transaction(target, label))
                     {
                         transaction.Start();
@@ -1894,6 +1943,20 @@ namespace Heron.Revit.Addin
                 if (name == "doc" || name == "uidoc" || name == "app")
                 {
                     bound.Add(name);
+                    continue;
+                }
+
+                // D-112's failure discipline. Run puts the object in before the
+                // script starts, on the write path only; this is the line that
+                // names it for the fragment.
+                if (name == EditScopeNeed)
+                {
+                    bound.Add(name);
+                    lines.Append("IFailuresPreprocessor ").Append(name)
+                         .Append(" = (IFailuresPreprocessor)__heron[\"").Append(name)
+                         .Append("\"];\n");
+                    how.Add(name + " - Heron's failure discipline, for the fragment's own "
+                            + "edit mode");
                     continue;
                 }
 
@@ -4696,6 +4759,25 @@ namespace Heron.Revit.Addin
         private static string Size(object shaped, object before)
         {
             return HeronBindingNote.Size(shaped, before);
+        }
+
+        /// <summary>
+        /// The ambient need that says a fragment works in one of Revit's edit
+        /// modes and opens its own transactions inside Heron's group - D-112.
+        /// The same name is in brain/heron_fragment.py's AMBIENT.
+        /// </summary>
+        private const string EditScopeNeed = "editScopeFailures";
+
+        /// <summary>True when the contract sent with the request declares this need.</summary>
+        private static bool DeclaresNeed(IList<Dictionary<string, string>> needs, string wanted)
+        {
+            if (needs == null) return false;
+            foreach (var need in needs)
+            {
+                string name, type, source;
+                if (Fields(need, out name, out type, out source) && name == wanted) return true;
+            }
+            return false;
         }
 
         private static bool Fields(Dictionary<string, string> need,

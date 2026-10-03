@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DIM-031
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -178,6 +178,64 @@ contract:
       type: IList<ElementId>
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: c bulding test (4,965 elements), Revit 2024, session 41260
+  positive_case: 'run as it would normally be run - the arrangement was re-made first by running
+    filter-elements-by-category with this phase''s own values - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned alreadyTaggedHere
+    0 item(s), cautions 0 item(s), findings 1 item(s) [37 space tag(s) placed in "Level 1
+    - HVAC Zones" as "Space T...], firstRefusal (null), forSpaces true, forZones false, kindWord
+    space, mismatched 0 item(s), newTags 37 item(s) [355561, 355562, 355563, ...], notEnclosed
+    0 item(s), notTaggable 0 item(s), otherLevel 0 item(s), planLevel Level, refused 0 item(s),
+    roomTagsCategory 1 item(s) [id -2000480], spaceTagsCategory 1 item(s) [id -2000485], tagSymbol
+    SpaceTagType, tagType SpaceTagType, tagged 37, taggedHere HashSet`1, tagsCategory 1 item(s)
+    [id -2000485], tagsCategoryWord Space Tags, tagsHiddenHere false, typeCategoryId 1 item(s)
+    [id -2000485], typeLabel Func`2, typeName Space Tag: Family4, unplaced 0 item(s), viewsSharingTags
+    HashSet`1, zoneTagTargets Func`2, zoneTagsCategory 1 item(s) [id -2008115]. inputs came
+    view as given; elements from filter-elements-by-category (37); tagTypeId as given. on
+    c bulding test'
+  negative_case: 'run with view=FloorPlan: Level 1 - HVAC Zones, tagTypeId=Family4 arranged
+    with category=Rooms, levelId=Level 1 instead - chosen because it should not contain what
+    this fragment reports - the arrangement was re-made first by running filter-elements-by-category
+    with this phase''s own values - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alreadyTaggedHere 0 item(s), cautions 0 item(s),
+    findings 1 item(s) [0 space tag(s) placed in "Level 1 - HVAC Zones" as "Space Ta...],
+    firstRefusal (null), forSpaces true, forZones false, kindWord space, mismatched 0 item(s),
+    newTags 0 item(s), notEnclosed 0 item(s), notTaggable 37 item(s) [352950, 352952, 352953,
+    ...], otherLevel 0 item(s), planLevel Level, refused 0 item(s), roomTagsCategory 1 item(s)
+    [id -2000480], spaceTagsCategory 1 item(s) [id -2000485], tagSymbol SpaceTagType, tagType
+    SpaceTagType, tagged 0, taggedHere HashSet`1, tagsCategory 1 item(s) [id -2000485], tagsCategoryWord
+    Space Tags, tagsHiddenHere false, typeCategoryId 1 item(s) [id -2000485], typeLabel Func`2,
+    typeName Space Tag: Family4, unplaced 0 item(s), viewsSharingTags HashSet`1, zoneTagTargets
+    Func`2, zoneTagsCategory 1 item(s) [id -2008115]. inputs came view as given; elements
+    from filter-elements-by-category (37); tagTypeId as given. on c bulding test'
+  second_route: >
+    The KEPT tags in the same model, checked by a separate read-only measurement that asked
+    Revit itself and not this fragment's report, 2026-10-03. The audit log has four kept
+    tag-rooms runs on "c bulding test" at 18:00 UTC, before this proof at 18:05. Revit then
+    held 79 space tags (37 in "Level 1 - Spaces", 42 in "Level 2 - Spaces") on all 79
+    enclosed spaces, and 6 zone tags (3 in each "HVAC Zones" plan) on all 6 zones holding
+    spaces. None had no target, none was a second tag on one element in one view, every tag's
+    own text (TagText) carried its space's number or name or its zone's name, and every tag
+    point lay inside its space (Space.IsPointInSpace), or inside a space of its zone. Revit's
+    own count by hand (Select All Instances) was not done; this is the model's data read
+    another way, not a person's eye.
+  fingerprint: d4fc04e00926c473
+  caveat: >-
+    The signed run above is the SPACE case. The other two kinds were proved on the same
+    test copy, the same day, against the SAME code (fingerprint d4fc04e00926c473), each
+    with its own negative, rolled back, and signed off by Ajmal PS with this one. ZONES -
+    plan "Level 1 - Spaces", type Family3 (Zone Tags):
+    positive 3 of 3 Level 1 zones tagged, 0 refused, 0 mismatched; negative, the 37 Level 1
+    spaces with the same zone tag type, 0 placed and all 37 in notTaggable. ROOMS - plan
+    "Level 1 - HVAC Zones", type Room Tag With Area: positive 37 of 37 Level 1 rooms tagged,
+    0 refused, 0 mismatched; negative, the 37 Level 1 spaces with the same room tag type, 0
+    placed and all 37 in notTaggable. The second route above also read the 6 kept zone tags
+    and the 79 room tags in the model: no duplicates, every text its own zone's or room's,
+    every point inside it. The three tag counts read 79, 6 and 79 before and after every run.
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

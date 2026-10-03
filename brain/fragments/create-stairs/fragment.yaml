@@ -1,0 +1,146 @@
+heron-agent: HERON-REVIT-ELE-010
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-ELE-076
+semantic-identity: "make a stair between these two levels in this stair hall"
+kind: action
+domain: revit.elements
+capability: CREATE_STAIRS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Makes a real Revit stair - a Stairs element with its runs and landing -
+  from a base level to a top level, laid out inside a rectangle on plan: one
+  straight run, or a U (dogleg) with a landing across the far end. Optionally
+  cuts the opening in the top level's floor over it.
+
+  **NOTHING IN THE LIBRARY COULD MAKE A STAIR BEFORE THIS, AND NO FRAGMENT
+  COULD.** Revit makes a stair only inside a StairsEditScope, which refuses to
+  start while a transaction is open - and every write fragment runs inside
+  one. Measured 2026-10-03 on Project2, Revit 2024. This fragment declares the
+  ambient `editScopeFailures` need, and D-112 has the add-in run it inside the
+  job's TransactionGroup with no transaction open: still one undo, still
+  rolled back on a preview.
+
+  **THE RISER HEIGHT AND TREAD ARE THE STAIR TYPE'S.** The riser count is the
+  fewest that keeps every riser at or under the type's Maximum Riser Height;
+  the tread is its Minimum Tread Depth. A type name that is not loaded is
+  refused, with the loaded names listed - never guessed.
+
+  **THE RECTANGLE IS THE CLEAR INSIDE OF THE HALL**, wall faces and not
+  centrelines. `entrySide` is the side the first riser faces - the stair climbs
+  away from it - and `startOffset` is the clear floor between that side and the
+  first riser: where a door opens, and on a U where the top run arrives.
+
+  **ALL OR NOTHING, READ BACK.** The run count, the landing, the total risers
+  and the stair's plan extent inside the rectangle are read inside the edit
+  scope, and any miss cancels it. With `cutOpening` the top level's slab is cut
+  over the stair and its VOLUME read before and after; an opening that removed
+  nothing takes the stair away again.
+
+  **THE OPENING IS THE SLAB'S OWN, NOT A SHAFT.** Measured 2026-10-03, rolled
+  back: a shaft from Level 1 to Level 2 over the hall removed nothing from
+  either slab, while a floor opening in the Level 2 slab removed 8 m3.
+
+  It makes no railing. Revit's own Stair tool adds one; the API does not, and
+  nothing in the library makes one yet.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: editScopeFailures
+      type: IFailuresPreprocessor
+      source: ambient
+    - name: baseLevel
+      type: Level
+      source: request
+    - name: topLevel
+      type: Level
+      source: request
+    - name: stairType
+      # A NAME, NOT A BOUND TYPE: the binder has no stair-type row, and adding
+      # one is an add-in change. The fragment looks it up and lists the loaded
+      # names when it is not there.
+      type: string
+      source: request
+    - name: shape
+      type: string
+      source: request
+    - name: runWidth
+      type: double
+      source: request
+    - name: area
+      type: IList<XYZ>
+      source: request
+    - name: entrySide
+      type: string
+      source: request
+    - name: firstRunSide
+      type: string
+      source: request
+    - name: startOffset
+      type: double
+      source: request
+    - name: cutOpening
+      type: bool
+      source: request
+      optional: true
+  provides:
+    - name: created
+      role: result
+      type: ElementId
+    - name: risers
+      role: result
+      type: int
+    - name: riserHeightMm
+      role: result
+      type: double
+    - name: runCount
+      role: result
+      type: int
+    - name: landingCount
+      role: result
+      type: int
+    - name: openings
+      role: result
+      type: IList<ElementId>
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  Read off the reference assemblies for 2020 to 2027 on 2026-10-03:
+  `StairsEditScope.Start(ElementId, ElementId)`, `Commit(IFailuresPreprocessor)`,
+  `Cancel` and `IsPermitted`; `StairsRun.CreateStraightRun`, `TopElevation`,
+  `ActualRunWidth` and `ActualRisersNumber`; `StairsLanding.CanCreateAutomaticLanding`
+  and `CreateAutomaticLanding`; `Stairs.DesiredRisersNumber`, `ActualRisersNumber`,
+  `ActualRiserHeight`, `ActualTreadDepth`, `GetStairsRuns` and `GetStairsLandings`;
+  `StairsType.MaxRiserHeight`, `MinTreadDepth` and `MinRunWidth` - all present
+  and unchanged across the range. `Document.Create.NewOpening(Element, CurveArray,
+  bool)` is CREATE_OPENING's call, present throughout.
+
+# ROUTING - repeated in CREATE_OPENING.
+#
+#   "make the stair"                 -> here
+#   "cut the hole for the stair"     -> here with cutOpening=true, when the stair
+#                                       is being made; CREATE_OPENING for a hole
+#                                       in a slab that already has its stair
+#   "cut an opening in this slab"    -> CREATE_OPENING
+#   "make a floor slab"              -> CREATE_FLOOR
+
+utterances:
+  - make the stair also
+  - make the stair
+  - add a stair from level 1 to level 2
+  - create a U-shaped stair in the stair hall
+  - put a dogleg staircase in the stair core
+  - model the staircase between the two floors
