@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-022
-semantic-identity: "add these family parameters to the family being edited"
+semantic-identity: "add these family parameters to the family being edited, or switch existing ones to type or instance"
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_PARAMETERS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -46,6 +46,12 @@ purpose: >
   allow in a name - the call fails and nothing from it is kept, rather than
   half the list being added and the rest reported.
 
+  **SWITCHING TYPE AND INSTANCE (version 2).** With switchExisting true the
+  names are parameters the family already has - or `all` - and instance says
+  which way they go, several at once. The order is worked out for them, a
+  switch Revit would not allow is refused by name before anything changes,
+  and each is read back, all or nothing.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
@@ -57,20 +63,29 @@ contract:
       type: IList<string>
       source: request
     # What they hold: Length, Number, Integer, Angle, Area, Volume, YesNo,
-    # Text, Material or Air Flow.
+    # Text, Material or Air Flow. Not used when switching - give it empty.
     - name: kind
       type: string
       source: request
-    # true for instance parameters, false for type parameters.
+    # true for instance parameters, false for type parameters. When
+    # switching, the scope the named parameters are moved TO.
     - name: instance
       type: bool
       source: request
     # The Properties palette heading, as Revit names it - "Dimensions",
     # "Mechanical", "Identity Data". Empty files lengths and angles under
-    # Dimensions and the rest under Data.
+    # Dimensions and the rest under Data. Not used when switching.
     - name: parameterGroup
       type: string
       source: request
+    # true SWITCHES parameters already in the family to the scope `instance`
+    # names, instead of adding new ones; parameterNames may then be `all`.
+    # Absent is false - adding, exactly as version 1 did. `optional: true` is
+    # what lets it be left out (HeronBindingNote.AbsentValue).
+    - name: switchExisting
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: added
       # Each parameter added, read back from the family with the kind, scope
@@ -83,6 +98,21 @@ contract:
       # (D-52).
       role: accounting
       type: IList<string>
+    - name: switched
+      # Each parameter switched, in the order it was switched - the order the
+      # formulas allow, never the order the names were given.
+      role: result
+      type: IList<string>
+    - name: scopeReadBack
+      # Every parameter named, read back from the family afterwards with the
+      # scope it now has, as one line - "A instance; B instance; C instance".
+      role: accounting
+      type: string
+    - name: keptLinks
+      # What each one is tied to, the same before and after: connector sizes,
+      # nested families' parameters, labelled dimensions.
+      role: accounting
+      type: string
     - name: notAFamily
       role: accounting
       type: bool
@@ -148,11 +178,26 @@ compatibility-note: >
   ParameterType and BuiltInParameterGroup enums on the older. The same shape
   ADD_PROJECT_PARAMETER uses for the same move. Reading a parameter's kind back
   follows the same split: `Definition.GetDataType()` from 2022,
-  `Definition.ParameterType` before it.
+  `Definition.ParameterType` before it. Switching uses
+  `FamilyManager.MakeInstance` and `MakeType`, `FamilyParameter.Formula` and
+  `AssociatedParameters`, and `Dimension.FamilyLabel` - all unchanged from 2020
+  to 2027 (api-surface, read 2026-10-04).
+
+  **WHAT SWITCHING REFUSES, AND THE ORDER IT TAKES.** A type formula cannot
+  read an instance parameter, so going to instance a parameter moves before
+  what its formula reads, and going to type after it - worked out from the
+  formulas, never from the order the names arrive in. Refused by name before
+  anything changes: a switch that would leave a type formula reading an
+  instance parameter; to instance, a parameter a nested family's TYPE
+  parameter is linked to, or a column of the type catalogue beside the saved
+  family; and a built-in parameter. The read-back compares scope, formula,
+  associated parameters (connector sizes, nested families) and labelled
+  dimensions before and after, and throws on any difference.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "add a Width parameter to this family"   -> here
+#   "make these family parameters instance"  -> here, switchExisting true
 #   "add a shared parameter to the project"  -> ADD_PROJECT_PARAMETER
 #   "put 600 into Width"                     -> SET_FAMILY_TYPE_VALUES
 #   "what parameters has this family got"    -> REPORT_FAMILY_PARAMETERS
@@ -162,3 +207,6 @@ utterances:
   - add family parameters for width depth and height
   - create type parameters Neck Width and Neck Depth
   - add an instance length parameter to the family
+  - switch these parameters between type and instance
+  - make all these parameters instance
+  - change these type parameters to instance parameters
