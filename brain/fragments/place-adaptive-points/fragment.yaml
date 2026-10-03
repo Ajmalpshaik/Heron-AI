@@ -1,0 +1,111 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-050
+semantic-identity: "place the adaptive points an adaptive component is clicked into place by, in an adaptive or pattern-based family"
+kind: action
+domain: revit.families
+capability: PLACE_ADAPTIVE_POINTS
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Places POINTS in an adaptive component, a pattern-based panel or a mass open
+  in the Family Editor - the Point tool, then Make Adaptive. A modeller places
+  an adaptive family by clicking its PLACEMENT points in their number order,
+  and its shape follows wherever they land: a four-point panel, a two-point
+  beam, a three-point bracket. A SHAPE HANDLE point moves the shape after
+  placement; a plain REFERENCE point is a point to build on.
+
+  **ONLY IN A CONCEPTUAL FAMILY.** Revit makes reference points only in an
+  adaptive component, a pattern-based panel or a mass; any other family is
+  refused before anything is made, naming the templates that make one. A
+  PLACEMENT or SHAPE HANDLE point is an adaptive point, which Revit makes only
+  in an adaptive family - a mass is refused them and takes reference points.
+
+  **THREE WAYS TO SAY WHERE**, semicolons between, made in the order given:
+  FREE - "X,Y,Z" in millimetres from the family origin; HOSTED ON A LINE -
+  "on <line id> at 0.25", that far along it from its start (Revit's normalised
+  curve parameter), so it slides with the line: an inset frame, a mid-point,
+  an opening that scales with the cell; HOSTED ON A POINT'S OWN PLANE - "on
+  point 1 yz 0,150", millimetres along that plane's two axes, so a profile
+  drawn through such points turns with the point: a two-point beam's section.
+  A hosted point is a REFERENCE point that follows its host; placement and
+  shape handle points are free ones, so the two are not mixed in one call.
+
+  **ALL OR NOTHING**: every point's position, kind and number are read again;
+  placement numbers must rise in the order given, and numbers that are not the
+  next ones after the family's own are reported. A point where another
+  already is - in this call or in the family - is refused. Their ids come back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # "X,Y,Z" in millimetres, semicolons between, in placement order -
+    # "0,0,0; 1000,0,0; 1000,1000,0; 0,1000,0" - or hosted: "on <line id> at
+    # 0.5", "on point 1 yz 0,150".
+    - name: points
+      type: string
+      source: request
+    # placement, shape handle or reference.
+    - name: pointKind
+      type: string
+      source: request
+  provides:
+    - name: pointIds
+      # The new points' unique ids, commas between, in the order given.
+      role: result
+      type: string
+    - name: placedPoints
+      # Every point as read back - kind, placement number, id, position - on
+      # ONE line.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was placed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyItemFactory.NewReferencePoint(XYZ)` - which Autodesk's remarks say
+  throws when the family is not a conceptual one - and
+  `AdaptiveComponentFamilyUtils.MakeAdaptivePoint`, `GetPlacementNumber`,
+  `IsAdaptivePlacementPoint` and `GetNumberOfPlacementPoints` read the same
+  2020 through 2027 (the RevitAPI reference assemblies and XML remarks, read
+  2026-10-01). Whether Revit's conceptual flag reads true for the adaptive and
+  pattern-based templates as well as a mass is NEEDS-CHECKING BV4; the check
+  here accepts any of the three flags. A hosted point is
+  `FamilyItemFactory.NewReferencePoint(PointElementReference)` on
+  `Application.NewPointOnEdge` with a `PointLocationOnCurve`, or on
+  `PointOnPlane.NewPointOnPlane` with `ReferencePoint.GetCoordinatePlaneReference
+  XY/YZ/XZ` - all 2020 through 2027 (the RevitAPI XML, read 2026-10-02).
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "add four adaptive points to this family"     -> here
+#   "draw lines between the adaptive points"      -> DRAW_FAMILY_POINT_CURVES
+#   "make a surface from these lines"             -> CREATE_CONCEPTUAL_FORM
+
+utterances:
+  - add four adaptive points to this family
+  - host a point on this line at its midpoint
+  - add points on the yz plane of point 1 for the beam profile
+  - place adaptive placement points
+  - make these points adaptive
+  - add a shape handle point to the adaptive component

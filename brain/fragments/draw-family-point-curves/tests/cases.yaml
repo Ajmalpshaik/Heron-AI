@@ -1,0 +1,28 @@
+positive:
+  - given: >
+      a new family from the metric Curtain Panel Pattern Based template, its
+      four placement points as the template brings them; curves "1,2 | 2,3 |
+      3,4 | 4,1", referenceLines true
+    expect: >
+      four reference lines, each read back through its two points; LOOKED AT -
+      moving point 1 drags the two lines on it
+
+  - given: >
+      the Generic Model Adaptive family with points 1 to 4 placed; curves
+      "1,2,3", referenceLines false
+    expect: one model spline through points 1, 2 and 3, read back in that order
+
+negative:
+  - given: curves "1,9" where the family has no point numbered 9
+    expect: refused naming the placement numbers the family has, nothing drawn
+
+  - given: curves "1" alone
+    expect: refused - a curve needs two or more points - nothing drawn
+
+  - given: a project in front
+    expect: notAFamily true and nothing drawn
+
+second_route:
+  - >
+      In the Family Editor, select a curve and read its Properties - Is
+      Reference Line - and drag a point to see the curve follow

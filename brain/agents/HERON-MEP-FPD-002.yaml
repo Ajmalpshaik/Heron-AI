@@ -1,0 +1,91 @@
+# Fire Protection Design Agent - HERON-MEP-FPD-002
+#
+# NOT DECLARED HERE: tier and risk (docs/28-agent-registry.md owns them),
+# status (the module's Heron-Status header owns it).
+#
+# The module is brain/heron_fire.py, on the answer machinery of
+# brain/heron_hvac.py. docs/42-fire-protection-design.md is what it was
+# written from and what it is not.
+
+agent: HERON-MEP-FPD-002
+version: 0.1.0
+
+input:
+  calculation:
+    type: string
+    required: false
+    description: >
+      Which calculation - pipe_schedule, sprinkler_layout, design_area,
+      hydraulic and the rest. Empty asks for the list of them and what each
+      one needs, derived by running each on nothing.
+  inputs:
+    type: map
+    required: false
+    description: >
+      Named values in the units their names carry - density_mm_min,
+      max_spacing_m, flow_lpm, pressure_bar. Every design criterion arrives
+      here or is asked for, the hazard class above all; none is supplied by
+      the agent (D-33).
+
+output:
+  status:
+    type: string
+    description: >
+      ok, missing, refused or unknown. Only ok carries results; a calculation
+      that did not complete shows nothing, so a partial answer is never read
+      as a smaller one.
+  results:
+    type: list
+    description: >
+      The figures, metric first with the US equivalent beside each.
+  missing:
+    type: list
+    description: >
+      What to ask the modeller for, each with the reason and - where the
+      project's standard (NFPA 13, BS EN 12845 or FM Global) holds a figure
+      for it that was checked - that figure OFFERED with its table and
+      edition, never applied.
+  refused:
+    type: list
+    description: >
+      Inputs that cannot be a design figure, and questions that reach a table
+      cell nobody could check - refused rather than guessed.
+  ignored:
+    type: list
+    description: >
+      Inputs given that this calculation does not read. A mistyped name is
+      reported, never quietly dropped.
+  ask_once:
+    type: list
+    description: >
+      The project's governing standards still to be asked - the sprinkler
+      standard (an NFPA 13 edition, EN 12845 or FM Global) and the approving
+      authority, each only where the calculation uses it - asked once per
+      project and kept for it (D-111).
+  standards:
+    type: map
+    description: >
+      The project standards the answer used, each with where it came from -
+      this request, or the project's own fire record.
+  sources:
+    type: list
+    description: >
+      The standard, edition and section every method and reference came from.
+  next:
+    type: list
+    description: >
+      The capability that would put the result into Revit. Naming one sends
+      nothing.
+
+allowed-tools: []
+
+timeout-seconds: 10
+
+failures:
+  - NEEDS_REQUEST_VALUES
+  - UNUSABLE_REQUEST_VALUES
+  - UNKNOWN_CALCULATION
+
+retry:
+  attempts: 0
+  on-failures: []

@@ -1,0 +1,110 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-VIEW-117
+semantic-identity: "draw a filled or masking region inside the family being edited - a detail item's hatch, a symbol's mask, a solid plan fill"
+kind: action
+domain: revit.families
+capability: DRAW_FAMILY_FILLED_REGION
+version: 1
+source: OFFICIAL
+risk: MODIFY
+
+purpose: >
+  Draws a FILLED or MASKING region inside the family open in the Family Editor
+  - the hatch of a detail item's insulation, the solid of a cut steel section,
+  the white mask a symbol hides what is under it with, the solid fill of a
+  plan symbol in a model family. The Family Editor's Filled Region and Masking
+  Region.
+
+  **THE KIND OF FAMILY AND THE RELEASE DECIDE WHAT EXISTS.** A 2D family - a
+  detail item, an annotation, a profile, a title block - draws in its VIEW, by
+  the view's name, on every release 2020 to 2027. A 3D model family draws on a
+  level or a named reference plane, and Revit has a call for that only from
+  2023. A MASKING region has a call of its own only from 2024. Each is found on
+  the running Revit by its own signature; a release without it is refused by
+  name with what to do instead.
+
+  **THE SAME SHAPE LANGUAGE AS THE FORM TOOLS**, millimetres in the plane's own
+  two model coordinates, closed loops only, `|` between them - a loop inside
+  another is a hole.
+
+  **THE TYPE IS NAMED** - the family's own filled region type, "Solid Black",
+  or "masking". A name the family does not hold is refused with the ones it
+  does.
+
+  **READ BACK, ALL OR NOTHING**: the region, its loops, its type and whether it
+  is masking are read again; one that does not read as asked fails the call.
+  Its id comes back.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # In a 2D family the VIEW to draw in, as the Project Browser names it -
+    # "Ref. Level". In a 3D family a level or a named reference plane facing
+    # left-right, front-back or up.
+    - name: workPlane
+      type: string
+      source: request
+    # Closed loops, `|` between: "circle CX,CY R", "rect X1,Y1 X2,Y2",
+    # "polygon CX,CY R N", or corners "X,Y; X,Y; arc MX,MY X,Y". Millimetres.
+    - name: shapes
+      type: string
+      source: request
+    # A filled region type in the family - "Solid Black" - or "masking".
+    - name: regionType
+      type: string
+      source: request
+  provides:
+    - name: regionId
+      # The new region's unique id.
+      role: result
+      type: string
+    - name: drawn
+      # Filled or masking, its type, where, its loops and boundary length - read
+      # back.
+      role: result
+      type: string
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was drawn, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FilledRegion.Create(Document, ElementId, ElementId, IList<CurveLoop>)` - a
+  view-specific region, in models and 2D families - is the same 2020 through
+  2027. `FilledRegion.Create(Document, ElementId, SketchPlane, ...)` - a
+  region in a 3D model family - exists from 2023, and
+  `FilledRegion.CreateMaskingRegion`, both forms, from 2024 (the RevitAPI
+  reference assemblies and Autodesk's XML remarks, read 2026-10-01). Both are
+  found by signature at run time, so 2020 to 2022 refuse a 3D family's region
+  by name rather than failing to compile.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "add a solid fill to this detail item family" -> here
+#   "put a masking region in this family"         -> here
+#   "put a filled region here"                    -> CREATE_FILLED_REGION - a
+#                                                    project's view, not a family
+#   "draw the valve symbol in plan"               -> DRAW_FAMILY_SYMBOLIC_LINES
+
+utterances:
+  - add a solid fill to this detail item family
+  - put a masking region in this family
+  - draw a filled region in the family
+  - fill the insulation hatch in this detail component

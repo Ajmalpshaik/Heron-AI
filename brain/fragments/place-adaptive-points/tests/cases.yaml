@@ -1,0 +1,52 @@
+positive:
+  - given: >
+      a new family from the metric Generic Model Adaptive template; points
+      "0,0,0; 1000,0,0; 1000,1000,0; 0,1000,0", pointKind "placement"
+    expect: >
+      four placement points numbered 1 to 4 in that order, each read back where
+      it was asked; the family now has 4 placement points; LOOKED AT - the
+      numbers shown beside them in the Family Editor
+
+  - given: the same family; points "500,500,300", pointKind "shape handle"
+    expect: one shape handle point at 500,500,300, read back, with no number
+
+  - given: >
+      the same family after DRAW_FAMILY_POINT_CURVES drew a reference line
+      "1,2"; points "on <that line's id> at 0.5", pointKind "reference"
+    expect: >
+      one reference point at 500,0,0, read back; dragging point 2 to 2000,0,0
+      in the Family Editor moves it to 1000,0,0 - it is hosted (BV19)
+
+  - given: >
+      a Generic Model Adaptive family with points 1 and 2 at 0,0,0 and
+      3000,0,0; points "on point 1 yz -100,0; on point 1 yz 100,0; on point 1 yz
+      100,200; on point 1 yz -100,200", pointKind "reference"
+    expect: >
+      four reference points on point 1's YZ plane - a 200 x 200 square from Y
+      -100 to 100 and Z 0 to 200 - read back; rotating point 1 turns them with
+      it (BV19)
+
+negative:
+  - given: a new family from the plain metric Generic Model template
+    expect: >
+      refused - not an adaptive component, a pattern-based panel or a mass -
+      and nothing placed
+
+  - given: points "0,0" in the adaptive family
+    expect: refused - not a point X,Y,Z - and nothing placed
+
+  - given: points "on <a line's id> at 0.5", pointKind "placement"
+    expect: >
+      refused - a hosted point is a reference point; placement points are free
+      ones - and nothing placed
+
+  - given: points "0,0,0" where point 1 already is
+    expect: refused - another point is already there - nothing placed
+
+  - given: a project in front
+    expect: notAFamily true and nothing placed
+
+second_route:
+  - >
+      In the Family Editor, select each point: Properties shows it as an
+      Adaptive Point with its Point number

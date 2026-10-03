@@ -1,0 +1,34 @@
+positive:
+  - given: >
+      a new family from the metric Profile template with four reference planes
+      added and named Left Edge, Right Edge, Bottom Edge and Top Edge at X -25,
+      X 25, Y 0 and Y 50; view "Ref. Level", shapes "rect -25,0 25,50",
+      subcategory "none", lockToPlanes true
+    expect: >
+      four detail lines forming the 50 x 50 profile, each read back, and 4
+      locks - one to each named plane; then a 50 mm Width labelled between Left
+      Edge and Right Edge and flexed to 80 moves the two side lines with the
+      planes (FLEX_FAMILY)
+
+  - given: >
+      a new family from the metric Detail Item template; view "Ref. Level",
+      shapes "path -300,0; 300,0 | circle 0,0 50", subcategory "Heron Detail",
+      lockToPlanes false
+    expect: >
+      one straight line and two arcs on the new subcategory "Heron Detail",
+      read back; the finding saying the subcategory was made
+
+negative:
+  - given: shapes "path 0,0; 100,0" in the Profile family
+    expect: refused - every line in a profile family is part of the profile - nothing drawn
+
+  - given: a new family from the plain metric Generic Model template
+    expect: refused as a 3D model family, naming DRAW_FAMILY_SYMBOLIC_LINES - nothing drawn
+
+  - given: a project in front
+    expect: notAFamily true and nothing drawn
+
+second_route:
+  - >
+      In the Family Editor, select a line: Properties shows it as a Line with
+      its subcategory; the padlocks show on the locked lines
