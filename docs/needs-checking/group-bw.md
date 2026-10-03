@@ -28,7 +28,7 @@ That proof itself recorded `unenclosed 5` of 5 rooms, which the same early read 
 | Spaces, OLD code, same box | inside + outside | 2 | **2** - the defect |
 | Spaces, OLD code, same box | inside only | 1 | **1** - the defect |
 
-**Why it was not signed at first:** `heron_validate accept` takes an empty negative leg, which this fragment cannot give because it always places something, or a D-53 tracking set, and `validate --vary` split its values on commas, which every point is written with. `validate --vary` and `tools/prove-tracking.py` now take `|` between values when one is there, and the tracking run on the same model made 1, 2 and 3 spaces from 1, 2 and 3 points on Roof, rolled back. **Signed by Ajmal PS and promoted back to PROVEN on 2026-10-03, after BW1 and BW2 passed. Nothing in this group is left to check.**
+**Why it was not signed at first:** `heron_validate accept` takes an empty negative leg, which this fragment cannot give because it always places something, or a D-53 tracking set, and `validate --vary` split its values on commas, which every point is written with. `validate --vary` and `tools/prove-tracking.py` now take a pipe (the vertical bar) between values when one is there, and the tracking run on the same model made 1, 2 and 3 spaces from 1, 2 and 3 points on Roof, rolled back. **Signed by Ajmal PS and promoted back to PROVEN on 2026-10-03, after BW1 and BW2 passed. Nothing in this group is left to check.**
 
 | # | Check | Expected |
 |---|---|---|
