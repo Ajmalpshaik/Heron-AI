@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -79,6 +79,39 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
+    Revit 2024, session 32340'
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned asked 1 item(s) [(Autodesk.Revit.DB.ConnectorElement,
+    Autodesk.Revit.DB.Conne...], changed 1 item(s) [duct connector 2954 on "Box Top" and duct
+    connector 2955 on ...], connectorReport 2 connector(s), read back: duct connector 2954
+    on "Box Top", Supply Air, pointing up - PRIMARY, linked to 2955; duct connector 2955 on
+    "Box Left", Return Air, pointing left (-X) - secondary, linked to 2954., connectors 2
+    item(s) [Supply Air, Return Air], domainWords Func`2, findings 4 item(s) [duct connector
+    2954 on "Box Top" was already primary - left ..., "Box Top > Box Left" is linked, but
+    its connectors are Suppl..., Before: duct connector 2954 on "Box Top", Supply Air, pointi...,
+    ...], halfMillimetre 0.00164041994750656, invariant CultureInfo, label Func`2, notAFamily
+    false, onPlanes 2 entry(ies), ownName Func`2, pointing Func`2, problems 0 item(s), refused
+    (null), row Func`2, spaced Func`2, squash Func`2, wantPrimary ConnectorElement. inputs
+    came primary as given; links as given. on Family1'
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned asked 0 item(s), changed 0 item(s), connectorReport ,
+    connectors 0 item(s), domainWords Func`2, findings 1 item(s) [The document in front, "Project1",
+    is a project, not a famil...], halfMillimetre 0.00164041994750656, invariant CultureInfo,
+    label Func`2, notAFamily true, onPlanes 0 entry(ies), ownName Func`2, pointing Func`2,
+    problems 0 item(s), refused The document in front, "Project1", is a project, not a family
+    open in the Family Editor. A connector's primary flag and links are set inside the family
+    - open it first., row Func`2, spaced Func`2, squash Func`2, wantPrimary (null). inputs
+    came primary as given; links as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: bb2f93d09fde7d4e
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

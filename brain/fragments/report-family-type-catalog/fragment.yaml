@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -59,6 +59,34 @@ contract:
       type: bool
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
+    Revit 2024, session 32340'
+  positive_case: "run as it would normally be run. returned catalogText ,Default Elevation##LENGTH##MILLIMETERS,Blade\
+    \ Count##OTHER##,Show Handle##OTHER##,Supply Flow##HVAC_AIR_FLOW##LITERS_PER_SECOND,Depth##LENGTH##MILLIMETERS,Height##LENGTH##MILLIMETERS,Neck\
+    \ Diameter##LENGTH##MILLIMETERS,Width##LENGTH##MILLIMETERS\r\nT1,0,4,1,0,400,500,200,600\r\
+    \n, cell Func`2, fileName .txt, findings 5 item(s) [1 type(s) and 8 column(s) read into\
+    \ a type catalog for \"\" - ..., The family has not been saved, so it has no folder yet.\
+    \ The ..., The family has 1 type(s). A catalog earns its place when the..., ...], flags\
+    \ BindingFlags, invariant CultureInfo, leftOut Body Material (holds an element), Type\
+    \ Image (holds an element), Keynote (blank in every type), Model (blank in every type),\
+    \ Manufacturer (blank in every type), Type Comments (blank in every type), URL (blank\
+    \ in every type), Description (blank in every type), Assembly Code (blank in every type),\
+    \ Cost (blank in every type), Type IFC Predefined Type (blank in every type), Export Type\
+    \ to IFC As (blank in every type), measuredAs Func`2, notAFamily false, specOf Func`2,\
+    \ typeCount 1, units Units. on Family1"
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports. returned catalogText , cell Func`2, fileName , findings 1 item(s)
+    [The document in front, "Project1", is a project, not a famil...], flags BindingFlags,
+    invariant CultureInfo, leftOut , measuredAs Func`2, notAFamily true, specOf Func`2, typeCount
+    0, units Units. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 4be5f5da08538ee7
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

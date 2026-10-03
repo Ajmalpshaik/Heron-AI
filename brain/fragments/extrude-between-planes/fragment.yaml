@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -91,6 +91,40 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family1,
+    Revit 2024, session 32340'
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, bottom
+    Tuple`5, datums 10 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
+    (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., ...], elevation ViewSection, findings 2 item(s) [Built a
+    solid extrusion 600 x 400 x 200 mm (width x depth x ..., Locked to planes is not yet PROVED
+    to follow them. FLEX_FAMI...], halfMillimetre 0.00164041994750656, invariant CultureInfo,
+    locked 5 item(s) [left face to "Box Left", right face to "Box Right", front face to "Box
+    Front", ...], mm Func`2, notAFamily false, one Func`3, ownName Func`2, plan ViewPlan,
+    problems 0 item(s), refused (null), sides 4 item(s) [(Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
+    (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., ...], size 600 x 400
+    x 200 mm (width x depth x height), centred at X 0, Y 0, from Z 500 to 700, top Tuple`5.
+    inputs came sidePlanes as given (4); basePlane as given; topPlane as given. on Family1
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, bottom (null), datums 0
+    item(s), elevation (null), findings 1 item(s) [The document in front is a project, not
+    a family open in the...], halfMillimetre 0.00164041994750656, invariant CultureInfo, locked
+    0 item(s), mm Func`2, notAFamily true, one Func`3, ownName Func`2, plan (null), problems
+    0 item(s), refused The document in front is a project, not a family open in the Family
+    Editor. A family's geometry is built inside the family - open it first., sides 0 item(s),
+    size , top (null). inputs came sidePlanes as given (4); basePlane as given; topPlane as
+    given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 6d63ff78002b1da0
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

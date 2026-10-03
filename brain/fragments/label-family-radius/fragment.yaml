@@ -60,6 +60,10 @@ purpose: >
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
+  **THIS IS VERSION 2, AND IT IS DRAFT UNTIL IT IS PROVED AGAIN.** Version 1's
+  proof below (2026-10-03) showed the label on the EDGE accepted and read
+  back, never the form following it; it no longer describes the code.
+
 contract:
   needs:
     - name: doc
@@ -99,6 +103,36 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
+    Revit 2024, session 32340'
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned arc Arc, axisOf Func`2, dbNamespace
+    Autodesk.Revit.DB, diameter true, edge Edge, findings 2 item(s) [The diameter of the form's
+    round edge centred at X 800, Y 0,..., Labelled is not yet PROVED to drive the circle.
+    FLEX_FAMILY ...], flags BindingFlags, halfMillimetre 0.00164041994750656, invariant CultureInfo,
+    isLength Func`2, labelled The diameter of the form's round edge centred at X 800, Y 0,
+    Z 300 mm, labelled "Neck Diameter" in "Ref. Level", reading 200 mm., mm Func`2, notAFamily
+    false, parameter FamilyParameter, problems 0 item(s), refused (null), revitAssembly RuntimeAssembly,
+    sameKind Func`3, target Revolution, valueMm 200, view ViewPlan, wantedRadius 0.328083989501312.
+    inputs came form as given; parameterName as given; diameter as given. on Family1
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned arc (null), axisOf Func`2, dbNamespace Autodesk.Revit.DB,
+    diameter true, edge (null), findings 1 item(s) [The document in front is a project, not
+    a family open in the...], flags BindingFlags, halfMillimetre 0.00164041994750656, invariant
+    CultureInfo, isLength Func`2, labelled , mm Func`2, notAFamily true, parameter (null),
+    problems 0 item(s), refused The document in front is a project, not a family open in the
+    Family Editor. A family dimension is labelled inside the family - open it first., revitAssembly
+    RuntimeAssembly, sameKind Func`3, target (null), valueMm 0, view (null), wantedRadius
+    0. inputs came form as given; parameterName as given; diameter as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: ecebc59e19b96faf
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

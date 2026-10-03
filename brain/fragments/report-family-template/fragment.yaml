@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -79,6 +79,40 @@ contract:
       type: bool
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family6, Project1 - active was Family6,
+    Revit 2024, session 32340'
+  positive_case: 'run as it would normally be run. returned axisLetters 3 item(s) [X, Y, Z],
+    axisOf Func`2, countOf Func`2, familyKind a detail item - 2D, placed in a view, findings
+    2 item(s) ["" is a detail item - 2D, placed in a view. Category Detail ..., The family
+    has no type yet. A formula, and any value, needs ...], invariant CultureInfo, lineList
+    , mm Func`2, notAFamily false, planeList Center (Left/Right): faces X, at X 0 mm, Is Reference
+    Center (Left/Right), defines origin, pinned  ||  Center (Front/Back): faces Y, at Y 0
+    mm, Is Reference Center (Front/Back), defines origin, pinned  ||  (unnamed da0cea1e-82fa-11d3-a7db-00105aa73639-0000002f):
+    faces Z, at Z 0 mm, Is Reference Not a Reference, defines origin, pointList , shown Func`2,
+    stored Func`2, templateReport Family "" | category Detail Items | kind: a detail item
+    - 2D, placed in a view | placement ViewBased | host elements in the template: none | settings:
+    Host (blank), Work Plane-Based No, Always Vertical No, Cut with Voids When Loaded No,
+    Shared No, Room Calculation Point No, Maintain Annotation Orientation No, Rotate with
+    component No, Keep text readable No, Part Type Undefined, Profile Usage <Generic>, Material
+    for Model Behavior Other, Section Shape Not Defined | built-in parameters: Type Image
+    [type], Keynote [type], Model [type], Manufacturer [type], Type Comments [type], URL [type],
+    Description [type], Assembly Code [type], Cost [type], Section Name Key [type], Type IFC
+    Predefined Type [type], Export Type to IFC As [type] | own parameters: 0 | reference planes:
+    3 | reference lines: 0 | adaptive points: 0 | types: 0, none current | views: Ref. Level
+    (FloorPlan). on Family6'
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports. returned axisLetters 3 item(s) [X, Y, Z], axisOf Func`2, countOf
+    Func`2, familyKind , findings 1 item(s) [The document in front, "Project1", is a project,
+    not a famil...], invariant CultureInfo, lineList , mm Func`2, notAFamily true, planeList
+    , pointList , shown Func`2, stored Func`2, templateReport . on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: e0d021fd47f791ec
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -91,6 +91,43 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family4, Project1 - active was Family1,
+    Revit 2024, session 32340'
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned call Func`4, changed 4 item(s)
+    [Light shape set to point., Light distribution set to spherical., Initial intensity set
+    on 1 type(s)., ...], chosen 1 item(s) [0], distributionArgs 0 item(s), distributionStyle
+    Spherical, findings 2 item(s) [1 type(s), read back: "L1": point, spherical, Luminous
+    Flux ..., What Type Properties shows for each value is what the modell...], intensityArgs
+    1 item(s) [1500], intensityKind InitialFluxIntensity, invariant CultureInfo, kelvin 4000,
+    light LightFamily, lightReport 1 type(s), read back: "L1": point, spherical, Luminous
+    Flux 1500 lm, 4000 K. The light source sits at X 0, Y 0, Z 1400 mm., lightingNamespace
+    Autodesk.Revit.DB.Lighting., lightingType Func`2, make Func`3, notAFamily false, number
+    Func`2, number0f Func`3, plain Func`2, problems 0 item(s), reasonOf Func`2, refused (null),
+    revitAssembly RuntimeAssembly, shapeArgs 0 item(s), shapeStyle Point, shown Func`2, squash
+    Func`2, typeNames 1 item(s) [L1]. inputs came shape as given; distribution as given; intensity
+    as given; colorTemperature as given; typeName as given. on Family4'
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned call Func`4, changed 0 item(s), chosen 0 item(s), distributionArgs
+    (null), distributionStyle (null), findings 1 item(s) [The document in front, "Project1",
+    is a project, not a famil...], intensityArgs (null), intensityKind (null), invariant CultureInfo,
+    kelvin (null), light (null), lightReport , lightingNamespace Autodesk.Revit.DB.Lighting.,
+    lightingType Func`2, make Func`3, notAFamily true, number Func`2, number0f Func`3, plain
+    Func`2, problems 0 item(s), reasonOf Func`2, refused The document in front, "Project1",
+    is a project, not a family open in the Family Editor. A light source is defined inside
+    the lighting fixture family - open it first., revitAssembly RuntimeAssembly, shapeArgs
+    (null), shapeStyle (null), shown Func`2, squash Func`2, typeNames 0 item(s). inputs came
+    shape as given; distribution as given; intensity as given; colorTemperature as given;
+    typeName as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 01e1cda49ad13f33
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

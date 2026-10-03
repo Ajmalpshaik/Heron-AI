@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -77,6 +77,45 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
+    Revit 2024, session 32340'
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, coarse
+    true, datums 8 item(s) [(Autodesk.Revit.DB.ReferencePlane, 1, 0, Center (Front/Back)...,
+    (Autodesk.Revit.DB.ReferencePlane, 0, 0, Center (Left/Right)..., (Autodesk.Revit.DB.ReferencePlane,
+    0, -0.984251968503937, Bo..., ...], drawn 3 symbolic line(s) in 2 shape(s) on "Ref. Level",
+    1242.48 mm in all, on the family's category, Generic Models, shown at coarse, medium,
+    fine - every end read back., findings 3 item(s) [3 symbolic line(s) in 2 shape(s) on "Ref.
+    Level", 1242.48 mm..., Revit took the ViewSpecific kind of visibility for these lin...,
+    They show only in views parallel to "Ref. Level", never in 3...], fine true, halfMillimetre
+    0.00164041994750656, inPlane 3 item(s) [System.Int32[], System.Int32[], System.Int32[]],
+    invariant CultureInfo, lineIds bfa50ce5-921a-49fe-86b2-5220cec4d34a-00000c03,bfa50ce5-921a-49fe-86b2-5220cec4d34a-00000c04,bfa50ce5-921a-49fe-86b2-5220cec4d34a-00000c05,
+    loopOf Func`3, medium true, mm Func`2, notAFamily false, number Func`2, onCategory true,
+    openOf Func`3, ownName Func`2, pair Func`2, parent Category, pieces 2 item(s) [(System.Collections.Generic.List`1[System.Double[]],
+    True), (System.Collections.Generic.List`1[System.Double[]], False)], plain Func`2, plane
+    Tuple`4, problems 0 item(s), refused (null), shortest 0.7803686370625, squash Func`2,
+    wanted Category, wantedName none. inputs came workPlane as given; shapes as given; detailLevels
+    as given; subcategory as given. on Family1
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned along Func`3, axisOf Func`2, coarse false, datums 0 item(s),
+    drawn , findings 1 item(s) [The document in front is a project, not a family open in the...],
+    fine false, halfMillimetre 0.00164041994750656, inPlane 3 item(s) [System.Int32[], System.Int32[],
+    System.Int32[]], invariant CultureInfo, lineIds , loopOf Func`3, medium false, mm Func`2,
+    notAFamily true, number Func`2, onCategory true, openOf Func`3, ownName Func`2, pair Func`2,
+    parent (null), pieces 0 item(s), plain Func`2, plane (null), problems 0 item(s), refused
+    The document in front is a project, not a family open in the Family Editor. A family's
+    symbolic lines are drawn inside the family - open it first., shortest 0.7803686370625,
+    squash Func`2, wanted (null), wantedName none. inputs came workPlane as given; shapes
+    as given; detailLevels as given; subcategory as given. on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 88f910b123073135
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

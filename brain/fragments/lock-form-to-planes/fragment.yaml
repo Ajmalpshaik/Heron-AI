@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -74,6 +74,40 @@ contract:
       type: string
     - name: findings
       type: IList<string>
+
+proof:
+  date: '2026-10-03'
+  by: Ajmal PS
+  model: 'PHASES RAN AGAINST DIFFERENT DOCUMENTS: Family1, Project1 - active was Family6,
+    Revit 2024, session 32340'
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned along Func`3, axisLetters 3 item(s)
+    [X, Y, Z], axisOf Func`2, axisWords 3 item(s) [left-right, front-back, up-down], datums
+    8 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
+    ...], elevation ViewSection, findings 2 item(s) [Locked 3 face(s): the face at X -300
+    mm to "Box Left" (in Re..., Locked is not yet PROVED to follow the planes. FLEX_FAMILY
+    c...], flatFaces Func`1, halfMillimetre 0.00164041994750656, invariant CultureInfo, locked
+    3 item(s) [the face at X -300 mm to "Box Left" (in Ref. Level), the face at X 300 mm to
+    "Box Right" (in Ref. Level), the face at Z 500 mm to "Box Top" (in Back)], mm Func`2,
+    notAFamily false, ownName Func`2, plan ViewPlan, problems 0 item(s), refused (null), target
+    Extrusion, wantedPlanes 3 item(s) [(Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen...,
+    (Autodesk.Revit.DB.ReferencePlane, Autodesk.Revit.DB.Referen..., (Autodesk.Revit.DB.ReferencePlane,
+    Autodesk.Revit.DB.Referen...]. inputs came form as given; planes as given (3). on Family1'
+  negative_case: run against 'Project1' instead - chosen because it should not contain what
+    this fragment reports - run inside a transaction, and Revit reported the transaction group
+    ROLLED BACK afterwards. returned along Func`3, axisLetters 3 item(s) [X, Y, Z], axisOf
+    Func`2, axisWords 3 item(s) [left-right, front-back, up-down], datums 0 item(s), elevation
+    (null), findings 1 item(s) [The document in front is a project, not a family open in the...],
+    flatFaces Func`1, halfMillimetre 0.00164041994750656, invariant CultureInfo, locked 0
+    item(s), mm Func`2, notAFamily true, ownName Func`2, plan (null), problems 0 item(s),
+    refused The document in front is a project, not a family open in the Family Editor. A
+    form is locked to its planes inside the family - open it first., target (null), wantedPlanes
+    0 item(s). inputs came form as given; planes as given (3). on Project1
+  second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
+    whether one exists here has not been settled, and a declared absence is not the same as
+    none
+  fingerprint: 0d0b701b7c15a976
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
