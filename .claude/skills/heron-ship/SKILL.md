@@ -1,6 +1,6 @@
 ---
 name: heron-ship
-description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the eleven CI actually decides on, the reports whose findings are questions, the checker whose exit code follows the unfinished list, and the seven checks that need something this container has not got - a tool, a store or the whole git history.
+description: What to run before pushing Heron, in what order, and which failures are the machine rather than the change. Use before any commit or push, when a gate or test fails and it is not obvious whether the change caused it, or when asked whether the work is ready. Covers stating the change's intent and capturing its before/after evidence, the four gates you run before pushing and the eleven CI actually decides on, the reports whose findings are questions, the checker whose exit code follows the unfinished list, the seven checks that need something this container has not got - a tool, a store or the whole git history, why no derived count is typed in prose, and how to resolve a merge conflict in the NEEDS-CHECKING group index or at the end of the 5b rows.
 allowed-tools:
   - Bash
   - Read
@@ -458,7 +458,46 @@ container with no Revit has nothing to break, so the compile gates are cheaper t
 
 - **Never push to `main`.** Work on the session's branch and open a **draft** pull request.
 - Rebuilt anything under `revit/`? **Redeploy the add-in**, and check the framework first (§5).
-- Changed a count anybody states in prose? `check-docs` already told you. Fix the sentence.
+- Changed a count anybody states in prose? `check-docs` already told you. Fix the sentence - and
+  the fix is to **take the number out**, not to re-type it (§6a).
+
+## 6a. No typed derived count in prose, and how to merge the registers
+
+**Never type a count a command can derive** - fragments `PROVEN` / `DRAFT`, the library's total,
+`MODIFY` fragments `PROVEN`, fragments carrying the stack guard. Write the sentence without the number
+and name the command instead:
+
+```bash
+grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c        # PROVEN / DRAFT / total
+grep -l '^heron-status: PROVEN' brain/fragments/*/fragment.yaml \
+  | xargs grep -l '^ *risk: *MODIFY' | wc -l                                    # MODIFY that are PROVEN
+python tests/test_stack_guard.py                                                # how many carry the guard
+```
+
+**Why, measured on 2026-10-04:** 15 of the last 30 first-parent merges on `main` changed the same
+count sentences in `README.md`, `CONTRIBUTING.md`, `brain/README.md`, `docs/README.md`, docs/32 and
+docs/33, so every fragment pull request conflicted with the next one - one conflicted twice in a day,
+two others four times each. A typed count is a merge conflict with every other proving session.
+`check-docs` §7 and `tests/test_library_total.py` still check any count that IS typed, so a number
+that comes back is still held to the truth; a dated measurement (*"measured 2026-10-02: 163"*) stays
+legal, because it is a record and nobody needs to update it.
+
+**Two collision points are left on purpose, because both are append-only registers.** Every pull
+request that adds a NEEDS-CHECKING group puts its `## Group XX` heading and its one `**Its own file:**`
+line after the last group in [`docs/NEEDS-CHECKING.md`](../../../docs/NEEDS-CHECKING.md), and every new
+5b row goes at the end of the last `docs/fragment-issues/section-5b-rows-*.md`. The index cannot be
+generated: its early groups are in **dependency order** (A, K, J, R, B...), not letter order, and
+other sections sit between them - only a person knows where a group belongs.
+[`needs-checking-register.py`](../../../tools/needs-checking-register.py) is a reader by design, and
+stays one.
+
+**Resolving either conflict: keep BOTH sides, in order** - two-letter groups in letter order (`BY`
+before `BZ`), 5b rows in row-number order. Never take one side: a dropped group line leaves its
+`group-xx.md` on disk with nothing pointing at it, and the group silently leaves the register.
+`check-docs` §10 now fails on exactly that - a `docs/needs-checking/group-*.md` its index never names.
+**If both sides used the same group letter or row number**, the side merging second takes the next
+free one and renames everything that says it (`git grep` the old id): `tests/test_open_defects.py`
+fails on a 5b number used twice, and two `group-xx.md` files collide as an add/add conflict.
 
 ## What this deliberately does not do
 

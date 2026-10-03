@@ -65,10 +65,10 @@ python tools/check-gaps.py                                  # unfinished, versus
 
 ## What is still to come
 
-**Proof, mostly.** **273 fragments are `PROVEN`; the other 192 and all twenty-four skills are `DRAFT`** — derive
-both with `python brain/heron_fragment.py` rather than reading them here. **This line said 167 and 193
+**Proof, mostly.** **Most fragments are `PROVEN`; the rest and all twenty-four skills are `DRAFT`** — derive
+both with `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`; no count is typed here. **This line said 167 and 193
 until 2026-09-19**, which was wrong by 149 in one direction and 114 in the other and had been for weeks
-(and 306 and 120 until 2026-10-02, the same mistake a third time):
+(and 306 and 120 until 2026-10-02, the same mistake a third time, and 273 and 192 until 2026-10-04, when it stopped typing them):
 the sentence telling its reader to derive the numbers was itself the reason nobody did. Phase 2's
 definition of done is *"ten real skills **work**"* — ten are written, and the word that needs a Revit is
 still the last one. The first 52 are what one night with a real model bought; the arithmetic on the rest has
@@ -80,8 +80,9 @@ everything else.
 `run_fragment_write` is a **separate** operation from the read, deliberately — `MODIFY` in the
 registry, wrapping the run in a `TransactionGroup` assimilated only on `apply=true` and rolled back
 otherwise, so a preview is the run itself undone rather than a simulation that could lie
-([D-55](../docs/DECISIONS.md)). **194 `MODIFY` fragments are `PROVEN`** — derive that with
-`heron_fragment.py` — so this is built *and* met a model. `write.enabled` still defaults to `false`
+([D-55](../docs/DECISIONS.md)). **Many `MODIFY` fragments are `PROVEN`** — count them with
+`grep -l '^heron-status: PROVEN' brain/fragments/*/fragment.yaml | xargs grep -l '^ *risk: *MODIFY' | wc -l`
+— so this is built *and* met a model. `write.enabled` still defaults to `false`
 until a real Revit has been through [NEEDS-CHECKING.md](../docs/NEEDS-CHECKING.md). So a request resolves to *this capability,
 provided by that fragment*, and can be READ all the way through — and no answer here may imply more
 than that.
