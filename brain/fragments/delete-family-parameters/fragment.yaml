@@ -1,0 +1,129 @@
+heron-agent: HERON-REVIT-FAM-012
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-PAR-033
+semantic-identity: "delete these family parameters from the family being edited, when nothing uses them"
+
+# A NEW CAPABILITY, NOT A REMOVE MODE ON ADD_FAMILY_PARAMETERS, and why:
+# ADD_FAMILY_PARAMETERS (FRG-PAR-022) is PROVEN, and its contract NEEDS a kind,
+# a scope and a group from the request - none of which mean anything to a
+# delete - and PROVIDES `added`. A remove mode would have to make all three
+# optional, put its proof back to DRAFT, and leave one card answering both
+# "add a Width parameter" and "delete Width" under one risk declaration.
+# SET_FAMILY_FORMULA, LINK_FAMILY_PARAMETER and LINK_FAMILY_FORM_PARAMETER each
+# act on ONE parameter's wiring, which is exactly what this refuses to touch.
+# DELETE_ELEMENTS takes elements, and a family parameter is not one a view can
+# select. Asked for on 2026-10-04 after two leftover parameters in a PPR check
+# valve family had to be deleted by hand.
+kind: action
+domain: revit.families
+capability: DELETE_FAMILY_PARAMETERS
+version: 1
+source: OFFICIAL
+# MODIFY, as every delete in this library declares (DELETE_ELEMENTS,
+# DELETE_REVISION, REMOVE_VIEW_FILTER): the ladder has no rung above MODIFY for
+# a change inside the document, and ADMIN is project setup. Article 7 asks for
+# the owner's yes for THIS deletion - here the names ARE that yes, typed
+# exactly; no find chooses the targets, so there is nothing for a separate
+# `confirm` to re-name (DELETE_REVISION needs one because a find picks its
+# revision).
+risk: MODIFY
+
+purpose: >
+  Deletes FAMILY parameters, by name, from the family open in the Family
+  Editor - the Family Types dialog's "Delete Parameter", several at a time.
+  For the leftovers of a family build: a parameter added and never used, or
+  one whose job moved to another.
+
+  **IT DELETES ONLY WHAT NOTHING ELSE USES, AND IT NEVER CASCADES.** Before
+  anything goes, each name is checked for everything that would change when
+  it went, and refused BY NAME with what still uses it:
+  another parameter's FORMULA that reads it (each formula quoted); a
+  DIMENSION labelled with it (how many); an ARRAY whose count it is; a FORM
+  FIELD linked to it - Extrusion Start or End, Visible, Material; a NESTED
+  FAMILY's parameter linked to it; a CONNECTOR whose size follows it. The
+  refusal says what to unhook first. Nothing is unhooked here - taking a
+  parameter out from under a form or a formula changes the family somewhere
+  the modeller is not looking.
+
+  A parameter whose OWN formula is set, and which nothing else uses, CAN go -
+  its formula reads others, nobody reads it. A formula user that is itself in
+  the list does not block: asking for both deletes both, the user first.
+
+  **A NAME NOT FOUND IS NEVER GUESSED.** Names are matched exactly; a name the
+  family does not have is refused with the nearest names it does have. Revit's
+  built-in parameters for the category are refused too.
+
+  **ALL OR NOTHING.** Every name is checked before the first goes, and one
+  refusal refuses the call. Each deletion is read back - the family no longer
+  has that name - and a deletion Revit refuses, or one that did not take,
+  fails the call with nothing kept. One Undo puts every deleted parameter back
+  with its values.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The parameters to delete, comma separated, exactly as Family Types shows
+    # them - "Cap R Start, Body Material".
+    - name: parameterNames
+      type: IList<string>
+      source: request
+  provides:
+    - name: deleted
+      # Each parameter deleted - with its scope, and its own formula if it had
+      # one - after the family was read back without it.
+      role: result
+      type: IList<string>
+    - name: blocked
+      # Names the family has that were NOT deleted because something still
+      # uses them, each with what uses it and what to unhook. A name it was
+      # HANDED and did not act on, never a thing it did (D-52).
+      role: accounting
+      type: IList<string>
+    - name: notFound
+      # Names the family does not have, each with the nearest names it does.
+      role: accounting
+      type: IList<string>
+    - name: notAFamily
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing was deleted, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `FamilyManager.RemoveParameter(FamilyParameter)`, `FamilyManager.Parameters`,
+  `FamilyParameter.AssociatedParameters`, `FamilyParameter.Formula`,
+  `FamilyParameter.IsShared`, `Dimension.FamilyLabel`, `BaseArray.Label` and
+  `InternalDefinition.BuiltInParameter` read the same 2020 through 2027 (the
+  RevitAPI reference assemblies, read 2026-10-04 with tools/api-surface). No
+  call here changed shape across the range, so nothing is chosen at run time.
+
+# ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
+#
+#   "delete the Cap R Start parameter from this family" -> here
+#   "add a Width parameter to this family"   -> ADD_FAMILY_PARAMETERS
+#   "clear the value out of this parameter"  -> REMOVE_PARAMETER_VALUE - a
+#                                               value on placed elements; the
+#                                               parameter stays
+#   "delete these elements"                  -> DELETE_ELEMENTS
+#   "what parameters has this family got"    -> REPORT_FAMILY_PARAMETERS
+
+utterances:
+  - delete the Cap R Start and Body Material parameters from this family
+  - delete these family parameters
+  - remove the unused parameters Cap R Start and Body Material from the family
+  - delete a leftover family parameter

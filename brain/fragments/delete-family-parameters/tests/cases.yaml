@@ -1,0 +1,47 @@
+positive:
+  - given: >
+      a new unsaved Generic Model family made by CREATE_FAMILY_DOCUMENT
+      (scratch, never one of the owner's saved families); length type
+      parameters "Heron Del A", "Heron Del B" and "Heron Del C" added by
+      ADD_FAMILY_PARAMETERS with values written; "Heron Del C" labelling a
+      dimension between two reference planes; a fourth length parameter
+      "Heron Del D" with the formula "Heron Del B * 2"; parameterNames
+      "Heron Del A"
+    expect: >
+      deleted holds "Heron Del A", and REPORT_FAMILY_PARAMETERS run after it
+      no longer lists "Heron Del A" while B, C and D are still there with
+      their values
+
+  - given: >
+      the same family, parameterNames "Heron Del D" - a parameter with its OWN
+      formula that nothing reads
+    expect: deleted holds "Heron Del D"; its formula did not stop it
+
+negative:
+  - given: the same family, parameterNames "Heron Del B" - read by D's formula
+    expect: >
+      refused, blocked naming the formula "Heron Del D" = Heron Del B * 2, and
+      "Heron Del B" still in the family afterwards
+
+  - given: the same family, parameterNames "Heron Del C" - the dimension label
+    expect: >
+      refused, blocked saying it labels 1 dimension, and "Heron Del C" still in
+      the family with the dimension still labelled
+
+  - given: >
+      parameterNames "Heron Del A, Heron Del C" - one free, one labelling
+    expect: >
+      refused as a whole: NEITHER deleted, "Heron Del A" still there too - all
+      or nothing
+
+  - given: parameterNames "Heron Del Z"
+    expect: refused, notFound offering the near names "Heron Del A", "Heron Del B", ...
+
+  - given: a project in front
+    expect: notAFamily true and nothing deleted anywhere
+
+second_route:
+  - >
+      Family Types by hand: the same parameter selected and Delete Parameter
+      pressed - Revit's own dialog lists what would be affected - compared
+      with what this blocked or deleted
