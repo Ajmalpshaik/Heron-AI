@@ -5,40 +5,48 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-045
-semantic-identity: "tie the radius or diameter of a round family form to a length parameter"
+semantic-identity: "tie the radius or diameter of a round family form to a length parameter, inside its sketch"
 kind: action
 domain: revit.families
 capability: LABEL_FAMILY_RADIUS
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  LABELS the radius or the diameter of a round form in the family open in the
-  Family Editor with a length parameter - a radial or diameter dimension on
-  one of the form's round edges, labelled - so the parameter can drive how big
-  the round part is: a duct neck's diameter, a knob's radius, a pipe stub's
-  size. LABEL_FAMILY_DIMENSION is the straight distance between two planes;
-  this is the round size.
+  LABELS the round size of a form in the family open in the Family Editor with
+  a length parameter, so the parameter drives it: a duct neck's diameter, a
+  pipe stub's size, a bell's radius. The dimension goes INSIDE THE FORM'S
+  SKETCH, where Edit Extrusion or Edit Revolve shows it - the way a modeller
+  does it by hand. LABEL_FAMILY_DIMENSION is the straight distance between two
+  planes; this is the round size.
 
-  **IN A FAMILY THE CALLS EXIST ON EVERY RELEASE.** The family editor's own
-  radial and diameter dimension calls read the same 2020 to 2027 in the
-  reference assemblies. CREATE_RADIAL_DIMENSION is 2025 and later because a
-  PROJECT cannot reach those calls - a family can.
+  **ON THE SKETCH, NEVER ON THE FINISHED EDGE.** Version 1 labelled the
+  finished form's round edge. Revit accepted the label and the circle ignored
+  it: on 2026-10-03 the stem of a gate valve in Family1 (Revit 2024) read 8 mm
+  with its parameter at 14, and FLEX_FAMILY refused (row 5b-305, NEEDS-CHECKING
+  BM3). A dimension on the sketch's own curve drove the form at 300 and at
+  40 mm the same evening - on a form made in that run and on one made days
+  before - so a form already built can be labelled now.
 
-  **WHETHER THE LABEL DRIVES THE SHAPE IS NOT YET KNOWN.** By hand a circle is
-  labelled inside its sketch; through the API a family's sketch cannot be
-  edited on any release - the sketch-editing scope refuses a document that is
-  not a project, and will not start inside a transaction. So the label goes on
-  the finished form's round EDGE, and FLEX_FAMILY is what shows whether moving
-  the parameter then moves the circle. Revit refusing the label is reported in
-  its own words, and nothing is kept.
+  **TWO KINDS OF ROUND SIZE.** An EXTRUSION's circle: a radial or diameter
+  dimension on a sketched arc of that radius. A REVOLVE's radius: a straight
+  dimension, in the sketch, from a REFERENCE PLANE the axis lies on to the
+  profile line running alongside the axis, with the axis locked to that plane.
+  Measured from the revolve's own axis line, Revit moved the axis and the
+  revolve broke, so a revolve with no plane through its axis is refused - make
+  one with CREATE_REFERENCE_PLANES first. A revolve's size is a radius: give
+  it a radius parameter whose formula halves the diameter. Other forms are
+  refused.
+
+  **ONE FAMILY RESIZES WITH THE PIPE SIZE.** With the round sizes labelled,
+  one body follows Nominal Diameter through formulas, instead of one shape set
+  per size switched on and off.
 
   **THE PARAMETER MUST ALREADY HOLD THE SIZE.** A label moves the geometry to
-  the parameter's value - a new length reads zero - so the edge labelled is the
-  one whose radius the parameter already holds (half of it, for a diameter),
-  and a form with no such edge is refused, listing the radii it has. Of several,
-  the one seen as a circle in a plan or an elevation, nearest the viewer.
+  the parameter's value - a new length reads zero - so the curve labelled is
+  the one whose size the parameter already holds (half of it, for a diameter),
+  and a form with none is refused, listing the sizes it has.
 
   **ONE LABEL PER PARAMETER**, as LABEL_FAMILY_DIMENSION: a second dimension
   driving the same parameter fights the first.
@@ -47,7 +55,8 @@ purpose: >
   SELECTED in the family's window and called `selected`.
 
   **ALL OR NOTHING, READ BACK** after Revit regenerates: the dimension must
-  carry the parameter and read its value.
+  carry the parameter and read its value. FLEX_FAMILY at two different sizes
+  shows the form following.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -66,7 +75,8 @@ contract:
     - name: parameterName
       type: string
       source: request
-    # true for a diameter dimension, false for a radius.
+    # true for a diameter dimension, false for a radius. A revolve takes a
+    # radius only.
     - name: diameter
       type: bool
       source: request
@@ -95,14 +105,15 @@ runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  `FamilyItemFactory.NewRadialDimension(view, arcRef, origin)` and
-  `NewDiameterDimension(view, arcRef, origin)`, `Dimension.FamilyLabel` (whose
-  remarks say a dimension is labelled by a family parameter in a family
-  document), `Dimension.Value`, `Edge.AsCurve()`, `Edge.Reference` and
-  `Arc.Radius` read the same 2020 through 2027 (the RevitAPI reference
-  assemblies and their own XML remarks, read 2026-10-01). `SketchEditScope`
-  exists only from 2022, and its constructor refuses a document that is not a
-  project. A parameter's kind is read by reflection, because it moved at 2022.
+  `FamilyItemFactory.NewRadialDimension(view, arcRef, origin)`,
+  `NewDiameterDimension(view, arcRef, origin)`, `NewDimension(view, line,
+  references)` and `NewAlignment(view, reference, reference)`,
+  `Dimension.FamilyLabel`, `Dimension.Value`, `Sketch.Profile`,
+  `Sketch.SketchPlane`, `Revolution.Axis`, `ReferencePlane.GetPlane()` and
+  `Curve.Reference` read the same 2020 through 2027 (the RevitAPI reference
+  assemblies, read 2026-10-01 and 2026-10-03). No `SketchEditScope` is used -
+  it exists only from 2022 and refuses a family document. A parameter's kind is
+  read by reflection, because it moved at 2022.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
@@ -118,3 +129,5 @@ utterances:
   - make the circle size parametric
   - label the diameter of this round form
   - tie the cylinder radius to a parameter
+  - make the revolve radius follow a parameter
+  - make this round family resize with the pipe size
