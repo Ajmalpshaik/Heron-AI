@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-VIEW-101
-semantic-identity: "dimension between these two references, on this view"
+semantic-identity: "dimension between these grids, levels, planes, lines or wall faces, on this view"
 kind: action
 domain: revit.annotation
 capability: CREATE_LINEAR_DIMENSION
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -33,25 +33,51 @@ purpose: >
   line gives the chained dimension a drawing actually carries, which is why the
   input is a list rather than a pair.
 
+  **VERSION 2 TAKES WHAT CAN BE TYPED (2026-10-03).** Version 1 asked for Revit
+  `Reference` objects and a `Line`, which no request can carry, so nothing could
+  run it - FRAGMENT-ISSUES section 6 and D-72. It now takes, `|` between them:
+  `grid A`, `level Level 2`, `plane Box Left`, `line <id>` (a model or detail
+  line) and `wall <id> exterior` or `interior` - an id as Revit shows it, or a
+  unique id. A face picked with the mouse still cannot be said and is not
+  offered. The line the string sits on is two points in millimetres.
+
+  **READ BACK.** The dimension's references are counted and each segment's value
+  is read again, so `measured` is what Revit measured, not what was asked.
+
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
 contract:
   needs:
     - name: doc
       type: Document
+    # The view to draw it in, as the Project Browser names it - "Level 1", or
+    # "FloorPlan: Level 1" where a floor and a ceiling plan share the name.
     - name: view
       type: View
       source: request
-    - name: line
-      type: Line
+    # What it measures between, `|` between them, two or more: "grid A | grid B",
+    # "level Level 1 | level Level 2", "plane Box Left | plane Box Right",
+    # "line 123456 | wall 234567 exterior".
+    - name: between
+      type: string
       source: request
-    - name: references
-      type: IList<Reference>
+    # Where the dimension string sits: one end, in millimetres - "0,-1000,0".
+    - name: lineFrom
+      type: XYZ
+      source: request
+    # ...and the other end - "6000,-1000,0".
+    - name: lineTo
+      type: XYZ
       source: request
   provides:
     - name: created
       role: result
       type: ElementId
+    - name: measured
+      # What Revit measured, read back - "6000 mm", or "3000 mm + 3000 mm" for a
+      # chained string.
+      role: result
+      type: string
     - name: refused
       # Why it declined, in the user's words - the evidence it looked and said
       # no. Never a thing it FOUND (D-52).
@@ -88,6 +114,8 @@ compatibility-note: >
 #   "dimension to a radius"          -> CREATE_RADIAL_DIMENSION
 
 utterances:
+  - dimension between grid A and grid B
+  - dimension from level 1 to level 2
   - dimension between these two
   - put a dimension from here to here
   - dimension these references
