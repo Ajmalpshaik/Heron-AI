@@ -529,3 +529,33 @@ The page also leads with the building's figures, which the brain now adds up its
 nothing (mcp/companion README rule 4): the supply air and outdoor air of the Spaces calculated, the load
 per square metre of the floor that WAS calculated, and how many Spaces were. The sheet opens with the
 same figures as its Summary.
+
+### 12.8 The first real Finalize (Project2, Revit 2024, 2026-10-05)
+
+The owner calculated the three-room test building in Project2 (Revit 2024, session 18156), confirmed the
+take-off and pressed **Finalize to Revit**. What it did, read back by hand:
+
+- **The Spaces were written right.** All nine values - Design Cooling Load, Design Heating Load and
+  Specified Supply Airflow for Office 1, Reception 2 and Office 3 - sat inside a 0.5 % band around what was
+  calculated, each band matching exactly its own Space (SELECT_BY_NUMERIC_PARAMETER, internal units).
+- **The read-back and the diffuser step asked the add-in for elements by typed ids**, through
+  FILTER_ELEMENTS_BY_ID, which never accepts one ("elementIds ... cannot be typed"). The read-back was
+  refused (`bad_request_value`, then `chain_empty`), and on a model with diffusers no flow would have
+  been written. The tests had stood Revit in with something that took the ids.
+- **Fixed.** The diffusers are handed over by category, once per level of the calculated Spaces, and the
+  file of ids picks which are written - SET_AIR_TERMINAL_FLOW already leaves every other terminal alone.
+  Proved on Project2: FILTER_ELEMENTS_BY_CATEGORY (Air Terminals, Level 1) handed over six, and a one-row
+  file set one terminal's flow and read it back through its connector. The read-back reads the take-off
+  again and sets each written value beside what Revit now prints (`read_back`), allowing Revit's own
+  rounding; the diffusers through REPORT_SPACE_AIRFLOW on each level's Spaces.
+- **READ_SPACE_LOADS could not have read them back anyway** on this model: it reads the design and the
+  calculated figures in one guard, and the calculated ones throw until Revit's own loads analysis has
+  run. Recorded as [FRAGMENT-ISSUES row 5b-323](fragment-issues/section-5b-rows-176-200.md); Finalize no
+  longer uses it.
+- **A family finding, not a Heron one:** the office's `TRG_SAD_T202_SupplyAirDiffuser_SquarePlaqueFaceType`
+  ties its duct connector's flow to no parameter, so no tool can set its flow from outside - the tool says
+  `noFlowParameter` and writes nothing. `TCM_SAD_Supply Diffuser - Rectangular Face Rectangular Neck Auto
+  Sizing` does tie it, and took the flow.
+- **The owner's addition: Finalize makes the Spaces schedule** - "HVAC Load Calculation - Spaces", with
+  Number, Name, Level, Area and the three values written (`SCHEDULE_NAME`, `SCHEDULE_FIELDS`). Revit
+  refuses a second schedule of the same name, and a second Finalize says the schedule is already there.
