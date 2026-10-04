@@ -197,12 +197,15 @@ else
 {
     var onUnticked = 0;
     foreach (var pair in onLevel) onUnticked += pair.Value;
-    storeys.Add(string.Format("{0} level(s) read: {1} marked Building Story, {2} NOT marked{3}. "
-        + "{4} model element(s) have one of the unmarked levels as their level, of {5} model "
-        + "element(s) read",
+    // NO UNMARKED LEVEL MEANS NO ELEMENT WAS READ, and "0 of 0" would read as a
+    // measured zero (review of PR #410), so that case says the scan did not run.
+    storeys.Add(string.Format("{0} level(s) read: {1} marked Building Story, {2} NOT marked{3}. {4}",
         levels.Count, ticked.Count, unticked.Count,
         unreadable.Count > 0 ? string.Format(", {0} whose Building Story setting could not be read", unreadable.Count) : "",
-        onUnticked, modelElementsRead));
+        unticked.Count == 0
+            ? "No level was found unmarked, so elements were NOT counted"
+            : string.Format("{0} model element(s) have one of the unmarked levels as their level, "
+                + "of {1} model element(s) read", onUnticked, modelElementsRead)));
     foreach (var level in unticked)
         storeys.Add(string.Format("  '{0}' at {1:0.0} mm (project) - NOT a Building Story; {2} model "
             + "element(s) on it", level.Name, level.ProjectElevation * 304.8, onLevel[level.Id]));

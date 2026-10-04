@@ -34,7 +34,9 @@ purpose: >
     or with it read-only, is never given some other parameter found by its name
     - a typed name may repeat (FRAGMENT-ISSUES 5b-203). One this call placed is
     removed again inside the same undo; one already there is left as it was.
-    Both are named in `noSillParameter`.
+    Both are named in `noSillParameter`. **A door or window already in the
+    wall is never given the asked sill** - this call did not place it; its sill
+    is read and said in `sills`, and nothing on it changes.
   - **Read back after a regenerate**, and set beside what was asked in `sills`.
     More than 1 mm out is named in `sillWrong`, never counted as right.
 

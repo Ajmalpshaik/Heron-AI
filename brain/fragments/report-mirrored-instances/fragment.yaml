@@ -42,7 +42,8 @@ purpose: >
   **WHAT IS NOT CHECKED:** linked models; whether a mirrored instance is
   actually wrong (some families are drawn to be mirrored); and a nested shared
   component, which turns with the family it sits in - such a row names the
-  family it is nested in, so it is not read as a second mistake.
+  family it is nested in and is NOT counted in any total, so one mistake is
+  not counted twice.
 
 contract:
   needs:

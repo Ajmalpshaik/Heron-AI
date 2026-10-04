@@ -263,3 +263,26 @@ needs measuring first. Each waits for the owner, one at a time ([31 §5](31-stud
 
 **Not an import** - no file from the folder is in this repository, and none of its sentences. **Not a
 proof** - nine fragments and one recipe owe a run against a real model, and Group CD says which.
+
+## 9. The review, 2026-10-04
+
+Codex was out of credit, so a review agent read the pull request's code. **No high-severity defect.** Five
+findings were confirmed and fixed in the same pull request, all inside DRAFT fragments:
+
+- `CHECK_MODEL_STANDARDS` ran version 1's suspect names over type and room names even with no `type=` or
+  `room=` key, growing a version 1 caller's failures. A new section now runs only when its own key is given.
+- `PLACE_STRUCTURAL_FAMILY` kept a column whose top Revit refused, and only listed it. It is now removed
+  again, the same as a family with no top parameter.
+- `PLACE_HOSTED_FAMILY` wrote the asked sill on a door or window **already in the wall**, which the call
+  did not place. It now leaves it, reads its sill and says so.
+- `REPORT_MIRRORED_INSTANCES` counted a nested component carrying its host's mirror as a second one. It is
+  now listed and not counted.
+- `REPORT_LEVEL_ELEVATIONS` printed *0 of 0 elements read* when no level was unmarked - a zero that was
+  never measured. It now says the elements were not counted.
+
+**Two are recorded, not changed.** A column whose base a point's height puts ABOVE the asked top is not
+refused before placing - the check compares levels only, and how Revit turns a point's height into a
+base offset is not measured; the read-back catches it as `topWrong`, and [CD6](needs-checking/group-cd.md)
+measures it. And when no shared parameter file was set before, the setting is put back as an empty path;
+whether Revit takes that is unknown, a failure is reported as `sharedParameterFileRestored` false, and
+[CD3](needs-checking/group-cd.md) starts one run with the setting empty to find out.

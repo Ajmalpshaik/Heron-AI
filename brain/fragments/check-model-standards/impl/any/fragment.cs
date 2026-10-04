@@ -316,6 +316,19 @@ foreach (var element in new FilteredElementCollector(doc)
 }
 section("MEP system names", patternFor("system"), systemNames, systemIds);
 
+// A NEW SECTION RUNS ONLY WHEN ITS OWN KEY WAS GIVEN. Version 1's suspectNames
+// apply to the five sections version 1 had; letting them reach type and room
+// names would have grown a version 1 caller's failures with no key asking for
+// it (review of PR #410). Absent key: NOT CHECKED, said in words.
+Action<string, string> notAsked = (title, key) =>
+{
+    findings.Add("");
+    findings.Add(title.ToUpper());
+    sectionsNotChecked++;
+    findings.Add("  NOT CHECKED - no '" + key + "=' pattern was given, so " + title.ToLower()
+        + " were not looked at. THIS IS NOT A PASS");
+};
+
 // ---- type names, as "Family: Type" (version 2) ----
 // Over the TYPES of the categories in `requiredOn` - the same categories the
 // parameter rules cover, so one list says which part of the model is in scope.
@@ -326,7 +339,11 @@ if (requiredOn != null)
     foreach (var category in requiredOn)
         if (category != null) typeCategoryIds.Add(category.Id);
 
-if (typeCategoryIds.Count == 0)
+if (patternFor("type").Length == 0)
+{
+    notAsked("Type names", "type");
+}
+else if (typeCategoryIds.Count == 0)
 {
     findings.Add("");
     findings.Add("TYPE NAMES");
@@ -358,6 +375,7 @@ else
 // its number as well, so a pattern for the name would fail on every room.
 var roomNames = new List<string>();
 var roomIds = new List<ElementId>();
+if (patternFor("room").Length > 0)
 foreach (var element in new FilteredElementCollector(doc)
     .OfCategory(BuiltInCategory.OST_Rooms)
     .WhereElementIsNotElementType())
@@ -367,7 +385,8 @@ foreach (var element in new FilteredElementCollector(doc)
     roomNames.Add(nameParameter == null ? "" : (nameParameter.AsString() ?? ""));
     roomIds.Add(element.Id);
 }
-section("Room names", patternFor("room"), roomNames, roomIds);
+if (patternFor("room").Length == 0) notAsked("Room names", "room");
+else section("Room names", patternFor("room"), roomNames, roomIds);
 
 // ---- the parameters the project requires ----
 findings.Add("");

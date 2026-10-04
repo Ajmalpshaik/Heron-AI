@@ -59,6 +59,7 @@ else
     var typeOrder = new List<string>();
     var rows = new List<string>();
     var rowsNotShown = 0;
+    var nestedWithFlags = 0;
 
     foreach (var name in categoryNames)
         if (!byCategory.ContainsKey(name)) byCategory[name] = new int[4];
@@ -100,6 +101,22 @@ else
         }
 
         perCategory[0]++; perType[0]++;
+
+        // A NESTED SHARED COMPONENT turns with the family it sits in, so its
+        // flags are usually its host's. It is listed, but NOT counted as a
+        // mirror or a flip of its own - the host is, and counting both would
+        // count one mistake twice (review of PR #410).
+        var parent = instance.SuperComponent;
+        if (parent != null && (isMirrored || isHand || isFacing))
+        {
+            nestedWithFlags++;
+            if (rows.Count < rowsShown)
+                rows.Add("  id " + instance.Id + "  " + categoryName + "  '" + typeName + "'  "
+                    + "nested in id " + parent.Id + " and carrying its flags - not counted");
+            else rowsNotShown++;
+            continue;
+        }
+
         if (isMirrored) { perCategory[1]++; perType[1]++; mirrored.Add(instance.Id); }
         if (isHand) { perCategory[2]++; perType[2]++; handFlipped.Add(instance.Id); }
         if (isFacing) { perCategory[3]++; perType[3]++; facingFlipped.Add(instance.Id); }
@@ -113,13 +130,8 @@ else
 
         if (rows.Count < rowsShown)
         {
-            // A nested shared component turns with the family it sits in, so its
-            // flags are usually its host's. Said, so it is not counted as a
-            // second mistake.
-            var parent = instance.SuperComponent;
             rows.Add("  id " + instance.Id + "  " + categoryName + "  '" + typeName + "'  "
-                + string.Join(", ", flags.ToArray())
-                + (parent != null ? "  (nested in id " + parent.Id + ")" : ""));
+                + string.Join(", ", flags.ToArray()));
         }
         else rowsNotShown++;
     }
@@ -155,6 +167,9 @@ else
     findings.Add("EACH ONE");
     if (rows.Count == 0) findings.Add("  none");
     findings.AddRange(rows);
+    if (nestedWithFlags > 0)
+        findings.Add("  " + nestedWithFlags + " nested component(s) carry a mirror or flip from the "
+            + "family they sit in; listed above, not counted in any total");
     if (rowsNotShown > 0)
         findings.Add("  ... " + rowsNotShown + " more, not listed. Every count above is complete "
             + "and every id is in the lists handed on");

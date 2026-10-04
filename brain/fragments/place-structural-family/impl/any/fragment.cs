@@ -195,13 +195,25 @@ else
         var refusedWith = "";
         try
         {
-            topParameter.Set(topLevel.Id);
-            offsetParameter.Set(offsetFeet);
-            doc.Regenerate();
+            if (!topParameter.Set(topLevel.Id) || !offsetParameter.Set(offsetFeet))
+                refusedWith = " - Revit returned false for the top level or the top offset";
+            else
+                doc.Regenerate();
         }
         catch (Exception failure)
         {
             refusedWith = " - Revit refused it: " + failure.Message;
+        }
+
+        // A TOP REVIT WOULD NOT TAKE IS THE SAME CASE AS NO TOP PARAMETER: the
+        // column is removed again in the same undo, never kept at a top nobody
+        // asked for (review of PR #410 - it used to be kept and only listed).
+        if (refusedWith.Length > 0)
+        {
+            try { doc.Delete(made.Id); } catch { }
+            topRefused.Add(label + refusedWith + ", so it was removed again rather than left at "
+                + "a top nobody asked for");
+            continue;
         }
 
         placed.Add(made.Id);

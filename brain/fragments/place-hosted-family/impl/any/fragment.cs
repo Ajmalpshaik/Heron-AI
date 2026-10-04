@@ -417,6 +417,14 @@ else
                 noSillParameter.Add(label + " - the one already there: " + why
                     + ", so its sill was left as it is. No other parameter is tried");
             }
+            else if (!isNew)
+            {
+                // ONE ALREADY THERE IS NOT CHANGED. This call did not place it, and
+                // the card promises it is left as it was (review of PR #410: the
+                // sill used to be written on it too). Its sill is read and said.
+                sills.Add(label + " - already there, its sill was left as it is: reads "
+                    + (sill.AsDouble() * 304.8).ToString("0") + " mm");
+            }
             else
             {
                 try
