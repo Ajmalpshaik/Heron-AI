@@ -1,0 +1,43 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# Run on a model the owner names (docs/44 section 10 names his L-shaped
+# office, "heron ai bulding", 15 Spaces, 5 zones). Every case reads only.
+
+positive:
+  - given: the L-shaped office with 15 MEP Spaces, nothing selected
+    expect: >
+      spaces 15; takeoffJson is format 1 with 15 Spaces. A corner office has
+      TWO wall faces with beyond "outside", facing two different ways; a Space
+      under the roof has a "top" face with beyond "outside"; the corridor wall
+      between two offices reads beyond "space" with the OTHER office's id
+
+  - given: one corner office, its outside walls measured by hand on the plan
+    expect: >
+      each outside wall face's area_m2 equals the hand take-off (finish face,
+      floor to the Space's top) within 2 %, and each window's area_m2 is its
+      width x height from its type
+
+  - given: the same take-off read back by python brain/heron_takeoff.py's read()
+    expect: it reads whole - no TakeoffError
+
+negative:
+  - given: one window type's Properties open on screen (Analytical Properties)
+    expect: >
+      its u_w_m2k and shgc in the take-off are the SAME numbers the Properties
+      palette shows - THE FIRST THING CHECKED: the U-value is read as is,
+      because Revit's internal unit for it is taken to be W/(m2.K). A window
+      type with no SHGC set reads shgc null, never 0
+
+  - given: the project rotated 30 degrees (Manage > Position > Rotate True North)
+    expect: >
+      a wall drawn to face project north reports a normal along project y, and
+      project_to_true_north_deg reads 30 or -30; heron_takeoff.azimuth_deg then
+      gives 30 or 330 - and which of the two is right on the drawing fixes the
+      sign, in azimuth_deg only
+
+  - given: a Space whose walls do not enclose it (Not Enclosed in the schedule)
+    expect: >
+      placed false and faces [] - never a zero-area row WITH faces
+
+second_route: >
+  Revit's own Space schedule: Area and Volume per Space must equal area_m2 and
+  volume_m3 in the take-off; the window count per wall against the plan

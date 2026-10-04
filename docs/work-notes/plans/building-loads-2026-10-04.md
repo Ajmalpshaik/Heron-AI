@@ -919,6 +919,17 @@ and add ONE store row (put_fragment one row; never rebuild the shared store).
   (int, result), `findings` (IList<string>, accounting). One JSON string because a fragment's list output
   reaches the caller as its first three names (5b-195) - the same workaround `READ_ELEMENT_TABLE` uses.
 - `risk: READ`. Opens no transaction.
+- **Changed during the build, 2026-10-04 - two things the real code said:**
+  1. **`doc` only, no `elements`.** The add-in refuses a fragment whose `elements` was never supplied
+     (`needs_unbound`, "Nothing is selected in Revit") before the snippet runs, so "an empty list means
+     every Space" could never be reached. The reader takes every Space in the document; "calculate the
+     loads for this building" is a whole-model question and nothing is usually selected when it is asked.
+     Ids are written as strings (`ElementId.ToString()`), not numbers - the brain treats them as strings.
+  2. **The U-value parameter was renamed in Revit 2027.** `ANALYTICAL_HEAT_TRANSFER_COEFFICIENT` exists
+     2020-2026 and is gone in 2027, which has `ANALYTICAL_THERMAL_TRANSMITTANCE` ("Thermal Transmittance
+     (U)") - measured in each release's RevitAPI.xml. Neither name compiles everywhere, so the fragment
+     finds it by name at run time (`Enum.TryParse`, the older first). Compiled on all eight releases;
+     which one a real 2027 model fills is a NEEDS-CHECKING row.
 
 - [ ] **Step 1: Card** - `id` the next free `FRG-MEP-0NN` (find with
   `grep -h '^id: FRG-MEP' brain/fragments/*/fragment.yaml | sort | tail -1`), `capability:
