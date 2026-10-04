@@ -9,13 +9,60 @@ semantic-identity: "put a door or a window into this wall"
 kind: action
 domain: revit.elements
 capability: PLACE_HOSTED_FAMILY
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
+# THE TOP OF THIS PURPOSE IS WHAT THE SEARCH READS (FRAGMENT-ISSUES 5b-319).
+# The trained search model reads only the first 512 word-pieces of a card -
+# identity, utterances, then the purpose - and this card is far longer
+# (measured 2026-10-04: 1,355). Version 3 put its sill rules first, and "place
+# doors and windows hosted in walls at points" went to REPORT_SPACE_ENVELOPE
+# with this card 35th by nearness. So what a modeller asks it for comes first,
+# the rules that still hold come next, and history comes last. A new version's
+# rules go below the summary, never above it.
 purpose: >
-  Places a door or a window INTO the wall at each point given, and turns each
-  one so it swings toward the room named for it.
+  Places a door or a window INTO the wall at each point given, turns each one
+  so it swings toward the room named for it, and - when a sill height is
+  given - sets each one's sill to it and reads it back.
+
+  What a modeller asks it for: put doors and windows into walls. For each
+  point given, it finds the wall that point sits on and places the door or
+  window there - at the sill height asked for, or where Revit puts it.
+
+  **A DOOR ALREADY AT THE POINT IS NOT DOUBLED.** A door of the same category,
+  in the same wall, within 50 mm of the point, is taken as the one asked for.
+  It is set right rather than stacked on - so re-running is safe, and it is
+  how a door placed earlier gets corrected.
+
+  **PLACE_FAMILY_ON_FACE IS THE OTHER HALF AND IS NOT THIS.** That one hosts to a
+  FACE picked off geometry, which is right for a face-based family on a soffit.
+  This one hosts to the ELEMENT, which is what a door and a window want.
+
+  **VERSION 3 SETS THE SILL, AND READS IT EITHER WAY.** `sillHeight` is in
+  millimetres above the level, or blank. BLANK IS VERSION 2 EXACTLY: the sill
+  is left as Revit placed it - but what each door or window reads is still
+  reported, in `sills`, because a window placed through the API has been said
+  to land with its sill at 0. Nobody here has measured that; the reading
+  settles it either way. Given a sill:
+  - **Checked before placing.** Level + sill + the type's Height (the
+    built-in Height doors and windows both use) against the top of the wall
+    found at the point. A head that would stand above the wall skips that
+    point - `sillTooHigh` - and nothing is placed or changed there. A type
+    whose Height is on the instance cannot be read this cheaply, and the reply
+    counts those points as not checked rather than guessing.
+  - **Set on the built-in Sill Height and nothing else.** A family without one,
+    or with it read-only, is never given some other parameter found by its name
+    - a typed name may repeat (FRAGMENT-ISSUES 5b-203). One this call placed is
+    removed again inside the same undo; one already there is left as it was.
+    Both are named in `noSillParameter`. **A door or window already in the
+    wall is never given the asked sill** - this call did not place it; its sill
+    is read and said in `sills`, and nothing on it changes.
+  - **Read back after a regenerate**, and set beside what was asked in `sills`.
+    More than 1 mm out is named in `sillWrong`, never counted as right.
+
+  **VERSION 2'S RECORD FOLLOWS.** The two rules above it are version 2's
+  as well, and still hold.
 
   **VERSION 1 COULD NOT BE GIVEN A WALL BY NAME.** It took the host as one
   element, and a wall instance has no name anybody could type: the add-in
@@ -49,11 +96,6 @@ purpose: >
     its own, and swapped with Revit's From/To flip when wrong.
   A door still wrong on any count is named rather than counted.
 
-  **A DOOR ALREADY AT THE POINT IS NOT DOUBLED.** A door of the same category,
-  in the same wall, within 50 mm of the point, is taken as the one asked for.
-  It is set right rather than stacked on - so re-running is safe, and it is
-  how a door placed earlier gets corrected.
-
   **EVERY DOOR IS READ BACK.** Its host must be the wall that was found. One
   that Revit hosted somewhere else, or nowhere, is removed again inside the same
   undo and its point named.
@@ -68,10 +110,6 @@ purpose: >
   move when the wall moves. That is why the wall is found and the door read
   back, rather than the host being left to a name: the failure is silent and
   looks fine in plan.
-
-  **PLACE_FAMILY_ON_FACE IS THE OTHER HALF AND IS NOT THIS.** That one hosts to a
-  FACE picked off geometry, which is right for a face-based family on a soffit.
-  This one hosts to the ELEMENT, which is what a door and a window want.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -98,6 +136,15 @@ contract:
       source: request
     - name: level
       type: Level
+      source: request
+    # VERSION 3. Millimetres above the level - "900" - or BLANK for version
+    # 2's behaviour: the sill left as Revit placed it, and only read. A string
+    # so that blank can mean "not asked". NOT marked `optional: true`, because
+    # nothing would honour it: the add-in refuses any `source: request` need
+    # that arrives with no value unless it is a bool (FRAGMENT-ISSUES 5b-227
+    # and 5b-252). Send it, blank or not.
+    - name: sillHeight
+      type: string
       source: request
   provides:
     - name: placed
@@ -153,6 +200,28 @@ contract:
       # counted as right (D-52).
       role: accounting
       type: IList<string>
+    - name: sills
+      # VERSION 3. One line per door or window kept: the sill asked and the
+      # sill read back, or - with no sill asked - what Revit placed it at. A
+      # reading, never a thing it did, so it banks nothing.
+      role: accounting
+      type: IList<string>
+    - name: sillWrong
+      # Sills that read back more than 1 mm from what was asked. Named, never
+      # counted as right (D-52).
+      role: accounting
+      type: IList<string>
+    - name: noSillParameter
+      # Doors and windows whose family has no usable built-in Sill Height. One
+      # this call placed was removed again; one already there was left alone.
+      # No other parameter is ever tried by name (5b-203).
+      role: accounting
+      type: IList<string>
+    - name: sillTooHigh
+      # Points skipped before placing: the sill plus the type's Height would
+      # put the head above the wall's top. Given and unusable (D-52).
+      role: accounting
+      type: IList<string>
     - name: findings
       type: IList<string>
 
@@ -167,6 +236,13 @@ compatibility-note: >
   not a structural member, and PLACE_STRUCTURAL_FAMILY is where that decision
   belongs. Points arrive in internal FEET (D-20).
 
+  Version 3, read off the reference assemblies 2020 to 2027 on 2026-10-04:
+  `BuiltInParameter.INSTANCE_SILL_HEIGHT_PARAM` and `FAMILY_HEIGHT_PARAM`
+  (one value, which `DOOR_HEIGHT` and `WINDOW_HEIGHT` share), `Element.get_Parameter
+  (BuiltInParameter)`, `Element.get_BoundingBox(View)`, `Parameter.Set(double)`,
+  `IsReadOnly`, `StorageType` and `AsDouble` - one signature each across all
+  eight. The sill arrives in millimetres and becomes feet by / 304.8 (D-20).
+
 # ROUTING - repeated in PLACE_FAMILY_INSTANCES and PLACE_FAMILY_ON_FACE.
 #
 #   "put a door in this wall"       -> here
@@ -178,9 +254,24 @@ compatibility-note: >
 #    centre it"                        on a sheet, not a family in a wall. The
 #                                      sentence reached here until 2026-09-27
 
+# VERSION 3: "put the windows in at a 900 sill" is still here - the sill is a
+# value of this job, not a second tool.
+#
+# 2026-10-04 (5b-319): "place doors and windows hosted in walls at points",
+# "add windows to the outside walls" and "put doors in the walls at these
+# points" -> here. Each had gone to REPORT_SPACE_ENVELOPE, a READ, or to
+# CREATE_WALL. The plural phrasings below are there because the words route
+# matches a typed word as a PREFIX: "walls" never matches "wall", and every
+# phrasing here was singular. tests/test_routing_phrases.py asks them back.
+
 utterances:
   - put a door in this wall
   - place windows in this wall
   - add a door here
   - place a hosted family
   - put these openings into the wall
+  - place windows along the outside walls
+  - add doors to the walls at the points given
+  - insert windows into the walls at a sill height
+  - put a door at each of these points
+  - fit the windows into the external walls

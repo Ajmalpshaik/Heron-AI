@@ -43,6 +43,7 @@ PROTECTED FROM OTHER WEBSITES AND PROGRAMS (docs/40 section 11):
     inline script (Content-Security-Policy).
 """
 
+import base64
 import http.server
 import io
 import json
@@ -50,6 +51,7 @@ import os
 import re
 import secrets
 import socketserver
+import subprocess
 import sys
 import threading
 import time
@@ -76,6 +78,9 @@ PAIR_SECONDS = 120
 PAGES = {
     "/": ("index.html", "text/html; charset=utf-8"),
     "/companion.js": ("companion.js", "text/javascript; charset=utf-8"),
+    # The Loads panel's 3D view: a renderer of its own, so nothing is fetched
+    # from the internet (docs/44 s12).
+    "/loads3d.js": ("loads3d.js", "text/javascript; charset=utf-8"),
     "/companion.css": ("companion.css", "text/css; charset=utf-8"),
 }
 
@@ -88,6 +93,77 @@ SECURITY_HEADERS = (
     ("Referrer-Policy", "no-referrer"),
     ("Cache-Control", "no-store"),
 )
+
+#: How a load sheet the page opens is served (docs/44 s12.7). The sheet is the
+#: brain's own HTML with its styles inline: it may run NO script and sit in no
+#: frame.
+REPORT_HEADERS = (
+    ("Content-Security-Policy",
+     "default-src 'none'; style-src 'unsafe-inline'; img-src data:; "
+     "frame-ancestors 'none'; base-uri 'none'; form-action 'none'"),
+    ("X-Frame-Options", "DENY"),
+    ("X-Content-Type-Options", "nosniff"),
+    ("Referrer-Policy", "no-referrer"),
+    ("Cache-Control", "no-store"),
+)
+
+#: A PDF opens in the browser's own viewer, which a content policy would stop.
+PDF_HEADERS = REPORT_HEADERS[1:]
+
+#: How long the folder window may stay open before Heron stops waiting for it.
+FOLDER_SECONDS = 900
+
+#: The folder window: Windows' own, made topmost so it opens in front of the
+#: browser that asked for it. Every value it needs comes in from the
+#: environment - data, never code - and the one thing it writes is the folder.
+FOLDER_SCRIPT = "\n".join((
+    "Add-Type -AssemblyName System.Windows.Forms",
+    "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
+    "$owner = New-Object System.Windows.Forms.Form -Property @{TopMost = $true}",
+    "$dialog = New-Object System.Windows.Forms.FolderBrowserDialog",
+    "$dialog.Description = $env:HERON_FOLDER_TITLE",
+    "$dialog.ShowNewFolderButton = $true",
+    "$start = $env:HERON_FOLDER_START",
+    "if ($start -and (Test-Path -LiteralPath $start -PathType Container)) "
+    "{ $dialog.SelectedPath = $start }",
+    "if ($dialog.ShowDialog($owner) -eq [System.Windows.Forms.DialogResult]::OK) "
+    "{ [Console]::Out.Write($dialog.SelectedPath) }",
+    "$owner.Dispose()",
+))
+
+
+def pick_folder(start=None, title="Where should Heron save the load report?", run=None):
+    """
+    A Windows folder window, so the modeller says where a report goes
+    (docs/44 s12.7; Ajmal, 2026-10-04: "I can give the location").
+
+    It runs in a PowerShell process of its own. The start folder and the
+    title go in as environment values, never as part of the command, and its
+    output is captured - nothing reaches the stdout MCP speaks on (README
+    rule 2). Returns {"folder": path}, {"cancelled": True} or
+    {"unavailable": why}; it never raises. `run` is subprocess.run, or a
+    stand-in for the test.
+    """
+    if os.name != "nt":
+        return {"unavailable": "a folder window opens on Windows only"}
+    run = run or subprocess.run
+    env = dict(os.environ, HERON_FOLDER_START=start or "", HERON_FOLDER_TITLE=title)
+    command = ["powershell.exe", "-NoProfile", "-NonInteractive", "-STA", "-EncodedCommand",
+               base64.b64encode(FOLDER_SCRIPT.encode("utf-16-le")).decode("ascii")]
+    try:
+        done = run(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                   stderr=subprocess.DEVNULL, env=env, timeout=FOLDER_SECONDS,
+                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    except (OSError, subprocess.SubprocessError) as why:
+        return {"unavailable": "the folder window could not open (%s)" % why}
+    if done.returncode != 0:
+        return {"unavailable": "the folder window ended with code %s" % done.returncode}
+    text = (done.stdout or b"").decode("utf-8", "replace").lstrip("﻿").strip()
+    if not text:
+        return {"cancelled": True}
+    if not os.path.isabs(text) or not os.path.isdir(text):
+        return {"unavailable": "the folder window answered %r, which is not a folder" % text}
+    return {"folder": text}
 
 
 def live_dir():
@@ -305,6 +381,13 @@ class Changes(object):
 
 #: This process's after-change tables - one chat's.
 CHANGES = Changes()
+
+#: SWITCHED OFF by the owner (Ajmal PS, 2026-10-04), KEPT for later (docs/40
+#: s21.6): the page shows the HVAC Load Calculation, and the Changes tables -
+#: with the colour books that paint them - are not on it. The code above is
+#: whole and still tested; while this is False the MCP server offers nothing
+#: to it, so no table is made that nobody can see.
+SHOW_CHANGES = False
 
 
 # ------------------------------------------------------------ Load from Revit
@@ -563,6 +646,228 @@ class Tables(object):
 
 #: This process's editable table - one chat's.
 TABLES = Tables()
+
+
+class LoadsPanel(object):
+    """
+    The Loads panel a chat opens with revit_building_loads (docs/44 section 7)
+    - one building at a time, the newest replacing the last.
+
+    IT HOLDS DATA AND CALLS HOOKS - NOTHING ELSE (README rule 4). Every number
+    on it was worked out in brain/ (heron_building_loads); Recalculate, Report
+    and Finalize each call a hook the MCP server sets, and with none set they
+    answer that the chat is gone and do nothing. The take-off a run was made
+    from is kept here so Recalculate never asks Revit again.
+    """
+
+    GONE = "the chat that opened this is no longer connected - nothing was done"
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._held = None
+        self._takeoff = None
+        #: Set by the MCP server. recalculate_hook(takeoff, inputs, identity)
+        #: -> brain answer; report_hook(panel) -> {"ok", "said", "html", "pdf",
+        #: "csv"}; finalize_hook(takeoff, result, identity) -> {"ok", "said",
+        #: "finalized"}; runs_hook(document) -> [run]; run_hook(document, id)
+        #: -> a kept run or None; confirm_hook(takeoff, result, identity) ->
+        #: {"ok", "said", "result"}.
+        self.recalculate_hook = None
+        self.report_hook = None
+        self.finalize_hook = None
+        self.runs_hook = None
+        self.run_hook = None
+        self.confirm_hook = None
+        #: folder_hook(start) -> {"folder"} | {"cancelled"} | {"unavailable"}:
+        #: where the modeller wants the report (docs/44 s12.7).
+        self.folder_hook = pick_folder
+
+    def open(self, document, answer, identity=None, read_at=None):
+        result = answer.get("result") or {}
+        inputs = answer.get("inputs") or {}
+        with self._lock:
+            self._takeoff = answer.get("takeoff")
+            self._held = {
+                "document": document, "at": time.strftime("%H:%M:%S"),
+                # When the MODEL was read - kept through a Recalculate, which
+                # works on the take-off already held and reads nothing.
+                "read_at": read_at or time.strftime("%H:%M:%S"),
+                "identity": list(identity) if identity else None,
+                "qa": list(answer.get("qa") or []), "asked": list(answer.get("asked") or []),
+                "project": dict(inputs.get("project") or {}),
+                "profiles": dict(inputs.get("profiles") or {}),
+                "overrides": dict(inputs.get("overrides") or {}),
+                # The hour-by-hour rows stay in the kept run; the page shows peaks.
+                "spaces": [{k: v for k, v in s.items() if k != "cooling"}
+                           for s in result.get("spaces") or []],
+                "peaks": {str(s.get("id")): (s.get("cooling") or {}).get("peak")
+                          for s in result.get("spaces") or []},
+                "components": {str(s.get("id")): (s.get("cooling") or {}).get("components")
+                               for s in result.get("spaces") or []},
+                "zones": list(result.get("zones") or []),
+                "building": result.get("building"), "notes": list(result.get("notes") or []),
+                "run_id": result.get("run_id"), "units": result.get("units"),
+                "said": answer.get("said"), "report": None, "finalized": None,
+                "confirmed": bool(answer.get("confirmed")),
+                # Where this project's last report went - the folder window opens there.
+                "report_folder": answer.get("report_folder"),
+                "summary": answer.get("summary"),
+                # The 3D view's data, served on its own route: it is the
+                # biggest thing the panel holds and the page asks for it only
+                # when the 3D view is opened or the run changed.
+                "view": answer.get("view"),
+                "result": answer.get("result")}
+
+    def current(self):
+        with self._lock:
+            if not self._held:
+                return None
+            held = dict(self._held)
+        held.pop("result", None)
+        held["has_view"] = bool(held.pop("view", None))
+        return json.loads(json.dumps(held))
+
+    def view(self):
+        """The 3D view's data for the run on the page - drawn by the page, made in brain/."""
+        with self._lock:
+            got = self._held.get("view") if self._held else None
+            return json.loads(json.dumps(got)) if got else None
+
+    def confirm(self):
+        """Gate 1: the modeller says the take-off on the page is right (docs/44 s6)."""
+        hook = self.confirm_hook
+        if hook is None:
+            return {"ok": False, "said": self.GONE}
+        takeoff, result, identity = self._snapshot()
+        if takeoff is None or not result:
+            return {"ok": False, "said": "nothing has been calculated yet, so there is no "
+                                         "take-off to confirm"}
+        got = hook(takeoff, result, identity) or {}
+        if got.get("ok"):
+            with self._lock:
+                if self._held is not None and self._held.get("result") is result:
+                    self._held["confirmed"] = True
+        return {"ok": bool(got.get("ok")), "said": got.get("said")}
+
+    def _snapshot(self):
+        with self._lock:
+            if not self._held:
+                return None, None, None
+            return (self._takeoff, self._held.get("result"),
+                    list(self._held["identity"]) if self._held.get("identity") else None)
+
+    def recalculate(self, body):
+        hook = self.recalculate_hook
+        if hook is None:
+            return {"ok": False, "said": self.GONE}
+        if not isinstance(body, dict) or not all(
+                isinstance(body.get(k, {}), dict) for k in ("project", "profiles", "overrides")):
+            return {"ok": False, "said": "the inputs could not be read - nothing was calculated"}
+        takeoff, _result, identity = self._snapshot()
+        if takeoff is None:
+            return {"ok": False, "said": "no building is open on this page - ask the chat to "
+                                         "calculate the loads first"}
+        with self._lock:
+            document = self._held["document"]
+            read_at = self._held.get("read_at")
+        answer = hook(takeoff, {"project": body.get("project") or {},
+                                "profiles": body.get("profiles") or {},
+                                "overrides": body.get("overrides") or {}}, identity)
+        if not isinstance(answer, dict) or answer.get("takeoff") is None:
+            return {"ok": False, "said": (answer or {}).get("said") or self.GONE}
+        self.open(document, answer, identity, read_at)
+        return {"ok": True, "said": answer.get("said"), "loads": self.current()}
+
+    #: What the page may open of a report it wrote, and how - nothing else.
+    REPORT_KINDS = {"html": "text/html; charset=utf-8", "pdf": "application/pdf"}
+
+    def report(self, body=None):
+        """The load calculation sheet. With {"ask": true} the modeller is asked where
+        it goes first, in a folder window opened where the last one went
+        (docs/44 s12.7); Cancel writes nothing."""
+        hook = self.report_hook
+        if hook is None:
+            return {"ok": False, "said": self.GONE}
+        takeoff, result, _identity = self._snapshot()
+        if takeoff is None or not result:
+            return {"ok": False, "said": "nothing has been calculated yet, so there is no "
+                                         "report to write"}
+        folder, note = None, ""
+        if isinstance(body, dict) and body.get("ask"):
+            with self._lock:
+                start = self._held.get("report_folder") if self._held else None
+            picked = (self.folder_hook or pick_folder)(start) or {}
+            if picked.get("cancelled"):
+                return {"ok": False, "said": "No folder was chosen, so no report was written."}
+            folder = picked.get("folder")
+            if not folder:
+                note = ("The folder window could not open (%s), so the report went to the "
+                        "usual place. " % (picked.get("unavailable") or "no answer"))
+        got = hook(takeoff, result, folder) or {}
+        with self._lock:
+            if self._held is not None and got.get("ok"):
+                # A key for this report's files only: a link cannot carry the
+                # API header, so the page opens the sheet with this instead.
+                self._held["report"] = dict(
+                    {k: got.get(k) for k in ("html", "pdf", "csv", "takeoff_csv", "said",
+                                             "folder")},
+                    token=secrets.token_urlsafe(24))
+                if folder:
+                    self._held["report_folder"] = folder
+        return dict(got, ok=bool(got.get("ok")), said=note + (got.get("said") or ""))
+
+    def report_file(self, token, kind):
+        """(path, content type) of a file the LAST report wrote, for the key the page
+        was given - else None. Never a path from the request."""
+        with self._lock:
+            report = dict((self._held or {}).get("report") or {})
+        key = report.get("token")
+        if not key or not isinstance(token, str) or not secrets.compare_digest(
+                token.encode("utf-8"), key.encode("utf-8")):
+            return None
+        content_type = self.REPORT_KINDS.get(kind)
+        path = report.get(kind) if content_type else None
+        if not path or not os.path.isfile(path):
+            return None
+        return path, content_type
+
+    def finalize(self):
+        hook = self.finalize_hook
+        if hook is None:
+            return {"ok": False, "said": self.GONE}
+        takeoff, result, identity = self._snapshot()
+        if takeoff is None or not result:
+            return {"ok": False, "said": "nothing has been calculated yet, so nothing was "
+                                         "written"}
+        got = hook(takeoff, result, identity) or {}
+        with self._lock:
+            if self._held is not None:
+                self._held["finalized"] = {"at": time.strftime("%H:%M:%S"),
+                                           "said": got.get("said"),
+                                           "values": got.get("finalized")}
+        return dict(got, ok=bool(got.get("ok")))
+
+    def runs(self):
+        hook = self.runs_hook
+        with self._lock:
+            document = self._held["document"] if self._held else None
+        if hook is None or document is None:
+            return []
+        return hook(document) or []
+
+    def earlier(self, run_id):
+        """A kept run, read-only - never made the current one."""
+        hook = self.run_hook
+        with self._lock:
+            document = self._held["document"] if self._held else None
+        if hook is None or document is None or not isinstance(run_id, str) \
+                or not run_id.replace("-", "").isdigit():
+            return None
+        return hook(document, run_id)
+
+
+#: This process's Loads panel - one chat's.
+LOADS_PANEL = LoadsPanel()
 
 
 def companion_dir():
@@ -916,17 +1221,40 @@ class _Handler(http.server.BaseHTTPRequestHandler):
     # ------------------------------------------------------------- replies
 
     def _send(self, status, body, content_type, extra=()):
+        self._send_raw(status, body, content_type, tuple(SECURITY_HEADERS) + tuple(extra))
+
+    def _send_raw(self, status, body, content_type, headers):
+        """One reply with exactly these headers - the page's own, or a report's."""
         data = body if isinstance(body, bytes) else body.encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
-        for name, value in SECURITY_HEADERS:
-            self.send_header(name, value)
-        for name, value in extra:
+        for name, value in headers:
             self.send_header(name, value)
         self.end_headers()
         if self.command != "HEAD":
             self.wfile.write(data)
+
+    def _report_file(self, path):
+        """GET /report/<key>/<html|pdf>: the sheet the last Report wrote, opened in a
+        tab of its own (docs/44 s12.7). A link cannot carry the API header, so the
+        paired cookie and the key the page was given stand in for it."""
+        if not self.owner.knows(self._cookie()):
+            return self._refuse(403, "not paired")
+        parts = path.split("/")
+        got = LOADS_PANEL.report_file(parts[2], parts[3]) if len(parts) == 4 else None
+        if got is None:
+            return self._refuse(404, "not found")
+        try:
+            with io.open(got[0], "rb") as fh:
+                body = fh.read()
+        except OSError:
+            return self._refuse(404, "not found")
+        if got[1] == "application/pdf":
+            name = re.sub(r"[^A-Za-z0-9._-]", "_", os.path.basename(got[0]))
+            return self._send_raw(200, body, got[1], tuple(PDF_HEADERS) + (
+                ("Content-Disposition", 'inline; filename="%s"' % name),))
+        return self._send_raw(200, body, got[1], REPORT_HEADERS)
 
     def _json(self, status, payload, extra=()):
         self._send(status, json.dumps(payload), "application/json; charset=utf-8", extra)
@@ -997,6 +1325,34 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if why:
                 return self._refuse(403, why)
             return self._json(200, {"ok": True, "cards": CHANGES.cards()})
+        if path == "/api/loads":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "loads": LOADS_PANEL.current()})
+        if path == "/api/loads/view":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "view": LOADS_PANEL.view()})
+        if path == "/api/loads/runs":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "runs": LOADS_PANEL.runs()})
+        if path == "/api/loads/run":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            query = self.path.split("?", 1)[1] if "?" in self.path else ""
+            run_id = None
+            for part in query.split("&"):
+                name, _, value = part.partition("=")
+                if name == "id":
+                    run_id = value
+            return self._json(200, {"ok": True, "run": LOADS_PANEL.earlier(run_id)})
+        if path.startswith("/report/"):
+            return self._report_file(path)
         return self._refuse(404, "not found")
 
     def do_POST(self):
@@ -1040,6 +1396,23 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             except (ValueError, TypeError, UnicodeDecodeError):
                 return self._refuse(400, "unreadable")
             return self._json(200, CHANGES.apply(card_id, body.get("values")))
+        if path in ("/api/loads/recalculate", "/api/loads/report", "/api/loads/finalize",
+                    "/api/loads/confirm"):
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 1048576)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except (ValueError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            if path.endswith("/recalculate"):
+                return self._json(200, LOADS_PANEL.recalculate(body))
+            if path.endswith("/report"):
+                return self._json(200, LOADS_PANEL.report(body))
+            if path.endswith("/confirm"):
+                return self._json(200, LOADS_PANEL.confirm())
+            return self._json(200, LOADS_PANEL.finalize())
         if path == "/api/changes/clear":
             why = self._api_ok()
             if why:

@@ -1,6 +1,7 @@
 // NOT STANDALONE. Assumes `doc`, `app`, `sourceDocumentTitle`,
 // `sharedParameterFile` and `nameContains` are in scope, and leaves `bound`,
-// `clashed`, `skipped`, `regrouped` and `refused` behind.
+// `clashed`, `skipped`, `regrouped`, `refused` and
+// `sharedParameterFileRestored` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). The undo belongs to THIS
 // document - the source project is only read.
@@ -30,12 +31,27 @@
 // own file and the API cannot recreate one elsewhere. Those are NAMED, because
 // a transfer that quietly leaves out three of ten is worse than one that
 // refuses.
+//
+// VERSION 2 PUTS REVIT'S SHARED PARAMETER FILE SETTING BACK (FRAGMENT-ISSUES
+// 5b-317). Version 1 pointed Application.SharedParametersFilename at the file
+// asked for and left it there. That setting belongs to the Revit session, not
+// to either document: no transaction holds it, so Undo cannot reverse it, and
+// Manage > Shared Parameters stayed pointed at this path afterwards. The value
+// in force is read first and restored in a `finally` once every binding is
+// made, and the restore is READ BACK - `sharedParameterFileRestored` is true
+// only when the setting reads as it did before. The definitions are used while
+// the file is the one asked for; the bindings they made live in the document
+// and do not need the setting afterwards.
 
 var bound = new List<string>();
 var clashed = new List<string>();
 var skipped = new List<string>();
 var regrouped = new List<string>();
 string refused = "";
+var sharedParameterFileRestored = false;
+string previousSharedFile = null;
+var previousRead = false;
+var settingChanged = false;
 
 string wantedTitle = (sourceDocumentTitle ?? "").Trim();
 string filterText = (nameContains ?? "").Trim();
@@ -94,184 +110,228 @@ Func<Definition, System.Type, object> groupOf = (definition, groupType) =>
 };
 
 DefinitionFile definitionFile = null;
-if (source != null)
+// Read BEFORE anything is changed, so it can be put back whatever happens.
+try { previousSharedFile = app.SharedParametersFilename; previousRead = true; }
+catch { previousRead = false; }
+
+try
 {
-    try
+    if (source != null && previousRead)
     {
-        if (!string.IsNullOrEmpty(sharedParameterFile))
-            app.SharedParametersFilename = sharedParameterFile;
-        definitionFile = app.OpenSharedParameterFile();
-    }
-    catch { definitionFile = null; }
-}
-
-if (source == null)
-{
-    refused = "No open project matching '" + sourceDocumentTitle + "'. Both projects have to be open " +
-              "in the same Revit - open now: " + string.Join(", ", openTitles.ToArray()) + ".";
-}
-else if (insertMethod == null)
-{
-    refused = "This Revit has no BindingMap.Insert(definition, binding, group) - nothing done.";
-}
-else if (definitionFile == null)
-{
-    refused = "The shared parameter file '" + sharedParameterFile + "' could not be opened. A shared " +
-              "parameter's definition lives in that file, not in the project, so nothing can be bound " +
-              "without it.";
-}
-else
-{
-    var groupType = insertMethod.GetParameters()[2].ParameterType;
-
-    // Every shared definition in the file, by GUID. Matched on GUID and never
-    // on name: two files can hold one name as two different parameters.
-    var inFile = new Dictionary<Guid, ExternalDefinition>();
-    foreach (DefinitionGroup fileGroup in definitionFile.Groups)
-    {
-        foreach (Definition entry in fileGroup.Definitions)
-        {
-            var external = entry as ExternalDefinition;
-            if (external == null) continue;
-            if (!inFile.ContainsKey(external.GUID)) inFile.Add(external.GUID, external);
-        }
-    }
-
-    // Which of the source's parameters are shared, by name -> GUID.
-    var sharedInSource = new Dictionary<string, Guid>();
-    foreach (var element in new FilteredElementCollector(source).OfClass(typeof(SharedParameterElement)))
-    {
-        var shared = element as SharedParameterElement;
-        if (shared == null) continue;
-        string sharedName = "";
-        try { sharedName = shared.Name ?? ""; } catch { }
-        if (sharedName.Length > 0 && !sharedInSource.ContainsKey(sharedName))
-            sharedInSource.Add(sharedName, shared.GuidValue);
-    }
-
-    // What is already bound HERE, by name. Read once, before anything is
-    // inserted, so this fragment does not trip over its own work.
-    var boundHere = new Dictionary<string, int>();
-    var hereIterator = doc.ParameterBindings.ForwardIterator();
-    while (hereIterator.MoveNext())
-    {
-        var definition = hereIterator.Key;
-        if (definition == null) continue;
-        string name = "";
-        try { name = definition.Name ?? ""; } catch { }
-        if (name.Length > 0 && !boundHere.ContainsKey(name)) boundHere.Add(name, 1);
-    }
-
-    int looked = 0;
-    var iterator = source.ParameterBindings.ForwardIterator();
-    while (iterator.MoveNext())
-    {
-        var definition = iterator.Key;
-        if (definition == null) continue;
-
-        string name = "";
-        try { name = definition.Name ?? ""; } catch { }
-        if (name.Length == 0) continue;
-        if (filterText.Length > 0 &&
-            name.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) < 0) continue;
-        looked++;
-
-        if (boundHere.ContainsKey(name))
-        {
-            clashed.Add(name + " (already bound here, left alone)");
-            continue;
-        }
-
-        if (!sharedInSource.ContainsKey(name))
-        {
-            skipped.Add(name + " (a NON-SHARED project parameter - it exists only inside that file " +
-                        "and the API cannot recreate one here)");
-            continue;
-        }
-
-        var guid = sharedInSource[name];
-        if (!inFile.ContainsKey(guid))
-        {
-            skipped.Add(name + " (not in the shared parameter file given - its definition lives there, " +
-                        "and matching by name instead could bind a different parameter)");
-            continue;
-        }
-
-        var sourceBinding = iterator.Current as ElementBinding;
-        if (sourceBinding == null)
-        {
-            skipped.Add(name + " (its binding could not be read)");
-            continue;
-        }
-
-        var categorySet = app.Create.NewCategorySet();
         try
         {
-            foreach (Category category in sourceBinding.Categories)
-                if (category != null) categorySet.Insert(category);
-        }
-        catch { }
-
-        if (categorySet.IsEmpty)
-        {
-            skipped.Add(name + " (bound to no category this project has)");
-            continue;
-        }
-
-        bool instance = sourceBinding is InstanceBinding;
-        var binding = instance
-            ? (ElementBinding)app.Create.NewInstanceBinding(categorySet)
-            : (ElementBinding)app.Create.NewTypeBinding(categorySet);
-
-        object group = groupOf(definition, groupType);
-        bool fellBack = false;
-        if (group == null)
-        {
-            group = dataGroup(groupType);
-            fellBack = true;
-        }
-
-        try
-        {
-            var ok = insertMethod.Invoke(doc.ParameterBindings,
-                                         new object[] { inFile[guid], binding, group });
-            // Insert returning true is not proof. Read it back out of the
-            // document - the same rule ADD_PROJECT_PARAMETER records.
-            bool landed = false;
-            var check = doc.ParameterBindings.ForwardIterator();
-            while (check.MoveNext())
+            if (!string.IsNullOrEmpty(sharedParameterFile))
             {
-                var got = check.Key;
-                if (got == null) continue;
-                string gotName = "";
-                try { gotName = got.Name ?? ""; } catch { }
-                if (gotName == name) { landed = true; break; }
+                settingChanged = true;
+                app.SharedParametersFilename = sharedParameterFile;
             }
-
-            if (!landed)
-            {
-                skipped.Add(name + " (Revit reported " + (ok == null ? "nothing" : ok.ToString()) +
-                            " and the binding is not in the document)");
-            }
-            else if (fellBack)
-            {
-                regrouped.Add(name + " (filed under Data - this release would not say which group it " +
-                              "was in over there)");
-            }
-            else
-            {
-                bound.Add(name);
-            }
+            definitionFile = app.OpenSharedParameterFile();
         }
-        catch (Exception)
-        {
-            skipped.Add(name + " (Revit refused the binding)");
-        }
+        catch { definitionFile = null; }
     }
 
-    if (looked == 0)
+    if (source != null && !previousRead)
     {
-        refused = "No project parameters in '" + source.Title + "'" +
-                  (filterText.Length > 0 ? " matching '" + filterText + "'" : "") + ".";
+        refused = "The shared parameter file Revit has set could not be read, so it could not be put back " +
+                  "afterwards - nothing was attempted.";
+    }
+    else if (source == null)
+    {
+        refused = "No open project matching '" + sourceDocumentTitle + "'. Both projects have to be open " +
+                  "in the same Revit - open now: " + string.Join(", ", openTitles.ToArray()) + ".";
+    }
+    else if (insertMethod == null)
+    {
+        refused = "This Revit has no BindingMap.Insert(definition, binding, group) - nothing done.";
+    }
+    else if (definitionFile == null)
+    {
+        refused = "The shared parameter file '" + sharedParameterFile + "' could not be opened. A shared " +
+                  "parameter's definition lives in that file, not in the project, so nothing can be bound " +
+                  "without it.";
+    }
+    else
+    {
+        var groupType = insertMethod.GetParameters()[2].ParameterType;
+
+        // Every shared definition in the file, by GUID. Matched on GUID and never
+        // on name: two files can hold one name as two different parameters.
+        var inFile = new Dictionary<Guid, ExternalDefinition>();
+        foreach (DefinitionGroup fileGroup in definitionFile.Groups)
+        {
+            foreach (Definition entry in fileGroup.Definitions)
+            {
+                var external = entry as ExternalDefinition;
+                if (external == null) continue;
+                if (!inFile.ContainsKey(external.GUID)) inFile.Add(external.GUID, external);
+            }
+        }
+
+        // Which of the source's parameters are shared, by name -> GUID.
+        var sharedInSource = new Dictionary<string, Guid>();
+        foreach (var element in new FilteredElementCollector(source).OfClass(typeof(SharedParameterElement)))
+        {
+            var shared = element as SharedParameterElement;
+            if (shared == null) continue;
+            string sharedName = "";
+            try { sharedName = shared.Name ?? ""; } catch { }
+            if (sharedName.Length > 0 && !sharedInSource.ContainsKey(sharedName))
+                sharedInSource.Add(sharedName, shared.GuidValue);
+        }
+
+        // What is already bound HERE, by name. Read once, before anything is
+        // inserted, so this fragment does not trip over its own work.
+        var boundHere = new Dictionary<string, int>();
+        var hereIterator = doc.ParameterBindings.ForwardIterator();
+        while (hereIterator.MoveNext())
+        {
+            var definition = hereIterator.Key;
+            if (definition == null) continue;
+            string name = "";
+            try { name = definition.Name ?? ""; } catch { }
+            if (name.Length > 0 && !boundHere.ContainsKey(name)) boundHere.Add(name, 1);
+        }
+
+        int looked = 0;
+        var iterator = source.ParameterBindings.ForwardIterator();
+        while (iterator.MoveNext())
+        {
+            var definition = iterator.Key;
+            if (definition == null) continue;
+
+            string name = "";
+            try { name = definition.Name ?? ""; } catch { }
+            if (name.Length == 0) continue;
+            if (filterText.Length > 0 &&
+                name.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) < 0) continue;
+            looked++;
+
+            if (boundHere.ContainsKey(name))
+            {
+                clashed.Add(name + " (already bound here, left alone)");
+                continue;
+            }
+
+            if (!sharedInSource.ContainsKey(name))
+            {
+                skipped.Add(name + " (a NON-SHARED project parameter - it exists only inside that file " +
+                            "and the API cannot recreate one here)");
+                continue;
+            }
+
+            var guid = sharedInSource[name];
+            if (!inFile.ContainsKey(guid))
+            {
+                skipped.Add(name + " (not in the shared parameter file given - its definition lives there, " +
+                            "and matching by name instead could bind a different parameter)");
+                continue;
+            }
+
+            var sourceBinding = iterator.Current as ElementBinding;
+            if (sourceBinding == null)
+            {
+                skipped.Add(name + " (its binding could not be read)");
+                continue;
+            }
+
+            var categorySet = app.Create.NewCategorySet();
+            try
+            {
+                foreach (Category category in sourceBinding.Categories)
+                    if (category != null) categorySet.Insert(category);
+            }
+            catch { }
+
+            if (categorySet.IsEmpty)
+            {
+                skipped.Add(name + " (bound to no category this project has)");
+                continue;
+            }
+
+            bool instance = sourceBinding is InstanceBinding;
+            var binding = instance
+                ? (ElementBinding)app.Create.NewInstanceBinding(categorySet)
+                : (ElementBinding)app.Create.NewTypeBinding(categorySet);
+
+            object group = groupOf(definition, groupType);
+            bool fellBack = false;
+            if (group == null)
+            {
+                group = dataGroup(groupType);
+                fellBack = true;
+            }
+
+            try
+            {
+                var ok = insertMethod.Invoke(doc.ParameterBindings,
+                                             new object[] { inFile[guid], binding, group });
+                // Insert returning true is not proof. Read it back out of the
+                // document - the same rule ADD_PROJECT_PARAMETER records.
+                bool landed = false;
+                var check = doc.ParameterBindings.ForwardIterator();
+                while (check.MoveNext())
+                {
+                    var got = check.Key;
+                    if (got == null) continue;
+                    string gotName = "";
+                    try { gotName = got.Name ?? ""; } catch { }
+                    if (gotName == name) { landed = true; break; }
+                }
+
+                if (!landed)
+                {
+                    skipped.Add(name + " (Revit reported " + (ok == null ? "nothing" : ok.ToString()) +
+                                " and the binding is not in the document)");
+                }
+                else if (fellBack)
+                {
+                    regrouped.Add(name + " (filed under Data - this release would not say which group it " +
+                                  "was in over there)");
+                }
+                else
+                {
+                    bound.Add(name);
+                }
+            }
+            catch (Exception)
+            {
+                skipped.Add(name + " (Revit refused the binding)");
+            }
+        }
+
+        if (looked == 0)
+        {
+            refused = "No project parameters in '" + source.Title + "'" +
+                      (filterText.Length > 0 ? " matching '" + filterText + "'" : "") + ".";
+        }
+    }
+}
+finally
+{
+    // PUT THE SESSION'S SETTING BACK, and read it to be sure. Undo cannot do
+    // this - the setting is outside every transaction (5b-317).
+    if (!settingChanged)
+    {
+        // Never changed, so it is as it was.
+        sharedParameterFileRestored = previousRead;
+    }
+    else
+    {
+        try
+        {
+            app.SharedParametersFilename = previousSharedFile ?? "";
+            var now = app.SharedParametersFilename ?? "";
+            sharedParameterFileRestored = string.Equals(now, previousSharedFile ?? "",
+                StringComparison.OrdinalIgnoreCase);
+        }
+        catch { sharedParameterFileRestored = false; }
+
+        if (!sharedParameterFileRestored)
+        {
+            refused = (refused.Length > 0 ? refused + " " : "") +
+                      "Revit's shared parameter file setting could NOT be put back - Manage > Shared " +
+                      "Parameters may now point at '" + sharedParameterFile + "'. It was '" +
+                      (previousSharedFile ?? "") + "'; set it back there by hand.";
+        }
     }
 }

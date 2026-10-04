@@ -12,6 +12,24 @@ positive:
   - given: a mixed set of equipment, ducts and an in-place element
     expect: the three kinds counted separately in the summary
 
+  # Version 3, added 2026-10-04. NONE OF THE VERSION 3 CASES HAS BEEN RUN.
+  - given: >
+      the same equipment and one duct, sharedCoordinates true, on a model whose
+      survey point is moved and turned away from the internal origin
+    expect: >
+      each position given twice - internal millimetres, then "shared E, N,
+      elev" - and the shared pair for one element matching what a Spot
+      Coordinate placed on it in Revit reads (set to Survey Point). Facing
+      given in project north AND true north. The site lines name the angle to
+      true north, and the base point and survey point, internal and shared,
+      matching Manage > Coordinates > Report Shared Coordinates
+
+  - given: the same selection with sharedCoordinates left out
+    expect: >
+      the positions exactly as version 2 gave them, the reply saying they are
+      from the INTERNAL origin and that facing is in project north, and the
+      site lines still present
+
 negative:
   - given: a thirty-metre duct reported as a single coordinate
     expect: >
@@ -34,7 +52,33 @@ negative:
   - given: an element with neither a location nor a bounding box
     expect: counted and named, not silently absent
 
-second_route: >
-  Revit's own Properties palette for a point-based element, and the tape measure
-  from the project base point for a coordinate that has to mean something
-  outside the model
+  # Version 3.
+  - given: >
+      sharedCoordinates true on a model whose survey point sits ON the internal
+      origin, unturned (a fresh model from the default template)
+    expect: >
+      the shared numbers EQUAL to the internal ones, and the angle to true
+      north 0 - NOT shifted by the other model's offset or by an assumed one.
+      This is what makes the moved model's different numbers mean something
+
+  - given: >
+      the same selection on the moved model, sharedCoordinates true, compared
+      element by element with the same run with it left out
+    expect: >
+      the internal numbers identical in both runs - asking for shared
+      coordinates must not move the internal ones
+
+  - given: a selection nowhere near 20 miles from the internal origin
+    expect: >
+      the farthest distance given in metres and NO warning beside it - the
+      only limit named is Revit's own, and nothing nearer is called far
+
+second_route:
+  - >
+    Revit's own Properties palette for a point-based element, and the tape measure
+    from the project base point for a coordinate that has to mean something
+    outside the model
+  - >
+    Version 3: a Spot Coordinate on the same element, set to report from the
+    Survey Point, and Manage > Coordinates > Report Shared Coordinates on it -
+    Revit's own two routes to the shared numbers

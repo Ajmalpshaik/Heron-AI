@@ -1451,6 +1451,240 @@ def hvac(calculation, inputs, project=None, project_name=None):
     return _design(HVAC, "hvac", "design.hvac", calculation, inputs, project, project_name)
 
 
+def _loads_inputs(inputs):
+    import json
+    if isinstance(inputs, dict):
+        return inputs
+    text = (inputs or "").strip()
+    if not text:
+        return {}
+    try:
+        got = json.loads(text)
+    except ValueError as why:
+        raise ValueError("the inputs are not a JSON object: %s" % why)
+    if not isinstance(got, dict):
+        raise ValueError("the inputs must be a JSON object - {\"project\": {...}, "
+                         "\"profiles\": {...}, \"overrides\": {...}}")
+    return got
+
+
+def _merged(older, newer):
+    out = dict(older or {})
+    out.update(newer or {})
+    return out
+
+
+def _kept_values(d):
+    """The values that are given - a key given as nothing (or {"value": None}) is dropped."""
+    def given(v):
+        if isinstance(v, dict) and "value" in v:
+            return v["value"] is not None
+        return v is not None
+    return dict((k, v) for k, v in (d or {}).items() if given(v))
+
+
+def building_loads(takeoff_json, inputs, project=None, project_name=None, save=True,
+                   include_links=None):
+    """
+    Every Space's load from REPORT_SPACE_ENVELOPE's take-off - docs/44 s5.
+
+    `inputs` is a dict or a JSON object string: {"project": {...}, "profiles":
+    {...}, "overrides": {...}} - what the modeller has answered so far. With a
+    `project` key, the last run kept for that project fills in what this call
+    did not say (its answers are not asked twice), its HVAC standards are read
+    as hvac() reads them, and a finished run is kept beside them.
+
+    Returns {"asked", "qa", "result", "takeoff", "said", "saved"}. While
+    anything is asked, nothing is calculated and nothing is kept. One audit
+    line, `design.loads`, says how it ended and NEVER carries the inputs.
+    """
+    try:
+        import heron_building_loads as LOADS
+        import heron_loads_view as VIEW
+        import heron_takeoff as TAKEOFF
+    except ImportError as exc:
+        raise BrainUnavailable("Heron's building loads could not be imported: %s. It needs "
+                               "nothing beyond Python itself, so this is a broken install."
+                               % exc)
+    try:
+        given = _loads_inputs(inputs)
+        takeoff = TAKEOFF.read(takeoff_json)
+        # Whether the model was read with its links (D-59) travels with the
+        # take-off, so Recalculate keeps it and Finalize re-reads it the same way.
+        if include_links is not None:
+            takeoff.include_links = bool(include_links)
+    except ValueError as why:
+        _audit().record("design.loads", False, fields={"status": "unreadable"})
+        return {"asked": [], "qa": [], "result": None, "takeoff": None, "saved": None,
+                "said": "Nothing was calculated: %s" % why}
+
+    recorded = {}
+    last = None
+    if project:
+        try:
+            import heron_designbasis as KEEP
+            recorded, _note = KEEP.read(project, "hvac")
+        except (ValueError, OSError):
+            recorded = {}
+        try:
+            last = LOADS.load(project)
+        except (ValueError, OSError):
+            last = None
+    before = (last or {}).get("inputs") or {}
+    project_inputs = _merged(before.get("project"), given.get("project"))
+    profiles = dict(before.get("profiles") or {})
+    for key, values in (given.get("profiles") or {}).items():
+        profiles[key] = _merged(profiles.get(key), values)
+    overrides = dict(before.get("overrides") or {})
+    for key, values in (given.get("overrides") or {}).items():
+        overrides[str(key)] = _merged(overrides.get(str(key)), values)
+    # A value given as nothing CLEARS what was kept: a project or type value
+    # is then asked again, and a Space's own value gives way to its type's
+    # (the second review, N2 - a blanked field on the page came back).
+    project_inputs = _kept_values(project_inputs)
+    profiles = dict((k, _kept_values(v)) for k, v in profiles.items())
+    overrides = dict((k, _kept_values(v)) for k, v in overrides.items())
+    overrides = dict((k, v) for k, v in overrides.items() if v)
+
+    asked = LOADS.needs(takeoff, project_inputs, profiles)
+    result = saved = None
+    if asked:
+        said = LOADS.questions_text(asked)
+        status = "missing"
+    else:
+        result = LOADS.run(takeoff, project_inputs, profiles, overrides, recorded)
+        result["include_links"] = bool(getattr(takeoff, "include_links", False))
+        # GATE 1 HOLDS FOR THE GEOMETRY, NOT FOR THE INPUTS: a take-off the
+        # modeller confirmed stays confirmed through a Recalculate of the same
+        # geometry, and a model read again with any face changed must be
+        # confirmed again (docs/44 s6).
+        if last and LOADS.confirmed(last, takeoff):
+            result["geometry_confirmed"] = dict(last["geometry_confirmed"])
+        said = LOADS.summary_text(result)
+        if not LOADS.confirmed(result, takeoff):
+            said += (chr(10) + "The take-off is NOT CONFIRMED yet: the modeller checks it in the "
+                     "Companion's 3D view and presses 'The take-off is right' before the "
+                     "report is final or anything is written back.")
+        status = "ok"
+        if save and project:
+            try:
+                saved = LOADS.save(project, result, takeoff=takeoff)
+            except (ValueError, OSError) as why:
+                said += "\nThis run was NOT KEPT: %s" % why
+        elif save:
+            said += ("\nThis run was NOT KEPT - Heron does not know which project this is yet "
+                     "(D-33).")
+    # THE CHECKS THE PAGE SHOWS ARE THE RUN'S OWN: with the modeller's answers
+    # and the site, as the report prints them (the second review, N1). With no
+    # run yet, the same two, so the site is said while questions are asked.
+    if result:
+        qa = list(result.get("qa") or [])
+    else:
+        said_beyond = LOADS.answers(project_inputs, strict=False)
+        qa = TAKEOFF.qa(takeoff, said_beyond) + LOADS.site_checks(takeoff, project_inputs)
+        order = {"FAIL": 0, "WARN": 1, "INFO": 2}
+        qa.sort(key=lambda f: order.get(f["level"], 3))
+    counts = {}
+    for s in (result or {}).get("spaces") or []:
+        counts[s["status"]] = counts.get(s["status"], 0) + 1
+    _audit().record("design.loads", status == "ok",
+                    fields={"status": status,
+                            "error": _DESIGN_REFUSALS.get(status)},
+                    numbers={"spaces": len(takeoff.spaces), "asked": len(asked),
+                             "calculated": counts.get("ok", 0),
+                             "refused": counts.get("refused", 0),
+                             "qa_fail": sum(1 for f in qa if f["level"] == "FAIL")})
+    return {"asked": asked, "qa": qa, "result": result, "takeoff": takeoff, "saved": saved,
+            "said": said, "inputs": {"project": project_inputs, "profiles": profiles,
+                                     "overrides": overrides},
+            # What the Companion's 3D view draws - the same faces, worked out in
+            # brain/ (docs/44 s12). Drawn before anything is calculated too, so
+            # the geometry can be checked while the questions are answered.
+            "view": VIEW.build(takeoff, result, LOADS.answers(project_inputs, strict=False)),
+            "summary": TAKEOFF.summary(takeoff, LOADS.answers(project_inputs, strict=False)),
+            "confirmed": bool(result) and LOADS.confirmed(result, takeoff),
+            # Where the modeller last put this project's report - the folder
+            # window opens there (docs/44 s12.7).
+            "report_folder": LOADS.report_folder(project) if project else None}
+
+
+def loads_confirm(takeoff, result, project=None, project_name=None):
+    """Gate 1 (docs/44 s6): the modeller has checked this take-off. Recorded with the run,
+    and kept with the project's copy of it. Returns {"ok", "said", "result"}."""
+    import heron_building_loads as LOADS
+    if not result:
+        return {"ok": False, "said": "Nothing has been calculated yet, so there is no run to "
+                                     "record the check against."}
+    LOADS.confirm(result, takeoff)
+    said = ("The take-off%s is confirmed for this run - its report is final and Finalize is "
+            "open." % ((" of %s" % project_name) if project_name else ""))
+    if project:
+        try:
+            LOADS.save(project, result, replace=True)
+        except (ValueError, OSError) as why:
+            said += " It was NOT KEPT with the project: %s" % why
+    _audit().record("design.loads_confirm", True, fields={"status": "ok"})
+    return {"ok": True, "said": said, "result": result}
+
+
+def loads_report(takeoff, result, model_path=None, project=None, project_name=None,
+                 folder=None):
+    """
+    The load calculation sheet for one run (docs/44 s8): HTML, two CSVs and,
+    where Edge or Chrome is on the PC, a PDF. Written by the brain from its own
+    numbers; nothing is exported from Revit (docs/44 s9, question 4).
+
+    WHERE: `folder` when the modeller chose one (docs/44 s12.7) - straight
+    into it, the run's id in every file name, and kept as this project's
+    report folder. Else the folder last chosen for the project, while it is
+    still there. Else "Heron loads/<run>" beside the saved Revit model, else
+    the run's own folder in Heron's knowledge folder.
+    """
+    import heron_loads_report as REPORT
+    import heron_building_loads as LOADS
+    run_id = result.get("run_id") or "run"
+    chosen = None
+    if folder:
+        if not isinstance(folder, str) or not os.path.isabs(folder) or not os.path.isdir(folder):
+            return {"ok": False, "said": "No report was written: %s is not a folder on this PC."
+                                         % (folder,)}
+        chosen = folder
+    kept = LOADS.report_folder(project) if project and not chosen else None
+    if chosen:
+        folder = chosen
+    elif kept and os.path.isdir(kept):
+        folder = kept
+    elif model_path and os.path.isabs(model_path) and os.path.isdir(os.path.dirname(model_path)):
+        folder = os.path.join(os.path.dirname(model_path), "Heron loads", run_id)
+    else:
+        try:
+            folder = os.path.join(LOADS._folder(project or ""), run_id)
+        except ValueError as why:
+            return {"ok": False, "said": "No report was written: %s" % why}
+    standards = {}
+    if project:
+        try:
+            import heron_designbasis as KEEP
+            recorded, _note = KEEP.read(project, "hvac")
+            standards = {k: (v.get("value") if isinstance(v, dict) else v)
+                         for k, v in (recorded or {}).items()}
+        except (ValueError, OSError):
+            standards = {}
+    try:
+        got = REPORT.write(folder, takeoff, result, standards, project_name=project_name)
+    except OSError as why:
+        _audit().record("design.loads_report", False, fields={"status": "not written"})
+        return {"ok": False, "said": "No report was written: %s" % why}
+    _audit().record("design.loads_report", True,
+                    fields={"status": "ok", "pdf": "yes" if got.get("pdf") else "no"})
+    if chosen and project:
+        try:
+            LOADS.set_report_folder(project, chosen)
+        except (ValueError, OSError):
+            pass                    # written all the same; only not offered next time
+    return dict(got, folder=folder)
+
+
 def fire(calculation, inputs, project=None, project_name=None):
     """
     One fire protection design calculation - HERON-MEP-FPD-002, docs/42 - or,

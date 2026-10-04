@@ -22,6 +22,10 @@
 //
 // A CONNECTOR THAT CANNOT BE TIED TO ITS SIZE IS NOT LEFT BEHIND AT ONE FOOT.
 // Any refusal after the checks THROWS, and the host rolls the call back.
+//
+// GLOBAL AND FITTING ARE OFFERED, as Revit's System Classification list offers
+// them; where Revit refuses one for a face, its refusal is reported and nothing
+// is kept. SET_FAMILY_CONNECTOR_ROLES changes a connector already made.
 
 var findings = new List<string>();
 var connector = "";
@@ -130,9 +134,12 @@ Func<FamilyParameter, bool> isLength = p =>
     }
 };
 
-// EVERY SYSTEM REVIT OFFERS A FAMILY CONNECTOR: (kind, name, value).
+// EVERY SYSTEM REVIT OFFERS A FAMILY CONNECTOR: (kind, name, value). Global and
+// Fitting are offered too - a valve body's two pipe connectors are Global so a
+// system passes through it (docs/43 §10). Both are a duct AND a pipe system, so
+// the domain comes from the words ("Global pipe") or the family's category.
 var systems = new List<Tuple<string, string, object>>();
-var notOffered = new[] { "Fitting", "Global", "UndefinedSystemType", "Undefined" };
+var notOffered = new[] { "UndefinedSystemType", "Undefined" };
 foreach (var value in Enum.GetValues(typeof(DuctSystemType)))
     if (!notOffered.Contains(value.ToString())) systems.Add(Tuple.Create("duct", value.ToString(), value));
 foreach (var value in Enum.GetValues(typeof(PipeSystemType)))
@@ -159,7 +166,8 @@ else
     // THE SYSTEM.
     var said = squash(system);
     // Either the enum's own name or the name Revit shows for it.
-    var systemMatches = systems.Where(s => squash(s.Item2) == said || squash(spaced(s.Item2)) == said).ToList();
+    var systemMatches = systems.Where(s => squash(s.Item2) == said || squash(spaced(s.Item2)) == said
+        || squash(s.Item2) + s.Item1 == said || s.Item1 + squash(s.Item2) == said).ToList();
     if (said.Length == 0) problems.Add("No system was named - \"Supply Air\", \"Domestic Cold Water\", \"Power Balanced\".");
     else if (systemMatches.Count == 0)
     {
@@ -170,8 +178,31 @@ else
             + (near.Count > 0 ? " Close: " + string.Join(", ", near) + "." : " Revit's names are used - Supply Air, Return Air, Exhaust Air, Domestic Cold Water, Domestic Hot Water, Hydronic Supply, Hydronic Return, Sanitary, Vent, Fire Protection Wet, Fire Protection Dry, Fire Protection Pre-Action, Fire Protection Other, Other Pipe, Power Balanced."));
     }
     else if (systemMatches.Count > 1)
-        problems.Add("\"" + system.Trim() + "\" is a " + string.Join(" and a ", systemMatches.Select(s => s.Item1))
-            + " system both - nothing was made rather than one being picked.");
+    {
+        // A NAME BOTH DOMAINS HAVE - Global, Fitting. The domain is the word
+        // beside it, "Global pipe", or else the family's category: a Pipe
+        // Accessories family's Global is a pipe Global.
+        var category = doc.OwnerFamily == null || doc.OwnerFamily.FamilyCategory == null ? null : doc.OwnerFamily.FamilyCategory.Id;
+        Func<BuiltInCategory[], bool> isOneOf = list => category != null && list.Any(b => category == new ElementId(b));
+        var pipeFamily = isOneOf(new[] { BuiltInCategory.OST_PipeAccessory, BuiltInCategory.OST_PipeFitting,
+            BuiltInCategory.OST_PlumbingFixtures, BuiltInCategory.OST_Sprinklers });
+        var ductFamily = isOneOf(new[] { BuiltInCategory.OST_DuctAccessory, BuiltInCategory.OST_DuctFitting,
+            BuiltInCategory.OST_DuctTerminal });
+        var asked = systemMatches.Where(s => said.StartsWith(s.Item1) || said.EndsWith(s.Item1)).ToList();
+        if (asked.Count == 0 && pipeFamily) asked = systemMatches.Where(s => s.Item1 == "pipe").ToList();
+        if (asked.Count == 0 && ductFamily) asked = systemMatches.Where(s => s.Item1 == "duct").ToList();
+        if (asked.Count == 1)
+        {
+            chosen = asked[0];
+            findings.Add("\"" + system.Trim() + "\" is a duct and a pipe system both; a " + chosen.Item1 + " connector "
+                + "was made, " + (said.StartsWith(chosen.Item1) || said.EndsWith(chosen.Item1) ? "as the words say."
+                : "from the family's category."));
+        }
+        else
+            problems.Add("\"" + system.Trim() + "\" is a " + string.Join(" and a ", systemMatches.Select(s => s.Item1))
+                + " system both - say which, \"" + system.Trim() + " pipe\" or \"" + system.Trim() + " duct\". Nothing was "
+                + "made rather than one being picked.");
+    }
     else chosen = systemMatches[0];
 
     // THE SIZES.

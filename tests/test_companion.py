@@ -251,9 +251,14 @@ def test_no_way_to_an_ai():
     check(tools.TOOLS.get("heron_companion") == (tools.READ, None),
           "heron_companion is declared READ with no Revit operation")
 
-    js = io.open(PAGE_JS, encoding="utf-8").read()
-    check("innerHTML" not in js and "insertAdjacentHTML" not in js,
-          "the page puts model text on screen as text, never as HTML")
+    static = os.path.join(ROOT, "mcp", "companion", "static")
+    for name in sorted(n for n in os.listdir(static) if n.endswith(".js")):
+        js = io.open(os.path.join(static, name), encoding="utf-8").read()
+        check("innerHTML" not in js and "insertAdjacentHTML" not in js
+              and "outerHTML" not in js and "document.write" not in js,
+              "%s puts model text on screen as text, never as HTML" % name)
+        check(not re.search(r"https?://", js.replace("http://127.0.0.1", "")),
+              "%s names no address outside this PC" % name)
 
 
 def test_addin_side():
@@ -638,6 +643,392 @@ def test_load_from_revit():
           "only the two known kinds load")
 
 
+def test_loads():
+    """The Loads panel (docs/44 section 7): it holds what the brain worked out
+    and calls hooks - no arithmetic, no BIM rule - and its routes are behind
+    the same header, cookie and Origin as the table's Apply."""
+    print()
+    print("The Loads panel: data and hooks only, and its writes behind the pairing")
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    sys.path.insert(0, os.path.join(ROOT, "tests"))
+    import heron_brain as brain_seam
+    from test_takeoff import ROOM
+    from test_building_loads import PROJECT, OFFICE
+    answer = brain_seam.building_loads(json.dumps(ROOM), {"project": PROJECT,
+                                                          "profiles": {"Office": OFFICE}},
+                                       save=False)
+    panel = hc.LoadsPanel()
+    check(panel.current() is None and panel.recalculate({})["ok"] is False
+          and panel.finalize()["ok"] is False and panel.report()["ok"] is False,
+          "an empty panel, with no chat connected, does nothing")
+    panel.open("Project1", answer, ("Project1", "", "11"))
+    shown = panel.current()
+    check(shown["document"] == "Project1" and shown["spaces"][0]["status"] == "ok"
+          and shown["building"]["block_w"] == answer["result"]["building"]["block_w"]
+          and "takeoff" not in shown and "result" not in shown,
+          "the panel returns what it was given - the take-off and hour rows stay off the page")
+    before = json.dumps(panel.current(), sort_keys=True)
+    said = panel.recalculate({"project": PROJECT, "profiles": {"Office": OFFICE}})
+    check(said["ok"] is False and "no longer connected" in said["said"]
+          and json.dumps(panel.current(), sort_keys=True) == before,
+          "Recalculate with no hook answers 'no longer connected' and changes nothing")
+    seen = []
+
+    def recalc(takeoff, inputs, identity):
+        seen.append((takeoff, inputs, identity))
+        return brain_seam.building_loads(takeoff, inputs, save=False)
+    panel.recalculate_hook = recalc
+    office = dict(OFFICE, equipment_w_per_m2=40)
+    after = panel.recalculate({"project": PROJECT, "profiles": {"Office": office}})
+    check(after["ok"] and seen and seen[0][0] is answer["takeoff"]
+          and seen[0][2] == ["Project1", "", "11"]
+          and after["loads"]["building"]["block_w"] > answer["result"]["building"]["block_w"],
+          "Recalculate runs the brain on the take-off ALREADY HELD, in the model it came from")
+    check(panel.recalculate({"project": "not a dict"})["ok"] is False,
+          "inputs that are not an object are refused at the door")
+    check(panel.earlier("../x") is None, "an earlier run's id must be a run id")
+
+    source = io.open(SOURCE, encoding="utf-8").read()
+    body = source[source.index("class LoadsPanel("):source.index("LOADS_PANEL = LoadsPanel()")]
+    check(not re.search(r"[0-9]\s*[*/]\s*[a-z_(]|W_PER_TR|3\.6", body)
+          and "import heron_" not in body,
+          "the class does no arithmetic and imports no brain module (README rule 4)")
+    for route in ("/api/loads/recalculate", "/api/loads/report", "/api/loads/finalize"):
+        check(route in source, "the page can ask for %s" % route)
+    i = source.index('if path in ("/api/loads/recalculate"')
+    check(source.index("why = self._api_ok()", i) < source.index("LOADS_PANEL.recalculate", i),
+          "every Loads POST is behind _api_ok - header, Origin and the paired cookie")
+
+    companion = hc.Companion(bound_pid=lambda: 100, folder=tempfile.mkdtemp(),
+                             discovery_dir=tempfile.mkdtemp(), is_alive=lambda pid: True)
+    real_stdout, sys.stdout = sys.stdout, io.StringIO()
+    try:
+        companion.pairing_address()
+        port = companion.port
+        origin = "http://127.0.0.1:%d" % port
+        refused = ask(port, "POST", "/api/loads/finalize",
+                      {"X-Heron-Companion": "1", "Origin": origin,
+                       "Content-Type": "application/json"}, "{}")
+        unpaired_get = ask(port, "GET", "/api/loads", {"X-Heron-Companion": "1"})
+        page = ask(port, "GET", "/")
+    finally:
+        printed, sys.stdout = sys.stdout.getvalue(), real_stdout
+        companion.stop()
+    check(refused[0] == 403 and unpaired_get[0] == 403,
+          "Finalize and the panel's data are refused without a redeemed pairing")
+    check(b'id="loads"' in page[2], "the page has the Loads section")
+    check(printed == "", "nothing reached stdout")
+
+    # The 3D view (docs/44 s12): its data is made in brain/ and served on its
+    # own route; the page file is served from the whitelist; the take-off is
+    # confirmed through a hook, behind the same pairing.
+    view_panel = hc.LoadsPanel()
+    check(view_panel.view() is None and view_panel.confirm()["ok"] is False,
+          "an empty panel has no 3D view and confirms nothing")
+    from test_loads_view import l_building
+    from test_loads_view import GROUNDED
+    shaped = brain_seam.building_loads(json.dumps(l_building()), {
+        "project": GROUNDED, "profiles": {"Office": OFFICE}}, save=False)
+    view_panel.open("Project1", shaped, ("Project1", "", "11"))
+    drawn = view_panel.view()
+    check(drawn and drawn["faces"] and "view" not in view_panel.current()
+          and view_panel.current()["has_view"] is True,
+          "the 3D view's data is served on its own route, not inside every poll")
+    check(view_panel.confirm()["ok"] is False and view_panel.current()["confirmed"] is False,
+          "with no chat connected the take-off cannot be confirmed")
+    view_panel.confirm_hook = lambda t, r, identity: brain_seam.loads_confirm(t, r)
+    said = view_panel.confirm()
+    check(said["ok"] and view_panel.current()["confirmed"] is True,
+          "'The take-off is right' records the check through the brain")
+    check(hc.PAGES.get("/loads3d.js", (None,))[0] == "loads3d.js"
+          and set(hc.PAGES) == {"/", "/companion.js", "/companion.css", "/loads3d.js"},
+          "the page files are a fixed list - the 3D view's script is on it, nothing else")
+    for route in ("/api/loads/view", "/api/loads/confirm"):
+        check(route in source, "the page can ask for %s" % route)
+    i = source.index('if path == "/api/loads/view":')
+    check(source.index("why = self._api_ok()", i) < source.index("LOADS_PANEL.view()", i),
+          "the 3D view's data is behind _api_ok like every other route")
+    page_js = io.open(os.path.join(ROOT, "mcp", "companion", "static", "loads3d.js"),
+                      encoding="utf-8").read()
+    check("fetch(\"/api/loads/view\"" in page_js and "import " not in page_js,
+          "the 3D view fetches only its own data and loads no library")
+
+    server = io.open(SERVER, encoding="utf-8").read()
+    fin = server[server.index("def _loads_finalize("):]
+    fin = fin[:fin.index(chr(10) + "def ", 10)]
+    check("_apply_table(rows, identity)" in fin
+          and fin.index("_apply_table(rows, identity)") < fin.index('"SET_AIR_TERMINAL_FLOW"')
+          and "moved = _moved_since(identity)" in fin,
+          "Finalize writes the Spaces through the table's own Apply first, then the "
+          "diffusers, each refused when the chat has moved to another model")
+    check(tools.COMPANION_ACTIONS.get("companion_loads_finalize") == (tools.MODIFY,
+                                                                      "run_fragment_write"),
+          "Finalize is declared MODIFY through run_fragment_write")
+    check("LOADS.finalize_rows(takeoff, result)" in fin,
+          "Finalize builds its rows through the brain, which refuses a take-off nobody confirmed")
+    # Review I9 and I10: Finalize reads the model again and refuses a changed
+    # one; it counts the undo entries it actually made.
+    reread = fin.find('"REPORT_SPACE_ENVELOPE"')
+    check(reread != -1 and reread < fin.index("_apply_table(rows, identity)")
+          and "LOADS.fingerprint(fresh) != LOADS.fingerprint(takeoff)" in fin,
+          "Finalize reads the model again and refuses if its geometry changed")
+    check("Two undo entries in Revit:" not in fin and "entries += 1" in fin,
+          "Finalize says how many undo entries it made, not always two")
+    # The second review, m1: the rows carry the values Heron SHOWED, so an edit
+    # made in Revit since the read refuses the whole write; m3: confirming
+    # checks the chat is still on the model the take-off came from.
+    check("LOADS.finalize_rows(fresh, result)" not in fin
+          and fin.count("LOADS.finalize_rows(takeoff, result)") == 2
+          and 'setdefault("current", {})[field] = new' in fin,
+          "Finalize checks each row against the value Heron showed, and then holds what it wrote")
+    conf = server[server.index("def _loads_confirm("):]
+    conf = conf[:conf.index(chr(10) + "def ", 10)]
+    check("moved = _moved_since(identity)" in conf
+          and conf.index("moved = _moved_since(identity)") < conf.index("brain.loads_confirm("),
+          "confirming the take-off is refused when the chat has moved to another model")
+    kept = hc.LoadsPanel()
+    kept.open("Project1", shaped, ("Project1", "", "11"), read_at="08:00:00")
+    kept.recalculate_hook = lambda t, i, ident: brain_seam.building_loads(t, i, save=False)
+    kept.recalculate({"project": GROUNDED, "profiles": {"Office": OFFICE}})
+    check(kept.current()["read_at"] == "08:00:00",
+          "Recalculate keeps the time the MODEL was read - it reads nothing itself")
+    for hook in ("recalculate_hook = _loads_recalculate", "report_hook = _loads_report",
+                 "finalize_hook = _loads_finalize", "confirm_hook = _loads_confirm"):
+        check(hook in server, "the server sets %s" % hook.split(" =")[0])
+
+
+def test_loads_report_page():
+    """The page after Ajmal's first look (2026-10-04): Report asks where the
+    sheet goes, the sheet opens in the browser through a key only the paired
+    page holds, the inputs sit above the results, the title names both loads,
+    and the 3D view turns the way the mouse moves, as Revit's does."""
+    print()
+    print("The Loads report: asked where, opened in the browser")
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    sys.path.insert(0, os.path.join(ROOT, "tests"))
+    import subprocess
+    import heron_brain as brain_seam
+    from test_takeoff import ROOM
+    from test_building_loads import PROJECT, OFFICE
+    answer = brain_seam.building_loads(json.dumps(ROOM), {"project": PROJECT,
+                                                          "profiles": {"Office": OFFICE}},
+                                       save=False)
+    panel = hc.LoadsPanel()
+    panel.open("Project1", answer, ("Project1", "", "11"))
+    chosen = tempfile.mkdtemp(prefix="heron-report-")
+    asked, wrote = [], []
+    panel.report_hook = lambda t, r, folder: (wrote.append(folder)
+                                              or brain_seam.loads_report(t, r, folder=folder))
+    panel.folder_hook = lambda start: asked.append(start) or {"cancelled": True}
+    said = panel.report({"ask": True})
+    check(said["ok"] is False and asked and not wrote and panel.current()["report"] is None,
+          "Report asks where to save the sheet first, and Cancel writes nothing")
+    panel.folder_hook = lambda start: {"folder": chosen}
+    said = panel.report({"ask": True})
+    held = panel.current()["report"]
+    check(said["ok"] and wrote == [chosen] and os.path.dirname(said["html"] or "") == chosen,
+          "the sheet is written into the folder chosen")
+    check(held["folder"] == chosen and len(held.get("token") or "") >= 20
+          and panel.current()["report_folder"] == chosen,
+          "the page is told where it went, holds a key to open it, and offers that folder next time")
+    check(panel.report_file("x" * 32, "html") is None
+          and panel.report_file(held["token"], "csv") is None
+          and panel.report_file(held["token"], "../html") is None,
+          "a wrong key, or a kind of file it does not open, opens nothing")
+    got = panel.report_file(held["token"], "html")
+    check(got is not None and got[0] == said["html"] and got[1].startswith("text/html"),
+          "the key opens the sheet that report wrote")
+    panel.folder_hook = lambda start: {"unavailable": "no window here"}
+    wrote[:] = []
+    from test_building_loads import knowledge_folder
+    with knowledge_folder():
+        # The usual place is the project's own folder - a scratch one here.
+        by_default = panel.report_hook
+        panel.report_hook = lambda t, r, folder: (wrote.append(folder) or brain_seam.loads_report(
+            t, r, folder=folder, project="project-t"))
+        later = panel.report({"ask": True})
+        panel.report_hook = by_default
+    check(later["ok"] and wrote == [None] and "could not open" in later["said"]
+          and panel.report_file(held["token"], "html") is None,
+          "with no folder window the sheet goes to the usual place, says so, and the old key is gone")
+
+    # The folder window: a Windows dialog in a process of its own, which
+    # prints nothing where MCP speaks and takes the start folder as data.
+    calls = []
+
+    def fake_run(command, **kw):
+        calls.append((command, kw))
+
+        class Done(object):
+            returncode = 0
+            stdout = (chosen + "\r\n").encode("utf-8")
+        return Done()
+    picked = hc.pick_folder("C:\\x'; Remove-Item C:\\", run=fake_run)
+    if os.name != "nt":
+        check("unavailable" in picked and not calls,
+              "off Windows there is no folder window, and nothing is started")
+    else:
+        command, kw = calls[0]
+        check(picked == {"folder": chosen}, "the folder window answers with the folder chosen")
+        check(kw.get("stdout") == subprocess.PIPE and kw.get("stdin") == subprocess.DEVNULL
+              and kw.get("stderr") == subprocess.DEVNULL,
+              "its process prints nothing where MCP speaks")
+        check("Remove-Item" not in " ".join(command)
+              and kw["env"].get("HERON_FOLDER_START") == "C:\\x'; Remove-Item C:\\",
+              "the start folder goes in as data, never as code")
+
+        def cancelled(command, **kw):
+            class Done(object):
+                returncode = 0
+                stdout = b""
+            return Done()
+
+        def broken(command, **kw):
+            raise OSError("no powershell")
+        check(hc.pick_folder(None, run=cancelled) == {"cancelled": True},
+              "Cancel in the window is a cancel")
+        check("unavailable" in hc.pick_folder(None, run=broken),
+              "a window that cannot open is said, never a crash")
+
+    # The route that opens the sheet: the paired page only, the right key only,
+    # and a page that may run no script.
+    panel.folder_hook = lambda start: {"folder": chosen}
+    said = panel.report({"ask": True})
+    token = panel.current()["report"]["token"]
+    saved_panel = hc.LOADS_PANEL
+    hc.LOADS_PANEL = panel
+    companion = hc.Companion(bound_pid=lambda: 100, folder=tempfile.mkdtemp(),
+                             discovery_dir=tempfile.mkdtemp(), is_alive=lambda pid: True)
+    real_stdout, sys.stdout = sys.stdout, io.StringIO()
+    try:
+        address = companion.pairing_address()
+        port = companion.port
+        origin = "http://127.0.0.1:%d" % port
+        code = address.split("?pair=", 1)[1]
+        paired = ask(port, "POST", "/api/pair", {"X-Heron-Companion": "1", "Origin": origin,
+                                                 "Content-Type": "application/json"},
+                     json.dumps({"code": code}))
+        cookie = paired[1].get("set-cookie", "").split(";", 1)[0]
+        no_cookie = ask(port, "GET", "/report/%s/html" % token)
+        good = ask(port, "GET", "/report/%s/html" % token, {"Cookie": cookie})
+        wrong = ask(port, "GET", "/report/%s/html" % ("x" * 32), {"Cookie": cookie})
+        evil = ask(port, "GET", "/report/%s/html" % token, {"Cookie": cookie},
+                   host="evil.example:%d" % port)
+        pdf = ask(port, "GET", "/report/%s/pdf" % token, {"Cookie": cookie})
+    finally:
+        printed, sys.stdout = sys.stdout.getvalue(), real_stdout
+        companion.stop()
+        hc.LOADS_PANEL = saved_panel
+    csp = good[1].get("content-security-policy", "")
+    check(no_cookie[0] == 403 and wrong[0] == 404 and evil[0] == 421,
+          "the sheet is refused without the pairing, with a wrong key, or for another Host")
+    check(good[0] == 200 and good[1].get("content-type", "").startswith("text/html")
+          and b"HVAC Load Calculation" in good[2],
+          "the paired page opens the sheet in the browser")
+    check("default-src 'none'" in csp and "script-src" not in csp
+          and "frame-ancestors 'none'" in csp,
+          "and the sheet may run no script and sit in no frame")
+    check((pdf[0] == 200 and pdf[1].get("content-type") == "application/pdf"
+           and pdf[2][:4] == b"%PDF") if said.get("pdf") else pdf[0] == 404,
+          "the PDF opens in the browser too - or is 'not found' when no browser could print it")
+    check(printed == "", "nothing reached stdout")
+
+    # The page: Report asks, the sheet opens in a new tab, one column, both
+    # loads named, and the drag follows the mouse.
+    static = os.path.join(ROOT, "mcp", "companion", "static")
+    js = io.open(os.path.join(static, "companion.js"), encoding="utf-8").read()
+    css = io.open(os.path.join(static, "companion.css"), encoding="utf-8").read()
+    index = io.open(os.path.join(static, "index.html"), encoding="utf-8").read()
+    view = io.open(os.path.join(static, "loads3d.js"), encoding="utf-8").read()
+    check('loadsPost("/api/loads/report", { ask: true }' in js,
+          "the Report button asks where the sheet goes")
+    check('"/report/" + encodeURIComponent(' in js and 'rel = "noopener"' in js
+          and 'target = "_blank"' in js,
+          "and the page offers to open the sheet and the PDF in a new tab")
+    check("Cooling (AC) load" in js and "Heating load" in js,
+          "the results say which columns are the cooling (AC) load and which the heating load")
+    check("HVAC Load Calculation" in index and "Cooling (AC) and heating load per Space" in index
+          and "not an hourly simulation like HAP" in index,
+          "the panel is named for what it is - an HVAC load calculation, both loads, not HAP")
+    check("max-width: 38%" not in css and "#loads .l-inputs, #loads .l-results { display: block;"
+          in css, "the inputs sit above the results, each the page's full width")
+    check("cam.yaw -= dx" in view and "cam.yaw += dx" not in view,
+          "dragging turns the building the way the mouse moves, as Revit's orbit does")
+
+
+def test_finalize_asks_for_nothing_by_typed_ids():
+    """The first real Finalize (Project2, Revit 2024, 2026-10-05) wrote the three
+    Spaces right - read back value by value - but its read-back and its diffuser
+    step chained from FILTER_ELEMENTS_BY_ID with typed ids, which the add-in
+    never accepts ("elementIds ... cannot be typed"): the read-back was lost, and
+    on a model with diffusers their flows would have been. Ajmal asked the same
+    day for the Spaces schedule to be made by Finalize too."""
+    print()
+    print("Finalize on a real add-in: no typed ids, a real read-back, the schedule")
+    server = io.open(SERVER, encoding="utf-8").read()
+    fin = server[server.index("def _loads_finalize("):]
+    fin = fin[:fin.index(chr(10) + "def ", 10)]
+    check("elementIds=" not in fin and "FILTER_ELEMENTS_BY_ID" not in fin,
+          "Finalize asks the add-in for no element by a typed id")
+    at = fin.find('"SET_AIR_TERMINAL_FLOW"')
+    check(at != -1 and '"FILTER_ELEMENTS_BY_CATEGORY"' in fin
+          and -1 < fin.find("category=Air Terminals") < at
+          and "filter-elements-by-category where category=Air Terminals" in fin,
+          "the diffusers are found by category on each calculated Space's level, and the "
+          "file of ids picks which are written")
+    applied = fin.find("_apply_table(rows, identity)")
+    check(applied != -1 and fin.find('"REPORT_SPACE_ENVELOPE"', applied) != -1
+          and "LOADS.read_back(rows, " in fin,
+          "the read-back reads the take-off again after the write and compares it value by value")
+    check('"CREATE_SCHEDULE"' in fin and "LOADS.SCHEDULE_NAME" in fin
+          and "LOADS.SCHEDULE_FIELDS" in fin,
+          "Finalize makes the Spaces schedule of what it wrote, once")
+
+
+def test_switched_off_parts():
+    """The owner's word (Ajmal PS, 2026-10-04): the Selected card and the
+    Changes tables, with the colour books that paint them, come off the page,
+    and nothing keeps working for them in the background - but their code is
+    KEPT, switched off, to be brought back later (docs/40 s21.6)."""
+    print()
+    print("Switched off and kept: what is selected, and the Changes tables")
+    static = os.path.join(ROOT, "mcp", "companion", "static")
+    index = io.open(os.path.join(static, "index.html"), encoding="utf-8").read()
+    js = io.open(os.path.join(static, "companion.js"), encoding="utf-8").read()
+    shown = re.sub(r"(?s)<template\b.*?</template>", "", index)
+    kept = "".join(re.findall(r"(?s)<template\b.*?</template>", index))
+    for name in ("selection", "changes", "paint"):
+        check('id="%s"' % name not in shown and 'id="%s"' % name in kept,
+              "the '%s' section is off the page, and kept in a template that shows nothing" % name)
+    check("const SHOW_SELECTION = false;" in js and "const SHOW_CHANGES = false;" in js,
+          "the page's two switches are off")
+    check("function showSelection(" in js and "function paint(" in js
+          and "async function changes(" in js
+          and "if (SHOW_SELECTION) showSelection(r);" in js
+          and "if (SHOW_CHANGES) changes();" in js and "if (SHOW_CHANGES) paint();" in js,
+          "their code is kept, and nothing calls it while the switches are off")
+    check(hc.SHOW_CHANGES is False and callable(hc.Changes().offer),
+          "the server's switch is off, and its Changes tables are still whole")
+    server = io.open(SERVER, encoding="utf-8").read()
+    for name in ("def _offer_change(", "def _load_settings(", "def revit_offer_settings("):
+        body = server[server.index(name):]
+        body = body[:body.index(chr(10) + "def ", 10) if chr(10) + "def " in body[10:] else len(body)]
+        gate = body.find("SHOW_CHANGES")
+        check(gate != -1 and gate < body.find("CHANGES.offer") if "CHANGES.offer" in body
+              else gate != -1 and gate < body.find("LOADS[kind]"),
+              "%s stops at the switch before it makes any table" % name.split("(")[0][4:])
+    addin = io.open(os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronLiveState.cs"),
+                    encoding="utf-8").read()
+    reads = [m.start() for m in re.finditer(r"Selection\.GetElementIds\(\)", addin)]
+    guards = [m.start() for m in re.finditer(r"if \(WatchSelection\)", addin)]
+    check("private static readonly bool WatchSelection = false;" in addin
+          and len(reads) == 2 and len(guards) == 2
+          and all(any(g < r for g in guards) for r in reads),
+          "the add-in reads no selection while WatchSelection is off - the code is kept")
+    check('"\\"selection\\": null"' in addin and "WatchSelection ? 200 : 1000" in addin,
+          "its live file says 'selection: null', and Idling looks once a second, not five times")
+
+
 def main():
     tmp = tempfile.mkdtemp(prefix="heron-companion-")
     test_live_files(tmp)
@@ -648,6 +1039,19 @@ def main():
     test_tables()
     test_load_from_revit()
     test_model_guard()
+    test_loads()
+    try:
+        test_loads_report_page()
+    except Exception as why:                    # noqa: BLE001 - reported, not hidden
+        check(False, "the Loads report checks ran to the end (they raised %r)" % (why,))
+    try:
+        test_switched_off_parts()
+    except Exception as why:                    # noqa: BLE001 - reported, not hidden
+        check(False, "the switched-off checks ran to the end (they raised %r)" % (why,))
+    try:
+        test_finalize_asks_for_nothing_by_typed_ids()
+    except Exception as why:                    # noqa: BLE001 - reported, not hidden
+        check(False, "the Finalize checks ran to the end (they raised %r)" % (why,))
     test_no_way_to_an_ai()
     test_addin_side()
 

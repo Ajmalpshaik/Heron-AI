@@ -6,6 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <title>Heron Companion</title>
 <link rel="stylesheet" href="/companion.css">
+<script src="/loads3d.js" defer></script>
 <script src="/companion.js" defer></script>
 </head>
 <body>
@@ -32,29 +33,35 @@
 <main>
   <section id="notice" class="notice" role="status" aria-live="polite" hidden></section>
 
-  <div class="top">
-    <section class="card" id="revit" aria-labelledby="h-revit">
-      <h2 id="h-revit">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>
-        Revit
-      </h2>
-      <dl class="facts">
-        <dt>Revit</dt><dd id="f-version">—</dd>
-        <dt>Model</dt><dd id="f-model">—</dd>
-        <dt>View</dt><dd id="f-view">—</dd>
-        <dt>Updated</dt><dd id="f-updated">—</dd>
-      </dl>
-    </section>
+  <section class="card strip" id="revit" aria-labelledby="h-revit">
+    <h2 id="h-revit">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>
+      Revit
+    </h2>
+    <dl class="facts">
+      <div><dt>Revit</dt><dd id="f-version">—</dd></div>
+      <div><dt>Model</dt><dd id="f-model">—</dd></div>
+      <div><dt>View</dt><dd id="f-view">—</dd></div>
+      <div><dt>Updated</dt><dd id="f-updated">—</dd></div>
+    </dl>
+  </section>
 
-    <section class="card" id="selection" aria-labelledby="h-selection">
-      <h2 id="h-selection">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4l7 17 2.5-7.5L21 11z"/></svg>
-        Selected <span id="s-count" class="count">—</span>
+  <section class="card" id="loads" aria-labelledby="h-loads">
+    <header class="card-head">
+      <h2 id="h-loads">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v18M5 8l7-5 7 5M5 21h14"/><circle cx="12" cy="13" r="3"/></svg>
+        HVAC Load Calculation
       </h2>
-      <ul id="s-categories" class="categories"></ul>
-      <p id="s-note" class="muted small"></p>
-    </section>
-  </div>
+      <p class="card-sub">Cooling (AC) and heating load per Space · ASHRAE method · a peak estimate, not an hourly simulation like HAP</p>
+    </header>
+    <div id="l-box"></div>
+    <div id="l-3d" class="l3d" hidden></div>
+    <div id="l-box2"></div>
+    <p id="l-empty" class="empty">Ask the chat to "calculate the loads for this building". Heron reads every
+      Space's walls and windows from Revit, works out each Space's cooling (AC) load and heating load, and
+      shows the table here - you change the people, lights and equipment, press Recalculate, and write a
+      report.</p>
+  </section>
 
   <section class="card" id="table" aria-labelledby="h-table">
     <h2 id="h-table">
@@ -66,22 +73,39 @@
       their Mark and Comments in a table". It opens here; you edit the white cells and press Apply.</p>
   </section>
 
-  <section class="card" id="changes" aria-labelledby="h-changes">
-    <h2 id="h-changes">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
-      Changes you can adjust
-    </h2>
-    <div class="c-tools">
-      <button type="button" class="btn" id="c-load-filters" title="Read every filter on Revit's active view and show each as a table">Load filters</button>
-      <button type="button" class="btn" id="c-load-categories" title="Read every category with a colour set in Revit's active view and show each as a table">Load category colours</button>
-      <button type="button" class="btn-lite" id="c-clear" title="Remove every table from this page - nothing in Revit changes">Clear tables</button>
-      <span class="result" id="c-said" role="status" aria-live="polite"></span>
-    </div>
-    <div id="c-list"></div>
-    <p id="c-empty" class="empty">Press <b>Load filters</b> or <b>Load category colours</b> to read the view
-      that is active in Revit - or ask the chat to change a setting. Edit the values and press Apply again;
-      the chat is not involved.</p>
-  </section>
+  <!-- SWITCHED OFF by the owner (Ajmal PS, 2026-10-04), KEPT for later (docs/40
+       s21.6): what is selected in Revit, and the Changes tables with the colour
+       books that paint them. A template is never shown and runs nothing; to
+       bring one back, move its section out of the template and set its switch
+       in companion.js (SHOW_SELECTION, SHOW_CHANGES) to true. -->
+  <template id="off-selection">
+    <section class="card" id="selection" aria-labelledby="h-selection">
+      <h2 id="h-selection">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4l7 17 2.5-7.5L21 11z"/></svg>
+        Selected <span id="s-count" class="count">—</span>
+      </h2>
+      <ul id="s-categories" class="categories"></ul>
+      <p id="s-note" class="muted small"></p>
+    </section>
+  </template>
+  <template id="off-changes">
+    <section class="card" id="changes" aria-labelledby="h-changes">
+      <h2 id="h-changes">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+        Changes you can adjust
+      </h2>
+      <div class="c-tools">
+        <button type="button" class="btn" id="c-load-filters" title="Read every filter on Revit's active view and show each as a table">Load filters</button>
+        <button type="button" class="btn" id="c-load-categories" title="Read every category with a colour set in Revit's active view and show each as a table">Load category colours</button>
+        <button type="button" class="btn-lite" id="c-clear" title="Remove every table from this page - nothing in Revit changes">Clear tables</button>
+        <span class="result" id="c-said" role="status" aria-live="polite"></span>
+      </div>
+      <div id="c-list"></div>
+      <p id="c-empty" class="empty">Press <b>Load filters</b> or <b>Load category colours</b> to read the view
+        that is active in Revit - or ask the chat to change a setting. Edit the values and press Apply again;
+        the chat is not involved.</p>
+    </section>
+  </template>
 </main>
 
 <aside class="dock" id="activity" aria-label="What the chat asked Heron to do">
@@ -108,6 +132,8 @@
   </button>
 </aside>
 
+<!-- SWITCHED OFF with the Changes tables it paints (2026-10-04), KEPT for later. -->
+<template id="off-paint">
 <aside class="paint" id="paint" aria-label="Colour books">
   <button type="button" class="paint-btn" id="p-toggle" aria-expanded="false" aria-controls="p-panel"
           title="Colour books - click to open. Drag this button onto a colour to paint it.">
@@ -129,6 +155,7 @@
     <p class="dock-note">Click a colour to load the paint button. Drag the paint button onto any colour in a change to paint it - nothing is sent until you press Apply again.</p>
   </div>
 </aside>
+</template>
 
 <footer class="foot">
   <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>

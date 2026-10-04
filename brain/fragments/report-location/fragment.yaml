@@ -9,7 +9,7 @@ semantic-identity: "where exactly are these"
 kind: action
 domain: revit.geometry
 capability: REPORT_LOCATION
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -44,12 +44,44 @@ purpose: >
   is version 2; version 1's proof no longer describes the code, and the
   fragment is DRAFT until it is proved again.
 
+  **SHARED COORDINATES, TRUE NORTH AND THE TWO SITE POINTS (version 3).**
+  Version 2's paragraph above calling a surveyor's coordinate "a different
+  question" is kept as the record of what it did; it is no longer the
+  answer. The internal origin stays the DEFAULT, and every reply says
+  which coordinates it gives. With `sharedCoordinates` set, every position
+  is ALSO given as east / north / elevation in the model's shared
+  coordinates, through the active project location, and a facing direction
+  in true north beside project north. Which way the location's transform
+  runs is not assumed: it is tried both ways against the project base point
+  and the survey point, whose own internal and shared positions Revit
+  reports, and used only if one direction reproduces both - otherwise the
+  reply says shared coordinates could not be given, and why. Every reply
+  now also names the angle from project north to true north, where the
+  project base point and the survey point are (internal and shared), and
+  how far the farthest reported position is from the internal origin, in
+  metres. That distance is a number, not a verdict: it is flagged only
+  beyond the 20 miles (about 32 km) Revit's own help gives as the limit for
+  geometry from the internal origin. A facing direction without the switch
+  is said to be in project north, which v2 printed without saying. This is
+  version 3; version 2 was never proved, version 1's proof does not
+  describe this code, and the fragment is DRAFT until it is proved again.
+
 contract:
   needs:
     - name: doc
       type: Document
     - name: elements
       type: IList<Element>
+    - name: sharedCoordinates
+      # Version 3. ABSENT MEANS INTERNAL ONLY - what versions 1 and 2 did, and
+      # what the reply says it gave. Set, each position is given in shared
+      # coordinates as well. `optional: true` on a bool is what lets it be
+      # left out: the add-in binds it false (HeronBindingNote.AbsentValue,
+      # FRAGMENT-ISSUES row 5b-252). A string choice of internal / shared /
+      # both would be refused whenever it was left out (row 5b-227).
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: locations
       role: result
@@ -101,7 +133,13 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. `LocationPoint`, `LocationCurve`,
   `Curve.GetEndPoint` and `Element.get_BoundingBox` are present 2020 through
-  2027, compiled at both ends. Feet become millimetres by multiplying by 304.8
+  2027, compiled at both ends. Version 3's members were looked up in the
+  reference assemblies of every release, 2020 to 2027, on 2026-10-04:
+  `Document.ActiveProjectLocation`, `ProjectLocation.GetTotalTransform` and
+  `GetProjectPosition`, `ProjectPosition.Angle`, `BasePoint.GetProjectBasePoint`,
+  `GetSurveyPoint`, `Position` and `SharedPosition`, and `Transform.Inverse`,
+  `OfPoint` and `OfVector` are present on all eight - so no release needs the
+  base point's east/west and north/south parameters as a fallback. Feet become millimetres by multiplying by 304.8
   as plain arithmetic - no units API, which is what changed shape at 2021.
 
 # ROUTING - repeated in MEASURE_DISTANCE, REPORT_BOUNDING_BOX and
@@ -117,6 +155,12 @@ compatibility-note: >
 #                                       the position
 #   "put the level on the drawing"   -> ADD_SPOT_ELEVATIONS, which annotates
 #                                       instead of reporting
+#   "what are the shared coordinates of this" -> here, with sharedCoordinates
+#                                       set - the same positions, in the
+#                                       surveyor's coordinates as well
+#   "is the level height trustworthy" -> REPORT_LEVEL_ELEVATIONS - a LEVEL's
+#                                       two heights and the survey offset, not
+#                                       an element's position
 #   "unload this link"                   -> UNLOAD_LINKS. A link's position
 #                                           is what this reports; unloading
 #                                           keeps it and drops the geometry

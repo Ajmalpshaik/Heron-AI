@@ -4,6 +4,14 @@
 "use strict";
 
 const HEADER = { "X-Heron-Companion": "1" };
+
+// SWITCHED OFF by the owner (Ajmal PS, 2026-10-04), KEPT for later (docs/40
+// s21.6): the Companion shows the HVAC Load Calculation. What is selected in
+// Revit, and the Changes tables with the colour books that paint them, are
+// kept below and in index.html's templates - nothing here calls them while
+// these are false.
+const SHOW_SELECTION = false;
+const SHOW_CHANGES = false;
 let paired = false;
 let failures = 0;
 
@@ -34,7 +42,9 @@ function ago(seconds) {
 }
 
 function clearRevit() {
-  ["f-version", "f-model", "f-view", "f-updated", "s-count"].forEach(id => set(id, null));
+  ["f-version", "f-model", "f-view", "f-updated"].forEach(id => set(id, null));
+  if (!SHOW_SELECTION) return;
+  set("s-count", null);
   $("s-categories").replaceChildren();
   $("s-note").textContent = "";
 }
@@ -64,7 +74,11 @@ function show(state) {
   set("f-model", r.document ? r.document.title : "No model open");
   set("f-view", r.view ? r.view.name + "  (" + r.view.type + ")" : null);
   set("f-updated", ago(r.updatedSecondsAgo));
+  if (SHOW_SELECTION) showSelection(r);
+}
 
+// What is selected in Revit - switched off (SHOW_SELECTION), kept for later.
+function showSelection(r) {
   const sel = r.selection || { count: 0, categories: {} };
   set("s-count", sel.count);
   const list = $("s-categories");
@@ -945,6 +959,574 @@ async function table_() {
   } catch (e) { /* the state poll reports a closed page */ }
 }
 
+// ---------------------------------------------------------------- loads
+// The HVAC Load Calculation panel (docs/44 section 7). Every number on it was
+// worked out by Heron's brain; the page only shows them, collects typed
+// inputs, and posts them back. Model text goes on the page with textContent
+// only. The look (2026-10-04): the four steps first, the building's figures,
+// the checks and the 3D take-off, then the inputs above the results.
+
+let loadsShown = null;
+let loadsBusy = false;
+
+// A Space's own values: its type's eight, and the set points one Space may
+// have of its own (docs/44 s5.3). [name, what it is, its unit]
+const SET_POINT_FIELDS = [
+  ["room_dry_bulb_c", "Room, cooling", "°C"], ["room_rh_pct", "Room humidity", "% RH"],
+  ["heating_room_dry_bulb_c", "Room, heating", "°C"], ["supply_dry_bulb_c", "Supply air", "°C"],
+];
+const PROFILE_FIELDS = [
+  ["people_per_m2", "People", "per m²"], ["sensible_w_each", "Sensible heat", "W per person"],
+  ["latent_w_each", "Latent heat", "W per person"], ["lighting_w_per_m2", "Lighting", "W/m²"],
+  ["equipment_w_per_m2", "Equipment", "W/m²"], ["infiltration_ach", "Infiltration", "air changes/h"],
+  ["outdoor_air_ls_per_person", "Outdoor air", "L/s per person"],
+  ["outdoor_air_ls_per_m2", "Outdoor air", "L/s per m²"],
+];
+const SPACE_FIELDS = PROFILE_FIELDS.concat(SET_POINT_FIELDS);
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = String(text);
+  return e;
+}
+
+function fixed(v, places) { return v == null || v === "" ? "—" : Number(v).toFixed(places); }
+
+// A number as the brain gave it, its thousands grouped - formatting only, never arithmetic.
+function num(v, places) {
+  if (v == null || v === "" || isNaN(Number(v))) return "—";
+  return Number(v).toLocaleString("en-US", { minimumFractionDigits: places, maximumFractionDigits: places });
+}
+
+function valueOf(entry) { return entry && typeof entry === "object" ? entry.value : entry; }
+function sourceOf(entry) { return entry && typeof entry === "object" ? (entry.source || "instruction") : "instruction"; }
+
+// Where a value came from, in one word; the whole source is in its tooltip.
+function sourceWord(source) {
+  const s = String(source || "instruction");
+  if (s.startsWith("standard")) return "standard";
+  if (s.startsWith("model")) return "model";
+  if (s.startsWith("assum")) return "assumed";
+  return "you";
+}
+
+// Icons are SVG made here, in the page's own SVG namespace - no emoji, no file.
+const ICONS = {
+  edit: ["M4 20h4L19 9l-4-4L4 16v4z", "M14 6l4 4"],
+  check: ["M5 12.5l4.5 4.5L19 7"],
+  refresh: ["M20 11a8 8 0 1 0-2.4 5.7", "M20 4v7h-7"],
+  eye: ["M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z", "M12 9.2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6z"],
+  file: ["M7 3h7l5 5v13H7z", "M14 3v5h5", "M10 13h6M10 17h6"],
+  open: ["M14 4h6v6", "M20 4l-9 9", "M18 14v6H4V6h6"],
+  revit: ["M12 15V4", "M7.5 8.5L12 4l4.5 4.5", "M4 15v5h16v-5"],
+};
+
+function icon(paths) {
+  const ns = document.querySelector("svg.ico").namespaceURI;
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("class", "ico");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+  paths.forEach(d => {
+    const p = document.createElementNS(ns, "path");
+    p.setAttribute("d", d);
+    svg.append(p);
+  });
+  return svg;
+}
+
+function button(label, cls, paths, title) {
+  const b = el("button", cls);
+  b.type = "button";
+  if (paths) b.append(icon(paths));
+  b.append(document.createTextNode(label));
+  if (title) b.title = title;
+  return b;
+}
+
+async function loadsPost(path, body, said) {
+  loadsBusy = true;
+  document.querySelectorAll("#loads button").forEach(b => { b.disabled = true; });
+  said.className = "result";
+  said.textContent = path.endsWith("finalize") ? "Writing into Revit - it waits if the chat is using Revit right now…"
+    : (path.endsWith("report") && body && body.ask)
+      ? "Choose where to save the report in the folder window that opened - look behind this page if you cannot see it…"
+      : "Working…";
+  try {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
+      credentials: "same-origin",
+      body: JSON.stringify(body || {}),
+    });
+    const answer = await res.json();
+    said.className = answer.ok ? "result ok" : "result failed";
+    said.textContent = answer.said || answer.error || (answer.ok ? "Done." : "Not done.");
+  } catch (e) {
+    said.className = "result failed";
+    said.textContent = path.endsWith("finalize")
+      ? "The page lost the answer, so it cannot say whether Revit took the values. Look at the model, and at Revit's undo list, before pressing Finalize again."
+      : "The page could not reach Heron. Nothing was changed.";
+  }
+  loadsBusy = false;
+  loadsShown = null;
+  await loads_();
+  const after = $("l-said");
+  if (after && said.textContent) { after.className = said.className; after.textContent = said.textContent; }
+}
+
+// Model, when it was read, the run - one quiet line under the title.
+function loadsMeta(L) {
+  const meta = el("div", "l-meta");
+  const item = (label, value) => {
+    const s = el("span", "l-meta-item");
+    s.append(el("span", "l-meta-label", label), el("span", "l-meta-value", value));
+    meta.append(s);
+  };
+  item("Model", L.document || "—");
+  item("Read from Revit", L.read_at || L.at || "—");
+  item("Calculated", L.run_id ? (L.at || "") + " · run " + L.run_id : "not yet");
+  meta.append(el("span", "l-meta-note", "Recalculate reads nothing from Revit. Finalize reads the model again and stops if it changed."));
+  return meta;
+}
+
+// The four steps, each with its own button: calculate, check the take-off,
+// report, and write into Revit. Gate 1 (docs/44 s6): the report is a draft
+// and Finalize stays shut until the modeller has checked the take-off.
+function loadsSteps(L, project, profiles, overrides, said) {
+  const spaces = L.spaces || [];
+  const ok = spaces.filter(s => s.status === "ok");
+  const terminals = ok.reduce((n, s) => n + (s.terminals || []).length, 0);
+  const steps = el("ol", "l-steps");
+  steps.setAttribute("aria-label", "The four steps");
+  const step = (n, title, state, done, current, controls) => {
+    const li = el("li", "l-step" + (done ? " done" : "") + (current ? " current" : ""));
+    const mark = el("span", "l-step-n");
+    if (done) mark.append(icon(ICONS.check)); else mark.textContent = String(n);
+    const text = el("div", "l-step-text");
+    text.append(el("span", "l-step-title", title), el("span", "l-step-state", state));
+    const act = el("div", "l-step-act");
+    controls.filter(Boolean).forEach(c => act.append(c));
+    li.append(mark, text, act);
+    steps.append(li);
+  };
+
+  const recalc = button("Recalculate", "btn-lite", ICONS.refresh,
+    "Works out the loads again with the inputs below. Nothing in Revit changes.");
+  recalc.addEventListener("click", () => loadsPost("/api/loads/recalculate",
+    { project: project, profiles: profiles, overrides: overrides }, said));
+  step(1, "Calculate",
+       L.run_id ? ok.length + " of " + spaces.length + " Spaces calculated" : "Answer the questions, then Recalculate",
+       !!L.run_id && ok.length > 0, !L.run_id || !ok.length, [recalc]);
+
+  const sure = button(L.confirmed ? "Confirmed" : "The take-off is right", "btn-lite", ICONS.eye,
+    "I have looked at the 3D view and the checks on the model, and the faces are right.");
+  sure.disabled = !L.run_id || !!L.confirmed;
+  sure.addEventListener("click", () => {
+    if (confirm("Confirm that the faces in the 3D view - walls, roofs, windows, what is beyond each - " +
+                "are the building's? The report stops being a draft and Finalize opens.")) {
+      loadsPost("/api/loads/confirm", {}, said);
+    }
+  });
+  step(2, "Check the take-off",
+       L.confirmed ? "Confirmed - the report is final" : "Look at the 3D view and the checks, then confirm",
+       !!L.confirmed, !!L.run_id && ok.length > 0 && !L.confirmed, [sure]);
+
+  const report = button("Report…", "btn-lite", ICONS.file,
+    "Asks where to save it, then writes the HVAC load calculation sheet - HTML, PDF and CSV. Nothing in Revit changes.");
+  report.disabled = !L.run_id;
+  report.addEventListener("click", () => loadsPost("/api/loads/report", { ask: true }, said));
+  // Where the sheet went, and the sheet itself in a tab of its own - through a
+  // key only this page holds (docs/44 s12.7).
+  const opens = [];
+  if (L.report && L.report.token) {
+    [["html", "Open report"], ["pdf", "Open PDF"]].forEach(([kind, label]) => {
+      if (!L.report[kind]) return;
+      const a = el("a", "btn-lite");
+      a.append(icon(ICONS.open), document.createTextNode(label));
+      a.href = "/report/" + encodeURIComponent(L.report.token) + "/" + kind;
+      a.target = "_blank";
+      a.rel = "noopener";
+      opens.push(a);
+    });
+  }
+  step(3, "Report",
+       L.report ? "Saved in " + (L.report.folder || "the usual place") + (L.report.pdf ? "" : " - no PDF, the page is the report")
+                : (L.confirmed ? "Write the calculation sheet" : "A draft until the take-off is confirmed"),
+       !!L.report, !!L.confirmed && !L.report, [report].concat(opens));
+
+  const finalize = button("Finalize to Revit", "btn", ICONS.revit);
+  finalize.disabled = !ok.length || !L.confirmed;
+  finalize.title = L.confirmed
+    ? "Reads the model again, then writes the loads and airflows into " + ok.length + " Spaces and " +
+      terminals + " diffusers - one undo entry for the Spaces, and one more if diffusers are written."
+    : "Confirm the take-off first - check the 3D view, then press 'The take-off is right'.";
+  finalize.addEventListener("click", () => {
+    if (confirm(finalize.title + " Go ahead?")) loadsPost("/api/loads/finalize", {}, said);
+  });
+  step(4, "Write into Revit",
+       L.finalized ? "Written at " + L.finalized.at
+                   : (L.confirmed ? ok.length + " Spaces and " + terminals + " diffusers" : "Opens once the take-off is confirmed"),
+       !!L.finalized, !!L.confirmed && !!L.report && !L.finalized, [finalize]);
+  return steps;
+}
+
+// The building's figures, as the brain added them up - the page sums nothing.
+function loadsFigures(L) {
+  const b = L.building || {};
+  const spaces = L.spaces || [];
+  const refused = spaces.filter(s => s.status === "refused").length;
+  const wrap = el("div", "l-figures");
+  const fig = (cls, label, value, unit, sub) => {
+    const d = el("div", "l-fig " + cls);
+    const v = el("div", "l-fig-value");
+    v.append(el("span", "l-fig-num", value), el("span", "l-fig-unit", unit));
+    d.append(el("div", "l-fig-label", label), v, el("div", "l-fig-sub", sub));
+    wrap.append(d);
+  };
+  fig("cool", "Cooling (AC) load", num(b.block_w, 0), "W",
+      num(b.block_tr, 2) + " TR · rooms' block · " + (b.block_when || "—"));
+  fig("cool", "At the coil, with outdoor air", num(b.coil_block_w, 0), "W",
+      num(b.coil_block_tr, 2) + " TR · " + (b.coil_block_when || "—"));
+  fig("heat", "Heating load", num(b.heating_w, 0), "W", "the Spaces' heat losses");
+  fig("air", "Supply air", num(b.supply_ls, 0), "L/s", "outdoor air " + num(b.outdoor_air_ls, 0) + " L/s");
+  fig("plain", "Cooling per floor area", num(b.block_w_per_m2, 0), "W/m²",
+      "over " + num(b.calculated_area_m2, 1) + " m² calculated");
+  fig(b.calculated != null && b.calculated < spaces.length ? "bad" : "plain", "Spaces calculated",
+      b.calculated == null ? "—" : String(b.calculated), "of " + spaces.length,
+      refused ? refused + " refused - see why below" : "none refused");
+  return wrap;
+}
+
+function loadsChecks(L) {
+  const qa = L.qa || [];
+  const wrap = el("section", "l-sec l-qa");
+  const head = el("h3", null, "Checks on the model");
+  ["FAIL", "WARN", "INFO"].forEach(level => {
+    const n = qa.filter(f => f.level === level).length;
+    if (n) head.append(el("span", "badge " + level.toLowerCase(), n + " " + level));
+  });
+  wrap.append(head);
+  const list = el("ul", "l-qa-list");
+  qa.forEach(f => {
+    const level = String(f.level);
+    const li = el("li", "qa-" + level.toLowerCase());
+    li.append(el("span", "badge " + level.toLowerCase(), level), el("span", "qa-text", f.text));
+    list.append(li);
+  });
+  if (!qa.length) list.append(el("li", "muted", "Nothing found."));
+  wrap.append(list);
+  return wrap;
+}
+
+// Asked - what Heron still needs; a standard's figure is OFFERED, never filled in.
+function loadsAsked(L, project, profiles) {
+  const ask = el("section", "l-sec l-asked");
+  ask.append(el("h3", null, "Heron needs these before it calculates anything"));
+  const scroll = el("div", "l-scroll");
+  const tbl = el("table", "l-table");
+  const head = el("tr");
+  ["For", "Value", "Unit", "Why", "A standard offers", "Your answer"].forEach(h => head.append(el("th", null, h)));
+  tbl.append(head);
+  (L.asked || []).forEach(a => {
+    const tr = el("tr");
+    let input;
+    if (a.input.startsWith("beyond:")) {
+      // What is beyond a face Revit could not see past: one of four words,
+      // which the brain lists in the question itself.
+      input = el("select");
+      const none = el("option", null, "choose…"); none.value = ""; input.append(none);
+      String(a.unit).split(",").flatMap(part => part.split(" or ")).map(w => w.trim()).filter(Boolean)
+        .forEach(word => { const o = el("option", null, word); o.value = word; input.append(o); });
+      input.addEventListener("change", () => { project[a.input] = input.value || null; });
+    } else {
+      input = el("input");
+      input.type = "text";
+      input.addEventListener("input", () => {
+        const raw = input.value.trim();
+        const v = raw === "" ? null : (isNaN(Number(raw)) ? raw : Number(raw));
+        if (a.for === "project") project[a.input] = v;
+        else { profiles[a.for] = profiles[a.for] || {}; profiles[a.for][a.input] = v; }
+      });
+    }
+    input.setAttribute("aria-label", a.input + " " + a.for);
+    tr.append(el("td", null, a.for === "project" ? "project" : a.for),
+              el("td", "id", a.input), el("td", "muted", a.unit),
+              el("td", null, a.why), el("td", "small muted", a.offer || "no standard figure held"));
+    const cell = el("td"); cell.append(input); tr.append(cell);
+    tbl.append(tr);
+  });
+  scroll.append(tbl);
+  ask.append(scroll, el("p", "small muted", "Answer, then press Recalculate in step 1."));
+  return ask;
+}
+
+// Inputs - one row per Space type, each value editable, where it came from beside it.
+function loadsInputs(L, profiles) {
+  const wrap = el("section", "l-sec l-inputs");
+  wrap.append(el("h3", null, "Inputs per Space type"));
+  const scroll = el("div", "l-scroll");
+  const tbl = el("table", "l-table l-input-table");
+  const head = el("tr");
+  head.append(el("th", null, "Space type"));
+  PROFILE_FIELDS.forEach(([, label, unit]) => {
+    const th = el("th", "num");
+    th.append(el("span", "th-main", label), el("span", "th-unit", unit));
+    head.append(th);
+  });
+  tbl.append(head);
+  Object.keys(profiles).sort().forEach(key => {
+    const tr = el("tr");
+    tr.append(el("td", "l-type", key));
+    PROFILE_FIELDS.forEach(([name, label, unit]) => {
+      const td = el("td", "num");
+      const word = sourceWord(sourceOf(profiles[key][name]));
+      const input = el("input", "src-" + word);
+      input.type = "text";
+      input.inputMode = "decimal";
+      input.value = valueOf(profiles[key][name]) == null ? "" : valueOf(profiles[key][name]);
+      input.setAttribute("aria-label", key + " - " + label + " " + unit);
+      input.title = "From: " + sourceOf(profiles[key][name]);
+      input.addEventListener("input", () => {
+        const raw = input.value.trim();
+        profiles[key][name] = raw === "" ? null : (isNaN(Number(raw)) ? raw : Number(raw));
+      });
+      td.append(input, el("span", "tag src-" + word, word));
+      tr.append(td);
+    });
+    tbl.append(tr);
+  });
+  scroll.append(tbl);
+  const key = el("p", "l-key");
+  key.append(el("span", "l-key-title", "Where each value comes from:"));
+  [["you", "you said it"], ["standard", "a standard"], ["model", "the Revit model"], ["assumed", "an assumption"]]
+    .forEach(([word, text]) => key.append(el("span", "l-key-item src-" + word, text)));
+  wrap.append(scroll, key);
+  return wrap;
+}
+
+// Results - per Space, then zones and the building: block AND sum of peaks.
+// Which load each column is (Ajmal, 2026-10-04: "which load - AC load or
+// heating load?"): the cooling (AC) load and its peak hour, the heating load,
+// then the air it needs.
+function loadsResults(L, project, profiles, overrides) {
+  const results = el("section", "l-sec l-results");
+  results.append(el("h3", null, "Results per Space"));
+  const scroll = el("div", "l-scroll");
+  const rtbl = el("table", "l-table l-result-table");
+  const thead = el("thead");
+  const groups = el("tr", "groups");
+  [["", 3, ""], ["Cooling (AC) load", 6, "g cool"], ["Heating load", 1, "g heat"], ["Air", 3, "g air"], ["", 1, ""]]
+    .forEach(([h, span, cls]) => {
+      const th = el("th", cls || null, h);
+      th.colSpan = span;
+      groups.append(th);
+    });
+  const rh = el("tr", "cols");
+  [["Space", ""], ["Zone", ""], ["m²", "num"], ["Sensible W", "num g"], ["Latent W", "num"], ["Total W", "num"],
+   ["W/m²", "num"], ["TR", "num"], ["Peak at", ""], ["W", "num g"], ["Supply L/s", "num g"],
+   ["Outdoor air L/s", "num"], ["ACH", "num"], ["Status", "g"]]
+    .forEach(([h, cls]) => rh.append(el("th", cls || null, h)));
+  thead.append(groups, rh);
+  rtbl.append(thead);
+  const tbody = el("tbody");
+  (L.spaces || []).forEach(s => {
+    const v = s.shown || {};
+    const tr = el("tr", s.status === "ok" ? null : "off");
+    // The Space's name opens it alone in the 3D view, every other ghosted.
+    const name = el("td", "l-space");
+    const go = el("button", "linkish", ((s.number || "") + " " + (s.name || "")).trim());
+    go.type = "button";
+    go.title = "Show this Space alone in the 3D view";
+    go.addEventListener("click", () => { if (window.HeronLoads3D) window.HeronLoads3D.focus(String(s.id)); });
+    // This Space's own values - its people, lights, equipment, outdoor air and
+    // set points - beside its Space type's, kept as a change for this Space only.
+    const sid = String(s.id);
+    const edit = el("button", "icon-btn");
+    edit.type = "button";
+    edit.append(icon(ICONS.edit));
+    edit.title = "Change this Space's own values - kept for this Space only";
+    edit.setAttribute("aria-label", "Change the own values of " + ((s.number || "") + " " + (s.name || "")).trim());
+    const own = el("tr", "own");
+    own.hidden = !overrides[sid];
+    const ownCell = el("td");
+    ownCell.colSpan = 14;
+    const ownBox = el("div", "own-box");
+    SPACE_FIELDS.forEach(([field, label, unit]) => {
+      const lab = el("label", "own-field");
+      const input = el("input");
+      input.type = "text";
+      input.inputMode = "decimal";
+      const mine = overrides[sid] && valueOf(overrides[sid][field]);
+      input.value = mine == null ? "" : mine;
+      const shared = (profiles[s.profile] && valueOf(profiles[s.profile][field])) ?? valueOf(project[field]);
+      input.placeholder = shared == null ? "" : String(shared);
+      input.setAttribute("aria-label", sid + " " + field);
+      input.addEventListener("input", () => {
+        const raw = input.value.trim();
+        overrides[sid] = overrides[sid] || {};
+        // Blank is sent as nothing, which CLEARS this Space's own value, so its
+        // type's value applies again - never left out, which would keep the old one.
+        overrides[sid][field] = raw === "" ? null : (isNaN(Number(raw)) ? raw : Number(raw));
+      });
+      lab.append(el("span", "small muted", label + " (" + unit + ")"), input);
+      ownBox.append(lab);
+    });
+    ownCell.append(el("p", "small muted", "This Space only - blank keeps its Space type's value (shown faint). Press Recalculate."), ownBox);
+    own.append(ownCell);
+    edit.addEventListener("click", () => {
+      own.hidden = !own.hidden;
+      edit.setAttribute("aria-expanded", String(!own.hidden));
+    });
+    edit.setAttribute("aria-expanded", String(!own.hidden));
+    name.append(go, edit);
+    const status = el("td", "g");
+    status.append(el("span", "badge " + (s.status === "ok" ? "ok" : s.status === "refused" ? "fail" : "warn"), s.status));
+    if ((s.why || []).length) status.title = s.why.join("\n");
+    tr.append(name,
+              el("td", "muted", s.zone || "—"), el("td", "num", num(s.area_m2, 1)),
+              el("td", "num g", num(v.sensible_w, 0)), el("td", "num", num(v.latent_w, 0)),
+              el("td", "num strong", num(v.total_w, 0)), el("td", "num", num(v.w_per_m2, 1)),
+              el("td", "num", num(v.tr, 2)), el("td", "muted", v.peak || "—"),
+              el("td", "num g strong", num(v.heating_w, 0)),
+              el("td", "num g", num(v.supply_ls, 1)), el("td", "num", num(v.outdoor_air_ls, 1)),
+              el("td", "num", num(v.ach, 1)), status);
+    tbody.append(tr, own);
+    if (s.status !== "ok" && (s.why || []).length) {
+      const why = el("tr", "why");
+      const td = el("td", "small", s.why.join(" · "));
+      td.colSpan = 14;
+      why.append(td);
+      tbody.append(why);
+    }
+  });
+  rtbl.append(tbody);
+  const tfoot = el("tfoot");
+  const total = (label, z, cls) => {
+    const tr = el("tr", "sum" + (cls ? " " + cls : ""));
+    // The sum of peaks is not a sensible or a latent figure: it spans both
+    // columns, beside the block load it is NOT (the Total W column).
+    const peaks = el("td", "num g small muted", "sum of peaks " + num(z.sum_of_peaks_w, 0) + " W");
+    peaks.colSpan = 2;
+    tr.append(el("td", null, label), el("td", null, ""), el("td", "num", num(z.area_m2, 1)), peaks,
+              el("td", "num strong", num(z.block_w, 0)), el("td", "num", num(z.block_w_per_m2, 1)),
+              el("td", "num", num(z.block_tr, 2)), el("td", "muted", z.block_when || "—"),
+              el("td", "num g strong", num(z.heating_w, 0)),
+              el("td", "num g", num(z.supply_ls, 1)), el("td", "num", num(z.outdoor_air_ls, 1)),
+              el("td", null, ""), el("td", "g small muted",
+                "coil " + num(z.coil_block_w, 0) + " W, " + (z.coil_block_when || "—")));
+    tfoot.append(tr);
+  };
+  (L.zones || []).forEach(z => total("Zone " + z.name, z));
+  if (L.building) total("Building", L.building, "building");
+  rtbl.append(tfoot);
+  scroll.append(rtbl);
+  results.append(scroll, el("p", "small muted",
+    "Total W in a zone or building row is its block load - the largest hour of the Spaces added together, " +
+    "not their peaks added up. Coil: with the outdoor air at the coil. Click a Space to see it alone in the 3D view; " +
+    "the pencil gives it values of its own."));
+  return results;
+}
+
+// Glass by the way it faces - added up by the brain from the take-off.
+function loadsGlass(L) {
+  const glass = el("section", "l-sec l-glass");
+  glass.append(el("h3", null, "Glass to outside, by the way it faces"));
+  const gt = el("table", "l-table");
+  const gh = el("tr");
+  ["Facing", "Outside wall m²", "Glass m²", "Glass % of wall"].forEach((h, i) => gh.append(el("th", i ? "num" : null, h)));
+  gt.append(gh);
+  ["N", "E", "S", "W"].forEach(q => {
+    const g = L.summary.glass_by_facing[q] || {};
+    const tr = el("tr");
+    tr.append(el("td", null, q), el("td", "num", num(g.wall_m2, 1)), el("td", "num", num(g.glass_m2, 1)),
+              el("td", "num", num(g.glass_pct_of_wall, 1)));
+    gt.append(tr);
+  });
+  glass.append(gt, el("p", "small muted", "Glass is " + num(L.summary.glass_pct_of_floor, 1) +
+    " % of the " + num(L.summary.floor_m2, 1) + " m² of floor placed."));
+  return glass;
+}
+
+// What the run is and is not, what Revit holds after Finalize, earlier runs.
+function loadsMore(L) {
+  const more = el("section", "l-sec l-more");
+  const notes = el("details", "l-notes");
+  notes.append(el("summary", null, "What this calculation is, and what it is not"));
+  (L.notes || []).forEach(n => notes.append(el("p", "small", n)));
+  more.append(notes);
+  if (L.finalized) {
+    const d = el("details", "l-back");
+    d.open = true;
+    d.append(el("summary", null, "Written into Revit at " + L.finalized.at));
+    d.append(el("p", "small", L.finalized.said || ""));
+    // What Revit holds now, read back after the write - beside what was calculated.
+    ((L.finalized.values && L.finalized.values.read_back_text) || []).forEach(t => d.append(el("pre", "small", t)));
+    more.append(d);
+  }
+  // Runs - every Recalculate is kept; an earlier one opens read-only.
+  const runs = el("details", "l-runs");
+  runs.append(el("summary", null, "Earlier runs"));
+  runs.addEventListener("toggle", async () => {
+    if (!runs.open || runs.dataset.read) return;
+    runs.dataset.read = "1";
+    try {
+      const res = await fetch("/api/loads/runs", { headers: HEADER, credentials: "same-origin" });
+      const list = (await res.json()).runs || [];
+      if (!list.length) runs.append(el("p", "small muted", "No run is kept for this project yet."));
+      list.forEach(r => runs.append(el("p", "small", r.run_id + " · " + (r.when || "") +
+        " · block " + num(r.block_w, 0) + " W" + (r.run_id === L.run_id ? " (this one)" : ""))));
+    } catch (e) { runs.append(el("p", "small muted", "The runs could not be read.")); }
+  });
+  more.append(runs);
+  return more;
+}
+
+function renderLoads(L) {
+  const box = $("l-box");
+  const below = $("l-box2");
+  box.replaceChildren();
+  below.replaceChildren();
+  $("l-empty").hidden = !!L;
+  if (!L) return;
+  const project = Object.assign({}, L.project || {});
+  const profiles = JSON.parse(JSON.stringify(L.profiles || {}));
+  const overrides = JSON.parse(JSON.stringify(L.overrides || {}));
+  const said = el("p", "result");
+  said.id = "l-said";
+  said.setAttribute("role", "status");
+  said.setAttribute("aria-live", "polite");
+  box.append(loadsMeta(L), loadsSteps(L, project, profiles, overrides, said), said);
+  if ((L.asked || []).length) box.append(loadsAsked(L, project, profiles));
+  box.append(loadsFigures(L), loadsChecks(L));
+  if (L.has_view) box.append(el("h3", "l-3d-title", "3D take-off - the faces these loads were worked out from"));
+  below.append(loadsInputs(L, profiles), loadsResults(L, project, profiles, overrides));
+  const extra = el("div", "l-extra");
+  if (L.summary && L.summary.glass_by_facing) extra.append(loadsGlass(L));
+  extra.append(loadsMore(L));
+  below.append(extra);
+}
+
+async function loads_() {
+  if (loadsBusy) return;
+  // An input being typed is never wiped by the poll.
+  if (document.activeElement && document.activeElement.closest && document.activeElement.closest("#loads")) return;
+  try {
+    const res = await fetch("/api/loads", { headers: HEADER, credentials: "same-origin" });
+    if (!res.ok) return;
+    const L = (await res.json()).loads;
+    const key = L ? (L.run_id || "") + "/" + L.at + "/" + (L.report ? "r" : "") + (L.confirmed ? "c" : "") +
+      (L.finalized ? L.finalized.at : "") : "none";
+    if (key === loadsShown) return;
+    loadsShown = key;
+    renderLoads(L);
+    // The 3D view keeps its own camera across redraws; it reloads only for a new run.
+    if (window.HeronLoads3D) window.HeronLoads3D.update($("l-3d"), L && L.has_view ? (L.run_id || "") + "/" + L.at : null);
+  } catch (e) { /* the state poll reports a closed page */ }
+}
+
 async function pair(code) {
   const res = await fetch("/api/pair", {
     method: "POST",
@@ -968,8 +1550,9 @@ async function poll() {
     document.body.classList.remove("closed");
     show(body.state);
     activity();
-    changes();
+    if (SHOW_CHANGES) changes();
     table_();
+    loads_();
   } catch (e) {
     failures += 1;
     if (failures >= 3) {
@@ -1008,7 +1591,7 @@ function theme() {
 async function start() {
   theme();
   dock();
-  paint();
+  if (SHOW_CHANGES) paint();
   const code = new URLSearchParams(location.search).get("pair");
   if (code) {
     // The one-time code leaves the address bar at once, whatever happens next.
@@ -1049,8 +1632,10 @@ async function tableTool(button, path, body) {
   changes();
 }
 
-$("c-load-filters").addEventListener("click", () => tableTool(null, "/api/changes/load", { kind: "filters" }));
-$("c-load-categories").addEventListener("click", () => tableTool(null, "/api/changes/load", { kind: "categories" }));
-$("c-clear").addEventListener("click", () => tableTool(null, "/api/changes/clear"));
+if (SHOW_CHANGES) {
+  $("c-load-filters").addEventListener("click", () => tableTool(null, "/api/changes/load", { kind: "filters" }));
+  $("c-load-categories").addEventListener("click", () => tableTool(null, "/api/changes/load", { kind: "categories" }));
+  $("c-clear").addEventListener("click", () => tableTool(null, "/api/changes/clear"));
+}
 
 start();

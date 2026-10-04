@@ -87,6 +87,16 @@ compatibility-note: >
   and `Plane.CreateByNormalAndOrigin` are unchanged 2020 to 2027, and the two
   plan points arrive in internal feet with no units call.
 
+# ROUTING - the same rows are in the fragments named here. Added 2026-10-04
+# (docs/45): "is this door mirrored" ranked THIS fragment first, a question
+# answered by a write, until REPORT_MIRRORED_INSTANCES took the sentence.
+#
+#   "mirror these to the other room"      -> here. It CHANGES the model
+#   "is this door mirrored" / "which
+#    doors are mirrored"                  -> REPORT_MIRRORED_INSTANCES. It
+#                                            only reads
+#   "flip the door"                       -> FLIP_ELEMENTS
+
 utterances:
   - mirror these to the other room
   - flip this layout across

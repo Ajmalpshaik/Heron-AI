@@ -1727,6 +1727,9 @@ def _offer_change(capability, folder, values, document):
     """Leave a settings change's values on the Companion page (docs/40 21.1).
     Display only: a fault here never reaches the chat's answer."""
     try:
+        # Switched off with the page's Changes tables (docs/40 s21.6).
+        if not _companion_module().SHOW_CHANGES:
+            return
         subject = _settings_card(folder)
         if not subject or not pinned.is_pinned:
             return
@@ -1823,6 +1826,275 @@ def _apply_table(rows, identity=None):
     return text, result
 
 
+# ---------------------------------------------------------------------------
+# The Loads panel's hooks (docs/44 section 7). Recalculate, the runs and the
+# Report touch no model - the brain works on the take-off the panel already
+# holds. Finalize writes through revit_change's own body, behind the Changes
+# switch, refused whole if any Space moved since it was read (Article 12c).
+# ---------------------------------------------------------------------------
+
+def _loads_recalculate(takeoff, inputs, identity):
+    with _revit_lock:
+        moved = _moved_since(identity)
+    if moved:
+        return {"said": moved, "takeoff": None}
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    answer = brain.building_loads(takeoff, inputs, project=pinned.project_key,
+                                  project_name=pinned.title)
+    _note("companion_loads_recalculate", started, time.time() - clock, reply=answer["said"])
+    return answer
+
+
+def _loads_runs(_document):
+    import heron_building_loads as LOADS
+    return LOADS.runs(pinned.project_key) if pinned.project_key else []
+
+
+def _loads_run(_document, run_id):
+    import heron_building_loads as LOADS
+    got = LOADS.load(pinned.project_key, run_id) if pinned.project_key else None
+    if not got:
+        return None
+    return {"run_id": got.get("run_id"), "when": got.get("when"),
+            "building": got.get("building"), "zones": got.get("zones"),
+            "spaces": [{k: v for k, v in s.items() if k != "cooling"}
+                       for s in got.get("spaces") or []],
+            "inputs": got.get("inputs")}
+
+
+def _loads_report(takeoff, result, folder=None):
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    got = brain.loads_report(takeoff, result, model_path=pinned.document_path,
+                             project=pinned.project_key, project_name=pinned.title,
+                             folder=folder)
+    _note("companion_loads_report", started, time.time() - clock, reply=got.get("said"),
+          outcome=None if got.get("ok") else "refused")
+    return got
+
+
+def _loads_confirm(takeoff, result, identity=None):
+    with _revit_lock:
+        moved = _moved_since(identity)
+    if moved:
+        return {"ok": False, "said": moved}
+    started = time.strftime("%H:%M:%S")
+    got = brain.loads_confirm(takeoff, result, project=pinned.project_key,
+                              project_name=pinned.title)
+    _note("companion_loads_confirm", started, 0, reply=got.get("said"))
+    return got
+
+
+def _loads_finalize(takeoff, result, identity):
+    """
+    Finalize (docs/44 s6, gate 2).
+
+    1. THE MODEL IS READ AGAIN, and Finalize refuses if its geometry is not the
+       take-off the loads were worked out from (the fingerprint leaves out the
+       values Finalize itself writes). Recalculate never reads the model, so
+       without this a load from an hours-old take-off could be written after
+       walls or windows moved (the review of 2026-10-04, I9). The fresh read
+       also gives the CURRENT values each row is checked against.
+    2. The three Space fields through ONE SET_PARAMETER_VALUES_BY_ID -
+       _apply_table, the table's own Apply, so the model guard, the stale
+       check and the one undo entry are the ones it has.
+    3. The diffusers' share of each Space's flow through SET_AIR_TERMINAL_FLOW,
+       once per level of the calculated Spaces: every air terminal on the
+       level is handed over by category and the file of ids picks which are
+       written. Never by typed ids, which the add-in refuses (2026-10-05).
+    4. Read back: the take-off read again, every written value beside what
+       Revit now holds.
+    5. The Spaces schedule of what was written, made once.
+    The answer counts the undo entries actually made - the Space values, a
+    level's diffusers, the schedule - until one TransactionGroup spans them
+    all (FRAGMENT-ISSUES 5b-314).
+    """
+    import heron_building_loads as LOADS
+    import heron_hvac as HVAC
+    import heron_takeoff as TAKEOFF
+    try:
+        LOADS.finalize_rows(takeoff, result)          # refuses an unconfirmed take-off early
+    except ValueError as why:
+        return {"ok": False, "said": "Nothing was written: %s" % why}
+    links = bool(getattr(takeoff, "include_links", False) or result.get("include_links"))
+    with _revit_lock:
+        moved = _moved_since(identity)
+        if moved:
+            return {"ok": False, "said": moved}
+        out = {}
+        said_read = _through(revit_read, reply_out=out, origin="companion")(
+            "REPORT_SPACE_ENVELOPE", "includeLinks=true" if links else "")
+    reply = out.get("reply")
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return {"ok": False, "said": "Nothing was written - the model could not be read again "
+                                     "to check it has not changed: %s" % said_read}
+    try:
+        fresh = TAKEOFF.read((reply.get("provides") or {}).get("takeoffJson") or "")
+    except ValueError as why:
+        return {"ok": False, "said": "Nothing was written - the model's take-off could not be "
+                                     "read again: %s" % why}
+    if LOADS.fingerprint(fresh) != LOADS.fingerprint(takeoff):
+        return {"ok": False, "said": "Nothing was written: the model has changed since these "
+                                     "loads were worked out - a wall, a window, a Space or a type. "
+                                     "Ask the chat to calculate the loads again, check the "
+                                     "take-off, and Finalize then."}
+    # THE ROWS CARRY THE VALUES HERON SHOWED, NOT THE FRESH ONES: a Space's
+    # loads edited in Revit since the read must refuse the whole write
+    # (Article 12c) - the fresh read proves only that the geometry is the same
+    # (the second review, m1). After a Finalize, what was written becomes what
+    # Heron holds, so the next Finalize is checked against it.
+    try:
+        rows = LOADS.finalize_rows(takeoff, result)
+    except ValueError as why:
+        return {"ok": False, "said": "Nothing was written: %s" % why}
+    if not rows:
+        return {"ok": False, "said": "No Space was calculated, so nothing was written."}
+    text, applied = _apply_table(rows, identity)
+    if not (applied and applied.get("applied")):
+        return {"ok": False, "said": text}
+    held = dict((str(s.get("id")), s) for s in takeoff.spaces)
+    for sid, _uid, field, _was, new in rows:
+        if sid in held:
+            held[sid].setdefault("current", {})[field] = new
+    said = [text]
+    entries = 1
+    lines = []
+    for s in result.get("spaces") or []:
+        if s.get("status") != "ok" or not s.get("terminals"):
+            continue
+        split = HVAC.run("terminal_flows", {"flow_ls": s["supply_ls"],
+                                            "terminal_ids": [str(t) for t in s["terminals"]]})
+        if split["status"] != "ok" or not split.get("csv"):
+            said.append("Space %s %s: its diffusers' flows were not worked out - %s"
+                        % (s.get("number") or "", s.get("name") or "",
+                           "; ".join(split.get("refused") or [m["input"] for m in
+                                                               split.get("missing") or []])))
+            continue
+        lines += split["csv"].strip().splitlines()[1:]
+    # NOTHING BELOW ASKS THE ADD-IN FOR AN ELEMENT BY A TYPED ID - it never
+    # accepts one, and the first real Finalize (Project2, 2026-10-05) lost its
+    # read-back to that, and would have lost every diffuser. Elements are found
+    # by category on the calculated Spaces' own levels instead.
+    nl = chr(10)
+    steps = ["the Space values"]
+    calculated = set(str(s.get("id")) for s in result.get("spaces") or []
+                     if s.get("status") == "ok")
+    levels = sorted(set(str(s.get("level")) for s in takeoff.spaces
+                        if str(s.get("id")) in calculated and s.get("level")))
+    if lines:
+        import shutil
+        import tempfile
+        folder = tempfile.mkdtemp(prefix="heron-loads-")
+        path = os.path.join(folder, "terminal-flows.csv")
+        with io.open(path, "w", encoding="utf-8") as fh:
+            fh.write("element_id,flow_ls" + nl + nl.join(lines) + nl)
+        changed_total, troubles = 0, []
+        try:
+            for level in levels:
+                with _revit_lock:
+                    moved = _moved_since(identity)
+                    if moved:
+                        troubles.append(moved)
+                        break
+                    # Every air terminal on the level; the file of ids picks which
+                    # are written - SET_AIR_TERMINAL_FLOW leaves every other alone.
+                    _through(revit_read, origin="companion")(
+                        "FILTER_ELEMENTS_BY_CATEGORY",
+                        "category=Air Terminals" + nl + "levelId=" + level)
+                    out = {}
+                    wrote = _through(revit_change, reply_out=out, origin="companion")(
+                        "SET_AIR_TERMINAL_FLOW", "csvPath=" + path,
+                        "filter-elements-by-category where category=Air Terminals")
+                answer = out.get("reply") if isinstance(out.get("reply"), dict) else {}
+                done = bool(answer.get("ok"))
+                try:
+                    changed = int(((answer.get("provides") or {}) if done else {})
+                                  .get("changed") or 0)
+                except (TypeError, ValueError):
+                    changed = 0
+                if changed:
+                    entries += 1
+                    changed_total += changed
+                    steps.append("the diffusers on %s" % level)
+                elif not done and "chain_empty" not in str(answer.get("error") or wrote):
+                    # A level with no air terminal on it hands over an empty
+                    # chain, which is not a fault; anything else is said.
+                    troubles.append("%s: %s" % (level, wrote))
+        finally:
+            shutil.rmtree(folder, ignore_errors=True)
+        said.append("Diffusers: %d of %d written with their Space's share of the supply air%s."
+                    % (changed_total, len(lines),
+                       "" if changed_total == len(lines) else
+                       " - the rest already held that flow, sit on a level no calculated "
+                       "Space is on, or their family's flow is not tied to its connector"))
+        said.extend(troubles)
+    else:
+        said.append("No calculated Space has an air terminal in it, so no diffuser flow was "
+                    "written.")
+    # READ BACK - the take-off read AGAIN, each written value beside what Revit
+    # now holds; the diffusers through each level's Spaces.
+    back_rows, back_text = [], []
+    with _revit_lock:
+        if not _moved_since(identity):
+            out = {}
+            _through(revit_read, reply_out=out, origin="companion")(
+                "REPORT_SPACE_ENVELOPE", "includeLinks=true" if links else "")
+            reply = out.get("reply")
+            if isinstance(reply, dict) and reply.get("ok"):
+                try:
+                    again = TAKEOFF.read((reply.get("provides") or {}).get("takeoffJson") or "")
+                except ValueError:
+                    again = None
+                if again is not None:
+                    back_rows = LOADS.read_back(rows, again)
+                    # What Revit prints is what the next Finalize is checked against.
+                    printed = dict((str(s.get("id")), s.get("current") or {}) for s in again.spaces)
+                    for sid, space in held.items():
+                        if sid in printed:
+                            space.setdefault("current", {}).update(printed[sid])
+            if lines:
+                for level in levels:
+                    _through(revit_read, origin="companion")(
+                        "FILTER_ELEMENTS_BY_CATEGORY", "category=Spaces" + nl + "levelId=" + level)
+                    back_text.append(str(_through(revit_read, origin="companion")(
+                        "REPORT_SPACE_AIRFLOW", "",
+                        "filter-elements-by-category where category=Spaces")))
+    matched = sum(1 for b in back_rows if b["ok"])
+    if back_rows:
+        said.append("Read back from Revit: %d of %d values hold what was written%s."
+                    % (matched, len(back_rows), "" if matched == len(back_rows)
+                       else " - the ones that do not are listed below"))
+    else:
+        said.append("The values could not be read back - check them in Revit before relying "
+                    "on them.")
+    back_text = ["%s - %s: wrote %s, Revit holds %s%s" % (
+        b["space"], b["parameter"], b["written"], b["reads"] or "nothing",
+        "" if b["ok"] else "  <- NOT what was written") for b in back_rows] + back_text
+    # THE SCHEDULE OF WHAT WAS WRITTEN (Ajmal, 2026-10-05) - made once. Revit
+    # refuses a second schedule of the same name, and that is said plainly.
+    with _revit_lock:
+        moved = _moved_since(identity)
+        out = {}
+        made = moved or _through(revit_change, reply_out=out, origin="companion")(
+            "CREATE_SCHEDULE", "categoryId=Spaces" + nl + "fieldNames="
+            + ", ".join(LOADS.SCHEDULE_FIELDS) + nl + "scheduleName=" + LOADS.SCHEDULE_NAME)
+    if not moved and isinstance(out.get("reply"), dict) and out["reply"].get("ok"):
+        entries += 1
+        steps.append("the schedule")
+        said.append("Made the schedule '%s' - every value just written, Space by Space."
+                    % LOADS.SCHEDULE_NAME)
+    elif not moved and re.search(r"already|unique|in use", str(made), re.I):
+        said.append("The schedule '%s' is already in the model - it shows the values just "
+                    "written." % LOADS.SCHEDULE_NAME)
+    else:
+        said.append("The schedule '%s' was not made: %s" % (LOADS.SCHEDULE_NAME, made))
+    finalized = [{"id": r[0], "parameter": r[2], "was": r[3], "written": r[4]} for r in rows]
+    said.append("%s in Revit's undo list: %s." % (
+        "One new entry" if entries == 1 else "%d new entries" % entries, ", then ".join(steps)))
+    return {"ok": True, "said": nl.join(str(x) for x in said),
+            "finalized": {"rows": finalized, "read_back": back_rows,
+                          "read_back_text": back_text, "undo_entries": entries}}
+
+
 def _load_settings(kind):
     """
     The Companion's Load from Revit: READ the active view's filters or
@@ -1834,6 +2106,9 @@ def _load_settings(kind):
     (answer text, the tables offered).
     """
     companion_page = _companion_module()
+    if not companion_page.SHOW_CHANGES:
+        return ("The Companion's Changes tables are switched off for now, so nothing was "
+                "loaded.", [])
     reader, _applier = companion_page.LOADS[kind]
     started, clock = time.strftime("%H:%M:%S"), time.time()
     with _revit_lock:
@@ -2104,6 +2379,11 @@ def revit_offer_settings(capability: str, values: str) -> str:
     the Changes switch, the pin, one undo entry.
     """
     companion_page = _companion_module()
+    if not companion_page.SHOW_CHANGES:
+        # The owner switched the page's Changes tables off (2026-10-04, docs/40
+        # s21.6): a table offered now would sit where nobody can see it.
+        return ("The Companion's Changes tables are switched off for now, so nothing was "
+                "offered. Change the setting through the chat instead.")
     if not companion_page.enabled():
         return ("The Heron Companion is switched off in Revit, so nothing was offered. "
                 "To turn it on, click the arrow under the Companion button on the "
@@ -2219,6 +2499,88 @@ def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 200
             "The modeller edits and applies it there."
             % (rows, ", ".join(table.get("columns") or []), document,
                (" %d more were left out." % more) if more else ""))
+
+
+def _open_companion(companion_page):
+    companion = companion_page.shared(bound_pid=_companion_revit)
+    if not companion.recently_seen():
+        try:
+            import webbrowser
+            webbrowser.open(companion.pairing_address(), new=2)
+        except Exception:                            # noqa: BLE001 - the button still works
+            pass
+
+
+@server.tool()
+def revit_building_loads(inputs: str = "", expect_from: str = "",
+                         include_links: bool = False) -> str:
+    """
+    Calculate the heating and cooling load of every MEP Space in the open
+    model - docs/44. Heron reads every Space's walls, roofs, floors and
+    windows from Revit (REPORT_SPACE_ENVELOPE, which changes nothing), works
+    out each Space's load with its HVAC engine, adds them up by zone and for
+    the building, and opens the Loads panel in the Heron Companion with the
+    whole table - inputs, results, and what is wrong with the model.
+
+    Use when the user asks to "calculate the loads for this building", "work
+    out the cooling load of every space", "size the spaces' airflow from
+    their loads".
+
+    `inputs` is a JSON object of what the modeller has answered so far:
+    {"project": {"design_weather": "doha-0.4", "room_dry_bulb_c": 24, ...},
+     "profiles": {"Office": {"people_per_m2": 0.1, ...}},
+     "overrides": {"<space id>": {"equipment_w_per_m2": 40}}}. Answers are
+    kept with the open model's project, so they are not asked twice.
+
+    HERON SUPPLIES NO DESIGN VALUE THE MODELLER DID NOT GIVE (D-33). While
+    anything is missing, nothing is calculated and the answer is the list of
+    questions, each with the figure a standard offers - put them to the
+    modeller, never fill them in yourself. A window or wall type with no U or
+    SHGC in the model refuses that Space only, and is never defaulted.
+
+    `include_links` (D-59, the modeller decides): in a federated model the
+    walls are in the architect's link. Set it when the modeller says the
+    walls are linked - each linked wall's type, windows and doors are then
+    read from its link. Left false, those faces read "unknown" and the model
+    checks say the links were not read.
+
+    You are told only the totals; the rows are on the Companion page, with a
+    3D view of the very faces the loads were worked out from. The modeller
+    checks that view and presses "The take-off is right" before the report is
+    final; writing the loads back into the Spaces is the page's Finalize
+    button, never this tool. A load here is a peak estimate, not an hourly
+    simulation like HAP.
+    """
+    companion_page = _companion_module()
+    if not companion_page.enabled():
+        return ("The Heron Companion is switched off in Revit, so no loads were calculated. "
+                "To turn it on, click the arrow under the Companion button on the "
+                "Heron tab.")
+    out = {}
+    said = _through(revit_read, reply_out=out)(
+        "REPORT_SPACE_ENVELOPE", "includeLinks=true" if include_links else "", expect_from)
+    reply = out.get("reply")
+    # revit_read has already refused, classified any failure and checked the
+    # pin; when it did not get a good reply, its own sentence is the answer.
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return said
+    # THE PIN'S REFUSAL STANDS, as in revit_edit_table: a good reply from
+    # ANOTHER model must never open a panel whose Finalize targets this one.
+    if pinned.check(reply):
+        return said
+    provides = reply.get("provides") or {}
+    try:
+        answer = brain.building_loads(provides.get("takeoffJson") or "", inputs,
+                                      project=pinned.project_key, project_name=pinned.title,
+                                      include_links=include_links)
+    except brain.BrainUnavailable as why:
+        return str(why)
+    if answer.get("takeoff") is None:
+        return answer["said"]
+    document = reply.get("document")
+    companion_page.LOADS_PANEL.open(document, answer, _pin_identity())
+    _open_companion(companion_page)
+    return answer["said"]
 
 
 @server.tool()
@@ -5127,6 +5489,12 @@ if __name__ == "__main__":
         companion_page.CHANGES.apply_hook = _apply_change
         companion_page.CHANGES.load_hook = _load_settings
         companion_page.TABLES.apply_hook = _apply_table
+        companion_page.LOADS_PANEL.recalculate_hook = _loads_recalculate
+        companion_page.LOADS_PANEL.report_hook = _loads_report
+        companion_page.LOADS_PANEL.finalize_hook = _loads_finalize
+        companion_page.LOADS_PANEL.runs_hook = _loads_runs
+        companion_page.LOADS_PANEL.run_hook = _loads_run
+        companion_page.LOADS_PANEL.confirm_hook = _loads_confirm
         companion_page.keep(bound_pid=_companion_revit)
     except Exception as why:                         # noqa: BLE001 - never cost the chat
         sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)

@@ -1,0 +1,127 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-058
+semantic-identity: "every MEP Space's walls, roofs, floors and windows - areas, facing and thermal values - for a load calculation"
+kind: filter
+domain: revit.mep
+capability: REPORT_SPACE_ENVELOPE
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads the take-off a building's heating and cooling loads are calculated
+  from (docs/44 section 4): every MEP Space in the model - its number, name,
+  level, zone, Space Type, floor area, volume and height - and every face that
+  bounds it, from Revit's own spatial geometry: whether it is a wall, the top
+  or the bottom, its area, the way it faces (its outward direction, which the
+  brain turns to true north), what is on the other side - outside, another
+  Space, an unconditioned space - and the windows, doors and curtain panels in
+  it with their sizes.
+
+  **For each type met it gives the thermal values Revit holds** - U-value, and
+  for glass the SHGC - and a value Revit does not hold is reported missing,
+  never 0. A window with no SHGC read as 0 loses all its sun without a word;
+  the brain refuses that Space and names the type instead.
+
+  **Once per model:** the site's latitude, longitude, time zone and elevation,
+  the True North angle, and the units the model shows loads and airflow in -
+  so the values written back later are in the model's own units.
+
+  **It calculates nothing.** The loads are worked out by Heron's HVAC engine
+  (heron_building_loads), never here.
+
+  **Every Space, not the selection.** The question is about the whole building,
+  and nothing is usually selected when it is asked.
+
+  **Every face's outline, and where each window and door sits** - in metres,
+  in the model's own coordinates - so the Companion's 3D view draws the very
+  faces the loads were worked out from, for the modeller to check before
+  anything is written back (docs/44 section 12).
+
+  **Linked walls only when asked for (D-59).** In a federated model the walls
+  are in the architect's link; with includeLinks set they are read from it,
+  their types keyed by the link they come from. Otherwise such a face is
+  "unknown" beyond, and a finding says the links were not read.
+
+  **Why one string.** A fragment's list output reaches the caller as its first
+  three names (FRAGMENT-ISSUES 5b-195), and a take-off needs every face. So it
+  crosses as one JSON string, `takeoffJson`, format 1, as READ_ELEMENT_TABLE's
+  table does.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: includeLinks
+      # D-59. THE MODELLER DECIDES, JOB BY JOB, and absent means host only. In
+      # a federated MEP model the walls are in the architect's link: with this
+      # set, a linked wall's type, function, windows and doors are read from
+      # its link; without it that face reads beyond "unknown" with a finding.
+      # `optional: true` lets it be left out - the binder binds an absent
+      # optional bool to false (HeronBindingNote.AbsentValue, row 5b-227).
+      type: bool
+      source: request
+      optional: true
+  provides:
+    # The whole take-off as one JSON string, format 1.
+    - name: takeoffJson
+      role: result
+      type: string
+    # How many MEP Spaces were read, placed or not.
+    - name: spaces
+      role: result
+      type: int
+    # D-59: how many loaded linked models there were to read. includeLinks set
+    # and this at 0 means "links were asked for and none is loaded".
+    - name: linksSearched
+      role: accounting
+      type: int
+    # A sentence per thing that could not be read - a linked boundary, an
+    # opening with no size, no site location.
+    - name: findings
+      role: accounting
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. SpatialElementGeometryCalculator and
+  its boundary subfaces, GetSpaceAtPoint, Wall.FindInserts, CurtainGrid,
+  SiteLocation and ProjectPosition are all present from 2020 to 2027. Values
+  are read with AsDouble() in Revit's internal units and converted to metres
+  here, so no units API is touched (the 2021 units move). No ElementId is read
+  as a number - each is written with ToString(). The U-value parameter was
+  renamed in Revit 2027 (ANALYTICAL_THERMAL_TRANSMITTANCE), so it is found by
+  name at run time. RevitLinkInstance, GetLinkDocument, GetTotalTransform,
+  Face.GetEdgesAsCurveLoops and Curve.Tessellate are present 2020 to 2027.
+
+# ROUTING - repeated nowhere else yet.
+#
+#   "read the spaces' walls and windows for the loads"  -> here
+#   "what load does Revit hold on each space"           -> READ_SPACE_LOADS
+#   "list the spaces and their airflow"                 -> REPORT_SPACE_AIRFLOW
+#   "read the thermal U value of every floor type and roof type" -> here, never CREATE_ROOF
+#   "add windows to the outside walls"                  -> PLACE_HOSTED_FAMILY - a
+#                                                          change; this card only reads
+#
+# 2026-10-04 (5b-319): the fourth utterance said "the outside walls, roofs and
+# glass of every space", narrower than the take-off - every bounding face is
+# read, inside walls too - and "outside walls" was the phrase that sent "add
+# windows to the outside walls" here. It now names every face and the U-values.
+# The fifth is there because a question about the U-values of floor and roof
+# types reached CREATE_ROOF, a change. It says roof and floor and NOT wall on
+# purpose: measured that day, "wall" in it sent "add windows to the outside
+# walls" straight back here.
+utterances:
+  - read the spaces' walls and windows for the load calculation
+  - space envelope take-off
+  - which way do this space's outside walls face
+  - take off every space's walls, roofs, floors and glass with their U-values
+  - what U-value does each roof and floor type have

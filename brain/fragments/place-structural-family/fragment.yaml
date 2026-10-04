@@ -9,13 +9,32 @@ semantic-identity: "put a structural column or a footing at each of these points
 kind: action
 domain: revit.elements
 capability: PLACE_STRUCTURAL_FAMILY
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
   Places a point-based family at each point as a REAL STRUCTURAL MEMBER - a
-  column, a footing - with the structural type the caller asked for.
+  column, a footing - with the structural type the caller asked for, and a
+  column's top at the level and offset asked for.
+
+  **VERSION 2 GIVES A COLUMN ITS TOP.** Version 1 placed a column on its base
+  level and said nothing about where it stopped. `topLevelName` and
+  `topOffset` (millimetres) are BLANK FOR VERSION 1 EXACTLY - the top left as
+  Revit placed it, and the reply says so. Given, and only for a column:
+  - **The level is found by its whole name, exactly.** No level of that name,
+    or two, and nothing is placed - never the nearest name.
+  - **A top at or below the base is refused before anything is placed** -
+    the top level's elevation, and that plus the offset, against the base
+    level's. An offset with no top level is refused too: which level it is
+    measured from is not guessed.
+  - **Set on the built-in Top Level and Top Offset, never a parameter found
+    by name.** A column whose family has neither settable is removed again
+    inside the same undo and named in `topRefused`.
+  - **Read back after a regenerate** - the level and offset it now carries,
+    as an elevation in millimetres, with the top of its own geometry as a
+    second reading - beside what was asked, in `tops`. More than 1 mm out, or
+    on another level, is named in `topWrong`.
 
   **IT EXISTS BECAUSE `PLACE_FAMILY_INSTANCES` HARDCODES `NonStructural`, AND
   THAT WAS RIGHT FOR WHAT IT WAS WRITTEN FOR.** Its own purpose names air
@@ -50,6 +69,20 @@ contract:
     - name: structuralType
       type: string
       source: request
+    # VERSION 2. The level a column's top is tied to, by its whole name - or
+    # BLANK for version 1's behaviour, the top left as Revit placed it.
+    # Columns only. Strings so that blank can mean "not asked": NOT marked
+    # `optional: true`, because the add-in refuses any request need that
+    # arrives with no value unless it is a bool (FRAGMENT-ISSUES 5b-227 and
+    # 5b-252). Send both, blank or not.
+    - name: topLevelName
+      type: string
+      source: request
+    # VERSION 2. Millimetres above (or, negative, below) the top level - or
+    # BLANK for none. Refused without a top level.
+    - name: topOffset
+      type: string
+      source: request
   provides:
     - name: placed
       role: result
@@ -58,6 +91,22 @@ contract:
       # Points nothing could be placed at. Never an instance it placed (D-52).
       role: accounting
       type: int
+    - name: tops
+      # VERSION 2. One line per column given a top: asked, read back from its
+      # Top Level and Top Offset, and its geometry's top. A reading of what was
+      # done, never a thing found, so it banks nothing.
+      role: accounting
+      type: IList<string>
+    - name: topWrong
+      # Columns whose top reads back more than 1 mm out, or on another level.
+      # Named, never counted as right (D-52).
+      role: accounting
+      type: IList<string>
+    - name: topRefused
+      # Columns removed again because their family has no settable Top Level
+      # and Top Offset. Never one it kept (D-52).
+      role: accounting
+      type: IList<string>
     - name: findings
       type: IList<string>
 
@@ -70,6 +119,15 @@ compatibility-note: >
   is present 2020 through 2027 - read off the reference assemblies at both ends
   on 2026-09-18, along with every value of `StructuralType`. Points arrive in
   internal FEET, converted at the edge (D-20).
+
+  Version 2, read off the reference assemblies 2020 to 2027 on 2026-10-04:
+  `BuiltInParameter.FAMILY_TOP_LEVEL_PARAM` and `FAMILY_TOP_LEVEL_OFFSET_PARAM`,
+  `Level.ProjectElevation`, `Element.get_Parameter(BuiltInParameter)`,
+  `Element.get_BoundingBox(View)`, `Parameter.Set(ElementId)`, `Set(double)`,
+  `AsElementId`, `AsDouble`, `IsReadOnly` and `StorageType` - one signature each
+  across all eight. Every elevation is compared as ProjectElevation, the same
+  origin a bounding box is read in. The offset arrives in millimetres and
+  becomes feet by / 304.8 (D-20).
 
 # ROUTING - repeated in PLACE_FAMILY_INSTANCES and PLACE_LINE_BASED_FAMILY.
 #

@@ -875,3 +875,41 @@ the three filters in `{3D}` had no override at all, while the same values sent t
 applied correctly. Two other chats were driving the same Revit with their own Companion pages, and
 the audit log does not say which client sent a write, so the cause is not established. A filter
 Apply from this page, read back, is owed before this is relied on.
+
+### 21.5 The Loads panel and its 3D view (2026-10-04)
+
+A fourth kind of content, on the owner's word: the **Loads** panel of [docs/44](44-building-loads-from-the-model.md)
+- a building's loads per Space, the checks on the model, Recalculate, Report, **The take-off is right**
+and Finalize - with a **3D view of the very faces the loads were worked out from** (docs/44 section 12).
+It keeps this page's rules: the panel holds data and calls hooks the MCP server sets; every number,
+colour and legend is made in `brain/`; Finalize writes through `revit_change`'s own body; the 3D view is
+a renderer of Heron's own (`static/loads3d.js`), so nothing is loaded from the internet.
+
+### 21.6 The page after the owner's first test (2026-10-04)
+
+The owner built a three-room test building in Revit, calculated it, and looked at the page. He decided
+four things, and every one is built:
+
+- **The page is the HVAC Load Calculation.** The panel is named for what it is - an HVAC load
+  calculation: each Space's cooling (AC) load and heating load, by ASHRAE methods, a peak estimate and not
+  an hourly simulation like HAP - so the next panels can be named the same way (a fire fighting
+  hydraulic calculation, a plumbing water supply calculation). It leads with the four steps (calculate,
+  check the take-off, report, write into Revit), then the building's figures, the checks and the 3D
+  take-off, then the inputs above the results - one column, never side by side.
+- **What is selected, and the Changes tables, are SWITCHED OFF - and KEPT.** The Selected card, the
+  Changes tables (21.1 to 21.4) and the colour books that paint them are off the page. Their sections
+  sit in `index.html` inside templates, which show nothing and run nothing; their code stays in
+  `companion.js` behind `SHOW_SELECTION` and `SHOW_CHANGES`, both false. On the server, `SHOW_CHANGES`
+  in `heron_companion.py` stops the three places a table was made - a settings change made in the chat,
+  the page's Load buttons, and `revit_offer_settings`, which now says the tables are off. **Nothing keeps
+  working for them in the background:** the add-in's `HeronLiveState.WatchSelection` is false, so Idling
+  reads no selection at all and looks once a second for the model and the view alone; the live file
+  carries `"selection": null`. That last part takes effect when the add-in is next deployed. To bring
+  either back: set its switch true and move its section out of its template.
+- **Report asks where.** A Windows folder window opens where the last report of the project went; the
+  folder is kept per project, and the sheet goes straight into it, the run's id in every file name.
+- **The sheet opens in the browser.** "Open report" and "Open PDF" open the files that report wrote, in
+  a tab of their own, through a key only the paired page holds. The sheet is served so it can run no
+  script and sit in no frame.
+
+The 3D view now turns the way the mouse moves, as Revit's orbit does.

@@ -1,3 +1,9 @@
+# VERSION 2 ADDS `topLevelName` and `topOffset`, both BLANK for version 1's
+# behaviour - every version 1 case below is run with both blank and must come
+# back as before. A TOP IS PROVED BY READING IT, NEVER BY `tops`: select the
+# column and read Top Level and Top Offset in Properties, and look at it in a
+# section, where its top meets the level line.
+
 positive:
   - given: >
       four points at grid intersections on Level 1, a loaded structural column
@@ -10,7 +16,46 @@ positive:
   - given: the same points with structuralType "footing"
     expect: footings, reading as footings in the schedule
 
+  - given: >
+      a model with Level 1 at 0 and Level 2 above it, two points on Level 1,
+      a structural column type, structuralType "column", `topLevelName`
+      "Level 2" and `topOffset` "-150"
+    expect: >
+      two columns, each reading Top Level "Level 2" and Top Offset -150 in
+      Properties, `tops` reading the same elevation asked and read, the
+      geometry's top within a slab's depth of it, and `topWrong` and
+      `topRefused` empty
+
+  - given: the same points and type with `topLevelName` and `topOffset` blank
+    expect: >
+      two columns placed as version 1 placed them, and a finding saying every
+      top was left as Revit placed it. Read Top Level in Properties: that is
+      the height version 1 left a column at
+
 negative:
+  - given: >
+      the same call with `topLevelName` "Level 1" - the base level itself -
+      after the positive was KEPT
+    expect: >
+      refused before anything is placed - "is not above the base level" -
+      and the two columns the positive left still read Top Level "Level 2",
+      Top Offset -150. Nothing new on Level 1
+
+  - given: '`topLevelName` "Level 9", a name no level carries'
+    expect: >
+      refused, "No level is named 'Level 9' exactly", and nothing placed.
+      Never the nearest-named level
+
+  - given: >
+      structuralType "footing" with `topLevelName` "Level 2"
+    expect: >
+      refused - a top level is set only on columns - and nothing placed
+
+  - given: '`topOffset` "300" with `topLevelName` blank'
+    expect: >
+      refused - which level the offset is measured from is not guessed - and
+      nothing placed
+
   - given: an empty list of points
     expect: nothing placed, nothing thrown, a finding saying there were no points
 
@@ -26,6 +71,11 @@ negative:
       family, per point, and the run survives it
 
 second_route:
+  - >
+      Revit's own Structure > Column, with Height and Level 2 chosen on the
+      options bar, placed beside one this placed with the same top, and both
+      selected: Top Level and Top Offset read the same in Properties, and in
+      a section both tops stand at the same height
   - >
       Revit's own Structure then Column at the same grid intersections, and the
       two compared in the structural column schedule - specifically the
