@@ -12,6 +12,30 @@ positive:
   - given: a type missing a required project parameter
     expect: the parameter named, so the fix is exact
 
+  # VERSION 2 - a family open in the Family Editor
+  - given: >
+      a scratch Pipe Accessories family with two opposite pipe connectors,
+      Work Plane-Based Yes, Part Type Normal, one connector flipped to point
+      into the body, its Diameter associated to a TYPE parameter that two
+      formulas read, and one family parameter nothing uses
+    expect: >
+      offStandard 6 and each named in familyReport: FAIL Work Plane-Based, FAIL
+      Part Type Normal, FAIL the inward connector by id, FAIL the pair not
+      opposite (the flip makes both point one way), FAIL the type size
+      parameter with "2 formula(s) depend on it", FAIL the unused parameter by
+      name. Each with its fix - SET_FAMILY_SETTINGS, SET_FAMILY_CONNECTOR_ROLES
+      flip, the Family Types switch, DELETE_FAMILY_PARAMETERS
+
+  - given: TRG_PLMB_VLV_PPR Gate Valve_GV_R0 as saved on 2026-10-04
+    expect: >
+      FAIL on Nominal Diameter being a TYPE parameter, with the formulas
+      depending on it counted (the build reported 35) - the reason it does not
+      resize with its pipe. PASS on
+      Work Plane-Based No and Part Type Valve Breaks Into
+
+  - given: a connector whose System Classification is Domestic Cold Water on an inline accessory
+    expect: a WARN, not a FAIL - some offices fix the system on purpose
+
 negative:
   - given: a family type that exists in the project but is placed NOWHERE
     expect: >
@@ -37,5 +61,26 @@ negative:
       naming. There is no default convention here and inventing one would apply
       one office's rules to another's model
 
+  # VERSION 2
+  - given: >
+      the two PPR check valves after SET_FAMILY_SETTINGS fixed them -
+      Work Plane-Based No, Part Type Valve Breaks Into, instance sizes
+    expect: >
+      no FAIL for placement or size - the D-30 case that must NOT contain what
+      the scratch family reported. Anything still failing is named and
+      checked by hand before the case is called clean
+
+  - given: a Mechanical Equipment family whose connector size is driven by a type parameter
+    expect: >
+      NO size FAIL - equipment is a run's end and a fixed size per type is
+      right for it; and no Work Plane-Based or Part Type check at all
+
+  - given: a Generic Models family
+    expect: >
+      only the name, required-parameter and tidiness checks, and a finding that
+      says so - not a single connector FAIL
+
 second_route:
   - Project Browser, Families branch - and Manage, Purge Unused to see which are placed at all
+  - "In the Family Editor: Family Category and Parameters for Work Plane-Based and Part Type; select each connector for its direction arrow, System Classification and the small associate button beside Diameter; Family Types for Instance or Type"
+  - REPORT_FAMILY_TEMPLATE, REPORT_FAMILY_CONNECTORS and REPORT_FAMILY_PARAMETERS on the same family

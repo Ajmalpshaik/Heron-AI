@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-QA-021
-semantic-identity: "audit the family library against the office standard"
+semantic-identity: "audit the family library against the office standard, or check the mep family open in the family editor joins its run and follows its pipe size"
 kind: filter
 domain: revit.qa
 capability: CHECK_FAMILY_STANDARDS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -47,6 +47,42 @@ purpose: >
   no universal family standard, and a default here would be one office's
   convention applied to another's model.
 
+  **VERSION 2 (2026-10-04, FRAGMENT-ISSUES 5b-313): A FAMILY OPEN IN THE FAMILY
+  EDITOR IS CHECKED ITSELF, BEFORE IT IS LOADED.** Three PPR valves built
+  through Heron in Revit 2024 looked finished and were not: two check valves
+  would not connect to a pipe (Work Plane-Based Yes; one also Part Type Normal),
+  and the gate valve would not resize with its pipe (its connector's Nominal
+  Diameter, and 35 formulas off it, were TYPE parameters). Nothing said so
+  until each was loaded and tried. Now, in a family document, this answers
+  PASS, FAIL or WARN for each check, with the fix in Revit words and the Heron
+  tool that makes it where there is one, as ONE string - `familyReport` -
+  because a list reaches the reply cut to three:
+
+  - placement: an inline accessory or a fitting that is Work Plane-Based; an
+    inline accessory whose Part Type is Normal with a run's connectors; a
+    fitting whose Part Type is Normal;
+  - connectors: none at all on an MEP family; one pointing toward the family's
+    own centre (5b-309); a pass-through pair not opposite on one line; a size
+    no family parameter drives; a size driven by a TYPE parameter, with how
+    many formulas depend on it, or by one with a formula of its own; an inline
+    accessory's System Classification not Global (a WARN - some offices fix it);
+  - tidiness: a family parameter nothing uses (a FAIL; a SHARED one is a WARN,
+    since shared ones carry schedule data); a solid form shown at Coarse or
+    Medium inside a nested family that already draws that level (a WARN).
+
+  The checks go by CATEGORY and PART TYPE, never by the family's name: pipe and
+  duct accessories are inline, pipe, duct, cable tray and conduit fittings are
+  the run's joints, and equipment, terminals, fixtures and devices sit at a
+  run's end (no Work Plane-Based or Part Type check; a size driven by a type
+  parameter is right for them). Every other category gets the name, required
+  parameter and tidiness checks only. `namePattern` is matched against the
+  family's own name and `requiredParameters` against its family parameters.
+
+  In a family document the version 1 audit of NESTED family types is not run:
+  a nested handwheel needs no connector, and reporting one would be false work.
+  Version 1's proof no longer describes the code and is kept below as a record;
+  the fragment is DRAFT until it is proved again (NEEDS-CHECKING Group CB).
+
 contract:
   needs:
     - name: doc
@@ -63,7 +99,19 @@ contract:
   provides:
     - name: findings
       type: IList<string>
+    # In a family document: the whole verdict, every PASS, FAIL, WARN and NOT
+    # CHECKED with its fix, joined - a list would arrive cut to three. Empty
+    # in a project.
+    - name: familyReport
+      role: result
+      type: string
+    - name: warned
+      # In a family document, the WARNs - things that may be meant. Zero in a
+      # project.
+      role: result
+      type: int
     - name: offStandard
+      # In a project, family types off standard; in a family document, FAILs.
       role: result
       type: int
     - name: notChecked
@@ -98,7 +146,12 @@ runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  One implementation for every release. `Family`, `FamilySymbol`,
+  One implementation for every release. Version 2's family checks use
+  `ConnectorElement`, `FamilyManager.GetAssociatedFamilyParameter`,
+  `GenericForm.GetVisibility` and `Options.DetailLevel`, all on 2020; part types
+  and categories are matched by their enum NAMES read on the running Revit, so
+  one a release has not got (OST_PlumbingEquipment before 2025) is never this
+  family's. `Family`, `FamilySymbol`,
   `Family.IsInPlace`, `FamilyInstance.MEPModel` and `ConnectorManager` are
   unchanged 2020 through 2027 - read off the reference assemblies at both ends.
   The name test is a plain substring match rather than a regular expression, so
@@ -128,6 +181,18 @@ compatibility-note: >
 #   "what parameters does it have"       -> REPORT_PARAMETER_INVENTORY - the
 #                                           full list on one element, before you
 #                                           know any of the names
+#   "will this family connect when it is placed on a pipe"
+#                                        -> here, in the Family Editor (v2)
+#   "check this family before i load it" -> REPORT_GEOMETRY_COMPLEXITY owns
+#                                           that exact sentence - how HEAVY a
+#                                           family is; not declared here
+#   "list the connectors in this family" -> REPORT_FAMILY_CONNECTORS - every
+#                                           setting of each, no verdict
+#   "what kind of family is this"        -> REPORT_FAMILY_TEMPLATE - its
+#                                           settings, no verdict
+#   "make this family work plane based", "set the part type"
+#                                        -> SET_FAMILY_SETTINGS - the WRITE that
+#                                           fixes what this reports
 
 utterances:
   - check the families are named to our standard
@@ -135,3 +200,7 @@ utterances:
   - why does nothing schedule properly
   - do these families have connectors
   - check the families against our convention
+  - will this family connect when it is placed on a pipe
+  - will this valve family connect to a pipe
+  - why does this valve not follow the pipe size
+  - check this mep family will connect and follow its size
