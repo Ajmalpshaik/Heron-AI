@@ -355,6 +355,55 @@ def run(t, project, profiles, overrides=None, recorded=None):
             "inputs": inputs, "units": dict(t.units), "notes": notes}
 
 
+# --- what the chat is told (never the rows - those are on the page) ---------
+
+_MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+
+def questions_text(asked):
+    """The questions, project first, each with the figure a standard offers - never applied."""
+    lines = ["Nothing was calculated. Heron needs these first - put them to the modeller, "
+             "never fill them in (D-33):"]
+    for a in asked:
+        where = "for the project" if a["for"] == "project" else "for '%s' Spaces" % a["for"]
+        line = "  - %s (%s) %s: %s" % (a["input"], a["unit"], where, a["why"])
+        if a.get("offer"):
+            line += " - offered: %s" % a["offer"]
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def summary_text(result):
+    """A few lines for the chat: counts, the block load, the sum of peaks, heating."""
+    spaces = result.get("spaces") or []
+    count = {}
+    for s in spaces:
+        count[s["status"]] = count.get(s["status"], 0) + 1
+    b = result.get("building") or {}
+    lines = ["Spaces calculated: %d; refused: %d; still missing inputs: %d; left out "
+             "(not placed): %d." % (count.get("ok", 0), count.get("refused", 0),
+                                   count.get("missing", 0), count.get("left out", 0))]
+    if b.get("block_w"):
+        lines.append("Building cooling, block load: %.1f kW (%.1f TR) at %s 21, %02d:00 - "
+                     "what the plant is sized to." % (
+                         b["block_w"] / 1000.0, b["block_w"] / HVAC.W_PER_TR,
+                         _MONTHS[b["block_month"] - 1], b["block_hour"]))
+        lines.append("Sum of each Space's own peak: %.1f kW - what the terminals are sized "
+                     "to." % (b["sum_of_peaks_w"] / 1000.0))
+        lines.append("Building heating loss: %.1f kW." % (b["heating_w"] / 1000.0))
+    reasons = {}
+    for s in spaces:
+        if s["status"] in ("refused", "missing"):
+            for why in s.get("why") or []:
+                reasons[why] = reasons.get(why, 0) + 1
+    for why, n in sorted(reasons.items(), key=lambda kv: -kv[1])[:3]:
+        lines.append("Refused (%d Space(s)): %s" % (n, why))
+    lines.append("The full table is in the Heron Companion.")
+    lines.append(HVAC.NOT_HAP)
+    lines.append(HVAC.DISCLAIMER)
+    return "\n".join(lines)
+
+
 # --- back into Revit (docs/44 s6, gate 2) -----------------------------------
 
 # One W in IT Btu/h (1 Btu = 1055.05585262 J); one L/s in CFM (1 ft3 = 28.316846592 L)

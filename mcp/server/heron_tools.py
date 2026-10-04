@@ -278,6 +278,12 @@ TOOLS = {
     # page's companion_table_apply below, never this tool.
     "revit_edit_table":         (ANALYZE, "run_fragment_read"),
 
+    # Building loads (docs/44). ANALYZE through run_fragment_read, exactly
+    # revit_edit_table's level: it reads every Space's take-off with
+    # REPORT_SPACE_ENVELOPE, calculates in the brain, and changes nothing.
+    # Writing the loads back is the page's companion_loads_finalize below.
+    "revit_building_loads":     (ANALYZE, "run_fragment_read"),
+
     # Puts a settings capability's CURRENT values on the Companion page as an
     # editable table, sending nothing to Revit. READ, no operation. The
     # page's Apply is companion_apply below, at MODIFY - never this tool.

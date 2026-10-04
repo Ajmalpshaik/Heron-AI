@@ -1451,6 +1451,112 @@ def hvac(calculation, inputs, project=None, project_name=None):
     return _design(HVAC, "hvac", "design.hvac", calculation, inputs, project, project_name)
 
 
+def _loads_inputs(inputs):
+    import json
+    if isinstance(inputs, dict):
+        return inputs
+    text = (inputs or "").strip()
+    if not text:
+        return {}
+    try:
+        got = json.loads(text)
+    except ValueError as why:
+        raise ValueError("the inputs are not a JSON object: %s" % why)
+    if not isinstance(got, dict):
+        raise ValueError("the inputs must be a JSON object - {\"project\": {...}, "
+                         "\"profiles\": {...}, \"overrides\": {...}}")
+    return got
+
+
+def _merged(older, newer):
+    out = dict(older or {})
+    out.update(newer or {})
+    return out
+
+
+def building_loads(takeoff_json, inputs, project=None, project_name=None, save=True):
+    """
+    Every Space's load from REPORT_SPACE_ENVELOPE's take-off - docs/44 s5.
+
+    `inputs` is a dict or a JSON object string: {"project": {...}, "profiles":
+    {...}, "overrides": {...}} - what the modeller has answered so far. With a
+    `project` key, the last run kept for that project fills in what this call
+    did not say (its answers are not asked twice), its HVAC standards are read
+    as hvac() reads them, and a finished run is kept beside them.
+
+    Returns {"asked", "qa", "result", "takeoff", "said", "saved"}. While
+    anything is asked, nothing is calculated and nothing is kept. One audit
+    line, `design.loads`, says how it ended and NEVER carries the inputs.
+    """
+    try:
+        import heron_building_loads as LOADS
+        import heron_takeoff as TAKEOFF
+    except ImportError as exc:
+        raise BrainUnavailable("Heron's building loads could not be imported: %s. It needs "
+                               "nothing beyond Python itself, so this is a broken install."
+                               % exc)
+    try:
+        given = _loads_inputs(inputs)
+        takeoff = TAKEOFF.read(takeoff_json)
+    except ValueError as why:
+        _audit().record("design.loads", False, fields={"status": "unreadable"})
+        return {"asked": [], "qa": [], "result": None, "takeoff": None, "saved": None,
+                "said": "Nothing was calculated: %s" % why}
+
+    recorded = {}
+    last = None
+    if project:
+        try:
+            import heron_designbasis as KEEP
+            recorded, _note = KEEP.read(project, "hvac")
+        except (ValueError, OSError):
+            recorded = {}
+        try:
+            last = LOADS.load(project)
+        except (ValueError, OSError):
+            last = None
+    before = (last or {}).get("inputs") or {}
+    project_inputs = _merged(before.get("project"), given.get("project"))
+    profiles = dict(before.get("profiles") or {})
+    for key, values in (given.get("profiles") or {}).items():
+        profiles[key] = _merged(profiles.get(key), values)
+    overrides = dict(before.get("overrides") or {})
+    for key, values in (given.get("overrides") or {}).items():
+        overrides[str(key)] = _merged(overrides.get(str(key)), values)
+
+    asked = LOADS.needs(takeoff, project_inputs, profiles)
+    qa = TAKEOFF.qa(takeoff)
+    result = saved = None
+    if asked:
+        said = LOADS.questions_text(asked)
+        status = "missing"
+    else:
+        result = LOADS.run(takeoff, project_inputs, profiles, overrides, recorded)
+        said = LOADS.summary_text(result)
+        status = "ok"
+        if save and project:
+            try:
+                saved = LOADS.save(project, result)
+            except (ValueError, OSError) as why:
+                said += "\nThis run was NOT KEPT: %s" % why
+        elif save:
+            said += ("\nThis run was NOT KEPT - Heron does not know which project this is yet "
+                     "(D-33).")
+    counts = {}
+    for s in (result or {}).get("spaces") or []:
+        counts[s["status"]] = counts.get(s["status"], 0) + 1
+    _audit().record("design.loads", status == "ok",
+                    fields={"status": status,
+                            "error": _DESIGN_REFUSALS.get(status)},
+                    numbers={"spaces": len(takeoff.spaces), "asked": len(asked),
+                             "calculated": counts.get("ok", 0),
+                             "refused": counts.get("refused", 0),
+                             "qa_fail": sum(1 for f in qa if f["level"] == "FAIL")})
+    return {"asked": asked, "qa": qa, "result": result, "takeoff": takeoff, "saved": saved,
+            "said": said, "inputs": {"project": project_inputs, "profiles": profiles,
+                                     "overrides": overrides}}
+
+
 def fire(calculation, inputs, project=None, project_name=None):
     """
     One fire protection design calculation - HERON-MEP-FPD-002, docs/42 - or,

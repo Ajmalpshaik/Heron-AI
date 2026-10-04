@@ -32,6 +32,8 @@ WHAT IT DOES NOT PROVE
 from __future__ import print_function
 
 import copy as _copy
+import io
+import json
 import os
 import shutil
 import sys
@@ -242,6 +244,75 @@ def test_unknown_unit_refuses_finalize():
     except ValueError as why:
         refused = str(why)
     assert "kcal/h" in refused
+
+
+# --- the seam and the tool (Task 5) - through heron_brain, which needs no MCP SDK
+
+SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
+
+
+def _brain():
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    import heron_brain
+    return heron_brain
+
+
+def _files(folder):
+    return [os.path.join(d, f) for d, _s, fs in os.walk(folder) for f in fs]
+
+
+def test_seam_calculates_and_keeps_the_run():
+    brain = _brain()
+    with knowledge_folder() as tmp:
+        got = brain.building_loads(json.dumps(ROOM),
+                                   json.dumps({"project": PROJECT, "profiles": {"Office": OFFICE}}),
+                                   project="project-a", project_name="t")
+        assert not got["asked"] and got["result"]["spaces"][0]["status"] == "ok"
+        assert "Spaces calculated: 1;" in got["said"] and " kW (" in got["said"]
+        assert "Office 01" not in got["said"]                  # never the rows
+        assert H.NOT_HAP in got["said"] and "compliant" not in got["said"].lower()
+        assert got["saved"] and got["saved"].startswith(tmp)
+
+
+def test_seam_asks_and_calculates_nothing():
+    brain = _brain()
+    with knowledge_folder() as tmp:
+        project = dict(PROJECT)
+        del project["room_dry_bulb_c"]
+        got = brain.building_loads(json.dumps(ROOM),
+                                   {"project": project, "profiles": {"Office": OFFICE}},
+                                   project="project-a")
+        assert [a["input"] for a in got["asked"]] == ["room_dry_bulb_c"]
+        assert got["result"] is None and "Nothing was calculated" in got["said"]
+        assert not [f for f in _files(tmp) if f.endswith(".json") and ".loads" in f]
+
+
+def test_seam_remembers_the_last_answers():
+    brain = _brain()
+    with knowledge_folder():
+        brain.building_loads(json.dumps(ROOM), {"project": PROJECT,
+                                                "profiles": {"Office": OFFICE}},
+                             project="project-a")
+        again = brain.building_loads(json.dumps(ROOM), {}, project="project-a")
+        assert not again["asked"] and again["result"]["spaces"][0]["status"] == "ok"
+
+
+def test_seam_refuses_an_unreadable_takeoff():
+    got = _brain().building_loads("not json", {})
+    assert got["result"] is None and "Nothing was calculated" in got["said"]
+
+
+def test_tool_reads_the_envelope_checks_the_pin_and_tells_only_totals():
+    server = io.open(SERVER, encoding="utf-8").read()
+    body = server[server.index("def revit_building_loads("):]
+    body = body[:body.index(chr(10) + "@server.tool()")]
+    assert '_through(revit_read, reply_out=out)("REPORT_SPACE_ENVELOPE"' in body
+    assert body.index("if pinned.check(reply):") < body.index("brain.building_loads(")
+    assert "LOADS_PANEL.open(document, answer, _pin_identity())" in body
+    assert "revit_change" not in body and "_change(" not in body
+    sys.path.insert(0, os.path.join(ROOT, "mcp", "server"))
+    import heron_tools as TOOLS
+    assert TOOLS.TOOLS.get("revit_building_loads") == (TOOLS.ANALYZE, "run_fragment_read")
 
 
 if __name__ == "__main__":

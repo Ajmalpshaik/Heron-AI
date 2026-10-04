@@ -2221,6 +2221,76 @@ def revit_edit_table(parameters: str, expect_from: str = "", max_rows: int = 200
                (" %d more were left out." % more) if more else ""))
 
 
+def _open_companion(companion_page):
+    companion = companion_page.shared(bound_pid=_companion_revit)
+    if not companion.recently_seen():
+        try:
+            import webbrowser
+            webbrowser.open(companion.pairing_address(), new=2)
+        except Exception:                            # noqa: BLE001 - the button still works
+            pass
+
+
+@server.tool()
+def revit_building_loads(inputs: str = "", expect_from: str = "") -> str:
+    """
+    Calculate the heating and cooling load of every MEP Space in the open
+    model - docs/44. Heron reads every Space's walls, roofs, floors and
+    windows from Revit (REPORT_SPACE_ENVELOPE, which changes nothing), works
+    out each Space's load with its HVAC engine, adds them up by zone and for
+    the building, and opens the Loads panel in the Heron Companion with the
+    whole table - inputs, results, and what is wrong with the model.
+
+    Use when the user asks to "calculate the loads for this building", "work
+    out the cooling load of every space", "size the spaces' airflow from
+    their loads".
+
+    `inputs` is a JSON object of what the modeller has answered so far:
+    {"project": {"design_weather": "doha-0.4", "room_dry_bulb_c": 24, ...},
+     "profiles": {"Office": {"people_per_m2": 0.1, ...}},
+     "overrides": {"<space id>": {"equipment_w_per_m2": 40}}}. Answers are
+    kept with the open model's project, so they are not asked twice.
+
+    HERON SUPPLIES NO DESIGN VALUE THE MODELLER DID NOT GIVE (D-33). While
+    anything is missing, nothing is calculated and the answer is the list of
+    questions, each with the figure a standard offers - put them to the
+    modeller, never fill them in yourself. A window or wall type with no U or
+    SHGC in the model refuses that Space only, and is never defaulted.
+
+    You are told only the totals; the rows are on the Companion page. Writing
+    the loads back into the Spaces is the page's Finalize button, never this
+    tool. A load here is a peak estimate, not an hourly simulation like HAP.
+    """
+    companion_page = _companion_module()
+    if not companion_page.enabled():
+        return ("The Heron Companion is switched off in Revit, so no loads were calculated. "
+                "To turn it on, click the arrow under the Companion button on the "
+                "Heron tab.")
+    out = {}
+    said = _through(revit_read, reply_out=out)("REPORT_SPACE_ENVELOPE", "", expect_from)
+    reply = out.get("reply")
+    # revit_read has already refused, classified any failure and checked the
+    # pin; when it did not get a good reply, its own sentence is the answer.
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return said
+    # THE PIN'S REFUSAL STANDS, as in revit_edit_table: a good reply from
+    # ANOTHER model must never open a panel whose Finalize targets this one.
+    if pinned.check(reply):
+        return said
+    provides = reply.get("provides") or {}
+    try:
+        answer = brain.building_loads(provides.get("takeoffJson") or "", inputs,
+                                      project=pinned.project_key, project_name=pinned.title)
+    except brain.BrainUnavailable as why:
+        return str(why)
+    if answer.get("takeoff") is None:
+        return answer["said"]
+    document = reply.get("document")
+    companion_page.LOADS_PANEL.open(document, answer, _pin_identity())
+    _open_companion(companion_page)
+    return answer["said"]
+
+
 @server.tool()
 def revit_use_this_model() -> str:
     """
