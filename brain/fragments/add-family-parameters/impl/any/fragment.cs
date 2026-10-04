@@ -506,7 +506,9 @@ if (refused == null && switchExisting)
         string formula = null;
         try { formula = p.Formula; } catch (Exception) { }
         formula = formula ?? "";
-        if (!formulaBefore.ContainsKey(p.Definition.Name)) formulaBefore[p.Definition.Name] = formula;
+        // KEYED BY NAME FROM THE PARAMETER THE NAME SELECTS, so a built-in that
+        // shares a family parameter's name never stands in for its formula.
+        if (byName[p.Definition.Name] == p) formulaBefore[p.Definition.Name] = formula;
         readsOf[p] = namesRead(formula).Select(n => byName[n]).Where(r => r != p).ToList();
     }
 
@@ -587,6 +589,13 @@ if (refused == null && switchExisting)
     var unknown = new List<string>();
     var builtIn = new List<string>();
     var everything = names.Count == 1 && string.Equals(names[0], "all", StringComparison.OrdinalIgnoreCase);
+
+    // "all" IS A REAL NAME TOO. A family that holds a parameter called All
+    // cannot tell the one from every one, so that spelling is refused rather
+    // than read the wider way.
+    var allIsAName = everything
+        && byName.Keys.Any(n => string.Equals(n, "all", StringComparison.OrdinalIgnoreCase));
+    if (allIsAName) everything = false;
     if (everything)
     {
         foreach (var p in everyParameter) if (!isBuiltIn(p) && !asked.Contains(p)) asked.Add(p);
@@ -634,10 +643,27 @@ if (refused == null && switchExisting)
         }
     }
 
+    if (allIsAName)
+        reasons.Add("This family has a parameter called '" + names[0] + "', so all could mean that one "
+            + "or every one. Name the parameters instead.");
+
+    // AN IMAGE PARAMETER IS TYPE ONLY - Revit's MakeInstance throws on one - so
+    // it is refused here by name rather than part-way through.
+    Func<FamilyParameter, bool> isImage = p =>
+    {
+        var spec = specOf(p);
+        if (spec == null) return false;
+        var text = spec.GetType().Name == "ForgeTypeId" ? idText(spec) : spec.ToString();
+        return text == "Image" || text.ToLowerInvariant().Contains(":image-");
+    };
+
     if (wantInstance)
     {
         foreach (var p in toSwitch)
         {
+            if (isImage(p))
+                reasons.Add("'" + p.Definition.Name + "' is an Image parameter, and Revit keeps an image "
+                    + "parameter as type only.");
             var typeLinks = tiedTo(p).Where(t => t.Contains("(TYPE)")).ToList();
             if (typeLinks.Count > 0)
                 reasons.Add("'" + p.Definition.Name + "' drives " + string.Join(", ", typeLinks)

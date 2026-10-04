@@ -30,3 +30,5 @@ to type afterwards and read again. Compiles on all eight releases (2026-10-04).
 | **CA4** | A reporting parameter switched to type | Revit's own refusal quoted first and the whole call rolled back - **record the words**: whether Revit refuses this is not yet measured |
 | **CA5** | The first positive case on Revit 2020 | The same order and read-back as on 2024 |
 | **CA6** | The gate valve itself, in the session that owns it, `all` to instance | Either switched with the connectors and the nested handwheel's link kept, or refused naming exactly what blocks it - **never touched from this group's runs** |
+| **CA7** | A family holding a parameter really called `All`, switched with parameterNames all | Refused as ambiguous, nothing switched (added after review, 2026-10-04; compiled, not yet run) |
+| **CA8** | An Image parameter switched to instance | Refused by name before anything changes - Revit's MakeInstance throws on one (added after review; compiled, not yet run) |

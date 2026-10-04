@@ -80,6 +80,20 @@ negative:
       name the family does not have
     expect: refused by name, nothing switched
 
+  - given: >
+      switchExisting true, parameterNames all, in a family that holds a
+      parameter really called All
+    expect: >
+      refused as ambiguous, nothing switched - never read as every parameter.
+      NOT YET RUN in Revit
+
+  - given: >
+      switchExisting true, instance true, on an Image parameter (or all, in a
+      family that has one)
+    expect: >
+      refused naming it before anything changes - Revit keeps an image
+      parameter as type only. NOT YET RUN in Revit
+
 second_route:
   - >
       Family Types, New Parameter by hand for one of the same names, and its
