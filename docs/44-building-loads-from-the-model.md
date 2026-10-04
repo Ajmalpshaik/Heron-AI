@@ -449,3 +449,36 @@ real outlines), `tests/test_companion.py` (`test_loads`), `tests/test_building_l
 `tests/test_loads_report.py` (the gate), and the page in a browser at desktop width and at 375 px:
 turning, clicking a face, the colour modes, top view, one Space alone, confirming, and the report.
 **Nothing here has met a real Revit**: [Group CC](needs-checking/group-cc.md) rows CC14 to CC17.
+
+### 12.5 The review of 2026-10-04, and what it changed
+
+A fresh reviewer read the whole branch before the pull request. Its findings, and what was done with each:
+
+| Finding | What changed | Where it is held |
+|---|---|---|
+| **A slab between two storeys was read as "nothing beyond"** - the look past a face started half a foot beyond its underside, inside any thicker slab - and such a face was then counted as a wall to an unconditioned space: a third more cooling on the office below | The look starts past the element's own thickness (a floor's, roof's or ceiling's, else its box) and tries two feet further on. **A face Revit still finds nothing beyond is a question, once per element** - outside, unconditioned, conditioned or ground - and its Spaces wait for the answer. It is never guessed | `heron_takeoff.beyond`, `role`, `unknowns`; `needs()` asks `beyond:<element>`; Group CC rows CC18 and CC19 |
+| The block load left out the outdoor air yet was called "what the plant is sized to" | Two blocks: the rooms' own, and **with the outdoor air at the coil**, hour by hour. No sentence says a block sizes plant | `_block`, the summary, the report, the panel |
+| One unconditioned temperature served cooling and heating | `heating_unconditioned_temp_c` beside `unconditioned_temp_c` | `PROJECT_KEYS` |
+| An outside door's type carries no absorptance in Revit, so every Space with one refused | Asked once, **`door_absorptance`**, offered from the sol-air table - only when such a door exists | `needs()`; CC21 |
+| Every curtain panel went into every face of its wall, so a curtain wall across two Spaces refused both | A panel, window or door belongs to the face its box's middle projects onto | the reader; CC22 |
+| Skylights were never read | Windows in a roof, or in a floor above, are read as skylights | the reader; CC20 |
+| Faces Revit could not work out vanished, and the Space ran on internal gains | A placed Space with no faces is a FAIL | `qa()` |
+| A window or door in an outside wall that sits in no Space's face was dropped | A finding names it | the reader; CC25 |
+| Glass in a facade wall whose type is not Exterior gets no sun | A WARN tells the modeller to set the type's Function | `qa()` |
+| A face bounded by an unread link said "type None" | It says the link was not read, and how to read it | `heron_takeoff.UNREAD_LINK` |
+| The site the sun is worked out for was never shown, and a template's default city would run Doha weather with another city's sun | The site is said every run and printed on the sheet; **a site more than 150 km from the design weather's station is a FAIL** | `site_checks()`; CC23 |
+| A project value that is not a number crashed the run; 1000 W/m2.K or RH 0.5 was taken | Every project value is range-checked and refused in words | `_checked_project()` |
+| Recalculate never reads the model, yet the page showed its time as the read time; a load from an old take-off could be written after walls moved | The panel keeps the time the model was read. **Finalize reads the model again and refuses if its geometry changed** (the fingerprint leaves out the values Finalize writes), and checks every row against what Revit holds now | `_loads_finalize`; CC16 |
+| Finalize always said two undo entries | It counts the entries it made: one, or two | `_loads_finalize`; CC24 |
+| Per-Space values, the take-off kept with a run, the read-back on the page | Built: a Space's own people, lights, equipment, outdoor air and set points from its row; each run keeps the take-off it came from (once per fingerprint) and drops its hour-by-hour rows; the read-back after Finalize is on the page | `run()`, `save()`, `load_takeoff()`; the panel |
+
+**One thing the review asked for was not built, on purpose: reconciling the Spaces' area against each
+level's floors.** A model's floors are often drawn twice (a finish and a structural slab) and an MEP
+model often has none of its own, so the check would warn on sound models. The separate-groups check and
+the 3D view stand in for it.
+
+**The smaller findings are left for later and listed in the pull request.** They include: people counted
+with round-half-even; supply air sized at the peak-total hour, not the peak-sensible one; the `m3/h`
+symbol; the report and the runs reading the live pin instead of the panel's model; the panel's poll size;
+a name starting with `=` in a CSV; Spaces not filtered by phase or design option; the Space Type found by
+its English name; and building area including refused Spaces.

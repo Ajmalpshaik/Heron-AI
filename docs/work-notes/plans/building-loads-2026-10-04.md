@@ -1298,6 +1298,16 @@ reader of the old shape simply does not see; gate 1 is built (`confirm`, `confir
 `finalize_rows` refuses an unconfirmed take-off); `heron_takeoff` gains `role`, `summary`, `compass` and
 the separate-groups check.
 
+## Changed after the whole-branch review (2026-10-04)
+
+[docs/44 section 12.5](../../44-building-loads-from-the-model.md) lists each finding and its fix. What it changes in this plan:
+
+- **Format 1 gains no keys for it**; the reader's look past a slab, its skylights, its panel and opening matching and its orphan-opening finding are all inside REPORT_SPACE_ENVELOPE.
+- **Project inputs:** `heating_unconditioned_temp_c` joins `PROJECT_KEYS`; `door_absorptance` is asked only when an outside door's type has no absorptance; a face Revit found nothing beyond is asked as `beyond:<element>` (outside, unconditioned, conditioned or ground). Every project value is range-checked.
+- **Results:** each zone and the building carry `coil_block_w` - with the outdoor air at the coil - beside the rooms' `block_w`; the result carries `site` and `takeoff_fingerprint`.
+- **Gate 1 confirms the take-off before the report is final and before Finalize**, not before anything is calculated: a calculation is read-only and cheap, and the numbers help the check.
+- **Not built, on purpose:** the Spaces' area against each level's floors (docs/44 section 12.5 says why).
+
 ## After the build - the proof (on the owner's word, on the model he names)
 
 1. Deploy the add-in to Revit 2020, 2024 and 2027 with Revit closed; restart Revit, then the Claude app.

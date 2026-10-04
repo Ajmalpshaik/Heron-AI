@@ -34,6 +34,14 @@ write: run it on a rolled-back setup and undo it.
 | **CC15** | **Walls in a linked model** - a model whose walls are in the architect's link, read with and without `include_links` | With it: linked faces read beyond `outside` or `space`, their types named with their link, `linksSearched` the number of loaded links. Without it: those faces read `unknown`, and one finding per link says the links were not read. A nested link is not read |
 | **CC16** | **The take-off gate** - Finalize before and after **The take-off is right**, then a wall moved in Revit and the loads read again | Before: Finalize is shut and the report says DRAFT. After: Finalize opens and the report names who confirmed it and when. After the wall moved: the confirmation is gone and must be given again |
 | **CC17** | **Which way a face points** - the corner office of CC5, coloured by the way each face faces | Each outside wall coloured for the compass direction the plan shows (with CC4's sign settled) - the outline's normal points OUT of the Space |
+| **CC18** | **A Space under a Space** - an office on Level 1 under an office on Level 2, a concrete slab between | The office's top face reads beyond `space` with the upper office's id - never `unknown`. Try a slab thicker than 150 mm: the look starts past its thickness |
+| **CC19** | **A flat roof drawn as a Floor** | Its face reads `unknown`, and Heron asks once for that element: answered `outside`, it is counted as a roof with sun on it |
+| **CC20** | **A skylight** in a roof over one Space | It is read as a `skylight` opening of the roof face, with its own U and SHGC, and drawn on the roof in the 3D view |
+| **CC21** | **An outside door** whose type carries no absorptance (the usual case) | Heron asks for `door_absorptance` once; answered, the door is counted with sun on it. Confirm in Revit that door types show no Absorptance in their Analytical Properties |
+| **CC22** | **A curtain wall across two Spaces** (and across two storeys) | Each Space's face holds only its own panels; no "openings larger than the face" FAIL |
+| **CC23** | **A site left at its template location** (Manage > Location not set) with `doha-0.4` | A FAIL naming the site and how far it is from Doha International, and every Space waits until the location is set |
+| **CC24** | **The undo count** - Finalize with no air terminals in any Space, then with some | One new entry, then two - and the answer says which |
+| **CC25** | **A window in an outside wall behind which no Space is placed** | A finding names it: its load is counted nowhere |
 
 **Then sign.** CC5 and CC6 are the positive case and CC7 the negative for D-30; CC1 to CC4 and the
 Space schedule's own Area and Volume are the second look. The fragment moves to PROVEN only with
