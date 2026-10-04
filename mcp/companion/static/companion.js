@@ -1094,7 +1094,14 @@ function renderLoads(L) {
   (L.spaces || []).forEach(s => {
     const v = s.shown || {};
     const tr = el("tr", s.status === "ok" ? null : "off");
-    tr.append(el("td", null, ((s.number || "") + " " + (s.name || "")).trim()),
+    // The Space's name opens it alone in the 3D view, every other ghosted.
+    const name = el("td");
+    const go = el("button", "linkish", ((s.number || "") + " " + (s.name || "")).trim());
+    go.type = "button";
+    go.title = "Show this Space alone in the 3D view";
+    go.addEventListener("click", () => { if (window.HeronLoads3D) window.HeronLoads3D.focus(String(s.id)); });
+    name.append(go);
+    tr.append(name,
               el("td", null, s.zone || "—"), el("td", "num", fixed(s.area_m2, 1)),
               el("td", "num", fixed(v.sensible_w, 0)), el("td", "num", fixed(v.latent_w, 0)),
               el("td", "num", fixed(v.total_w, 0)), el("td", "num", fixed(v.w_per_m2, 1)),
@@ -1129,6 +1136,26 @@ function renderLoads(L) {
   results.append(rtbl);
   box.append(results);
 
+  // Glass by the way it faces - added up by the brain from the take-off.
+  if (L.summary && L.summary.glass_by_facing) {
+    const glass = el("div", "l-glass");
+    glass.append(el("h3", null, "Glass to outside, by the way it faces"));
+    const gt = el("table");
+    const gh = el("tr");
+    ["", "outside wall m²", "glass m²", "glass % of wall"].forEach((h, i) => gh.append(el("th", i ? "num" : null, h)));
+    gt.append(gh);
+    ["N", "E", "S", "W"].forEach(q => {
+      const g = L.summary.glass_by_facing[q] || {};
+      const tr = el("tr");
+      tr.append(el("td", null, q), el("td", "num", fixed(g.wall_m2, 1)), el("td", "num", fixed(g.glass_m2, 1)),
+                el("td", "num", fixed(g.glass_pct_of_wall, 1)));
+      gt.append(tr);
+    });
+    glass.append(gt, el("p", "small muted", "Glass is " + fixed(L.summary.glass_pct_of_floor, 1) +
+      " % of the " + fixed(L.summary.floor_m2, 1) + " m² of floor placed."));
+    box.append(glass);
+  }
+
   const notes = el("details", "l-notes");
   notes.append(el("summary", null, "What this is, and what it is not"));
   (L.notes || []).forEach(n => notes.append(el("p", "small", n)));
@@ -1146,16 +1173,30 @@ function renderLoads(L) {
   report.title = "Writes the load calculation sheet - HTML, PDF and CSV. Nothing in Revit changes.";
   report.disabled = !L.run_id;
   report.addEventListener("click", () => loadsPost("/api/loads/report", {}, said));
+  // Gate 1 (docs/44 s6): the modeller checks the take-off - the 3D view and
+  // the model checks above - and says so. The report is a draft until then,
+  // and Finalize stays shut.
+  const sure = el("button", null, L.confirmed ? "Take-off confirmed ✓" : "The take-off is right");
+  sure.title = "I have looked at the 3D view and the checks on the model, and the faces are right.";
+  sure.disabled = !L.run_id || !!L.confirmed;
+  sure.addEventListener("click", () => {
+    if (confirm("Confirm that the faces in the 3D view - walls, roofs, windows, what is beyond each - " +
+                "are the building's? The report stops being a draft and Finalize opens.")) {
+      loadsPost("/api/loads/confirm", {}, said);
+    }
+  });
   const ok = (L.spaces || []).filter(s => s.status === "ok");
   const terminals = ok.reduce((n, s) => n + (s.terminals || []).length, 0);
   const finalize = el("button", "primary", "Finalize to Revit");
-  finalize.disabled = !ok.length;
-  finalize.title = "Writes the loads and airflows into " + ok.length + " Spaces and " + terminals +
-    " diffusers - two undo entries in Revit.";
+  finalize.disabled = !ok.length || !L.confirmed;
+  finalize.title = L.confirmed
+    ? "Writes the loads and airflows into " + ok.length + " Spaces and " + terminals +
+      " diffusers - two undo entries in Revit."
+    : "Confirm the take-off first - check the 3D view, then press 'The take-off is right'.";
   finalize.addEventListener("click", () => {
     if (confirm(finalize.title + " Go ahead?")) loadsPost("/api/loads/finalize", {}, said);
   });
-  foot.append(recalc, report, finalize, el("span", "small muted", finalize.title));
+  foot.append(recalc, report, sure, finalize, el("span", "small muted", finalize.title));
   box.append(foot);
   if (L.report) {
     const r = el("p", "small");
@@ -1194,10 +1235,13 @@ async function loads_() {
     const res = await fetch("/api/loads", { headers: HEADER, credentials: "same-origin" });
     if (!res.ok) return;
     const L = (await res.json()).loads;
-    const key = L ? (L.run_id || "") + "/" + L.at + "/" + (L.report ? "r" : "") + (L.finalized ? L.finalized.at : "") : "none";
+    const key = L ? (L.run_id || "") + "/" + L.at + "/" + (L.report ? "r" : "") + (L.confirmed ? "c" : "") +
+      (L.finalized ? L.finalized.at : "") : "none";
     if (key === loadsShown) return;
     loadsShown = key;
     renderLoads(L);
+    // The 3D view keeps its own camera across redraws; it reloads only for a new run.
+    if (window.HeronLoads3D) window.HeronLoads3D.update($("l-3d"), L && L.has_view ? (L.run_id || "") + "/" + L.at : null);
   } catch (e) { /* the state poll reports a closed page */ }
 }
 

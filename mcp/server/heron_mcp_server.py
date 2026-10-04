@@ -1868,6 +1868,13 @@ def _loads_report(takeoff, result):
     return got
 
 
+def _loads_confirm(takeoff, result):
+    started = time.strftime("%H:%M:%S")
+    got = brain.loads_confirm(takeoff, result, project=pinned.project_key)
+    _note("companion_loads_confirm", started, 0, reply=got.get("said"))
+    return got
+
+
 def _loads_finalize(takeoff, result, identity):
     """
     Finalize (docs/44 s6, gate 2): the three Space fields through ONE
@@ -2357,7 +2364,8 @@ def _open_companion(companion_page):
 
 
 @server.tool()
-def revit_building_loads(inputs: str = "", expect_from: str = "") -> str:
+def revit_building_loads(inputs: str = "", expect_from: str = "",
+                         include_links: bool = False) -> str:
     """
     Calculate the heating and cooling load of every MEP Space in the open
     model - docs/44. Heron reads every Space's walls, roofs, floors and
@@ -2382,9 +2390,18 @@ def revit_building_loads(inputs: str = "", expect_from: str = "") -> str:
     modeller, never fill them in yourself. A window or wall type with no U or
     SHGC in the model refuses that Space only, and is never defaulted.
 
-    You are told only the totals; the rows are on the Companion page. Writing
-    the loads back into the Spaces is the page's Finalize button, never this
-    tool. A load here is a peak estimate, not an hourly simulation like HAP.
+    `include_links` (D-59, the modeller decides): in a federated model the
+    walls are in the architect's link. Set it when the modeller says the
+    walls are linked - each linked wall's type, windows and doors are then
+    read from its link. Left false, those faces read "unknown" and the model
+    checks say the links were not read.
+
+    You are told only the totals; the rows are on the Companion page, with a
+    3D view of the very faces the loads were worked out from. The modeller
+    checks that view and presses "The take-off is right" before the report is
+    final; writing the loads back into the Spaces is the page's Finalize
+    button, never this tool. A load here is a peak estimate, not an hourly
+    simulation like HAP.
     """
     companion_page = _companion_module()
     if not companion_page.enabled():
@@ -2392,7 +2409,8 @@ def revit_building_loads(inputs: str = "", expect_from: str = "") -> str:
                 "To turn it on, click the arrow under the Companion button on the "
                 "Heron tab.")
     out = {}
-    said = _through(revit_read, reply_out=out)("REPORT_SPACE_ENVELOPE", "", expect_from)
+    said = _through(revit_read, reply_out=out)(
+        "REPORT_SPACE_ENVELOPE", "includeLinks=true" if include_links else "", expect_from)
     reply = out.get("reply")
     # revit_read has already refused, classified any failure and checked the
     # pin; when it did not get a good reply, its own sentence is the answer.
@@ -5327,6 +5345,7 @@ if __name__ == "__main__":
         companion_page.LOADS_PANEL.finalize_hook = _loads_finalize
         companion_page.LOADS_PANEL.runs_hook = _loads_runs
         companion_page.LOADS_PANEL.run_hook = _loads_run
+        companion_page.LOADS_PANEL.confirm_hook = _loads_confirm
         companion_page.keep(bound_pid=_companion_revit)
     except Exception as why:                         # noqa: BLE001 - never cost the chat
         sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)

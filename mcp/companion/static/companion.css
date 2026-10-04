@@ -559,3 +559,30 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 @media (max-width: 899px) {
   #loads .l-inputs, #loads .l-results { display: block; max-width: 100%; }
 }
+
+/* ------------------------------------------------------------ loads 3D view */
+#loads .l3d { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 12px; margin-top: 14px; }
+#loads .l3d[hidden] { display: none; }
+#loads .l3d-stage { position: relative; min-height: 420px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); overflow: hidden; }
+#loads .l3d-stage canvas { display: block; width: 100%; height: 520px; touch-action: none; cursor: grab; }
+#loads .l3d-side { font-size: 13px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+#loads .l3d-row { display: flex; flex-direction: column; gap: 3px; }
+#loads .l3d-row select { width: 100%; font: inherit; padding: 3px 4px; }
+#loads .l3d-ticks { display: grid; grid-template-columns: 1fr; gap: 2px; }
+#loads .l3d-tick { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+#loads .l3d-buttons { display: flex; flex-wrap: wrap; gap: 4px; }
+#loads .l3d-buttons button { flex: 1 1 auto; min-width: 2.4em; }
+#loads .l3d-key { display: flex; align-items: center; gap: 6px; font-size: 12px; margin: 2px 0; }
+#loads .l3d-key i { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line); flex: none; }
+#loads .l3d-ramp { height: 10px; border-radius: 5px; margin: 4px 0 2px; }
+#loads .l3d-ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+#loads .l3d-info dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; margin: 0; font-size: 12px; }
+#loads .l3d-info dt { color: var(--muted); }
+#loads .l3d-info dd { margin: 0; word-break: break-word; }
+#loads .warn { color: var(--warn); }
+#loads button.linkish { background: none; border: 0; padding: 0; font: inherit; color: var(--primary); cursor: pointer; text-align: left; text-decoration: underline dotted; }
+#loads .l-glass table { max-width: 420px; }
+@media (max-width: 899px) {
+  #loads .l3d { grid-template-columns: minmax(0, 1fr); }
+  #loads .l3d-stage canvas { height: 360px; }
+}

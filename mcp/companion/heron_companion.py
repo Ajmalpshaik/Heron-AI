@@ -76,6 +76,9 @@ PAIR_SECONDS = 120
 PAGES = {
     "/": ("index.html", "text/html; charset=utf-8"),
     "/companion.js": ("companion.js", "text/javascript; charset=utf-8"),
+    # The Loads panel's 3D view: a renderer of its own, so nothing is fetched
+    # from the internet (docs/44 s12).
+    "/loads3d.js": ("loads3d.js", "text/javascript; charset=utf-8"),
     "/companion.css": ("companion.css", "text/css; charset=utf-8"),
 }
 
@@ -587,12 +590,14 @@ class LoadsPanel(object):
         #: -> brain answer; report_hook(panel) -> {"ok", "said", "html", "pdf",
         #: "csv"}; finalize_hook(takeoff, result, identity) -> {"ok", "said",
         #: "finalized"}; runs_hook(document) -> [run]; run_hook(document, id)
-        #: -> a kept run or None.
+        #: -> a kept run or None; confirm_hook(takeoff, result) -> {"ok",
+        #: "said", "result"}.
         self.recalculate_hook = None
         self.report_hook = None
         self.finalize_hook = None
         self.runs_hook = None
         self.run_hook = None
+        self.confirm_hook = None
 
     def open(self, document, answer, identity=None):
         result = answer.get("result") or {}
@@ -617,6 +622,12 @@ class LoadsPanel(object):
                 "building": result.get("building"), "notes": list(result.get("notes") or []),
                 "run_id": result.get("run_id"), "units": result.get("units"),
                 "said": answer.get("said"), "report": None, "finalized": None,
+                "confirmed": bool(answer.get("confirmed")),
+                "summary": answer.get("summary"),
+                # The 3D view's data, served on its own route: it is the
+                # biggest thing the panel holds and the page asks for it only
+                # when the 3D view is opened or the run changed.
+                "view": answer.get("view"),
                 "result": answer.get("result")}
 
     def current(self):
@@ -625,7 +636,30 @@ class LoadsPanel(object):
                 return None
             held = dict(self._held)
         held.pop("result", None)
+        held["has_view"] = bool(held.pop("view", None))
         return json.loads(json.dumps(held))
+
+    def view(self):
+        """The 3D view's data for the run on the page - drawn by the page, made in brain/."""
+        with self._lock:
+            got = self._held.get("view") if self._held else None
+            return json.loads(json.dumps(got)) if got else None
+
+    def confirm(self):
+        """Gate 1: the modeller says the take-off on the page is right (docs/44 s6)."""
+        hook = self.confirm_hook
+        if hook is None:
+            return {"ok": False, "said": self.GONE}
+        takeoff, result, _identity = self._snapshot()
+        if takeoff is None or not result:
+            return {"ok": False, "said": "nothing has been calculated yet, so there is no "
+                                         "take-off to confirm"}
+        got = hook(takeoff, result) or {}
+        if got.get("ok"):
+            with self._lock:
+                if self._held is not None and self._held.get("result") is result:
+                    self._held["confirmed"] = True
+        return {"ok": bool(got.get("ok")), "said": got.get("said")}
 
     def _snapshot(self):
         with self._lock:
@@ -1146,6 +1180,11 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if why:
                 return self._refuse(403, why)
             return self._json(200, {"ok": True, "loads": LOADS_PANEL.current()})
+        if path == "/api/loads/view":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "view": LOADS_PANEL.view()})
         if path == "/api/loads/runs":
             why = self._api_ok()
             if why:
@@ -1205,7 +1244,8 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             except (ValueError, TypeError, UnicodeDecodeError):
                 return self._refuse(400, "unreadable")
             return self._json(200, CHANGES.apply(card_id, body.get("values")))
-        if path in ("/api/loads/recalculate", "/api/loads/report", "/api/loads/finalize"):
+        if path in ("/api/loads/recalculate", "/api/loads/report", "/api/loads/finalize",
+                    "/api/loads/confirm"):
             why = self._api_ok()
             if why:
                 return self._refuse(403, why)
@@ -1218,6 +1258,8 @@ class _Handler(http.server.BaseHTTPRequestHandler):
                 return self._json(200, LOADS_PANEL.recalculate(body))
             if path.endswith("/report"):
                 return self._json(200, LOADS_PANEL.report())
+            if path.endswith("/confirm"):
+                return self._json(200, LOADS_PANEL.confirm())
             return self._json(200, LOADS_PANEL.finalize())
         if path == "/api/changes/clear":
             why = self._api_ok()

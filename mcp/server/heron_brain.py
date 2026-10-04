@@ -1490,6 +1490,7 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
     """
     try:
         import heron_building_loads as LOADS
+        import heron_loads_view as VIEW
         import heron_takeoff as TAKEOFF
     except ImportError as exc:
         raise BrainUnavailable("Heron's building loads could not be imported: %s. It needs "
@@ -1532,7 +1533,17 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
         status = "missing"
     else:
         result = LOADS.run(takeoff, project_inputs, profiles, overrides, recorded)
+        # GATE 1 HOLDS FOR THE GEOMETRY, NOT FOR THE INPUTS: a take-off the
+        # modeller confirmed stays confirmed through a Recalculate of the same
+        # geometry, and a model read again with any face changed must be
+        # confirmed again (docs/44 s6).
+        if last and LOADS.confirmed(last, takeoff):
+            result["geometry_confirmed"] = dict(last["geometry_confirmed"])
         said = LOADS.summary_text(result)
+        if not LOADS.confirmed(result, takeoff):
+            said += (chr(10) + "The take-off is NOT CONFIRMED yet: the modeller checks it in the "
+                     "Companion's 3D view and presses 'The take-off is right' before the "
+                     "report is final or anything is written back.")
         status = "ok"
         if save and project:
             try:
@@ -1554,7 +1565,31 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
                              "qa_fail": sum(1 for f in qa if f["level"] == "FAIL")})
     return {"asked": asked, "qa": qa, "result": result, "takeoff": takeoff, "saved": saved,
             "said": said, "inputs": {"project": project_inputs, "profiles": profiles,
-                                     "overrides": overrides}}
+                                     "overrides": overrides},
+            # What the Companion's 3D view draws - the same faces, worked out in
+            # brain/ (docs/44 s12). Drawn before anything is calculated too, so
+            # the geometry can be checked while the questions are answered.
+            "view": VIEW.build(takeoff, result),
+            "summary": TAKEOFF.summary(takeoff),
+            "confirmed": bool(result) and LOADS.confirmed(result, takeoff)}
+
+
+def loads_confirm(takeoff, result, project=None):
+    """Gate 1 (docs/44 s6): the modeller has checked this take-off. Recorded with the run,
+    and kept with the project's copy of it. Returns {"ok", "said", "result"}."""
+    import heron_building_loads as LOADS
+    if not result:
+        return {"ok": False, "said": "Nothing has been calculated yet, so there is no run to "
+                                     "record the check against."}
+    LOADS.confirm(result, takeoff)
+    said = "The take-off is confirmed for this run - its report is final and Finalize is open."
+    if project:
+        try:
+            LOADS.save(project, result, replace=True)
+        except (ValueError, OSError) as why:
+            said += " It was NOT KEPT with the project: %s" % why
+    _audit().record("design.loads_confirm", True, fields={"status": "ok"})
+    return {"ok": True, "said": said, "result": result}
 
 
 def loads_report(takeoff, result, model_path=None, project=None):

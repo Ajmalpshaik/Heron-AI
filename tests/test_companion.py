@@ -251,9 +251,14 @@ def test_no_way_to_an_ai():
     check(tools.TOOLS.get("heron_companion") == (tools.READ, None),
           "heron_companion is declared READ with no Revit operation")
 
-    js = io.open(PAGE_JS, encoding="utf-8").read()
-    check("innerHTML" not in js and "insertAdjacentHTML" not in js,
-          "the page puts model text on screen as text, never as HTML")
+    static = os.path.join(ROOT, "mcp", "companion", "static")
+    for name in sorted(n for n in os.listdir(static) if n.endswith(".js")):
+        js = io.open(os.path.join(static, name), encoding="utf-8").read()
+        check("innerHTML" not in js and "insertAdjacentHTML" not in js
+              and "outerHTML" not in js and "document.write" not in js,
+              "%s puts model text on screen as text, never as HTML" % name)
+        check(not re.search(r"https?://", js.replace("http://127.0.0.1", "")),
+              "%s names no address outside this PC" % name)
 
 
 def test_addin_side():
@@ -714,6 +719,39 @@ def test_loads():
     check(b'id="loads"' in page[2], "the page has the Loads section")
     check(printed == "", "nothing reached stdout")
 
+    # The 3D view (docs/44 s12): its data is made in brain/ and served on its
+    # own route; the page file is served from the whitelist; the take-off is
+    # confirmed through a hook, behind the same pairing.
+    view_panel = hc.LoadsPanel()
+    check(view_panel.view() is None and view_panel.confirm()["ok"] is False,
+          "an empty panel has no 3D view and confirms nothing")
+    from test_loads_view import l_building
+    shaped = brain_seam.building_loads(json.dumps(l_building()), {
+        "project": PROJECT, "profiles": {"Office": OFFICE}}, save=False)
+    view_panel.open("Project1", shaped, ("Project1", "", "11"))
+    drawn = view_panel.view()
+    check(drawn and drawn["faces"] and "view" not in view_panel.current()
+          and view_panel.current()["has_view"] is True,
+          "the 3D view's data is served on its own route, not inside every poll")
+    check(view_panel.confirm()["ok"] is False and view_panel.current()["confirmed"] is False,
+          "with no chat connected the take-off cannot be confirmed")
+    view_panel.confirm_hook = lambda t, r: brain_seam.loads_confirm(t, r)
+    said = view_panel.confirm()
+    check(said["ok"] and view_panel.current()["confirmed"] is True,
+          "'The take-off is right' records the check through the brain")
+    check(hc.PAGES.get("/loads3d.js", (None,))[0] == "loads3d.js"
+          and set(hc.PAGES) == {"/", "/companion.js", "/companion.css", "/loads3d.js"},
+          "the page files are a fixed list - the 3D view's script is on it, nothing else")
+    for route in ("/api/loads/view", "/api/loads/confirm"):
+        check(route in source, "the page can ask for %s" % route)
+    i = source.index('if path == "/api/loads/view":')
+    check(source.index("why = self._api_ok()", i) < source.index("LOADS_PANEL.view()", i),
+          "the 3D view's data is behind _api_ok like every other route")
+    page_js = io.open(os.path.join(ROOT, "mcp", "companion", "static", "loads3d.js"),
+                      encoding="utf-8").read()
+    check("fetch(\"/api/loads/view\"" in page_js and "import " not in page_js,
+          "the 3D view fetches only its own data and loads no library")
+
     server = io.open(SERVER, encoding="utf-8").read()
     fin = server[server.index("def _loads_finalize("):]
     fin = fin[:fin.index(chr(10) + "def ", 10)]
@@ -725,8 +763,10 @@ def test_loads():
     check(tools.COMPANION_ACTIONS.get("companion_loads_finalize") == (tools.MODIFY,
                                                                       "run_fragment_write"),
           "Finalize is declared MODIFY through run_fragment_write")
+    check("LOADS.finalize_rows(takeoff, result)" in fin,
+          "Finalize builds its rows through the brain, which refuses a take-off nobody confirmed")
     for hook in ("recalculate_hook = _loads_recalculate", "report_hook = _loads_report",
-                 "finalize_hook = _loads_finalize"):
+                 "finalize_hook = _loads_finalize", "confirm_hook = _loads_confirm"):
         check(hook in server, "the server sets %s" % hook.split(" =")[0])
 
 
