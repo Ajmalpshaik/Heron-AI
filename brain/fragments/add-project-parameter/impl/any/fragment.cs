@@ -39,7 +39,7 @@
 // not proof that the binding is there.
 //
 // ===========================================================================
-// VERSION 2 (FRAGMENT-ISSUES 5b-316).
+// VERSION 2 (FRAGMENT-ISSUES 5b-317).
 // ===========================================================================
 //
 // THE APPLICATION'S SHARED PARAMETER FILE IS PUT BACK. Version 1 pointed
@@ -287,7 +287,7 @@ else
         finally
         {
             // PUT THE SESSION'S SETTING BACK, and read it to be sure. Undo cannot
-            // do this - the setting is outside every transaction (5b-316).
+            // do this - the setting is outside every transaction (5b-317).
             try
             {
                 app.SharedParametersFilename = previousSharedFile ?? "";

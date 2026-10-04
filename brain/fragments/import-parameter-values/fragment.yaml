@@ -70,13 +70,13 @@ purpose: >
   **VERSION 3 TAKES A YES/NO COLUMN BACK, AND ASKS WHAT A BLANK CELL MEANS.**
   The parameter export writes a tick box as the word Revit shows, Yes or No,
   and version 2 read an Integer cell only as a whole number - so a file this
-  library had just written could not come back (FRAGMENT-ISSUES 5b-314). A
+  library had just written could not come back (FRAGMENT-ISSUES 5b-315). A
   Yes/No parameter is now recognised first, on every release from 2020, the
   way `WRITE_ELEMENT_PARAMETERS` version 4 recognises one, and takes Yes/No,
   True/False, On/Off and 1/0 in any case; any other word is refused, counted
   apart and named. Its read-back is the 1 or 0 Revit holds, not the displayed
   word. And version 2 cleared a text value wherever its cell was blank, without
-  a word, while refusing the same blank for a number (5b-315). `blankCells` is
+  a word, while refusing the same blank for a number (5b-316). `blankCells` is
   now ASKED, with no default: `skip` leaves every element whose cell is blank
   exactly as it was and counts the cells in `blankCellsSkipped`; `clear`
   empties a TEXT parameter, counts it in `cellsCleared`, and refuses a blank
@@ -99,7 +99,7 @@ contract:
       source: request
     # "skip" or "clear" - what an empty cell means. ASKED, NO DEFAULT: one of
     # the two deletes what somebody typed, so Heron never picks. Anything
-    # else refuses the run (version 3, 5b-315).
+    # else refuses the run (version 3, 5b-316).
     - name: blankCells
       type: string
       source: request

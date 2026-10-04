@@ -18,7 +18,7 @@ purpose: >
   under none, an element that arrives as an anonymous proxy or not at all, two
   objects with one identity, and MEP pieces that leave their system behind.
   Every step reads; nothing is changed, and nothing is called ready - a step
-  that passes means the values it checked were met (docs/44 s3).
+  that passes means the values it checked were met (docs/45 s3).
 
   1. REPORT_LEVEL_ELEVATIONS, version 3, for each level's Building Story tick
      and how many elements sit on a level without it. The exporter makes a
@@ -86,9 +86,9 @@ preconditions:
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
-  WRITTEN FROM A STUDY, NOT FROM A JOB - docs/44, 2026-10-04. Every step is a
+  WRITTEN FROM A STUDY, NOT FROM A JOB - docs/45, 2026-10-04. Every step is a
   capability Heron already has except step 1's Building Story count, which is
   REPORT_LEVEL_ELEVATIONS version 3 (DRAFT). Which level an element on an
   unticked level is filed under, and what Revit names its IFC parameters on
-  each release from 2020, are not measured: Group CC (CC9) measures them on a
+  each release from 2020, are not measured: Group CD (CD9) measures them on a
   scratch model, and this recipe stays DRAFT until then.

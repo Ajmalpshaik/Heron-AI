@@ -37,14 +37,14 @@ positive:
     expect: >
       four values written, each tick box in Properties now matching its row,
       and none counted as read back different. Version 2 refused all four
-      (5b-314). "true", "OFF", "1" and "0" are taken the same way
+      (5b-315). "true", "OFF", "1" and "0" are taken the same way
 
   - given: >
       version 3 - a Comments column with one cell left empty, on an element
       whose Comments reads "keep me", and blankCells "skip"
     expect: >
       that element's Comments still reads "keep me", blankCellsSkipped 1, and
-      the other rows written as normal (5b-315)
+      the other rows written as normal (5b-316)
 
   - given: the same file with blankCells "clear"
     expect: >

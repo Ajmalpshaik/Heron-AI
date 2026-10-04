@@ -2,7 +2,7 @@
 # and PLACE_STRUCTURAL_FAMILY version 2 (a column's top, FRG-ELE-064).
 # Written 2026-10-04 and NOT RUN as a proof - the owner runs it, on a TEST COPY.
 #
-#     python tools/batch-prove.py tools/jobs/study-44-sill-and-column-top.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/study-45-sill-and-column-top.yaml --dry-run
 #
 # THE ARRANGEMENT IS BUILT FIRST, on a new scratch project saved as
 # "Heron-CC-scratch" (metric, Revit 2024), because no model here is known to

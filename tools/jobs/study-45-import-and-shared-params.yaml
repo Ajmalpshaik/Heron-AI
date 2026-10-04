@@ -1,5 +1,5 @@
-# The first proofs of three DRAFT widenings - FRAGMENT-ISSUES 5b-314, 5b-315
-# and 5b-316, NEEDS-CHECKING Group CC:
+# The first proofs of three DRAFT widenings - FRAGMENT-ISSUES 5b-315, 5b-316
+# and 5b-317, NEEDS-CHECKING Group CD:
 #
 #   import-parameter-values      (IMPORT_PARAMETER_VALUES, FRG-PAR-015) v3 -
 #                                a Yes/No column comes back; a blank cell is
@@ -10,8 +10,8 @@
 #   transfer-project-parameters-between-documents   (FRG-PAR-020) v2 - the
 #                                same setting put back
 #
-#     python tools/batch-prove.py tools/jobs/study-44-import-and-shared-params.yaml --dry-run
-#     python tools/batch-prove.py tools/jobs/study-44-import-and-shared-params.yaml
+#     python tools/batch-prove.py tools/jobs/study-45-import-and-shared-params.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/study-45-import-and-shared-params.yaml
 #
 # RUN ON TEST COPIES, never a working file. `write: true` runs both legs inside
 # a transaction group and ROLLS THEM BACK - but rollback has failed before on
@@ -28,7 +28,7 @@
 # heron-cc-other.txt (a copy of any valid shared parameter file). Note the path.
 # If the setting already reads heron-cc-shared.txt, "put back" is put back to
 # the same value and proves nothing. After EACH job, read the box again: it
-# must show the noted path. That reading is the proof of 5b-316;
+# must show the noted path. That reading is the proof of 5b-317;
 # `sharedParameterFileRestored` is the fragment's own word for it.
 #
 # NOT KEPT, AND NOT UNDOABLE: the add-project-parameter positive WRITES a
@@ -44,7 +44,7 @@ defaults:
   write: true
 
 jobs:
-  # ---------------------------------------------------------------- 5b-314/315
+  # ---------------------------------------------------------------- 5b-315/315
   # MAKE THE FILES FROM THE MODEL. Run EXPORT_PARAMETERS_TO_CSV over the 15 fan
   # coil units with Show_Clearance and Comments, save it as
   # import-yesno.csv, then by hand:
@@ -85,7 +85,7 @@ jobs:
       blankCells "clear" (that unit's Comments empties, cellsCleared 1) and
       with blankCells "" (refused, nothing written on any unit).
 
-  # ---------------------------------------------------------------- 5b-316
+  # ---------------------------------------------------------------- 5b-317
   # heron-cc-shared.txt: a valid shared parameter file, header and META only,
   # or let the positive create it. POSITIVE binds HERON_CC_TAG to Ducts.
   # NEGATIVE: the same file and name, asked ONLY for a category Revit does not

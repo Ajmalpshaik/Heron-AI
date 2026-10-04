@@ -153,7 +153,7 @@ asked which, one at a time.
 | ~~Curtain wall grid lines and mullions~~ | **Built 2026-09-25, DRAFT** - the grid and the mullions of a curtain wall TYPE, and a reader of both (§3 lesson 12). Still not built: a fixed NUMBER of divisions, which is a per-wall count, and one grid line placed by hand |
 | A wall's profile - an arched head | |
 | A ground surface | Revit 2024 brought in the toposolid in place of the toposurface, so it is two routes across Heron's eight releases |
-| ~~Stairs~~ and railings | **Stairs built as `CREATE_STAIRS`, DRAFT** - recorded 2026-10-04 by [44](44-five-more-downloaded-skill-files.md), which found this line out of date. Railings are still not built |
+| ~~Stairs~~ and railings | **Stairs built as `CREATE_STAIRS`, DRAFT** - recorded 2026-10-04 by [44](45-five-more-downloaded-skill-files.md), which found this line out of date. Railings are still not built |
 | Wall foundations, and reinforcement | Reinforcement needs its host to exist first |
 | Parts, and making an assembly | |
 | Point clouds | |

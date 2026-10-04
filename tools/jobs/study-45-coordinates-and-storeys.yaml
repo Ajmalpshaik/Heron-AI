@@ -9,8 +9,8 @@
 #                             each level's Building Story setting, and a count
 #                             of model elements on every level NOT marked
 #
-#     python tools/batch-prove.py tools/jobs/study-44-coordinates-and-storeys.yaml --dry-run
-#     python tools/batch-prove.py tools/jobs/study-44-coordinates-and-storeys.yaml
+#     python tools/batch-prove.py tools/jobs/study-45-coordinates-and-storeys.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/study-45-coordinates-and-storeys.yaml
 #
 # Run by the owner, on test copies, never by the session that wrote it.
 #

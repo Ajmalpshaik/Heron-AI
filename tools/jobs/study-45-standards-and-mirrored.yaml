@@ -2,8 +2,8 @@
 # CHECK_MODEL_STANDARDS version 2 (type and room name rules, value patterns,
 # placeholders) and REPORT_MIRRORED_INSTANCES version 1 (new). Both DRAFT.
 #
-#     python tools/batch-prove.py tools/jobs/study-44-standards-and-mirrored.yaml --dry-run
-#     python tools/batch-prove.py tools/jobs/study-44-standards-and-mirrored.yaml
+#     python tools/batch-prove.py tools/jobs/study-45-standards-and-mirrored.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/study-45-standards-and-mirrored.yaml
 #
 # Run by the owner, on a test copy, never by the session that wrote it. Neither
 # fragment takes a selection, so there is no setup chain: both negatives come
@@ -44,7 +44,7 @@ jobs:
       type as "Family: Type" with no space before the colon, the negative
       lists none. If "Family and Type" comes back NOT READ on any duct, that is
       row 5b-203's guard firing and is itself worth recording. The value and
-      placeholder keys are proved separately by hand (Group CC), because they
+      placeholder keys are proved separately by hand (Group CD), because they
       need a parameter value the owner sets on a test copy.
 
   # THE ARRANGEMENT IS THE WORK. On a test copy of Project1, before running:

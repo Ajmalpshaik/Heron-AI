@@ -7,7 +7,7 @@ Heron-Layer:  brain
 See docs/29-metadata-standard.md
 -->
 
-# 44 — Five more downloaded skill files, studied
+# 45 — Five more downloaded skill files, studied
 
 **Asked 2026-10-04.** The owner shared the folder [39](39-three-downloaded-skill-sets.md) studied again,
 now thirteen files, and asked for each and everything in it to be checked and, where it is useful, made
@@ -24,8 +24,8 @@ tool name, no sentence, no file name, no code.
 
 | What it produced | Where it lives now |
 |---|---|
-| **Three defects in Heron, found by reading Heron's code against a lesson in the files** - a Yes/No column Heron exports that Heron cannot import back; a blank spreadsheet cell that silently wiped a text value; and two fragments that left Revit's own shared parameter file setting pointed at Heron's path, where Undo never reaches | Rows [5b-314, 5b-315, 5b-316](fragment-issues/section-5b-rows-176-200.md) - each fixed in a DRAFT fragment, §5 |
-| **Eight fragments widened, one added**, all DRAFT, compiled for every release Heron supports | §5, and [Group CC](needs-checking/group-cc.md) to prove them |
+| **Three defects in Heron, found by reading Heron's code against a lesson in the files** - a Yes/No column Heron exports that Heron cannot import back; a blank spreadsheet cell that silently wiped a text value; and two fragments that left Revit's own shared parameter file setting pointed at Heron's path, where Undo never reaches | Rows [5b-315, 5b-316, 5b-317](fragment-issues/section-5b-rows-176-200.md) - each fixed in a DRAFT fragment, §5 |
+| **Eight fragments widened, one added**, all DRAFT, compiled for every release Heron supports | §5, and [Group CD](needs-checking/group-cd.md) to prove them |
 | **A method, written down:** what to read in the model before it goes out as IFC | [`ifc-export-readiness`](../brain/skills/ifc-export-readiness.yaml), DRAFT |
 | **What is worth building but touches a PROVEN fragment**, so waits for the owner's word | §6 |
 | **Why most of it is out of scope** | §7 |
@@ -157,7 +157,7 @@ most were **already held** - checked in Heron's code, not its documents:
 - **Stairs refused inside an open transaction.** Held, and isolated independently in `CREATE_STAIRS` - their
   diagnosis and Heron's agree.
 
-**Three were broken in Heron, and are fixed at DRAFT** - rows [5b-314 to 5b-316](fragment-issues/section-5b-rows-176-200.md):
+**Three were broken in Heron, and are fixed at DRAFT** - rows [5b-315 to 5b-317](fragment-issues/section-5b-rows-176-200.md):
 
 1. **A Yes/No round trip.** The export writes a tick box as *Yes* or *No*; the import took only a whole
    number, so every tick box came back refused. Safe, and useless.
@@ -179,14 +179,14 @@ the coordinates are wrong (a threshold, not a fact); and a dating of the toposol
 
 ## 5. Built, all DRAFT
 
-**Compiled for every release Heron supports; not one has run in Revit.** The proofs are [Group CC](needs-checking/group-cc.md).
+**Compiled for every release Heron supports; not one has run in Revit.** The proofs are [Group CD](needs-checking/group-cd.md).
 Every one below was DRAFT before it was touched, so **no proven fragment lost its proof** for this.
 
 | Fragment | Version | What it does now, in Revit words |
 |---|---|---|
-| `IMPORT_PARAMETER_VALUES` | 3 | Takes a Yes/No column back - Yes/No, True/False, On/Off, 1/0 - and reads it back. **Asks every time what an empty cell means**, leave or clear, and counts what it left (5b-314, 5b-315) |
-| `ADD_PROJECT_PARAMETER` | 2 | Puts Revit's shared parameter file setting back as it found it, whatever happens; names a category that cannot take the parameter, and one Revit dropped (5b-316) |
-| `TRANSFER_PROJECT_PARAMETERS_BETWEEN_DOCUMENTS` | 2 | Puts the setting back the same way (5b-316) |
+| `IMPORT_PARAMETER_VALUES` | 3 | Takes a Yes/No column back - Yes/No, True/False, On/Off, 1/0 - and reads it back. **Asks every time what an empty cell means**, leave or clear, and counts what it left (5b-315, 5b-316) |
+| `ADD_PROJECT_PARAMETER` | 2 | Puts Revit's shared parameter file setting back as it found it, whatever happens; names a category that cannot take the parameter, and one Revit dropped (5b-317) |
+| `TRANSFER_PROJECT_PARAMETERS_BETWEEN_DOCUMENTS` | 2 | Puts the setting back the same way (5b-317) |
 | `PLACE_HOSTED_FAMILY` | 3 | Takes a **sill height** for a window, sets it, reads it back. Without one it places as before and says what sill Revit gave |
 | `PLACE_STRUCTURAL_FAMILY` | 2 | Takes a **top level** and top offset for a column, refuses a top at or below the base before placing anything, and reads the top back |
 | `REPORT_LOCATION` | 3 | Gives positions in **shared (survey) coordinates** beside the internal ones, the angle to true north, and where the project base point and survey point are |
@@ -212,7 +212,7 @@ model does not have is NOT CHECKED, never zero**.
    scratch store: the new report now takes *is this door / fixture / equipment mirrored* and *are the toilets
    mirrored*, and *mirror these to the other room* and *copy it mirrored* still reach the mirror. Routing
    rows were added to `MIRROR_ELEMENTS`, `FLIP_ELEMENTS` and `REPORT_DOOR_ROOM_LINKS` - card wording,
-   outside the proof seal. [CC12](needs-checking/group-cc.md) checks it again after the merge.
+   outside the proof seal. [CD12](needs-checking/group-cd.md) checks it again after the merge.
 3. **The Building Story count has no sentence of its own yet.** *Which levels are building stories* still
    ranks `LIST_LEVELS` first. No words were invented for it; it is reached through the recipe, and its own
    utterance waits for the modeller's real words.
@@ -242,7 +242,7 @@ needs measuring first. Each waits for the owner, one at a time ([31 §5](31-stud
 | **A report of the project's parameter bindings** | A new read; nothing asks for it yet |
 | **A takeoff by two keys at once** - level and size | Widens `SUM_BY_GROUP`; nothing asks for it yet |
 | **The IFC schema typed in a chat** | **A recorded decision, not a gap.** [Section 6](fragment-issues/section-6.md) of the register keeps the schema untypeable on purpose: its names differ per release, and a name that works on one release and not another is worse than refusing on both. A reader proposed resolving it on the running release and listing the names that release has. That answers a different worry, and the decision is the owner's |
-| **Elements with no IFC class, before export, through the category mapping** | Whether the API can read the export mapping on 2020 to 2027 is not known; CC9 measures it before anything is written |
+| **Elements with no IFC class, before export, through the category mapping** | Whether the API can read the export mapping on 2020 to 2027 is not known; CD9 measures it before anything is written |
 | **A caveat on volume takeoffs** - two overlapping elements that are not joined are counted twice | One line in two PROVEN cards; wording in `fragment.yaml` is outside the proof seal, and is left for a session touching them |
 
 ---
@@ -262,4 +262,4 @@ needs measuring first. Each waits for the owner, one at a time ([31 §5](31-stud
 ## 8. What this is not
 
 **Not an import** - no file from the folder is in this repository, and none of its sentences. **Not a
-proof** - nine fragments and one recipe owe a run against a real model, and Group CC says which.
+proof** - nine fragments and one recipe owe a run against a real model, and Group CD says which.

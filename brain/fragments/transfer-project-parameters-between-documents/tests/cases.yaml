@@ -19,7 +19,7 @@ positive:
       the template's shared parameters bound here, sharedParameterFileRestored
       true, and Manage > Shared Parameters afterwards showing the modeller's
       own file again - read in Revit's dialog. Version 1 left it pointing at the
-      file given (5b-316)
+      file given (5b-317)
 
 negative:
   - given: >

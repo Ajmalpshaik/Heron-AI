@@ -33,7 +33,7 @@
 // refuses.
 //
 // VERSION 2 PUTS REVIT'S SHARED PARAMETER FILE SETTING BACK (FRAGMENT-ISSUES
-// 5b-316). Version 1 pointed Application.SharedParametersFilename at the file
+// 5b-317). Version 1 pointed Application.SharedParametersFilename at the file
 // asked for and left it there. That setting belongs to the Revit session, not
 // to either document: no transaction holds it, so Undo cannot reverse it, and
 // Manage > Shared Parameters stayed pointed at this path afterwards. The value
@@ -309,7 +309,7 @@ try
 finally
 {
     // PUT THE SESSION'S SETTING BACK, and read it to be sure. Undo cannot do
-    // this - the setting is outside every transaction (5b-316).
+    // this - the setting is outside every transaction (5b-317).
     if (!settingChanged)
     {
         // Never changed, so it is as it was.

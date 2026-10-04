@@ -29,7 +29,7 @@
 // ===========================================================================
 //
 // A YES/NO PARAMETER IS A TICK BOX, NOT A NUMBER THAT PARSES (FRAGMENT-ISSUES
-// 5b-314). Revit stores it as the Integer 1 or 0, and the parameter export
+// 5b-315). Revit stores it as the Integer 1 or 0, and the parameter export
 // writes it as the text Revit shows - "Yes" or "No" - so version 2's
 // int.TryParse refused every cell of a file this library had just written. A
 // Yes/No parameter is now found first, the way WRITE_ELEMENT_PARAMETERS
@@ -43,7 +43,7 @@
 // displayed word is the UI language's, so comparing words could call a good
 // write different.
 //
-// A BLANK CELL USED TO CLEAR TEXT SILENTLY (5b-315). Version 2 called Set("")
+// A BLANK CELL USED TO CLEAR TEXT SILENTLY (5b-316). Version 2 called Set("")
 // on a text parameter for an empty cell - wiping a value somebody typed,
 // without a word - and refused the same blank for a number. Which one a blank
 // means is the modeller's to say, so `blankCells` is ASKED, with no default:

@@ -44,7 +44,7 @@ purpose: >
   nothing.
 
   **VERSION 2 PUTS REVIT'S SHARED PARAMETER FILE SETTING BACK, AND NAMES A
-  CATEGORY IT COULD NOT BIND** (FRAGMENT-ISSUES 5b-316). Version 1 pointed
+  CATEGORY IT COULD NOT BIND** (FRAGMENT-ISSUES 5b-317). Version 1 pointed
   Revit at the requested file and left it there. That setting belongs to the
   Revit session, not to the project: no transaction holds it, so Undo cannot
   reverse it, and Manage > Shared Parameters stayed pointed at Heron's path in
@@ -103,7 +103,7 @@ contract:
       # True when Revit's shared parameter file setting reads, afterwards, as
       # it did before the run. A session setting outside every transaction, so
       # Undo cannot put it back. Bookkeeping about the run, never a finding
-      # (D-52). Version 2, 5b-316.
+      # (D-52). Version 2, 5b-317.
       role: accounting
       type: bool
 

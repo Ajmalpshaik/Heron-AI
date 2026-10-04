@@ -19,7 +19,7 @@ positive:
       the parameter bound to Duct Accessories, sharedParameterFileRestored
       true, and Manage > Shared Parameters afterwards showing the modeller's
       own file again - read in Revit's dialog, not from this report. Version 1
-      left it pointing at the file asked for (5b-316)
+      left it pointing at the file asked for (5b-317)
 
 negative:
   - given: >

@@ -100,7 +100,7 @@ compatibility-note: >
   No geometry is computed here, so there is nothing for a units change to reach.
 
 # ROUTING - the same rows are in the fragments named here. Added 2026-10-04
-# (docs/44).
+# (docs/45).
 #
 #   "flip the door" / "the handing is
 #    wrong, fix it"                       -> here. It CHANGES the model
