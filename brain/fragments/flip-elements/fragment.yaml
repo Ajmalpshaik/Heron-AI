@@ -99,6 +99,17 @@ compatibility-note: >
   `CanFlipFacing`, `flipHand()` and `flipFacing()` are unchanged 2020 to 2027.
   No geometry is computed here, so there is nothing for a units change to reach.
 
+# ROUTING - the same rows are in the fragments named here. Added 2026-10-04
+# (docs/44).
+#
+#   "flip the door" / "the handing is
+#    wrong, fix it"                       -> here. It CHANGES the model
+#   "which doors are flipped" / "is this
+#    door mirrored"                       -> REPORT_MIRRORED_INSTANCES. It
+#                                            only reads, and keeps mirrored
+#                                            apart from flipped
+#   "mirror these to the other room"      -> MIRROR_ELEMENTS
+
 utterances:
   - the door opens the wrong way
   - flip the diffuser round

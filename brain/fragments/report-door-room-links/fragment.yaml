@@ -144,6 +144,9 @@ compatibility-note: >
 #                                             2026-09-05
 #   "the door schedule reads backwards"    -> here - that is a FLIPPED DOOR, and
 #                                             this names which ones
+#   "which doors are mirrored or flipped"  -> REPORT_MIRRORED_INSTANCES - which
+#                                             ones; this names the rooms a
+#                                             flipped door reads backwards
 #   "place the rooms"                      -> PLACE_ROOMS. One reads, one makes
 #   "how big is this room"                 -> MEASURE_ROOM_DIMENSIONS
 #   "what is in this room"                 -> FILTER_ELEMENTS_IN_ROOM

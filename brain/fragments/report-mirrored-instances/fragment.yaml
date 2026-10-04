@@ -112,3 +112,6 @@ utterances:
   - which doors have been mirrored or flipped
   - are the doors mirrored
   - which fixtures have been mirrored
+  - is this door mirrored
+  - is this fixture mirrored
+  - is anything mirrored in this model
