@@ -48,6 +48,11 @@ namespace Heron.Revit.Addin
     /// house rule is a member every release has over a branch that hides one
     /// that does not (revit-version-support skill), and Idling is on all eight.
     ///
+    /// SINCE 2026-10-04 THE SELECTION IS NOT READ AT ALL (WatchSelection, below):
+    /// the owner took the Selected card off the Companion and asked that
+    /// nothing keep watching it in the background. The file names the model
+    /// and the view; the selection code is kept, switched off.
+    ///
     /// NO TRANSACTION, NO MODEL CHANGE, NO NETWORK. Reading a selection and
     /// the active view needs no transaction. Every entry point swallows and
     /// logs: a status file that cannot be written must never cost Revit
@@ -64,8 +69,22 @@ namespace Heron.Revit.Addin
         /// <summary>Element ids written into the file, then idsTruncated.</summary>
         private const int IdCap = 200;
 
-        /// <summary>How often the selection is looked at on Idling.</summary>
-        private static readonly TimeSpan IdleInterval = TimeSpan.FromMilliseconds(200);
+        /// <summary>
+        /// THE SELECTION IS NOT WATCHED (Ajmal PS, 2026-10-04, docs/40 s21.6).
+        /// The Companion no longer shows what is selected, so Idling no longer
+        /// reads it and the file carries "selection": null. The code that reads
+        /// it is kept below, whole, for when it is wanted again: set this true.
+        /// The model and the view are still written.
+        /// </summary>
+        private static readonly bool WatchSelection = false;
+
+        /// <summary>
+        /// How often Idling looks: five times a second while the selection is
+        /// watched, once a second for the model and view alone - a view renamed
+        /// while it stays active raises no ViewActivated, so Idling still looks.
+        /// </summary>
+        private static readonly TimeSpan IdleInterval =
+            TimeSpan.FromMilliseconds(WatchSelection ? 200 : 1000);
         private static readonly Stopwatch SinceIdleCheck = Stopwatch.StartNew();
 
         /// <summary>
@@ -235,17 +254,22 @@ namespace Heron.Revit.Addin
             var doc = uiDoc == null ? null : uiDoc.Document;
             if (doc == null) return "(none)";
 
-            var ids = uiDoc.Selection.GetElementIds();
+            var count = 0;
             var hash = 17;
-            unchecked
+            if (WatchSelection)
             {
-                foreach (var id in ids) hash = hash * 31 + id.GetHashCode();
+                var ids = uiDoc.Selection.GetElementIds();
+                count = ids.Count;
+                unchecked
+                {
+                    foreach (var id in ids) hash = hash * 31 + id.GetHashCode();
+                }
             }
             var view = doc.ActiveView;
             // THE NAME TOO: a view renamed while it stays active raises no
             // ViewActivated, and the id alone would never see it (Codex review).
             return doc.Title + "|" + doc.PathName + "|" + (view == null ? "" : view.Id + "|" + view.Name)
-                 + "|" + ids.Count.ToString(CultureInfo.InvariantCulture)
+                 + "|" + count.ToString(CultureInfo.InvariantCulture)
                  + "|" + hash.ToString(CultureInfo.InvariantCulture);
         }
 
@@ -348,25 +372,37 @@ namespace Heron.Revit.Addin
                     viewId = view.Id.ToString();
                 }
 
-                var selected = uiDoc.Selection.GetElementIds();
-                count = selected.Count;
-                foreach (var id in selected)
+                if (WatchSelection)
                 {
-                    if (ids.Count < IdCap) ids.Add(id.ToString());
+                    var selected = uiDoc.Selection.GetElementIds();
+                    count = selected.Count;
+                    foreach (var id in selected)
+                    {
+                        if (ids.Count < IdCap) ids.Add(id.ToString());
 
-                    if (counted >= TallyCap) { capped = true; continue; }
-                    counted++;
-                    var element = doc.GetElement(id);
-                    var name = element == null || element.Category == null
-                        ? "(no category)"
-                        : element.Category.Name;
-                    int seen;
-                    tally[name] = tally.TryGetValue(name, out seen) ? seen + 1 : 1;
+                        if (counted >= TallyCap) { capped = true; continue; }
+                        counted++;
+                        var element = doc.GetElement(id);
+                        var name = element == null || element.Category == null
+                            ? "(no category)"
+                            : element.Category.Name;
+                        int seen;
+                        tally[name] = tally.TryGetValue(name, out seen) ? seen + 1 : 1;
+                    }
                 }
             }
 
             var categories = new List<string>();
             foreach (var kv in tally) categories.Add(Json.Num(kv.Key, kv.Value));
+
+            var selection = !WatchSelection
+                ? "\"selection\": null"
+                : "\"selection\": " + Json.Obj(
+                    Json.Num("count", count),
+                    "\"categories\": " + Json.Obj(categories.ToArray()),
+                    Json.Arr("ids", ids),
+                    Json.Bool("idsTruncated", count > ids.Count),
+                    Json.Bool("countCapped", capped));
 
             return Json.Obj(
                 Json.Num("format", Format),
@@ -379,12 +415,7 @@ namespace Heron.Revit.Addin
                     ? "\"view\": null"
                     : "\"view\": " + Json.Obj(Json.Str("name", viewName), Json.Str("type", viewType),
                                               "\"id\": " + viewId),
-                "\"selection\": " + Json.Obj(
-                    Json.Num("count", count),
-                    "\"categories\": " + Json.Obj(categories.ToArray()),
-                    Json.Arr("ids", ids),
-                    Json.Bool("idsTruncated", count > ids.Count),
-                    Json.Bool("countCapped", capped)));
+                selection);
         }
     }
 }

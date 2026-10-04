@@ -39,14 +39,30 @@ DISCLAIMER = ("Prepared with Heron - a design aid from published methods. A peak
 MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
 CSS = """
-body { font-family: Segoe UI, Arial, sans-serif; font-size: 10pt; color: #111; margin: 18mm; }
-h1 { font-size: 16pt; margin: 0 0 4pt; } h2 { font-size: 12pt; margin: 16pt 0 6pt; }
-p.meta { color: #444; margin: 0 0 2pt; }
+@page { size: A4; margin: 14mm 12mm; }
+body { font-family: "Segoe UI", Arial, sans-serif; font-size: 9.5pt; line-height: 1.4; color: #1a2230;
+       max-width: 1100px; margin: 0 auto; padding: 18px 22px; }
+.sheet-head { border-bottom: 2px solid #1e4fb8; padding-bottom: 8pt; margin-bottom: 10pt; }
+.kind { font-size: 8pt; letter-spacing: .08em; text-transform: uppercase; color: #5a6778; }
+h1 { font-size: 18pt; margin: 2pt 0 1pt; color: #0f1a2a; }
+.sub { margin: 0 0 6pt; color: #4f5d6e; }
+.meta { display: flex; flex-wrap: wrap; gap: 3pt 20pt; margin: 4pt 0 6pt; }
+.meta span { color: #6b7888; margin-right: 4pt; }
+h2 { font-size: 11.5pt; margin: 16pt 0 6pt; padding-bottom: 3pt; color: #0f1a2a;
+     border-bottom: 1px solid #c9d2dc; page-break-after: avoid; break-after: avoid; }
 table { border-collapse: collapse; width: 100%; margin: 4pt 0 8pt; }
-th, td { border: 1px solid #bbb; padding: 2pt 4pt; text-align: left; vertical-align: top; }
-th { background: #eee; } td.n { text-align: right; font-variant-numeric: tabular-nums; }
-tr { page-break-inside: avoid; } .fail { color: #a00; } .warn { color: #8a5a00; }
-.note { font-size: 9pt; color: #333; } .disclaimer { border: 1px solid #888; padding: 6pt; }
+th, td { border: 1px solid #d5dce4; padding: 3pt 5pt; text-align: left; vertical-align: top; }
+th { background: #eef2f6; color: #2b3a4d; font-weight: 600; }
+tr:nth-child(even) td { background: #f8fafc; }
+td.n { text-align: right; font-variant-numeric: tabular-nums; }
+table.summary td:first-child { width: 42%; font-weight: 600; }
+tr { page-break-inside: avoid; } .fail { color: #b3261e; } .warn { color: #9a5b00; }
+.note { font-size: 8.5pt; color: #3c4a5c; }
+.lead { margin: 2pt 0; font-weight: 600; }
+.disclaimer { border: 1px solid #c9d2dc; border-left: 4px solid #9a5b00; background: #fdf8ee;
+              padding: 6pt 8pt; margin: 6pt 0; }
+.disclaimer.fail { border-left-color: #b3261e; background: #fbe7e5; }
+@media print { body { padding: 0; max-width: none; } }
 """
 
 
@@ -97,19 +113,45 @@ def html(result, standards=None, takeoff=None, project_name=None):
     else:
         sure = bool(r.get("geometry_confirmed"))
     stamp = r.get("geometry_confirmed") or {}
+    facts = ([("Project", project_name)] if project_name else []) + [
+        ("Model", r.get("document")), ("Run", r.get("run_id")), ("Calculated", r.get("when"))]
+    # The name the Companion's panel carries too (2026-10-04): what the sheet
+    # IS - an HVAC load calculation - and what it is not.
     parts = ["<!doctype html><html><head><meta charset='utf-8'>",
-             "<title>Load calculation - %s</title><style>%s</style></head><body>"
+             "<title>HVAC Load Calculation - %s</title><style>%s</style></head><body>"
              % (_e(r.get("document")), CSS),
-             "<h1>Load calculation sheet</h1>",
-             ("<p class='meta'>Project: %s</p>" % _e(project_name)) if project_name else "",
-             "<p class='meta'>Model: %s</p>" % _e(r.get("document")),
-             "<p class='meta'>Run %s, %s</p>" % (_e(r.get("run_id")), _e(r.get("when"))),
-             "<p class='meta'><b>%s</b></p>" % _e(DISCLAIMER),
-             ("<p class='meta'>Take-off checked and confirmed by %s, %s.</p>"
+             "<header class='sheet-head'><div class='kind'>Heron - design aid</div>",
+             "<h1>HVAC Load Calculation</h1>",
+             "<p class='sub'>Cooling (AC) and heating load per Space - ASHRAE method - a peak "
+             "estimate, not an hourly simulation like HAP</p>",
+             "<div class='meta'>%s</div>" % "".join(
+                 "<div><span>%s</span><b>%s</b></div>" % (_e(k), _e(v)) for k, v in facts),
+             "</header>",
+             "<p class='lead'>%s</p>" % _e(DISCLAIMER),
+             ("<p class='note'>Take-off checked and confirmed by %s, %s.</p>"
               % (_e(stamp.get("by")), _e(stamp.get("at"))) if sure else
               "<p class='disclaimer fail'><b>DRAFT - THE TAKE-OFF WAS NOT CONFIRMED.</b> Nobody "
               "has yet checked the faces these loads were worked out from. Check them in the "
               "Heron Companion's 3D view and confirm them before this sheet is used.</p>")]
+
+    # The building's figures first, as the brain added them up.
+    parts.append("<h2>Summary</h2>")
+    summary = _table(("", "value", "at"), [
+        ("Cooling (AC) load - the rooms' block",
+         "%s W  (%s TR)" % (_n(b.get("block_w")), _n(b.get("block_tr"), 2)),
+         _when(b.get("block_month"), b.get("block_hour"))),
+        ("Cooling with the outdoor air at the coil",
+         "%s W  (%s TR)" % (_n(b.get("coil_block_w")), _n(b.get("coil_block_tr"), 2)),
+         _when(b.get("coil_block_month"), b.get("coil_block_hour"))),
+        ("Heating load", "%s W" % _n(b.get("heating_w")), "-"),
+        ("Supply air", "%s L/s" % _n(b.get("supply_ls"), 1), "-"),
+        ("Outdoor air", "%s L/s" % _n(b.get("outdoor_air_ls"), 1), "-"),
+        ("Cooling per floor area", "%s W/m2" % _n(b.get("block_w_per_m2"), 1), "-"),
+        ("Floor area calculated", "%s m2 of %s m2" % (_n(b.get("calculated_area_m2"), 1),
+                                                      _n(b.get("area_m2"), 1)), "-"),
+        ("Spaces calculated", "%s of %s" % (b.get("calculated", "-"), b.get("spaces", "-")),
+         "-")])
+    parts.append(summary.replace("<table>", "<table class='summary'>", 1))
 
     inputs = r.get("inputs") or {}
     project = inputs.get("project") or {}
@@ -196,8 +238,9 @@ def html(result, standards=None, takeoff=None, project_name=None):
                      _n(sh.get("total_w")), _n(sh.get("w_per_m2"), 1), _n(sh.get("tr"), 2),
                      _n(sh.get("heating_w")), _n(sh.get("supply_ls"), 1),
                      _n(sh.get("outdoor_air_ls"), 1), sh.get("peak") or "-", s["status"]))
-    parts.append(_table(("Space", "zone", "m2", "sensible W", "latent W", "total W", "W/m2",
-                         "TR", "heating W", "supply L/s", "OA L/s", "peak", "status"),
+    parts.append(_table(("Space", "zone", "m2", "cooling sensible W", "cooling latent W",
+                         "cooling total W", "cooling W/m2", "cooling TR", "heating W",
+                         "supply air L/s", "outdoor air L/s", "cooling peak at", "status"),
                         rows, numeric=range(2, 11)))
 
     parts.append("<h2>Each Space at its peak hour, by component</h2>")
