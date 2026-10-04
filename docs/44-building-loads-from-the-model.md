@@ -350,3 +350,27 @@ Each phase is a pull request on its own, merged on the owner's word, with the ga
 **What would make the loads trustworthy, not just consistent:** one office from his building run in HAP or
 TRACE by an engineer, same inputs, and the difference explained ([41 §14](41-hvac-design.md)). Until then
 every report says it is a design aid.
+
+---
+
+## 11. What is built - 2026-10-04
+
+Built from [the plan](work-notes/plans/building-loads-2026-10-04.md) in one pull request, **not merged**,
+**nothing run in Revit**. Every part is DRAFT; the proof is [Group CC](needs-checking/group-cc.md), on a
+model the owner names. Where the build had to depart from the plan, the plan says so in its own text.
+
+| Part | What it does | Its test | Status |
+|---|---|---|---|
+| `heron_hvac` answers carry `data` | `monthly_load` gives every hour of every month and the components at its peak as numbers; `heating_load` its loss; `supply_airflow` its flow. No new physics | [`tests/test_hvac.py`](../tests/test_hvac.py) section 9 | DRAFT |
+| [`brain/heron_takeoff.py`](../brain/heron_takeoff.py) | Reads the take-off whole or refuses it whole; gate 1's checks; faces into engine surfaces, windows netted out, azimuths turned to true north in ONE place | [`tests/test_takeoff.py`](../tests/test_takeoff.py) | DRAFT |
+| [`brain/heron_building_loads.py`](../brain/heron_building_loads.py) | Every Space through the room engine; the block load hour by hour beside the sum of peaks; questions with a standard's figure offered; source labels; runs kept per project; the rows Finalize writes, in the model's own units | [`tests/test_building_loads.py`](../tests/test_building_loads.py) | DRAFT |
+| `REPORT_SPACE_ENVELOPE` ([FRG-MEP-058](../brain/fragments/report-space-envelope/fragment.yaml)) | The take-off: every Space's faces, openings, the types' U / SHGC / absorptance, the site and True North, the units shown. Every Space in the document - not the selection | compiles on 2020 to 2027; [Group CC](needs-checking/group-cc.md) | DRAFT |
+| `revit_building_loads` (MCP tool) | Reads the take-off, asks or calculates, opens the Loads panel, tells the chat only the totals | `tests/test_building_loads.py` (through `heron_brain`) | DRAFT |
+| The Companion's Loads panel | Inputs per Space type, results, zone and building totals, the model's checks, Recalculate, Report, Finalize, earlier runs | [`tests/test_companion.py`](../tests/test_companion.py) `test_loads`; the page checked in a browser at desktop width and 375 px | DRAFT |
+| [`brain/heron_loads_report.py`](../brain/heron_loads_report.py) | The load calculation sheet: HTML, CSV, take-off CSV, and a PDF printed by Edge or Chrome when one is on the PC | [`tests/test_loads_report.py`](../tests/test_loads_report.py); a PDF printed by Edge on the owner's PC and read back | DRAFT |
+| Finalize | The three Space fields through the table's own Apply, then the diffusers through `SET_AIR_TERMINAL_FLOW`, then read back. **Two undo entries** until one TransactionGroup spans both writes - [register row 5b-314](fragment-issues/section-5b-rows-176-200.md) | `tests/test_building_loads.py` (the rows and units); `tests/test_companion.py` (the order and the model guard) | DRAFT |
+| [`space-airflow`](../brain/skills/space-airflow.yaml) skill, version 2 | Calculate first, review, then Finalize | `tests/test_skills.py` | DRAFT |
+
+**Two things the real code said, and the plan was changed to match:** the fragment takes `doc` only,
+because the add-in refuses a selection-bound fragment when nothing is selected before its code runs; and
+Revit 2027 renamed the U-value parameter, so the fragment finds it by name at run time (Group CC row CC3).
