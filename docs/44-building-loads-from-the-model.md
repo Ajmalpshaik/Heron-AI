@@ -482,3 +482,31 @@ with round-half-even; supply air sized at the peak-total hour, not the peak-sens
 symbol; the report and the runs reading the live pin instead of the panel's model; the panel's poll size;
 a name starting with `=` in a CSV; Spaces not filtered by phase or design option; the Space Type found by
 its English name; and building area including refused Spaces.
+
+### 12.6 The second review, of the 3D view and the fixes
+
+The same reviewer then read everything after its first range. No critical finding. What it found, and
+what was done:
+
+| Finding | What changed |
+|---|---|
+| The page's "Checks on the model" were not the run's own - no site line, and a face already answered still listed as asked | The panel shows the run's own checks, with the answers and the site; before a run, the same two |
+| A Space's own value cleared on the page came back from the kept run | A cleared value is sent as nothing, and nothing clears what was kept: the Space's type value applies again |
+| A floor answered "outside" or "unconditioned" was counted as on the ground | Open below: conduction to the outdoor air, hour by hour, both seasons, no sun. Over an unconditioned space: the unconditioned temperatures. Only "ground" is the ground |
+| A Space face nothing bounds was dropped, and a face with no element was blamed on links | The reader writes such a face, marked `bounded_by: nothing`, and marks an unread link as one; the Space is refused with the right sentence. A placed Space with no face above it is a FAIL |
+| A curtain wall's frames needed a U-value of their own, which such types do not carry | The frames are counted at the area-weighted U of the panels in that face, with no sun, and the sheet says so |
+| The compass worked True North out with a formula of its own | The brain sends the north direction made by the same rule as every facing |
+| Finalize took each row's old value from the fresh read, so a load edited in Revit since the read would be overwritten | The rows carry the values Heron showed: an edit made in Revit refuses the whole write again (Article 12c). After a Finalize, what was written is what Heron holds |
+| Changing an answer about what is beyond kept the confirmation | The confirmation covers the answers too |
+| Confirming did not check the chat was still on the same model | It does, before anything is kept |
+| Glass with no SHGC was shown refused where no SHGC is needed; three checks read what Revit found and not the answers | Both follow what each face counts as |
+| The second look past a wall could see across a narrow shaft | The second look is for ceilings and floors only |
+| The diffuser write counted as an undo entry when it changed nothing | It counts only when something changed |
+| A wrong answer word was asked again with no word about why | The question says which answer was not one of the four |
+| A face's direction was taken from the subface on trust | It is turned to point out of the Space's own solid when it does not |
+
+**Left as minors, with the first review's:** an opening whose box middle is far from its face (deep
+shading in a family, a door modelled open) is an orphan; the active view's phase decides what is beyond,
+so Finalize from a view of another phase reads as "the model changed"; an earlier run cannot yet be
+reopened with its own geometry on the page; a misspelt per-Space key is kept and printed; a skylight in
+a sloped roof is drawn at its box's middle height.
