@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -22,6 +22,9 @@ purpose: >
   **THE PROFILE IS HALF THE SECTION**, drawn from the axis outwards and wholly
   on one side of it. A profile that crosses its axis, or lies on it, is
   refused here by name - Revit refuses it too, in words nobody can place.
+  A corner within Revit's shortest line (about 0.8 mm) of the axis is put on
+  it exactly first: one rounded a hair across it made a revolve with no solid
+  in it (5b-318).
 
   **THE PROFILE AND THE AXIS ARE WRITTEN THE SAME WAY**, in the plane's own
   two model coordinates, millimetres from the family origin: X,Y on a level or
