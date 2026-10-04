@@ -363,7 +363,44 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
             {
                 IList<SpatialElementBoundarySubface> subs = null;
                 try { subs = results.GetBoundaryFaceInfo(face); } catch { }
-                if (subs == null) continue;
+                if (subs == null || subs.Count == 0)
+                {
+                    // NOTHING BOUNDS THIS FACE - a Space's top at its own upper
+                    // limit, with no room-bounding ceiling or roof. It is written
+                    // as such, never dropped: dropped, the Space loses its roof
+                    // without a word (the second review, N4). The brain refuses
+                    // the Space and says what to make room-bounding.
+                    try
+                    {
+                        var fbox = face.GetBoundingBox();
+                        var fmid = new UV((fbox.Min.U + fbox.Max.U) / 2.0, (fbox.Min.V + fbox.Max.V) / 2.0);
+                        var fn = face.ComputeNormal(fmid);
+                        var fside = fn.Z > 0.7 ? "top" : fn.Z < -0.7 ? "bottom" : "wall";
+                        var floops = new List<string>();
+                        foreach (CurveLoop loop in face.GetEdgesAsCurveLoops())
+                        {
+                            var pts = new List<string>();
+                            foreach (Curve curve in loop)
+                            {
+                                var along = curve.Tessellate();
+                                for (int i = 0; i < along.Count - 1; i++) pts.Add(point(along[i]));
+                            }
+                            if (pts.Count >= 3) floops.Add("[" + string.Join(",", pts.ToArray()) + "]");
+                        }
+                        faces.Add("{" + esc("element") + ":null," + esc("type") + ":null," + esc("link") + ":null"
+                            + "," + esc("bounded_by") + ":" + esc("nothing")
+                            + "," + esc("side") + ":" + esc(fside)
+                            + "," + esc("normal") + ":[" + num(fn.X) + "," + num(fn.Y) + "," + num(fn.Z) + "]"
+                            + "," + esc("area_m2") + ":" + num(face.Area * SquareFeetToSquareMetres)
+                            + "," + esc("beyond") + ":" + esc("unknown")
+                            + "," + esc("beyond_space") + ":null"
+                            + "," + esc("loops") + ":[" + string.Join(",", floops.ToArray()) + "]"
+                            + "," + esc("openings") + ":[]}");
+                        findings.Add("Space " + label + ": no element bounds its " + fside + " face - make the ceiling, roof, floor or wall there room-bounding, or set the Space's limits.");
+                    }
+                    catch { findings.Add("Space " + label + ": a face with nothing bounding it could not be read."); }
+                    continue;
+                }
                 foreach (var sub in subs)
                 {
                     var side = sub.SubfaceType == SubfaceType.Top ? "top"
@@ -377,6 +414,17 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
                     var mid = new UV((box.Min.U + box.Max.U) / 2.0, (box.Min.V + box.Max.V) / 2.0);
                     var normal = subface.ComputeNormal(mid);
                     var centre = subface.Evaluate(mid);
+                    // OUT OF THE SPACE, MADE SURE: the Space's own solid face
+                    // points out of the solid. If the subface's normal points
+                    // the other way it is turned round, not trusted (the second
+                    // review, m13; Group CC row CC17 checks it on a model).
+                    try
+                    {
+                        var onSolid = face.Project(centre);
+                        if (onSolid != null && normal.DotProduct(face.ComputeNormal(onSolid.UVPoint)) < 0)
+                            normal = normal.Negate();
+                    }
+                    catch { }
 
                     // ---- what bounds it: this model's element, or a link's (D-59)
                     var link = sub.SpatialBoundaryElement;
@@ -384,6 +432,7 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
                     Document source = doc;
                     var prefix = "";
                     string linkName = null;
+                    string unreadLink = null;
                     var toHost = Transform.Identity;
                     if (link != null && link.LinkInstanceId != ElementId.InvalidElementId)
                     {
@@ -394,6 +443,9 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
                         {
                             var why = inst == null ? "a linked model" : inst.Name;
                             linkedNotRead[why] = (linkedNotRead.ContainsKey(why) ? linkedNotRead[why] : 0) + 1;
+                            // Marked as a link NOT READ - never confused with a
+                            // face nothing bounds (the second review, N4).
+                            unreadLink = why;
                         }
                         else
                         {
@@ -418,7 +470,11 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
                     if (host != null)
                     {
                         Space other = null;
-                        foreach (var past in new[] { 0.5, 2.0 })
+                        // The second look is for ceilings and floors only - a
+                        // ceiling void, a raised floor. Past a wall it could see
+                        // across a narrow shaft to the next Space (the second
+                        // review, m7).
+                        foreach (var past in side == "wall" ? new[] { 0.5 } : new[] { 0.5, 2.0 })
                         {
                             try { other = doc.GetSpaceAtPoint(centre + normal * (thickness + past), phase); } catch { other = null; }
                             if (other != null && other.Id != space.Id) break;
@@ -544,7 +600,8 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
 
                     faces.Add("{" + esc("element") + ":" + (host == null ? "null" : esc(prefix + host.Id.ToString()))
                         + "," + esc("type") + ":" + esc(host == null ? null : typeKey(source, prefix, linkName, host.GetTypeId()))
-                        + "," + esc("link") + ":" + esc(linkName)
+                        + "," + esc("link") + ":" + esc(linkName ?? unreadLink)
+                        + "," + esc("bounded_by") + ":" + esc(unreadLink != null ? "unread link" : host == null ? "nothing" : "element")
                         + "," + esc("side") + ":" + esc(side)
                         + "," + esc("normal") + ":[" + num(normal.X) + "," + num(normal.Y) + "," + num(normal.Z) + "]"
                         + "," + esc("area_m2") + ":" + num(subface.Area * SquareFeetToSquareMetres)
