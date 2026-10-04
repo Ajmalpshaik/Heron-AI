@@ -19,6 +19,16 @@ positive:
   - given: the same take-off read back by python brain/heron_takeoff.py's read()
     expect: it reads whole - no TakeoffError
 
+  - given: the corner office drawn in the Companion's 3D view
+    expect: >
+      every face has an outline (loops) in metres; each window and door has a
+      centre, width_m and height_m and is drawn on its wall where Revit shows it
+
+  - given: the same linked-walls model, read WITH includeLinks
+    expect: >
+      the linked faces read beyond "outside" or "space", their types carry the
+      link's name, and linksSearched is the number of loaded links
+
 negative:
   - given: one window type's Properties open on screen (Analytical Properties)
     expect: >
@@ -37,6 +47,13 @@ negative:
   - given: a Space whose walls do not enclose it (Not Enclosed in the schedule)
     expect: >
       placed false and faces [] - never a zero-area row WITH faces
+
+  - given: >
+      a model whose walls are in a linked architectural model, read WITHOUT
+      includeLinks
+    expect: >
+      those faces read beyond "unknown" - never "outside" by guess - and one
+      finding per link says the links were not read; linksSearched 0
 
 second_route: >
   Revit's own Space schedule: Area and Volume per Space must equal area_m2 and

@@ -1,13 +1,14 @@
-// NOT STANDALONE. Assumes `doc` is in scope, and leaves `takeoffJson`, `spaces`
-// and `findings` behind.
+// NOT STANDALONE. Assumes `doc` and `includeLinks` are in scope, and leaves
+// `takeoffJson`, `spaces`, `linksSearched` and `findings` behind.
 //
 // READS ONLY. No transaction is opened and nothing is set.
 //
 // THE TAKE-OFF FOR A BUILDING'S LOADS (docs/44 section 4). Every MEP Space in
 // the model, each with every face that bounds it - outside wall, partition,
-// roof, floor - its area, which way it faces, what is on the other side, the
-// windows and doors in it, and the thermal values each type carries. The brain
-// (heron_takeoff.py) reads it; nothing here calculates a load.
+// roof, floor - its area, its outline, which way it faces, what is on the other
+// side, the windows and doors in it with where they sit, and the thermal values
+// each type carries. The brain (heron_takeoff.py) reads it, and the Companion's
+// 3D view draws the same faces; nothing here calculates a load.
 //
 // EVERY SPACE, NOT THE SELECTION. "Calculate the loads for this building" is a
 // question about the whole model, and a selection-bound reader refuses to run
@@ -17,9 +18,19 @@
 // as null, never 0 - a window read as SHGC 0 loses its sun without a word. The
 // brain refuses that Space and names the type.
 //
+// LINKED WALLS ONLY WHEN ASKED FOR - D-59. In a federated MEP model the walls
+// a Space is bounded by are usually in the architect's link. Absent
+// `includeLinks` means host only, and such a face reads beyond "unknown" with a
+// finding that says links were not read. With it set, the bounding element is
+// read FROM its link - its type, its function, its windows and doors - and its
+// types are keyed by the link they come from, so a link's type 12345 is never
+// mistaken for the host's. `linksSearched` counts the loaded links there were
+// to read. Nested links are not read.
+//
 // EVERY NUMBER CARRIES ITS UNIT IN ITS NAME: _m2, _m3, _m, _deg, _h, _w_m2k.
 // Revit's internal feet become metres here, at the edge (D-20): 1 ft = 0.3048 m
-// exactly.
+// exactly. Outlines and positions are metres in the model's own coordinates,
+// rounded to the millimetre.
 //
 // ONE STRING, BECAUSE A LIST CROSSES AS THREE NAMES (FRAGMENT-ISSUES 5b-195) -
 // the workaround READ_ELEMENT_TABLE uses. Format 1 is defined in ONE place:
@@ -31,6 +42,7 @@
 
 var findings = new List<string>();
 var spaces = 0;
+var linksSearched = 0;
 var takeoffJson = "";
 
 var FeetToMetres = 0.3048;
@@ -56,6 +68,10 @@ Func<string, string> esc = text =>
 Func<double, string> num = d =>
     (double.IsNaN(d) || double.IsInfinity(d)) ? "null" : Math.Round(d, 6).ToString("R", invariant);
 Func<double?, string> numOrNull = d => d.HasValue ? num(d.Value) : "null";
+// A point in the model, in metres, to the millimetre.
+Func<double, string> metres = d =>
+    (double.IsNaN(d) || double.IsInfinity(d)) ? "null" : Math.Round(d * FeetToMetres, 3).ToString("R", invariant);
+Func<XYZ, string> point = p => "[" + metres(p.X) + "," + metres(p.Y) + "," + metres(p.Z) + "]";
 
 // ---- the phase the take-off is read in -------------------------------------
 
@@ -67,6 +83,22 @@ try
 }
 catch { }
 if (phase == null && doc.Phases.Size > 0) phase = doc.Phases.get_Item(doc.Phases.Size - 1) as Phase;
+
+// ---- the links there are to read (D-59) -------------------------------------
+
+if (includeLinks)
+{
+    foreach (var e in new FilteredElementCollector(doc).OfClass(typeof(RevitLinkInstance)))
+    {
+        var inst = e as RevitLinkInstance;
+        Document linked = null;
+        try { linked = inst == null ? null : inst.GetLinkDocument(); } catch { }
+        if (linked != null) linksSearched++;
+    }
+    if (linksSearched == 0)
+        findings.Add("Links were asked for, and no linked model is loaded - every boundary was read from this model only.");
+}
+var linkedNotRead = new Dictionary<string, int>();
 
 // ---- the types met, with their thermal values ------------------------------
 
@@ -100,35 +132,35 @@ foreach (var candidate in new[] { "ANALYTICAL_HEAT_TRANSFER_COEFFICIENT", "ANALY
 }
 if (uParameter == null) findings.Add("This Revit has no U-value parameter Heron knows by name - every U reads as missing.");
 Func<Element, double?> uValue = element => uParameter.HasValue ? thermal(element, uParameter.Value) : null;
-Func<ElementId, string> typeKey = typeId =>
+
+// A type is keyed by the document it lives in: "" for this model, "L<link
+// instance id>:" for a link, so two documents' ids never collide.
+Func<Document, string, string, ElementId, string> typeKey = (source, prefix, linkName, typeId) =>
 {
     if (typeId == null || typeId == ElementId.InvalidElementId) return null;
-    var key = typeId.ToString();
+    var key = prefix + typeId.ToString();
     if (types.ContainsKey(key)) return key;
-    var type = doc.GetElement(typeId) as ElementType;
+    var type = source.GetElement(typeId) as ElementType;
     if (type == null) return null;
-    var family = type as FamilySymbol;
-    var name = family != null ? family.FamilyName + ": " + type.Name : type.Name;
-    if (family == null)
-    {
-        try { name = type.FamilyName + ": " + type.Name; } catch { }
-    }
+    var name = type.Name;
+    try { if (!string.IsNullOrEmpty(type.FamilyName)) name = type.FamilyName + ": " + type.Name; } catch { }
     types[key] = "{" + esc("name") + ":" + esc(name)
         + "," + esc("category") + ":" + esc(type.Category == null ? null : type.Category.Name)
         + "," + esc("u_w_m2k") + ":" + numOrNull(uValue(type))
         + "," + esc("shgc") + ":" + numOrNull(thermal(type, BuiltInParameter.ANALYTICAL_SOLAR_HEAT_GAIN_COEFFICIENT))
         + "," + esc("absorptance") + ":" + numOrNull(thermal(type, BuiltInParameter.ANALYTICAL_ABSORPTANCE))
+        + "," + esc("link") + ":" + esc(linkName)
         + "}";
     return key;
 };
 
 // ---- an opening's size: the instance's, else its type's - never guessed ----
 
-Func<Element, BuiltInParameter[], double?> length = (element, which) =>
+Func<Element, Document, BuiltInParameter[], double?> length = (element, source, which) =>
 {
     foreach (var bip in which)
     {
-        foreach (var holder in new Element[] { element, doc.GetElement(element.GetTypeId()) })
+        foreach (var holder in new Element[] { element, source.GetElement(element.GetTypeId()) })
         {
             if (holder == null) continue;
             var v = thermal(holder, bip);
@@ -139,8 +171,27 @@ Func<Element, BuiltInParameter[], double?> length = (element, which) =>
 };
 var widths = new[] { BuiltInParameter.WINDOW_WIDTH, BuiltInParameter.DOOR_WIDTH, BuiltInParameter.FAMILY_WIDTH_PARAM };
 var heights = new[] { BuiltInParameter.WINDOW_HEIGHT, BuiltInParameter.DOOR_HEIGHT, BuiltInParameter.FAMILY_HEIGHT_PARAM };
-var windowsCategory = new ElementId(BuiltInCategory.OST_Windows);
-var doorsCategory = new ElementId(BuiltInCategory.OST_Doors);
+var panelWidths = new[] { BuiltInParameter.CURTAIN_WALL_PANELS_WIDTH };
+var panelHeights = new[] { BuiltInParameter.CURTAIN_WALL_PANELS_HEIGHT };
+
+// Where an opening sits, for the 3D view only: its middle on this face, at the
+// height of the middle of its box. Its AREA is the size above, never the box.
+Func<Element, Transform, Face, string> placeOn = (element, toHost, face) =>
+{
+    try
+    {
+        var box = element.get_BoundingBox(null);
+        if (box == null) return null;
+        var low = toHost.OfPoint(box.Min);
+        var high = toHost.OfPoint(box.Max);
+        var middle = (low + high) * 0.5;
+        var hit = face.Project(middle);
+        if (hit == null) return null;
+        var onFace = hit.XYZPoint;
+        return point(new XYZ(onFace.X, onFace.Y, middle.Z));
+    }
+    catch { return null; }
+};
 
 // ---- the site ----------------------------------------------------------------
 
@@ -216,6 +267,8 @@ foreach (var t in new FilteredElementCollector(doc).OfCategory(BuiltInCategory.O
 
 // ---- every Space -------------------------------------------------------------
 
+var windowsCategory = new ElementId(BuiltInCategory.OST_Windows);
+var doorsCategory = new ElementId(BuiltInCategory.OST_Doors);
 var options = new SpatialElementBoundaryOptions();
 options.SpatialElementBoundaryLocation = SpatialElementBoundaryLocation.Finish;
 var calculator = new SpatialElementGeometryCalculator(doc, options);
@@ -276,24 +329,47 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
                              : sub.SubfaceType == SubfaceType.Bottom ? "bottom" : "wall";
                     var subface = sub.GetSubface();
                     if (subface == null) continue;
+                    // The subface IS part of the Space's own solid, so its
+                    // normal points out of the Space - read both the normal and
+                    // the centre in the subface's own UV.
                     var box = subface.GetBoundingBox();
                     var mid = new UV((box.Min.U + box.Max.U) / 2.0, (box.Min.V + box.Max.V) / 2.0);
-                    // Outward from the Space's own solid: a solid's face normal
-                    // points out of the solid.
-                    var normal = face.ComputeNormal(mid);
+                    var normal = subface.ComputeNormal(mid);
                     var centre = subface.Evaluate(mid);
 
+                    // ---- what bounds it: this model's element, or a link's (D-59)
                     var link = sub.SpatialBoundaryElement;
                     Element host = null;
-                    string beyond = "unknown", beyondSpace = "null";
-                    if (link != null && link.LinkedElementId != ElementId.InvalidElementId)
+                    Document source = doc;
+                    var prefix = "";
+                    string linkName = null;
+                    var toHost = Transform.Identity;
+                    if (link != null && link.LinkInstanceId != ElementId.InvalidElementId)
                     {
-                        findings.Add("Space " + label + ": a face is bounded by an element in a linked model - read from the link; what is beyond it is not known.");
+                        var inst = doc.GetElement(link.LinkInstanceId) as RevitLinkInstance;
+                        Document linked = null;
+                        try { linked = inst == null ? null : inst.GetLinkDocument(); } catch { }
+                        if (!includeLinks || linked == null)
+                        {
+                            var why = inst == null ? "a linked model" : inst.Name;
+                            linkedNotRead[why] = (linkedNotRead.ContainsKey(why) ? linkedNotRead[why] : 0) + 1;
+                        }
+                        else
+                        {
+                            source = linked;
+                            host = linked.GetElement(link.LinkedElementId);
+                            prefix = "L" + inst.Id.ToString() + ":";
+                            linkName = inst.Name;
+                            try { toHost = inst.GetTotalTransform(); } catch { }
+                        }
                     }
                     else if (link != null)
                     {
                         host = doc.GetElement(link.HostElementId);
                     }
+
+                    // ---- what is on the other side
+                    string beyond = "unknown", beyondSpace = "null";
                     double thickness = 0.0;
                     var wall = host as Wall;
                     if (wall != null) { try { thickness = wall.Width; } catch { } }
@@ -318,6 +394,7 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
                         }
                     }
 
+                    // ---- the windows, doors and curtain panels in it
                     var openings = new List<string>();
                     if (wall != null && side == "wall")
                     {
@@ -327,7 +404,7 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
                         {
                             foreach (var panelId in grid.GetPanelIds())
                             {
-                                var panel = doc.GetElement(panelId);
+                                var panel = source.GetElement(panelId);
                                 if (panel == null) continue;
                                 var panelArea = thermal(panel, BuiltInParameter.HOST_AREA_COMPUTED);
                                 if (!panelArea.HasValue)
@@ -337,17 +414,23 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
                                 }
                                 var kind = panel is Wall || (panel.Category != null && panel.Category.Id == doorsCategory)
                                     ? "door" : "curtain_panel";
-                                openings.Add("{" + esc("element") + ":" + esc(panel.Id.ToString())
+                                var pw = length(panel, source, panelWidths);
+                                var ph = length(panel, source, panelHeights);
+                                var where = placeOn(panel, toHost, subface);
+                                openings.Add("{" + esc("element") + ":" + esc(prefix + panel.Id.ToString())
                                     + "," + esc("kind") + ":" + esc(kind)
-                                    + "," + esc("type") + ":" + esc(typeKey(panel.GetTypeId()))
-                                    + "," + esc("area_m2") + ":" + num(panelArea.Value * SquareFeetToSquareMetres) + "}");
+                                    + "," + esc("type") + ":" + esc(typeKey(source, prefix, linkName, panel.GetTypeId()))
+                                    + "," + esc("area_m2") + ":" + num(panelArea.Value * SquareFeetToSquareMetres)
+                                    + "," + esc("centre") + ":" + (where ?? "null")
+                                    + "," + esc("width_m") + ":" + (pw.HasValue ? metres(pw.Value) : "null")
+                                    + "," + esc("height_m") + ":" + (ph.HasValue ? metres(ph.Value) : "null") + "}");
                             }
                         }
                         else
                         {
                             foreach (var insertId in wall.FindInserts(true, false, false, true))
                             {
-                                var insert = doc.GetElement(insertId) as FamilyInstance;
+                                var insert = source.GetElement(insertId) as FamilyInstance;
                                 if (insert == null || insert.Category == null) continue;
                                 var isWindow = insert.Category.Id == windowsCategory;
                                 var isDoor = insert.Category.Id == doorsCategory;
@@ -357,30 +440,53 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
                                 var at = insert.Location as LocationPoint;
                                 if (at == null) continue;
                                 IntersectionResult hit = null;
-                                try { hit = subface.Project(at.Point); } catch { }
+                                try { hit = subface.Project(toHost.OfPoint(at.Point)); } catch { }
                                 if (hit == null || hit.Distance > thickness + 0.5) continue;
-                                var w = length(insert, widths);
-                                var h = length(insert, heights);
+                                var w = length(insert, source, widths);
+                                var h = length(insert, source, heights);
                                 if (!w.HasValue || !h.HasValue)
                                 {
                                     findings.Add("Space " + label + ": the size of " + insert.Category.Name.ToLower() + " " + insert.Id + " could not be read - it is left out, never guessed.");
                                     continue;
                                 }
-                                openings.Add("{" + esc("element") + ":" + esc(insert.Id.ToString())
+                                var where = placeOn(insert, toHost, subface);
+                                openings.Add("{" + esc("element") + ":" + esc(prefix + insert.Id.ToString())
                                     + "," + esc("kind") + ":" + esc(isWindow ? "window" : "door")
-                                    + "," + esc("type") + ":" + esc(typeKey(insert.GetTypeId()))
-                                    + "," + esc("area_m2") + ":" + num(w.Value * h.Value * SquareFeetToSquareMetres) + "}");
+                                    + "," + esc("type") + ":" + esc(typeKey(source, prefix, linkName, insert.GetTypeId()))
+                                    + "," + esc("area_m2") + ":" + num(w.Value * h.Value * SquareFeetToSquareMetres)
+                                    + "," + esc("centre") + ":" + (where ?? "null")
+                                    + "," + esc("width_m") + ":" + metres(w.Value)
+                                    + "," + esc("height_m") + ":" + metres(h.Value) + "}");
                             }
                         }
                     }
 
-                    faces.Add("{" + esc("element") + ":" + (host == null ? "null" : esc(host.Id.ToString()))
-                        + "," + esc("type") + ":" + esc(host == null ? null : typeKey(host.GetTypeId()))
+                    // ---- its outline, for the 3D view: every loop, in metres
+                    var loops = new List<string>();
+                    try
+                    {
+                        foreach (CurveLoop loop in subface.GetEdgesAsCurveLoops())
+                        {
+                            var pts = new List<string>();
+                            foreach (Curve curve in loop)
+                            {
+                                var along = curve.Tessellate();
+                                for (int i = 0; i < along.Count - 1; i++) pts.Add(point(along[i]));
+                            }
+                            if (pts.Count >= 3) loops.Add("[" + string.Join(",", pts.ToArray()) + "]");
+                        }
+                    }
+                    catch { }
+
+                    faces.Add("{" + esc("element") + ":" + (host == null ? "null" : esc(prefix + host.Id.ToString()))
+                        + "," + esc("type") + ":" + esc(host == null ? null : typeKey(source, prefix, linkName, host.GetTypeId()))
+                        + "," + esc("link") + ":" + esc(linkName)
                         + "," + esc("side") + ":" + esc(side)
                         + "," + esc("normal") + ":[" + num(normal.X) + "," + num(normal.Y) + "," + num(normal.Z) + "]"
                         + "," + esc("area_m2") + ":" + num(subface.Area * SquareFeetToSquareMetres)
                         + "," + esc("beyond") + ":" + esc(beyond)
                         + "," + esc("beyond_space") + ":" + beyondSpace
+                        + "," + esc("loops") + ":[" + string.Join(",", loops.ToArray()) + "]"
                         + "," + esc("openings") + ":[" + string.Join(",", openings.ToArray()) + "]}");
                 }
             }
@@ -404,6 +510,12 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
 }
 
 if (spaces == 0) findings.Add("The model has no MEP Spaces. Rooms carry no load - place Spaces first.");
+foreach (var pair in linkedNotRead)
+{
+    findings.Add(pair.Value + " face(s) are bounded by elements in " + pair.Key + ", which was "
+        + (includeLinks ? "not loaded" : "not read - ask again with links included")
+        + "; what is beyond them is not known.");
+}
 
 var typeRows = new List<string>();
 foreach (var pair in types) typeRows.Add(esc(pair.Key) + ":" + pair.Value);
@@ -414,6 +526,7 @@ takeoffJson = "{" + esc("format") + ":1"
     + "," + esc("document") + ":" + esc(doc.Title)
     + "," + esc("units") + ":{" + esc("power") + ":" + esc(powerSymbol) + "," + esc("airflow") + ":" + esc(airflowSymbol) + "}"
     + "," + esc("site") + ":" + siteJson
+    + "," + esc("links_read") + ":" + linksSearched
     + "," + esc("types") + ":{" + string.Join(",", typeRows.ToArray()) + "}"
     + "," + esc("spaces") + ":[" + string.Join(",", spaceRows.ToArray()) + "]"
     + "," + esc("findings") + ":[" + string.Join(",", findingRows.ToArray()) + "]}";
