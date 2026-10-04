@@ -530,3 +530,32 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 /* Load from Revit and Clear tables - the Changes card's own tools. */
 .c-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
 .c-tools .result { flex: 1 1 240px; }
+
+/* ------------------------------------------------------------ loads panel */
+#loads .where { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); font-size: 12.5px; margin: 0 0 10px; }
+#loads h3 { font-size: 13px; font-weight: 650; margin: 14px 0 6px; }
+#loads .grid { overflow: auto; max-height: 520px; border: 1px solid var(--line); border-radius: 8px; padding: 0 8px 8px; }
+#loads table { border-collapse: collapse; font-size: 13px; min-width: 100%; }
+#loads th, #loads td { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+#loads th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+#loads .num { text-align: right; font-variant-numeric: tabular-nums; }
+#loads td input { width: 6.5em; font: inherit; text-align: right; padding: 2px 4px; }
+#loads .l-asked td input { width: 9em; text-align: left; }
+#loads .tag { display: block; font-size: 10.5px; color: var(--muted); }
+#loads tr.off td { color: var(--muted); }
+#loads tr.why td { border-bottom: 1px solid var(--line); }
+#loads tr.sum td { font-weight: 650; }
+#loads .l-qa ul { margin: 0; padding-left: 18px; font-size: 13px; }
+#loads .qa-fail b { color: var(--bad); }
+#loads .qa-warn b { color: var(--warn); }
+#loads .qa-info b { color: var(--muted); }
+#loads .foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+#loads details { margin-top: 10px; font-size: 13px; }
+@media (min-width: 900px) {
+  #loads .l-inputs, #loads .l-results { display: inline-block; vertical-align: top; }
+  #loads .l-inputs { max-width: 38%; margin-right: 1%; }
+  #loads .l-results { max-width: 60%; }
+}
+@media (max-width: 899px) {
+  #loads .l-inputs, #loads .l-results { display: block; max-width: 100%; }
+}

@@ -301,6 +301,11 @@ COMPANION_ACTIONS = {
     # The edited cells of an element table, in one SET_PARAMETER_VALUES_BY_ID
     # run through the same body: revit_change's level and operation.
     "companion_table_apply":    (MODIFY,  "run_fragment_write"),
+    # The Loads panel's Finalize (docs/44 s6): the Spaces' loads and airflow
+    # through the table's own Apply, then the diffusers' flows - each through
+    # revit_change's body. Recalculate and Report touch no model - the brain
+    # works on the take-off the panel holds - so they have no row.
+    "companion_loads_finalize": (MODIFY,  "run_fragment_write"),
 }
 
 

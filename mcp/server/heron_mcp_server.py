@@ -1823,6 +1823,131 @@ def _apply_table(rows, identity=None):
     return text, result
 
 
+# ---------------------------------------------------------------------------
+# The Loads panel's hooks (docs/44 section 7). Recalculate, the runs and the
+# Report touch no model - the brain works on the take-off the panel already
+# holds. Finalize writes through revit_change's own body, behind the Changes
+# switch, refused whole if any Space moved since it was read (Article 12c).
+# ---------------------------------------------------------------------------
+
+def _loads_recalculate(takeoff, inputs, identity):
+    with _revit_lock:
+        moved = _moved_since(identity)
+    if moved:
+        return {"said": moved, "takeoff": None}
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    answer = brain.building_loads(takeoff, inputs, project=pinned.project_key,
+                                  project_name=pinned.title)
+    _note("companion_loads_recalculate", started, time.time() - clock, reply=answer["said"])
+    return answer
+
+
+def _loads_runs(_document):
+    import heron_building_loads as LOADS
+    return LOADS.runs(pinned.project_key) if pinned.project_key else []
+
+
+def _loads_run(_document, run_id):
+    import heron_building_loads as LOADS
+    got = LOADS.load(pinned.project_key, run_id) if pinned.project_key else None
+    if not got:
+        return None
+    return {"run_id": got.get("run_id"), "when": got.get("when"),
+            "building": got.get("building"), "zones": got.get("zones"),
+            "spaces": [{k: v for k, v in s.items() if k != "cooling"}
+                       for s in got.get("spaces") or []],
+            "inputs": got.get("inputs")}
+
+
+def _loads_report(takeoff, result):
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    got = brain.loads_report(takeoff, result, model_path=pinned.document_path,
+                             project=pinned.project_key)
+    _note("companion_loads_report", started, time.time() - clock, reply=got.get("said"),
+          outcome=None if got.get("ok") else "refused")
+    return got
+
+
+def _loads_finalize(takeoff, result, identity):
+    """
+    Finalize (docs/44 s6, gate 2): the three Space fields through ONE
+    SET_PARAMETER_VALUES_BY_ID - _apply_table, the table's own Apply, so the
+    model guard, the stale check and the one undo entry are the ones it has -
+    then the diffusers' share of each Space's flow through ONE
+    SET_AIR_TERMINAL_FLOW, then read back. TWO WRITES ARE TWO UNDO ENTRIES
+    until one TransactionGroup spans both (FRAGMENT-ISSUES).
+    """
+    import heron_building_loads as LOADS
+    import heron_hvac as HVAC
+    try:
+        rows = LOADS.finalize_rows(takeoff, result)
+    except ValueError as why:
+        return {"ok": False, "said": "Nothing was written: %s" % why}
+    if not rows:
+        return {"ok": False, "said": "No Space was calculated, so nothing was written."}
+    text, applied = _apply_table(rows, identity)
+    if not (applied and applied.get("applied")):
+        return {"ok": False, "said": text}
+    said = [text]
+    lines = []
+    ids = []
+    for s in result.get("spaces") or []:
+        if s.get("status") != "ok" or not s.get("terminals"):
+            continue
+        split = HVAC.run("terminal_flows", {"flow_ls": s["supply_ls"],
+                                            "terminal_ids": [str(t) for t in s["terminals"]]})
+        if split["status"] != "ok" or not split.get("csv"):
+            said.append("Space %s %s: its diffusers' flows were not worked out - %s"
+                        % (s.get("number") or "", s.get("name") or "",
+                           "; ".join(split.get("refused") or [m["input"] for m in
+                                                               split.get("missing") or []])))
+            continue
+        lines += split["csv"].strip().splitlines()[1:]
+        ids += [str(t) for t in s["terminals"]]
+    if lines:
+        import tempfile
+        folder = tempfile.mkdtemp(prefix="heron-loads-")
+        path = os.path.join(folder, "terminal-flows.csv")
+        with io.open(path, "w", encoding="utf-8") as fh:
+            fh.write("element_id,flow_ls\n" + "\n".join(lines) + "\n")
+        with _revit_lock:
+            moved = _moved_since(identity)
+            if moved:
+                said.append(moved)
+            else:
+                found = _through(revit_read, origin="companion")(
+                    "FILTER_ELEMENTS_BY_ID", "elementIds=" + ",".join(ids))
+                out = {}
+                try:
+                    wrote = _through(revit_change, reply_out=out, origin="companion")(
+                        "SET_AIR_TERMINAL_FLOW", "csvPath=" + path, "filter-elements-by-id")
+                finally:
+                    import shutil
+                    shutil.rmtree(folder, ignore_errors=True)
+                said.append(wrote if isinstance(out.get("reply"), dict)
+                            and out["reply"].get("ok") else "%s\n%s" % (found, wrote))
+    else:
+        said.append("No calculated Space has an air terminal in it, so no diffuser flow was "
+                    "written.")
+    # READ BACK - what Revit now holds beside what was calculated.
+    back = {}
+    with _revit_lock:
+        for capability in ("READ_SPACE_LOADS", "REPORT_SPACE_AIRFLOW"):
+            ids_now = [r[0] for r in rows[::3]]
+            out = {}
+            _through(revit_read, reply_out=out, origin="companion")(
+                "FILTER_ELEMENTS_BY_ID", "elementIds=" + ",".join(ids_now))
+            _through(revit_read, reply_out=out, origin="companion")(
+                capability, "", "filter-elements-by-id")
+            reply = out.get("reply")
+            if isinstance(reply, dict) and reply.get("ok"):
+                back[capability] = reply.get("provides")
+    finalized = [{"id": r[0], "parameter": r[2], "was": r[3], "written": r[4]} for r in rows]
+    said.append("Two undo entries in Revit: the Space values, then the diffusers.")
+    return {"ok": True, "said": "\n".join(str(x) for x in said),
+            "finalized": {"rows": finalized, "read_back": back}}
+
+
 def _load_settings(kind):
     """
     The Companion's Load from Revit: READ the active view's filters or
@@ -5197,6 +5322,11 @@ if __name__ == "__main__":
         companion_page.CHANGES.apply_hook = _apply_change
         companion_page.CHANGES.load_hook = _load_settings
         companion_page.TABLES.apply_hook = _apply_table
+        companion_page.LOADS_PANEL.recalculate_hook = _loads_recalculate
+        companion_page.LOADS_PANEL.report_hook = _loads_report
+        companion_page.LOADS_PANEL.finalize_hook = _loads_finalize
+        companion_page.LOADS_PANEL.runs_hook = _loads_runs
+        companion_page.LOADS_PANEL.run_hook = _loads_run
         companion_page.keep(bound_pid=_companion_revit)
     except Exception as why:                         # noqa: BLE001 - never cost the chat
         sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)

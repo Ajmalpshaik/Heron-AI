@@ -945,6 +945,262 @@ async function table_() {
   } catch (e) { /* the state poll reports a closed page */ }
 }
 
+// ---------------------------------------------------------------- loads
+// The Loads panel (docs/44 section 7). Every number on it was worked out by
+// Heron's brain; the page only shows them, collects typed inputs, and posts
+// them back. Model text goes on the page with textContent only.
+
+let loadsShown = null;
+let loadsBusy = false;
+
+const PROFILE_FIELDS = [
+  ["people_per_m2", "people/m²"], ["sensible_w_each", "W sens./person"],
+  ["latent_w_each", "W lat./person"], ["lighting_w_per_m2", "lights W/m²"],
+  ["equipment_w_per_m2", "equip. W/m²"], ["infiltration_ach", "infiltr. ACH"],
+  ["outdoor_air_ls_per_person", "OA L/s·person"], ["outdoor_air_ls_per_m2", "OA L/s·m²"],
+];
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = String(text);
+  return e;
+}
+
+function fixed(v, places) { return v == null || v === "" ? "—" : Number(v).toFixed(places); }
+
+function valueOf(entry) { return entry && typeof entry === "object" ? entry.value : entry; }
+function sourceOf(entry) { return entry && typeof entry === "object" ? (entry.source || "instruction") : "instruction"; }
+
+async function loadsPost(path, body, said) {
+  loadsBusy = true;
+  document.querySelectorAll("#loads button").forEach(b => { b.disabled = true; });
+  said.className = "result";
+  said.textContent = path.endsWith("finalize") ? "Writing into Revit - it waits if the chat is using Revit right now…" : "Working…";
+  try {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
+      credentials: "same-origin",
+      body: JSON.stringify(body || {}),
+    });
+    const answer = await res.json();
+    said.className = answer.ok ? "result ok" : "result failed";
+    said.textContent = answer.said || answer.error || (answer.ok ? "Done." : "Not done.");
+  } catch (e) {
+    said.className = "result failed";
+    said.textContent = path.endsWith("finalize")
+      ? "The page lost the answer, so it cannot say whether Revit took the values. Look at the model, and at Revit's undo list, before pressing Finalize again."
+      : "The page could not reach Heron. Nothing was changed.";
+  }
+  loadsBusy = false;
+  loadsShown = null;
+  await loads_();
+  const after = $("l-said");
+  if (after && said.textContent) { after.className = said.className; after.textContent = said.textContent; }
+}
+
+function renderLoads(L) {
+  const box = $("l-box");
+  box.replaceChildren();
+  $("l-empty").hidden = !!L;
+  if (!L) return;
+  const where = el("p", "where");
+  where.append(el("span", null, L.document || ""), el("span", null, "read at " + (L.at || "")),
+               el("span", null, L.run_id ? "run " + L.run_id : "not calculated yet"));
+  box.append(where);
+
+  // QA - always visible, FAIL first (the brain sorted it).
+  const qa = el("div", "l-qa");
+  qa.append(el("h3", null, "Checks on the model (" + (L.qa || []).length + ")"));
+  const qaList = el("ul");
+  (L.qa || []).forEach(f => {
+    const li = el("li", "qa-" + String(f.level).toLowerCase());
+    li.append(el("b", null, f.level + " "), document.createTextNode(f.text));
+    qaList.append(li);
+  });
+  if (!(L.qa || []).length) qaList.append(el("li", "muted", "Nothing found."));
+  qa.append(qaList);
+  box.append(qa);
+
+  const project = Object.assign({}, L.project || {});
+  const profiles = JSON.parse(JSON.stringify(L.profiles || {}));
+  const overrides = JSON.parse(JSON.stringify(L.overrides || {}));
+
+  // Asked - what Heron still needs; a standard's figure is OFFERED, never filled in.
+  if ((L.asked || []).length) {
+    const ask = el("div", "l-asked");
+    ask.append(el("h3", null, "Heron needs these before it calculates anything"));
+    const tbl = el("table");
+    (L.asked || []).forEach(a => {
+      const tr = el("tr");
+      const input = el("input");
+      input.type = "text";
+      input.setAttribute("aria-label", a.input + " " + a.for);
+      input.addEventListener("input", () => {
+        const raw = input.value.trim();
+        const v = raw === "" ? null : (isNaN(Number(raw)) ? raw : Number(raw));
+        if (a.for === "project") project[a.input] = v;
+        else { profiles[a.for] = profiles[a.for] || {}; profiles[a.for][a.input] = v; }
+      });
+      tr.append(el("td", null, a.for === "project" ? "project" : a.for),
+                el("td", "id", a.input), el("td", "muted", a.unit),
+                el("td", null, a.why), el("td", "small muted", a.offer || "no standard figure held"));
+      const cell = el("td"); cell.append(input); tr.append(cell);
+      tbl.append(tr);
+    });
+    ask.append(tbl);
+    box.append(ask);
+  }
+
+  // Inputs - one row per profile, each cell editable, its source as a tag.
+  const inputs = el("div", "l-inputs grid");
+  inputs.append(el("h3", null, "Inputs per Space type"));
+  const itbl = el("table");
+  const head = el("tr");
+  head.append(el("th", null, "Space type"));
+  PROFILE_FIELDS.forEach(([, label]) => head.append(el("th", "num", label)));
+  itbl.append(head);
+  Object.keys(profiles).sort().forEach(key => {
+    const tr = el("tr");
+    tr.append(el("td", null, key));
+    PROFILE_FIELDS.forEach(([name]) => {
+      const td = el("td", "num");
+      const input = el("input");
+      input.type = "text";
+      input.value = valueOf(profiles[key][name]) == null ? "" : valueOf(profiles[key][name]);
+      input.setAttribute("aria-label", key + " " + name);
+      input.addEventListener("input", () => {
+        const raw = input.value.trim();
+        profiles[key][name] = raw === "" ? null : (isNaN(Number(raw)) ? raw : Number(raw));
+      });
+      td.append(input, el("span", "tag", sourceOf(profiles[key][name])));
+      tr.append(td);
+    });
+    itbl.append(tr);
+  });
+  inputs.append(itbl);
+  box.append(inputs);
+
+  // Results - per Space, then zones and the building: block AND sum of peaks.
+  const results = el("div", "l-results grid");
+  results.append(el("h3", null, "Results"));
+  const rtbl = el("table");
+  const rh = el("tr");
+  ["Space", "Zone", "m²", "sens. W", "lat. W", "total W", "W/m²", "TR", "heat W",
+   "supply L/s", "OA L/s", "ACH", "peak", "status"].forEach((h, i) =>
+    rh.append(el("th", i > 1 && i < 12 ? "num" : null, h)));
+  rtbl.append(rh);
+  (L.spaces || []).forEach(s => {
+    const v = s.shown || {};
+    const tr = el("tr", s.status === "ok" ? null : "off");
+    tr.append(el("td", null, ((s.number || "") + " " + (s.name || "")).trim()),
+              el("td", null, s.zone || "—"), el("td", "num", fixed(s.area_m2, 1)),
+              el("td", "num", fixed(v.sensible_w, 0)), el("td", "num", fixed(v.latent_w, 0)),
+              el("td", "num", fixed(v.total_w, 0)), el("td", "num", fixed(v.w_per_m2, 1)),
+              el("td", "num", fixed(v.tr, 2)), el("td", "num", fixed(v.heating_w, 0)),
+              el("td", "num", fixed(v.supply_ls, 1)), el("td", "num", fixed(v.outdoor_air_ls, 1)),
+              el("td", "num", fixed(v.ach, 1)), el("td", null, v.peak || "—"));
+    const st = el("td", null, s.status);
+    if ((s.why || []).length) st.title = s.why.join("\n");
+    tr.append(st);
+    rtbl.append(tr);
+    if (s.status !== "ok" && (s.why || []).length) {
+      const why = el("tr", "why");
+      const td = el("td", "small muted", s.why.join(" · "));
+      td.colSpan = 14;
+      why.append(td);
+      rtbl.append(why);
+    }
+  });
+  const total = (label, z) => {
+    const tr = el("tr", "sum");
+    tr.append(el("td", null, label), el("td", null, ""), el("td", "num", fixed(z.area_m2, 1)),
+              el("td", null, ""), el("td", null, ""),
+              el("td", "num", "block " + fixed(z.block_w, 0)), el("td", null, ""),
+              el("td", "num", fixed(z.block_tr, 2)), el("td", "num", fixed(z.heating_w, 0)),
+              el("td", "small muted", "sum of peaks " + fixed(z.sum_of_peaks_w, 0) + " W"),
+              el("td", null, ""), el("td", null, ""), el("td", null, z.block_when || "—"),
+              el("td", null, ""));
+    rtbl.append(tr);
+  };
+  (L.zones || []).forEach(z => total("Zone " + z.name, z));
+  if (L.building) total("Building", L.building);
+  results.append(rtbl);
+  box.append(results);
+
+  const notes = el("details", "l-notes");
+  notes.append(el("summary", null, "What this is, and what it is not"));
+  (L.notes || []).forEach(n => notes.append(el("p", "small", n)));
+  box.append(notes);
+
+  // Buttons.
+  const foot = el("div", "foot");
+  const said = el("p", "result");
+  said.id = "l-said";
+  const recalc = el("button", null, "Recalculate");
+  recalc.title = "Works out the loads again with the inputs above. Nothing in Revit changes.";
+  recalc.addEventListener("click", () => loadsPost("/api/loads/recalculate",
+    { project: project, profiles: profiles, overrides: overrides }, said));
+  const report = el("button", null, "Report");
+  report.title = "Writes the load calculation sheet - HTML, PDF and CSV. Nothing in Revit changes.";
+  report.disabled = !L.run_id;
+  report.addEventListener("click", () => loadsPost("/api/loads/report", {}, said));
+  const ok = (L.spaces || []).filter(s => s.status === "ok");
+  const terminals = ok.reduce((n, s) => n + (s.terminals || []).length, 0);
+  const finalize = el("button", "primary", "Finalize to Revit");
+  finalize.disabled = !ok.length;
+  finalize.title = "Writes the loads and airflows into " + ok.length + " Spaces and " + terminals +
+    " diffusers - two undo entries in Revit.";
+  finalize.addEventListener("click", () => {
+    if (confirm(finalize.title + " Go ahead?")) loadsPost("/api/loads/finalize", {}, said);
+  });
+  foot.append(recalc, report, finalize, el("span", "small muted", finalize.title));
+  box.append(foot);
+  if (L.report) {
+    const r = el("p", "small");
+    r.textContent = "Report: " + [L.report.pdf, L.report.html, L.report.csv].filter(Boolean).join(" · ");
+    box.append(r);
+  }
+  if (L.finalized) {
+    const f = el("p", "small");
+    f.textContent = L.finalized.at + " · " + (L.finalized.said || "");
+    box.append(f);
+  }
+  box.append(said);
+
+  // Runs - every Recalculate is kept; an earlier one opens read-only.
+  const runs = el("details", "l-runs");
+  runs.append(el("summary", null, "Earlier runs"));
+  runs.addEventListener("toggle", async () => {
+    if (!runs.open || runs.dataset.read) return;
+    runs.dataset.read = "1";
+    try {
+      const res = await fetch("/api/loads/runs", { headers: HEADER, credentials: "same-origin" });
+      const list = (await res.json()).runs || [];
+      if (!list.length) runs.append(el("p", "small muted", "No run is kept for this project yet."));
+      list.forEach(r => runs.append(el("p", "small", r.run_id + " · " + (r.when || "") +
+        " · block " + fixed(r.block_w, 0) + " W" + (r.run_id === L.run_id ? " (this one)" : ""))));
+    } catch (e) { runs.append(el("p", "small muted", "The runs could not be read.")); }
+  });
+  box.append(runs);
+}
+
+async function loads_() {
+  if (loadsBusy) return;
+  // An input being typed is never wiped by the poll.
+  if (document.activeElement && document.activeElement.closest && document.activeElement.closest("#loads")) return;
+  try {
+    const res = await fetch("/api/loads", { headers: HEADER, credentials: "same-origin" });
+    if (!res.ok) return;
+    const L = (await res.json()).loads;
+    const key = L ? (L.run_id || "") + "/" + L.at + "/" + (L.report ? "r" : "") + (L.finalized ? L.finalized.at : "") : "none";
+    if (key === loadsShown) return;
+    loadsShown = key;
+    renderLoads(L);
+  } catch (e) { /* the state poll reports a closed page */ }
+}
+
 async function pair(code) {
   const res = await fetch("/api/pair", {
     method: "POST",
@@ -970,6 +1226,7 @@ async function poll() {
     activity();
     changes();
     table_();
+    loads_();
   } catch (e) {
     failures += 1;
     if (failures >= 3) {

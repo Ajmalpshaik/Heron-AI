@@ -638,6 +638,98 @@ def test_load_from_revit():
           "only the two known kinds load")
 
 
+def test_loads():
+    """The Loads panel (docs/44 section 7): it holds what the brain worked out
+    and calls hooks - no arithmetic, no BIM rule - and its routes are behind
+    the same header, cookie and Origin as the table's Apply."""
+    print()
+    print("The Loads panel: data and hooks only, and its writes behind the pairing")
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    sys.path.insert(0, os.path.join(ROOT, "tests"))
+    import heron_brain as brain_seam
+    from test_takeoff import ROOM
+    from test_building_loads import PROJECT, OFFICE
+    answer = brain_seam.building_loads(json.dumps(ROOM), {"project": PROJECT,
+                                                          "profiles": {"Office": OFFICE}},
+                                       save=False)
+    panel = hc.LoadsPanel()
+    check(panel.current() is None and panel.recalculate({})["ok"] is False
+          and panel.finalize()["ok"] is False and panel.report()["ok"] is False,
+          "an empty panel, with no chat connected, does nothing")
+    panel.open("Project1", answer, ("Project1", "", "11"))
+    shown = panel.current()
+    check(shown["document"] == "Project1" and shown["spaces"][0]["status"] == "ok"
+          and shown["building"]["block_w"] == answer["result"]["building"]["block_w"]
+          and "takeoff" not in shown and "result" not in shown,
+          "the panel returns what it was given - the take-off and hour rows stay off the page")
+    before = json.dumps(panel.current(), sort_keys=True)
+    said = panel.recalculate({"project": PROJECT, "profiles": {"Office": OFFICE}})
+    check(said["ok"] is False and "no longer connected" in said["said"]
+          and json.dumps(panel.current(), sort_keys=True) == before,
+          "Recalculate with no hook answers 'no longer connected' and changes nothing")
+    seen = []
+
+    def recalc(takeoff, inputs, identity):
+        seen.append((takeoff, inputs, identity))
+        return brain_seam.building_loads(takeoff, inputs, save=False)
+    panel.recalculate_hook = recalc
+    office = dict(OFFICE, equipment_w_per_m2=40)
+    after = panel.recalculate({"project": PROJECT, "profiles": {"Office": office}})
+    check(after["ok"] and seen and seen[0][0] is answer["takeoff"]
+          and seen[0][2] == ["Project1", "", "11"]
+          and after["loads"]["building"]["block_w"] > answer["result"]["building"]["block_w"],
+          "Recalculate runs the brain on the take-off ALREADY HELD, in the model it came from")
+    check(panel.recalculate({"project": "not a dict"})["ok"] is False,
+          "inputs that are not an object are refused at the door")
+    check(panel.earlier("../x") is None, "an earlier run's id must be a run id")
+
+    source = io.open(SOURCE, encoding="utf-8").read()
+    body = source[source.index("class LoadsPanel("):source.index("LOADS_PANEL = LoadsPanel()")]
+    check(not re.search(r"[0-9]\s*[*/]\s*[a-z_(]|W_PER_TR|3\.6", body)
+          and "import heron_" not in body,
+          "the class does no arithmetic and imports no brain module (README rule 4)")
+    for route in ("/api/loads/recalculate", "/api/loads/report", "/api/loads/finalize"):
+        check(route in source, "the page can ask for %s" % route)
+    i = source.index('if path in ("/api/loads/recalculate"')
+    check(source.index("why = self._api_ok()", i) < source.index("LOADS_PANEL.recalculate", i),
+          "every Loads POST is behind _api_ok - header, Origin and the paired cookie")
+
+    companion = hc.Companion(bound_pid=lambda: 100, folder=tempfile.mkdtemp(),
+                             discovery_dir=tempfile.mkdtemp(), is_alive=lambda pid: True)
+    real_stdout, sys.stdout = sys.stdout, io.StringIO()
+    try:
+        companion.pairing_address()
+        port = companion.port
+        origin = "http://127.0.0.1:%d" % port
+        refused = ask(port, "POST", "/api/loads/finalize",
+                      {"X-Heron-Companion": "1", "Origin": origin,
+                       "Content-Type": "application/json"}, "{}")
+        unpaired_get = ask(port, "GET", "/api/loads", {"X-Heron-Companion": "1"})
+        page = ask(port, "GET", "/")
+    finally:
+        printed, sys.stdout = sys.stdout.getvalue(), real_stdout
+        companion.stop()
+    check(refused[0] == 403 and unpaired_get[0] == 403,
+          "Finalize and the panel's data are refused without a redeemed pairing")
+    check(b'id="loads"' in page[2], "the page has the Loads section")
+    check(printed == "", "nothing reached stdout")
+
+    server = io.open(SERVER, encoding="utf-8").read()
+    fin = server[server.index("def _loads_finalize("):]
+    fin = fin[:fin.index(chr(10) + "def ", 10)]
+    check("_apply_table(rows, identity)" in fin
+          and fin.index("_apply_table(rows, identity)") < fin.index('"SET_AIR_TERMINAL_FLOW"')
+          and "moved = _moved_since(identity)" in fin,
+          "Finalize writes the Spaces through the table's own Apply first, then the "
+          "diffusers, each refused when the chat has moved to another model")
+    check(tools.COMPANION_ACTIONS.get("companion_loads_finalize") == (tools.MODIFY,
+                                                                      "run_fragment_write"),
+          "Finalize is declared MODIFY through run_fragment_write")
+    for hook in ("recalculate_hook = _loads_recalculate", "report_hook = _loads_report",
+                 "finalize_hook = _loads_finalize"):
+        check(hook in server, "the server sets %s" % hook.split(" =")[0])
+
+
 def main():
     tmp = tempfile.mkdtemp(prefix="heron-companion-")
     test_live_files(tmp)
@@ -648,6 +740,7 @@ def main():
     test_tables()
     test_load_from_revit()
     test_model_guard()
+    test_loads()
     test_no_way_to_an_ai()
     test_addin_side()
 
