@@ -1,0 +1,64 @@
+# Two READ fragments from the study of downloaded reference material:
+# CHECK_MODEL_STANDARDS version 2 (type and room name rules, value patterns,
+# placeholders) and REPORT_MIRRORED_INSTANCES version 1 (new). Both DRAFT.
+#
+#     python tools/batch-prove.py tools/jobs/study-44-standards-and-mirrored.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/study-44-standards-and-mirrored.yaml
+#
+# Run by the owner, on a test copy, never by the session that wrote it. Neither
+# fragment takes a selection, so there is no setup chain: both negatives come
+# from the VALUE (tools/jobs/value-driven-negatives.yaml explains why that is the
+# stronger contrast).
+
+model: Snowdon-scratch_ajmal.al (standards) and a test copy of Project1 work_ajmal.al (mirrored), Revit 2024
+
+defaults:
+  write: false                          # both are risk READ
+  setup: []
+
+jobs:
+  # VALUE-DRIVEN. Every section is given "*" so it passes, the required
+  # parameter is one every duct carries, and ONLY the type rule differs between
+  # the legs. Snowdon's duct types are the sample's own names, not the office
+  # prefix, so "*: TRG*" fails them and "*" passes them. MEASURE FIRST: if this
+  # model's duct types already start with TRG, the positive comes back empty and
+  # the fragment gets blamed for the arrangement.
+  - fragment: check-model-standards
+    set:
+      namePatterns: "view=*; sheet=*; level=*; workset=*; system=*; room=*; type=*: TRG*"
+      requiredOn: "Ducts"
+      requiredParameters: "Family and Type"
+      suspectNames: "zz-no-such-name"
+      skipViewTemplates: true
+      maxRows: 50
+    negative-set:
+      namePatterns: "view=*; sheet=*; level=*; workset=*; system=*; room=*; type=*"
+      requiredOn: "Ducts"
+      requiredParameters: "Family and Type"
+      suspectNames: "zz-no-such-name"
+      skipViewTemplates: true
+      maxRows: 50
+    expect: failures
+    note: >
+      Read the TYPE NAMES section on both legs: the positive names each duct
+      type as "Family: Type" with no space before the colon, the negative
+      lists none. If "Family and Type" comes back NOT READ on any duct, that is
+      row 5b-203's guard firing and is itself worth recording. The value and
+      placeholder keys are proved separately by hand (Group CC), because they
+      need a parameter value the owner sets on a test copy.
+
+  # THE ARRANGEMENT IS THE WORK. On a test copy of Project1, before running:
+  # mirror ONE door (Modify > Mirror), use the flip arrows on a SECOND door
+  # (hand flip only - not mirrored), leave the rest alone. The positive is
+  # Doors; the negative is Air Terminals, whose diffusers were placed and never
+  # mirrored - measure that first. The flipped door must appear under hand
+  # flipped and NOT under MIRRORED: that is the half of the proof that matters.
+  - fragment: report-mirrored-instances
+    set:
+      categories: "Doors"
+    negative-set:
+      categories: "Air Terminals"
+    expect: mirrored
+    note: >
+      Run on Project1 work_ajmal.al (a TEST COPY), not on Snowdon - the
+      Snowdon HVAC model keeps its doors in a link, which this does not read.

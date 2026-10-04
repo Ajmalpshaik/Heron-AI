@@ -9,7 +9,7 @@ semantic-identity: "does this model follow the project's own naming and data rul
 kind: action
 domain: revit.qa
 capability: CHECK_MODEL_STANDARDS
-version: 1
+version: 2
 source: OFFICIAL
 risk: READ
 
@@ -49,6 +49,28 @@ purpose: >
   browser and system views are not named by anybody. Flagging them buries the
   real findings under noise nobody can act on.
 
+  **VERSION 2 READS FOUR MORE RULES, EVERY ONE OPTIONAL AND EVERY ONE NOT
+  CHECKED WHEN IT IS NOT GIVEN.** They are keys in the same `namePatterns` table,
+  not new values to supply, so a request written for version 1 runs unchanged:
+  `type=` checks type names written as *"Family: Type"* - no space before the
+  colon - over the types of the categories in `requiredOn`, so
+  `type=*: TRG*` finds every type whose name does not start with the office
+  prefix; `room=` checks room names; `value:<parameter>=` is the pattern a FILLED
+  value of a required parameter must match, and a filled value that breaks it is
+  counted apart from a blank one, because correcting data and entering it are
+  different jobs; `placeholder=TBD, XXX` names the values this project uses for
+  "not filled in yet", which are then counted as BLANK. **No placeholder is
+  assumed** - with none named, *"TBD"* is a filled value, and the report says
+  placeholders were NOT CHECKED. Keys are read regardless of capitals, and a key
+  it does not know is listed as NOT USED rather than dropped.
+
+  **A PARAMETER NAME TWO PARAMETERS SHARE ON ONE ELEMENT IS REPORTED, NOT READ**
+  (FRAGMENT-ISSUES row 5b-203). Revit picks one of the two at random when asked
+  by name, so such an element is counted as NOT READ - neither passed nor failed.
+
+  **A CHECK THAT PASSES MEANS THE MODEL MEETS THE RULES THAT WERE GIVEN.** It
+  never says the model complies with anything; that is the engineer's call.
+
   **THIS CHECKS CONVENTIONS, NOT CORRECTNESS.** A view named perfectly can still
   show the wrong thing. It is the cheap half of a model audit; the warnings, the
   links and the geometry weight are the other half, and neither replaces looking
@@ -59,7 +81,14 @@ contract:
     - name: doc
       type: Document
     # Keyed by what is being named: "view", "sheet", "level", "workset",
-    # "system". A key that is absent or empty is NOT CHECKED and says so.
+    # "system", and since version 2 "type" (as "Family: Type", over the types
+    # of `requiredOn`) and "room". Also since version 2: "value:<parameter>",
+    # the pattern a FILLED value of that required parameter must match, and
+    # "placeholder", a comma list of values counted as blank. Keys are read
+    # regardless of capitals. A key that is absent or empty is NOT CHECKED and
+    # says so; a key not known is listed as NOT USED. They live here rather
+    # than as new needs because the binder refuses an absent request need of
+    # any type but an optional bool (HeronBindingNote.AbsentValue).
     - name: namePatterns
       type: IDictionary<string, string>
       source: request
@@ -123,7 +152,14 @@ compatibility-note: >
   library.** `System.Text.RegularExpressions` would work everywhere; the reason
   is the pattern language, not the platform - see `purpose`.
 
-  No units API is called: every value read here is compared as text. No
+  Version 2 adds `Element.GetParameters(string)`, `ElementType.FamilyName`,
+  `FilteredElementCollector.WhereElementIsElementType`, `BuiltInCategory.OST_Rooms`
+  and `BuiltInParameter.ROOM_NAME`, each read with tools/api-surface as present
+  and unchanged 2020 through 2027. A room's name is read from ROOM_NAME, not
+  `Element.Name`, which carries the room number as well.
+
+  No units API is called: every value read here is compared as text - a value
+  pattern on a number is matched against what Revit SHOWS, unit and all. No
   `ElementId` is read as a number.
 
 # ROUTING - the same rows are in the fragments named here.
@@ -147,6 +183,12 @@ compatibility-note: >
 #   "why is the model so heavy"           -> REPORT_GEOMETRY_COMPLEXITY
 #   "which views have no template"        -> FIND_VIEWS_WITHOUT_TEMPLATE
 #   "fix the names this found"            -> RENAME_ELEMENTS or EDIT_TEXT_VALUES
+#   "do the type names follow our naming standard"
+#                                         -> here, version 2, with type=
+#   "which parameters still say TBD"      -> here, with placeholder= and the
+#                                            parameter in requiredParameters
+#   "which doors are mirrored"            -> REPORT_MIRRORED_INSTANCES - handing
+#                                            is not a naming rule
 
 utterances:
   - check this model against our naming standard
@@ -156,3 +198,5 @@ utterances:
   - which elements are missing the parameters the project requires
   - check the model naming conventions
   - is this model ready to submit
+  - do the type names follow our naming standard
+  - which parameters still say TBD

@@ -30,6 +30,33 @@ positive:
       the user worksets checked by name, with NO ids attached to those findings -
       a workset id is not an element id and would resolve to nothing
 
+  # ---- version 2 ----
+  - given: >
+      requiredOn Ducts, namePatterns "type=*: TRG*", over duct types
+      "Rectangular Duct: TRG-Supply" and "Rectangular Duct: Default"
+    expect: >
+      the Default type reported as "Rectangular Duct: Default", with its id and
+      the pattern quoted; the TRG type passes. The name is written "Family:
+      Type" with no space before the colon
+
+  - given: requiredOn Mechanical Equipment, requiredParameters "Comments",
+      namePatterns "placeholder=TBD, XXX", one unit with Comments "TBD", one
+      with "XXX", one with "AHU-01"
+    expect: >
+      two BLANK (2 of them holding a placeholder), one filled. The "TBD" row
+      says it holds a placeholder the request named
+
+  - given: requiredOn Mechanical Equipment, requiredParameters "Mark",
+      namePatterns "value:Mark=AHU-*", one unit marked "AHU-01" and one "unit 2"
+    expect: >
+      1 filled and matching, 1 filled but NOT matching, 0 blank - the wrong
+      value is NOT counted as blank, and "unit 2" is quoted beside the pattern
+
+  - given: namePatterns "room=Office*" over rooms named "Office 01" and "Store"
+    expect: >
+      only Store reported. The name is the room's Name parameter, not its
+      element name, which carries the number too
+
 negative:
   - given: a rule set naming no pattern for sheets and no suspect names
     expect: >
@@ -74,6 +101,37 @@ negative:
       NOTHING RENAMED AND NOTHING SET. This reports; RENAME_ELEMENTS and
       EDIT_TEXT_VALUES are what fix it
 
+  # ---- version 2 ----
+  - given: the same Mechanical Equipment with Comments "TBD", and NO
+      placeholder key
+    expect: >
+      "TBD" counted as FILLED and the line saying placeholders were NOT
+      CHECKED. No placeholder is ever assumed
+
+  - given: namePatterns "value:Mark=AHU-*", requiredOn Ducts and requiredParameters Mark, over ducts
+      whose Mark is blank
+    expect: >
+      the blank ducts counted BLANK only, never also as not matching - a value
+      pattern is applied to a filled value, so blank and wrong form stay apart
+
+  - given: >
+      requiredOn Walls, a curtain wall type, requiredParameters
+      "Interior Type" (shown twice on the type, under Vertical and Horizontal
+      Mullions)
+    expect: >
+      that wall counted NOT READ because two parameters share the name, not
+      filled and not blank (row 5b-203)
+
+  - given: >
+      namePatterns "type=*: TRG*" and NO requiredOn
+    expect: >
+      TYPE NAMES NOT CHECKED, saying the type pattern was given and could not
+      be applied. Never a zero
+
+  - given: namePatterns "views=MEP-*" (a misspelt key)
+    expect: >
+      "views" listed under RULES NOT UNDERSTOOD, and the views NOT CHECKED
+
 second_route:
   - >
     Revit's own Project Browser sorted by name, and the Sheet List schedule. The
@@ -84,3 +142,8 @@ second_route:
     The project's BIM execution plan or naming standard document. The patterns
     handed in should be traceable to a written rule, and a finding nobody can
     trace to one is a finding nobody will act on
+
+  - >
+    Version 2: a type schedule of the required categories with Family and Type
+    fields, and a schedule of the required parameter filtered "equals TBD" -
+    the counts here should match the rows there

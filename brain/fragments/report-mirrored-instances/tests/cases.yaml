@@ -1,0 +1,58 @@
+# Arrangement, built on a TEST COPY of Project1 work_ajmal.al before running:
+# mirror one door with Modify > Mirror; hand-flip a second door with its flip
+# arrow (not mirrored); leave the rest. The contrast is in the arrangement - a
+# flipped door is the thing the mirrored list must NOT contain.
+
+positive:
+  - given: categories "Doors", one door mirrored with Modify > Mirror and one
+      hand flipped with its arrow
+    expect: >
+      the mirrored door in `mirrored`, listed as MIRRORED with its id and
+      "Family: Type"; the hand-flipped door in `handFlipped` and NOT in
+      `mirrored`. Counts per category and per type agree with the two doors
+
+  - given: categories "Doors, Plumbing Fixtures", with a mirrored door and a
+      mirrored basin
+    expect: >
+      one mirrored under Doors and one under Plumbing Fixtures, each category
+      counted on its own line
+
+  - given: a door that is BOTH mirrored and facing flipped
+    expect: >
+      one row carrying "MIRRORED, facing flipped" - the id in `mirrored` AND in
+      `facingFlipped`. Neither flag hides the other
+
+negative:
+  - given: categories "Air Terminals", diffusers placed and never mirrored
+    expect: >
+      0 MIRRORED, with the number of air terminals checked shown beside it.
+      A different selection, not an empty one - the instances were looked at
+      and none is mirrored
+
+  - given: categories "Doors", where the only change is a door hand flipped
+      with its arrow
+    expect: >
+      that door in `handFlipped` and `mirrored` EMPTY. THIS IS THE CASE THAT
+      MATTERS: a flip uses the family's own control and is not a mirror, and a
+      version that folds the two together reports a correct door as wrong
+
+  - given: categories "Ducts"
+    expect: >
+      Ducts reported as NO FAMILY INSTANCES - a category of system elements -
+      never as a zero that reads like a pass
+
+  - given: any run at all
+    expect: >
+      NOTHING FLIPPED, MIRRORED OR CHANGED. FLIP_ELEMENTS and MIRROR_ELEMENTS
+      are the tools that change handing
+
+second_route:
+  - >
+    Revit itself: select the reported door and look at it in plan - a mirrored
+    door's swing and handle side are reversed against an unmirrored one of the
+    same type, and the flip arrows show which have been used.
+
+  - >
+    The arrangement itself: the owner knows which door was mirrored and which
+    was flipped because he did it, and the report must name exactly those two.
+    That is why the arrangement is two doors, not a whole floor.
