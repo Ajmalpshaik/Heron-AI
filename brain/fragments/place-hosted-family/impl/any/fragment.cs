@@ -1,7 +1,8 @@
-// NOT STANDALONE. Assumes `doc`, `symbol`, `points`, `toRoomAt`, `hingeAt` and
-// `level` are in scope; leaves `placed`, `alreadyThere`, `failed`, `noWall`,
-// `twoWalls`, `flipped`, `handFlipped`, `toRoomSwapped`, `wrongRoom`,
-// `wrongHinge`, `toRoomWrong` and `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `symbol`, `points`, `toRoomAt`, `hingeAt`,
+// `level` and `sillHeight` are in scope; leaves `placed`, `alreadyThere`,
+// `failed`, `noWall`, `twoWalls`, `flipped`, `handFlipped`, `toRoomSwapped`,
+// `wrongRoom`, `wrongHinge`, `toRoomWrong`, `sills`, `sillWrong`,
+// `noSillParameter`, `sillTooHigh` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16). Points are internal FEET.
 //
@@ -47,6 +48,27 @@
 // undo and its point named. A count of calls that returned is not evidence
 // that a door is in a wall.
 //
+// VERSION 3: THE SILL HEIGHT, ASKED FOR OR READ - NEVER TRUSTED. `sillHeight`
+// is millimetres above the level, or BLANK. Blank changes nothing about
+// version 2: the sill is left as Revit placed it, and what it reads is still
+// reported per door, because a window placed through the API has been said to
+// land with its sill at 0 - a hypothesis nobody here has measured, so the
+// reply carries the reading that settles it. Given, it is:
+//   1. CHECKED BEFORE PLACING, where it is cheap: the level's elevation + the
+//      sill + the TYPE's Height (FAMILY_HEIGHT_PARAM, the built-in Doors and
+//      Windows both use) against the top of the wall's own bounding box. A
+//      head above the wall's top skips that point - `sillTooHigh` - and
+//      nothing is placed or touched there. A type whose Height cannot be read
+//      (an instance Height) is not refused: the reply says the head went
+//      unchecked.
+//   2. SET on INSTANCE_SILL_HEIGHT_PARAM, the built-in, and nothing else. A
+//      family without one, or with it read-only, is NOT given another
+//      parameter found by name - a typed name may repeat (row 5b-203). A door
+//      this call placed is removed again inside the same undo and named in
+//      `noSillParameter`; a door already there is left as it was and named.
+//   3. READ BACK after a regenerate, in millimetres, and set beside what was
+//      asked in `sills`. More than 1 mm out is named in `sillWrong`.
+//
 // NonStructural is passed deliberately - a door is not a structural member, and
 // PLACE_STRUCTURAL_FAMILY is where that decision belongs.
 
@@ -61,6 +83,10 @@ var toRoomSwapped = 0;
 var wrongRoom = new List<string>();
 var wrongHinge = new List<string>();
 var toRoomWrong = new List<string>();
+var sills = new List<string>();
+var sillWrong = new List<string>();
+var noSillParameter = new List<string>();
+var sillTooHigh = new List<string>();
 var findings = new List<string>();
 
 // One millimetre, and fifty, in the feet everything here is measured in.
@@ -69,7 +95,31 @@ const double SamePlace = 50.0 / 304.8;
 
 string firstRefusal = null;
 
-if (points == null || points.Count == 0)
+// THE SILL ASKED FOR, in feet, or null for "leave it as Revit places it".
+// Read before anything is placed, so a sill that cannot be read stops the run
+// whole rather than after the first door.
+var sillText = (sillHeight ?? "").Trim();
+double? sillAsked = null;
+string sillRefusal = null;
+if (sillText.Length > 0)
+{
+    double sillMm;
+    if (!double.TryParse(sillText, System.Globalization.NumberStyles.Float,
+                         System.Globalization.CultureInfo.InvariantCulture, out sillMm))
+        sillRefusal = "'" + sillText + "' is not a sill height. Give it in millimetres - 900 - "
+            + "or leave it blank to keep the sill Revit places. Nothing was placed";
+    else if (sillMm < 0)
+        sillRefusal = "A sill of " + sillText + " mm is below the level, and that is not guessed "
+            + "at. Nothing was placed";
+    else
+        sillAsked = sillMm / 304.8;
+}
+
+if (sillRefusal != null)
+{
+    findings.Add(sillRefusal);
+}
+else if (points == null || points.Count == 0)
 {
     findings.Add("No points were given, so there is nothing to place");
 }
@@ -123,6 +173,24 @@ else
     }
 
     var z = level.ProjectElevation;
+
+    // The type's Height, for the head check before placing. Doors and
+    // Windows both keep it in FAMILY_HEIGHT_PARAM; a family that keeps its
+    // height on the instance has none here, and the check is then reported
+    // as not made rather than guessed.
+    double? typeHeight = null;
+    if (sillAsked.HasValue)
+    {
+        try
+        {
+            var heightParameter = symbol.get_Parameter(BuiltInParameter.FAMILY_HEIGHT_PARAM);
+            if (heightParameter != null && heightParameter.StorageType == StorageType.Double
+                && heightParameter.AsDouble() > 0)
+                typeHeight = heightParameter.AsDouble();
+        }
+        catch { }
+    }
+    var headUnchecked = 0;
 
     // The room a short way out along the door's facing - clear of the wall's
     // half-thickness, well short of the far side of a corridor.
@@ -251,6 +319,31 @@ else
             continue;
         }
 
+        // THE HEAD, BEFORE ANYTHING IS PLACED OR TOUCHED. Level + sill + the
+        // type's Height against the top of the wall's own bounding box.
+        if (sillAsked.HasValue)
+        {
+            BoundingBoxXYZ wallBox = null;
+            try { wallBox = host.get_BoundingBox(null); } catch { }
+            if (typeHeight.HasValue && wallBox != null)
+            {
+                var head = z + sillAsked.Value + typeHeight.Value;
+                if (head > wallBox.Max.Z + Slack)
+                {
+                    sillTooHigh.Add(string.Format("{0} - a {1:0} mm sill under a {2:0} mm high "
+                        + "type puts its head {3:0} mm above the level, over the wall's top at "
+                        + "{4:0} mm; nothing placed or changed there", label,
+                        sillAsked.Value * 304.8, typeHeight.Value * 304.8,
+                        (head - z) * 304.8, (wallBox.Max.Z - z) * 304.8));
+                    continue;
+                }
+            }
+            else
+            {
+                headUnchecked++;
+            }
+        }
+
         // ALREADY THERE? Same category, same wall, within 50 mm of the point.
         FamilyInstance made = null;
         foreach (var element in new FilteredElementCollector(doc)
@@ -299,8 +392,65 @@ else
                 continue;
             }
 
-            placed.Add(made.Id);
         }
+
+        // THE SILL. Asked for: set on the built-in, regenerated and read back.
+        // Not asked for: read, so the reply says where Revit put it.
+        var isNew = !alreadyThere.Contains(label);
+        Parameter sill = null;
+        try { sill = made.get_Parameter(BuiltInParameter.INSTANCE_SILL_HEIGHT_PARAM); } catch { }
+        var sillUsable = sill != null && sill.StorageType == StorageType.Double;
+
+        if (sillAsked.HasValue)
+        {
+            if (!sillUsable || sill.IsReadOnly)
+            {
+                var why = !sillUsable ? "its family has no Sill Height parameter"
+                                      : "its Sill Height is read-only";
+                if (isNew)
+                {
+                    try { doc.Delete(made.Id); } catch { }
+                    noSillParameter.Add(label + " - " + why + ", so it was removed again rather "
+                        + "than left at a sill nobody asked for. No other parameter is tried");
+                    continue;
+                }
+                noSillParameter.Add(label + " - the one already there: " + why
+                    + ", so its sill was left as it is. No other parameter is tried");
+            }
+            else
+            {
+                try
+                {
+                    sill.Set(sillAsked.Value);
+                    doc.Regenerate();
+                }
+                catch (Exception failure)
+                {
+                    if (firstRefusal == null) firstRefusal = label + ": " + failure.Message;
+                }
+                var readMm = double.NaN;
+                try
+                {
+                    sill = made.get_Parameter(BuiltInParameter.INSTANCE_SILL_HEIGHT_PARAM);
+                    if (sill != null) readMm = sill.AsDouble() * 304.8;
+                }
+                catch { }
+                var askedMm = sillAsked.Value * 304.8;
+                var reads = double.IsNaN(readMm) ? "nothing" : readMm.ToString("0") + " mm";
+                sills.Add(string.Format("{0} - sill asked {1:0} mm, reads {2}", label, askedMm, reads));
+                if (double.IsNaN(readMm) || Math.Abs(readMm - askedMm) > 1.0)
+                    sillWrong.Add(string.Format("{0} - sill asked {1:0} mm, reads {2}",
+                        label, askedMm, reads));
+            }
+        }
+        else
+        {
+            sills.Add(label + " - sill not asked for, left as Revit placed it: reads "
+                + (sillUsable ? (sill.AsDouble() * 304.8).ToString("0") + " mm"
+                              : "nothing - its family has no Sill Height parameter"));
+        }
+
+        if (isNew) placed.Add(made.Id);
 
         // THE ROOM IT OPENS INTO. A point a foot above the floor, so it is
         // inside the room's height whatever the room's limits are.
@@ -396,6 +546,18 @@ else
         placed.Count, alreadyThere.Count, symbol.Name, level.Name, flipped, handFlipped,
         toRoomSwapped, noWall.Count, twoWalls.Count, failed, wrongRoom.Count, wrongHinge.Count,
         toRoomWrong.Count, phase == null ? "(none)" : phase.Name));
+
+    if (sillAsked.HasValue)
+        findings.Add(string.Format(
+            "Sill asked for: {0:0} mm. Read back as asked on {1}, reading otherwise on {2}, "
+            + "no usable Sill Height on {3}, {4} point(s) skipped because the head would stand "
+            + "above the wall. Head not checked at {5} point(s) - the type's Height or the "
+            + "wall's top could not be read",
+            sillAsked.Value * 304.8, sills.Count - sillWrong.Count, sillWrong.Count,
+            noSillParameter.Count, sillTooHigh.Count, headUnchecked));
+    else
+        findings.Add("No sill height was asked for, so every sill was left as Revit placed it - "
+            + "what each one reads is in `sills`");
 
     if (firstRefusal != null) findings.Add("Revit's first refusal said: " + firstRefusal);
 }
