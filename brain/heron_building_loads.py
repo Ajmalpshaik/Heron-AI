@@ -68,6 +68,7 @@ OA_NOTE = ("outdoor air per Space is the breathing-zone sum, people x Rp + area 
            "air distribution effectiveness and system ventilation efficiency are the "
            "ventilation calculation's and are not applied here")
 SOURCES = ("model", "instruction", "assumption")
+_MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
 
 class _Refused(ValueError):
@@ -262,7 +263,8 @@ def _block(spaces):
         month = hour = None
         block = 0.0
     return {"area_m2": area, "sum_of_peaks_w": peaks, "block_w": block, "block_month": month,
-            "block_hour": hour, "heating_w": heating}
+            "block_hour": hour, "heating_w": heating, "block_tr": block / HVAC.W_PER_TR,
+            "block_when": ("%s %02d:00" % (_MONTHS[month - 1], hour)) if month else None}
 
 
 def run(t, project, profiles, overrides=None, recorded=None):
@@ -285,7 +287,7 @@ def run(t, project, profiles, overrides=None, recorded=None):
                "number": space.get("number"), "name": space.get("name"),
                "zone": space.get("zone"), "profile": key, "status": "ok", "why": [],
                "area_m2": space.get("area_m2"), "cooling": None, "heating": None,
-               "supply_ls": None, "outdoor_air_ls": None,
+               "supply_ls": None, "outdoor_air_ls": None, "checks": [],
                "terminals": list(space.get("terminals") or [])}
         rows.append(row)
         if not space.get("placed") or not space.get("area_m2"):
@@ -335,10 +337,26 @@ def run(t, project, profiles, overrides=None, recorded=None):
                           "components": heat["data"]["components"]}
         row["supply_ls"] = air["data"]["supply_ls"]
         row["outdoor_air_ls"] = cool_in.get("outdoor_air_ls")
+        # What the page shows beside each Space - worked out here, so the
+        # Companion does no arithmetic of its own (mcp/companion README rule 4).
+        area = float(space["area_m2"])
+        row["shown"] = {"sensible_w": peak["sensible_w"], "latent_w": peak["latent_w"],
+                        "total_w": peak["total_w"], "w_per_m2": peak["total_w"] / area,
+                        "tr": peak["total_w"] / HVAC.W_PER_TR,
+                        "heating_w": heat["data"]["loss_w"], "supply_ls": row["supply_ls"],
+                        "outdoor_air_ls": row["outdoor_air_ls"],
+                        "ach": (row["supply_ls"] * 3.6 / (area * space["height_m"])
+                                if space.get("height_m") else None),
+                        "peak": "%s %02d:00" % (_MONTHS[peak["month"] - 1], peak["hour"])}
         for answer in (cool, heat, air):
             for line in answer.get("assumed") or []:
                 if line not in notes:
                     notes.append(line)
+            # The engine's own WARN and FAIL checks stay with the Space they
+            # are about - a negative latent from dry outdoor air, say.
+            for level, text in answer.get("checks") or []:
+                if level in ("WARN", "FAIL") and (level, text) not in row["checks"]:
+                    row["checks"].append((level, text))
     zones = []
     for name in sorted({r["zone"] or "(no zone)" for r in rows}):
         z = _block([r for r in rows if (r["zone"] or "(no zone)") == name])
@@ -356,9 +374,6 @@ def run(t, project, profiles, overrides=None, recorded=None):
 
 
 # --- what the chat is told (never the rows - those are on the page) ---------
-
-_MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-
 
 def questions_text(asked):
     """The questions, project first, each with the figure a standard offers - never applied."""

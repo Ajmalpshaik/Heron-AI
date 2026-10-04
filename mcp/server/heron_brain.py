@@ -1557,6 +1557,43 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
                                      "overrides": overrides}}
 
 
+def loads_report(takeoff, result, model_path=None, project=None):
+    """
+    The load calculation sheet for one run (docs/44 s8): HTML, two CSVs and,
+    where Edge or Chrome is on the PC, a PDF - written into "Heron loads/<run>"
+    beside the saved Revit model, else into the run's own folder in Heron's
+    knowledge folder. Written by the brain from its own numbers; nothing is
+    exported from Revit (docs/44 s9, question 4).
+    """
+    import heron_loads_report as REPORT
+    import heron_building_loads as LOADS
+    run_id = result.get("run_id") or "run"
+    if model_path and os.path.isabs(model_path) and os.path.isdir(os.path.dirname(model_path)):
+        folder = os.path.join(os.path.dirname(model_path), "Heron loads", run_id)
+    else:
+        try:
+            folder = os.path.join(LOADS._folder(project or ""), run_id)
+        except ValueError as why:
+            return {"ok": False, "said": "No report was written: %s" % why}
+    standards = {}
+    if project:
+        try:
+            import heron_designbasis as KEEP
+            recorded, _note = KEEP.read(project, "hvac")
+            standards = {k: (v.get("value") if isinstance(v, dict) else v)
+                         for k, v in (recorded or {}).items()}
+        except (ValueError, OSError):
+            standards = {}
+    try:
+        got = REPORT.write(folder, takeoff, result, standards)
+    except OSError as why:
+        _audit().record("design.loads_report", False, fields={"status": "not written"})
+        return {"ok": False, "said": "No report was written: %s" % why}
+    _audit().record("design.loads_report", True,
+                    fields={"status": "ok", "pdf": "yes" if got.get("pdf") else "no"})
+    return got
+
+
 def fire(calculation, inputs, project=None, project_name=None):
     """
     One fire protection design calculation - HERON-MEP-FPD-002, docs/42 - or,
