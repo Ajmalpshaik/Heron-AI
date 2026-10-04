@@ -198,6 +198,7 @@ compatibility-note: >
 #
 #   "add a Width parameter to this family"   -> here
 #   "make these family parameters instance"  -> here, switchExisting true
+#   "delete these family parameters"         -> DELETE_FAMILY_PARAMETERS
 #   "add a shared parameter to the project"  -> ADD_PROJECT_PARAMETER
 #   "put 600 into Width"                     -> SET_FAMILY_TYPE_VALUES
 #   "what parameters has this family got"    -> REPORT_FAMILY_PARAMETERS

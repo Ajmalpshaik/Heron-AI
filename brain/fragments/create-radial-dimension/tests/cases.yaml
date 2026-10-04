@@ -1,7 +1,7 @@
 positive:
   - given: >
-      a floor plan on Revit 2025 or later, a curved wall or an arc detail line,
-      and a reference to that arc, with isDiameter false
+      a floor plan on Revit 2025 or later, "grid <name>" for an arc grid or
+      "line <id>" for an arc detail line, with isDiameter false
     expect: >
       a radial dimension reading the real radius - checked against the radius the
       arc was drawn at, not read off the report
@@ -13,7 +13,8 @@ positive:
       rather than assuming the flag reaches Revit
 
 negative:
-  - given: a reference to a straight line rather than an arc
+  - given: >
+      "grid A" - a straight grid rather than an arc
     expect: >
       refused in words naming the arc requirement, nothing created - not a raw
       Revit exception
