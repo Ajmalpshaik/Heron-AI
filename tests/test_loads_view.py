@@ -265,6 +265,36 @@ def test_the_l_building_runs_and_its_block_is_below_its_peaks():
     assert r["building"]["block_w"] < r["building"]["sum_of_peaks_w"]
 
 
+def test_the_compass_comes_from_the_same_rule_as_the_facing():
+    # Second review N6: the page worked True North out with its own formula.
+    # The brain sends the north direction, made by heron_takeoff.azimuth_deg,
+    # so a sign fixed there turns the compass with the facing colours.
+    import math
+    for north in (0.0, 20.0, 90.0, -30.0):
+        v = view(l_building(true_north=north))
+        x, y = v["north_xy"]
+        assert abs(T.azimuth_deg([x, y, 0.0], north)) % 360.0 < 1e-6 or \
+            abs(T.azimuth_deg([x, y, 0.0], north) - 360.0) < 1e-6, (north, v["north_xy"])
+        assert abs(math.hypot(x, y) - 1.0) < 1e-9
+
+
+def test_glass_refused_only_where_it_is_counted():
+    # Second review m4: glass in a wall between two Spaces carries no load, so
+    # a missing SHGC there refuses nothing.
+    d = l_building()
+    d["types"]["g2"] = {"name": "Window: Internal", "category": "Windows", "u_w_m2k": 2.8,
+                        "shgc": None, "absorptance": None}
+    a = [s for s in d["spaces"] if s["id"] == "101"][0]
+    shared = [f for f in a["faces"] if f["element"] == "101E"][0]
+    shared["openings"].append({"element": "101E-int", "kind": "window", "type": "g2",
+                               "area_m2": 2.0, "centre": [6.0, 2.5, 1.5], "width_m": 2.0,
+                               "height_m": 1.0})
+    v = view(d)
+    inner = faces_of(v, "101E-int")[0]
+    assert not inner["used_as"].startswith("REFUSED"), inner["used_as"]
+    assert v["spaces"]["101"]["status"] == "ok"
+
+
 def test_imports_only_the_standard_library():
     import ast
     allowed = set(getattr(sys, "stdlib_module_names", ())) | {"__future__", "heron_takeoff"}

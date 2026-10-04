@@ -83,7 +83,7 @@ def _when(month, hour):
     return "%s 21, %02d:00" % (MONTHS[month - 1], hour) if month else "-"
 
 
-def html(result, standards=None, takeoff=None):
+def html(result, standards=None, takeoff=None, project_name=None):
     """The load calculation sheet as one self-contained page.
 
     With the take-off it was worked out from, the sheet also says whether THAT
@@ -101,6 +101,7 @@ def html(result, standards=None, takeoff=None):
              "<title>Load calculation - %s</title><style>%s</style></head><body>"
              % (_e(r.get("document")), CSS),
              "<h1>Load calculation sheet</h1>",
+             ("<p class='meta'>Project: %s</p>" % _e(project_name)) if project_name else "",
              "<p class='meta'>Model: %s</p>" % _e(r.get("document")),
              "<p class='meta'>Run %s, %s</p>" % (_e(r.get("run_id")), _e(r.get("when"))),
              "<p class='meta'><b>%s</b></p>" % _e(DISCLAIMER),
@@ -162,7 +163,7 @@ def html(result, standards=None, takeoff=None):
         parts.append("<p>Nothing found.</p>")
 
     if takeoff is not None:
-        sm = TAKEOFF.summary(takeoff)
+        sm = TAKEOFF.summary(takeoff, LOADS.answers(project, strict=False))
         parts.append("<h2>Glass by the way it faces</h2>")
         rows = [(q, _n(v["wall_m2"], 1), _n(v["glass_m2"], 1), _n(v["glass_pct_of_wall"], 1))
                 for q, v in sorted(sm["glass_by_facing"].items(),
@@ -328,7 +329,7 @@ def pdf(html_path, pdf_path, search=None):
     return True, "printed by %s" % os.path.basename(exe)
 
 
-def write(folder, takeoff, result, standards=None, search=None):
+def write(folder, takeoff, result, standards=None, search=None, project_name=None):
     """Write the sheet, its CSV, the take-off CSV and - where a browser can - the PDF.
 
     Returns {"ok", "said", "html", "pdf", "csv", "takeoff_csv"}.
@@ -340,7 +341,7 @@ def write(folder, takeoff, result, standards=None, search=None):
              "csv": os.path.join(folder, stem + ".csv"),
              "takeoff_csv": os.path.join(folder, stem + "-takeoff.csv")}
     with io.open(paths["html"], "w", encoding="utf-8") as fh:
-        fh.write(html(result, standards, takeoff))
+        fh.write(html(result, standards, takeoff, project_name))
     with io.open(paths["csv"], "w", encoding="utf-8", newline="") as fh:
         fh.write(csv_text(result))
     with io.open(paths["takeoff_csv"], "w", encoding="utf-8", newline="") as fh:

@@ -144,13 +144,8 @@ def _checked_project(project):
     return out
 
 
-def answers(project, strict=True):
-    """What the modeller said is beyond each face Revit could not see past: {element: word}.
-
-    Given as project["beyond"] = {element: word}, or as "beyond:<element>" keys -
-    the shape the Companion's questions post. A word that is not one of the four
-    refuses the run when strict, and is left unanswered when not.
-    """
+def _given_answers(project):
+    """Every word given about what is beyond a face, as typed - right or wrong."""
     out = {}
     raw = _value((project or {}).get("beyond")) or {}
     if isinstance(raw, dict):
@@ -159,6 +154,17 @@ def answers(project, strict=True):
     for k, v in (project or {}).items():
         if isinstance(k, str) and k.startswith("beyond:"):
             out[k.split(":", 1)[1]] = _value(v)
+    return out
+
+
+def answers(project, strict=True):
+    """What the modeller said is beyond each face Revit could not see past: {element: word}.
+
+    Given as project["beyond"] = {element: word}, or as "beyond:<element>" keys -
+    the shape the Companion's questions post. A word that is not one of the four
+    refuses the run when strict, and is left unanswered when not.
+    """
+    out = _given_answers(project)
     for k in sorted(out):
         if out[k] not in TAKEOFF.ANSWERS:
             if strict:
@@ -213,7 +219,10 @@ def monthly_inputs(t, space, project, profile):
          "ground_reflectance": q["ground_reflectance"],
          "room_dry_bulb_c": q["room_dry_bulb_c"], "room_rh_pct": q["room_rh_pct"],
          "altitude_m": q["altitude_m"],
-         "walls": _opaque(s["walls"], ho, door), "roofs": _opaque(s["roofs"], ho),
+         "walls": _opaque(s["walls"], ho, door) + [
+             dict(r, absorptance_over_ho=0.0, facing=0.0, no_direct_sun=True)
+             for r in s["exposed_floors"]],
+         "roofs": _opaque(s["roofs"], ho),
          "windows": s["windows"], "skylights": s["skylights"],
          "partitions": [dict(x, adjacent_temp_c=q["unconditioned_temp_c"])
                         for x in s["partitions"]],
@@ -242,7 +251,8 @@ def heating_inputs(t, space, project, profile):
     p = _checked(profile)
     q = _checked_project(project)
     surf = [{"name": r["name"], "area_m2": r["area_m2"], "u_w_m2k": r["u_w_m2k"]}
-            for r in s["walls"] + s["roofs"] + s["windows"] + s["skylights"]]
+            for r in s["walls"] + s["roofs"] + s["windows"] + s["skylights"]
+            + s["exposed_floors"]]
     surf += [dict(r, adjacent_temp_c=q["heating_unconditioned_temp_c"]) for r in s["partitions"]]
     surf += [dict(r, adjacent_temp_c=q["ground_temp_c"]) for r in s["floors"]]
     i = {"floor_area_m2": float(space["area_m2"]), "room_height_m": space.get("height_m"),
@@ -302,13 +312,16 @@ def needs(t, project, profiles):
         unit, why = PROJECT_ASK[DOOR_KEY][:2]
         out.append({"input": DOOR_KEY, "unit": unit, "why": why, "offer": offers.get(DOOR_KEY),
                     "for": "project"})
+    given = _given_answers(project)
     for element, u in sorted(TAKEOFF.unknowns(t, said).items()):
         where = {"top": "above", "bottom": "below"}.get(u["side"], "beyond")
+        why = ("Revit found nothing %s %s, which bounds %s - what is there?"
+               % (where, u["name"], ", ".join(u["spaces"])))
+        if given.get(element) not in (None, ""):
+            why += " (the answer %r is not one of the four)" % (given[element],)
         out.append({"input": "beyond:%s" % element,
                     "unit": "outside, unconditioned, conditioned or ground",
-                    "why": "Revit found nothing %s %s, which bounds %s - what is there?"
-                           % (where, u["name"], ", ".join(u["spaces"])),
-                    "offer": None, "for": "project"})
+                    "why": why, "offer": None, "for": "project"})
     keys = []
     for s in _placed(t):
         key = profile_key(s)
@@ -498,6 +511,9 @@ def run(t, project, profiles, overrides=None, recorded=None):
                         "ach": (row["supply_ls"] * 3.6 / (area * space["height_m"])
                                 if space.get("height_m") else None),
                         "peak": "%s %02d:00" % (_MONTHS[peak["month"] - 1], peak["hour"])}
+        for line in TAKEOFF.surfaces(t, space, said)["assumed"]:
+            if line not in notes:
+                notes.append(line)
         for answer in (cool, heat, air):
             for line in answer.get("assumed") or []:
                 if line not in notes:
@@ -609,18 +625,28 @@ def fingerprint(t):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
 
 
+def answers_key(result):
+    """A short key for what the run was told is beyond the faces Revit could not see past -
+    part of what the modeller confirms with the take-off."""
+    project = ((result or {}).get("inputs") or {}).get("project") or {}
+    said = sorted(answers(project, strict=False).items())
+    return hashlib.sha256(json.dumps(said).encode("utf-8")).hexdigest()[:12]
+
+
 def confirm(result, t, by="the modeller, in the Heron Companion"):
-    """Record that the modeller has checked this take-off - with when, and which one."""
+    """Record that the modeller has checked this take-off - with when, which one, and the
+    answers about what is beyond its faces."""
     result["geometry_confirmed"] = {
         "at": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"), "by": by,
-        "takeoff": fingerprint(t)}
+        "takeoff": fingerprint(t), "answers": answers_key(result)}
     return result
 
 
 def confirmed(result, t):
-    """True only when the run carries a confirmation of THIS take-off."""
+    """True only when the run carries a confirmation of THIS take-off with THESE answers."""
     got = (result or {}).get("geometry_confirmed") or {}
-    return bool(got) and got.get("takeoff") == fingerprint(t)
+    return (bool(got) and got.get("takeoff") == fingerprint(t)
+            and got.get("answers") == answers_key(result))
 
 
 NOT_CONFIRMED = ("the take-off has not been confirmed - look at the 3D view and the checks on "

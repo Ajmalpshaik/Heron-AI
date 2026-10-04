@@ -193,6 +193,59 @@ def test_glass_in_a_wall_that_is_not_exterior_is_a_check():
                for f in T.qa(T.read(d)))
 
 
+def test_a_face_nothing_bounds_is_not_blamed_on_links():
+    # Second review N4: a Space face Revit gave no bounding element for, and a
+    # face bounded by an unread link, were the same in the take-off.
+    d = copy()
+    d["spaces"][0]["faces"][1].update(element=None, type=None, beyond="unknown")
+    d["spaces"][0]["faces"][1]["bounded_by"] = "nothing"
+    t = T.read(d)
+    said = " ".join(T.surfaces(t, t.spaces[0])["refused"])
+    assert "links" not in said and "no element bounds" in said, said
+    d["spaces"][0]["faces"][1]["bounded_by"] = "unread link"
+    d["spaces"][0]["faces"][1]["link"] = "Architecture.rvt"
+    said = " ".join(T.surfaces(T.read(d), T.read(d).spaces[0])["refused"])
+    assert "Architecture.rvt" in said and "links included" in said, said
+
+
+def test_a_placed_space_with_nothing_above_it_is_a_fail():
+    d = copy()
+    d["spaces"][0]["faces"] = [f for f in d["spaces"][0]["faces"] if f["side"] != "top"]
+    assert any(f["level"] == "FAIL" and f["space"] == 1 and "above" in f["text"]
+               for f in T.qa(T.read(d)))
+
+
+def test_a_curtain_walls_frames_need_no_u_of_its_own():
+    # Second review N5: what is left of a curtain wall's face between its
+    # panels needed a U on the curtain wall type, which such types do not carry.
+    d = copy()
+    d["types"]["cw"] = {"name": "Curtain Wall: Storefront", "category": "Walls",
+                        "u_w_m2k": None, "shgc": None, "absorptance": None}
+    d["types"]["pn"] = {"name": "System Panel: Glazed", "category": "Curtain Panels",
+                        "u_w_m2k": 2.0, "shgc": 0.3, "absorptance": None}
+    d["spaces"][0]["faces"][0].update(type="cw", curtain=True, area_m2=13.5, openings=[
+        {"element": 50 + i, "kind": "curtain_panel", "type": "pn", "area_m2": 4.4}
+        for i in range(3)])                                         # 13.2 of 13.5 m2 glass
+    t = T.read(d)
+    s = T.surfaces(t, t.spaces[0])
+    assert not s["refused"], s["refused"]
+    frames = [w for w in s["windows"] if "frames" in w["name"]]
+    assert frames and abs(frames[0]["area_m2"] - 0.3) < 1e-9 and frames[0]["shgc"] == 0.0
+    assert frames[0]["u_w_m2k"] == 2.0 and s["assumed"], s
+
+
+def test_the_answers_count_wherever_beyond_is_read():
+    # Second review m5: a face answered "outside" is an outside face for the
+    # INFO line and the glass by facing too.
+    d = copy()
+    d["spaces"][0]["faces"][0]["beyond"] = "unknown"
+    d["spaces"][0]["faces"][1]["beyond"] = "unknown"
+    t = T.read(d)
+    said = {"10": "outside", "12": "outside"}
+    assert not [f for f in T.qa(t, said) if "no outside face" in f["text"]]
+    assert T.summary(t, said)["glass_by_facing"]["W"]["glass_m2"] == 2.0
+
+
 def test_imports_only_the_standard_library():
     allowed = set(getattr(sys, "stdlib_module_names", ())) or {"json", "math"}
     tree = ast.parse(open(os.path.join(ROOT, "brain", "heron_takeoff.py")).read())

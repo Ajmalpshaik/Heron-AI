@@ -388,6 +388,76 @@ def test_review_i9_the_fingerprint_ignores_what_finalize_writes():
     assert B.fingerprint(T.read(moved)) != B.fingerprint(t)
 
 
+# --- the second review's findings, each reproduced before it was fixed -------
+
+def test_review2_n3_a_floor_open_below_or_over_an_unconditioned_space_is_not_ground():
+    def floor_answered(word):
+        d = copy()
+        d["spaces"][0]["faces"].append(
+            {"element": 40, "type": "r", "side": "bottom", "normal": [0.0, 0.0, -1.0],
+             "area_m2": 20.0, "beyond": "unknown", "beyond_space": None, "openings": []})
+        t = T.read(d)
+        return B.run(t, dict(PROJECT, **{"beyond:40": word}), {"Office": OFFICE})["spaces"][0]
+    ground, outside, store = (floor_answered(w) for w in ("ground", "outside", "unconditioned"))
+    assert ground["status"] == outside["status"] == store["status"] == "ok"
+    # Open below: conduction to the outdoor air, hour by hour - more cooling than
+    # the ground, which carries none.
+    assert outside["cooling"]["peak"]["total_w"] > ground["cooling"]["peak"]["total_w"]
+    # Over a store: the unconditioned temperatures, cooling and heating.
+    assert store["cooling"]["peak"]["total_w"] > ground["cooling"]["peak"]["total_w"]
+    heat = dict((c["name"], c["w"]) for c in store["heating"]["components"])
+    assert heat["Roof (40)"] == 20.0 * 0.3 * (21 - 18)                # heating_unconditioned 18 C
+
+
+def test_review2_n2_an_override_cleared_on_the_page_is_cleared():
+    brain = _brain()
+    with knowledge_folder():
+        t = json.dumps(two_offices([-1.0, 0.0, 0.0]))
+        base = brain.building_loads(t, {"project": PROJECT, "profiles": {"Office": OFFICE}},
+                                    project="project-a")
+        bumped = brain.building_loads(t, {"overrides": {"2": {"equipment_w_per_m2": 40}}},
+                                      project="project-a")
+        cleared = brain.building_loads(t, {"overrides": {"2": {"equipment_w_per_m2": None}}},
+                                       project="project-a")
+        total = lambda got: got["result"]["spaces"][1]["cooling"]["peak"]["total_w"]
+        assert total(bumped) > total(base)
+        assert abs(total(cleared) - total(base)) < 1e-6, (total(cleared), total(base))
+        assert "2" not in (cleared["inputs"]["overrides"] or {})
+
+
+def test_review2_n1_the_page_shows_the_checks_the_run_used():
+    brain = _brain()
+    d = copy()
+    d["site"].update(latitude_deg=42.36, longitude_deg=-71.06, named="Boston, MA")
+    d["spaces"][0]["faces"][1]["beyond"] = "unknown"
+    got = brain.building_loads(json.dumps(d), {"project": dict(PROJECT, **{"beyond:12": "outside"}),
+                                               "profiles": {"Office": OFFICE}}, save=False)
+    texts = " ".join(f["text"] for f in got["qa"])
+    assert "km from" in texts and "the sun is worked out for" in texts, texts
+    assert "Heron asks" not in texts                                # 12 was answered
+    asked = brain.building_loads(json.dumps(d), {"project": PROJECT}, save=False)
+    assert any("the sun is worked out for" in f["text"] for f in asked["qa"])
+
+
+def test_review2_m2_changing_an_answer_takes_the_confirmation_away():
+    d = copy()
+    d["spaces"][0]["faces"][1]["beyond"] = "unknown"
+    t = T.read(d)
+    r = B.confirm(B.run(t, dict(PROJECT, **{"beyond:12": "outside"}), {"Office": OFFICE}), t)
+    assert B.confirmed(r, t)
+    other = B.run(t, dict(PROJECT, **{"beyond:12": "conditioned"}), {"Office": OFFICE})
+    other["geometry_confirmed"] = dict(r["geometry_confirmed"])     # carried over by mistake
+    assert not B.confirmed(other, t)
+
+
+def test_review2_m12_a_wrong_answer_word_is_said_when_asked_again():
+    d = copy()
+    d["spaces"][0]["faces"][1]["beyond"] = "unknown"
+    asked = [a for a in B.needs(T.read(d), dict(PROJECT, **{"beyond:12": "sky"}), {"Office": OFFICE})
+             if a["input"] == "beyond:12"]
+    assert asked and "'sky'" in asked[0]["why"], asked
+
+
 # --- the seam and the tool (Task 5) - through heron_brain, which needs no MCP SDK
 
 SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")

@@ -204,12 +204,15 @@ def build(takeoff, result=None, answers=None):
             note = _USED[used]
             if TAKEOFF.beyond(f, answers) != f.get("beyond"):
                 note += " - as the modeller answered (Revit found nothing beyond it)"
+            if used == "unknown" and f.get("element") is None:
+                note = "REFUSED - " + TAKEOFF.no_element(f)
             if used not in ("none", "unknown") and u is None:
                 note = "REFUSED - its type has no U-value in the model"
             face = {
                 "id": "%s-%d" % (sid, i), "space": sid, "level": s.get("level"),
                 "element": f.get("element"), "type": kind.get("name"), "link": f.get("link"),
-                "side": f.get("side"), "beyond": f.get("beyond"),
+                "side": f.get("side"), "beyond": TAKEOFF.beyond(f, answers),
+                "found_beyond": f.get("beyond"),
                 "beyond_space": names.get(str(f.get("beyond_space"))),
                 "category": cat, "label": _CATEGORY[cat][2], "used_as": note,
                 "area_m2": f.get("area_m2"), "u_w_m2k": u, "absorptance": kind.get("absorptance"),
@@ -242,11 +245,17 @@ def build(takeoff, result=None, answers=None):
                 ocat = category(f, o.get("kind"))
                 ou = okind.get("u_w_m2k")
                 glazed = o.get("kind") in TAKEOFF.GLAZED
-                refused = ou is None or (glazed and okind.get("shgc") is None)
+                # Refused only where it counts: an opening to another Space
+                # carries no load, and one to an unconditioned space or the
+                # ground is conduction only - it needs no SHGC.
+                counted = used not in ("none", "unknown")
+                sunlit = used in ("wall", "roof", "exposed_floor")
+                refused = counted and (ou is None or (sunlit and glazed and okind.get("shgc") is None))
                 faces.append({
                     "id": "%s-%d-%d" % (sid, i, j), "space": sid, "level": s.get("level"),
                     "element": o.get("element"), "type": okind.get("name"),
-                    "link": f.get("link"), "side": f.get("side"), "beyond": f.get("beyond"),
+                    "link": f.get("link"), "side": f.get("side"),
+                    "beyond": TAKEOFF.beyond(f, answers), "found_beyond": f.get("beyond"),
                     "beyond_space": names.get(str(f.get("beyond_space"))),
                     "category": ocat, "label": _CATEGORY[ocat][2],
                     "used_as": ("REFUSED - its type has no %s in the model"
@@ -313,9 +322,16 @@ def build(takeoff, result=None, answers=None):
     if unplaced_openings:
         notes.append("%d window(s) or door(s) are counted in the loads but not drawn - Revit did "
                      "not say where they sit" % unplaced_openings)
+    # TRUE NORTH ON THE PAGE COMES FROM THE SAME RULE AS EVERY FACING: the
+    # direction, in project coordinates, that heron_takeoff.azimuth_deg calls
+    # 0. A sign fixed there turns the compass with the facing colours (the
+    # second review, N6).
+    turned = math.radians(-TAKEOFF.azimuth_deg([0.0, 1.0, 0.0], north))
+    north_xy = [round(math.sin(turned), 9), round(math.cos(turned), 9)]
     return {"format": FORMAT, "document": t.document, "faces": faces, "spaces": spaces,
+            "north_xy": north_xy,
             "levels": [name for name, _z in sorted(levels.items(), key=lambda kv: kv[1])],
             "modes": [{"key": k, "label": label} for k, label in MODES],
-            "legends": legends, "true_north_deg": north or 0.0,
+            "legends": legends,
             "origin_m": [round(x, 3) for x in origin], "notes": notes,
             "summary": TAKEOFF.summary(t)}

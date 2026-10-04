@@ -91,6 +91,18 @@ UNREAD_LINK = ("a face of this Space is bounded by an element in a linked model 
                "read - calculate again with links included")
 
 
+def no_element(face):
+    """Why a face with no bounding element refuses its Space - said for what it is."""
+    if face.get("bounded_by") == "nothing":
+        where = {"top": "above it", "bottom": "below it"}.get(face.get("side"), "on one side")
+        return ("no element bounds it %s, so what is there is not known - make the ceiling, roof, "
+                "floor or wall there room-bounding, or set the Space's limits" % where)
+    if face.get("link"):
+        return ("a face of this Space is bounded by %s, a linked model that was not read - "
+                "calculate again with links included" % face["link"])
+    return UNREAD_LINK
+
+
 def beyond(face, answers=None):
     """What is beyond a face: as Revit found it, or as the modeller answered for its element.
 
@@ -110,11 +122,11 @@ def role(face, answers=None):
     """What a face counts as in the load - the ONE rule surfaces() and the 3D view share.
 
     "none" (conditioned on both sides), "wall", "roof", "exposed_floor" (open
-    to outside below), "partition" (a wall or ceiling to an unconditioned
-    space, at the project's unconditioned temperatures), "floor" (heating
-    only, at the project's ground temperature - a floor on the ground, or a
-    face the modeller said is against it) or "unknown" (nothing found beyond
-    it, and not yet answered: its Space waits).
+    to outside below: conduction to the outdoor air, both seasons, no sun),
+    "partition" (a wall, ceiling or floor to an unconditioned space, at the
+    project's unconditioned temperatures), "floor" (against the ground:
+    heating only, at the project's ground temperature) or "unknown" (nothing
+    found beyond it, and not yet answered: its Space waits).
     """
     where, side = beyond(face, answers), face.get("side")
     if where == "space":
@@ -125,7 +137,7 @@ def role(face, answers=None):
         return {"wall": "wall", "top": "roof"}.get(side, "exposed_floor")
     if where == "ground":
         return "floor"
-    return "floor" if side == "bottom" else "partition"
+    return "partition"
 
 
 def unknowns(t, answers=None):
@@ -153,7 +165,7 @@ def surfaces(t, space, answers=None):
     be missing - the runner then asks for one door absorptance, once.
     """
     out = {"walls": [], "roofs": [], "windows": [], "skylights": [], "partitions": [],
-           "floors": [], "refused": []}
+           "floors": [], "exposed_floors": [], "refused": [], "assumed": []}
     north = t.site.get("project_to_true_north_deg")
     for face in space.get("faces") or []:
         used = role(face, answers)
@@ -161,8 +173,9 @@ def surfaces(t, space, answers=None):
             continue                                # conditioned on both sides: no load
         if used == "unknown":
             if face.get("element") is None:
-                if UNREAD_LINK not in out["refused"]:
-                    out["refused"].append(UNREAD_LINK)
+                why = no_element(face)
+                if why not in out["refused"]:
+                    out["refused"].append(why)
             else:
                 out["refused"].append(
                     "nothing was found beyond %s - say what is there: outside, unconditioned, "
@@ -172,11 +185,15 @@ def surfaces(t, space, answers=None):
         name = _name(t, face.get("type"), face.get("element"))
         side = face.get("side")
         facing = azimuth_deg(face["normal"], north) if side == "wall" else None
-        net = float(face.get("area_m2") or 0.0)
+        gross = net = float(face.get("area_m2") or 0.0)
+        panel_ua = panel_a = 0.0
         for o in face.get("openings") or []:
             area = float(o.get("area_m2") or 0.0)
             net -= area
             okind = t.types.get(str(o.get("type"))) or {}
+            if o.get("kind") == "curtain_panel" and okind.get("u_w_m2k") is not None:
+                panel_ua += float(okind["u_w_m2k"]) * area
+                panel_a += area
             oname = _name(t, o.get("type"), o.get("element"))
             glazed = o.get("kind") in GLAZED
             if okind.get("u_w_m2k") is None:
@@ -202,13 +219,29 @@ def surfaces(t, space, answers=None):
                 out["walls"].append({"name": oname, "area_m2": area,
                                      "u_w_m2k": okind["u_w_m2k"], "facing": facing,
                                      "absorptance": okind.get("absorptance"), "door": True})
-        if net <= 1e-9:
+        # What is left of a face once its openings are out - a rounding sliver
+        # is nothing; on a curtain wall it is the frames between the panels.
+        if net <= max(1e-6, 0.001 * gross):
+            continue
+        if kind.get("u_w_m2k") is None and face.get("curtain") and panel_a > 0:
+            frames = {"name": "%s frames" % name, "area_m2": round(net, 6),
+                      "u_w_m2k": round(panel_ua / panel_a, 6)}
+            out["assumed"].append(
+                "%s: the frames between its panels, %.2f m2, are counted at its panels' "
+                "U-value with no sun - the curtain wall type carries no U-value of its own"
+                % (name, net))
+            if used == "wall":
+                out["windows"].append(dict(frames, shgc=0.0, facing=facing))
+            elif used in ("partition", "floor"):
+                (out["floors"] if used == "floor" else out["partitions"]).append(frames)
             continue
         if kind.get("u_w_m2k") is None:
             out["refused"].append(_no_value(name, "U-value"))
             continue
         rec = {"name": name, "area_m2": round(net, 6), "u_w_m2k": kind["u_w_m2k"]}
-        if used in ("floor", "exposed_floor"):
+        if used == "exposed_floor":
+            out["exposed_floors"].append(rec)
+        elif used == "floor":
             out["floors"].append(rec)
         elif used == "partition":
             out["partitions"].append(rec)
@@ -230,7 +263,7 @@ def compass(azimuth):
     return COMPASS[int(((float(azimuth) + 45.0) % 360.0) // 90.0)]
 
 
-def summary(t):
+def summary(t, answers=None):
     """The take-off's own totals, for the checks, the panel and the report.
 
     Per level: Spaces placed and their floor area. Glass to outside by the way
@@ -249,7 +282,7 @@ def summary(t):
         lv["area_m2"] += float(s["area_m2"])
         floor += float(s["area_m2"])
         for f in s.get("faces") or []:
-            if f.get("beyond") != "outside" or f.get("side") != "wall" or not f.get("normal"):
+            if beyond(f, answers) != "outside" or f.get("side") != "wall" or not f.get("normal"):
                 continue
             q = by_quarter[compass(azimuth_deg(f["normal"], north))]
             q["wall_m2"] += float(f.get("area_m2") or 0.0)
@@ -306,9 +339,13 @@ def qa(t, answers=None):
                 "windows are not known - it is left out; check it is bounded, then read the "
                 "model again" % label)
             continue
-        if not any(f.get("beyond") == "outside" for f in faces):
+        if not any(beyond(f, answers) == "outside" for f in faces):
             add("INFO", sid, "Space %s has no outside face - only its internal gains load it"
                 % label)
+        if not any(f.get("side") == "top" for f in faces):
+            add("FAIL", sid, "Space %s: Revit gave no face above it, so what is over it - a "
+                "ceiling, a roof, another Space - is not counted; make its ceiling or roof "
+                "room-bounding, or set its upper limit, and read the model again" % label)
         for face in faces:
             if role(face, answers) == "unknown" and face.get("element") is not None:
                 add("WARN", sid, "Space %s: nothing was found beyond %s - Heron asks what is "
