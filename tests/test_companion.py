@@ -956,6 +956,35 @@ def test_loads_report_page():
           "dragging turns the building the way the mouse moves, as Revit's orbit does")
 
 
+def test_finalize_asks_for_nothing_by_typed_ids():
+    """The first real Finalize (Project2, Revit 2024, 2026-10-05) wrote the three
+    Spaces right - read back value by value - but its read-back and its diffuser
+    step chained from FILTER_ELEMENTS_BY_ID with typed ids, which the add-in
+    never accepts ("elementIds ... cannot be typed"): the read-back was lost, and
+    on a model with diffusers their flows would have been. Ajmal asked the same
+    day for the Spaces schedule to be made by Finalize too."""
+    print()
+    print("Finalize on a real add-in: no typed ids, a real read-back, the schedule")
+    server = io.open(SERVER, encoding="utf-8").read()
+    fin = server[server.index("def _loads_finalize("):]
+    fin = fin[:fin.index(chr(10) + "def ", 10)]
+    check("elementIds=" not in fin and "FILTER_ELEMENTS_BY_ID" not in fin,
+          "Finalize asks the add-in for no element by a typed id")
+    at = fin.find('"SET_AIR_TERMINAL_FLOW"')
+    check(at != -1 and '"FILTER_ELEMENTS_BY_CATEGORY"' in fin
+          and -1 < fin.find("category=Air Terminals") < at
+          and "filter-elements-by-category where category=Air Terminals" in fin,
+          "the diffusers are found by category on each calculated Space's level, and the "
+          "file of ids picks which are written")
+    applied = fin.find("_apply_table(rows, identity)")
+    check(applied != -1 and fin.find('"REPORT_SPACE_ENVELOPE"', applied) != -1
+          and "LOADS.read_back(rows, " in fin,
+          "the read-back reads the take-off again after the write and compares it value by value")
+    check('"CREATE_SCHEDULE"' in fin and "LOADS.SCHEDULE_NAME" in fin
+          and "LOADS.SCHEDULE_FIELDS" in fin,
+          "Finalize makes the Spaces schedule of what it wrote, once")
+
+
 def test_switched_off_parts():
     """The owner's word (Ajmal PS, 2026-10-04): the Selected card and the
     Changes tables, with the colour books that paint them, come off the page,
@@ -1019,6 +1048,10 @@ def main():
         test_switched_off_parts()
     except Exception as why:                    # noqa: BLE001 - reported, not hidden
         check(False, "the switched-off checks ran to the end (they raised %r)" % (why,))
+    try:
+        test_finalize_asks_for_nothing_by_typed_ids()
+    except Exception as why:                    # noqa: BLE001 - reported, not hidden
+        check(False, "the Finalize checks ran to the end (they raised %r)" % (why,))
     test_no_way_to_an_ai()
     test_addin_side()
 

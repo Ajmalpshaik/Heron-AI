@@ -529,6 +529,51 @@ def test_the_building_total_carries_the_air_and_the_load_per_square_metre():
     assert nothing["calculated"] == 0 and nothing["block_w_per_m2"] is None
 
 
+def _confirmed_rows():
+    t = T.read(ROOM)
+    r = B.confirm(B.run(t, PROJECT, {"Office": OFFICE}), t, "test")
+    return t, B.finalize_rows(t, r)
+
+
+def test_read_back_matches_what_finalize_wrote():
+    # The first real Finalize (Project2, 2026-10-05) wrote the Spaces right, but
+    # its read-back asked for them by typed ids, which the add-in refuses - so
+    # the read-back is the take-off read again, compared value by value.
+    t, rows = _confirmed_rows()
+    fresh = copy()
+    fresh["spaces"][0]["current"] = {field: new for _sid, _uid, field, _was, new in rows}
+    back = B.read_back(rows, fresh)
+    assert len(back) == len(rows) == 3 and all(b["ok"] for b in back)
+    assert back[0]["space"] and back[0]["written"] == rows[0][4]
+
+
+def test_read_back_allows_revits_rounding_and_says_what_does_not_match():
+    t, rows = _confirmed_rows()
+    fresh = copy()
+    written = {field: new for _sid, _uid, field, _was, new in rows}
+    shown = dict(written)
+    # Revit prints its own rounding - "238 L/s" for 237.6 - and thousands grouped.
+    cool = B._number_in(written["Design Cooling Load"])
+    shown["Design Cooling Load"] = "{:,.0f} W".format(cool)
+    shown["Design Heating Load"] = "1 W"                           # an edit made in Revit
+    fresh["spaces"][0]["current"] = shown
+    back = {b["parameter"]: b for b in B.read_back(rows, fresh)}
+    assert back["Design Cooling Load"]["ok"]
+    assert not back["Design Heating Load"]["ok"] and back["Design Heating Load"]["reads"] == "1 W"
+    fresh["spaces"][0]["current"] = {}
+    assert not any(b["ok"] for b in B.read_back(rows, fresh))     # nothing readable is no match
+    assert B._number_in("3.300,5 W") == 3300.5 and B._number_in("238,0 L/s") == 238.0
+    assert B._number_in("") is None and B._number_in(None) is None
+
+
+def test_finalize_makes_the_schedule_of_what_it_wrote():
+    # Ajmal, 2026-10-05: Finalize also makes the Spaces schedule - named the way
+    # the calculation is named, with every value Finalize writes.
+    assert B.SCHEDULE_NAME == "HVAC Load Calculation - Spaces"
+    assert B.SCHEDULE_FIELDS[:2] == ("Number", "Name")
+    assert all(f in B.SCHEDULE_FIELDS for f in B.FINALIZE_FIELDS)
+
+
 def _calculated(brain):
     return brain.building_loads(json.dumps(ROOM), {"project": PROJECT,
                                                    "profiles": {"Office": OFFICE}},

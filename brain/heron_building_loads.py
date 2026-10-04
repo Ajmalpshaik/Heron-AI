@@ -610,6 +610,60 @@ AIRFLOW = {"L/s": (1.0, "%.1f L/s"), "CFM": (2.118880003, "%.0f CFM"),
            "m3/h": (3.6, "%.0f m3/h")}
 FINALIZE_FIELDS = ("Design Cooling Load", "Design Heating Load", "Specified Supply Airflow")
 
+#: The Spaces schedule Finalize makes (Ajmal, 2026-10-05) - named the way the
+#: calculation is named, with every value Finalize writes beside the Space.
+SCHEDULE_NAME = "HVAC Load Calculation - Spaces"
+SCHEDULE_FIELDS = ("Number", "Name", "Level", "Area") + FINALIZE_FIELDS
+
+
+def _number_in(text):
+    """The number a value string shows as Revit prints it - "3,300 W", "238.0 L/s",
+    "238,0 L/s", "3.300,5 W" - or None. Whichever of . and , comes last is the
+    decimal point; one alone is a thousands mark only before exactly three digits."""
+    if text is None:
+        return None
+    m = re.search(r"-?\d[\d.,]*", str(text))
+    if not m:
+        return None
+    s = m.group(0).rstrip(".,")
+    if "." in s and "," in s:
+        point = "." if s.rfind(".") > s.rfind(",") else ","
+        s = s.replace("," if point == "." else ".", "").replace(point, ".")
+    elif s.count(",") + s.count(".") > 1:
+        s = s.replace(",", "").replace(".", "")
+    elif "," in s or "." in s:
+        mark = "," if "," in s else "."
+        s = s.replace(mark, "" if len(s.split(mark)[1]) == 3 else ".")
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
+def read_back(rows, fresh):
+    """What Revit holds now beside what Finalize wrote, row by row:
+    [{"id", "space", "parameter", "written", "reads", "ok"}].
+
+    `fresh` is the take-off read AGAIN after the write: its `current` is each
+    field as Revit prints it. No element is asked for by a typed id - the
+    add-in refuses those, which is how the first real Finalize lost its
+    read-back (Project2, 2026-10-05). Revit's own rounding is allowed: one in
+    the unit shown, or half a percent. A value that cannot be read is no match.
+    """
+    t = TAKEOFF.read(fresh)
+    spaces = {str(s.get("id")): s for s in t.spaces}
+    out = []
+    for sid, _uid, field, _was, new in rows:
+        s = spaces.get(str(sid)) or {}
+        reads = (s.get("current") or {}).get(field)
+        wrote, holds = _number_in(new), _number_in(reads)
+        ok = wrote is not None and holds is not None and \
+            abs(wrote - holds) <= max(1.0, abs(wrote) * 0.005)
+        name = ("%s %s" % (s.get("number") or "", s.get("name") or "")).strip()
+        out.append({"id": str(sid), "space": name or str(sid), "parameter": field,
+                    "written": new, "reads": reads, "ok": ok})
+    return out
+
 
 def _unit(table, symbol, what):
     if symbol not in table:
