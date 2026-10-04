@@ -18,7 +18,8 @@
 //
 // A PROFILE CROSSING ITS AXIS IS REFUSED HERE, by name, rather than by Revit
 // with a message nobody can place: every corner and every arc's middle point
-// must lie on one side of the axis line or on it.
+// must lie on one side of the axis line or on it. A corner within Revit's
+// shortest curve of the axis is first put on it exactly (5b-318).
 //
 // THE ANGLES ARE REVIT'S OWN START AND END ANGLE, in degrees. A full turn is
 // 0 to 360. Which way a part-turn sweeps is Revit's rule for the plane's
@@ -329,6 +330,39 @@ else
         var dx = axisTo[0] - axisFrom[0];
         var dy = axisTo[1] - axisFrom[1];
         var length = Math.Sqrt(dx * dx + dy * dy);
+
+        // A CORNER WITHIN THE SHORTEST CURVE OF THE AXIS IS PUT ON IT EXACTLY.
+        // Below that distance the check further down counts a corner as on the
+        // axis, but Revit does not: a corner meant to touch a tilted axis and
+        // rounded to 0.034 mm across it built a revolve with no solid in it
+        // (5b-318). Moved along the axis's normal onto the line, the same for
+        // the two segments that share it.
+        var snapped = 0;
+        foreach (var loop in loops)
+            foreach (var s in loop)
+                foreach (var k in new[] { 1, 5 })
+                {
+                    var side = (dx * (s[k + 1] - axisFrom[1]) - dy * (s[k] - axisFrom[0])) / length;
+                    if (side == 0.0 || Math.Abs(side) > shortest) continue;
+                    var u = (dx * (s[k] - axisFrom[0]) + dy * (s[k + 1] - axisFrom[1])) / (length * length);
+                    s[k] = axisFrom[0] + dx * u;
+                    s[k + 1] = axisFrom[1] + dy * u;
+                    snapped++;
+                }
+        if (snapped > 0)
+            foreach (var loop in loops)
+                foreach (var s in loop)
+                    if (s[0] == 0.0 && Math.Sqrt(Math.Pow(s[5] - s[1], 2) + Math.Pow(s[6] - s[2], 2)) < shortest)
+                    {
+                        problems.Add("Putting the corners that touch the axis exactly on it leaves a side from "
+                            + plain(s[1]) + "," + plain(s[2]) + " to " + plain(s[5]) + "," + plain(s[6])
+                            + " shorter than Revit's shortest line. Redraw the profile with that corner off the axis.");
+                        break;
+                    }
+        if (snapped > 0)
+            findings.Add(snapped / 2 + " corner(s) lay within " + plain(shortest) + " mm of the axis and were put on "
+                + "it exactly - Revit builds no solid from a corner a hair across its axis.");
+
         var left = false;
         var right = false;
         foreach (var loop in loops)
@@ -449,8 +483,9 @@ if (refused == null)
     // back to its bounding box, and to the allowance a tessellated box needs.
     var bounds = form.get_BoundingBox(null);
     if (!measured && bounds == null)
-        throw new InvalidOperationException("The revolve was built and has no extent to read back. NOTHING from "
-            + "this call was kept.");
+        throw new InvalidOperationException("Revit made the revolve with no solid in it, so it has no extent to read "
+            + "back - most often a profile that crosses its axis by a sliver, or a profile Revit cannot turn. "
+            + "NOTHING from this call was kept.");
     Func<int, double> readLow = i => measured ? low[i] : along(bounds.Min, i);
     Func<int, double> readHigh = i => measured ? high[i] : along(bounds.Max, i);
 
