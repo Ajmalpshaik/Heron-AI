@@ -599,13 +599,16 @@ class LoadsPanel(object):
         self.run_hook = None
         self.confirm_hook = None
 
-    def open(self, document, answer, identity=None):
+    def open(self, document, answer, identity=None, read_at=None):
         result = answer.get("result") or {}
         inputs = answer.get("inputs") or {}
         with self._lock:
             self._takeoff = answer.get("takeoff")
             self._held = {
                 "document": document, "at": time.strftime("%H:%M:%S"),
+                # When the MODEL was read - kept through a Recalculate, which
+                # works on the take-off already held and reads nothing.
+                "read_at": read_at or time.strftime("%H:%M:%S"),
                 "identity": list(identity) if identity else None,
                 "qa": list(answer.get("qa") or []), "asked": list(answer.get("asked") or []),
                 "project": dict(inputs.get("project") or {}),
@@ -681,12 +684,13 @@ class LoadsPanel(object):
                                          "calculate the loads first"}
         with self._lock:
             document = self._held["document"]
+            read_at = self._held.get("read_at")
         answer = hook(takeoff, {"project": body.get("project") or {},
                                 "profiles": body.get("profiles") or {},
                                 "overrides": body.get("overrides") or {}}, identity)
         if not isinstance(answer, dict) or answer.get("takeoff") is None:
             return {"ok": False, "said": (answer or {}).get("said") or self.GONE}
-        self.open(document, answer, identity)
+        self.open(document, answer, identity, read_at)
         return {"ok": True, "said": answer.get("said"), "loads": self.current()}
 
     def report(self):

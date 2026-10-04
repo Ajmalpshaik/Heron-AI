@@ -1877,17 +1877,53 @@ def _loads_confirm(takeoff, result):
 
 def _loads_finalize(takeoff, result, identity):
     """
-    Finalize (docs/44 s6, gate 2): the three Space fields through ONE
-    SET_PARAMETER_VALUES_BY_ID - _apply_table, the table's own Apply, so the
-    model guard, the stale check and the one undo entry are the ones it has -
-    then the diffusers' share of each Space's flow through ONE
-    SET_AIR_TERMINAL_FLOW, then read back. TWO WRITES ARE TWO UNDO ENTRIES
-    until one TransactionGroup spans both (FRAGMENT-ISSUES).
+    Finalize (docs/44 s6, gate 2).
+
+    1. THE MODEL IS READ AGAIN, and Finalize refuses if its geometry is not the
+       take-off the loads were worked out from (the fingerprint leaves out the
+       values Finalize itself writes). Recalculate never reads the model, so
+       without this a load from an hours-old take-off could be written after
+       walls or windows moved (the review of 2026-10-04, I9). The fresh read
+       also gives the CURRENT values each row is checked against.
+    2. The three Space fields through ONE SET_PARAMETER_VALUES_BY_ID -
+       _apply_table, the table's own Apply, so the model guard, the stale
+       check and the one undo entry are the ones it has.
+    3. The diffusers' share of each Space's flow through ONE
+       SET_AIR_TERMINAL_FLOW, chained after FILTER_ELEMENTS_BY_ID.
+    4. Read back. The answer counts the undo entries actually made - one or
+       two - until one TransactionGroup spans both (FRAGMENT-ISSUES 5b-314).
     """
     import heron_building_loads as LOADS
     import heron_hvac as HVAC
+    import heron_takeoff as TAKEOFF
     try:
-        rows = LOADS.finalize_rows(takeoff, result)
+        LOADS.finalize_rows(takeoff, result)          # refuses an unconfirmed take-off early
+    except ValueError as why:
+        return {"ok": False, "said": "Nothing was written: %s" % why}
+    links = bool(getattr(takeoff, "include_links", False) or result.get("include_links"))
+    with _revit_lock:
+        moved = _moved_since(identity)
+        if moved:
+            return {"ok": False, "said": moved}
+        out = {}
+        said_read = _through(revit_read, reply_out=out, origin="companion")(
+            "REPORT_SPACE_ENVELOPE", "includeLinks=true" if links else "")
+    reply = out.get("reply")
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return {"ok": False, "said": "Nothing was written - the model could not be read again "
+                                     "to check it has not changed: %s" % said_read}
+    try:
+        fresh = TAKEOFF.read((reply.get("provides") or {}).get("takeoffJson") or "")
+    except ValueError as why:
+        return {"ok": False, "said": "Nothing was written - the model's take-off could not be "
+                                     "read again: %s" % why}
+    if LOADS.fingerprint(fresh) != LOADS.fingerprint(takeoff):
+        return {"ok": False, "said": "Nothing was written: the model has changed since these "
+                                     "loads were worked out - a wall, a window, a Space or a type. "
+                                     "Ask the chat to calculate the loads again, check the "
+                                     "take-off, and Finalize then."}
+    try:
+        rows = LOADS.finalize_rows(fresh, result)
     except ValueError as why:
         return {"ok": False, "said": "Nothing was written: %s" % why}
     if not rows:
@@ -1896,6 +1932,7 @@ def _loads_finalize(takeoff, result, identity):
     if not (applied and applied.get("applied")):
         return {"ok": False, "said": text}
     said = [text]
+    entries = 1
     lines = []
     ids = []
     for s in result.get("spaces") or []:
@@ -1931,28 +1968,35 @@ def _loads_finalize(takeoff, result, identity):
                 finally:
                     import shutil
                     shutil.rmtree(folder, ignore_errors=True)
-                said.append(wrote if isinstance(out.get("reply"), dict)
-                            and out["reply"].get("ok") else "%s\n%s" % (found, wrote))
+                done = isinstance(out.get("reply"), dict) and out["reply"].get("ok")
+                if done:
+                    entries += 1
+                said.append(wrote if done else "%s\n%s" % (found, wrote))
     else:
         said.append("No calculated Space has an air terminal in it, so no diffuser flow was "
                     "written.")
     # READ BACK - what Revit now holds beside what was calculated.
-    back = {}
+    back, back_text = {}, []
     with _revit_lock:
-        for capability in ("READ_SPACE_LOADS", "REPORT_SPACE_AIRFLOW"):
+        if not _moved_since(identity):
             ids_now = [r[0] for r in rows[::3]]
-            out = {}
-            _through(revit_read, reply_out=out, origin="companion")(
-                "FILTER_ELEMENTS_BY_ID", "elementIds=" + ",".join(ids_now))
-            _through(revit_read, reply_out=out, origin="companion")(
-                capability, "", "filter-elements-by-id")
-            reply = out.get("reply")
-            if isinstance(reply, dict) and reply.get("ok"):
-                back[capability] = reply.get("provides")
+            for capability in ("READ_SPACE_LOADS", "REPORT_SPACE_AIRFLOW"):
+                out = {}
+                _through(revit_read, reply_out=out, origin="companion")(
+                    "FILTER_ELEMENTS_BY_ID", "elementIds=" + ",".join(ids_now))
+                text_back = _through(revit_read, reply_out=out, origin="companion")(
+                    capability, "", "filter-elements-by-id")
+                reply = out.get("reply")
+                if isinstance(reply, dict) and reply.get("ok"):
+                    back[capability] = reply.get("provides")
+                back_text.append(str(text_back))
     finalized = [{"id": r[0], "parameter": r[2], "was": r[3], "written": r[4]} for r in rows]
-    said.append("Two undo entries in Revit: the Space values, then the diffusers.")
+    said.append("%s in Revit's undo list: %s." % (
+        "One new entry" if entries == 1 else "Two new entries",
+        "the Space values" if entries == 1 else "the Space values, then the diffusers"))
     return {"ok": True, "said": "\n".join(str(x) for x in said),
-            "finalized": {"rows": finalized, "read_back": back}}
+            "finalized": {"rows": finalized, "read_back": back, "read_back_text": back_text,
+                          "undo_entries": entries}}
 
 
 def _load_settings(kind):
@@ -2423,7 +2467,8 @@ def revit_building_loads(inputs: str = "", expect_from: str = "",
     provides = reply.get("provides") or {}
     try:
         answer = brain.building_loads(provides.get("takeoffJson") or "", inputs,
-                                      project=pinned.project_key, project_name=pinned.title)
+                                      project=pinned.project_key, project_name=pinned.title,
+                                      include_links=include_links)
     except brain.BrainUnavailable as why:
         return str(why)
     if answer.get("takeoff") is None:

@@ -1474,7 +1474,8 @@ def _merged(older, newer):
     return out
 
 
-def building_loads(takeoff_json, inputs, project=None, project_name=None, save=True):
+def building_loads(takeoff_json, inputs, project=None, project_name=None, save=True,
+                   include_links=None):
     """
     Every Space's load from REPORT_SPACE_ENVELOPE's take-off - docs/44 s5.
 
@@ -1499,6 +1500,10 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
     try:
         given = _loads_inputs(inputs)
         takeoff = TAKEOFF.read(takeoff_json)
+        # Whether the model was read with its links (D-59) travels with the
+        # take-off, so Recalculate keeps it and Finalize re-reads it the same way.
+        if include_links is not None:
+            takeoff.include_links = bool(include_links)
     except ValueError as why:
         _audit().record("design.loads", False, fields={"status": "unreadable"})
         return {"asked": [], "qa": [], "result": None, "takeoff": None, "saved": None,
@@ -1533,6 +1538,7 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
         status = "missing"
     else:
         result = LOADS.run(takeoff, project_inputs, profiles, overrides, recorded)
+        result["include_links"] = bool(getattr(takeoff, "include_links", False))
         # GATE 1 HOLDS FOR THE GEOMETRY, NOT FOR THE INPUTS: a take-off the
         # modeller confirmed stays confirmed through a Recalculate of the same
         # geometry, and a model read again with any face changed must be
@@ -1547,7 +1553,7 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
         status = "ok"
         if save and project:
             try:
-                saved = LOADS.save(project, result)
+                saved = LOADS.save(project, result, takeoff=takeoff)
             except (ValueError, OSError) as why:
                 said += "\nThis run was NOT KEPT: %s" % why
         elif save:
@@ -1569,7 +1575,7 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
             # What the Companion's 3D view draws - the same faces, worked out in
             # brain/ (docs/44 s12). Drawn before anything is calculated too, so
             # the geometry can be checked while the questions are answered.
-            "view": VIEW.build(takeoff, result),
+            "view": VIEW.build(takeoff, result, LOADS.answers(project_inputs, strict=False)),
             "summary": TAKEOFF.summary(takeoff),
             "confirmed": bool(result) and LOADS.confirmed(result, takeoff)}
 

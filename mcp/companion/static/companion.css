@@ -586,3 +586,8 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
   #loads .l3d { grid-template-columns: minmax(0, 1fr); }
   #loads .l3d-stage canvas { height: 360px; }
 }
+#loads tr.own td { background: var(--zebra); }
+#loads .own-box { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px 10px; }
+#loads .own-field { display: flex; flex-direction: column; gap: 2px; }
+#loads .own-field input { width: 100%; text-align: right; }
+#loads .l-back pre { white-space: pre-wrap; word-break: break-word; margin: 4px 0; }

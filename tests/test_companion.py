@@ -726,8 +726,9 @@ def test_loads():
     check(view_panel.view() is None and view_panel.confirm()["ok"] is False,
           "an empty panel has no 3D view and confirms nothing")
     from test_loads_view import l_building
+    from test_loads_view import GROUNDED
     shaped = brain_seam.building_loads(json.dumps(l_building()), {
-        "project": PROJECT, "profiles": {"Office": OFFICE}}, save=False)
+        "project": GROUNDED, "profiles": {"Office": OFFICE}}, save=False)
     view_panel.open("Project1", shaped, ("Project1", "", "11"))
     drawn = view_panel.view()
     check(drawn and drawn["faces"] and "view" not in view_panel.current()
@@ -765,6 +766,22 @@ def test_loads():
           "Finalize is declared MODIFY through run_fragment_write")
     check("LOADS.finalize_rows(takeoff, result)" in fin,
           "Finalize builds its rows through the brain, which refuses a take-off nobody confirmed")
+    # Review I9 and I10: Finalize reads the model again and refuses a changed
+    # one; it counts the undo entries it actually made.
+    reread = fin.find('"REPORT_SPACE_ENVELOPE"')
+    check(reread != -1 and reread < fin.index("_apply_table(rows, identity)")
+          and "LOADS.fingerprint(fresh) != LOADS.fingerprint(takeoff)" in fin
+          and "LOADS.finalize_rows(fresh, result)" in fin,
+          "Finalize reads the model again, refuses if its geometry changed, and checks each "
+          "row against what Revit holds now")
+    check("Two undo entries in Revit:" not in fin and "entries += 1" in fin,
+          "Finalize says how many undo entries it made, not always two")
+    kept = hc.LoadsPanel()
+    kept.open("Project1", shaped, ("Project1", "", "11"), read_at="08:00:00")
+    kept.recalculate_hook = lambda t, i, ident: brain_seam.building_loads(t, i, save=False)
+    kept.recalculate({"project": GROUNDED, "profiles": {"Office": OFFICE}})
+    check(kept.current()["read_at"] == "08:00:00",
+          "Recalculate keeps the time the MODEL was read - it reads nothing itself")
     for hook in ("recalculate_hook = _loads_recalculate", "report_hook = _loads_report",
                  "finalize_hook = _loads_finalize", "confirm_hook = _loads_confirm"):
         check(hook in server, "the server sets %s" % hook.split(" =")[0])
