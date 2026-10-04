@@ -131,9 +131,16 @@ def l_building(true_north=0.0, rooms=None):
             "spaces": spaces, "findings": []}
 
 
+# Each office's floor finds nothing below it: the modeller answers "ground".
+ANSWERED = dict(("beyond:%sF" % sid, "ground") for sid, _r in ROOMS.values())
+ANSWERED["beyond:104F"] = "ground"
+GROUNDED = dict(PROJECT, **ANSWERED)
+
+
 def view(d=None, run=True):
     t = T.read(d or l_building())
-    return V.build(t, B.run(t, PROJECT, {"Office": OFFICE}) if run else None)
+    said = B.answers(GROUNDED)
+    return V.build(t, B.run(t, GROUNDED, {"Office": OFFICE}) if run else None, said)
 
 
 def faces_of(v, element):
@@ -159,7 +166,11 @@ def test_a_wall_between_two_spaces_is_drawn_as_no_load():
     assert faces_of(v, "101S")[0]["category"] == "outside_wall"
     assert faces_of(v, "101R")[0]["category"] == "roof"
     floor = faces_of(v, "101F")[0]
-    assert floor["category"] == "floor_unknown" and "heating loss only" in floor["used_as"]
+    assert floor["category"] == "on_ground" and "heating loss only" in floor["used_as"]
+    assert "as the modeller answered" in floor["used_as"]
+    unanswered = faces_of(V.build(T.read(l_building())), "101F")[0]
+    assert unanswered["used_as"].startswith("NOT COUNTED YET")
+    assert unanswered["category"] == "floor_unknown"
 
 
 def test_an_opening_sits_on_its_wall_at_its_own_size():
@@ -247,7 +258,9 @@ def test_spaces_that_share_no_wall_are_a_check():
 
 def test_the_l_building_runs_and_its_block_is_below_its_peaks():
     t = T.read(l_building())
-    r = B.run(t, PROJECT, {"Office": OFFICE})
+    asked = [a["input"] for a in B.needs(t, PROJECT, {"Office": OFFICE})]
+    assert asked == ["beyond:101F", "beyond:102F", "beyond:103F"], asked
+    r = B.run(t, GROUNDED, {"Office": OFFICE})
     assert [s["status"] for s in r["spaces"]] == ["ok", "ok", "ok"], [s["why"] for s in r["spaces"]]
     assert r["building"]["block_w"] < r["building"]["sum_of_peaks_w"]
 

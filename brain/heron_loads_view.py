@@ -48,7 +48,8 @@ CATEGORIES = (
     ("exposed_floor", "#a26b4a", "floor open to outside below"),
     ("floor_unconditioned", "#c9b79c", "floor over an unconditioned space"),
     ("floor_between_spaces", "#ddd5c7", "floor over another Space - no load"),
-    ("floor_unknown", "#8f8f8f", "floor - nothing found below it (ground?)"),
+    ("floor_unknown", "#d9534f", "floor - nothing found below it"),
+    ("on_ground", "#8f8f8f", "against the ground - as the modeller answered"),
     ("window", "#4f9fd1", "window"),
     ("curtain_panel", "#6fb7d9", "curtain wall panel"),
     ("skylight", "#4f9fd1", "skylight"),
@@ -93,11 +94,14 @@ def _scale(value, low, high):
     return _ramp((value - low) / ((high - low) or 1.0))
 
 
-def category(face, kind=None):
-    """The category a face or an opening is drawn in."""
+def category(face, kind=None, answers=None):
+    """The category a face or an opening is drawn in - by what is beyond it, as Revit found
+    it or as the modeller answered."""
     if kind:
         return kind if kind in _CATEGORY else "window"
-    side, beyond = face.get("side"), face.get("beyond")
+    side, beyond = face.get("side"), TAKEOFF.beyond(face, answers)
+    if beyond == "ground":
+        return "on_ground"
     if side == "wall":
         return {"outside": "outside_wall", "unconditioned": "wall_unconditioned",
                 "space": "wall_between_spaces"}.get(beyond, "wall_unknown")
@@ -114,7 +118,8 @@ _USED = {"none": "no load - conditioned on both sides",
          "exposed_floor": "a floor open below: heating loss only",
          "partition": "a partition to an unconditioned space, at the project's temperature "
                       "beyond it",
-         "floor": "a floor: heating loss only, at the project's ground temperature"}
+         "floor": "a floor: heating loss only, at the project's ground temperature",
+         "unknown": "NOT COUNTED YET - Revit found nothing beyond it; Heron asks what is there"}
 
 
 def _sub(a, b):
@@ -147,8 +152,12 @@ def _legend(rows):
     return [{"colour": c, "label": label} for _key, c, label in rows]
 
 
-def build(takeoff, result=None):
-    """The 3D view's data for one take-off, coloured by the run when there is one."""
+def build(takeoff, result=None, answers=None):
+    """The 3D view's data for one take-off, coloured by the run when there is one.
+
+    `answers` is what the modeller said is beyond the faces Revit could not see
+    past ({element: word}) - each such face is drawn as what it was answered.
+    """
     t = TAKEOFF.read(takeoff)
     north = t.site.get("project_to_true_north_deg")
     rows = dict((str(s.get("id")), s) for s in (result or {}).get("spaces") or [])
@@ -187,13 +196,15 @@ def build(takeoff, result=None):
                 outline_missing += 1
                 continue
             kind = t.types.get(str(f.get("type"))) or {}
-            used = TAKEOFF.role(f)
+            used = TAKEOFF.role(f, answers)
             u = kind.get("u_w_m2k")
             facing = (TAKEOFF.azimuth_deg(f["normal"], north)
                       if f.get("side") == "wall" and f.get("normal") else None)
-            cat = category(f)
+            cat = category(f, answers=answers)
             note = _USED[used]
-            if used != "none" and u is None:
+            if TAKEOFF.beyond(f, answers) != f.get("beyond"):
+                note += " - as the modeller answered (Revit found nothing beyond it)"
+            if used not in ("none", "unknown") and u is None:
                 note = "REFUSED - its type has no U-value in the model"
             face = {
                 "id": "%s-%d" % (sid, i), "space": sid, "level": s.get("level"),
@@ -205,8 +216,8 @@ def build(takeoff, result=None):
                 "facing_deg": facing, "facing": TAKEOFF.compass(facing) if facing is not None else None,
                 "loops": loops, "opening": False,
                 "colours": {"type": _CATEGORY[cat][1],
-                            "beyond": dict((k, c) for k, c, _l in BEYOND).get(f.get("beyond"),
-                                                                              BEYOND[3][1]),
+                            "beyond": dict((k, c) for k, c, _l in BEYOND).get(
+                                TAKEOFF.beyond(f, answers), BEYOND[3][1]),
                             "u": (NO_U[0] if u is None and used != "none"
                                   else _scale(u, u_low, u_high) if u is not None
                                   else BEYOND[1][1]),

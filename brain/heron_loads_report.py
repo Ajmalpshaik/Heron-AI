@@ -111,10 +111,40 @@ def html(result, standards=None, takeoff=None):
               "Heron Companion's 3D view and confirm them before this sheet is used.</p>")]
 
     inputs = r.get("inputs") or {}
+    project = inputs.get("project") or {}
+    parts.append("<h2>Site - where the sun is worked out</h2>")
+    site = r.get("site") or {}
+    parts.append(_table(("", "value", "source"), [
+        ("place", site.get("named") or "-", "model"),
+        ("latitude, degrees north", _n(site.get("latitude_deg"), 3), "model"),
+        ("longitude, degrees east", _n(site.get("longitude_deg"), 3), "model"),
+        ("time zone, hours from UTC", _n(site.get("utc_offset_h"), 1), "model"),
+        ("elevation, m", _n(site.get("elevation_m"), 1), "model"),
+        ("True North, degrees from project north", _n(site.get("project_to_true_north_deg"), 1),
+         "model")]))
+
     parts.append("<h2>Design conditions</h2>")
     parts.append(_table(("input", "value", "source"),
-                        [(k, _value(v), _source(v))
-                         for k, v in sorted((inputs.get("project") or {}).items())]))
+                        [(k, _value(v), _source(v)) for k, v in sorted(project.items())
+                         if not str(k).startswith("beyond")]))
+
+    # What the modeller said is beyond the faces Revit could not see past -
+    # part of the take-off, so a reader can check it like any other face.
+    said = LOADS.answers(project, strict=False)
+    if said:
+        names = {}
+        if takeoff is not None:
+            t = TAKEOFF.read(takeoff)
+            for sp in t.spaces:
+                for f in sp.get("faces") or []:
+                    if f.get("element") is not None:
+                        names[str(f["element"])] = "%s (%s)" % (
+                            (t.types.get(str(f.get("type"))) or {}).get("name") or "an element",
+                            f["element"])
+        parts.append("<h2>What is beyond the faces Revit could not see past</h2>")
+        parts.append(_table(("element", "beyond it", "source"),
+                            [(names.get(k, "element %s" % k), v, "instruction")
+                             for k, v in sorted(said.items())]))
 
     parts.append("<h2>Standards in force</h2>")
     if standards:
@@ -180,17 +210,22 @@ def html(result, standards=None, takeoff=None):
                              for c in s["cooling"]["components"]], numeric=(1, 2)))
 
     parts.append("<h2>Zones and building</h2>")
-    zrows = [(z["name"], _n(z["area_m2"], 1), _n(z["block_w"]), _when(z["block_month"],
-                                                                      z["block_hour"]),
-              _n(z["sum_of_peaks_w"]), _n(z["heating_w"])) for z in r.get("zones") or []]
-    zrows.append(("Building", _n(b.get("area_m2"), 1), _n(b.get("block_w")),
-                  _when(b.get("block_month"), b.get("block_hour")), _n(b.get("sum_of_peaks_w")),
-                  _n(b.get("heating_w"))))
-    parts.append(_table(("", "m2", "block load W", "block at", "sum of peaks W", "heating W"),
-                        zrows, numeric=(1, 2, 4, 5)))
-    parts.append("<p class='note'>The block load is the largest hour-by-hour sum - what the "
-                 "plant is sized to. The sum of peaks adds each Space's own peak - what each "
-                 "terminal is sized to.</p>")
+
+    def zone_row(name, z):
+        return (name, _n(z.get("area_m2"), 1), _n(z.get("block_w")),
+                _when(z.get("block_month"), z.get("block_hour")), _n(z.get("coil_block_w")),
+                _when(z.get("coil_block_month"), z.get("coil_block_hour")),
+                _n(z.get("sum_of_peaks_w")), _n(z.get("heating_w")))
+    zrows = [zone_row(z["name"], z) for z in r.get("zones") or []]
+    zrows.append(zone_row("Building", b))
+    parts.append(_table(("", "m2", "rooms' block W", "at", "with outdoor air at the coil W",
+                         "at", "sum of peaks W", "heating W"), zrows,
+                        numeric=(1, 2, 4, 6, 7)))
+    parts.append("<p class='note'>The rooms' block is the largest hour-by-hour sum of the Spaces' "
+                 "own cooling loads. With the outdoor air at the coil adds each Space's outdoor "
+                 "air, hour by hour. The sum of peaks adds each Space's own peak - what each "
+                 "Space's supply air is worked out from. None of them selects plant: an hourly "
+                 "method does (see the method notes).</p>")
 
     parts.append("<h2>The engine's own checks</h2>")
     checked = [("%s %s" % (s.get("number") or "", s.get("name") or ""), level, text)

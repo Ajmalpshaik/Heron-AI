@@ -20,6 +20,7 @@ WHAT IT DOES NOT PROVE
 
 from __future__ import print_function
 
+import copy as _copy
 import os
 import shutil
 import sys
@@ -71,13 +72,30 @@ def test_an_unconfirmed_takeoff_is_stamped_draft():
     assert "DRAFT - THE TAKE-OFF WAS NOT CONFIRMED" in page
     page = R.html(B.confirm(r, t), takeoff=t)
     assert "NOT CONFIRMED" not in page and "checked and confirmed by" in page
-    moved = T.read(dict(ROOM, document="another reading"))       # a different take-off
-    assert "NOT CONFIRMED" in R.html(r, takeoff=moved)
+    moved = _copy.deepcopy(ROOM)                                  # a wall moved in the model
+    moved["spaces"][0]["faces"][0]["area_m2"] = 14.0
+    assert "NOT CONFIRMED" in R.html(r, takeoff=T.read(moved))
 
 
 def test_glass_by_the_way_it_faces_is_in_the_sheet():
     page = R.html(built(), takeoff=T.read(ROOM))
     assert "Glass by the way it faces" in page and "glass % of wall" in page
+
+
+def test_report_shows_the_site_the_coil_block_and_the_answers():
+    # Review I7 and I1: the site the sun is worked out for, and the outdoor
+    # air at the coil, were on no page; the answers about faces Revit could
+    # not see past are part of the take-off a reader must be able to check.
+    d = _copy.deepcopy(ROOM)
+    d["spaces"][0]["faces"][1]["beyond"] = "unknown"
+    t = T.read(d)
+    r = B.run(t, dict(PROJECT, **{"beyond:12": "outside"}), {"Office": OFFICE})
+    page = R.html(r, takeoff=t)
+    assert "Site" in page and "25.280" in page and "Doha" in page
+    assert "with the outdoor air at the coil" in page.lower()
+    assert "%.0f" % r["building"]["coil_block_w"] in page
+    assert "beyond:12" not in page and "Roof (12)" in page and "outside" in page
+    assert "plant is sized to" not in page
 
 
 def test_csv_has_one_row_per_space():

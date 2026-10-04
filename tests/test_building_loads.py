@@ -51,8 +51,8 @@ from test_takeoff import ROOM, copy, raises, run_all          # noqa: E402
 PROJECT = {"design_weather": "doha-0.4", "room_dry_bulb_c": 24, "room_rh_pct": 50,
            "supply_dry_bulb_c": 13, "ground_reflectance": 0.2,
            "outside_surface_coefficient_w_m2k": 17, "heating_outdoor_dry_bulb_c": 10,
-           "heating_room_dry_bulb_c": 21, "unconditioned_temp_c": 35, "ground_temp_c": 25,
-           "altitude_m": 10}
+           "heating_room_dry_bulb_c": 21, "unconditioned_temp_c": 35,
+           "heating_unconditioned_temp_c": 18, "ground_temp_c": 25, "altitude_m": 10}
 OFFICE = {"people_per_m2": 0.1, "sensible_w_each": 75, "latent_w_each": 55,
           "lighting_w_per_m2": 10, "equipment_w_per_m2": 15, "infiltration_ach": 0.3,
           "outdoor_air_ls_per_person": 2.5, "outdoor_air_ls_per_m2": 0.3}
@@ -265,6 +265,127 @@ def test_a_confirmation_holds_for_that_takeoff_only():
     moved = copy()
     moved["spaces"][0]["faces"][0]["area_m2"] = 14.0               # the model changed
     assert not B.confirmed(r, T.read(moved))
+
+
+# --- the review's findings, each reproduced before it was fixed --------------
+
+def unknown_roof():
+    d = copy()
+    d["spaces"][0]["faces"][1]["beyond"] = "unknown"           # the roof, element 12
+    return d
+
+
+def test_review_c1_a_face_nobody_can_see_beyond_is_asked_per_element():
+    d = two_offices([1.0, 0.0, 0.0])
+    for s in d["spaces"]:
+        s["faces"][1]["beyond"] = "unknown"                     # both share element 12
+    t = T.read(d)
+    asked = [a for a in B.needs(t, PROJECT, {"Office": OFFICE}) if a["input"].startswith("beyond:")]
+    assert [a["input"] for a in asked] == ["beyond:12"], asked
+    assert "outside" in asked[0]["unit"] and "ground" in asked[0]["unit"]
+    r = B.run(t, PROJECT, {"Office": OFFICE})
+    assert [s["status"] for s in r["spaces"]] == ["missing", "missing"]
+    answered = dict(PROJECT, **{"beyond:12": "outside"})
+    assert not B.needs(t, answered, {"Office": OFFICE})
+    r = B.run(t, answered, {"Office": OFFICE})
+    assert [s["status"] for s in r["spaces"]] == ["ok", "ok"]
+    bad = B.run(t, dict(PROJECT, **{"beyond:12": "sky"}), {"Office": OFFICE})
+    assert bad["spaces"][0]["status"] == "refused" and "beyond:12" in " ".join(bad["spaces"][0]["why"])
+
+
+def test_review_i2_heating_has_its_own_unconditioned_temperature():
+    d = copy()
+    d["spaces"][0]["faces"][0]["beyond"] = "unconditioned"      # a wall to a store
+    t = T.read(d)
+    hot = dict(PROJECT, unconditioned_temp_c=45, heating_unconditioned_temp_c=15)
+    r = B.run(t, hot, {"Office": OFFICE})
+    s = r["spaces"][0]
+    assert s["status"] == "ok", s["why"]
+    store = [c for c in s["heating"]["components"] if c["name"].startswith("Ext wall")]
+    assert store and store[0]["w"] > 0                          # 21 C inside, 15 C beyond: a loss
+    without = dict(PROJECT)
+    del without["heating_unconditioned_temp_c"]
+    assert "heating_unconditioned_temp_c" in [a["input"] for a in B.needs(t, without, {})]
+
+
+def door_building():
+    d = copy()
+    d["types"]["dr"] = {"name": "Single Flush: 900", "category": "Doors", "u_w_m2k": 2.0,
+                        "shgc": None, "absorptance": None}
+    d["spaces"][0]["faces"][0]["openings"].append(
+        {"element": 30, "kind": "door", "type": "dr", "area_m2": 1.89})
+    return d
+
+
+def test_review_i3_an_outside_door_with_no_absorptance_is_asked_once():
+    t = T.read(door_building())
+    asked = [a["input"] for a in B.needs(t, PROJECT, {"Office": OFFICE})]
+    assert asked == ["door_absorptance"], asked
+    r = B.run(t, dict(PROJECT, door_absorptance=0.6), {"Office": OFFICE})
+    assert r["spaces"][0]["status"] == "ok", r["spaces"][0]["why"]
+    assert any(c["name"] == "Single Flush: 900 (30)" for c in r["spaces"][0]["cooling"]["components"])
+
+
+def test_review_i1_the_coil_block_carries_the_outdoor_air():
+    r = B.run(T.read(ROOM), PROJECT, {"Office": OFFICE})
+    b = r["building"]
+    assert b["coil_block_w"] > b["block_w"] > 0
+    none = B.run(T.read(ROOM), PROJECT, {"Office": dict(OFFICE, outdoor_air_ls_per_person=0,
+                                                          outdoor_air_ls_per_m2=0)})
+    assert none["spaces"][0]["status"] == "ok", none["spaces"][0]["why"]
+    assert abs(none["building"]["coil_block_w"] - none["building"]["block_w"]) < 1e-6
+    assert "plant is sized to" not in B.summary_text(r)
+
+
+def test_review_i8_project_values_are_range_checked_too():
+    t = T.read(ROOM)
+    for key, bad in (("outside_surface_coefficient_w_m2k", "ten"),
+                     ("outside_surface_coefficient_w_m2k", 1000),
+                     ("room_rh_pct", 0.5), ("room_dry_bulb_c", -5)):
+        r = B.run(t, dict(PROJECT, **{key: bad}), {"Office": OFFICE})      # never raises
+        assert r["spaces"][0]["status"] == "refused", (key, bad)
+        assert key in " ".join(r["spaces"][0]["why"]), r["spaces"][0]["why"]
+        assert r["building"]["block_w"] == 0
+
+
+def test_review_i7_a_site_far_from_the_weather_station_is_a_fail():
+    d = copy()
+    d["site"].update(latitude_deg=42.36, longitude_deg=-71.06, named="Boston, MA")
+    r = B.run(T.read(d), PROJECT, {"Office": OFFICE})
+    assert any(f["level"] == "FAIL" and "km" in f["text"] and "Boston" in f["text"] for f in r["qa"])
+    assert r["spaces"][0]["status"] == "refused"
+    ok = B.run(T.read(ROOM), PROJECT, {"Office": OFFICE})
+    assert any("Doha" in f["text"] and f["level"] == "INFO" for f in ok["qa"])
+    assert ok["site"]["latitude_deg"] == 25.28
+
+
+def test_review_i11_a_space_can_have_its_own_set_point():
+    t = T.read(two_offices([-1.0, 0.0, 0.0]))
+    r = B.run(t, PROJECT, {"Office": OFFICE}, overrides={2: {"room_dry_bulb_c": 21}})
+    a, b = r["spaces"]
+    assert b["cooling"]["peak"]["total_w"] > a["cooling"]["peak"]["total_w"]
+
+
+def test_review_i11_a_kept_run_keeps_its_takeoff_and_not_its_hours():
+    with knowledge_folder():
+        t = T.read(ROOM)
+        r = B.run(t, PROJECT, {"Office": OFFICE})
+        path = B.save("project-a", r, takeoff=t)
+        kept = json.load(io.open(path, encoding="utf-8"))
+        assert "hours" not in kept["spaces"][0]["cooling"]
+        back = B.load_takeoff("project-a", kept["takeoff_fingerprint"])
+        assert back is not None and B.fingerprint(back) == B.fingerprint(t)
+
+
+def test_review_i9_the_fingerprint_ignores_what_finalize_writes():
+    t = T.read(ROOM)
+    written = copy()
+    written["spaces"][0]["current"]["Design Cooling Load"] = "2021 W"
+    written["findings"] = ["something said differently"]
+    assert B.fingerprint(T.read(written)) == B.fingerprint(t)
+    moved = copy()
+    moved["spaces"][0]["faces"][0]["area_m2"] = 14.0
+    assert B.fingerprint(T.read(moved)) != B.fingerprint(t)
 
 
 # --- the seam and the tool (Task 5) - through heron_brain, which needs no MCP SDK

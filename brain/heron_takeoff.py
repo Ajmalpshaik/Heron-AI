@@ -15,7 +15,10 @@ heron_hvac's room calculations read. It adds no physics: areas are netted,
 azimuths turned to true north, and nothing else.
 
 A type with no U-value, or a glazed type with no SHGC, refuses its Space - it
-is never defaulted. Every number carries its unit in its key name.
+is never defaulted. A face Revit found nothing beyond is never guessed either:
+it is a question for the modeller, asked once per element, and its Space waits
+for the answer (`unknowns`, and the `answers` every function here takes).
+Every number carries its unit in its key name.
 
 Standard library only.
 """
@@ -25,6 +28,8 @@ import math
 
 FORMAT = 1
 GLAZED = ("window", "curtain_panel", "skylight")
+# What the modeller may say is beyond a face Revit could not see past.
+ANSWERS = ("outside", "unconditioned", "conditioned", "ground")
 
 
 class TakeoffError(ValueError):
@@ -82,31 +87,87 @@ def _no_value(name, what):
     return "%s has no %s in the model - set its type's thermal properties" % (name, what)
 
 
-def role(face):
+UNREAD_LINK = ("a face of this Space is bounded by an element in a linked model that was not "
+               "read - calculate again with links included")
+
+
+def beyond(face, answers=None):
+    """What is beyond a face: as Revit found it, or as the modeller answered for its element.
+
+    "outside", "space" (conditioned beyond), "unconditioned", "ground", or
+    "unknown" while nobody has said.
+    """
+    found = face.get("beyond")
+    if found != "unknown" or face.get("element") is None:
+        return found
+    said = (answers or {}).get(str(face.get("element")))
+    if said == "conditioned":
+        return "space"
+    return said if said in ANSWERS else "unknown"
+
+
+def role(face, answers=None):
     """What a face counts as in the load - the ONE rule surfaces() and the 3D view share.
 
     "none" (conditioned on both sides), "wall", "roof", "exposed_floor" (open
-    to outside below), "partition" (a wall or ceiling to an unconditioned or
-    unknown space - at the project's unconditioned temperature) or "floor"
-    (heating only, at the project's ground temperature).
+    to outside below), "partition" (a wall or ceiling to an unconditioned
+    space, at the project's unconditioned temperatures), "floor" (heating
+    only, at the project's ground temperature - a floor on the ground, or a
+    face the modeller said is against it) or "unknown" (nothing found beyond
+    it, and not yet answered: its Space waits).
     """
-    beyond, side = face.get("beyond"), face.get("side")
-    if beyond == "space":
+    where, side = beyond(face, answers), face.get("side")
+    if where == "space":
         return "none"
-    if beyond == "outside":
+    if where == "unknown":
+        return "unknown"
+    if where == "outside":
         return {"wall": "wall", "top": "roof"}.get(side, "exposed_floor")
+    if where == "ground":
+        return "floor"
     return "floor" if side == "bottom" else "partition"
 
 
-def surfaces(t, space):
-    """One Space's faces as the room engine's surface records, and what refused."""
+def unknowns(t, answers=None):
+    """Every element Revit found nothing beyond, still unanswered - once each, with its Spaces."""
+    out = {}
+    for s in t.spaces:
+        if not s.get("placed") or not s.get("area_m2"):
+            continue
+        label = ("%s %s" % (s.get("number") or "", s.get("name") or "")).strip()
+        for f in s.get("faces") or []:
+            if f.get("element") is None or role(f, answers) != "unknown":
+                continue
+            key = str(f["element"])
+            entry = out.setdefault(key, {"name": _name(t, f.get("type"), f["element"]),
+                                         "side": f.get("side"), "spaces": []})
+            if label not in entry["spaces"]:
+                entry["spaces"].append(label)
+    return out
+
+
+def surfaces(t, space, answers=None):
+    """One Space's faces as the room engine's surface records, and what refused.
+
+    An outside door carries `door: True` and its type's absorptance, which may
+    be missing - the runner then asks for one door absorptance, once.
+    """
     out = {"walls": [], "roofs": [], "windows": [], "skylights": [], "partitions": [],
            "floors": [], "refused": []}
     north = t.site.get("project_to_true_north_deg")
     for face in space.get("faces") or []:
-        beyond = face.get("beyond")
-        if beyond == "space":
+        used = role(face, answers)
+        if used == "none":
             continue                                # conditioned on both sides: no load
+        if used == "unknown":
+            if face.get("element") is None:
+                if UNREAD_LINK not in out["refused"]:
+                    out["refused"].append(UNREAD_LINK)
+            else:
+                out["refused"].append(
+                    "nothing was found beyond %s - say what is there: outside, unconditioned, "
+                    "conditioned or ground" % _name(t, face.get("type"), face.get("element")))
+            continue
         kind = t.types.get(str(face.get("type"))) or {}
         name = _name(t, face.get("type"), face.get("element"))
         side = face.get("side")
@@ -121,13 +182,16 @@ def surfaces(t, space):
             if okind.get("u_w_m2k") is None:
                 out["refused"].append(_no_value(oname, "U-value"))
                 continue
+            if used in ("partition", "floor"):
+                # Glass or a door to an unconditioned space: conduction only,
+                # so no SHGC is needed for it.
+                rec = {"name": oname, "area_m2": area, "u_w_m2k": okind["u_w_m2k"]}
+                (out["floors"] if used == "floor" else out["partitions"]).append(rec)
+                continue
             if glazed and okind.get("shgc") is None:
                 out["refused"].append(_no_value(oname, "SHGC"))
                 continue
-            if beyond != "outside":
-                out["partitions"].append({"name": oname, "area_m2": area,
-                                          "u_w_m2k": okind["u_w_m2k"]})
-            elif glazed and side == "wall":
+            if glazed and side == "wall":
                 out["windows"].append({"name": oname, "area_m2": area,
                                        "u_w_m2k": okind["u_w_m2k"], "shgc": okind["shgc"],
                                        "facing": facing})
@@ -137,14 +201,13 @@ def surfaces(t, space):
             else:                                   # an opaque door to outside
                 out["walls"].append({"name": oname, "area_m2": area,
                                      "u_w_m2k": okind["u_w_m2k"], "facing": facing,
-                                     "absorptance": okind.get("absorptance")})
+                                     "absorptance": okind.get("absorptance"), "door": True})
         if net <= 1e-9:
             continue
         if kind.get("u_w_m2k") is None:
             out["refused"].append(_no_value(name, "U-value"))
             continue
         rec = {"name": name, "area_m2": round(net, 6), "u_w_m2k": kind["u_w_m2k"]}
-        used = role(face)
         if used in ("floor", "exposed_floor"):
             out["floors"].append(rec)
         elif used == "partition":
@@ -218,7 +281,7 @@ def _groups(spaces):
     return len(set(top(i) for i in ids))
 
 
-def qa(t):
+def qa(t, answers=None):
     """Gate 1 - what is wrong, or worth saying, before any load runs. FAIL first."""
     found = []
 
@@ -237,19 +300,33 @@ def qa(t):
         if not s.get("placed") or not s.get("area_m2"):
             add("FAIL", sid, "Space %s is not placed or not enclosed - it is left out" % label)
             continue
-        if not any(f.get("beyond") == "outside" for f in s.get("faces") or []):
+        faces = s.get("faces") or []
+        if not faces:
+            add("FAIL", sid, "Space %s: Revit gave no faces for it, so its walls, roof and "
+                "windows are not known - it is left out; check it is bounded, then read the "
+                "model again" % label)
+            continue
+        if not any(f.get("beyond") == "outside" for f in faces):
             add("INFO", sid, "Space %s has no outside face - only its internal gains load it"
                 % label)
-        for face in s.get("faces") or []:
-            if face.get("beyond") == "unknown":
-                add("WARN", sid, "Space %s: nothing was found beyond the face of element %s - "
-                    "say what is there" % (label, face.get("element")))
+        for face in faces:
+            if role(face, answers) == "unknown" and face.get("element") is not None:
+                add("WARN", sid, "Space %s: nothing was found beyond %s - Heron asks what is "
+                    "there" % (label, _name(t, face.get("type"), face.get("element"))))
+            if (face.get("side") == "wall" and face.get("beyond") == "unconditioned"
+                    and any(o.get("kind") in GLAZED for o in face.get("openings") or [])):
+                add("WARN", sid, "Space %s: %s has glass but is not an Exterior wall, so its glass "
+                    "gets no sun - if it is on the outside of the building, set its type's "
+                    "Function to Exterior" % (label, _name(t, face.get("type"),
+                                                          face.get("element"))))
             gross = float(face.get("area_m2") or 0.0)
             holes = sum(float(o.get("area_m2") or 0.0) for o in face.get("openings") or [])
             if holes > gross + 1e-6:
                 add("FAIL", sid, "Space %s: openings of %.2f m2 are larger than the %.2f m2 "
                     "face of element %s" % (label, holes, gross, face.get("element")))
-        for why in surfaces(t, s)["refused"]:
+        for why in surfaces(t, s, answers)["refused"]:
+            if why.startswith("nothing was found beyond"):
+                continue                            # asked, not failed - see unknowns()
             add("FAIL", sid, "Space %s: %s" % (label, why))
     by_level = {}
     for s in t.spaces:

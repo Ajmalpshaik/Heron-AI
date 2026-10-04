@@ -144,6 +144,55 @@ def test_no_site_location_is_a_fail():
     assert any(f["level"] == "FAIL" and "site location" in f["text"] for f in T.qa(T.read(d)))
 
 
+def test_a_face_with_nothing_found_beyond_is_asked_never_guessed():
+    # Review C1: a face with nothing found beyond it was counted as a wall to an
+    # unconditioned space - a slab between two storeys added a third to a Space's
+    # cooling. It is a QUESTION now, per element, and nothing is assumed.
+    d = copy()
+    d["spaces"][0]["faces"][1]["beyond"] = "unknown"           # the roof element 12
+    t = T.read(d)
+    s = T.surfaces(t, t.spaces[0])
+    assert s["roofs"] == [] and s["partitions"] == []
+    assert any("12" in r and "say what is there" in r for r in s["refused"]), s["refused"]
+    assert T.unknowns(t) and "12" in T.unknowns(t)
+    roofs = T.surfaces(t, t.spaces[0], {"12": "outside"})["roofs"]
+    assert [r["name"] for r in roofs] == ["Roof (12)"]
+    above = T.surfaces(t, t.spaces[0], {"12": "conditioned"})
+    assert above["roofs"] == [] and above["partitions"] == [] and not above["refused"]
+    grounded = copy()
+    grounded["spaces"][0]["faces"][1].update(side="bottom", beyond="unknown")
+    g = T.read(grounded)
+    assert T.surfaces(g, g.spaces[0], {"12": "ground"})["floors"]
+
+
+def test_a_face_bounded_by_an_unread_link_says_so():
+    # Review I6: it said "type None (None) has no U-value".
+    d = copy()
+    d["spaces"][0]["faces"][1].update(element=None, type=None, beyond="unknown")
+    t = T.read(d)
+    said = " ".join(T.surfaces(t, t.spaces[0])["refused"])
+    assert "None" not in said and "linked model" in said and "links included" in said
+    assert any(f["level"] == "FAIL" and "linked model" in f["text"] for f in T.qa(t))
+
+
+def test_a_placed_space_with_no_faces_is_a_fail():
+    # Review I5c: a Space whose faces Revit could not work out ran on its
+    # internal gains alone.
+    d = copy()
+    d["spaces"][0]["faces"] = []
+    assert any(f["level"] == "FAIL" and f["space"] == 1 and "no faces" in f["text"]
+               for f in T.qa(T.read(d)))
+
+
+def test_glass_in_a_wall_that_is_not_exterior_is_a_check():
+    # Review I5e: a facade wall whose type is not Exterior files its windows
+    # as glass to an unconditioned space - no sun at all.
+    d = copy()
+    d["spaces"][0]["faces"][0]["beyond"] = "unconditioned"
+    assert any(f["level"] == "WARN" and "Function" in f["text"] and "Exterior" in f["text"]
+               for f in T.qa(T.read(d)))
+
+
 def test_imports_only_the_standard_library():
     allowed = set(getattr(sys, "stdlib_module_names", ())) or {"json", "math"}
     tree = ast.parse(open(os.path.join(ROOT, "brain", "heron_takeoff.py")).read())
