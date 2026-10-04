@@ -11,7 +11,33 @@ positive:
       was reused. Two definitions of one name mean two GUIDs, and a colleague's
       model then carries a parameter that looks identical and is not
 
+  - given: >
+      version 2 - Manage > Shared Parameters pointing at a file of the
+      modeller's own (note its path first), and AJ_Status asked for on Duct
+      Accessories with a DIFFERENT shared parameter file
+    expect: >
+      the parameter bound to Duct Accessories, sharedParameterFileRestored
+      true, and Manage > Shared Parameters afterwards showing the modeller's
+      own file again - read in Revit's dialog, not from this report. Version 1
+      left it pointing at the file asked for (5b-316)
+
 negative:
+  - given: >
+      version 2 - one category the Project Parameters dialog does not offer
+      (check with a read that it does not allow bound parameters) asked for
+      together with Duct Accessories
+    expect: >
+      bound to Duct Accessories only, and the other category NAMED in
+      categoriesNotBound as one Revit does not let a project parameter onto -
+      not missing from the answer. No other category gains the parameter:
+      Pipes, checked in Manage > Project Parameters, still does not carry it
+
+  - given: >
+      version 2 - ONLY categories that cannot carry a project parameter
+    expect: >
+      nothing done, each one named, and Manage > Shared Parameters exactly as
+      it was - the setting is never touched when there is nothing to bind
+
   - given: the parameter already bound to Ducts, now asked for on Pipe Fittings only
     expect: >
       bound to BOTH afterwards, and the report naming Ducts as kept. THIS IS THE
@@ -39,3 +65,8 @@ negative:
 
 second_route:
   - Manage, Shared Parameters in Revit to see the definition, and Manage, Project Parameters to see the binding and its categories
+  - >
+    Version 2: open Manage > Shared Parameters after the run and read the path
+    in its box - it must be the one noted before the run, whatever the report
+    says. Then press Undo once: the binding goes, and the path stays the
+    modeller's own, because nothing here leaves Undo anything to do for it

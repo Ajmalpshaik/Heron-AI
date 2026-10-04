@@ -30,7 +30,52 @@ positive:
       written on the TYPE, with the row saying so. A type edit reaches every
       instance sharing it, which is a bigger change than the row looks
 
+  - given: >
+      version 3 - a file from EXPORT_PARAMETERS_TO_CSV with a Yes/No column
+      reading "Yes" on two rows and "No" on two, over four elements whose tick
+      box is currently the opposite, and blankCells "skip"
+    expect: >
+      four values written, each tick box in Properties now matching its row,
+      and none counted as read back different. Version 2 refused all four
+      (5b-314). "true", "OFF", "1" and "0" are taken the same way
+
+  - given: >
+      version 3 - a Comments column with one cell left empty, on an element
+      whose Comments reads "keep me", and blankCells "skip"
+    expect: >
+      that element's Comments still reads "keep me", blankCellsSkipped 1, and
+      the other rows written as normal (5b-315)
+
+  - given: the same file with blankCells "clear"
+    expect: >
+      that element's Comments is now empty, cellsCleared 1, and the clear also
+      counted in valuesWritten. Asked for by name, so it is done
+
 negative:
+  - given: >
+      version 3 - the same file with blankCells left out, and again with
+      blankCells "delete"
+    expect: >
+      NOTHING WRITTEN on any element, and a finding saying the two words that
+      are taken. One of them deletes what somebody typed, so Heron never picks
+      for the modeller
+
+  - given: >
+      version 3 - a Yes/No column with "Maybe" on one row, over an element
+      whose tick box is ticked
+    expect: >
+      that tick box still ticked, the row named with the words that are taken,
+      and counted as "a word that is not Yes or No" - not as Revit refusing the
+      value, and not written as 0
+
+  - given: >
+      version 3 - a blank cell under a NUMBER column (an Offset or a length)
+      with blankCells "clear"
+    expect: >
+      that element's number exactly as it was, and the cell counted as blank on
+      a parameter that is not text, with the row named. A number has no empty
+      value a file can set
+
   - given: a file exported from a DIFFERENT model
     expect: >
       every row reported as matching no element in the set handed in, and NOTHING
@@ -89,3 +134,9 @@ second_route:
   - >
     The Properties palette on three elements picked at random from the file.
     Manual, and it is what catches a whole column written one row out of step
+
+  - >
+    Version 3: EXPORT_PARAMETERS_TO_CSV run again over the same elements after
+    the import. The Yes/No column must read back the words that went in, and
+    the element whose cell was blank under "skip" must still carry its old
+    text - a second route that does not share this fragment's read-back

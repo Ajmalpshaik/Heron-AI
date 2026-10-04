@@ -9,7 +9,7 @@ semantic-identity: "bring the project parameters over from the other project"
 kind: action
 domain: revit.parameters
 capability: TRANSFER_PROJECT_PARAMETERS_BETWEEN_DOCUMENTS
-version: 1
+version: 2
 source: OFFICIAL
 risk: ADMIN
 
@@ -54,6 +54,16 @@ purpose: >
   **BOTH PROJECTS MUST BE OPEN IN THE SAME REVIT.** The source is found by its
   title among the open documents; if it is not open, the open ones are listed
   and nothing is attempted. Linked documents are not offered.
+
+  **VERSION 2 PUTS REVIT'S SHARED PARAMETER FILE SETTING BACK**
+  (FRAGMENT-ISSUES 5b-316). Version 1 pointed Revit at the file asked for and
+  left it there. That setting belongs to the Revit session, not to either
+  project: no transaction holds it, so Undo cannot reverse it, and Manage >
+  Shared Parameters stayed pointed at that path afterwards. The setting in
+  force is now read first and put back once the bindings are made, whatever
+  happened, and `sharedParameterFileRestored` says whether it reads as it did
+  before. If it cannot be read first, nothing is attempted; if it cannot be put
+  back, `refused` says so and names both paths. DRAFT, never proved.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). **The
   undo belongs to THIS document** - the source project is only read.
@@ -102,6 +112,13 @@ contract:
       # "did this come back empty" (D-52).
       role: accounting
       type: string
+    - name: sharedParameterFileRestored
+      # True when Revit's shared parameter file setting reads, afterwards, as
+      # it did before the run. A session setting outside every transaction, so
+      # Undo cannot put it back. Bookkeeping about the run, never a finding
+      # (D-52). Version 2, 5b-316.
+      role: accounting
+      type: bool
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -121,6 +138,8 @@ compatibility-note: >
   `SharedParameterElement.GuidValue`, `DefinitionFile.Groups` and
   `ExternalDefinition.GUID` were read off the SHIPPED 2020 and 2024 assemblies
   and are identical at both ends. No ElementId is turned into an int anywhere.
+  Version 2 reads `Application.SharedParametersFilename` as well as setting
+  it; the reference assemblies show it unchanged 2020 through 2027.
 
 # ROUTING - the same rows are in the fragments named here.
 #
