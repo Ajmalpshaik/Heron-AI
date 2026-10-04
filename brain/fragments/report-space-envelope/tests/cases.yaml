@@ -55,6 +55,16 @@ negative:
       those faces read beyond "unknown" - never "outside" by guess - and one
       finding per link says the links were not read; linksSearched 0
 
+  - given: an office on Level 1 under an office on Level 2, with a 250 mm slab between
+    expect: >
+      the lower office's top face reads beyond "space" with the upper office's
+      id - never "unknown" (the look starts past the slab's own thickness)
+
+  - given: a curtain wall that runs across two Spaces
+    expect: >
+      each Space's face holds only the panels in it, never every panel of the
+      wall
+
 second_route: >
   Revit's own Space schedule: Area and Volume per Space must equal area_m2 and
   volume_m3 in the take-off; the window count per wall against the plan

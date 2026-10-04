@@ -174,24 +174,65 @@ var heights = new[] { BuiltInParameter.WINDOW_HEIGHT, BuiltInParameter.DOOR_HEIG
 var panelWidths = new[] { BuiltInParameter.CURTAIN_WALL_PANELS_WIDTH };
 var panelHeights = new[] { BuiltInParameter.CURTAIN_WALL_PANELS_HEIGHT };
 
-// Where an opening sits, for the 3D view only: its middle on this face, at the
-// height of the middle of its box. Its AREA is the size above, never the box.
-Func<Element, Transform, Face, string> placeOn = (element, toHost, face) =>
+// The middle of an element's box, in this model's coordinates - how an opening
+// is matched to the face it is in, and where the 3D view draws it. A door's own
+// point sits on its sill, on the very edge of the face, where a projection is
+// least reliable; the middle of its box is inside the opening.
+Func<Element, Transform, XYZ> middleOf = (element, toHost) =>
 {
     try
     {
         var box = element.get_BoundingBox(null);
         if (box == null) return null;
-        var low = toHost.OfPoint(box.Min);
-        var high = toHost.OfPoint(box.Max);
-        var middle = (low + high) * 0.5;
-        var hit = face.Project(middle);
-        if (hit == null) return null;
-        var onFace = hit.XYZPoint;
-        return point(new XYZ(onFace.X, onFace.Y, middle.Z));
+        return (toHost.OfPoint(box.Min) + toHost.OfPoint(box.Max)) * 0.5;
     }
     catch { return null; }
 };
+// Is it in THIS face: its middle projects onto the face, no further away than
+// the wall is thick and half a foot more. A curtain wall or a long wall bounds
+// several Spaces; each panel and opening belongs only to the face it is in.
+Func<XYZ, Face, double, IntersectionResult> onThisFace = (middle, face, thickness) =>
+{
+    if (middle == null) return null;
+    IntersectionResult hit = null;
+    try { hit = face.Project(middle); } catch { }
+    return hit != null && hit.Distance <= thickness + 0.5 ? hit : null;
+};
+// Where an opening sits, for the 3D view only: its middle on this face, at the
+// height of the middle of its box. Its AREA is the size above, never the box.
+Func<IntersectionResult, XYZ, string> placeAt = (hit, middle) =>
+    hit == null || middle == null ? null : point(new XYZ(hit.XYZPoint.X, hit.XYZPoint.Y, middle.Z));
+
+// How thick the element a face sits on is - so the look past it starts on its
+// far side. A wall's width; a floor's, roof's or ceiling's own thickness, else
+// the height of its box. A slab between two storeys was read as "nothing
+// beyond" when the look started half a foot past a thicker slab's underside
+// (the review of 2026-10-04, C1).
+Func<Element, Document, double> thicknessOf = (host, source) =>
+{
+    var wall = host as Wall;
+    if (wall != null) { try { return wall.Width; } catch { } }
+    foreach (var bip in new[] { BuiltInParameter.FLOOR_ATTR_THICKNESS_PARAM,
+                                BuiltInParameter.ROOF_ATTR_THICKNESS_PARAM,
+                                BuiltInParameter.CEILING_THICKNESS })
+    {
+        foreach (var holder in new Element[] { host, source.GetElement(host.GetTypeId()) })
+        {
+            if (holder == null) continue;
+            var v = thermal(holder, bip);
+            if (v.HasValue && v.Value > 0) return v.Value;
+        }
+    }
+    try
+    {
+        var box = host.get_BoundingBox(null);
+        if (box != null) return Math.Min(box.Max.Z - box.Min.Z, 3.0);
+    }
+    catch { }
+    return 0.0;
+};
+var seenOpenings = new Dictionary<string, string>();   // in an outside wall or a roof
+var placedOpenings = new HashSet<string>();
 
 // ---- the site ----------------------------------------------------------------
 
@@ -368,15 +409,21 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
                         host = doc.GetElement(link.HostElementId);
                     }
 
-                    // ---- what is on the other side
+                    // ---- what is on the other side: looked for just past the
+                    // element's far side, then two feet further on (a finish,
+                    // a ceiling void) before anything is called unknown.
                     string beyond = "unknown", beyondSpace = "null";
-                    double thickness = 0.0;
                     var wall = host as Wall;
-                    if (wall != null) { try { thickness = wall.Width; } catch { } }
+                    double thickness = host == null ? 0.0 : thicknessOf(host, source);
                     if (host != null)
                     {
                         Space other = null;
-                        try { other = doc.GetSpaceAtPoint(centre + normal * (thickness + 0.5), phase); } catch { }
+                        foreach (var past in new[] { 0.5, 2.0 })
+                        {
+                            try { other = doc.GetSpaceAtPoint(centre + normal * (thickness + past), phase); } catch { other = null; }
+                            if (other != null && other.Id != space.Id) break;
+                            other = null;
+                        }
                         if (other != null && other.Id != space.Id)
                         {
                             beyond = "space";
@@ -396,16 +443,26 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
 
                     // ---- the windows, doors and curtain panels in it
                     var openings = new List<string>();
-                    if (wall != null && side == "wall")
+                    var hostObject = host as HostObject;
+                    // Openings counted in this face: windows and doors in a wall,
+                    // windows in a roof or a floor above - skylights.
+                    var takesOpenings = hostObject != null && (side == "wall" || side == "top");
+                    var outsideFace = beyond == "outside";
+                    if (takesOpenings)
                     {
                         CurtainGrid grid = null;
-                        try { grid = wall.CurtainGrid; } catch { }
+                        if (wall != null) { try { grid = wall.CurtainGrid; } catch { } }
                         if (grid != null)
                         {
                             foreach (var panelId in grid.GetPanelIds())
                             {
                                 var panel = source.GetElement(panelId);
                                 if (panel == null) continue;
+                                // Only the panels in THIS face: a curtain wall
+                                // across two Spaces gives each its own.
+                                var panelMiddle = middleOf(panel, toHost);
+                                var panelHit = onThisFace(panelMiddle, subface, thickness);
+                                if (panelHit == null) continue;
                                 var panelArea = thermal(panel, BuiltInParameter.HOST_AREA_COMPUTED);
                                 if (!panelArea.HasValue)
                                 {
@@ -416,7 +473,7 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
                                     ? "door" : "curtain_panel";
                                 var pw = length(panel, source, panelWidths);
                                 var ph = length(panel, source, panelHeights);
-                                var where = placeOn(panel, toHost, subface);
+                                var where = placeAt(panelHit, panelMiddle);
                                 openings.Add("{" + esc("element") + ":" + esc(prefix + panel.Id.ToString())
                                     + "," + esc("kind") + ":" + esc(kind)
                                     + "," + esc("type") + ":" + esc(typeKey(source, prefix, linkName, panel.GetTypeId()))
@@ -428,20 +485,27 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
                         }
                         else
                         {
-                            foreach (var insertId in wall.FindInserts(true, false, false, true))
+                            foreach (var insertId in hostObject.FindInserts(true, false, false, true))
                             {
                                 var insert = source.GetElement(insertId) as FamilyInstance;
                                 if (insert == null || insert.Category == null) continue;
                                 var isWindow = insert.Category.Id == windowsCategory;
-                                var isDoor = insert.Category.Id == doorsCategory;
+                                var isDoor = insert.Category.Id == doorsCategory && side == "wall";
                                 if (!isWindow && !isDoor) continue;
-                                // In THIS face: the insert's point projects onto
-                                // this Space's side of the wall, within it.
-                                var at = insert.Location as LocationPoint;
-                                if (at == null) continue;
-                                IntersectionResult hit = null;
-                                try { hit = subface.Project(toHost.OfPoint(at.Point)); } catch { }
-                                if (hit == null || hit.Distance > thickness + 0.5) continue;
+                                var key = prefix + insert.Id.ToString();
+                                if (outsideFace && !seenOpenings.ContainsKey(key))
+                                    seenOpenings[key] = insert.Category.Name.ToLower() + " " + insert.Id;
+                                // In THIS face: the middle of its box projects
+                                // onto this Space's side of the host, within it.
+                                var insertMiddle = middleOf(insert, toHost);
+                                if (insertMiddle == null)
+                                {
+                                    var at = insert.Location as LocationPoint;
+                                    if (at != null) insertMiddle = toHost.OfPoint(at.Point);
+                                }
+                                var hit = onThisFace(insertMiddle, subface, thickness);
+                                if (hit == null) continue;
+                                placedOpenings.Add(key);
                                 var w = length(insert, source, widths);
                                 var h = length(insert, source, heights);
                                 if (!w.HasValue || !h.HasValue)
@@ -449,9 +513,9 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
                                     findings.Add("Space " + label + ": the size of " + insert.Category.Name.ToLower() + " " + insert.Id + " could not be read - it is left out, never guessed.");
                                     continue;
                                 }
-                                var where = placeOn(insert, toHost, subface);
-                                openings.Add("{" + esc("element") + ":" + esc(prefix + insert.Id.ToString())
-                                    + "," + esc("kind") + ":" + esc(isWindow ? "window" : "door")
+                                var where = placeAt(hit, insertMiddle);
+                                openings.Add("{" + esc("element") + ":" + esc(key)
+                                    + "," + esc("kind") + ":" + esc(!isWindow ? "door" : side == "top" ? "skylight" : "window")
                                     + "," + esc("type") + ":" + esc(typeKey(source, prefix, linkName, insert.GetTypeId()))
                                     + "," + esc("area_m2") + ":" + num(w.Value * h.Value * SquareFeetToSquareMetres)
                                     + "," + esc("centre") + ":" + (where ?? "null")
@@ -510,6 +574,14 @@ foreach (var element in new FilteredElementCollector(doc).OfCategory(BuiltInCate
 }
 
 if (spaces == 0) findings.Add("The model has no MEP Spaces. Rooms carry no load - place Spaces first.");
+// A window or door in an outside wall or a roof that sits in no Space's face
+// carries no load anywhere - said, never dropped (docs/44 s6, gate 1).
+foreach (var pair in seenOpenings)
+{
+    if (!placedOpenings.Contains(pair.Key))
+        findings.Add("The " + pair.Value + " in an outside wall or roof sits in no Space's face, so "
+            + "no load is counted for it - check the Space behind it is placed and bounded.");
+}
 foreach (var pair in linkedNotRead)
 {
     findings.Add(pair.Value + " face(s) are bounded by elements in " + pair.Key + ", which was "
