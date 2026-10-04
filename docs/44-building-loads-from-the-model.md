@@ -255,7 +255,8 @@ Tuesday"), and copied for a what-if.
 not placed, Spaces with no outside face (fine, but said), the sum of Space areas against the level's gross
 area, a face with nothing behind it, a window whose host wall bounds no Space, any type missing U or SHGC,
 no True North, no site location. The owner confirms, or fixes in Revit and reads again. The confirmation
-is recorded with the run.
+is recorded with the run. **The site location is fixed in Revit by hand** (Manage > Location): nothing in
+Heron sets it ([FRAGMENT-ISSUES 5b-322](FRAGMENT-ISSUES.md), recorded 2026-10-04, not built).
 
 **Gate 2 - write only on his word.** Finalize is a `MODIFY` through `revit_change`'s own path ([D-108](DECISIONS.md)):
 one undo entry, the Companion table is the preview Article 9 asks for, a stale row refuses the whole

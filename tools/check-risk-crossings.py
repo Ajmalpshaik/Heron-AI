@@ -327,6 +327,15 @@ QUESTIONS = [
     # about one element in front of you.
     "which equipment is not connected to anything",
     "which fixtures have no pipe",
+
+    # A REAL SESSION PRODUCED THIS ONE, 2026-10-04 (FRAGMENT-ISSUES 5b-319).
+    # The session building loads in Project2 asked it and was answered
+    # CREATE_ROOF, a MODIFY, with REPORT_SPACE_ENVELOPE - which reads every
+    # type's U-value - a hair behind. The card fix sends it to the take-off on
+    # the trained model; on spelling alone it is still CREATE_ROOF, and this
+    # sweep is where that stays visible. tests/test_routing_phrases.py asks it
+    # on the model.
+    "read the thermal U value of every floor type and roof type",
 ]
 
 

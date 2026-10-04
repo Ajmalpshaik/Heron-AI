@@ -107,8 +107,21 @@ compatibility-note: >
 #   "read the spaces' walls and windows for the loads"  -> here
 #   "what load does Revit hold on each space"           -> READ_SPACE_LOADS
 #   "list the spaces and their airflow"                 -> REPORT_SPACE_AIRFLOW
+#   "read the thermal U value of every floor type and roof type" -> here, never CREATE_ROOF
+#   "add windows to the outside walls"                  -> PLACE_HOSTED_FAMILY - a
+#                                                          change; this card only reads
+#
+# 2026-10-04 (5b-319): the fourth utterance said "the outside walls, roofs and
+# glass of every space", narrower than the take-off - every bounding face is
+# read, inside walls too - and "outside walls" was the phrase that sent "add
+# windows to the outside walls" here. It now names every face and the U-values.
+# The fifth is there because a question about the U-values of floor and roof
+# types reached CREATE_ROOF, a change. It says roof and floor and NOT wall on
+# purpose: measured that day, "wall" in it sent "add windows to the outside
+# walls" straight back here.
 utterances:
   - read the spaces' walls and windows for the load calculation
   - space envelope take-off
   - which way do this space's outside walls face
-  - take off the outside walls, roofs and glass of every space
+  - take off every space's walls, roofs, floors and glass with their U-values
+  - what U-value does each roof and floor type have
