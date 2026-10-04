@@ -89,6 +89,14 @@ compatibility-note: >
 #                                       mullions as a grid, not as a flat list
 #   "everything on level 2"          -> FILTER_ELEMENTS_BY_CATEGORY with a
 #                                       level. A level is not a host
+#   "put a door in this wall"        -> PLACE_HOSTED_FAMILY - placing one,
+#                                       not finding the ones already there
+#
+# 2026-10-04 (5b-319): once PLACE_HOSTED_FAMILY's card was put right, plain
+# questions about the doors and windows in a wall - "which doors are in this
+# wall", "show me the windows hosted on the external walls" - went to it, a
+# change, because this card named doors and windows once and asked about them
+# in no question but one. The three utterances at the end ask what this does.
 
 utterances:
   - what is hosted on this wall
@@ -96,3 +104,6 @@ utterances:
   - what insulation is on this duct
   - find everything hosted on this element
   - what is hosted on this ceiling
+  - which doors and windows are in these walls
+  - list the windows in this wall
+  - how many doors are hosted in these walls
