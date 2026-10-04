@@ -474,7 +474,17 @@ if (refused == null && switchExisting)
         var inQuotes = false;
         for (var i = 0; i < letters.Length; i++)
         {
-            if (letters[i] == '"') { inQuotes = !inQuotes; letters[i] = ' '; continue; }
+            if (letters[i] == '"')
+            {
+                // AN INCH MARK IS NOT A QUOTE: 6" + Width. A quote right after a
+                // digit, outside quoted text, is the unit and toggles nothing.
+                var back = i - 1;
+                while (back >= 0 && letters[back] == ' ') back--;
+                var inchMark = !inQuotes && back >= 0 && char.IsDigit(letters[back]);
+                if (!inchMark) inQuotes = !inQuotes;
+                letters[i] = ' ';
+                continue;
+            }
             if (inQuotes) letters[i] = ' ';
         }
         var work = new string(letters);
@@ -488,9 +498,14 @@ if (refused == null && switchExisting)
                 var after = end >= work.Length ? ' ' : work[end];
                 var whole = !char.IsLetterOrDigit(before) && before != '_'
                     && !char.IsLetterOrDigit(after) && after != '_';
+                // A UNIT IS NOT A NAME: in 100 mm the mm follows a number, and a
+                // parameter is never written straight after one in a formula.
+                var look = at - 1;
+                while (look >= 0 && work[look] == ' ') look--;
+                var unitAfterNumber = look >= 0 && (char.IsDigit(work[look]) || work[look] == '.');
                 if (whole)
                 {
-                    if (!found.Contains(name)) found.Add(name);
+                    if (!unitAfterNumber && !found.Contains(name)) found.Add(name);
                     work = work.Substring(0, at) + new string(' ', name.Length) + work.Substring(end);
                 }
                 at = end;
@@ -573,7 +588,11 @@ if (refused == null && switchExisting)
             if (System.IO.File.Exists(cataloguePath))
             {
                 var header = System.IO.File.ReadLines(cataloguePath).FirstOrDefault() ?? "";
-                foreach (var column in header.Split(','))
+                // THE FIRST CHARACTER DECLARES THE DELIMITER - a comma in nearly
+                // every catalogue, but the format allows another.
+                var delimiter = header.Length > 0 && !char.IsLetterOrDigit(header[0]) && header[0] != '"'
+                    ? header[0] : ',';
+                foreach (var column in header.Split(delimiter))
                 {
                     var cut = column.IndexOf("##", StringComparison.Ordinal);
                     var columnName = (cut >= 0 ? column.Substring(0, cut) : column).Trim().Trim('"').Trim();
