@@ -15,8 +15,8 @@ in [docs/40](../../docs/40-heron-companion.md). The chat stays the only place to
 
 | | Does |
 |---|---|
-| [`heron_companion.py`](heron_companion.py) | The server: pairing, the protection rules, which Revit to show, the keeper that follows the Companion switch (D-109), the activity list, the after-change tables and the element table |
-| [`static/index.html`](static/index.html), [`static/companion.js`](static/companion.js), [`static/companion.css`](static/companion.css) | The page. Nothing is loaded from the internet |
+| [`heron_companion.py`](heron_companion.py) | The server: pairing, the protection rules, which Revit to show, the keeper that follows the Companion switch (D-109), the activity list, the after-change tables and the element table, and the Loads panel (docs/44) |
+| [`static/index.html`](static/index.html), [`static/companion.js`](static/companion.js), [`static/companion.css`](static/companion.css), [`static/loads3d.js`](static/loads3d.js) | The page, and the Loads panel's 3D view - a renderer of its own. Nothing is loaded from the internet |
 
 ## Rules for this folder
 

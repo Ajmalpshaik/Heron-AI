@@ -76,6 +76,9 @@ PAIR_SECONDS = 120
 PAGES = {
     "/": ("index.html", "text/html; charset=utf-8"),
     "/companion.js": ("companion.js", "text/javascript; charset=utf-8"),
+    # The Loads panel's 3D view: a renderer of its own, so nothing is fetched
+    # from the internet (docs/44 s12).
+    "/loads3d.js": ("loads3d.js", "text/javascript; charset=utf-8"),
     "/companion.css": ("companion.css", "text/css; charset=utf-8"),
 }
 
@@ -565,6 +568,185 @@ class Tables(object):
 TABLES = Tables()
 
 
+class LoadsPanel(object):
+    """
+    The Loads panel a chat opens with revit_building_loads (docs/44 section 7)
+    - one building at a time, the newest replacing the last.
+
+    IT HOLDS DATA AND CALLS HOOKS - NOTHING ELSE (README rule 4). Every number
+    on it was worked out in brain/ (heron_building_loads); Recalculate, Report
+    and Finalize each call a hook the MCP server sets, and with none set they
+    answer that the chat is gone and do nothing. The take-off a run was made
+    from is kept here so Recalculate never asks Revit again.
+    """
+
+    GONE = "the chat that opened this is no longer connected - nothing was done"
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._held = None
+        self._takeoff = None
+        #: Set by the MCP server. recalculate_hook(takeoff, inputs, identity)
+        #: -> brain answer; report_hook(panel) -> {"ok", "said", "html", "pdf",
+        #: "csv"}; finalize_hook(takeoff, result, identity) -> {"ok", "said",
+        #: "finalized"}; runs_hook(document) -> [run]; run_hook(document, id)
+        #: -> a kept run or None; confirm_hook(takeoff, result, identity) ->
+        #: {"ok", "said", "result"}.
+        self.recalculate_hook = None
+        self.report_hook = None
+        self.finalize_hook = None
+        self.runs_hook = None
+        self.run_hook = None
+        self.confirm_hook = None
+
+    def open(self, document, answer, identity=None, read_at=None):
+        result = answer.get("result") or {}
+        inputs = answer.get("inputs") or {}
+        with self._lock:
+            self._takeoff = answer.get("takeoff")
+            self._held = {
+                "document": document, "at": time.strftime("%H:%M:%S"),
+                # When the MODEL was read - kept through a Recalculate, which
+                # works on the take-off already held and reads nothing.
+                "read_at": read_at or time.strftime("%H:%M:%S"),
+                "identity": list(identity) if identity else None,
+                "qa": list(answer.get("qa") or []), "asked": list(answer.get("asked") or []),
+                "project": dict(inputs.get("project") or {}),
+                "profiles": dict(inputs.get("profiles") or {}),
+                "overrides": dict(inputs.get("overrides") or {}),
+                # The hour-by-hour rows stay in the kept run; the page shows peaks.
+                "spaces": [{k: v for k, v in s.items() if k != "cooling"}
+                           for s in result.get("spaces") or []],
+                "peaks": {str(s.get("id")): (s.get("cooling") or {}).get("peak")
+                          for s in result.get("spaces") or []},
+                "components": {str(s.get("id")): (s.get("cooling") or {}).get("components")
+                               for s in result.get("spaces") or []},
+                "zones": list(result.get("zones") or []),
+                "building": result.get("building"), "notes": list(result.get("notes") or []),
+                "run_id": result.get("run_id"), "units": result.get("units"),
+                "said": answer.get("said"), "report": None, "finalized": None,
+                "confirmed": bool(answer.get("confirmed")),
+                "summary": answer.get("summary"),
+                # The 3D view's data, served on its own route: it is the
+                # biggest thing the panel holds and the page asks for it only
+                # when the 3D view is opened or the run changed.
+                "view": answer.get("view"),
+                "result": answer.get("result")}
+
+    def current(self):
+        with self._lock:
+            if not self._held:
+                return None
+            held = dict(self._held)
+        held.pop("result", None)
+        held["has_view"] = bool(held.pop("view", None))
+        return json.loads(json.dumps(held))
+
+    def view(self):
+        """The 3D view's data for the run on the page - drawn by the page, made in brain/."""
+        with self._lock:
+            got = self._held.get("view") if self._held else None
+            return json.loads(json.dumps(got)) if got else None
+
+    def confirm(self):
+        """Gate 1: the modeller says the take-off on the page is right (docs/44 s6)."""
+        hook = self.confirm_hook
+        if hook is None:
+            return {"ok": False, "said": self.GONE}
+        takeoff, result, identity = self._snapshot()
+        if takeoff is None or not result:
+            return {"ok": False, "said": "nothing has been calculated yet, so there is no "
+                                         "take-off to confirm"}
+        got = hook(takeoff, result, identity) or {}
+        if got.get("ok"):
+            with self._lock:
+                if self._held is not None and self._held.get("result") is result:
+                    self._held["confirmed"] = True
+        return {"ok": bool(got.get("ok")), "said": got.get("said")}
+
+    def _snapshot(self):
+        with self._lock:
+            if not self._held:
+                return None, None, None
+            return (self._takeoff, self._held.get("result"),
+                    list(self._held["identity"]) if self._held.get("identity") else None)
+
+    def recalculate(self, body):
+        hook = self.recalculate_hook
+        if hook is None:
+            return {"ok": False, "said": self.GONE}
+        if not isinstance(body, dict) or not all(
+                isinstance(body.get(k, {}), dict) for k in ("project", "profiles", "overrides")):
+            return {"ok": False, "said": "the inputs could not be read - nothing was calculated"}
+        takeoff, _result, identity = self._snapshot()
+        if takeoff is None:
+            return {"ok": False, "said": "no building is open on this page - ask the chat to "
+                                         "calculate the loads first"}
+        with self._lock:
+            document = self._held["document"]
+            read_at = self._held.get("read_at")
+        answer = hook(takeoff, {"project": body.get("project") or {},
+                                "profiles": body.get("profiles") or {},
+                                "overrides": body.get("overrides") or {}}, identity)
+        if not isinstance(answer, dict) or answer.get("takeoff") is None:
+            return {"ok": False, "said": (answer or {}).get("said") or self.GONE}
+        self.open(document, answer, identity, read_at)
+        return {"ok": True, "said": answer.get("said"), "loads": self.current()}
+
+    def report(self):
+        hook = self.report_hook
+        if hook is None:
+            return {"ok": False, "said": self.GONE}
+        takeoff, result, _identity = self._snapshot()
+        if takeoff is None or not result:
+            return {"ok": False, "said": "nothing has been calculated yet, so there is no "
+                                         "report to write"}
+        got = hook(takeoff, result) or {}
+        with self._lock:
+            if self._held is not None:
+                self._held["report"] = {k: got.get(k) for k in ("html", "pdf", "csv",
+                                                                "takeoff_csv", "said")}
+        return dict(got, ok=bool(got.get("ok")))
+
+    def finalize(self):
+        hook = self.finalize_hook
+        if hook is None:
+            return {"ok": False, "said": self.GONE}
+        takeoff, result, identity = self._snapshot()
+        if takeoff is None or not result:
+            return {"ok": False, "said": "nothing has been calculated yet, so nothing was "
+                                         "written"}
+        got = hook(takeoff, result, identity) or {}
+        with self._lock:
+            if self._held is not None:
+                self._held["finalized"] = {"at": time.strftime("%H:%M:%S"),
+                                           "said": got.get("said"),
+                                           "values": got.get("finalized")}
+        return dict(got, ok=bool(got.get("ok")))
+
+    def runs(self):
+        hook = self.runs_hook
+        with self._lock:
+            document = self._held["document"] if self._held else None
+        if hook is None or document is None:
+            return []
+        return hook(document) or []
+
+    def earlier(self, run_id):
+        """A kept run, read-only - never made the current one."""
+        hook = self.run_hook
+        with self._lock:
+            document = self._held["document"] if self._held else None
+        if hook is None or document is None or not isinstance(run_id, str) \
+                or not run_id.replace("-", "").isdigit():
+            return None
+        return hook(document, run_id)
+
+
+#: This process's Loads panel - one chat's.
+LOADS_PANEL = LoadsPanel()
+
+
 def companion_dir():
     """Where each chat leaves the note the Companion button in Revit reads -
     HeronPaths.Companion, mirrored (D-109)."""
@@ -997,6 +1179,32 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if why:
                 return self._refuse(403, why)
             return self._json(200, {"ok": True, "cards": CHANGES.cards()})
+        if path == "/api/loads":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "loads": LOADS_PANEL.current()})
+        if path == "/api/loads/view":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "view": LOADS_PANEL.view()})
+        if path == "/api/loads/runs":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "runs": LOADS_PANEL.runs()})
+        if path == "/api/loads/run":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            query = self.path.split("?", 1)[1] if "?" in self.path else ""
+            run_id = None
+            for part in query.split("&"):
+                name, _, value = part.partition("=")
+                if name == "id":
+                    run_id = value
+            return self._json(200, {"ok": True, "run": LOADS_PANEL.earlier(run_id)})
         return self._refuse(404, "not found")
 
     def do_POST(self):
@@ -1040,6 +1248,23 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             except (ValueError, TypeError, UnicodeDecodeError):
                 return self._refuse(400, "unreadable")
             return self._json(200, CHANGES.apply(card_id, body.get("values")))
+        if path in ("/api/loads/recalculate", "/api/loads/report", "/api/loads/finalize",
+                    "/api/loads/confirm"):
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 1048576)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except (ValueError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            if path.endswith("/recalculate"):
+                return self._json(200, LOADS_PANEL.recalculate(body))
+            if path.endswith("/report"):
+                return self._json(200, LOADS_PANEL.report())
+            if path.endswith("/confirm"):
+                return self._json(200, LOADS_PANEL.confirm())
+            return self._json(200, LOADS_PANEL.finalize())
         if path == "/api/changes/clear":
             why = self._api_ok()
             if why:

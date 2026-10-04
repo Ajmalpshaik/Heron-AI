@@ -477,6 +477,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-cb.md`](needs-checking/group-cb.md)
 
+## Group CC - building loads from the model: the take-off, the loads written back, and their read-back (2026-10-04)
+
+**Its own file:** [`needs-checking/group-cc.md`](needs-checking/group-cc.md)
+
 ## Group CD - what the five downloaded skill files left behind: nine fragments and a recipe (2026-10-04)
 
 **Its own file:** [`needs-checking/group-cd.md`](needs-checking/group-cd.md)

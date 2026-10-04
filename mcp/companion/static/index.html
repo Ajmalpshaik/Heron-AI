@@ -6,6 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <title>Heron Companion</title>
 <link rel="stylesheet" href="/companion.css">
+<script src="/loads3d.js" defer></script>
 <script src="/companion.js" defer></script>
 </head>
 <body>
@@ -64,6 +65,18 @@
     <div id="t-box"></div>
     <p id="t-empty" class="empty">Ask the chat for elements in a table - for example "give me the FCUs with
       their Mark and Comments in a table". It opens here; you edit the white cells and press Apply.</p>
+  </section>
+
+  <section class="card" id="loads" aria-labelledby="h-loads">
+    <h2 id="h-loads">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v18M5 8l7-5 7 5M5 21h14"/><circle cx="12" cy="13" r="3"/></svg>
+      Loads
+    </h2>
+    <div id="l-box"></div>
+    <div id="l-3d" class="l3d" hidden></div>
+    <p id="l-empty" class="empty">Ask the chat to "calculate the loads for this building". Heron reads every
+      Space's walls and windows from Revit, works out each Space's load, and shows the table here - you
+      change the people, lights and equipment, press Recalculate, and write a report.</p>
   </section>
 
   <section class="card" id="changes" aria-labelledby="h-changes">
