@@ -57,6 +57,15 @@ the plan argues from it. The engine it builds on is [docs/41](../../41-hvac-desi
 - **The fragment starts DRAFT.** Nothing in this plan is called proven; the proof is a recorded run on a
   named model with a negative case (D-30), done after the build on a model the owner names.
 - **Stage explicit paths. Never `git add -A`.**
+- **Changed during the build, 2026-10-04: no pytest.** Heron's suites are plain scripts run as
+  `python tests/test_x.py` (CI and `check-gaps.py` run them that way, and pytest is not installed on the
+  owner's PC). The new test files keep the `test_` functions below, with plain `assert`, and run them with
+  a small `run_all()` in `tests/test_takeoff.py` that the other two import; `pytest.raises` became a
+  `raises()` helper and `tmp_path` / `monkeypatch` a `tempfile` folder with `HERON_KNOWLEDGE` set and put
+  back. Every `python -m pytest tests/x.py -q` command below reads `python tests/x.py`. Task 1's checks
+  went into `tests/test_hvac.py` as its section 9, in that file's own `check()` style, and run
+  `monthly_load` on `DOHA_ROOM` **with** `design_weather="doha-0.4"` - without it the engine asks for the
+  weather and the answer is `missing`.
 
 ## Review focus
 
