@@ -1286,6 +1286,18 @@ def test_no_browser_means_no_pdf_and_no_error(tmp_path):
 
 ---
 
+## Added after the nine tasks, on the owner's word (2026-10-04)
+
+The owner asked for the 3D view of phase 6 now, for the studied skill's other engineering ideas, and for
+everything to come from the model ([docs/44 section 12](../../44-building-loads-from-the-model.md)). Built
+on the same branch: `brain/heron_loads_view.py` and `tests/test_loads_view.py` (new);
+`mcp/companion/static/loads3d.js` (new); REPORT_SPACE_ENVELOPE gains face outlines, opening positions and
+D-59's `includeLinks` / `linksSearched`; **format 1 gains optional keys** - `loops` on a face, `centre`,
+`width_m`, `height_m` on an opening, `link` on a face and a type, `links_read` on the take-off - which a
+reader of the old shape simply does not see; gate 1 is built (`confirm`, `confirmed`, `fingerprint`, and
+`finalize_rows` refuses an unconfirmed take-off); `heron_takeoff` gains `role`, `summary`, `compass` and
+the separate-groups check.
+
 ## After the build - the proof (on the owner's word, on the model he names)
 
 1. Deploy the add-in to Revit 2020, 2024 and 2027 with Revit closed; restart Revit, then the Claude app.

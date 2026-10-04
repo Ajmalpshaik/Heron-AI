@@ -374,3 +374,78 @@ model the owner names. Where the build had to depart from the plan, the plan say
 **Two things the real code said, and the plan was changed to match:** the fragment takes `doc` only,
 because the add-in refuses a selection-bound fragment when nothing is selected before its code runs; and
 Revit 2027 renamed the U-value parameter, so the fragment finds it by name at run time (Group CC row CC3).
+
+---
+
+## 12. The 3D view, the geometry gate, and what else was taken - asked 2026-10-04
+
+**Asked by the owner after section 11 was built**, in his words: check the studied skill again, *"in the
+companion app we need to see this 3D views also, all the settings in there"* - because a table of faces
+is heavy to review and *"we cannot see something visually"* - take its engineering ideas into Heron
+(*"not exactly copy paste, you can do like that"*), and get everything the calculation needs from the
+Revit model rather than from PDF plans. Phase 6's 3D view (section 10) is brought forward on that word.
+
+**Checked again:** the studied skill's public repository is at the same commit section 1 studied
+(published 2026-10-01, nothing since), so section 1.2 stands as written. Its 3D viewer, its take-off
+checks and its design notes were read again for what a Revit take-off can use. Nothing below is its code
+or its wording; the mechanisms are re-authored in Heron's own terms (section 1.4).
+
+### 12.1 The 3D view in the Loads panel
+
+The Companion's Loads panel draws **the very faces the loads were worked out from** - every Space's
+walls, roof, floor and partitions as REPORT_SPACE_ENVELOPE outlined them, and the windows and doors where
+they sit - so the modeller can turn the building round and check the take-off before anything leaves
+Heron.
+
+| Setting | What it does |
+|---|---|
+| **Colour by** | Surface type, what is beyond each face, U-value, which way it faces, Space cooling W/m2, Space heating W/m2, Space status |
+| **Space** | One Space alone, every other ghosted - also from the Space's name in the results table |
+| **Show** | Each level; roofs and ceilings; floors; walls between Spaces; windows and doors; see-through; Space names |
+| **Top / 3D / Fit / + / -** | Plan with project north up; the corner view; the whole building; closer, further. Drag turns it, right-drag or Shift-drag pans, the wheel or a pinch zooms |
+| **Compass** | True North, turned by the model's own angle |
+| **Click a face** | What it is, **what it counted as in the load**, its type, element id and link, area, U, SHGC, the way it faces, what is beyond it, and its Space's loads |
+
+Two settings are Heron's own, because a model, not a drawing, is the source: **colour by the way it
+faces** shows at a glance whether True North was read the right way round (Group CC row CC4), and
+**colour by Space status** shows every refused Space in red with its reason a click away.
+
+**It is a small renderer of Heron's own** (`mcp/companion/static/loads3d.js`), not a 3D library: the
+Companion loads nothing from the internet (its README rule 1, its content security policy) and adds no
+package. **Everything that means something is decided in `brain/heron_loads_view.py`** - the
+categories, the colours, the legends, what each face counted as - and the page only projects and paints
+(the Companion's rule 4). Model text reaches the screen as text.
+
+### 12.2 Gate 1, built: "The take-off is right"
+
+Section 6's first gate was designed and not built in section 11. It is now: the panel's **The take-off
+is right** records that the modeller checked the take-off, **with the take-off's own fingerprint**, in
+the run kept for the project. Until then the report is stamped **DRAFT - THE TAKE-OFF WAS NOT
+CONFIRMED** and Finalize stays shut - and the brain itself refuses Finalize's rows for an unconfirmed
+take-off, so the rule does not depend on the page. A Recalculate of the same geometry keeps the
+confirmation; a model read again with any face changed needs it again.
+
+### 12.3 Also taken, re-authored
+
+- **Spaces on a level that share no wall** are a check - a gap between them, or a corridor, stair or
+  shaft with no Space.
+- **Glass by the way it faces** - glass area beside the outside wall it sits in, the share of each
+  facing that is glass, and glass against floor area - in the panel and on the report, from the model's
+  own windows.
+- **The model, not plans, is the source of every size.** REPORT_SPACE_ENVELOPE now also gives every
+  face's outline and every window and door's position and size - what the 3D view draws - and, when the
+  modeller says the walls are linked, reads them **from the architect's link** (D-59's `includeLinks`,
+  `linksSearched`; `include_links` on `revit_building_loads`). Without it a linked wall's face is
+  "unknown" beyond and the checks say the links were not read.
+
+**Not taken**, because the Revit model already answers it: reading PDF plans, scale calibration,
+dimension chains, area reconciliation against a printed schedule. **Not taken** because it is a house's,
+not an office's: below-grade window wells, bedroom egress, attic and crawlspace buffer zones (section 2).
+
+### 12.4 Where it is checked
+
+[`tests/test_loads_view.py`](../tests/test_loads_view.py) (an L-shaped building of three offices with
+real outlines), `tests/test_companion.py` (`test_loads`), `tests/test_building_loads.py` and
+`tests/test_loads_report.py` (the gate), and the page in a browser at desktop width and at 375 px:
+turning, clicking a face, the colour modes, top view, one Space alone, confirming, and the report.
+**Nothing here has met a real Revit**: [Group CC](needs-checking/group-cc.md) rows CC14 to CC17.
