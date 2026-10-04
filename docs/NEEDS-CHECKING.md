@@ -469,6 +469,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-bz.md`](needs-checking/group-bz.md)
 
+## Group CA - family parameters switched between type and instance, in the order their formulas allow (2026-10-04)
+
+**Its own file:** [`needs-checking/group-ca.md`](needs-checking/group-ca.md)
+
 ## Group CB - checking an MEP family will connect and resize, in the Family Editor, before it is loaded (2026-10-04)
 
 **Its own file:** [`needs-checking/group-cb.md`](needs-checking/group-cb.md)

@@ -57,8 +57,8 @@
 //
 // WHERE HERON HAS THE FIX, THE TOOL IS NAMED. SET_FAMILY_SETTINGS,
 // SET_FAMILY_CONNECTOR_ROLES, DELETE_FAMILY_PARAMETERS and
-// SET_FAMILY_FORM_VISIBILITY. The type-to-instance switch is still being built
-// (FRAGMENT-ISSUES 5b-308), so that fix is given in the Family Types dialog.
+// SET_FAMILY_FORM_VISIBILITY, and ADD_FAMILY_PARAMETERS version 2 (5b-308) for
+// a size parameter to switch from type to instance with its formulas.
 
 var findings = new List<string>();
 var offStandard = 0;
@@ -437,9 +437,10 @@ if (doc.IsFamilyDocument)
                         + " formula(s) depend on it (" + direct + " directly)"
                         + (reading.Count > 0 ? ": " + string.Join(", ", reading.Take(12)) + (reading.Count > 12 ? ", ..." : "") : "")
                         + ".",
-                        "Family Types, select \"" + name + "\", Modify, Instance - and every parameter whose formula "
-                        + "reads it must become Instance with it, because a type formula cannot read an instance "
-                        + "parameter. Heron's own switch for this is being built (FRAGMENT-ISSUES 5b-308).");
+                        "switch it to Instance with every parameter whose formula reads it - a type formula cannot "
+                        + "read an instance parameter: ADD_FAMILY_PARAMETERS switchExisting=true, instance=true, "
+                        + "parameterNames=\"" + string.Join(", ", new[] { name }.Concat(reading)) + "\" (it orders "
+                        + "the switch itself), or Family Types, each one, Modify, Instance.");
                 else if (!string.IsNullOrEmpty(driver.Formula))
                     fail("\"" + name + "\", which sizes " + label(c) + ", is calculated by the formula " + driver.Formula
                         + " - so the pipe or duct cannot set it, and the family will not follow its size.",
