@@ -797,6 +797,209 @@ def test_loads():
         check(hook in server, "the server sets %s" % hook.split(" =")[0])
 
 
+def test_loads_report_page():
+    """The page after Ajmal's first look (2026-10-04): Report asks where the
+    sheet goes, the sheet opens in the browser through a key only the paired
+    page holds, the inputs sit above the results, the title names both loads,
+    and the 3D view turns the way the mouse moves, as Revit's does."""
+    print()
+    print("The Loads report: asked where, opened in the browser")
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    sys.path.insert(0, os.path.join(ROOT, "tests"))
+    import subprocess
+    import heron_brain as brain_seam
+    from test_takeoff import ROOM
+    from test_building_loads import PROJECT, OFFICE
+    answer = brain_seam.building_loads(json.dumps(ROOM), {"project": PROJECT,
+                                                          "profiles": {"Office": OFFICE}},
+                                       save=False)
+    panel = hc.LoadsPanel()
+    panel.open("Project1", answer, ("Project1", "", "11"))
+    chosen = tempfile.mkdtemp(prefix="heron-report-")
+    asked, wrote = [], []
+    panel.report_hook = lambda t, r, folder: (wrote.append(folder)
+                                              or brain_seam.loads_report(t, r, folder=folder))
+    panel.folder_hook = lambda start: asked.append(start) or {"cancelled": True}
+    said = panel.report({"ask": True})
+    check(said["ok"] is False and asked and not wrote and panel.current()["report"] is None,
+          "Report asks where to save the sheet first, and Cancel writes nothing")
+    panel.folder_hook = lambda start: {"folder": chosen}
+    said = panel.report({"ask": True})
+    held = panel.current()["report"]
+    check(said["ok"] and wrote == [chosen] and os.path.dirname(said["html"] or "") == chosen,
+          "the sheet is written into the folder chosen")
+    check(held["folder"] == chosen and len(held.get("token") or "") >= 20
+          and panel.current()["report_folder"] == chosen,
+          "the page is told where it went, holds a key to open it, and offers that folder next time")
+    check(panel.report_file("x" * 32, "html") is None
+          and panel.report_file(held["token"], "csv") is None
+          and panel.report_file(held["token"], "../html") is None,
+          "a wrong key, or a kind of file it does not open, opens nothing")
+    got = panel.report_file(held["token"], "html")
+    check(got is not None and got[0] == said["html"] and got[1].startswith("text/html"),
+          "the key opens the sheet that report wrote")
+    panel.folder_hook = lambda start: {"unavailable": "no window here"}
+    wrote[:] = []
+    from test_building_loads import knowledge_folder
+    with knowledge_folder():
+        # The usual place is the project's own folder - a scratch one here.
+        by_default = panel.report_hook
+        panel.report_hook = lambda t, r, folder: (wrote.append(folder) or brain_seam.loads_report(
+            t, r, folder=folder, project="project-t"))
+        later = panel.report({"ask": True})
+        panel.report_hook = by_default
+    check(later["ok"] and wrote == [None] and "could not open" in later["said"]
+          and panel.report_file(held["token"], "html") is None,
+          "with no folder window the sheet goes to the usual place, says so, and the old key is gone")
+
+    # The folder window: a Windows dialog in a process of its own, which
+    # prints nothing where MCP speaks and takes the start folder as data.
+    calls = []
+
+    def fake_run(command, **kw):
+        calls.append((command, kw))
+
+        class Done(object):
+            returncode = 0
+            stdout = (chosen + "\r\n").encode("utf-8")
+        return Done()
+    picked = hc.pick_folder("C:\\x'; Remove-Item C:\\", run=fake_run)
+    if os.name != "nt":
+        check("unavailable" in picked and not calls,
+              "off Windows there is no folder window, and nothing is started")
+    else:
+        command, kw = calls[0]
+        check(picked == {"folder": chosen}, "the folder window answers with the folder chosen")
+        check(kw.get("stdout") == subprocess.PIPE and kw.get("stdin") == subprocess.DEVNULL
+              and kw.get("stderr") == subprocess.DEVNULL,
+              "its process prints nothing where MCP speaks")
+        check("Remove-Item" not in " ".join(command)
+              and kw["env"].get("HERON_FOLDER_START") == "C:\\x'; Remove-Item C:\\",
+              "the start folder goes in as data, never as code")
+
+        def cancelled(command, **kw):
+            class Done(object):
+                returncode = 0
+                stdout = b""
+            return Done()
+
+        def broken(command, **kw):
+            raise OSError("no powershell")
+        check(hc.pick_folder(None, run=cancelled) == {"cancelled": True},
+              "Cancel in the window is a cancel")
+        check("unavailable" in hc.pick_folder(None, run=broken),
+              "a window that cannot open is said, never a crash")
+
+    # The route that opens the sheet: the paired page only, the right key only,
+    # and a page that may run no script.
+    panel.folder_hook = lambda start: {"folder": chosen}
+    said = panel.report({"ask": True})
+    token = panel.current()["report"]["token"]
+    saved_panel = hc.LOADS_PANEL
+    hc.LOADS_PANEL = panel
+    companion = hc.Companion(bound_pid=lambda: 100, folder=tempfile.mkdtemp(),
+                             discovery_dir=tempfile.mkdtemp(), is_alive=lambda pid: True)
+    real_stdout, sys.stdout = sys.stdout, io.StringIO()
+    try:
+        address = companion.pairing_address()
+        port = companion.port
+        origin = "http://127.0.0.1:%d" % port
+        code = address.split("?pair=", 1)[1]
+        paired = ask(port, "POST", "/api/pair", {"X-Heron-Companion": "1", "Origin": origin,
+                                                 "Content-Type": "application/json"},
+                     json.dumps({"code": code}))
+        cookie = paired[1].get("set-cookie", "").split(";", 1)[0]
+        no_cookie = ask(port, "GET", "/report/%s/html" % token)
+        good = ask(port, "GET", "/report/%s/html" % token, {"Cookie": cookie})
+        wrong = ask(port, "GET", "/report/%s/html" % ("x" * 32), {"Cookie": cookie})
+        evil = ask(port, "GET", "/report/%s/html" % token, {"Cookie": cookie},
+                   host="evil.example:%d" % port)
+        pdf = ask(port, "GET", "/report/%s/pdf" % token, {"Cookie": cookie})
+    finally:
+        printed, sys.stdout = sys.stdout.getvalue(), real_stdout
+        companion.stop()
+        hc.LOADS_PANEL = saved_panel
+    csp = good[1].get("content-security-policy", "")
+    check(no_cookie[0] == 403 and wrong[0] == 404 and evil[0] == 421,
+          "the sheet is refused without the pairing, with a wrong key, or for another Host")
+    check(good[0] == 200 and good[1].get("content-type", "").startswith("text/html")
+          and b"HVAC Load Calculation" in good[2],
+          "the paired page opens the sheet in the browser")
+    check("default-src 'none'" in csp and "script-src" not in csp
+          and "frame-ancestors 'none'" in csp,
+          "and the sheet may run no script and sit in no frame")
+    check((pdf[0] == 200 and pdf[1].get("content-type") == "application/pdf"
+           and pdf[2][:4] == b"%PDF") if said.get("pdf") else pdf[0] == 404,
+          "the PDF opens in the browser too - or is 'not found' when no browser could print it")
+    check(printed == "", "nothing reached stdout")
+
+    # The page: Report asks, the sheet opens in a new tab, one column, both
+    # loads named, and the drag follows the mouse.
+    static = os.path.join(ROOT, "mcp", "companion", "static")
+    js = io.open(os.path.join(static, "companion.js"), encoding="utf-8").read()
+    css = io.open(os.path.join(static, "companion.css"), encoding="utf-8").read()
+    index = io.open(os.path.join(static, "index.html"), encoding="utf-8").read()
+    view = io.open(os.path.join(static, "loads3d.js"), encoding="utf-8").read()
+    check('loadsPost("/api/loads/report", { ask: true }' in js,
+          "the Report button asks where the sheet goes")
+    check('"/report/" + encodeURIComponent(' in js and 'rel = "noopener"' in js
+          and 'target = "_blank"' in js,
+          "and the page offers to open the sheet and the PDF in a new tab")
+    check("Cooling (AC) load" in js and "Heating load" in js,
+          "the results say which columns are the cooling (AC) load and which the heating load")
+    check("HVAC Load Calculation" in index and "Cooling (AC) and heating load per Space" in index
+          and "not an hourly simulation like HAP" in index,
+          "the panel is named for what it is - an HVAC load calculation, both loads, not HAP")
+    check("max-width: 38%" not in css and "#loads .l-inputs, #loads .l-results { display: block;"
+          in css, "the inputs sit above the results, each the page's full width")
+    check("cam.yaw -= dx" in view and "cam.yaw += dx" not in view,
+          "dragging turns the building the way the mouse moves, as Revit's orbit does")
+
+
+def test_switched_off_parts():
+    """The owner's word (Ajmal PS, 2026-10-04): the Selected card and the
+    Changes tables, with the colour books that paint them, come off the page,
+    and nothing keeps working for them in the background - but their code is
+    KEPT, switched off, to be brought back later (docs/40 s21.6)."""
+    print()
+    print("Switched off and kept: what is selected, and the Changes tables")
+    static = os.path.join(ROOT, "mcp", "companion", "static")
+    index = io.open(os.path.join(static, "index.html"), encoding="utf-8").read()
+    js = io.open(os.path.join(static, "companion.js"), encoding="utf-8").read()
+    shown = re.sub(r"(?s)<template\b.*?</template>", "", index)
+    kept = "".join(re.findall(r"(?s)<template\b.*?</template>", index))
+    for name in ("selection", "changes", "paint"):
+        check('id="%s"' % name not in shown and 'id="%s"' % name in kept,
+              "the '%s' section is off the page, and kept in a template that shows nothing" % name)
+    check("const SHOW_SELECTION = false;" in js and "const SHOW_CHANGES = false;" in js,
+          "the page's two switches are off")
+    check("function showSelection(" in js and "function paint(" in js
+          and "async function changes(" in js
+          and "if (SHOW_SELECTION) showSelection(r);" in js
+          and "if (SHOW_CHANGES) changes();" in js and "if (SHOW_CHANGES) paint();" in js,
+          "their code is kept, and nothing calls it while the switches are off")
+    check(hc.SHOW_CHANGES is False and callable(hc.Changes().offer),
+          "the server's switch is off, and its Changes tables are still whole")
+    server = io.open(SERVER, encoding="utf-8").read()
+    for name in ("def _offer_change(", "def _load_settings(", "def revit_offer_settings("):
+        body = server[server.index(name):]
+        body = body[:body.index(chr(10) + "def ", 10) if chr(10) + "def " in body[10:] else len(body)]
+        gate = body.find("SHOW_CHANGES")
+        check(gate != -1 and gate < body.find("CHANGES.offer") if "CHANGES.offer" in body
+              else gate != -1 and gate < body.find("LOADS[kind]"),
+              "%s stops at the switch before it makes any table" % name.split("(")[0][4:])
+    addin = io.open(os.path.join(ROOT, "revit", "Heron.Revit.Addin", "HeronLiveState.cs"),
+                    encoding="utf-8").read()
+    reads = [m.start() for m in re.finditer(r"Selection\.GetElementIds\(\)", addin)]
+    guards = [m.start() for m in re.finditer(r"if \(WatchSelection\)", addin)]
+    check("private static readonly bool WatchSelection = false;" in addin
+          and len(reads) == 2 and len(guards) == 2
+          and all(any(g < r for g in guards) for r in reads),
+          "the add-in reads no selection while WatchSelection is off - the code is kept")
+    check('"\\"selection\\": null"' in addin and "WatchSelection ? 200 : 1000" in addin,
+          "its live file says 'selection: null', and Idling looks once a second, not five times")
+
+
 def main():
     tmp = tempfile.mkdtemp(prefix="heron-companion-")
     test_live_files(tmp)
@@ -808,6 +1011,14 @@ def main():
     test_load_from_revit()
     test_model_guard()
     test_loads()
+    try:
+        test_loads_report_page()
+    except Exception as why:                    # noqa: BLE001 - reported, not hidden
+        check(False, "the Loads report checks ran to the end (they raised %r)" % (why,))
+    try:
+        test_switched_off_parts()
+    except Exception as why:                    # noqa: BLE001 - reported, not hidden
+        check(False, "the switched-off checks ran to the end (they raised %r)" % (why,))
     test_no_way_to_an_ai()
     test_addin_side()
 

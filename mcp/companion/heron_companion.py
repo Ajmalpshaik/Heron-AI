@@ -43,6 +43,7 @@ PROTECTED FROM OTHER WEBSITES AND PROGRAMS (docs/40 section 11):
     inline script (Content-Security-Policy).
 """
 
+import base64
 import http.server
 import io
 import json
@@ -50,6 +51,7 @@ import os
 import re
 import secrets
 import socketserver
+import subprocess
 import sys
 import threading
 import time
@@ -91,6 +93,77 @@ SECURITY_HEADERS = (
     ("Referrer-Policy", "no-referrer"),
     ("Cache-Control", "no-store"),
 )
+
+#: How a load sheet the page opens is served (docs/44 s12.7). The sheet is the
+#: brain's own HTML with its styles inline: it may run NO script and sit in no
+#: frame.
+REPORT_HEADERS = (
+    ("Content-Security-Policy",
+     "default-src 'none'; style-src 'unsafe-inline'; img-src data:; "
+     "frame-ancestors 'none'; base-uri 'none'; form-action 'none'"),
+    ("X-Frame-Options", "DENY"),
+    ("X-Content-Type-Options", "nosniff"),
+    ("Referrer-Policy", "no-referrer"),
+    ("Cache-Control", "no-store"),
+)
+
+#: A PDF opens in the browser's own viewer, which a content policy would stop.
+PDF_HEADERS = REPORT_HEADERS[1:]
+
+#: How long the folder window may stay open before Heron stops waiting for it.
+FOLDER_SECONDS = 900
+
+#: The folder window: Windows' own, made topmost so it opens in front of the
+#: browser that asked for it. Every value it needs comes in from the
+#: environment - data, never code - and the one thing it writes is the folder.
+FOLDER_SCRIPT = "\n".join((
+    "Add-Type -AssemblyName System.Windows.Forms",
+    "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8",
+    "$owner = New-Object System.Windows.Forms.Form -Property @{TopMost = $true}",
+    "$dialog = New-Object System.Windows.Forms.FolderBrowserDialog",
+    "$dialog.Description = $env:HERON_FOLDER_TITLE",
+    "$dialog.ShowNewFolderButton = $true",
+    "$start = $env:HERON_FOLDER_START",
+    "if ($start -and (Test-Path -LiteralPath $start -PathType Container)) "
+    "{ $dialog.SelectedPath = $start }",
+    "if ($dialog.ShowDialog($owner) -eq [System.Windows.Forms.DialogResult]::OK) "
+    "{ [Console]::Out.Write($dialog.SelectedPath) }",
+    "$owner.Dispose()",
+))
+
+
+def pick_folder(start=None, title="Where should Heron save the load report?", run=None):
+    """
+    A Windows folder window, so the modeller says where a report goes
+    (docs/44 s12.7; Ajmal, 2026-10-04: "I can give the location").
+
+    It runs in a PowerShell process of its own. The start folder and the
+    title go in as environment values, never as part of the command, and its
+    output is captured - nothing reaches the stdout MCP speaks on (README
+    rule 2). Returns {"folder": path}, {"cancelled": True} or
+    {"unavailable": why}; it never raises. `run` is subprocess.run, or a
+    stand-in for the test.
+    """
+    if os.name != "nt":
+        return {"unavailable": "a folder window opens on Windows only"}
+    run = run or subprocess.run
+    env = dict(os.environ, HERON_FOLDER_START=start or "", HERON_FOLDER_TITLE=title)
+    command = ["powershell.exe", "-NoProfile", "-NonInteractive", "-STA", "-EncodedCommand",
+               base64.b64encode(FOLDER_SCRIPT.encode("utf-16-le")).decode("ascii")]
+    try:
+        done = run(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                   stderr=subprocess.DEVNULL, env=env, timeout=FOLDER_SECONDS,
+                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    except (OSError, subprocess.SubprocessError) as why:
+        return {"unavailable": "the folder window could not open (%s)" % why}
+    if done.returncode != 0:
+        return {"unavailable": "the folder window ended with code %s" % done.returncode}
+    text = (done.stdout or b"").decode("utf-8", "replace").lstrip("﻿").strip()
+    if not text:
+        return {"cancelled": True}
+    if not os.path.isabs(text) or not os.path.isdir(text):
+        return {"unavailable": "the folder window answered %r, which is not a folder" % text}
+    return {"folder": text}
 
 
 def live_dir():
@@ -308,6 +381,13 @@ class Changes(object):
 
 #: This process's after-change tables - one chat's.
 CHANGES = Changes()
+
+#: SWITCHED OFF by the owner (Ajmal PS, 2026-10-04), KEPT for later (docs/40
+#: s21.6): the page shows the HVAC Load Calculation, and the Changes tables -
+#: with the colour books that paint them - are not on it. The code above is
+#: whole and still tested; while this is False the MCP server offers nothing
+#: to it, so no table is made that nobody can see.
+SHOW_CHANGES = False
 
 
 # ------------------------------------------------------------ Load from Revit
@@ -598,6 +678,9 @@ class LoadsPanel(object):
         self.runs_hook = None
         self.run_hook = None
         self.confirm_hook = None
+        #: folder_hook(start) -> {"folder"} | {"cancelled"} | {"unavailable"}:
+        #: where the modeller wants the report (docs/44 s12.7).
+        self.folder_hook = pick_folder
 
     def open(self, document, answer, identity=None, read_at=None):
         result = answer.get("result") or {}
@@ -626,6 +709,8 @@ class LoadsPanel(object):
                 "run_id": result.get("run_id"), "units": result.get("units"),
                 "said": answer.get("said"), "report": None, "finalized": None,
                 "confirmed": bool(answer.get("confirmed")),
+                # Where this project's last report went - the folder window opens there.
+                "report_folder": answer.get("report_folder"),
                 "summary": answer.get("summary"),
                 # The 3D view's data, served on its own route: it is the
                 # biggest thing the panel holds and the page asks for it only
@@ -693,7 +778,13 @@ class LoadsPanel(object):
         self.open(document, answer, identity, read_at)
         return {"ok": True, "said": answer.get("said"), "loads": self.current()}
 
-    def report(self):
+    #: What the page may open of a report it wrote, and how - nothing else.
+    REPORT_KINDS = {"html": "text/html; charset=utf-8", "pdf": "application/pdf"}
+
+    def report(self, body=None):
+        """The load calculation sheet. With {"ask": true} the modeller is asked where
+        it goes first, in a folder window opened where the last one went
+        (docs/44 s12.7); Cancel writes nothing."""
         hook = self.report_hook
         if hook is None:
             return {"ok": False, "said": self.GONE}
@@ -701,12 +792,44 @@ class LoadsPanel(object):
         if takeoff is None or not result:
             return {"ok": False, "said": "nothing has been calculated yet, so there is no "
                                          "report to write"}
-        got = hook(takeoff, result) or {}
+        folder, note = None, ""
+        if isinstance(body, dict) and body.get("ask"):
+            with self._lock:
+                start = self._held.get("report_folder") if self._held else None
+            picked = (self.folder_hook or pick_folder)(start) or {}
+            if picked.get("cancelled"):
+                return {"ok": False, "said": "No folder was chosen, so no report was written."}
+            folder = picked.get("folder")
+            if not folder:
+                note = ("The folder window could not open (%s), so the report went to the "
+                        "usual place. " % (picked.get("unavailable") or "no answer"))
+        got = hook(takeoff, result, folder) or {}
         with self._lock:
-            if self._held is not None:
-                self._held["report"] = {k: got.get(k) for k in ("html", "pdf", "csv",
-                                                                "takeoff_csv", "said")}
-        return dict(got, ok=bool(got.get("ok")))
+            if self._held is not None and got.get("ok"):
+                # A key for this report's files only: a link cannot carry the
+                # API header, so the page opens the sheet with this instead.
+                self._held["report"] = dict(
+                    {k: got.get(k) for k in ("html", "pdf", "csv", "takeoff_csv", "said",
+                                             "folder")},
+                    token=secrets.token_urlsafe(24))
+                if folder:
+                    self._held["report_folder"] = folder
+        return dict(got, ok=bool(got.get("ok")), said=note + (got.get("said") or ""))
+
+    def report_file(self, token, kind):
+        """(path, content type) of a file the LAST report wrote, for the key the page
+        was given - else None. Never a path from the request."""
+        with self._lock:
+            report = dict((self._held or {}).get("report") or {})
+        key = report.get("token")
+        if not key or not isinstance(token, str) or not secrets.compare_digest(
+                token.encode("utf-8"), key.encode("utf-8")):
+            return None
+        content_type = self.REPORT_KINDS.get(kind)
+        path = report.get(kind) if content_type else None
+        if not path or not os.path.isfile(path):
+            return None
+        return path, content_type
 
     def finalize(self):
         hook = self.finalize_hook
@@ -1098,17 +1221,40 @@ class _Handler(http.server.BaseHTTPRequestHandler):
     # ------------------------------------------------------------- replies
 
     def _send(self, status, body, content_type, extra=()):
+        self._send_raw(status, body, content_type, tuple(SECURITY_HEADERS) + tuple(extra))
+
+    def _send_raw(self, status, body, content_type, headers):
+        """One reply with exactly these headers - the page's own, or a report's."""
         data = body if isinstance(body, bytes) else body.encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
-        for name, value in SECURITY_HEADERS:
-            self.send_header(name, value)
-        for name, value in extra:
+        for name, value in headers:
             self.send_header(name, value)
         self.end_headers()
         if self.command != "HEAD":
             self.wfile.write(data)
+
+    def _report_file(self, path):
+        """GET /report/<key>/<html|pdf>: the sheet the last Report wrote, opened in a
+        tab of its own (docs/44 s12.7). A link cannot carry the API header, so the
+        paired cookie and the key the page was given stand in for it."""
+        if not self.owner.knows(self._cookie()):
+            return self._refuse(403, "not paired")
+        parts = path.split("/")
+        got = LOADS_PANEL.report_file(parts[2], parts[3]) if len(parts) == 4 else None
+        if got is None:
+            return self._refuse(404, "not found")
+        try:
+            with io.open(got[0], "rb") as fh:
+                body = fh.read()
+        except OSError:
+            return self._refuse(404, "not found")
+        if got[1] == "application/pdf":
+            name = re.sub(r"[^A-Za-z0-9._-]", "_", os.path.basename(got[0]))
+            return self._send_raw(200, body, got[1], tuple(PDF_HEADERS) + (
+                ("Content-Disposition", 'inline; filename="%s"' % name),))
+        return self._send_raw(200, body, got[1], REPORT_HEADERS)
 
     def _json(self, status, payload, extra=()):
         self._send(status, json.dumps(payload), "application/json; charset=utf-8", extra)
@@ -1205,6 +1351,8 @@ class _Handler(http.server.BaseHTTPRequestHandler):
                 if name == "id":
                     run_id = value
             return self._json(200, {"ok": True, "run": LOADS_PANEL.earlier(run_id)})
+        if path.startswith("/report/"):
+            return self._report_file(path)
         return self._refuse(404, "not found")
 
     def do_POST(self):
@@ -1261,7 +1409,7 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if path.endswith("/recalculate"):
                 return self._json(200, LOADS_PANEL.recalculate(body))
             if path.endswith("/report"):
-                return self._json(200, LOADS_PANEL.report())
+                return self._json(200, LOADS_PANEL.report(body))
             if path.endswith("/confirm"):
                 return self._json(200, LOADS_PANEL.confirm())
             return self._json(200, LOADS_PANEL.finalize())

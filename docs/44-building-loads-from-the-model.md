@@ -510,3 +510,21 @@ shading in a family, a door modelled open) is an orphan; the active view's phase
 so Finalize from a view of another phase reads as "the model changed"; an earlier run cannot yet be
 reopened with its own geometry on the page; a misspelt per-Space key is kept and printed; a skylight in
 a sloped roof is drawn at its box's middle height.
+
+### 12.7 The page and the sheet, after the first test (2026-10-04)
+
+The owner calculated a three-room test building in Project2 and asked for five changes. Each is built
+and tested, and docs/40 21.6 has the page's side:
+
+| He asked | What changed |
+|---|---|
+| "Which load is it - AC or heating, or HAP?" | The panel and the sheet are titled **HVAC Load Calculation**: cooling (AC) and heating load per Space, ASHRAE method, a peak estimate and not an hourly simulation like HAP. The results group their columns under Cooling (AC) load, Heating load and Air |
+| "I can give the location" | Report opens a Windows folder window where the project's last report went. The sheet goes straight into the folder chosen, the run's id in every file name, and the folder is kept for the project (`report_folder`). A folder that is not there is refused, never made; a kept folder that has since gone falls back to the usual place |
+| "I cannot see it in here" | Open report and Open PDF open the sheet in the browser, through a key only the paired page holds; the sheet may run no script |
+| One column, the results below | The inputs sit above the results, each the page's full width |
+| The 3D view turns the wrong way | It turns the way the mouse moves, as Revit's orbit does |
+
+The page also leads with the building's figures, which the brain now adds up itself so the page sums
+nothing (mcp/companion README rule 4): the supply air and outdoor air of the Spaces calculated, the load
+per square metre of the floor that WAS calculated, and how many Spaces were. The sheet opens with the
+same figures as its Summary.

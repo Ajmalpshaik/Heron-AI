@@ -1602,7 +1602,10 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
             # the geometry can be checked while the questions are answered.
             "view": VIEW.build(takeoff, result, LOADS.answers(project_inputs, strict=False)),
             "summary": TAKEOFF.summary(takeoff, LOADS.answers(project_inputs, strict=False)),
-            "confirmed": bool(result) and LOADS.confirmed(result, takeoff)}
+            "confirmed": bool(result) and LOADS.confirmed(result, takeoff),
+            # Where the modeller last put this project's report - the folder
+            # window opens there (docs/44 s12.7).
+            "report_folder": LOADS.report_folder(project) if project else None}
 
 
 def loads_confirm(takeoff, result, project=None, project_name=None):
@@ -1624,18 +1627,34 @@ def loads_confirm(takeoff, result, project=None, project_name=None):
     return {"ok": True, "said": said, "result": result}
 
 
-def loads_report(takeoff, result, model_path=None, project=None, project_name=None):
+def loads_report(takeoff, result, model_path=None, project=None, project_name=None,
+                 folder=None):
     """
     The load calculation sheet for one run (docs/44 s8): HTML, two CSVs and,
-    where Edge or Chrome is on the PC, a PDF - written into "Heron loads/<run>"
-    beside the saved Revit model, else into the run's own folder in Heron's
-    knowledge folder. Written by the brain from its own numbers; nothing is
-    exported from Revit (docs/44 s9, question 4).
+    where Edge or Chrome is on the PC, a PDF. Written by the brain from its own
+    numbers; nothing is exported from Revit (docs/44 s9, question 4).
+
+    WHERE: `folder` when the modeller chose one (docs/44 s12.7) - straight
+    into it, the run's id in every file name, and kept as this project's
+    report folder. Else the folder last chosen for the project, while it is
+    still there. Else "Heron loads/<run>" beside the saved Revit model, else
+    the run's own folder in Heron's knowledge folder.
     """
     import heron_loads_report as REPORT
     import heron_building_loads as LOADS
     run_id = result.get("run_id") or "run"
-    if model_path and os.path.isabs(model_path) and os.path.isdir(os.path.dirname(model_path)):
+    chosen = None
+    if folder:
+        if not isinstance(folder, str) or not os.path.isabs(folder) or not os.path.isdir(folder):
+            return {"ok": False, "said": "No report was written: %s is not a folder on this PC."
+                                         % (folder,)}
+        chosen = folder
+    kept = LOADS.report_folder(project) if project and not chosen else None
+    if chosen:
+        folder = chosen
+    elif kept and os.path.isdir(kept):
+        folder = kept
+    elif model_path and os.path.isabs(model_path) and os.path.isdir(os.path.dirname(model_path)):
         folder = os.path.join(os.path.dirname(model_path), "Heron loads", run_id)
     else:
         try:
@@ -1658,7 +1677,12 @@ def loads_report(takeoff, result, model_path=None, project=None, project_name=No
         return {"ok": False, "said": "No report was written: %s" % why}
     _audit().record("design.loads_report", True,
                     fields={"status": "ok", "pdf": "yes" if got.get("pdf") else "no"})
-    return got
+    if chosen and project:
+        try:
+            LOADS.set_report_folder(project, chosen)
+        except (ValueError, OSError):
+            pass                    # written all the same; only not offered next time
+    return dict(got, folder=folder)
 
 
 def fire(calculation, inputs, project=None, project_name=None):

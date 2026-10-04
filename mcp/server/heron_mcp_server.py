@@ -1727,6 +1727,9 @@ def _offer_change(capability, folder, values, document):
     """Leave a settings change's values on the Companion page (docs/40 21.1).
     Display only: a fault here never reaches the chat's answer."""
     try:
+        # Switched off with the page's Changes tables (docs/40 s21.6).
+        if not _companion_module().SHOW_CHANGES:
+            return
         subject = _settings_card(folder)
         if not subject or not pinned.is_pinned:
             return
@@ -1859,10 +1862,11 @@ def _loads_run(_document, run_id):
             "inputs": got.get("inputs")}
 
 
-def _loads_report(takeoff, result):
+def _loads_report(takeoff, result, folder=None):
     started, clock = time.strftime("%H:%M:%S"), time.time()
     got = brain.loads_report(takeoff, result, model_path=pinned.document_path,
-                             project=pinned.project_key, project_name=pinned.title)
+                             project=pinned.project_key, project_name=pinned.title,
+                             folder=folder)
     _note("companion_loads_report", started, time.time() - clock, reply=got.get("said"),
           outcome=None if got.get("ok") else "refused")
     return got
@@ -2026,6 +2030,9 @@ def _load_settings(kind):
     (answer text, the tables offered).
     """
     companion_page = _companion_module()
+    if not companion_page.SHOW_CHANGES:
+        return ("The Companion's Changes tables are switched off for now, so nothing was "
+                "loaded.", [])
     reader, _applier = companion_page.LOADS[kind]
     started, clock = time.strftime("%H:%M:%S"), time.time()
     with _revit_lock:
@@ -2296,6 +2303,11 @@ def revit_offer_settings(capability: str, values: str) -> str:
     the Changes switch, the pin, one undo entry.
     """
     companion_page = _companion_module()
+    if not companion_page.SHOW_CHANGES:
+        # The owner switched the page's Changes tables off (2026-10-04, docs/40
+        # s21.6): a table offered now would sit where nobody can see it.
+        return ("The Companion's Changes tables are switched off for now, so nothing was "
+                "offered. Change the setting through the chat instead.")
     if not companion_page.enabled():
         return ("The Heron Companion is switched off in Revit, so nothing was offered. "
                 "To turn it on, click the arrow under the Companion button on the "
