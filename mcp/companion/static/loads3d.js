@@ -196,10 +196,10 @@
     }
   }
 
-  // True north on the screen: the brain's angle turns project north into it.
+  // True north on the screen: the direction the brain worked out with the
+  // same rule as every facing (heron_takeoff.azimuth_deg) - never a second formula.
   function compass(w, B) {
-    const tn = (view.true_north_deg || 0) * Math.PI / 180;
-    const north = [-Math.sin(tn), Math.cos(tn), 0];
+    const north = [view.north_xy[0], view.north_xy[1], 0];
     let x = dot(north, B.r), y = dot(north, B.u);
     const n = Math.hypot(x, y) || 1; x /= n; y /= n;
     const cx = w - 34, cy = 34, r = 22;

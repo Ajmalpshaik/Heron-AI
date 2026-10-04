@@ -736,7 +736,7 @@ def test_loads():
           "the 3D view's data is served on its own route, not inside every poll")
     check(view_panel.confirm()["ok"] is False and view_panel.current()["confirmed"] is False,
           "with no chat connected the take-off cannot be confirmed")
-    view_panel.confirm_hook = lambda t, r: brain_seam.loads_confirm(t, r)
+    view_panel.confirm_hook = lambda t, r, identity: brain_seam.loads_confirm(t, r)
     said = view_panel.confirm()
     check(said["ok"] and view_panel.current()["confirmed"] is True,
           "'The take-off is right' records the check through the brain")
@@ -770,12 +770,22 @@ def test_loads():
     # one; it counts the undo entries it actually made.
     reread = fin.find('"REPORT_SPACE_ENVELOPE"')
     check(reread != -1 and reread < fin.index("_apply_table(rows, identity)")
-          and "LOADS.fingerprint(fresh) != LOADS.fingerprint(takeoff)" in fin
-          and "LOADS.finalize_rows(fresh, result)" in fin,
-          "Finalize reads the model again, refuses if its geometry changed, and checks each "
-          "row against what Revit holds now")
+          and "LOADS.fingerprint(fresh) != LOADS.fingerprint(takeoff)" in fin,
+          "Finalize reads the model again and refuses if its geometry changed")
     check("Two undo entries in Revit:" not in fin and "entries += 1" in fin,
           "Finalize says how many undo entries it made, not always two")
+    # The second review, m1: the rows carry the values Heron SHOWED, so an edit
+    # made in Revit since the read refuses the whole write; m3: confirming
+    # checks the chat is still on the model the take-off came from.
+    check("LOADS.finalize_rows(fresh, result)" not in fin
+          and fin.count("LOADS.finalize_rows(takeoff, result)") == 2
+          and 'setdefault("current", {})[field] = new' in fin,
+          "Finalize checks each row against the value Heron showed, and then holds what it wrote")
+    conf = server[server.index("def _loads_confirm("):]
+    conf = conf[:conf.index(chr(10) + "def ", 10)]
+    check("moved = _moved_since(identity)" in conf
+          and conf.index("moved = _moved_since(identity)") < conf.index("brain.loads_confirm("),
+          "confirming the take-off is refused when the chat has moved to another model")
     kept = hc.LoadsPanel()
     kept.open("Project1", shaped, ("Project1", "", "11"), read_at="08:00:00")
     kept.recalculate_hook = lambda t, i, ident: brain_seam.building_loads(t, i, save=False)

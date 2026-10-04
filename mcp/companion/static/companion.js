@@ -1144,9 +1144,9 @@ function renderLoads(L) {
       input.addEventListener("input", () => {
         const raw = input.value.trim();
         overrides[sid] = overrides[sid] || {};
-        if (raw === "") delete overrides[sid][field];
-        else overrides[sid][field] = isNaN(Number(raw)) ? raw : Number(raw);
-        if (!Object.keys(overrides[sid]).length) delete overrides[sid];
+        // Blank is sent as nothing, which CLEARS this Space's own value, so its
+        // type's value applies again - never left out, which would keep the old one.
+        overrides[sid][field] = raw === "" ? null : (isNaN(Number(raw)) ? raw : Number(raw));
       });
       lab.append(el("span", "small muted", label), input);
       ownBox.append(lab);

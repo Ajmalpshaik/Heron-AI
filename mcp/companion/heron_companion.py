@@ -590,8 +590,8 @@ class LoadsPanel(object):
         #: -> brain answer; report_hook(panel) -> {"ok", "said", "html", "pdf",
         #: "csv"}; finalize_hook(takeoff, result, identity) -> {"ok", "said",
         #: "finalized"}; runs_hook(document) -> [run]; run_hook(document, id)
-        #: -> a kept run or None; confirm_hook(takeoff, result) -> {"ok",
-        #: "said", "result"}.
+        #: -> a kept run or None; confirm_hook(takeoff, result, identity) ->
+        #: {"ok", "said", "result"}.
         self.recalculate_hook = None
         self.report_hook = None
         self.finalize_hook = None
@@ -653,11 +653,11 @@ class LoadsPanel(object):
         hook = self.confirm_hook
         if hook is None:
             return {"ok": False, "said": self.GONE}
-        takeoff, result, _identity = self._snapshot()
+        takeoff, result, identity = self._snapshot()
         if takeoff is None or not result:
             return {"ok": False, "said": "nothing has been calculated yet, so there is no "
                                          "take-off to confirm"}
-        got = hook(takeoff, result) or {}
+        got = hook(takeoff, result, identity) or {}
         if got.get("ok"):
             with self._lock:
                 if self._held is not None and self._held.get("result") is result:

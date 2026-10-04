@@ -1862,15 +1862,20 @@ def _loads_run(_document, run_id):
 def _loads_report(takeoff, result):
     started, clock = time.strftime("%H:%M:%S"), time.time()
     got = brain.loads_report(takeoff, result, model_path=pinned.document_path,
-                             project=pinned.project_key)
+                             project=pinned.project_key, project_name=pinned.title)
     _note("companion_loads_report", started, time.time() - clock, reply=got.get("said"),
           outcome=None if got.get("ok") else "refused")
     return got
 
 
-def _loads_confirm(takeoff, result):
+def _loads_confirm(takeoff, result, identity=None):
+    with _revit_lock:
+        moved = _moved_since(identity)
+    if moved:
+        return {"ok": False, "said": moved}
     started = time.strftime("%H:%M:%S")
-    got = brain.loads_confirm(takeoff, result, project=pinned.project_key)
+    got = brain.loads_confirm(takeoff, result, project=pinned.project_key,
+                              project_name=pinned.title)
     _note("companion_loads_confirm", started, 0, reply=got.get("said"))
     return got
 
@@ -1922,8 +1927,13 @@ def _loads_finalize(takeoff, result, identity):
                                      "loads were worked out - a wall, a window, a Space or a type. "
                                      "Ask the chat to calculate the loads again, check the "
                                      "take-off, and Finalize then."}
+    # THE ROWS CARRY THE VALUES HERON SHOWED, NOT THE FRESH ONES: a Space's
+    # loads edited in Revit since the read must refuse the whole write
+    # (Article 12c) - the fresh read proves only that the geometry is the same
+    # (the second review, m1). After a Finalize, what was written becomes what
+    # Heron holds, so the next Finalize is checked against it.
     try:
-        rows = LOADS.finalize_rows(fresh, result)
+        rows = LOADS.finalize_rows(takeoff, result)
     except ValueError as why:
         return {"ok": False, "said": "Nothing was written: %s" % why}
     if not rows:
@@ -1931,6 +1941,10 @@ def _loads_finalize(takeoff, result, identity):
     text, applied = _apply_table(rows, identity)
     if not (applied and applied.get("applied")):
         return {"ok": False, "said": text}
+    held = dict((str(s.get("id")), s) for s in takeoff.spaces)
+    for sid, _uid, field, _was, new in rows:
+        if sid in held:
+            held[sid].setdefault("current", {})[field] = new
     said = [text]
     entries = 1
     lines = []
@@ -1969,7 +1983,9 @@ def _loads_finalize(takeoff, result, identity):
                     import shutil
                     shutil.rmtree(folder, ignore_errors=True)
                 done = isinstance(out.get("reply"), dict) and out["reply"].get("ok")
-                if done:
+                provided = ((out.get("reply") or {}).get("provides") or {}) if done else {}
+                changed = provided.get("changed")
+                if done and (changed is None or str(changed) not in ("0", "")):
                     entries += 1
                 said.append(wrote if done else "%s\n%s" % (found, wrote))
     else:

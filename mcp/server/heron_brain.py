@@ -1474,6 +1474,15 @@ def _merged(older, newer):
     return out
 
 
+def _kept_values(d):
+    """The values that are given - a key given as nothing (or {"value": None}) is dropped."""
+    def given(v):
+        if isinstance(v, dict) and "value" in v:
+            return v["value"] is not None
+        return v is not None
+    return dict((k, v) for k, v in (d or {}).items() if given(v))
+
+
 def building_loads(takeoff_json, inputs, project=None, project_name=None, save=True,
                    include_links=None):
     """
@@ -1529,9 +1538,15 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
     overrides = dict(before.get("overrides") or {})
     for key, values in (given.get("overrides") or {}).items():
         overrides[str(key)] = _merged(overrides.get(str(key)), values)
+    # A value given as nothing CLEARS what was kept: a project or type value
+    # is then asked again, and a Space's own value gives way to its type's
+    # (the second review, N2 - a blanked field on the page came back).
+    project_inputs = _kept_values(project_inputs)
+    profiles = dict((k, _kept_values(v)) for k, v in profiles.items())
+    overrides = dict((k, _kept_values(v)) for k, v in overrides.items())
+    overrides = dict((k, v) for k, v in overrides.items() if v)
 
     asked = LOADS.needs(takeoff, project_inputs, profiles)
-    qa = TAKEOFF.qa(takeoff)
     result = saved = None
     if asked:
         said = LOADS.questions_text(asked)
@@ -1559,6 +1574,16 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
         elif save:
             said += ("\nThis run was NOT KEPT - Heron does not know which project this is yet "
                      "(D-33).")
+    # THE CHECKS THE PAGE SHOWS ARE THE RUN'S OWN: with the modeller's answers
+    # and the site, as the report prints them (the second review, N1). With no
+    # run yet, the same two, so the site is said while questions are asked.
+    if result:
+        qa = list(result.get("qa") or [])
+    else:
+        said_beyond = LOADS.answers(project_inputs, strict=False)
+        qa = TAKEOFF.qa(takeoff, said_beyond) + LOADS.site_checks(takeoff, project_inputs)
+        order = {"FAIL": 0, "WARN": 1, "INFO": 2}
+        qa.sort(key=lambda f: order.get(f["level"], 3))
     counts = {}
     for s in (result or {}).get("spaces") or []:
         counts[s["status"]] = counts.get(s["status"], 0) + 1
@@ -1576,11 +1601,11 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
             # brain/ (docs/44 s12). Drawn before anything is calculated too, so
             # the geometry can be checked while the questions are answered.
             "view": VIEW.build(takeoff, result, LOADS.answers(project_inputs, strict=False)),
-            "summary": TAKEOFF.summary(takeoff),
+            "summary": TAKEOFF.summary(takeoff, LOADS.answers(project_inputs, strict=False)),
             "confirmed": bool(result) and LOADS.confirmed(result, takeoff)}
 
 
-def loads_confirm(takeoff, result, project=None):
+def loads_confirm(takeoff, result, project=None, project_name=None):
     """Gate 1 (docs/44 s6): the modeller has checked this take-off. Recorded with the run,
     and kept with the project's copy of it. Returns {"ok", "said", "result"}."""
     import heron_building_loads as LOADS
@@ -1588,7 +1613,8 @@ def loads_confirm(takeoff, result, project=None):
         return {"ok": False, "said": "Nothing has been calculated yet, so there is no run to "
                                      "record the check against."}
     LOADS.confirm(result, takeoff)
-    said = "The take-off is confirmed for this run - its report is final and Finalize is open."
+    said = ("The take-off%s is confirmed for this run - its report is final and Finalize is "
+            "open." % ((" of %s" % project_name) if project_name else ""))
     if project:
         try:
             LOADS.save(project, result, replace=True)
@@ -1598,7 +1624,7 @@ def loads_confirm(takeoff, result, project=None):
     return {"ok": True, "said": said, "result": result}
 
 
-def loads_report(takeoff, result, model_path=None, project=None):
+def loads_report(takeoff, result, model_path=None, project=None, project_name=None):
     """
     The load calculation sheet for one run (docs/44 s8): HTML, two CSVs and,
     where Edge or Chrome is on the PC, a PDF - written into "Heron loads/<run>"
@@ -1626,7 +1652,7 @@ def loads_report(takeoff, result, model_path=None, project=None):
         except (ValueError, OSError):
             standards = {}
     try:
-        got = REPORT.write(folder, takeoff, result, standards)
+        got = REPORT.write(folder, takeoff, result, standards, project_name=project_name)
     except OSError as why:
         _audit().record("design.loads_report", False, fields={"status": "not written"})
         return {"ok": False, "said": "No report was written: %s" % why}
