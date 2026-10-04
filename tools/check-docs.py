@@ -1006,6 +1006,36 @@ for _folder, _dirs, _what in (('tools', False, 'file'),
         out("  %s/: all %d of its %ss are named in its README\n"
             % (_folder, _seen, _what))
 
+# AND EVERY GROUP FILE OF THE NEEDS-CHECKING REGISTER, NAMED IN ITS INDEX.
+# Every pull request that adds a group puts its one line in the same place in
+# docs/NEEDS-CHECKING.md, so two of them always conflict there - and the
+# resolution that keeps one side and drops the other leaves the dropped
+# group's file on disk with nothing pointing at it. The register reader puts
+# a group back only where the index names it, so that group silently leaves
+# the register: owner-queue, check-gaps and every count stop seeing its rows,
+# and every one of them stays green. Measured 2026-10-04 by deleting Group
+# BY's line: this file, the register suites and the reader all passed.
+_nc_page = os.path.join(root, 'docs', 'NEEDS-CHECKING.md')
+_nc_dir = os.path.join(root, 'docs', 'needs-checking')
+if os.path.isfile(_nc_page) and os.path.isdir(_nc_dir):
+    _nc_text = io.open(_nc_page, encoding='utf-8').read()
+    _nc_files = sorted(n for n in os.listdir(_nc_dir)
+                       if n.startswith('group-') and n.endswith('.md'))
+    _nc_missing = [n for n in _nc_files
+                   if not named(_nc_text, 'needs-checking/' + n)]
+    for _name in _nc_missing:
+        out("  NOT NAMED: docs/needs-checking/%s - on disk, and "
+            "docs/NEEDS-CHECKING.md never names it, so the register has "
+            "lost that group\n" % _name)
+    if _nc_missing:
+        failed = True
+    else:
+        out("  docs/needs-checking/: all %d of its group files are named in "
+            "docs/NEEDS-CHECKING.md\n" % len(_nc_files))
+else:
+    out("  docs/NEEDS-CHECKING.md or docs/needs-checking/ not found - "
+        "nothing to check\n")
+
 # ---------- 11. text hygiene, over every tracked file ----------
 #
 # Three faults no reader sees and every tool trips over:
