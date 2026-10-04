@@ -1,0 +1,99 @@
+# The proof plan for PLACE_HOSTED_FAMILY version 3 (the sill height, FRG-ELE-065)
+# and PLACE_STRUCTURAL_FAMILY version 2 (a column's top, FRG-ELE-064).
+# Written 2026-10-04 and NOT RUN as a proof - the owner runs it, on a TEST COPY.
+#
+#     python tools/batch-prove.py tools/jobs/study-45-sill-and-column-top.yaml --dry-run
+#
+# THE ARRANGEMENT IS BUILT FIRST, on a new scratch project saved as
+# "Heron-CC-scratch" (metric, Revit 2024), because no model here is known to
+# hold a wall of a known height with rooms on both sides. Build it, then read
+# every value below back off it before running - nothing here was measured:
+#
+#   Levels   Level 1 at 0, Level 2 at 4000 mm, a floor plan of each
+#   Wall     ONE straight "Generic - 200mm" wall on Level 1 from (0,0) to
+#            (6000,0) mm, Unconnected Height 3000 mm - so a 900 sill under a
+#            1220 mm window heads at 2120 (fits) and a 2500 sill at 3720
+#            (does not)
+#   Rooms    two, closed by three more walls or room separation lines: one
+#            north of the wall (y > 0), one south
+#   Types    M_Fixed 0915 x 1220mm loaded (a window with a built-in Sill
+#            Height and a type Height); one structural column type loaded
+#            (Project1's was "305x305x97UC")
+#
+# WINDOW POINTS: on the wall's line at x 1500 and 4500; room points 1000 mm
+# north of each; hinge points 300 mm east (a fixed window has no swing arc, so
+# `wrongHinge` naming both is expected and is not this proof's concern).
+# A SILL IS PROVED BY READING IT: select each window and read Sill Height in
+# Properties, and cut a section through the wall.
+#
+# COLUMN POINTS: (2000,3000) and (4000,3000) mm, on Level 1, clear of the wall.
+# A TOP IS PROVED BY READING IT: Top Level and Top Offset in Properties, and a
+# section through both.
+#
+# NO ADD-IN REBUILD IS NEEDED: fragment source is read live. The Python side
+# must see the new cards (a store row, or a restart) before the run.
+
+model: Heron-CC-scratch, Revit 2024 - a SAVED TEST COPY built for this
+
+defaults:
+  in: Heron-CC-scratch
+  write: true
+  setup: []
+
+jobs:
+  # POSITIVE: two windows at a 900 sill. NEGATIVE: the SAME wall and window
+  # type at a 2500 sill, whose head would stand above the 3000 mm wall - a
+  # different value that must place NOTHING, not an empty request.
+  - fragment: place-hosted-family
+    set:
+      symbol:     "M_Fixed: 0915 x 1220mm"
+      level:      "Level 1"
+      points:     "1500,0,0; 4500,0,0"
+      toRoomAt:   "1500,1000,0; 4500,1000,0"
+      hingeAt:    "1800,0,0; 4800,0,0"
+      sillHeight: "900"
+    negative-set:
+      symbol:     "M_Fixed: 0915 x 1220mm"
+      level:      "Level 1"
+      points:     "1500,0,0; 4500,0,0"
+      toRoomAt:   "1500,1000,0; 4500,1000,0"
+      hingeAt:    "1800,0,0; 4800,0,0"
+      sillHeight: "2500"
+    expect: placed
+    note: >
+      Positive: placed 2, `sills` reading "sill asked 900 mm, reads 900 mm"
+      twice, sillWrong / noSillParameter / sillTooHigh empty; Sill Height in
+      Properties reads 900 on both and the wall's Volume drops by two
+      openings. Negative: placed empty, both points in `sillTooHigh` naming
+      a 3720 mm head over a 3000 mm wall, the wall's Volume unchanged. Then,
+      by hand, the SAME call with sillHeight blank and the windows deleted
+      first: `sills` says what Revit placed each sill at - that number settles
+      the "windows land at sill 0" hypothesis, either way.
+
+  # POSITIVE: two columns topped at Level 2 - 150. NEGATIVE: the SAME points
+  # and type with the base level itself as the top - refused before anything
+  # is placed.
+  - fragment: place-structural-family
+    set:
+      symbol:         "305x305x97UC"
+      level:          "Level 1"
+      points:         "2000,3000,0; 4000,3000,0"
+      structuralType: "Column"
+      topLevelName:   "Level 2"
+      topOffset:      "-150"
+    negative-set:
+      symbol:         "305x305x97UC"
+      level:          "Level 1"
+      points:         "2000,3000,0; 4000,3000,0"
+      structuralType: "Column"
+      topLevelName:   "Level 1"
+      topOffset:      ""
+    expect: placed
+    note: >
+      Positive: placed 2, `tops` reading "top asked 'Level 2' + -150 mm = 3850
+      mm, reads 'Level 2' + offset = 3850 mm" twice with the geometry's top
+      beside it, topWrong / topRefused empty; Top Level "Level 2" and Top
+      Offset -150 in Properties. Negative: refused "is not above the base
+      level", placed empty, no new column on Level 1. Then, by hand, the same
+      call with topLevelName and topOffset blank: version 1's columns, and a
+      finding that every top was left as Revit placed it.

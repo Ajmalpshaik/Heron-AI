@@ -1,0 +1,118 @@
+heron-agent: HERON-QA-BIM-011
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-QA-034
+semantic-identity: "which family instances of these categories are mirrored, and which are only flipped"
+kind: action
+domain: revit.qa
+capability: REPORT_MIRRORED_INSTANCES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Lists the doors, fixtures, equipment - any family instances of the
+  categories you name - that have been MIRRORED, and separately the ones whose
+  flip arrows have been used, counted per category and per *"Family: Type"*,
+  with every element's id. It changes nothing.
+
+  **A MIRRORED DOOR SCHEDULES THE WRONG HANDING.** Mirroring reflects the
+  geometry: a left-hand door now draws as a right-hand one while its type,
+  its schedule row and anything ordered from that schedule still say left.
+  Nothing in Revit warns about it, so it is found by looking, and this is the
+  looking.
+
+  **MIRRORED AND FLIPPED ARE DIFFERENT, AND ARE NEVER FOLDED TOGETHER.** A flip
+  uses the family's own hand or facing arrows - the family author allowed it,
+  and a flipped door is NOT a mirrored door. One instance can be mirrored AND
+  flipped. So each of the three flags is counted on its own and printed per
+  element, and `mirrored`, `handFlipped` and `facingFlipped` are three lists. A
+  facing flip matters too: it leaves the door's From Room and To Room as they
+  were (FRAGMENT-ISSUES row 5b-212), and REPORT_DOOR_ROOM_LINKS is what checks
+  those against the rooms.
+
+  **FAMILY INSTANCES ONLY, AND A CATEGORY WITH NONE IS SAID.** Ducts, pipes and
+  walls are not families and carry no such flag. A category named with no
+  family instances in it is reported as that - never as a zero that reads like
+  a pass.
+
+  **WHAT IS NOT CHECKED:** linked models; whether a mirrored instance is
+  actually wrong (some families are drawn to be mirrored); and a nested shared
+  component, which turns with the family it sits in - such a row names the
+  family it is nested in and is NOT counted in any total, so one mistake is
+  not counted twice.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # RESOLVED categories, by name in Revit - "Doors, Plumbing Fixtures".
+    - name: categories
+      type: IList<Category>
+      source: request
+  provides:
+    - name: findings
+      type: IList<string>
+    - name: mirrored
+      # Instances whose Mirrored flag is set - the answer.
+      role: result
+      type: IList<ElementId>
+    - name: handFlipped
+      # Instances whose hand flip arrow has been used. Kept apart from
+      # `mirrored`: a flip is not a mirror.
+      role: result
+      type: IList<ElementId>
+    - name: facingFlipped
+      # Instances whose facing flip arrow has been used. A facing flip leaves
+      # From Room and To Room unchanged (row 5b-212).
+      role: result
+      type: IList<ElementId>
+    - name: instancesChecked
+      # How many family instances were examined. A count of work DONE, not of
+      # things found (D-52).
+      role: accounting
+      type: int
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `FamilyInstance.Mirrored`,
+  `HandFlipped`, `FacingFlipped`, `Symbol`, `SuperComponent` and
+  `ElementType.FamilyName` were each read with tools/api-surface as present and
+  unchanged 2020 through 2027. `ElementMulticategoryFilter` and
+  `OfClass(typeof(FamilyInstance))` are the same on every release. No units API
+  is called and no `ElementId` is read as a number.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "which doors are mirrored"            -> here. Until this card it resolved
+#                                            to MIRROR_ELEMENTS, which CHANGES
+#                                            the model - a question answered by
+#                                            a write
+#   "are any doors flipped"               -> here when the question is which
+#                                            ones; REPORT_DOOR_ROOM_LINKS when it
+#                                            is whether From/To Room read
+#                                            backwards
+#   "mirror these to the other room"      -> MIRROR_ELEMENTS. One reads, one
+#                                            changes
+#   "flip the door" / "the handing is
+#    wrong, fix it"                       -> FLIP_ELEMENTS
+#   "check the model against our naming
+#    standard"                            -> CHECK_MODEL_STANDARDS - names and
+#                                            data, not handing
+
+utterances:
+  - which doors are mirrored
+  - are any of the fixtures mirrored
+  - list the mirrored family instances
+  - which doors have been mirrored or flipped
+  - are the doors mirrored
+  - which fixtures have been mirrored
+  - is this door mirrored
+  - is this fixture mirrored
+  - is anything mirrored in this model

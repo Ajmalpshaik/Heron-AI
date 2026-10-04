@@ -9,7 +9,7 @@ semantic-identity: "add a new project parameter to these categories"
 kind: action
 domain: revit.parameters
 capability: ADD_PROJECT_PARAMETER
-version: 1
+version: 2
 source: OFFICIAL
 risk: ADMIN
 
@@ -42,6 +42,21 @@ purpose: >
   in the properties palette, it can be changed in Revit's own Project Parameters
   dialog afterwards, and asking a modeller for an internal group name buys
   nothing.
+
+  **VERSION 2 PUTS REVIT'S SHARED PARAMETER FILE SETTING BACK, AND NAMES A
+  CATEGORY IT COULD NOT BIND** (FRAGMENT-ISSUES 5b-317). Version 1 pointed
+  Revit at the requested file and left it there. That setting belongs to the
+  Revit session, not to the project: no transaction holds it, so Undo cannot
+  reverse it, and Manage > Shared Parameters stayed pointed at Heron's path in
+  every project afterwards. The setting in force is now read first and put back
+  whatever happens, and `sharedParameterFileRestored` says whether it reads as
+  it did before. And version 1 reported only the categories that came back
+  bound, so a category Revit will not let a project parameter onto simply went
+  missing from the answer. Each one is now checked before it is added, every
+  category asked for is looked for in the binding afterwards, and any that is
+  not there is in `categoriesNotBound` with the reason. If none of them can
+  carry a parameter, nothing is done and the shared parameter file setting is
+  never touched. DRAFT, never proved.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -77,6 +92,20 @@ contract:
     - name: boundCategories
       role: result
       type: IList<string>
+    - name: categoriesNotBound
+      # Categories asked for that the parameter is NOT on afterwards, each with
+      # the reason - Revit does not allow a project parameter there, or it was
+      # left out of the binding. Asked for and not delivered, never a thing
+      # it bound (D-52). Version 2.
+      role: accounting
+      type: IList<string>
+    - name: sharedParameterFileRestored
+      # True when Revit's shared parameter file setting reads, afterwards, as
+      # it did before the run. A session setting outside every transaction, so
+      # Undo cannot put it back. Bookkeeping about the run, never a finding
+      # (D-52). Version 2, 5b-317.
+      role: accounting
+      type: bool
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
@@ -96,6 +125,10 @@ compatibility-note: >
   trap: 2021 SHIPS `ForgeTypeId` while this constructor there still takes the
   old enum, so testing whether the type exists gives the wrong answer - the
   constructor's own signature is the only reliable question.
+
+  Version 2 adds `Application.SharedParametersFilename` read as well as set,
+  `Category.AllowsBoundParameters` and `CategorySet.Contains(Category)`; the
+  reference assemblies show all three present and unchanged 2020 through 2027.
 
 # ROUTING - repeated in WRITE_ELEMENT_PARAMETERS and COPY_PARAMETER_VALUE.
 #

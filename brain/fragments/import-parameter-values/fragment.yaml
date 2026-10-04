@@ -9,7 +9,7 @@ semantic-identity: "put the values from this table back onto the elements they c
 kind: action
 domain: revit.parameters
 capability: IMPORT_PARAMETER_VALUES
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -67,6 +67,24 @@ purpose: >
   describes the code and is kept as a record, and the fragment is DRAFT until it
   is proved again.
 
+  **VERSION 3 TAKES A YES/NO COLUMN BACK, AND ASKS WHAT A BLANK CELL MEANS.**
+  The parameter export writes a tick box as the word Revit shows, Yes or No,
+  and version 2 read an Integer cell only as a whole number - so a file this
+  library had just written could not come back (FRAGMENT-ISSUES 5b-315). A
+  Yes/No parameter is now recognised first, on every release from 2020, the
+  way `WRITE_ELEMENT_PARAMETERS` version 4 recognises one, and takes Yes/No,
+  True/False, On/Off and 1/0 in any case; any other word is refused, counted
+  apart and named. Its read-back is the 1 or 0 Revit holds, not the displayed
+  word. And version 2 cleared a text value wherever its cell was blank, without
+  a word, while refusing the same blank for a number (5b-316). `blankCells` is
+  now ASKED, with no default: `skip` leaves every element whose cell is blank
+  exactly as it was and counts the cells in `blankCellsSkipped`; `clear`
+  empties a TEXT parameter, counts it in `cellsCleared`, and refuses a blank
+  for a number, a tick box or an element reference with the reason. Any other
+  word, or none, refuses the run and nothing is written. The proof below is
+  version 1's and is kept as a record; this version is DRAFT until it is
+  proved.
+
 contract:
   needs:
     - name: doc
@@ -78,6 +96,12 @@ contract:
       source: request
     - name: includeTypeParameters
       type: bool
+      source: request
+    # "skip" or "clear" - what an empty cell means. ASKED, NO DEFAULT: one of
+    # the two deletes what somebody typed, so Heron never picks. Anything
+    # else refuses the run (version 3, 5b-316).
+    - name: blankCells
+      type: string
       source: request
   provides:
     - name: findings
@@ -99,6 +123,17 @@ contract:
       # Values Revit accepted and then read back different. EVERY VALUE
       # WRITTEN IS RE-READ, and these are the ones that did not take (D-52).
       role: accounting
+      type: int
+    - name: blankCellsSkipped
+      # Empty cells left alone because blankCells was "skip". Given and
+      # deliberately not used - never a value written (D-52).
+      role: accounting
+      type: int
+    - name: cellsCleared
+      # Text values emptied because their cell was blank and blankCells was
+      # "clear". Also counted in valuesWritten - this says how many of those
+      # were clears.
+      role: result
       type: int
 
 proof:
@@ -137,6 +172,13 @@ compatibility-note: >
   `Parameter.IsReadOnly`, `Parameter.StorageType`, `Parameter.Set`,
   `Parameter.SetValueString`, `Parameter.AsString` and `Parameter.AsValueString`
   are present and unchanged 2020 through 2027.
+
+  Since version 3 one question crosses that line: is this parameter a Yes/No?
+  `Definition.GetDataType` and `SpecTypeId.Boolean.YesNo` exist from 2022 and
+  `Definition.ParameterType` from 2020 to 2022, so both are reached by
+  reflection and neither is written as a call - the technique
+  `WRITE_ELEMENT_PARAMETERS` version 4 uses. `Parameter.AsInteger` and
+  `Parameter.Set(int)`, used for the tick box, are unchanged 2020 to 2027.
 
   **No `ElementId` is constructed from a number, which is what makes this one
   implementation.** `ElementId(int)` still exists at 2027 and `ElementId(long)`

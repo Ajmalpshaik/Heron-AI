@@ -1,0 +1,130 @@
+# The first proofs of three DRAFT widenings - FRAGMENT-ISSUES 5b-315, 5b-316
+# and 5b-317, NEEDS-CHECKING Group CD:
+#
+#   import-parameter-values      (IMPORT_PARAMETER_VALUES, FRG-PAR-015) v3 -
+#                                a Yes/No column comes back; a blank cell is
+#                                asked about (`blankCells` skip | clear)
+#   add-project-parameter        (ADD_PROJECT_PARAMETER, FRG-PAR-010) v2 -
+#                                Revit's shared parameter file setting put back;
+#                                a category Revit will not bind is named
+#   transfer-project-parameters-between-documents   (FRG-PAR-020) v2 - the
+#                                same setting put back
+#
+#     python tools/batch-prove.py tools/jobs/study-45-import-and-shared-params.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/study-45-import-and-shared-params.yaml
+#
+# RUN ON TEST COPIES, never a working file. `write: true` runs both legs inside
+# a transaction group and ROLLS THEM BACK - but rollback has failed before on
+# this PC, so read the values in Properties afterwards rather than assuming.
+#
+# THE INPUT FILES ARE MADE, NOT FOUND. Everything below reads from one folder,
+# C:/Users/AJMALA~1/AppData/Local/Temp/heron-cc/ - make it first. What goes in
+# it is written beside each job. Paths are an ASSUMPTION of this file; change
+# them all together if the folder moves.
+#
+# THE SHARED PARAMETER SETTING MUST START SOMEWHERE ELSE. Before the two
+# shared-parameter jobs, open Manage > Shared Parameters and point it at a file
+# that is NOT heron-cc-shared.txt - the modeller's own, or
+# heron-cc-other.txt (a copy of any valid shared parameter file). Note the path.
+# If the setting already reads heron-cc-shared.txt, "put back" is put back to
+# the same value and proves nothing. After EACH job, read the box again: it
+# must show the noted path. That reading is the proof of 5b-317;
+# `sharedParameterFileRestored` is the fragment's own word for it.
+#
+# NOT KEPT, AND NOT UNDOABLE: the add-project-parameter positive WRITES a
+# definition into heron-cc-shared.txt on disk the first time. That file lives in
+# the scratch folder for that reason.
+
+model: >
+  Project1 "heron ai bulding" (a test copy), Revit 2024 - 15 fan coil units with
+  the instance Yes/No Show_Clearance; and for the transfer, that copy plus a
+  second open test copy as the source
+
+defaults:
+  write: true
+
+jobs:
+  # ---------------------------------------------------------------- 5b-315/315
+  # MAKE THE FILES FROM THE MODEL. Run EXPORT_PARAMETERS_TO_CSV over the 15 fan
+  # coil units with Show_Clearance and Comments, save it as
+  # import-yesno.csv, then by hand:
+  #   - flip every Show_Clearance cell (Yes -> No, No -> Yes), so all 15 must
+  #     change. Write two of them as "true"/"OFF" to cover the other words
+  #   - type "keep me" into ONE unit's Comments in Revit first, and leave that
+  #     unit's Comments cell EMPTY in the file
+  # Then copy it to import-maybe.csv and change every Show_Clearance cell to
+  # "Maybe" and empty every Comments cell.
+  #
+  # POSITIVE: 15 values written for Show_Clearance, none READS BACK DIFFERENT,
+  # blankCellsSkipped 1 and that unit's Comments still "keep me".
+  # NEGATIVE: the SAME 15 units, every Yes/No cell "Maybe", every text cell
+  # blank - valuesWritten 0, 15 counted as not a Yes/No word, 15 blank cells
+  # skipped, every tick box as it was. The same set on purpose: a different set
+  # would pass by having nothing in it.
+  - fragment: import-parameter-values
+    expect: valuesWritten
+    keep-chain: true
+    setup:
+      - filter-elements-by-category
+    setup-set:
+      category: Mechanical Equipment
+      levelId: none
+    set:
+      csvPath: "C:/Users/AJMALA~1/AppData/Local/Temp/heron-cc/import-yesno.csv"
+      includeTypeParameters: false
+      blankCells: skip
+    negative-setup-set:
+      category: Mechanical Equipment
+      levelId: none
+    negative-set:
+      csvPath: "C:/Users/AJMALA~1/AppData/Local/Temp/heron-cc/import-maybe.csv"
+      includeTypeParameters: false
+      blankCells: skip
+    note: >
+      Then, by hand or as a single run, the same import-yesno.csv with
+      blankCells "clear" (that unit's Comments empties, cellsCleared 1) and
+      with blankCells "" (refused, nothing written on any unit).
+
+  # ---------------------------------------------------------------- 5b-317
+  # heron-cc-shared.txt: a valid shared parameter file, header and META only,
+  # or let the positive create it. POSITIVE binds HERON_CC_TAG to Ducts.
+  # NEGATIVE: the same file and name, asked ONLY for a category Revit does not
+  # let a project parameter onto - nothing bound, that category NAMED in
+  # categoriesNotBound, and the setting never changed. "Cameras" below is MY
+  # ASSUMPTION of such a category: confirm it first in Manage > Project
+  # Parameters (it must not be in the category list there), and pick another
+  # if it is.
+  - fragment: add-project-parameter
+    expect: bound
+    setup: []
+    set:
+      sharedParameterFile: "C:/Users/AJMALA~1/AppData/Local/Temp/heron-cc/heron-cc-shared.txt"
+      groupName: "HERON"
+      parameterName: "HERON_CC_TAG"
+      categories: "Ducts"
+      instanceBinding: true
+    negative-set:
+      sharedParameterFile: "C:/Users/AJMALA~1/AppData/Local/Temp/heron-cc/heron-cc-shared.txt"
+      groupName: "HERON"
+      parameterName: "HERON_CC_TAG"
+      categories: "Cameras"
+      instanceBinding: true
+
+  # ARRANGEMENT: a second test copy open in the same Revit as the source, with
+  # HERON_CC_TAG from heron-cc-shared.txt bound to Ducts and KEPT there (by
+  # hand in Manage > Project Parameters, or add-project-parameter run without
+  # rollback on that copy). Set sourceDocumentTitle to its title.
+  # POSITIVE: HERON_CC_TAG bound here, setting put back.
+  # NEGATIVE: nameContains matching nothing - `refused` says so, nothing bound,
+  # this project's parameters exactly as they were, setting put back.
+  - fragment: transfer-project-parameters-between-documents
+    expect: bound
+    setup: []
+    set:
+      sourceDocumentTitle: "SOURCE TEST COPY TITLE"
+      sharedParameterFile: "C:/Users/AJMALA~1/AppData/Local/Temp/heron-cc/heron-cc-shared.txt"
+      nameContains: "HERON_CC"
+    negative-set:
+      sourceDocumentTitle: "SOURCE TEST COPY TITLE"
+      sharedParameterFile: "C:/Users/AJMALA~1/AppData/Local/Temp/heron-cc/heron-cc-shared.txt"
+      nameContains: "ZZZ NO SUCH PARAM"

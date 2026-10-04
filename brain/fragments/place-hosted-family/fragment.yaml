@@ -9,13 +9,38 @@ semantic-identity: "put a door or a window into this wall"
 kind: action
 domain: revit.elements
 capability: PLACE_HOSTED_FAMILY
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Places a door or a window INTO the wall at each point given, and turns each
-  one so it swings toward the room named for it.
+  Places a door or a window INTO the wall at each point given, turns each one
+  so it swings toward the room named for it, and - when a sill height is
+  given - sets each one's sill to it and reads it back.
+
+  **VERSION 3 SETS THE SILL, AND READS IT EITHER WAY.** `sillHeight` is in
+  millimetres above the level, or blank. BLANK IS VERSION 2 EXACTLY: the sill
+  is left as Revit placed it - but what each door or window reads is still
+  reported, in `sills`, because a window placed through the API has been said
+  to land with its sill at 0. Nobody here has measured that; the reading
+  settles it either way. Given a sill:
+  - **Checked before placing.** Level + sill + the type's Height (the
+    built-in Height doors and windows both use) against the top of the wall
+    found at the point. A head that would stand above the wall skips that
+    point - `sillTooHigh` - and nothing is placed or changed there. A type
+    whose Height is on the instance cannot be read this cheaply, and the reply
+    counts those points as not checked rather than guessing.
+  - **Set on the built-in Sill Height and nothing else.** A family without one,
+    or with it read-only, is never given some other parameter found by its name
+    - a typed name may repeat (FRAGMENT-ISSUES 5b-203). One this call placed is
+    removed again inside the same undo; one already there is left as it was.
+    Both are named in `noSillParameter`. **A door or window already in the
+    wall is never given the asked sill** - this call did not place it; its sill
+    is read and said in `sills`, and nothing on it changes.
+  - **Read back after a regenerate**, and set beside what was asked in `sills`.
+    More than 1 mm out is named in `sillWrong`, never counted as right.
+
+  **VERSION 2'S RECORD FOLLOWS, UNCHANGED.**
 
   **VERSION 1 COULD NOT BE GIVEN A WALL BY NAME.** It took the host as one
   element, and a wall instance has no name anybody could type: the add-in
@@ -99,6 +124,15 @@ contract:
     - name: level
       type: Level
       source: request
+    # VERSION 3. Millimetres above the level - "900" - or BLANK for version
+    # 2's behaviour: the sill left as Revit placed it, and only read. A string
+    # so that blank can mean "not asked". NOT marked `optional: true`, because
+    # nothing would honour it: the add-in refuses any `source: request` need
+    # that arrives with no value unless it is a bool (FRAGMENT-ISSUES 5b-227
+    # and 5b-252). Send it, blank or not.
+    - name: sillHeight
+      type: string
+      source: request
   provides:
     - name: placed
       role: result
@@ -153,6 +187,28 @@ contract:
       # counted as right (D-52).
       role: accounting
       type: IList<string>
+    - name: sills
+      # VERSION 3. One line per door or window kept: the sill asked and the
+      # sill read back, or - with no sill asked - what Revit placed it at. A
+      # reading, never a thing it did, so it banks nothing.
+      role: accounting
+      type: IList<string>
+    - name: sillWrong
+      # Sills that read back more than 1 mm from what was asked. Named, never
+      # counted as right (D-52).
+      role: accounting
+      type: IList<string>
+    - name: noSillParameter
+      # Doors and windows whose family has no usable built-in Sill Height. One
+      # this call placed was removed again; one already there was left alone.
+      # No other parameter is ever tried by name (5b-203).
+      role: accounting
+      type: IList<string>
+    - name: sillTooHigh
+      # Points skipped before placing: the sill plus the type's Height would
+      # put the head above the wall's top. Given and unusable (D-52).
+      role: accounting
+      type: IList<string>
     - name: findings
       type: IList<string>
 
@@ -167,6 +223,13 @@ compatibility-note: >
   not a structural member, and PLACE_STRUCTURAL_FAMILY is where that decision
   belongs. Points arrive in internal FEET (D-20).
 
+  Version 3, read off the reference assemblies 2020 to 2027 on 2026-10-04:
+  `BuiltInParameter.INSTANCE_SILL_HEIGHT_PARAM` and `FAMILY_HEIGHT_PARAM`
+  (one value, which `DOOR_HEIGHT` and `WINDOW_HEIGHT` share), `Element.get_Parameter
+  (BuiltInParameter)`, `Element.get_BoundingBox(View)`, `Parameter.Set(double)`,
+  `IsReadOnly`, `StorageType` and `AsDouble` - one signature each across all
+  eight. The sill arrives in millimetres and becomes feet by / 304.8 (D-20).
+
 # ROUTING - repeated in PLACE_FAMILY_INSTANCES and PLACE_FAMILY_ON_FACE.
 #
 #   "put a door in this wall"       -> here
@@ -177,6 +240,9 @@ compatibility-note: >
 #   "the plan is off to the side,   -> CENTER_VIEWPORTS_ON_SHEETS - a viewport
 #    centre it"                        on a sheet, not a family in a wall. The
 #                                      sentence reached here until 2026-09-27
+
+# VERSION 3: "put the windows in at a 900 sill" is still here - the sill is a
+# value of this job, not a second tool.
 
 utterances:
   - put a door in this wall

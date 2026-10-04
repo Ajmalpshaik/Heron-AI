@@ -1,6 +1,7 @@
-// NOT STANDALONE. Assumes `doc`, `elements`, `csvPath` and
-// `includeTypeParameters` are in scope; leaves `findings`, `valuesWritten`,
-// `rowsMatched`, `rowsUnmatched` and `valuesRejected` behind.
+// NOT STANDALONE. Assumes `doc`, `elements`, `csvPath`,
+// `includeTypeParameters` and `blankCells` are in scope; leaves `findings`,
+// `valuesWritten`, `rowsMatched`, `rowsUnmatched`, `valuesRejected`,
+// `blankCellsSkipped` and `cellsCleared` behind.
 //
 // IT WRITES, AND IT OPENS NO TRANSACTION. Golden Rule 16: a fragment assumes one
 // is open. A partial import is undone by the caller's own rollback, with
@@ -22,12 +23,99 @@
 //
 // THREE KINDS OF SKIP, COUNTED APART: read-only target, unknown parameter name,
 // and a value Revit would not take. Three different fixes.
+//
+// ===========================================================================
+// VERSION 3: A YES/NO COLUMN COMES BACK, AND A BLANK CELL IS ASKED ABOUT.
+// ===========================================================================
+//
+// A YES/NO PARAMETER IS A TICK BOX, NOT A NUMBER THAT PARSES (FRAGMENT-ISSUES
+// 5b-315). Revit stores it as the Integer 1 or 0, and the parameter export
+// writes it as the text Revit shows - "Yes" or "No" - so version 2's
+// int.TryParse refused every cell of a file this library had just written. A
+// Yes/No parameter is now found first, the way WRITE_ELEMENT_PARAMETERS
+// version 4 finds one: the kind is read by reflection, `Definition.GetDataType`
+// against `SpecTypeId.Boolean.YesNo` where the running Revit has them (2022
+// on) and `Definition.ParameterType` where it has that instead (2020 to 2022).
+// The add-in compiles fragments with no release symbols, so an `#if` would
+// take the same branch everywhere. Yes/No, True/False, On/Off and 1/0 in any
+// case are taken; anything else is refused, counted apart and named. The
+// read-back for a tick box is `AsInteger` against the 1 or 0 asked for - the
+// displayed word is the UI language's, so comparing words could call a good
+// write different.
+//
+// A BLANK CELL USED TO CLEAR TEXT SILENTLY (5b-316). Version 2 called Set("")
+// on a text parameter for an empty cell - wiping a value somebody typed,
+// without a word - and refused the same blank for a number. Which one a blank
+// means is the modeller's to say, so `blankCells` is ASKED, with no default:
+// "skip" leaves the element exactly as it is and counts the cell in
+// `blankCellsSkipped`; "clear" empties a TEXT parameter, counts it in
+// `cellsCleared`, and refuses a blank for a number, a Yes/No or an element
+// reference with the reason, because those have no empty value a file can set.
+// Any other word, or none, refuses the run and NOTHING is written.
 
 var findings = new List<string>();
 var valuesWritten = 0;
 var rowsMatched = 0;
 var rowsUnmatched = 0;
 var valuesRejected = 0;
+var blankCellsSkipped = 0;
+var cellsCleared = 0;
+
+// Asked, never assumed. Null for a word that is neither.
+var blankWord = (blankCells ?? "").Trim().ToLowerInvariant();
+var blankMode = blankWord == "skip" || blankWord == "clear" ? blankWord : null;
+
+// SpecTypeId.Boolean.YesNo on 2022 and later; null on 2020 and 2021, which
+// answer through ParameterType instead. The same lookup WRITE_ELEMENT_PARAMETERS
+// version 4 makes.
+var yesNoSpecs = typeof(Document).Assembly.GetType(typeof(Document).Namespace + ".SpecTypeId+Boolean");
+var yesNoProperty = yesNoSpecs == null ? null : yesNoSpecs.GetProperty("YesNo",
+    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+var yesNoSpec = yesNoProperty == null ? null : yesNoProperty.GetValue(null, null);
+
+Func<Parameter, bool> isYesNo = p =>
+{
+    if (p.StorageType != StorageType.Integer) return false;
+    try
+    {
+        var definition = p.Definition;
+        if (definition == null) return false;
+
+        var getDataType = definition.GetType().GetMethod("GetDataType", System.Type.EmptyTypes);
+        if (getDataType != null && yesNoSpec != null)
+        {
+            var spec = getDataType.Invoke(definition, null);
+            if (spec == null) return false;
+            // NameEquals, because a spec id carries its version and a parameter
+            // made under another version must still read as a tick box.
+            var nameEquals = spec.GetType().GetMethod("NameEquals", new[] { yesNoSpec.GetType() });
+            return nameEquals != null
+                ? (bool)nameEquals.Invoke(spec, new[] { yesNoSpec })
+                : spec.Equals(yesNoSpec);
+        }
+
+        var parameterType = definition.GetType().GetProperty("ParameterType");
+        var kind = parameterType == null ? null : parameterType.GetValue(definition, null);
+        return kind != null && kind.ToString() == "YesNo";
+    }
+    catch (Exception)
+    {
+        // Not known to be a tick box, so it takes the plain Integer road, where
+        // a word is refused rather than written wrongly.
+        return false;
+    }
+};
+
+// What a cell means for a tick box: 1, 0, or null for "not a Yes/No word".
+var tickedWords = new[] { "yes", "true", "on", "1" };
+var untickedWords = new[] { "no", "false", "off", "0" };
+Func<string, int?> tickOf = text =>
+{
+    var said = (text ?? "").Trim().ToLowerInvariant();
+    return Array.IndexOf(tickedWords, said) >= 0 ? 1
+        : Array.IndexOf(untickedWords, said) >= 0 ? 0
+        : (int?)null;
+};
 
 // Honours the quoting a spreadsheet export writes: "quoted, fields" and a
 // doubled "" for a literal quote inside one.
@@ -107,7 +195,15 @@ foreach (var element in elements)
     byId[element.Id.ToString()] = element;
 }
 
-if (string.IsNullOrEmpty(csvPath) || !System.IO.File.Exists(csvPath))
+if (blankMode == null)
+{
+    findings.Add("What a blank cell means was not said" + (blankWord.Length > 0 ? " ('" + blankCells
+        + "' is neither word)" : "") + ", so NOTHING was written. Say blankCells 'skip' to leave an "
+        + "element's value as it is wherever its cell is empty, or 'clear' to empty a text parameter "
+        + "wherever its cell is empty - Heron does not choose for you, because one of the two deletes "
+        + "what somebody typed");
+}
+else if (string.IsNullOrEmpty(csvPath) || !System.IO.File.Exists(csvPath))
 {
     findings.Add("There is no file at '" + (csvPath ?? "") + "', so NOTHING was written");
 }
@@ -158,6 +254,8 @@ else
             var unknownParameter = 0;
             var ambiguousName = 0;
             var refusedValue = 0;
+            var notAYesNoWord = 0;
+            var blankNotClearable = 0;
             var problems = new List<string>();
 
             for (var r = 1; r < rows.Count; r++)
@@ -184,6 +282,15 @@ else
                     var parameterName = header[c].Trim();
                     if (parameterName.Length == 0) continue;
                     var wanted = cells[c];
+                    var blank = wanted.Trim().Length == 0;
+
+                    // "skip": an empty cell asks for nothing, so nothing on this
+                    // element is looked up or touched.
+                    if (blank && blankMode == "skip")
+                    {
+                        blankCellsSkipped++;
+                        continue;
+                    }
 
                     // A COLUMN NAME TWO PARAMETERS SHARE IS NOT WRITTEN. A shared or project
                     // parameter can be bound beside a built-in one of the same name, and
@@ -247,12 +354,44 @@ else
                         continue;
                     }
 
+                    // "clear" empties TEXT only. A number, a tick box or an element
+                    // reference has no empty value a file can set, so the blank is
+                    // refused with that reason rather than read as a bad number.
+                    if (blank && parameter.StorageType != StorageType.String)
+                    {
+                        blankNotClearable++;
+                        if (problems.Count < 25)
+                        {
+                            problems.Add("row " + (r + 1) + ": '" + parameterName + "' on id " + element.Id
+                                + " is not text, so a blank cell cannot clear it - it was left as it was");
+                        }
+                        continue;
+                    }
+
+                    var yesNo = isYesNo(parameter);
+                    int? tick = yesNo ? tickOf(wanted) : null;
+                    if (yesNo && tick == null)
+                    {
+                        notAYesNoWord++;
+                        if (problems.Count < 25)
+                        {
+                            problems.Add("row " + (r + 1) + ": '" + wanted + "' is not a Yes/No value, and '"
+                                + parameterName + "' on id " + element.Id + " is a Yes/No parameter - "
+                                + "write Yes or No (True/False, On/Off and 1/0 are taken too). Left as it was");
+                        }
+                        continue;
+                    }
+
                     var accepted = false;
                     try
                     {
-                        if (parameter.StorageType == StorageType.String)
+                        if (yesNo)
                         {
-                            accepted = parameter.Set(wanted);
+                            accepted = parameter.Set(tick.Value);
+                        }
+                        else if (parameter.StorageType == StorageType.String)
+                        {
+                            accepted = parameter.Set(blank ? "" : wanted);
                         }
                         else if (parameter.StorageType == StorageType.Integer)
                         {
@@ -284,12 +423,25 @@ else
                         continue;
                     }
 
-                    // READ BACK. Accepted is not landed.
-                    var landed = parameter.AsString();
-                    if (string.IsNullOrEmpty(landed)) landed = parameter.AsValueString();
-                    if (landed == null) landed = "";
+                    // READ BACK. Accepted is not landed. A tick box is read as its 1 or
+                    // 0, not as the word Revit displays in this UI language.
+                    string landed;
+                    bool same;
+                    if (yesNo)
+                    {
+                        var got = parameter.AsInteger();
+                        landed = got.ToString();
+                        same = got == tick.Value;
+                    }
+                    else
+                    {
+                        landed = parameter.AsString();
+                        if (string.IsNullOrEmpty(landed)) landed = parameter.AsValueString();
+                        if (landed == null) landed = "";
+                        same = landed.Trim() == wanted.Trim();
+                    }
 
-                    if (landed.Trim() != wanted.Trim())
+                    if (!same)
                     {
                         valuesRejected++;
                         if (problems.Count < 25)
@@ -301,6 +453,7 @@ else
                     }
 
                     valuesWritten++;
+                    if (blank) cellsCleared++;
                 }
             }
 
@@ -311,8 +464,13 @@ else
             findings.Add("Skipped: " + unknownParameter + " because the parameter is not there, "
                 + ambiguousName + " because the column's name belongs to two or more parameters, "
                 + readOnlySkips + " because it is read-only, " + refusedValue
-                + " because Revit would not take the value. Those are four different fixes and are "
-                + "counted apart on purpose");
+                + " because Revit would not take the value, " + notAYesNoWord
+                + " because a Yes/No parameter was given a word that is not Yes or No, " + blankNotClearable
+                + " because the cell was blank and the parameter is not text. Those are six different "
+                + "fixes and are counted apart on purpose");
+            findings.Add(blankMode == "skip"
+                ? blankCellsSkipped + " blank cell(s) skipped - those elements keep the value they had"
+                : cellsCleared + " text value(s) CLEARED because their cell was blank, as asked");
         }
     }
 }

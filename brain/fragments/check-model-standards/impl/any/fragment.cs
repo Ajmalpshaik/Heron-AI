@@ -22,12 +22,38 @@
 // MEP SYSTEMS ARE COLLECTED BY CATEGORY. MEPSystem is abstract and Revit rejects
 // an abstract type to OfClass at runtime, which would take the whole sweep down
 // on exactly the workshared MEP model this is for.
+//
+// VERSION 2 - FOUR MORE KEYS IN `namePatterns`, EVERY ONE OPTIONAL. They ride in
+// the table the request already supplies rather than as new needs, because the
+// binder refuses an absent request need of any type but an optional bool
+// (HeronBindingNote.AbsentValue) - a new list here would have stopped every
+// existing caller. Each one is NOT CHECKED when absent, never a zero:
+//
+//   type=<pattern>          type names, as "Family: Type" - no space before the
+//                           colon - over the TYPES of the categories in
+//                           `requiredOn`
+//   room=<pattern>          room names, read from the room's Name parameter (the
+//                           element name carries the number as well)
+//   value:<Parameter>=<p>   the pattern a FILLED value of that required
+//                           parameter must match. A filled value that breaks it
+//                           is counted apart from a blank one: wrong data is a
+//                           different job from missing data
+//   placeholder=<a>,<b>     values the project treats as not filled in - TBD,
+//                           XXX, whatever the request names. Counted as BLANK.
+//                           Nothing is assumed: with no such key, "TBD" is a
+//                           filled value
+//
+// A NAME TWO PARAMETERS SHARE ON ONE ELEMENT IS REPORTED, NOT READ. Revit's
+// LookupParameter returns one of them at random (FRAGMENT-ISSUES row 5b-203, D-54
+// s3), so a value read that way is no evidence of anything. Such an element is
+// counted as NOT READ, apart from blank, filled and absent.
 
 var findings = new List<string>();
 var failures = 0;
 var sectionsChecked = 0;
 var sectionsNotChecked = 0;
 var offenders = new List<ElementId>();
+var totalNotRead = 0;
 
 // `*` and literal text only, case-insensitive. Written out rather than reached
 // for as a regular expression - see the header.
@@ -75,12 +101,65 @@ Func<string, string, bool> matches = (text, pattern) =>
     return true;
 };
 
+// The table's keys are read case-insensitively and trimmed: "View" and "view "
+// are the same rule to the person who typed them. Version 1 read them exactly,
+// so a capital letter turned a rule into NOT CHECKED.
+var rules = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+var valuePatterns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+var placeholders = new List<string>();
+var placeholdersGiven = false;
+var unknownKeys = new List<string>();
+var knownKeys = new[] { "view", "sheet", "level", "workset", "system", "type", "room" };
+
+if (namePatterns != null)
+{
+    foreach (var pair in namePatterns)
+    {
+        var key = (pair.Key ?? "").Trim();
+        var value = (pair.Value ?? "").Trim();
+        if (key.Length == 0) continue;
+
+        if (key.StartsWith("value:", StringComparison.OrdinalIgnoreCase))
+        {
+            var parameterName = key.Substring("value:".Length).Trim();
+            if (parameterName.Length == 0 || value.Length == 0) { unknownKeys.Add(key); continue; }
+            valuePatterns[parameterName] = value;
+            continue;
+        }
+
+        if (string.Equals(key, "placeholder", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(key, "placeholders", StringComparison.OrdinalIgnoreCase))
+        {
+            foreach (var piece in value.Split(','))
+            {
+                var trimmed = piece.Trim();
+                if (trimmed.Length > 0) placeholders.Add(trimmed);
+            }
+            placeholdersGiven = placeholders.Count > 0;
+            continue;
+        }
+
+        if (Array.IndexOf(knownKeys, key.ToLowerInvariant()) >= 0) { rules[key] = value; continue; }
+        unknownKeys.Add(key);
+    }
+}
+
 Func<string, string> patternFor = key =>
 {
-    if (namePatterns == null) return "";
     string pattern = null;
-    if (!namePatterns.TryGetValue(key, out pattern)) return "";
+    if (!rules.TryGetValue(key, out pattern)) return "";
     return pattern ?? "";
+};
+
+// A value is a placeholder when it matches one the request named, by the same
+// wildcard rule as everything else - "TBD" is exactly TBD, "TBC*" allows a tail.
+Func<string, bool> isPlaceholder = value =>
+{
+    if (!placeholdersGiven) return false;
+    var trimmed = (value ?? "").Trim();
+    foreach (var placeholder in placeholders)
+        if (matches(trimmed, placeholder)) return true;
+    return false;
 };
 
 Func<string, bool> looksSuspect = name =>
@@ -237,6 +316,78 @@ foreach (var element in new FilteredElementCollector(doc)
 }
 section("MEP system names", patternFor("system"), systemNames, systemIds);
 
+// A NEW SECTION RUNS ONLY WHEN ITS OWN KEY WAS GIVEN. Version 1's suspectNames
+// apply to the five sections version 1 had; letting them reach type and room
+// names would have grown a version 1 caller's failures with no key asking for
+// it (review of PR #410). Absent key: NOT CHECKED, said in words.
+Action<string, string> notAsked = (title, key) =>
+{
+    findings.Add("");
+    findings.Add(title.ToUpper());
+    sectionsNotChecked++;
+    findings.Add("  NOT CHECKED - no '" + key + "=' pattern was given, so " + title.ToLower()
+        + " were not looked at. THIS IS NOT A PASS");
+};
+
+// ---- type names, as "Family: Type" (version 2) ----
+// Over the TYPES of the categories in `requiredOn` - the same categories the
+// parameter rules cover, so one list says which part of the model is in scope.
+// "Family: Type" with no space before the colon is the form Heron writes a type
+// name in everywhere else, so a pattern written for one tool works in another.
+var typeCategoryIds = new List<ElementId>();
+if (requiredOn != null)
+    foreach (var category in requiredOn)
+        if (category != null) typeCategoryIds.Add(category.Id);
+
+if (patternFor("type").Length == 0)
+{
+    notAsked("Type names", "type");
+}
+else if (typeCategoryIds.Count == 0)
+{
+    findings.Add("");
+    findings.Add("TYPE NAMES");
+    sectionsNotChecked++;
+    findings.Add("  NOT CHECKED - type names are checked over the types of the categories in "
+        + "requiredOn, and no category was given" + (patternFor("type").Length > 0
+            ? ". A type pattern WAS given ('" + patternFor("type") + "') and could not be applied"
+            : ""));
+}
+else
+{
+    var typeNames = new List<string>();
+    var typeIds = new List<ElementId>();
+    foreach (var element in new FilteredElementCollector(doc)
+        .WherePasses(new ElementMulticategoryFilter(typeCategoryIds))
+        .WhereElementIsElementType())
+    {
+        var type = element as ElementType;
+        if (type == null) continue;
+        var familyName = type.FamilyName ?? "";
+        typeNames.Add(familyName.Length > 0 ? familyName + ": " + type.Name : type.Name);
+        typeIds.Add(type.Id);
+    }
+    section("Type names", patternFor("type"), typeNames, typeIds);
+}
+
+// ---- room names (version 2) ----
+// Read from the Name parameter, not Element.Name: a room's element name carries
+// its number as well, so a pattern for the name would fail on every room.
+var roomNames = new List<string>();
+var roomIds = new List<ElementId>();
+if (patternFor("room").Length > 0)
+foreach (var element in new FilteredElementCollector(doc)
+    .OfCategory(BuiltInCategory.OST_Rooms)
+    .WhereElementIsNotElementType())
+{
+    if (element == null) continue;
+    var nameParameter = element.get_Parameter(BuiltInParameter.ROOM_NAME);
+    roomNames.Add(nameParameter == null ? "" : (nameParameter.AsString() ?? ""));
+    roomIds.Add(element.Id);
+}
+if (patternFor("room").Length == 0) notAsked("Room names", "room");
+else section("Room names", patternFor("room"), roomNames, roomIds);
+
 // ---- the parameters the project requires ----
 findings.Add("");
 findings.Add("REQUIRED PARAMETERS");
@@ -246,7 +397,10 @@ if (requiredOn == null || requiredOn.Count == 0
 {
     sectionsNotChecked++;
     findings.Add("  NOT CHECKED - no categories or no parameter names were given. Nothing here says "
-        + "the data is complete");
+        + "the data is complete"
+        + (valuePatterns.Count > 0 ? ". " + valuePatterns.Count + " value pattern(s) were given and "
+            + "could not be applied" : "")
+        + (placeholdersGiven ? ". The placeholders named were not used" : ""));
 }
 else
 {
@@ -276,21 +430,46 @@ else
         {
             if (string.IsNullOrEmpty(parameterName)) continue;
 
+            string valuePattern = null;
+            valuePatterns.TryGetValue(parameterName, out valuePattern);
+            var valuePatternGiven = !string.IsNullOrEmpty(valuePattern);
+
             var blank = 0;
+            var asPlaceholder = 0;
             var absent = 0;
             var filled = 0;
+            var wrongForm = 0;
+            var notRead = 0;
             var shown = 0;
 
             foreach (var element in subjects)
             {
                 if (element == null) continue;
 
-                var parameter = element.LookupParameter(parameterName);
-                if (parameter == null)
+                // THE SAME-NAME GUARD, row 5b-203. Two parameters with this name on
+                // the element - or, when the element has none, on its type - and
+                // LookupParameter would hand back one of them at random. Reported,
+                // never read: a value picked that way is no evidence either way.
+                var type = doc.GetElement(element.GetTypeId()) as ElementType;
+                var onElement = element.GetParameters(parameterName).Count;
+                var onType = type == null ? 0 : type.GetParameters(parameterName).Count;
+                if (onElement > 1 || (onElement == 0 && onType > 1))
                 {
-                    var type = doc.GetElement(element.GetTypeId()) as ElementType;
-                    if (type != null) parameter = type.LookupParameter(parameterName);
+                    notRead++;
+                    totalNotRead++;
+                    if (shown < maxRows)
+                    {
+                        shown++;
+                        findings.Add("  '" + parameterName + "' is NOT READ on " + element.Name
+                            + " (id " + element.Id + ") - " + (onElement > 1 ? onElement : onType)
+                            + " parameters on the " + (onElement > 1 ? "element" : "type")
+                            + " share that name, and reading one of them by name picks at random");
+                    }
+                    continue;
                 }
+
+                var parameter = element.LookupParameter(parameterName);
+                if (parameter == null && type != null) parameter = type.LookupParameter(parameterName);
 
                 if (parameter == null)
                 {
@@ -308,16 +487,42 @@ else
 
                 var value = parameter.AsString();
                 if (string.IsNullOrEmpty(value)) value = parameter.AsValueString();
-                if (!parameter.HasValue || string.IsNullOrEmpty(value))
+                var placeholder = parameter.HasValue && !string.IsNullOrEmpty(value)
+                    && value.Trim().Length > 0 && isPlaceholder(value);
+                if (!parameter.HasValue || string.IsNullOrEmpty(value) || value.Trim().Length == 0
+                    || placeholder)
                 {
                     blank++;
+                    if (placeholder) asPlaceholder++;
                     failures++;
                     offenders.Add(element.Id);
                     if (shown < maxRows)
                     {
                         shown++;
                         findings.Add("  '" + parameterName + "' is BLANK on " + element.Name
-                            + " (id " + element.Id + ") - that is data entry");
+                            + " (id " + element.Id + ")"
+                            + (placeholder ? " - it holds '" + value.Trim() + "', a placeholder the "
+                                + "request named" : "")
+                            + " - that is data entry");
+                    }
+                    continue;
+                }
+
+                // FILLED, AND - WHEN A PATTERN WAS GIVEN FOR IT - IN THE WRONG FORM.
+                // Kept apart from blank: somebody typed something, and the fix is
+                // to correct it, not to fill it. The text compared is what Revit
+                // shows, so a number carries its unit.
+                if (valuePatternGiven && !matches(value.Trim(), valuePattern))
+                {
+                    wrongForm++;
+                    failures++;
+                    offenders.Add(element.Id);
+                    if (shown < maxRows)
+                    {
+                        shown++;
+                        findings.Add("  '" + parameterName + "' on " + element.Name + " (id "
+                            + element.Id + ") is '" + value.Trim() + "', which does not match '"
+                            + valuePattern + "'");
                     }
                     continue;
                 }
@@ -325,15 +530,53 @@ else
                 filled++;
             }
 
-            findings.Add("  " + parameterName + ": " + filled + " filled, " + blank + " BLANK, "
-                + absent + " NOT PRESENT on the element at all. Those last two go to different "
-                + "people and are counted apart on purpose");
+            if (blank + absent + wrongForm + notRead > shown)
+                findings.Add("  ... " + (blank + absent + wrongForm + notRead - shown)
+                    + " more for '" + parameterName + "', not listed. The counts are complete");
+
+            findings.Add("  " + parameterName + ": " + filled + " filled"
+                + (valuePatternGiven ? " and matching '" + valuePattern + "', " + wrongForm
+                    + " filled but NOT matching it" : " (value form NOT CHECKED - no value:"
+                    + parameterName + " pattern was given)")
+                + ", " + blank + " BLANK"
+                + (placeholdersGiven ? " (" + asPlaceholder + " of them holding a placeholder)"
+                    : " (placeholders NOT CHECKED - none were named, so a 'TBD' counts as filled)")
+                + ", " + absent + " NOT PRESENT on the element at all"
+                + (notRead > 0 ? ", " + notRead + " NOT READ because two parameters share the name"
+                    : "")
+                + ". Blank and not present go to different people and are counted apart on purpose");
+        }
+
+        foreach (var pattern in valuePatterns)
+        {
+            var required = false;
+            foreach (var parameterName in requiredParameters)
+                if (string.Equals(parameterName, pattern.Key, StringComparison.OrdinalIgnoreCase))
+                    required = true;
+            if (!required)
+                findings.Add("  value:" + pattern.Key + " NOT CHECKED - '" + pattern.Key + "' is not "
+                    + "in requiredParameters, and a value pattern is only applied to a parameter "
+                    + "the run was asked to require");
         }
 
         findings.Add("  categories covered: " + string.Join(", ", categoryNames.ToArray())
             + " (" + subjects.Count + " element(s))");
     }
 }
+
+// A KEY THIS FRAGMENT DOES NOT KNOW IS SAID, NOT DROPPED. "views=" for "view="
+// would otherwise leave the views NOT CHECKED with nothing to say why.
+if (unknownKeys.Count > 0)
+{
+    findings.Add("");
+    findings.Add("RULES NOT UNDERSTOOD");
+    findings.Add("  NOT USED: " + string.Join(", ", unknownKeys.ToArray()) + ". The keys this reads "
+        + "are view, sheet, level, workset, system, type, room, value:<parameter> and placeholder");
+}
+
+if (totalNotRead > 0)
+    findings.Insert(0, totalNotRead + " parameter read(s) were NOT MADE because two parameters share "
+        + "the name on one element - those elements are neither passed nor failed");
 
 findings.Insert(0, string.Format("{0} failure(s) across {1} section(s) checked, {2} section(s) NOT "
     + "CHECKED. Model: {3}. A SECTION NOBODY GAVE A RULE FOR IS NOT A SECTION THAT PASSED - read the "

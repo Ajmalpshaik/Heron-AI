@@ -11,7 +11,25 @@ positive:
     expect: >
       only the parameters whose names contain AJ_, and no other binding touched
 
+  - given: >
+      version 2 - Manage > Shared Parameters pointing at a file of the
+      modeller's own (note its path first), and the transfer run with a
+      DIFFERENT shared parameter file that defines the template's parameters
+    expect: >
+      the template's shared parameters bound here, sharedParameterFileRestored
+      true, and Manage > Shared Parameters afterwards showing the modeller's
+      own file again - read in Revit's dialog. Version 1 left it pointing at the
+      file given (5b-317)
+
 negative:
+  - given: >
+      version 2 - the source project NOT open, with Manage > Shared Parameters
+      pointing at the modeller's own file
+    expect: >
+      `refused` naming what is open, nothing bound, and Manage > Shared
+      Parameters still showing the modeller's own file - the setting is never
+      changed when nothing is attempted
+
   - given: a NON-SHARED project parameter in the source
     expect: >
       it named in `skipped` saying it cannot be carried - NOT quietly left out.
@@ -53,3 +71,8 @@ second_route:
     category list behind each one. A name appearing in this project is not
     proof: select an element of a bound category and check the parameter is
     actually on it, in the group you expected
+
+  - >
+    Version 2: open Manage > Shared Parameters after the run and read the path
+    in its box - it must be the one noted before the run, whatever the report
+    says
