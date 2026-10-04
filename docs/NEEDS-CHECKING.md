@@ -151,6 +151,10 @@ Say *"A1 passed"* or *"D3 failed, here is what it said"* and that is enough.
 **Each item states what PASS actually looks like**, because "it seemed to work" is how an untested claim
 becomes a proven one without anything being proven.
 
+**A merge conflict at the end of the group list is two new groups, not a choice.** Keep both, in
+letter order; `check-docs` fails on a group file the index no longer names. The recipe is
+[`heron-ship` §6a](../.claude/skills/heron-ship/SKILL.md).
+
 **Delete an item only when it has passed** — not when it has been read, and not when the code looks
 right. Add an item every time something is built away from Revit.
 
@@ -464,6 +468,14 @@ Step 6 is finished, and not before. At that point:
 ## Group BZ - every setting of a family connector already made, Global included, and a list of a family's connectors (2026-10-04)
 
 **Its own file:** [`needs-checking/group-bz.md`](needs-checking/group-bz.md)
+
+## Group CA - family parameters switched between type and instance, in the order their formulas allow (2026-10-04)
+
+**Its own file:** [`needs-checking/group-ca.md`](needs-checking/group-ca.md)
+
+## Group CB - checking an MEP family will connect and resize, in the Family Editor, before it is loaded (2026-10-04)
+
+**Its own file:** [`needs-checking/group-cb.md`](needs-checking/group-cb.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

@@ -192,7 +192,8 @@ the moment it fills with things somebody thought might be wrong, it stops being 
 or 5b goes **at the end of that section's last rows file**, whatever its number, and the next run of
 [`tools/split-register.py`](../tools/split-register.py) moves it to the file its number belongs to.
 Anything else goes in its section's file, and a new section goes on this page, in full, for the next run
-to move.
+to move. Two branches adding rows at that end conflict there: keep both rows, in row-number order - the
+recipe is [`heron-ship` §6a](../.claude/skills/heron-ship/SKILL.md).
 
 **Nothing leaves this register except by [`tools/archive-fragment-issues.py`](../tools/archive-fragment-issues.py)**,
 which moves a finished row of section 5 or 5b to [`fragment-issues-archive/`](fragment-issues-archive/README.md)

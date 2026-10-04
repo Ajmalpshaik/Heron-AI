@@ -8,16 +8,16 @@ people who actually do BIM work are worth more than contributions from people wh
 > add-in has since been deployed to Revit 2020, 2024 and 2027, and D-28's executor compiles a
 > fragment's C# inside Revit's own process, so fragments do now meet real models.
 >
-> **318 of the 467 fragments are `PROVEN`** — each on a recorded run against a named model.
-> **149 of the 467 fragments are `DRAFT`**, which is Heron's word for *not proven as it stands* - most
-> have never met a model, and some were proved before their code changed.
-> **All twenty-four skills are still `DRAFT`.** Derived 2026-10-02.
+> **Most fragments are `PROVEN`** — each on a recorded run against a named model. **The rest are
+> `DRAFT`**, which is Heron's word for *not proven as it stands* - most of those have never met a
+> model, and some were proved before their code changed. **All twenty-four skills are still `DRAFT`.**
+> No count is typed here, on purpose: every fragment pull request moved it and conflicted with the next.
 >
 > Derive it rather than believing this line —
 > `grep -h '^heron-status:' brain/fragments/*/fragment.yaml | sort | uniq -c`.
 >
-> Both figures are written in the one form `tools/check-docs.py` can verify, and that is deliberate.
-> This paragraph said *"167 of the 360 carry a recorded proof"* and *"193 fragments have still never
+> This paragraph used to carry both figures, in the one form `tools/check-docs.py` can verify; it
+> carries none since 2026-10-04, because a number nobody types cannot drift. It also said *"167 of the 360 carry a recorded proof"* and *"193 fragments have still never
 > met a model"* until 2026-09-21 — **wrong by 160**, in wording three words outside the pattern the
 > gate matches, directly above its own instruction to derive it
 > ([row 5b-50](docs/FRAGMENT-ISSUES.md)).
