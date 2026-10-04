@@ -28,6 +28,16 @@ positive:
       in millimetres and "same height" or "DIFFERS by N mm", checked by
       reading one level head in a section with the link visible
 
+  # Version 3, added 2026-10-04. NOT RUN.
+  - given: >
+      a model with one level whose Building Story box is UNTICKED, with a known
+      number of ducts, a wall and a piece of equipment on it
+    expect: >
+      storeys names that level as NOT a Building Story with a count equal to
+      the model elements on it - the ducts INCLUDED, which is the MEP
+      start-level step working. Check the count against SELECT_BY_LEVEL on the
+      same level, restricted to model categories
+
 negative:
   - given: >
       a model where the two heights AGREE but the survey point sits above the
@@ -71,8 +81,24 @@ negative:
       "NO level of that name in this model" on its line - never compared
       with the nearest level by height
 
+  # Version 3, added 2026-10-04. NOT RUN.
+  - given: a model whose levels are ALL ticked Building Story
+    expect: >
+      storeys reads "Every level is marked Building Story" and NAMES every
+      level read - not a bare 0, and no count line for any level
+
+  - given: >
+      an UNTICKED level that only views, a sheet's annotation or tags refer to,
+      with no model element on it
+    expect: >
+      that level listed as NOT a Building Story with 0 model elements on it -
+      its floor plan and tags are not counted as things on the level
+
 second_route:
   - >
     place a spot elevation on a floor in Revit and compare it against the level
     height this reports - they agree only when the model is not affected
   - open Manage > Project Location and read the survey point's Z by eye
+  - >
+    version 3: click each level head and read its Building Story box in
+    Properties, and run SELECT_BY_LEVEL on an unticked level for the count

@@ -1,0 +1,86 @@
+# Proof plan for two READ widenings built 2026-10-04, both DRAFT and NOT RUN:
+#
+#   report-location           REPORT_LOCATION          FRG-GEO-025  version 3
+#                             shared coordinates beside internal ones, the
+#                             angle to true north, the project base point and
+#                             survey point, and the distance from the internal
+#                             origin
+#   report-level-elevations   REPORT_LEVEL_ELEVATIONS  FRG-DOC-010  version 3
+#                             each level's Building Story setting, and a count
+#                             of model elements on every level NOT marked
+#
+#     python tools/batch-prove.py tools/jobs/study-44-coordinates-and-storeys.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/study-44-coordinates-and-storeys.yaml
+#
+# Run by the owner, on test copies, never by the session that wrote it.
+#
+# THE ARRANGEMENT - two models open at once in Revit 2024:
+#
+#   Snowdon-scratch_ajmal.al   the scratch copy of the Snowdon Towers sample.
+#                              REPORT_LEVEL_ELEVATIONS' own proof (2026-09-13)
+#                              measured a survey point 780.5 mm above the
+#                              project origin on Snowdon Towers, so its shared
+#                              elevations differ from its internal ones. Its
+#                              horizontal offset and angle were never read -
+#                              the site lines in the reply will say.
+#                              BEFORE THE RUN, untick "Building Story" by hand
+#                              on ONE level that has ducts or equipment on it,
+#                              unless the first read shows one unticked already.
+#   Project1                   REPORT_LEVEL_ELEVATIONS' proof measured its
+#                              survey offset as 0 on 2026-09-13, when it was an
+#                              unsaved default-template model. It has been built
+#                              in since: if the site lines in the negative reply
+#                              show the survey point moved, the negative is NOT
+#                              the zero-offset case and must be re-arranged on a
+#                              fresh model from the default template. Its levels
+#                              must ALL be ticked Building Story (the template's
+#                              default) - check one by hand.
+
+model: Snowdon-scratch_ajmal.al + Project1, Revit 2024
+
+defaults:
+  setup:
+    - select-by-category-name
+    - set-selection
+
+jobs:
+  # POSITIVE: Snowdon, shared coordinates asked for - each position given twice,
+  # the shared elevation differing from the internal one by the survey offset.
+  # NEGATIVE: Project1, the same switch - shared numbers EQUAL to internal, angle
+  # to true north 0. A fragment that shifted everything by an assumed or a
+  # remembered offset fails here.
+  - fragment: report-location
+    in: "Snowdon-scratch_ajmal.al"
+    negative-in: "Project1"
+    expect: locations
+    set:
+      categoryName: Mechanical Equipment
+      inViewOnly: "FloorPlan: L3"
+      sharedCoordinates: true
+    negative-set:
+      categoryName: Air Terminals
+      inViewOnly: ""
+      sharedCoordinates: true
+    note: >
+      Check one element's shared pair against a Spot Coordinate placed on it
+      in Revit, reporting from the Survey Point. Then run the positive once more
+      with sharedCoordinates false: the internal numbers must be identical to
+      this run's, and the reply must say internal and project north.
+
+  # POSITIVE: Snowdon with one level unticked - that level named with its count
+  # of model elements, ducts included. NEGATIVE: Project1, every level ticked -
+  # "Every level is marked Building Story" with the levels NAMED, never a bare 0.
+  - fragment: report-level-elevations
+    in: "Snowdon-scratch_ajmal.al"
+    negative-in: "Project1"
+    setup: []
+    expect: storeys
+    set:
+      includeLinks: false
+    negative-set:
+      includeLinks: false
+    note: >
+      Check the unticked level's count against SELECT_BY_LEVEL on that level,
+      restricted to model categories. The survey-offset half of this tool is
+      unchanged from version 2 and its answer must still read 780.5 mm on
+      Snowdon and 0 on Project1.

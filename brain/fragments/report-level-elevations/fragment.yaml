@@ -9,7 +9,7 @@ semantic-identity: "whether this model's level heights can be trusted in a calcu
 kind: action
 domain: revit.document
 capability: REPORT_LEVEL_ELEVATIONS
-version: 2
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -66,6 +66,23 @@ purpose: >
   would look up here (FRAGMENT-ISSUES row 75). Links nested inside a link
   are not read, and are counted in the answer. This is version 2; version
   1's proof no longer describes the code, and the fragment is DRAFT until
+  it is proved again.
+
+  **WHICH LEVELS ARE BUILDING STORIES, AND WHAT STANDS ON THE ONES THAT ARE
+  NOT (version 3).** Every reply now carries `storeys`: each level's
+  "Building Story" setting, and for every level NOT marked, how many model
+  elements have that level as their level. An IFC export makes a storey only
+  from a level marked Building Story, so elements on an unmarked level are
+  put in another storey on the way out. An element's level is found the way
+  SELECT_WITHOUT_LEVEL finds it, in its four steps and order, ending on an
+  MEP curve's start level, because a duct keeps its level nowhere else. Only
+  model elements are counted; views, sheets and annotation carry a level
+  too and go into no storey. **Numbers, never a verdict** - an unmarked
+  level with nothing on it is harmless, and one with elements on it is the
+  modeller's call. When every level is marked the reply says so and names
+  the levels it read, rather than printing a bare zero. Linked models are
+  not read for this, whatever `includeLinks` says. Versions 1 and 2 above
+  are kept as the record; this is version 3, and the fragment is DRAFT until
   it is proved again.
 
 contract:
@@ -126,6 +143,13 @@ contract:
       # up in THIS model (FRAGMENT-ISSUES row 75).
       role: accounting
       type: IList<string>
+    - name: storeys
+      # Version 3. One line saying how many levels are marked Building Story,
+      # then one line per UNMARKED level with the count of model elements on
+      # it. Every level marked is said in words with the levels named - never
+      # a bare zero. Text, because it is read by a person, not chained.
+      role: result
+      type: IList<string>
 
 proof:
   date: '2026-09-13'
@@ -148,7 +172,10 @@ compatibility-note: >
   One implementation for every release. `Level.Elevation`,
   `Level.ProjectElevation`, `BasePoint.Position` and `BasePoint.SharedPosition`
   are unchanged 2020 to 2027, and `LEVEL_RELATIVE_BASE_TYPE` is present on all
-  of them. Heights are handed on in Revit's internal feet, not millimetres -
+  of them. Version 3's members were looked up in every release's reference
+  assemblies on 2026-10-04: `LEVEL_IS_BUILDING_STORY`, `FAMILY_LEVEL_PARAM`,
+  `RBS_START_LEVEL_PARAM`, `Parameter.AsInteger` and `Category.CategoryType`
+  are present 2020 to 2027. Heights are handed on in Revit's internal feet, not millimetres -
   D-20 keeps the conversion at the edge where the user is, and this fragment is
   about which of two numbers to use rather than about units.
 
@@ -162,6 +189,13 @@ compatibility-note: >
 #   "list the levels"                 -> LIST_LEVELS - the levels themselves;
 #                                        this fragment is about whether their
 #                                        heights can be trusted
+#   "where exactly is this"           -> REPORT_LOCATION - an ELEMENT's
+#                                        position, internal or shared; this
+#                                        fragment is about LEVELS
+#
+# Version 3's Building Story report has NO utterance of its own yet: no
+# modeller has asked for it in words, and none is invented. A sentence about
+# levels ranks LIST_LEVELS first today.
 
 utterances:
   - can I trust the level heights on this model

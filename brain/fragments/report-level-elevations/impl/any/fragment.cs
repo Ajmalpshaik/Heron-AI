@@ -1,6 +1,7 @@
 // NOT STANDALONE. Assumes `doc` and `includeLinks` are in scope, and leaves
 // `levels`, `elevations`, `projectElevations`, `worstDifference`, `affected`,
-// `atRisk`, `typesDisagree`, `linksSearched` and `linkedMatches` behind.
+// `atRisk`, `typesDisagree`, `linksSearched`, `linkedMatches` and `storeys`
+// behind.
 //
 // READ ONLY. Opens no transaction and needs none.
 //
@@ -117,6 +118,102 @@ const double Tolerance = 0.0005 / 0.3048;
 bool affected = worstDifference > Tolerance;
 bool atRisk = !affected && surveyOffsetKnown && Math.Abs(surveyOffset) > Tolerance;
 bool typesDisagree = basesSeen.Count > 1;
+
+// ---- Version 3: which levels are Building Stories ---------------------------
+//
+// EACH LEVEL'S "BUILDING STORY" TICK, AND WHAT STANDS ON THE ONES WITHOUT IT.
+// An IFC export makes a storey only from a level ticked Building Story, so an
+// element whose level is NOT ticked is put in some other storey on the way out.
+// This reports the tick and a COUNT - never a verdict: an unticked level with
+// nothing on it is common and harmless, and whether one with elements on it
+// matters is the modeller's call.
+//
+// THE LEVEL OF AN ELEMENT IS LOOKED UP THE WAY SELECT_WITHOUT_LEVEL DOES, in the
+// same four steps and the same order - wall, LevelId, the family's level
+// parameter, then an MEP curve's START level, which is the only place a duct or
+// pipe keeps one. Only MODEL elements are counted: views, sheets and annotation
+// carry a level too, and none of them goes into a storey.
+//
+// THIS MODEL'S LEVELS ONLY. A link's levels are not read for this, with or
+// without `includeLinks`.
+
+var storeys = new List<string>();
+var unticked = new List<Level>();
+var ticked = new List<string>();
+var unreadable = new List<string>();
+
+foreach (var element in levels)
+{
+    var level = element as Level;
+    if (level == null) continue;
+    Parameter flag = null;
+    try { flag = level.get_Parameter(BuiltInParameter.LEVEL_IS_BUILDING_STORY); } catch (Exception) { flag = null; }
+    if (flag == null || !flag.HasValue) { unreadable.Add(level.Name); continue; }
+    if (flag.AsInteger() == 1) ticked.Add(level.Name);
+    else unticked.Add(level);
+}
+
+var onLevel = new Dictionary<ElementId, int>();
+foreach (var level in unticked) onLevel[level.Id] = 0;
+var modelElementsRead = 0;
+
+if (unticked.Count > 0)
+{
+    foreach (var element in new FilteredElementCollector(doc).WhereElementIsNotElementType())
+    {
+        if (element == null || element is Level || element.ViewSpecific) continue;
+        Category category = null;
+        try { category = element.Category; } catch (Exception) { category = null; }
+        if (category == null || category.CategoryType != CategoryType.Model) continue;
+        modelElementsRead++;
+
+        // SELECT_WITHOUT_LEVEL's four steps, in its order.
+        var at = ElementId.InvalidElementId;
+        var wall = element as Wall;
+        if (wall != null) at = wall.LevelId;
+        if (at == ElementId.InvalidElementId) at = element.LevelId;
+        if (at == ElementId.InvalidElementId)
+        {
+            var parameter = element.get_Parameter(BuiltInParameter.FAMILY_LEVEL_PARAM);
+            if (parameter != null && parameter.HasValue) at = parameter.AsElementId();
+        }
+        if (at == ElementId.InvalidElementId)
+        {
+            var parameter = element.get_Parameter(BuiltInParameter.RBS_START_LEVEL_PARAM);
+            if (parameter != null && parameter.HasValue) at = parameter.AsElementId();
+        }
+
+        int count;
+        if (at != ElementId.InvalidElementId && onLevel.TryGetValue(at, out count)) onLevel[at] = count + 1;
+    }
+}
+
+if (unticked.Count == 0 && unreadable.Count == 0)
+{
+    storeys.Add(string.Format("Every level is marked Building Story - {0} level(s) read: {1}",
+        ticked.Count, ticked.Count == 0 ? "(this model has no levels)" : string.Join(", ", ticked)));
+}
+else
+{
+    var onUnticked = 0;
+    foreach (var pair in onLevel) onUnticked += pair.Value;
+    storeys.Add(string.Format("{0} level(s) read: {1} marked Building Story, {2} NOT marked{3}. "
+        + "{4} model element(s) have one of the unmarked levels as their level, of {5} model "
+        + "element(s) read",
+        levels.Count, ticked.Count, unticked.Count,
+        unreadable.Count > 0 ? string.Format(", {0} whose Building Story setting could not be read", unreadable.Count) : "",
+        onUnticked, modelElementsRead));
+    foreach (var level in unticked)
+        storeys.Add(string.Format("  '{0}' at {1:0.0} mm (project) - NOT a Building Story; {2} model "
+            + "element(s) on it", level.Name, level.ProjectElevation * 304.8, onLevel[level.Id]));
+    if (ticked.Count > 0)
+        storeys.Add("  Marked Building Story: " + string.Join(", ", ticked));
+    if (unreadable.Count > 0)
+        storeys.Add("  Building Story could not be read: " + string.Join(", ", unreadable));
+    storeys.Add("An IFC export makes storeys only from levels marked Building Story, so elements "
+        + "on an unmarked level are placed in another storey in the export. These are counts, not "
+        + "a judgement - views, sheets and annotation are not counted, and linked models are not read for this");
+}
 
 // ---- D-59: the links' levels against these, by name -------------------------
 
