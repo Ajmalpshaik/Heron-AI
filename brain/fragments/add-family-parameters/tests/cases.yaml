@@ -12,6 +12,23 @@ positive:
       nothing added, all three in alreadyThere, and no second Width in Family
       Types
 
+  - given: >
+      SWITCHING (version 2). A scratch family made unsaved with
+      CREATE_FAMILY_DOCUMENT, holding the PPR gate valve's shape in small: type
+      A; B = A * 2 and C = B + 1 mm, both type formulas; a pipe connector sized
+      by A; a dimension labelled B. switchExisting true, parameterNames all,
+      instance true, kind and parameterGroup empty
+    expect: >
+      C, B, A switched in that order - read from the formulas, not the names -
+      every one read back as instance, the connector still sized by A and the
+      label still on B, and REPORT_FAMILY_PARAMETERS showing all three as
+      instance with both formulas unchanged
+
+  - given: the same family, now all instance, switched back with instance false
+    expect: >
+      A, B, C switched in that order, read back as type, the connector and the
+      label kept
+
 negative:
   - given: >
       parameterNames "Width" where the family already has an INSTANCE Width,
@@ -39,7 +56,50 @@ negative:
   - given: a project in front
     expect: notAFamily true and nothing added anywhere
 
+  - given: >
+      switchExisting true, parameterNames A alone, instance true - while B, a
+      TYPE parameter, reads A in its formula
+    expect: >
+      refused naming B and its formula, before anything changes; A still type
+
+  - given: >
+      the family all instance, switchExisting true, parameterNames C alone,
+      instance false - while C's formula reads B, which stays instance
+    expect: refused naming C, and nothing switched
+
+  - given: >
+      switchExisting true, instance true, on a parameter a nested family's TYPE
+      parameter is linked to - the gate valve's Nominal Diameter, if its nested
+      symbol's link is a type one
+    expect: >
+      refused naming the parameter and the nested family's type parameter it
+      drives. NOT YET RUN - the scratch family had no nested family
+
+  - given: >
+      switchExisting true, a built-in parameter such as Default Elevation, or a
+      name the family does not have
+    expect: refused by name, nothing switched
+
+  - given: >
+      switchExisting true, parameterNames all, in a family that holds a
+      parameter really called All
+    expect: >
+      refused as ambiguous, nothing switched - never read as every parameter.
+      NOT YET RUN in Revit
+
+  - given: >
+      switchExisting true, instance true, on an Image parameter (or all, in a
+      family that has one)
+    expect: >
+      refused naming it before anything changes - Revit keeps an image
+      parameter as type only. NOT YET RUN in Revit
+
 second_route:
   - >
       Family Types, New Parameter by hand for one of the same names, and its
       kind, scope and group compared with what this reports for its twin
+  - >
+      Family Types by hand: the Type / Instance choice on the same parameter,
+      and its scope compared with what this reads back. For switching, the
+      scope was also read by a second tool, REPORT_FAMILY_PARAMETERS, on
+      2026-10-04
