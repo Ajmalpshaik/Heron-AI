@@ -437,6 +437,11 @@ before it governs a project.** No standard's text is reproduced here; the figure
 - **Skills.** A skill names capabilities, and this is an MCP tool, not a fragment capability - so
   `space-airflow`, `terminal-layout` and `duct-layout` do not yet name it. How a skill should reach a
   brain-side calculation is the owner's question (§15).
+- **A building runner now exists (2026-10-04).** [`heron_building_loads.py`](../brain/heron_building_loads.py)
+  runs this engine's own `monthly_load`, `heating_load` and `supply_airflow` on every Space of a model's
+  take-off and adds them up - the block load hour by hour beside the sum of peaks - with no physics of
+  its own ([44 §11](44-building-loads-from-the-model.md)). Each load answer now carries its numbers in
+  `data` for it. The engine itself is unchanged in method.
 
 ---
 
@@ -483,5 +488,9 @@ reason §4.2 gives. Until then every answer is marked a design aid.
 3. **A friction-sizing fragment in Revit** (§13) - worth the second copy of the arithmetic?
 4. **Skills** - should `space-airflow` and its neighbours name `heron_hvac`, and if so, how does a skill
    name a brain-side calculation?
+   **Answered for `space-airflow`, 2026-10-04** ([44 §11](44-building-loads-from-the-model.md)): a skill
+   still names only capabilities. Its version 2 lists `REPORT_SPACE_ENVELOPE`, the fragment the
+   calculation reads with, and names the brain-side step - the tool `revit_building_loads` - in its
+   steps' own words. `terminal-layout` and `duct-layout` are unchanged.
 5. **Conflict 1 in §12** is your own file against ASHRAE's table - which governs your work?
    **Answered 2026-10-02: your 2.5 m/s** - [D-110](decisions/D-110.md), built as §8 describes.

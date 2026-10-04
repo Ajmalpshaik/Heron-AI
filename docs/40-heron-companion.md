@@ -875,3 +875,12 @@ the three filters in `{3D}` had no override at all, while the same values sent t
 applied correctly. Two other chats were driving the same Revit with their own Companion pages, and
 the audit log does not say which client sent a write, so the cause is not established. A filter
 Apply from this page, read back, is owed before this is relied on.
+
+### 21.5 The Loads panel and its 3D view (2026-10-04)
+
+A fourth kind of content, on the owner's word: the **Loads** panel of [docs/44](44-building-loads-from-the-model.md)
+- a building's loads per Space, the checks on the model, Recalculate, Report, **The take-off is right**
+and Finalize - with a **3D view of the very faces the loads were worked out from** (docs/44 section 12).
+It keeps this page's rules: the panel holds data and calls hooks the MCP server sets; every number,
+colour and legend is made in `brain/`; Finalize writes through `revit_change`'s own body; the 3D view is
+a renderer of Heron's own (`static/loads3d.js`), so nothing is loaded from the internet.

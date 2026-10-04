@@ -278,6 +278,12 @@ TOOLS = {
     # page's companion_table_apply below, never this tool.
     "revit_edit_table":         (ANALYZE, "run_fragment_read"),
 
+    # Building loads (docs/44). ANALYZE through run_fragment_read, exactly
+    # revit_edit_table's level: it reads every Space's take-off with
+    # REPORT_SPACE_ENVELOPE, calculates in the brain, and changes nothing.
+    # Writing the loads back is the page's companion_loads_finalize below.
+    "revit_building_loads":     (ANALYZE, "run_fragment_read"),
+
     # Puts a settings capability's CURRENT values on the Companion page as an
     # editable table, sending nothing to Revit. READ, no operation. The
     # page's Apply is companion_apply below, at MODIFY - never this tool.
@@ -295,6 +301,11 @@ COMPANION_ACTIONS = {
     # The edited cells of an element table, in one SET_PARAMETER_VALUES_BY_ID
     # run through the same body: revit_change's level and operation.
     "companion_table_apply":    (MODIFY,  "run_fragment_write"),
+    # The Loads panel's Finalize (docs/44 s6): the Spaces' loads and airflow
+    # through the table's own Apply, then the diffusers' flows - each through
+    # revit_change's body. Recalculate and Report touch no model - the brain
+    # works on the take-off the panel holds - so they have no row.
+    "companion_loads_finalize": (MODIFY,  "run_fragment_write"),
 }
 
 

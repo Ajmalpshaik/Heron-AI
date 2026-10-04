@@ -469,6 +469,9 @@ class Answer(object):
         self.next = []
         self.optional = []       # (input, unit, why) - for the catalogue
         self.csv = None
+        # The numbers behind the sentences, for a caller that adds answers up
+        # (heron_building_loads, docs/44 s5). Empty unless a calculation fills it.
+        self.data = {}
 
     def __getattr__(self, name):
         # The top-level accessors, so a calculation reads a.number(...).
@@ -2224,6 +2227,7 @@ def _supply_from_load(a, out, sensible, latent, supply_t, area, height):
         ws_needed = None
         if out.sr is not None and latent > 0:
             ws_needed = out.sr["w"] - latent / 1000.0 / (m * (2501.0 + 1.86 * out.tr))
+    a.data["supply_ls"] = q
     a.result("Supply airflow", flow_text(q) + " at %s C supply, dT %s K"
              % (_f(supply_t, 1), _f(dt, 1)))
     if area is not None:
@@ -2473,25 +2477,37 @@ def calc_monthly_load(a):
             beam, diffuse, _m = (clear_sky(sun["eo"], sun["altitude"], m["tau_b"], m["tau_d"])
                                  if sun["altitude"] > 0 else (0.0, 0.0, None))
             sens, lat_ = base_s, base_l
+            parts = [(r[0], r[1], r[2]) for r in constant]
             for s, e in zip(surfaces, _sun_on(surfaces, sun, beam, diffuse, rho)):
                 if s["kind"] in ("wall", "roof"):
                     te = t + s["aho"] * e - (LONGWAVE_HORIZONTAL_K if s["kind"] == "roof"
                                              else 0.0)
-                    sens += s["u"] * s["area"] * (te - tr)
+                    term = s["u"] * s["area"] * (te - tr)
                 else:
-                    sens += s["u"] * s["area"] * (t - tr)
-                    sens += s["area"] * s["shgc"] * e * (1.0 if s["iac"] is None else s["iac"])
+                    term = s["u"] * s["area"] * (t - tr)
+                    term += s["area"] * s["shgc"] * e * (1.0 if s["iac"] is None else s["iac"])
+                sens += term
+                parts.append((s["name"], term, 0.0))
             wo = PSY.humidity_ratio_from_wet_bulb(t, twb, p) if need_air else None
             if infiltration_ls is not None:
                 qs, ql = air_heat(standard, infiltration_ls, t, tr, wo, wr, p)
                 sens, lat_ = sens + qs, lat_ + ql
+                parts.append(("infiltration", qs, ql))
             coil = None
             if oa is not None:
                 oqs, oql = air_heat(standard, oa, t, tr, wo, wr, p)
                 coil = sens + lat_ + oqs + oql
             hours.append({"hour": hour, "t": t, "twb": twb, "s": sens, "l": lat_,
-                          "total": sens + lat_, "coil": coil, "w": wo})
+                          "total": sens + lat_, "coil": coil, "w": wo, "parts": parts})
         peaks.append((m, hours, max(hours, key=lambda h: h["total"])))
+    top_m, top_hours, top = max(peaks, key=lambda x: x[2]["total"])
+    a.data["peak"] = {"month": top_m["month"], "hour": top["hour"], "sensible_w": top["s"],
+                      "latent_w": top["l"], "total_w": top["total"]}
+    a.data["components"] = [{"name": n, "sensible_w": s, "latent_w": l}
+                            for n, s, l in top["parts"]]
+    a.data["hours"] = [{"month": m["month"], "hour": h["hour"], "sensible_w": h["s"],
+                        "latent_w": h["l"], "total_w": h["total"], "coil_w": h["coil"]}
+                       for m, hs, _pk in peaks for h in hs]
 
     columns = ["month", "hour", "DB C", "WB C", "sensible W", "latent W", "total W"]
     if oa is not None:
@@ -2510,7 +2526,6 @@ def calc_monthly_load(a):
                         "given changes with the weather or the sun - so the hour named as its "
                         "peak is only the first; give its walls, roof, windows or "
                         "infiltration to find the hour that governs")
-    top_m, top_hours, top = max(peaks, key=lambda x: x[2]["total"])
     low_m, _low_hours, low = min(peaks, key=lambda x: x[2]["total"])
 
     def when(m, h):
@@ -2612,12 +2627,16 @@ def calc_heating_load(a):
     if safety is not None:
         rows.append(["safety factor %s %%" % _f(safety, 1), loss * safety / 100.0, "on the above"])
         loss *= 1.0 + safety / 100.0
+    a.data["loss_w"] = loss
+    a.data["components"] = [{"name": r[0], "w": r[1]} for r in rows]
+    a.data["outdoor_air_w"] = None
     a.table("Heat loss by component", ("component", "W", "how"),
             [[r[0], _f(r[1], 0), r[2]] for r in rows])
     a.result("Room heat loss", power_text(loss))
     a.result("Load density", "%s W/m2" % _f(loss / area, 1))
     if oa is not None:
         oq = -out.air_load(oa)[0]
+        a.data["outdoor_air_w"] = oq
         a.result("Outdoor air heating", power_text(oq))
         a.result("Coil heating (room + outdoor air)", power_text(loss + oq))
     a.uses("steady-state conduction U.A.dT and sensible air loads; no credit for "
@@ -3968,7 +3987,7 @@ def run(name, inputs=None, recorded=None, calculations=None):
                 "known": list(calculations), "missing": [], "refused": [],
                 "ignored": [], "results": [], "tables": [], "checks": [], "method": [],
                 "sources": [], "assumed": [], "next": [], "csv": None,
-                "standards": {}, "ask_once": [], "memory": []}
+                "standards": {}, "ask_once": [], "memory": [], "data": {}}
     if not isinstance(inputs, dict):
         try:
             inputs = parse_inputs(inputs)
@@ -4002,6 +4021,7 @@ def _as_dict(answer, entry):
         "assumed": answer.assumed if done else [],
         "next": answer.next if done else [],
         "csv": answer.csv if done else None,
+        "data": answer.data if done else {},
         "standards": dict(answer.standards),
         "ask_once": answer.ask_once,
         # What the caller did with the project's standards - kept, changed, or

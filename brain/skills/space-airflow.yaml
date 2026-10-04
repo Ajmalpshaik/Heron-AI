@@ -1,5 +1,5 @@
 heron-status: DRAFT
-heron-step: 14
+heron-step: 17
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -12,9 +12,41 @@ source: OFFICIAL
 
 risk: MODIFY
 
+# VERSION 2, 2026-10-04 (docs/44): it CALCULATES the loads first, then writes.
+# Version 1 read only the loads Revit already held, so a model whose loads had
+# never been run gave nothing to work the air out from. This answers docs/41
+# section 15 item 4 for this skill: a skill names CAPABILITIES, and the
+# brain-side calculation is reached through the MCP tool revit_building_loads,
+# which the steps below name in words - the capability it reads with,
+# REPORT_SPACE_ENVELOPE, is what `needs` lists.
 purpose: >
-  Calculates a Space's required airflow and writes it back. Every number is a
-  per-request input - never a remembered default.
+  Works out every Space's heating and cooling load and supply airflow from the
+  model itself, shows it for review, and on the modeller's word writes the
+  loads and airflows into the Spaces and their diffusers. Every design value is
+  a per-request input - never a remembered default - and every one the
+  modeller has not given is asked, with a standard's figure offered, never
+  filled in (D-33).
+
+  1. READ, CHECK, ASK, CALCULATE - the tool revit_building_loads. It reads
+     every Space's walls, roofs, floors and windows with REPORT_SPACE_ENVELOPE
+     (nothing in the model changes), lists what is wrong with the model - a
+     Space not enclosed, a window type with no SHGC, no site location - and,
+     while any design value is missing, answers with the questions and
+     calculates nothing. Put those questions to the modeller.
+  2. REVIEW in the Heron Companion's Loads panel: inputs per Space type,
+     results per Space, zone and building block loads beside the sum of
+     peaks. The modeller changes people, lights and equipment there and
+     presses Recalculate - nothing in Revit changes. Report writes the load
+     calculation sheet (HTML, PDF, CSV).
+  3. FINALIZE, on the modeller's click in the panel - never from the chat:
+     Design Cooling Load, Design Heating Load and Specified Supply Airflow on
+     each calculated Space through SET_PARAMETER_VALUES_BY_ID (refused whole if
+     any Space changed since it was read), then each Space's flow split across
+     its diffusers through SET_AIR_TERMINAL_FLOW. Two undo entries. Then
+     READ_SPACE_LOADS and REPORT_SPACE_AIRFLOW read back what Revit holds.
+
+  A load here is a peak estimate from published methods, not an hourly
+  simulation like HAP; the engineer of record approves every value.
 
 # The words Ajmal actually says, not the words the technique is named after.
 utterances:
@@ -22,10 +54,17 @@ utterances:
   - calculate the air for these spaces
   - set the supply air flow
   - how much air does this room need
+# NOT ADDED in version 2: "calculate the loads for this building". The chat
+# reaches revit_building_loads by that tool's own description (D-01 - the host
+# decides what was meant), and a new sentence here would leave the routing
+# recording in tools/jobs/skills/ measuring four of six (test_skill_catalog).
+# Add it with a fresh recording from tools/prove-skill.py, not without one.
 
 # CAPABILITIES, never fragment ids. A fragment can be replaced, split or
 # retired without this file changing - that is what the registry is for.
 needs:
+  # Version 2's reader: every Space's take-off for the load calculation.
+  - REPORT_SPACE_ENVELOPE
   - FILTER_ELEMENTS_BY_CATEGORY
   - READ_ELEMENT_PARAMETERS
   - WRITE_ELEMENT_PARAMETERS
@@ -35,15 +74,24 @@ needs:
   # it or somebody typed it in, which is the difference between a design figure
   # and a guess. READ_ELEMENT_PARAMETERS cannot stand in for it.
   - READ_SPACE_LOADS
+  # Version 2's write-back and its read-back (docs/44 section 6, gate 2).
+  - SET_PARAMETER_VALUES_BY_ID
+  - FILTER_ELEMENTS_BY_ID
+  - SET_AIR_TERMINAL_FLOW
+  - REPORT_SPACE_AIRFLOW
 
 # What must be true BEFORE it runs, so it fails early with something
 # useful instead of deep inside a transaction (docs/09 s2).
 preconditions:
   - Spaces exist and are bounded - an unbounded Space has no volume to work from
-  - the air change rate or load basis has been confirmed for THIS request
+  - the model's site location is set, and its window and wall types carry U and SHGC
+  - the design values have been given for THIS project - asked, never assumed
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 
 note: >
   Ajmal speaks in mm and in air changes; Revit stores internal units. The
-  conversion is explicit both ways, and the reply is in his units.
+  conversion is explicit both ways, and the reply is in his units. The values
+  Finalize writes are in the model's own display units - W or Btu/h, L/s or
+  CFM - read from the take-off, and a unit Heron does not convert to refuses
+  the write.

@@ -807,6 +807,42 @@ def month_by_month():
     print()
 
 
+def numbers_for_the_runner():
+    print("9. a load answer carries its numbers, for the building runner (docs/44 s5)")
+    year = H.run("monthly_load", dict(DOHA_ROOM, design_weather="doha-0.4"))
+    data = year.get("data") or {}
+    hours = data.get("hours") or []
+    peak = data.get("peak") or {}
+    top = max(hours, key=lambda h: h["total_w"]) if hours else {}
+    check(year["status"] == "ok" and len(hours) == 12 * 24,
+          "monthly_load gives every hour of every month as numbers - %d of 288" % len(hours))
+    check(bool(top) and (peak.get("month"), peak.get("hour")) == (top["month"], top["hour"])
+          and abs(peak.get("total_w", 0) - top["total_w"]) < 1e-9,
+          "its peak is the largest of those hours, month and hour named")
+    parts = data.get("components") or []
+    check(bool(parts) and abs(sum(x["sensible_w"] for x in parts)
+                              - peak.get("sensible_w", 0)) < 1e-6
+          and abs(sum(x["latent_w"] for x in parts) - peak.get("latent_w", 0)) < 1e-6,
+          "the components at the peak hour add up to its sensible and latent load")
+    heat = H.run("heating_load", {"floor_area_m2": 20, "room_dry_bulb_c": 21,
+                                  "outdoor_dry_bulb_c": 5,
+                                  "surfaces": [{"name": "wall", "area_m2": 10, "u_w_m2k": 0.5}]})
+    hd = heat.get("data") or {}
+    check(heat["status"] == "ok" and abs(hd.get("loss_w", 0) - 10 * 0.5 * 16) < 1e-9
+          and hd.get("components") == [{"name": "wall", "w": 80.0}],
+          "heating_load carries its loss, 10 m2 x 0.5 x 16 K = 80 W, and its components")
+    air = H.run("supply_airflow", {"sensible_load_w": 1230, "supply_dry_bulb_c": 13,
+                                   "room_dry_bulb_c": 23, "standard_air": True})
+    check(air["status"] == "ok" and abs((air.get("data") or {}).get("supply_ls", 0) - 100.0)
+          < 1e-9, "supply_airflow carries its flow - 1230 W at 10 K in standard air is 100 L/s")
+    short = H.run("heating_load", {"floor_area_m2": 20})
+    check(short["status"] == "missing" and short.get("data") == {},
+          "an answer that did not finish carries no numbers")
+    check(H.run("no_such_calculation", {}).get("data") == {},
+          "an unknown calculation carries an empty data too - one shape for every answer")
+    print()
+
+
 def main():
     physics()
     worked_examples()
@@ -816,6 +852,7 @@ def main():
     reaches_nothing()
     owners_answers()
     month_by_month()
+    numbers_for_the_runner()
 
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))
