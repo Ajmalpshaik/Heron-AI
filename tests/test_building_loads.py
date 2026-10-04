@@ -209,7 +209,7 @@ def test_save_and_load_round_trip():
 def test_finalize_writes_the_three_fields_for_each_ok_space():
     t = T.read(ROOM)
     r = B.run(t, PROJECT, {"Office": OFFICE})
-    rows = B.finalize_rows(t, r)
+    rows = B.finalize_rows(t, B.confirm(r, t))
     assert [x[2] for x in rows] == ["Design Cooling Load", "Design Heating Load",
                                    "Specified Supply Airflow"]
     assert rows[0][:2] == ["1", "u1"] and rows[0][3] == "0.00 W"
@@ -221,7 +221,7 @@ def test_finalize_converts_to_project_units():
     d["units"] = {"power": "Btu/h", "airflow": "CFM"}
     t = T.read(d)
     r = B.run(t, PROJECT, {"Office": OFFICE})
-    rows = {x[2]: x[4] for x in B.finalize_rows(t, r)}
+    rows = {x[2]: x[4] for x in B.finalize_rows(t, B.confirm(r, t))}
     w = r["spaces"][0]["cooling"]["peak"]["total_w"]
     assert rows["Design Cooling Load"] == "%.0f Btu/h" % (w * 3.412141633)
     assert rows["Specified Supply Airflow"] == "%.0f CFM" % (r["spaces"][0]["supply_ls"] * 2.118880003)
@@ -229,7 +229,7 @@ def test_finalize_converts_to_project_units():
 
 def test_refused_space_is_never_written():
     t = T.read(bad_second_office())
-    rows = B.finalize_rows(t, B.run(t, PROJECT, {"Office": OFFICE}))
+    rows = B.finalize_rows(t, B.confirm(B.run(t, PROJECT, {"Office": OFFICE}), t))
     assert {x[0] for x in rows} == {"1"}
 
 
@@ -239,11 +239,32 @@ def test_unknown_unit_refuses_finalize():
     t = T.read(d)
     r = B.run(t, PROJECT, {"Office": OFFICE})
     try:
-        B.finalize_rows(t, r)
+        B.finalize_rows(t, B.confirm(r, t))
         refused = ""
     except ValueError as why:
         refused = str(why)
     assert "kcal/h" in refused
+
+
+def test_finalize_refuses_a_takeoff_nobody_confirmed():
+    t = T.read(ROOM)
+    r = B.run(t, PROJECT, {"Office": OFFICE})
+    try:
+        B.finalize_rows(t, r)
+        said = ""
+    except ValueError as why:
+        said = str(why)
+    assert "not been confirmed" in said
+    assert B.finalize_rows(t, B.confirm(r, t))
+
+
+def test_a_confirmation_holds_for_that_takeoff_only():
+    t = T.read(ROOM)
+    r = B.confirm(B.run(t, PROJECT, {"Office": OFFICE}), t)
+    assert B.confirmed(r, t)
+    moved = copy()
+    moved["spaces"][0]["faces"][0]["area_m2"] = 14.0               # the model changed
+    assert not B.confirmed(r, T.read(moved))
 
 
 # --- the seam and the tool (Task 5) - through heron_brain, which needs no MCP SDK
@@ -306,7 +327,10 @@ def test_tool_reads_the_envelope_checks_the_pin_and_tells_only_totals():
     server = io.open(SERVER, encoding="utf-8").read()
     body = server[server.index("def revit_building_loads("):]
     body = body[:body.index(chr(10) + "@server.tool()")]
-    assert '_through(revit_read, reply_out=out)("REPORT_SPACE_ENVELOPE"' in body
+    assert '_through(revit_read, reply_out=out)(' in body
+    # D-59: links are read only when the modeller asks - absent means host only.
+    assert '"REPORT_SPACE_ENVELOPE", "includeLinks=true" if include_links else ""' in body
+    assert "include_links: bool = False" in body
     assert body.index("if pinned.check(reply):") < body.index("brain.building_loads(")
     assert "LOADS_PANEL.open(document, answer, _pin_identity())" in body
     assert "revit_change" not in body and "_change(" not in body

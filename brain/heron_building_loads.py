@@ -24,6 +24,7 @@ only when a run is saved or loaded, as it is for a project's standards).
 """
 
 import datetime
+import hashlib
 import io
 import json
 import os
@@ -437,13 +438,44 @@ def _unit(table, symbol, what):
     return table[symbol]
 
 
+# --- gate 1: the modeller confirms the take-off (docs/44 s6) ------------------
+
+def fingerprint(t):
+    """The take-off's own fingerprint - a confirmation holds for exactly this geometry."""
+    t = TAKEOFF.read(t)
+    text = json.dumps(t.raw, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+
+
+def confirm(result, t, by="the modeller, in the Heron Companion"):
+    """Record that the modeller has checked this take-off - with when, and which one."""
+    result["geometry_confirmed"] = {
+        "at": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"), "by": by,
+        "takeoff": fingerprint(t)}
+    return result
+
+
+def confirmed(result, t):
+    """True only when the run carries a confirmation of THIS take-off."""
+    got = (result or {}).get("geometry_confirmed") or {}
+    return bool(got) and got.get("takeoff") == fingerprint(t)
+
+
+NOT_CONFIRMED = ("the take-off has not been confirmed - look at the 3D view and the checks on "
+                 "the model in the Heron Companion, then press 'The take-off is right'")
+
+
 def finalize_rows(t, result):
     """SET_PARAMETER_VALUES_BY_ID rows [id, unique_id, parameter, was, new] for every ok Space.
 
     `new` is in the project's own display units, read from the take-off - a
-    unit Heron cannot convert to refuses the whole Finalize (ValueError).
+    unit Heron cannot convert to refuses the whole Finalize (ValueError). So
+    does a take-off the modeller has not confirmed (gate 1, docs/44 s6): the
+    loads of geometry nobody looked at are never written into Revit.
     """
     t = TAKEOFF.read(t)
+    if not confirmed(result, t):
+        raise ValueError(NOT_CONFIRMED)
     power = _unit(POWER, (t.units or {}).get("power"), "power")
     air = _unit(AIRFLOW, (t.units or {}).get("airflow"), "airflow")
     current = {str(s.get("id")): s.get("current") or {} for s in t.spaces}
@@ -476,15 +508,19 @@ def _folder(project_key):
     return os.path.join(base, "projects", scope._safe_key(project_key) + ".loads")
 
 
-def save(project_key, result):
-    """Keep one run; the path it was written to. A second run in the same second is not lost."""
+def save(project_key, result, replace=False):
+    """Keep one run; the path it was written to. A second run in the same second is not lost.
+
+    `replace` writes over the kept copy of this same run - how a confirmation
+    made after the run was kept is recorded with it.
+    """
     folder = _folder(project_key)
     if not os.path.isdir(folder):
         os.makedirs(folder)
     base = run_id = result["run_id"]
     path = os.path.join(folder, run_id + ".json")
     n = 1
-    while os.path.exists(path):
+    while os.path.exists(path) and not replace:
         n += 1
         run_id = "%s-%d" % (base, n)
         path = os.path.join(folder, run_id + ".json")

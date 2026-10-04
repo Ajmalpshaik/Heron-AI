@@ -64,6 +64,22 @@ def test_report_names_what_was_refused_and_why():
     assert "Generic" in page and "refused" in page
 
 
+def test_an_unconfirmed_takeoff_is_stamped_draft():
+    t = T.read(ROOM)
+    r = built()
+    page = R.html(r, takeoff=t)
+    assert "DRAFT - THE TAKE-OFF WAS NOT CONFIRMED" in page
+    page = R.html(B.confirm(r, t), takeoff=t)
+    assert "NOT CONFIRMED" not in page and "checked and confirmed by" in page
+    moved = T.read(dict(ROOM, document="another reading"))       # a different take-off
+    assert "NOT CONFIRMED" in R.html(r, takeoff=moved)
+
+
+def test_glass_by_the_way_it_faces_is_in_the_sheet():
+    page = R.html(built(), takeoff=T.read(ROOM))
+    assert "Glass by the way it faces" in page and "glass % of wall" in page
+
+
 def test_csv_has_one_row_per_space():
     lines = R.csv_text(built()).strip().splitlines()
     assert len(lines) == 2 and lines[0].startswith("number,")
@@ -106,8 +122,9 @@ def test_imports_only_the_standard_library():
     import ast
     allowed = set(getattr(sys, "stdlib_module_names", ())) | {
         "__future__", "heron_hvac", "heron_takeoff", "heron_building_loads",
+        "heron_loads_view",
         "heron_designbasis", "heron_psychro"}
-    for module in ("heron_loads_report", "heron_building_loads"):
+    for module in ("heron_loads_report", "heron_building_loads", "heron_loads_view"):
         tree = ast.parse(open(os.path.join(ROOT, "brain", module + ".py")).read())
         names = set()
         for node in ast.walk(tree):

@@ -29,6 +29,7 @@ import os
 import pathlib
 import subprocess
 
+import heron_building_loads as LOADS
 import heron_hvac as HVAC
 import heron_takeoff as TAKEOFF
 
@@ -82,17 +83,32 @@ def _when(month, hour):
     return "%s 21, %02d:00" % (MONTHS[month - 1], hour) if month else "-"
 
 
-def html(result, standards=None):
-    """The load calculation sheet as one self-contained page."""
+def html(result, standards=None, takeoff=None):
+    """The load calculation sheet as one self-contained page.
+
+    With the take-off it was worked out from, the sheet also says whether THAT
+    take-off was confirmed (gate 1) and adds the glass by the way it faces;
+    without it, a recorded confirmation is reported as recorded.
+    """
     r = result
     b = r.get("building") or {}
+    if takeoff is not None:
+        sure = LOADS.confirmed(r, takeoff)
+    else:
+        sure = bool(r.get("geometry_confirmed"))
+    stamp = r.get("geometry_confirmed") or {}
     parts = ["<!doctype html><html><head><meta charset='utf-8'>",
              "<title>Load calculation - %s</title><style>%s</style></head><body>"
              % (_e(r.get("document")), CSS),
              "<h1>Load calculation sheet</h1>",
              "<p class='meta'>Model: %s</p>" % _e(r.get("document")),
              "<p class='meta'>Run %s, %s</p>" % (_e(r.get("run_id")), _e(r.get("when"))),
-             "<p class='meta'><b>%s</b></p>" % _e(DISCLAIMER)]
+             "<p class='meta'><b>%s</b></p>" % _e(DISCLAIMER),
+             ("<p class='meta'>Take-off checked and confirmed by %s, %s.</p>"
+              % (_e(stamp.get("by")), _e(stamp.get("at"))) if sure else
+              "<p class='disclaimer fail'><b>DRAFT - THE TAKE-OFF WAS NOT CONFIRMED.</b> Nobody "
+              "has yet checked the faces these loads were worked out from. Check them in the "
+              "Heron Companion's 3D view and confirm them before this sheet is used.</p>")]
 
     inputs = r.get("inputs") or {}
     parts.append("<h2>Design conditions</h2>")
@@ -114,6 +130,19 @@ def html(result, standards=None):
                                                  _e(f["text"])) for f in qa))
     else:
         parts.append("<p>Nothing found.</p>")
+
+    if takeoff is not None:
+        sm = TAKEOFF.summary(takeoff)
+        parts.append("<h2>Glass by the way it faces</h2>")
+        rows = [(q, _n(v["wall_m2"], 1), _n(v["glass_m2"], 1), _n(v["glass_pct_of_wall"], 1))
+                for q, v in sorted(sm["glass_by_facing"].items(),
+                                   key=lambda kv: TAKEOFF.COMPASS.index(kv[0]))]
+        parts.append(_table(("faces", "outside wall m2", "glass m2", "glass % of wall"), rows,
+                            numeric=(1, 2, 3)))
+        parts.append("<p class='note'>Glass to outside, %s m2, is %s %% of the %s m2 of floor "
+                     "placed. Taken from the model's own windows and walls.</p>"
+                     % (_n(sm["glass_m2"], 1), _n(sm["glass_pct_of_floor"], 1),
+                        _n(sm["floor_m2"], 1)))
 
     parts.append("<h2>Inputs per Space type</h2>")
     for key, values in sorted((inputs.get("profiles") or {}).items()):
@@ -276,7 +305,7 @@ def write(folder, takeoff, result, standards=None, search=None):
              "csv": os.path.join(folder, stem + ".csv"),
              "takeoff_csv": os.path.join(folder, stem + "-takeoff.csv")}
     with io.open(paths["html"], "w", encoding="utf-8") as fh:
-        fh.write(html(result, standards))
+        fh.write(html(result, standards, takeoff))
     with io.open(paths["csv"], "w", encoding="utf-8", newline="") as fh:
         fh.write(csv_text(result))
     with io.open(paths["takeoff_csv"], "w", encoding="utf-8", newline="") as fh:

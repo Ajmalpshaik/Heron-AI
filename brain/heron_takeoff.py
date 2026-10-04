@@ -82,6 +82,22 @@ def _no_value(name, what):
     return "%s has no %s in the model - set its type's thermal properties" % (name, what)
 
 
+def role(face):
+    """What a face counts as in the load - the ONE rule surfaces() and the 3D view share.
+
+    "none" (conditioned on both sides), "wall", "roof", "exposed_floor" (open
+    to outside below), "partition" (a wall or ceiling to an unconditioned or
+    unknown space - at the project's unconditioned temperature) or "floor"
+    (heating only, at the project's ground temperature).
+    """
+    beyond, side = face.get("beyond"), face.get("side")
+    if beyond == "space":
+        return "none"
+    if beyond == "outside":
+        return {"wall": "wall", "top": "roof"}.get(side, "exposed_floor")
+    return "floor" if side == "bottom" else "partition"
+
+
 def surfaces(t, space):
     """One Space's faces as the room engine's surface records, and what refused."""
     out = {"walls": [], "roofs": [], "windows": [], "skylights": [], "partitions": [],
@@ -128,18 +144,78 @@ def surfaces(t, space):
             out["refused"].append(_no_value(name, "U-value"))
             continue
         rec = {"name": name, "area_m2": round(net, 6), "u_w_m2k": kind["u_w_m2k"]}
-        if beyond != "outside":
-            (out["floors"] if side == "bottom" else out["partitions"]).append(rec)
-        elif side == "wall":
+        used = role(face)
+        if used in ("floor", "exposed_floor"):
+            out["floors"].append(rec)
+        elif used == "partition":
+            out["partitions"].append(rec)
+        elif used == "wall":
             rec["facing"] = facing
             rec["absorptance"] = kind.get("absorptance")
             out["walls"].append(rec)
-        elif side == "top":
+        else:
             rec["absorptance"] = kind.get("absorptance")
             out["roofs"].append(rec)
-        else:
-            out["floors"].append(rec)
     return out
+
+
+COMPASS = ("N", "E", "S", "W")
+
+
+def compass(azimuth):
+    """The quarter a bearing falls in - N for 315 to 45 degrees, and so on round."""
+    return COMPASS[int(((float(azimuth) + 45.0) % 360.0) // 90.0)]
+
+
+def summary(t):
+    """The take-off's own totals, for the checks, the panel and the report.
+
+    Per level: Spaces placed and their floor area. Glass to outside by the way
+    it faces - window area beside the outside wall it sits in, and the share
+    of that wall that is glass - and glass against the floor area placed.
+    """
+    north = t.site.get("project_to_true_north_deg")
+    levels = {}
+    by_quarter = dict((q, {"glass_m2": 0.0, "wall_m2": 0.0}) for q in COMPASS)
+    floor = glass = 0.0
+    for s in t.spaces:
+        if not s.get("placed") or not s.get("area_m2"):
+            continue
+        lv = levels.setdefault(s.get("level") or "(no level)", {"spaces": 0, "area_m2": 0.0})
+        lv["spaces"] += 1
+        lv["area_m2"] += float(s["area_m2"])
+        floor += float(s["area_m2"])
+        for f in s.get("faces") or []:
+            if f.get("beyond") != "outside" or f.get("side") != "wall" or not f.get("normal"):
+                continue
+            q = by_quarter[compass(azimuth_deg(f["normal"], north))]
+            q["wall_m2"] += float(f.get("area_m2") or 0.0)
+            for o in f.get("openings") or []:
+                if o.get("kind") in GLAZED:
+                    q["glass_m2"] += float(o.get("area_m2") or 0.0)
+                    glass += float(o.get("area_m2") or 0.0)
+    for q in by_quarter.values():
+        q["glass_pct_of_wall"] = (100.0 * q["glass_m2"] / q["wall_m2"]) if q["wall_m2"] else None
+    return {"levels": levels, "glass_by_facing": by_quarter, "glass_m2": glass,
+            "floor_m2": floor, "glass_pct_of_floor": (100.0 * glass / floor) if floor else None}
+
+
+def _groups(spaces):
+    """How many groups the placed Spaces of one level form, joined by faces they share."""
+    ids = [str(s.get("id")) for s in spaces]
+    parent = dict((i, i) for i in ids)
+
+    def top(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    for s in spaces:
+        for f in s.get("faces") or []:
+            other = str(f.get("beyond_space"))
+            if f.get("beyond") == "space" and other in parent:
+                parent[top(str(s.get("id")))] = top(other)
+    return len(set(top(i) for i in ids))
 
 
 def qa(t):
@@ -175,6 +251,16 @@ def qa(t):
                     "face of element %s" % (label, holes, gross, face.get("element")))
         for why in surfaces(t, s)["refused"]:
             add("FAIL", sid, "Space %s: %s" % (label, why))
+    by_level = {}
+    for s in t.spaces:
+        if s.get("placed") and s.get("area_m2"):
+            by_level.setdefault(s.get("level") or "(no level)", []).append(s)
+    for level, placed in sorted(by_level.items()):
+        n = _groups(placed)
+        if n > 1:
+            add("WARN", None, "the Spaces on %s form %d groups that share no wall - check for a "
+                "gap between them, or a corridor, stair or shaft with no Space in it"
+                % (level, n))
     for text in t.findings:
         add("WARN", None, text)
     order = {"FAIL": 0, "WARN": 1, "INFO": 2}
