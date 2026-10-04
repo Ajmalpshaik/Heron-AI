@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,7 @@ semantic-identity: "put a duct, pipe or electrical connector on this face of the
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_CONNECTOR
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -43,6 +43,12 @@ purpose: >
   "Other" is not taken: a duct has Other Air and a pipe Other Pipe. Revit has no
   steam system; a steam connection is Other Pipe.
 
+  **GLOBAL AND FITTING ARE TAKEN TOO** - a valve body's two connectors are
+  Global so a system passes through it. Both are a duct and a pipe system, so
+  the domain comes from the words, "Global pipe", or else from the family's
+  category: Global on a Pipe Accessories family is a pipe connector. Where
+  Revit refuses one, its words are reported and nothing is kept.
+
   **WHICH WAY ROUND IS MEASURED, NOT ASSUMED.** Revit takes a connector's own
   width direction from the face, not from the family's X, so a parameter named
   "Neck Width" can come out driving the port's height. The face is measured
@@ -54,8 +60,8 @@ purpose: >
   **THE SIZE IS READ BACK, AND A MISMATCH IS NOT KEPT.** After the ties the
   connector's width and height are read against the face, or its diameter
   against its parameter; one that differs fails the call. Flow direction,
-  description and electrical load are left at Revit's defaults and set in
-  Properties.
+  description and electrical load are left at Revit's defaults;
+  SET_FAMILY_CONNECTOR_ROLES changes them, and the system, afterwards.
 
   **ALL OR NOTHING.** A connector that cannot be tied to its size is not left
   behind at one foot: the call fails and nothing is kept.
@@ -71,7 +77,8 @@ contract:
       type: string
       source: request
     # The system, as Revit names it - "Supply Air", "Return Air", "Domestic
-    # Cold Water", "Sanitary", "Fire Protection Wet", "Power Balanced".
+    # Cold Water", "Sanitary", "Fire Protection Wet", "Power Balanced",
+    # "Global" ("Global pipe" where the category does not say).
     - name: system
       type: string
       source: request
@@ -150,7 +157,10 @@ compatibility-note: >
   ElectricalSystemType, planarFace)`, `FamilyManager
   .AssociateElementParameterToFamilyParameter` and the built-in parameters
   CONNECTOR_WIDTH, CONNECTOR_HEIGHT and CONNECTOR_DIAMETER read the same 2020
-  through 2027 (api-surface, read 2026-09-24). The three system enums are read
+  through 2027 (api-surface, read 2026-09-24). Global = 29 and Fitting = 28 are
+  in DuctSystemType and PipeSystemType 2020 through 2027, and
+  `new ElementId(BuiltInCategory)` is on every release (api-surface,
+  2026-10-04). The three system enums are read
   by name at run time, so a system added in a later release is offered there
   without a change here.
 
@@ -161,7 +171,9 @@ compatibility-note: >
 #                                                   connector ALREADY in the
 #                                                   family, any linkable
 #                                                   parameter
-#   "which connectors does this family have"     -> CHECK_EQUIPMENT_CONNECTORS
+#   "which connectors does this family have"     -> REPORT_FAMILY_CONNECTORS
+#   "set this connector to Global", "flip it"    -> SET_FAMILY_CONNECTOR_ROLES,
+#                                                   a connector already made
 #   "connect these ducts to the terminal"        -> CONNECT_AIR_TERMINALS, in a
 #                                                   project
 #   "report connector sizes in the model"        -> REPORT_CONNECTORS

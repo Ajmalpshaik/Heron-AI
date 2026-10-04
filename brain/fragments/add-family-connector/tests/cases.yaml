@@ -1,5 +1,13 @@
 positive:
   - given: >
+      a Pipe Accessories valve family, facePlane "Port Left", system "Global",
+      sizeParameters "Nominal Diameter"
+    expect: >
+      a pipe connector reading Global, the pipe domain taken from the
+      category and said so. MEASURED 2026-10-04, Revit 2024, rolled back in
+      TRG_PLMB_VLV_PPR Gate Valve_GV_R0
+
+  - given: >
       an Air Terminals family with a NON-SQUARE 400 x 300 neck locked between
       planes, its top on Neck Top; facePlane "Neck Top", system "Supply Air",
       sizeParameters "Neck Width, Neck Depth" holding 400 and 300
@@ -28,6 +36,12 @@ positive:
       Protection Wet (row 5b-297)
 
 negative:
+  - given: system "Global" in a Generic Models family
+    expect: refused - Global is a duct and a pipe system both; "Global pipe" or "Global duct" asked for
+
+  - given: system "Globl" (misspelt)
+    expect: refused, nothing made. MEASURED 2026-10-04
+
   - given: system "Supply Air" and sizeParameters empty
     expect: >
       refused, nothing made - a duct connector with no size parameter would

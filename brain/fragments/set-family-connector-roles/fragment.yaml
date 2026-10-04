@@ -1,48 +1,50 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-MEP-055
-semantic-identity: "choose which connector of the family being edited is primary, and link connector pairs so a system passes through it"
+semantic-identity: "edit a connector already in the family being edited - set its system classification, flow, size parameters, flip it, make it primary, link a pair"
 kind: action
 domain: revit.families
 capability: SET_FAMILY_CONNECTOR_ROLES
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
 purpose: >
-  Sets the two connector settings a new connector is left at by Revit, in the
-  family open in the Family Editor: which connector is PRIMARY, and which pairs
-  are LINKED.
+  Edits a connector that is ALREADY in the family open in the Family Editor -
+  the settings ADD_FAMILY_CONNECTOR leaves at Revit's defaults, and the ones a
+  modeller changes later: System Classification (Global and Fitting too),
+  Flow Direction, Flow Configuration, Loss Method with its coefficient or
+  pressure drop, Description, the family parameters driving its size, which
+  way it points (a flip), which connector is PRIMARY and which pairs are
+  LINKED.
 
-  **ONE PRIMARY PER DOMAIN.** `AssignAsPrimary` promotes the connector named
-  and, in Revit's own remark, makes the rest of its system secondary. A
-  fitting's primary connector belongs on the face lying on the X axis
-  (Autodesk's help, as the mep-fitting skill records) - one that does not is
-  reported, not refused.
+  **`settings` IS ONE VALUE** - "system=Global; flowDirection=In; flip=true" -
+  holding only what should change, for every connector `connectors` names.
+  Keys: system, flowDirection, flowConfiguration, lossMethod,
+  lossCoefficient, pressureDrop (Pa), description, flip, sizeParameters.
 
-  **A LINKED PAIR PASSES A SYSTEM THROUGH THE FAMILY** - a coil, a pump, a valve
-  body - so the run on one side and the run on the other become one system. The
-  sources docs/43 §10 records say it does so only when both connectors' system
-  is Global; a pair that is not is reported with the words to fix it, and its
-  system is never changed here. `"Inlet > none"` removes a link, and
-  `"Inlet > none | Inlet > Branch"` moves one to a new partner in one call -
-  the unlinks run first.
+  **REVIT DECIDES WHICH SYSTEM A CONNECTOR MAY TAKE.** Each connector is
+  asked (IsSystemClassificationValid) before anything changes, so a system
+  Revit keeps from it is refused with the systems it does take.
 
-  **A CONNECTOR IS NAMED BY THE PLANE ITS FACE LIES ON** - "Neck Top", the way
-  ADD_FAMILY_CONNECTOR places one - or by its id from the report. A plane that
-  holds more than one connector is refused with their ids.
+  **A LINKED PAIR PASSES A SYSTEM THROUGH THE FAMILY** - a coil, a pump, a
+  valve body. The sources docs/43 §10 records say it does so only when both
+  connectors are Global, so a linked pair that is not is reported with the
+  setting that fixes it; give "system=Global" in the same call to set it.
 
-  **CHECKED FIRST, READ BACK AFTER, ALL OR NOTHING.** A pair of two domains, a
-  connector linked to itself or in two pairs, or a connector already linked to a
-  third one and not unlinked in the same call, is refused before anything
-  changes. After the change the primary
-  must read primary and each link must read linked BOTH ways; where Revit set
-  only one end, the other is set to match and the report says so. Every
-  connector is reported before and after.
+  **A CONNECTOR IS NAMED BY THE PLANE ITS FACE LIES ON** - "Port Left", the
+  way ADD_FAMILY_CONNECTOR places one - by its id, or "all". A plane holding
+  more than one connector is refused with their ids.
+
+  **NOTHING ASKED CHANGES NOTHING**; REPORT_FAMILY_CONNECTORS is the read.
+
+  **CHECKED FIRST, READ BACK AFTER, ALL OR NOTHING.** Every setting is read
+  back on every connector named - a flip must point the other way, a size
+  must follow its parameter - and one that differs fails the whole call.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -50,6 +52,19 @@ contract:
   needs:
     - name: doc
       type: Document
+    # The connectors `settings` is for: the planes their faces lie on, or
+    # ids, commas between - "Port Left, Port Right" - or "all". Empty when
+    # only `primary` or `links` is asked.
+    - name: connectors
+      type: string
+      source: request
+    # "name=value" with `;` between, only the settings to change:
+    # system, flowDirection, flowConfiguration, lossMethod, lossCoefficient,
+    # pressureDrop (Pa), description, flip, sizeParameters (diameter; or
+    # width, height). Empty changes none of them.
+    - name: settings
+      type: string
+      source: request
     # The connector to make primary: the plane its face lies on, "Neck Top", or
     # its id. Empty leaves the primary as it is.
     - name: primary
@@ -62,8 +77,9 @@ contract:
       source: request
   provides:
     - name: connectorReport
-      # Every connector as read back: domain, id, the plane it lies on, system,
-      # direction, primary or secondary, what it is linked to - on ONE line.
+      # Every connector as read back - domain, id, the plane it lies on,
+      # system, size and the parameters driving it, flow, which way it
+      # points, where it sits, primary or secondary, linked - on ONE line.
       role: result
       type: string
     - name: changed
@@ -118,6 +134,14 @@ runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
+  Version 2 adds `ConnectorElement.FlipDirection`, the `SystemClassification`
+  setter and `IsSystemClassificationValid`,
+  `FamilyManager.GetAssociatedFamilyParameter`, the enums FlowDirectionType,
+  Duct/PipeFlowConfigurationType and Duct/PipeLossMethodType, and the
+  built-in parameters RBS_DUCT/PIPE_FLOW_DIRECTION_PARAM,
+  RBS_DUCT/PIPE_FLOW_CONFIGURATION_PARAM, RBS_DUCT/PIPE_FITTING_LOSS_METHOD_PARAM,
+  RBS_LOSS_COEFFICIENT, RBS_PRESSURE_DROP and RBS_CONNECTOR_DESCRIPTION - each
+  present 2020, 2024 and 2027 (api-surface, read 2026-10-04).
   `ConnectorElement.AssignAsPrimary`, `IsPrimary`, `GetLinkedConnectorElement`,
   `SetLinkedConnectorElement`, `Origin`, `Direction`, `Domain` and
   `SystemClassification`, and `MEPSystemClassification.Global`, read the same
@@ -129,6 +153,10 @@ compatibility-note: >
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "set the primary connector of this family"   -> here
+#   "set the valve connectors to Global"         -> here
+#   "flip the connector on Port Left"            -> here
+#   "list this family's connectors"              -> REPORT_FAMILY_CONNECTORS,
+#                                                   a read
 #   "put a supply air connector on the neck"     -> ADD_FAMILY_CONNECTOR - a
 #                                                   new connector
 #   "link the connector flow to a family parameter"
