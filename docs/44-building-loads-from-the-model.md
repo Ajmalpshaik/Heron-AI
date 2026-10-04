@@ -307,23 +307,28 @@ the project file to show how each Space's load was worked out.
 
 ---
 
-## 9. Owner questions - asked one at a time, in this order
+## 9. Owner questions - answered 2026-10-04
 
-1. **Scope of version 1:** offices, schools and other commercial buildings in Qatar through Heron's own
-   engine, with houses left to the separately installed skill - yes?
-2. **People, lights, equipment:** typed per Space Type in the Companion (recommended - Revit's own Space
-   Type settings are read-only through the API on Spaces), or read from Revit's Building/Space Type
-   Settings where he has filled them?
-3. **What Finalize writes:** Revit's own Space fields (Design Cooling Load, Design Heating Load, Specified
-   Supply Airflow, outdoor air) - recommended, Revit's schedules and Analyze tools already read them - or
-   his own shared parameters?
-4. **The PDF:** confirm the report is not a "Publish" action under D-107, since it is written from Heron's
-   numbers and not exported from Revit.
-5. **A second method:** a cross-check by a different method, as that skill does with EnergyPlus. The
-   engine is already on his PC, but it is 350 MB outside Heron's install. Not now (recommended), or a later
-   optional add-on?
-6. **The defects in §1.2:** tell the author? It would be a public issue on their GitHub, from his account
-   - his decision.
+The owner answered the first and left the rest to Claude (*"you can decide the things"*). Each decision
+below is Claude's unless marked his, and he can overturn any of them.
+
+1. **Scope of version 1 - HIS ANSWER:** every commercial building - offices, schools and the rest - through
+   Heron's own engine; houses stay with the separately installed skill. **Qatar first.** Another country
+   ("this school in India") is kept possible and built later: `heron_hvac` already takes any site's own
+   monthly design weather (`months`) where it holds no named set, so until a country's set is added Heron
+   says it holds no design weather for that place and asks for it - never a guess. Testing waits for a model
+   he will name.
+2. **People, lights, equipment - decided:** typed once per Space Type in the Companion, editable per Space.
+   Revit's own Space Type values are read-only through the API on Spaces, and typed values carry the
+   "your instruction" label the report needs.
+3. **What Finalize writes - decided:** Revit's own Space fields (Design Cooling Load, Design Heating Load,
+   Specified Supply Airflow), through the existing `SET_PARAMETER_VALUES_BY_ID`; then the diffuser flows
+   through `terminal_flows` and `SET_AIR_TERMINAL_FLOW`. No new write tool.
+4. **The PDF - decided:** not a Publish action. It is written by the brain from Heron's own numbers, into
+   the run's folder; nothing is exported from Revit.
+5. **A second method - decided:** not now. Revisit after the first comparison with an engineer's HAP run.
+6. **The defects in §1.2 - decided:** not reported. It would be a public post from his account; he can ask
+   for it at any time.
 
 ---
 
