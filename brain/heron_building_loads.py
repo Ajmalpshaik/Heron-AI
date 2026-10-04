@@ -378,11 +378,16 @@ def site_checks(t, project):
 
 def _block(spaces):
     hours, coil = {}, {}
-    peaks = heating = area = 0.0
+    peaks = heating = area = done_area = supply = outdoor = 0.0
+    calculated = 0
     for s in spaces:
         area += float(s["area_m2"] or 0.0)
         if s["status"] != "ok":
             continue
+        calculated += 1
+        done_area += float(s["area_m2"] or 0.0)
+        supply += float(s.get("supply_ls") or 0.0)
+        outdoor += float(s.get("outdoor_air_ls") or 0.0)
         peaks += s["cooling"]["peak"]["total_w"]
         heating += s["heating"]["loss_w"]
         for h in s["cooling"]["hours"]:
@@ -407,7 +412,13 @@ def _block(spaces):
             "block_when": when(month, hour),
             "coil_block_w": c_block, "coil_block_tr": c_block / HVAC.W_PER_TR,
             "coil_block_month": c_month, "coil_block_hour": c_hour,
-            "coil_block_when": when(c_month, c_hour)}
+            "coil_block_when": when(c_month, c_hour),
+            # The page's summary row (2026-10-04): the air the calculated Spaces
+            # need, and the load per square metre of the floor that WAS
+            # calculated - a refused Space's floor would only dilute it.
+            "spaces": len(spaces), "calculated": calculated, "calculated_area_m2": done_area,
+            "supply_ls": supply, "outdoor_air_ls": outdoor,
+            "block_w_per_m2": block / done_area if done_area else None}
 
 
 def run(t, project, profiles, overrides=None, recorded=None):
@@ -755,6 +766,43 @@ def load_takeoff(project_key, takeoff_fingerprint):
         return TAKEOFF.read(fh.read())
 
 
+#: The note, in a project's runs folder, of where the modeller last chose to
+#: put its load reports. Never a run.
+REPORT_FOLDER_NOTE = "report-folder.json"
+
+
+def report_folder(project_key):
+    """The folder this project's load reports go to, as the modeller last chose it -
+    or None when none was chosen. Whether it is still there is the caller's to check."""
+    try:
+        path = os.path.join(_folder(project_key), REPORT_FOLDER_NOTE)
+    except ValueError:
+        return None
+    try:
+        with io.open(path, encoding="utf-8") as fh:
+            got = json.loads(fh.read()).get("folder")
+    except (OSError, ValueError, AttributeError):
+        return None
+    return got if isinstance(got, str) and got else None
+
+
+def set_report_folder(project_key, folder):
+    """Keep the folder the modeller chose for this project's load reports.
+
+    Only a folder that is already on this PC, named in full: a typed name that
+    is not there is a typing slip, and making it would leave reports in a
+    folder nobody meant (Ajmal, 2026-10-04: "I can give the location").
+    """
+    if not isinstance(folder, str) or not os.path.isabs(folder) or not os.path.isdir(folder):
+        raise ValueError("%r is not a folder on this PC" % (folder,))
+    base = _folder(project_key)
+    if not os.path.isdir(base):
+        os.makedirs(base)
+    with io.open(os.path.join(base, REPORT_FOLDER_NOTE), "w", encoding="utf-8") as fh:
+        fh.write(json.dumps({"folder": folder}))
+    return folder
+
+
 def runs(project_key):
     """This project's runs, newest first: [{"run_id", "when", "block_w"}]."""
     try:
@@ -765,7 +813,8 @@ def runs(project_key):
         return []
     out = []
     for name in os.listdir(folder):
-        if not name.endswith(".json") or name.startswith("takeoff-"):
+        if not name.endswith(".json") or name.startswith("takeoff-") \
+                or name == REPORT_FOLDER_NOTE:
             continue
         try:
             with io.open(os.path.join(folder, name), encoding="utf-8") as fh:

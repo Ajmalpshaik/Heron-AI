@@ -381,7 +381,9 @@
         const k = cam.dist * 0.0015;
         for (let i = 0; i < 3; i++) cam.target[i] += (-B.r[i] * dx + B.u[i] * dy) * k;
       } else {
-        cam.yaw += dx * 0.4;
+        // As Revit's orbit: the building turns the way the mouse moves - drag
+        // left and it turns left (Ajmal, 2026-10-04). Up and down already did.
+        cam.yaw -= dx * 0.4;
         cam.pitch = Math.max(2, Math.min(89.5, cam.pitch + dy * 0.4));
       }
       redraw();

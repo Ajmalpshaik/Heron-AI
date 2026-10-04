@@ -514,6 +514,76 @@ def test_seam_refuses_an_unreadable_takeoff():
     assert got["result"] is None and "Nothing was calculated" in got["said"]
 
 
+def test_the_building_total_carries_the_air_and_the_load_per_square_metre():
+    # The page's summary row (2026-10-04) shows these; the page adds nothing up
+    # itself (mcp/companion README rule 4), so the brain does.
+    r = B.run(bad_second_office(), PROJECT, {"Office": OFFICE})
+    ok = [s for s in r["spaces"] if s["status"] == "ok"]
+    b = r["building"]
+    assert b["spaces"] == 2 and b["calculated"] == 1 == len(ok)
+    assert abs(b["supply_ls"] - ok[0]["supply_ls"]) < 1e-9
+    assert abs(b["outdoor_air_ls"] - ok[0]["outdoor_air_ls"]) < 1e-9
+    assert abs(b["calculated_area_m2"] - ok[0]["area_m2"]) < 1e-9
+    assert abs(b["block_w_per_m2"] - b["block_w"] / ok[0]["area_m2"]) < 1e-9
+    nothing = B._block([])
+    assert nothing["calculated"] == 0 and nothing["block_w_per_m2"] is None
+
+
+def _calculated(brain):
+    return brain.building_loads(json.dumps(ROOM), {"project": PROJECT,
+                                                   "profiles": {"Office": OFFICE}},
+                                project="project-a", save=False)
+
+
+def test_report_goes_to_the_folder_the_modeller_chose_and_is_remembered():
+    # Ajmal, 2026-10-04: "I can give the location" - the sheet goes where he
+    # says, straight into that folder, and that folder is offered next time.
+    brain = _brain()
+    with knowledge_folder():
+        got = _calculated(brain)
+        assert got.get("report_folder") is None             # nothing chosen yet
+        chosen = tempfile.mkdtemp(prefix="heron-report-")
+        try:
+            wrote = brain.loads_report(got["takeoff"], got["result"], folder=chosen,
+                                       project="project-a", project_name="t")
+            assert wrote["ok"] and wrote["folder"] == chosen
+            assert os.path.dirname(wrote["html"]) == chosen and os.path.isfile(wrote["html"])
+            assert B.report_folder("project-a") == chosen
+            assert _calculated(brain)["report_folder"] == chosen
+            again = brain.loads_report(got["takeoff"], got["result"], project="project-a")
+            assert again["ok"] and again["folder"] == chosen
+            # The note that remembers the folder is not a run.
+            assert all(r["run_id"] for r in B.runs("project-a"))
+        finally:
+            shutil.rmtree(chosen, ignore_errors=True)
+
+
+def test_a_report_folder_that_is_not_there_is_refused_and_nothing_is_written():
+    brain = _brain()
+    with knowledge_folder():
+        got = _calculated(brain)
+        missing = os.path.join(tempfile.mkdtemp(prefix="heron-report-"), "not-there")
+        said = brain.loads_report(got["takeoff"], got["result"], folder=missing,
+                                  project="project-a")
+        assert said["ok"] is False and "not a folder" in said["said"]
+        assert not os.path.exists(missing) and B.report_folder("project-a") is None
+        relative = brain.loads_report(got["takeoff"], got["result"], folder="reports",
+                                      project="project-a")
+        assert relative["ok"] is False and B.report_folder("project-a") is None
+        assert raises(ValueError, B.set_report_folder, "project-a", "reports")
+
+
+def test_a_remembered_folder_that_was_removed_falls_back_to_the_usual_place():
+    brain = _brain()
+    with knowledge_folder() as tmp:
+        got = _calculated(brain)
+        chosen = tempfile.mkdtemp(prefix="heron-report-")
+        B.set_report_folder("project-a", chosen)
+        shutil.rmtree(chosen)
+        wrote = brain.loads_report(got["takeoff"], got["result"], project="project-a")
+        assert wrote["ok"] and wrote["folder"] != chosen and wrote["folder"].startswith(tmp)
+
+
 def test_tool_reads_the_envelope_checks_the_pin_and_tells_only_totals():
     server = io.open(SERVER, encoding="utf-8").read()
     body = server[server.index("def revit_building_loads("):]

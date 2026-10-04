@@ -9,13 +9,15 @@ in [docs/40](../../docs/40-heron-companion.md). The chat stays the only place to
 | Listens | `127.0.0.1` only, on a port Windows picks — never on the network |
 | Reads | the add-in's live file, `%LOCALAPPDATA%\Heron\live\pid-N.json` (written by `revit/Heron.Revit.Addin/HeronLiveState.cs` while the Heron button is connected) |
 | Changes | **only through the chat's own write path**: the page's Apply runs `revit_change`'s one body (`_change`) under the lock every tool call holds - the same gate, Changes switch, pin and single undo entry. Its risk is declared in `heron_tools.COMPANION_ACTIONS` |
+| Opens | a Windows folder window when Report is pressed, to ask where the HVAC load calculation sheet goes - its own process, nothing printed (`pick_folder`) |
+| Switched off | the Selected card and the Changes tables with their colour books (owner, 2026-10-04) - kept, behind `SHOW_SELECTION` / `SHOW_CHANGES`; see [docs/40 s21.6](../../docs/40-heron-companion.md) |
 | Lives | as long as the chat that opened it |
 
 ## What's here
 
 | | Does |
 |---|---|
-| [`heron_companion.py`](heron_companion.py) | The server: pairing, the protection rules, which Revit to show, the keeper that follows the Companion switch (D-109), the activity list, the after-change tables and the element table, and the Loads panel (docs/44) |
+| [`heron_companion.py`](heron_companion.py) | The server: pairing, the protection rules, which Revit to show, the keeper that follows the Companion switch (D-109), the activity list, the element table, the HVAC Load Calculation panel (docs/44) and the route that opens its sheet - and the after-change tables, switched off |
 | [`static/index.html`](static/index.html), [`static/companion.js`](static/companion.js), [`static/companion.css`](static/companion.css), [`static/loads3d.js`](static/loads3d.js) | The page, and the Loads panel's 3D view - a renderer of its own. Nothing is loaded from the internet |
 
 ## Rules for this folder
