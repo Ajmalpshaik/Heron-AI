@@ -917,6 +917,11 @@ class SprinklerPanel(object):
                 "types": answer.get("types") or {}, "fittings": answer.get("fittings") or {},
                 "sources": answer.get("sources") or [],
                 "fields": answer.get("fields") or [],
+                "water_fields": answer.get("water_fields") or {},
+                "water_parts": answer.get("water_parts") or [],
+                "hazard_classes": answer.get("hazard_classes") or [],
+                "spacing_fields": answer.get("spacing_fields") or [],
+                "spacing": result.get("spacing"), "water": result.get("water"),
                 "answer": result.get("answer"), "notes": list(result.get("notes") or []),
                 "run_id": result.get("run_id"), "said": answer.get("said"),
                 "confirmed": bool(answer.get("confirmed")), "report": None,
@@ -949,7 +954,7 @@ class SprinklerPanel(object):
         if not isinstance(body, dict):
             return None
         out = {}
-        for part in ("criteria", "k", "fittings", "standards"):
+        for part in ("criteria", "k", "fittings", "standards", "spacing", "water"):
             if not isinstance(body.get(part, {}), dict):
                 return None
             out[part] = body.get(part) or {}

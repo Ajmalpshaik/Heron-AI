@@ -26,11 +26,14 @@ import io
 import os
 
 import heron_fire as FIRE
+import heron_fire_water as WATER
 import heron_loads_report as SHEET
 import heron_sprinkler_run as RUN
 import heron_sprinkler_takeoff as TAKEOFF
 
 _e = SHEET._e
+WATER_FLOW = FIRE.flow_text
+WATER_PRESSURE = FIRE.pressure_text
 _table = SHEET._table
 _csv = SHEET._csv
 
@@ -151,6 +154,8 @@ def html(result, network=None, standards=None, project_name=None):
         parts.append("".join("<p class='lead %s'>%s - %s</p>" % (
             "fail" if lv == "FAIL" else "warn" if lv == "WARN" else "", _e(lv), _e(t))
             for lv, t in answer.get("checks") or []))
+    parts.append(water_html(r.get("water")))
+    parts.append(spacing_html(r.get("spacing")))
     parts.append("<h2>Model checks</h2>")
     parts.append("".join("<p class='lead %s'>%s - %s</p>" % (
         "fail" if f["level"] == "FAIL" else "warn" if f["level"] == "WARN" else "",
@@ -167,6 +172,85 @@ def html(result, network=None, standards=None, project_name=None):
     parts.append("<p class='disclaimer'>%s</p>" % _e(FIRE.DISCLAIMER))
     parts.append("</body></html>")
     return "".join(parts)
+
+
+def _answer_html(answer):
+    """One engine answer's results, tables and checks - as the engine printed them."""
+    out = []
+    for name, text in answer.get("results") or []:
+        out.append("<p class='note'>%s: %s</p>" % (_e(name), _e(text)))
+    for t in answer.get("tables") or []:
+        out.append("<p class='lead'>%s</p>" % _e(t["title"]))
+        out.append(_table(t["columns"], t["rows"]))
+    for lv, t in answer.get("checks") or []:
+        out.append("<p class='lead %s'>%s - %s</p>" % (
+            "fail" if lv == "FAIL" else "warn" if lv == "WARN" else "", _e(lv), _e(t)))
+    for t in answer.get("assumed") or []:
+        out.append("<p class='note'>Assumed: %s</p>" % _e(t))
+    return "".join(out)
+
+
+def water_html(water):
+    """The Fire water section (docs/46 s13.1) - each part as the engine answered it, a part
+    not included said so, and how the total was made."""
+    if not water:
+        return ""
+    out = ["<h2>Fire water</h2>"]
+    if water.get("status") == "not solved":
+        return out[0] + "".join("<p class='note'>%s</p>" % _e(t) for t in water.get("notes") or [])
+    total = water.get("total") or {}
+    out.append(_table(["", ""], [
+        ["Total flow at the source", WATER_FLOW(total.get("flow_lpm"))],
+        ["Pressure the source must give", WATER_PRESSURE(total.get("pressure_bar"))]])
+        .replace("<table>", "<table class='summary'>", 1))
+    for line in total.get("from") or []:
+        out.append("<p class='note'>From: %s</p>" % _e(line))
+    for key, _calc, label in WATER.PARTS + (("supply", "water_supply",
+                                             "The flow test against the total"),):
+        got = (water.get("parts") or {}).get(key)
+        if got is None:
+            continue
+        out.append("<p class='lead'>%s</p>" % _e(label))
+        if got.get("status") == "ok":
+            out.append(_answer_html(got))
+        elif got.get("status") == "missing":
+            out.append("<p class='note'>Not worked out - still asked: %s</p>" % _e(
+                ", ".join(m["input"] for m in got.get("missing") or [])))
+        else:
+            out.append("<p class='lead fail'>%s</p>" % _e("; ".join(got.get("refused") or [])))
+    for t in water.get("notes") or []:
+        out.append("<p class='note'>%s</p>" % _e(t))
+    return "".join(out)
+
+
+def spacing_html(spacing):
+    """The Spacing section (docs/46 s13.2) - every Space with a head, its class, its result,
+    every failing head; a Space not checked said as not checked."""
+    if not spacing or not (spacing.get("spaces") or spacing.get("loose")):
+        return ""
+    out = ["<h2>Spacing in each Space</h2>"]
+    rows = []
+    for sp in spacing.get("spaces") or []:
+        rows.append([sp.get("label"), sp.get("level") or "-", len(sp.get("heads") or []),
+                     sp.get("hazard") or "-",
+                     "-" if sp.get("angle_deg") is None else "%.1f (%s)" % (
+                         sp["angle_deg"], sp.get("angle_from")),
+                     sp.get("status"), sp.get("why") or ""])
+    out.append(_table(["Space", "Level", "Heads", "Hazard class", "Branch lines, degrees",
+                       "Result", "Why"], rows, numeric=(2,)))
+    for sp in spacing.get("spaces") or []:
+        answer = sp.get("answer") or {}
+        if sp.get("status") in ("ok", "fail") and answer.get("tables"):
+            out.append("<p class='lead'>%s</p>" % _e(sp.get("label")))
+            out.append(_answer_html(answer))
+    if spacing.get("loose"):
+        out.append("<p class='lead warn'>In no Space, so not checked: %s</p>"
+                   % _e(", ".join(spacing["loose"])))
+    out.append("<p class='note'>Each Space is turned so its branch lines lie along x before "
+               "S and L are measured; the direction is read from the model's level pipes in the "
+               "Space unless the modeller gave one. A Space with no hazard class is not "
+               "checked - it is never passed.</p>")
+    return "".join(out)
 
 
 def heads_csv(result):

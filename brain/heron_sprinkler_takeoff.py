@@ -680,8 +680,9 @@ def qa(n, k_by_type=None, source=None):
     return found
 
 
-#: What a confirmation does NOT depend on - names that change without a pipe moving.
-NAMES = ("level", "space", "family", "type")
+#: What a confirmation does NOT depend on - names that change without a pipe moving, and
+#: which Space a head sits in (the spacing check's, not the network's).
+NAMES = ("level", "space", "space_id", "family", "type")
 
 
 def fingerprint(n):

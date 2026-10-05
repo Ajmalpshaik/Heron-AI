@@ -259,3 +259,83 @@ every one was taken, and its review log says what each changed. The main changes
 **Seen in a browser** (headless Chromium, on the test network of `tests/test_sprinkler_takeoff.py`, not
 a model): the panel with its questions, then solved with its figures, checks, tables and 3D view coloured
 by velocity, with no script error. **Not run in Revit** - group CE is the next step.
+
+---
+
+## 13. Phase 1b - the fire water and the spacing, asked 2026-10-05
+
+**Asked by the owner** after phase 1: of what was left for firefighting, *"1 and 2 - complete that
+first"* - (1) the standpipes, hose reels, fire pump and tank, and (2) the coverage and spacing of the
+heads per room. Both are in the same panel: they are the same system's questions, and one sheet is
+what a consultant is handed.
+
+### 13.1 Fire water - what the source must give, and how much water
+
+The engine already calculates each part on its own ([42 §9](42-fire-protection-design.md)):
+`standpipe`, `hose_reels`, `water_storage`, `fire_pump`, `water_supply`. What is missing is putting
+them together with the sprinkler demand the panel has just solved. A new **Fire water** section of the
+panel does that:
+
+- **Which systems the source serves** - standpipes and hose reels are each *included* or not by the
+  modeller's tick. Nothing is included by default, and the sheet says, for each, **"not included by
+  the modeller"** - never silence.
+- **What runs at the same time as the sprinklers** - for each included system, a tick. The total flow
+  at the source is the sprinkler demand (with its hose allowance) plus every system ticked; the
+  pressure the source must give is **the highest any included demand needs there**. That second rule
+  is a simplification - each system's own path is not solved together with the others - and the sheet
+  says so in words.
+- **Each part's inputs are the engine's own questions**, asked only for the parts included, each with
+  the standard's figure offered (D-33). The page holds no list of its own: the fields come from running
+  each calculation on nothing.
+- **The tank** - `water_storage` with the sprinkler flow, the hose allowance and each simultaneous
+  system's flow over its own duration, which is asked.
+- **The pump** - `fire_pump` with the pump's data-sheet points, checked against the total demand at
+  the highest pressure.
+- **The supply** - with standpipes or hose reels included, the flow test is checked again against the
+  total, through `water_supply`.
+
+The fire water answers never block the sprinkler solve: they come after it, and a missing pump curve is
+a question in its own section.
+
+### 13.2 Spacing and coverage per Space
+
+The engine's `sprinkler_spacing` already checks a drawn layout as NFPA 13 measures it - each head's S,
+L, area and wall distance - from a room outline and the heads' positions. What is missing is the room
+outline and the heads from the model, room by room.
+
+- **The read** - REPORT_SPRINKLER_NETWORK also gives, for every MEP Space a head of the system sits in,
+  its outline in plan (metres, model coordinates) and its level, and each head carries its Space's id.
+  Spaces, not Rooms: Spaces are in the MEP model, where the sprinklers are. **A head in no Space is
+  listed, never checked**.
+- **Which way the branch lines run** - read from the model's own pipes: the length-weighted direction
+  of the horizontal pipes in the Space. Shown with what it was read from, and the modeller can change
+  it. The layout is turned by that angle before the check, so a building at an angle is measured along
+  its own branch lines.
+- **The hazard class of each Space** - the engineer's, asked per Space, never assumed. **The limits of
+  each class** - most spacing, most area, most wall distance and the optional minimums - asked once per
+  class, with the standard's figures for that class offered.
+- **Each Space's result** - every head OK or FAIL with the reason, and the farthest point from any head.
+  The 3D view gets a **Spacing** colour, and the Space outlines are drawn.
+- **A Space with no hazard given is "not checked"**, said on the panel and the sheet, never "OK".
+
+### 13.3 What is still not here
+
+Obstructions to spray (the beam rule) per head; heads above a ceiling; sidewall and extended-coverage
+heads, which measure differently; standpipe and hose reel outlets read from the model; a standpipe-only
+building with no sprinkler system. Each stays a question for a later phase.
+
+The plan is [`docs/work-notes/plans/fire-water-and-spacing-2026-10-05.md`](work-notes/plans/fire-water-and-spacing-2026-10-05.md).
+
+### 13.4 What is built - phase 1b (2026-10-05)
+
+| Part | What it is | Its test |
+|---|---|---|
+| `heron_fire` | `data` on `standpipe`, `hose_reels`, `water_storage`, `fire_pump`, `water_supply` and `sprinkler_spacing`; `spacing_offers()`; `fields()` - a calculation's inputs, derived by running it on nothing | `tests/test_fire.py` section 11 |
+| REPORT_SPRINKLER_NETWORK | Each head's `space_id`; `spaces` with each one's outline | compiled on 2020, 2024 and 2027 here; [group CE](needs-checking/group-ce.md) CE8 |
+| [`heron_sprinkler_spacing.py`](../brain/heron_sprinkler_spacing.py) | Spacing per Space, the branch angle from the pipes, the layout turned to it | `tests/test_sprinkler_spacing.py` |
+| [`heron_fire_water.py`](../brain/heron_fire_water.py) | The fire water parts put together with the sprinkler demand | `tests/test_sprinkler_spacing.py` |
+| The run, the sheet, the 3D view, the page | Both sections; a Spacing colour and the Space outlines | `tests/test_sprinkler_run.py`, `tests/test_sprinkler_view.py`, `tests/test_companion.py` |
+
+**Seen in a browser** on a test office turned 20 degrees (not a model): both sections, the outline and
+the Spacing colour, and Calculate sent from the page and answered, with no script error. **Not run in
+Revit** - CE8 to CE10.

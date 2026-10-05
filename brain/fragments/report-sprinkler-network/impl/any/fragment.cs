@@ -236,6 +236,10 @@ Func<Element, string> kParameter = element =>
     return null;
 };
 
+// The Spaces the heads sit in, for the spacing check (docs/46 s13.2): each
+// read once, after the elements, with its outline.
+var headSpaces = new Dictionary<string, Space>();
+
 var body = new System.Text.StringBuilder();
 var first = true;
 foreach (var element in elements)
@@ -331,13 +335,18 @@ foreach (var element in elements)
         }
     }
 
-    string space = null;
+    string space = null, spaceId = null;
     if (kind == "sprinkler" && at != null)
     {
         try
         {
             var s = doc.GetSpaceAtPoint(at);
-            if (s != null) space = (s.Number + " " + s.Name).Trim();
+            if (s != null)
+            {
+                space = (s.Number + " " + s.Name).Trim();
+                spaceId = s.Id.ToString();
+                headSpaces[spaceId] = s;
+            }
         }
         catch { }
     }
@@ -361,6 +370,7 @@ foreach (var element in elements)
             : "null")
         .Append("," + esc("level") + ":").Append(esc(levelOf(element)))
         .Append("," + esc("space") + ":").Append(esc(space))
+        .Append("," + esc("space_id") + ":").Append(esc(spaceId))
         .Append("," + esc("at") + ":").Append(point(at))
         .Append("," + esc("connectors") + ":[").Append(connectors.ToString()).Append("]}");
 }
@@ -389,6 +399,63 @@ else
         .Append("," + esc("base_equipment") + ":").Append(esc(baseEquipment))
         .Append("}");
 json.Append("," + esc("elements") + ":[").Append(body.ToString()).Append("]");
+
+// ---- the Spaces the heads sit in, with their outlines -----------------------
+//
+// The first boundary loop, as Revit bounds the Space with its default options,
+// each curve tessellated into points, metres in plan, a point repeating the one
+// before it left out. A Space whose boundary cannot be read is listed with a
+// null outline and a finding - its heads are then not checked, never guessed.
+json.Append("," + esc("spaces") + ":[");
+var firstSpace = true;
+foreach (var pair in headSpaces)
+{
+    var s = pair.Value;
+    var outline = new System.Text.StringBuilder();
+    var points = 0;
+    try
+    {
+        var loops = s.GetBoundarySegments(new SpatialElementBoundaryOptions());
+        if (loops != null && loops.Count > 0)
+        {
+            XYZ last = null;
+            foreach (BoundarySegment segment in loops[0])
+            {
+                var curve = segment.GetCurve();
+                if (curve == null) continue;
+                foreach (XYZ p in curve.Tessellate())
+                {
+                    if (last != null && p.DistanceTo(last) < 1e-6) continue;
+                    if (points > 0) outline.Append(",");
+                    outline.Append("[").Append(metres(p.X)).Append(",").Append(metres(p.Y)).Append("]");
+                    last = p;
+                    points++;
+                }
+            }
+        }
+    }
+    catch { points = 0; }
+    if (points < 3) findings.Add("The outline of Space " + (s.Number + " " + s.Name).Trim() + " could not be read - its heads are not checked for spacing.");
+    double? area = null;
+    try
+    {
+        var a = s.get_Parameter(BuiltInParameter.ROOM_AREA);
+        if (a != null && a.HasValue && a.StorageType == StorageType.Double) area = a.AsDouble() * 0.09290304;
+    }
+    catch { }
+    string levelName = null;
+    try { if (s.Level != null) levelName = s.Level.Name; } catch { }
+    if (!firstSpace) json.Append(",");
+    firstSpace = false;
+    json.Append("{" + esc("id") + ":").Append(esc(pair.Key))
+        .Append("," + esc("number") + ":").Append(esc(s.Number))
+        .Append("," + esc("name") + ":").Append(esc(s.Name))
+        .Append("," + esc("level") + ":").Append(esc(levelName))
+        .Append("," + esc("area_m2") + ":").Append(numOrNull(area))
+        .Append("," + esc("outline") + ":").Append(points >= 3 ? "[" + outline.ToString() + "]" : "null")
+        .Append("}");
+}
+json.Append("]");
 json.Append("," + esc("findings") + ":[");
 for (var i = 0; i < findings.Count; i++)
 {

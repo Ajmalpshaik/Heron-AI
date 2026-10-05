@@ -1582,8 +1582,10 @@ function sprinklerState(S) {
     Object.entries(inputs[part] || {}).forEach(([k, v]) => { out[k] = valueOf(v); });
     return out;
   };
+  const deep = v => JSON.parse(JSON.stringify(v || {}));
   return { criteria: plain("criteria"), k: plain("k"), fittings: plain("fittings"),
            standards: Object.assign({}, inputs.standards || {}),
+           spacing: deep(inputs.spacing), water: deep(inputs.water),
            operating: (inputs.operating || []).slice(), suggested: (inputs.suggested || []).slice(),
            source: inputs.source || S.source || null };
 }
@@ -1805,6 +1807,118 @@ function sprinklerRemote(S, state, said) {
   return sec;
 }
 
+// One place in a nested input map, made on the way: state.water.pump.rated_flow_lpm.
+function put(root, path, value) {
+  let here = root;
+  path.slice(0, -1).forEach(k => { if (!here[k] || typeof here[k] !== "object") here[k] = {}; here = here[k]; });
+  here[path[path.length - 1]] = value;
+}
+function got(root, path) {
+  let here = root;
+  for (const k of path) { if (!here || typeof here !== "object") return null; here = here[k]; }
+  return here == null ? null : valueOf(here);
+}
+
+function statusBadge(status) {
+  const level = { ok: "ok", fail: "fail", refused: "fail", asked: "warn", missing: "warn", warn: "warn" }[status] || "info";
+  return el("span", "badge " + level, status || "—");
+}
+
+// Spacing: every Space with a head, its class, its branch angle and its result -
+// all worked out in brain/ (heron_sprinkler_spacing). The page offers the
+// classes the brain sent and the figures the brain offered.
+function sprinklerSpacing(S, state) {
+  const sp = S.spacing || {};
+  const sec = el("section", "l-sec");
+  sec.append(el("h3", null, "Spacing in each Space"));
+  sec.append(el("p", "small muted", "Give each Space its hazard class - the engineer's, never assumed - and the limits of each class; then Calculate. A Space with no class is not checked."));
+  const rows = (sp.spaces || []).map(row => {
+    const pick = el("select");
+    pick.setAttribute("aria-label", "hazard class of " + row.label);
+    const none = el("option", null, "not given"); none.value = ""; pick.append(none);
+    (S.hazard_classes || []).forEach(c => { const o = el("option", null, c); o.value = c; pick.append(o); });
+    pick.value = got(state.spacing, ["hazard", row.id]) || row.hazard || "";
+    pick.addEventListener("change", () => put(state.spacing, ["hazard", row.id], pick.value));
+    const angle = sprinklerField(got(state.spacing, ["angle_deg", row.id]), "branch angle of " + row.label,
+                                 v => put(state.spacing, ["angle_deg", row.id], v));
+    angle.placeholder = row.model_angle_deg == null ? "give it" : String(row.model_angle_deg);
+    const read = row.model_angle_deg == null ? "no level pipe found"
+      : row.model_angle_deg + "° from " + row.model_angle_m + " m of the model's pipes";
+    return [row.label, row.level || "—", (row.heads || []).length, pick, angle, read, statusBadge(row.status), row.why || ""];
+  });
+  sec.append(sprinklerTable(["Space", "Level", "Heads", "Hazard class", "Branch lines (degrees)", "Read from the model", "Result", "Why"], rows));
+  if ((sp.loose || []).length) sec.append(el("p", "small warn", "In no Space, so not checked: " + sp.loose.join(", ")));
+  const classes = [...new Set(Object.values((state.spacing || {}).hazard || {}).filter(Boolean))];
+  if (classes.length) {
+    sec.append(el("h3", null, "Limits for each class"));
+    const offer = name => { const a = (sp.asked || []).find(x => x.input === name); return a ? (a.offer || "") : ""; };
+    const lrows = [];
+    classes.forEach(c => (S.spacing_fields || []).forEach(([name, unit, why, required]) => {
+      lrows.push([c, why + (required ? "" : " (optional)"), unit,
+                  sprinklerField(got(state.spacing, ["limits", c, name]), c + " " + name,
+                                 v => put(state.spacing, ["limits", c, name], v)),
+                  offer("spacing.limits." + c + "." + name)]);
+    }));
+    sec.append(sprinklerTable(["Class", "Limit", "Unit", "Your value", "The standard offers"], lrows));
+  }
+  return sec;
+}
+
+// Fire water: the standpipes, hose reels, tank and pump, put together with the
+// sprinkler demand in brain/ (heron_fire_water). Each part's questions are the
+// engine's own, sent by the brain.
+function sprinklerWater(S, state) {
+  const w = S.water || {};
+  const sec = el("section", "l-sec");
+  sec.append(el("h3", null, "Fire water - what the source must give"));
+  sec.append(el("p", "small muted", "Tick what the fire water serves. A part not ticked is said on the sheet as not included. The pressure is the highest any included demand needs at the source; each part's path is not solved together with the others."));
+  const total = w.total || {};
+  if (w.status && w.status !== "not solved") {
+    sec.append(sprinklerTable(["Total flow at the source", "Pressure the source must give"],
+      [[num(total.flow_lpm, 1) + " L/min", num(total.pressure_bar, 3) + " bar"]]));
+  } else {
+    sec.append(el("p", "small muted", "Worked out once the sprinkler system is solved."));
+  }
+  (S.water_parts || []).forEach(([key, label]) => {
+    const part = el("div", "l-sec");
+    const head = el("h3", null, label);
+    const answer = (w.parts || {})[key];
+    if (answer) head.append(statusBadge(answer.status));
+    part.append(head);
+    const include = el("label", "l3d-tick");
+    const box = el("input"); box.type = "checkbox"; box.checked = !!got(state.water, ["include", key]);
+    box.addEventListener("change", () => put(state.water, ["include", key], box.checked));
+    include.append(box, el("span", null, "Included"));
+    part.append(include);
+    if (key === "standpipe" || key === "hose_reels") {
+      const same = el("label", "l3d-tick");
+      const b2 = el("input"); b2.type = "checkbox"; b2.checked = !!got(state.water, ["simultaneous", key]);
+      b2.addEventListener("change", () => put(state.water, ["simultaneous", key], b2.checked));
+      same.append(b2, el("span", null, "Runs at the same time as the sprinklers"));
+      part.append(same);
+    }
+    const asked = name => (w.asked || []).find(a => a.input === "water." + key + "." + name);
+    part.append(sprinklerTable(["Input", "Your value", "Unit", "Why", "Offered"],
+      ((S.water_fields || {})[key] || []).map(f => [f.input + (f.required ? "" : " (optional)"),
+        sprinklerField(got(state.water, [key, f.input]), label + " " + f.input,
+                       v => put(state.water, [key, f.input], v)),
+        f.unit, f.why, (asked(f.input) || {}).offer || ""])));
+    if (answer && answer.status === "ok") {
+      (answer.results || []).forEach(r => part.append(el("p", "small", r[0] + ": " + r[1])));
+      (answer.checks || []).forEach(c => {
+        const p = el("p", "small");
+        p.append(statusBadge(String(c[0]).toLowerCase() === "fail" ? "fail" : String(c[0]).toLowerCase()), document.createTextNode(" " + c[1]));
+        part.append(p);
+      });
+    } else if (answer && answer.status === "refused") {
+      part.append(el("p", "small warn", (answer.refused || []).join("; ")));
+    }
+    sec.append(part);
+  });
+  (w.notes || []).forEach(t => sec.append(el("p", "small muted", t)));
+  return sec;
+}
+
 function sprinklerResults(S) {
   const wrap = el("div");
   ((S.answer && S.answer.tables) || []).forEach(t => {
@@ -1842,7 +1956,8 @@ function renderSprinkler(S) {
   if (S.status === "ok") box.append(sprinklerFigures(S));
   box.append(sprinklerChecks(S));
   if (S.has_view) box.append(el("h3", "l-3d-title", "3D - the pipes and heads the calculation solved"));
-  below.append(sprinklerInputs(S, state), sprinklerRemote(S, state, said), sprinklerResults(S));
+  below.append(sprinklerInputs(S, state), sprinklerRemote(S, state, said), sprinklerResults(S),
+               sprinklerSpacing(S, state), sprinklerWater(S, state));
 }
 
 async function sprinkler_() {

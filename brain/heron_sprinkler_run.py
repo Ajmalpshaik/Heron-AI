@@ -36,6 +36,8 @@ import os
 import re
 
 import heron_fire as FIRE
+import heron_fire_water as WATER
+import heron_sprinkler_spacing as SPACING
 import heron_sprinkler_takeoff as TAKEOFF
 
 FORMAT = 1
@@ -105,8 +107,10 @@ def _number(name, raw, unit, low, high):
 def normalise(inputs):
     """The inputs as the run keeps them - every value labelled with where it came from.
 
-    {"criteria", "k", "fittings", "operating", "source", "standards"}. A value
-    that cannot be one raises InputError naming it.
+    {"criteria", "k", "fittings", "operating", "source", "standards", "spacing",
+    "water"}. A value that cannot be one raises InputError naming it. The
+    spacing and fire water inputs are kept as given: their values are checked
+    by the engine that reads them (heron_sprinkler_spacing, heron_fire_water).
     """
     if isinstance(inputs, str):
         try:
@@ -122,7 +126,9 @@ def normalise(inputs):
            "suggested": [str(x) for x in inputs.get("suggested") or []],
            "source": str(inputs["source"]) if inputs.get("source") else None,
            "standards": dict((k, v) for k, v in (inputs.get("standards") or {}).items()
-                             if v not in (None, ""))}
+                             if v not in (None, "")),
+           "spacing": _nested(inputs.get("spacing"), "spacing"),
+           "water": _nested(inputs.get("water"), "water")}
     unknown = [k for k in out["criteria"] if k not in CRITERIA]
     if unknown:
         raise InputError("%s is not a criterion Heron reads - %s" % (
@@ -136,6 +142,23 @@ def normalise(inputs):
     for name, entry in out["fittings"].items():
         entry["value"] = _number("the equivalent length of %s" % name, entry["value"], "m",
                                  *EQ_RANGE)
+    return out
+
+
+def _nested(raw, name):
+    """A section of the inputs that is a map of maps (spacing, water), blanks left out."""
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise InputError("the %s inputs are not a map" % name)
+    out = {}
+    for k, v in raw.items():
+        if isinstance(v, dict):
+            inner = _nested(v, "%s.%s" % (name, k))
+            if inner:
+                out[str(k)] = inner
+        elif v is not None and v != "" and _value(v) not in (None, ""):
+            out[str(k)] = v
     return out
 
 
@@ -304,6 +327,24 @@ def _now():
 
 def run(n, inputs, recorded=None):
     """
+    One run (see _solve), then - whatever it came to - every head's spacing in
+    its Space (heron_sprinkler_spacing), and, when the sprinklers are solved,
+    the fire water (heron_fire_water). Neither of those ever stops the solve.
+    """
+    result = _solve(n, inputs, recorded)
+    given = result.get("inputs")
+    result["spacing"] = None
+    result["water"] = None
+    if given is None:
+        return result
+    standard = _standard(given, recorded)
+    result["spacing"] = SPACING.check(n, given.get("spacing"), standard)
+    result["water"] = WATER.run(result, given.get("water"), given.get("standards"), recorded)
+    return result
+
+
+def _solve(n, inputs, recorded=None):
+    """
     One run. While anything is asked, nothing is solved: {"status": "missing",
     "asked": [...]}. A FAIL in the model checks refuses the run with the
     checks' own words. Else heron_fire's `hydraulic` is run and its answer
@@ -413,6 +454,13 @@ def confirmed(result, n):
 
 def summary_text(result):
     """Three to five lines for the chat - the rest is on the panel."""
+    text = _summary(result)
+    extra = [x for x in (SPACING.summary_line(result.get("spacing")),
+                         WATER.summary_line(result.get("water"))) if x]
+    return " ".join([text] + extra)
+
+
+def _summary(result):
     system = (result.get("system") or {}).get("name") or "the system"
     if result.get("status") == "missing":
         names = [a["input"] for a in result.get("asked") or []]
@@ -556,4 +604,29 @@ def carried(last, inputs, heads=None):
         inputs["operating"] = [h for h in before["operating"] if keep is None or str(h) in keep]
     for k, v in (before.get("standards") or {}).items():
         inputs["standards"].setdefault(k, v)
+    for part in ("spacing", "water"):
+        inputs[part] = _carry(before.get(part) or {}, inputs.get(part) or {},
+                              raw.get(part) if isinstance(raw.get(part), dict) else {})
     return inputs
+
+
+def _carry(before, now, raw):
+    """`now` with what `before` held filled in where this call said nothing - a key this
+    call gave as nothing (in `raw`) clears it, at any depth."""
+    out = dict(now)
+    for k, v in before.items():
+        said = raw.get(k, None) if isinstance(raw, dict) else None
+        # A map of further inputs is not a blank; only a value given as nothing is.
+        blank = said is None or said == "" or (
+            isinstance(said, dict) and "value" in said and said["value"] in (None, ""))
+        if k in raw and blank:
+            out.pop(k, None)
+            continue
+        if isinstance(v, dict):
+            inner = _carry(v, out.get(k) if isinstance(out.get(k), dict) else {},
+                           said if isinstance(said, dict) else {})
+            if inner:
+                out[k] = inner
+        elif k not in out:
+            out[k] = v
+    return out

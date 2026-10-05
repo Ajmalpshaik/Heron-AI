@@ -29,6 +29,7 @@ Standard library only.
 
 import math
 
+import heron_sprinkler_spacing as SPACING
 import heron_sprinkler_takeoff as TAKEOFF
 
 FORMAT = 1
@@ -40,6 +41,11 @@ OPERATING = (("on", "#c53030", "operating - in the remote area"),
 CHECKS = (("ok", "#5aa469", "within the limits given"),
           ("fail", "#d9534f", "above the velocity limit given"),
           ("none", "#cfcac0", "no limit given, or not solved"))
+SPACING_MARKS = (("ok", "#5aa469", "within its Space's limits"),
+                 ("fail", "#d9534f", "breaks a spacing limit - see its Space"),
+                 ("not checked", "#e0a030", "not checked - its Space has no hazard class or limits"),
+                 ("no Space", "#9e9e9e", "in no Space - not checked"))
+OUTLINE = "#7a8796"
 DRY = "#cfcac0"
 #: Below this a pipe is dry - the solver's round-off on a branch with no open head.
 WET_LPM = 1e-6
@@ -155,11 +161,14 @@ def build(network, result=None):
                          ["Length solved", "%.2f m" % (got.get("length_m") or 0.0)],
                          ["Fittings", "%.2f m equivalent" % (got.get("eq_m") or 0.0)],
                          ["Loss", "%.4f bar" % (got.get("loss_bar") or 0.0)]]
+        colour["spacing"] = DRY
         segments.append({"id": seg["id"], "element": str(e["id"]),
                          "a": moved(records[a]["at"]),
                          "b": moved(records[b]["at"]), "values": values, "colour": colour,
                          "info": info, "level": e.get("level")})
 
+    marks = SPACING.head_status(result)
+    mark_colour = dict((k, c) for k, c, _t in SPACING_MARKS)
     points = []
     for e in n.elements:
         if e.get("kind") != "sprinkler":
@@ -173,6 +182,10 @@ def build(network, result=None):
             ["Level", e.get("level") or "-"], ["Space", e.get("space") or "-"],
             ["Remote area", "yes" if on else "no"]]
         values = {"operating": on}
+        mark = marks.get(str(e["id"]))
+        if mark:
+            colour["spacing"] = mark_colour[mark]
+            info.append(["Spacing", mark])
         if solved:
             h = heads.get(nid) if nid else None
             p = h.get("p_bar") if h else (pressures.get(nid) if nid else None)
@@ -203,8 +216,24 @@ def build(network, result=None):
                    "legend": _ramp_legend(p_lo, p_hi, "bar")},
                   {"key": "checks", "label": "Checks",
                    "legend": [[c, t] for _k, c, t in CHECKS]}]
+    if marks:
+        modes.append({"key": "spacing", "label": "Spacing in its Space",
+                      "legend": [[c, t] for _k, c, t in SPACING_MARKS]})
+    # Each Space's outline, at the height of its heads - drawn as a closed line.
+    outlines = []
+    found, _loose = SPACING.spaces(n)
+    for sid, sp in sorted(found.items()):
+        if not sp.get("outline"):
+            continue
+        zs = [float(e["at"][2]) for e in n.elements if e.get("kind") == "sprinkler"
+              and str(e.get("space_id")) == sid and isinstance(e.get("at"), (list, tuple))]
+        z = sum(zs) / len(zs) if zs else centre[2]
+        outlines.append({"id": sid, "label": SPACING.label(sp), "level": sp.get("level"),
+                         "colour": OUTLINE,
+                         "points": [moved([x, y, z]) for x, y in sp["outline"]]})
     levels = sorted(set(x.get("level") for x in segments + points if x.get("level")))
     return {"format": FORMAT, "segments": segments, "points": points, "modes": modes,
+            "outlines": outlines,
             "levels": levels, "dry": DRY,
             "source": {"at": moved(src["at"]), "colour": SOURCE, "id": source}
             if src and src.get("at") else None}

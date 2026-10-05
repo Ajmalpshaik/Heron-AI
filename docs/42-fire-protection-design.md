@@ -465,6 +465,10 @@ did not come back - what did was Singapore's and EN 12845's - and are not held. 
   2026-10-04 the network is read from Revit without that:** `REPORT_SPRINKLER_NETWORK` reads one system
   and the brain joins it and hands it to this same `hydraulic`, in the Companion's Sprinkler panel -
   [46](46-sprinkler-hydraulics-from-the-model.md). The arithmetic still has one home, here.
+  Since 2026-10-05 the same panel puts `standpipe`, `hose_reels`, `water_storage`, `fire_pump`
+  and `water_supply` together with the solved sprinkler demand, and runs `sprinkler_spacing` on
+  every Space a head sits in ([46 §13](46-sprinkler-hydraulics-from-the-model.md)). Standpipe and
+  hose reel outlets are still typed, not read from the model.
 - **Velocity pressure, the normal-pressure method, and pumps inside the network.** The solver is the
   total-pressure method with the source as the one boundary; a pump is checked on its own against the
   demand.

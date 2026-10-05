@@ -1750,6 +1750,51 @@ def hydraulic_offers(standard=None):
             if family == "en" else None}
 
 
+def spacing_offers(hazard=None, standard=None):
+    """
+    {criterion: the sentence offering the standard's figure} for the limits
+    `sprinkler_spacing` asks - for one hazard class, for a caller that asks
+    them before it has a layout to check (the Sprinkler panel, docs/46 s13).
+    The engine's own offer functions, so the text has one home. Offered,
+    never applied (D-33).
+    """
+    family = family_of(standard) if standard else None
+    shown = family or "nfpa"
+    key = hazard_key(hazard, shown) if hazard else None
+    return {"max_spacing_m": _spacing_offer(key, "maximum spacing and area", shown),
+            "max_area_m2": _spacing_offer(key, "maximum area and spacing", shown),
+            "max_wall_distance_m": _wall_offer(shown),
+            "min_spacing_m": _least_spacing_offer(shown),
+            "min_wall_distance_m": _rule("sprinkler_rules", "minimum distance to a wall")
+            if shown == "nfpa" else None}
+
+
+def fields(name):
+    """
+    The inputs a calculation reads, DERIVED by running it on nothing:
+    [{"input", "unit", "why", "required"}] - so a page that asks for them holds
+    no list of its own. Inputs asked only once others are given (a flow
+    test's second figure) appear when the calculation is run with them.
+    """
+    entry = CALCULATIONS[name]
+    answer = Answer(name, {})
+    try:
+        entry["run"](answer)
+    except Refused:
+        pass
+    out, seen = [], set()
+    for m in answer.missing:
+        if m["input"] not in seen:
+            seen.add(m["input"])
+            out.append({"input": m["input"], "unit": m.get("unit"), "why": m.get("why"),
+                        "required": True})
+    for o in answer.optional:
+        if o[0] not in seen:
+            seen.add(o[0])
+            out.append({"input": o[0], "unit": o[1], "why": o[2], "required": False})
+    return out
+
+
 @calculation("water_supply", "Water supply against a demand - a flow test's curve", "supply")
 def calc_water_supply(a):
     """Whether a tested water supply - static pressure, and the residual at a measured flow - meets a sprinkler demand plus hose streams, and by how much, and the most flow it gives at the demand's pressure."""
@@ -1775,6 +1820,9 @@ def calc_water_supply(a):
     _supply_lines(a, supply, total, p, margin)
     a.result("Most flow at that pressure", flow_text(supply_flow(supply[0], supply[1],
                                                                 supply[2], p)))
+    have = supply_pressure(supply[0], supply[1], supply[2], total)
+    a.data = {"demand_lpm": total, "demand_bar": p, "at_demand_bar": have,
+              "margin_bar": have - p}
     if not hose:
         a.assume("no hose allowance given, so none added")
 
@@ -1834,6 +1882,7 @@ def calc_water_storage(a):
     _check_standard(a, held["sprinkler_standard"], "the durations offered are", family)
     _check_authority(a, held["fire_authority"], "the storage duration and volume by "
                      "occupancy")
+    a.data = {"effective_m3": volume, "total_m3": total}
     a.uses("volume = sum of each demand's flow x its own duration; every demand listed is "
            "taken as running at the same time, as given")
     a.cite(SRC_STORAGE)
@@ -2650,6 +2699,7 @@ def calc_sprinkler_spacing(a):
     lines = _rows_of(points, ax, tol)
     rows = []
     fails = []
+    per_head = {}
     for li, (coord, members) in enumerate(lines):
         for mi, p in enumerate(members):
             pid, x, y = p
@@ -2685,6 +2735,10 @@ def calc_sprinkler_spacing(a):
                 bad.append("neighbour %s m" % _f(near / 1000.0, 2))
             if wmin is not None and wall < wmin * 1000.0 - 1e-6:
                 bad.append("wall %s m close" % _f(wall / 1000.0, 2))
+            per_head[pid] = {"s_m": s / 1000.0, "l_m": l_ / 1000.0, "area_m2": s * l_ / 1e6,
+                             "end_wall_m": None if far_wall is None else far_wall / 1000.0,
+                             "nearest_m": None if near is None else near / 1000.0,
+                             "fails": list(bad)}
             rows.append([pid, _f(s / 1000.0, 2), _f(l_ / 1000.0, 2), _f(s * l_ / 1e6, 2),
                          "-" if far_wall is None else _f(far_wall / 1000.0, 2),
                          "-" if near is None else _f(near / 1000.0, 2),
@@ -2704,6 +2758,9 @@ def calc_sprinkler_spacing(a):
     _limits_not_checked(a, smin, wmin, family)
     worst, wx, wy, _samples = farthest_point(outline, points, 250.0)
     reach = math.sqrt(amax / 2.0)
+    a.data = {"heads": per_head, "lines": len(lines),
+              "farthest": {"x_mm": wx, "y_mm": wy, "distance_m": worst / 1000.0,
+                           "beyond_m": reach}}
     if worst > reach * 1000.0 + 1e-6:
         a.check("WARN", "a point at x %s y %s mm is %s m from every sprinkler - more than "
                         "the %s m half-diagonal of the largest square module allowed; a part "
@@ -3242,6 +3299,7 @@ def calc_fire_pump(a):
         return
     curve = [(0.0, churn), (rated_q, rated_p), (1.5 * rated_q, p150)]
     rules = REFERENCES["fire_pump_rules"]
+    at = None
     a.result("Rated point", "%s at %s" % (flow_text(rated_q), pressure_text(rated_p)))
     a.check("OK" if churn <= 1.40 * rated_p + 1e-12 else "FAIL",
             "churn %s is %s %% of rated - NFPA 20 allows at most 140 %%"
@@ -3278,6 +3336,8 @@ def calc_fire_pump(a):
                     "%s against the %s the components are rated to%s" % (
                         pressure_text(top), pressure_text(pmax),
                         "" if top <= pmax else " - a pressure relief or a lower-pressure pump"))
+    a.data = {"rated_lpm": rated_q, "rated_bar": rated_p, "at_demand_bar": at,
+              "ok": not any(level == "FAIL" for level, _t in a.checks)}
     for r in rules["rows"]:
         a.uses("%s: %s" % (r[0], r[1]))
     a.uses("the pump's net pressure between its three points by the parabola through them")
@@ -3362,6 +3422,7 @@ def calc_standpipe(a):
                 % (rule[1] if rule else "a pressure-regulating landing valve above 7 bar"))
     _check_authority(a, held["fire_authority"], "landing valves, hose reels and their "
                      "pressures")
+    a.data = {"flow_lpm": total, "source_bar": need}
     a.uses("flow = the first standpipe + each additional, to the most given; pressure at the "
            "source = the outlet's residual + rise x 0.0979 bar/m + friction")
     a.cite(REFERENCES["standpipe_rules"]["source"])
@@ -3411,6 +3472,8 @@ def calc_hose_reels(a):
         a.check("WARN", "the UAE code is reported to ask %s"
                 % (rule[1] if rule else "4.5 bar at the most remote reel"))
     _check_authority(a, held["fire_authority"], "hose reels, their flow and their pressure")
+    a.data = {"flow_lpm": total, "source_bar": need,
+              "volume_m3": total * duration / 1000.0 if duration else None}
     a.uses("flow = reels at once x each one's flow; pressure at the source = the reel's + rise x "
            "0.0979 bar/m + friction")
     a.cite(REFERENCES["hose_reel_rules"]["source"])

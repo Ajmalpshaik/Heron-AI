@@ -20,7 +20,7 @@
   let mode = "size";
   let pending = false;
   const cam = { yaw: 35, pitch: 32, dist: 30, target: [0, 0, 0] };
-  const show = { levels: {}, heads: true };
+  const show = { levels: {}, heads: true, outlines: true };
 
   function el(tag, cls, text) {
     const e = document.createElement(tag);
@@ -53,6 +53,7 @@
     const out = [];
     for (const s of view.segments) { if (s.a) out.push(s.a); if (s.b) out.push(s.b); }
     for (const p of view.points) if (p.at) out.push(p.at);
+    for (const o of view.outlines || []) for (const p of o.points) out.push(p);
     return out;
   }
 
@@ -88,6 +89,19 @@
       if (z <= 0.05) return null;
       return [w / 2 + dot(d, B.r) / z * focal, h / 2 - dot(d, B.u) / z * focal, z];
     };
+    // Each Space's outline at its heads' height - a thin dashed line, under the pipes.
+    if (show.outlines) {
+      ctx.setLineDash([6, 4]);
+      for (const o of view.outlines || []) {
+        if (!onLevel(o)) continue;
+        const pts = o.points.map(project);
+        if (pts.some(p => !p) || pts.length < 3) continue;
+        ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+        ctx.closePath(); ctx.lineWidth = 1; ctx.strokeStyle = o.colour || "#7a8796"; ctx.stroke();
+      }
+      ctx.setLineDash([]);
+    }
     const list = [];
     for (const s of view.segments) {
       if (!s.a || !s.b || !onLevel(s)) continue;
@@ -192,6 +206,7 @@
       ticks.append(tick(lv, () => show.levels[lv] !== false, v => { show.levels[lv] = v; }));
     }
     ticks.append(tick("Sprinklers", () => show.heads, v => { show.heads = v; }));
+    if ((view.outlines || []).length) ticks.append(tick("Space outlines", () => show.outlines, v => { show.outlines = v; }));
     side.append(ticks);
     const buttons = el("div", "l3d-buttons");
     const button = (text, title, go) => { const b = el("button", null, text); b.type = "button"; b.title = title; b.addEventListener("click", go); buttons.append(b); };

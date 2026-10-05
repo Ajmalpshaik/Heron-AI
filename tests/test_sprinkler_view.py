@@ -71,7 +71,8 @@ def test_after_a_solve():
     assert fast and all(s["values"]["v_ms"] > 0.5 for s in fast)
     v = V.build(NET.net(), r)
     keys = [m["key"] for m in v["modes"]]
-    assert keys == ["size", "operating", "flow", "velocity", "pressure", "checks"]
+    # Heads in no Space still get the spacing colour - grey, "in no Space".
+    assert keys == ["size", "operating", "flow", "velocity", "pressure", "checks", "spacing"]
     pts = dict((p["id"], p) for p in v["points"])
     assert pts["402"]["colour"]["operating"] != pts["401"]["colour"]["operating"]
     assert pts["402"]["values"]["p_bar"] > 0 and pts["401"]["colour"]["pressure"] == V.DRY
@@ -116,6 +117,36 @@ def test_write_without_a_browser():
         assert lines[0].startswith("head,") and lines[1].startswith("402,")
     finally:
         shutil.rmtree(folder, ignore_errors=True)
+
+
+def test_spacing_colour_and_outlines():
+    import test_sprinkler_spacing as SP
+    n = SP.office()
+    r = R.run(n, {"spacing": {"hazard": {"7001": "light"},
+                              "limits": {"light hazard": dict(SP.LIGHT, max_spacing_m=2.5)}}})
+    v = V.build(n, r)
+    fail = dict((k, c) for k, c, _t in V.SPACING_MARKS)["fail"]
+    assert all(p["colour"]["spacing"] == fail for p in v["points"])
+    assert len(v["outlines"]) == 1 and v["outlines"][0]["label"] == "101 Office"
+    assert len(v["outlines"][0]["points"]) == 4
+    assert all(s["colour"]["spacing"] == V.DRY for s in v["segments"])
+
+
+def test_sheet_has_fire_water_and_spacing():
+    import test_sprinkler_spacing as SP
+    n = SP.office()
+    g = RUN.given(operating=["402", "404"], fittings={
+        "tee or cross, flow turned 90 degrees|DN25": 0},
+        spacing={"hazard": {"7001": "light"}, "limits": {"light hazard": SP.LIGHT}},
+        water={"include": {"standpipe": True}, "simultaneous": {"standpipe": True},
+               "standpipe": SP.STANDPIPE})
+    r = R.run(n, g)
+    page = REPORT.html(r, n)
+    assert "<h2>Fire water</h2>" in page and "<h2>Spacing in each Space</h2>" in page
+    assert page.count("not included by the modeller") == 3
+    assert "not solved together" in page and "101 Office" in page
+    unsolved = REPORT.html(R.run(n, {}), n)
+    assert "so the fire water is not worked out" in unsolved
 
 
 def test_view_is_copied_not_shared():

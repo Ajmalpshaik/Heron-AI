@@ -219,7 +219,8 @@ def test_summary_says_draft_and_never_compliant():
 
 def test_imports_standard_library_only():
     allowed = {"datetime", "heapq", "io", "json", "math", "os", "re", "heron_fire",
-               "heron_sprinkler_takeoff", "heron_designbasis"}
+               "heron_sprinkler_takeoff", "heron_designbasis", "heron_fire_water",
+               "heron_sprinkler_spacing"}
     tree = ast.parse(open(os.path.join(ROOT, "brain", "heron_sprinkler_run.py")).read())
     names = set()
     for node in ast.walk(tree):

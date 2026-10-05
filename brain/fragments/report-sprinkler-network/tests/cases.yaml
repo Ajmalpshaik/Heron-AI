@@ -24,7 +24,18 @@ positive:
       the main's connectors include one of type "curve" at the tap's point,
       joined to the tap fitting
 
+  - given: an office Space with four heads, its boundary seen on plan
+    expect: >
+      the heads carry the office's id in space_id; spaces lists the office once,
+      its outline matching the Space's boundary on plan to the millimetre and its
+      area_m2 the schedule's Area
+
 negative:
+  - given: one head moved out of every Space (above a corridor with no Space)
+    expect: >
+      its space_id is null and it is in no Space's list - never put in the
+      nearest Space
+
   - given: >
       a domestic cold water system next to the wet system, sharing no pipe,
       with systemName "*" and a pipe of the WET system selected

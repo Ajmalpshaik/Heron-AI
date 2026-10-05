@@ -1115,6 +1115,25 @@ def test_sprinkler_panel():
           "Calculate is refused when the chat moved models, and sends nothing to Revit")
     check(tools.TOOLS.get("revit_sprinkler_hydraulics") == (tools.ANALYZE, "run_fragment_read"),
           "the tool is declared at revit_read's level - it reads and changes nothing")
+    # Phase 1b (docs/46 s13): the spacing and fire water inputs go through untouched.
+    body2 = dict(body, spacing={"hazard": {"7001": "light hazard"}},
+                 water={"include": {"pump": True}, "pump": {"rated_flow_lpm": 2000}})
+    panel.calculate(body2)
+    check(seen["inputs"]["spacing"] == body2["spacing"]
+          and seen["inputs"]["water"] == body2["water"],
+          "Calculate hands the spacing and fire water inputs to the hook as the page sent them")
+    check(panel.calculate(dict(body, water="not a map"))["ok"] is False,
+          "fire water inputs that are not a map are refused - nothing is calculated")
+    shown = panel.current()
+    check(shown["water_parts"] and shown["water_fields"].get("pump")
+          and shown["spacing_fields"] and shown["hazard_classes"],
+          "the page is sent the fire water questions, the spacing limits and the classes by "
+          "the brain - it holds no list of its own")
+    page = io.open(os.path.join(ROOT, "mcp", "companion", "static", "companion.js"),
+                   encoding="utf-8").read()
+    check("Spacing in each Space" in page and "Fire water - what the source must give" in page
+          and "not included" in page,
+          "the page shows the Spacing and Fire water sections, and says a part not included")
 
 
 def main():

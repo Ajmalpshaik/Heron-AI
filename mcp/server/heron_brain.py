@@ -1703,7 +1703,10 @@ def sprinkler_hydraulics(network_json, inputs, project=None, project_name=None, 
     and NEVER carries the inputs.
     """
     try:
+        import heron_fire as FIRE
+        import heron_fire_water as WATER
         import heron_sprinkler_run as RUN
+        import heron_sprinkler_spacing as SPACING
         import heron_sprinkler_takeoff as NET
         import heron_sprinkler_view as VIEW
     except ImportError as exc:
@@ -1735,6 +1738,7 @@ def sprinkler_hydraulics(network_json, inputs, project=None, project_name=None, 
         _audit().record("design.sprinkler", False, fields={"status": "refused"})
         return {"network": None, "result": None, "said": "Nothing was solved: %s" % why}
     result = RUN.run(network, given, recorded=recorded)
+    standard = RUN._standard(given, recorded)
     # GATE 1 HOLDS FOR THE NETWORK AND ITS K-FACTORS, NOT FOR THE CRITERIA: a
     # network confirmed stays confirmed through a Calculate of the same pipes
     # with the same K (docs/46 s6).
@@ -1777,6 +1781,13 @@ def sprinkler_hydraulics(network_json, inputs, project=None, project_name=None, 
             # the runner, so the page holds no engineering list of its own.
             "fields": [[k, RUN.CRITERIA[k][0], RUN.CRITERIA[k][1], RUN.CRITERIA[k][4]]
                        for k in RUN.ORDER],
+            # The fire water parts' own questions, and the hazard classes of the
+            # project's standard - both from the engine (docs/46 s13).
+            "water_fields": WATER.fields(),
+            "water_parts": [[k, label] for k, _c, label in WATER.PARTS],
+            "hazard_classes": list(FIRE.HAZARD_SETS[FIRE.family_of(standard) or "nfpa"]),
+            "spacing_fields": [[c, "m2" if c.endswith("m2") else "m", c.replace("_", " "),
+                                c in SPACING.REQUIRED] for c in SPACING.LIMITS],
             "confirmed": RUN.confirmed(result, network)}
 
 
