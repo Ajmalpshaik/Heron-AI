@@ -7,6 +7,7 @@
 <title>Heron Companion</title>
 <link rel="stylesheet" href="/companion.css">
 <script src="/loads3d.js" defer></script>
+<script src="/sprinkler3d.js" defer></script>
 <script src="/companion.js" defer></script>
 </head>
 <body>
@@ -61,6 +62,22 @@
       Space's walls and windows from Revit, works out each Space's cooling (AC) load and heating load, and
       shows the table here - you change the people, lights and equipment, press Recalculate, and write a
       report.</p>
+  </section>
+
+  <section class="card" id="sprinkler" aria-labelledby="h-sprinkler" hidden>
+    <header class="card-head">
+      <h2 id="h-sprinkler">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v7M6 10h12M8 10l-2 4M16 10l2 4M12 10v4"/><path d="M7 18h.01M12 19h.01M17 18h.01"/></svg>
+        Sprinkler Hydraulic Calculation
+      </h2>
+      <p class="card-sub">One sprinkler system from the model · Hazen-Williams · a design aid, not a listed hydraulic program - the fire consultant and the authority approve the design</p>
+    </header>
+    <div id="k-box"></div>
+    <div id="k-3d" class="l3d" hidden></div>
+    <div id="k-box2"></div>
+    <p id="k-empty" class="empty">Ask the chat to "run the hydraulics on this sprinkler system". Heron reads the
+      pipes, fittings and heads from Revit and shows them here - you confirm the K-factors, give the design
+      criteria, tick the remote area and press Calculate.</p>
   </section>
 
   <section class="card" id="table" aria-labelledby="h-table">

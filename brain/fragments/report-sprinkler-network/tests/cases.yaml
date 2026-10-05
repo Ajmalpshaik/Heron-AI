@@ -1,0 +1,54 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# Run on a model the owner names, with one wet sprinkler system and a
+# domestic water system beside it. Every case reads only.
+
+positive:
+  - given: one wet sprinkler system selected (a pipe of it), systemName "*"
+    expect: >
+      networkJson is format 1 with that system chosen; elementCount equals the
+      count the System Browser shows for the system (pipes, fittings,
+      accessories, sprinklers) plus its base equipment if it has one; every
+      pipe has inner_diameter_m, nominal_diameter_m and length_m; every
+      sprinkler has a connector joined to a pipe or a fitting
+
+  - given: the same system named in systemName, with a DIFFERENT system selected
+    expect: >
+      the named system is read - a name wins over the selection - and a finding
+      says it was chosen by its name
+
+  - given: the take-off read back by python brain/heron_sprinkler_takeoff.py's read() and qa()
+    expect: it reads whole - no NetworkError - and qa() has no FAIL but the K-factors to confirm
+
+  - given: a branch line with a tap (a spud) on a main
+    expect: >
+      the main's connectors include one of type "curve" at the tap's point,
+      joined to the tap fitting
+
+negative:
+  - given: >
+      a domestic cold water system next to the wet system, sharing no pipe,
+      with systemName "*" and a pipe of the WET system selected
+    expect: >
+      not one element of the domestic water system appears in elements - THE
+      CASE THAT MATTERS: a network read wider than its system is solved wrong
+      without a word
+
+  - given: one sprinkler type's Properties open on screen
+    expect: >
+      its k.parameter text is what the Properties palette shows for its
+      K-Factor, and k.connector is a raw number Heron does not convert - the
+      brain asks the modeller to confirm the K
+
+  - given: a model with two fire protection systems, nothing selected, systemName "*"
+    expect: >
+      system null and elements empty; systems lists both, neither chosen; a
+      finding says to say which
+
+  - given: a model with no fire protection system
+    expect: systems empty, system null, elements empty, a finding says so
+
+second_route: >
+  Revit's own System Browser for the system: the count of pipes, fittings,
+  accessories and sprinklers it lists must equal the kinds in elements; and
+  one pipe's Inside Diameter and Length in its Properties must equal
+  inner_diameter_m and length_m

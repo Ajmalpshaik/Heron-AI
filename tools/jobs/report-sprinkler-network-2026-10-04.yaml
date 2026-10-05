@@ -1,0 +1,28 @@
+# The proof plan for REPORT_SPRINKLER_NETWORK (docs/46, NEEDS-CHECKING group CE).
+#
+#     python tools/batch-prove.py tools/jobs/report-sprinkler-network-2026-10-04.yaml --dry-run
+#
+# THE MODEL IS THE OWNER'S TO NAME. It needs one wet sprinkler system and a
+# domestic water system beside it that shares no pipe. Run it on a TEST COPY.
+# The values below are the arrangement, not the model's names: change the
+# system names to the ones the model's System Browser shows.
+
+model: the owner's sprinkler test model (to be named), Revit 2024
+
+jobs:
+  # The positive reads the wet system by its name. The negative names the
+  # domestic water system: it is not a fire protection system, so nothing may
+  # be read - and the domestic pipes must never appear under the wet system's
+  # name either (cases.yaml's negative, checked by eye on the positive's JSON).
+  - fragment: report-sprinkler-network
+    set:
+      systemName: "Wet Sprinkler 1"
+    negative-set:
+      systemName: "Domestic Cold Water 1"
+    expect: networkJson
+    note: >
+      The positive's elementCount must equal the System Browser's count for
+      the wet system plus its base equipment. The negative must come back with
+      system null, elements empty and a finding naming the name given. Then
+      read the positive's networkJson with heron_sprinkler_takeoff.read() and
+      qa(): no FAIL but the K-factors to confirm.

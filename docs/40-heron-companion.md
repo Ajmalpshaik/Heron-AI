@@ -562,6 +562,7 @@ labels are derived from it as for every tool.
 |---|---|---|---|---|
 | `heron_companion` | `READ` | none | Starts this chat's Companion if it is not running, opens it in the browser, and answers what has happened on it | *"Heron Companion is open in your browser."* or a one-line summary of applies |
 | `revit_edit_table` | `ANALYZE` | `run_fragment_read` | Runs `READ_ELEMENT_TABLE`, holds the rows for the page, opens the Companion | *"Table opened in Heron Companion: 24 ducts in Level 1 - Mechanical."* |
+| `revit_sprinkler_hydraulics` | `ANALYZE` | `run_fragment_read` | Runs `REPORT_SPRINKLER_NETWORK`, solves the system in the brain, opens the Sprinkler panel ([46](46-sprinkler-hydraulics-from-the-model.md)). Writes nothing | The demand and pressure at the source, the governing head, or what is still to ask |
 
 **The Apply action is not an MCP tool** — Claude cannot call it. Its risk is still declared in one
 place: a `COMPANION_ACTIONS` table in `heron_tools.py` with `companion_apply` at `MODIFY` through
@@ -913,3 +914,15 @@ four things, and every one is built:
   script and sit in no frame.
 
 The 3D view now turns the way the mouse moves, as Revit's orbit does.
+
+### 21.7 The Sprinkler Hydraulic Calculation panel (2026-10-04)
+
+The next panel named the same way, on the owner's word: **Sprinkler Hydraulic Calculation**, from
+[docs/46](46-sprinkler-hydraulics-from-the-model.md). One fire protection system read from the model, the
+checks on it, the K-factor of each sprinkler type to confirm, the criteria and the fittings' equivalent
+lengths with the standard's figure offered beside each, the remote area as ticks with a **Suggest**, then
+Calculate, **The network is right** and Report - and a 3D view of the pipes and heads the solve used
+(`static/sprinkler3d.js`, Heron's own renderer). The same rules hold: the panel holds data and calls the
+hooks the MCP server sets; every number, colour, question and offer is made in `brain/`. **It writes
+nothing to Revit** - phase 1 has no Finalize, so it has no `COMPANION_ACTIONS` row. The card shares the
+Loads panel's styles.

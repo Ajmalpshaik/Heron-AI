@@ -1685,6 +1685,172 @@ def loads_report(takeoff, result, model_path=None, project=None, project_name=No
     return dict(got, folder=folder)
 
 
+def sprinkler_hydraulics(network_json, inputs, project=None, project_name=None, save=True):
+    """
+    A sprinkler system's hydraulic calculation from REPORT_SPRINKLER_NETWORK's
+    network - docs/46 s5.
+
+    `inputs` is a dict or a JSON object string: {"criteria": {...}, "k":
+    {...}, "fittings": {...}, "operating": [...], "source": ..., "standards":
+    {...}} - what the modeller has answered so far. With a `project` key, the
+    last run kept for this system fills in what this call did not say, the
+    project's FIRE standards are read as fire() reads them (D-111) and a
+    sprinkler standard given here is kept, and a solved run is kept.
+
+    Returns {"network", "result", "qa", "asked", "view", "said", "types",
+    "fittings", "sources", "confirmed", "saved"}. While anything is asked,
+    nothing is solved. One audit line, `design.sprinkler`, says how it ended
+    and NEVER carries the inputs.
+    """
+    try:
+        import heron_sprinkler_run as RUN
+        import heron_sprinkler_takeoff as NET
+        import heron_sprinkler_view as VIEW
+    except ImportError as exc:
+        raise BrainUnavailable("Heron's sprinkler hydraulics could not be imported: %s. It "
+                               "needs nothing beyond Python itself, so this is a broken "
+                               "install." % exc)
+    try:
+        network = NET.read(network_json)
+    except ValueError as why:
+        _audit().record("design.sprinkler", False, fields={"status": "unreadable"})
+        return {"network": None, "result": None, "said": "Nothing was solved: %s" % why}
+    system_id = (network.system or {}).get("id")
+    recorded, last, memory = {}, None, []
+    if project:
+        try:
+            import heron_designbasis as KEEP
+            recorded, note = KEEP.read(project, "fire")
+            if note:
+                memory.append(note)
+        except (ValueError, OSError):
+            recorded = {}
+        try:
+            last = RUN.load(project, system_id=system_id) if system_id else None
+        except (ValueError, OSError):
+            last = None
+    try:
+        given = RUN.carried(last, inputs, heads=list(NET.head_nodes(network)))
+    except ValueError as why:
+        _audit().record("design.sprinkler", False, fields={"status": "refused"})
+        return {"network": None, "result": None, "said": "Nothing was solved: %s" % why}
+    result = RUN.run(network, given, recorded=recorded)
+    # GATE 1 HOLDS FOR THE NETWORK AND ITS K-FACTORS, NOT FOR THE CRITERIA: a
+    # network confirmed stays confirmed through a Calculate of the same pipes
+    # with the same K (docs/46 s6).
+    if last and RUN.confirmed(last, network) and \
+            RUN._k_key(last) == RUN._k_key(result):
+        result["network_confirmed"] = dict(last["network_confirmed"])
+    said = RUN.summary_text(result)
+    answer = result.get("answer") or {}
+    given_std = dict((name, entry["value"]) for name, entry in
+                     (answer.get("standards") or {}).items() if entry.get("from") == "request")
+    if given_std and project:
+        try:
+            import heron_designbasis as KEEP
+            _changes, note = KEEP.record(project, given_std, project_name, discipline="fire")
+            if note:
+                memory.append(note)
+        except (ValueError, OSError) as why:
+            memory.append("NOT KEPT - %s" % why)
+    saved = None
+    if result["status"] == "ok" and save and project:
+        try:
+            saved = RUN.save(project, result, network=network)
+        except (ValueError, OSError) as why:
+            said += " This run was NOT KEPT: %s" % why
+    elif result["status"] == "ok" and save:
+        said += " This run was NOT KEPT - Heron does not know which project this is yet (D-33)."
+    _audit().record("design.sprinkler", result["status"] == "ok",
+                    fields={"status": result["status"],
+                            "error": _DESIGN_REFUSALS.get(result["status"])},
+                    numbers={"elements": len(network.elements), "asked": len(result["asked"]),
+                             "operating": len((result.get("inputs") or {}).get("operating")
+                                              or []),
+                             "qa_fail": sum(1 for f in result["qa"] if f["level"] == "FAIL")})
+    return {"network": network, "result": result, "qa": result["qa"], "asked": result["asked"],
+            "said": said, "memory": memory, "saved": saved,
+            "view": VIEW.build(network, result),
+            "types": NET.sprinkler_types(network), "fittings": NET.fitting_rows(network),
+            "sources": NET.source_candidates(network),
+            # The criteria the page asks for, in order, with their units - from
+            # the runner, so the page holds no engineering list of its own.
+            "fields": [[k, RUN.CRITERIA[k][0], RUN.CRITERIA[k][1], RUN.CRITERIA[k][4]]
+                       for k in RUN.ORDER],
+            "confirmed": RUN.confirmed(result, network)}
+
+
+def sprinkler_suggest(network, inputs):
+    """The remote-area suggestion - {"ok", "heads", "count", "said"}. A suggestion only."""
+    import heron_sprinkler_run as RUN
+    try:
+        heads, count, why = RUN.suggest(network, inputs)
+    except ValueError as why_not:
+        return {"ok": False, "said": "Nothing was suggested: %s" % why_not}
+    return {"ok": True, "heads": heads, "count": count,
+            "said": "Suggested %s. Check the ticks, then Calculate." % why}
+
+
+def sprinkler_confirm(network, result, project=None, project_name=None):
+    """Gate 1 (docs/46 s6): the modeller has checked this network and its K-factors."""
+    import heron_sprinkler_run as RUN
+    if not result:
+        return {"ok": False, "said": "Nothing has been calculated yet, so there is no run to "
+                                     "record the check against."}
+    RUN.confirm(result, network)
+    said = "The network%s is confirmed for this run - its sheet is final." % (
+        (" of %s" % project_name) if project_name else "")
+    if project and result.get("status") == "ok":
+        try:
+            RUN.save(project, result, replace=True)
+        except (ValueError, OSError) as why:
+            said += " It was NOT KEPT with the project: %s" % why
+    _audit().record("design.sprinkler_confirm", True, fields={"status": "ok"})
+    return {"ok": True, "said": said, "result": result}
+
+
+def sprinkler_report(network, result, model_path=None, project=None, project_name=None,
+                     folder=None):
+    """
+    The hydraulic calculation sheet for one run (docs/46 s8): HTML, two CSVs
+    and, where Edge or Chrome is on the PC, a PDF. Written by the brain from
+    its own numbers; nothing is exported from Revit. WHERE: `folder` when the
+    modeller chose one; else "Heron sprinkler/<run>" beside the saved Revit
+    model; else the run's own folder in Heron's knowledge folder.
+    """
+    import heron_sprinkler_report as REPORT
+    import heron_sprinkler_run as RUN
+    run_id = result.get("run_id") or "run"
+    if folder:
+        if not isinstance(folder, str) or not os.path.isabs(folder) or not os.path.isdir(folder):
+            return {"ok": False, "said": "No report was written: %s is not a folder on this PC."
+                                         % (folder,)}
+    elif model_path and os.path.isabs(model_path) and os.path.isdir(os.path.dirname(model_path)):
+        folder = os.path.join(os.path.dirname(model_path), "Heron sprinkler", run_id)
+    else:
+        try:
+            folder = os.path.join(RUN._folder(project or ""), run_id)
+        except ValueError as why:
+            return {"ok": False, "said": "No report was written: %s" % why}
+    standards = {}
+    if project:
+        try:
+            import heron_designbasis as KEEP
+            recorded, _note = KEEP.read(project, "fire")
+            standards = {k: (v.get("value") if isinstance(v, dict) else v)
+                         for k, v in (recorded or {}).items()}
+        except (ValueError, OSError):
+            standards = {}
+    try:
+        got = REPORT.write(folder, network, result, standards, project_name=project_name)
+    except OSError as why:
+        _audit().record("design.sprinkler_report", False, fields={"status": "not written"})
+        return {"ok": False, "said": "No report was written: %s" % why}
+    _audit().record("design.sprinkler_report", True,
+                    fields={"status": "ok", "pdf": "yes" if got.get("pdf") else "no"})
+    return dict(got, folder=folder)
+
+
 def fire(calculation, inputs, project=None, project_name=None):
     """
     One fire protection design calculation - HERON-MEP-FPD-002, docs/42 - or,

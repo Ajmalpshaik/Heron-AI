@@ -1111,6 +1111,39 @@ def beyond_nfpa():
     print()
 
 
+def numbers_as_data():
+    print("10. the hydraulic answer carries its own numbers as data (docs/46)")
+    tree = run("hydraulic", dict(STD, source="S", c_factor=120, min_pressure_bar=0.5,
+                                 density_mm_min=4.1,
+                                 nodes=[{"id": "S", "elevation_m": 0},
+                                        {"id": "T", "elevation_m": 3},
+                                        {"id": "A", "elevation_m": 3, "k_lpm_bar": 80,
+                                         "area_per_sprinkler_m2": 12},
+                                        {"id": "B", "elevation_m": 3, "k_lpm_bar": 80,
+                                         "area_per_sprinkler_m2": 12}],
+                                 pipes=[{"from": "S", "to": "T", "length_m": 3,
+                                         "bore_mm": 52.48},
+                                        {"from": "T", "to": "A", "length_m": 4,
+                                         "bore_mm": 26.64},
+                                        {"from": "T", "to": "B", "length_m": 7,
+                                         "bore_mm": 26.64}]))
+    d = tree["data"]
+    check(tree["status"] == "ok" and d["governing"] == "B" and d["source"] == "S",
+          "the governing head and the source are in data - the farther head governs")
+    check(near(d["demand_lpm"], first_number(result(tree, "Sprinkler demand")), 1e-3)
+          and near(d["source_bar"], first_number(result(tree, "Pressure at S")), 1e-3),
+          "data's demand and source pressure are the numbers the results print")
+    into_t = sum(p["q_lpm"] for p in d["pipes"] if p["to"] == "T")
+    out_t = sum(p["q_lpm"] for p in d["pipes"] if p["from"] == "T")
+    check(near(into_t, out_t, 1e-6) and near(out_t, d["demand_lpm"], 1e-6),
+          "pipe flows in data balance at the tee and equal the demand")
+    b = d["heads"]["B"]
+    check(near(b["p_bar"], b["p_req_bar"], 1e-6) and b["q_lpm"] >= b["q_req_lpm"] - 1e-9
+          and near(d["pressures"]["A"], d["heads"]["A"]["p_bar"], 1e-12),
+          "the governing head runs at exactly its need; every head's pressure is in data")
+    print()
+
+
 def main():
     physics()
     solver()
@@ -1121,6 +1154,7 @@ def main():
     refusals()
     reaches_nothing_and_keeps_once()
     beyond_nfpa()
+    numbers_as_data()
 
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))

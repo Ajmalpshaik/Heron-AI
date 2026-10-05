@@ -461,7 +461,10 @@ did not come back - what did was Singapore's and EN 12845's - and are not held. 
   result sets reproduce it; the rating near a heat source is not built.
 - **A hydraulic calculation read straight from Revit.** Today the host reads the network
   (`READ_MEP_SYSTEM`, `REPORT_CONNECTOR_LOADS`) and hands it to `hydraulic`. A fragment would carry the
-  same arithmetic in C# - a second home for one fact - so it is a decision, F43 item 4.
+  same arithmetic in C# - a second home for one fact - so it is a decision, F43 item 4. **Since
+  2026-10-04 the network is read from Revit without that:** `REPORT_SPRINKLER_NETWORK` reads one system
+  and the brain joins it and hands it to this same `hydraulic`, in the Companion's Sprinkler panel -
+  [46](46-sprinkler-hydraulics-from-the-model.md). The arithmetic still has one home, here.
 - **Velocity pressure, the normal-pressure method, and pumps inside the network.** The solver is the
   total-pressure method with the source as the one boundary; a pump is checked on its own against the
   demand.

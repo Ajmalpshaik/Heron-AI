@@ -1690,6 +1690,26 @@ def calc_hydraulic(a):
             a.check("OK", "no sprinkler sees more than the %s given" % pressure_text(pmax))
     if supply is not None:
         _supply_lines(a, supply, total, p_source, margin)
+    # THE SAME NUMBERS AS NUMBERS, for a caller that draws or reports them -
+    # the Sprinkler panel (docs/46). The tables above are text; this is what
+    # they were printed from, so nothing downstream parses a table.
+    a.data = {
+        "governing": governing, "demand_lpm": demand, "source": source,
+        "source_bar": pressures[source], "supply_bar": p_source,
+        "hose_lpm": hose or 0.0, "total_lpm": total,
+        "heads": dict((h, {"k": nodes[h]["k"], "q_req_lpm": nodes[h]["q_req"],
+                           "p_req_bar": nodes[h]["p_req"],
+                           "q_lpm": head_flow(nodes[h]["k"], pressures[h]),
+                           "p_bar": pressures[h]}) for h in heads),
+        "pressures": dict(pressures),
+        "pipes": [{"index": i, "from": p["a"], "to": p["b"], "q_lpm": q,
+                   "v_ms": velocity_ms(abs(q), p["bore"]),
+                   "loss_bar": p["r"] * abs(q) ** HW_EXPONENT, "bore_mm": p["bore"],
+                   "c": p["c"], "length_m": p["length"], "eq_m": p["eq"]}
+                  for i, (p, q) in enumerate(zip(pipes, flows))],
+        "supply": None if supply is None else {
+            "static_bar": supply[0], "residual_bar": supply[1], "test_flow_lpm": supply[2],
+            "at_demand_bar": supply_pressure(supply[0], supply[1], supply[2], total)}}
     _check_standard(a, held["sprinkler_standard"], "the method and the figures offered are",
                     family)
     a.uses("node pressures solved by Newton's method so every node balances: Hazen-Williams "
@@ -1710,6 +1730,24 @@ def calc_hydraulic(a):
                  "sprinkler's K-factor this calculation takes; SET_MEP_SIZE changes a pipe "
                  "that needs to be bigger; REPORT_MEP_PRESSURE_DROP reads Revit's own figure, "
                  "which by default is Darcy-Weisbach and not this one")
+
+
+def hydraulic_offers(standard=None):
+    """
+    {criterion: the sentence offering the standard's figure} for what `hydraulic`
+    asks - for a caller that asks the criteria BEFORE it has a network to run
+    (the Sprinkler panel, docs/46). The engine's own offer functions, so the
+    text has one home. Offered beside the question, never applied (D-33).
+    """
+    family = family_of(standard) if standard else None
+    shown = family or "nfpa"
+    return {"density_mm_min": _design_offer(shown, None, "density"),
+            "design_area_m2": _design_offer(shown, None, "area"),
+            "hose_allowance_lpm": _design_offer(shown, None, "hose"),
+            "min_pressure_bar": _min_pressure_offer(family),
+            "c_factor": _c_offer(family),
+            "max_velocity_ms": _rules_offer("en12845_rules", ("velocity",))
+            if family == "en" else None}
 
 
 @calculation("water_supply", "Water supply against a demand - a flow test's curve", "supply")

@@ -1527,6 +1527,340 @@ async function loads_() {
   } catch (e) { /* the state poll reports a closed page */ }
 }
 
+// ---------------------------------------------------------------- sprinkler
+// The Sprinkler panel (docs/46 section 7). Every number, question, offer and
+// colour on it was worked out by Heron's brain; the page only shows them,
+// collects typed inputs and ticks, and posts them back. Model text goes on
+// the page with textContent only. Nothing here writes to Revit.
+
+let sprinklerShown = null;
+let sprinklerBusy = false;
+
+async function sprinklerPost(path, body, said, keep) {
+  sprinklerBusy = true;
+  const wasOff = new Map();
+  document.querySelectorAll("#sprinkler button").forEach(b => { wasOff.set(b, b.disabled); b.disabled = true; });
+  said.className = "result";
+  said.textContent = (path.endsWith("report") && body && body.ask)
+    ? "Choose where to save the sheet in the folder window that opened - look behind this page if you cannot see it…"
+    : "Working…";
+  let answer = null;
+  try {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
+      credentials: "same-origin",
+      body: JSON.stringify(body || {}),
+    });
+    answer = await res.json();
+    said.className = answer.ok ? "result ok" : "result failed";
+    said.textContent = answer.said || answer.error || (answer.ok ? "Done." : "Not done.");
+  } catch (e) {
+    said.className = "result failed";
+    said.textContent = "The page could not reach Heron. Nothing was changed.";
+  }
+  sprinklerBusy = false;
+  // Suggest changes only the ticks on the page: the panel is not redrawn, so
+  // what the modeller typed and ticked stays as it is.
+  if (keep) {
+    wasOff.forEach((off, b) => { b.disabled = off; });
+    return answer;
+  }
+  sprinklerShown = null;
+  await sprinkler_();
+  const after = $("k-said");
+  if (after && said.textContent) { after.className = said.className; after.textContent = said.textContent; }
+  return answer;
+}
+
+// The inputs as the page holds them while the modeller types: plain values,
+// and "" for a field emptied on purpose (the brain then asks it again).
+function sprinklerState(S) {
+  const inputs = S.inputs || {};
+  const plain = part => {
+    const out = {};
+    Object.entries(inputs[part] || {}).forEach(([k, v]) => { out[k] = valueOf(v); });
+    return out;
+  };
+  return { criteria: plain("criteria"), k: plain("k"), fittings: plain("fittings"),
+           standards: Object.assign({}, inputs.standards || {}),
+           operating: (inputs.operating || []).slice(), suggested: (inputs.suggested || []).slice(),
+           source: inputs.source || S.source || null };
+}
+
+function typed(input, put) {
+  input.addEventListener("input", () => {
+    const raw = input.value.trim();
+    put(raw === "" ? "" : (isNaN(Number(raw)) ? raw : Number(raw)));
+  });
+}
+
+function sprinklerField(value, label, put) {
+  const input = el("input");
+  input.type = "text";
+  input.value = value == null ? "" : String(value);
+  input.setAttribute("aria-label", label);
+  typed(input, put);
+  return input;
+}
+
+function offerFor(S, name) {
+  const a = (S.asked || []).find(x => x.input === name);
+  return a ? (a.offer || "") : "";
+}
+
+function sprinklerTable(head, rows) {
+  const scroll = el("div", "l-scroll");
+  const tbl = el("table", "l-table");
+  const tr = el("tr");
+  head.forEach(h => tr.append(el("th", null, h)));
+  tbl.append(tr);
+  rows.forEach(r => {
+    const row = el("tr");
+    r.forEach(c => { const td = el("td"); if (c instanceof Node) td.append(c); else td.textContent = c == null ? "—" : String(c); row.append(td); });
+    tbl.append(row);
+  });
+  scroll.append(tbl);
+  return scroll;
+}
+
+function sprinklerSteps(S, state, said) {
+  const solved = S.status === "ok";
+  const steps = el("ol", "l-steps");
+  const step = (n, title, text, done, current, controls) => {
+    const li = el("li", "l-step" + (done ? " done" : "") + (current ? " current" : ""));
+    const mark = el("span", "l-step-n");
+    if (done) mark.append(icon(ICONS.check)); else mark.textContent = String(n);
+    const t = el("div", "l-step-text");
+    t.append(el("span", "l-step-title", title), el("span", "l-step-state", text));
+    const act = el("div", "l-step-act");
+    controls.filter(Boolean).forEach(c => act.append(c));
+    li.append(mark, t, act);
+    steps.append(li);
+  };
+  const calc = button("Calculate", "btn-lite", ICONS.refresh,
+    "Solves the system with the inputs below. Nothing in Revit changes.");
+  calc.addEventListener("click", () => sprinklerPost("/api/sprinkler/calculate", state, said));
+  step(1, "Calculate", solved ? "Solved - " + (state.operating || []).length + " heads in the remote area"
+       : ((S.asked || []).length ? (S.asked || []).length + " thing(s) to answer below" : "Press Calculate"),
+       solved, !solved, [calc]);
+  const sure = button(S.confirmed ? "Confirmed" : "The network is right", "btn-lite", ICONS.eye,
+    "I have looked at the 3D view, the checks and the K-factors, and the system is right.");
+  sure.disabled = !solved || !!S.confirmed;
+  sure.addEventListener("click", () => {
+    if (confirm("Confirm that the pipes and heads in the 3D view, and the K-factors, are the system's? " +
+                "The sheet stops being a draft.")) sprinklerPost("/api/sprinkler/confirm", {}, said);
+  });
+  step(2, "Check the network", S.confirmed ? "Confirmed - the sheet is final" : "Look at the 3D view and the checks, then confirm",
+       !!S.confirmed, solved && !S.confirmed, [sure]);
+  const report = button("Report…", "btn-lite", ICONS.file,
+    "Asks where to save it, then writes the hydraulic calculation sheet - HTML, PDF and CSV. Nothing in Revit changes.");
+  report.disabled = !solved;
+  report.addEventListener("click", () => sprinklerPost("/api/sprinkler/report", { ask: true }, said));
+  const opens = [];
+  if (S.report && S.report.token) {
+    [["html", "Open sheet"], ["pdf", "Open PDF"]].forEach(([kind, label]) => {
+      if (!S.report[kind]) return;
+      const a = el("a", "btn-lite");
+      a.append(icon(ICONS.open), document.createTextNode(label));
+      a.href = "/report/" + encodeURIComponent(S.report.token) + "/" + kind;
+      a.target = "_blank";
+      a.rel = "noopener";
+      opens.push(a);
+    });
+  }
+  step(3, "Report", S.report ? "Saved in " + (S.report.folder || "the usual place")
+       : (S.confirmed ? "Write the calculation sheet" : "A draft until the network is confirmed"),
+       !!S.report, !!S.confirmed && !S.report, [report].concat(opens));
+  return steps;
+}
+
+function sprinklerFigures(S) {
+  const d = (S.answer && S.answer.data) || {};
+  const wrap = el("div", "l-figures");
+  const fig = (cls, label, value, unit, subText) => {
+    const box = el("div", "l-fig " + cls);
+    const v = el("div", "l-fig-value");
+    v.append(el("span", "l-fig-num", value), el("span", "l-fig-unit", unit));
+    box.append(el("div", "l-fig-label", label), v, el("div", "l-fig-sub", subText));
+    wrap.append(box);
+  };
+  fig("air", "Total demand", num(d.total_lpm, 1), "L/min", "sprinklers " + num(d.demand_lpm, 1) + " + hose " + num(d.hose_lpm, 0));
+  fig("cool", "Pressure at the source", num(d.supply_bar, 3), "bar", "at " + (d.source || "—") + ", with device losses");
+  fig("plain", "Governing head", d.governing || "—", "", "runs at exactly what it needs");
+  if (d.supply) {
+    const margin = d.supply.at_demand_bar - d.supply_bar;
+    fig(margin < 0 ? "bad" : "plain", "Supply margin", num(margin, 3), "bar", "flow test gives " + num(d.supply.at_demand_bar, 3) + " bar at the demand");
+  } else {
+    fig("plain", "Supply margin", "—", "", "no flow test given");
+  }
+  return wrap;
+}
+
+function sprinklerChecks(S) {
+  const list = (S.qa || []).map(f => [f.level, f.text]).concat(((S.answer && S.answer.checks) || []).map(c => [c[0], c[1]]));
+  const wrap = el("section", "l-sec l-qa");
+  const head = el("h3", null, "Checks");
+  ["FAIL", "WARN", "OK", "INFO"].forEach(level => {
+    const n = list.filter(f => f[0] === level).length;
+    if (n) head.append(el("span", "badge " + level.toLowerCase(), n + " " + level));
+  });
+  wrap.append(head);
+  const ul = el("ul", "l-qa-list");
+  (S.refused || []).forEach(t => { const li = el("li", "qa-fail"); li.append(el("span", "badge fail", "NOT SOLVED"), el("span", "qa-text", t)); ul.append(li); });
+  list.forEach(([level, text]) => {
+    const li = el("li", "qa-" + String(level).toLowerCase());
+    li.append(el("span", "badge " + String(level).toLowerCase(), level), el("span", "qa-text", text));
+    ul.append(li);
+  });
+  wrap.append(ul);
+  return wrap;
+}
+
+function sprinklerInputs(S, state) {
+  const wrap = el("div");
+  // The standard, once per project.
+  const std = el("section", "l-sec");
+  std.append(el("h3", null, "Standard"));
+  std.append(sprinklerTable(["Which standard governs the sprinklers", "Your answer", "Offered"], [[
+    "asked once and kept for the project",
+    sprinklerField(state.standards.sprinkler_standard, "sprinkler standard", v => { state.standards.sprinkler_standard = v; }),
+    offerFor(S, "standards.sprinkler_standard") || "kept for the project"]]));
+  wrap.append(std);
+  // The criteria.
+  const crit = el("section", "l-sec");
+  crit.append(el("h3", null, "Design criteria"));
+  crit.append(sprinklerTable(["Criterion", "Unit", "Why", "Your value", "A standard offers"],
+    (S.fields || []).map(([name, unit, why, required]) => [
+      name + (required ? "" : " (optional)"), unit, why,
+      sprinklerField(state.criteria[name], name, v => { state.criteria[name] = v; }),
+      offerFor(S, "criteria." + name) || ""])));
+  wrap.append(crit);
+  // K per sprinkler type - confirmed, never taken from Revit's stored value.
+  const k = el("section", "l-sec");
+  k.append(el("h3", null, "Sprinkler K-factors - confirm each type"));
+  k.append(sprinklerTable(["Type", "Heads", "Revit holds", "K (L/min/bar^0.5)"],
+    Object.entries(S.types || {}).map(([key, t]) => [t.name, (t.heads || []).length,
+      [t.parameter, t.connector == null ? null : "connector value " + t.connector + " (unit not known)"].filter(Boolean).join("; ") || "nothing",
+      sprinklerField(state.k[key], "K of " + t.name, v => { state.k[key] = v; })])));
+  wrap.append(k);
+  // Fittings and valves.
+  const f = el("section", "l-sec");
+  f.append(el("h3", null, "Fittings and valves - equivalent length of one"));
+  f.append(el("p", "small muted", "The chart Heron holds has few cells, so most rows are asked on the first run - that is expected. A figure is offered only where the chart holds it."));
+  f.append(sprinklerTable(["Fitting", "Size", "Count", "Equivalent length (m)", "Offered"],
+    Object.entries(S.fittings || {}).map(([key, row]) => [row.kind, row.size || "size not read", row.count,
+      sprinklerField(state.fittings[key], "equivalent length of " + key, v => { state.fittings[key] = v; }),
+      offerFor(S, "fittings." + key) || ""])));
+  wrap.append(f);
+  // Where the demand is reported.
+  const src = el("section", "l-sec");
+  src.append(el("h3", null, "Source - where the demand is reported"));
+  const pick = el("select");
+  pick.setAttribute("aria-label", "source");
+  const none = el("option", null, "choose…"); none.value = ""; pick.append(none);
+  (S.sources || []).forEach(c => { const o = el("option", null, c.id + " - " + c.what); o.value = c.id; pick.append(o); });
+  pick.value = state.source || "";
+  pick.addEventListener("change", () => { state.source = pick.value || null; });
+  src.append(pick);
+  wrap.append(src);
+  return wrap;
+}
+
+function sprinklerRemote(S, state, said) {
+  const sec = el("section", "l-sec");
+  sec.append(el("h3", null, "Remote area - the heads that flow"));
+  const heads = [];
+  Object.values(S.types || {}).forEach(t => (t.heads || []).forEach(h => heads.push([h, t.name])));
+  const count = el("p", "small muted");
+  const boxes = new Map();
+  const recount = () => { count.textContent = state.operating.length + " of " + heads.length + " heads ticked."; };
+  const suggest = button("Suggest", "btn-lite", ICONS.refresh,
+    "Ticks the heads farthest from the source along the pipe, as many as the design area holds. You check and change the ticks.");
+  suggest.addEventListener("click", async () => {
+    const got = await sprinklerPost("/api/sprinkler/suggest", state, said, true);
+    if (got && got.ok) {
+      state.operating = (got.heads || []).slice();
+      state.suggested = (got.heads || []).slice();
+      boxes.forEach((box, id) => { box.checked = state.operating.includes(id); });
+      recount();
+    }
+  });
+  sec.append(suggest, count);
+  const grid = el("div", "l3d-ticks");
+  heads.forEach(([id, name]) => {
+    const lab = el("label", "l3d-tick");
+    const box = el("input"); box.type = "checkbox"; box.checked = state.operating.includes(id);
+    box.addEventListener("change", () => {
+      state.operating = state.operating.filter(x => x !== id);
+      if (box.checked) state.operating.push(id);
+      recount();
+    });
+    boxes.set(id, box);
+    lab.append(box, el("span", null, id + " · " + name));
+    grid.append(lab);
+  });
+  sec.append(grid);
+  recount();
+  return sec;
+}
+
+function sprinklerResults(S) {
+  const wrap = el("div");
+  ((S.answer && S.answer.tables) || []).forEach(t => {
+    const sec = el("section", "l-sec");
+    sec.append(el("h3", null, t.title));
+    sec.append(sprinklerTable(t.columns, t.rows));
+    wrap.append(sec);
+  });
+  (S.notes || []).forEach(n => wrap.append(el("p", "small muted", n)));
+  return wrap;
+}
+
+function renderSprinkler(S) {
+  const box = $("k-box");
+  const below = $("k-box2");
+  box.replaceChildren();
+  below.replaceChildren();
+  $("k-empty").hidden = !!S;
+  if (!S) return;
+  const state = sprinklerState(S);
+  const said = el("p", "result");
+  said.id = "k-said";
+  said.setAttribute("role", "status");
+  said.setAttribute("aria-live", "polite");
+  const meta = el("div", "l-meta");
+  [["System", (S.system && S.system.name) || "—"], ["Model", S.document || "—"],
+   ["Read from Revit", S.read_at || S.at || "—"],
+   ["Run", S.status === "ok" ? S.run_id : "not solved yet"]].forEach(([k, v]) => {
+    const item = el("span", "l-meta-item");
+    item.append(el("span", "l-meta-label", k), el("span", "l-meta-value", v));
+    meta.append(item);
+  });
+  meta.append(el("span", "l-meta-note", "Calculate reads nothing from Revit, and nothing here writes to Revit."));
+  box.append(meta, sprinklerSteps(S, state, said), said);
+  if (S.status === "ok") box.append(sprinklerFigures(S));
+  box.append(sprinklerChecks(S));
+  if (S.has_view) box.append(el("h3", "l-3d-title", "3D - the pipes and heads the calculation solved"));
+  below.append(sprinklerInputs(S, state), sprinklerRemote(S, state, said), sprinklerResults(S));
+}
+
+async function sprinkler_() {
+  if (sprinklerBusy) return;
+  if (document.activeElement && document.activeElement.closest && document.activeElement.closest("#sprinkler")) return;
+  try {
+    const res = await fetch("/api/sprinkler", { headers: HEADER, credentials: "same-origin" });
+    if (!res.ok) return;
+    const S = (await res.json()).sprinkler;
+    const key = S ? (S.run_id || "") + "/" + S.at + "/" + (S.report ? "r" : "") + (S.confirmed ? "c" : "") : "none";
+    if (key === sprinklerShown) return;
+    sprinklerShown = key;
+    $("sprinkler").hidden = !S;
+    renderSprinkler(S);
+    if (window.HeronSprinkler3D) window.HeronSprinkler3D.update($("k-3d"), S && S.has_view ? (S.run_id || "") + "/" + S.at : null);
+  } catch (e) { /* the state poll reports a closed page */ }
+}
+
 async function pair(code) {
   const res = await fetch("/api/pair", {
     method: "POST",
@@ -1553,6 +1887,7 @@ async function poll() {
     if (SHOW_CHANGES) changes();
     table_();
     loads_();
+    sprinkler_();
   } catch (e) {
     failures += 1;
     if (failures >= 3) {

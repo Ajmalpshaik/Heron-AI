@@ -206,6 +206,7 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 
 | Date | Sitting |
 |---|---|
+| 2026-10-04 | [A SPRINKLER SYSTEM'S HYDRAULICS NOW COME FROM THE MODEL](handover-archive/2026-10-04-a-sprinkler-system-s-hydraulics-now-come-from-the-model.md) |
 | 2026-10-02 | [HERON'S FIRE ENGINE NOW READS EN 12845, FM GLOBAL AND BS 5839](handover-archive/2026-10-02-heron-s-fire-engine-now-reads-en-12845-fm-global-and-bs-5839.md) |
 | 2026-10-02 | [HERON CAN NOW WORK OUT A SPRINKLER SYSTEM, NOT ONLY PLACE ITS HEADS](handover-archive/2026-10-02-heron-can-now-work-out-a-sprinkler-system-not-only-place-its-heads.md) |
 | 2026-10-02 | [HERON CAN NOW WORK OUT WHAT A DUCT SHOULD BE, NOT ONLY DRAW IT](handover-archive/2026-10-02-heron-can-now-work-out-what-a-duct-should-be-not-only-draw-it.md) |
@@ -217,7 +218,6 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 | 2026-09-22 | [THE SYSTEMS CHECK COUNTED TERMINALS AND CALLED THEM THE SYSTEM](handover-archive/2026-09-22-the-systems-check-counted-terminals-and-called-them-the.md) |
 | 2026-09-22 | [THE RELPATH CRASH: TWO MORE CALLS FIXED, AND THE RULE MOVED WHERE EVERY TOOL CAN IMPORT IT](handover-archive/2026-09-22-the-relpath-crash-two-more-calls-fixed-and-the-rule-moved.md) |
 | 2026-09-22 | [FOUR HINTS TOLD A CALLER TO TYPE WHAT REVIT REFUSES, AND FOURTEEN SAID NOTHING](handover-archive/2026-09-22-four-hints-told-a-caller-to-type-what-revit-refuses-and.md) |
-| 2026-09-22 | [SESSION CLOSED. THE READING SWEEP THROUGH `tools/`, AND WHERE IT STOPPED](handover-archive/2026-09-22-session-closed-the-reading-sweep-through-tools-and-where-it.md) |
 
 ## The session archive — what happened before today
 
