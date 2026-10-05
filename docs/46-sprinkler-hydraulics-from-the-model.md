@@ -348,7 +348,7 @@ The plan is [`docs/work-notes/plans/fire-water-and-spacing-2026-10-05.md`](work-
 | `heron_fire` | `data` on `standpipe`, `hose_reels`, `water_storage`, `fire_pump`, `water_supply` and `sprinkler_spacing`; `spacing_offers()`; `fields()` - a calculation's inputs, derived by running it on nothing | `tests/test_fire.py` section 11 |
 | REPORT_SPRINKLER_NETWORK | Each head's `space_id`; `spaces` with each one's outline | compiled on 2020, 2024 and 2027 here; [group CE](needs-checking/group-ce.md) CE8 |
 | [`heron_sprinkler_spacing.py`](../brain/heron_sprinkler_spacing.py) | Spacing per Space, the branch angle from the pipes, the layout turned to it | `tests/test_sprinkler_spacing.py` |
-| [`heron_fire_water.py`](../brain/heron_fire_water.py) | The fire water parts put together with the sprinkler demand | `tests/test_sprinkler_spacing.py` |
+| [`heron_sprinkler_water.py`](../brain/heron_sprinkler_water.py) | The fire water parts put together with the sprinkler demand | `tests/test_sprinkler_spacing.py` |
 | The run, the sheet, the 3D view, the page | Both sections; a Spacing colour and the Space outlines | `tests/test_sprinkler_run.py`, `tests/test_sprinkler_view.py`, `tests/test_companion.py` |
 
 **Seen in a browser** on a test office turned 20 degrees (not a model): both sections, the outline and

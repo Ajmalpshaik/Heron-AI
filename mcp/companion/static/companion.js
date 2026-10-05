@@ -1874,7 +1874,7 @@ function sprinklerSpacing(S, state) {
 }
 
 // Fire water: the standpipes, hose reels, tank and pump, put together with the
-// sprinkler demand in brain/ (heron_fire_water). Each part's questions are the
+// sprinkler demand in brain/ (heron_sprinkler_water). Each part's questions are the
 // engine's own, sent by the brain.
 function sprinklerWater(S, state) {
   const w = S.water || {};

@@ -36,7 +36,7 @@ import os
 import re
 
 import heron_fire as FIRE
-import heron_fire_water as WATER
+import heron_sprinkler_water as WATER
 import heron_sprinkler_spacing as SPACING
 import heron_sprinkler_takeoff as TAKEOFF
 
@@ -110,7 +110,7 @@ def normalise(inputs):
     {"criteria", "k", "fittings", "operating", "source", "standards", "spacing",
     "water"}. A value that cannot be one raises InputError naming it. The
     spacing and fire water inputs are kept as given: their values are checked
-    by the engine that reads them (heron_sprinkler_spacing, heron_fire_water).
+    by the engine that reads them (heron_sprinkler_spacing, heron_sprinkler_water).
     """
     if isinstance(inputs, str):
         try:
@@ -338,7 +338,7 @@ def run(n, inputs, recorded=None):
     """
     One run (see _solve), then - whatever it came to - every head's spacing in
     its Space (heron_sprinkler_spacing), and, when the sprinklers are solved,
-    the fire water (heron_fire_water). Neither of those ever stops the solve.
+    the fire water (heron_sprinkler_water). Neither of those ever stops the solve.
     """
     result = _solve(n, inputs, recorded)
     given = result.get("inputs")

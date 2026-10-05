@@ -1704,7 +1704,7 @@ def sprinkler_hydraulics(network_json, inputs, project=None, project_name=None, 
     """
     try:
         import heron_fire as FIRE
-        import heron_fire_water as WATER
+        import heron_sprinkler_water as WATER
         import heron_sprinkler_run as RUN
         import heron_sprinkler_spacing as SPACING
         import heron_sprinkler_takeoff as NET

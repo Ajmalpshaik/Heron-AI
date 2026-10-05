@@ -42,7 +42,7 @@ sys.path.insert(0, os.path.join(ROOT, "brain"))
 sys.path.insert(0, os.path.join(ROOT, "tests"))
 
 import heron_fire as FIRE                                     # noqa: E402
-import heron_fire_water as WATER                              # noqa: E402
+import heron_sprinkler_water as WATER                              # noqa: E402
 import heron_sprinkler_run as R                               # noqa: E402
 import heron_sprinkler_spacing as S                           # noqa: E402
 import test_sprinkler_run as RUN                              # noqa: E402

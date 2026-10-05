@@ -82,7 +82,7 @@ the page holds data and calls hooks; plain-script tests; explicit staging.
 
 ## Task 4 - fire water
 
-**File:** new `brain/heron_fire_water.py`; `tests/test_fire_water.py`.
+**File:** new `brain/heron_sprinkler_water.py`; `tests/test_fire_water.py`.
 
 - [ ] `PARTS` - standpipe, hose_reels, storage, pump; each with its engine calculation and the inputs
   the runner fills (pump: demand flow and pressure; storage: sprinkler flow, hose allowance, other
