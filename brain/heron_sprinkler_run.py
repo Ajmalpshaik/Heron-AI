@@ -127,8 +127,8 @@ def normalise(inputs):
            "source": str(inputs["source"]) if inputs.get("source") else None,
            "standards": dict((k, v) for k, v in (inputs.get("standards") or {}).items()
                              if v not in (None, "")),
-           "spacing": _nested(inputs.get("spacing"), "spacing"),
-           "water": _nested(inputs.get("water"), "water")}
+           "spacing": _section(inputs.get("spacing"), "spacing"),
+           "water": _section(inputs.get("water"), "water")}
     unknown = [k for k in out["criteria"] if k not in CRITERIA]
     if unknown:
         raise InputError("%s is not a criterion Heron reads - %s" % (
@@ -160,6 +160,15 @@ def _nested(raw, name):
         elif v is not None and v != "" and _value(v) not in (None, ""):
             out[str(k)] = v
     return out
+
+
+def _section(raw, name):
+    """A spacing or fire water section - one that cannot be read refuses that section only,
+    never the sprinkler solve (docs/46 s13.1; the review, R13)."""
+    try:
+        return _nested(raw, name)
+    except InputError as why:
+        return {"_error": str(why)}
 
 
 def _plain(d):

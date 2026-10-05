@@ -411,25 +411,61 @@ var firstSpace = true;
 foreach (var pair in headSpaces)
 {
     var s = pair.Value;
+    // THE OUTER LOOP IS THE LARGEST ONE. The API does not promise the first loop
+    // is the outside; the others are columns and shafts inside the Space,
+    // counted. An edge bounded by a separation line is counted too: the
+    // spacing check holds every edge as a wall, and a separation line is not
+    // one (the plan's review, R5).
     var outline = new System.Text.StringBuilder();
     var points = 0;
+    var innerLoops = 0;
+    var separationEdges = 0;
     try
     {
         var loops = s.GetBoundarySegments(new SpatialElementBoundaryOptions());
         if (loops != null && loops.Count > 0)
         {
-            XYZ last = null;
-            foreach (BoundarySegment segment in loops[0])
+            List<XYZ> best = null;
+            int bestIndex = -1;
+            double bestArea = -1.0;
+            for (var li = 0; li < loops.Count; li++)
             {
-                var curve = segment.GetCurve();
-                if (curve == null) continue;
-                foreach (XYZ p in curve.Tessellate())
+                var pts = new List<XYZ>();
+                foreach (BoundarySegment segment in loops[li])
                 {
-                    if (last != null && p.DistanceTo(last) < 1e-6) continue;
+                    var curve = segment.GetCurve();
+                    if (curve == null) continue;
+                    foreach (XYZ p in curve.Tessellate())
+                        if (pts.Count == 0 || p.DistanceTo(pts[pts.Count - 1]) >= 1e-6) pts.Add(p);
+                }
+                var twice = 0.0;
+                for (var i = 0; i < pts.Count; i++)
+                {
+                    var a = pts[i];
+                    var b = pts[(i + 1) % pts.Count];
+                    twice += a.X * b.Y - b.X * a.Y;
+                }
+                if (Math.Abs(twice) > bestArea) { bestArea = Math.Abs(twice); best = pts; bestIndex = li; }
+            }
+            innerLoops = loops.Count - 1;
+            if (best != null)
+            {
+                foreach (var p in best)
+                {
                     if (points > 0) outline.Append(",");
                     outline.Append("[").Append(metres(p.X)).Append(",").Append(metres(p.Y)).Append("]");
-                    last = p;
                     points++;
+                }
+                foreach (BoundarySegment segment in loops[bestIndex])
+                {
+                    try
+                    {
+                        var by = doc.GetElement(segment.ElementId);
+                        if (by != null && (isCategory(by, BuiltInCategory.OST_MEPSpaceSeparationLines)
+                                           || isCategory(by, BuiltInCategory.OST_RoomSeparationLines)))
+                            separationEdges++;
+                    }
+                    catch { }
                 }
             }
         }
@@ -453,6 +489,8 @@ foreach (var pair in headSpaces)
         .Append("," + esc("level") + ":").Append(esc(levelName))
         .Append("," + esc("area_m2") + ":").Append(numOrNull(area))
         .Append("," + esc("outline") + ":").Append(points >= 3 ? "[" + outline.ToString() + "]" : "null")
+        .Append("," + esc("inner_loops") + ":").Append(innerLoops.ToString(invariant))
+        .Append("," + esc("separation_edges") + ":").Append(separationEdges.ToString(invariant))
         .Append("}");
 }
 json.Append("]");

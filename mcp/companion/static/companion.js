@@ -1820,7 +1820,7 @@ function got(root, path) {
 }
 
 function statusBadge(status) {
-  const level = { ok: "ok", fail: "fail", refused: "fail", asked: "warn", missing: "warn", warn: "warn" }[status] || "info";
+  const level = { ok: "ok", fail: "fail", refused: "fail", asked: "warn", missing: "warn", warn: "warn", check: "warn" }[status] || "info";
   return el("span", "badge " + level, status || "—");
 }
 
@@ -1832,6 +1832,10 @@ function sprinklerSpacing(S, state) {
   const sec = el("section", "l-sec");
   sec.append(el("h3", null, "Spacing in each Space"));
   sec.append(el("p", "small muted", "Give each Space its hazard class - the engineer's, never assumed - and the limits of each class; then Calculate. A Space with no class is not checked."));
+  if (sp.status === "not read" || sp.status === "refused") {
+    sec.append(el("p", "small warn", sp.why || "The spacing was not checked."));
+    return sec;
+  }
   const rows = (sp.spaces || []).map(row => {
     const pick = el("select");
     pick.setAttribute("aria-label", "hazard class of " + row.label);
@@ -1842,22 +1846,27 @@ function sprinklerSpacing(S, state) {
     const angle = sprinklerField(got(state.spacing, ["angle_deg", row.id]), "branch angle of " + row.label,
                                  v => put(state.spacing, ["angle_deg", row.id], v));
     angle.placeholder = row.model_angle_deg == null ? "give it" : String(row.model_angle_deg);
-    const read = row.model_angle_deg == null ? "no level pipe found"
-      : row.model_angle_deg + "° from " + row.model_angle_m + " m of the model's pipes";
-    return [row.label, row.level || "—", (row.heads || []).length, pick, angle, read, statusBadge(row.status), row.why || ""];
+    const read = row.model_angle_deg == null ? (row.model_angle_how || "no level pipe found")
+      : row.model_angle_deg + "° - " + (row.model_angle_how || "");
+    const why = el("div");
+    if (row.why) why.append(el("div", null, row.why));
+    (row.warns || []).filter(t => t !== row.why).forEach(t => why.append(el("div", "small warn", t)));
+    if (row.farthest) why.append(el("div", "small muted", "Farthest from any head: " + row.farthest.distance_m.toFixed(2) +
+      " m, at x " + row.farthest.x_m + " y " + row.farthest.y_m + " m in the model"));
+    return [row.label, row.level || "—", (row.heads || []).length, pick, angle, statusBadge(row.status), why, read];
   });
-  sec.append(sprinklerTable(["Space", "Level", "Heads", "Hazard class", "Branch lines (degrees)", "Read from the model", "Result", "Why"], rows));
+  sec.append(sprinklerTable(["Space", "Level", "Heads", "Hazard class", "Branch lines (degrees)", "Result", "Why", "Branch lines read from the model"], rows));
   if ((sp.loose || []).length) sec.append(el("p", "small warn", "In no Space, so not checked: " + sp.loose.join(", ")));
   const classes = [...new Set(Object.values((state.spacing || {}).hazard || {}).filter(Boolean))];
   if (classes.length) {
     sec.append(el("h3", null, "Limits for each class"));
-    const offer = name => { const a = (sp.asked || []).find(x => x.input === name); return a ? (a.offer || "") : ""; };
+    const offer = (c, name) => ((S.spacing_offers || {})[c] || {})[name] || "";
     const lrows = [];
     classes.forEach(c => (S.spacing_fields || []).forEach(([name, unit, why, required]) => {
       lrows.push([c, why + (required ? "" : " (optional)"), unit,
                   sprinklerField(got(state.spacing, ["limits", c, name]), c + " " + name,
                                  v => put(state.spacing, ["limits", c, name], v)),
-                  offer("spacing.limits." + c + "." + name)]);
+                  offer(c, name)]);
     }));
     sec.append(sprinklerTable(["Class", "Limit", "Unit", "Your value", "The standard offers"], lrows));
   }
@@ -1896,13 +1905,14 @@ function sprinklerWater(S, state) {
       b2.addEventListener("change", () => put(state.water, ["simultaneous", key], b2.checked));
       same.append(b2, el("span", null, "Runs at the same time as the sprinklers"));
       part.append(same);
+      if (key === "standpipe") part.append(el("p", "small muted", "The sprinkler hose allowance and a standpipe running at the same time may be the same water - Heron counts both; whether one serves for the other is the engineer's and the authority's call."));
     }
     const asked = name => (w.asked || []).find(a => a.input === "water." + key + "." + name);
     part.append(sprinklerTable(["Input", "Your value", "Unit", "Why", "Offered"],
       ((S.water_fields || {})[key] || []).map(f => [f.input + (f.required ? "" : " (optional)"),
         sprinklerField(got(state.water, [key, f.input]), label + " " + f.input,
                        v => put(state.water, [key, f.input], v)),
-        f.unit, f.why, (asked(f.input) || {}).offer || ""])));
+        f.unit, f.why, f.offer || (asked(f.input) || {}).offer || ""])));
     if (answer && answer.status === "ok") {
       (answer.results || []).forEach(r => part.append(el("p", "small", r[0] + ": " + r[1])));
       (answer.checks || []).forEach(c => {
@@ -1915,6 +1925,15 @@ function sprinklerWater(S, state) {
     }
     sec.append(part);
   });
+  const once = (w.asked || []).filter(a => a.input.startsWith("standards."));
+  if (once.length) {
+    sec.append(el("h3", null, "Asked once for the project"));
+    sec.append(sprinklerTable(["Input", "Your value", "Why", "Offered"], once.map(a => {
+      const name = a.input.slice("standards.".length);
+      return [name, sprinklerField(state.standards[name], name, v => { state.standards[name] = v; }),
+              a.why || "", a.offer || ""];
+    })));
+  }
   (w.notes || []).forEach(t => sec.append(el("p", "small muted", t)));
   return sec;
 }

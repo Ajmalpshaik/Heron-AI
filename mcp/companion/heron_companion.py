@@ -921,6 +921,7 @@ class SprinklerPanel(object):
                 "water_parts": answer.get("water_parts") or [],
                 "hazard_classes": answer.get("hazard_classes") or [],
                 "spacing_fields": answer.get("spacing_fields") or [],
+                "spacing_offers": answer.get("spacing_offers") or {},
                 "spacing": result.get("spacing"), "water": result.get("water"),
                 "answer": result.get("answer"), "notes": list(result.get("notes") or []),
                 "run_id": result.get("run_id"), "said": answer.get("said"),

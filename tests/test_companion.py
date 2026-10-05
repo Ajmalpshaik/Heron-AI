@@ -1134,6 +1134,9 @@ def test_sprinkler_panel():
     check("Spacing in each Space" in page and "Fire water - what the source must give" in page
           and "not included" in page,
           "the page shows the Spacing and Fire water sections, and says a part not included")
+    check("innerHTML" not in page and "el(\"div\", null, row.why)" in page
+          and "[row.label, row.level" in page,
+          "Space names and their results reach the page as text only (Golden Rule 19)")
 
 
 def main():

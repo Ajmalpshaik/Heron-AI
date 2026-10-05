@@ -9,6 +9,11 @@ See docs/29-metadata-standard.md
 
 # Fire water and spacing per Space - implementation plan (phase 1b)
 
+> **FINAL - 2026-10-05.** Written, reviewed by an independent read of the code (13 defects, each with
+> evidence, measured against the first build), corrected, and finalized. Where a task line and the
+> **Review log** disagree, the log wins. The first build was committed before the review returned; the
+> fixes are the second commit.
+
 **Goal:** the Sprinkler panel gains two sections. **Fire water**: the standpipes, hose reels, tank and
 fire pump, put together with the sprinkler demand the panel solved. **Spacing**: every head checked
 against its Space's outline and its hazard class's limits, room by room, from the model. Nothing is
@@ -136,4 +141,23 @@ the page holds data and calls hooks; plain-script tests; explicit staging.
 
 ## Review log
 
-*(filled by the independent review)*
+| # | Finding | Change |
+|---|---|---|
+| R1 | The doubled-angle mean lets branch lines and cross mains (90 degrees apart) cancel: 30 x 10 m with 120 x 10 m gave 76.7 degrees - every head then FAILs | The **grid direction** is the mean of 4 theta (modulo 90); which of its two axes is the branch line is the one carrying more of the smallest pipe size; a spread grid (resultant under 0.9 of the length) is ASKED, not guessed. Test with equal main and branch lengths |
+| R2 | `family_of("BS EN 12845")` is None, so an EN project got NFPA classes and offers | Every `family_of` on a said standard goes through `standard_value` first (`heron_fire.family_said`), in `hydraulic_offers`, `spacing_offers`, the spacing check and the seam |
+| R3 | The farthest point comes back in the turned frame | Turned back to model coordinates before the view or the sheet; the sheet says the engine's own WARN is in the Space's turned frame |
+| R4 | A network read before this phase has no `spaces`, and every head showed "in no Space" | `spaces` absent -> spacing "not read", said, and no Spacing colour. Format 1's definition gains `spaces` and `space_id` |
+| R5 | A Space's edge may be a separation line, which the check holds as a wall; `loops[0]` is not promised to be the outer loop | The fragment takes the loop with the largest area, counts the others, and writes each edge's bounding element category; a Space with separation-line edges is never plain "ok" - its status says the edge is not a wall |
+| R6 | `fire_authority` is asked once by every water part, and was dropped - the QCDD and UAE checks went quiet | Each part's `ask_once` is asked (`standards.fire_authority`), and every answer's standards given in the request are kept with `KEEP.record`; each calculation gets only the standards it reads |
+| R7 | `fields()` lost the offers; the pump's suction is required once a demand is given | `fields()` carries each input's offer (optional inputs keep theirs too); the standpipe duration offers NFPA 14's row; the pump's suction is marked required |
+| R8 | "Flows add, the highest pressure governs" was arithmetic outside the engine | A `combined_demand` calculation in `heron_fire`, with its own words and test; each part's `height_m` question names the sprinkler source it is measured from; each part's assumptions travel with the total |
+| R9 | The sprinkler hose allowance and a simultaneous standpipe may be the same water | Said beside the tick and on the sheet - the modeller decides; NFPA 14's combined-system rule is not held, and is offered as "from your copy" |
+| R10 | Spacing and water answers given while the hydraulics are unsolved were not kept | A run is kept when it solved OR carries spacing or water inputs |
+| R11 | The Companion holder and the page offers | `_inputs` and `open` carry both sections (done in the first build); the seam returns each class's offers, so a limits table always has them; the page shows each Space's WARNs |
+| R12 | No escaping test for a Space name | A Space named `<script>` on the sheet, and the page puts Space labels on screen as text |
+| R13 | Smaller | A malformed spacing or water map refuses that section only; `_inside` is the engine's; the graph is built once per check; `area_m2` from square feet is said |
+
+**Risks kept:** a head the Space's own height does not reach (uprights above the Space's upper limit,
+Spaces in a link, another phase) reads "in no Space" - counted on the sheet and NEEDS-CHECKING CE8 asks
+for it; a head a millimetre outside a curved Space's chord refuses that Space; the row tolerance stays
+the engine's 100 mm; the kept network copy is written once per fingerprint and may hold old outlines.

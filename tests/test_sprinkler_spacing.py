@@ -128,8 +128,83 @@ def test_turned_office_measures_the_same():
 
 
 def test_angle_along_y_is_ninety():
-    angle, metres = S.branch_angle(office(90.0), S.spaces(office(90.0))[0]["7001"])
-    assert abs(angle - 90.0) < 1e-6 and metres > 8
+    angle, metres, how = S.branch_angle(office(90.0), S.spaces(office(90.0))[0]["7001"])
+    assert abs(angle - 90.0) < 1e-6 and metres > 8 and "smallest pipe" in how
+
+
+def grid(branch_deg, main_deg, branch_m, main_m, pieces=5):
+    """Level pipes only: a DN50 main and DN25 branch lines, in a large Space."""
+    c = NET._c
+    els = []
+
+    def line(prefix, deg, total, dn, inner, y0):
+        t = math.radians(deg)
+        step = total / pieces
+        for i in range(pieces):
+            a = (round(1.0 + i * step * math.cos(t), 6), round(y0 + i * step * math.sin(t), 6), 3.0)
+            b = (round(1.0 + (i + 1) * step * math.cos(t), 6),
+                 round(y0 + (i + 1) * step * math.sin(t), 6), 3.0)
+            els.append(NET._pipe("%s%d" % (prefix, i), dn, inner, step, c(0, a), c(1, b)))
+    line("8", main_deg, main_m, 50, 52.5, 20.0)
+    line("9", branch_deg, branch_m, 25, 26.6, 20.0)
+    n = office()
+    n["elements"] = els + [e for e in n["elements"] if e["kind"] == "sprinkler"]
+    n["spaces"][0]["outline"] = [[-40, -40], [40, -40], [40, 60], [-40, 60]]
+    return n
+
+
+def test_equal_main_and_branches_read_the_branches():
+    # The review's case: 30 degrees x 10 m with 120 degrees x 10 m - a doubled-angle
+    # mean gave 76.7; the grid is at 30, and the DN25 lines run at 30.
+    n = grid(30.0, 120.0, 10.0, 10.0)
+    angle, metres, how = S.branch_angle(n, S.spaces(n)[0]["7001"])
+    assert abs(angle - 30.0) < 0.01 and abs(metres - 20.0) < 1e-3, (angle, how)
+    n = grid(120.0, 30.0, 10.0, 10.0)
+    angle, _m, _h = S.branch_angle(n, S.spaces(n)[0]["7001"])
+    assert abs(angle - 120.0) < 0.01, angle
+
+
+def test_a_spread_grid_is_asked_not_guessed():
+    n = grid(30.0, 75.0, 10.0, 10.0)
+    angle, _m, how = S.branch_angle(n, S.spaces(n)[0]["7001"])
+    assert angle is None and "give the angle" in how
+    got = spacing(n)
+    assert got["spaces"][0]["status"] == "asked"
+    assert any(a["input"] == "spacing.angle_deg.7001" for a in got["asked"])
+
+
+def test_an_en_project_gets_en_classes():
+    got = S.check(office(), {"hazard": {"7001": "OH1"}}, "BS EN 12845")
+    assert "OH4" in got["classes"] and got["spaces"][0]["hazard"] != "ordinary hazard group 1"
+    offer = [a for a in got["asked"] if a["input"].endswith("max_area_m2")][0]["offer"]
+    assert "12845" in offer and "NFPA" not in offer
+
+
+def test_farthest_point_is_in_model_coordinates():
+    row = spacing(office(30.0))["spaces"][0]
+    far = row["farthest"]
+    # In the office's own frame the farthest point is a corner; turned 30 degrees about
+    # the outline's first corner, it is no longer at (6, 4).
+    corners = [S._turned_back(x * 1000.0, y * 1000.0, (0.0, 0.0), 30.0)
+               for x, y in ((0, 0), (6, 0), (6, 4), (0, 4))]
+    assert any(abs(far["x_m"] - cx) < 0.3 and abs(far["y_m"] - cy) < 0.3 for cx, cy in corners)
+    assert not (abs(far["x_m"] - 6.0) < 0.3 and abs(far["y_m"] - 4.0) < 0.3)
+
+
+def test_a_read_without_spaces_is_not_read():
+    n = office()
+    del n["spaces"]
+    got = spacing(n)
+    assert got["status"] == "not read" and not got["loose"]
+    assert "read the model again" in S.summary_line(got)
+
+
+def test_separation_lines_are_never_plain_ok():
+    n = office()
+    n["spaces"][0]["separation_edges"] = 1
+    row = spacing(n)["spaces"][0]
+    assert row["status"] == "check" and "separation lines" in row["why"]
+    assert set(S.head_status({"spacing": spacing(n)}).values()) == {"check"}
 
 
 def test_no_hazard_is_not_checked():
@@ -226,6 +301,54 @@ def test_short_pump_fails_and_missing_curve_asks_pump_only():
                          "standpipe": STANDPIPE}, QCDD)
     assert half["status"] == "missing" and half["parts"]["standpipe"]["status"] == "ok"
     assert all(a["input"].startswith("water.pump.") for a in half["asked"])
+
+
+def test_fire_authority_is_asked_once_and_used():
+    r = solved()
+    nfpa_only = {"sprinkler_standard": STD}
+    w = WATER.run(r, {"include": {"standpipe": True, "pump": True},
+                      "simultaneous": {"standpipe": True},
+                      "standpipe": STANDPIPE, "pump": PUMP}, nfpa_only)
+    asked = [a["input"] for a in w["asked"]]
+    assert asked.count("standards.fire_authority") == 1
+    assert w["status"] == "ok", "a standard asked once does not leave the parts unfinished"
+    q = WATER.run(r, {"include": {"standpipe": True}, "standpipe": STANDPIPE}, QCDD)
+    assert any("QCDD" in t for _lv, t in q["parts"]["standpipe"]["checks"])
+    assert "sprinkler_standard" not in q["parts"]["standpipe"]["ignored"]
+
+
+def test_hose_allowance_and_standpipe_may_be_the_same_water():
+    r = R.run(NET.net(), RUN.given(operating=["401", "402"], criteria=dict(
+        RUN.GIVEN["criteria"], hose_allowance_lpm=950)))
+    w = WATER.run(r, {"include": {"standpipe": True}, "simultaneous": {"standpipe": True},
+                      "standpipe": STANDPIPE}, QCDD)
+    assert any("may be the same water" in t for t in w["notes"])
+
+
+def test_fields_carry_offers_and_the_pump_suction_is_required():
+    f = WATER.fields()
+    pump = dict((x["input"], x) for x in f["pump"])
+    assert pump["suction_pressure_bar"]["required"] is True
+    sp = dict((x["input"], x) for x in f["standpipe"])
+    assert "30 min" in (sp["duration_min"]["offer"] or "")
+    assert "sprinkler system's source" in sp["height_m"]["why"]
+    assert sp["first_flow_lpm"]["offer"]
+
+
+def test_a_bad_section_refuses_that_section_only():
+    r = R.run(NET.net(), dict(RUN.given(operating=["401", "402"]), water="not a map",
+                              spacing=["nor", "this"]))
+    assert r["status"] == "ok"
+    assert r["water"]["status"] == "refused" and r["spacing"]["status"] in ("refused", "not read")
+
+
+def test_a_space_name_is_escaped_on_the_sheet():
+    import heron_sprinkler_report as REPORT
+    n = office()
+    n["spaces"][0]["name"] = "<script>alert(1)</script>"
+    r = R.run(n, {"spacing": {"hazard": {"7001": "light"}, "limits": {"light hazard": LIGHT}}})
+    page = REPORT.html(r, n)
+    assert "<script>alert" not in page and "&lt;script&gt;alert" in page
 
 
 def test_not_solved_means_no_water():

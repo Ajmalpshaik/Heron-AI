@@ -1195,6 +1195,19 @@ def water_and_spacing_as_data():
     check("ordinary hazard" in (offers["max_spacing_m"] or "").lower()
           and "light hazard" not in (offers["max_spacing_m"] or "").lower(),
           "the spacing offers are the class's own figures")
+    both = run("combined_demand", {"demands": [
+        {"name": "sprinklers", "flow_lpm": 1000, "pressure_bar": 4},
+        {"name": "standpipes", "flow_lpm": 1893, "pressure_bar": 9.8}]})
+    check(both["status"] == "ok" and both["data"]["flow_lpm"] == 2893
+          and both["data"]["pressure_bar"] == 9.8 and both["data"]["governing"] == "standpipes"
+          and any("not solved together" in t for t in checks(both, "WARN")),
+          "combined demand: the flows add, the highest pressure governs, and it says the "
+          "paths are not solved together")
+    off = F.fields("hose_reels")
+    check(any(f["input"] == "duration_min" and f["offer"] for f in off),
+          "fields() carries the offer of an optional input too")
+    check(F.family_said("BS EN 12845") == "en" and F.family_said("NFPA 13-2022") == "nfpa",
+          "a standard as a person says it is read through standard_value before its family")
     pump_fields = dict((f["input"], f["required"]) for f in F.fields("fire_pump"))
     check(pump_fields.get("rated_flow_lpm") is True and pump_fields.get("demand_flow_lpm") is False,
           "fields() derives what a calculation reads, required or not, by running it on nothing")

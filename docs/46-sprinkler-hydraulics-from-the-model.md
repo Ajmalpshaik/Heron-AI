@@ -281,9 +281,16 @@ panel does that:
   the modeller"** - never silence.
 - **What runs at the same time as the sprinklers** - for each included system, a tick. The total flow
   at the source is the sprinkler demand (with its hose allowance) plus every system ticked; the
-  pressure the source must give is **the highest any included demand needs there**. That second rule
-  is a simplification - each system's own path is not solved together with the others - and the sheet
-  says so in words.
+  pressure the source must give is **the highest any included demand needs there**. That rule is the
+  engine's own `combined_demand` calculation, and it says in words that each system's own path is not
+  solved together with the others. Each part's height is asked **above the sprinkler system's
+  source**, so the pressures compare at one point; each part's assumptions travel with the total.
+- **The same water twice.** The sprinkler hose allowance and a standpipe running at the same time may
+  be the same water. Heron counts both and says so beside the tick: whether one serves for the other is
+  the engineer's and the authority's call (NFPA 14's rule for a combined system is not held by Heron).
+- **The fire authority** is asked once for the project, as the sprinkler standard is (D-111): the
+  standpipe, hose reel, tank and pump calculations each read it, and QCDD's and the UAE code's checks
+  depend on it.
 - **Each part's inputs are the engine's own questions**, asked only for the parts included, each with
   the standard's figure offered (D-33). The page holds no list of its own: the fields come from running
   each calculation on nothing.
@@ -307,10 +314,18 @@ outline and the heads from the model, room by room.
   its outline in plan (metres, model coordinates) and its level, and each head carries its Space's id.
   Spaces, not Rooms: Spaces are in the MEP model, where the sprinklers are. **A head in no Space is
   listed, never checked**.
-- **Which way the branch lines run** - read from the model's own pipes: the length-weighted direction
-  of the horizontal pipes in the Space. Shown with what it was read from, and the modeller can change
-  it. The layout is turned by that angle before the check, so a building at an angle is measured along
-  its own branch lines.
+- **Which way the branch lines run** - read from the model's own level pipes in the Space: the grid's
+  direction first (a mean of four times each pipe's angle, so branch lines and the cross main, 90
+  degrees apart, agree instead of cancelling), then which of its two axes carries more of the smallest
+  pipe - the branch lines. Pipes that do not sit on one grid are asked, never guessed: a few degrees
+  wrong splits every branch line and fails every head. Shown with what it was read from, and the
+  modeller can change it. The layout is turned by that angle before the check, so a building at an
+  angle is measured along its own branch lines; the farthest point from any head is turned back to the
+  model's coordinates before it is shown.
+- **An edge that is not a wall.** A Space bounded partly by separation lines is held by the check as if
+  every edge were a wall. Such a Space is never plainly "ok": it reads **check by eye**, saying why.
+- **A read from before this phase** has no Spaces in it; its spacing is "not read", never "every head
+  in no Space".
 - **The hazard class of each Space** - the engineer's, asked per Space, never assumed. **The limits of
   each class** - most spacing, most area, most wall distance and the optional minimums - asked once per
   class, with the standard's figures for that class offered.

@@ -71,8 +71,8 @@ def test_after_a_solve():
     assert fast and all(s["values"]["v_ms"] > 0.5 for s in fast)
     v = V.build(NET.net(), r)
     keys = [m["key"] for m in v["modes"]]
-    # Heads in no Space still get the spacing colour - grey, "in no Space".
-    assert keys == ["size", "operating", "flow", "velocity", "pressure", "checks", "spacing"]
+    # This network was read without its Spaces, so there is no spacing colour (review R4).
+    assert keys == ["size", "operating", "flow", "velocity", "pressure", "checks"]
     pts = dict((p["id"], p) for p in v["points"])
     assert pts["402"]["colour"]["operating"] != pts["401"]["colour"]["operating"]
     assert pts["402"]["values"]["p_bar"] > 0 and pts["401"]["colour"]["pressure"] == V.DRY

@@ -197,7 +197,7 @@ def _absent(view, key, unit, why, required, reference):
     if required:
         view.answer.need(view.name(key), unit, why, reference)
     elif not view.prefix:
-        view.answer.optional_input(key, unit, why)
+        view.answer.optional_input(key, unit, why, reference)
     return None
 
 
@@ -1739,7 +1739,7 @@ def hydraulic_offers(standard=None):
     (the Sprinkler panel, docs/46). The engine's own offer functions, so the
     text has one home. Offered beside the question, never applied (D-33).
     """
-    family = family_of(standard) if standard else None
+    family = family_said(standard)
     shown = family or "nfpa"
     return {"density_mm_min": _design_offer(shown, None, "density"),
             "design_area_m2": _design_offer(shown, None, "area"),
@@ -1758,7 +1758,7 @@ def spacing_offers(hazard=None, standard=None):
     The engine's own offer functions, so the text has one home. Offered,
     never applied (D-33).
     """
-    family = family_of(standard) if standard else None
+    family = family_said(standard)
     shown = family or "nfpa"
     key = hazard_key(hazard, shown) if hazard else None
     return {"max_spacing_m": _spacing_offer(key, "maximum spacing and area", shown),
@@ -1787,12 +1787,24 @@ def fields(name):
         if m["input"] not in seen:
             seen.add(m["input"])
             out.append({"input": m["input"], "unit": m.get("unit"), "why": m.get("why"),
-                        "required": True})
+                        "required": True, "offer": m.get("reference")})
     for o in answer.optional:
         if o[0] not in seen:
             seen.add(o[0])
-            out.append({"input": o[0], "unit": o[1], "why": o[2], "required": False})
+            out.append({"input": o[0], "unit": o[1], "why": o[2], "required": False,
+                        "offer": o[3] if len(o) > 3 else None})
     return out
+
+
+def family_said(standard):
+    """'nfpa', 'en' or 'fm' for a sprinkler standard AS A PERSON SAYS IT - "BS EN 12845",
+    "NFPA 13 2022" - read through standard_value first; None when unknown or other."""
+    if not standard:
+        return None
+    try:
+        return family_of(standard_value("sprinkler_standard", standard))
+    except Refused:
+        return family_of(standard)
 
 
 @calculation("water_supply", "Water supply against a demand - a flow test's curve", "supply")
@@ -1825,6 +1837,41 @@ def calc_water_supply(a):
               "margin_bar": have - p}
     if not hose:
         a.assume("no hose allowance given, so none added")
+
+
+@calculation("combined_demand", "Demands that run at the same time, at one source", "supply")
+def calc_combined_demand(a):
+    """The flow and pressure one source must give to demands that run at the same time - sprinklers with their hose allowance, standpipes, hose reels - each given as its own flow and the pressure it needs AT THAT SOURCE: the flows add, and the source must give the highest of the pressures. Each demand's own path is not solved together with the others, and the answer says so."""
+    demands = a.records("demands", "each demand that runs at the same time: {name, flow_lpm, "
+                        "pressure_bar} - the pressure it needs at this same source")
+    rows = []
+    if demands:
+        for v in demands:
+            name = v.text("name") or v.name("name")
+            q = flow_lpm(v, "this demand's flow")
+            p = pressure_bar(v, "the pressure this demand needs at the source")
+            if q is not None and p is not None:
+                rows.append((name, q, p))
+    if a.incomplete():
+        return
+    if not rows:
+        a.refuse("no demand was given")
+        return
+    total = sum(q for _n, q, _p in rows)
+    governing = max(rows, key=lambda r: r[2])
+    a.table("Demands at the source", ("demand", "L/min", "bar at the source"),
+            [[n, _f(q, 1), _f(p, 3)] for n, q, p in rows])
+    a.result("Total flow", flow_text(total))
+    a.result("Pressure the source must give", "%s - %s's" % (pressure_text(governing[2]),
+                                                              governing[0]))
+    if len(rows) > 1:
+        a.check("WARN", "each demand's own path is not solved together with the others: the "
+                        "pressure is the highest any one needs at the source, at the total flow "
+                        "- a combined network solve would carry each demand's share of the "
+                        "shared pipe, and can ask more")
+    a.data = {"flow_lpm": total, "pressure_bar": governing[2], "governing": governing[0]}
+    a.uses("total flow = the sum of the demands that run at the same time; the source must "
+           "give the highest pressure any of them needs there")
 
 
 @calculation("water_storage", "Fire water storage volume", "supply")

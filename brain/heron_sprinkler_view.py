@@ -43,6 +43,8 @@ CHECKS = (("ok", "#5aa469", "within the limits given"),
           ("none", "#cfcac0", "no limit given, or not solved"))
 SPACING_MARKS = (("ok", "#5aa469", "within its Space's limits"),
                  ("fail", "#d9534f", "breaks a spacing limit - see its Space"),
+                 ("check", "#8e6bbf", "within the limits, but its Space has separation lines "
+                  "held as walls - check by eye"),
                  ("not checked", "#e0a030", "not checked - its Space has no hazard class or limits"),
                  ("no Space", "#9e9e9e", "in no Space - not checked"))
 OUTLINE = "#7a8796"

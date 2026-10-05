@@ -1747,8 +1747,16 @@ def sprinkler_hydraulics(network_json, inputs, project=None, project_name=None, 
         result["network_confirmed"] = dict(last["network_confirmed"])
     said = RUN.summary_text(result)
     answer = result.get("answer") or {}
-    given_std = dict((name, entry["value"]) for name, entry in
-                     (answer.get("standards") or {}).items() if entry.get("from") == "request")
+    # EVERY answer's standards given in this request are kept - the hydraulic
+    # one reads only the sprinkler standard; the fire water parts read the
+    # fire authority (the plan's review, R6).
+    every = [answer] + list(((result.get("water") or {}).get("answers")) or []) + [
+        sp.get("answer") or {} for sp in ((result.get("spacing") or {}).get("spaces") or [])]
+    given_std = {}
+    for got in every:
+        for name, entry in (got.get("standards") or {}).items():
+            if entry.get("from") == "request":
+                given_std[name] = entry["value"]
     if given_std and project:
         try:
             import heron_designbasis as KEEP
@@ -1758,12 +1766,16 @@ def sprinkler_hydraulics(network_json, inputs, project=None, project_name=None, 
         except (ValueError, OSError) as why:
             memory.append("NOT KEPT - %s" % why)
     saved = None
-    if result["status"] == "ok" and save and project:
+    # A run is kept when it solved, or when it carries spacing or fire water
+    # answers - those need no solve, and must not be asked twice (review, R10).
+    worth = result["status"] == "ok" or bool(
+        ((result.get("inputs") or {}).get("spacing")) or ((result.get("inputs") or {}).get("water")))
+    if worth and save and project:
         try:
             saved = RUN.save(project, result, network=network)
         except (ValueError, OSError) as why:
             said += " This run was NOT KEPT: %s" % why
-    elif result["status"] == "ok" and save:
+    elif worth and save:
         said += " This run was NOT KEPT - Heron does not know which project this is yet (D-33)."
     _audit().record("design.sprinkler", result["status"] == "ok",
                     fields={"status": result["status"],
@@ -1785,9 +1797,13 @@ def sprinkler_hydraulics(network_json, inputs, project=None, project_name=None, 
             # project's standard - both from the engine (docs/46 s13).
             "water_fields": WATER.fields(),
             "water_parts": [[k, label] for k, _c, label in WATER.PARTS],
-            "hazard_classes": list(FIRE.HAZARD_SETS[FIRE.family_of(standard) or "nfpa"]),
+            "hazard_classes": list(FIRE.HAZARD_SETS[FIRE.family_said(standard) or "nfpa"]),
             "spacing_fields": [[c, "m2" if c.endswith("m2") else "m", c.replace("_", " "),
                                 c in SPACING.REQUIRED] for c in SPACING.LIMITS],
+            # Each class's own figures, for every class the page offers - so a
+            # limits table has its offers before and after it is answered (R11).
+            "spacing_offers": dict((c, FIRE.spacing_offers(c, standard)) for c in
+                                   FIRE.HAZARD_SETS[FIRE.family_said(standard) or "nfpa"]),
             "confirmed": RUN.confirmed(result, network)}
 
 

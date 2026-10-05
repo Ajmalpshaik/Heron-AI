@@ -63,11 +63,20 @@ Companion gains `SprinklerPanel`, its routes, a page section and `sprinkler3d.js
     "inner_diameter_m": 0.0525 | null, "nominal_diameter_m": 0.05 | null, "length_m": 3.2 | null,
     "part_type": "Tee" | null, "angle_deg": 90.0 | null,
     "k": {"connector": 5.6 | null, "parameter": "80 L/min/bar^1/2" | null} | null,
-    "level": "Level 1" | null, "space": "101 Office" | null,
+    "level": "Level 1" | null, "space": "101 Office" | null, "space_id": "7001" | null,
+    "at": [x, y, z] | null,
     "connectors": [{"id": 0, "point": [x, y, z], "radius_m": 0.025 | null,
                     "to": [["790", 1], ...]}]}],
+ "spaces": [{"id": "7001", "number": "101", "name": "Office", "level": "Level 1",
+             "area_m2": 24.0 | null, "outline": [[x, y], ...] | null,
+             "inner_loops": 0, "separation_edges": 0}],
  "findings": ["..."]}
 ```
+
+`spaces` and each head's `space_id` were added in phase 1b (2026-10-05, [the plan](fire-water-and-spacing-2026-10-05.md)):
+every Space a head of the system sits in, its largest boundary loop as `outline` (metres, plan), how
+many other loops it has, and how many of the outline's edges are separation lines. A read made before
+phase 1b has no `spaces` key, and the spacing check says it was "not read".
 
 `systems` lists every fire protection piping system in the model, the chosen one marked. When none is
 chosen (`system` null) `elements` is empty and the chat asks which. Points are metres in model
