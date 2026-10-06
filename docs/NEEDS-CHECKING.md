@@ -515,6 +515,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-cm.md`](needs-checking/group-cm.md)
 
+## Group CO - family parameters renamed in place, formulas and labels read back with the new names (2026-10-06)
+
+**Its own file:** [`needs-checking/group-co.md`](needs-checking/group-co.md)
+
 ## Group CP - nested families: a read run that left an element, formula Yes/No values, hidden bodies in a box, and how a work-plane family stands (2026-10-07)
 
 **Its own file:** [`needs-checking/group-cp.md`](needs-checking/group-cp.md)

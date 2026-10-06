@@ -29,6 +29,21 @@ positive:
       A, B, C switched in that order, read back as type, the connector and the
       label kept
 
+  - given: >
+      RENAMING (version 3). A scratch family made for it and confirmed by its
+      title - never GM_PipeSupport_* or a FamilyN the owner has open - holding
+      CC 1 to 2 = 300 mm and CC 2 to 3 = 300 mm (type lengths), Total = CC 1 to
+      2 + CC 2 to 3 (a type formula), and a dimension between two reference
+      planes labelled CC 1 to 2. renameExisting true, parameterNames "CC 1 to
+      2=Pipe CC 1 to 2; CC 2 to 3=Pipe CC 2 to 3", kind and parameterGroup
+      empty, instance false
+    expect: >
+      renamed lists both, Old -> New; formulasReadBack shows Total = Pipe CC 1
+      to 2 + Pipe CC 2 to 3; keptLinks shows Pipe CC 1 to 2 with 1 labelled
+      dimension; REPORT_FAMILY_PARAMETERS shows the new names and no old one;
+      and FLEX_FAMILY, Pipe CC 1 to 2 set to 450 mm, still moves the labelled
+      plane - the label drives under its new name
+
 negative:
   - given: >
       parameterNames "Width" where the family already has an INSTANCE Width,
@@ -94,6 +109,30 @@ negative:
       refused naming it before anything changes - Revit keeps an image
       parameter as type only. NOT YET RUN in Revit
 
+  - given: >
+      renameExisting true on the same scratch family, "CC 1 to 2=cc 2 to 3" -
+      a new name already in the family, in other capitals
+    expect: >
+      refused naming 'cc 2 to 3' as already a parameter (as 'CC 2 to 3'),
+      before anything changes; both parameters, Total's formula and the label
+      read back exactly as before
+
+  - given: >
+      renameExisting true, "CC 1 to 2=Pipe CC 1-2" (an operator), "CC 1 to 2=2
+      Pipe" (a digit first), "CC 1 to 2=Pipe:CC" (a character Revit refuses),
+      and "CC 1 to 2 Pipe CC" (no =)
+    expect: each refused by name, nothing renamed
+
+  - given: >
+      renameExisting true on a SHARED parameter, or a built-in such as Default
+      Elevation, or a name the family does not have
+    expect: >
+      refused by name - the shared one told its name comes with its GUID -
+      and nothing renamed, the other pairs in the same call included
+
+  - given: switchExisting and renameExisting both true
+    expect: refused as two jobs, nothing changed
+
 second_route:
   - >
       Family Types, New Parameter by hand for one of the same names, and its
@@ -103,3 +142,7 @@ second_route:
       and its scope compared with what this reads back. For switching, the
       scope was also read by a second tool, REPORT_FAMILY_PARAMETERS, on
       2026-10-04
+  - >
+      For renaming: Family Types by hand, the formula column of the parameter
+      that read the old name, compared with formulasReadBack; and FLEX_FAMILY
+      driving the renamed label
