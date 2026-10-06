@@ -30,6 +30,19 @@
 # THE HINGE IS READ OFF THE DRAWING. The centre of the door's plan swing arc,
 # in a floor plan of the level, is taken as the hinge. Read an arrangement's
 # hinge the same way in plan: the swing arc is centred on the hinged jamb.
+#
+# VERSION 4 ADDS `rotation`, in degrees or BLANK, and FLOORS, CEILINGS AND
+# ROOFS. Every case above version 4 is run with rotation blank and must come
+# back as before - but a WINDOW now faces its wall's exterior (row 5b-325) and
+# no hinge is read for it (row 5b-293). The version 4 cases are at the end of
+# each list, and were MEASURED on 2026-10-06 in Project2 (Revit 2024, session
+# 51820), a never-saved scratch project Ajmal opened for it: Level 1 at 0 and
+# Level 2 at 4000; four "Generic - 200mm" walls on Level 1 drawn clockwise
+# round (0,0)-(8000,6000), 4000 high; a flat "Basic Roof : Generic - 400mm"
+# on Level 2 over (-300,-300)-(8300,6300); a room inside; a "Floor : Generic
+# 150mm" on Level 1; a "Basic Ceiling : Generic" on Level 1 at 2700. Every
+# run rolled back unless it says KEPT. A FAMILY IN A ROOF IS PROVED BY THE
+# ROOF, never by `placed`: read its Volume and Area before and after.
 
 positive:
   - given: >
@@ -80,6 +93,67 @@ positive:
       their sills, and `sills` naming what each reads, "left as Revit placed
       it". That reading is the answer to whether a window placed this way
       lands at 0 or at the family's default sill - say which, with the number
+
+  - given: >
+      VERSION 4. M_Skylight-Flat 1200 x 1200mm (Revit's US Metric library,
+      Windows - a Windows family whose Host reads Roof), `level` "Level 1",
+      one point over the middle of the flat roof on Level 2, `toRoomAt` and
+      `hingeAt` the same point again, `sillHeight` and `rotation` blank
+    expect: >
+      one skylight INTO that roof, found on Level 2 although Level 1 was
+      named: `readBack` "Host setting read off the family: Roof", the roof's
+      id, category Roofs, type and level 'Level 2', the skylight at its point
+      in plan, its Level reading 'Level 2'; `noHost`, `twoHosts`, `offPoint`
+      empty. MEASURED: placed 1, read back as said, insertion point at the
+      roof's base, 4000 mm, under its top face at 4400. KEPT once, the roof
+      read 22.243 m3 and 55.604 m2 against 22.704 m3 and 56.76 m2 uncut -
+      an opening of about 1.155 m2 - by SELECT_BY_NUMERIC_PARAMETER
+
+  - given: >
+      the same skylight at two points with `rotation` "90; 30"
+    expect: >
+      both in the roof, `hostedIn` reading "turned 90 degrees" and "turned 30
+      degrees", `rotationWrong` empty. MEASURED with a 1200 x 600mm type
+
+  - given: >
+      the same call again beside one KEPT - a point 22 mm from it - with
+      `rotation` "45", and a second point clear of it
+    expect: >
+      the first in `alreadyThere`, turned to 45 degrees and nothing doubled;
+      the second placed new. MEASURED. Before one already there was looked
+      for FIRST, this answered "no roof on any level is over it": the kept
+      skylight's own opening leaves no roof face under its point
+
+  - given: >
+      M_Fixed 0915 x 1220mm at a point on the south wall and one on the east
+      wall, each `toRoomAt` inside the room, `hingeAt` beside it, sill and
+      rotation blank - the arrangement that turned every window inside-out
+      in "Heron loads test" (row 5b-325)
+    expect: >
+      both windows in their walls FACING OUT: `readBack` giving each one's
+      FacingOrientation equal to its wall's exterior, Wall.Orientation, and
+      FacingFlipped False; `facingWrong` and `wrongHinge` empty, To Room the
+      room. MEASURED (0, -1) on the south wall and (1, 0) on the east, and
+      again (0, -1) and (0, 1) on the south and north walls. Version 3 run on
+      the same walls, rolled back: flipped 2 - both turned to face the room -
+      and both named in `wrongHinge` for want of a swing arc
+
+  - given: >
+      a CEILING-hosted family - M_Troffer Light - Parabolic Rectangular
+      0600x1200mm(2 Lamp) - 120V, from the Architectural lighting folder - at
+      a point under the ceiling on Level 1, `rotation` "90"
+    expect: >
+      in the ceiling, at its underside: `readBack` "Host setting read off the
+      family: Ceiling", category Ceilings, at 2700 mm, turned 90 degrees, its
+      Level 'Level 1'. MEASURED, and KEPT once in Project2
+
+  - given: >
+      a FLOOR-hosted family at a point over the slab on the level named
+    expect: >
+      in that floor, at its top face, read back as the roof and the ceiling
+      are. Read from the code and NOT yet seen on a model: no floor-hosted
+      family was in the library on this PC - the drains, outlets and
+      registers tried were face-based or level-based (the negatives below)
 
 negative:
   - given: >
@@ -180,7 +254,55 @@ negative:
       and NOT yet seen on a model: two leaves are hinged at both jambs, so
       there is no one side to name
 
+  - given: >
+      VERSION 4. The skylight at a point with no roof over it - (20000,
+      20000), outside the building
+    expect: >
+      that point in `noHost` - "no roof on any level is over it" - `placed`
+      empty and nothing changed. MEASURED. For a floor or a ceiling the line
+      names the levels where one IS there, "(one on 'Level 2' is)", rather
+      than taking it
+
+  - given: >
+      a ceiling-hosted family at a point under TWO ceilings on the level - a
+      second ceiling at 2400 made under part of the 2700 one, in the same
+      rolled-back run (setup create-ceiling) - and a second point under the
+      2700 one alone
+    expect: >
+      the first in `twoHosts`, naming both ceilings and their level, nothing
+      placed there; the second placed. MEASURED
+
+  - given: >
+      a FACE-BASED family - M_Downlight - Round - LED, M_Floor Drain - Round
+    expect: >
+      refused before anything is placed: "is face-based - it goes ON a face,
+      not INTO a wall, a floor, a ceiling or a roof - so PLACE_FAMILY_ON_FACE
+      is what places it. Nothing was placed". MEASURED on both
+
+  - given: >
+      a family that is NOT HOSTED - M_Floor Drain-2D, M_Outlet Floor-Duplex,
+      M_Supply Register-Floor, all level-based
+    expect: >
+      refused before anything is placed, naming PLACE_FAMILY_INSTANCES and
+      its placement, OneLevelBased. MEASURED on all three
+
+  - given: >
+      a roof family with `sillHeight` "900", or a wall family with a
+      `rotation` other than 0
+    expect: >
+      refused whole before anything is placed - a sill is a door's or a
+      window's in a wall, and a door or window turns with its wall. MEASURED
+      for the sill on the roof
+
 second_route:
+  - >
+      VERSION 4. Revit's own Architecture > Window with M_Skylight-Flat, in a
+      roof plan, clicked into the same flat roof beside one this placed: both
+      must read the roof as their host when selected, both must cut the roof
+      by the same opening - its Volume drops by the same amount for each -
+      and both must move with the roof when its edge is moved. Then compare
+      their Level in Properties: this one reads the roof's own level. NOT
+      RUN - it needs a person at the keyboard
   - >
       Revit's own Architecture > Window: the same window type clicked by hand
       into the same wall, its Sill Height read in Properties straight after
