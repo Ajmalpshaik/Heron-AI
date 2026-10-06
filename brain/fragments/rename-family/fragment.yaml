@@ -109,6 +109,8 @@ compatibility-note: >
 #                                       what is handed in, which on a type means
 #                                       the TYPE name, one level below this
 #   "duplicate this type"            -> DUPLICATE_TYPE
+#   "rename the family type"         -> SET_FAMILY_TYPE_VALUES - a TYPE inside
+#                                       the family open in the Family Editor
 #   "change SUP to SUPPLY on these"  -> RENAME_ELEMENTS
 
 #   "check the families are named to our standard" -> CHECK_FAMILY_STANDARDS
