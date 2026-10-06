@@ -1,8 +1,8 @@
 # tools
 
-**The scripts that keep this repository honest.** Plain Python 3; the two that compile also need the
-.NET SDK, and `check-fragments-compile.py` and `check-routing.py` need PyYAML. Run them from the
-repository root.
+**The scripts that keep this repository honest.** Plain Python 3; the ones that compile also need the
+.NET SDK, and several need PyYAML - `grep -l 'import yaml' tools/*.py` names them, where this line once
+named two. Run them from the repository root.
 
 It said *"three small scripts that keep the documentation honest"* until 2026-08-29, then **"ten"**
 until 2026-09-07. The second one was *correct on the day it was written* — 2026-08-30, in the commit
@@ -224,7 +224,7 @@ python tools/check-compile.py                 # every version it can reach
 python tools/check-compile.py 2020 2024       # just those two
 ```
 
-Builds all four projects against every Revit version, using the Revit API reference assemblies from
+Builds every project in `PROJECTS` in [`brain/heron_dotnet.py`](../brain/heron_dotnet.py) against every Revit version - and fails on a `.csproj` on disk that nothing builds - using the Revit API reference assemblies from
 NuGet. This is `A2`, `A3` and `A5` of [`NEEDS-CHECKING.md`](../docs/NEEDS-CHECKING.md) in one command instead
 of one version at a time.
 
@@ -250,7 +250,7 @@ python tools/check-fragments-compile.py 2020 2024   # just those two
 python tools/check-fragments-compile.py --keep      # leave the build tree to read
 ```
 
-`check-compile.py` builds the four **projects**. Until 2026-08-29 **nothing built the fragments** — and
+`check-compile.py` builds the **projects**. Until 2026-08-29 **nothing built the fragments** — and
 a fragment is C# that will one day be handed to Roslyn and run inside Revit ([D-28](../docs/DECISIONS.md)).
 The part of the library that does the work was the one part no compiler had read.
 
@@ -612,7 +612,7 @@ its declared risk, the bridge operation it calls, and whether it can change the 
 
 **A Heron tool's schema is not a JSON file anywhere** — it is the decorated function's signature, which
 the MCP SDK turns into one at run time. So that is what this reads, and it **parses rather than
-imports**: importing `heron_mcp_server` needs the MCP SDK installed and defines eighteen tools as a side
+imports**: importing `heron_mcp_server` needs the MCP SDK installed and defines every tool as a side
 effect of asking what they are. A documentation tool that only works where the server already runs is
 useless exactly where documentation is wanted — a reviewer's laptop, CI, a checkout with no
 dependencies. `ast` needs nothing.
@@ -766,7 +766,7 @@ Because it is generated, the map cannot drift from the registry. Regenerate rath
 
 ## Why these are committed
 
-They are small, they have no dependencies, and they encode three rules the project already learned the
+They are small, most need nothing but Python, and they encode four rules the project already learned the
 hard way:
 
 1. **A stated count is a claim; a derived count is a fact.**
@@ -792,11 +792,11 @@ Exit 1 when a signature is being wasted, 0 otherwise. A **STALE** signature — 
 changed under it — is reported and is *not* a failure: that is [D-30](../docs/DECISIONS.md) working,
 and the fragment must be proved again.
 
-**It runs in CI, but not as its own step.** It lives inside [`check-docs.py`](check-docs.py) **§9**,
-for exactly the reason §8 records below: this repository's `gh` token carries `repo` but not
-`workflow`, so no session can push a step into `gates.yml` — **a gate nobody can install is not a
-gate**. A commit that adds the step properly sits on the branch `ci/run-check-signatures` and cannot
-be pushed. If that workflow is ever edited by hand, move it beside the others and delete §9.
+**It runs in CI as its own step** in [`gates.yml`](../.github/workflows/gates.yml), and **also inside
+[`check-docs.py`](check-docs.py) §9**. This paragraph said *"not as its own step"* - a session could not
+push to the workflow file, and the step sat on `ci/run-check-signatures` - until that changed: the step
+landed and the branch is gone. §9 stays on purpose, so a wasted signature is caught on a laptop before a
+pull request exists; `check-docs.py`'s own comment above §9 gives the reason.
 
 **It existed for two days with nothing running it, and had no entry on this page.** The tool written
 because a gate was missing was itself the one tool nobody had written down — found 2026-09-15 by
@@ -939,8 +939,8 @@ names to choose an `expect:` from as a comment. It removes the errors a person m
 it does not remove the judgement a person has to make, and pretending otherwise would make it worse
 than the hand-written file.
 
-**Nothing is dropped silently.** A run against the library today emits 6 jobs and marks 108 fragments
-that cannot be arranged — waiting on a risk Heron does not reach yet, on a shape
+**Nothing is dropped silently.** Its last line says how many jobs it emitted and how many fragments
+it marked as unarrangeable — waiting on a risk Heron does not reach yet, on a shape
 [D-54](../docs/DECISIONS.md) has no rule for, on a value the setup chain does not leave behind, or
 having nothing to vary between the two legs at all, which makes them
 [D-53](../docs/DECISIONS.md) tracking work rather than batch work. Those numbers move as fragments are
@@ -959,7 +959,7 @@ because the authority is C# and nothing in Python can call it; the test is what 
 ## `prove-skill.py` — is a SKILL proved, and the half that needs a Revit written out
 
 ```bash
-python tools/prove-skill.py                      # both halves, all ten skills
+python tools/prove-skill.py                      # both halves, every skill
 python tools/prove-skill.py --plan-only          # the disk half, in seconds
 python tools/prove-skill.py --skill count-elements
 python tools/prove-skill.py --jobs tools/jobs/skills
@@ -979,8 +979,8 @@ Between the two halves sits a third thing, read from disk and therefore stable b
 every declared capability has a provider, whether that provider is **PROVEN** (a skill cannot be proved
 above what it rests on), whether the provider's risk **outranks the skill's own declared risk**
 ([row 140](../docs/FRAGMENT-ISSUES.md)), and whether the capabilities can be ordered so each one binds.
-`--plan-only` is that half alone; the routing half asks the live store 43 times and takes about
-twenty-five minutes, which is why `--routing-to` / `--routing-from` exist — a recording is printed back
+`--plan-only` is that half alone; the routing half asks the live store once per skill utterance - 43 times, about
+twenty-five minutes, when there were ten skills - which is why `--routing-to` / `--routing-from` exist — a recording is printed back
 with the index fingerprint it was taken against, and labelled a recording.
 
 `receivable()` and `classify()` are **imported** from `generate-jobs.py` and `check-skill-routing.py`
@@ -990,7 +990,7 @@ do not stay in step.
 The emitted job file is `tools/jobs/example.yaml`'s shape, one per skill, with the steps in an order
 that composes and `keep-chain: true` exactly where a need can only come down the chain. **Read its
 header before running it** — it says how many of its own steps `batch-prove` will refuse as `ALREADY`,
-which for seven of the ten skills is all of them ([row 141](../docs/FRAGMENT-ISSUES.md)).
+which for seven of the ten skills there were then was all of them ([row 141](../docs/FRAGMENT-ISSUES.md)).
 
 ---
 
@@ -1115,6 +1115,9 @@ reason is named) · `LOOK` (a person should look, with why) · `NEEDS A RUN` (on
 and which tool asks it).
 
 ### What it found, and what it proved it cannot do
+
+> **These are the figures from its first run, over 360 fragments** - history, not today's state. Run
+> `python tools/check-revit-gate.py` for the current counts per question.
 
 **One real defect in 360 fragments.** `create-from-room-boundaries` took `heightAboveLevel` and never
 said what the number meant. It is `Set()` straight into `CEILING_HEIGHTABOVELEVEL_PARAM`, which takes
@@ -1611,12 +1614,14 @@ builds rows that do not exist yet. **That is the difference between generating a
 one**, and a version that discarded those dates would have looked like tidying.
 
 **The gate is inside [`check-docs.py`](check-docs.py) §8, not in `gates.yml`** where the other three
-generators are diffed. The reason is worth stating: this repository's `gh` token carries `repo` but not
-`workflow`, so no session can push a change to that workflow file — **a gate nobody can install is not a
-gate**. `check-docs.py` already runs inside *The gates that must pass*, so this rides in with it. Moving
-it beside the other generators would be tidier and would catch exactly the same thing.
+generators are diffed. The reason first given here has expired: it said the `gh` token could not push a
+change to the workflow file, and sessions have since edited `gates.yml` several times. **The reason it
+stays has not**: nothing in `gates.yml` diffs the decision summary, so deleting §8 would delete the check,
+and `check-docs.py` runs both inside *The gates that must pass* and on a laptop. Its own comment above §8
+says so.
 
-**§9 now rides in the same way, for the same reason** — `check-signatures.py`, added 2026-09-15. Two riders is the point at which this stops being a neat trick and starts being a queue: if the workflow file ever becomes editable, both should move out and this note should go with them.
+**§9 rode in the same way** — `check-signatures.py`, added 2026-09-15 — and now also has its own step in
+`gates.yml`; see [its section](#check-signaturespy--is-anybodys-signature-sitting-unused).
 
 **Proved by breaking it**: deleting the `D-70` row makes `check-docs.py` exit 1 naming `D-70`, and
 restoring it returns to 0.
