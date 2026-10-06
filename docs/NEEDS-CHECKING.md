@@ -489,6 +489,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ce.md`](needs-checking/group-ce.md)
 
+## Group CF - Area and Volume Computations: the whole dialog read, and set behind the Admin switch (2026-10-06)
+
+**Its own file:** [`needs-checking/group-cf.md`](needs-checking/group-cf.md)
+
 ## Group CG - a project's answers kept under the model's own id, and the template's id asked about (2026-10-06)
 
 **Its own file:** [`needs-checking/group-cg.md`](needs-checking/group-cg.md)

@@ -150,11 +150,21 @@ compatibility-note: >
 #   "place a room in that area"          -> PLACE_ROOM_AT_POINT. An Area is
 #                                           not a Room and this fragment
 #                                           reports the Area-plan kind
+#   "list the area schemes"              -> REPORT_AREA_VOLUME_COMPUTATIONS,
+#                                           which collects every scheme for
+#                                           itself. This one reaches a scheme
+#                                           only through the Areas in it, so a
+#                                           scheme with none is invisible here
+#   "is volume computation on"           -> REPORT_AREA_VOLUME_COMPUTATIONS
+#   "create an area scheme"              -> SET_AREA_VOLUME_COMPUTATIONS
 
 utterances:
   - report the areas in this model
   - what areas do we have
-  - list the area schemes
+  # 'list the area schemes' MOVED 2026-10-06 to REPORT_AREA_VOLUME_COMPUTATIONS,
+  # which lists every scheme the Area Schemes tab shows. This fragment groups
+  # the Areas it finds by scheme, so a scheme with no Areas yet never appeared
+  # in its answer - a list of schemes that leaves one out.
   - what is the gross area per level
   - how much rentable area is there
   - show me the area breakdown
