@@ -199,6 +199,7 @@ namespace Heron.Revit.Addin
                 Json.Str("activeView", view == null ? null : SafeName(view)),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Bool("modifiedAnything", false),
                 Json.Str("reads", Reads(levelRows.Count, sharing, empty,
                                         repeatedGrids, OutOfOrder(levels))));

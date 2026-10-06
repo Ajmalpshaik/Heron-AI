@@ -85,6 +85,7 @@ WHAT IT CANNOT DO
 """
 
 import io
+import json
 import os
 import re
 import sys
@@ -208,6 +209,7 @@ async def exercise(server):
         "revit_change": ["capability", "values", "expect_from", "request"],
         "heron_hvac": ["calculation", "inputs"],
         "heron_fire": ["calculation", "inputs"],
+        "heron_earlier_answers": ["use"],
     }
     for name, args in sorted(expected.items()):
         if name not in served:
@@ -655,6 +657,117 @@ async def exercise_words(module):
         module.pinned.forget()
 
 
+async def exercise_earlier(module):
+    """
+    FRAGMENT-ISSUES 5b-324, through the SDK's own dispatch: a model made from
+    the default template is ASKED about the answers kept under the template's
+    id, and is asked its own standards until the modeller names one.
+
+    Measured 2026-10-06 the other way: "Heron loads test" was given Project2's
+    kept answers without a question, because both reported the template's
+    Project Information id and that id named the store.
+    """
+    server = module.server
+    print()
+    print("  answers kept under the id every template-born project shares (5b-324)")
+
+    async def call(tool, arguments):
+        try:
+            return text_of(await server.call_tool(tool, arguments)) or ""
+        except Exception as exc:                                # noqa: BLE001
+            return "(%s could not be called: %s: %s)" % (tool, type(exc).__name__, exc)
+
+    shared = "8764c510-57b7-44c3-bddf-266d86c26380-0000c160"
+    own = "c95db604-0abd-4bc5-9ebd-3ece37b3ce52"
+    folder = os.path.join(os.environ["HERON_KNOWLEDGE"], "projects")
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
+    kept = os.path.join(folder, shared + ".hvac.json")
+    record = {"format": 1, "project_key": shared, "project_name": "Project2", "history": [],
+              "standards": dict((name, {"value": value, "recorded": "2026-10-03T16:53:00Z"})
+                                for name, value in (("ventilation_standard", "62.1-2022"),
+                                                    ("energy_standard", "90.1-2022"),
+                                                    ("qcs_edition", "QCS 2024"),
+                                                    ("cibse_beside_ashrae", False)))}
+    with io.open(kept, "w", encoding="utf-8") as fh:
+        fh.write(json.dumps(record))
+    with io.open(kept, "rb") as fh:
+        before = fh.read()
+
+    ventilation = {"calculation": "ventilation", "inputs": "{}"}
+    module.pinned.forget()
+    try:
+        module.pinned.check({"ok": True, "document": "Heron loads test",
+                             "documentPath": "C:/test/Heron loads test.rvt",
+                             "projectKey": shared, "creationGuid": own})
+        said = await call("heron_hvac", ventilation)
+        check("EARLIER ANSWERS" in said and "Project2" in said,
+              "a model made from the template is ASKED whether Project2's kept "
+              "answers are its own")
+        check("ASK ONCE FOR THIS PROJECT" in said,
+              "and is asked its own governing standards - Project2's were NOT "
+              "used, which is what happened to 'Heron loads test' on 2026-10-06")
+        asked = (await call("heron_standards", {"request": "duct insulation thickness",
+                                                "scopes": "project"})
+                 + await call("heron_research", {"request": "duct insulation thickness",
+                                                 "scopes": "project"}))
+        check(asked.count("EARLIER ANSWERS") == 2,
+              "and the project-knowledge answers ask it too - the review of this change "
+              "found them silent while the project index under the shared id dropped "
+              "out of them")
+
+        # THE ADD-IN'S GUARD STILL COMPARES THE SHARED ID, so in another model
+        # made from the same template it selects - and the pin refuses only
+        # afterwards. Its refusal said "Nothing has been sent to Revit", which
+        # was false there. Found by the review of this change, 2026-10-06.
+        other = {"ok": True, "selected": 12, "category": "ducts", "breakdown": "ducts 12",
+                 "categories": 1, "document": "Project2", "projectKey": shared,
+                 "creationGuid": "e66f36a9-173f-46c8-bdca-d5787b826308",
+                 "scope": "the whole model, not just the active view"}
+        resolve = module.binding.resolve
+        module.binding.resolve = lambda: StandIn(other)
+        try:
+            said = await call("revit_select_by_category", {"category": "ducts"})
+        finally:
+            module.binding.resolve = resolve
+        check("Nothing has been sent to Revit" not in said
+              and "12" in said and "Project2" in said and "Heron loads test" in said,
+              "a selection the add-in already made in another model is SAID, with both "
+              "models named, not denied: %s" % said[:140])
+        check(module.pinned.title == "Heron loads test",
+              "and the pin stays on the model it was pointed at")
+
+        listed = await call("heron_earlier_answers", {})
+        check("Project2" in listed and "NOT used" in listed,
+              "heron_earlier_answers with nothing given lists what is kept, by "
+              "the model it was given for")
+        took = await call("heron_earlier_answers", {"use": "Project2"})
+        check(took.startswith("Copied"), "and on the modeller's word copies it: %s"
+              % took.splitlines()[0][:120])
+        said = await call("heron_hvac", ventilation)
+        check("EARLIER ANSWERS" not in said and "ASK ONCE FOR THIS PROJECT" not in said,
+              "after which the standards are this model's own, and nothing is "
+              "asked twice")
+        with io.open(kept, "rb") as fh:
+            check(fh.read() == before,
+                  "and the answers kept under the shared id are exactly as they were")
+
+        module.pinned.forget()
+        module.pinned.check({"ok": True, "document": "PIPE", "documentPath": "C:/test/PIPE.rvt",
+                             "projectKey": shared})
+        said = await call("heron_hvac", ventilation)
+        check("NOTHING IS KEPT FOR THIS MODEL" in said and "EARLIER ANSWERS" not in said,
+              "a model that reports only the shared id - Revit 2020 to 2023 - "
+              "keeps nothing, and says why")
+        check("ASK ONCE FOR THIS PROJECT" in said,
+              "and is not given Project2's standards either")
+        took = await call("heron_earlier_answers", {"use": "Project2"})
+        check("Nothing was copied" in took,
+              "and nothing can be copied to it: %s" % took[:120])
+    finally:
+        module.pinned.forget()
+
+
 def main():
     version, broken = sdk_version()
     print("Heron's MCP server, served by a real SDK")
@@ -689,6 +802,12 @@ def main():
     home = tempfile.mkdtemp(prefix="heron-mcp-serves-")
     had = os.environ.get("HERON_KNOWLEDGE")
     os.environ["HERON_KNOWLEDGE"] = home
+    # AND ITS AUDIT TRAIL. Without this every heron_hvac call here wrote a line
+    # into the owner's REAL trail under %APPDATA%\Heron, which is evidence and
+    # is never pruned - test_hvac and test_fire already point it at a scratch
+    # folder. Found by the review of the 5b-324 change, 2026-10-06.
+    had_audit = os.environ.get("HERON_AUDIT")
+    os.environ["HERON_AUDIT"] = os.path.join(home, "audit")
     try:
         try:
             import heron_mcp_server as server_module
@@ -709,6 +828,7 @@ def main():
         asyncio.run(exercise(server))
         asyncio.run(exercise_door(server_module))
         asyncio.run(exercise_words(server_module))
+        asyncio.run(exercise_earlier(server_module))
 
         print()
         if FAILURES:
@@ -730,6 +850,10 @@ def main():
             os.environ.pop("HERON_KNOWLEDGE", None)
         else:
             os.environ["HERON_KNOWLEDGE"] = had
+        if had_audit is None:
+            os.environ.pop("HERON_AUDIT", None)
+        else:
+            os.environ["HERON_AUDIT"] = had_audit
         shutil.rmtree(home, ignore_errors=True)
 
 

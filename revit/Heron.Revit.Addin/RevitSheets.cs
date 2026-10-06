@@ -115,6 +115,7 @@ namespace Heron.Revit.Addin
                     Json.Num("sheetCount", 0),
                     Json.Str("document", doc.Title),
                     Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                    Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                     Json.Bool("modifiedAnything", false),
                     Json.Str("reads",
                         "This model has no sheets. Normal for a working model "
@@ -212,6 +213,7 @@ namespace Heron.Revit.Addin
                 Json.Num("revisionsIssued", issued),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Bool("modifiedAnything", false),
                 Json.Str("reads", Reads(rows.Count, placeholders, emptySheets,
                                         noTitleblock, titleblockRows.Count)));

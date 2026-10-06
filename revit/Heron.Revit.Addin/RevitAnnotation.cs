@@ -136,6 +136,7 @@ namespace Heron.Revit.Addin
                 Json.Num("keynotes", keynotes),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Bool("modifiedAnything", false),
                 Json.Str("reads", Reads(dimensions, overridden, tags,
                                         orphanTags, textNotes)));

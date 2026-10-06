@@ -184,6 +184,7 @@ an edit.
 | [D-110](#d-110--a-supply-diffuser-neck-in-an-ncrc-30-room-is-held-to-the-owners-25-ms-not-ashraes-22) | A supply diffuser neck in an NC/RC 30 room is held to the owner's 2.5 m/s, not ASHRAE's 2.2 | ✅ Accepted · 2026-10-02 |
 | [D-111](#d-111--a-projects-governing-standards-are-asked-once-and-kept-for-that-project) | A project's governing standards are asked once and kept for that project | ✅ Accepted · 2026-10-02 |
 | [D-112](#d-112--a-fragment-that-must-work-in-one-of-revits-edit-modes-opens-its-own-transactions-inside-herons-group) | A fragment that must work in one of Revit's edit modes opens its own transactions inside Heron's group | ⏳ Proposed · 2026-10-03 |
+| [D-113](#d-113--a-projects-kept-answers-are-filed-under-the-models-own-id-and-answers-kept-under-its-templates-id-are-asked-about) | A project's kept answers are filed under the model's own id, and answers kept under its template's id are asked about | ⏳ Proposed · 2026-10-06 |
 
 ## Format
 
@@ -955,3 +956,11 @@ What this makes easy. What this makes hard. What it locks in.
 **Affects:** [`RevitFragment.cs`](../revit/Heron.Revit.Addin/RevitFragment.cs), [`heron_fragment.py`](../brain/heron_fragment.py) (`AMBIENT`), [`check-revit-gate.py`](../tools/check-revit-gate.py), `create-stairs`
 
 **Full record:** [`decisions/D-112.md`](decisions/D-112.md)
+
+## D-113 — A project's kept answers are filed under the model's own id, and answers kept under its template's id are asked about
+
+**Status:** Proposed · **Date:** 2026-10-06 · **Source:** [FRAGMENT-ISSUES 5b-324](fragment-issues/section-5b-rows-176-200.md), measured on the owner's PC the same day
+**Supersedes:** the KEY in [D-111](#d-111--a-projects-governing-standards-are-asked-once-and-kept-for-that-project) item 4 - a new project inherits its Project Information UniqueId from its template, so every model made from one template shared one record
+**Affects:** [`RevitOperations.cs`](../revit/Heron.Revit.Addin/RevitOperations.cs), [`heron_write.py`](../mcp/server/heron_write.py), [`heron_earlier.py`](../brain/heron_earlier.py), [`heron_mcp_server.py`](../mcp/server/heron_mcp_server.py) (`heron_earlier_answers`)
+
+**Full record:** [`decisions/D-113.md`](decisions/D-113.md)

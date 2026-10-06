@@ -163,6 +163,7 @@ namespace Heron.Revit.Addin
                 Json.Num("roomsWithNoArea", roomsWithNoArea),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Bool("modifiedAnything", false),
                 Json.Bool("anythingLeftTheModel", false),
                 Json.Str("reads", Reads(sheets, placeholders, blankSheets,

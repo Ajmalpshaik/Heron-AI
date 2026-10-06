@@ -503,6 +503,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-ci.md`](needs-checking/group-ci.md)
 
+## Group CK - a project's answers kept under the model's own id, and the template's id asked about (2026-10-06)
+
+**Its own file:** [`needs-checking/group-ck.md`](needs-checking/group-ck.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

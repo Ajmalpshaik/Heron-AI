@@ -253,7 +253,7 @@ def main():
     check("_aim_at_pin(args)" in change,
           "through the SAME helper revit_change uses - one copy of the aim")
     aim = body_of(text, "_aim_at_pin") or ""
-    check(all(line in aim for line in ('args["expectProject"] = pinned.project_key or ""',
+    check(all(line in aim for line in ('args["expectProject"] = pinned.project_information_id or ""',
                                         'args["document"] = pinned.title',
                                         'args["documentPath"] = pinned.document_path')),
           "and that helper carries all three identities")

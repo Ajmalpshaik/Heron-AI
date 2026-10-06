@@ -240,6 +240,15 @@ TOOLS = {
     # into Revit; sending one is revit_change's.
     "heron_fire":               (READ,    None),
 
+    # Answers kept under the id every template-born project shares
+    # (FRAGMENT-ISSUES 5b-324, D-113). READ, operation None, for every reason
+    # heron_hvac is: it reads no model and sends nothing to Revit. On the
+    # modeller's word it COPIES that model name's earlier answers into the
+    # open model's own files, in Heron's own knowledge folder - the same kind
+    # of bookkeeping heron_hvac's kept standards are - and moves, rewrites or
+    # deletes nothing that was there.
+    "heron_earlier_answers":    (READ,    None),
+
     # The Capability Gap report (HERON-AHR-GAP-001, docs/06 s6). READ, and the
     # operation is None for the same reason as the three above - it sends
     # nothing to Revit. What it reads is Heron's OWN audit trail, which is a
