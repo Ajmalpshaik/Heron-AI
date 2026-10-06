@@ -1,0 +1,54 @@
+# The proof of REMOVE_FAMILY_CONNECTOR - a connector deleted from the family
+# open in the Family Editor - NEEDS-CHECKING Group CR, rows CR1 to CR8,
+# FRAGMENT-ISSUES row 5b-354:
+#
+#   remove-family-connector      REMOVE_FAMILY_CONNECTOR      FRG-MEP-061
+#
+#     python tools/batch-prove.py tools/jobs/remove-family-connector-2026-10-07.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/remove-family-connector-2026-10-07.yaml
+#
+# NEVER ON THE OWNER'S OPEN FAMILY1, where the request came from on 2026-10-07.
+# THE ARRANGEMENT IS MADE ONCE, KEPT, IN A NEW SCRATCH FAMILY - never one of the
+# owner's saved families. CREATE_FAMILY_DOCUMENT from Metric Generic Model gives
+# a family; type its title where `in:` says FAMILY-TITLE. Then, in it, with the
+# Heron tools (the commands are in docs/needs-checking/group-cr.md):
+#
+#   reference planes "Conn A" -100 and "Conn B" 100, left-right
+#   one solid extrusion on Ref. Level, rect -100,-100 100,100, 0 to 200 mm -
+#     its left face lies on Conn A, its right face on Conn B
+#   a pipe connector on the face lying on "Conn A"   (ADD_FAMILY_CONNECTOR)
+#   a duct connector on the face lying on "Conn B"   (ADD_FAMILY_CONNECTOR)
+#
+# THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN - fill FAMILY-TITLE first.
+#
+# POSITIVE: "Conn A" - the pipe connector goes; `removed` holds one line and
+# `connectorReport` lists only the duct connector on Conn B.
+#
+# NEGATIVE: "Conn Middle" - no connector lies on such a plane. Refused, the
+# family's two connectors listed, `removed` EMPTY.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at the family afterwards anyway - both connectors still there
+# (REPORT_FAMILY_CONNECTORS): rollback has failed on this PC before (BD1).
+#
+# With two Revits connected to Heron, add `--session <process id>` - batch-prove
+# cannot pin one; the single `validate` commands in group-cr.md can.
+
+model: a scratch family from Metric Generic Model.rft, Revit 2024
+
+defaults:
+  in: "FAMILY-TITLE"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: remove-family-connector
+    expect: removed
+    set:
+      connectors: "Conn A"
+    negative-set:
+      connectors: "Conn Middle"
+    note: >
+      The negative is a name the family does not hold, not an empty one - an
+      empty name is refused too, but proves less. CR4 to CR6 (two on one
+      plane, a primary taken, a linked partner) are run by hand.

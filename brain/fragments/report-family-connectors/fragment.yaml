@@ -74,6 +74,8 @@ compatibility-note: >
 #   "which way does the connector point"         -> here
 #   "set the connectors to Global", "flip it"    -> SET_FAMILY_CONNECTOR_ROLES
 #   "put a connector on this face"               -> ADD_FAMILY_CONNECTOR
+#   "delete the connector on Air Outlet"         -> REMOVE_FAMILY_CONNECTOR -
+#                                                   takes the ids listed here
 #   "what connectors are on these ducts"         -> REPORT_CONNECTORS, placed
 #                                                   elements in a project
 

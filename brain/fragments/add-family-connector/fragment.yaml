@@ -177,6 +177,8 @@ compatibility-note: >
 #   "connect these ducts to the terminal"        -> CONNECT_AIR_TERMINALS, in a
 #                                                   project
 #   "report connector sizes in the model"        -> REPORT_CONNECTORS
+#   "delete the connector I just added"          -> REMOVE_FAMILY_CONNECTOR -
+#                                                   one already made, deleted
 
 utterances:
   - put a supply air duct connector on the neck top

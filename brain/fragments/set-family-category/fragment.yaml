@@ -159,6 +159,7 @@ compatibility-note: >
 #   "add the shared parameter Equipment Tag to this family"
 #                                             -> ADD_FAMILY_SHARED_PARAMETERS
 #   "put a supply air connector on the neck"  -> ADD_FAMILY_CONNECTOR
+#   "delete the pipe connector from this family" -> REMOVE_FAMILY_CONNECTOR
 #   "link the connector flow to a parameter"  -> LINK_FAMILY_PARAMETER - an
 #                                                element already in the family
 #   "flex the family"                         -> FLEX_FAMILY

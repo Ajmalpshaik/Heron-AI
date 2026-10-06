@@ -1,0 +1,67 @@
+positive:
+  - given: >
+      a new unsaved scratch family made by CREATE_FAMILY_DOCUMENT from Metric
+      Mechanical Equipment (never one of the owner's saved families): one
+      extrusion with faces lying on reference planes "Conn A" and "Conn B";
+      a round pipe connector on "Conn A" and a round duct connector on
+      "Conn B", both made by ADD_FAMILY_CONNECTOR; connectors "Conn A"
+    expect: >
+      removed holds ONE line, the pipe connector on "Conn A";
+      REPORT_FAMILY_CONNECTORS run after it lists only the duct connector on
+      "Conn B", unchanged - same id, same system, same pointing
+
+  - given: >
+      the same family, a pipe connector by its id (from
+      REPORT_FAMILY_CONNECTORS) where it was primary and a second pipe
+      connector is left
+    expect: >
+      removed holds that connector; a finding names the pipe connector left
+      as having no PRIMARY and gives the SET_FAMILY_CONNECTOR_ROLES words
+
+  - given: >
+      two pipe connectors linked to each other by SET_FAMILY_CONNECTOR_ROLES
+      ("Conn A > Conn C"); connectors "Conn A"
+    expect: >
+      removed holds the Conn A connector; a finding reads the Conn C
+      connector back NOT linked. RECORD whether Revit cleared that end itself
+
+  - given: >
+      a connector whose diameter is driven by a family parameter "Heron Conn
+      D" (SET_FAMILY_CONNECTOR_ROLES sizeParameters); connectors naming it
+    expect: >
+      removed holds it; a finding says "Heron Conn D" stays in the family;
+      REPORT_FAMILY_PARAMETERS after it still lists "Heron Conn D"
+
+  - given: connectors "all" on the same family
+    expect: >
+      every connector in removed; connectorReport "No connectors are left in
+      the family."; RECORD what Document.Delete returned besides the
+      connectors - expected nothing
+
+negative:
+  - given: >
+      the same scratch family, connectors "Conn Middle", where no connector
+      lies on such a plane
+    expect: >
+      refused, naming the family's connectors - and REPORT_FAMILY_CONNECTORS
+      after it lists both connectors still there. The batch-prove negative
+
+  - given: >
+      two connectors on faces lying on one plane "Conn A"; connectors "Conn A"
+    expect: refused - two connectors lie on that plane, naming both ids - nothing deleted
+
+  - given: connectors "Conn A, Conn Middle" - one good name, one not
+    expect: refused, and the Conn A connector is still there - all or nothing
+
+  - given: connectors empty
+    expect: refused, listing the family's connectors - nothing deleted
+
+  - given: a project in front
+    expect: notAFamily true and nothing deleted
+
+second_route:
+  - >
+      In the Family Editor, the connector named is gone from the 3D view and
+      from the Properties list when the face it sat on is selected; a
+      REPORT_FAMILY_CONNECTORS read after it gives the same list as the
+      connectorReport this returns
