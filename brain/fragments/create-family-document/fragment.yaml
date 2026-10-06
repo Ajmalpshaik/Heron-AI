@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -106,29 +106,41 @@ contract:
     - name: findings
       type: IList<string>
 
-# VERSION 1's PROOF, kept as the record. Version 2 changed impl/, so the
-# fingerprint no longer matches and heron-status is DRAFT until re-proved.
+# VERSION 2 PROVED 2026-10-06 on scratch HeronNewFam_A (Revit 2024), signed by
+# Ajmal PS on his word - NEEDS-CHECKING CM5.
 proof:
-  date: '2026-10-03'
+  date: '2026-10-06'
   by: Ajmal PS
-  model: Family1 (1,929 elements), Revit 2024, session 32340
+  model: HeronNewFam_A, Revit 2024, session 51820 - the count is NOT recorded because 1,713
+    elements was measured on HeronNewFam_P1, the document in front, and this ran against another
+    one (row 15)
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned created Document, findings 1 item(s)
-    [New family document created from 'C:\ProgramData\Autodesk\RV...], refused (null). inputs
-    came templatePath as given. on Family1
-  negative_case: run with templatePath=C:\ProgramData\Autodesk\RVT 2024\Family Templates\English\No
-    Such Template.rft instead - chosen because it should not contain what this fragment reports
-    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned created (null), findings 1 item(s) [No template file at 'C:\ProgramData\Autodesk\RVT
-    2024\Family...], refused No template file at 'C:\ProgramData\Autodesk\RVT 2024\Family
-    Templates\English\No Such Template.rft'. Family templates are .rft files and their folder
-    differs by Revit version, by language and by installation. inputs came templatePath as
-    given. on Family1
+    the transaction group ROLLED BACK afterwards. returned article a family, created Document,
+    exampleTemplate Metric Generic Model, fileExtension .rfa, findings 1 item(s) [New family
+    'HeronNewFam_P2' made from 'C:\ProgramData\Autode...], folder C:\ProgramData\Autodesk\RVT
+    2024\Family Templates, kind family, makeNew Func`2, openNext (null), refused (null), savedTo
+    C:\Users\AjmalAlavudheen\AppData\Local\Temp\claude\D--Ajmal-Aj-Programs-Heron-Ai--claude-worktrees-heron-ii-cross-pc-python-ea73ba\0aa9df09-5163-4f5c-a55f-884182a26916\scratchpad\newdocs\HeronNewFam_P2.rfa,
+    target C:\Users\AjmalAlavudheen\AppData\Local\Temp\claude\D--Ajmal-Aj-Programs-Heron-Ai--claude-worktrees-heron-ii-cross-pc-python-ea73ba\0aa9df09-5163-4f5c-a55f-884182a26916\scratchpad\newdocs\HeronNewFam_P2.rfa,
+    targetExtension .rfa, template Metric Generic Model, templateExtension .rft, templateFolder
+    Func`1, templateUsed C:\ProgramData\Autodesk\RVT 2024\Family Templates\English\Metric
+    Generic Model.rft, title HeronNewFam_P2. inputs came templatePath as given; savePath as
+    given. on HeronNewFam_A
+  negative_case: run against 'HeronNewFam_A' with templatePath=Metric Generic Model, savePath=C:\Users\AjmalAlavudheen\AppData\Local\Temp\claude\D--Ajmal-Aj-Programs-Heron-Ai--claude-worktrees-heron-ii-cross-pc-python-ea73ba\0aa9df09-5163-4f5c-a55f-884182a26916\scratchpad\newdocs\HeronNewFam_C.rfa
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    article a family, created (null), exampleTemplate Metric Generic Model, fileExtension
+    .rfa, findings 1 item(s) ['C:\Users\AjmalAlavudheen\AppData\Local\Temp\claude\D--Ajmal...],
+    folder C:\ProgramData\Autodesk\RVT 2024\Family Templates, kind family, makeNew Func`2,
+    openNext (null), refused 'C:\Users\AjmalAlavudheen\AppData\Local\Temp\claude\D--Ajmal-Aj-Programs-Heron-Ai--claude-worktrees-heron-ii-cross-pc-python-ea73ba\0aa9df09-5163-4f5c-a55f-884182a26916\scratchpad\newdocs\HeronNewFam_C.rfa'
+    already exists. Nothing was created and the file was not touched - this never overwrites.
+    Name a new file, savedTo (null), target C:\Users\AjmalAlavudheen\AppData\Local\Temp\claude\D--Ajmal-Aj-Programs-Heron-Ai--claude-worktrees-heron-ii-cross-pc-python-ea73ba\0aa9df09-5163-4f5c-a55f-884182a26916\scratchpad\newdocs\HeronNewFam_C.rfa,
+    targetExtension .rfa, template Metric Generic Model, templateExtension .rft, templateFolder
+    Func`1, templateUsed (null), title (null). inputs came templatePath as given; savePath
+    as given. on HeronNewFam_A
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 783e2ae3cc728652
-
+  fingerprint: e4496168a6640651
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
