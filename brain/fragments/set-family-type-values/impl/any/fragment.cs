@@ -21,6 +21,12 @@
 //
 // THE ANSWER IS READ BACK from the type after the write, never taken from what
 // was asked for.
+//
+// A MATERIAL IS WRITTEN BY NAME, and only a material the family already holds.
+// "Nut Material=Steel - Galvanised" finds that material exactly, or in another
+// case when only one matches; absent, the call is refused naming the closest
+// names, and none is ever made. "<By Category>" or "none" clears it. A URL, and
+// any other kind Revit stores as text, is written as text.
 
 var findings = new List<string>();
 var typeUsed = "";
@@ -70,12 +76,47 @@ var kindsNew = new List<KeyValuePair<string, object>>
     new KeyValuePair<string, object>("integer", specNamed("SpecTypeId+Int", "Integer")),
     new KeyValuePair<string, object>("yesno",   specNamed("SpecTypeId+Boolean", "YesNo")),
     new KeyValuePair<string, object>("text",    specNamed("SpecTypeId+String", "Text")),
+    new KeyValuePair<string, object>("text",    specNamed("SpecTypeId+String", "Url")),
+    new KeyValuePair<string, object>("text",    specNamed("SpecTypeId+String", "MultilineText")),
+    new KeyValuePair<string, object>("material", specNamed("SpecTypeId+Reference", "Material")),
 };
 
 var kindsOld = new Dictionary<string, string>
 {
     { "Length", "length" }, { "Angle", "angle" }, { "Number", "number" },
     { "Integer", "integer" }, { "YesNo", "yesno" }, { "Text", "text" },
+    { "URL", "text" }, { "MultilineText", "text" }, { "Material", "material" },
+};
+
+// The material a material parameter holds, by name - "<By Category>" when none.
+Func<FamilyType, FamilyParameter, string> materialShown = (type, p) =>
+{
+    ElementId id = null;
+    try { id = type == null ? null : type.AsElementId(p); } catch (Exception) { }
+    if (id == null || id == ElementId.InvalidElementId) return "<By Category>";
+    var material = doc.GetElement(id);
+    return material == null ? "(a material that is not in the family)" : "\"" + material.Name + "\"";
+};
+
+// How far apart two names are, in single-letter edits - to name the closest
+// materials when the one asked for is not in the family.
+Func<string, string, int> editsApart = (first, second) =>
+{
+    var a = first.ToLowerInvariant();
+    var b = second.ToLowerInvariant();
+    var row = Enumerable.Range(0, b.Length + 1).ToArray();
+    for (var i = 1; i <= a.Length; i++)
+    {
+        var previous = row[0];
+        row[0] = i;
+        for (var j = 1; j <= b.Length; j++)
+        {
+            var kept = row[j];
+            row[j] = Math.Min(Math.Min(row[j] + 1, row[j - 1] + 1), previous + (a[i - 1] == b[j - 1] ? 0 : 1));
+            previous = kept;
+        }
+    }
+    return row[b.Length];
 };
 
 // What kind a parameter holds, as one of the six words this writes - or the
@@ -112,6 +153,7 @@ Func<FamilyParameter, string> kindOf = p =>
 // A value as the type holds it, in the unit it was typed in.
 Func<FamilyType, FamilyParameter, string, string> shown = (type, p, kindWord) =>
 {
+    if (kindWord == "material") return materialShown(type, p);
     if (type == null || !type.HasValue(p)) return "(no value)";
     switch (kindWord)
     {
@@ -175,6 +217,7 @@ else if (values == null || values.Count == 0)
 else
 {
     var fm = doc.FamilyManager;
+    List<Material> materials = null;
 
     foreach (var pair in values)
     {
@@ -243,9 +286,47 @@ else
             case "text":
                 planned.Add(Tuple.Create(p, kindWord, (object)text));
                 break;
+            case "material":
+                var clearing = text.ToLowerInvariant();
+                if (clearing == "<by category>" || clearing == "by category" || clearing == "none")
+                {
+                    planned.Add(Tuple.Create(p, kindWord, (object)ElementId.InvalidElementId));
+                    break;
+                }
+                if (materials == null)
+                    materials = new FilteredElementCollector(doc).OfClass(typeof(Material)).Cast<Material>().ToList();
+                // EXACT FIRST; another case only when it names one material alone.
+                var exact = materials.Where(m => string.Equals(m.Name, text, StringComparison.Ordinal)).ToList();
+                if (exact.Count == 0)
+                    exact = materials.Where(m => string.Equals(m.Name, text, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (exact.Count == 1)
+                {
+                    planned.Add(Tuple.Create(p, kindWord, (object)exact[0].Id));
+                    break;
+                }
+                if (exact.Count > 1)
+                {
+                    problems.Add("\"" + text + "\" matches " + exact.Count + " materials that differ only in "
+                        + "case (" + string.Join(", ", exact.Select(m => "\"" + m.Name + "\"")) + ") - type the one "
+                        + "meant for \"" + name + "\" exactly.");
+                    break;
+                }
+                var closest = materials.OrderBy(m => editsApart(m.Name, text)).ThenBy(m => m.Name)
+                    .Take(3).Select(m => "\"" + m.Name + "\"").ToList();
+                problems.Add("There is no material \"" + text + "\" in this family for \"" + name + "\", and "
+                    + "none is made here"
+                    + (closest.Count > 0 ? " - the closest are " + string.Join(", ", closest) + "." : " - the family holds no materials yet.")
+                    + " Make or load it in Manage > Materials first, or \"<By Category>\" clears the parameter.");
+                break;
             default:
-                problems.Add("\"" + name + "\" holds a kind this does not write (" + kindWord + ") - a "
-                    + "material, an area or a flow is set in the Family Types dialog for now.");
+                // ANY OTHER KIND REVIT STORES AS TEXT is written as text.
+                if (p.StorageType == StorageType.String)
+                {
+                    planned.Add(Tuple.Create(p, "text", (object)text));
+                    break;
+                }
+                problems.Add("\"" + name + "\" holds a kind this does not write (" + kindWord + ") - an "
+                    + "area or a flow is set in the Family Types dialog for now.");
                 break;
         }
     }
@@ -306,6 +387,7 @@ if (refused == null)
         {
             if (plan.Item3 is double) fm.Set(plan.Item1, (double)plan.Item3);
             else if (plan.Item3 is int) fm.Set(plan.Item1, (int)plan.Item3);
+            else if (plan.Item3 is ElementId) fm.Set(plan.Item1, (ElementId)plan.Item3);
             else fm.Set(plan.Item1, (string)plan.Item3);
         }
     }
@@ -344,6 +426,12 @@ if (refused == null)
         {
             var value = current.AsInteger(p);
             held = value.HasValue && value.Value == (int)plan.Item3;
+        }
+        else if (plan.Item3 is ElementId)
+        {
+            ElementId value = null;
+            try { value = current.AsElementId(p); } catch (Exception) { }
+            held = (value ?? ElementId.InvalidElementId).Equals((ElementId)plan.Item3);
         }
         else
         {
