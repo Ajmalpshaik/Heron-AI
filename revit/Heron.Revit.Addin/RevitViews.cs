@@ -190,6 +190,7 @@ namespace Heron.Revit.Addin
                 Json.Bool("activeViewCropped", active != null && IsCropped(active)),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Bool("modifiedAnything", false),
                 Json.Str("reads", Reads(views.Count, noTemplate, notPlaced,
                                         unusedTemplates, active)));

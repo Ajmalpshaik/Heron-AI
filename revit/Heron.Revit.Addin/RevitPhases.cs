@@ -163,6 +163,7 @@ namespace Heron.Revit.Addin
                                                             BuiltInParameter.VIEW_PHASE_FILTER)),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Bool("modifiedAnything", false),
                 Json.Str("reads",
                     phaseRows.Count <= 1 && optionRows.Count == 0

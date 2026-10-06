@@ -166,6 +166,7 @@ namespace Heron.Revit.Addin
                 Json.Num("onNoSystem", offSystem),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Bool("modifiedAnything", false),
                 Json.Str("reads",
                     "AN OPEN CONNECTOR IS NOT A FAULT. The end of every run "

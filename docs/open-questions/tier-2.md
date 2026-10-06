@@ -251,3 +251,25 @@ about the platform boundary. **Ajmal resolves it**, and until then the disagreem
 than closed whichever way makes a task easier.
 
 ---
+
+### 🔵 Q-60 — May Heron write a one-time id into a Revit 2020 to 2023 model, so that its answers can be kept? *(found 2026-10-06)*
+
+Since [D-113](../decisions/D-113.md) a project's kept answers - its governing standards, its load runs, its
+sprinkler runs - are filed under the model's own id, `Document.CreationGUID`, which arrived at **Revit 2024**.
+On 2020 to 2023 nothing read-only tells two models made from one template apart: the Project Information
+id is the TEMPLATE's ([FRAGMENT-ISSUES 5b-324](../fragment-issues/section-5b-rows-176-200.md)), the path
+changes on Save As, and the document's version id changes on every save. So Heron keeps **nothing** for
+such a model, and every answer says so: the standards and the load questions are asked each time.
+
+**The smallest way to give them a key** is an id Heron writes once into the model - on the Project
+Information element, through Extensible Storage or a project parameter - behind the Changes switch, the
+first time it is asked to keep something there. **It is a change to the owner's model, which is why it is
+his to decide and was not built.** Two things to weigh: the id is copied with the model, as CreationGUID
+is, so a copy made to start another job keeps the first job's answers; and a model saved as a TEMPLATE
+with the id in it would hand every new project the same one - the 5b-324 failure one level up - so an id
+found in a model made from a template would have to be replaced on first use, not trusted.
+
+**Ajmal decides**: build the stamp for 2020 to 2023, or accept that those releases keep nothing between
+answers. Until he does, they keep nothing.
+
+---

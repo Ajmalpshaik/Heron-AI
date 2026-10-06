@@ -15,8 +15,9 @@ risk: READ
 
 purpose: >
   Narrows the model to the elements that Revit records as HOSTED ON one given
-  element - the doors and windows cut into a wall, the face-hosted sensors on a
-  ceiling, the insulation and lining wrapped around a duct.
+  element - the doors and windows cut into a wall, the skylights in a roof,
+  the face-hosted sensors on a ceiling, the insulation and lining wrapped
+  around a duct.
 
   **This is the recorded parent relationship, not proximity.** Two elements
   touching, overlapping or sharing a face are not hosted on each other, and
@@ -97,6 +98,15 @@ compatibility-note: >
 # wall", "show me the windows hosted on the external walls" - went to it, a
 # change, because this card named doors and windows once and asked about them
 # in no question but one. The three utterances at the end ask what this does.
+#
+# 2026-10-06 (5b-326): PLACE_HOSTED_FAMILY version 4 places into roofs, floors
+# and ceilings too, and its new words pulled "list the windows in the roof" - a
+# question - to it, a change, where `main` sent it to REPORT_SPACE_ENVELOPE, a
+# read. This card asked about walls and a ceiling and never a roof; the two roof
+# questions at the end - the roof's twins of the wall ones - put that right, measured on private stores built from
+# the branch. A first wording with "what is hosted in this roof" pulled "place
+# doors and windows hosted in walls at points" here instead - a change asked
+# for, sent to a read - so it says "have", as the wall question above does.
 
 utterances:
   - what is hosted on this wall
@@ -107,3 +117,5 @@ utterances:
   - what doors and windows does this wall have
   - list the windows in this wall
   - how many doors are hosted in these walls
+  - list the skylights in this roof
+  - which skylights does this roof have

@@ -193,6 +193,7 @@ namespace Heron.Revit.Addin
                 Json.Num("fewPlacementsThreshold", FewPlacements),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Bool("modifiedAnything", false),
                 Json.Str("reads", Reads(rows.Count, typeCount, unusedTypes,
                                         placedTotal, inPlace, lopsided)));
