@@ -166,16 +166,21 @@ def main():
     real = MRG.look(list(found.values()))
     check(real["looked"] and real["of"] == len(found),
           "all %d fragments were compared" % len(found))
-    check(len(real["decided"]) == 2,
-          "exactly two groups share a contract signature")
+    # THREE SINCE 2026-10-06. SET_PROJECT_LOCATION and SET_PROJECT_UNITS
+    # share the settings-table contract by design - one table of named
+    # settings in, changed / alreadyThat / findings / refused out - and do
+    # two different jobs, so the pair is keep-separate like the other two.
+    check(len(real["decided"]) == 3,
+          "exactly three groups share a contract signature")
     check(real["for_the_host"] == [],
-          "and NOT ONE of them needs the host - both are keep-separate")
+          "and NOT ONE of them needs the host - all are keep-separate")
     names = sorted(one for group in real["decided"]
                    for one in group["fragments"])
     check(names == ["dimension-family-instances", "dimension-mep-runs",
+                    "set-project-location", "set-project-units",
                     "transfer-materials-between-documents",
                     "transfer-view-filters-between-documents"],
-          "the four are: %s" % ", ".join(names))
+          "the six are: %s" % ", ".join(names))
     check(all(len(one["capabilities"]) == 2 for one in real["decided"]),
           "each pair declares two different capabilities - the answer "
           "people expect from a merge agent is the one it gives least")
