@@ -127,16 +127,25 @@ does not exist on an old one.
 
 | Member | Exists from | Use instead, on 2020+ |
 |---|---|---|
-| `Document.CreationGUID` | **2024** | `doc.ProjectInformation.UniqueId` — created with the document, survives save, rename and move, and present on every release 2020–2027 |
+| `Document.CreationGUID` | **2024** | **Nothing read-only identifies a MODEL on 2020–2023.** Read it by reflection where it exists — `RevitOperations.CreationGuid`, null on older releases — and say what is lost without it. **Not** `doc.ProjectInformation.UniqueId`: a new project inherits that element from its template, so every model made from one template reports the same id ([D-113](../../../docs/decisions/D-113.md)) |
 
 `RevitWrite.DocumentKey()` used `CreationGUID` to pin the document for Golden Rule 20. It had been read
 several times, including once by a review that listed it as a *likely* problem spot, and it survived
 every reading. The compiler found it in seconds.
 
-**Prefer a member that exists everywhere over a `#if` that hides one that does not.** A branch is two
-code paths to keep true forever; `ProjectInformation.UniqueId` is one expression that is simply correct.
-That is [D-20](../../../docs/DECISIONS.md) applied to identity rather than units — prefer the thing with
-nothing in it for Autodesk to move.
+**THIS TABLE THEN RECOMMENDED THE WRONG SUBSTITUTE, until 2026-10-06.** It said the Project Information
+UniqueId is *"created with the document"*. It is created with the TEMPLATE: two blank projects and an
+unrelated `PIPE.rvt` reported one id on 2026-09-15 (NEEDS-CHECKING E12), and on 2026-10-06 a new project
+was given another model's kept loads answers because both reported it
+([FRAGMENT-ISSUES 5b-324](../../../docs/fragment-issues/section-5b-rows-176-200.md)). The compiler cannot
+catch that class: the substitute compiles everywhere and answers a different question.
+
+**Prefer a member that exists everywhere over a `#if` that hides one that does not — when it answers the
+same question.** Measure that before taking it: read both on two real models that should differ. Where no
+such member exists, read the newer one by reflection in ONE adapter (`RevitOperations.CreationGuid`, and
+`SpecTypeId` in `RevitFragment`) rather than a `#if`, so one build still serves every release. That is
+[D-20](../../../docs/DECISIONS.md) applied to identity rather than units — prefer the thing with nothing
+in it for Autodesk to move.
 
 ### Two rules that follow
 

@@ -159,12 +159,18 @@ def scope_path(scope, project_key=None):
 def _safe_key(project_key):
     """A project key, reduced to something that can be a filename.
 
-    The key itself is the document's Project Information UniqueId - the same
-    identity RevitWrite pins a document by, chosen because it is created with
-    the document and survives save, rename and move. It is NOT the file name:
-    naming a store after a file means renaming the file loses the knowledge,
-    and the stale-name trap in docs/25 section 2a is the same mistake at a
-    different layer.
+    The key itself is the model's own id, Document.CreationGUID, which the
+    add-in sends as `creationGuid` and DocumentPin.project_key returns (D-113).
+    It survives save, rename and move. It is NOT the file name: naming a store
+    after a file means renaming the file loses the knowledge, and the
+    stale-name trap in docs/25 section 2a is the same mistake at a different
+    layer.
+
+    IT WAS THE PROJECT INFORMATION UniqueId UNTIL 2026-10-06, and this said
+    that id is created with the document. It is created with the TEMPLATE, so
+    every model made from one template shared one store (FRAGMENT-ISSUES
+    5b-324). What was kept under it is asked about, never used:
+    heron_earlier.
     """
     return re.sub(r"[^A-Za-z0-9._-]", "-", str(project_key))[:120]
 

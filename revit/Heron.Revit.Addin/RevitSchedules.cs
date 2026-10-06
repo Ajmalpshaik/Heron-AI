@@ -100,6 +100,7 @@ namespace Heron.Revit.Addin
                     Json.Num("scheduleCount", 0),
                     Json.Str("document", doc.Title),
                     Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                    Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                     Json.Bool("modifiedAnything", false),
                     Json.Str("reads",
                         "This model has no schedules. Nothing is extracting "
@@ -179,6 +180,7 @@ namespace Heron.Revit.Addin
                 Json.Num("materialTakeoffs", takeoffs),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Bool("modifiedAnything", false),
                 Json.Str("reads", Reads(rows.Count, filtered, notOnASheet)));
         }
