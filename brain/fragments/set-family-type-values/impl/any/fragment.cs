@@ -1,6 +1,6 @@
-// NOT STANDALONE. Assumes `doc`, `typeName` and `values` are in scope; leaves
-// `typeUsed`, `typeCreated`, `written`, `drives`, `notAFamily`, `refused` and
-// `findings` behind.
+// NOT STANDALONE. Assumes `doc`, `typeName`, `values` and `deleteType` are in
+// scope; leaves `typeUsed`, `typeCreated`, `written`, `drives`, `typesNow`,
+// `notAFamily`, `refused` and `findings` behind.
 //
 // ASSUMES AN OPEN TRANSACTION (Golden Rule 16) and does not open one.
 //
@@ -27,12 +27,27 @@
 // case when only one matches; absent, the call is refused naming the closest
 // names, and none is ever made. "<By Category>" or "none" clears it. A URL, and
 // any other kind Revit stores as text, is written as text.
+//
+// THE TYPE'S OWN NAME IS A ROW IN `values`, "Type Name=HexNut - ISO 4032", the
+// way the Family Types dialog's Rename sits beside its rows (version 3). It is
+// not a separate need because the binder refuses an absent text need
+// (HeronBindingNote.AbsentValue), and a separate `renameTo` would have stopped
+// every existing call. A rename never makes a type: the type named `typeName`
+// must exist, and the new name may not be one another type already has - in
+// any case, because Revit compares type names without case. A family with its
+// OWN parameter called "Type Name" is refused rather than guessed at.
+//
+// `deleteType` REMOVES the type named `typeName` (FamilyManager.DeleteCurrentType)
+// and does nothing else, so it is refused beside any value or a rename. Absent
+// is false (`optional: true`). The last type is never deleted: a family with no
+// type cannot hold a formula, and making one again is a different call.
 
 var findings = new List<string>();
 var typeUsed = "";
 var typeCreated = false;
 var written = new List<string>();
 var drives = 0;
+var typesNow = "";
 var notAFamily = false;
 string refused = null;
 
@@ -188,6 +203,27 @@ var wantedType = typeName == null ? "" : typeName.Trim();
 var forbidden = "\\:{}[]|;<>?`~";
 var badCharacters = wantedType.Where(c => forbidden.IndexOf(c) >= 0).Distinct().ToList();
 
+// "Type Name" is lifted out of `values`; what is left are parameters.
+const string typeNameRow = "Type Name";
+string renameTo = null;
+var parameterValues = new Dictionary<string, string>();
+if (values != null)
+    foreach (var pair in values)
+    {
+        if (string.Equals((pair.Key ?? "").Trim(), typeNameRow, StringComparison.OrdinalIgnoreCase))
+            renameTo = (pair.Value ?? "").Trim();
+        else
+            parameterValues[pair.Key] = pair.Value;
+    }
+
+// Every type the family has, as one line - the answer a missing name is given.
+Func<string> typeList = () =>
+{
+    var names = doc.FamilyManager.Types.Cast<FamilyType>().Where(t => t != null)
+        .Select(t => "\"" + t.Name + "\"").ToList();
+    return names.Count == 0 ? "none" : string.Join(", ", names);
+};
+
 // Each planned write: the parameter, its kind, the value in Revit's own unit.
 var planned = new List<Tuple<FamilyParameter, string, object>>();
 var problems = new List<string>();
@@ -209,17 +245,66 @@ else if (badCharacters.Count > 0)
     refused = "Revit does not allow " + string.Join(" ", badCharacters.Select(c => c.ToString()))
         + " in a type name, so nothing was written. Change the name and ask again.";
 }
-else if (values == null || values.Count == 0)
+else if (deleteType && (renameTo != null || parameterValues.Count > 0))
+{
+    refused = "Deleting a type is done alone - values or a new name beside deleteType would be "
+        + "written into a type that is then removed. Nothing was changed.";
+}
+else if (!deleteType && renameTo == null && parameterValues.Count == 0)
 {
     refused = "No values were given - name=value pairs with semicolons between, "
-        + "\"Width=600; Depth=600\".";
+        + "\"Width=600; Depth=600\", or \"Type Name=New name\" to rename the type.";
 }
 else
 {
     var fm = doc.FamilyManager;
     List<Material> materials = null;
 
-    foreach (var pair in values)
+    FamilyType named = null;
+    foreach (FamilyType existing in fm.Types)
+        if (existing != null && string.Equals(existing.Name, wantedType, StringComparison.OrdinalIgnoreCase))
+        { named = existing; break; }
+
+    if (deleteType)
+    {
+        if (named == null)
+            problems.Add("There is no type \"" + wantedType + "\" to delete - the family's types are "
+                + typeList() + ".");
+        else if (fm.Types.Size <= 1)
+            problems.Add("\"" + named.Name + "\" is the family's only type, and a family with no type "
+                + "cannot hold a formula or a value - make another type first, then delete this one.");
+    }
+
+    if (renameTo != null)
+    {
+        var badNew = renameTo.Where(c => forbidden.IndexOf(c) >= 0).Distinct().ToList();
+        // Another type with the new name, in any case - never the type being renamed.
+        var clash = fm.Types.Cast<FamilyType>().FirstOrDefault(t => t != null
+            && (named == null || t.Name != named.Name)
+            && string.Equals(t.Name, renameTo, StringComparison.OrdinalIgnoreCase));
+        var ownRow = fm.Parameters.Cast<FamilyParameter>().FirstOrDefault(fp =>
+            string.Equals(fp.Definition.Name, typeNameRow, StringComparison.OrdinalIgnoreCase));
+
+        if (ownRow != null)
+            problems.Add("This family has its own parameter called \"" + ownRow.Definition.Name + "\", "
+                + "so \"Type Name=\" could mean that parameter or the type's name - rename the "
+                + "parameter first.");
+        else if (renameTo.Length == 0)
+            problems.Add("\"Type Name=\" was given with no new name.");
+        else if (badNew.Count > 0)
+            problems.Add("Revit does not allow " + string.Join(" ", badNew.Select(c => c.ToString()))
+                + " in a type name, so \"" + renameTo + "\" cannot be the new name.");
+        else if (named == null)
+            problems.Add("There is no type \"" + wantedType + "\" to rename, and a rename never makes "
+                + "one - the family's types are " + typeList() + ".");
+        else if (clash != null)
+            problems.Add("The family already has a type \"" + clash.Name + "\", and Revit does not "
+                + "tell type names apart by case - choose another name for \"" + named.Name + "\".");
+        else if (named.Name == renameTo)
+            problems.Add("The type is already called \"" + renameTo + "\".");
+    }
+
+    foreach (var pair in parameterValues)
     {
         var name = pair.Key == null ? "" : pair.Key.Trim();
         var text = pair.Value == null ? "" : pair.Value.Trim();
@@ -339,7 +424,39 @@ else
 // WRITE
 // ---------------------------------------------------------------------------
 
-if (refused == null)
+if (refused == null && deleteType)
+{
+    var fm = doc.FamilyManager;
+    FamilyType doomed = null;
+    foreach (FamilyType existing in fm.Types)
+        if (existing != null && string.Equals(existing.Name, wantedType, StringComparison.OrdinalIgnoreCase))
+        { doomed = existing; break; }
+    var gone = doomed.Name;
+
+    try
+    {
+        if (fm.CurrentType == null || fm.CurrentType.Name != gone)
+            fm.CurrentType = doomed;
+        fm.DeleteCurrentType();
+    }
+    catch (Exception ex)
+    {
+        throw new InvalidOperationException("Revit refused to delete the type \"" + gone + "\": "
+            + ex.Message + " NOTHING from this call was kept.");
+    }
+
+    doc.Regenerate();
+
+    // READ BACK: the type is gone, and the family still has a current type.
+    if (fm.Types.Cast<FamilyType>().Any(t => t != null && t.Name == gone))
+        throw new InvalidOperationException("The type \"" + gone + "\" is still in the family after "
+            + "the delete. NOTHING from this call was kept.");
+    typeUsed = fm.CurrentType == null ? "" : fm.CurrentType.Name;
+    findings.Add("Deleted the type \"" + gone + "\". The family's current type is now \"" + typeUsed
+        + "\"; its types are " + typeList() + ".");
+}
+
+if (refused == null && !deleteType)
 {
     var fm = doc.FamilyManager;
 
@@ -382,6 +499,11 @@ if (refused == null)
 
         if (fm.CurrentType == null || fm.CurrentType.Name != target.Name)
             fm.CurrentType = target;
+
+        // THE RENAME GOES FIRST, so the values below are written into the type
+        // by its new name, and both are read back from the same current type.
+        if (renameTo != null)
+            fm.RenameCurrentType(renameTo);
 
         foreach (var plan in planned)
         {
@@ -443,8 +565,23 @@ if (refused == null)
         try { drives += p.AssociatedParameters.Size; } catch (Exception) { }
     }
 
-    findings.Add((typeCreated ? "Made the type \"" : "Wrote into the type \"") + typeUsed + "\", now the "
-        + "family's current type. Read back: " + string.Join("; ", written) + ".");
+    if (renameTo != null)
+    {
+        // READ BACK: the current type carries the new name, and no type the old
+        // one unless the rename only changed its case.
+        var oldStays = !string.Equals(wantedType, renameTo, StringComparison.OrdinalIgnoreCase)
+            && fm.Types.Cast<FamilyType>().Any(t => t != null
+                && string.Equals(t.Name, wantedType, StringComparison.OrdinalIgnoreCase));
+        if (typeUsed != renameTo || oldStays)
+            throw new InvalidOperationException("The type did not take the name \"" + renameTo + "\" - "
+                + "the family's types read " + typeList() + ". NOTHING from this call was kept.");
+        findings.Add("Renamed the type \"" + wantedType + "\" to \"" + typeUsed + "\", now the family's "
+            + "current type. The family's types are " + typeList() + ".");
+    }
+
+    if (planned.Count > 0)
+        findings.Add((typeCreated ? "Made the type \"" : "Wrote into the type \"") + typeUsed + "\", now the "
+            + "family's current type. Read back: " + string.Join("; ", written) + ".");
 
     // ALL OR NOTHING, READ BACK: a value that did not hold, or a dimension that
     // stopped agreeing with its parameter, THROWS - the host rolls the whole
@@ -465,11 +602,14 @@ if (refused == null)
             + string.Join("; ", broken) + ". Its constraints cannot take them, so NOTHING from this call "
             + "was kept.");
 
-    findings.Add(drives == 0
+    if (planned.Count > 0)
+        findings.Add(drives == 0
         ? "Nothing in the family is labelled with or associated to these parameters yet, so no "
           + "geometry moved."
         : "These parameters drive " + drives + " labelled dimension(s) or associated element "
           + "parameter(s), and every labelled dimension reads its parameter after the write.");
 }
 
+// THE FAMILY'S TYPES AS THEY STAND AFTER THE CALL, read back whatever it did.
+if (doc.IsFamilyDocument) typesNow = typeList();
 if (refused != null) findings.Add(refused);

@@ -43,7 +43,8 @@ calls - on a PRIVATE store built from this checkout. Never the store every
 chat on the machine reads (row 5b-233).
 
     CHANGES    must reach the tool that makes that change
-    QUESTIONS  must not be answered by a tool that changes the model (D-86).
+    QUESTIONS  a question, or a request to select, must not be answered by a
+               tool that changes the model (D-86; 5b-329).
                The write line is read from the operation registry, never
                typed here (Golden Rule 19)
     NO TOOL    nothing in Heron does it; it must not be answered by a tool
@@ -131,6 +132,22 @@ QUESTIONS = [
      "5b-337: a first draft of SET_AREA_VOLUME_COMPUTATIONS answered it - its card quoted the question"),
     ("check if volume calculation is enabled",
      "5b-337: answered SET_SCHEDULE_FIELD_TOTALS"),
+    # A REQUEST TO SELECT IS HELD TO THE SAME RULE - nothing in it asks for a
+    # change. 5b-329: "select every wall of type Curtain Wall" reached
+    # SET_CURTAIN_WALL_GRID, and these paraphrases, written before any card
+    # was reworded, reached it or SET_CURTAIN_WALL_MULLIONS on 2026-10-06.
+    ("select all walls of type Curtain Wall",
+     "5b-329: answered SET_CURTAIN_WALL_MULLIONS"),
+    ("select all the curtain walls of type Storefront",
+     "5b-329: answered SET_CURTAIN_WALL_GRID"),
+    ("select all elements of type Curtain Wall",
+     "5b-329: answered SET_CURTAIN_WALL_GRID"),
+    ("select all instances of the Storefront curtain wall type",
+     "5b-329: answered SET_CURTAIN_WALL_GRID"),
+    # NOT HERE: "select every wall that uses the Curtain Wall type", the fifth
+    # paraphrase. SET_CURTAIN_WALL_GRID and REPORT_CURTAIN_WALL_TYPE fuse to the
+    # same score on it, and the PROVEN nudge hands the tie to the change - still
+    # OPEN in 5b-329. A guard that a status change flips is not a guard.
 ]
 
 # A question about the project's own setup reaches the tool that READS it.
@@ -244,7 +261,7 @@ def main():
             check(answer.route != "identity",
                   "  and it was ranked, not matched word for word (%s)" % answer.route)
 
-        print("\n4. A QUESTION IS NOT ANSWERED BY A CHANGE")
+        print("\n4. A QUESTION OR A SELECTION IS NOT ANSWERED BY A CHANGE")
         for text, why in QUESTIONS:
             _answer, got, risk = ask(text)
             check(not writes(risk), "%r -> %s, %s (%s)" % (text, got, risk or "no risk", why))

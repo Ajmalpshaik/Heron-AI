@@ -562,3 +562,40 @@ take-off and pressed **Finalize to Revit**. What it did, read back by hand:
 - **The owner's addition: Finalize makes the Spaces schedule** - "HVAC Load Calculation - Spaces", with
   Number, Name, Level, Area and the three values written (`SCHEDULE_NAME`, `SCHEDULE_FIELDS`). Revit
   refuses a second schedule of the same name, and a second Finalize says the schedule is already there.
+
+### 12.9 After the test from zero (Heron loads test, Revit 2024, 2026-10-06)
+
+The owner's test from zero ([Group CC](needs-checking/group-cc.md), register rows 5b-325 to 5b-335)
+found four defects in this feature's own code. Each is fixed, and each fix has a test that was seen
+to fail first:
+
+| Found | What changed | Where |
+|---|---|---|
+| **5b-330** - a curtain panel was counted whole on a Space's face. A curtain wall runs the storey, past the slab's underside where the Space stops, and past the walls at its sides, so three of five Spaces were refused for *"openings larger than the face"* | **Only the part of each panel that lies on the Space's face counts** - Revit's own panel area, times the share of the panel's outline inside the face's outline. Every panel of the wall is measured against every face of it, so a panel across a partition counts its part on each Space. The refusal stays for a real mismatch, with a thousandth of the face allowed for the millimetre rounding of the outlines | `heron_takeoff.counted()`, `share()`; the 3D view says how much of a cut panel was counted |
+| Found fixing it: the frames between a curtain wall's panels (the second review, N5) waited for a `curtain` mark the take-off never writes, so a curtain wall WITH mullions would still have refused its Space for the curtain wall type's missing U | A wall with a curtain panel in any of its faces is a curtain wall - the take-off reads a wall's curtain grid instead of its windows and doors | `heron_takeoff.curtain()` |
+| **5b-332** - `project["beyond"]` given as a table `{element: word}` was dropped | Read, labelled or not, and kept as the page's own `beyond:<element>` answers - so it is printed on the sheet, covered by the confirmation, and a later table changes only the elements it names | `heron_building_loads.flat()`, `_table()`; `heron_brain.building_loads` |
+| **5b-333** (1) - a Recalculate overtaken by a fresh read of the model was kept after it and shown over it | The chat's fresh read tells the panel first (`reading()`); a Recalculate started before it is neither kept nor shown, each checked in one step with what it guards, and the page says why | `LoadsPanel.recalculate`, `keep`; `_loads_recalculate`; `revit_building_loads` |
+| **5b-333** (2) - the chat answer listed the commonest three refusal lines, and the third refused Space went unnamed | Every Space not calculated is named, with every reason; Spaces refused for the same reasons share a line | `heron_building_loads.summary_text` |
+| **5b-335**, Finalize's part - diffusers placed with no level (row 5b-334) were on no level, so the per-level hand-over found none, and the page blamed their family; the second Finalize's schedule step threw | The diffusers are handed over by category with NO level and the file of ids picks which are written, in one write; each one not written is put down to the reason SET_AIR_TERMINAL_FLOW gave; the model's schedules are read first, and a schedule already there is said to be | `_loads_finalize`, `_schedule_names`; `heron_building_loads.diffusers_said`, `schedule_made` |
+
+**Which side owns 5b-330: the brain.** REPORT_SPACE_ENVELOPE reports what Revit holds - each panel's
+own area, where it sits and its size, and each face's outline - which is its contract (section 4.2), and
+it hands each panel to the one face its middle is on. Netting the openings out of a face is the brain's
+job (`heron_takeoff`: *"areas are netted"*), and the take-off already carries everything the cut needs.
+So the fragment is unchanged, and nothing had to be compiled again for eight releases.
+
+**Only a curtain panel is cut.** Its outline is exact - its box is the grid cell it fills. A window's
+or a door's place in the take-off is the middle of its box, which a frame or a sill moves, so it is
+counted whole, as Revit gives its size, and one larger than its face still refuses its Space.
+
+**Left as they are:** 5b-331 (air films, people rounded to whole persons) is the owner's decision;
+5b-334 (`PLACE_FAMILY_INSTANCES`) and the `levelOf` half of 5b-335 (`FILTER_ELEMENTS_BY_CATEGORY`) are
+another task's - Finalize no longer depends on either. **Known limits, recorded in row 5b-330:** a panel
+whose middle lies on no Space's face is counted on none; a solid (spandrel) curtain panel is read as a
+curtain panel, so as glass (read in the code, not run on a model).
+
+**Not yet run in Revit - the owner postponed it on 2026-10-06.** Until then each fix is tested off Revit
+only: the tests above, the server's own Finalize against a stand-in Revit (`tests/test_loads_finalize.py`),
+and the take-off kept from the test, run through the fixed brain. The re-run is
+[Group CC](needs-checking/group-cc.md) rows CC8, CC11, CC13, CC22 and CC24, on a copy of Heron loads test -
+with three diffusers placed as row 5b-334 placed them, so the level-free hand-over meets what tripped it.

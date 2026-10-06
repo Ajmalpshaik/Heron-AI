@@ -1,0 +1,124 @@
+heron-agent: HERON-REVIT-DOC-004
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-039
+semantic-identity: "start a brand new project from a project template and save it where I say"
+kind: action
+domain: revit.document
+capability: CREATE_PROJECT_DOCUMENT
+version: 1
+source: OFFICIAL
+risk: ADMIN
+
+purpose: >
+  Starts a new Revit project from a project template, saves it to the file the
+  caller names, and opens that file in a Revit window - File > New > Project,
+  then Save As, done in one call.
+
+  **NOTHING IN HERON COULD START A PROJECT.** Measured 2026-10-06:
+  `NewProjectDocument` appeared in no fragment, and the only fragments calling
+  `OpenAndActivateDocument` open files that already exist. A new model began
+  by hand.
+
+  **THE TEMPLATE IS ASKED FOR AND NEVER GUESSED.** The office template decides
+  the units, views, families and standards the model starts with, and choosing
+  it is a decision about the job (D-33). A full .rte path is used as given. A
+  name alone is looked up by EXACT file name under the folder of this Revit's
+  default project template; the full path used is returned as `templateUsed`,
+  and two files of that name are refused with both listed.
+
+  **THE FILE NAME IS THE CALLER'S AND NOTHING IS OVERWRITTEN.** `savePath` must
+  be a full path ending .rvt in a folder that exists. A file already there is
+  refused and left untouched, and the save itself is told never to overwrite.
+  No folder is created.
+
+  **WHEN HERON IS WORKING IN THE WINDOW IN FRONT, IT IS SAVED BUT NOT OPENED** -
+  Revit opens no window while the active document is modifiable, measured
+  2026-10-06 through CREATE_FAMILY_DOCUMENT. The reply gives `openNext`, the
+  path ACTIVATE_DOCUMENT opens. Aimed (`--in`) at a document that is not in
+  front, the project opens in this one call.
+
+  **THE BODY IS CREATE_FAMILY_DOCUMENT'S**, word for word below its first lines,
+  and tests/test_new_document_twins.py holds the two level. Only the template
+  and file extensions, the folder searched and the one creating call differ.
+
+  ASSUMES NOTHING ABOUT TRANSACTIONS - a new document cannot be inside the
+  current one's, and this opens none.
+
+contract:
+  needs:
+    - name: app
+      type: Application
+    - name: uidoc
+      type: UIDocument
+    # A full .rte path, or a template's file name, looked up by exact name
+    # under the folder of this Revit's default project template.
+    - name: templatePath
+      type: string
+      source: request
+    # The full .rvt path the new project is saved to. Named by the caller and
+    # never invented; refused if it exists or its folder does not.
+    - name: savePath
+      type: string
+      source: request
+  provides:
+    - name: created
+      # The project as it is now OPEN IN A WINDOW - the saved file reopened,
+      # never the windowless copy the API first makes.
+      role: result
+      type: Document
+    - name: title
+      # What the next call names it by: `fragment --in "<title>"`.
+      role: result
+      type: string
+    - name: savedTo
+      role: result
+      type: string
+    - name: templateUsed
+      # The full template path a short name resolved to, always reported.
+      role: result
+      type: string
+    - name: openNext
+      # Set only when the project was saved but could not be opened because
+      # Heron was working in the window in front: the path to hand
+      # ACTIVATE_DOCUMENT as documentPath. Empty when it opened here.
+      role: result
+      type: string
+    - name: refused
+      # Why it declined, in the user's words - evidence it looked and said no.
+      # Never a thing it MADE (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  `Application.NewProjectDocument(string)`, `Application.DefaultProjectTemplate`,
+  `Document.SaveAs(string, SaveAsOptions)`, `Document.Close(bool)` and
+  `UIApplication.OpenAndActivateDocument(string)` are present 2020 through 2027
+  - read off the reference assemblies at both ends on 2026-10-06, and the
+  fragment compile gate builds it against all eight.
+
+# ROUTING - repeated in CREATE_FAMILY_DOCUMENT.
+#
+#   "start a new project"          -> here
+#   "start a new family"           -> CREATE_FAMILY_DOCUMENT - a .rft template
+#                                     and a .rfa file
+#   "open that saved model"        -> ACTIVATE_DOCUMENT - it is already a file
+#   "switch to the other project"  -> SWITCH_ACTIVE_PROJECT - it is already open
+#   "add a project parameter"      -> ADD_PROJECT_PARAMETER - nothing to do with
+#                                     a new project file
+
+utterances:
+  - start a new project from the template
+  - new project from this template
+  - create a new Revit project
+  - make a new model from our office template
+  - start a fresh project file and save it as
