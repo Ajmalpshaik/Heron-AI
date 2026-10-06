@@ -458,6 +458,51 @@ def test_review2_m12_a_wrong_answer_word_is_said_when_asked_again():
     assert asked and "'sky'" in asked[0]["why"], asked
 
 
+def test_5b332_a_table_of_answers_is_read_and_kept():
+    # FRAGMENT-ISSUES 5b-332: project["beyond"] = {element: word}, the shape
+    # answers() promises beside "beyond:<element>" keys, was dropped by _value(),
+    # which took the table for one labelled value - both questions came back.
+    d = copy()
+    d["spaces"][0]["faces"][1]["beyond"] = "unknown"           # the roof, element 12
+    t = T.read(d)
+    table = dict(PROJECT, beyond={"12": "outside"})
+    labelled = dict(PROJECT, beyond={"value": {"12": "outside"}, "source": "instruction"})
+    assert B.answers(table) == {"12": "outside"} == B.answers(labelled)
+    assert not [a for a in B.needs(t, table, {"Office": OFFICE})
+                if a["input"].startswith("beyond:")]
+    r = B.run(t, table, {"Office": OFFICE})
+    assert r["spaces"][0]["status"] == "ok", r["spaces"][0]["why"]
+    # Kept with the run as the page's own keys: the sheet prints it, the next
+    # call remembers it, and the confirmation covers it as the same answer.
+    keyed = B.run(t, dict(PROJECT, **{"beyond:12": "outside"}), {"Office": OFFICE})
+    assert B.answers(r["inputs"]["project"]) == {"12": "outside"}
+    assert B.answers_key(r) == B.answers_key(keyed)
+    bad = B.run(t, dict(PROJECT, beyond={"12": "sky"}), {"Office": OFFICE})
+    assert bad["spaces"][0]["status"] == "refused"
+    assert "beyond:12" in " ".join(bad["spaces"][0]["why"]), bad["spaces"][0]["why"]
+
+
+def test_5b333_the_chat_answer_names_every_space_not_calculated():
+    # FRAGMENT-ISSUES 5b-333 (2): the chat answer said "refused: 3" and listed
+    # the three commonest refusal LINES - two for one Space, one for another -
+    # so the third refused Space was never named.
+    d = copy()
+    for n in range(2, 6):
+        other = _copy.deepcopy(d["spaces"][0])
+        other.update(id=n, unique_id="u%d" % n, number=str(n), name="Office 0%d" % n)
+        other["faces"][0]["openings"][0]["area_m2"] = 14.0      # larger than its 13.5 m2 face
+        d["spaces"].append(other)
+    d["spaces"][1]["faces"][1]["openings"] = [{"element": 99, "kind": "skylight", "type": "g",
+                                               "area_m2": 25.0}]   # a second reason, Office 02
+    r = B.run(T.read(d), PROJECT, {"Office": OFFICE})
+    said = B.summary_text(r)
+    assert "refused: 4;" in said, said
+    for name in ("2 Office 02", "3 Office 03", "4 Office 04", "5 Office 05"):
+        assert name in said, (name, said)
+    assert "Office 01" not in said                                 # calculated: on the page
+    assert "openings of 25.00 m2 are larger than the 20.00 m2 face" in said, said   # both reasons
+
+
 # --- the seam and the tool (Task 5) - through heron_brain, which needs no MCP SDK
 
 SERVER = os.path.join(ROOT, "mcp", "server", "heron_mcp_server.py")
@@ -507,6 +552,47 @@ def test_seam_remembers_the_last_answers():
                              project="project-a")
         again = brain.building_loads(json.dumps(ROOM), {}, project="project-a")
         assert not again["asked"] and again["result"]["spaces"][0]["status"] == "ok"
+
+
+def test_seam_5b332_a_later_table_changes_only_its_own_answers():
+    # Through the tool's own path: a table given in one call is kept per
+    # element, so a later table that answers one element again replaces that
+    # answer and leaves the other - never the whole table for the new one.
+    brain = _brain()
+    d = copy()
+    d["spaces"][0]["faces"][0]["beyond"] = "unknown"           # the wall, element 10
+    d["spaces"][0]["faces"][1]["beyond"] = "unknown"           # the roof, element 12
+    with knowledge_folder():
+        first = brain.building_loads(json.dumps(d), {
+            "project": dict(PROJECT, beyond={"10": "outside", "12": "outside"}),
+            "profiles": {"Office": OFFICE}}, project="project-a")
+        assert not first["asked"], first["asked"]
+        assert first["result"]["spaces"][0]["status"] == "ok"
+        again = brain.building_loads(json.dumps(d), {"project": {"beyond": {"12": "conditioned"}}},
+                                     project="project-a")
+        assert not again["asked"], again["asked"]
+        assert B.answers(again["result"]["inputs"]["project"]) == {"10": "outside",
+                                                                   "12": "conditioned"}
+
+
+def test_seam_5b333_a_run_is_kept_only_while_keep_says_so():
+    # FRAGMENT-ISSUES 5b-333 (1): a Recalculate overtaken by a fresh read of the
+    # model saved its run AFTER the fresh one - so the newest run kept was a
+    # building no longer there. The Companion hands the brain `keep`, which
+    # saves only while the page still holds the take-off the run came from.
+    brain = _brain()
+    inputs = {"project": PROJECT, "profiles": {"Office": OFFICE}}
+    with knowledge_folder():
+        try:
+            gone = brain.building_loads(json.dumps(ROOM), inputs, project="project-a",
+                                        keep=lambda save: (False, None))
+        except TypeError as no_keep:                        # the old seam takes no keep
+            gone = {"saved": "", "said": "no keep: %s" % no_keep}
+        assert gone["saved"] is None and "NOT KEPT" in gone["said"], gone["said"]
+        assert not B.runs("project-a")
+        kept = brain.building_loads(json.dumps(ROOM), inputs, project="project-a",
+                                    keep=lambda save: (True, save()))
+        assert kept["saved"] and len(B.runs("project-a")) == 1
 
 
 def test_seam_refuses_an_unreadable_takeoff():
@@ -572,6 +658,42 @@ def test_finalize_makes_the_schedule_of_what_it_wrote():
     assert B.SCHEDULE_NAME == "HVAC Load Calculation - Spaces"
     assert B.SCHEDULE_FIELDS[:2] == ("Number", "Name")
     assert all(f in B.SCHEDULE_FIELDS for f in B.FINALIZE_FIELDS)
+
+
+def test_5b335_finalize_says_the_true_reason_a_diffuser_was_not_written():
+    # FRAGMENT-ISSUES 5b-335: the filter handed over none of the three diffusers
+    # (rowsUnmatched 3) and the page said they "sit on a level no calculated
+    # Space is on, or their family's flow is not tied to its connector" - a
+    # list of maybes, and the wrong one first. Each reason is now the one
+    # SET_AIR_TERMINAL_FLOW gave, as the add-in reports it.
+    said = getattr(B, "diffusers_said", None)
+    assert said is not None, "the brain has no diffusers_said"
+    written, lines = said({"changed": "0", "rowsUnmatched": "3", "alreadyThatFlow": "0 item(s)",
+                           "noFlowParameter": "0 item(s)", "refused": "0 item(s)",
+                           "notATerminal": "0 item(s)", "builtInDisagrees": "0 item(s)",
+                           "badRows": "0"}, 3)
+    text = " ".join(lines)
+    assert written == 0 and "0 of 3" in text, text
+    assert "3 were not among the air terminals" in text, text
+    assert "family" not in text and "level" not in text, text
+    written, lines = said({"changed": "1", "noFlowParameter": "2 item(s) [352700, 352701]",
+                           "alreadyThatFlow": "0 item(s)", "rowsUnmatched": "0"}, 3)
+    text = " ".join(lines)
+    assert written == 1 and "1 of 3" in text and "352700, 352701" in text, text
+    assert "no parameter" in text and "were not among" not in text, text
+    written, lines = said({"changed": "3", "alreadyThatFlow": "0 item(s)"}, 3)
+    assert written == 3 and lines == ["Diffusers: 3 of 3 written with their Space's share of "
+                                      "the supply air, each read back through its connector."], lines
+
+
+def test_5b335_a_second_finalize_finds_the_schedule_already_there():
+    # The second Finalize's schedule step threw - Revit refuses a second
+    # schedule of that name - where docs/44 s12.8 says it is said to be there.
+    made = getattr(B, "schedule_made", None)
+    assert made is not None, "the brain has no schedule_made"
+    assert made(["Space Schedule", "HVAC Load Calculation - Spaces"])
+    assert made([" hvac load calculation - spaces "])           # as Revit compares view names
+    assert not made(["HVAC Load Calculation - Spaces 2", "Space Schedule"]) and not made([])
 
 
 def _calculated(brain):
