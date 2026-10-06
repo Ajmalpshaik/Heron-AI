@@ -144,25 +144,48 @@ def _checked_project(project):
     return out
 
 
+def _table(project):
+    """The table of answers, project["beyond"] = {element: word} - as given, or labelled
+    {"value": table, "source": ...}. Not _value(): that takes ANY dict for a labelled value
+    and returns its "value" key, which a table has not got, so the table vanished
+    (FRAGMENT-ISSUES 5b-332)."""
+    raw = (project or {}).get("beyond")
+    if isinstance(raw, dict) and "value" in raw:
+        raw = raw["value"]
+    return raw if isinstance(raw, dict) else {}
+
+
 def _given_answers(project):
-    """Every word given about what is beyond a face, as typed - right or wrong."""
-    out = {}
-    raw = _value((project or {}).get("beyond")) or {}
-    if isinstance(raw, dict):
-        for k, v in raw.items():
-            out[str(k)] = _value(v)
+    """Every word given about what is beyond a face, as typed - right or wrong. A
+    "beyond:<element>" key wins over the table's row for the same element."""
+    out = dict((str(k), _value(v)) for k, v in _table(project).items())
     for k, v in (project or {}).items():
         if isinstance(k, str) and k.startswith("beyond:"):
             out[k.split(":", 1)[1]] = _value(v)
     return out
 
 
+def flat(project):
+    """The project's inputs with a table of answers written out as the "beyond:<element>"
+    keys the Companion's questions post - one shape from here on, so each answer is kept,
+    merged and labelled on its own, and a later table changes only the elements it names.
+    A key given beside the table wins over the table's row for the same element."""
+    out = dict(project or {})
+    raw, table = out.get("beyond"), _table(out)
+    if table or (isinstance(raw, dict) and "value" not in raw):
+        for k, v in table.items():
+            out.setdefault("beyond:%s" % k, v)
+        del out["beyond"]
+    return out
+
+
 def answers(project, strict=True):
     """What the modeller said is beyond each face Revit could not see past: {element: word}.
 
-    Given as project["beyond"] = {element: word}, or as "beyond:<element>" keys -
-    the shape the Companion's questions post. A word that is not one of the four
-    refuses the run when strict, and is left unanswered when not.
+    Given as project["beyond"] = {element: word} - labelled or not - or as
+    "beyond:<element>" keys, the shape the Companion's questions post. A word
+    that is not one of the four refuses the run when strict, and is left
+    unanswered when not.
     """
     out = _given_answers(project)
     for k in sorted(out):
@@ -424,7 +447,8 @@ def _block(spaces):
 def run(t, project, profiles, overrides=None, recorded=None):
     """Every Space through the room engine, then zones and the building. See docs/44 s5."""
     t = TAKEOFF.read(t)
-    project = project or {}
+    # A table of answers is kept as the page's own keys, one per element (5b-332).
+    project = flat(project)
     profiles = profiles or {}
     overrides = {str(k): v for k, v in (overrides or {}).items()}
     # A project value that cannot be a design figure, or an answer that is not
@@ -587,14 +611,27 @@ def summary_text(result):
         lines.append("Sum of each Space's own peak: %.1f kW - what each Space's supply air is "
                      "worked out from." % (b["sum_of_peaks_w"] / 1000.0))
         lines.append("Building heating loss: %.1f kW." % (b["heating_w"] / 1000.0))
-    reasons = {}
+    # EVERY SPACE NOT CALCULATED IS NAMED, with every reason it has - never the
+    # commonest three lines, which named one refused Space twice and left the
+    # third unnamed (FRAGMENT-ISSUES 5b-333). Spaces with the same reasons share
+    # a line; a reason is said once, without its Space's own name in front.
+    groups = []
     for s in spaces:
-        if s["status"] in ("refused", "missing"):
-            for why in s.get("why") or []:
-                reasons[(s["status"], why)] = reasons.get((s["status"], why), 0) + 1
-    for (status, why), n in sorted(reasons.items(), key=lambda kv: -kv[1])[:3]:
-        lines.append("%s (%d Space(s)): %s" % ("Refused" if status == "refused" else "Waiting",
-                                               n, why))
+        if s["status"] not in ("refused", "missing"):
+            continue
+        label = ("%s %s" % (s.get("number") or "", s.get("name") or "")).strip() or str(s["id"])
+        own = "Space %s: " % label
+        why = tuple(w[len(own):] if w.startswith(own) else w for w in s.get("why") or [])
+        for g in groups:
+            if g[0] == s["status"] and g[1] == why:
+                g[2].append(label)
+                break
+        else:
+            groups.append((s["status"], why, [label]))
+    for status in ("refused", "missing"):
+        for _status, why, labels in [g for g in groups if g[0] == status]:
+            lines.append("%s - %s: %s" % ("Refused" if status == "refused" else "Waiting",
+                                          ", ".join(labels), "; ".join(why) or "no reason given"))
     lines.append("The full table is in the Heron Companion.")
     lines.append(HVAC.NOT_HAP)
     lines.append(HVAC.DISCLAIMER)
@@ -663,6 +700,72 @@ def read_back(rows, fresh):
         out.append({"id": str(sid), "space": name or str(sid), "parameter": field,
                     "written": new, "reads": reads, "ok": ok})
     return out
+
+
+def schedule_made(names):
+    """Whether the model already holds the Spaces schedule Finalize makes, among the names
+    of its schedules. Revit refuses a second schedule of the same name - CREATE_SCHEDULE
+    threw on the second Finalize of 2026-10-06 (FRAGMENT-ISSUES 5b-335) - so Finalize looks
+    first. Matched as Revit matches view names, case and outer spaces aside."""
+    want = SCHEDULE_NAME.strip().lower()
+    return any(str(n or "").strip().lower() == want for n in names or [])
+
+
+def _items(value):
+    """(how many, the first ids shown) from what the add-in reports for a list -
+    "2 item(s) [352700, 352701]", "0 item(s)" - or for a number, "3"."""
+    m = re.match(r"^\s*(\d+)(?: item\(s\))?(?: \[(.*)\])?\s*$", str(value or "0"))
+    if not m:
+        return 0, []
+    shown = [x.strip() for x in (m.group(2) or "").split(",") if x.strip() not in ("", "...")]
+    return int(m.group(1)), shown
+
+
+#: Why SET_AIR_TERMINAL_FLOW left a diffuser alone, by the name it reports it under.
+NOT_WRITTEN = (
+    ("alreadyThatFlow", "already held that flow, so there was nothing to change"),
+    ("noFlowParameter", "have a family that ties the duct connector's flow to no parameter "
+                        "(the connector's flow is Calculated or System, or the family has no "
+                        "duct connector or two), so nothing can set it from outside - tie the "
+                        "connector's Flow to a family parameter, then Finalize again"),
+    ("refused", "were not kept by Revit, and each was put back as it was"),
+    ("notATerminal", "are not air terminals"),
+    ("rowsUnmatched", "were not among the air terminals Revit handed over - every one in the "
+                      "model is handed over, so the model holds none with that id now; read the "
+                      "loads again"),
+    ("badRows", "lines of Heron's own file of flows could not be read, so nothing was written "
+                "for them"),
+)
+
+
+def diffusers_said(provides, handed):
+    """What Finalize says about the diffusers it handed SET_AIR_TERMINAL_FLOW:
+    (how many were written, [the lines to say]).
+
+    `provides` is that fragment's own answer and `handed` how many rows the file of flows
+    held. Every diffuser not written is put down to the reason the fragment gave for it -
+    never to a list of what might have happened: on 2026-10-06 none of three was handed
+    over, and the page blamed their family (FRAGMENT-ISSUES 5b-335)."""
+    p = provides or {}
+    written = _items(p.get("changed"))[0]
+    lines = ["Diffusers: %d of %d written with their Space's share of the supply air%s."
+             % (written, handed, ", each read back through its connector" if written else "")]
+    told = 0
+    for key, why in NOT_WRITTEN:
+        n, ids = _items(p.get(key))
+        if n:
+            told += n
+            lines.append("Not written: %d %s%s." % (
+                n, why, " (%s%s)" % (", ".join(ids), ", ..." if n > len(ids) else "")
+                if ids else ""))
+    if written + told < handed:
+        lines.append("Not written: %d, and Revit's answer does not say why - check those "
+                     "diffusers' Flow in Revit." % (handed - written - told))
+    n, ids = _items(p.get("builtInDisagrees"))
+    if n:
+        lines.append("Written, but the Flow Revit shows in Properties still reads something else "
+                     "on %d (%s) - look at them in Revit." % (n, ", ".join(ids) or "-"))
+    return written, lines
 
 
 def _unit(table, symbol, what):

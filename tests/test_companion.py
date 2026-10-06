@@ -674,7 +674,7 @@ def test_loads():
           "Recalculate with no hook answers 'no longer connected' and changes nothing")
     seen = []
 
-    def recalc(takeoff, inputs, identity):
+    def recalc(takeoff, inputs, identity, keep=None):
         seen.append((takeoff, inputs, identity))
         return brain_seam.building_loads(takeoff, inputs, save=False)
     panel.recalculate_hook = recalc
@@ -790,13 +790,74 @@ def test_loads():
           "confirming the take-off is refused when the chat has moved to another model")
     kept = hc.LoadsPanel()
     kept.open("Project1", shaped, ("Project1", "", "11"), read_at="08:00:00")
-    kept.recalculate_hook = lambda t, i, ident: brain_seam.building_loads(t, i, save=False)
+    kept.recalculate_hook = lambda t, i, ident, keep=None: brain_seam.building_loads(t, i,
+                                                                                     save=False)
     kept.recalculate({"project": GROUNDED, "profiles": {"Office": OFFICE}})
     check(kept.current()["read_at"] == "08:00:00",
           "Recalculate keeps the time the MODEL was read - it reads nothing itself")
     for hook in ("recalculate_hook = _loads_recalculate", "report_hook = _loads_report",
                  "finalize_hook = _loads_finalize", "confirm_hook = _loads_confirm"):
         check(hook in server, "the server sets %s" % hook.split(" =")[0])
+
+
+def test_loads_recalculate_overtaken_by_a_fresh_read():
+    """FRAGMENT-ISSUES 5b-333 (1), 2026-10-06: the chat read the model again
+    (revit_building_loads) while the modeller's Recalculate was working on the
+    take-off the page held. The Recalculate saved its run after the fresh one
+    and opened its answer over it, so the page showed a building no longer
+    there. Now it is neither kept nor shown, and the page is told why."""
+    print()
+    print("The Loads panel: a Recalculate overtaken by a fresh read of the model")
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    sys.path.insert(0, os.path.join(ROOT, "tests"))
+    import copy as _copy
+    import heron_brain as brain_seam
+    from test_takeoff import ROOM
+    from test_building_loads import PROJECT, OFFICE
+    inputs = {"project": PROJECT, "profiles": {"Office": OFFICE}}
+    old = brain_seam.building_loads(json.dumps(ROOM), inputs, save=False)
+    moved = _copy.deepcopy(ROOM)
+    moved["spaces"][0]["area_m2"] = 27.5                          # a wall moved since
+    fresh = brain_seam.building_loads(json.dumps(moved), inputs, save=False)
+    panel = hc.LoadsPanel()
+    panel.open("Project1", old, ("Project1", "", "11"))
+    kept = []
+
+    def overtaken(takeoff, given, identity, keep=None):
+        reading = getattr(panel, "reading", None)                 # the chat reads again...
+        if reading is not None:
+            reading()
+        panel.open("Project1", fresh, ("Project1", "", "11"))     # ...and opens its answer
+        answer = brain_seam.building_loads(takeoff, given, save=False)
+        if keep is not None:
+            keep(lambda: kept.append("old") or "a path")
+        return answer
+    panel.recalculate_hook = overtaken
+    said = panel.recalculate(inputs)
+    check(said["ok"] is False and "read again" in (said.get("said") or ""),
+          "a Recalculate overtaken by a fresh read answers that the model was read again")
+    check(panel.current()["spaces"][0]["area_m2"] == 27.5,
+          "the page still shows the fresh read, not the take-off the Recalculate started on")
+    check(not kept, "the overtaken Recalculate's run is not kept")
+
+    def calm(takeoff, given, identity, keep=None):
+        answer = brain_seam.building_loads(takeoff, given, save=False)
+        if keep is not None:
+            keep(lambda: kept.append("new") or "a path")
+        return answer
+    panel.recalculate_hook = calm
+    again = panel.recalculate(inputs)
+    check(again["ok"] and kept == ["new"],
+          "a Recalculate nothing overtook is kept and shown, as before")
+
+    server = io.open(SERVER, encoding="utf-8").read()
+    tool = server[server.index("def revit_building_loads("):]
+    tool = tool[:tool.index(chr(10) + "@server.tool()")]
+    check(-1 < tool.find("LOADS_PANEL.reading()") < tool.find("brain.building_loads("),
+          "the chat's fresh read tells the panel before it works the loads out and keeps them")
+    recalc = server[server.index("def _loads_recalculate("):]
+    recalc = recalc[:recalc.index(chr(10) + "def ", 10)]
+    check("keep=keep" in recalc, "Recalculate hands the brain the panel's keep")
 
 
 def test_loads_report_page():
@@ -985,6 +1046,19 @@ def test_finalize_asks_for_nothing_by_typed_ids():
     check('"CREATE_SCHEDULE"' in fin and "LOADS.SCHEDULE_NAME" in fin
           and "LOADS.SCHEDULE_FIELDS" in fin,
           "Finalize makes the Spaces schedule of what it wrote, once")
+    # FRAGMENT-ISSUES 5b-335 (2026-10-06): diffusers placed with no level were
+    # never on the level Finalize asked for, so none was handed over - and the
+    # page blamed their family. And the second Finalize's schedule step threw.
+    check('"category=Air Terminals" + nl + "levelId=none"' in fin
+          and '"category=Air Terminals" + nl + "levelId=" + level' not in fin,
+          "the diffusers are handed over by category with no level - the file of ids picks "
+          "which are written, whatever level parameter each carries")
+    check("LOADS.diffusers_said(" in fin and "sit on a level no calculated" not in fin,
+          "each diffuser not written is put down to the reason SET_AIR_TERMINAL_FLOW gave")
+    names = fin.find("_schedule_names()")
+    check(-1 < names < fin.find('"CREATE_SCHEDULE"') and "LOADS.schedule_made(" in fin,
+          "Finalize looks for the schedule before making it, so a second Finalize says it is "
+          "there instead of letting Revit refuse a second one of that name")
 
 
 def test_switched_off_parts():
@@ -1235,6 +1309,10 @@ def main():
     test_load_from_revit()
     test_model_guard()
     test_loads()
+    try:
+        test_loads_recalculate_overtaken_by_a_fresh_read()
+    except Exception as why:                    # noqa: BLE001 - reported, not hidden
+        check(False, "the overtaken-Recalculate checks ran to the end (they raised %r)" % (why,))
     try:
         test_loads_report_page()
     except Exception as why:                    # noqa: BLE001 - reported, not hidden
