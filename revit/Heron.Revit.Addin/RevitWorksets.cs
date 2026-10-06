@@ -105,6 +105,7 @@ namespace Heron.Revit.Addin
                     Json.Bool("workshared", false),
                     Json.Str("document", doc.Title),
                     Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                    Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                     Json.Bool("modifiedAnything", false),
                     Json.Str("reads",
                         "This model is not workshared, so worksets, ownership "
@@ -241,6 +242,7 @@ namespace Heron.Revit.Addin
                 Json.Str("user", me),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Bool("modifiedAnything", false),
                 Json.Str("reads", Reads(rows.Count, closed, sampleIds.Count,
                                         placed, theirs, unknown)));

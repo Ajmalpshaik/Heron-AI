@@ -1941,6 +1941,48 @@ def sprinkler_report(network, result, model_path=None, project=None, project_nam
     return dict(got, folder=folder)
 
 
+def earlier_question(project, earlier):
+    """
+    The question about answers kept under the id every template-born project
+    shares (heron_earlier, FRAGMENT-ISSUES 5b-324, D-113), or None when there
+    is nothing to ask.
+
+    `project` is DocumentPin.project_key - the model's own CreationGUID - and
+    `earlier` is DocumentPin.project_information_id, the shared id those
+    answers were filed under before D-113. Nothing is used or written here.
+    """
+    try:
+        import heron_earlier as EARLIER
+    except ImportError as exc:
+        raise BrainUnavailable("Heron's earlier-answers module could not be imported: %s. "
+                               "It needs nothing beyond Python itself, so this is a broken "
+                               "install." % exc)
+    return EARLIER.question(project, earlier)
+
+
+def earlier_decide(project, earlier, answer):
+    """
+    The modeller's answer to earlier_question: a model name, or "none".
+    Returns (ok, said). On a name, what was kept under the shared id for that
+    name is COPIED to this model's own files; nothing under the shared id is
+    moved, rewritten or deleted. One audit line, `project.earlier`, says how
+    it ended and never carries the name - a model's name is project
+    information, and the trail is never pruned.
+    """
+    try:
+        import heron_earlier as EARLIER
+    except ImportError as exc:
+        raise BrainUnavailable("Heron's earlier-answers module could not be imported: %s. "
+                               "It needs nothing beyond Python itself, so this is a broken "
+                               "install." % exc)
+    ok, said = EARLIER.decide(project, earlier, answer)
+    none = str(answer or "").strip().lower() in EARLIER.NONE_WORDS
+    _audit().record("project.earlier", ok,
+                    fields={"status": "ok" if ok else "refused",
+                            "answer": "none" if none else "a model name"})
+    return ok, said
+
+
 def fire(calculation, inputs, project=None, project_name=None):
     """
     One fire protection design calculation - HERON-MEP-FPD-002, docs/42 - or,

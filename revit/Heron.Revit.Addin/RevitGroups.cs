@@ -214,6 +214,7 @@ namespace Heron.Revit.Addin
                 Json.Num("notListed", (placed + unplaced) - rows.Count),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Bool("modifiedAnything", false),
                 Json.Str("reads",
                     "`placements` IS THE NUMBER THAT MATTERS: editing one "
@@ -337,6 +338,7 @@ namespace Heron.Revit.Addin
                 Json.Num("notListed", listable - rows.Count),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Bool("modifiedAnything", false),
                 Json.Str("scope", "the whole model, not just the active view"),
                 Json.Str("reads",

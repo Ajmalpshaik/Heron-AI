@@ -21,8 +21,11 @@
 #            (Project1's was "305x305x97UC")
 #
 # WINDOW POINTS: on the wall's line at x 1500 and 4500; room points 1000 mm
-# north of each; hinge points 300 mm east (a fixed window has no swing arc, so
-# `wrongHinge` naming both is expected and is not this proof's concern).
+# north of each; hinge points 300 mm east. Version 3 named both windows in
+# `wrongHinge` for want of a swing arc; since version 4 (2026-10-06, row
+# 5b-293) no hinge is read for a window, and `wrongHinge` comes back empty.
+# Version 4 also needs `rotation`, sent BLANK below for version 3's behaviour:
+# the add-in refuses a value left out, blank or not.
 # A SILL IS PROVED BY READING IT: select each window and read Sill Height in
 # Properties, and cut a section through the wall.
 #
@@ -52,6 +55,7 @@ jobs:
       toRoomAt:   "1500,1000,0; 4500,1000,0"
       hingeAt:    "1800,0,0; 4800,0,0"
       sillHeight: "900"
+      rotation:   ""
     negative-set:
       symbol:     "M_Fixed: 0915 x 1220mm"
       level:      "Level 1"
@@ -59,6 +63,7 @@ jobs:
       toRoomAt:   "1500,1000,0; 4500,1000,0"
       hingeAt:    "1800,0,0; 4800,0,0"
       sillHeight: "2500"
+      rotation:   ""
     expect: placed
     note: >
       Positive: placed 2, `sills` reading "sill asked 900 mm, reads 900 mm"

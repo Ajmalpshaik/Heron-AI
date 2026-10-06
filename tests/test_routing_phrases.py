@@ -98,6 +98,8 @@ CHANGES = [
      "5b-319: answered REPORT_SPACE_ENVELOPE"),
     ("put doors in the walls at these points", "PLACE_HOSTED_FAMILY",
      "5b-319: answered CREATE_WALL"),
+    ("place a skylight in the roof at a point", "PLACE_HOSTED_FAMILY",
+     "5b-326: asked by a session 2026-10-06, answered CREATE_ROOF"),
     ("create an area scheme", "SET_AREA_VOLUME_COMPUTATIONS",
      "5b-337: before the Area and Volume Computations tools, answered APPLY_COLOR_FILL_SCHEME"),
     ("rename the rentable area scheme to net lettable", "SET_AREA_VOLUME_COMPUTATIONS",

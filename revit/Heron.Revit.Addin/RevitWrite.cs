@@ -194,6 +194,7 @@ namespace Heron.Revit.Addin
                 Json.Str("document", doc.Title),
                 Json.Str("documentPath", string.IsNullOrEmpty(doc.PathName) ? null : doc.PathName),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Num("expiresInSeconds", (long)PreviewLifetime.TotalSeconds),
                 Json.Str("summary", Describe(movable.Count, skipped, preview.Category) +
                                     " " + HeronUnits.DescribeVerticalMove(millimetres) +
@@ -500,6 +501,7 @@ namespace Heron.Revit.Addin
                 Json.Str("document", doc.Title),
                 Json.Str("documentPath", string.IsNullOrEmpty(doc.PathName) ? null : doc.PathName),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Num("warnings", handler.Count),
                 Json.Str("undo", "One Ctrl+Z in Revit puts this back."),
                 Json.Str("undoEntry", name));
@@ -851,9 +853,16 @@ namespace Heron.Revit.Addin
         /// A document's identity, stable across saves and window switches.
         ///
         /// The identity is the UniqueId of the document's own Project
-        /// Information element. It is created with the document, it survives
-        /// being saved, renamed and moved, and it is different for every
-        /// open model - which is all Golden Rule 20 asks of it.
+        /// Information element. It survives being saved, renamed and moved.
+        /// This said it is created with the document and is different for
+        /// every open model. NEITHER IS TRUE: a new project inherits the
+        /// element from its template, so every model made from one template
+        /// reports the same id (NEEDS-CHECKING E12, FRAGMENT-ISSUES 5b-324).
+        /// Between two such models the element-id re-count in Apply is what
+        /// refuses an approval carried from one into the other. Not changed
+        /// here: the knowledge stores moved to RevitOperations.CreationGuid
+        /// (D-113), and moving this key too is a write-path change owed its
+        /// own proof in Revit.
         ///
         /// It is NOT Document.CreationGUID, and that is deliberate.
         /// CreationGUID reads like the obvious answer and does not exist in

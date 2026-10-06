@@ -169,6 +169,7 @@ namespace Heron.Revit.Addin
                 Json.Num("countedLinks", counted),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Bool("modifiedAnything", false),
                 Json.Str("reads",
                     rows.Count == 0
