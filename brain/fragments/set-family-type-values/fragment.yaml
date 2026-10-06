@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -129,45 +129,41 @@ contract:
 proof:
   date: '2026-10-06'
   by: Ajmal PS
-  model: Family3, Revit 2024, session 51820 - the count is NOT recorded because 1,790 elements
-    was measured on GM_PipeSupport_HexNut, the document in front, and this ran against another
-    one (row 15)
-  positive_case: run as it would normally be run - the arrangement was re-made first by running
-    add-family-parameters with this phase's own values - run inside a transaction, and Revit
-    reported the transaction group ROLLED BACK afterwards. returned badCharacters 0 item(s),
-    dbNamespace Autodesk.Revit.DB, drives 0, editsApart Func`3, findings 2 item(s) [Made the
-    type "T1", now the family's current type. Read back..., Nothing in the family is labelled
-    with or associated to thes...], flags BindingFlags, forbidden \:{}[]|;<>?`~, invariant
-    CultureInfo, kindOf Func`2, kindsNew 9 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId],
+  model: Family14, Revit 2024, session 51820 - the count is NOT recorded because 1,713 elements
+    was measured on HeronNewFam_D, the document in front, and this ran against another one
+    (row 15)
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned badCharacters 0 item(s), dbNamespace
+    Autodesk.Revit.DB, deleteType false, drives 0, editsApart Func`3, findings 1 item(s) [Renamed
+    the type "Standard" to "Test - A", now the family's ...], flags BindingFlags, forbidden
+    \:{}[]|;<>?`~, invariant CultureInfo, kindOf Func`2, kindsNew 9 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId],
     [angle, Autodesk.Revit.DB.ForgeTypeId], [number, Autodesk.Revit.DB.ForgeTypeId], ...],
-    kindsOld 9 entry(ies), materialShown Func`3, mm Func`2, notAFamily false, planned 2 item(s)
-    [(Autodesk.Revit.DB.FamilyParameter, material, 255), (Autodesk.Revit.DB.FamilyParameter,
-    text, https://ajmalps.co...], problems 0 item(s), refused (null), revitAssembly RuntimeAssembly,
-    sameKind Func`3, shown Func`4, specNamed Func`3, typeCreated true, typeUsed T1, wantedType
-    T1, written 2 item(s) [Nut Material = "Glass" (was (new type)), URL = "https://ajmalps.com"
-    (was (new type))]. inputs came typeName as given; values as given (2). on Family3
-  negative_case: run against 'Family3' with parameterNames=Nut Material, kind=Material, instance=false,
-    parameterGroup=, typeName=T1, values=Nut Material=Unobtainium; URL=https://ajmalps.com
-    instead - chosen because it should not contain what this fragment reports - the arrangement
-    was re-made first by running add-family-parameters with this phase's own values - run
-    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned badCharacters 0 item(s), dbNamespace Autodesk.Revit.DB, drives 0, editsApart
-    Func`3, findings 1 item(s) [Nothing was written. There is no material "Unobtainium" in
-    t...], flags BindingFlags, forbidden \:{}[]|;<>?`~, invariant CultureInfo, kindOf Func`2,
-    kindsNew 9 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId], [angle, Autodesk.Revit.DB.ForgeTypeId],
+    kindsOld 9 entry(ies), materialShown Func`3, mm Func`2, notAFamily false, parameterValues
+    0 entry(ies), planned 0 item(s), problems 0 item(s), refused (null), renameTo Test - A,
+    revitAssembly RuntimeAssembly, sameKind Func`3, shown Func`4, specNamed Func`3, typeCreated
+    false, typeList Func`1, typeNameRow Type Name, typeUsed Test - A, typesNow "T2", "Test
+    - A", wantedType Standard, written 0 item(s). inputs came typeName as given; values as
+    given (1); deleteType not given - false (optional). on Family14
+  negative_case: run against 'Family14' with typeName=Standard, values=Type Name=t2 instead
+    - chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned badCharacters
+    0 item(s), dbNamespace Autodesk.Revit.DB, deleteType false, drives 0, editsApart Func`3,
+    findings 1 item(s) [Nothing was written. The family already has a type "T2", and...],
+    flags BindingFlags, forbidden \:{}[]|;<>?`~, invariant CultureInfo, kindOf Func`2, kindsNew
+    9 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId], [angle, Autodesk.Revit.DB.ForgeTypeId],
     [number, Autodesk.Revit.DB.ForgeTypeId], ...], kindsOld 9 entry(ies), materialShown Func`3,
-    mm Func`2, notAFamily false, planned 1 item(s) [(Autodesk.Revit.DB.FamilyParameter, text,
-    https://ajmalps.co...], problems 1 item(s) [There is no material "Unobtainium" in this
-    family for "Nut M...], refused Nothing was written. There is no material "Unobtainium"
-    in this family for "Nut Material", and none is made here - the closest are "Default",
-    "Glass", "Poche". Make or load it in Manage > Materials first, or "<By Category>" clears
-    the parameter., revitAssembly RuntimeAssembly, sameKind Func`3, shown Func`4, specNamed
-    Func`3, typeCreated false, typeUsed , wantedType T1, written 0 item(s). inputs came typeName
-    as given; values as given (2). on Family3
+    mm Func`2, notAFamily false, parameterValues 0 entry(ies), planned 0 item(s), problems
+    1 item(s) [The family already has a type "T2", and Revit does not tell ...], refused Nothing
+    was written. The family already has a type "T2", and Revit does not tell type names apart
+    by case - choose another name for "Standard"., renameTo t2, revitAssembly RuntimeAssembly,
+    sameKind Func`3, shown Func`4, specNamed Func`3, typeCreated false, typeList Func`1, typeNameRow
+    Type Name, typeUsed , typesNow "T2", "Standard", wantedType Standard, written 0 item(s).
+    inputs came typeName as given; values as given (1); deleteType not given - false (optional).
+    on Family14
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 72a0d37418cb2847
+  fingerprint: 1281aa005776f57a
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/

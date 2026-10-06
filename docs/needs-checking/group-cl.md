@@ -13,7 +13,7 @@ optional switch `deleteType`. Before it, the type `Standard` in `GM_PipeSupport_
 by hand ([row 5b-343](../fragment-issues/section-5b-rows-176-200.md)). The new name rides in `values`
 because the binder refuses an absent text value (HeronBindingNote.AbsentValue); a separate `renameTo`
 would have stopped every existing call - chosen by Ajmal PS on 2026-10-06. The change is under `impl/`, so
-the version 2 proof went stale and the fragment is **DRAFT until signed**.
+the version 2 proof went stale; **signed by Ajmal PS on 2026-10-06** on the CL1/CL2 record below, and PROVEN again.
 
 **Run on 2026-10-06, rolled back**, on the scratch family *Family14* (Revit 2024, session 51820, unsaved,
 made with `CREATE_FAMILY_DOCUMENT` from *Metric Generic Model.rft*), never on the owner's
@@ -29,7 +29,7 @@ in that scratch family with version 3 itself, and every run below rolled back.
 | **CL5** | `deleteType=true` with `values=URL=x` | **RAN 2026-10-06, rolled back:** refused - a delete is done alone, nothing changed |
 | **CL6** | a rename of a type that does not exist | **RAN 2026-10-06** (no-transaction run, before the arrangement): refused - *a rename never makes one - the family's types are none* |
 | **CL7** | Family14 after CL1 to CL5 | **RAN 2026-10-06:** `typesNow "Standard", "T2"` - every run rolled back |
-| **CL8** | the signature | **OWED** - `heron_validate.py accept set-family-type-values --by "Ajmal PS"` on the CL1/CL2 record, on the owner's word only |
+| **CL8** | the signature | **DONE 2026-10-06:** `heron_validate.py accept set-family-type-values --by "Ajmal PS"` on the CL1/CL2 record, on the owner's word - PROVEN |
 | **CL9** | `deleteType=true` on a family's ONLY type | refused, nothing deleted. **Not run** - a one-type family was not arranged |
 | **CL10** | a family with its OWN parameter called `Type Name`, then `Type Name=x` | refused as ambiguous. **Not run** |
 | **CL11** | CL1 on **Revit 2020** and **2027** | The same answers. `RenameCurrentType` and `DeleteCurrentType` read the same 2020 to 2027 (api-surface) and compile on all eight releases; not run there |
