@@ -1,3 +1,5 @@
+# RUN 2026-10-06 in Project2 (scratch, Revit 2024), rolled back: version 2's
+# case below and the spacing-alone negative; the rest of this plan has not.
 # THE PROOF PLAN, written 2026-09-24 and NOT RUN. Nothing here has touched a
 # model (D-30); every case says what to arrange and what must come back. The
 # owner runs it, on a TEST COPY - tools/jobs/set-curtain-wall-grid-test-projject-

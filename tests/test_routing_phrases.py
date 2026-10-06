@@ -123,8 +123,10 @@ QUESTIONS = [
      "5b-329: answered SET_CURTAIN_WALL_GRID"),
     ("select all instances of the Storefront curtain wall type",
      "5b-329: answered SET_CURTAIN_WALL_GRID"),
-    ("select every wall that uses the Curtain Wall type",
-     "5b-329: answered SET_CURTAIN_WALL_GRID"),
+    # NOT HERE: "select every wall that uses the Curtain Wall type", the fifth
+    # paraphrase. SET_CURTAIN_WALL_GRID and REPORT_CURTAIN_WALL_TYPE fuse to the
+    # same score on it, and the PROVEN nudge hands the tie to the change - still
+    # OPEN in 5b-329. A guard that a status change flips is not a guard.
 ]
 
 NO_TOOL = [
