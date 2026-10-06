@@ -30,6 +30,15 @@ Revit 2024, session 51820, every change rolled back or put back - *Heron loads t
   list-levels --keep-chain`), because the add-in Revit had loaded still refuses it with nothing
   selected.
 
+**Then on Revit 2020** (2026-10-06, session 63748, a new never-saved *Project1*, the add-in from this
+change installed for 2020 only - Revit 2024 untouched): **REPORT_LOCATION with NOTHING selected** bound
+*elements not given - none (optional)* and answered with the site alone, then followed three kept
+states (Doha 30 East, Riyadh 12.5 West, put back); **both units tools ran Revit 2020's UnitType route**
+for the first time - 120 unit types, and W to Btu/h, L/s to CFM set, read back and rolled back,
+*Horsepower* refused; and SET_PROJECT_LOCATION rolled back as on 2024, True North's sign the same. The
+put-back matched in everything but the weather station, which Revit chose afresh (*SOUTH WEYMOUTH* for
+*53158_2004*) - the API cannot set it. **CJ2, CJ3 and CJ5 have run; their signatures are still owed.**
+
 Run every row on a scratch project with `--in`, `HERON_CLIENT_ID=ajmal-pc` and stdin closed
 (`</dev/null`). The setters need `--allow-publish --write`, and the owner's Admin and Changes switches
 on; `batch-prove` sends nothing declared ADMIN.

@@ -56,6 +56,13 @@ risk: ADMIN
 # **DAYLIGHT SAVING IS READ, NOT SET.** Revit's API can say whether the site
 # uses it and has no way to change it on any release, so a value that differs
 # from the model's is refused with where Revit's own box is.
+#
+# **THE WEATHER STATION IS REVIT'S CHOICE, AND IT IS SAID.** Its name is
+# get-only on every release. Measured 2026-10-06: Revit 2024 kept Boston's
+# station after a move to Doha, and Revit 2020 moved it to "DOHA INTL AIRPORT".
+# Setting the old coordinates again brings back the place, time zone and True
+# North exactly, but Revit 2020 then chose "SOUTH WEYMOUTH" where the template
+# had "53158_2004" - so the exact way back is Revit's own Undo, one entry.
 purpose: >
   Changes Manage > Location and does Manage > Position > Rotate True North:
   moves the project's site to a city from Revit's own Default City List or to
