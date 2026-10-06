@@ -1,0 +1,163 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-057
+semantic-identity: "set Area and Volume Computations - switch between Areas only and Areas and Volumes, change where room areas are measured, make or rename area schemes"
+kind: action
+domain: revit.rooms
+capability: SET_AREA_VOLUME_COMPUTATIONS
+version: 1
+source: OFFICIAL
+risk: ADMIN
+
+purpose: >
+  Switches Revit's Volume Computations between Areas only and Areas and
+  Volumes, changes where every room's area is measured, and makes, renames or
+  re-describes area schemes - Area and Volume Computations (Architecture >
+  Room & Area), both tabs, set in the words the dialog shows. COMPUTATIONS:
+  Volume Computations to Areas only or Areas and Volumes; Room Area
+  Computation to At wall finish, At wall center, At wall core layer or At
+  wall core center. AREA SCHEMES: a new scheme, a new name for one, or a new
+  description. Built on 2026-10-06: the model "Heron loads test" needed Areas
+  and Volumes before its Spaces had volumes, nothing in Heron could change
+  it, and the modeller did it by hand (FRAGMENT-ISSUES row 5b-327).
+
+  **ADMIN, BEHIND THE OWNER'S ADMIN SWITCH (D-106).** These are how the project
+  is set up, not an edit to an element. Room Area Computation re-measures
+  EVERY room in the project at once - every room schedule, tag and anything
+  reading a room's Area moves with it - and an area scheme is a
+  classification the whole team works inside, the reason CREATE_WORKSET is
+  ADMIN. One card carries one risk, so the whole dialog is ADMIN, renaming
+  included. A chat should say what a Room Area Computation change does to
+  every room before asking for it.
+
+  **NO DELETE.** Deleting an area scheme deletes its area plans and the areas
+  on them (Constitution Article 7), so it stays in the dialog, where Revit
+  says what goes with it.
+
+  **A NEW SCHEME IS A COPY OF AN ORDINARY ONE.** Revit's API has no call that
+  makes an area scheme from nothing, on any release 2020 to 2027. The
+  dialog's New makes an ordinary, non-Gross Building scheme, so one is copied
+  with ElementTransformUtils.CopyElement, renamed, given the description
+  asked for (or none), and checked: it must not be a Gross Building scheme,
+  and no area plan or area may come with it. A project holding only the Gross
+  Building scheme is refused by name - make the first ordinary scheme with
+  the dialog's New.
+
+  **EVERYTHING IS CHECKED FIRST, AND READ BACK AFTER.** A word the dialog does
+  not show, a scheme that is not there, a name Revit refuses or one already
+  taken stops the call with nothing changed. A setting already as asked is
+  counted and left alone. After the last write every setting and scheme is
+  read again; one that does not read as asked fails the call and the host
+  rolls the whole call back. When Volume Computations changes, the placed
+  rooms and spaces with a volume are counted before and after, so the answer
+  shows what the switch did to this model.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # Setting = value, SEMICOLONS between, in the dialog's words. Name only
+    # the settings to change:
+    #   Volume Computations=Areas and Volumes      (the other choice: Areas only)
+    #   Room Area Computation=At wall center       (or At wall finish, At wall
+    #                                               core layer, At wall core center)
+    #   New Area Scheme=Net Lettable               (with a description:
+    #                                               Net Lettable : its description)
+    #   Rename Area Scheme=Rentable -> Net Lettable
+    #   Area Scheme Description=Rentable : the new description
+    # Several schemes in one entry take "|" between them -
+    # "New Area Scheme=Lettable | Net Internal : NIA". ":", "->" and "|" are
+    # characters Revit refuses in a name, so a name is never split wrongly;
+    # a description is everything after the first colon. A description cannot
+    # hold a semicolon, which ends the entry.
+    - name: settings
+      type: IDictionary<string, string>
+      source: request
+  provides:
+    - name: settingReport
+      # Every change, before -> after, as READ BACK - on one line. Empty when
+      # nothing needed changing.
+      role: result
+      type: string
+    - name: changed
+      role: result
+      type: int
+    - name: alreadyAsAsked
+      # Asked for and already so: looked at, nothing written (D-52).
+      role: accounting
+      type: int
+    - name: roomsWithVolume
+      # Placed rooms holding a volume AFTER the call - the read-back of what
+      # Volume Computations does in this model. Evidence, never a change.
+      role: accounting
+      type: int
+    - name: spacesWithVolume
+      role: accounting
+      type: int
+    - name: notAProject
+      # True when the document in front is a family, which has no such dialog.
+      role: accounting
+      type: bool
+    - name: refused
+      # Why nothing changed, in plain words. Empty when the call ran.
+      role: accounting
+      type: string
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `AreaVolumeSettings.GetAreaVolumeSettings`,
+  `ComputeVolumes { get; set; }`, `Get-` and `SetSpatialElementBoundaryLocation`,
+  the four `SpatialElementBoundaryLocation` values, `SpatialElementType.Room`
+  and `Space`, `AreaScheme.IsGrossBuildingArea`,
+  `ElementTransformUtils.CopyElement` and `NamingUtils.IsValidName` are
+  present and unchanged 2020 through 2027 - looked up in every release's
+  reference assembly with tools/api-surface on 2026-10-06. `AreaScheme`
+  declares no Create on any of them, which is why a new scheme is a copy;
+  that CopyElement copies an area scheme is the route the Revit API forum
+  gives for it, and is NOT yet seen in a real Revit - the proof is the first
+  time (NEEDS-CHECKING group CF).
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "turn on volume computation"          -> here - Volume Computations=Areas
+#                                            and Volumes
+#   "set room area computation to wall center" -> here
+#   "create an area scheme called X"      -> here - New Area Scheme
+#   "rename the Rentable area scheme"     -> here - Rename Area Scheme
+#   "is volume computation on"            -> REPORT_AREA_VOLUME_COMPUTATIONS.
+#                                            A question; reading it needs no
+#                                            write (D-86)
+#   "list the area schemes"               -> REPORT_AREA_VOLUME_COMPUTATIONS
+#   "delete an area scheme"               -> nothing in Heron. It deletes the
+#                                            scheme's area plans and areas too
+#                                            (Article 7); done in the dialog
+#   "rename these views" / "find and replace in the names" -> RENAME_ELEMENTS,
+#                                            which renames what is selected or
+#                                            handed to it. An area scheme can be
+#                                            neither, which is why its rename is
+#                                            here
+#   "make an area plan"                   -> no tool yet; View > Plan Views >
+#                                            Area Plan, choosing the scheme
+
+utterances:
+  - turn on volume computation
+  - set area and volume computations to areas and volumes
+  - switch volume computation to areas and volumes
+  - set room area computation to wall center
+  - measure room areas at the wall finish
+  - create a new area scheme
+  - rename the area scheme
+  - change the name of the area scheme
+  - change the description of the area scheme
+  - change the room area computation
