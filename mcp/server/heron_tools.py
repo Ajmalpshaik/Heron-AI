@@ -284,6 +284,12 @@ TOOLS = {
     # Writing the loads back is the page's companion_loads_finalize below.
     "revit_building_loads":     (ANALYZE, "run_fragment_read"),
 
+    # Sprinkler hydraulics (docs/46). ANALYZE through run_fragment_read,
+    # exactly revit_building_loads' level: it reads one fire protection
+    # system with REPORT_SPRINKLER_NETWORK, solves it in the brain, and
+    # changes nothing. Phase 1 writes nothing back, so it has no page action.
+    "revit_sprinkler_hydraulics": (ANALYZE, "run_fragment_read"),
+
     # Puts a settings capability's CURRENT values on the Companion page as an
     # editable table, sending nothing to Revit. READ, no operation. The
     # page's Apply is companion_apply below, at MODIFY - never this tool.

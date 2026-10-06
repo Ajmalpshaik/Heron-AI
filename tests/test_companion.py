@@ -741,8 +741,10 @@ def test_loads():
     check(said["ok"] and view_panel.current()["confirmed"] is True,
           "'The take-off is right' records the check through the brain")
     check(hc.PAGES.get("/loads3d.js", (None,))[0] == "loads3d.js"
-          and set(hc.PAGES) == {"/", "/companion.js", "/companion.css", "/loads3d.js"},
-          "the page files are a fixed list - the 3D view's script is on it, nothing else")
+          and set(hc.PAGES) == {"/", "/companion.js", "/companion.css", "/loads3d.js",
+                                "/sprinkler3d.js"},
+          "the page files are a fixed list - the two 3D views' scripts are on it, nothing "
+          "else (the Sprinkler panel's added 2026-10-04, docs/46)")
     for route in ("/api/loads/view", "/api/loads/confirm"):
         check(route in source, "the page can ask for %s" % route)
     i = source.index('if path == "/api/loads/view":')
@@ -1029,6 +1031,114 @@ def test_switched_off_parts():
           "its live file says 'selection: null', and Idling looks once a second, not five times")
 
 
+def test_sprinkler_panel():
+    """The Sprinkler panel (docs/46): data and hooks only, every route behind the
+    pairing, its own 3D view, and nothing on it writes to Revit."""
+    print()
+    print("The Sprinkler panel: data and hooks only, and it writes nothing to Revit")
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    sys.path.insert(0, os.path.join(ROOT, "tests"))
+    import heron_brain as brain_seam
+    import test_sprinkler_run as RUNS
+    network = json.dumps(RUNS.NET.net())
+    panel = hc.SprinklerPanel()
+    check(panel.calculate({})["said"] == hc.SprinklerPanel.GONE
+          and panel.suggest({})["said"] == hc.SprinklerPanel.GONE
+          and panel.confirm()["said"] == hc.SprinklerPanel.GONE
+          and panel.report({})["said"] == hc.SprinklerPanel.GONE,
+          "with no chat connected, every button says so and does nothing")
+    answer = brain_seam.sprinkler_hydraulics(network, {}, save=False)
+    panel.open("Project1", answer, ("Project1", "", "11"), read_at="08:00:00")
+    shown = panel.current()
+    check(shown["status"] == "missing" and shown["asked"] and shown["has_view"]
+          and "view" not in shown and "result" not in shown,
+          "the panel shows the questions; the 3D data is on its own route")
+    check([f[0] for f in shown["fields"]][:2] == ["density_mm_min", "area_per_sprinkler_m2"],
+          "the criteria the page asks for come from the brain, in its order")
+    seen = {}
+
+    def calc(net, inputs, identity):
+        seen["inputs"] = inputs
+        return brain_seam.sprinkler_hydraulics(net, inputs, save=False)
+    panel.calculate_hook = calc
+    body = RUNS.given(operating=["401", "402"])
+    got = panel.calculate(body)
+    check(got["ok"] and seen["inputs"]["operating"] == ["401", "402"]
+          and got["sprinkler"]["status"] == "ok" and got["sprinkler"]["read_at"] == "08:00:00",
+          "Calculate hands the page's inputs to the hook and keeps when the model was read")
+    check(panel.calculate({"criteria": "not a map"})["ok"] is False,
+          "inputs that are not a map are refused - nothing is calculated")
+    panel.suggest_hook = brain_seam.sprinkler_suggest
+    sug = panel.suggest(body)
+    check(sug["ok"] and sorted(sug["heads"]) == ["401", "402"],
+          "Suggest returns ticks for the page and solves nothing")
+    panel.confirm_hook = lambda n, r, identity: brain_seam.sprinkler_confirm(n, r)
+    check(panel.confirm()["ok"] and panel.current()["confirmed"] is True,
+          "'The network is right' records the check through the brain")
+    folder = tempfile.mkdtemp(prefix="heron-sprinkler-")
+    panel.report_hook = lambda n, r, f: brain_seam.sprinkler_report(n, r, folder=folder)
+    panel.folder_hook = lambda start, title=None: {"cancelled": True}
+    check(panel.report({"ask": True})["ok"] is False and panel.current()["report"] is None,
+          "Cancel in the folder window writes no report")
+    panel.folder_hook = lambda start, title=None: {"folder": folder}
+    wrote = panel.report({"ask": True})
+    token = panel.current()["report"]["token"]
+    check(wrote["ok"] and panel.report_file(token, "html")
+          and panel.report_file(token, "html")[0].startswith(folder)
+          and panel.report_file("wrong", "html") is None and panel.report_file(token, "csv") is None,
+          "the sheet opens through the key this page was given, html or pdf only")
+    source = io.open(os.path.join(ROOT, "mcp", "companion", "heron_companion.py"),
+                     encoding="utf-8").read()
+    for route in ("/api/sprinkler", "/api/sprinkler/view", "/api/sprinkler/calculate",
+                  "/api/sprinkler/suggest", "/api/sprinkler/confirm", "/api/sprinkler/report"):
+        check(route in source, "the page can ask for %s" % route)
+    i = source.index('if path == "/api/sprinkler":')
+    j = source.index('if path in ("/api/sprinkler/calculate"')
+    check(source.index("why = self._api_ok()", i) < source.index("SPRINKLER_PANEL.current()", i)
+          and source.index("why = self._api_ok()", j) < source.index("SPRINKLER_PANEL.calculate(", j),
+          "every Sprinkler route is behind _api_ok like every other route")
+    check("def finalize" not in source[source.index("class SprinklerPanel"):
+                                       source.index("SPRINKLER_PANEL = SprinklerPanel()")]
+          and "/api/sprinkler/finalize" not in source,
+          "the Sprinkler panel has no Finalize - phase 1 writes nothing to Revit")
+    page_js = io.open(os.path.join(ROOT, "mcp", "companion", "static", "sprinkler3d.js"),
+                      encoding="utf-8").read()
+    check('fetch("/api/sprinkler/view"' in page_js and "import " not in page_js,
+          "the Sprinkler 3D view fetches only its own data and loads no library")
+    server = io.open(SERVER, encoding="utf-8").read()
+    for hook in ("calculate_hook = _sprinkler_calculate", "suggest_hook = _sprinkler_suggest",
+                 "confirm_hook = _sprinkler_confirm", "report_hook = _sprinkler_report"):
+        check(hook in server, "the server sets %s" % hook.split(" =")[0])
+    calc_src = server[server.index("def _sprinkler_calculate("):]
+    calc_src = calc_src[:calc_src.index(chr(10) + "def ", 10)]
+    check("_moved_since(identity)" in calc_src and "revit_change" not in calc_src,
+          "Calculate is refused when the chat moved models, and sends nothing to Revit")
+    check(tools.TOOLS.get("revit_sprinkler_hydraulics") == (tools.ANALYZE, "run_fragment_read"),
+          "the tool is declared at revit_read's level - it reads and changes nothing")
+    # Phase 1b (docs/46 s13): the spacing and fire water inputs go through untouched.
+    body2 = dict(body, spacing={"hazard": {"7001": "light hazard"}},
+                 water={"include": {"pump": True}, "pump": {"rated_flow_lpm": 2000}})
+    panel.calculate(body2)
+    check(seen["inputs"]["spacing"] == body2["spacing"]
+          and seen["inputs"]["water"] == body2["water"],
+          "Calculate hands the spacing and fire water inputs to the hook as the page sent them")
+    check(panel.calculate(dict(body, water="not a map"))["ok"] is False,
+          "fire water inputs that are not a map are refused - nothing is calculated")
+    shown = panel.current()
+    check(shown["water_parts"] and shown["water_fields"].get("pump")
+          and shown["spacing_fields"] and shown["hazard_classes"],
+          "the page is sent the fire water questions, the spacing limits and the classes by "
+          "the brain - it holds no list of its own")
+    page = io.open(os.path.join(ROOT, "mcp", "companion", "static", "companion.js"),
+                   encoding="utf-8").read()
+    check("Spacing in each Space" in page and "Fire water - what the source must give" in page
+          and "not included" in page,
+          "the page shows the Spacing and Fire water sections, and says a part not included")
+    check("innerHTML" not in page and "el(\"div\", null, row.why)" in page
+          and "[row.label, row.level" in page,
+          "Space names and their results reach the page as text only (Golden Rule 19)")
+
+
 def main():
     tmp = tempfile.mkdtemp(prefix="heron-companion-")
     test_live_files(tmp)
@@ -1052,6 +1162,10 @@ def main():
         test_finalize_asks_for_nothing_by_typed_ids()
     except Exception as why:                    # noqa: BLE001 - reported, not hidden
         check(False, "the Finalize checks ran to the end (they raised %r)" % (why,))
+    try:
+        test_sprinkler_panel()
+    except Exception as why:                    # noqa: BLE001 - reported, not hidden
+        check(False, "the Sprinkler panel checks ran to the end (they raised %r)" % (why,))
     test_no_way_to_an_ai()
     test_addin_side()
 

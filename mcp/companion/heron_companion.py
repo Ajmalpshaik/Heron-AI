@@ -81,6 +81,8 @@ PAGES = {
     # The Loads panel's 3D view: a renderer of its own, so nothing is fetched
     # from the internet (docs/44 s12).
     "/loads3d.js": ("loads3d.js", "text/javascript; charset=utf-8"),
+    # The Sprinkler panel's 3D view - pipes as lines, heads as dots (docs/46).
+    "/sprinkler3d.js": ("sprinkler3d.js", "text/javascript; charset=utf-8"),
     "/companion.css": ("companion.css", "text/css; charset=utf-8"),
 }
 
@@ -870,6 +872,207 @@ class LoadsPanel(object):
 LOADS_PANEL = LoadsPanel()
 
 
+class SprinklerPanel(object):
+    """
+    The Sprinkler panel a chat opens with revit_sprinkler_hydraulics (docs/46
+    section 7) - one system at a time, the newest replacing the last.
+
+    IT HOLDS DATA AND CALLS HOOKS - NOTHING ELSE (README rule 4). Every number,
+    colour and question on it was worked out in brain/ (heron_sprinkler_*);
+    Calculate, Suggest, the network check and Report each call a hook the MCP
+    server sets, and with none set they answer that the chat is gone and do
+    nothing. The network a run was made from is kept here so Calculate never
+    asks Revit again. Phase 1 writes nothing to Revit, so there is no Finalize.
+    """
+
+    GONE = LoadsPanel.GONE
+    REPORT_KINDS = LoadsPanel.REPORT_KINDS
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._held = None
+        self._network = None
+        #: Set by the MCP server. calculate_hook(network, inputs, identity) ->
+        #: brain answer; suggest_hook(network, inputs) -> {"ok", "heads",
+        #: "said"}; confirm_hook(network, result, identity) -> {"ok", "said"};
+        #: report_hook(network, result, folder) -> {"ok", "said", "html", "pdf"}.
+        self.calculate_hook = None
+        self.suggest_hook = None
+        self.confirm_hook = None
+        self.report_hook = None
+        self.folder_hook = pick_folder
+
+    def open(self, document, answer, identity=None, read_at=None):
+        result = answer.get("result") or {}
+        with self._lock:
+            self._network = answer.get("network")
+            self._held = {
+                "document": document, "at": time.strftime("%H:%M:%S"),
+                "read_at": read_at or time.strftime("%H:%M:%S"),
+                "identity": list(identity) if identity else None,
+                "system": result.get("system"), "status": result.get("status"),
+                "qa": list(answer.get("qa") or []), "asked": list(answer.get("asked") or []),
+                "refused": list(result.get("refused") or []),
+                "inputs": result.get("inputs"), "source": result.get("source"),
+                "types": answer.get("types") or {}, "fittings": answer.get("fittings") or {},
+                "sources": answer.get("sources") or [],
+                "fields": answer.get("fields") or [],
+                "water_fields": answer.get("water_fields") or {},
+                "water_parts": answer.get("water_parts") or [],
+                "hazard_classes": answer.get("hazard_classes") or [],
+                "spacing_fields": answer.get("spacing_fields") or [],
+                "spacing_offers": answer.get("spacing_offers") or {},
+                "spacing": result.get("spacing"), "water": result.get("water"),
+                "answer": result.get("answer"), "notes": list(result.get("notes") or []),
+                "run_id": result.get("run_id"), "said": answer.get("said"),
+                "confirmed": bool(answer.get("confirmed")), "report": None,
+                "report_folder": None, "view": answer.get("view"), "result": result}
+
+    def current(self):
+        with self._lock:
+            if not self._held:
+                return None
+            held = dict(self._held)
+        held.pop("result", None)
+        held["has_view"] = bool(held.pop("view", None))
+        return json.loads(json.dumps(held))
+
+    def view(self):
+        """The 3D view's data for the run on the page - drawn by the page, made in brain/."""
+        with self._lock:
+            got = self._held.get("view") if self._held else None
+            return json.loads(json.dumps(got)) if got else None
+
+    def _snapshot(self):
+        with self._lock:
+            if not self._held:
+                return None, None, None
+            return (self._network, self._held.get("result"),
+                    list(self._held["identity"]) if self._held.get("identity") else None)
+
+    @staticmethod
+    def _inputs(body):
+        if not isinstance(body, dict):
+            return None
+        out = {}
+        for part in ("criteria", "k", "fittings", "standards", "spacing", "water"):
+            if not isinstance(body.get(part, {}), dict):
+                return None
+            out[part] = body.get(part) or {}
+        operating = body.get("operating") or []
+        suggested = body.get("suggested") or []
+        if not isinstance(operating, list) or not isinstance(suggested, list):
+            return None
+        out["operating"] = [str(x) for x in operating]
+        out["suggested"] = [str(x) for x in suggested]
+        if body.get("source"):
+            out["source"] = str(body["source"])
+        return out
+
+    def calculate(self, body):
+        hook = self.calculate_hook
+        if hook is None:
+            return {"ok": False, "said": self.GONE}
+        inputs = self._inputs(body)
+        if inputs is None:
+            return {"ok": False, "said": "the inputs could not be read - nothing was calculated"}
+        network, _result, identity = self._snapshot()
+        if network is None:
+            return {"ok": False, "said": "no sprinkler system is open on this page - ask the "
+                                         "chat to run the hydraulics first"}
+        with self._lock:
+            document = self._held["document"]
+            read_at = self._held.get("read_at")
+        answer = hook(network, inputs, identity)
+        if not isinstance(answer, dict) or answer.get("network") is None:
+            return {"ok": False, "said": (answer or {}).get("said") or self.GONE}
+        self.open(document, answer, identity, read_at)
+        return {"ok": True, "said": answer.get("said"), "sprinkler": self.current()}
+
+    def suggest(self, body):
+        """The remote-area suggestion - ticks for the page; nothing is solved or kept."""
+        hook = self.suggest_hook
+        if hook is None:
+            return {"ok": False, "said": self.GONE}
+        inputs = self._inputs(body)
+        if inputs is None:
+            return {"ok": False, "said": "the inputs could not be read - nothing was suggested"}
+        network, _result, _identity = self._snapshot()
+        if network is None:
+            return {"ok": False, "said": "no sprinkler system is open on this page"}
+        got = hook(network, inputs) or {}
+        return {"ok": bool(got.get("ok")), "said": got.get("said"),
+                "heads": list(got.get("heads") or [])}
+
+    def confirm(self):
+        """Gate 1: the modeller says the network and its K-factors are right (docs/46 s6)."""
+        hook = self.confirm_hook
+        if hook is None:
+            return {"ok": False, "said": self.GONE}
+        network, result, identity = self._snapshot()
+        if network is None or not result or result.get("status") != "ok":
+            return {"ok": False, "said": "nothing has been solved yet, so there is no network "
+                                         "to confirm"}
+        got = hook(network, result, identity) or {}
+        if got.get("ok"):
+            with self._lock:
+                if self._held is not None and self._held.get("result") is result:
+                    self._held["confirmed"] = True
+        return {"ok": bool(got.get("ok")), "said": got.get("said")}
+
+    def report(self, body=None):
+        """The hydraulic calculation sheet. With {"ask": true} the modeller is asked where
+        it goes first; Cancel writes nothing (as the Loads panel's Report)."""
+        hook = self.report_hook
+        if hook is None:
+            return {"ok": False, "said": self.GONE}
+        network, result, _identity = self._snapshot()
+        if network is None or not result:
+            return {"ok": False, "said": "nothing has been calculated yet, so there is no "
+                                         "report to write"}
+        folder, note = None, ""
+        if isinstance(body, dict) and body.get("ask"):
+            with self._lock:
+                start = self._held.get("report_folder") if self._held else None
+            picked = (self.folder_hook or pick_folder)(
+                start, title="Where should Heron save the sprinkler calculation?") or {}
+            if picked.get("cancelled"):
+                return {"ok": False, "said": "No folder was chosen, so no report was written."}
+            folder = picked.get("folder")
+            if not folder:
+                note = ("The folder window could not open (%s), so the report went to the "
+                        "usual place. " % (picked.get("unavailable") or "no answer"))
+        got = hook(network, result, folder) or {}
+        with self._lock:
+            if self._held is not None and got.get("ok"):
+                self._held["report"] = dict(
+                    {k: got.get(k) for k in ("html", "pdf", "csv", "pipes_csv", "said",
+                                             "folder")},
+                    token=secrets.token_urlsafe(24))
+                if folder:
+                    self._held["report_folder"] = folder
+        return dict(got, ok=bool(got.get("ok")), said=note + (got.get("said") or ""))
+
+    def report_file(self, token, kind):
+        """(path, content type) of a file the LAST report wrote, for the key the page was
+        given - else None. Never a path from the request."""
+        with self._lock:
+            report = dict((self._held or {}).get("report") or {})
+        key = report.get("token")
+        if not key or not isinstance(token, str) or not secrets.compare_digest(
+                token.encode("utf-8"), key.encode("utf-8")):
+            return None
+        content_type = self.REPORT_KINDS.get(kind)
+        path = report.get(kind) if content_type else None
+        if not path or not os.path.isfile(path):
+            return None
+        return path, content_type
+
+
+#: This process's Sprinkler panel - one chat's.
+SPRINKLER_PANEL = SprinklerPanel()
+
+
 def companion_dir():
     """Where each chat leaves the note the Companion button in Revit reads -
     HeronPaths.Companion, mirrored (D-109)."""
@@ -1242,7 +1445,11 @@ class _Handler(http.server.BaseHTTPRequestHandler):
         if not self.owner.knows(self._cookie()):
             return self._refuse(403, "not paired")
         parts = path.split("/")
-        got = LOADS_PANEL.report_file(parts[2], parts[3]) if len(parts) == 4 else None
+        # The key was issued by one panel; each checks only its own.
+        got = None
+        if len(parts) == 4:
+            got = (LOADS_PANEL.report_file(parts[2], parts[3])
+                   or SPRINKLER_PANEL.report_file(parts[2], parts[3]))
         if got is None:
             return self._refuse(404, "not found")
         try:
@@ -1351,6 +1558,16 @@ class _Handler(http.server.BaseHTTPRequestHandler):
                 if name == "id":
                     run_id = value
             return self._json(200, {"ok": True, "run": LOADS_PANEL.earlier(run_id)})
+        if path == "/api/sprinkler":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "sprinkler": SPRINKLER_PANEL.current()})
+        if path == "/api/sprinkler/view":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "view": SPRINKLER_PANEL.view()})
         if path.startswith("/report/"):
             return self._report_file(path)
         return self._refuse(404, "not found")
@@ -1413,6 +1630,23 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if path.endswith("/confirm"):
                 return self._json(200, LOADS_PANEL.confirm())
             return self._json(200, LOADS_PANEL.finalize())
+        if path in ("/api/sprinkler/calculate", "/api/sprinkler/suggest",
+                    "/api/sprinkler/confirm", "/api/sprinkler/report"):
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 1048576)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except (ValueError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            if path.endswith("/calculate"):
+                return self._json(200, SPRINKLER_PANEL.calculate(body))
+            if path.endswith("/suggest"):
+                return self._json(200, SPRINKLER_PANEL.suggest(body))
+            if path.endswith("/confirm"):
+                return self._json(200, SPRINKLER_PANEL.confirm())
+            return self._json(200, SPRINKLER_PANEL.report(body))
         if path == "/api/changes/clear":
             why = self._api_ok()
             if why:

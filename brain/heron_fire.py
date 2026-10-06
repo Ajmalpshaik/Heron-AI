@@ -197,7 +197,7 @@ def _absent(view, key, unit, why, required, reference):
     if required:
         view.answer.need(view.name(key), unit, why, reference)
     elif not view.prefix:
-        view.answer.optional_input(key, unit, why)
+        view.answer.optional_input(key, unit, why, reference)
     return None
 
 
@@ -1690,6 +1690,26 @@ def calc_hydraulic(a):
             a.check("OK", "no sprinkler sees more than the %s given" % pressure_text(pmax))
     if supply is not None:
         _supply_lines(a, supply, total, p_source, margin)
+    # THE SAME NUMBERS AS NUMBERS, for a caller that draws or reports them -
+    # the Sprinkler panel (docs/46). The tables above are text; this is what
+    # they were printed from, so nothing downstream parses a table.
+    a.data = {
+        "governing": governing, "demand_lpm": demand, "source": source,
+        "source_bar": pressures[source], "supply_bar": p_source,
+        "hose_lpm": hose or 0.0, "total_lpm": total,
+        "heads": dict((h, {"k": nodes[h]["k"], "q_req_lpm": nodes[h]["q_req"],
+                           "p_req_bar": nodes[h]["p_req"],
+                           "q_lpm": head_flow(nodes[h]["k"], pressures[h]),
+                           "p_bar": pressures[h]}) for h in heads),
+        "pressures": dict(pressures),
+        "pipes": [{"index": i, "from": p["a"], "to": p["b"], "q_lpm": q,
+                   "v_ms": velocity_ms(abs(q), p["bore"]),
+                   "loss_bar": p["r"] * abs(q) ** HW_EXPONENT, "bore_mm": p["bore"],
+                   "c": p["c"], "length_m": p["length"], "eq_m": p["eq"]}
+                  for i, (p, q) in enumerate(zip(pipes, flows))],
+        "supply": None if supply is None else {
+            "static_bar": supply[0], "residual_bar": supply[1], "test_flow_lpm": supply[2],
+            "at_demand_bar": supply_pressure(supply[0], supply[1], supply[2], total)}}
     _check_standard(a, held["sprinkler_standard"], "the method and the figures offered are",
                     family)
     a.uses("node pressures solved by Newton's method so every node balances: Hazen-Williams "
@@ -1710,6 +1730,81 @@ def calc_hydraulic(a):
                  "sprinkler's K-factor this calculation takes; SET_MEP_SIZE changes a pipe "
                  "that needs to be bigger; REPORT_MEP_PRESSURE_DROP reads Revit's own figure, "
                  "which by default is Darcy-Weisbach and not this one")
+
+
+def hydraulic_offers(standard=None):
+    """
+    {criterion: the sentence offering the standard's figure} for what `hydraulic`
+    asks - for a caller that asks the criteria BEFORE it has a network to run
+    (the Sprinkler panel, docs/46). The engine's own offer functions, so the
+    text has one home. Offered beside the question, never applied (D-33).
+    """
+    family = family_said(standard)
+    shown = family or "nfpa"
+    return {"density_mm_min": _design_offer(shown, None, "density"),
+            "design_area_m2": _design_offer(shown, None, "area"),
+            "hose_allowance_lpm": _design_offer(shown, None, "hose"),
+            "min_pressure_bar": _min_pressure_offer(family),
+            "c_factor": _c_offer(family),
+            "max_velocity_ms": _rules_offer("en12845_rules", ("velocity",))
+            if family == "en" else None}
+
+
+def spacing_offers(hazard=None, standard=None):
+    """
+    {criterion: the sentence offering the standard's figure} for the limits
+    `sprinkler_spacing` asks - for one hazard class, for a caller that asks
+    them before it has a layout to check (the Sprinkler panel, docs/46 s13).
+    The engine's own offer functions, so the text has one home. Offered,
+    never applied (D-33).
+    """
+    family = family_said(standard)
+    shown = family or "nfpa"
+    key = hazard_key(hazard, shown) if hazard else None
+    return {"max_spacing_m": _spacing_offer(key, "maximum spacing and area", shown),
+            "max_area_m2": _spacing_offer(key, "maximum area and spacing", shown),
+            "max_wall_distance_m": _wall_offer(shown),
+            "min_spacing_m": _least_spacing_offer(shown),
+            "min_wall_distance_m": _rule("sprinkler_rules", "minimum distance to a wall")
+            if shown == "nfpa" else None}
+
+
+def fields(name):
+    """
+    The inputs a calculation reads, DERIVED by running it on nothing:
+    [{"input", "unit", "why", "required"}] - so a page that asks for them holds
+    no list of its own. Inputs asked only once others are given (a flow
+    test's second figure) appear when the calculation is run with them.
+    """
+    entry = CALCULATIONS[name]
+    answer = Answer(name, {})
+    try:
+        entry["run"](answer)
+    except Refused:
+        pass
+    out, seen = [], set()
+    for m in answer.missing:
+        if m["input"] not in seen:
+            seen.add(m["input"])
+            out.append({"input": m["input"], "unit": m.get("unit"), "why": m.get("why"),
+                        "required": True, "offer": m.get("reference")})
+    for o in answer.optional:
+        if o[0] not in seen:
+            seen.add(o[0])
+            out.append({"input": o[0], "unit": o[1], "why": o[2], "required": False,
+                        "offer": o[3] if len(o) > 3 else None})
+    return out
+
+
+def family_said(standard):
+    """'nfpa', 'en' or 'fm' for a sprinkler standard AS A PERSON SAYS IT - "BS EN 12845",
+    "NFPA 13 2022" - read through standard_value first; None when unknown or other."""
+    if not standard:
+        return None
+    try:
+        return family_of(standard_value("sprinkler_standard", standard))
+    except Refused:
+        return family_of(standard)
 
 
 @calculation("water_supply", "Water supply against a demand - a flow test's curve", "supply")
@@ -1737,8 +1832,46 @@ def calc_water_supply(a):
     _supply_lines(a, supply, total, p, margin)
     a.result("Most flow at that pressure", flow_text(supply_flow(supply[0], supply[1],
                                                                 supply[2], p)))
+    have = supply_pressure(supply[0], supply[1], supply[2], total)
+    a.data = {"demand_lpm": total, "demand_bar": p, "at_demand_bar": have,
+              "margin_bar": have - p}
     if not hose:
         a.assume("no hose allowance given, so none added")
+
+
+@calculation("combined_demand", "Demands that run at the same time, at one source", "supply")
+def calc_combined_demand(a):
+    """The flow and pressure one source must give to demands that run at the same time - sprinklers with their hose allowance, standpipes, hose reels - each given as its own flow and the pressure it needs AT THAT SOURCE: the flows add, and the source must give the highest of the pressures. Each demand's own path is not solved together with the others, and the answer says so."""
+    demands = a.records("demands", "each demand that runs at the same time: {name, flow_lpm, "
+                        "pressure_bar} - the pressure it needs at this same source")
+    rows = []
+    if demands:
+        for v in demands:
+            name = v.text("name") or v.name("name")
+            q = flow_lpm(v, "this demand's flow")
+            p = pressure_bar(v, "the pressure this demand needs at the source")
+            if q is not None and p is not None:
+                rows.append((name, q, p))
+    if a.incomplete():
+        return
+    if not rows:
+        a.refuse("no demand was given")
+        return
+    total = sum(q for _n, q, _p in rows)
+    governing = max(rows, key=lambda r: r[2])
+    a.table("Demands at the source", ("demand", "L/min", "bar at the source"),
+            [[n, _f(q, 1), _f(p, 3)] for n, q, p in rows])
+    a.result("Total flow", flow_text(total))
+    a.result("Pressure the source must give", "%s - %s's" % (pressure_text(governing[2]),
+                                                              governing[0]))
+    if len(rows) > 1:
+        a.check("WARN", "each demand's own path is not solved together with the others: the "
+                        "pressure is the highest any one needs at the source, at the total flow "
+                        "- a combined network solve would carry each demand's share of the "
+                        "shared pipe, and can ask more")
+    a.data = {"flow_lpm": total, "pressure_bar": governing[2], "governing": governing[0]}
+    a.uses("total flow = the sum of the demands that run at the same time; the source must "
+           "give the highest pressure any of them needs there")
 
 
 @calculation("water_storage", "Fire water storage volume", "supply")
@@ -1796,6 +1929,7 @@ def calc_water_storage(a):
     _check_standard(a, held["sprinkler_standard"], "the durations offered are", family)
     _check_authority(a, held["fire_authority"], "the storage duration and volume by "
                      "occupancy")
+    a.data = {"effective_m3": volume, "total_m3": total}
     a.uses("volume = sum of each demand's flow x its own duration; every demand listed is "
            "taken as running at the same time, as given")
     a.cite(SRC_STORAGE)
@@ -2612,6 +2746,7 @@ def calc_sprinkler_spacing(a):
     lines = _rows_of(points, ax, tol)
     rows = []
     fails = []
+    per_head = {}
     for li, (coord, members) in enumerate(lines):
         for mi, p in enumerate(members):
             pid, x, y = p
@@ -2647,6 +2782,10 @@ def calc_sprinkler_spacing(a):
                 bad.append("neighbour %s m" % _f(near / 1000.0, 2))
             if wmin is not None and wall < wmin * 1000.0 - 1e-6:
                 bad.append("wall %s m close" % _f(wall / 1000.0, 2))
+            per_head[pid] = {"s_m": s / 1000.0, "l_m": l_ / 1000.0, "area_m2": s * l_ / 1e6,
+                             "end_wall_m": None if far_wall is None else far_wall / 1000.0,
+                             "nearest_m": None if near is None else near / 1000.0,
+                             "fails": list(bad)}
             rows.append([pid, _f(s / 1000.0, 2), _f(l_ / 1000.0, 2), _f(s * l_ / 1e6, 2),
                          "-" if far_wall is None else _f(far_wall / 1000.0, 2),
                          "-" if near is None else _f(near / 1000.0, 2),
@@ -2666,6 +2805,9 @@ def calc_sprinkler_spacing(a):
     _limits_not_checked(a, smin, wmin, family)
     worst, wx, wy, _samples = farthest_point(outline, points, 250.0)
     reach = math.sqrt(amax / 2.0)
+    a.data = {"heads": per_head, "lines": len(lines),
+              "farthest": {"x_mm": wx, "y_mm": wy, "distance_m": worst / 1000.0,
+                           "beyond_m": reach}}
     if worst > reach * 1000.0 + 1e-6:
         a.check("WARN", "a point at x %s y %s mm is %s m from every sprinkler - more than "
                         "the %s m half-diagonal of the largest square module allowed; a part "
@@ -3204,6 +3346,7 @@ def calc_fire_pump(a):
         return
     curve = [(0.0, churn), (rated_q, rated_p), (1.5 * rated_q, p150)]
     rules = REFERENCES["fire_pump_rules"]
+    at = None
     a.result("Rated point", "%s at %s" % (flow_text(rated_q), pressure_text(rated_p)))
     a.check("OK" if churn <= 1.40 * rated_p + 1e-12 else "FAIL",
             "churn %s is %s %% of rated - NFPA 20 allows at most 140 %%"
@@ -3240,6 +3383,8 @@ def calc_fire_pump(a):
                     "%s against the %s the components are rated to%s" % (
                         pressure_text(top), pressure_text(pmax),
                         "" if top <= pmax else " - a pressure relief or a lower-pressure pump"))
+    a.data = {"rated_lpm": rated_q, "rated_bar": rated_p, "at_demand_bar": at,
+              "ok": not any(level == "FAIL" for level, _t in a.checks)}
     for r in rules["rows"]:
         a.uses("%s: %s" % (r[0], r[1]))
     a.uses("the pump's net pressure between its three points by the parabola through them")
@@ -3324,6 +3469,7 @@ def calc_standpipe(a):
                 % (rule[1] if rule else "a pressure-regulating landing valve above 7 bar"))
     _check_authority(a, held["fire_authority"], "landing valves, hose reels and their "
                      "pressures")
+    a.data = {"flow_lpm": total, "source_bar": need}
     a.uses("flow = the first standpipe + each additional, to the most given; pressure at the "
            "source = the outlet's residual + rise x 0.0979 bar/m + friction")
     a.cite(REFERENCES["standpipe_rules"]["source"])
@@ -3373,6 +3519,8 @@ def calc_hose_reels(a):
         a.check("WARN", "the UAE code is reported to ask %s"
                 % (rule[1] if rule else "4.5 bar at the most remote reel"))
     _check_authority(a, held["fire_authority"], "hose reels, their flow and their pressure")
+    a.data = {"flow_lpm": total, "source_bar": need,
+              "volume_m3": total * duration / 1000.0 if duration else None}
     a.uses("flow = reels at once x each one's flow; pressure at the source = the reel's + rise x "
            "0.0979 bar/m + friction")
     a.cite(REFERENCES["hose_reel_rules"]["source"])

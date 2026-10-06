@@ -1111,6 +1111,109 @@ def beyond_nfpa():
     print()
 
 
+def numbers_as_data():
+    print("10. the hydraulic answer carries its own numbers as data (docs/46)")
+    tree = run("hydraulic", dict(STD, source="S", c_factor=120, min_pressure_bar=0.5,
+                                 density_mm_min=4.1,
+                                 nodes=[{"id": "S", "elevation_m": 0},
+                                        {"id": "T", "elevation_m": 3},
+                                        {"id": "A", "elevation_m": 3, "k_lpm_bar": 80,
+                                         "area_per_sprinkler_m2": 12},
+                                        {"id": "B", "elevation_m": 3, "k_lpm_bar": 80,
+                                         "area_per_sprinkler_m2": 12}],
+                                 pipes=[{"from": "S", "to": "T", "length_m": 3,
+                                         "bore_mm": 52.48},
+                                        {"from": "T", "to": "A", "length_m": 4,
+                                         "bore_mm": 26.64},
+                                        {"from": "T", "to": "B", "length_m": 7,
+                                         "bore_mm": 26.64}]))
+    d = tree["data"]
+    check(tree["status"] == "ok" and d["governing"] == "B" and d["source"] == "S",
+          "the governing head and the source are in data - the farther head governs")
+    check(near(d["demand_lpm"], first_number(result(tree, "Sprinkler demand")), 1e-3)
+          and near(d["source_bar"], first_number(result(tree, "Pressure at S")), 1e-3),
+          "data's demand and source pressure are the numbers the results print")
+    into_t = sum(p["q_lpm"] for p in d["pipes"] if p["to"] == "T")
+    out_t = sum(p["q_lpm"] for p in d["pipes"] if p["from"] == "T")
+    check(near(into_t, out_t, 1e-6) and near(out_t, d["demand_lpm"], 1e-6),
+          "pipe flows in data balance at the tee and equal the demand")
+    b = d["heads"]["B"]
+    check(near(b["p_bar"], b["p_req_bar"], 1e-6) and b["q_lpm"] >= b["q_req_lpm"] - 1e-9
+          and near(d["pressures"]["A"], d["heads"]["A"]["p_bar"], 1e-12),
+          "the governing head runs at exactly its need; every head's pressure is in data")
+    print()
+
+
+def water_and_spacing_as_data():
+    print("11. the fire water and spacing answers carry their numbers; offers and fields by name")
+    QC = dict(STD, fire_authority="QCDD")
+    sp = run("standpipe", dict(QC, standpipe_class="i", standpipes=1, first_flow_lpm=1893,
+                               outlet_pressure_bar=6.9, height_m=30))
+    check(sp["status"] == "ok" and near(sp["data"]["flow_lpm"], 1893, 1e-12)
+          and near(sp["data"]["source_bar"], first_number(result(sp, "Pressure at the source")),
+                   1e-3),
+          "standpipe: data's flow and source pressure are the numbers its results print")
+    hr = run("hose_reels", dict(QC, reels_operating=2, reel_flow_lpm=30, reel_pressure_bar=2,
+                                height_m=10, duration_min=60))
+    check(hr["status"] == "ok" and hr["data"]["flow_lpm"] == 60
+          and near(hr["data"]["volume_m3"], 3.6, 1e-12),
+          "hose reels: flow, source pressure and water for the duration are in data")
+    st = run("water_storage", dict(QC, sprinkler_flow_lpm=1000, duration_min=60,
+                                   hose_allowance_lpm=950, unusable_volume_m3=5,
+                                   other_demands=[{"name": "hose reels", "flow_lpm": 60,
+                                                   "duration_min": 60}]))
+    check(st["status"] == "ok" and near(st["data"]["effective_m3"], 120.6, 1e-12)
+          and near(st["data"]["total_m3"], 125.6, 1e-12),
+          "storage: the effective volume is every demand's flow over its own duration, plus "
+          "the unusable volume in total")
+    pump = run("fire_pump", dict(QC, rated_flow_lpm=2000, rated_pressure_bar=8,
+                                 churn_pressure_bar=10, pressure_at_150_bar=6,
+                                 demand_flow_lpm=2500, demand_pressure_bar=9,
+                                 suction_pressure_bar=0))
+    check(pump["status"] == "ok" and pump["data"]["ok"] is False
+          and pump["data"]["at_demand_bar"] is not None and pump["data"]["at_demand_bar"] < 9,
+          "pump: a pump short of the demand says so in data as well as in its FAIL")
+    ws = run("water_supply", {"supply_static_bar": 6, "supply_residual_bar": 4,
+                              "supply_test_flow_lpm": 3000, "demand_flow_lpm": 1500,
+                              "demand_pressure_bar": 4})
+    check(ws["status"] == "ok" and near(ws["data"]["margin_bar"],
+                                        ws["data"]["at_demand_bar"] - 4, 1e-12),
+          "water supply: the pressure the test gives at the demand, and the margin, in data")
+    room = run("sprinkler_spacing", dict(STD, hazard="light", branch_axis="x",
+                                         outline_mm=[[0, 0], [6000, 0], [6000, 4000], [0, 4000]],
+                                         sprinklers=[{"id": "a", "x": 1500, "y": 1000},
+                                                     {"id": "b", "x": 4500, "y": 1000},
+                                                     {"id": "c", "x": 1500, "y": 3000},
+                                                     {"id": "d", "x": 4500, "y": 3000}],
+                                         max_spacing_m=4.6, max_area_m2=20.9,
+                                         max_wall_distance_m=2.3))
+    heads = room["data"]["heads"]
+    check(room["status"] == "ok" and sorted(heads) == ["a", "b", "c", "d"]
+          and all(h["s_m"] == 3.0 and h["l_m"] == 2.0 and not h["fails"] for h in heads.values()),
+          "spacing: each head's S, L and its failures are in data - 3 m by 2 m, none failing")
+    offers = F.spacing_offers("OH1")
+    check("ordinary hazard" in (offers["max_spacing_m"] or "").lower()
+          and "light hazard" not in (offers["max_spacing_m"] or "").lower(),
+          "the spacing offers are the class's own figures")
+    both = run("combined_demand", {"demands": [
+        {"name": "sprinklers", "flow_lpm": 1000, "pressure_bar": 4},
+        {"name": "standpipes", "flow_lpm": 1893, "pressure_bar": 9.8}]})
+    check(both["status"] == "ok" and both["data"]["flow_lpm"] == 2893
+          and both["data"]["pressure_bar"] == 9.8 and both["data"]["governing"] == "standpipes"
+          and any("not solved together" in t for t in checks(both, "WARN")),
+          "combined demand: the flows add, the highest pressure governs, and it says the "
+          "paths are not solved together")
+    off = F.fields("hose_reels")
+    check(any(f["input"] == "duration_min" and f["offer"] for f in off),
+          "fields() carries the offer of an optional input too")
+    check(F.family_said("BS EN 12845") == "en" and F.family_said("NFPA 13-2022") == "nfpa",
+          "a standard as a person says it is read through standard_value before its family")
+    pump_fields = dict((f["input"], f["required"]) for f in F.fields("fire_pump"))
+    check(pump_fields.get("rated_flow_lpm") is True and pump_fields.get("demand_flow_lpm") is False,
+          "fields() derives what a calculation reads, required or not, by running it on nothing")
+    print()
+
+
 def main():
     physics()
     solver()
@@ -1121,6 +1224,8 @@ def main():
     refusals()
     reaches_nothing_and_keeps_once()
     beyond_nfpa()
+    numbers_as_data()
+    water_and_spacing_as_data()
 
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))

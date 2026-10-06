@@ -1884,6 +1884,50 @@ def _loads_confirm(takeoff, result, identity=None):
     return got
 
 
+# ---------------------------------------------------------------------------
+# The Sprinkler panel's hooks (docs/46 section 7). None of them touches the
+# model: the brain works on the network the panel already holds. Phase 1 has
+# no Finalize - nothing is written back.
+# ---------------------------------------------------------------------------
+
+def _sprinkler_calculate(network, inputs, identity):
+    with _revit_lock:
+        moved = _moved_since(identity)
+    if moved:
+        return {"said": moved, "network": None}
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    answer = brain.sprinkler_hydraulics(network, inputs, project=pinned.project_key,
+                                        project_name=pinned.title)
+    _note("companion_sprinkler_calculate", started, time.time() - clock, reply=answer["said"])
+    return answer
+
+
+def _sprinkler_suggest(network, inputs):
+    return brain.sprinkler_suggest(network, inputs)
+
+
+def _sprinkler_confirm(network, result, identity=None):
+    with _revit_lock:
+        moved = _moved_since(identity)
+    if moved:
+        return {"ok": False, "said": moved}
+    started = time.strftime("%H:%M:%S")
+    got = brain.sprinkler_confirm(network, result, project=pinned.project_key,
+                                 project_name=pinned.title)
+    _note("companion_sprinkler_confirm", started, 0, reply=got.get("said"))
+    return got
+
+
+def _sprinkler_report(network, result, folder=None):
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    got = brain.sprinkler_report(network, result, model_path=pinned.document_path,
+                                 project=pinned.project_key, project_name=pinned.title,
+                                 folder=folder)
+    _note("companion_sprinkler_report", started, time.time() - clock, reply=got.get("said"),
+          outcome=None if got.get("ok") else "refused")
+    return got
+
+
 def _loads_finalize(takeoff, result, identity):
     """
     Finalize (docs/44 s6, gate 2).
@@ -2579,6 +2623,82 @@ def revit_building_loads(inputs: str = "", expect_from: str = "",
         return answer["said"]
     document = reply.get("document")
     companion_page.LOADS_PANEL.open(document, answer, _pin_identity())
+    _open_companion(companion_page)
+    return answer["said"]
+
+
+@server.tool()
+def revit_sprinkler_hydraulics(system: str = "", inputs: str = "",
+                               expect_from: str = "") -> str:
+    """
+    Run the hydraulic calculation of one sprinkler system in the open model -
+    docs/46. Heron reads the fire protection piping system from Revit
+    (REPORT_SPRINKLER_NETWORK, which changes nothing) - every pipe, fitting,
+    valve and sprinkler and how they connect - solves it with its fire
+    engine's hydraulic calculation, and opens the Sprinkler panel in the
+    Heron Companion with the network in 3D, the questions, and the results.
+
+    Use when the user asks to "run the hydraulics on this sprinkler system",
+    "do the sprinkler hydraulic calculation", "what pressure does the riser
+    need for this system", "check the sprinkler system's demand".
+
+    `system` is the system's name as the System Browser shows it; empty means
+    the system of what is selected, else the only fire protection system in
+    the model. With none chosen, the answer lists the systems - ask which.
+
+    `inputs` is a JSON object of what the modeller has answered so far:
+    {"standards": {"sprinkler_standard": "NFPA 13-2022"},
+     "criteria": {"density_mm_min": 4.1, "area_per_sprinkler_m2": 12,
+                  "design_area_m2": 139, "min_pressure_bar": 0.5, "c_factor": 120},
+     "k": {"<sprinkler type id>": 80}, "fittings": {"<kind>|DN50": 3.05},
+     "operating": ["<sprinkler id>", ...], "source": "<point id>"}.
+    Answers are kept with the open model's project, so they are not asked
+    twice; the panel is the easier place to give them.
+
+    HERON SUPPLIES NO DESIGN VALUE THE MODELLER DID NOT GIVE (D-33). While
+    anything is missing, nothing is solved and the answer lists what to ask,
+    each with the standard's figure offered - put them to the modeller, never
+    fill them in yourself. The K-factor of each sprinkler type is the
+    modeller's to confirm: Revit's stored value is shown, never trusted. The
+    remote area is the modeller's ticks; the panel's Suggest only proposes.
+
+    It READS ONLY and writes nothing to Revit. You are told only the totals;
+    the tables, the 3D view and the sheet (Report) are on the Companion page.
+    It is a design aid, not a listed hydraulic program - the fire consultant
+    and the authority (QCDD in Qatar) approve the design.
+    """
+    companion_page = _companion_module()
+    if not companion_page.enabled():
+        return ("The Heron Companion is switched off in Revit, so the sprinkler system was not "
+                "read. To turn it on, click the arrow under the Companion button on the "
+                "Heron tab.")
+    out = {}
+    said = _through(revit_read, reply_out=out)(
+        "REPORT_SPRINKLER_NETWORK", "systemName=" + ((system or "").strip() or "*"),
+        expect_from)
+    reply = out.get("reply")
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return said
+    # THE PIN'S REFUSAL STANDS, as in revit_building_loads.
+    if pinned.check(reply):
+        return said
+    provides = reply.get("provides") or {}
+    try:
+        answer = brain.sprinkler_hydraulics(provides.get("networkJson") or "", inputs,
+                                            project=pinned.project_key,
+                                            project_name=pinned.title)
+    except brain.BrainUnavailable as why:
+        return str(why)
+    network = answer.get("network")
+    if network is None:
+        return answer["said"]
+    if network.system is None:
+        names = [s.get("name") for s in network.systems if s.get("name")]
+        return ("No sprinkler system was chosen. %s Ask the modeller which, then call again "
+                "with `system`." % ("The model's fire protection systems: %s." % ", ".join(names)
+                                    if names else "The model has no fire protection piping "
+                                    "system."))
+    companion_page.SPRINKLER_PANEL.open(reply.get("document"), answer, _pin_identity())
     _open_companion(companion_page)
     return answer["said"]
 
@@ -5495,6 +5615,10 @@ if __name__ == "__main__":
         companion_page.LOADS_PANEL.runs_hook = _loads_runs
         companion_page.LOADS_PANEL.run_hook = _loads_run
         companion_page.LOADS_PANEL.confirm_hook = _loads_confirm
+        companion_page.SPRINKLER_PANEL.calculate_hook = _sprinkler_calculate
+        companion_page.SPRINKLER_PANEL.suggest_hook = _sprinkler_suggest
+        companion_page.SPRINKLER_PANEL.confirm_hook = _sprinkler_confirm
+        companion_page.SPRINKLER_PANEL.report_hook = _sprinkler_report
         companion_page.keep(bound_pid=_companion_revit)
     except Exception as why:                         # noqa: BLE001 - never cost the chat
         sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)

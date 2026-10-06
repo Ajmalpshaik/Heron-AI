@@ -1,0 +1,108 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-059
+semantic-identity: "one fire protection piping system's pipes, fittings, valves and sprinklers, and which connector joins which - for a hydraulic calculation"
+kind: filter
+domain: revit.mep
+capability: REPORT_SPRINKLER_NETWORK
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads the network a sprinkler system's hydraulic calculation is solved on
+  (docs/46 section 3): one fire protection piping system - every pipe with its
+  length, inside and nominal diameter; every fitting with its part type and
+  angle; every valve; every sprinkler with the K-factor Revit holds, its level
+  and the Space it sits in; the system's base equipment - and for every
+  element, each piping connector's point, whether it is an End or a Curve (a
+  tap part-way along a pipe), and which connectors it is joined to.
+
+  **Which system.** A name in systemName wins. `*` means the system of what
+  is selected - only when the model read is the one in front - else the only
+  fire protection system in the model. With none chosen it reads no elements
+  and lists the fire protection systems there are.
+
+  **The K-factor is read, never trusted.** Revit's assigned K coefficient
+  crosses raw, beside any K-Factor parameter as Revit displays it; the unit it
+  is held in is not one Heron relies on, so the modeller confirms each type's
+  K on the Companion.
+
+  **The Spaces the heads sit in** (docs/46 section 13.2): each sprinkler
+  carries its Space's id, and every Space a head of the system sits in is
+  listed once with its number, name, level, area and its outline in plan -
+  the first boundary loop, tessellated, in metres - for the spacing check. A
+  Space whose boundary cannot be read is listed with no outline and a finding.
+
+  **It calculates nothing and joins nothing.** Which connectors meet is
+  Revit's answer; turning that into nodes, and the hydraulics, are the brain's
+  (heron_sprinkler_takeoff, heron_fire). A connector joined to nothing is
+  written as joined to nothing - an open end is a finding, never closed.
+
+  **Why one string.** A fragment's list output reaches the caller as its first
+  three names (FRAGMENT-ISSUES 5b-195), and a network needs every element. So
+  it crosses as one JSON string, `networkJson`, format 1.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+    # The system's name, or `*` for the selection's system, else the only
+    # fire protection system. Always sent - the caller passes `*` when the
+    # modeller named none.
+    - name: systemName
+      type: string
+      source: request
+  provides:
+    # The whole network as one JSON string, format 1.
+    - name: networkJson
+      role: result
+      type: string
+    # How many elements of the chosen system were read. Not `elements` - that
+    # name is an element list everywhere else, and a count under it would be
+    # bound into the next fragment (the plan's review, R12).
+    - name: elementCount
+      role: result
+      type: int
+    # Which route chose the system, and what could not be read.
+    - name: findings
+      role: accounting
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. PipingSystem.PipingNetwork, Elements,
+  BaseEquipment and SystemType; Connector.AllRefs, ConnectorType, Domain,
+  Origin, Shape, Radius and AssignedKCoefficient; MechanicalFitting.PartType;
+  Document.GetSpaceAtPoint; SpatialElement.GetBoundarySegments,
+  BoundarySegment.GetCurve and Curve.Tessellate; RBS_PIPE_INNER_DIAM_PARAM, RBS_PIPE_DIAMETER_PARAM
+  and CURVE_ELEM_LENGTH are present 2020 to 2027. The system classification
+  and the part type are read with ToString(), so no enum member a release
+  lacks is named. Lengths are AsDouble() in internal feet, converted here; no
+  units API is touched (the 2021 move). No ElementId is read as a number -
+  each is written with ToString(). There is no RBS_PIPE_ANGLE parameter; the
+  fitting's angle is read by its name, Angle, and is null where a family has
+  none. Only the 2024 reference assemblies were in the container this was
+  written in - the other releases' compile is the gate's to say.
+
+# ROUTING - take-off wording only. "Run the hydraulics on this sprinkler
+# system" is the revit_sprinkler_hydraulics TOOL's, which reads this and
+# solves it; claiming that sentence here would hand a chat raw JSON and no
+# answer (the plan's review, R14; D-01).
+#
+#   "read the sprinkler pipe network for a hydraulic calculation" -> here
+#   "what system are these on"                 -> READ_MEP_SYSTEM
+#   "what connects to what"                    -> TRACE_CONNECTIVITY
+utterances:
+  - read the sprinkler pipe network for a hydraulic calculation
+  - sprinkler hydraulic take-off
+  - take off the fire sprinkler system's pipes, fittings and heads with their connections

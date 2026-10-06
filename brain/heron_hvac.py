@@ -172,7 +172,7 @@ class Inputs(object):
         if required:
             self.answer.need(self.name(key), unit, why, reference)
         elif not self.prefix:
-            self.answer.optional_input(key, unit, why)
+            self.answer.optional_input(key, unit, why, reference)
         return None
 
     def number(self, key, unit, why, low=None, high=None, required=True,
@@ -467,7 +467,7 @@ class Answer(object):
         self.sources = []
         self.assumed = []
         self.next = []
-        self.optional = []       # (input, unit, why) - for the catalogue
+        self.optional = []       # (input, unit, why, reference) - for the catalogue
         self.csv = None
         # The numbers behind the sentences, for a caller that adds answers up
         # (heron_building_loads, docs/44 s5). Empty unless a calculation fills it.
@@ -492,9 +492,11 @@ class Answer(object):
             entry["reference"] = reference
         self.missing.append(entry)
 
-    def optional_input(self, name, unit, why):
+    def optional_input(self, name, unit, why, reference=None):
+        # The offer travels with an optional input too, so a caller that asks
+        # for it before anything is run can offer the standard's figure (D-33).
         if not any(o[0] == name for o in self.optional):
-            self.optional.append((name, unit, why))
+            self.optional.append((name, unit, why, reference))
 
     def refuse(self, sentence):
         if sentence not in self.refused:
