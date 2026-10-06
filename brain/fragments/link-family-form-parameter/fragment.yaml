@@ -1,15 +1,15 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-029
-semantic-identity: "link a particular form's own fields - Visible, a revolve's angles, an extrusion's ends - to family parameters in the family being edited"
+semantic-identity: "link a particular form's own fields - Visible, a revolve's angles, an extrusion's ends - or one nested part's instance fields to family parameters in the family being edited"
 kind: action
 domain: revit.families
 capability: LINK_FAMILY_FORM_PARAMETER
-version: 1
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -26,8 +26,19 @@ purpose: >
   every element of a kind at once - every extrusion together - and a handle
   that may be left out is one extrusion among several.
 
-  **MATERIAL IS LEFT TO SET_FAMILY_FORM_MATERIAL**, which also sets one or puts
-  it back to <By Category>, and is refused here by name.
+  **AND ONE NESTED PART.** A nested family's placed copy has the same button on
+  its instance parameters, and LINK_FAMILY_PARAMETER links every copy of that
+  family together. A pipe support's beam, legs and brace can be four copies of
+  one channel family with four lengths, and four U-bolts each with its own
+  size and Visible: each copy is named by its id and linked alone - its other
+  copies keep their own values. Only the copy's INSTANCE fields: a TYPE field
+  belongs to every copy of that type, and LINK_NESTED_TYPE_PARAMETER links it
+  there - named in the refusal.
+
+  **MATERIAL**: a FORM's is left to SET_FAMILY_FORM_MATERIAL, which also sets
+  one or puts it back to <By Category>, and is refused here by name. A NESTED
+  PART's Material is an instance parameter of its own family, which that tool
+  does not reach, and it is linked here like any other field.
 
   **THE LINKS ARE PAIRS**, field = family parameter, semicolons between; "none"
   in place of a family parameter unlinks. The field is the name in Properties.
@@ -37,9 +48,14 @@ purpose: >
   the same type - or only reports; a field the form lacks, or that Revit will
   not let be linked. Each refusal names the ones that could.
 
-  **THE FORMS ARE NAMED BY THEIR IDS** - the ones the form tools gave back, or
-  REPORT_FAMILY_FORMS read - or SELECTED in the family's window and called
-  `selected`.
+  **THE FORMS AND PARTS ARE NAMED BY THEIR IDS** - the ones the form tools or
+  PLACE_NESTED_FAMILY gave back, or REPORT_FAMILY_FORMS read - or SELECTED in
+  the family's window and called `selected`. Anything else - a model line, a
+  reference plane - is refused and nothing is linked.
+
+  **VERSION 2 (2026-10-06)** adds nested parts. Version 1's proof, on forms,
+  no longer describes the code and is kept below as a record; the fragment is
+  DRAFT until it is proved again.
 
   **EVERY LINK IS READ BACK**, before and after, with what the field reads;
   one that does not read as asked fails the call, and Heron rolls it all back.
@@ -52,8 +68,8 @@ contract:
       type: Document
     - name: uidoc
       type: UIDocument
-    # The forms, by the ids the form tools gave back, commas between - or
-    # `selected`.
+    # The forms and nested parts, by the ids the form tools or
+    # PLACE_NESTED_FAMILY gave back, commas between - or `selected`.
     - name: forms
       type: string
       source: request
@@ -65,7 +81,7 @@ contract:
       source: request
   provides:
     - name: linkReport
-      # Every link asked for, form by form, before and after and what the field
+      # Every link asked for, form by form and part by part, before and after and what the field
       # reads, on ONE line - a list is cut to three entries before anyone reads
       # it.
       role: result
@@ -134,12 +150,20 @@ compatibility-note: >
   read the same 2020 through 2027 (the RevitAPI reference assemblies and their
   XML remarks, read 2026-10-01). A parameter's KIND moved at 2022 -
   `Definition.ParameterType` before, `GetDataType()` from - so both are read by
-  reflection, newest first, as LINK_FAMILY_PARAMETER reads them.
+  reflection, newest first, as LINK_FAMILY_PARAMETER reads them. A nested
+  part is a `FamilyInstance`, its type `FamilyInstance.Symbol`, unchanged 2020
+  through 2027.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "link the handle's visible to Show_Handle"    -> here, one form
 #   "link the elbow's end angle to Bend Angle"    -> here, one form
+#   "link this nested beam's length to Beam Length" -> here, ONE nested copy
+#                                                    by its id
+#   "link the U-bolt length on every copy"        -> LINK_FAMILY_PARAMETER,
+#                                                    every copy of the family
+#   "link the nested type's width to Motor Width" -> LINK_NESTED_TYPE_PARAMETER,
+#                                                    a TYPE value
 #   "link the connector flow to a parameter"      -> LINK_FAMILY_PARAMETER,
 #                                                    every element of a kind
 #   "link the body material to Body Material"     -> SET_FAMILY_FORM_MATERIAL
@@ -152,3 +176,5 @@ utterances:
   - drive this extrusion's end with the Depth parameter
   - link this form's visible field to a family parameter
   - make this part optional in some types
+  - link this nested beam's length to Beam Length
+  - link only this copy's visible to Pipe 2 Visible

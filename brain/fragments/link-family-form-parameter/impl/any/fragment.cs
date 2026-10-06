@@ -17,9 +17,20 @@
 // every element of a category at once - every extrusion together - and a
 // handle that may be left out is one extrusion among several.
 //
-// MATERIAL IS NOT HERE. SET_FAMILY_FORM_MATERIAL links a form's Material, and
-// also sets one or puts it back to <By Category>; two tools for one field
-// would answer the same words two ways, so it is refused here by name.
+// AND ONE NESTED PART AT A TIME (version 2). A nested family's placed copy has
+// the same button on its instance parameters, and LINK_FAMILY_PARAMETER links
+// every copy of that family together. A pipe support's beam, legs and brace
+// can be four copies of one channel family with four lengths: each copy is
+// named by its id and linked alone. Only the copy's INSTANCE fields are here;
+// a TYPE field belongs to every copy of that type and is
+// LINK_NESTED_TYPE_PARAMETER's, named in the refusal.
+//
+// MATERIAL IS NOT HERE FOR A FORM. SET_FAMILY_FORM_MATERIAL links a form's
+// Material, and also sets one or puts it back to <By Category>; two tools for
+// one field would answer the same words two ways, so it is refused for a form
+// by name. A NESTED PART'S Material is an instance parameter of its own family,
+// which SET_FAMILY_FORM_MATERIAL does not reach, so it is linked here like any
+// other field.
 //
 // A LINK REVIT WOULD REFUSE IS REFUSED FIRST, BY NAME - a family parameter that
 // does not exist, holds another kind of value (Revit's own remark: the two
@@ -124,8 +135,25 @@ Func<Definition, Tuple<object, string>> kindOf = definition =>
 
 Func<GenericForm, string> shapeOf = f => f is Extrusion ? "extrusion" : f is Revolution ? "revolve"
     : f is Blend ? "blend" : f is SweptBlend ? "swept blend" : f is Sweep ? "sweep" : "form";
-Func<GenericForm, string> describe = f =>
+// A form by its shape, a nested part by its family and type - the words in
+// the Properties palette's type box - each with its id.
+Func<Element, string> describe = e =>
 {
+    var nested = e as FamilyInstance;
+    if (nested != null)
+    {
+        var label = "?";
+        try
+        {
+            var symbol = nested.Symbol;
+            label = symbol == null ? nested.Name
+                : (symbol.Family == null ? "" : symbol.Family.Name + " : ") + symbol.Name;
+        }
+        catch (Exception) { label = "?"; }
+        return "nested \"" + label + "\" " + e.UniqueId;
+    }
+    var f = e as GenericForm;
+    if (f == null) return e.UniqueId;
     var solid = true;
     try { solid = f.IsSolid; } catch (Exception) { solid = true; }
     return (solid ? "solid " : "void ") + shapeOf(f) + " " + f.UniqueId;
@@ -154,20 +182,24 @@ Func<Parameter, string> reads = p =>
     }
 };
 
-var targets = new List<GenericForm>();
+// The forms and nested parts named - every one a GenericForm or a
+// FamilyInstance, nothing else gets in.
+var targets = new List<Element>();
 var problems = new List<string>();
 // Each link asked for: the field's name, the family parameter's name as typed,
 // and whether it is an unlink.
 var asked = new List<Tuple<string, string, bool>>();
-// Each link to make: the form, its field, the family parameter (null to
-// unlink), the field's name as typed, and what the field is linked to now.
-var plans = new List<Tuple<GenericForm, Parameter, FamilyParameter, string, FamilyParameter>>();
+// Each link to make: the form or nested part, its field, the family parameter
+// (null to unlink), the field's name as typed, and what the field is linked
+// to now.
+var plans = new List<Tuple<Element, Parameter, FamilyParameter, string, FamilyParameter>>();
 
 if (!doc.IsFamilyDocument)
 {
     notAFamily = true;
     refused = "The document in front, \"" + doc.Title + "\", is a project, not a family open in the Family Editor. "
-        + "A form's fields are linked inside the family - open it for editing first (OPEN_FAMILY_FOR_EDITING). "
+        + "A form's or nested part's fields are linked inside the family - open it for editing first "
+        + "(OPEN_FAMILY_FOR_EDITING). "
         + "Nothing was changed.";
 }
 else
@@ -198,17 +230,18 @@ else
             else named.Add(element);
         }
 
+    // In a family open in the Family Editor every FamilyInstance is a nested
+    // family's placed copy.
     foreach (var element in named)
     {
-        var f = element as GenericForm;
-        if (f == null)
-            problems.Add("\"" + (element.Name ?? element.UniqueId) + "\" (" + element.UniqueId + ") is not a form - "
-                + "an extrusion, revolve, blend, sweep or swept blend.");
-        else if (!targets.Any(t => t.Id == f.Id)) targets.Add(f);
+        if (!(element is GenericForm) && !(element is FamilyInstance))
+            problems.Add("\"" + (element.Name ?? element.UniqueId) + "\" (" + element.UniqueId + ") is neither a form - "
+                + "an extrusion, revolve, blend, sweep or swept blend - nor a nested family placed in this one.");
+        else if (!targets.Any(t => t.Id == element.Id)) targets.Add(element);
     }
     if (problems.Count == 0 && targets.Count == 0)
-        problems.Add("No form was named. Name them by the ids the form tools gave back, commas between, or select "
-            + "them and say \"selected\".");
+        problems.Add("No form or nested part was named. Name them by the ids the form tools or PLACE_NESTED_FAMILY "
+            + "gave back, commas between, or select them and say \"selected\".");
 
     // ---- the links --------------------------------------------------------
     var familyParameters = new List<FamilyParameter>();
@@ -300,12 +333,6 @@ else
                 problems.Add("\"" + own + "\" is named twice in the links - say it once.");
                 continue;
             }
-            if (squash(own) == "material")
-            {
-                problems.Add("A form's Material is linked by SET_FAMILY_FORM_MATERIAL, which also sets one or puts it "
-                    + "back to <By Category> - it is left to that tool.");
-                continue;
-            }
             if (wanted.Length == 0)
             {
                 problems.Add("\"" + own + "=\" names no family parameter - write \"" + own + "=none\" to unlink it.");
@@ -326,11 +353,27 @@ else
         foreach (var f in targets)
             foreach (var link in asked)
             {
+                var nested = f as FamilyInstance;
+                if (nested == null && squash(link.Item1) == "material")
+                {
+                    problems.Add("A form's Material is linked by SET_FAMILY_FORM_MATERIAL, which also sets one or puts "
+                        + "it back to <By Category> - it is left to that tool (the " + describe(f) + ").");
+                    continue;
+                }
                 var found = fieldsNamed(f, link.Item1);
                 var linkable = found.Where(canLink).ToList();
                 if (linkable.Count == 0)
                 {
-                    problems.Add(found.Count == 0
+                    // A TYPE FIELD is not on the copy: say whose it is rather
+                    // than "no such field".
+                    var onType = false;
+                    if (found.Count == 0 && nested != null && nested.Symbol != null)
+                        onType = fieldsNamed(nested.Symbol, link.Item1).Count > 0;
+                    problems.Add(onType
+                        ? "\"" + link.Item1 + "\" is a TYPE parameter of the " + describe(f) + " - it belongs to every "
+                          + "copy of that type, and LINK_NESTED_TYPE_PARAMETER links it there. What can be linked on "
+                          + "this copy alone: " + linkableNames(f) + "."
+                        : found.Count == 0
                         ? "The " + describe(f) + " has no field called \"" + link.Item1 + "\". What can be linked on it: "
                           + linkableNames(f) + "."
                         : "Revit does not let \"" + link.Item1 + "\" be linked to a family parameter on the "
@@ -469,8 +512,13 @@ if (refused == null)
     }
     linkReport = string.Join("  ||  ", rows);
 
-    findings.Add(changed + " link(s) changed and " + alreadyLinked + " already as asked, on " + targets.Count
-        + " form(s) - read back from the family.");
+    var nestedCount = targets.Count(t => t is FamilyInstance);
+    findings.Add(changed + " link(s) changed and " + alreadyLinked + " already as asked, on "
+        + (targets.Count - nestedCount) + " form(s) and " + nestedCount + " nested part(s) - read back from the "
+        + "family.");
+    if (nestedCount > 0 && changed > 0)
+        findings.Add("A nested part linked here follows the parameter alone; other copies of the same nested family "
+            + "keep their own values. FLEX_FAMILY shows each copy move on its own.");
     if (plans.Any(p => p.Item3 == null && p.Item5 != null))
         findings.Add("An unlinked field keeps the value it had and can be typed into again in Properties.");
     if (plans.Any(p => p.Item3 != null && p.Item2.Id == new ElementId(BuiltInParameter.IS_VISIBLE_PARAM)))
