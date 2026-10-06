@@ -1,11 +1,11 @@
-# The proof plan for REPORT_SPRINKLER_LAYOUT_SPACES (docs/47, NEEDS-CHECKING group CF).
+# The proof plan for REPORT_SPRINKLER_LAYOUT_SPACES (docs/47, NEEDS-CHECKING group CG).
 #
 #     python tools/batch-prove.py tools/jobs/report-sprinkler-layout-spaces-2026-10-06.yaml --dry-run
 #
 # THE MODEL IS THE OWNER'S TO NAME. It needs an L-shaped office Space with a
 # room-bounding column and a ceiling, and a store Space with one sprinkler in
 # it, on a level not at zero. Run it on a TEST COPY. Reading only - placing is
-# CF4 to CF7, run from the Companion, not here.
+# CG4 to CG7, run from the Companion, not here.
 
 model: the owner's sprinkler layout test model (to be named), Revit 2024
 

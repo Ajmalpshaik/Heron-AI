@@ -30,11 +30,11 @@ FAIL; Apply places one level through the PROVEN `PLACE_FAMILY_INSTANCES` and rea
 - A farthest-point gate would have rejected the rectangle layout's own answer.
 - A head on a re-entrant wall passes the existing check.
 
-**Not run in Revit.** Group CF has the runs. The question that matters most: does a head sent at a z
-land at that height, or one level's elevation off (5b-338)? The read-back says CHECK if it does.
+**Not run in Revit.** Group CG has the runs. The question that matters most: does a head sent at a z
+land at that height, or one level's elevation off (5b-340)? The read-back says CHECK if it does.
 
-**Recorded, not fixed:** 5b-336 (the network read's Spaces by volume), 5b-337 (a head on a wall passes),
-5b-338 (two fragments describe a level's elevation differently).
+**Recorded, not fixed:** 5b-338 (the network read's Spaces by volume), 5b-339 (a head on a wall passes),
+5b-340 (two fragments describe a level's elevation differently).
 
 **Also this sitting:** GitHub Actions stopped starting jobs at about 16:09 - every job failed in three
 seconds with no runner. The likely cause is the private repository's free minutes, used up this month;

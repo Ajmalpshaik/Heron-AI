@@ -146,6 +146,11 @@ compatibility-note: >
 #                                          zero is usually a project setting
 #   "set the room number"               -> WRITE_ELEMENT_PARAMETERS. This
 #                                          fragment only reads
+#   "is volume computation on"          -> REPORT_AREA_VOLUME_COMPUTATIONS -
+#                                          the switch itself, and how many
+#                                          rooms and spaces have a volume
+#   "turn on volume computation"        -> SET_AREA_VOLUME_COMPUTATIONS - the
+#                                          switch `volumeNotComputed` points at
 
 utterances:
   - list the rooms with their areas

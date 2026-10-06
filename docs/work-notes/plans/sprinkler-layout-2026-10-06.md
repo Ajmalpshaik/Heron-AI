@@ -141,7 +141,7 @@ tests/cases.yaml). `FRG-MEP-060`, DRAFT, READ, `heron-agent: HERON-REVIT-SYS-030
 
 ## Task 6 - documents and gates
 
-- [ ] docs/47 §11 built table; docs/README row 47; NEEDS-CHECKING group CF (the read, the ceiling, the
+- [ ] docs/47 §11 built table; docs/README row 47; NEEDS-CHECKING group CG (the read, the ceiling, the
   height of a placed head - the z question, a real L-shaped room, Apply with Changes off); HANDOVER row
   and note; the proof job `tools/jobs/report-sprinkler-layout-spaces-2026-10-06.yaml`.
 - [ ] All gates; browser check of the panel on a test room; push; draft PR.
@@ -159,7 +159,7 @@ tests/cases.yaml). `FRG-MEP-060`, DRAFT, READ, `heron-agent: HERON-REVIT-SYS-030
 | R5 | A farthest-point gate rejects `sprinkler_layout`'s own 3 x 4 m answer and is no NFPA rule | It stays a WARN, as in `sprinkler_spacing`; pass is S, L, area, wall and the minimum distances |
 | R6 | Heads exactly on a re-entrant wall pass (`inside` counts the edge; a ray at t=0 is ignored) | `min_wall_distance_m` is **required** in `sprinkler_layout_room`, offered from the standard, and a candidate point closer than it to any edge or hole is dropped before measuring; the L test is non-aligned (10 x 10 less 4 x 6). The checker's on-wall defect is recorded in FRAGMENT-ISSUES |
 | R7 | 2000 candidates x `farthest_point` is over an hour | The search measures without the farthest point and stops at a room's first failing head; candidates ordered by their clipped head count; at most 200 measured; `farthest_point` once on the winner, its samples outside the holes; `_measure_heads` refactor output-identical, test_fire run before and after |
-| R8 | `Level.Elevation` vs `ProjectElevation` disagree across two fragments; whether `NewFamilyInstance` reads z as absolute is unmeasured | The read emits both elevations and each existing head's z with its Elevation from Level; points are sent at `ProjectElevation + ceiling - deflector`; the read-back prints every head's z against the height asked. The conflict is recorded in FRAGMENT-ISSUES; CF rows use a level not at zero and ask whether the family's insertion point is its deflector |
+| R8 | `Level.Elevation` vs `ProjectElevation` disagree across two fragments; whether `NewFamilyInstance` reads z as absolute is unmeasured | The read emits both elevations and each existing head's z with its Elevation from Level; points are sent at `ProjectElevation + ceiling - deflector`; the read-back prints every head's z against the height asked. The conflict is recorded in FRAGMENT-ISSUES; CG rows use a level not at zero and ask whether the family's insertion point is its deflector |
 | R9 | "Add to the heads already here" cannot pass - the layout cannot see them | Left out of v1: a room with heads is shown with them and not laid out |
 | R10 | Golden Rule 16: one action, one undo | **Apply places one level at a time** - one undo entry per press; the page has an Apply per level |
 | R11 | Write-path details | `ok` and `failed` from the reply, never `placed`; `_apply_table`'s 700000-character refusal before a points line; `pinned.check` after each call |
@@ -170,4 +170,4 @@ tests/cases.yaml). `FRG-MEP-060`, DRAFT, READ, `heron-agent: HERON-REVIT-SYS-030
 | R16 | Most sprinkler families are face-based | docs/47 s9 says so; such a type is listed, disabled |
 | R17 | The read-back cannot use `heron_sprinkler_spacing.check` (it needs a take-off network) | `heron_fire.run("sprinkler_spacing")` directly, at the room's angle, on the heads inside by the 2D test |
 | R18 | Companion: fixed page files, no `innerHTML`, registry rows | The plan is drawn in companion.js with `createElementNS`, no new static file; `COMPANION_ACTIONS` and `TOOLS` rows with tests; every route behind `_api_ok` |
-| R19 | Gates | FRG-MEP-060 and group CF are free; `docs/needs-checking/group-cf.md` is its own file named in the index; `run("sprinkler_layout_room", {})` comes back missing with no results |
+| R19 | Gates | FRG-MEP-060 and group CF were free (CF was then taken by #419 first, so this group is CG); `docs/needs-checking/group-cg.md` is its own file named in the index; `run("sprinkler_layout_room", {})` comes back missing with no results |

@@ -27,7 +27,7 @@ WHAT IT PROVES
 
 WHAT IT DOES NOT PROVE
   That a real model is read as format 1 says, or where Revit puts a head sent
-  at a z - that is NEEDS-CHECKING group CF.
+  at a z - that is NEEDS-CHECKING group CG.
 """
 
 from __future__ import print_function

@@ -5,28 +5,32 @@
 > goes in this file. [`tools/needs-checking-register.py`](../../tools/needs-checking-register.py) reads
 > it back into the register for every tool that reads the register.
 
-## Group CF - sprinkler layout from the model: the rooms read, the heads placed, and their height (2026-10-06)
+## Group CF - Area and Volume Computations: the whole dialog read, and set behind the Admin switch (2026-10-06)
 
-**Built 2026-10-06 from [docs/47](../47-sprinkler-layout-from-the-model.md) and
-[its plan](../work-notes/plans/sprinkler-layout-2026-10-06.md). REPORT_SPRINKLER_LAYOUT_SPACES is DRAFT
-and compiles on Revit 2020, 2024 and 2027; nothing below has run in Revit.** The read's arrangement is
-in [`tools/jobs/report-sprinkler-layout-spaces-2026-10-06.yaml`](../../tools/jobs/report-sprinkler-layout-spaces-2026-10-06.yaml),
-read back with `python tools/batch-prove.py <file> --dry-run`. **The model is the owner's to name, on a
-TEST COPY**: an L-shaped office Space with a room-bounding column and a ceiling, a store Space with one
-sprinkler in it, both on a level that is **not at zero**, with the project base point moved, and one
-level-based sprinkler family loaded. CF1 to CF3 read only; **CF4 to CF7 place heads** and need the
-Changes switch on.
+**NOTHING HERE HAS RUN IN REVIT.** Both tools were written on 2026-10-06 after a lookup found nothing
+that reads or sets the dialog - the model *Heron loads test* needed Areas and Volumes before its Spaces
+had volumes, and the owner set it by hand (row 5b-327). They compile on every release 2020 to 2027 and
+are **DRAFT**. The owner said the same day not to test them yet: *"keep it there, it is not like
+tested"*.
+
+`report-area-volume-computations` reads both tabs and asks for nothing. `set-area-volume-computations`
+is **ADMIN** ([D-106](../decisions/D-106.md)) - it runs only while the owner's Admin switch and Changes
+are on. So its proof goes through `validate --allow-publish --write`, never `batch-prove`, which sends
+nothing declared ADMIN.
+
+**What the proof needs, and why it is not any model:** a test project - **never** *Heron loads test* -
+whose Volume Computations still reads **Areas only**, with a few placed, bounded Rooms or Spaces, and the
+Gross Building and Rentable schemes; and any family open beside it for the negative. Run with `--in`
+naming the project, `HERON_CLIENT_ID=ajmal-pc`, stdin closed (`</dev/null`). Read the settings with
+CF1 first: a project already at Areas and Volumes cannot show CF2's positive.
 
 | # | Run | Look for |
 |---|---|---|
-| **CF1** | **REPORT_SPRINKLER_LAYOUT_SPACES, the positive** - the office and the store selected, `spaces` `*` | Both rooms in `layoutJson`; the office's `outline` drawn over the plan matches its boundary to the millimetre, `holes` holds the column, `area_m2` the schedule's Area; `ceilings` the office's ceiling at its Height Offset From Level; the store's head in `sprinklers` even though it sits above the Space's upper limit |
-| **CF2** | **The D-30 negative** - `spaces` set to an id that matches nothing; then nothing selected and `*` | No room, `spaceCount` 0 and a finding naming the id; then no room and a finding saying to select the rooms |
-| **CF3** | **The two elevations** - the same read on the level not at zero | Write down `level_elevation_m`, `level_project_elevation_m`, and the store head's `z` and `offset_m`. **Which elevation plus the offset gives the z** is the answer FRAGMENT-ISSUES 5b-338 waits on |
-| **CF4** | **The whole flow** - "place sprinklers in these rooms" in a chat, the office and the store selected | The Sprinkler Layout panel opens; the store is shown with its head and not laid out; after the type, the deflector distance, the office's class, ceiling and angle, and the limits are given, Preview draws the office's heads all OK |
-| **CF5** | **Apply with the Changes switch OFF** | Nothing placed; the page says the switch is off and where it is; Revit's undo list has no new entry |
-| **CF6** | **Apply with the switch ON - the height** | One undo entry; the read-back finds every head in the office; **each head's height in Revit equals the height asked** (level + ceiling - deflector). If every head is one level's elevation too high or too low, the read-back says CHECK and the z question (5b-338) is answered the other way - undo, and record it |
-| **CF7** | **The deflector** - one placed head opened in its family | Is the family's insertion point its deflector? If not, `ceiling - deflector` puts the wrong point at that height and the read-back still passes - write down the offset to add |
-
-**Then sign** REPORT_SPRINKLER_LAYOUT_SPACES on CF1 and CF2. It also needs **one store row** on the
-owner's PC before a chat can route to it there (`python tools/check-routing.py` rebuilds the store when
-its count disagrees with the cards).
+| **CF1** | `validate report-area-volume-computations --in "<project>" --negative-in "<family>"` - read only | Volume Computations and Room Area Computation in the dialog's words, every area scheme including one with no areas, each with its description, Gross Building marked, its area and area-plan counts; the counts of placed rooms and spaces with a volume. Negative: the family - `notAProject`, nothing else. Second route: the dialog itself |
+| **CF2** | `validate set-area-volume-computations --in "<project>" --allow-publish --write --set "settings=Volume Computations=Areas and Volumes" --negative-set "settings=Room Area Computation=<what CF1 read>"` | Positive: `changed 1`, *Areas only -> Areas and Volumes* read back, and **a Space's volume above zero** - `spacesWithVolume` above the finding's "before" count. Negative: the setting already as asked - `changed 0`, `alreadyAsAsked 1`, `settingReport` empty, nothing written |
+| **CF3** | CF1 again, straight after CF2 | **The model exactly as CF1 read it** - Areas only still. The rollback is checked by reading, never assumed - a rollback reported as done once left a rename in place ([row 19](../fragment-issues/section-5-rows-001-025.md)) |
+| **CF4** | CF2's positive with `Room Area Computation=At wall center` added | The room setting read back moved, and what Revit reports for **Spaces** after it - do Spaces follow the one setting the dialog shows, or keep their own? Unmeasured on every release |
+| **CF5** | `settings=New Area Scheme=Heron Proof : made by a proof` | **The first time `ElementTransformUtils.CopyElement` meets an area scheme in front of Heron.** The copy must come back ordinary (not Gross Building), named, described, with **no area plan and no area** brought along - the fragment refuses and rolls back if any came. Unmeasured: the API declares no way to create a scheme, and the copy route is the Revit API forum's, not seen here |
+| **CF6** | `Rename Area Scheme=Rentable -> Rentable Heron` and `Area Scheme Description=Gross Building : <text>` | Both read back. **Which parameter holds a scheme's description is a guess** - `ALL_MODEL_DESCRIPTION` - and CF1 says *not read* beside every scheme if the guess is wrong. Fix the one lookup in both fragments before anything else is proved |
+| **CF7** | the Admin switch OFF, then `revit_change` asking for Areas and Volumes | Refused by name - the Admin switch is off - and nothing sent. **The owner's switch, turned by him only** |
+| **CF8** | CF1 and CF2 on **Revit 2020** and **2027** | The same answers. The members were looked up in each release's reference assembly; nothing was run there |
