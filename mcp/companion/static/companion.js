@@ -2214,6 +2214,19 @@ function layoutRooms(Y, state) {
       : r.status === "fail" ? "fails - not placed" : (r.why || r.status || ""));
     if (r.z_from) cap.title = "height: " + r.z_from;
     fig.append(cap);
+    // Every head's S, L, area and walls, and the engine's own checks - what the
+    // modeller reads before Apply (docs/47 s7), made in brain/.
+    if (r.measured || (r.checks || []).length) {
+      const more = el("details", "y-more");
+      more.append(el("summary", "small", "Each head, as NFPA 13 measures it"));
+      (r.checks || []).forEach(c => {
+        const p = el("p", "small");
+        p.append(statusBadge(String(c[0]).toLowerCase() === "ok" ? "ok" : String(c[0]).toLowerCase()), document.createTextNode(" " + c[1]));
+        more.append(p);
+      });
+      if (r.measured) more.append(sprinklerTable(r.measured.columns, r.measured.rows));
+      fig.append(more);
+    }
     plans.append(fig);
   });
   sec.append(plans);

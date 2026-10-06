@@ -2903,21 +2903,25 @@ def _longest_edge_deg(outline):
     return math.degrees(math.atan2(y1 - y0, x1 - x0)) % 180.0
 
 
-def layout_candidates(outline, holes, smax_mm, amax_mm2, wmin_mm, smin_mm=None):
+def layout_candidates(outline, holes, smax_mm, amax_mm2, wmin_mm, smin_mm=None, wmax_mm=None):
     """
     Every regular grid worth measuring in an outline turned so its branch lines
     run along x: [(heads, squareness, s, l, [(x, y)])], fewest heads first. A
     module is kept only within the most spacing and area; each is tried at a
     few shifts of its start (LAYOUT_SHIFTS, a fraction of a module each way);
-    a point is kept only inside the outline, outside every hole, and at least
+    the search starts at the fewest modules each way that the most spacing AND
+    the most wall distance allow - a centred head is half a module from the
+    wall - so a tight wall limit is not searched short of (the Codex review of
+    #418); a point is kept only inside the outline, outside every hole, and at least
     the least wall distance from every edge of either.
     """
     xs = [p[0] for p in outline]
     ys = [p[1] for p in outline]
     x0, y0 = min(xs), min(ys)
     width, depth = max(xs) - x0, max(ys) - y0
-    first_c = max(1, int(math.ceil(width / smax_mm - 1e-9)))
-    first_r = max(1, int(math.ceil(depth / smax_mm - 1e-9)))
+    least = smax_mm if wmax_mm is None else min(smax_mm, 2.0 * wmax_mm)
+    first_c = max(1, int(math.ceil(width / least - 1e-9)))
+    first_r = max(1, int(math.ceil(depth / least - 1e-9)))
     found = []
     seen = set()
     for cols in range(first_c, first_c + LAYOUT_EXTRA_MODULES + 1):
@@ -2977,7 +2981,8 @@ def calc_sprinkler_layout_room(a):
     turned = _turn(outline, origin, -angle)
     turned_holes = [_turn(h, origin, -angle) for h in holes]
     candidates = layout_candidates(turned, turned_holes, smax * 1000.0, amax * 1e6,
-                                   wmin * 1000.0, None if smin is None else smin * 1000.0)
+                                   wmin * 1000.0, None if smin is None else smin * 1000.0,
+                                   wmax * 1000.0)
     candidates = [c for c in candidates if c[0] <= LAYOUT_HEADS_MAX]
     if not candidates:
         a.refuse("no regular grid fits this room within %s m spacing, %s m2 and %s m from the "

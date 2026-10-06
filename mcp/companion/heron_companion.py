@@ -1101,27 +1101,31 @@ class LayoutPanel(object):
         self.place_hook = None
 
     def open(self, document, answer, identity=None, read_at=None):
+        with self._lock:
+            self._open_locked(document, answer, identity, read_at)
+
+    def _open_locked(self, document, answer, identity=None, read_at=None):
+        """open(), for a caller already holding the lock."""
         result = answer.get("result") or {}
         rooms = []
         for r in result.get("rooms") or []:
             rooms.append({k: r.get(k) for k in (
                 "key", "label", "level", "status", "why", "asked", "count", "heads",
-                "angle_offer_deg", "ceilings", "z_mm", "z_from")})
-        with self._lock:
-            self._data = answer.get("data")
-            self._result = result
-            self._held = {
-                "document": document, "at": time.strftime("%H:%M:%S"),
-                "read_at": read_at or time.strftime("%H:%M:%S"),
-                "identity": list(identity) if identity else None,
-                "status": result.get("status"), "rooms": rooms,
-                "asked": list(result.get("asked") or []),
-                "levels": result.get("levels") or {},
-                "inputs": result.get("inputs") or {}, "standard": result.get("standard"),
-                "types": answer.get("types") or [], "fields": answer.get("fields") or {},
-                "view": answer.get("view") or [],
-                "findings": list(result.get("findings") or []),
-                "said": answer.get("said"), "placed": {}}
+                "angle_offer_deg", "ceilings", "z_mm", "z_from", "measured", "checks")})
+        self._data = answer.get("data")
+        self._result = result
+        self._held = {
+            "document": document, "at": time.strftime("%H:%M:%S"),
+            "read_at": read_at or time.strftime("%H:%M:%S"),
+            "identity": list(identity) if identity else None,
+            "status": result.get("status"), "rooms": rooms,
+            "asked": list(result.get("asked") or []),
+            "levels": result.get("levels") or {},
+            "inputs": result.get("inputs") or {}, "standard": result.get("standard"),
+            "types": answer.get("types") or [], "fields": answer.get("fields") or {},
+            "view": answer.get("view") or [],
+            "findings": list(result.get("findings") or []),
+            "said": answer.get("said"), "placed": {}}
 
     def current(self):
         with self._lock:
@@ -1164,7 +1168,14 @@ class LayoutPanel(object):
         answer = hook(data, inputs, identity)
         if not isinstance(answer, dict) or answer.get("data") is None:
             return {"ok": False, "said": (answer or {}).get("said") or self.GONE}
-        self.open(document, answer, identity, read_at)
+        with self._lock:
+            # A NEWER READ WINS: the chat may have opened other rooms while this
+            # preview was being worked out (the Codex review of #418).
+            if self._data is not data:
+                return {"ok": False, "said": "the chat read other rooms while this preview was "
+                                             "being worked out - this preview was dropped",
+                        "layout": json.loads(json.dumps(self._held)) if self._held else None}
+            self._open_locked(document, answer, identity, read_at)
         return {"ok": True, "said": answer.get("said"), "layout": self.current()}
 
     def place(self, body):

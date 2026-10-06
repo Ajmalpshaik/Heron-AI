@@ -60,7 +60,7 @@ def read(heads_in_store=True, separation=0):
     store = [(20000, 0), (24000, 0), (24000, 3000), (20000, 3000)]
     lobby = [(30000, 0), (36000, 0), (36000, 6000), (30000, 6000)]
     return {
-        "format": 1, "document": "Test", "asked": "*",
+        "format": 1, "document": "Test", "asked": "*", "heads_read": True,
         "spaces": [
             {"id": "u-office", "element_id": "11", "kind": "space", "number": "201",
              "name": "Office", "level": "L2", "level_elevation_m": 4.0,
@@ -116,6 +116,15 @@ def test_heads_are_found_in_plan():
     assert rooms["u-office"]["problem"] is None and rooms["u-office"]["heads"] == []
 
 
+def test_heads_that_could_not_be_read_are_not_none():
+    blind = read()
+    blind["heads_read"] = False
+    got = L.preview(blind, answers())
+    assert all(r["status"] == "skipped" for r in got["rooms"]), [r["status"] for r in got["rooms"]]
+    assert got["status"] != "ok" and "could not be read" in got["rooms"][0]["why"]
+    assert L.changed(read(), blind, ["u-office"]), "an unreadable re-read refuses Apply"
+
+
 def test_everything_is_asked_and_nothing_offered_is_used():
     got = L.preview(read(), {})
     office = [r for r in got["rooms"] if r["key"] == "u-office"][0]
@@ -139,6 +148,8 @@ def test_the_office_is_laid_out_and_the_others_are_not():
     office = by["u-office"]
     assert office["status"] == "ok" and office["count"] > 0, (office["status"], office["why"])
     assert all(p["z_mm"] == 4000 + 2700 - 50 for p in office["points"])
+    assert office["measured"]["columns"][:3] == ["sprinkler", "S m", "L m"]
+    assert len(office["measured"]["rows"]) == office["count"] and office["checks"]
     assert "4000 mm + ceiling 2700 mm - deflector 50 mm" in office["z_from"]
     assert by["u-store"]["status"] == "skipped" and by["u-lobby"]["status"] == "skipped"
     assert got["status"] == "ok" and got["levels"]["L2"]["heads"] == office["count"]

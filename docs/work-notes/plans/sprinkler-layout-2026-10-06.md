@@ -29,7 +29,7 @@ holds data and calls hooks; plain-script tests; explicit staging; `write.enabled
   location: [x,y] | null,
   ceilings: [{id, type, height_m}], sprinklers: [{id, type, x, y, z}]}],
  sprinkler_types: [{name: "Family : Type", family, type, placement, k}],
- asked: "*" | [numbers], findings: [text]}
+ asked: "*" | "uniqueId;uniqueId", heads_read: true | false, findings: [text]}
 ```
 
 Metres in the model's own coordinates, rounded to the millimetre; null where Revit gives nothing.

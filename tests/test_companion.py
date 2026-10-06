@@ -1057,6 +1057,20 @@ def test_layout_panel():
           "Preview hands the page's answers to the hook and shows the layout")
     check(panel.preview({"rooms": "not a map"})["ok"] is False,
           "answers that are not a map are refused - nothing is laid out")
+    room = [r for r in panel.current()["rooms"] if r["key"] == "u-office"][0]
+    check(room["measured"] and room["measured"]["rows"] and room["checks"],
+          "each room's per-head measure and checks reach the page, to be read before Apply")
+    newer = brain_seam.sprinkler_layout(data, {})
+
+    def slow(d, inputs, identity):
+        panel.open("Project1", newer, ("Project1", "", "11"))   # the chat reads again meanwhile
+        return brain_seam.sprinkler_layout(d, inputs)
+    panel.preview_hook = slow
+    late = panel.preview(LAY.answers())
+    check(late["ok"] is False and panel.current()["status"] == "asked",
+          "a preview that finishes after a newer read is dropped - the newer read stays")
+    panel.preview_hook = lambda d, inputs, identity: brain_seam.sprinkler_layout(d, inputs)
+    panel.preview(LAY.answers())
     calls = []
 
     def place(d, result, inputs, level, identity):

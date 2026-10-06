@@ -112,7 +112,10 @@ def rooms(data):
                                   "y_mm": y, "z_mm": _mm(h.get("z")),
                                   "offset_mm": _mm(h.get("offset_m"))})
         problem = None
-        if not outline:
+        if data.get("heads_read") is not True:
+            problem = ("the sprinklers already in the model could not be read - a room is "
+                       "never laid out over heads Heron cannot see")
+        elif not outline:
             problem = "its outline could not be read"
         elif int(raw.get("separation_edges") or 0) > 0:
             problem = ("it is bounded partly by separation lines - the layout would hold "
@@ -298,6 +301,7 @@ def _room(room, inputs, standard, deflector, recorded):
     given = inputs["rooms"].get(room["key"]) or {}
     out = {"key": room["key"], "label": room["label"], "level": room["level"],
            "status": None, "why": None, "asked": [], "count": 0, "points": [],
+           "measured": None, "checks": [],
            "answer": None, "heads": room["heads"], "angle_offer_deg": room["angle_offer_deg"],
            "ceilings": room["ceilings"]}
     if room["problem"]:
@@ -349,6 +353,13 @@ def _room(room, inputs, standard, deflector, recorded):
                            "offer": m.get("reference")} for m in answer.get("missing") or []])
         return out
     d = answer["data"]
+    # WHAT THE MODELLER CHECKS BEFORE APPLY (docs/47 s7): every head's S, L, area and walls,
+    # and the engine's own checks - the farthest point among them - made here, shown there.
+    measured = [t for t in answer.get("tables") or []
+                if str(t.get("title", "")).startswith("Each sprinkler")]
+    out["measured"] = ({"columns": list(measured[0]["columns"]),
+                        "rows": [list(r) for r in measured[0]["rows"]]} if measured else None)
+    out["checks"] = [list(c) for c in answer.get("checks") or []]
     out["count"] = len(d["points"])
     out["points"] = [{"id": p["id"], "x_mm": p["x_mm"], "y_mm": p["y_mm"], "z_mm": z}
                      for p in d["points"]]
@@ -410,6 +421,9 @@ def changed(before, after, keys):
     was = dict((r["key"], r) for r in rooms(before))
     now = dict((r["key"], r) for r in rooms(after))
     out = []
+    if after.get("heads_read") is not True:
+        return ["the sprinklers already in the model could not be read again, so whether a "
+                "room has heads now is unknown"]
     for k in keys:
         if k not in now:
             out.append("%s is no longer in the model" % (was.get(k, {}).get("label") or k))

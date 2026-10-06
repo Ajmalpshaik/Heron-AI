@@ -168,6 +168,10 @@ var ceilings = new List<Element>();
 try { foreach (Element e in new FilteredElementCollector(doc).OfClass(typeof(Ceiling))) ceilings.Add(e); }
 catch { findings.Add("The ceilings could not be read."); }
 var heads = new List<FamilyInstance>();
+// WHETHER THE HEADS WERE READ crosses on its own: an unreadable set is not an
+// empty one, and a room laid out over heads Heron could not see is a second
+// grid (the Codex review of #418).
+var headsRead = false;
 try
 {
     foreach (Element e in new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Sprinklers).WhereElementIsNotElementType())
@@ -175,14 +179,16 @@ try
         var fi = e as FamilyInstance;
         if (fi != null && fi.Location is LocationPoint) heads.Add(fi);
     }
+    headsRead = true;
 }
-catch { findings.Add("The sprinklers already in the model could not be read."); }
+catch { findings.Add("The sprinklers already in the model could not be read - no room is laid out."); }
 
 // ---- the rooms ---------------------------------------------------------------
 
 var json = new System.Text.StringBuilder("{" + esc("format") + ":1");
 json.Append("," + esc("document") + ":").Append(esc(doc.Title));
 json.Append("," + esc("asked") + ":").Append(esc(asked.Length == 0 ? "*" : asked));
+json.Append("," + esc("heads_read") + ":").Append(headsRead ? "true" : "false");
 json.Append("," + esc("spaces") + ":[");
 var firstRoom = true;
 foreach (var s in rooms)

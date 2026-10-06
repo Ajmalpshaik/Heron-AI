@@ -147,7 +147,7 @@ is refused too - the layout would keep its heads a wall's distance from a line t
 Through the chat's own write path, exactly as the Loads panel's Finalize:
 
 1. Under the lock every tool holds, check the pin: the same Revit and the same project as the preview.
-2. Read the rooms again **by number**, and refuse if any room's fingerprint moved since Preview.
+2. Read the rooms again **by UniqueId** (s3, s10.1), and refuse if any room's fingerprint moved since Preview.
 3. **One level per Apply** - one undo entry per press (Golden Rule 16): `PLACE_FAMILY_INSTANCES` with
    `symbol`, `level` and `points` - by name and by value, never by element id and never by selection.
    The previewed job is used once: a second press places nothing.

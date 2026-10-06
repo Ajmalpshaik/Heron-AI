@@ -1256,6 +1256,12 @@ def layout_any_shape():
                                                              [0, 1200]]))
     check(got["data"]["passed"] and got["data"]["lines"] == 1,
           "a 1.2 x 20 m corridor passes on one branch line")
+    narrow = run("sprinkler_layout_room", dict(lim, outline_mm=[[0, 0], [20000, 0],
+                                                                [20000, 1000], [0, 1000]],
+                                               max_wall_distance_m=0.5, min_spacing_m=0.3))
+    check(narrow["data"]["passed"] and len(narrow["data"]["points"]) == 20,
+          "a tight wall limit is searched far enough: a 20 x 1 m room at 0.5 m from the wall "
+          "passes on 20 heads (the Codex review of #418)")
     got = run("sprinkler_layout_room", dict(lim, outline_mm=rect, max_wall_distance_m=0.5,
                                             min_wall_distance_m=0.6))
     check(not got["data"]["passed"] and checks(got, "FAIL")
