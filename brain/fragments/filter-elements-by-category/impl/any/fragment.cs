@@ -31,6 +31,14 @@
 // IS the knowledge here and it should be readable as a list, changeable in one
 // place, and quotable in the fragment's own documentation.
 //
+// A PARAMETER THAT HOLDS NO LEVEL IS PASSED OVER, NEVER ANSWERED WITH. An
+// element can carry several of these and fill only some. Until 2026-10-06 the
+// first one an element HAD answered, empty or not - and three work plane-based
+// diffusers with FAMILY_LEVEL_PARAM empty and SCHEDULE_LEVEL_PARAM on Level 1
+// were on no level at all: "matching 3", "elements 0", and the loads' Finalize
+// wrote a flow to none of them (FRAGMENT-ISSUES 5b-335). So each is asked in
+// turn, and the first that names a LEVEL answers.
+//
 // LINKS ARE READ ONLY WHEN ASKED FOR, AND THEY ARE COUNTED, NEVER SELECTED -
 // D-59. Absent `includeLinks` means host only, which is what this did before
 // and what its proof measured. When it is set, each loaded link is read with
@@ -68,7 +76,14 @@ Func<Element, ElementId> levelOf = e =>
     foreach (var candidate in levelParameterOrder)
     {
         var p = e.get_Parameter(candidate);
-        if (p != null) return p.AsElementId();
+        if (p == null || !p.HasValue || p.StorageType != StorageType.ElementId) continue;
+
+        var held = p.AsElementId();
+        if (held == null || held == ElementId.InvalidElementId) continue;
+
+        // A level of the element's OWN document - a linked element's levels
+        // are its link's, and that is where the caller below looks it up.
+        if (e.Document.GetElement(held) is Level) return held;
     }
     return ElementId.InvalidElementId;
 };

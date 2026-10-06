@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-023
-semantic-identity: "give this family type these parameter values, making the type if it is new"
+semantic-identity: "give this family type these parameter values, making the type if it is new - or rename or delete the family type"
 kind: action
 domain: revit.families
 capability: SET_FAMILY_TYPE_VALUES
-version: 2
+version: 3
 source: OFFICIAL
 risk: MODIFY
 
@@ -17,7 +17,8 @@ purpose: >
   Writes values into one TYPE of the family open in the Family Editor -
   "600 x 600: Width 600, Depth 600, Height 250" - and makes that type first if
   the family does not have it yet. What the Family Types dialog does when a
-  type is chosen, or added with New, and its rows are typed in.
+  type is chosen, or added with New, and its rows are typed in - and what its
+  Rename and Delete do to a family type.
 
   **A NEW FAMILY HAS NO TYPE AT ALL**, and several family jobs cannot run
   without one: a formula needs a current type to hold its result - reported
@@ -41,6 +42,12 @@ purpose: >
   ever made. "<By Category>" or "none" clears the parameter back to By
   Category. A URL, and any other kind Revit keeps as text, is written as text,
   as typed (version 2 - version 1 refused both).
+
+  **RENAME OR DELETE A TYPE (version 3).** "Type Name=HexNut - ISO 4032" in the
+  values renames the type `typeName` names, as the dialog's Rename does - only
+  a type that exists, never to a name another type has in any case, never with
+  a character Revit forbids. `deleteType` true removes that type, alone, and
+  never the family's last one. The types are read back after either.
 
   **A VALUE A FORMULA DRIVES IS REFUSED, NOT OVERWRITTEN.** Revit will not hold
   a typed value against a formula, and clearing the formula is a different
@@ -74,9 +81,18 @@ contract:
     # Parameter=value pairs, SEMICOLONS between - "Width=600; Depth=600".
     # Lengths in millimetres, angles in degrees, yes/no as true or false,
     # a material by its name ("<By Category>" clears it), a URL as typed.
+    # "Type Name=New name" renames the type (version 3). Empty when deleting.
     - name: values
       type: IDictionary<string, string>
       source: request
+    # true DELETES the type `typeName` names, and nothing else is done; the
+    # family's last type is refused. Absent is false - writing, exactly as
+    # version 2 did. `optional: true` is what lets it be left out
+    # (HeronBindingNote.AbsentValue).
+    - name: deleteType
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: typeUsed
       # The type that was written into, read back as the family's current type.
@@ -95,6 +111,11 @@ contract:
       # written parameters drive - what moved because of this.
       role: result
       type: int
+    - name: typesNow
+      # Every type the family has after the call, read back from it - the
+      # proof a rename or a delete took, and the list a missing name is given.
+      role: accounting
+      type: string
     - name: notAFamily
       role: accounting
       type: bool
@@ -108,50 +129,49 @@ contract:
 proof:
   date: '2026-10-06'
   by: Ajmal PS
-  model: Family3, Revit 2024, session 51820 - the count is NOT recorded because 1,790 elements
-    was measured on GM_PipeSupport_HexNut, the document in front, and this ran against another
-    one (row 15)
-  positive_case: run as it would normally be run - the arrangement was re-made first by running
-    add-family-parameters with this phase's own values - run inside a transaction, and Revit
-    reported the transaction group ROLLED BACK afterwards. returned badCharacters 0 item(s),
-    dbNamespace Autodesk.Revit.DB, drives 0, editsApart Func`3, findings 2 item(s) [Made the
-    type "T1", now the family's current type. Read back..., Nothing in the family is labelled
-    with or associated to thes...], flags BindingFlags, forbidden \:{}[]|;<>?`~, invariant
-    CultureInfo, kindOf Func`2, kindsNew 9 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId],
+  model: Family14, Revit 2024, session 51820 - the count is NOT recorded because 1,713 elements
+    was measured on HeronNewFam_D, the document in front, and this ran against another one
+    (row 15)
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned badCharacters 0 item(s), dbNamespace
+    Autodesk.Revit.DB, deleteType false, drives 0, editsApart Func`3, findings 1 item(s) [Renamed
+    the type "Standard" to "Test - A", now the family's ...], flags BindingFlags, forbidden
+    \:{}[]|;<>?`~, invariant CultureInfo, kindOf Func`2, kindsNew 9 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId],
     [angle, Autodesk.Revit.DB.ForgeTypeId], [number, Autodesk.Revit.DB.ForgeTypeId], ...],
-    kindsOld 9 entry(ies), materialShown Func`3, mm Func`2, notAFamily false, planned 2 item(s)
-    [(Autodesk.Revit.DB.FamilyParameter, material, 255), (Autodesk.Revit.DB.FamilyParameter,
-    text, https://ajmalps.co...], problems 0 item(s), refused (null), revitAssembly RuntimeAssembly,
-    sameKind Func`3, shown Func`4, specNamed Func`3, typeCreated true, typeUsed T1, wantedType
-    T1, written 2 item(s) [Nut Material = "Glass" (was (new type)), URL = "https://ajmalps.com"
-    (was (new type))]. inputs came typeName as given; values as given (2). on Family3
-  negative_case: run against 'Family3' with parameterNames=Nut Material, kind=Material, instance=false,
-    parameterGroup=, typeName=T1, values=Nut Material=Unobtainium; URL=https://ajmalps.com
-    instead - chosen because it should not contain what this fragment reports - the arrangement
-    was re-made first by running add-family-parameters with this phase's own values - run
-    inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned badCharacters 0 item(s), dbNamespace Autodesk.Revit.DB, drives 0, editsApart
-    Func`3, findings 1 item(s) [Nothing was written. There is no material "Unobtainium" in
-    t...], flags BindingFlags, forbidden \:{}[]|;<>?`~, invariant CultureInfo, kindOf Func`2,
-    kindsNew 9 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId], [angle, Autodesk.Revit.DB.ForgeTypeId],
+    kindsOld 9 entry(ies), materialShown Func`3, mm Func`2, notAFamily false, parameterValues
+    0 entry(ies), planned 0 item(s), problems 0 item(s), refused (null), renameTo Test - A,
+    revitAssembly RuntimeAssembly, sameKind Func`3, shown Func`4, specNamed Func`3, typeCreated
+    false, typeList Func`1, typeNameRow Type Name, typeUsed Test - A, typesNow "T2", "Test
+    - A", wantedType Standard, written 0 item(s). inputs came typeName as given; values as
+    given (1); deleteType not given - false (optional). on Family14
+  negative_case: run against 'Family14' with typeName=Standard, values=Type Name=t2 instead
+    - chosen because it should not contain what this fragment reports - run inside a transaction,
+    and Revit reported the transaction group ROLLED BACK afterwards. returned badCharacters
+    0 item(s), dbNamespace Autodesk.Revit.DB, deleteType false, drives 0, editsApart Func`3,
+    findings 1 item(s) [Nothing was written. The family already has a type "T2", and...],
+    flags BindingFlags, forbidden \:{}[]|;<>?`~, invariant CultureInfo, kindOf Func`2, kindsNew
+    9 item(s) [[length, Autodesk.Revit.DB.ForgeTypeId], [angle, Autodesk.Revit.DB.ForgeTypeId],
     [number, Autodesk.Revit.DB.ForgeTypeId], ...], kindsOld 9 entry(ies), materialShown Func`3,
-    mm Func`2, notAFamily false, planned 1 item(s) [(Autodesk.Revit.DB.FamilyParameter, text,
-    https://ajmalps.co...], problems 1 item(s) [There is no material "Unobtainium" in this
-    family for "Nut M...], refused Nothing was written. There is no material "Unobtainium"
-    in this family for "Nut Material", and none is made here - the closest are "Default",
-    "Glass", "Poche". Make or load it in Manage > Materials first, or "<By Category>" clears
-    the parameter., revitAssembly RuntimeAssembly, sameKind Func`3, shown Func`4, specNamed
-    Func`3, typeCreated false, typeUsed , wantedType T1, written 0 item(s). inputs came typeName
-    as given; values as given (2). on Family3
+    mm Func`2, notAFamily false, parameterValues 0 entry(ies), planned 0 item(s), problems
+    1 item(s) [The family already has a type "T2", and Revit does not tell ...], refused Nothing
+    was written. The family already has a type "T2", and Revit does not tell type names apart
+    by case - choose another name for "Standard"., renameTo t2, revitAssembly RuntimeAssembly,
+    sameKind Func`3, shown Func`4, specNamed Func`3, typeCreated false, typeList Func`1, typeNameRow
+    Type Name, typeUsed , typesNow "T2", "Standard", wantedType Standard, written 0 item(s).
+    inputs came typeName as given; values as given (1); deleteType not given - false (optional).
+    on Family14
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 72a0d37418cb2847
+  fingerprint: 1281aa005776f57a
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
+  `FamilyManager.RenameCurrentType(string)` and `DeleteCurrentType()` read the
+  same 2020 through 2027 (api-surface, read 2026-10-06); both act on the
+  CURRENT type, so the named type is made current first.
   A material is a material parameter's ElementId, set with the
   `FamilyManager.Set(FamilyParameter, ElementId)` overload and read back with
   `FamilyType.AsElementId`, the same 2020 through 2027; its kind is
@@ -172,6 +192,10 @@ compatibility-note: >
 #   "make a 600 x 600 type"               -> here
 #   "put 600 into Width"                  -> here
 #   "set the nut material to galvanised"  -> here (a family type's material)
+#   "rename the family type"              -> here ("Type Name=..." in values)
+#   "delete this family type"             -> here (deleteType)
+#   "rename these duct types"             -> RENAME_ELEMENTS - types in a
+#                                            project, not a family's own types
 #   "add a Width parameter"               -> ADD_FAMILY_PARAMETERS
 #   "neck width is width minus 100"       -> SET_FAMILY_FORMULA
 #   "try it at 900 and put it back"       -> FLEX_FAMILY
@@ -185,3 +209,6 @@ utterances:
   - create a new family type with these sizes
   - make a 600 x 600 type
   - put 600 into Width
+  - rename the family type
+  - rename type Standard to HexNut - ISO 4032
+  - delete this family type

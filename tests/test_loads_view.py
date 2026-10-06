@@ -187,6 +187,22 @@ def test_an_opening_sits_on_its_wall_at_its_own_size():
     assert win["area_m2"] == 3.0 and win["used_as"].startswith("glass")
 
 
+def test_a_panel_cut_to_its_face_says_how_much_was_counted():
+    # FRAGMENT-ISSUES 5b-330: a storey-high panel counts only its part on the
+    # Space's face. The view draws the whole panel, as Revit has it, and says
+    # how much of it the load counted - so the take-off can still be checked.
+    from test_takeoff import curtain_office, SOUTH, STOREY
+    t = T.read(curtain_office(STOREY, SOUTH))
+    v = V.build(t, B.run(t, PROJECT, {"Office": OFFICE}))
+    first = faces_of(v, 61)[0]
+    assert first["area_m2"] == 10.0, first
+    assert "9.20 m2 of its 10.00 m2" in first["used_as"], first["used_as"]
+    xs = [p[0] for p in first["loops"][0]]
+    assert abs((max(xs) - min(xs)) - 2.5) < 1e-9                # drawn whole
+    win = faces_of(view(), "101S-win")[0]
+    assert " of its " not in win["used_as"], win["used_as"]      # a window is counted whole
+
+
 def test_true_north_turns_the_facing_colours():
     south = faces_of(view(), "101S")[0]
     assert south["facing"] == "S" and south["facing_deg"] == 180.0
