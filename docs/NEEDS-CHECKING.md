@@ -515,6 +515,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-cm.md`](needs-checking/group-cm.md)
 
+## Group CO - family parameters renamed in place, formulas and labels read back with the new names (2026-10-06)
+
+**Its own file:** [`needs-checking/group-co.md`](needs-checking/group-co.md)
+
 ## Group CQ - deleting a family parameter that labels a dimension: the label taken off first, when asked (2026-10-06)
 
 **Its own file:** [`needs-checking/group-cq.md`](needs-checking/group-cq.md)
