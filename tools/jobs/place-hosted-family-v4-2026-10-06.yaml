@@ -1,0 +1,126 @@
+# The proof plan for PLACE_HOSTED_FAMILY version 4 (FRG-ELE-065): a family
+# INTO the roof, floor or ceiling found at each point, and a window that keeps
+# facing its wall's exterior (FRAGMENT-ISSUES rows 5b-325, 5b-326, 5b-293).
+#
+#     python tools/batch-prove.py tools/jobs/place-hosted-family-v4-2026-10-06.yaml --dry-run
+#
+# RUN ONCE ALREADY, BY HAND, ON 2026-10-06 - each job below as a rolled-back
+# `validate --write` in Project2 (Revit 2024, session 51820), a never-saved
+# scratch project the owner opened for it. The records are on the owner's PC,
+# git-ignored, under brain/proof-drafts/runs/ of the worktree that ran them;
+# docs/needs-checking/group-ch.md says what each returned. This file is how
+# to run them again, on Project2 or on any model arranged the same way.
+#
+# THE ARRANGEMENT - build it first, KEPT, in a scratch project, and read every
+# value back off it before running:
+#
+#   Levels   Level 1 at 0, Level 2 at 4000 mm (a metric template's own)
+#   Walls    four "Basic Wall: Generic - 200mm" on Level 1, 4000 high, drawn
+#            CLOCKWISE round (0,0) (0,6000) (8000,6000) (8000,0) - so each
+#            wall's exterior, Wall.Orientation, faces out of the building
+#   Roof     one flat "Basic Roof: Generic - 400mm" on Level 2 over
+#            (-300,-300) to (8300,6300)
+#   Room     one, at (4000,3000) on Level 1, enclosed by the four walls
+#   Floor    one "Floor: Generic 150mm" on Level 1 over (-100,-100) to
+#            (8100,6100)
+#   Ceiling  one "Basic Ceiling: Generic" on Level 1 at 2700, over (100,100)
+#            to (7900,5900)
+#   Types    M_Skylight-Flat (RVT 2020 US Metric library, Windows - its Host
+#            reads Roof); M_Fixed 0915 x 1220mm (the template's own); M_Troffer
+#            Light - Parabolic Rectangular (Lighting, Architectural, Internal -
+#            Host Ceiling)
+#
+# A FAMILY IN A ROOF IS PROVED BY THE ROOF, NEVER BY `placed`: read the roof's
+# Volume and Area with SELECT_BY_NUMERIC_PARAMETER before and after one KEPT.
+# A WINDOW IS PROVED BY ITS FACING: `readBack` gives FacingOrientation beside
+# its wall's exterior, and they must be the same.
+
+model: Project2, Revit 2024 - a NEVER-SAVED SCRATCH PROJECT built for this
+
+defaults:
+  in: Project2
+  write: true
+  setup: []
+
+jobs:
+  # POSITIVE: a skylight into the flat roof, found on Level 2 although Level 1
+  # is named. NEGATIVE: the same skylight at a point with no roof over it.
+  - fragment: place-hosted-family
+    set:
+      symbol:     "M_Skylight-Flat: 1200 x 1200mm"
+      level:      "Level 1"
+      points:     "6000,2000,0"
+      toRoomAt:   "6000,2000,0"
+      hingeAt:    "6000,2000,0"
+      sillHeight: ""
+      rotation:   ""
+    negative-set:
+      symbol:     "M_Skylight-Flat: 1200 x 1200mm"
+      level:      "Level 1"
+      points:     "20000,20000,0"
+      toRoomAt:   "20000,20000,0"
+      hingeAt:    "20000,20000,0"
+      sillHeight: ""
+      rotation:   ""
+    expect: placed
+    note: >
+      Positive: placed 1; readBack "Host setting read off the family: Roof",
+      the roof's id, Roofs, 'Generic - 400mm', 'Level 2', the skylight at
+      (6000, 2000) in plan, its Level 'Level 2'; noHost, twoHosts and offPoint
+      empty. Negative: placed empty, the point in noHost - "no roof on any
+      level is over it". Measured exactly so on 2026-10-06.
+
+  # POSITIVE: two windows on two walls, room points inside - the arrangement
+  # that turned every window inside-out under version 3. NEGATIVE: the same
+  # window at two points inside the room, where no wall is.
+  - fragment: place-hosted-family
+    set:
+      symbol:     "M_Fixed: 0915 x 1220mm"
+      level:      "Level 1"
+      points:     "2000,0,0; 6000,6000,0"
+      toRoomAt:   "2000,1000,0; 6000,5000,0"
+      hingeAt:    "2300,0,0; 6300,6000,0"
+      sillHeight: ""
+      rotation:   ""
+    negative-set:
+      symbol:     "M_Fixed: 0915 x 1220mm"
+      level:      "Level 1"
+      points:     "4000,3000,0; 5000,3000,0"
+      toRoomAt:   "4000,2000,0; 5000,2000,0"
+      hingeAt:    "4300,3000,0; 5300,3000,0"
+      sillHeight: ""
+      rotation:   ""
+    expect: placed
+    note: >
+      Positive: placed 2, both facing OUT - FacingOrientation (0, -1) and
+      (0, 1), each equal to its wall's exterior, FacingFlipped False -
+      facingWrong and wrongHinge empty, toRoomWrong empty. Negative: placed
+      empty, both points in noWall. Measured exactly so on 2026-10-06; the
+      same call through version 3 flipped both windows to face the room.
+
+  # POSITIVE: a ceiling-hosted light turned 90 degrees. NEGATIVE: the same
+  # light at a point outside the building, under no ceiling.
+  - fragment: place-hosted-family
+    set:
+      symbol:     "M_Troffer Light - Parabolic Rectangular: 0600x1200mm(2 Lamp) - 120V"
+      level:      "Level 1"
+      points:     "2000,4000,0"
+      toRoomAt:   "2000,4000,0"
+      hingeAt:    "2000,4000,0"
+      sillHeight: ""
+      rotation:   "90"
+    negative-set:
+      symbol:     "M_Troffer Light - Parabolic Rectangular: 0600x1200mm(2 Lamp) - 120V"
+      level:      "Level 1"
+      points:     "20000,20000,0"
+      toRoomAt:   "20000,20000,0"
+      hingeAt:    "20000,20000,0"
+      sillHeight: ""
+      rotation:   "90"
+    expect: placed
+    note: >
+      Positive: placed 1 in the ceiling, at its underside, 2700 mm, turned 90
+      degrees, its Level 'Level 1'. Negative: placed empty, the point in
+      noHost - "no ceiling on 'Level 1' is over it". Measured on 2026-10-06
+      at (2000, 2000) and (6000, 4000); this point is clear of the light kept
+      in Project2 at (6000, 4000).
