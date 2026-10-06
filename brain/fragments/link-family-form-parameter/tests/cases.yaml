@@ -26,6 +26,18 @@ positive:
   - given: the first case run a second time
     expect: changed 0, alreadyLinked 1, and nothing changed
 
+  - given: >
+      a new family from the metric Generic Model template with a Length type
+      parameter "Bolt Length", a small family loaded (GM_PipeSupport_HexNut, a
+      copy) and two copies of it placed by PLACE_NESTED_FAMILY; forms = the
+      SECOND copy's id, links "Thread Size=Bolt Length" (an instance length on
+      the nut)
+    expect: >
+      changed 1; linkReport names the nested "family : type" and its id, and
+      Thread Size going from not linked to "Bolt Length"; FLEX_FAMILY to another
+      Bolt Length moves the second copy's Thread Size and leaves the first
+      copy's as it was - read back on both copies
+
 negative:
   - given: links "Visible=Depth", a LENGTH parameter
     expect: >
@@ -40,10 +52,26 @@ negative:
       refused - the extrusion has no End Angle - listing what can be linked on
       it, and nothing changed
 
+  - given: >
+      the nested-part case's family, forms = the second copy's id and a
+      reference plane's (or a model line's) id, links "Thread Size=Bolt Length"
+    expect: >
+      refused - the plane is neither a form nor a nested part - and NEITHER copy
+      linked: the second copy's Thread Size still reads not linked
+
+  - given: a nested copy's id, links a field that is a TYPE parameter of its family
+    expect: >
+      refused naming LINK_NESTED_TYPE_PARAMETER and listing what can be linked
+      on that copy alone, and nothing changed
+
   - given: a project in front
     expect: notAFamily true and nothing changed anywhere
 
 second_route:
+  - >
+      Select the second nested copy in the Family Editor: the small button at
+      the end of its Thread Size row in Properties shows Bolt Length; the first
+      copy's does not
   - >
       Select the form in the Family Editor, the small button at the end of the
       Visible row in Properties: it shows Show_Handle; in a test project, a
