@@ -1,0 +1,32 @@
+# D-30. A READ that describes the whole project cannot come back empty while
+# Revit runs, so the negative case is TRACKING (D-53): the answer must follow
+# the model, value by value, when the model is changed under it.
+
+positive:
+  - given: a scratch project from a metric template, nothing selected
+    expect: >
+      `unitsTable` with the decimal symbol/digit grouping first and one row
+      per unit type, "Common: Length = Millimeters (mm), ..." among them, and
+      "HVAC: Cooling Load", "HVAC: Heating Load", "HVAC: Air Flow" and "HVAC:
+      Temperature" rows. `unitTypes` the number of rows. Manage > Project
+      Units shows the same, discipline by discipline
+
+  - given: the same project on Revit 2020 (or a 2020 run record)
+    expect: >
+      the same table through Revit 2020's UnitType names, said in `findings`
+
+negative:
+  - given: >
+      the same project with HVAC: Cooling Load and Heating Load set to
+      British thermal units per hour (Btu/h) and Air Flow to Cubic feet per
+      minute (CFM) by SET_PROJECT_UNITS as a rolled-back setup
+    expect: >
+      exactly those three rows changed to Btu/h and CFM and every other row
+      as before - a reader repeating a remembered table, or the template's
+      defaults, could not follow it
+
+second_route:
+  - >
+    Manage > Project Units in Revit: the Discipline list, each unit type's
+    Format button - Units, Rounding, Unit symbol - and the Decimal
+    symbol/digit grouping box

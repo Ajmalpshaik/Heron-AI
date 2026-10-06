@@ -1,0 +1,53 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# Every case runs ROLLED BACK (validate --allow-publish --write), on a scratch
+# project, never a working model; the Admin and Changes switches both on.
+
+positive:
+  - given: >
+      a scratch metric project; settings Cooling Load=Btu/h; Heating
+      Load=Btu/h; Air Flow=CFM
+    expect: >
+      `changed` naming exactly those three, each "Watts (W) -> British
+      thermal units per hour (Btu/h)" or "Liters per second (L/s) -> Cubic
+      feet per minute (CFM)" as READ BACK, with the old rounding kept where
+      it fits. Manage > Project Units, HVAC, shows the same; every other
+      unit type as before (REPORT_PROJECT_UNITS)
+
+  - given: settings Length=Millimeters, 1 decimal place
+    expect: >
+      `changed` "Common: Length: Millimeters (mm), 0 decimal places ->
+      Millimeters (mm), 1 decimal place" - the symbol kept, only the
+      rounding moved
+
+  - given: the same settings a second time
+    expect: >
+      `changed` empty and the unit types in `alreadyThat` - nothing written
+
+  - given: >
+      the working model, no transaction open (validate without --write),
+      Cooling Load=Btu/h - a measurement, not a change
+    expect: >
+      `refused` with Revit's own words about the missing transaction and the
+      plan. Nothing changes
+
+negative:
+  - given: settings Cooling Load=Horsepower
+    expect: >
+      `refused` saying it is not a unit Revit offers for HVAC: Cooling Load,
+      listing every one it does; nothing changed
+
+  - given: settings Temperature=Celsius (no discipline)
+    expect: >
+      `refused` naming every discipline that has a Temperature, asking for
+      one - unless the release has only one; nothing changed
+
+  - given: settings Air Flow=CFM; Duct Pressure=Pascals
+    expect: >
+      `refused` - "Duct Pressure" is not a unit type, with the near names -
+      and Air Flow NOT changed either: one bad entry stops the whole call
+
+second_route:
+  - >
+    Manage > Project Units: the Discipline list and each unit type's Format
+    dialog - Units, Rounding, Unit symbol. REPORT_PROJECT_UNITS reads the
+    same table back
