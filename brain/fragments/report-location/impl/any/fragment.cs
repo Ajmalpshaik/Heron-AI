@@ -1,5 +1,5 @@
 // NOT STANDALONE. Assumes `doc`, `elements` and `sharedCoordinates` are in
-// scope; leaves `locations`, `withoutLocation` and `findings` behind.
+// scope; leaves `locations`, `withoutLocation`, `findings` and `site` behind.
 //
 // A READ. It opens no transaction and needs none.
 //
@@ -38,6 +38,23 @@
 // position reported is given in metres. It is FLAGGED only beyond the limit
 // Revit's own help states for geometry from the internal origin - 20 miles
 // (about 32 km) - and that limit is named as Revit's, not Heron's.
+//
+// VERSION 4 - WHERE THE PROJECT IS, WITH NOTHING SELECTED. The site is now
+// the whole of Manage > Location as well: the place name, latitude and
+// longitude, time zone, daylight saving and weather station, and True North
+// in the Site tab's words - degrees East or West of project north. It is one
+// string, `site`, because the findings list reaches the chat cut to three
+// lines. `elements` is optional: with nothing selected the add-in binds an
+// empty list (an add-in older than this version still refuses, as before),
+// and the reply is the site alone.
+//
+// TRUE NORTH'S SIDE IS MEASURED, NOT TAKEN FROM THE SIGN OF REVIT'S ANGLE,
+// which the API documentation does not state: Revit is asked for the shared
+// position of two points a hundred feet apart along project north (what
+// Report Shared Coordinates gives), and the way that pair points says where
+// true north is. It works when both base points sit on the internal origin,
+// where the transform check above cannot tell its two directions apart. The
+// angle Revit stores is printed beside it, so the two can be compared.
 
 const double MillimetresPerFoot = 304.8;
 // Revit's own documented limit for model geometry from the internal origin:
@@ -49,6 +66,7 @@ const double Tolerance = 0.0005 / 0.3048;
 var locations = new List<string>();
 var withoutLocation = 0;
 var findings = new List<string>();
+var site = "";
 
 Func<XYZ, string> asMm = p => string.Format("({0:0}, {1:0}, {2:0}) mm",
     p.X * MillimetresPerFoot, p.Y * MillimetresPerFoot, p.Z * MillimetresPerFoot);
@@ -146,7 +164,8 @@ Func<XYZ, string> sharedPart = p => wantShared ? "; shared " + asShared(toShared
 
 if (elements == null || elements.Count == 0)
 {
-    findings.Add("No elements were given");
+    findings.Add("No elements were selected or given, so no element position is reported - only where "
+        + "the project is (the site)");
 }
 else
 {
@@ -254,24 +273,99 @@ else
     }
 }
 
-// ---- The site, said every time -----------------------------------------------
+// ---- The site, said every time, as ONE string --------------------------------
+//
+// Manage > Location and Manage > Position in the words Revit's dialogs use.
+// SET_PROJECT_LOCATION writes the same words and reads them back the same way.
 
-findings.Add(trueNorthDegrees.HasValue
-    ? string.Format("Project north is turned {0:0.###} degrees from true north (the active project "
-        + "location's angle)", trueNorthDegrees.Value)
-    : "The angle between project north and true north could not be read");
-
-Action<string, BasePoint> site = (what, point) =>
 {
-    if (point == null) { findings.Add(what + ": could not be read"); return; }
+    var invariant = System.Globalization.CultureInfo.InvariantCulture;
+    var degree = ((char)176).ToString();
+    var parts = new List<string>();
+
+    ProjectLocation active = null;
+    try { active = doc.ActiveProjectLocation; } catch (Exception) { active = null; }
+    parts.Add("project location " + (active == null ? "could not be read" : "'" + active.Name + "' (the active one)"));
+
+    SiteLocation siteHere = null;
+    try { siteHere = doc.SiteLocation; } catch (Exception) { siteHere = null; }
+    if (siteHere == null) parts.Add("the site location could not be read");
+    else
+    {
+        try
+        {
+            var latitude = siteHere.Latitude * 180.0 / Math.PI;
+            var longitude = siteHere.Longitude * 180.0 / Math.PI;
+            var minutes = (int)Math.Round(Math.Abs(siteHere.TimeZone) * 60.0);
+            parts.Add("place name '" + (siteHere.PlaceName ?? "") + "'");
+            parts.Add("latitude " + Math.Abs(latitude).ToString("0.000000", invariant) + degree + (latitude < 0 ? " S" : " N")
+                + ", longitude " + Math.Abs(longitude).ToString("0.000000", invariant) + degree + (longitude < 0 ? " W" : " E"));
+            bool? daylight = null;
+            try
+            {
+                foreach (var element in new FilteredElementCollector(doc).OfClass(typeof(SunAndShadowSettings)))
+                {
+                    var sun = element as SunAndShadowSettings;
+                    if (sun == null) continue;
+                    if (active != null && sun.ProjectLocationId == active.Id) { daylight = sun.UsesDST; break; }
+                    if (daylight == null) daylight = sun.UsesDST;
+                }
+            }
+            catch (Exception) { }
+            parts.Add("time zone UTC" + (siteHere.TimeZone < 0 ? "-" : "+") + (minutes / 60).ToString("00", invariant) + ":"
+                + (minutes % 60).ToString("00", invariant) + ", daylight saving "
+                + (daylight.HasValue ? (daylight.Value ? "used" : "not used") : "could not be read"));
+            string station = "";
+            try { station = siteHere.WeatherStationName ?? ""; } catch (Exception) { }
+            double height = 0.0;
+            try { height = siteHere.Elevation; } catch (Exception) { }
+            parts.Add("weather station '" + station + "', site elevation " + (height * 0.3048).ToString("0.###", invariant) + " m");
+        }
+        catch (Exception) { parts.Add("the site location could not be read"); }
+    }
+
+    // True North's side, MEASURED from two points along project north.
+    string north = "true north could not be read";
     try
     {
-        var internalAt = point.Position;
-        var sharedAt = point.SharedPosition;
-        findings.Add(string.Format("{0}: {1} from the internal origin ({2:0.0} m away); shared {3}",
-            what, asMm(internalAt), internalAt.GetLength() * MillimetresPerFoot / 1000.0, asShared(sharedAt)));
+        if (active != null)
+        {
+            var pivot = projectBase == null ? XYZ.Zero : projectBase.Position;
+            var at = active.GetProjectPosition(pivot);
+            var ahead = active.GetProjectPosition(pivot + XYZ.BasisY * 100.0);
+            var dx = ahead.EastWest - at.EastWest;
+            var dy = ahead.NorthSouth - at.NorthSouth;
+            if (Math.Abs(dx) + Math.Abs(dy) > 1e-6)
+            {
+                var east = -Math.Atan2(dx, dy) * 180.0 / Math.PI;
+                if (east <= -180.0) east += 360.0;
+                if (east > 180.0) east -= 360.0;
+                north = Math.Abs(east) < 0.0005
+                    ? "true north 0" + degree + " - project north is true north"
+                    : "true north " + Math.Abs(east).ToString("0.###", invariant) + degree + (east > 0 ? " East" : " West")
+                        + " of project north";
+            }
+        }
     }
-    catch (Exception) { findings.Add(what + ": its position could not be read"); }
-};
-site("Project base point", projectBase);
-site("Survey point", survey);
+    catch (Exception) { }
+    if (trueNorthDegrees.HasValue)
+        north += " (Revit's stored angle " + trueNorthDegrees.Value.ToString("0.###", invariant) + " degrees)";
+    parts.Add(north);
+
+    Action<string, BasePoint> point = (what, basePoint) =>
+    {
+        if (basePoint == null) { parts.Add(what + " could not be read"); return; }
+        try
+        {
+            var internalAt = basePoint.Position;
+            var sharedAt = basePoint.SharedPosition;
+            parts.Add(string.Format(invariant, "{0} {1} from the internal origin ({2:0.0} m away), shared {3}",
+                what, asMm(internalAt), internalAt.GetLength() * MillimetresPerFoot / 1000.0, asShared(sharedAt)));
+        }
+        catch (Exception) { parts.Add(what + ": its position could not be read"); }
+    };
+    point("project base point", projectBase);
+    point("survey point", survey);
+
+    site = "SITE  ||  " + string.Join("  ||  ", parts.ToArray());
+}

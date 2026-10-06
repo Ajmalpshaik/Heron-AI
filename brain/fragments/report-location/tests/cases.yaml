@@ -30,7 +30,36 @@ positive:
       from the INTERNAL origin and that facing is in project north, and the
       site lines still present
 
+  # Version 4, added 2026-10-06.
+  - given: NOTHING selected, on a scratch project (the add-in from version 4's change)
+    expect: >
+      `locations` empty, `findings` saying no element was selected, and
+      `site` naming the project location, place name, latitude and
+      longitude, time zone, daylight saving, weather station and True North
+      East or West of project north - what Manage > Location shows
+
+  - given: >
+      nothing selected, with SET_PROJECT_LOCATION as a rolled-back setup
+      writing city=Doha, Qatar; true north=30 East
+    expect: >
+      `site` reading Doha, Qatar, about 25.3 N 51.5 E, UTC+03:00, and "true
+      north 30 East of project north", with the angle Revit stores beside it
+
 negative:
+  # Version 4. TRACKING (D-53): the site cannot come back empty, so it must
+  # follow the model when the model is changed under it.
+  - given: >
+      the same setup writing a different city and true north=12 West, then
+      the same run with no setup
+    expect: >
+      `site` following each exactly - the second city, "12 West", then the
+      template's own site again. A reader repeating a remembered site, or the
+      template's, could not follow all three
+
+  - given: nothing selected, on an add-in OLDER than version 4's change
+    expect: >
+      refused as before, "elements was never supplied" - never an empty
+      answer dressed as a site
   - given: a thirty-metre duct reported as a single coordinate
     expect: >
       that NOT happening. THIS IS THE FIRST CASE TO RUN. The midpoint of a long

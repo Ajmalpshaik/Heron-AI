@@ -1,0 +1,64 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# Every case runs ROLLED BACK (validate --allow-publish --write), on a scratch
+# project, never a working model; the Admin and Changes switches both on.
+
+positive:
+  - given: a scratch project at its template's city; settings city=Doha, Qatar
+    expect: >
+      `changed` naming latitude, longitude, time zone and place name, each
+      before -> after as read back, and `findings` reading Doha, Qatar,
+      about 25.3 N 51.5 E, UTC+03:00. Manage > Location shows the same
+
+  - given: the same project; settings true north=30 East
+    expect: >
+      `changed` "true north 0 -> 30 East, turned about the project base
+      point". A plan view set to True North shows the model turned; the
+      project base point's shared N/S and E/W are unchanged
+
+  - given: settings latitude=25.2854 N; longitude=51.5310 E; time zone=UTC+03:00
+    expect: >
+      the site at those coordinates, the time zone written after them and
+      read back as UTC+03:00, and a note if the place name still names the
+      old city
+
+  - given: the same settings a second time
+    expect: >
+      `changed` empty and every setting in `alreadyThat` - nothing written
+
+  - given: >
+      the working model, no transaction open (validate without --write),
+      city=Doha, Qatar - a measurement, not a change
+    expect: >
+      `refused` with Revit's own words about the missing transaction and
+      the plan it would have carried out. Nothing changes
+
+negative:
+  - given: settings city=Atlantis
+    expect: >
+      `refused` saying Revit's city list has no 'Atlantis', with any names
+      holding that word; nothing changed, the site read back as it was
+
+  - given: settings latitude=25.2854 N (no longitude)
+    expect: >
+      `refused` - latitude and longitude go together; nothing changed
+
+  - given: settings true north=30 (no East or West)
+    expect: >
+      `refused` asking for East or West; nothing turned
+
+  - given: settings daylight saving=yes on a site that does not use it
+    expect: >
+      `refused` saying the API can read it but not set it, and where the
+      Location dialog's box is; nothing changed
+
+  - given: settings elevation=10
+    expect: >
+      `refused` naming 'elevation' as not a site setting and listing the
+      seven that are
+
+second_route:
+  - >
+    Manage > Location: the Location tab's Project Address, Latitude,
+    Longitude, Time Zone and Use Daylight Savings time; the Site tab's Angle
+    from Project North to True North, East or West. REPORT_LOCATION reads
+    the same with nothing selected

@@ -100,6 +100,26 @@ namespace Heron.BindingNote.TestHost
             Check(HeronBindingNote.AbsentValue("double", "true") == null,
                   "an optional number is still refused - no number means 'not asked'");
 
+            // FRAGMENT-ISSUES row 5b-322: WHAT AN UNFILLED ELEMENT LIST BINDS.
+            // A card that says nothing selected is a fine answer gets an empty
+            // list; every other unfilled need is still refused.
+            Check(HeronBindingNote.EmptyWhenAbsent("IList<Element>", "true") == "new List<Element>()",
+                  "an element list marked optional binds an empty list");
+            Check(HeronBindingNote.EmptyWhenAbsent("IList< Element >", " True ") == "new List<Element>()",
+                  "however the card spaces the type and spells true");
+            Check(HeronBindingNote.EmptyWhenAbsent("IEnumerable<Element>", "true") == "new List<Element>()",
+                  "an IEnumerable of elements too");
+            Check(HeronBindingNote.EmptyWhenAbsent("IList<Element>", null) == null,
+                  "an element list NOT marked optional is still refused - nobody was asked");
+            Check(HeronBindingNote.EmptyWhenAbsent("IList<Element>", "false") == null,
+                  "and so is one marked optional: false");
+            Check(HeronBindingNote.EmptyWhenAbsent("IList<ElementId>", "true") == null,
+                  "a list of ids is not an element list here, as in IsElementList");
+            Check(HeronBindingNote.EmptyWhenAbsent("Element", "true") == null,
+                  "one element has no empty value, so it is still refused");
+            Check(HeronBindingNote.EmptyWhenAbsent("bool", "true") == null,
+                  "a bool is AbsentValue's case, not this one");
+
             Console.WriteLine();
             if (Failures.Count > 0)
             {

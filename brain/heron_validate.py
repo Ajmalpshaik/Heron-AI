@@ -203,6 +203,12 @@ def route_for(frag, table):
     from_fragment = [n for n in frag.needs() if HF.need_source(n) == "fragment"]
     if not from_fragment:
         return STANDALONE, "runs on the open document alone"
+    # An element list the card lets be empty is not waited on either - the
+    # add-in binds it empty when nothing is selected (HF.need_may_be_empty).
+    if all(HF.need_may_be_empty(n) for n in from_fragment):
+        return STANDALONE, ("runs on the open document alone, or on what is "
+                            "selected: %s may be left empty"
+                            % ", ".join(sorted(n.get("name") for n in from_fragment)))
 
     missing, sources = [], []
     for need in from_fragment:

@@ -1,0 +1,215 @@
+heron-agent: HERON-REVIT-DOC-004
+heron-step: 17
+heron-status: PROVEN
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-042
+semantic-identity: "move the project site, change its time zone and rotate true north"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# FRAGMENT-ISSUES row 5b-322: on 2026-10-04 a session building loads asked
+# Heron to set the project's latitude and longitude to Doha and nothing could,
+# and on 2026-10-06 the owner set the site of "Heron loads test" to Qatar by
+# hand before a building-loads run. The loads read the site (docs/44 section
+# 6, gate 1), so a project left at its template's city calculates the wrong
+# sun. The owner asked for the whole job, not that one value: the site, the
+# time zone, daylight saving and True North together, each read back.
+kind: action
+domain: revit.document
+capability: SET_PROJECT_LOCATION
+version: 1
+source: OFFICIAL
+# ADMIN, BEHIND THE OWNER'S ADMIN SWITCH (D-106). It changes how the project
+# is set up for everybody who opens it - the sun every solar study and every
+# load calculation uses, and the shared coordinates every survey number is
+# read in - which is the class of change D-106's Admin row names: "changes to
+# how the project is set up". Row 5b-322 recorded the site as a D-106 Admin
+# change before this was built. It moves no element, and one Ctrl+Z undoes it.
+risk: ADMIN
+
+# HOW IT BEHAVES - a comment, not `purpose`, because `purpose` is searched and these
+# paragraphs name the site's settings so often that QUESTIONS about the site were
+# answered by this write (measured 2026-10-06 on both search backends).
+#
+# **A CITY IS REVIT'S OWN.** It is looked up in the list the Location dialog
+# offers, read through the API, and brings that entry's latitude, longitude,
+# time zone and name. "Doha" finds "Doha, Qatar" when only one entry is called
+# that; a name the list does not hold is refused with the nearest names in
+# it, never guessed at.
+#
+# **LATITUDE AND LONGITUDE GO TOGETHER**, in decimal degrees with North,
+# South, East or West - half a move is refused. Revit then picks its own city
+# name and time zone for the new place, and says the time zone can be wrong
+# near a boundary, so both are written after the coordinates when they are
+# given and read back whether or not they are; a place name Revit left naming
+# the old site is said.
+#
+# **TRUE NORTH IS TURNED ABOUT THE PROJECT BASE POINT**, whose shared
+# coordinates stay where they are - what typing Angle to True North on the
+# project base point does. Nothing in the model moves; every shared coordinate
+# a surveyor reads turns about that point. The angle is measured from where
+# Revit puts two points along project north, never from the sign of its angle,
+# so East and West cannot come out mirrored, and a turn that reads back wrong
+# throws and is rolled back.
+#
+# **DAYLIGHT SAVING IS READ, NOT SET.** Revit's API can say whether the site
+# uses it and has no way to change it on any release, so a value that differs
+# from the model's is refused with where Revit's own box is.
+#
+# **THE WEATHER STATION IS REVIT'S CHOICE, AND IT IS SAID.** Its name is
+# get-only on every release. Measured 2026-10-06: Revit 2024 kept Boston's
+# station after a move to Doha, and Revit 2020 moved it to "DOHA INTL AIRPORT".
+# Setting the old coordinates again brings back the place, time zone and True
+# North exactly, but Revit 2020 then chose "SOUTH WEYMOUTH" where the template
+# had "53158_2004" - so the exact way back is Revit's own Undo, one entry.
+purpose: >
+  Changes Manage > Location and does Manage > Position > Rotate True North:
+  moves the project's site to a city from Revit's own Default City List or to
+  a new latitude and longitude, renames the place, changes the time zone, and
+  rotates True North to an angle East or West of project north, as the
+  Location dialog's Site tab words it. One table of changes - "latitude=25.2854
+  N; longitude=51.5310 E; true north=30 East" - where a setting left out is
+  left alone, and every value is read back after the write.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The settings, as Revit's Location dialog words them - semicolons
+    # between, an equals sign in each, any of:
+    #   city=Doha, Qatar                       Revit's Default City List
+    #   latitude=25.2854 N; longitude=51.5310 E    decimal degrees, together
+    #   place name=Heron site
+    #   time zone=UTC+03:00                    or +3, -5:30
+    #   daylight saving=no                     read only - refused if it differs
+    #   true north=30 East                     or 12.5 West, or 0
+    # A setting left out, or given empty, is left alone. A key it does not
+    # know refuses the whole call by name.
+    - name: settings
+      type: IDictionary<string, string>
+      source: request
+  provides:
+    - name: changed
+      # Each setting that moved, before -> after as READ BACK.
+      role: result
+      type: string
+    - name: alreadyThat
+      # Settings already at the value asked, not written. The prior state,
+      # never a change (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      # The whole site READ BACK after the call - project location, place
+      # name, latitude, longitude, time zone, daylight saving, weather
+      # station, site elevation, True North - and anything Revit decided on
+      # its own. One string, because a list reaches the chat cut to three.
+      type: string
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND, so it must not count toward "did
+      # this come back empty" (D-52).
+      role: accounting
+      type: string
+
+proof:
+  date: '2026-10-06'
+  by: Ajmal PS
+  model: Project2 (3,433 elements), Revit 2024, session 51820
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyThat , changed latitude
+    42.358662° N -> 25.285400° N, longitude 71.056740° W -> 51.531000° E; time zone UTC-05:00
+    -> UTC+03:00; place name 'Boston, MA' -> 'Doha, Qatar'; true north 0° (project north is
+    true north) -> 30° East, turned about the project base point, findings Revit kept the
+    weather station '53159_2004' from the old site - Revit's own energy analysis reads it;
+    pick the nearest in Manage > Location, Weather tab. Heron cannot set it.  ||  THE SITE
+    NOW, READ BACK  ||  project location 'Default Site' (the active one)  ||  place name 'Doha,
+    Qatar'  ||  latitude 25.285400° N, longitude 51.531000° E  ||  time zone UTC+03:00, daylight
+    saving not used  ||  weather station '53159_2004', site elevation 10.058 m  ||  true north
+    30° East of project north, refused . inputs came settings as given (5). on Project2
+  negative_case: run with settings=city=Atlantis instead - chosen because it should not contain
+    what this fragment reports - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alreadyThat , changed , findings THE SITE NOW,
+    READ BACK  ||  project location 'Default Site' (the active one)  ||  place name 'Boston,
+    MA'  ||  latitude 42.358662° N, longitude 71.056740° W  ||  time zone UTC-05:00, daylight
+    saving not used  ||  weather station '53159_2004', site elevation 4.877 m  ||  true north
+    0° (project north is true north) of project north, refused Revit's city list (1504 places)
+    has no 'Atlantis'. Give latitude and longitude instead. Nothing was changed.. inputs came
+    settings as given (1). on Project2
+  second_route: 'Revit''s own Manage > Location dialog, read by the owner on the same scratch
+    Project2 in the same session after the same settings were run KEPT (2026-10-06): the Location
+    tab showed Doha''s latitude and longitude and UTC+03:00, and the Site tab ''Angle from
+    Project North to True North: 30.00 deg East'' - the East this tool writes is the dialog''s
+    East. REPORT_LOCATION v4 read the same site back (place ''Doha, Qatar'', 25.285400 N,
+    51.531000 E, UTC+03:00, true north 30 East, Revit''s stored angle 30). A third state from
+    Revit''s own city list (Riyadh, Saudi Arabia, true north 12.5 West, stored angle -12.5)
+    read back the same way, and the site put back with this tool read back IDENTICAL to before
+    (42.358662 N, 71.056740 W, Boston, MA, UTC-05:00, true north 0). NOT YET SEEN: any release
+    but 2024, a workshared model, and a project base point away from the internal origin.'
+  fingerprint: 9117ba2d0917e47d
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, and no units API: degrees become
+  radians by plain arithmetic, a time zone is hours, and the base point's
+  tolerance is half a millimetre in feet. Every member was read with
+  tools/api-surface --members against the reference assemblies of all eight
+  releases on 2026-10-06: `SiteLocation.Latitude`, `Longitude`, `TimeZone`
+  and `PlaceName` (get and set), `WeatherStationName` and `Elevation` (get),
+  `Application.Cities` with `City.Name`, `Latitude`, `Longitude` and
+  `TimeZone`, `ProjectLocation.GetProjectPosition` and `SetProjectPosition`,
+  the four-number `ProjectPosition` constructor, `BasePoint.GetProjectBasePoint`
+  and `Position`, and `SunAndShadowSettings.UsesDST` and `ProjectLocationId`
+  are present on all eight. `UsesDST` is GET-ONLY on all eight and nothing
+  else holds daylight saving, which is why it is refused rather than set.
+  Revit 2027 added `SiteLocation.SetLatitudeAndLongitude(latitude, longitude,
+  updateCityAndTimeZone)`; it is not used, because the property setters do
+  the same on every release and one implementation stays one.
+
+# ROUTING - the same rows are in REPORT_LOCATION, REPORT_PROJECT_UNITS and
+# SET_PROJECT_UNITS.
+#
+#   "set the project location to Doha"        -> here
+#   "move the site to these coordinates"      -> here
+#   "rotate true north 30 degrees east"       -> here - Manage > Position
+#   "change the project's time zone"          -> here
+#   "where is this project"                   -> REPORT_LOCATION. A QUESTION
+#                                                never reaches this write
+#                                                (D-86); that read says the
+#                                                same site and True North with
+#                                                nothing selected
+#   "what is the latitude of the site"        -> REPORT_LOCATION
+#   "where exactly is this duct"              -> REPORT_LOCATION - an
+#                                                element's position, not the
+#                                                project's
+#   "set the project units to Btu/h"          -> SET_PROJECT_UNITS - Manage >
+#                                                Project Units is a different
+#                                                dialog with its own tool
+#   "move the project base point"             -> NOT HERE, and nothing does
+#                                                yet. This turns about the
+#                                                base point and never moves it
+#   "calculate the building loads"            -> the building loads runner
+#                                                (docs/44), which READS the
+#                                                site this sets
+#
+# THREE QUESTIONS STILL REACH THIS WRITE, MEASURED AND LEFT (row 5b-346). On the
+# trained model "what is the project's latitude", "which city is this model
+# located in" and "what latitude and time zone is the site set to" rank this
+# card first and REPORT_LOCATION second - first by MEANING for two of them; the
+# words route prefers this short card and the fusion's tie goes its way. What
+# bounds it: a question gives none of the values this needs, `revit_read`
+# refuses an ADMIN capability before anything is sent, and heron_lookup shows
+# the risk beside every candidate. It is not fixed by declaring those sentences
+# in REPORT_LOCATION, which buys a rank instead of earning one.
+
+utterances:
+  - set the project location to Doha
+  - set the site location to Qatar
+  - rotate true north 30 degrees east
+  - move the site to Doha
+  - set the project time zone to UTC+3
