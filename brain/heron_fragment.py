@@ -149,6 +149,10 @@ AMBIENT = {
     # transaction of its own open, so the fragment can start one of Revit's
     # edit modes - a stair's - and hand this to every transaction it opens.
     "editScopeFailures": "IFailuresPreprocessor",
+    # D-114. Revit overwrites a loaded family only when LoadFamily is handed
+    # an IFamilyLoadOptions, which needs a class a fragment cannot declare -
+    # so the add-in supplies a factory; its bool is overwriteParameterValues.
+    "familyLoadOptions": "Func<bool, IFamilyLoadOptions>",
 }
 
 # WHERE A NEEDED NAME CAN COME FROM. Found the same way AMBIENT was - by writing

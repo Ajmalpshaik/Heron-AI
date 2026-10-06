@@ -1344,6 +1344,63 @@ namespace Heron.Revit.Addin
         }
 
         /// <summary>
+        /// Revit's "Family Already Exists" dialog, answered in advance - D-114.
+        ///
+        /// A loaded family is overwritten ONLY when LoadFamily is handed an
+        /// IFamilyLoadOptions, and that object needs a class, which a fragment
+        /// (a body of statements) cannot declare. So the host supplies it the
+        /// same way it supplies `doc` and D-112's failure discipline: through
+        /// the ambient need `familyLoadOptions`, a factory taking
+        /// overwriteParameterValues. The fragment decides WHETHER to reload and
+        /// with which answer; this only answers Revit's question as told.
+        ///
+        /// ALWAYS "overwrite the existing version". Choosing not to is choosing
+        /// not to reload, and that is the fragment's no - it never calls
+        /// LoadFamily with this object unless the caller asked to reload.
+        ///
+        /// A SHARED NESTED FAMILY TAKES THE FILE'S VERSION (FamilySource.Family).
+        /// The nut edited and saved on disk is the one wanted; FamilySource.Project
+        /// would keep the copy the reload was asked to replace.
+        ///
+        /// ToString() SAYS WHETHER REVIT ASKED. The fragment sees only the
+        /// interface, and LoadFamily's bare `false` cannot tell "the same file
+        /// is already loaded, nothing to do" from a refusal - whether Revit
+        /// reached the question can, and object.ToString needs no new type.
+        /// </summary>
+        private sealed class FamilyReload : IFamilyLoadOptions
+        {
+            private readonly bool _values;
+            private string _asked = "not asked";
+
+            public FamilyReload(bool overwriteParameterValues)
+            {
+                _values = overwriteParameterValues;
+            }
+
+            public bool OnFamilyFound(bool familyInUse, out bool overwriteParameterValues)
+            {
+                overwriteParameterValues = _values;
+                _asked = familyInUse ? "asked: family in use" : "asked: family";
+                return true;
+            }
+
+            public bool OnSharedFamilyFound(Family sharedFamily, bool familyInUse,
+                                            out FamilySource source,
+                                            out bool overwriteParameterValues)
+            {
+                source = FamilySource.Family;
+                overwriteParameterValues = _values;
+                _asked = "asked: shared family";
+                return true;
+            }
+
+            public override string ToString()
+            {
+                return _asked;
+            }
+        }
+
+        /// <summary>
         /// Reads what Revit posted at one commit and does what HeronFailureNote
         /// decides: dismiss every warning, or roll the whole transaction back.
         /// It NEVER returns Continue with anything left in the list and never
@@ -1964,6 +2021,21 @@ namespace Heron.Revit.Addin
                          .Append("\"];\n");
                     how.Add(name + " - Heron's failure discipline, for the fragment's own "
                             + "edit mode");
+                    continue;
+                }
+
+                // D-114: the answer to Revit's "Family Already Exists" dialog,
+                // for a fragment that reloads. A factory, so the fragment says
+                // whether parameter values are overwritten - see FamilyReload.
+                if (name == FamilyLoadNeed)
+                {
+                    bound.Add(name);
+                    globals.__heron[name] = new Func<bool, IFamilyLoadOptions>(
+                        values => new FamilyReload(values));
+                    lines.Append("Func<bool, IFamilyLoadOptions> ").Append(name)
+                         .Append(" = (Func<bool, IFamilyLoadOptions>)__heron[\"").Append(name)
+                         .Append("\"];\n");
+                    how.Add(name + " - Heron's answer to Revit's Family Already Exists dialog");
                     continue;
                 }
 
@@ -4774,6 +4846,13 @@ namespace Heron.Revit.Addin
         /// The same name is in brain/heron_fragment.py's AMBIENT.
         /// </summary>
         private const string EditScopeNeed = "editScopeFailures";
+
+        /// <summary>
+        /// The ambient need that hands a reloading fragment its answer to
+        /// Revit's "Family Already Exists" dialog - D-114. The same name is in
+        /// brain/heron_fragment.py's AMBIENT.
+        /// </summary>
+        private const string FamilyLoadNeed = "familyLoadOptions";
 
         /// <summary>True when the contract sent with the request declares this need.</summary>
         private static bool DeclaresNeed(IList<Dictionary<string, string>> needs, string wanted)
