@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-033
-semantic-identity: "delete these family parameters from the family being edited, when nothing uses them"
+semantic-identity: "delete these family parameters from the family being edited, when nothing uses them - a dimension label taken off first only when asked"
 
 # A NEW CAPABILITY, NOT A REMOVE MODE ON ADD_FAMILY_PARAMETERS, and why:
 # ADD_FAMILY_PARAMETERS (FRG-PAR-022) is PROVEN, and its contract NEEDS a kind,
@@ -24,7 +24,7 @@ semantic-identity: "delete these family parameters from the family being edited,
 kind: action
 domain: revit.families
 capability: DELETE_FAMILY_PARAMETERS
-version: 1
+version: 2
 source: OFFICIAL
 # MODIFY, as every delete in this library declares (DELETE_ELEMENTS,
 # DELETE_REVISION, REMOVE_VIEW_FILTER): the ladder has no rung above MODIFY for
@@ -48,9 +48,23 @@ purpose: >
   DIMENSION labelled with it (how many); an ARRAY whose count it is; a FORM
   FIELD linked to it - Extrusion Start or End, Visible, Material; a NESTED
   FAMILY's parameter linked to it; a CONNECTOR whose size follows it. The
-  refusal says what to unhook first. Nothing is unhooked here - taking a
+  refusal says what to unhook first. Nothing else is unhooked here - taking a
   parameter out from under a form or a formula changes the family somewhere
   the modeller is not looking.
+
+  **ONE EXCEPTION, ONLY WHEN ASKED: A DIMENSION'S LABEL.** With
+  `unlabelFirst` true, a dimension labelled with a parameter being deleted
+  does not block it - the label is taken off first (Label: <None>), then the
+  parameter is deleted, in the same call and the same Undo. For "delete this
+  parameter even though it labels a dimension", or "unlabel the dimension and
+  delete the parameter". The dimension stays, unlabelled, and the planes do
+  not move: an unlabelled dimension drives nothing. Every dimension unlabelled
+  is listed - the two planes it measures, its view, its reading - and read
+  back after Revit regenerates: no label left, the same reading. Formulas,
+  arrays, form fields, nested links and connectors still block exactly as
+  they do without it, and any one of them refuses the whole call before a
+  single label comes off. Without `unlabelFirst`, a label blocks as it always
+  has (version 2; version 1 had no way past it).
 
   A parameter whose OWN formula is set, and which nothing else uses, CAN go -
   its formula reads others, nobody reads it. A formula user that is itself in
@@ -77,10 +91,26 @@ contract:
     - name: parameterNames
       type: IList<string>
       source: request
+    # true takes the label off every dimension labelled with one of these
+    # parameters, then deletes them - only dimension labels; everything else
+    # still blocks. Absent is false: a label blocks, exactly as version 1
+    # did. `optional: true` is what lets it be left out
+    # (HeronBindingNote.AbsentValue).
+    - name: unlabelFirst
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: deleted
       # Each parameter deleted - with its scope, and its own formula if it had
       # one - after the family was read back without it.
+      role: result
+      type: IList<string>
+    - name: unlabelled
+      # Each dimension whose label was taken off because unlabelFirst was
+      # true - the two planes it measures, its view, its reading - read back
+      # bare and unmoved after the regeneration and after the deletion. Empty
+      # without unlabelFirst.
       role: result
       type: IList<string>
     - name: blocked
@@ -104,34 +134,35 @@ contract:
       type: IList<string>
 
 proof:
-  date: '2026-10-04'
+  date: '2026-10-06'
   by: Ajmal PS
-  model: Family15, Revit 2024, session 8804 - the count is NOT recorded because 3,545 elements
-    was measured on Project1, the document in front, and this ran against another one (row
-    15)
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+  model: HeronUnlabelProof (1,724 elements), Revit 2024, session 51820
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
     the transaction group ROLLED BACK afterwards. returned blocked 0 item(s), deleted 1 item(s)
-    [Heron Del A (type)], distance Func`3, findings 2 item(s) [Deleted 1 parameter(s), and
-    read back that the family no lon..., One Undo puts them all back, with their values in
-    every type...], fm FamilyManager, formulaUses Func`4, names 1 item(s) [Heron Del A], notAFamily
-    false, notFound 0 item(s), refused (null), squash Func`2, targets 1 entry(ies). inputs
-    came parameterNames as given (1). on Family15
-  negative_case: 'run with parameterNames=Heron Del B instead - chosen because it should not
-    contain what this fragment reports - run inside a transaction, and Revit reported the
-    transaction group ROLLED BACK afterwards. returned blocked 1 item(s) ["Heron Del B" was
-    NOT deleted, because another parameter''s f...], deleted 0 item(s), distance Func`3, findings
-    1 item(s) [Nothing was deleted - every name is checked before the first...], fm FamilyManager,
-    formulaUses Func`4, names 1 item(s) [Heron Del B], notAFamily false, notFound 0 item(s),
-    refused Nothing was deleted - every name is checked before the first one goes, and 1 of
-    1 could not go. "Heron Del B" was NOT deleted, because another parameter''s formula uses
-    it: "Heron Del D" = Heron Del B * 2 - change or clear that formula first (SET_FAMILY_FORMULA).
-    Nothing was unhooked: deleting a parameter never takes what uses it along with it., squash
-    Func`2, targets 1 entry(ies). inputs came parameterNames as given (1). on Family15'
+    [Heron Unl A (type)], distance Func`3, findings 3 item(s) [Took the label off 1 dimension(s)
+    first, as asked: the dimen..., Deleted 1 parameter(s), and read back that the family no
+    lon..., One Undo puts them all back, with their values in every type...], fm FamilyManager,
+    formulaUses Func`4, labelledBy 2 entry(ies), names 1 item(s) [Heron Unl A], notAFamily
+    false, notFound 0 item(s), refused (null), squash Func`2, targets 1 entry(ies), unlabelFirst
+    true, unlabelled 1 item(s) [the dimension from "Unl Left" to "Unl Right" in "Ref. Level"...].
+    inputs came parameterNames as given (1); unlabelFirst as given. on HeronUnlabelProof'
+  negative_case: 'run against ''HeronUnlabelProof'' with parameterNames=Heron Unl B, unlabelFirst=true
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    blocked 1 item(s) ["Heron Unl B" was NOT deleted, because another parameter''s f...],
+    deleted 0 item(s), distance Func`3, findings 1 item(s) [Nothing was deleted - every name
+    is checked before the first...], fm FamilyManager, formulaUses Func`4, labelledBy 2 entry(ies),
+    names 1 item(s) [Heron Unl B], notAFamily false, notFound 0 item(s), refused Nothing was
+    deleted - every name is checked before the first one goes, and 1 of 1 could not go. "Heron
+    Unl B" was NOT deleted, because another parameter''s formula uses it: "Heron Unl C" =
+    Heron Unl B / 3 - change or clear that formula first (SET_FAMILY_FORMULA). Nothing was
+    unhooked: deleting a parameter never takes what uses it along with it., squash Func`2,
+    targets 1 entry(ies), unlabelFirst true, unlabelled 0 item(s). inputs came parameterNames
+    as given (1); unlabelFirst as given. on HeronUnlabelProof'
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 6228dbeedea3a82a
-
+  fingerprint: afa22976c7d862bd
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -143,10 +174,19 @@ compatibility-note: >
   `InternalDefinition.BuiltInParameter` read the same 2020 through 2027 (the
   RevitAPI reference assemblies, read 2026-10-04 with tools/api-surface). No
   call here changed shape across the range, so nothing is chosen at run time.
+  Version 2 adds the `Dimension.FamilyLabel` SETTER, given null to take a
+  label off, with `Dimension.References`, `Dimension.Value`,
+  `Reference.ElementId` and `Element.OwnerViewId` to describe the dimension -
+  `FamilyParameter FamilyLabel { get; set; }`, `ReferenceArray References`,
+  `double? Value` and `ElementId ElementId` in every release 2020 through 2027
+  (api-surface, read 2026-10-06). No dimension is deleted, so
+  `Document.Delete` is not called.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "delete the Cap R Start parameter from this family" -> here
+#   "delete this parameter even though it labels a dimension" -> here, unlabelFirst
+#   "label the width with the Width parameter" -> LABEL_FAMILY_DIMENSION
 #   "add a Width parameter to this family"   -> ADD_FAMILY_PARAMETERS
 #   "clear the value out of this parameter"  -> REMOVE_PARAMETER_VALUE - a
 #                                               value on placed elements; the
@@ -159,3 +199,6 @@ utterances:
   - delete these family parameters
   - remove the unused parameters Cap R Start and Body Material from the family
   - delete a leftover family parameter
+  - delete this parameter even though it labels a dimension
+  - remove the label from the dimension and delete the parameter
+  - unlabel the dimension and delete the Frame Thickness 2 parameter
