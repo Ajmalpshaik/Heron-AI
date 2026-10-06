@@ -1872,7 +1872,7 @@ def sprinkler_layout(layout_json, inputs, project=None, project_name=None):
             recorded = {}
         given = LAYOUT.carried(LAYOUT.load_inputs(project), given)
     result = LAYOUT.preview(data, given, recorded=recorded)
-    result["inputs"] = given
+    given = result["inputs"]
     said = LAYOUT.summary_text(result)
     if project:
         stated = LAYOUT._value((given.get("standards") or {}).get("sprinkler_standard"))

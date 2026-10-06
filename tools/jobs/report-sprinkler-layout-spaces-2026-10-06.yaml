@@ -1,0 +1,27 @@
+# The proof plan for REPORT_SPRINKLER_LAYOUT_SPACES (docs/47, NEEDS-CHECKING group CF).
+#
+#     python tools/batch-prove.py tools/jobs/report-sprinkler-layout-spaces-2026-10-06.yaml --dry-run
+#
+# THE MODEL IS THE OWNER'S TO NAME. It needs an L-shaped office Space with a
+# room-bounding column and a ceiling, and a store Space with one sprinkler in
+# it, on a level not at zero. Run it on a TEST COPY. Reading only - placing is
+# CF4 to CF7, run from the Companion, not here.
+
+model: the owner's sprinkler layout test model (to be named), Revit 2024
+
+jobs:
+  # The positive reads the selected rooms. The negative names a UniqueId that
+  # matches nothing: no room may be read, and a finding must name the id.
+  - fragment: report-sprinkler-layout-spaces
+    set:
+      spaces: "*"
+    negative-set:
+      spaces: "no-such-unique-id"
+    expect: layoutJson
+    note: >
+      Select the office and the store first. The positive's spaces must list
+      both, the office's outline matching its boundary on plan and its
+      ceiling found; the store's head must be in its sprinklers. The negative
+      must come back with spaces empty, spaceCount 0 and a finding naming the
+      id. Then read the positive's layoutJson with heron_sprinkler_layout.read()
+      and rooms(): the store has its head, the office has none.

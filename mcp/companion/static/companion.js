@@ -2124,8 +2124,10 @@ function layoutJob(Y, state) {
   const sec = el("section", "l-sec");
   sec.append(el("h3", null, "The job - asked once"));
   const std = sprinklerField(state.standards.sprinkler_standard, "sprinkler standard", v => { state.standards.sprinkler_standard = v; });
+  std.className = "y-wide";
   const pick = el("select");
   pick.setAttribute("aria-label", "sprinkler type");
+  pick.className = "y-wide";
   const none = el("option", null, "— choose a sprinkler type —");
   none.value = "";
   pick.append(none);
@@ -2180,6 +2182,7 @@ function layoutRooms(Y, state) {
     const mine = state.rooms[r.key] = state.rooms[r.key] || {};
     const haz = el("select");
     haz.setAttribute("aria-label", "hazard class of " + r.label);
+    haz.className = "y-mid";
     const blank = el("option", null, "—");
     blank.value = "";
     haz.append(blank);

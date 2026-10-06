@@ -143,6 +143,8 @@ def test_the_office_is_laid_out_and_the_others_are_not():
     assert by["u-store"]["status"] == "skipped" and by["u-lobby"]["status"] == "skipped"
     assert got["status"] == "ok" and got["levels"]["L2"]["heads"] == office["count"]
     assert "ready to place" in L.summary_text(got)
+    assert got["inputs"]["rooms"]["u-office"]["hazard"] == "light hazard"
+    assert list(got["inputs"]["limits"]) == ["light hazard"], "the page shows the class it offers"
 
 
 def test_a_face_based_type_is_not_placed():

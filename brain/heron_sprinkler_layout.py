@@ -209,6 +209,20 @@ def _class(hazard, standard):
     return FIRE.hazard_key(hazard, family) or str(hazard)
 
 
+def canonical(inputs, standard):
+    """The answers with every hazard class named as the engine names it - a room's class
+    and the limits' keys - so the page shows "light" as the "light hazard" it offers."""
+    inputs = normalise(inputs)
+    for values in inputs["rooms"].values():
+        if _value(values.get("hazard")):
+            values["hazard"] = _class(_value(values["hazard"]), standard)
+    limits = {}
+    for name, values in inputs["limits"].items():
+        limits.setdefault(_class(name, standard), {}).update(values)
+    inputs["limits"] = limits
+    return inputs
+
+
 def _limits_for(inputs, hazard, standard):
     """The limits given for one class, whatever spelling of the class they were given under."""
     for name, values in inputs["limits"].items():
@@ -236,8 +250,8 @@ def preview(data, inputs, recorded=None):
     A room's status: ok (passed), fail (shown, never placed), asked (an answer missing),
     skipped (it has heads, separation lines, or no outline), refused (the engine said no).
     """
-    inputs = normalise(inputs)
-    standard = _standard(inputs, recorded)
+    standard = _standard(normalise(inputs), recorded)
+    inputs = canonical(inputs, standard)
     job = inputs["job"]
     asked = []
     type_name = _value(job.get("type"))
@@ -276,7 +290,7 @@ def preview(data, inputs, recorded=None):
                                             any(r["status"] == "asked" for r in out_rooms)
                                             else "nothing to place")
     return {"status": status, "rooms": out_rooms, "asked": asked, "levels": levels,
-            "type": type_name, "deflector_mm": deflector, "standard": standard,
+            "inputs": inputs, "type": type_name, "deflector_mm": deflector, "standard": standard,
             "findings": list(data.get("findings") or [])}
 
 

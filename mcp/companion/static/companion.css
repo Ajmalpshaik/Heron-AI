@@ -815,3 +815,5 @@ body.closed .paint { opacity: .55; filter: grayscale(1); }
 #layout .y-old { fill: #9aa5b1; }
 #layout .y-ok { fill: #2e8b57; }
 #layout .y-fail { fill: #c0392b; }
+#layout .l-table td input.y-wide, #layout .l-table td select.y-wide { width: 260px; max-width: 100%; }
+#layout .l-table td select.y-mid { width: 180px; max-width: 100%; }

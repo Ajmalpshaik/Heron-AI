@@ -223,6 +223,20 @@ Model text reaches the page as text, never as HTML (Golden Rule 19), as on every
 
 ---
 
-## 11. What is built
+## 11. What is built - 2026-10-06
 
-Filled when the build lands.
+The plan is [`docs/work-notes/plans/sprinkler-layout-2026-10-06.md`](work-notes/plans/sprinkler-layout-2026-10-06.md);
+its review log says what each of the 19 findings changed.
+
+| Piece | Holds | Tested by |
+|---|---|---|
+| [`report-sprinkler-layout-spaces`](../brain/fragments/report-sprinkler-layout-spaces/fragment.yaml) | The read (s3), FRG-MEP-060, DRAFT. Compiles on Revit 2020, 2024 and 2027 | `tests/cases.yaml`; NEEDS-CHECKING [group CF](needs-checking/group-cf.md) |
+| [`heron_fire.py`](../brain/heron_fire.py) `sprinkler_layout_room` | The layout of any shape (s4); `measure_heads`, the one copy of the measure `sprinkler_spacing` also runs | `tests/test_fire.py` section 12 |
+| [`heron_sprinkler_layout.py`](../brain/heron_sprinkler_layout.py) | The runner (s5): heads in plan, the questions, the preview, one level's placing, the fingerprint, the read-back, the kept answers | `tests/test_sprinkler_layout.py` |
+| `revit_sprinkler_layout`, `_sprinkler_layout_place` | The chat tool and Apply (s6) - `ANALYZE` and `companion_sprinkler_place` at `MODIFY` | `tests/test_companion.py` |
+| The Companion's Sprinkler Layout panel | The page (s7): the job, the limits per class, the rooms, each room's plan, Preview and Apply per level | `tests/test_companion.py`; checked in headless Chromium on test rooms |
+
+**Not run in Revit.** Where Revit puts a head sent at a height is the first thing CF6 settles
+(FRAGMENT-ISSUES 5b-338). Two defects the review found in what was already there are recorded, not
+fixed: the network read puts heads in Spaces by Revit's volume test (5b-336), and `sprinkler_spacing`
+passes a head standing on a wall (5b-337).
