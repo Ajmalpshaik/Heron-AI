@@ -10,13 +10,15 @@
 
 ## What's here
 
-**Three projects since 2026-09-21** — `Heron.Core`, and the installer, which this folder's own
-*What will be here* has listed since it was written. The installer is two projects on purpose: the
-engine is release-independent and runs anywhere, the window needs Windows.
+**Four projects** — `Heron.Core`, and the installer, which this folder's own *What will be here* had
+listed since it was written. The installer is three projects on purpose: the engine is
+release-independent and runs anywhere, the window needs Windows, and the command line
+(`heron-install`, added 2026-09-22) is the door an AI can knock on without a mouse. Derive the list
+with `find platform -name '*.csproj'` rather than trusting this sentence.
 
 ### `Heron.Core`
 
-Nine classes, each the Kernel half of an agent in
+One file per class (`ls platform/Heron.Core/*.cs`), each the Kernel half of an agent in
 [the registry](../docs/28-agent-registry.md):
 
 | Class | Does | Step |
@@ -25,13 +27,15 @@ Nine classes, each the Kernel half of an agent in
 | [`HeronConfig.cs`](Heron.Core/HeronConfig.cs) | The Configuration Manager. `Load` and `Save`, and deliberately **no** `ApplyFromRequest` | 1 |
 | [`HeronIdentity.cs`](Heron.Core/HeronIdentity.cs) | Stable identity for the things Heron must be able to name twice | 1 |
 | [`HeronOperationRegistry.cs`](Heron.Core/HeronOperationRegistry.cs) | The Tool Registry — every operation Heron will run, and the risk level of each | 3 |
+| [`HeronAppend.cs`](Heron.Core/HeronAppend.cs) | One line onto the end of a file another Revit process may be appending to at the same moment — or a plain answer that it could not be done. Used by the audit trail and the add-in log | 1 |
 | [`HeronAudit.cs`](Heron.Core/HeronAudit.cs) | The audit trail: one append-only line per request, keyed by Workflow ID | 4 |
+| [`HeronAtomicWrite.cs`](Heron.Core/HeronAtomicWrite.cs) | Write a file so an interrupted write cannot destroy what was already there — never delete-then-move | 6 |
 | [`HeronLease.cs`](Heron.Core/HeronLease.cs) | Who currently holds a Revit, and who may therefore send it anything ([D-22](../docs/DECISIONS.md)) | 6 |
 | [`HeronPermissions.cs`](Heron.Core/HeronPermissions.cs) | The seven permission levels of [docs/12 §1](../docs/12-security-and-permissions.md), in order | 6 |
 | [`HeronStop.cs`](Heron.Core/HeronStop.cs) | Emergency Stop — one switch that stops Heron doing anything further | 6 |
 | [`HeronUnits.cs`](Heron.Core/HeronUnits.cs) | Unit conversion. Millimetres, which is what the user says, to whatever Revit wants | 6 |
 
-### `Heron.Installer` — BUILT, NOT PROVEN
+### `Heron.Installer` — RUN ON THE OWNER'S PC, NOT EVERY ROW
 
 The install engine, and **no window** — Stage 3 of
 [the plugin extension plan](../docs/work-notes/plans/plugin-extension/02-implementation.md). Given the
@@ -44,16 +48,25 @@ Revit is open, and reports per product per release.
 | [`InstallPlan.cs`](Heron.Installer/InstallPlan.cs) | what will be installed where, and what is skipped **with the reason**. Pure: no files, no Revit, no clock |
 | [`IRevitEnvironment.cs`](Heron.Installer/IRevitEnvironment.cs) | the two questions about Windows, as an interface, so a test can answer them |
 | [`InstallEngine.cs`](Heron.Installer/InstallEngine.cs) | plan, wait, deploy, report. **It never closes Revit** |
-| [`WindowsAdapters.cs`](Heron.Installer/WindowsAdapters.cs) | the only two places it touches Windows. Both shell out to the scripts in `tools/` rather than repeating their rules. **Neither has ever run** |
+| [`WindowsAdapters.cs`](Heron.Installer/WindowsAdapters.cs) | where it touches Windows. They shell out to the scripts in `tools/` rather than repeating their rules. **First run on the owner's PC 2026-09-21** — Group `AB` in [NEEDS-CHECKING](../docs/needs-checking/group-ab.md) |
+| [`InstallerScreen.cs`](Heron.Installer/InstallerScreen.cs) | what the window and the command line may offer: which rows appear, which may be ticked, and the sentence under a greyed one |
+| [`InstallSource.cs`](Heron.Installer/InstallSource.cs) | whether a named source may be used at all, and the only place a fetch address is built from what was accepted |
+| [`ReleaseAssets.cs`](Heron.Installer/ReleaseAssets.cs) | what a release carries and how a downloaded file is checked. Pure; agrees with `tools/build-release-assets.py` |
+| [`ReleaseDownload.cs`](Heron.Installer/ReleaseDownload.cs) | fetches a product's files from a **named release**, verifies them before use, unpacks them. Nothing downloaded is executed |
+| [`ProductFolder.cs`](Heron.Installer/ProductFolder.cs) | the same as the download, minus the wire: Heron's files already on this PC, no internet |
+| [`UpdateCheck.cs`](Heron.Installer/UpdateCheck.cs) | the verdict on whether a newer release exists — up to date, newer, ahead, or cannot tell |
 
-**It is the one project here that is not Kernel plumbing**, and it is also the only one nothing else
-references — it sits at the bottom of the stack like everything in this folder, and nothing sits on it.
+**It is not Kernel plumbing**, and outside this folder only its own test host references it — the
+window and the command line below sit on it, and nothing outside the installer does.
 It pins `net8.0` rather than following the Revit release, because it installs **for** a release without
 ever loading into one.
 
-> **Everything it DECIDES is tested; nothing it DOES has run.** No file has been written and no
-> PowerShell has executed — that needs Windows. **How many checks that is, derive it** rather than
-> reading a number here:
+> **Everything it DECIDES is tested here; what it DOES has run only on the owner's PC**, on
+> 2026-09-21, recorded as Group `AB` in
+> [`docs/needs-checking/group-ab.md`](../docs/needs-checking/group-ab.md) — it found three Revit
+> releases, read the Addins folder and installed the AI Bridge. Rows still owed are listed there and in
+> [NEEDS-CHECKING](../docs/NEEDS-CHECKING.md). **How many checks the tested half is, derive it** rather
+> than reading a number here:
 >
 > ```bash
 > dotnet run --project tests/Heron.Installer.TestHost -c Release | grep -c '^  ok '
@@ -61,7 +74,7 @@ ever loading into one.
 >
 > This line typed **38** until 2026-09-21 and nothing measurable matched it — row 5b-81.
 
-### `Heron.Installer.App` — BUILT, NOT SEEN
+### `Heron.Installer.App` — SEEN ON THE OWNER'S PC, NOT EVERY ROW
 
 The installer **window** — `HeronInstaller.exe`, Stage 4. One window, one list, two buttons.
 
@@ -77,10 +90,22 @@ fails if the window names a product, asks a product anything, or grows an Update
 
 **No XAML.** [`revit/Heron.Revit.Addin`](../revit/Heron.Revit.Addin/) builds its windows in C# too.
 
-> **No pixel has been drawn.** It compiles on all eight releases with 0 warnings. Whether the window
-> appears, is readable, and installs anything is owed on a Windows PC — **Group `AB`** in
-> [NEEDS-CHECKING](../docs/NEEDS-CHECKING.md). **The group is named rather than its range**, because
-> `AB8` was added on 2026-09-21 and this line still said `AB1` to `AB7` an hour later.
+> **It has been seen.** Group `AB` was run on the owner's PC on 2026-09-21: the window appeared, read
+> cleanly after one layout fix, and installed the AI Bridge for real —
+> [`docs/needs-checking/group-ab.md`](../docs/needs-checking/group-ab.md). **Not every row passed**:
+> which are still owed or blocked is that file's and
+> [NEEDS-CHECKING](../docs/NEEDS-CHECKING.md)'s answer, not this one's. **The group is named rather
+> than its range**, because `AB8` was added on 2026-09-21 and this line still said `AB1` to `AB7` an
+> hour later.
+
+### `Heron.Installer.Cli` — BUILT, NOT RUN ON WINDOWS
+
+`heron-install`, Stage 6 — routes 1 and 2, the AI installing. The choices arrive already made on a
+command line; everything after that is the same engine the window uses. [`Arguments.cs`](Heron.Installer.Cli/Arguments.cs)
+reads the command line and refuses an unknown flag by name; [`Program.cs`](Heron.Installer.Cli/Program.cs)
+wires things together and decides nothing. `net8.0`, no window, so it runs where Heron is developed.
+**Its runs on a PC with Revit are owed** — Group `AE` in
+[`docs/needs-checking/group-ae.md`](../docs/needs-checking/group-ae.md).
 
 ## What will be here
 

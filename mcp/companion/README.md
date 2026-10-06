@@ -8,9 +8,9 @@ in [docs/40](../../docs/40-heron-companion.md). The chat stays the only place to
 | Runs | inside the chat's MCP server process, started when the chat calls `heron_companion` |
 | Listens | `127.0.0.1` only, on a port Windows picks — never on the network |
 | Reads | the add-in's live file, `%LOCALAPPDATA%\Heron\live\pid-N.json` (written by `revit/Heron.Revit.Addin/HeronLiveState.cs` while the Heron button is connected) |
-| Changes | **only through the chat's own write path**: the page's Apply runs `revit_change`'s one body (`_change`) under the lock every tool call holds - the same gate, Changes switch, pin and single undo entry. Its risk is declared in `heron_tools.COMPANION_ACTIONS` |
+| Changes | **only through the chat's own write path**: the page's Apply runs `revit_change` itself (`_apply_change` and `_apply_table` in `server/heron_mcp_server.py`) under the lock every tool call holds - the same gate, Changes switch, pin and single undo entry. Its risk is declared in `heron_tools.COMPANION_ACTIONS` |
 | Opens | a Windows folder window when Report is pressed, to ask where the HVAC load calculation sheet goes - its own process, nothing printed (`pick_folder`) |
-| Switched off | the Selected card and the Changes tables with their colour books (owner, 2026-10-04) - kept, behind `SHOW_SELECTION` / `SHOW_CHANGES`; see [docs/40 s21.6](../../docs/40-heron-companion.md) |
+| Switched off | the Selected card and the Changes tables with their colour books (owner, 2026-10-04) - kept, behind `SHOW_SELECTION` / `SHOW_CHANGES` in `static/companion.js` (and `SHOW_CHANGES` in `heron_companion.py`); see [docs/40 s21.6](../../docs/40-heron-companion.md) |
 | Lives | as long as the chat that opened it |
 
 ## What's here
