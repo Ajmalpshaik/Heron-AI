@@ -219,9 +219,30 @@ class DocumentPin(object):
     # The identity fields the add-in can send, MOST SPECIFIC FIRST, each with
     # the prefix its collapsed key carries. Read in this order everywhere, so
     # "which of these do both sides have" is one question with one answer.
-    _FIELDS = (("projectKey", "project:"),
+    #
+    # `creationGuid` IS THE MODEL'S OWN ID, and it replaced `projectKey` here
+    # (FRAGMENT-ISSUES 5b-324, D-113). `projectKey` is the UniqueId of the
+    # Project Information element, which a new project inherits from its
+    # TEMPLATE: measured 2026-10-06, "Heron loads test" reported the same one
+    # Project1, Project2 and PIPE.rvt had on 2026-09-15, while its
+    # Document.CreationGUID was its own - and the 18 projects on the owner's
+    # disk made from that template each carry a different one. Comparing the
+    # shared id decided two of them were ONE model: a chat pinned to one read
+    # the other, took its name, and filed its loads under the first one's.
+    #
+    # A model's CreationGUID follows it through Save As and a renamed file,
+    # which is what the shared id was believed to do. So does a COPY's - two
+    # copies of one model open at once still read as one here, as they did
+    # before (5b-324 says so); a write is aimed at the pinned PATH (D-74), so
+    # it still lands in the file the chat was pointed at.
+    _FIELDS = (("creationGuid", "model:"),
                ("documentPath", "path:"),
                ("document", "title:"))
+
+    # Sent beside the identity and kept with it, but never compared as
+    # identity: the shared id is what the add-in's expectProject guard checks,
+    # and what answers kept before D-113 were filed under (heron_earlier).
+    _ALSO_KEPT = ("projectKey",)
 
     def __init__(self):
         self._key = None
@@ -251,17 +272,43 @@ class DocumentPin(object):
         Deliberately narrower than `key`. A pin only has to tell two open
         models apart, so a path or a title will do; a store's NAME has to
         survive the file being renamed and must never be shared with a
-        different model that happens to sit at the same path. Only the Project
-        Information UniqueId does both, so only that is returned here.
+        different model. The model's own id, Document.CreationGUID, does both,
+        so only that is returned here.
+
+        IT WAS THE PROJECT INFORMATION UniqueId UNTIL 5b-324, and this
+        docstring said that id did both. It does not: a new project inherits
+        it from its template, so every model made from one template shared
+        one store - measured 2026-10-06, when "Heron loads test" was given
+        Project2's design weather, set points and profiles without a question
+        (D-113). That id is still on the pin, as `project_information_id`,
+        and names no store.
 
         None means "not known yet", and every caller must treat it as a
         question to ask rather than a scope to skip: skipping the project
         store silently answers a project question out of the company standard
-        and says nothing about it.
+        and says nothing about it. It is ALSO None on Revit 2020 to 2023,
+        which have no CreationGUID, and with an add-in older than D-113 -
+        nothing is kept for such a model, rather than kept where every
+        template-born project would find it.
         """
-        if self._key and self._key.startswith("project:"):
-            return self._key[len("project:"):]
+        if self._key and self._key.startswith("model:"):
+            return self._key[len("model:"):]
         return None
+
+    @property
+    def project_information_id(self):
+        """The UniqueId of the pinned model's Project Information element, as
+        the add-in sent it in `projectKey` - or None.
+
+        NOT AN IDENTITY, and named for what it is so nobody takes it for one:
+        a new project inherits it from its template (5b-324). It is kept for
+        two jobs only. The add-in's expectProject guard compares it, so it is
+        what the server sends there (D-74 says that guard is no longer what
+        keeps a write in the right model). And answers kept before D-113 were
+        filed under it, so it is how heron_earlier finds them - to ASK about
+        them, never to use them.
+        """
+        return self._seen.get("projectKey")
 
     @property
     def is_pinned(self):
@@ -283,21 +330,19 @@ class DocumentPin(object):
         models; an unsaved one falls back to the title and is pinned as
         loosely as it deserves.
 
-        `projectKey` IS PREFERRED AND IT IS THE ONLY ONE A KNOWLEDGE SCOPE MAY
-        BE NAMED AFTER. heron_scope._safe_key defines the project key as the
-        UniqueId of the document's Project Information element - created with
-        the document, surviving save, rename and move. This returned a
-        path-based key and three brain tools handed it to `open_scope`, so a
-        project store was named after a FILE NAME: rename the file and the
-        knowledge is gone; open a detached copy and it is somebody else's
-        store. The add-in had that UniqueId all along for its own
-        preview/commit pairing and never sent it. It does now. Found by a
-        review 2026-09-11.
+        `creationGuid` IS PREFERRED AND IT IS THE ONLY ONE A KNOWLEDGE SCOPE
+        MAY BE NAMED AFTER (D-113). This returned a path-based key once, and
+        three brain tools handed it to `open_scope`, so a project store was
+        named after a FILE NAME: rename the file and the knowledge is gone.
+        Found by a review 2026-09-11, and fixed by sending `projectKey`, the
+        Project Information UniqueId - which turned out to be the TEMPLATE's,
+        shared by every model made from it (5b-324, measured 2026-10-06). The
+        model's own id, Document.CreationGUID, is what was meant all along.
 
         THE PATH AND TITLE FALLBACKS STAY, FOR PINNING ONLY. Golden Rule 20
         needs to tell two open models apart and any stable string does that.
         Naming a STORE is a different question with a stricter answer, which
-        is why `project_key` below returns only the first of these.
+        is why `project_key` above returns only the first of these.
         """
         seen = DocumentPin.identity_of(reply)
         for field, prefix in DocumentPin._FIELDS:
@@ -313,12 +358,14 @@ class DocumentPin(object):
         `key_of` collapses these to one string and throws the rest away, which
         is right for naming a thing and wrong for comparing two of them - see
         check(). A field sent as JSON null (Json.Str writes `"documentPath":
-        null` for an unsaved model) counts as not sent.
+        null` for an unsaved model) counts as not sent. The shared
+        `projectKey` is collected too, and never compared (_ALSO_KEPT).
         """
         if not reply:
             return {}
         found = {}
-        for field, _ in DocumentPin._FIELDS:
+        names = [field for field, _ in DocumentPin._FIELDS] + list(DocumentPin._ALSO_KEPT)
+        for field in names:
             value = reply.get(field)
             if value:
                 found[field] = str(value)
@@ -377,13 +424,23 @@ class DocumentPin(object):
             return None
 
         field = self._common(seen)
-        if field is None:
+
+        # A DIFFERENT SHARED ID STILL PROVES A DIFFERENT MODEL. The same one
+        # proves nothing - every model made from one template carries it
+        # (5b-324) - but two different ones cannot be one model, so it stays
+        # as a refusal and only as one. Dropping it from the comparison let a
+        # reply with no path and another model's id through on the title
+        # alone; found by the review of this change, 2026-10-06.
+        was_id, now_id = self._seen.get("projectKey"), seen.get("projectKey")
+        other_id = bool(was_id and now_id and was_id != now_id)
+
+        if field is None and not other_id:
             # Nothing in common, so nothing to disagree about. The same
             # silence as an unidentifiable reply above, for the same reason:
             # a refusal nobody could act on is worse than none.
             return None
 
-        if self._seen[field] == seen[field]:
+        if field is not None and not other_id and self._seen[field] == seen[field]:
             self._title = title             # a save can rename it; same document
 
             # WHAT A MATCH MAY TEACH THE PIN. Matching on a project key or a
@@ -448,12 +505,14 @@ class DocumentPin(object):
         share a name. `title` alone cannot - this class exists because two
         sessions really did have a model called Project1 open in each.
 
-        NOT `project_key`, deliberately, and that is the lesson of E11. The
-        project key is `ProjectInformation.UniqueId`, which is inherited from
-        the TEMPLATE: two blank projects and an unrelated model in another
-        Revit release were all measured reporting the same one
-        (NEEDS-CHECKING, Group E). It names a knowledge store well and it
-        cannot pick a document out of a list at all.
+        NOT `project_key`, deliberately, and that is the lesson of E11. What
+        the add-in sent as the project key was `ProjectInformation.UniqueId`,
+        which is inherited from the TEMPLATE: two blank projects and an
+        unrelated model in another Revit release were all measured reporting
+        the same one (NEEDS-CHECKING, Group E). This said it named a knowledge
+        store well; it did not, for the same reason (5b-324, D-113). The
+        model's own id that replaced it still cannot pick a document out of a
+        list: two copies of one model open at once share it.
         """
         return self._seen.get("documentPath")
 

@@ -731,10 +731,17 @@ def main():
           "no store - rename the file and a path-named store is orphaned")
     real = DocumentPin()
     real.check({"document": "Tower B", "documentPath": "C:/x/TowerB.rvt",
-                "projectKey": "1a2b3c-0000-4d5e"})
-    check(real.project_key == "1a2b3c-0000-4d5e",
-          "and the Project Information UniqueId the add-in now sends is what "
-          "a project store is named after - it survives save, rename and move")
+                "projectKey": "1a2b3c-0000-4d5e",
+                "creationGuid": "6f1e2d3c-4b5a-4968-8776-655443322110"})
+    check(real.project_key == "6f1e2d3c-4b5a-4968-8776-655443322110",
+          "and the model's own id the add-in now sends, Document.CreationGUID, "
+          "is what a project store is named after - it survives save, rename "
+          "and move. THIS CHECK SAID the Project Information UniqueId until "
+          "2026-10-06, and that id is the TEMPLATE's: every model made from "
+          "one template shared one store (FRAGMENT-ISSUES 5b-324, D-113)")
+    check(real.project_information_id == "1a2b3c-0000-4d5e",
+          "while the shared id stays on the pin by its own name, for the "
+          "add-in's expectProject guard - and names no store")
     check("Json.Str(\"projectKey\"" in open(
               os.path.join(ROOT, "revit", "Heron.Revit.Addin",
                            "RevitOperations.cs"), encoding="utf-8").read(),
@@ -999,7 +1006,7 @@ def main():
           "arrives after SetElementIds has run, so switching model mid-chat "
           "highlighted the wrong building's ducts and then said nothing had "
           "been sent to Revit")
-    check('"expectProject": pinned.project_key or ""' in server_source,
+    check('"expectProject": pinned.project_information_id or ""' in server_source,
           "and the server sends the key with the request rather than checking "
           "it afterwards. Empty means 'do not check': a first request has "
           "nothing to compare against, and refusing it would make the pin "
@@ -1331,7 +1338,7 @@ def main():
           "mid-chat applied the change to the model in front and then "
           "answered 'Nothing has been sent to Revit' about work already in "
           "the undo stack")
-    check('args["expectProject"] = pinned.project_key or ""' in server_source,
+    check('args["expectProject"] = pinned.project_information_id or ""' in server_source,
           "and the server sends the key with the request. Empty means 'do "
           "not check': a first request has nothing to compare against, and "
           "refusing it would make the pin unobtainable")

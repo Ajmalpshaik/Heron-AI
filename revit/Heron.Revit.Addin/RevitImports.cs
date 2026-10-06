@@ -121,6 +121,7 @@ namespace Heron.Revit.Addin
                 Json.Num("revitLinks", revitLinks),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Bool("modifiedAnything", false),
                 Json.Str("reads", Reads(importedCount, linkedCadCount, revitLinks)));
         }
