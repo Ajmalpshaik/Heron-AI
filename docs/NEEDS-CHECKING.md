@@ -493,9 +493,9 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-cf.md`](needs-checking/group-cf.md)
 
-## Group CG - a project's answers kept under the model's own id, and the template's id asked about (2026-10-06)
+## Group CK - a project's answers kept under the model's own id, and the template's id asked about (2026-10-06)
 
-**Its own file:** [`needs-checking/group-cg.md`](needs-checking/group-cg.md)
+**Its own file:** [`needs-checking/group-ck.md`](needs-checking/group-ck.md)
 
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 

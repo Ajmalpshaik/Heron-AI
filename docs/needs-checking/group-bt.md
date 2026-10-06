@@ -16,7 +16,7 @@ a proof:** [`tests/test_hvac.py`](../../tests/test_hvac.py) section 7 holds the 
 the refusal to guess, against stand-in project keys. **Nothing has run against the key Revit itself
 reports**, which is the half that decides which file an answer lands in.
 
-**Since [D-113](../decisions/D-113.md), 2026-10-06, the file is named by the model's own id,** `Document.CreationGUID`, not its Project Information UniqueId - every model made from one template reports the same one of those, and *Heron loads test* was given Project2's answers under it ([5b-324](../fragment-issues/section-5b-rows-176-200.md)). **Run BT2 with two models made from the SAME template:** that is the case the old key failed, unseen until that day. On Revit 2020 to 2023 nothing is kept at all; [Group CG](group-cg.md) holds those rows.
+**Since [D-113](../decisions/D-113.md), 2026-10-06, the file is named by the model's own id,** `Document.CreationGUID`, not its Project Information UniqueId - every model made from one template reports the same one of those, and *Heron loads test* was given Project2's answers under it ([5b-324](../fragment-issues/section-5b-rows-176-200.md)). **Run BT2 with two models made from the SAME template:** that is the case the old key failed, unseen until that day. On Revit 2020 to 2023 nothing is kept at all; [Group CK](group-ck.md) holds those rows.
 
 | # | Check | Expected |
 |---|---|---|
