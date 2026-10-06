@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 14
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -9,7 +9,11 @@ semantic-identity: "place instances of one family type at these points"
 kind: action
 domain: revit.elements
 capability: PLACE_FAMILY_INSTANCES
-version: 1
+# VERSION 2 (2026-10-06, FRAGMENT-ISSUES 5b-334): a work plane-based family
+# goes on the level's own plane at the height asked, or is refused when it
+# cannot be lifted off it; every placement is read back. Version 1's proof
+# no longer describes the code, so this is DRAFT until it is signed again.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -24,6 +28,38 @@ purpose: >
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so
   twenty-four sprinklers are one undo entry rather than twenty-four.
+
+# VERSION 2, AND WHY IT IS WRITTEN HERE AND NOT IN THE PURPOSE ABOVE.
+#
+# A POINT'S Z IS ITS HEIGHT IN THE MODEL, in millimetres, like every point
+# Heron is handed - "2000,2000,6700" on a level at 4000 mm stands 2700 mm above
+# it. Revit's own call reads a level-based family's Z as its height above the
+# level and counts the level twice (a fan coil unit asked at 6700 there came
+# in at 10700, measured 2026-10-06); version 2 puts it right and reads it back.
+# This is the contract the sprinkler layout (docs/47) sends: "the heads'
+# elevation in the model's coordinates".
+#
+# EACH KIND GOES WHERE REVIT WOULD PUT IT BY HAND, AND IS READ BACK
+# (FRAGMENT-ISSUES 5b-334). A work plane-based family goes on the level's own
+# plane - Host the level, Schedule Level the level - with its height as its
+# Offset from Host. Version 1 left three ceiling diffusers asked at 3000 mm on
+# no level, at 0 mm, and said `placed 3`. One that carries no Offset from Host
+# there - M_Supply Diffuser - Circular - Round Neck - Ceiling Mounted, made for
+# a ceiling's face - cannot be lifted, so asked above the level's own height
+# the layout is refused and nothing is kept. A level-based family keeps its Level and Elevation from
+# Level. Each one is read back after the rebuild - where it stands, and its
+# level by FILTER_ELEMENTS_BY_CATEGORY's rule - and one that does not read back
+# where it was asked rolls the whole layout back. `readBack` says how each kind
+# ended up, in the Properties palette's names.
+#
+# THE PURPOSE IS VERSION 1'S, WORD FOR WORD, ON PURPOSE - and every sentence of
+# it is still true. Measured 2026-10-06 on private stores, these two paragraphs
+# written into the purpose sent "what level is this diffuser on" here on both
+# search backends, and "which level are these terminals on" here on the
+# spelling one - questions answered by a change (D-86) - and "place sprinklers
+# at these points" to COUNT_ELEMENTS. Nobody calling this reads the purpose:
+# heron_resolve prints only the values to type, and the reply's readBack says
+# "standing 3000 mm above 'Level 1'" by itself.
 
 contract:
   needs:
@@ -46,6 +82,14 @@ contract:
       # Points nothing could be placed at. Never an instance it placed (D-52).
       role: accounting
       type: int
+    - name: readBack
+      # VERSION 2. How each kind ended up, read off Revit after the rebuild and
+      # grouped - "3 x work plane-based, on 'Level 1''s own plane, standing
+      # 3000 mm above it - Host 'Level 1', Level 'Level 1', Schedule Level
+      # 'Level 1', Offset from Host 3000 mm". A STRING, because a reply cuts a
+      # list to three items. Accounting: it describes what `placed` counts.
+      role: accounting
+      type: string
 
 proof:
   date: '2026-09-13'
@@ -75,8 +119,15 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. The `NewFamilyInstance(XYZ, FamilySymbol,
   Level, StructuralType)` overload and `FamilySymbol.Activate()` are unchanged
-  2020 to 2027. Points arrive in Revit's internal feet - this fragment does no
-  unit arithmetic at all, which is what keeps it clear of the 2021 units move.
+  2020 to 2027. Points arrive in Revit's internal feet - this fragment converts
+  only for the words it prints, which is what keeps it clear of the 2021 units
+  move. Version 2 adds `Level.GetPlaneReference()` (since 2016),
+  `NewFamilyInstance(Reference, XYZ, XYZ, FamilySymbol)`,
+  `Family.FamilyPlacementType`, `Level.ProjectElevation`,
+  `InternalDefinition.BuiltInParameter` and the INSTANCE_FREE_HOST_OFFSET_PARAM,
+  INSTANCE_ELEVATION_PARAM and INSTANCE_SCHEDULE_ONLY_LEVEL_PARAM ids;
+  tools/check-fragments-compile.py built it against all eight releases on
+  2026-10-06. Only Revit 2024 has run it.
 
 # TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
 #
@@ -97,6 +148,19 @@ compatibility-note: >
 # from a default (D-33); the skills that place terminals and sprinklers are to
 # carry this as a precondition. After a placement, read the elevation back
 # rather than trusting `placed`. NEEDS-CHECKING AJ4.
+#
+# REPRODUCED 2026-10-06, AND VERSION 2 READS IT BACK ITSELF (5b-334). Three
+# work plane-based ceiling diffusers asked at 3000 mm came in at 0 mm with no
+# host. Measured the same day in a scratch project on six of Revit's own
+# families: version 1's call reads a LEVEL-BASED family's Z as the height
+# above the level (a fan coil unit asked at 6700 on a level at 4000 came in
+# with Elevation from Level 6700), gives a WORK PLANE-BASED family no host and
+# an absolute height, and cannot lift a "Ceiling Mounted" diffuser at all -
+# it carries no Offset from Host. Version 2 places each kind its own way and
+# refuses, keeping nothing, what does not read back where it was asked. The
+# DOOR half - a hosted family placed with no host - is still the note above:
+# version 2 reads back its height and level, never its host. A door goes
+# through PLACE_HOSTED_FAMILY.
 
 # ROUTING - repeated in LOAD_FAMILY and CHANGE_ELEMENT_TYPE.
 #

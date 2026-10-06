@@ -12,6 +12,34 @@ positive:
       Activate() and Regenerate() this case places nothing, and it is the
       normal state of a family the moment it is loaded
 
+  # VERSION 2, 2026-10-06 - FRAGMENT-ISSUES 5b-334. RUN in Project2 (scratch,
+  # Revit 2024), every leg rolled back.
+  # A POINT'S Z IS ITS HEIGHT IN THE MODEL: Level 1 is at 0 mm and Level 2 at
+  # 4000 mm in Project2, so "...,6700" on Level 2 is 2700 mm above it.
+  - given: >
+      a work plane-based family that carries Offset from Host - M_Supply
+      Diffuser - Hosted - at three points z 3000 on Level 1, and at one point
+      z 6700 on Level 2
+    expect: >
+      placed 3, then 1; readBack "work plane-based, on 'Level 1''s own plane,
+      standing 3000 mm above it - Host 'Level 1', Level 'Level 1', Schedule
+      Level 'Level 1', Offset from Host 3000 mm", and 2700 mm above Level 2.
+      RAN: exactly that
+
+  - given: >
+      a level-based family - M_Fan Coil Unit - Horizontal Basic Concealed - at
+      z 2700 on Level 1 and z 6700 on Level 2. Revit's own call reads the Z as
+      the height above the level, so on Level 2 it first stands at 10700
+    expect: >
+      readBack "level-based, on 'Level 1', standing 2700 mm above it - Level
+      'Level 1', Elevation from Level 2700 mm", and on Level 2 also 2700 mm
+      above it, written back by version 2. RAN: exactly that
+
+  - given: the same three hosted diffusers, tracked across 1, 2, 3 and 5 points
+    expect: >
+      placed 1, 2, 3 and 5, each read back at 3000 mm on Level 1's plane - the
+      D-53 tracking the version 2 draft records
+
 negative:
   - given: an empty point list
     expect: >
@@ -30,6 +58,25 @@ negative:
 
   - given: a point list containing a null
     expect: counted in failed, everything else placed
+
+  # VERSION 2 - the family 5b-334 was found with.
+  - given: >
+      M_Supply Diffuser - Circular - Round Neck - Ceiling Mounted, work plane-
+      based and carrying NO Offset from Host on a level's plane, asked at
+      3000 mm above Level 1
+    expect: >
+      the layout refused and nothing kept: "carries no Offset from Host on a
+      level's plane, so it cannot stand 3000 mm above 'Level 1'", naming Place
+      on Face, a hosted version of the family, or the level's own height as
+      the ways out. Version 1 put these at 0 mm with no host and said placed 3.
+      RAN: exactly that
+
+  - given: the same family at z 4000 on Level 2 - the level's own height
+    expect: >
+      placed 1 on Level 2's own plane - Host 'Level 2', Schedule Level
+      'Level 2' - and read back on that level by FILTER_ELEMENTS_BY_CATEGORY's
+      rule. RAN: placed and read back as said; the filter itself was run on the
+      hosted diffusers, not on this one
 
 second_route:
   - a schedule of that family, counted against the number asked for
