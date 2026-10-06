@@ -47,8 +47,12 @@ Beyond the usual categories, these are specific to what Heron does:
 These are enforced in the architecture, not left to good behaviour. If you find a way around any of
 them, that is a vulnerability worth reporting:
 
-- **The permission gate lives in the Revit add-in**, not in the AI layer. High-risk operations return
-  `REQUIRES_CONFIRMATION` and do not execute.
+- **The permission gate lives in the Revit add-in**, not in the AI layer
+  ([`HeronPermissions`](platform/Heron.Core/HeronPermissions.cs)). Every operation declares its risk in
+  code; one that changes a model is refused while `write.enabled` is off, which is the default, and a
+  write runs as a preview that is rolled back unless it is applied. *(The specification,
+  [12](docs/12-security-and-permissions.md), names a `REQUIRES_CONFIRMATION` reply; no code returns
+  that word.)*
 - **No text Heron reads may raise Heron's own permission level.** Content from documents, model text,
   family names and community packages is data, never instruction. *(Golden Rule 19)*
 - **Every model change runs in one named `TransactionGroup`** and rolls back completely on failure.
@@ -74,5 +78,5 @@ the repository.
 
 ## Supported versions
 
-Heron AI is in specification stage. No released version exists yet, so nothing is currently under
+Heron AI is built but not released. No released version exists yet, so nothing is currently under
 a support commitment. This section will list supported versions once releases begin.

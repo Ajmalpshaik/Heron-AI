@@ -1116,7 +1116,7 @@ and which tool asks it).
 
 ### What it found, and what it proved it cannot do
 
-> **These are the figures from its first run, over 360 fragments** - history, not today's state. Run
+> **These are the figures from its first run** - history, not today's state. Run
 > `python tools/check-revit-gate.py` for the current counts per question.
 
 **One real defect in 360 fragments.** `create-from-room-boundaries` took `heightAboveLevel` and never
