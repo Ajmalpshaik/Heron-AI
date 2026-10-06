@@ -1031,6 +1031,77 @@ def test_switched_off_parts():
           "its live file says 'selection: null', and Idling looks once a second, not five times")
 
 
+def test_layout_panel():
+    """The Sprinkler Layout panel (docs/47): data and hooks only, every route behind
+    the pairing, one level placed once, by name and value through revit_change."""
+    print()
+    print("The Sprinkler Layout panel: Preview places nothing; Apply places one level, once")
+    sys.path.insert(0, os.path.join(ROOT, "brain"))
+    sys.path.insert(0, os.path.join(ROOT, "tests"))
+    import heron_brain as brain_seam
+    import test_sprinkler_layout as LAY
+    panel = hc.LayoutPanel()
+    check(panel.preview({})["said"] == hc.LayoutPanel.GONE
+          and panel.place({"level": "L2"})["said"] == hc.LayoutPanel.GONE,
+          "with no chat connected, Preview and Apply say so and do nothing")
+    data = json.dumps(LAY.read())
+    answer = brain_seam.sprinkler_layout(data, {})
+    panel.open("Project1", answer, ("Project1", "", "11"), read_at="08:00:00")
+    shown = panel.current()
+    check(shown["status"] == "asked" and shown["asked"] and shown["types"]
+          and shown["fields"]["hazard_classes"] and len(shown["view"]) == 3,
+          "the panel shows the questions, the types and each room's plan data from the brain")
+    panel.preview_hook = lambda d, inputs, identity: brain_seam.sprinkler_layout(d, inputs)
+    got = panel.preview(LAY.answers())
+    check(got["ok"] and got["layout"]["status"] == "ok" and got["layout"]["levels"]["L2"]["heads"],
+          "Preview hands the page's answers to the hook and shows the layout")
+    check(panel.preview({"rooms": "not a map"})["ok"] is False,
+          "answers that are not a map are refused - nothing is laid out")
+    calls = []
+
+    def place(d, result, inputs, level, identity):
+        calls.append(level)
+        return {"ok": True, "said": "placed", "placed": {"level": level}}
+    panel.place_hook = place
+    first = panel.place({"level": "L2"})
+    again = panel.place({"level": "L2"})
+    check(first["ok"] and not again["ok"] and calls == ["L2"],
+          "a level is placed once: a second press places nothing")
+    panel.place_hook = lambda *a: {"ok": False, "said": "refused"}
+    panel.open("Project1", brain_seam.sprinkler_layout(data, LAY.answers()), ("Project1", "", "11"))
+    panel.place({"level": "L2"})
+    check("L2" not in panel.current()["placed"],
+          "a placing that was refused leaves the level free to try again")
+    check(panel.place({})["ok"] is False, "Apply with no level places nothing")
+    source = io.open(os.path.join(ROOT, "mcp", "companion", "heron_companion.py"),
+                     encoding="utf-8").read()
+    i = source.index('if path == "/api/layout":')
+    j = source.index('if path in ("/api/layout/preview", "/api/layout/place"):')
+    check(source.index("why = self._api_ok()", i) < source.index("LAYOUT_PANEL.current()", i)
+          and source.index("why = self._api_ok()", j) < source.index("LAYOUT_PANEL.preview(", j),
+          "every Layout route is behind _api_ok like every other route")
+    server = io.open(SERVER, encoding="utf-8").read()
+    for hook in ("preview_hook = _sprinkler_layout_preview",
+                 "place_hook = _sprinkler_layout_place"):
+        check(hook in server, "the server sets %s" % hook.split(" =")[0])
+    place_src = server[server.index("def _sprinkler_layout_place("):]
+    place_src = place_src[:place_src.index(chr(10) + "def ", 10)]
+    check("_moved_since(identity)" in place_src and "with _revit_lock:" in place_src
+          and '"PLACE_FAMILY_INSTANCES"' in place_src and "LAYOUT.changed(" in place_src
+          and "LAYOUT.read_back(" in place_src and "Selection" not in place_src,
+          "Apply checks the pin and that the rooms have not moved under the lock, places by "
+          "name and value, and reads back")
+    check(tools.TOOLS.get("revit_sprinkler_layout") == (tools.ANALYZE, "run_fragment_read")
+          and tools.COMPANION_ACTIONS.get("companion_sprinkler_place")
+          == (tools.MODIFY, "run_fragment_write"),
+          "the chat tool reads only; the page's Apply is declared at revit_change's level")
+    page = io.open(os.path.join(ROOT, "mcp", "companion", "static", "companion.js"),
+                   encoding="utf-8").read()
+    check('"/api/layout/place"' in page and "createElementNS" in page,
+          "the page places through its own route and draws the plans in SVG it makes")
+    print()
+
+
 def test_sprinkler_panel():
     """The Sprinkler panel (docs/46): data and hooks only, every route behind the
     pairing, its own 3D view, and nothing on it writes to Revit."""
@@ -1166,6 +1237,10 @@ def main():
         test_sprinkler_panel()
     except Exception as why:                    # noqa: BLE001 - reported, not hidden
         check(False, "the Sprinkler panel checks ran to the end (they raised %r)" % (why,))
+    try:
+        test_layout_panel()
+    except Exception as why:                    # noqa: BLE001 - reported, not hidden
+        check(False, "the Sprinkler Layout panel checks ran to the end (they raised %r)" % (why,))
     test_no_way_to_an_ai()
     test_addin_side()
 

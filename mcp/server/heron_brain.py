@@ -1836,6 +1836,69 @@ def sprinkler_confirm(network, result, project=None, project_name=None):
     return {"ok": True, "said": said, "result": result}
 
 
+def sprinkler_layout(layout_json, inputs, project=None, project_name=None):
+    """
+    A sprinkler layout for the rooms REPORT_SPRINKLER_LAYOUT_SPACES read -
+    docs/47 s5. `inputs` is a dict or a JSON object string: {"standards",
+    "job": {"type", "deflector_mm"}, "limits": {class: {...}}, "rooms": {room
+    id: {"hazard", "ceiling_mm", "angle_deg"}}}. With a `project` key the
+    project's FIRE standards are read (D-111), the answers kept for it fill in
+    what this call did not say, and the answers are kept again.
+
+    Returns {"data", "result", "said", "fields", "types", "memory"}. Nothing is
+    placed here: Apply is the Companion's, level by level. One audit line,
+    `design.sprinkler_layout`, says how it ended and NEVER carries the inputs.
+    """
+    try:
+        import heron_sprinkler_layout as LAYOUT
+    except ImportError as exc:
+        raise BrainUnavailable("Heron's sprinkler layout could not be imported: %s. It "
+                               "needs nothing beyond Python itself, so this is a broken "
+                               "install." % exc)
+    try:
+        data = LAYOUT.read(layout_json)
+        given = LAYOUT.normalise(inputs)
+    except ValueError as why:
+        _audit().record("design.sprinkler_layout", False, fields={"status": "unreadable"})
+        return {"data": None, "result": None, "said": "Nothing was laid out: %s" % why}
+    recorded, memory = {}, []
+    if project:
+        try:
+            import heron_designbasis as KEEP
+            recorded, note = KEEP.read(project, "fire")
+            if note:
+                memory.append(note)
+        except (ValueError, OSError):
+            recorded = {}
+        given = LAYOUT.carried(LAYOUT.load_inputs(project), given)
+    result = LAYOUT.preview(data, given, recorded=recorded)
+    result["inputs"] = given
+    said = LAYOUT.summary_text(result)
+    if project:
+        stated = LAYOUT._value((given.get("standards") or {}).get("sprinkler_standard"))
+        if stated:
+            try:
+                import heron_designbasis as KEEP
+                _changes, note = KEEP.record(project, {"sprinkler_standard": stated},
+                                             project_name, discipline="fire")
+                if note:
+                    memory.append(note)
+            except (ValueError, OSError) as why:
+                memory.append("NOT KEPT - %s" % why)
+        try:
+            LAYOUT.save_inputs(project, given)
+        except (ValueError, OSError) as why:
+            said += " The answers were NOT KEPT: %s" % why
+    _audit().record("design.sprinkler_layout", result["status"] == "ok",
+                    fields={"status": result["status"]},
+                    numbers={"rooms": len(result["rooms"]), "asked": len(result["asked"]),
+                             "heads": sum(r["count"] for r in result["rooms"]
+                                          if r["status"] == "ok")})
+    return {"data": data, "result": result, "said": said, "memory": memory,
+            "fields": LAYOUT.fields(result.get("standard")), "types": LAYOUT.types(data),
+            "view": LAYOUT.view(data, result)}
+
+
 def sprinkler_report(network, result, model_path=None, project=None, project_name=None,
                      folder=None):
     """

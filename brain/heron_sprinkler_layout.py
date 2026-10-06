@@ -491,6 +491,22 @@ def _spacing(room, previewed, inputs, standard):
     return {"verdict": verdict, "answer": answer}
 
 
+def view(data, result):
+    """What the page draws for each room - made here, drawn there: the outline, the holes,
+    the heads already in it, and each new head with whether it passed. Plan, mm."""
+    previewed = dict((r["key"], r) for r in (result or {}).get("rooms") or [])
+    out = []
+    for room in rooms(data):
+        p = previewed.get(room["key"]) or {}
+        heads = (((p.get("answer") or {}).get("data") or {}).get("heads")) or {}
+        out.append({"key": room["key"], "outline": room["outline_mm"],
+                    "holes": room["holes_mm"],
+                    "existing": [[h["x_mm"], h["y_mm"]] for h in room["heads"]],
+                    "points": [[q["x_mm"], q["y_mm"], not (heads.get(q["id"]) or {}).get("fails")]
+                               for q in p.get("points") or []]})
+    return out
+
+
 def summary_text(result):
     """One paragraph for the chat - totals only; the rooms are on the Companion."""
     rooms_ = result.get("rooms") or []
