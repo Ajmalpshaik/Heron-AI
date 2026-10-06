@@ -28,7 +28,43 @@ positive:
   - given: the same family, values "Nut Material=<By Category>"
     expect: Nut Material reads <By Category> - the parameter cleared, no material deleted
 
+
+  - given: >
+      a family with the types "Standard" and "T2", typeName "Standard", values
+      "Type Name=Test - A"
+    expect: >
+      the type reads "Test - A" in the Family Types dialog, no type is called
+      "Standard" any more, and typesNow lists "Test - A" and "T2"
+
+  - given: >
+      a family with the types "T1" and "T2", typeName "T1", deleteType true,
+      values empty
+    expect: >
+      "T1" is gone from the Family Types dialog, "T2" is the current type, and
+      typesNow lists "T2" alone
+
 negative:
+  - given: >
+      a family with the types "Standard" and "T2", typeName "Standard", values
+      "Type Name=t2" - a name another type already has, in another case
+    expect: >
+      refused naming "T2", nothing renamed - both types still read "Standard"
+      and "T2"
+
+  - given: typeName "Missing", values "Type Name=Test - A"
+    expect: >
+      refused naming the types the family has; no type "Missing" or "Test - A"
+      made - a rename never makes a type
+
+  - given: values "Type Name=Nut [M12]"
+    expect: refused naming the square brackets, nothing renamed
+
+  - given: a family with ONE type, that type's name, deleteType true
+    expect: refused - the family's only type is never deleted
+
+  - given: deleteType true with values "Width=600"
+    expect: refused - a delete is done alone, nothing written or deleted
+
   - given: >
       values "Nut Material=Unobtainium; URL=https://example.com/nut" - a material
       the family does not hold

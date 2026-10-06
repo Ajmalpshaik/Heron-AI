@@ -18,6 +18,9 @@ semantic-identity: "delete these family parameters from the family being edited,
 # DELETE_ELEMENTS takes elements, and a family parameter is not one a view can
 # select. Asked for on 2026-10-04 after two leftover parameters in a PPR check
 # valve family had to be deleted by hand.
+#
+# "delete this family type" is SET_FAMILY_TYPE_VALUES with deleteType - a TYPE,
+# not a parameter.
 kind: action
 domain: revit.families
 capability: DELETE_FAMILY_PARAMETERS
