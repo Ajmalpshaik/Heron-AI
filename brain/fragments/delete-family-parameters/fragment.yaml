@@ -1,11 +1,11 @@
 heron-agent: HERON-REVIT-FAM-012
 heron-step: 17
-heron-status: PROVEN
+heron-status: DRAFT
 heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-033
-semantic-identity: "delete these family parameters from the family being edited, when nothing uses them"
+semantic-identity: "delete these family parameters from the family being edited, when nothing uses them - a dimension label taken off first only when asked"
 
 # A NEW CAPABILITY, NOT A REMOVE MODE ON ADD_FAMILY_PARAMETERS, and why:
 # ADD_FAMILY_PARAMETERS (FRG-PAR-022) is PROVEN, and its contract NEEDS a kind,
@@ -21,7 +21,7 @@ semantic-identity: "delete these family parameters from the family being edited,
 kind: action
 domain: revit.families
 capability: DELETE_FAMILY_PARAMETERS
-version: 1
+version: 2
 source: OFFICIAL
 # MODIFY, as every delete in this library declares (DELETE_ELEMENTS,
 # DELETE_REVISION, REMOVE_VIEW_FILTER): the ladder has no rung above MODIFY for
@@ -45,9 +45,23 @@ purpose: >
   DIMENSION labelled with it (how many); an ARRAY whose count it is; a FORM
   FIELD linked to it - Extrusion Start or End, Visible, Material; a NESTED
   FAMILY's parameter linked to it; a CONNECTOR whose size follows it. The
-  refusal says what to unhook first. Nothing is unhooked here - taking a
+  refusal says what to unhook first. Nothing else is unhooked here - taking a
   parameter out from under a form or a formula changes the family somewhere
   the modeller is not looking.
+
+  **ONE EXCEPTION, ONLY WHEN ASKED: A DIMENSION'S LABEL.** With
+  `unlabelFirst` true, a dimension labelled with a parameter being deleted
+  does not block it - the label is taken off first (Label: <None>), then the
+  parameter is deleted, in the same call and the same Undo. For "delete this
+  parameter even though it labels a dimension", or "unlabel the dimension and
+  delete the parameter". The dimension stays, unlabelled, and the planes do
+  not move: an unlabelled dimension drives nothing. Every dimension unlabelled
+  is listed - the two planes it measures, its view, its reading - and read
+  back after Revit regenerates: no label left, the same reading. Formulas,
+  arrays, form fields, nested links and connectors still block exactly as
+  they do without it, and any one of them refuses the whole call before a
+  single label comes off. Without `unlabelFirst`, a label blocks as it always
+  has (version 2; version 1 had no way past it).
 
   A parameter whose OWN formula is set, and which nothing else uses, CAN go -
   its formula reads others, nobody reads it. A formula user that is itself in
@@ -74,10 +88,26 @@ contract:
     - name: parameterNames
       type: IList<string>
       source: request
+    # true takes the label off every dimension labelled with one of these
+    # parameters, then deletes them - only dimension labels; everything else
+    # still blocks. Absent is false: a label blocks, exactly as version 1
+    # did. `optional: true` is what lets it be left out
+    # (HeronBindingNote.AbsentValue).
+    - name: unlabelFirst
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: deleted
       # Each parameter deleted - with its scope, and its own formula if it had
       # one - after the family was read back without it.
+      role: result
+      type: IList<string>
+    - name: unlabelled
+      # Each dimension whose label was taken off because unlabelFirst was
+      # true - the two planes it measures, its view, its reading - read back
+      # bare and unmoved after the regeneration and after the deletion. Empty
+      # without unlabelFirst.
       role: result
       type: IList<string>
     - name: blocked
@@ -140,10 +170,19 @@ compatibility-note: >
   `InternalDefinition.BuiltInParameter` read the same 2020 through 2027 (the
   RevitAPI reference assemblies, read 2026-10-04 with tools/api-surface). No
   call here changed shape across the range, so nothing is chosen at run time.
+  Version 2 adds the `Dimension.FamilyLabel` SETTER, given null to take a
+  label off, with `Dimension.References`, `Dimension.Value`,
+  `Reference.ElementId` and `Element.OwnerViewId` to describe the dimension -
+  `FamilyParameter FamilyLabel { get; set; }`, `ReferenceArray References`,
+  `double? Value` and `ElementId ElementId` in every release 2020 through 2027
+  (api-surface, read 2026-10-06). No dimension is deleted, so
+  `Document.Delete` is not called.
 
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "delete the Cap R Start parameter from this family" -> here
+#   "delete this parameter even though it labels a dimension" -> here, unlabelFirst
+#   "label the width with the Width parameter" -> LABEL_FAMILY_DIMENSION
 #   "add a Width parameter to this family"   -> ADD_FAMILY_PARAMETERS
 #   "clear the value out of this parameter"  -> REMOVE_PARAMETER_VALUE - a
 #                                               value on placed elements; the
@@ -156,3 +195,6 @@ utterances:
   - delete these family parameters
   - remove the unused parameters Cap R Start and Body Material from the family
   - delete a leftover family parameter
+  - delete this parameter even though it labels a dimension
+  - remove the label from the dimension and delete the parameter
+  - unlabel the dimension and delete the Frame Thickness 2 parameter

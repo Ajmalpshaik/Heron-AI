@@ -1,0 +1,60 @@
+# The proof of DELETE_FAMILY_PARAMETERS version 2 - `unlabelFirst` takes a
+# dimension's label off, then deletes the parameter - NEEDS-CHECKING Group CO,
+# rows CO1 to CO4, FRAGMENT-ISSUES row 5b-349:
+#
+#   delete-family-parameters      DELETE_FAMILY_PARAMETERS      FRG-PAR-033
+#
+#     python tools/batch-prove.py tools/jobs/delete-family-parameters-unlabel-2026-10-06.yaml --dry-run
+#     python tools/batch-prove.py tools/jobs/delete-family-parameters-unlabel-2026-10-06.yaml
+#
+# THE ARRANGEMENT IS MADE ONCE, KEPT, IN A NEW UNSAVED SCRATCH FAMILY - never
+# one of the owner's saved families. CREATE_FAMILY_DOCUMENT from Metric Generic
+# Model gives "FamilyN"; type its title where `in:` says FAMILY-TITLE. Then, in
+# it, with the Heron tools (the commands are in docs/needs-checking/group-co.md):
+#
+#   reference planes "Unl Left" -150 and "Unl Right" 150, left-right
+#   reference planes "Unl Front" -150 and "Unl Back" 150, front-back
+#   length TYPE parameters "Heron Unl A", "Heron Unl B", "Heron Unl C"
+#   in a type "T1": Heron Unl A = 300, Heron Unl B = 300, Heron Unl C = 100
+#   "Heron Unl A" labels Unl Left to Unl Right    (LABEL_FAMILY_DIMENSION)
+#   "Heron Unl B" labels Unl Front to Unl Back    (LABEL_FAMILY_DIMENSION)
+#   "Heron Unl C" has the formula  Heron Unl B / 3   (SET_FAMILY_FORMULA)
+#
+# THE DRY RUN DOES NOT CATCH A PLACEHOLDER LEFT IN - fill FAMILY-TITLE first.
+#
+# POSITIVE: "Heron Unl A" with unlabelFirst true - it labels a dimension and
+# nothing else uses it, so the label comes off and the parameter goes; the
+# reply lists the one dimension, Unl Left to Unl Right, reading 300 mm.
+#
+# NEGATIVE: "Heron Unl B" with unlabelFirst true - it labels a dimension AND
+# "Heron Unl C"'s formula reads it. The formula still blocks, so the call is
+# refused and NO label comes off: `unlabelled` must be empty, `deleted` empty.
+#
+# `write: true` runs both legs inside a transaction group and ROLLS THEM BACK.
+# LOOK at the family afterwards anyway - both dimensions still labelled, all
+# three parameters still there: rollback has failed on this PC before (BD1).
+#
+# With two Revits connected to Heron, add `--session <process id>` - batch-prove
+# cannot pin one; the single `validate` commands in group-co.md can.
+
+model: an unsaved scratch family from Metric Generic Model.rft (FamilyN), Revit 2024
+
+defaults:
+  in: "FAMILY-TITLE"
+  # MODIFY: both legs run inside a transaction group and are ROLLED BACK.
+  write: true
+
+jobs:
+  - fragment: delete-family-parameters
+    expect: unlabelled
+    set:
+      parameterNames: "Heron Unl A"
+      unlabelFirst: "true"
+    negative-set:
+      parameterNames: "Heron Unl B"
+      unlabelFirst: "true"
+    note: >
+      The second leg is the one that matters: a formula still blocks, and the
+      label on the front-back dimension must still be there afterwards.
+      Version 1's call - "Heron Unl A" with unlabelFirst left out - is CO3,
+      run by hand: it must be refused in version 1's exact words.
