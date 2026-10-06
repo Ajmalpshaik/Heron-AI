@@ -1484,7 +1484,7 @@ def _kept_values(d):
 
 
 def building_loads(takeoff_json, inputs, project=None, project_name=None, save=True,
-                   include_links=None):
+                   include_links=None, keep=None):
     """
     Every Space's load from REPORT_SPACE_ENVELOPE's take-off - docs/44 s5.
 
@@ -1493,6 +1493,11 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
     `project` key, the last run kept for that project fills in what this call
     did not say (its answers are not asked twice), its HVAC standards are read
     as hvac() reads them, and a finished run is kept beside them.
+
+    `keep`, from the Companion's Recalculate: keep(save) -> (kept, what save
+    returned). It saves only while the page still holds the take-off this run
+    was worked out from, in one step with that check - a Recalculate overtaken
+    by a fresh read of the model is not kept (FRAGMENT-ISSUES 5b-333).
 
     Returns {"asked", "qa", "result", "takeoff", "said", "saved"}. While
     anything is asked, nothing is calculated and nothing is kept. One audit
@@ -1531,7 +1536,9 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
         except (ValueError, OSError):
             last = None
     before = (last or {}).get("inputs") or {}
-    project_inputs = _merged(before.get("project"), given.get("project"))
+    # A table of answers about what is beyond the faces merges per element: a
+    # later table answers again only what it names (FRAGMENT-ISSUES 5b-332).
+    project_inputs = _merged(LOADS.flat(before.get("project")), LOADS.flat(given.get("project")))
     profiles = dict(before.get("profiles") or {})
     for key, values in (given.get("profiles") or {}).items():
         profiles[key] = _merged(profiles.get(key), values)
@@ -1568,7 +1575,11 @@ def building_loads(takeoff_json, inputs, project=None, project_name=None, save=T
         status = "ok"
         if save and project:
             try:
-                saved = LOADS.save(project, result, takeoff=takeoff)
+                kept, saved = (keep or (lambda then: (True, then())))(
+                    lambda: LOADS.save(project, result, takeoff=takeoff))
+                if not kept:
+                    said += ("\nThis run was NOT KEPT: the model was read again while it was "
+                             "being worked out, and that newer read is what the page shows.")
             except (ValueError, OSError) as why:
                 said += "\nThis run was NOT KEPT: %s" % why
         elif save:

@@ -467,13 +467,15 @@ jobs:
           # THE SUITES THAT CANNOT RUN ON A PLAIN LINUX RUNNER, AND WHY.
           #
           #   test_bridge_roundtrip.py needs a built .NET test host
+          #   test_loads_finalize.py   needs the MCP SDK - it runs the server's
+          #                            own Finalize against a stand-in Revit
           #   test_mcp_serves.py       needs the MCP SDK
           #   test_served_claims.py    needs the MCP SDK
           #   test_routing_phrases.py  needs the trained embedding (model2vec)
           #
           # The MCP SDK and the .NET host are left out on purpose: both drag in
           # native dependencies that break for reasons that have nothing to do
-          # with this repository. Those three prove nothing either way here.
+          # with this repository. Those four prove nothing either way here.
           #
           # The trained embedding is left out because every routing check in
           # this job ranks by spelling here, on purpose, and the owner's PC
@@ -482,7 +484,7 @@ jobs:
           # model is - his PC - and says COULD NOT RUN here rather than assert
           # one backend's answers on the other.
           #
-          # IT IS A NOT-RUNNABLE LIST, NOT A FAILURE LIST. Each of these four
+          # IT IS A NOT-RUNNABLE LIST, NOT A FAILURE LIST. Each of these five
           # must come back exit 3. One that comes back exit 1 has RUN and has
           # something to say, and that is a failure like any other.
           #
@@ -504,6 +506,7 @@ jobs:
           # and both still fail if the thing they assert stops being true.
           printf '%s\n' \
             test_bridge_roundtrip.py \
+            test_loads_finalize.py \
             test_mcp_serves.py \
             test_routing_phrases.py \
             test_served_claims.py \
