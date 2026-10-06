@@ -206,6 +206,7 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 
 | Date | Sitting |
 |---|---|
+| 2026-10-06 | [SPRINKLERS LAID OUT IN ANY ROOM, PREVIEWED, THEN PLACED](handover-archive/2026-10-06-sprinklers-laid-out-in-any-room-previewed-then-placed.md) |
 | 2026-10-05 | [THE FIRE WATER AND THE SPACING, ON THE SPRINKLER PANEL](handover-archive/2026-10-05-the-fire-water-and-the-spacing-on-the-sprinkler-panel.md) |
 | 2026-10-04 | [A SPRINKLER SYSTEM'S HYDRAULICS NOW COME FROM THE MODEL](handover-archive/2026-10-04-a-sprinkler-system-s-hydraulics-now-come-from-the-model.md) |
 | 2026-10-02 | [HERON'S FIRE ENGINE NOW READS EN 12845, FM GLOBAL AND BS 5839](handover-archive/2026-10-02-heron-s-fire-engine-now-reads-en-12845-fm-global-and-bs-5839.md) |
@@ -217,7 +218,6 @@ not here — [`tools/archive-handover.py`](../tools/archive-handover.py) moves a
 | 2026-09-23 | [THE GUARD RAN ONLY WHERE ITS SKILL WAS LOADED, AND NOTHING SAID WHEN MAIN HAD MOVED](handover-archive/2026-09-23-the-guard-ran-only-where-its-skill-was-loaded-and-nothing.md) |
 | 2026-09-22 | [THE CATEGORY-OVERRIDE READ-BACK COULD NOT SHOW THE FILL](handover-archive/2026-09-22-the-category-override-read-back-could-not-show-the-fill.md) |
 | 2026-09-22 | [THE SYSTEMS CHECK COUNTED TERMINALS AND CALLED THEM THE SYSTEM](handover-archive/2026-09-22-the-systems-check-counted-terminals-and-called-them-the.md) |
-| 2026-09-22 | [THE RELPATH CRASH: TWO MORE CALLS FIXED, AND THE RULE MOVED WHERE EVERY TOOL CAN IMPORT IT](handover-archive/2026-09-22-the-relpath-crash-two-more-calls-fixed-and-the-rule-moved.md) |
 
 ## The session archive — what happened before today
 

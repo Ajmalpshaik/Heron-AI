@@ -1214,6 +1214,70 @@ def water_and_spacing_as_data():
     print()
 
 
+def layout_any_shape():
+    print("12. a layout for a room of any shape (docs/47 s4)")
+    lim = dict(STD, max_spacing_m=4.6, max_area_m2=21, max_wall_distance_m=2.3,
+               min_wall_distance_m=0.1, branch_angle_deg=0)
+    rect = [[0, 0], [6000, 0], [6000, 4000], [0, 4000]]
+    got = run("sprinkler_layout_room", dict(lim, outline_mm=rect))
+    same = run("sprinkler_layout", dict(STD, room_length_m=6, room_width_m=4, max_spacing_m=4.6,
+                                        max_area_m2=21, max_wall_distance_m=2.3))
+    check(got["status"] == "ok" and got["data"]["passed"]
+          and len(got["data"]["points"]) == first_number(result(same, "Sprinklers")),
+          "a 6 x 4 m rectangle gets as many heads as `sprinkler_layout` gives it")
+    ell = [[0, 0], [10000, 0], [10000, 4000], [6000, 4000], [6000, 10000], [0, 10000]]
+    got = run("sprinkler_layout_room", dict(lim, outline_mm=ell))
+    pts = [(p["x_mm"], p["y_mm"]) for p in got["data"]["points"]]
+    check(got["data"]["passed"] and pts
+          and all(F.inside(ell, x, y) and F.wall_distance(ell, x, y) >= 100 - 1e-6
+                  for x, y in pts),
+          "an L (10 x 10 m less 4 x 6 m) passes with every head inside and off every wall")
+    spaced = run("sprinkler_spacing", dict(STD, outline_mm=ell, branch_axis="x",
+                                           sprinklers=[[x, y] for x, y in pts],
+                                           max_spacing_m=4.6, max_area_m2=21,
+                                           max_wall_distance_m=2.3, min_wall_distance_m=0.1))
+    check(not checks(spaced, "FAIL"),
+          "the layout's heads, checked again by `sprinkler_spacing` itself, fail nothing")
+    r = math.radians(30)
+    turned = [[x * math.cos(r) - y * math.sin(r) + 500, x * math.sin(r) + y * math.cos(r) + 700]
+              for x, y in ell]
+    got30 = run("sprinkler_layout_room", dict(lim, outline_mm=turned, branch_angle_deg=30))
+    check(got30["data"]["passed"] and len(got30["data"]["points"]) == len(pts)
+          and all(F.inside(turned, p["x_mm"], p["y_mm"]) for p in got30["data"]["points"]),
+          "the same L turned 30 degrees, with the angle given, gets the same count, in the "
+          "model's own coordinates")
+    square = [[0, 0], [6000, 0], [6000, 6000], [0, 6000]]
+    column = [[2500, 2500], [3500, 2500], [3500, 3500], [2500, 3500]]
+    got = run("sprinkler_layout_room", dict(lim, outline_mm=square, holes_mm=[column]))
+    check(got["data"]["passed"]
+          and not any(F.inside(column, p["x_mm"], p["y_mm"]) for p in got["data"]["points"]),
+          "no head is put in a column")
+    got = run("sprinkler_layout_room", dict(lim, outline_mm=[[0, 0], [20000, 0], [20000, 1200],
+                                                             [0, 1200]]))
+    check(got["data"]["passed"] and got["data"]["lines"] == 1,
+          "a 1.2 x 20 m corridor passes on one branch line")
+    narrow = run("sprinkler_layout_room", dict(lim, outline_mm=[[0, 0], [20000, 0],
+                                                                [20000, 1000], [0, 1000]],
+                                               max_wall_distance_m=0.5, min_spacing_m=0.3))
+    check(narrow["data"]["passed"] and len(narrow["data"]["points"]) == 20,
+          "a tight wall limit is searched far enough: a 20 x 1 m room at 0.5 m from the wall "
+          "passes on 20 heads (the Codex review of #418)")
+    got = run("sprinkler_layout_room", dict(lim, outline_mm=rect, max_wall_distance_m=0.5,
+                                            min_wall_distance_m=0.6))
+    check(not got["data"]["passed"] and checks(got, "FAIL")
+          and "NOT TO BE PLACED" in " ".join(checks(got, "FAIL")),
+          "limits nothing can meet: the closest layout is shown failing and never offered for "
+          "placing")
+    asked = run("sprinkler_layout_room", dict(STD, outline_mm=ell))
+    angle = [m for m in asked["missing"] if m["input"] == "branch_angle_deg"]
+    wall = [m for m in asked["missing"] if m["input"] == "min_wall_distance_m"]
+    check(asked["status"] == "missing" and angle and "offered, never assumed"
+          in angle[0]["reference"] and wall,
+          "the branch angle is asked with the longest wall's offered, and the least wall "
+          "distance is required")
+    print()
+
+
 def main():
     physics()
     solver()
@@ -1226,6 +1290,7 @@ def main():
     beyond_nfpa()
     numbers_as_data()
     water_and_spacing_as_data()
+    layout_any_shape()
 
     if FAILURES:
         print("FAILED - %d check(s):" % len(FAILURES))

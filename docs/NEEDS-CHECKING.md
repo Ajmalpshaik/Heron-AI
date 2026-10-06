@@ -14,7 +14,6 @@
 > **Read [FOR-THE-OWNER.md](FOR-THE-OWNER.md) first if you are the owner.** It is the one page that
 > says what is waiting on you, across every register, without holding a list of its own.
 
-
 > ## 📌 This is a RECORD now, not a gate — 2026-08-28
 >
 > **The owner's instruction:** *"checking in Revit is not possible within 1 week, so keep the checking
@@ -36,7 +35,6 @@
 > has not. That was the owner's own instruction and this one supersedes it, which is his to do. It stays
 > below as a review to do at the PC. The reason it was wanted has not gone away: **two decisions were
 > reversed within hours of being recorded**, and Phase 2 is being built on five of that set.
-
 
 **Almost everything in this file is UNPROVEN**, and what changed on 2026-08-28 is worth stating
 precisely rather than generally.
@@ -492,6 +490,10 @@ Step 6 is finished, and not before. At that point:
 ## Group CF - Area and Volume Computations: the whole dialog read, and set behind the Admin switch (2026-10-06)
 
 **Its own file:** [`needs-checking/group-cf.md`](needs-checking/group-cf.md)
+
+## Group CG - sprinkler layout from the model: the rooms read, the heads placed, and their height (2026-10-06)
+
+**Its own file:** [`needs-checking/group-cg.md`](needs-checking/group-cg.md)
 
 ## Group CK - a project's answers kept under the model's own id, and the template's id asked about (2026-10-06)
 

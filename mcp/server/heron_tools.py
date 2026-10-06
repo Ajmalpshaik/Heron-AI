@@ -299,6 +299,11 @@ TOOLS = {
     # changes nothing. Phase 1 writes nothing back, so it has no page action.
     "revit_sprinkler_hydraulics": (ANALYZE, "run_fragment_read"),
 
+    # Sprinkler layout (docs/47). The same level: it reads the rooms with
+    # REPORT_SPRINKLER_LAYOUT_SPACES and lays them out in the brain, placing
+    # nothing. Placing is the page's companion_sprinkler_place below.
+    "revit_sprinkler_layout":   (ANALYZE, "run_fragment_read"),
+
     # Puts a settings capability's CURRENT values on the Companion page as an
     # editable table, sending nothing to Revit. READ, no operation. The
     # page's Apply is companion_apply below, at MODIFY - never this tool.
@@ -321,6 +326,10 @@ COMPANION_ACTIONS = {
     # revit_change's body. Recalculate and Report touch no model - the brain
     # works on the take-off the panel holds - so they have no row.
     "companion_loads_finalize": (MODIFY,  "run_fragment_write"),
+    # The Sprinkler Layout panel's Apply (docs/47 s6): one level of a
+    # previewed layout through PLACE_FAMILY_INSTANCES, in revit_change's body.
+    # Preview touches no model - the brain works on the rooms the panel holds.
+    "companion_sprinkler_place": (MODIFY, "run_fragment_write"),
 }
 
 
