@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-UNI-035
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -87,6 +87,38 @@ contract:
       # FOUND, so it must not count toward "did this come back empty" (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-10-06'
+  by: Ajmal PS
+  model: Project2 (3,433 elements), Revit 2024, session 51820
+  positive_case: 'run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyThat , changed HVAC: Cooling
+    Load: Watts (W), 0 decimal places -> British thermal units per hour (Btu/h), 0 decimal
+    places; HVAC: Heating Load: Watts (W), 0 decimal places -> British thermal units per hour
+    (Btu/h), 0 decimal places; HVAC: Air Flow: Liters per second (L/s), 1 decimal place ->
+    Cubic feet per minute (CFM), 1 decimal place, findings READ BACK  ||  HVAC: Cooling Load
+    = British thermal units per hour (Btu/h), 0 decimal places  ||  HVAC: Heating Load = British
+    thermal units per hour (Btu/h), 0 decimal places  ||  HVAC: Air Flow = Cubic feet per
+    minute (CFM), 1 decimal place; read and written through Revit''s ForgeTypeId units (2021
+    and later)., refused . inputs came settings as given (3). on Project2'
+  negative_case: 'run with settings=Cooling Load=Horsepower instead - chosen because it should
+    not contain what this fragment reports - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyThat , changed , findings
+    read and written through Revit''s ForgeTypeId units (2021 and later)., refused ''Horsepower''
+    is not a unit or symbol Revit offers for HVAC: Cooling Load. It offers British thermal
+    units per hour (Btu/h), British thermal units per second (Btu/s), Kilowatts (kW), Tons
+    of refrigeration (ton), Watts (W). Nothing was changed.. inputs came settings as given
+    (1). on Project2'
+  second_route: 'Revit''s own Manage > Project Units dialog, HVAC discipline, read by the
+    owner on the same scratch Project2 in the same session after the same settings were run
+    KEPT (2026-10-06): Cooling Load and Heating Load in Btu/h, Air Flow in CFM. REPORT_PROJECT_UNITS
+    read the model back: exactly those three of 138 rows changed and every other row identical;
+    a third state (Cooling Load Kilowatts, Air Flow CFM 0 decimal places, Length Meters 3
+    decimal places) read back the same way; and the units put back with this tool read back
+    IDENTICAL to before. NOT YET SEEN: Revit 2020, whose UnitType route this code takes by
+    reflection and which only a 2020 run can show, and any other release but 2024.'
+  fingerprint: 489c04a5b19e0498
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -1,6 +1,6 @@
 heron-agent: HERON-REVIT-DOC-004
 heron-step: 17
-heron-status: DRAFT
+heron-status: PROVEN
 heron-since: 0.1.0
 heron-layer: brain
 
@@ -113,6 +113,42 @@ contract:
       # this come back empty" (D-52).
       role: accounting
       type: string
+
+proof:
+  date: '2026-10-06'
+  by: Ajmal PS
+  model: Project2 (3,433 elements), Revit 2024, session 51820
+  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
+    the transaction group ROLLED BACK afterwards. returned alreadyThat , changed latitude
+    42.358662° N -> 25.285400° N, longitude 71.056740° W -> 51.531000° E; time zone UTC-05:00
+    -> UTC+03:00; place name 'Boston, MA' -> 'Doha, Qatar'; true north 0° (project north is
+    true north) -> 30° East, turned about the project base point, findings Revit kept the
+    weather station '53159_2004' from the old site - Revit's own energy analysis reads it;
+    pick the nearest in Manage > Location, Weather tab. Heron cannot set it.  ||  THE SITE
+    NOW, READ BACK  ||  project location 'Default Site' (the active one)  ||  place name 'Doha,
+    Qatar'  ||  latitude 25.285400° N, longitude 51.531000° E  ||  time zone UTC+03:00, daylight
+    saving not used  ||  weather station '53159_2004', site elevation 10.058 m  ||  true north
+    30° East of project north, refused . inputs came settings as given (5). on Project2
+  negative_case: run with settings=city=Atlantis instead - chosen because it should not contain
+    what this fragment reports - run inside a transaction, and Revit reported the transaction
+    group ROLLED BACK afterwards. returned alreadyThat , changed , findings THE SITE NOW,
+    READ BACK  ||  project location 'Default Site' (the active one)  ||  place name 'Boston,
+    MA'  ||  latitude 42.358662° N, longitude 71.056740° W  ||  time zone UTC-05:00, daylight
+    saving not used  ||  weather station '53159_2004', site elevation 4.877 m  ||  true north
+    0° (project north is true north) of project north, refused Revit's city list (1504 places)
+    has no 'Atlantis'. Give latitude and longitude instead. Nothing was changed.. inputs came
+    settings as given (1). on Project2
+  second_route: 'Revit''s own Manage > Location dialog, read by the owner on the same scratch
+    Project2 in the same session after the same settings were run KEPT (2026-10-06): the Location
+    tab showed Doha''s latitude and longitude and UTC+03:00, and the Site tab ''Angle from
+    Project North to True North: 30.00 deg East'' - the East this tool writes is the dialog''s
+    East. REPORT_LOCATION v4 read the same site back (place ''Doha, Qatar'', 25.285400 N,
+    51.531000 E, UTC+03:00, true north 30 East, Revit''s stored angle 30). A third state from
+    Revit''s own city list (Riyadh, Saudi Arabia, true north 12.5 West, stored angle -12.5)
+    read back the same way, and the site put back with this tool read back IDENTICAL to before
+    (42.358662 N, 71.056740 W, Boston, MA, UTC-05:00, true north 0). NOT YET SEEN: any release
+    but 2024, a workshared model, and a project base point away from the internal origin.'
+  fingerprint: 9117ba2d0917e47d
 
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]

@@ -10,7 +10,8 @@
 **Four tools, built 2026-10-06 for the setup a building-loads run reads** ([row
 5b-322](../fragment-issues/section-5b-rows-176-200.md)): `set-project-location` and `set-project-units`
 (both **ADMIN**, [D-106](../decisions/D-106.md)), `report-project-units`, and `report-location`
-**version 4**. All four compile on every release 2020 to 2027 and are **DRAFT**.
+**version 4**. All four compile on every release 2020 to 2027. **The two setters are PROVEN** - signed
+by Ajmal PS on 2026-10-07 at his word (CJ1); the two reads are **DRAFT**.
 
 **What has run, and where.** Scratch *Project2* (a new project from a metric template, never saved),
 Revit 2024, session 51820, every change rolled back or put back - *Heron loads test* untouched:
@@ -37,7 +38,8 @@ states (Doha 30 East, Riyadh 12.5 West, put back); **both units tools ran Revit 
 for the first time - 120 unit types, and W to Btu/h, L/s to CFM set, read back and rolled back,
 *Horsepower* refused; and SET_PROJECT_LOCATION rolled back as on 2024, True North's sign the same. The
 put-back matched in everything but the weather station, which Revit chose afresh (*SOUTH WEYMOUTH* for
-*53158_2004*) - the API cannot set it. **CJ2, CJ3 and CJ5 have run; their signatures are still owed.**
+*53158_2004*) - the API cannot set it. **CJ1 is done; CJ2, CJ3 and CJ5 have run, and the two reads'
+signatures are still owed.**
 
 Run every row on a scratch project with `--in`, `HERON_CLIENT_ID=ajmal-pc` and stdin closed
 (`</dev/null`). The setters need `--allow-publish --write`, and the owner's Admin and Changes switches

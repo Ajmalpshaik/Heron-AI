@@ -258,7 +258,7 @@ no True North, no site location. The owner confirms, or fixes in Revit and reads
 is recorded with the run. **The site location is fixed in Revit by hand** (Manage > Location) **or, since
 2026-10-06, through Heron**: `SET_PROJECT_LOCATION` sets the site, the time zone and True North, and
 `SET_PROJECT_UNITS` the units, both behind the owner's Admin switch, and `REPORT_LOCATION` and
-`REPORT_PROJECT_UNITS` read them back - all DRAFT ([FRAGMENT-ISSUES 5b-322](FRAGMENT-ISSUES.md),
+`REPORT_PROJECT_UNITS` read them back - the two setters PROVEN, the reads DRAFT ([FRAGMENT-ISSUES 5b-322](FRAGMENT-ISSUES.md),
 [Group CJ](needs-checking/group-cj.md)). It said *nothing in Heron sets it* until then.
 
 **Gate 2 - write only on his word.** Finalize is a `MODIFY` through `revit_change`'s own path ([D-108](DECISIONS.md)):
