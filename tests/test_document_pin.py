@@ -383,6 +383,18 @@ def main():
           "no request sends the model's own id where the add-in compares the "
           "shared one")
 
+    # EVERY ANSWER THAT READS A PROJECT'S KEPT ANSWERS ASKS ABOUT THE SHARED
+    # ID'S FIRST (5b-324) - the sprinkler layout arrived in #418 while this
+    # change was open, reading the project's fire standards too.
+    for tool in ("revit_building_loads", "revit_sprinkler_hydraulics",
+                 "revit_sprinkler_layout", "heron_hvac", "heron_fire",
+                 "heron_standards", "heron_research"):
+        start = server.find("def %s(" % tool)
+        end = server.find("@server.tool()", start)
+        body = server[start:end] if start >= 0 else ""
+        check("_with_project_note(" in body,
+              "%s puts the earlier-answers question at the top of its answer" % tool)
+
     print()
     if FAILURES:
         print("FAILED")

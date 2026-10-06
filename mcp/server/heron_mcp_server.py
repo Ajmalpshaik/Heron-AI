@@ -2022,6 +2022,8 @@ def _sprinkler_layout_preview(data, inputs, identity):
     started, clock = time.strftime("%H:%M:%S"), time.time()
     answer = brain.sprinkler_layout(data, inputs, project=pinned.project_key,
                                     project_name=pinned.title)
+    if answer.get("said"):
+        answer["said"] = _with_project_note(answer["said"])
     _note("companion_sprinkler_layout_preview", started, time.time() - clock,
           reply=answer["said"])
     return answer
@@ -2948,6 +2950,9 @@ def revit_sprinkler_layout(spaces: str = "", inputs: str = "") -> str:
         return answer["said"]
     if not answer["result"]["rooms"]:
         return ("No room was read. %s" % " ".join(answer["data"].get("findings") or [])).strip()
+    # The layout reads the project's FIRE standards too, so it asks about
+    # answers kept under the shared id the way the hydraulics do (5b-324).
+    answer["said"] = _with_project_note(answer["said"])
     companion_page.LAYOUT_PANEL.open(reply.get("document"), answer, _pin_identity())
     _open_companion(companion_page)
     return answer["said"]
