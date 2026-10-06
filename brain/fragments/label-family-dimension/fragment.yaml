@@ -151,6 +151,10 @@ compatibility-note: >
 #   "dimension these ducts"                       -> CREATE_DIMENSION - a
 #                                                    project annotation
 #   "dimension the grids and levels"              -> DIMENSION_GRIDS_AND_LEVELS
+#   "delete this parameter even though it labels a dimension"
+#                                                 -> DELETE_FAMILY_PARAMETERS
+#                                                    with unlabelFirst; this
+#                                                    card only ever ADDS a label
 
 utterances:
   - label the width dimension with the Width parameter

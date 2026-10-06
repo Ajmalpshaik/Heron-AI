@@ -17,7 +17,55 @@ positive:
       formula that nothing reads
     expect: deleted holds "Heron Del D"; its formula did not stop it
 
+  - given: >
+      version 2. A scratch family (CREATE_FAMILY_DOCUMENT, Metric Generic
+      Model, never saved): reference planes "Unl Left" at -150 and "Unl Right"
+      at 150 (left-right), "Unl Front" at -150 and "Unl Back" at 150
+      (front-back); length type parameters "Heron Unl A" 300, "Heron Unl B"
+      300 and "Heron Unl C" with the formula "Heron Unl B / 3"; "Heron Unl A"
+      labelling the dimension Unl Left to Unl Right and "Heron Unl B" the one
+      Unl Front to Unl Back (LABEL_FAMILY_DIMENSION). parameterNames
+      "Heron Unl A", unlabelFirst true
+    expect: >
+      deleted holds "Heron Unl A"; unlabelled holds ONE line naming "Unl Left"
+      to "Unl Right", the view, reading 300 mm; REPORT_FAMILY_PARAMETERS after
+      it lists B and C but not A; the dimension is still in the plan, label
+      <None>, and Unl Left / Unl Right are still 300 apart
+
+  - given: >
+      the same family, parameterNames "Heron Unl C" (labels nothing, has its
+      own formula), unlabelFirst true
+    expect: >
+      deleted holds "Heron Unl C", unlabelled empty, and the finding says no
+      dimension was labelled with it - unlabelFirst changes nothing when there
+      is no label
+
 negative:
+  - given: >
+      version 2's own negative. The same family, parameterNames "Heron Unl B"
+      - labels the front-back dimension AND is read by C's formula -
+      unlabelFirst true
+    expect: >
+      refused, blocked quoting "Heron Unl C" = Heron Unl B / 3, unlabelled
+      EMPTY, and afterwards the front-back dimension still labelled
+      "Heron Unl B" - a formula still blocks, and no label comes off in a call
+      that is refused
+
+  - given: >
+      the same family, parameterNames "Heron Unl A" with unlabelFirst left out
+      (version 1's call, unchanged)
+    expect: >
+      refused with version 1's exact words - "it labels 1 dimension(s) - take
+      the label off first (select the dimension, Label: <None>)" - unlabelled
+      empty, "Heron Unl A" still there and its dimension still labelled
+
+  - given: >
+      parameterNames "Heron Unl A, Heron Unl B", unlabelFirst true - one
+      freeable, one blocked by a formula
+    expect: >
+      refused as a whole: NEITHER deleted and NEITHER dimension unlabelled -
+      all or nothing
+
   - given: the same family, parameterNames "Heron Del B" - read by D's formula
     expect: >
       refused, blocked naming the formula "Heron Del D" = Heron Del B * 2, and
@@ -41,6 +89,11 @@ negative:
     expect: notAFamily true and nothing deleted anywhere
 
 second_route:
+  - >
+      Version 2, by hand: in a copy of the same scratch family, select the
+      Unl Left to Unl Right dimension, Label: <None>, then Family Types,
+      "Heron Unl A", Delete Parameter - the planes stay 300 apart and the
+      family ends the same as after this tool's call
   - >
       Family Types by hand: the same parameter selected and Delete Parameter
       pressed - Revit's own dialog lists what would be affected - compared
