@@ -97,17 +97,32 @@ CHANGES = [
      "5b-319: answered REPORT_SPACE_ENVELOPE"),
     ("put doors in the walls at these points", "PLACE_HOSTED_FAMILY",
      "5b-319: answered CREATE_WALL"),
+    # 5b-322 was a NO TOOL row until SET_PROJECT_LOCATION was built
+    # (2026-10-06); the sentence it guarded now has a tool, and must reach it.
+    ("set the project location latitude and longitude to Doha", "SET_PROJECT_LOCATION",
+     "5b-322: asked by the loads session 2026-10-04, when nothing could"),
+    ("turn true north thirty degrees to the east", "SET_PROJECT_LOCATION",
+     "5b-322: Manage > Position, part of the same job"),
+    ("show cooling and heating loads in Btu/h and airflow in CFM", "SET_PROJECT_UNITS",
+     "5b-322: NEEDS-CHECKING CC12 needs a model in Btu/h and CFM"),
 ]
 
 QUESTIONS = [
     ("read the thermal U value of every floor type and roof type",
      "5b-319: asked by the same session, answered CREATE_ROOF"),
+    ("where is this project", "5b-322: a question about the site never reaches its setter"),
+    ("which units does this model show cooling load in",
+     "5b-322: a question about the units never reaches their setter"),
 ]
 
-NO_TOOL = [
-    ("set the project location latitude and longitude to Doha",
-     "5b-322: nothing in Heron sets the project location"),
+# A question about the project's own setup reaches the tool that READS it.
+READS = [
+    ("where is this project", "REPORT_LOCATION"),
+    ("what latitude and time zone is the site set to", "REPORT_LOCATION"),
+    ("which units does this model show cooling load in", "REPORT_PROJECT_UNITS"),
 ]
+
+NO_TOOL = []
 
 OWN = [
     ("read every space's envelope", "REPORT_SPACE_ENVELOPE"),
@@ -138,7 +153,7 @@ def write_line():
 
 def sentences():
     return ([t for t, _c, _w in CHANGES] + [t for t, _w in QUESTIONS]
-            + [t for t, _w in NO_TOOL] + [t for t, _c in OWN])
+            + [t for t, _c in READS] + [t for t, _w in NO_TOOL] + [t for t, _c in OWN])
 
 
 def main():
@@ -223,6 +238,11 @@ def main():
         for text, want in OWN:
             _answer, got, _risk = ask(text)
             check(got == want, "%r -> %s" % (text, got))
+
+        print("\n7. A QUESTION ABOUT THE PROJECT'S SETUP REACHES ITS READER")
+        for text, want in READS:
+            _answer, got, risk = ask(text)
+            check(got == want and not writes(risk), "%r -> %s, %s" % (text, got, risk or "no risk"))
     finally:
         if store is not None:
             store.close()

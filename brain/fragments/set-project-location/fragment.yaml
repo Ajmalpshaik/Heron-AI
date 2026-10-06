@@ -1,0 +1,159 @@
+heron-agent: HERON-REVIT-DOC-004
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-039
+semantic-identity: "set where the project is on the earth and which way true north points"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# FRAGMENT-ISSUES row 5b-322: on 2026-10-04 a session building loads asked
+# Heron to set the project's latitude and longitude to Doha and nothing could,
+# and on 2026-10-06 the owner set the site of "Heron loads test" to Qatar by
+# hand before a building-loads run. The loads read the site (docs/44 section
+# 6, gate 1), so a project left at its template's city calculates the wrong
+# sun. The owner asked for the whole job, not that one value: the site, the
+# time zone, daylight saving and True North together, each read back.
+kind: action
+domain: revit.document
+capability: SET_PROJECT_LOCATION
+version: 1
+source: OFFICIAL
+# ADMIN, BEHIND THE OWNER'S ADMIN SWITCH (D-106). It changes how the project
+# is set up for everybody who opens it - the sun every solar study and every
+# load calculation uses, and the shared coordinates every survey number is
+# read in - which is the class of change D-106's Admin row names: "changes to
+# how the project is set up". Row 5b-322 recorded the site as a D-106 Admin
+# change before this was built. It moves no element, and one Ctrl+Z undoes it.
+risk: ADMIN
+
+purpose: >
+  Sets the project's location and True North - Manage > Location and Manage >
+  Position > Rotate True North: the site by a city from Revit's own Default
+  City List or by latitude and longitude, its place name, its time zone, and
+  the angle from project north to true north, East or West, as the Location
+  dialog's Site tab says it. One table of settings - "city=Doha, Qatar; true
+  north=30 East" - where a setting left out is left alone, and every value is
+  read back after the write.
+
+  **A CITY IS REVIT'S OWN.** It is looked up in the list the Location dialog
+  offers, read through the API, and brings that entry's latitude, longitude,
+  time zone and name. "Doha" finds "Doha, Qatar" when only one entry is called
+  that; a name the list does not hold is refused with the nearest names in
+  it, never guessed at.
+
+  **LATITUDE AND LONGITUDE GO TOGETHER**, in decimal degrees with North,
+  South, East or West - half a move is refused. Revit then picks its own city
+  name and time zone for the new place, and says the time zone can be wrong
+  near a boundary, so both are written after the coordinates when they are
+  given and read back whether or not they are; a place name Revit left naming
+  the old site is said.
+
+  **TRUE NORTH IS TURNED ABOUT THE PROJECT BASE POINT**, whose shared
+  coordinates stay where they are - what typing Angle to True North on the
+  project base point does. Nothing in the model moves; every shared coordinate
+  a surveyor reads turns about that point. The angle is measured from where
+  Revit puts two points along project north, never from the sign of its angle,
+  so East and West cannot come out mirrored, and a turn that reads back wrong
+  throws and is rolled back.
+
+  **DAYLIGHT SAVING IS READ, NOT SET.** Revit's API can say whether the site
+  uses it and has no way to change it on any release, so a value that differs
+  from the model's is refused with where Revit's own box is.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # The settings, as Revit's Location dialog words them - semicolons
+    # between, an equals sign in each, any of:
+    #   city=Doha, Qatar                       Revit's Default City List
+    #   latitude=25.2854 N; longitude=51.5310 E    decimal degrees, together
+    #   place name=Heron site
+    #   time zone=UTC+03:00                    or +3, -5:30
+    #   daylight saving=no                     read only - refused if it differs
+    #   true north=30 East                     or 12.5 West, or 0
+    # A setting left out, or given empty, is left alone. A key it does not
+    # know refuses the whole call by name.
+    - name: settings
+      type: IDictionary<string, string>
+      source: request
+  provides:
+    - name: changed
+      # Each setting that moved, before -> after as READ BACK.
+      role: result
+      type: string
+    - name: alreadyThat
+      # Settings already at the value asked, not written. The prior state,
+      # never a change (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      # The whole site READ BACK after the call - project location, place
+      # name, latitude, longitude, time zone, daylight saving, weather
+      # station, site elevation, True North - and anything Revit decided on
+      # its own. One string, because a list reaches the chat cut to three.
+      type: string
+    - name: refused
+      # Why it declined, in the user's words - the evidence it looked and
+      # said no. Never a thing it FOUND, so it must not count toward "did
+      # this come back empty" (D-52).
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release, and no units API: degrees become
+  radians by plain arithmetic, a time zone is hours, and the base point's
+  tolerance is half a millimetre in feet. Every member was read with
+  tools/api-surface --members against the reference assemblies of all eight
+  releases on 2026-10-06: `SiteLocation.Latitude`, `Longitude`, `TimeZone`
+  and `PlaceName` (get and set), `WeatherStationName` and `Elevation` (get),
+  `Application.Cities` with `City.Name`, `Latitude`, `Longitude` and
+  `TimeZone`, `ProjectLocation.GetProjectPosition` and `SetProjectPosition`,
+  the four-number `ProjectPosition` constructor, `BasePoint.GetProjectBasePoint`
+  and `Position`, and `SunAndShadowSettings.UsesDST` and `ProjectLocationId`
+  are present on all eight. `UsesDST` is GET-ONLY on all eight and nothing
+  else holds daylight saving, which is why it is refused rather than set.
+  Revit 2027 added `SiteLocation.SetLatitudeAndLongitude(latitude, longitude,
+  updateCityAndTimeZone)`; it is not used, because the property setters do
+  the same on every release and one implementation stays one.
+
+# ROUTING - the same rows are in REPORT_LOCATION, REPORT_PROJECT_UNITS and
+# SET_PROJECT_UNITS.
+#
+#   "set the project location to Doha"        -> here
+#   "move the site to these coordinates"      -> here
+#   "rotate true north 30 degrees east"       -> here - Manage > Position
+#   "change the project's time zone"          -> here
+#   "where is this project"                   -> REPORT_LOCATION. A QUESTION
+#                                                never reaches this write
+#                                                (D-86); that read says the
+#                                                same site and True North with
+#                                                nothing selected
+#   "what is the latitude of the site"        -> REPORT_LOCATION
+#   "where exactly is this duct"              -> REPORT_LOCATION - an
+#                                                element's position, not the
+#                                                project's
+#   "set the project units to Btu/h"          -> SET_PROJECT_UNITS - Manage >
+#                                                Project Units is a different
+#                                                dialog with its own tool
+#   "move the project base point"             -> NOT HERE, and nothing does
+#                                                yet. This turns about the
+#                                                base point and never moves it
+#   "calculate the building loads"            -> the building loads runner
+#                                                (docs/44), which READS the
+#                                                site this sets
+
+utterances:
+  - set the project location to Doha
+  - set the site location to Qatar
+  - rotate true north 30 degrees east
+  - change the project latitude and longitude
+  - set the project time zone

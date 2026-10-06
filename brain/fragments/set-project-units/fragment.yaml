@@ -1,0 +1,138 @@
+heron-agent: HERON-REVIT-UNI-035
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-DOC-041
+semantic-identity: "change the units, symbol and rounding the project shows a kind of value in"
+
+# WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
+# Nothing in the library could set Manage > Project Units. The building loads
+# write cooling load, heating load and airflow in whatever units the project
+# is set to, and NEEDS-CHECKING CC12 needs a model set to Btu/h and CFM and
+# put back after; the owner asked on 2026-10-06 for every setting a loads run
+# reads to be settable, generally - any unit type, not those three.
+kind: action
+domain: revit.document
+capability: SET_PROJECT_UNITS
+version: 1
+source: OFFICIAL
+# ADMIN, BEHIND THE OWNER'S ADMIN SWITCH (D-106). Project Units decides how
+# every dimension, tag, schedule and calculation in the project prints a
+# number, for everybody who opens it - "how the project is set up", D-106's
+# Admin row. No stored value changes: a duct's flow is the same airflow shown
+# in other units. One Ctrl+Z undoes it.
+risk: ADMIN
+
+purpose: >
+  Sets Manage > Project Units: for any unit type - length, area, volume,
+  cooling load, heating load, air flow, temperature and the rest - the units
+  its numbers are shown in, the symbol printed after them and the rounding,
+  each named in Revit's own words, and the decimal symbol / digit grouping.
+  One table - "Cooling Load=Btu/h; Air Flow=CFM; Length=Millimeters, 0 decimal
+  places" - with every value read back after the one write.
+
+  **REVIT'S WORDS, OR A REFUSAL THAT LISTS THEM.** A unit type is named as the
+  dialog names it, with its discipline when several share the name ("HVAC:
+  Temperature"); a unit by its name or by a symbol only one unit has ("Btu/h",
+  "CFM"). Anything Revit does not offer for that unit type is refused with
+  every unit and symbol it does offer, and nothing is changed.
+
+  **WHAT IS NOT SAID IS KEPT.** Each unit type starts from a copy of its own
+  format, so its tick boxes stay; a new unit keeps the old symbol and rounding
+  where they fit it, and where they do not, the one Revit offers first is
+  taken and said.
+
+  **ONE WRITE, READ BACK.** Every format is checked by Revit in memory before
+  the model is written once, so a bad value changes nothing; then every value
+  is read back from the model, and one that reads back different undoes the
+  lot.
+
+  ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    # A unit type per entry, semicolons between, Revit's words on both sides:
+    #   Cooling Load=Btu/h                       a symbol one unit has
+    #   Air Flow=Cubic feet per minute, CFM      the unit, then its symbol
+    #   HVAC: Temperature=Celsius, 1 decimal place
+    #   Length=Millimeters, no symbol, 0 decimal places
+    #   decimal symbol/digit grouping=123,456,789.00
+    # Rounding is "N decimal places", "rounding 0.5" or "to the nearest 1/16".
+    # A unit type left out is left alone.
+    - name: settings
+      type: IDictionary<string, string>
+      source: request
+  provides:
+    - name: changed
+      # Each unit type that moved, "before -> after" as READ BACK.
+      role: result
+      type: string
+    - name: alreadyThat
+      # Unit types already as asked, not written - the prior state, never a
+      # change (D-52).
+      role: accounting
+      type: string
+    - name: findings
+      # What was read back, any symbol or rounding chosen because the new
+      # unit could not keep the old, any tick box cleared, and which of
+      # Revit's two units APIs was used.
+      type: string
+    - name: refused
+      # Why it declined, with the names Revit does offer. Never a thing it
+      # FOUND, so it must not count toward "did this come back empty" (D-52).
+      role: accounting
+      type: string
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  ONE IMPLEMENTATION ACROSS THE 2021 UNITS CHANGE, BY REFLECTION - the
+  measurement is REPORT_PROJECT_UNITS', the read half. Writing adds, on the
+  ForgeTypeId route (2021 to 2027): `Units.SetFormatOptions(ForgeTypeId,
+  FormatOptions)`, `FormatOptions.SetUnitTypeId` and `SetSymbolTypeId`, the
+  static `FormatOptions.GetValidSymbols(ForgeTypeId)`,
+  `UnitUtils.GetValidUnits(ForgeTypeId)` and the `FormatOptions(ForgeTypeId)`
+  constructor; on the enum route (2020 and 2021): `SetFormatOptions(UnitType,
+  FormatOptions)`, the `DisplayUnits` and `UnitSymbol` setters, the static
+  `GetValidUnitSymbols(DisplayUnitType)`, `UnitUtils.GetValidDisplayUnits
+  (UnitType)` and the `FormatOptions(DisplayUnitType)` constructor - each read
+  with tools/api-surface --members on all eight reference assemblies on
+  2026-10-06. Called directly because they are the same on all eight:
+  `Document.GetUnits` and `SetUnits`, the `FormatOptions(FormatOptions)` copy
+  constructor, `Accuracy`, `IsValidAccuracy(double)`, the four suppress and
+  plus-sign properties with their `Can...()` checks, and `Units.DecimalSymbol`,
+  `DigitGroupingSymbol` and `DigitGroupingAmount` with their enums.
+
+# ROUTING - the same rows are in REPORT_PROJECT_UNITS, SET_PROJECT_LOCATION
+# and REPORT_LOCATION.
+#
+#   "set cooling load to Btu/h"             -> here
+#   "change the project units to imperial"  -> here, one unit type at a time;
+#                                              there is no "imperial" switch
+#                                              in Revit to set
+#   "show airflow in CFM"                   -> here
+#   "round lengths to 5 mm"                 -> here, "Length=Millimeters,
+#                                              rounding 5" - a rounding is
+#                                              in the units' own numbers
+#   "what units is this project in"         -> REPORT_PROJECT_UNITS. A
+#                                              question never reaches this
+#                                              write (D-86)
+#   "convert 500 L/s to CFM"                -> NOT HERE - that is arithmetic
+#                                              on one number; this changes
+#                                              how the project prints them all
+#   "set the project location"              -> SET_PROJECT_LOCATION
+#   "change a dimension style's units"      -> NOT HERE - a dimension type
+#                                              can override the project's
+#                                              units; this sets the project's
+
+utterances:
+  - set cooling load units to btu/h
+  - change the project units for air flow to cfm
+  - set the project length units to millimeters
+  - change project units

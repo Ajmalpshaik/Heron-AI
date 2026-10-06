@@ -9,14 +9,18 @@ semantic-identity: "where exactly are these"
 kind: action
 domain: revit.geometry
 capability: REPORT_LOCATION
-version: 3
+version: 4
 source: OFFICIAL
 risk: READ
 
 purpose: >
-  Reports where each element actually is, in millimetres - a point for the
-  things that have one, both ends for the things that run somewhere, and the
-  centre of the bounding box for everything else.
+  Reports where things are: where each selected element is, in millimetres -
+  a point for the things that have one, both ends for the things that run
+  somewhere, the centre of the bounding box for everything else - and, every
+  time, where the PROJECT is: its site's place name, latitude and longitude,
+  time zone and daylight saving, and True North East or West of project north,
+  as Manage > Location says them. With nothing selected it reports the
+  project's site alone.
 
   **AN ELEMENT HAS ONE OF THREE KINDS OF POSITION AND THE REPORT SAYS WHICH.** A
   piece of equipment is at a point. A duct runs from one place to another and
@@ -66,12 +70,33 @@ purpose: >
   version 3; version 2 was never proved, version 1's proof does not
   describe this code, and the fragment is DRAFT until it is proved again.
 
+  **WHERE THE PROJECT IS, WITH NOTHING SELECTED (version 4).** The site is
+  now the whole of Manage > Location too - place name, latitude and
+  longitude, time zone, daylight saving, weather station and site elevation -
+  and True North in the Site tab's words, degrees East or West of project
+  north, beside the angle Revit stores. Its side is MEASURED from where Revit
+  puts two points along project north, never taken from the sign of the
+  stored angle, which the API documentation does not state; that also holds
+  when both base points sit on the internal origin, where version 3's
+  transform check cannot tell its two directions apart. It comes back as ONE
+  string, `site`, because a list reaches the chat cut to three lines.
+  `elements` is optional: with nothing selected the add-in binds an empty
+  list and the answer is the site alone, so "where is this project" needs no
+  selection - an add-in older than this version still refuses, as before.
+  SET_PROJECT_LOCATION writes the same settings in the same words. Versions
+  1 to 3's proofs do not describe this code; it is DRAFT until proved again.
+
 contract:
   needs:
     - name: doc
       type: Document
     - name: elements
+      # Version 4. OPTIONAL: nothing selected and nothing chained binds an
+      # EMPTY list (RevitFragment's binder, HeronBindingNote.EmptyWhenAbsent),
+      # and the answer is the project's site alone. A selection still fills
+      # it exactly as before.
       type: IList<Element>
+      optional: true
     - name: sharedCoordinates
       # Version 3. ABSENT MEANS INTERNAL ONLY - what versions 1 and 2 did, and
       # what the reply says it gave. Set, each position is given in shared
@@ -93,6 +118,15 @@ contract:
       type: int
     - name: findings
       type: IList<string>
+    - name: site
+      # Version 4. Where the project is, as ONE string: the project location,
+      # place name, latitude and longitude, time zone, daylight saving,
+      # weather station and elevation, True North East or West of project
+      # north with the angle Revit stores, and the project base point and
+      # survey point, internal and shared. Filled with or without elements -
+      # it is what the reply answers "where is this project" with.
+      role: result
+      type: string
 
 proof:
   date: '2026-09-09'
@@ -141,6 +175,14 @@ compatibility-note: >
   `OfPoint` and `OfVector` are present on all eight - so no release needs the
   base point's east/west and north/south parameters as a fallback. Feet become millimetres by multiplying by 304.8
   as plain arithmetic - no units API, which is what changed shape at 2021.
+  Version 4's members were read the same way on 2026-10-06 and are present on
+  all eight: `SiteLocation.Latitude`, `Longitude`, `TimeZone`, `PlaceName`,
+  `WeatherStationName` and `Elevation`, `SunAndShadowSettings.UsesDST` and
+  `ProjectLocationId`, `Element.Name` on the project location, and
+  `ProjectLocation.GetProjectPosition` on two points for True North's side.
+  Degrees, hours and feet are plain arithmetic here too. The optional
+  `elements` needs the add-in's binder from the same change
+  (`HeronBindingNote.EmptyWhenAbsent`), which is release-independent C#.
 
 # ROUTING - repeated in MEASURE_DISTANCE, REPORT_BOUNDING_BOX and
 # ADD_SPOT_ELEVATIONS.
@@ -164,6 +206,22 @@ compatibility-note: >
 #   "unload this link"                   -> UNLOAD_LINKS. A link's position
 #                                           is what this reports; unloading
 #                                           keeps it and drops the geometry
+#
+# VERSION 4 - the project's own location. Repeated in SET_PROJECT_LOCATION,
+# REPORT_PROJECT_UNITS and SET_PROJECT_UNITS.
+#
+#   "where is this project"              -> here, with nothing selected - the
+#                                           site alone
+#   "what latitude is the site set to"   -> here
+#   "which way is true north"            -> here - East or West of project
+#                                           north, as the Site tab says it
+#   "is daylight saving on"              -> here
+#   "set the project location to Doha"   -> SET_PROJECT_LOCATION. A question
+#                                           above never reaches that write
+#                                           (D-86), and this never sets it
+#   "rotate true north 30 degrees"       -> SET_PROJECT_LOCATION
+#   "what units is this project in"      -> REPORT_PROJECT_UNITS - how the
+#                                           project measures, not where it is
 
 utterances:
   - where exactly are these
@@ -171,3 +229,6 @@ utterances:
   - where does this duct run from and to
   - report the location of these elements
   - what position is this at
+  - where is the project located
+  - what is the site latitude and longitude
+  - which way does true north point
