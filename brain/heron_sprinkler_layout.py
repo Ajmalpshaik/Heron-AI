@@ -301,7 +301,7 @@ def _room(room, inputs, standard, deflector, recorded):
     given = inputs["rooms"].get(room["key"]) or {}
     out = {"key": room["key"], "label": room["label"], "level": room["level"],
            "status": None, "why": None, "asked": [], "count": 0, "points": [],
-           "measured": None, "checks": [],
+           "measured": None, "checks": [], "outline_mm": room["outline_mm"],
            "answer": None, "heads": room["heads"], "angle_offer_deg": room["angle_offer_deg"],
            "ceilings": room["ceilings"]}
     if room["problem"]:
@@ -392,6 +392,14 @@ def plan(result, level):
     chosen = [r for r in result["rooms"] if r["level"] == level and r["status"] == "ok"]
     if not chosen:
         raise LayoutError("no room on level %s passed its preview" % level)
+    # OVERLAPPING ROOMS ARE REFUSED: a Room and a Space over the same floor both pass,
+    # and their grids together put two heads where one belongs (the Codex review of #418).
+    for i, a in enumerate(chosen):
+        for b in chosen[i + 1:]:
+            if any(FIRE.inside(b["outline_mm"], p["x_mm"], p["y_mm"]) for p in a["points"]) or \
+                    any(FIRE.inside(a["outline_mm"], p["x_mm"], p["y_mm"]) for p in b["points"]):
+                raise LayoutError("%s and %s overlap - a Room and a Space over the same floor? "
+                                  "Lay out only one of them" % (a["label"], b["label"]))
     pts = [p for r in chosen for p in r["points"]]
     line = "; ".join("%.1f,%.1f,%.1f" % (p["x_mm"], p["y_mm"], p["z_mm"]) for p in pts)
     if len(line) > POINTS_MAX_CHARS:

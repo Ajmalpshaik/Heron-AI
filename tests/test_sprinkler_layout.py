@@ -182,6 +182,23 @@ def test_apply_sends_one_level_by_name_and_value():
         raise AssertionError("a level with nothing passed was planned")
 
 
+def test_overlapping_rooms_are_not_placed_twice():
+    data = read()
+    twin = copy.deepcopy(data["spaces"][0])
+    twin.update(id="u-office-room", kind="room", number="201R")
+    data["spaces"].append(twin)
+    given = answers()
+    given["rooms"]["u-office-room"] = dict(given["rooms"]["u-office"])
+    got = L.preview(data, given)
+    assert [r["status"] for r in got["rooms"] if r["key"].startswith("u-office")] == ["ok", "ok"]
+    try:
+        L.plan(got, "L2")
+    except L.LayoutError as why:
+        assert "overlap" in str(why)
+    else:
+        raise AssertionError("a Room and a Space over the same floor were both placed")
+
+
 def test_a_moved_room_is_named():
     before = read()
     after = copy.deepcopy(before)
