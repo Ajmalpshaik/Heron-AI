@@ -151,6 +151,16 @@ purpose: >
 #   PLACE_FAMILY_INSTANCES. No floor-hosted family was in the library on this
 #   PC, so the floor path is read from the code, not yet seen on a model.
 #
+#   NO VALUE NAMES THE HOST. The brief allowed a caller to name the kind, but
+#   only to disambiguate, and nothing needed it: every family tried read its
+#   own Host setting in a project. A named kind could only repeat the family
+#   or contradict it. If a family's Host ever cannot be read, the call is
+#   refused saying so - that is the day a value would earn its place.
+#
+#   ALREADY THERE MEANS THE SAME CATEGORY, as it does in a wall - not the same
+#   family. One rule for every host, and the one version 3's callers already
+#   rely on.
+#
 #   FOUND STRAIGHT DOWN. Every floor or roof whose TOP face, and every
 #   ceiling whose UNDERSIDE, a vertical line through the point crosses is a
 #   candidate - so a point over a shaft or an opening has none, and a point
