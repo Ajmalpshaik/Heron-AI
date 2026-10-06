@@ -1,6 +1,6 @@
 # The proof of DELETE_FAMILY_PARAMETERS version 2 - `unlabelFirst` takes a
-# dimension's label off, then deletes the parameter - NEEDS-CHECKING Group CO,
-# rows CO1 to CO4, FRAGMENT-ISSUES row 5b-349:
+# dimension's label off, then deletes the parameter - NEEDS-CHECKING Group CQ,
+# rows CQ1 to CQ4, FRAGMENT-ISSUES row 5b-353:
 #
 #   delete-family-parameters      DELETE_FAMILY_PARAMETERS      FRG-PAR-033
 #
@@ -10,7 +10,7 @@
 # THE ARRANGEMENT IS MADE ONCE, KEPT, IN A NEW UNSAVED SCRATCH FAMILY - never
 # one of the owner's saved families. CREATE_FAMILY_DOCUMENT from Metric Generic
 # Model gives "FamilyN"; type its title where `in:` says FAMILY-TITLE. Then, in
-# it, with the Heron tools (the commands are in docs/needs-checking/group-co.md):
+# it, with the Heron tools (the commands are in docs/needs-checking/group-cq.md):
 #
 #   reference planes "Unl Left" -150 and "Unl Right" 150, left-right
 #   reference planes "Unl Front" -150 and "Unl Back" 150, front-back
@@ -35,7 +35,7 @@
 # three parameters still there: rollback has failed on this PC before (BD1).
 #
 # With two Revits connected to Heron, add `--session <process id>` - batch-prove
-# cannot pin one; the single `validate` commands in group-co.md can.
+# cannot pin one; the single `validate` commands in group-cq.md can.
 
 model: an unsaved scratch family from Metric Generic Model.rft (FamilyN), Revit 2024
 
@@ -56,5 +56,5 @@ jobs:
     note: >
       The second leg is the one that matters: a formula still blocks, and the
       label on the front-back dimension must still be there afterwards.
-      Version 1's call - "Heron Unl A" with unlabelFirst left out - is CO3,
+      Version 1's call - "Heron Unl A" with unlabelFirst left out - is CQ3,
       run by hand: it must be refused in version 1's exact words.
