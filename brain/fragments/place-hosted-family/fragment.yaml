@@ -5,11 +5,11 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-ELE-065
-semantic-identity: "put a door or a window into this wall"
+semantic-identity: "put a door, a window, a skylight or any hosted family into its wall, floor, ceiling or roof"
 kind: action
 domain: revit.elements
 capability: PLACE_HOSTED_FAMILY
-version: 3
+version: 4
 source: OFFICIAL
 risk: MODIFY
 
@@ -22,22 +22,43 @@ risk: MODIFY
 # the rules that still hold come next, and history comes last. A new version's
 # rules go below the summary, never above it.
 purpose: >
-  Places a door or a window INTO the wall at each point given, turns each one
-  so it swings toward the room named for it, and - when a sill height is
-  given - sets each one's sill to it and reads it back.
+  Places a hosted family INTO its host at each point given: a door or a
+  window into the wall there, and - since version 4 - a skylight into a flat
+  roof, a roof hatch or a vent into the roof over the point, a floor drain, a
+  grating or a floor box into the floor under it, a light or a fitting into
+  the ceiling over it. A door is turned to swing toward the room named for it and a
+  window to face out, and - when a sill height is given - a door's or a
+  window's sill is set and read back.
 
-  What a modeller asks it for: put doors and windows into walls. For each
-  point given, it finds the wall that point sits on and places the door or
-  window there - at the sill height asked for, or where Revit puts it.
+  What a modeller asks it for: put doors and windows into walls, skylights
+  into roofs, drains and floor boxes into floors, fittings into ceilings.
 
-  **A DOOR ALREADY AT THE POINT IS NOT DOUBLED.** A door of the same category,
-  in the same wall, within 50 mm of the point, is taken as the one asked for.
-  It is set right rather than stacked on - so re-running is safe, and it is
-  how a door placed earlier gets corrected.
+  **THE FAMILY SAYS WHAT IT GOES INTO** - its own Host setting, never its
+  category or the words used: a skylight is a Windows family hosted by a
+  roof. A face-based family is refused, naming PLACE_FAMILY_ON_FACE; one
+  that is not hosted at all, naming PLACE_FAMILY_INSTANCES.
+
+  **ONE ALREADY AT THE POINT IS NOT DOUBLED.** One of the same category, in
+  the same host, within 50 mm of the point, is taken as the one asked for and
+  set right rather than stacked on - so re-running is safe, and it is how
+  one placed earlier gets corrected.
 
   **PLACE_FAMILY_ON_FACE IS THE OTHER HALF AND IS NOT THIS.** That one hosts to a
   FACE picked off geometry, which is right for a face-based family on a soffit.
-  This one hosts to the ELEMENT, which is what a door and a window want.
+  This one hosts to the ELEMENT - the wall, floor, ceiling or roof.
+
+  **VERSION 4: FLOORS, CEILINGS AND ROOFS, AND A WINDOW FACES OUT.** The host
+  is found straight down through the point - up, for a ceiling: floors and
+  ceilings on `level`, roofs on every level, where `level` only decides
+  between two. None or two there, and the point is named and skipped. Every
+  one is read back - its host, its Level, where it stands and how it is
+  turned - in `hostedIn` and, whole, in `readBack`. `rotation` turns it in
+  plan, in degrees; blank leaves it as Revit places it. No offset and no
+  sill: the host's face decides its height. `toRoomAt` and `hingeAt` are a
+  door's and a window's and are not read for a roof, floor or ceiling - send
+  the points again, since an empty point list is refused. A window keeps
+  facing its wall's exterior and no hinge is read for it (rows 5b-325,
+  5b-293).
 
   **VERSION 3 SETS THE SILL, AND READS IT EITHER WAY.** `sillHeight` is in
   millimetres above the level, or blank. BLANK IS VERSION 2 EXACTLY: the sill
@@ -61,8 +82,8 @@ purpose: >
   - **Read back after a regenerate**, and set beside what was asked in `sills`.
     More than 1 mm out is named in `sillWrong`, never counted as right.
 
-  **VERSION 2'S RECORD FOLLOWS.** The two rules above it are version 2's
-  as well, and still hold.
+  **VERSION 2'S RECORD FOLLOWS.** The two rules about a door already at the
+  point and PLACE_FAMILY_ON_FACE are version 2's as well, and still hold.
 
   **VERSION 1 COULD NOT BE GIVEN A WALL BY NAME.** It took the host as one
   element, and a wall instance has no name anybody could type: the add-in
@@ -113,27 +134,103 @@ purpose: >
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
+# VERSION 4 IN FULL - kept here, not in the purpose. The words route ranks a
+# long card lower, and the version-4 rules written out in the purpose (1,817
+# words against main's 1,020) dropped "add windows to the outside walls" from
+# this card to REPORT_SPACE_ENVELOPE, a READ (measured 2026-10-06 on private
+# stores, both backends). The search reads the purpose; nothing reads this.
+#
+#   THE HOST, FROM THE FAMILY. FamilyPlacementType says whether it is hosted
+#   at all; the family's FAMILY_HOSTING_BEHAVIOR (Host) says by what. Measured
+#   2026-10-06 in Project2 (Revit 2024, session 51820): a project reads it off
+#   a loaded family - M_Skylight-Flat reads Roof, M_Fixed Wall, M_Troffer
+#   Light - Parabolic Rectangular Ceiling; M_Downlight - Round - LED and
+#   M_Floor Drain - Round are face-based and were refused naming
+#   PLACE_FAMILY_ON_FACE; M_Floor Drain-2D, M_Outlet Floor-Duplex and
+#   M_Supply Register-Floor are level-based and were refused naming
+#   PLACE_FAMILY_INSTANCES. No floor-hosted family was in the library on this
+#   PC, so the floor path is read from the code, not yet seen on a model.
+#
+#   FOUND STRAIGHT DOWN. Every floor or roof whose TOP face, and every
+#   ceiling whose UNDERSIDE, a vertical line through the point crosses is a
+#   candidate - so a point over a shaft or an opening has none, and a point
+#   over two slabs, two ceilings or a canopy under the main roof has two.
+#   Floors and ceilings on `level` only: every storey has its own, so any
+#   level would always find several. Roofs on EVERY level: a roof is drawn on
+#   a level of its own - "Roof", the top storey - seldom the one a modeller
+#   names. Where two roofs are, the one on `level` is taken when exactly one
+#   of them is on it. Measured: a skylight asked for on Level 1 went into the
+#   flat roof on Level 2, and a point under two ceilings was refused naming
+#   both while the next point, under one, still got its light.
+#
+#   ONE ALREADY THERE IS LOOKED FOR FIRST: it has cut its own opening, so the
+#   vertical line through its point meets no face. Measured: before this was
+#   put first, re-running a kept skylight's own call answered "no roof on any
+#   level is over it".
+#
+#   PLACED THROUGH THE HOST'S OWN LEVEL. Measured: the overload that takes a
+#   direction left a skylight reading no Level at all; this one gives it the
+#   roof's, 'Level 2'. The direction overload is the fallback, counted.
+#
+#   ROTATION is the instance's own X axis, in plan, from east. Given, it is
+#   read back after placing and turned about the instance's own vertical line
+#   if it points anywhere else, then read again; more than half a degree out
+#   is `rotationWrong`. Measured: 90 and 30 degrees, and 45 on one already
+#   there, all read back exact. A rotation for a wall family is refused - a
+#   door or window turns with its wall.
+#
+#   NO OFFSET. A family hosted by a floor, a ceiling or a roof sits on that
+#   host's face; one that must stand off a face is face-based. Measured: the
+#   skylight's insertion point reads the roof's base, 4000 mm, under its
+#   top face at 4400; the ceiling light reads the ceiling's underside, 2700.
+#
+#   A WINDOW FACES OUT. Version 3 gave a window the door's swing rule. On
+#   2026-10-06 in "Heron loads test" (Revit 2024) it flipped eight M_Fixed
+#   0915 x 1220mm windows inside-out - FacingFlipped True, opposite their
+#   walls' exterior (row 5b-325) - and the same day in Project2 version 3
+#   flipped both windows of a rolled-back run the same way, naming both in
+#   `wrongHinge` for want of a swing arc (row 5b-293). Version 4 on the same
+#   walls: FacingOrientation equal to Wall.Orientation, FacingFlipped False,
+#   To Room the room named, no hinge read.
+#
+#   PROVED BY THE HOST, NOT BY `placed`: the roof in Project2, 8600 x 6600 x
+#   400 mm (22.704 m3, 56.76 m2), read 22.243 m3 and 55.604 m2 with one
+#   M_Skylight-Flat 1200 x 1200mm in it - an opening of about 1.155 m2 - read
+#   by SELECT_BY_NUMERIC_PARAMETER, not by this fragment.
+
 contract:
   needs:
     - name: doc
       type: Document
+    # The family type. ITS FAMILY'S OWN HOST SETTING decides what it goes
+    # into - a wall, a floor, a ceiling or a roof - never its category: a
+    # skylight is a Windows family hosted by a roof.
     - name: symbol
       type: FamilySymbol
       source: request
-    # Where each door goes - on, or within half a wall's width of, the wall's
-    # location line. The wall is found from the point.
+    # Where each one goes. In a wall: on, or within half a wall's width of,
+    # the wall's location line - the wall is found from the point. In a
+    # floor, a ceiling or a roof: anywhere over its outline in plan - the host
+    # is found straight down (up, for a ceiling) through the point, and the
+    # point's own height is not read.
     - name: points
       type: IList<XYZ>
       source: request
-    # One per point: a point inside the room that door should open into.
+    # One per point, for a door or a window: a point inside the room it should
+    # open into - a window's To Room. NOT READ for a floor, a ceiling or a
+    # roof; the add-in refuses an empty point list, so send `points` again.
     - name: toRoomAt
       type: IList<XYZ>
       source: request
-    # One per point: a point on the side of the jamb the hinge belongs at -
-    # the side wall, when the leaf should open back against it.
+    # One per point, for a door: a point on the side of the jamb the hinge
+    # belongs at - the side wall, when the leaf should open back against it.
+    # NOT READ for a window, a floor, a ceiling or a roof; send `points` again.
     - name: hingeAt
       type: IList<XYZ>
       source: request
+    # The level the walls stand on, or the floors and ceilings belong to.
+    # Roofs are found on EVERY level, by what is over the point; this one
+    # decides only between two roofs over the same point.
     - name: level
       type: Level
       source: request
@@ -146,12 +243,23 @@ contract:
     - name: sillHeight
       type: string
       source: request
+    # VERSION 4. Degrees, turned anticlockwise in plan from the way the family
+    # is drawn - "90" - for a family in a floor, a ceiling or a roof: one for
+    # every point, or one per point with semicolons between. BLANK places it
+    # with its own X along east and leaves it as Revit puts it. A door, a
+    # window or anything else in a wall turns with its wall, so a rotation
+    # other than 0 for one is refused before anything is placed. A string
+    # like sillHeight, so blank can mean "not asked" - and sent, blank or not,
+    # for the same reason (5b-227, 5b-252).
+    - name: rotation
+      type: string
+      source: request
   provides:
     - name: placed
       role: result
       type: IList<ElementId>
     - name: failed
-      # Points where a wall was found and Revit would not host one, or hosted
+      # Points where a host was found and Revit would not host one, or hosted
       # it elsewhere so it was removed again. Never an instance it kept (D-52).
       role: accounting
       type: int
@@ -163,14 +271,39 @@ contract:
       # Points two walls are equally near, so the host is not guessed (D-52).
       role: accounting
       type: IList<string>
+    - name: noHost
+      # VERSION 4. Points with no floor or ceiling of the level given, or no
+      # roof on any level, at them - named with the levels that DO have one.
+      # Given and unusable (D-52).
+      role: accounting
+      type: IList<string>
+    - name: twoHosts
+      # VERSION 4. Points two floors, ceilings or roofs cover, named with
+      # their ids and levels - the host is not guessed (D-52).
+      role: accounting
+      type: IList<string>
+    - name: hostedIn
+      # VERSION 4. One line per instance kept or found already there, read
+      # back: the host's id, category, type and level, where the instance
+      # stands, how it is turned, and a window's facing. A reading, never a
+      # thing it did.
+      role: accounting
+      type: IList<string>
+    - name: offPoint
+      # VERSION 4. Instances it placed that read back more than 1 mm in plan
+      # from their point - or, in a wall, from the wall's line there. Named,
+      # never counted as right (D-52).
+      role: accounting
+      type: IList<string>
     - name: alreadyThere
-      # Points where a door of this category already sat in that wall, within
-      # 50 mm - nothing new placed, the existing door brought into line (D-52).
+      # Points where one of this category already sat in that host, within
+      # 50 mm - nothing new placed, the existing one brought into line (D-52).
       role: accounting
       type: IList<string>
     - name: flipped
-      # Doors turned round so they swing into the room asked for. What it did
-      # to the doors, never a thing it found.
+      # Doors turned round so they swing into the room asked for - and other
+      # wall-hosted families turned to face it; never a window. What it did,
+      # never a thing it found.
       role: accounting
       type: int
     - name: handFlipped
@@ -181,23 +314,41 @@ contract:
     - name: wrongHinge
       # Doors whose hinge is still at the other jamb, or could not be read -
       # no swing arc in any floor plan of the level, or two arcs a jamb apart.
-      # Named, never counted as right (D-52).
+      # Named, never counted as right (D-52). A door's alone since version 4:
+      # a window has no hinge to read (row 5b-293).
       role: accounting
       type: IList<string>
     - name: toRoomSwapped
-      # Doors whose From and To Room were swapped so the To Room is the room
-      # asked for. A facing flip does not move the To Room, so this is its own
-      # count.
+      # Doors and windows whose From and To Room were swapped so the To Room
+      # is the room asked for. A facing flip does not move a door's To Room,
+      # so this is its own count.
+      role: accounting
+      type: int
+    - name: turnedOut
+      # VERSION 4. Windows turned round so they face their wall's exterior,
+      # Wall.Orientation - what it did to them, never a thing it found.
       role: accounting
       type: int
     - name: wrongRoom
-      # Doors still swinging into another room, or whose room point was in no
+      # Doors still swinging into another room - or another wall-hosted family
+      # still facing one - and doors and windows whose room point was in no
       # room. Named, never counted as right (D-52).
       role: accounting
       type: IList<string>
     - name: toRoomWrong
-      # Doors whose To Room is still not the room asked for. Named, never
-      # counted as right (D-52).
+      # Doors and windows whose To Room is still not the room asked for.
+      # Named, never counted as right (D-52).
+      role: accounting
+      type: IList<string>
+    - name: facingWrong
+      # VERSION 4. Windows still facing into the building, against their
+      # wall's exterior, after the flip. Named, never counted as right (D-52).
+      role: accounting
+      type: IList<string>
+    - name: rotationWrong
+      # VERSION 4. Instances in a floor, a ceiling or a roof whose own X axis
+      # reads more than half a degree from the rotation asked, after the turn.
+      # Named, never counted as right (D-52).
       role: accounting
       type: IList<string>
     - name: sills
@@ -222,6 +373,13 @@ contract:
       # put the head above the wall's top. Given and unusable (D-52).
       role: accounting
       type: IList<string>
+    - name: readBack
+      # VERSION 4. The family's Host setting as read, then every `hostedIn`
+      # line, joined on one line - because a reply prints a list's first three
+      # lines cut at 60 characters, and the read-back is the evidence. A
+      # reading, never a thing it did.
+      role: accounting
+      type: string
     - name: findings
       type: IList<string>
 
@@ -243,19 +401,55 @@ compatibility-note: >
   `IsReadOnly`, `StorageType` and `AsDouble` - one signature each across all
   eight. The sill arrives in millimetres and becomes feet by / 304.8 (D-20).
 
+  Version 4, compiled against the reference assemblies of all eight releases
+  on 2026-10-06 (tools/check-fragments-compile.py): `Family.FamilyPlacementType`,
+  `BuiltInParameter.FAMILY_HOSTING_BEHAVIOR` and the `FamilyHostingBehavior`
+  values it holds - Wall 1, Floor 2, Ceiling 3, Roof 4, Face 5, read off the
+  2020 and 2024 assemblies - `HostObjectUtils.GetTopFaces` and
+  `GetBottomFaces`, `Element.GetGeometryObjectFromReference`,
+  `Face.Intersect(Curve, out IntersectionResultArray)`,
+  `Document.Create.NewFamilyInstance(XYZ, FamilySymbol, XYZ, Element,
+  StructuralType)` - the overload for an instance that needs a host and a
+  direction - `FamilyInstance.GetTransform`, `ElementTransformUtils.RotateElement`,
+  `Wall.Orientation` ("the normal vector projected from the exterior side of
+  the wall") and `FamilyInstance.FacingFlipped`. Whether a project reads the
+  Host setting off a loaded family is Revit's, and is the first thing the
+  proof reads.
+
 # ROUTING - repeated in PLACE_FAMILY_INSTANCES and PLACE_FAMILY_ON_FACE.
 #
 #   "put a door in this wall"       -> here
 #   "add windows to this elevation" -> here
+#   "place a skylight into the roof at this point" -> here - ROOF-hosted
+#   "put floor boxes into the floors at these points" -> here - FLOOR-hosted
+#   "place ceiling-hosted fittings into the ceilings" -> here - CEILING-hosted
 #   "put this light on that soffit" -> PLACE_FAMILY_ON_FACE - a FACE, picked off
 #                                      geometry, which a face-based family wants
+#   lights or diffusers "in the     -> here when the family's Host setting reads
+#    ceiling"                          Ceiling; PLACE_FAMILY_ON_FACE when the
+#                                      family is face-based. The words cannot
+#                                      tell the two apart and do not have to:
+#                                      the family decides, and this tool
+#                                      refuses a face-based family by name
 #   "place these sprinklers"        -> PLACE_FAMILY_INSTANCES - free-standing
+#   "put a roof over this",         -> CREATE_ROOF, CREATE_FLOOR and
+#    "add a slab here", "put a         CREATE_FROM_ROOM_BOUNDARIES - the host
+#    ceiling in every room"            itself, not a family hosted in it
 #   "the plan is off to the side,   -> CENTER_VIEWPORTS_ON_SHEETS - a viewport
 #    centre it"                        on a sheet, not a family in a wall. The
 #                                      sentence reached here until 2026-09-27
 
 # VERSION 3: "put the windows in at a 900 sill" is still here - the sill is a
 # value of this job, not a second tool.
+#
+# VERSION 4 (2026-10-06, row 5b-326): a skylight in a flat roof was the first
+# job no tool could do - nothing placed a family INTO a roof, a floor or a
+# ceiling at a point. This tool was widened rather than a second one written:
+# the job is the same - find the host at the point, place into it, read it
+# back - and only the host differs. The phrasings below name roofs, floors and
+# ceilings in the plural because the words route matches a typed word as a
+# prefix (row 5b-319): "roofs" in a card answers "roof" typed, and not the
+# other way round.
 #
 # 2026-10-04 (5b-319): "place doors and windows hosted in walls at points",
 # "add windows to the outside walls" and "put doors in the walls at these
@@ -275,3 +469,8 @@ utterances:
   - insert windows into the walls at a sill height
   - put a door at each of these points
   - fit the windows into the external walls
+  - place a skylight into the roof at this point
+  - put roof hatches and vents into the roofs
+  - place floor drains and gratings into the floor slabs
+  - put floor boxes into the floors at these points
+  - place ceiling-hosted fittings into the ceilings
