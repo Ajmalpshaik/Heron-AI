@@ -1,22 +1,33 @@
 positive:
   - given: >
-      the path to a metric generic model family template that exists on this
-      machine, on Revit 2024
+      templatePath "Metric Generic Model" (a name, not a path) and a savePath
+      ending .rfa in a scratch folder that exists, on Revit 2024, with --in
+      naming a document that is NOT in front
     expect: >
-      an open, empty family document of the template's category - checked by
-      reading its category in Revit, not off the report, and by it appearing in
-      the open-documents list. REPORT_OPEN_DOCUMENTS should then see it
+      templateUsed is the full path of Metric Generic Model.rft in this Revit's
+      family template folder; the family is saved at exactly savePath; it is
+      open in a window and in front - REPORT_OPEN_DOCUMENTS gives its title as
+      the active one - and the open-family count rises by ONE, which shows the
+      windowless copy was closed rather than left beside it
 
 negative:
-  - given: a path that does not exist
+  - given: a savePath that already exists
     expect: >
-      refused BY NAME saying so, and explaining that template folders differ by
-      version, language and installation. Not a raw file exception
+      refused BY NAME saying it already exists, NOTHING created -
+      REPORT_OPEN_DOCUMENTS shows the same family count - and the file's time
+      stamp unchanged. Never overwritten
 
-  - given: no template path at all
+  - given: no template, or a template name with no file of that name
     expect: >
-      refused by name. NOT a fall back to some default template - a guessed
-      template makes the wrong KIND of family, which is worse than failing
+      refused by name, naming the folder searched. NOT a fall back to some
+      default or near-match template - a guessed template makes the wrong KIND
+      of family, which is worse than failing
+
+  - given: a project template (.rte)
+    expect: refused naming CREATE_PROJECT_DOCUMENT, nothing created
+
+  - given: a savePath that is relative, ends .rvt, or sits in a missing folder
+    expect: refused by name, nothing created, no folder made
 
   - given: >
       a template saved by a NEWER Revit than the one running
@@ -24,10 +35,11 @@ negative:
       refused with the reason named. This is the real-world failure on a mixed
       version office and a bare null would explain nothing
 
-  - given: the document created and then never closed
+  - given: the run aimed at the document in front
     expect: >
-      it stays open. That is stated in the findings rather than tidied up
-      silently - closing somebody else's document is not this fragment's decision
+      saved, NOT opened, openNext naming the path - Revit opens no window while
+      the active document is modifiable. ACTIVATE_DOCUMENT with that path then
+      opens it
 
 second_route:
   - >
