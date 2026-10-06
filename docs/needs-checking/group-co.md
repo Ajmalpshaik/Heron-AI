@@ -33,4 +33,4 @@ After every run REPORT_FAMILY_PARAMETERS read CC 1 to 2 and CC 2 to 3 at 300 mm 
 | **CO5** | A new name with an operator (Pipe CC 1-2), a digit first, or a character Revit refuses (Pipe:CC) | Each refused by name, nothing renamed |
 | **CO6** | A parameter a nested family's parameter is linked to, renamed | The link read back unchanged in keptLinks - **not yet run**: the scratch family has no nested family |
 | **CO7** | The first positive case on Revit 2020 | The same read-back as on 2024 |
-| **CO8** | The run records in `brain/proof-drafts/runs/` read and signed | Drafted 2026-10-07 from `runs/add-family-parameters.json` (CO1 + CO3; gap: no second route run). `heron_validate.py accept add-family-parameters --by "Ajmal PS"` on his word only; until then DRAFT |
+| **CO8** | The run records in `brain/proof-drafts/runs/` read and signed | Drafted 2026-10-07 from `runs/add-family-parameters.json` (CO1 + CO3; gap: no second route run). `heron_validate.py accept add-family-parameters --by "Ajmal PS"` on his word. **SIGNED 2026-10-07 by Ajmal PS on his word - PROVEN** |
