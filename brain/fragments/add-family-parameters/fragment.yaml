@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-PAR-022
-semantic-identity: "add these family parameters to the family being edited, or switch existing ones to type or instance"
+semantic-identity: "add these family parameters to the family being edited, switch existing ones to type or instance, or rename them"
 kind: action
 domain: revit.families
 capability: ADD_FAMILY_PARAMETERS
@@ -86,6 +86,14 @@ contract:
       type: bool
       source: request
       optional: true
+    # true RENAMES parameters already in the family instead of adding new
+    # ones; each of parameterNames is then Old=New, and semicolons separate
+    # the pairs. kind, instance and parameterGroup are not used - give kind
+    # and parameterGroup empty and instance false. Absent is false.
+    - name: renameExisting
+      type: bool
+      source: request
+      optional: true
   provides:
     - name: added
       # Each parameter added, read back from the family with the kind, scope
@@ -111,6 +119,16 @@ contract:
     - name: keptLinks
       # What each one is tied to, the same before and after: connector sizes,
       # nested families' parameters, labelled dimensions.
+      role: accounting
+      type: string
+    - name: renamed
+      # Each parameter renamed, Old -> New, read back from the family by its
+      # new name.
+      role: result
+      type: IList<string>
+    - name: formulasReadBack
+      # Every formula that read an old name, read back after renaming - "Total
+      # = Pipe CC 1 to 2 + Pipe CC 2 to 3" - as one line.
       role: accounting
       type: string
     - name: notAFamily
@@ -194,10 +212,28 @@ compatibility-note: >
   associated parameters (connector sizes, nested families) and labelled
   dimensions before and after, and throws on any difference.
 
+  **RENAMING (version 3)** is `FamilyManager.RenameParameter(FamilyParameter,
+  string)` and `FamilyParameter.IsShared`, both unchanged from 2020 to 2027
+  (api-surface, read 2026-10-06). Revit rewrites formulas, keeps labels
+  (`Dimension.FamilyLabel` holds the parameter, not its name) and keeps
+  associations; the read-back finds each parameter again by its `Id`.
+  Every formula that read an old name is read back showing the new one, every
+  other formula is checked unchanged, and labelled dimensions and
+  associations are counted before and after. Refused by name before anything
+  changes: a SHARED parameter (its name comes with its GUID - replace it
+  instead), a built-in one, a name the family does not have, a new name
+  already in the family (capitals ignored), a character Revit refuses in a
+  name, and a new name a formula would read as arithmetic - an operator
+  anywhere in it, a digit first, or a word like if or pi.
+
 # ROUTING - see SET_FAMILY_CATEGORY for the whole family-building table.
 #
 #   "add a Width parameter to this family"   -> here
 #   "make these family parameters instance"  -> here, switchExisting true
+#   "rename the family parameter CC 1 to 2"  -> here, renameExisting true
+#   "rename these walls / views / sheets"    -> RENAME_ELEMENTS (elements, not
+#                                               a family's parameters)
+#   "rename this family"                     -> RENAME_FAMILY
 #   "delete these family parameters"         -> DELETE_FAMILY_PARAMETERS
 #   "add a shared parameter to the project"  -> ADD_PROJECT_PARAMETER
 #   "put 600 into Width"                     -> SET_FAMILY_TYPE_VALUES
@@ -211,3 +247,7 @@ utterances:
   - switch these parameters between type and instance
   - make all these parameters instance
   - change these type parameters to instance parameters
+  - rename the parameter
+  - rename the family parameter CC 1 to 2
+  - rename these family parameters
+  - call the CC parameter Pipe CC
