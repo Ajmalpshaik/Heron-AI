@@ -46,8 +46,10 @@ chat on the machine reads (row 5b-233).
     QUESTIONS  must not be answered by a tool that changes the model (D-86).
                The write line is read from the operation registry, never
                typed here (Golden Rule 19)
-    NO TOOL    nothing in Heron does it (5b-322); it must not be answered by
-               a tool that changes something else
+    NO TOOL    nothing in Heron does it; it must not be answered by a tool
+               that changes something else. Empty since 5b-322's sentence got
+               its tool on 2026-10-06 and moved to CHANGES
+    READS      a question about the project's own setup reaches its READ
     OWN        the take-off's own sentences must still reach it
 
 A sentence here is never declared word for word in any card - that would be
@@ -117,6 +119,12 @@ QUESTIONS = [
     ("where is this project", "5b-322: a question about the site never reaches its setter"),
     ("which units does this model show cooling load in",
      "5b-322: a question about the units never reaches their setter"),
+    ("does this project use daylight saving",
+     "5b-339: answered SAVE_DOCUMENT before the site's read could say it"),
+    ("is project north rotated from true north",
+     "5b-339: answered ROTATE_ELEMENTS_ABOUT_AXIS before the site's read could say it"),
+    ("are the project units metric or imperial",
+     "5b-339: answered CREATE_PIPE_SEGMENT before the units' read existed"),
     ("is volume computation switched on",
      "5b-337: a first draft of SET_AREA_VOLUME_COMPUTATIONS answered it - its card quoted the question"),
     ("check if volume calculation is enabled",
@@ -124,10 +132,12 @@ QUESTIONS = [
 ]
 
 # A question about the project's own setup reaches the tool that READS it.
+# Three site questions still reach SET_PROJECT_LOCATION and are NOT here -
+# row 5b-339 records them, measured; this guards the ones the change moved.
 READS = [
     ("where is this project", "REPORT_LOCATION"),
-    ("what latitude and time zone is the site set to", "REPORT_LOCATION"),
-    ("which units does this model show cooling load in", "REPORT_PROJECT_UNITS"),
+    ("is project north rotated from true north", "REPORT_LOCATION"),
+    ("are the project units metric or imperial", "REPORT_PROJECT_UNITS"),
 ]
 
 NO_TOOL = []

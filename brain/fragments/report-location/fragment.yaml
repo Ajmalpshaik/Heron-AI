@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-GEO-025
-semantic-identity: "where exactly are these"
+semantic-identity: "where is the project on the earth, and where exactly are these"
 kind: action
 domain: revit.geometry
 capability: REPORT_LOCATION
@@ -14,13 +14,13 @@ source: OFFICIAL
 risk: READ
 
 purpose: >
-  Reports where things are: where each selected element is, in millimetres -
-  a point for the things that have one, both ends for the things that run
-  somewhere, the centre of the bounding box for everything else - and, every
-  time, where the PROJECT is: its site's place name, latitude and longitude,
-  time zone and daylight saving, and True North East or West of project north,
-  as Manage > Location says them. With nothing selected it reports the
-  project's site alone.
+  Answers WHERE. Where the project is on the earth - which place its site is
+  named, what latitude and longitude, which time zone and whether daylight
+  saving is used, and how far True North is turned East or West of project
+  north, as Manage > Location shows them - with nothing selected. And where
+  each selected element is in the model, in millimetres: a point for the
+  things that have one, both ends for the things that run somewhere, the
+  centre of the bounding box for everything else. It reads and never changes.
 
   **AN ELEMENT HAS ONE OF THREE KINDS OF POSITION AND THE REPORT SAYS WHICH.** A
   piece of equipment is at a point. A duct runs from one place to another and
@@ -232,3 +232,9 @@ utterances:
   - where is the project located
   - what is the site latitude and longitude
   - which way does true north point
+  - what time zone is the project in
+  - what is the angle to true north
+  - what latitude is the project at
+  - which city is the project site in
+  - how far is true north rotated from project north
+  - what is the project location set to

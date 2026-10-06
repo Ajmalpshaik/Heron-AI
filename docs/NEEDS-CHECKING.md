@@ -493,6 +493,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-cf.md`](needs-checking/group-cf.md)
 
+## Group CJ - the project's site, True North and units: set behind the Admin switch, and read (2026-10-06)
+
+**Its own file:** [`needs-checking/group-cj.md`](needs-checking/group-cj.md)
+
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was

@@ -5,7 +5,7 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-039
-semantic-identity: "set where the project is on the earth and which way true north points"
+semantic-identity: "move the project site, change its time zone and rotate true north"
 
 # WHY IT EXISTS - a comment, not `purpose`, because `purpose` is searched.
 # FRAGMENT-ISSUES row 5b-322: on 2026-10-04 a session building loads asked
@@ -28,39 +28,42 @@ source: OFFICIAL
 # change before this was built. It moves no element, and one Ctrl+Z undoes it.
 risk: ADMIN
 
+# HOW IT BEHAVES - a comment, not `purpose`, because `purpose` is searched and these
+# paragraphs name the site's settings so often that QUESTIONS about the site were
+# answered by this write (measured 2026-10-06 on both search backends).
+#
+# **A CITY IS REVIT'S OWN.** It is looked up in the list the Location dialog
+# offers, read through the API, and brings that entry's latitude, longitude,
+# time zone and name. "Doha" finds "Doha, Qatar" when only one entry is called
+# that; a name the list does not hold is refused with the nearest names in
+# it, never guessed at.
+#
+# **LATITUDE AND LONGITUDE GO TOGETHER**, in decimal degrees with North,
+# South, East or West - half a move is refused. Revit then picks its own city
+# name and time zone for the new place, and says the time zone can be wrong
+# near a boundary, so both are written after the coordinates when they are
+# given and read back whether or not they are; a place name Revit left naming
+# the old site is said.
+#
+# **TRUE NORTH IS TURNED ABOUT THE PROJECT BASE POINT**, whose shared
+# coordinates stay where they are - what typing Angle to True North on the
+# project base point does. Nothing in the model moves; every shared coordinate
+# a surveyor reads turns about that point. The angle is measured from where
+# Revit puts two points along project north, never from the sign of its angle,
+# so East and West cannot come out mirrored, and a turn that reads back wrong
+# throws and is rolled back.
+#
+# **DAYLIGHT SAVING IS READ, NOT SET.** Revit's API can say whether the site
+# uses it and has no way to change it on any release, so a value that differs
+# from the model's is refused with where Revit's own box is.
 purpose: >
-  Sets the project's location and True North - Manage > Location and Manage >
-  Position > Rotate True North: the site by a city from Revit's own Default
-  City List or by latitude and longitude, its place name, its time zone, and
-  the angle from project north to true north, East or West, as the Location
-  dialog's Site tab says it. One table of settings - "city=Doha, Qatar; true
-  north=30 East" - where a setting left out is left alone, and every value is
-  read back after the write.
-
-  **A CITY IS REVIT'S OWN.** It is looked up in the list the Location dialog
-  offers, read through the API, and brings that entry's latitude, longitude,
-  time zone and name. "Doha" finds "Doha, Qatar" when only one entry is called
-  that; a name the list does not hold is refused with the nearest names in
-  it, never guessed at.
-
-  **LATITUDE AND LONGITUDE GO TOGETHER**, in decimal degrees with North,
-  South, East or West - half a move is refused. Revit then picks its own city
-  name and time zone for the new place, and says the time zone can be wrong
-  near a boundary, so both are written after the coordinates when they are
-  given and read back whether or not they are; a place name Revit left naming
-  the old site is said.
-
-  **TRUE NORTH IS TURNED ABOUT THE PROJECT BASE POINT**, whose shared
-  coordinates stay where they are - what typing Angle to True North on the
-  project base point does. Nothing in the model moves; every shared coordinate
-  a surveyor reads turns about that point. The angle is measured from where
-  Revit puts two points along project north, never from the sign of its angle,
-  so East and West cannot come out mirrored, and a turn that reads back wrong
-  throws and is rolled back.
-
-  **DAYLIGHT SAVING IS READ, NOT SET.** Revit's API can say whether the site
-  uses it and has no way to change it on any release, so a value that differs
-  from the model's is refused with where Revit's own box is.
+  Changes Manage > Location and does Manage > Position > Rotate True North:
+  moves the project's site to a city from Revit's own Default City List or to
+  a new latitude and longitude, renames the place, changes the time zone, and
+  rotates True North to an angle East or West of project north, as the
+  Location dialog's Site tab words it. One table of changes - "latitude=25.2854
+  N; longitude=51.5310 E; true north=30 East" - where a setting left out is
+  left alone, and every value is read back after the write.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -150,10 +153,20 @@ compatibility-note: >
 #   "calculate the building loads"            -> the building loads runner
 #                                                (docs/44), which READS the
 #                                                site this sets
+#
+# THREE QUESTIONS STILL REACH THIS WRITE, MEASURED AND LEFT (row 5b-339). On the
+# trained model "what is the project's latitude", "which city is this model
+# located in" and "what latitude and time zone is the site set to" rank this
+# card first and REPORT_LOCATION second - first by MEANING for two of them; the
+# words route prefers this short card and the fusion's tie goes its way. What
+# bounds it: a question gives none of the values this needs, `revit_read`
+# refuses an ADMIN capability before anything is sent, and heron_lookup shows
+# the risk beside every candidate. It is not fixed by declaring those sentences
+# in REPORT_LOCATION, which buys a rank instead of earning one.
 
 utterances:
   - set the project location to Doha
   - set the site location to Qatar
   - rotate true north 30 degrees east
-  - change the project latitude and longitude
-  - set the project time zone
+  - move the site to Doha
+  - set the project time zone to UTC+3

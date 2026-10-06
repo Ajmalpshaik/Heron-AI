@@ -22,25 +22,28 @@ version: 1
 source: OFFICIAL
 risk: READ
 
+# HOW IT ANSWERS - a comment, not `purpose`, because `purpose` is searched, and
+# naming units here pulled CHANGES like "show the loads in Btu/h" to this read
+# (measured 2026-10-06).
+#
+# **THE WORDS ARE REVIT'S.** Every unit type, unit and symbol name is asked
+# of Revit's own labels at run time - "Cooling Load", "British thermal units
+# per hour", "Btu/h" - so a symbol SET_PROJECT_UNITS or the building loads
+# must match is printed exactly as the model holds it, never retyped.
+#
+# **A UNIT TYPE IS NAMED WITH ITS DISCIPLINE** - "HVAC: Temperature",
+# "Piping: Temperature" - because several disciplines have one of the same
+# name and the dialog keeps them apart by its Discipline list.
+#
+# **THE WHOLE TABLE IS ONE STRING**, rows joined, because a list reaches the
+# chat cut to three entries and the table is the answer.
 purpose: >
-  Reads Manage > Project Units: for every unit type the project formats -
-  length, area, volume, cooling load, heating load, air flow, temperature and
-  the rest, discipline by discipline - the units its numbers are shown in,
-  the symbol printed after them and the rounding, all in Revit's own words,
-  and the decimal symbol / digit grouping as the dialog's example. Nothing
-  needs to be selected and nothing changes.
-
-  **THE WORDS ARE REVIT'S.** Every unit type, unit and symbol name is asked
-  of Revit's own labels at run time - "Cooling Load", "British thermal units
-  per hour", "Btu/h" - so a symbol SET_PROJECT_UNITS or the building loads
-  must match is printed exactly as the model holds it, never retyped.
-
-  **A UNIT TYPE IS NAMED WITH ITS DISCIPLINE** - "HVAC: Temperature",
-  "Piping: Temperature" - because several disciplines have one of the same
-  name and the dialog keeps them apart by its Discipline list.
-
-  **THE WHOLE TABLE IS ONE STRING**, rows joined, because a list reaches the
-  chat cut to three entries and the table is the answer.
+  Answers which units this project uses - metric or imperial, and for every
+  unit type, discipline by discipline (length, area, volume, cooling load,
+  heating load, air flow, temperature and the rest), which units, which
+  symbol and how many decimals - by reading Manage > Project Units, in
+  Revit's own words, with the decimal symbol / digit grouping. Nothing needs
+  to be selected and nothing changes.
 
 contract:
   needs:

@@ -25,29 +25,30 @@ source: OFFICIAL
 # in other units. One Ctrl+Z undoes it.
 risk: ADMIN
 
+# HOW IT BEHAVES - a comment, not `purpose`, because `purpose` is searched.
+#
+# **REVIT'S WORDS, OR A REFUSAL THAT LISTS THEM.** A unit type is named as the
+# dialog names it, with its discipline when several share the name ("HVAC:
+# Temperature"); a unit by its name or by a symbol only one unit has ("Btu/h",
+# "CFM"). Anything Revit does not offer for that unit type is refused with
+# every unit and symbol it does offer, and nothing is changed.
+#
+# **WHAT IS NOT SAID IS KEPT.** Each unit type starts from a copy of its own
+# format, so its tick boxes stay; a new unit keeps the old symbol and rounding
+# where they fit it, and where they do not, the one Revit offers first is
+# taken and said.
+#
+# **ONE WRITE, READ BACK.** Every format is checked by Revit in memory before
+# the model is written once, so a bad value changes nothing; then every value
+# is read back from the model, and one that reads back different undoes the
+# lot.
 purpose: >
-  Sets Manage > Project Units: for any unit type - length, area, volume,
-  cooling load, heating load, air flow, temperature and the rest - the units
-  its numbers are shown in, the symbol printed after them and the rounding,
-  each named in Revit's own words, and the decimal symbol / digit grouping.
-  One table - "Cooling Load=Btu/h; Air Flow=CFM; Length=Millimeters, 0 decimal
+  Changes Manage > Project Units: switches any unit type - length, area,
+  volume, cooling load, heating load, air flow, temperature and the rest - to
+  other units, another symbol or another rounding, each named in Revit's own
+  words, and changes the decimal symbol / digit grouping. One table of
+  changes - "Cooling Load=Btu/h; Air Flow=CFM; Length=Millimeters, 0 decimal
   places" - with every value read back after the one write.
-
-  **REVIT'S WORDS, OR A REFUSAL THAT LISTS THEM.** A unit type is named as the
-  dialog names it, with its discipline when several share the name ("HVAC:
-  Temperature"); a unit by its name or by a symbol only one unit has ("Btu/h",
-  "CFM"). Anything Revit does not offer for that unit type is refused with
-  every unit and symbol it does offer, and nothing is changed.
-
-  **WHAT IS NOT SAID IS KEPT.** Each unit type starts from a copy of its own
-  format, so its tick boxes stay; a new unit keeps the old symbol and rounding
-  where they fit it, and where they do not, the one Revit offers first is
-  taken and said.
-
-  **ONE WRITE, READ BACK.** Every format is checked by Revit in memory before
-  the model is written once, so a bad value changes nothing; then every value
-  is read back from the model, and one that reads back different undoes the
-  lot.
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16).
 
@@ -136,3 +137,4 @@ utterances:
   - change the project units for air flow to cfm
   - set the project length units to millimeters
   - change project units
+  - display areas in square feet
