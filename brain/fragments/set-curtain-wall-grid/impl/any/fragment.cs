@@ -48,6 +48,16 @@
 // will not take, or walls it cannot rebuild, throws: the executor rolls the
 // whole call back, because a type half-changed across every wall that uses it
 // is worse than one left alone.
+//
+// A DIRECTION'S LAYOUT IS WRITTEN BEFORE ITS SPACING, AND THE SPACING IS JUDGED
+// UNDER THE LAYOUT IT WILL HAVE. Revit keeps Spacing READ-ONLY while the Layout
+// is None or Fixed Number - Type Properties greys it out. Until 2026-10-06 this
+// asked whether the spacing could be written BEFORE writing the layout that
+// frees it, so "layout fixed distance; spacing 2500" on a type whose layout was
+// None was refused, and the refusal blamed "another user in a shared model" on
+// a model that was not shared (FRAGMENT-ISSUES 5b-328). Read-only is Revit's
+// own flag; who holds an element is asked of Revit and said only when Revit
+// says it.
 
 const double MillimetresPerFoot = 304.8;
 
@@ -120,6 +130,33 @@ Func<ElementType, string> fullName = type =>
 
 var label = curtainWallType == null ? "" : fullName(curtainWallType);
 
+// WHY REVIT KEEPS A SETTING READ-ONLY, as far as Revit itself says - never a
+// guess (5b-328). Whether another user holds the type is asked of Revit, and
+// only in a shared model. `when` is the state it was asked in, or "".
+Func<string, string, string> readOnlyBecause = (what, when) =>
+{
+    var holder = "";
+    if (doc.IsWorkshared && curtainWallType != null)
+    {
+        try
+        {
+            string owner;
+            if (WorksharingUtils.GetCheckoutStatus(doc, curtainWallType.Id, out owner)
+                == CheckoutStatus.OwnedByOtherUser)
+                holder = string.IsNullOrEmpty(owner) ? "another user" : owner;
+        }
+        catch (Exception) { holder = ""; }
+    }
+    return holder.Length > 0
+        ? string.Format("Revit keeps the {1} of '{0}' read-only{2}, and in this shared model '{0}' is "
+            + "held by {3} - they relinquish it, then ask again", label, what, when, holder)
+        : string.Format("Revit keeps the {1} of '{0}' read-only{2} and gives no reason for it - {3}. "
+            + "Look at the setting in Type Properties, where Revit greys out what it will not let "
+            + "change", label, what, when, doc.IsWorkshared
+                ? "nobody else holds the type in this shared model"
+                : "this model is not shared, so no other user holds it");
+};
+
 // Why a setting on the type cannot be written, or null when it can.
 Func<Parameter, StorageType, string, string> cannotWrite = (parameter, storage, what) =>
     parameter == null
@@ -127,9 +164,15 @@ Func<Parameter, StorageType, string, string> cannotWrite = (parameter, storage, 
     : parameter.StorageType != storage
         ? string.Format("'{0}' keeps its {1} in a form this does not write", label, what)
     : parameter.IsReadOnly
-        ? string.Format("Revit will not let the {1} of '{0}' be changed - it may be held by "
-            + "another user in a shared model", label, what)
+        ? readOnlyBecause(what, "")
     : null;
+
+// Whether a layout - Revit's number for it - spaces its lines evenly by a
+// distance, which is when Revit lets that direction's Spacing be written.
+Func<int, bool> usesSpacing = number =>
+    number == (int)SpacingRuleLayout.FixedDistance
+    || number == (int)SpacingRuleLayout.MaximumSpacing
+    || number == (int)SpacingRuleLayout.MinimumSpacing;
 
 // The layout Revit HOLDS, as a number - int.MinValue when it holds none.
 Func<Parameter, int> layoutNumber = parameter =>
@@ -253,7 +296,8 @@ else
     }
 
     // THE TYPE'S OWN SETTINGS, BY ID, and whether each asked-for one can be
-    // written at all.
+    // written at all. A spacing's READ-ONLY flag is not asked here: it follows
+    // the layout, and is judged below against the layout it will have.
     for (var d = 0; d < 2 && refused.Length == 0; d++)
     {
         layoutParameter[d] = curtainWallType.get_Parameter(layoutIds[d]);
@@ -266,7 +310,9 @@ else
         }
         if (refused.Length == 0 && !double.IsNaN(askedSpacingMm[d]))
         {
-            var why = cannotWrite(spacingParameter[d], StorageType.Double, directions[d] + " Spacing");
+            var why = spacingParameter[d] == null || spacingParameter[d].StorageType != StorageType.Double
+                ? cannotWrite(spacingParameter[d], StorageType.Double, directions[d] + " Spacing")
+                : null;
             if (why != null) refused = why + ". Nothing was changed";
         }
     }
@@ -278,11 +324,23 @@ else
     for (var d = 0; d < 2 && refused.Length == 0; d++)
     {
         var willBe = askedLayout[d] >= 0 ? layoutValues[askedLayout[d]] : layoutNumber(layoutParameter[d]);
-        var spaced = willBe == (int)SpacingRuleLayout.FixedDistance
-            || willBe == (int)SpacingRuleLayout.MaximumSpacing
-            || willBe == (int)SpacingRuleLayout.MinimumSpacing;
+        var spaced = usesSpacing(willBe);
 
-        if (!double.IsNaN(askedSpacingMm[d]) && !spaced)
+        // A SPACING READ-ONLY WHILE ITS LAYOUT STAYS AS IT IS IS REFUSED NOW,
+        // with Revit's reason. One whose layout this same request changes to a
+        // spaced one is judged after that layout is written, in the write
+        // below - before it, Revit's flag still describes the old layout.
+        var layoutChanges = askedLayout[d] >= 0
+            && layoutNumber(layoutParameter[d]) != layoutValues[askedLayout[d]];
+
+        if (!double.IsNaN(askedSpacingMm[d]) && spaced && !layoutChanges
+            && spacingParameter[d].IsReadOnly)
+        {
+            refused = readOnlyBecause(directions[d] + " Spacing", string.Format(
+                " under its {0} layout of {1}", directions[d],
+                layoutWordsShown(layoutParameter[d]) ?? "one that uses a spacing")) + ". Nothing was changed";
+        }
+        else if (!double.IsNaN(askedSpacingMm[d]) && !spaced)
         {
             var shownNow = askedLayout[d] >= 0 ? layoutShown[askedLayout[d]] : layoutWordsShown(layoutParameter[d]);
             refused = string.Format(
@@ -473,6 +531,37 @@ if (refused.Length == 0)
         if (!double.IsNaN(askedSpacingMm[d])
             && !(Math.Abs(spacingBeforeMm[d] - askedSpacingMm[d]) < SameSpacingMm))
         {
+            // THE SPACING UNDER THE LAYOUT IT NOW HAS - asked of the type afresh.
+            // A layout just written may free it only once Revit has rebuilt the
+            // type, so a spacing still read-only is asked again after one
+            // rebuild before it is called refused (5b-328).
+            var spacingNow = curtainWallType.get_Parameter(spacingIds[d]);
+            if (wroteLayout[d] && spacingNow != null && spacingNow.IsReadOnly)
+            {
+                try
+                {
+                    doc.Regenerate();
+                }
+                catch (Exception notRebuilt)
+                {
+                    throw new InvalidOperationException(string.Format(
+                        "Revit could not rebuild '{0}' with the {1} layout {2} - {3}. Nothing this call "
+                        + "did is kept", label, directions[d], layoutShown[askedLayout[d]], notRebuilt.Message));
+                }
+                spacingNow = curtainWallType.get_Parameter(spacingIds[d]);
+            }
+            if (spacingNow == null || spacingNow.IsReadOnly)
+                throw new InvalidOperationException(string.Format(
+                    "{0}. Nothing this call did is kept",
+                    spacingNow == null
+                        ? string.Format("'{0}' has no {1} Spacing - Revit gives this type none to set",
+                            label, directions[d])
+                        : readOnlyBecause(directions[d] + " Spacing", wroteLayout[d]
+                            ? string.Format(" even with its {0} layout just set to {1}",
+                                directions[d], layoutShown[askedLayout[d]])
+                            : "")));
+            spacingParameter[d] = spacingNow;
+
             bool took;
             try
             {
