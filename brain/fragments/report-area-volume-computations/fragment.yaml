@@ -1,0 +1,151 @@
+heron-agent: HERON-REVIT-RM-028
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-GEO-056
+semantic-identity: "the Area and Volume Computations settings - volumes on or off, where room areas are measured, and every area scheme"
+kind: action
+domain: revit.rooms
+capability: REPORT_AREA_VOLUME_COMPUTATIONS
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Answers whether this project computes volumes - Revit's volume calculation
+  for rooms and spaces - how its room areas are measured, and which area
+  schemes it has, read from Revit's Area and Volume Computations dialog
+  (Architecture > Room & Area), both tabs, in the words the dialog shows. COMPUTATIONS: Volume Computations - Areas only or Areas
+  and Volumes - and Room Area Computation - At wall finish, At wall center,
+  At wall core layer or At wall core center. AREA SCHEMES: every scheme, with
+  its description, whether it is the Gross Building one, and how many areas
+  and area plans it holds. It changes nothing and asks for nothing.
+
+  **"IS VOLUME COMPUTATION ON?" IS ANSWERED HERE (D-86).** A question about
+  these settings needs nothing changed, so it is read, never written. Built
+  on 2026-10-06 after a lookup found no tool: the model "Heron loads test"
+  had no Space volumes while Revit computed areas only (FRAGMENT-ISSUES row
+  5b-327).
+
+  **A VOLUME OF ZERO IS USUALLY THIS SETTING, NOT THE ROOM.** With Areas only,
+  Revit computes no volume and a schedule reads as a building with none. So
+  beside the setting the answer counts the placed, bounded rooms and spaces
+  and how many of them have a volume right now - the switch and what it does
+  to this model, read together.
+
+  **SPACES ARE ASKED ABOUT, NOT ASSUMED.** The dialog shows one Room Area
+  Computation; Revit's API takes the kind of spatial element as an argument.
+  What Revit answers for Spaces is reported as Revit's answer, and said
+  plainly if it differs from rooms.
+
+  **AN AREA SCHEME WITH NO AREAS IS STILL LISTED.** REPORT_AREAS reaches a
+  scheme only through the Areas placed in it, so a scheme nobody has used yet
+  is invisible there. The counts beside each scheme are what deleting it in
+  the dialog would take with it - its area plans and their areas - which is
+  why Heron offers no delete (Constitution Article 7).
+
+  In a family document it says the settings belong to a project, and reports
+  nothing else.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+  provides:
+    - name: volumeComputation
+      # The dialog's words: "Areas only" or "Areas and Volumes". Empty in a
+      # family document, where there is no such setting.
+      role: result
+      type: string
+    - name: roomAreaComputation
+      # "At wall finish", "At wall center", "At wall core layer" or "At wall
+      # core center" - the room setting the dialog shows.
+      role: result
+      type: string
+    - name: areaSchemes
+      # One line per scheme: name, Gross Building or not, description, and its
+      # areas and area plans - the Area Schemes tab, including schemes with
+      # no areas yet.
+      role: result
+      type: IList<string>
+    - name: placedRooms
+      # Rooms placed and bounded - the ones a volume could exist for. Context
+      # for the volume setting, never a thing it found (D-52).
+      role: accounting
+      type: int
+    - name: roomsWithVolume
+      # Of those, how many Revit holds a volume for right now. The evidence of
+      # what the volume setting does in this model.
+      role: accounting
+      type: int
+    - name: placedSpaces
+      # The same for MEP Spaces.
+      role: accounting
+      type: int
+    - name: spacesWithVolume
+      role: accounting
+      type: int
+    - name: notAProject
+      # True when the document in front is a family: the dialog belongs to a
+      # project, so nothing was read.
+      role: accounting
+      type: bool
+    - name: findings
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. `AreaVolumeSettings.GetAreaVolumeSettings`,
+  `ComputeVolumes` and `GetSpatialElementBoundaryLocation`, the
+  `SpatialElementType` values Room and Space, the four
+  `SpatialElementBoundaryLocation` values, `AreaScheme.IsGrossBuildingArea`,
+  `Area.AreaScheme` and `ViewPlan.AreaScheme` are present and unchanged 2020
+  through 2027 - looked up in every release's reference assembly with
+  tools/api-surface on 2026-10-06. `SpatialElementType` gained a fourth value
+  at 2022 (LoadArea, renamed ElectricalLoadArea at 2023); only Room and Space
+  are asked for. The volume is read through `BuiltInParameter.ROOM_VOLUME`,
+  as REPORT_ROOM_SPACE_DATA reads it, which carries the not-computed state.
+  Rooms and spaces are collected by category, never by `OfClass(typeof(Room))`,
+  which Revit refuses for a type that is not native.
+
+# ROUTING - the same rows are in the fragments named here.
+#
+#   "is volume computation on"           -> here. A question; it never reaches
+#                                           SET_AREA_VOLUME_COMPUTATIONS (D-86)
+#   "what are the area and volume computation settings" -> here
+#   "is room area measured at wall finish or wall center" -> here
+#   "list the area schemes"              -> here, every scheme including one
+#                                           with no areas. Moved from
+#                                           REPORT_AREAS on 2026-10-06, which
+#                                           reaches a scheme only through its
+#                                           Areas and so cannot name an empty one
+#   "why do the spaces have no volume"   -> here first - the switch, and how
+#                                           many rooms and spaces have a volume
+#   "turn on volume computation"         -> SET_AREA_VOLUME_COMPUTATIONS - the
+#                                           change, behind the Admin switch
+#   "create an area scheme" / "rename an area scheme" -> SET_AREA_VOLUME_COMPUTATIONS
+#   "delete an area scheme"              -> nothing in Heron. It deletes the
+#                                           scheme's area plans and areas too
+#                                           (Article 7); done in the dialog
+#   "report the areas" / "what is the gross area per level" -> REPORT_AREAS -
+#                                           the Areas inside each scheme
+#   "list the rooms with their volumes"  -> REPORT_ROOM_SPACE_DATA - room by
+#                                           room, naming which have no volume
+
+utterances:
+  - is volume computation on
+  - what are the area and volume computation settings
+  - are room volumes being computed
+  - is room area measured at wall finish or wall center
+  - how is the room area computed in this project
+  - list the area schemes
+  - what area schemes are in this model
+  - why do the spaces have no volume
+  - are volumes switched on in this project
+  - is area and volume computation turned on
+  - which room area computation does this project use

@@ -1930,6 +1930,103 @@ def _sprinkler_report(network, result, folder=None):
     return got
 
 
+# ---------------------------------------------------------------------------
+# The Sprinkler Layout panel's hooks (docs/47 sections 6 and 7). Preview
+# touches nothing; Place is the one write, through the chat's own write path.
+# ---------------------------------------------------------------------------
+
+def _sprinkler_layout_preview(data, inputs, identity):
+    with _revit_lock:
+        moved = _moved_since(identity)
+    if moved:
+        return {"said": moved, "data": None}
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    answer = brain.sprinkler_layout(data, inputs, project=pinned.project_key,
+                                    project_name=pinned.title)
+    _note("companion_sprinkler_layout_preview", started, time.time() - clock,
+          reply=answer["said"])
+    return answer
+
+
+def _read_layout_rooms(keys):
+    """REPORT_SPRINKLER_LAYOUT_SPACES for the rooms by UniqueId: (data, None) or (None, why)."""
+    import heron_sprinkler_layout as LAYOUT
+    out = {}
+    said = _through(revit_read, reply_out=out, origin="companion")(
+        "REPORT_SPRINKLER_LAYOUT_SPACES", "spaces=" + ";".join(keys))
+    reply = out.get("reply")
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return None, said
+    if pinned.check(reply):
+        return None, said
+    try:
+        return LAYOUT.read((reply.get("provides") or {}).get("layoutJson") or ""), None
+    except ValueError as why:
+        return None, str(why)
+
+
+def _sprinkler_layout_place(data, result, inputs, level, identity):
+    """
+    Apply (docs/47 s6): ONE level of a previewed layout placed - one undo entry.
+
+    1. The pin: the same Revit and project as the preview.
+    2. The rooms read again BY UNIQUEID, and refused when one moved since the
+       preview - its outline, level, ceiling or the heads in it (review R2).
+    3. PLACE_FAMILY_INSTANCES with the type, the level and the points, by name
+       and by value - never typed ids, never the selection.
+    4. The rooms read again, and the read-back: each head found beside where
+       it was sent, and the spacing of every head really in the room.
+    The lock every tool holds is held from 1 to 4, so nothing slips between
+    the check and the write. The panel marks the job used BEFORE this runs, so
+    a second press places nothing.
+    """
+    import heron_sprinkler_layout as LAYOUT
+    try:
+        sent = LAYOUT.plan(result, level)
+    except ValueError as why:
+        return {"ok": False, "said": "Nothing was placed: %s" % why}
+    started, clock = time.strftime("%H:%M:%S"), time.time()
+    with _revit_lock:
+        moved = _moved_since(identity)
+        if moved:
+            return {"ok": False, "said": moved}
+        before, why = _read_layout_rooms(sent["rooms"])
+        if before is None:
+            return {"ok": False, "said": "Nothing was placed - the rooms could not be read "
+                                         "again to check they have not changed: %s" % why}
+        moved = LAYOUT.changed(data, before, sent["rooms"])
+        if moved:
+            return {"ok": False, "said": "Nothing was placed: %s. Ask the chat to lay these "
+                                         "rooms out again." % "; ".join(moved)}
+        out = {}
+        text = _through(revit_change, reply_out=out, origin="companion")(
+            "PLACE_FAMILY_INSTANCES",
+            "symbol=%s\nlevel=%s\npoints=%s" % (sent["symbol"], sent["level"], sent["points"]))
+        reply = out.get("reply")
+        provides = (reply or {}).get("provides") or {}
+        if not isinstance(reply, dict) or not reply.get("ok"):
+            _note("companion_sprinkler_layout_place", started, time.time() - clock,
+                  reply=text, outcome="refused")
+            return {"ok": False, "said": "Nothing was placed: %s" % text}
+        failed = provides.get("failed")
+        after, why = _read_layout_rooms(sent["rooms"])
+    if after is None:
+        said = ("%d head(s) were sent to level %s, but the rooms could not be read back "
+                "(%s) - check them in Revit; its undo list has the placing." % (
+                    sent["count"], level, why))
+        _note("companion_sprinkler_layout_place", started, time.time() - clock, reply=said)
+        return {"ok": True, "said": said, "placed": {"sent": sent["count"], "read_back": None}}
+    back = LAYOUT.read_back(before, after, sent, result, inputs)
+    said = "Placed on level %s as one undo entry. %s%s" % (
+        level, back["text"],
+        (" Revit could not place %s of them." % failed) if failed not in (None, 0, "0") else "")
+    _note("companion_sprinkler_layout_place", started, time.time() - clock, reply=said)
+    return {"ok": True, "said": said,
+            "placed": {"level": level, "sent": sent["count"], "failed": failed,
+                       "read_back": [dict((k, v) for k, v in r.items() if k != "spacing")
+                                     for r in back["rooms"]]}}
+
+
 def _schedule_names():
     """The names of the schedules in the model this chat is pinned to - or None
     when they cannot be read, or the answer is another model's. A read: the
@@ -2723,6 +2820,71 @@ def revit_sprinkler_hydraulics(system: str = "", inputs: str = "",
                                     if names else "The model has no fire protection piping "
                                     "system."))
     companion_page.SPRINKLER_PANEL.open(reply.get("document"), answer, _pin_identity())
+    _open_companion(companion_page)
+    return answer["said"]
+
+
+@server.tool()
+def revit_sprinkler_layout(spaces: str = "", inputs: str = "") -> str:
+    """
+    Lay sprinklers out in the selected Spaces or Rooms of any shape - docs/47.
+    Heron reads the rooms from Revit (REPORT_SPRINKLER_LAYOUT_SPACES, which
+    changes nothing) - each one's outline and holes, its level, the ceilings
+    over it, the sprinklers already in it and the sprinkler types loaded -
+    lays each room out with its fire engine, and opens the Sprinkler Layout
+    panel in the Heron Companion: a plan of every room with each head OK or
+    FAIL, and Apply, level by level.
+
+    Use when the user asks to "place sprinklers in these rooms", "lay out the
+    sprinklers in this room", "auto place sprinklers", "how many sprinklers
+    for these rooms - and put them in".
+
+    `spaces` is empty for the Spaces and Rooms selected now. `inputs` is a
+    JSON object of what the modeller has answered so far:
+    {"standards": {"sprinkler_standard": "NFPA 13-2022"},
+     "job": {"type": "Family: Type", "deflector_mm": 50},
+     "limits": {"light hazard": {"max_spacing_m": 4.6, "max_area_m2": 20.9,
+                "max_wall_distance_m": 2.3, "min_wall_distance_m": 0.1}},
+     "rooms": {"<room id>": {"hazard": "light", "ceiling_mm": 2700,
+               "angle_deg": 0}}}.
+    Answers are kept with the open model's project; the panel is the easier
+    place to give them.
+
+    HERON SUPPLIES NO DESIGN VALUE THE MODELLER DID NOT GIVE (D-33). The
+    ceiling height the model shows and the angle of the longest wall are
+    OFFERED, never used until given. A room whose layout fails, a room that
+    already has heads, and a room bounded by separation lines are shown and
+    NOT placed.
+
+    THIS CALL READS ONLY. Placing is the panel's Apply - one level per press,
+    one undo entry, with the Changes switch on in Revit - and Heron reads the
+    heads back and checks their spacing from the model. It does not draw
+    pipes. It is a design aid: the fire consultant and the authority (QCDD in
+    Qatar) approve the layout.
+    """
+    companion_page = _companion_module()
+    if not companion_page.enabled():
+        return ("The Heron Companion is switched off in Revit, so the rooms were not read. "
+                "To turn it on, click the arrow under the Companion button on the Heron tab.")
+    out = {}
+    said = _through(revit_read, reply_out=out)(
+        "REPORT_SPRINKLER_LAYOUT_SPACES", "spaces=" + ((spaces or "").strip() or "*"))
+    reply = out.get("reply")
+    if not isinstance(reply, dict) or not reply.get("ok"):
+        return said
+    if pinned.check(reply):
+        return said
+    provides = reply.get("provides") or {}
+    try:
+        answer = brain.sprinkler_layout(provides.get("layoutJson") or "", inputs,
+                                        project=pinned.project_key, project_name=pinned.title)
+    except brain.BrainUnavailable as why:
+        return str(why)
+    if answer.get("data") is None:
+        return answer["said"]
+    if not answer["result"]["rooms"]:
+        return ("No room was read. %s" % " ".join(answer["data"].get("findings") or [])).strip()
+    companion_page.LAYOUT_PANEL.open(reply.get("document"), answer, _pin_identity())
     _open_companion(companion_page)
     return answer["said"]
 
@@ -5643,6 +5805,8 @@ if __name__ == "__main__":
         companion_page.SPRINKLER_PANEL.suggest_hook = _sprinkler_suggest
         companion_page.SPRINKLER_PANEL.confirm_hook = _sprinkler_confirm
         companion_page.SPRINKLER_PANEL.report_hook = _sprinkler_report
+        companion_page.LAYOUT_PANEL.preview_hook = _sprinkler_layout_preview
+        companion_page.LAYOUT_PANEL.place_hook = _sprinkler_layout_place
         companion_page.keep(bound_pid=_companion_revit)
     except Exception as why:                         # noqa: BLE001 - never cost the chat
         sys.stderr.write("Heron Companion keeper did not start: %s\n" % why)

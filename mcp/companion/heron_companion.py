@@ -1109,6 +1109,148 @@ class SprinklerPanel(object):
 SPRINKLER_PANEL = SprinklerPanel()
 
 
+class LayoutPanel(object):
+    """
+    The Sprinkler Layout panel a chat opens with revit_sprinkler_layout
+    (docs/47 section 7) - the rooms read, the newest read replacing the last.
+
+    IT HOLDS DATA AND CALLS HOOKS - NOTHING ELSE (README rule 4). Every room's
+    layout, status and plan was made in brain/ (heron_sprinkler_layout).
+    Preview calls preview_hook on the rooms already held, so it never asks
+    Revit; Place calls place_hook for ONE level. A previewed job is used once:
+    the level is marked placed under the lock BEFORE the hook runs, so a
+    second press - or a double click - places nothing (the plan's review, R2).
+    With no hook set, each answers that the chat is gone and does nothing.
+    """
+
+    GONE = LoadsPanel.GONE
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._held = None
+        self._data = None
+        self._result = None
+        #: Set by the MCP server. preview_hook(data, inputs, identity) -> brain
+        #: answer; place_hook(data, result, inputs, level, identity) -> {"ok",
+        #: "said", "placed"}.
+        self.preview_hook = None
+        self.place_hook = None
+
+    def open(self, document, answer, identity=None, read_at=None):
+        with self._lock:
+            self._open_locked(document, answer, identity, read_at)
+
+    def _open_locked(self, document, answer, identity=None, read_at=None):
+        """open(), for a caller already holding the lock."""
+        result = answer.get("result") or {}
+        rooms = []
+        for r in result.get("rooms") or []:
+            rooms.append({k: r.get(k) for k in (
+                "key", "label", "level", "status", "why", "asked", "count", "heads",
+                "angle_offer_deg", "ceilings", "z_mm", "z_from", "measured", "checks")})
+        self._data = answer.get("data")
+        self._result = result
+        self._held = {
+            "document": document, "at": time.strftime("%H:%M:%S"),
+            "read_at": read_at or time.strftime("%H:%M:%S"),
+            "identity": list(identity) if identity else None,
+            "status": result.get("status"), "rooms": rooms,
+            "asked": list(result.get("asked") or []),
+            "levels": result.get("levels") or {},
+            "inputs": result.get("inputs") or {}, "standard": result.get("standard"),
+            "types": answer.get("types") or [], "fields": answer.get("fields") or {},
+            "view": answer.get("view") or [],
+            "findings": list(result.get("findings") or []),
+            "said": answer.get("said"), "placed": {}}
+
+    def current(self):
+        with self._lock:
+            if not self._held:
+                return None
+            return json.loads(json.dumps(self._held))
+
+    def _snapshot(self):
+        with self._lock:
+            if not self._held:
+                return None, None, None
+            return (self._data, self._result,
+                    list(self._held["identity"]) if self._held.get("identity") else None)
+
+    @staticmethod
+    def _inputs(body):
+        if not isinstance(body, dict):
+            return None
+        out = {}
+        for part in ("standards", "job", "limits", "rooms"):
+            if not isinstance(body.get(part, {}), dict):
+                return None
+            out[part] = body.get(part) or {}
+        return out
+
+    def preview(self, body):
+        hook = self.preview_hook
+        if hook is None:
+            return {"ok": False, "said": self.GONE}
+        inputs = self._inputs(body)
+        if inputs is None:
+            return {"ok": False, "said": "the answers could not be read - nothing was laid out"}
+        data, _result, identity = self._snapshot()
+        if data is None:
+            return {"ok": False, "said": "no rooms are open on this page - ask the chat to "
+                                         "lay sprinklers out in the rooms first"}
+        with self._lock:
+            document = self._held["document"]
+            read_at = self._held.get("read_at")
+        answer = hook(data, inputs, identity)
+        if not isinstance(answer, dict) or answer.get("data") is None:
+            return {"ok": False, "said": (answer or {}).get("said") or self.GONE}
+        with self._lock:
+            # A NEWER READ WINS: the chat may have opened other rooms while this
+            # preview was being worked out (the Codex review of #418).
+            if self._data is not data:
+                return {"ok": False, "said": "the chat read other rooms while this preview was "
+                                             "being worked out - this preview was dropped",
+                        "layout": json.loads(json.dumps(self._held)) if self._held else None}
+            self._open_locked(document, answer, identity, read_at)
+        return {"ok": True, "said": answer.get("said"), "layout": self.current()}
+
+    def place(self, body):
+        """One level of the previewed layout - once."""
+        hook = self.place_hook
+        if hook is None:
+            return {"ok": False, "said": self.GONE}
+        level = body.get("level") if isinstance(body, dict) else None
+        if not isinstance(level, str) or not level:
+            return {"ok": False, "said": "no level was named - nothing was placed"}
+        with self._lock:
+            if not self._held or self._result is None:
+                return {"ok": False, "said": "nothing has been previewed - nothing was placed"}
+            if level in self._held["placed"]:
+                return {"ok": False, "said": "level %s of this preview was already placed - "
+                                             "ask the chat to lay the rooms out again before "
+                                             "placing more" % level}
+            self._held["placed"][level] = {"at": time.strftime("%H:%M:%S"), "said": None,
+                                           "running": True}
+            data, result = self._data, self._result
+            identity = list(self._held["identity"]) if self._held.get("identity") else None
+            inputs = dict(self._held.get("inputs") or {})
+        got = hook(data, result, inputs, level, identity) or {}
+        with self._lock:
+            if self._held is not None and self._result is result:
+                if got.get("ok"):
+                    self._held["placed"][level] = {"at": time.strftime("%H:%M:%S"),
+                                                   "said": got.get("said"),
+                                                   "values": got.get("placed")}
+                else:
+                    # NOTHING WAS PLACED, so the level may be tried again.
+                    self._held["placed"].pop(level, None)
+        return {"ok": bool(got.get("ok")), "said": got.get("said"), "layout": self.current()}
+
+
+#: This process's Sprinkler Layout panel - one chat's.
+LAYOUT_PANEL = LayoutPanel()
+
+
 def companion_dir():
     """Where each chat leaves the note the Companion button in Revit reads -
     HeronPaths.Companion, mirrored (D-109)."""
@@ -1604,6 +1746,11 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if why:
                 return self._refuse(403, why)
             return self._json(200, {"ok": True, "view": SPRINKLER_PANEL.view()})
+        if path == "/api/layout":
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            return self._json(200, {"ok": True, "layout": LAYOUT_PANEL.current()})
         if path.startswith("/report/"):
             return self._report_file(path)
         return self._refuse(404, "not found")
@@ -1683,6 +1830,18 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             if path.endswith("/confirm"):
                 return self._json(200, SPRINKLER_PANEL.confirm())
             return self._json(200, SPRINKLER_PANEL.report(body))
+        if path in ("/api/layout/preview", "/api/layout/place"):
+            why = self._api_ok()
+            if why:
+                return self._refuse(403, why)
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 1048576)
+                body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+            except (ValueError, UnicodeDecodeError):
+                return self._refuse(400, "unreadable")
+            if path.endswith("/preview"):
+                return self._json(200, LAYOUT_PANEL.preview(body))
+            return self._json(200, LAYOUT_PANEL.place(body))
         if path == "/api/changes/clear":
             why = self._api_ok()
             if why:

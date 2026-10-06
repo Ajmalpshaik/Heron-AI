@@ -1,0 +1,40 @@
+# D-30: the negative case is what catches "succeeded and did nothing".
+# Run on a model the owner names, with an L-shaped office Space, a ceiling in
+# it, two sprinklers already on its level, and a level NOT at zero. Every case
+# reads only.
+
+positive:
+  - given: one L-shaped office Space selected, spaces "*"
+    expect: >
+      layoutJson is format 1 with one space; its outline drawn over the plan
+      matches the Space's boundary to the millimetre and area_m2 its schedule
+      Area; holes lists a room-bounding column inside it
+
+  - given: the same Space, its ceiling at 2700 mm above the level
+    expect: ceilings lists that ceiling with height_m 2.7
+
+  - given: two sprinklers in the office at the ceiling, above the Space's upper limit
+    expect: >
+      both are in sprinklers with x, y, z and offset_m - found in plan even
+      though Revit's volume test puts them outside the Space
+
+  - given: the Space's UniqueId in spaces, with nothing selected
+    expect: the same Space is read - the id wins, the selection is not needed
+
+  - given: the sprinkler types in the model
+    expect: >
+      sprinkler_types names each as Revit's type selector shows it, Family:
+      Type, with its placement (OneLevelBased or WorkPlaneBased)
+
+negative:
+  - given: spaces set to an id that matches no Space or Room
+    expect: >
+      spaces empty, spaceCount 0, and a finding naming the id - THE CASE
+      THAT MATTERS: a read that answers about other rooms is laid out wrong
+      without a word
+
+  - given: nothing selected, spaces "*"
+    expect: spaces empty and a finding saying to select the rooms
+
+  - given: an unplaced Space selected
+    expect: it is not listed, and a finding says it has no area

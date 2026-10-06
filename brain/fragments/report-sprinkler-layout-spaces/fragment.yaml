@@ -1,0 +1,93 @@
+heron-agent: HERON-REVIT-SYS-030
+heron-step: 17
+heron-status: DRAFT
+heron-since: 0.1.0
+heron-layer: brain
+
+id: FRG-MEP-060
+semantic-identity: "the rooms a sprinkler layout is made for - each room's outline and holes, its level, the ceilings over it, the sprinklers already on its level, and the sprinkler types loaded"
+kind: filter
+domain: revit.mep
+capability: REPORT_SPRINKLER_LAYOUT_SPACES
+version: 1
+source: OFFICIAL
+risk: READ
+
+purpose: >
+  Reads what a sprinkler layout of a room needs (docs/47 section 3), for the
+  Spaces or Rooms asked: each one's outline in plan (its largest boundary
+  loop, tessellated, in metres) and its holes (every other loop - columns,
+  shafts), how many of its edges are separation lines, its level with both of
+  the level's elevations, its location point, the ceilings on its level whose
+  plan extent holds that point with each one's height above the level, every
+  sprinkler on its level inside its plan extent with its point and its
+  Elevation from Level, and - once - every sprinkler type loaded, named
+  `Family: Type`, with its family's placement type.
+
+  **Which rooms.** `*` is the Spaces and Rooms selected now - only when the
+  model read is the one in front. Otherwise UniqueIds separated by `;`, so
+  the same rooms can be read again whatever is selected by then. One that
+  matches nothing is a finding, never a guess.
+
+  **The heads are found in plan.** Revit's IsPointInSpace and IsPointInRoom
+  test a room's height too, and a head at the ceiling is often above it
+  (NEEDS-CHECKING AJ5). So every sprinkler on the level inside the room's
+  plan extent crosses, and the brain tests each against the outline itself.
+
+  **It calculates nothing.** The layout, its check and which heads are in
+  which room are the brain's (heron_sprinkler_layout, heron_fire).
+
+  **Why one string.** A fragment's list output reaches the caller as its first
+  three names (FRAGMENT-ISSUES 5b-195), so it crosses as one JSON string,
+  `layoutJson`, format 1.
+
+contract:
+  needs:
+    - name: doc
+      type: Document
+    - name: uidoc
+      type: UIDocument
+    # `*` for the selection, else UniqueIds separated by `;`. Always sent.
+    - name: spaces
+      type: string
+      source: request
+  provides:
+    # The rooms, their ceilings and heads, and the sprinkler types, as one JSON string, format 1.
+    - name: layoutJson
+      role: result
+      type: string
+    # How many rooms were read with an outline.
+    - name: spaceCount
+      role: result
+      type: int
+    # What was asked and could not be read.
+    - name: findings
+      role: accounting
+      type: IList<string>
+
+revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
+runtime: [net472, net48, net8.0-windows, net10.0-windows]
+tests: tests/
+
+compatibility-note: >
+  One implementation for every release. SpatialElement.GetBoundarySegments,
+  BoundarySegment.GetCurve, Curve.Tessellate, Level.Elevation and
+  ProjectElevation, Element.get_BoundingBox, CEILING_HEIGHTABOVELEVEL_PARAM,
+  INSTANCE_ELEVATION_PARAM, FAMILY_LEVEL_PARAM and Family.FamilyPlacementType
+  are present 2020 to 2027. The placement type is read with ToString(), so no
+  enum member a release lacks is named. Lengths are internal feet, converted
+  here; no units API is touched (the 2021 move). No ElementId is read as a
+  number - each is written with ToString().
+
+# ROUTING - take-off wording only. "Place sprinklers in these rooms" is the
+# revit_sprinkler_layout TOOL's, which reads this, lays the rooms out and opens
+# the Companion; PLACE_FAMILY_INSTANCES keeps "put the sprinklers in" (the
+# plan's review, R13; D-01).
+#
+#   "read the rooms for a sprinkler layout"      -> here
+#   "the shape, area and height of one room"     -> READ_ROOM_GEOMETRY
+#   "put the sprinklers in"                      -> PLACE_FAMILY_INSTANCES
+utterances:
+  - read the rooms for a sprinkler layout
+  - sprinkler layout take-off of these spaces
+  - the outlines, ceilings and existing sprinklers of these rooms for laying sprinklers out
