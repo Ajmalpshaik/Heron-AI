@@ -97,6 +97,18 @@ compatibility-note: >
 #   "place these on the wall face"     -> here
 #   "place a family at these points"   -> PLACE_FAMILY_INSTANCES, which is
 #                                         point-and-level and NOT hosted
+#   "put a skylight in the roof",      -> PLACE_HOSTED_FAMILY. A family whose
+#    "put floor drains in the floor",     Host setting reads Wall, Floor,
+#    "put doors in the walls"             Ceiling or Roof goes INTO that host,
+#                                         found at a point; this one places a
+#                                         FACE-BASED family on a face. The
+#                                         words cannot tell which a family
+#                                         is - its Host setting does - and
+#                                         PLACE_HOSTED_FAMILY refuses a
+#                                         face-based family naming this one
+#                                         (measured 2026-10-06, Project2:
+#                                         M_Downlight - Round - LED and
+#                                         M_Floor Drain - Round)
 #   "what is hosted on this"           -> SELECT_BY_HOST
 
 utterances:

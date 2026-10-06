@@ -113,6 +113,7 @@ namespace Heron.Revit.Addin
                     Json.Num("areas", 0),
                     Json.Str("document", doc.Title),
                     Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                    Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                     Json.Bool("modifiedAnything", false),
                     Json.Str("reads",
                         "This model has no rooms, no MEP spaces and no areas. "
@@ -134,6 +135,7 @@ namespace Heron.Revit.Addin
                                      ? rooms.Examples : spaces.Examples),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", RevitOperations.ProjectKey(doc)),
+                Json.Str("creationGuid", RevitOperations.CreationGuid(doc)),
                 Json.Bool("modifiedAnything", false),
                 Json.Str("reads", Reads(rooms, spaces, areas)));
         }

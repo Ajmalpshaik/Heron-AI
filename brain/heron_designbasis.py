@@ -37,8 +37,11 @@ ONE FILE PER PROJECT, AND THE PROJECT IS NEVER GUESSED
 -------------------------------------------------------
 knowledge/projects/<key>.hvac.json, and <key>.fire.json beside it - one file per
 project and discipline, beside the project's own store and named by the same
-key, the Project Information UniqueId the add-in reports (heron_scope._safe_key
-says why it is that and never the file name). A discipline's answers never
+key, the model's own CreationGUID the add-in reports (heron_scope._safe_key says
+why it is that and never the file name). Until D-113 it was the Project
+Information UniqueId, which every model made from one template shares - so
+Project2's answers were used in another model (FRAGMENT-ISSUES 5b-324); what
+was kept under it is asked about, never used (heron_earlier). A discipline's answers never
 land in another's file, so an HVAC question is never answered from a fire
 record. No key, no file: a project this chat has not seen is asked again
 rather than filed under a guess, because one client's answer in another

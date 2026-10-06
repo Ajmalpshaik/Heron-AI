@@ -350,6 +350,7 @@ namespace Heron.Revit.Addin
                 Json.Str("document", doc.Title),
                 Json.Str("documentPath", string.IsNullOrEmpty(doc.PathName) ? null : doc.PathName),
                 Json.Str("projectKey", ProjectKey(doc)),
+                Json.Str("creationGuid", CreationGuid(doc)),
                 Json.Bool("unsaved", doc.IsModified),
                 Json.Str("counts", "placed elements, excluding types"));
         }
@@ -561,25 +562,30 @@ namespace Heron.Revit.Addin
                 Json.Num("categories", wanted.Count),
                 Json.Str("document", doc.Title),
                 Json.Str("projectKey", ProjectKey(doc)),
+                Json.Str("creationGuid", CreationGuid(doc)),
                 Json.Str("scope", "the whole model, not just the active view"));
         }
 
         /// <summary>
-        /// The document's PROJECT KEY - what a knowledge scope is named after.
+        /// The UniqueId of the document's Project Information element, sent as
+        /// `projectKey`. NOT the model's identity, whatever its name says.
         ///
-        /// heron_scope._safe_key states the contract: the key is the UniqueId
-        /// of the document's own Project Information element, chosen because
-        /// it is created with the document and survives save, rename and move.
-        /// The add-in already computed exactly this inside RevitWrite for the
-        /// preview/commit pairing and never SENT it, so the MCP server had no
-        /// way to obtain one - it built a path-based key instead and the
-        /// project store was named after a file name, or, in a read-only
-        /// conversation where no write tool had run, was not opened at all.
-        /// Found by a review 2026-09-11.
+        /// It was chosen 2026-09-11 as what a knowledge scope is named after,
+        /// on the belief that it is created with the document. It is created
+        /// with the TEMPLATE: a new project inherits the element, UniqueId
+        /// included. Measured twice - two blank projects and an unrelated
+        /// PIPE.rvt in Revit 2020 all reported 8764c510-...-0000c160 on
+        /// 2026-09-15 (NEEDS-CHECKING E12), and "Heron loads test", a new
+        /// project in Revit 2024, reported the same id on 2026-10-06, so
+        /// Heron used Project2's kept loads answers in it without a question
+        /// (FRAGMENT-ISSUES 5b-324). The server now files a project's answers
+        /// under CreationGuid below (D-113).
         ///
-        /// NOT Document.CreationGUID, for the reason RevitWrite.DocumentKey
-        /// gives at length: it does not exist in Revit 2020, and D-05 does not
-        /// extrapolate a runtime table.
+        /// It is still sent, unchanged, for two jobs: the expectProject guard
+        /// compares it (D-74 says that guard is no longer what keeps a write
+        /// in the right model, and between two models made from one template
+        /// it cannot tell them apart), and answers kept before D-113 were
+        /// filed under it - the server finds them by it to ASK about them.
         ///
         /// A family document has no Project Information. Heron keeps no
         /// project knowledge for those, and null says so rather than
@@ -591,6 +597,47 @@ namespace Heron.Revit.Addin
             var info = doc.ProjectInformation;
             return info == null ? null : info.UniqueId;
         }
+
+        /// <summary>
+        /// The MODEL's own id - Document.CreationGUID - sent as `creationGuid`,
+        /// and what the server files a project's kept answers under (D-113).
+        ///
+        /// MEASURED, NOT ASSUMED, 2026-10-06. Read in Revit 2024 on "Heron
+        /// loads test" it was c95db604-0abd-4bc5-9ebd-3ece37b3ce52 while its
+        /// Project Information id was the template's. The same GUID heads the
+        /// Global/History stream of the saved file, which made the rest
+        /// readable from disk without Revit: the 18 projects on the owner's PC
+        /// made from that template carry 18 different ones, and six copies of
+        /// one model - a central, its local copies, a detached copy and plain
+        /// file copies - all carry the same one. So it tells template-born
+        /// projects apart and follows a model through Save As and a renamed
+        /// file. A copy made to start another job keeps it too; that is Save
+        /// As by another name, and D-113 says so.
+        ///
+        /// READ BY REFLECTION because it arrived at Revit 2024 (the table in
+        /// the revit-version-support skill): a direct call would not compile
+        /// for 2020 to 2023, and this one build serves all eight releases. On
+        /// those four it returns null, and the server keeps nothing for the
+        /// model rather than keep it where every template-born project would
+        /// find it.
+        ///
+        /// Null on a family document too, as ProjectKey is: Heron keeps no
+        /// project knowledge for a family. Null for an empty GUID, which names
+        /// nothing.
+        /// </summary>
+        internal static string CreationGuid(Document doc)
+        {
+            if (doc == null || doc.IsFamilyDocument) return null;
+            var property = CreationGuidProperty.Value;
+            if (property == null) return null;
+            var value = property.GetValue(doc, null);
+            if (!(value is Guid)) return null;
+            var guid = (Guid)value;
+            return guid == Guid.Empty ? null : guid.ToString("D");
+        }
+
+        private static readonly Lazy<System.Reflection.PropertyInfo> CreationGuidProperty =
+            new Lazy<System.Reflection.PropertyInfo>(() => typeof(Document).GetProperty("CreationGUID"));
 
         /// <summary>
         /// A BIM word to a Revit category, or the refusal to give back.
