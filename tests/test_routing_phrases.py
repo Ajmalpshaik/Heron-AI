@@ -105,6 +105,10 @@ CHANGES = [
      "5b-322: Manage > Position, part of the same job"),
     ("show cooling and heating loads in Btu/h and airflow in CFM", "SET_PROJECT_UNITS",
      "5b-322: NEEDS-CHECKING CC12 needs a model in Btu/h and CFM"),
+    ("create an area scheme", "SET_AREA_VOLUME_COMPUTATIONS",
+     "5b-337: before the Area and Volume Computations tools, answered APPLY_COLOR_FILL_SCHEME"),
+    ("rename the rentable area scheme to net lettable", "SET_AREA_VOLUME_COMPUTATIONS",
+     "5b-337: answered APPLY_COLOR_FILL_SCHEME"),
 ]
 
 QUESTIONS = [
@@ -113,6 +117,10 @@ QUESTIONS = [
     ("where is this project", "5b-322: a question about the site never reaches its setter"),
     ("which units does this model show cooling load in",
      "5b-322: a question about the units never reaches their setter"),
+    ("is volume computation switched on",
+     "5b-337: a first draft of SET_AREA_VOLUME_COMPUTATIONS answered it - its card quoted the question"),
+    ("check if volume calculation is enabled",
+     "5b-337: answered SET_SCHEDULE_FIELD_TOTALS"),
 ]
 
 # A question about the project's own setup reaches the tool that READS it.

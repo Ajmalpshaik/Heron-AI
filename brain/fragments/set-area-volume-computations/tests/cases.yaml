@@ -1,0 +1,73 @@
+# D-30: the negative case is what catches "succeeded and did nothing" - and,
+# for a write, "changed something it was not asked to".
+
+positive:
+  - given: >
+      a project with Volume Computations at Areas only and placed, bounded
+      Spaces; settings "Volume Computations=Areas and Volumes"
+    expect: >
+      changed 1; settingReport "Volume Computations Areas only -> Areas and
+      Volumes" READ BACK; spacesWithVolume above 0 where the finding's "before"
+      count was lower - a Space's volume read back above zero. The dialog shows
+      Areas and Volumes
+
+  - given: settings "Room Area Computation=At wall center" on a project at At wall finish
+    expect: >
+      changed 1, Room Area Computation At wall finish -> At wall center read
+      back, the finding saying every room's area is re-measured, and what Revit
+      reports for Spaces after it
+
+  - given: >
+      a project with the Gross Building and Rentable schemes; settings
+      "New Area Scheme=Heron Proof : made by a proof"
+    expect: >
+      changed 1; a scheme "Heron Proof" with that description read back, not
+      the Gross Building scheme, with no area plan and no area - the copy of
+      Rentable, renamed. Area Schemes tab shows a third row
+
+  - given: settings "Rename Area Scheme=Rentable -> Net Lettable"
+    expect: the scheme reads Net Lettable after the call, read back; its areas and area plans stay with it
+
+  - given: >
+      settings "Area Scheme Description=Rentable : BOMA rentable"
+    expect: the description reads "BOMA rentable", read back
+
+negative:
+  - given: >
+      settings naming a value the project already has - "Volume Computations=
+      Areas and Volumes" where it is already Areas and Volumes, or "Room Area
+      Computation=At wall finish" where it already is
+    expect: >
+      changed 0, settingReport empty, alreadyAsAsked 1 and the finding "0
+      setting(s) changed and 1 already as asked" - NOTHING WRITTEN. A fragment
+      that writes the same value again would read the same here, which is why
+      the read-back is of the settings, not of the call
+
+  - given: settings "Volume Computations=On"
+    expect: refused, naming the dialog's two choices - nothing changed
+
+  - given: settings "Room Area Computation=Middle of wall"
+    expect: refused, naming the dialog's four choices - nothing changed
+
+  - given: settings "Rename Area Scheme=Lettable -> Net" where no scheme is called Lettable
+    expect: refused, naming the schemes there are - nothing changed
+
+  - given: settings "New Area Scheme=Gross Building"
+    expect: alreadyAsAsked 1 and the finding that one is already there - no second scheme made
+
+  - given: >
+      settings "Volume Computations=Areas and Volumes; Room Area
+      Computation=Middle of wall" - one good value and one bad
+    expect: >
+      refused as a whole - Volume Computations NOT changed either. Everything is
+      checked before anything is written
+
+  - given: a family open in the Family Editor (run with --negative-in its title)
+    expect: notAProject true, refused, nothing changed
+
+second_route:
+  - >
+    The Area and Volume Computations dialog itself, opened after a kept call:
+    the Computations tab's choices and the Area Schemes tab's rows read as the
+    settingReport says. And a room or space schedule's Volume column, which
+    reads values only once Areas and Volumes is on
