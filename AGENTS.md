@@ -103,6 +103,12 @@ pass** — see [`tests/README.md`](tests/README.md).
 
 **Stage explicit paths.** Never `git add -A`; another session may be writing to this tree.
 
+**Rough work goes in a temporary folder, never beside Heron.** A helper script written to work
+something out - a family's shapes, a check of numbers - goes in the scratchpad folder the session
+names. With none named, use `%TEMP%\heron-work` (`C:\Users\<you>\AppData\Local\Temp\heron-work`),
+made if missing. Never inside the Heron folder and never next to it: on a PC whose session had no
+scratchpad, every family built left a `.py` in a `Python` folder beside the Heron folder.
+
 **[`CONTRIBUTING.md`](CONTRIBUTING.md) owns the pull-request process, the code style and the list of
 things that get a change rejected outright** — real model data, credentials, redistributed Revit
 assemblies. Read it before opening one; it is not repeated here.

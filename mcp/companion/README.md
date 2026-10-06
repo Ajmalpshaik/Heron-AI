@@ -17,8 +17,8 @@ in [docs/40](../../docs/40-heron-companion.md). The chat stays the only place to
 
 | | Does |
 |---|---|
-| [`heron_companion.py`](heron_companion.py) | The server: pairing, the protection rules, which Revit to show, the keeper that follows the Companion switch (D-109), the activity list, the element table, the HVAC Load Calculation panel (docs/44), the Sprinkler Hydraulic Calculation panel (docs/46) and the route that opens either sheet - and the after-change tables, switched off |
-| [`static/index.html`](static/index.html), [`static/companion.js`](static/companion.js), [`static/companion.css`](static/companion.css), [`static/loads3d.js`](static/loads3d.js), [`static/sprinkler3d.js`](static/sprinkler3d.js) | The page, and the 3D views of the Loads panel and the Sprinkler panel - renderers of its own. Nothing is loaded from the internet |
+| [`heron_companion.py`](heron_companion.py) | The server: pairing, the protection rules, which Revit to show, the keeper that follows the Companion switch (D-109), the activity list, the element table, the HVAC Load Calculation panel (docs/44), the Sprinkler Hydraulic Calculation panel (docs/46), the Sprinkler Layout panel (docs/47) and the route that opens either sheet - and the after-change tables, switched off |
+| [`static/index.html`](static/index.html), [`static/companion.js`](static/companion.js), [`static/companion.css`](static/companion.css), [`static/loads3d.js`](static/loads3d.js), [`static/sprinkler3d.js`](static/sprinkler3d.js) | The page, the 3D views of the Loads panel and the Sprinkler panel, and the Sprinkler Layout panel's plans, drawn by companion.js - renderers of its own. Nothing is loaded from the internet |
 
 ## Rules for this folder
 

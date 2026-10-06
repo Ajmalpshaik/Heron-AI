@@ -99,11 +99,19 @@ CHANGES = [
      "5b-319: answered CREATE_WALL"),
     ("place a skylight in the roof at a point", "PLACE_HOSTED_FAMILY",
      "5b-326: asked by a session 2026-10-06, answered CREATE_ROOF"),
+    ("create an area scheme", "SET_AREA_VOLUME_COMPUTATIONS",
+     "5b-337: before the Area and Volume Computations tools, answered APPLY_COLOR_FILL_SCHEME"),
+    ("rename the rentable area scheme to net lettable", "SET_AREA_VOLUME_COMPUTATIONS",
+     "5b-337: answered APPLY_COLOR_FILL_SCHEME"),
 ]
 
 QUESTIONS = [
     ("read the thermal U value of every floor type and roof type",
      "5b-319: asked by the same session, answered CREATE_ROOF"),
+    ("is volume computation switched on",
+     "5b-337: a first draft of SET_AREA_VOLUME_COMPUTATIONS answered it - its card quoted the question"),
+    ("check if volume calculation is enabled",
+     "5b-337: answered SET_SCHEDULE_FIELD_TOTALS"),
 ]
 
 NO_TOOL = [
