@@ -14,7 +14,12 @@ semantic-identity: "all elements of one category in the active document"
 kind: filter
 domain: revit.elements
 capability: FILTER_ELEMENTS_BY_CATEGORY
-version: 2
+# VERSION 3 (2026-10-06, FRAGMENT-ISSUES 5b-335): a level parameter that holds
+# no level is passed over and the next one asked, where version 2 answered
+# with the first one an element HAD. Three work plane-based diffusers with
+# FAMILY_LEVEL_PARAM empty and SCHEDULE_LEVEL_PARAM on Level 1 were on no
+# level ("matching 3", "elements 0"), so the loads' Finalize gave them no flow.
+version: 3
 source: OFFICIAL
 risk: READ
 
@@ -42,8 +47,8 @@ purpose: >
   revives ids against this model, and a linked id that happens to be in
   use here binds an unrelated element (FRAGMENT-ISSUES row 75). Links
   nested inside a link are not read, and are counted in the answer. This
-  is version 2; version 1's proof no longer describes the code, and the
-  fragment is DRAFT until it is proved again.
+  is version 3 - version 2 read the links - and version 1's proof no longer
+  describes the code, so the fragment is DRAFT until it is proved again.
 
 contract:
   needs:

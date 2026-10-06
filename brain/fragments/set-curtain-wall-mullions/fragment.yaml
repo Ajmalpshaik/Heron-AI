@@ -19,12 +19,12 @@ purpose: >
   which is what Type Properties shows under those two headings. Only the
   positions the modeller names change; a position left out keeps what it has.
 
-  **IT CHANGES THE TYPE, SO IT CHANGES EVERY WALL OF THAT TYPE.** The walls
+  **IT CHANGES THE TYPE, SO EACH WALL BUILT FROM IT CHANGES TOO.** The walls
   using it are counted before anything is written, and the count is the first
   line of the answer. To change one wall alone, DUPLICATE_TYPE first, put that
   wall on the copy with CHANGE_ELEMENT_TYPE, and set the copy.
 
-  **THE TYPE IS NAMED, NOT SELECTED** - "Curtain Wall: Storefront", or the bare
+  **THE TYPE IS NAMED IN THE REQUEST** - "Curtain Wall: Storefront", or the bare
   type name when no other wall type shares it (D-54) - for the same reason as
   SET_CURTAIN_WALL_GRID: it is a type change, and the request should say so. A
   wall type that is not a curtain wall is refused by name and nothing changes.

@@ -9,7 +9,16 @@ semantic-identity: "set how a curtain wall type's grid lines are laid out and sp
 kind: action
 domain: revit.elements
 capability: SET_CURTAIN_WALL_GRID
-version: 1
+# VERSION 2 (2026-10-06, FRAGMENT-ISSUES 5b-328): a direction's spacing is
+# judged under the layout the same request gives it, and written after that
+# layout, so "layout fixed distance; spacing 2500" works on a type whose
+# layout was None - version 1 refused it before writing anything, blaming
+# "another user in a shared model" on a model that was not shared. A setting
+# Revit keeps read-only is now refused with what Revit says: whether the model
+# is shared, and who holds the type. The card's "named, not selected" and
+# "every wall of that type" lines were reworded the same day, because they
+# pulled "select every wall of type Curtain Wall" here (5b-329).
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -19,19 +28,19 @@ purpose: >
   those two headings. Only what the modeller names changes: a direction, or a
   setting, left out of the request is left exactly as it is.
 
-  **IT CHANGES THE TYPE, SO IT CHANGES EVERY WALL OF THAT TYPE.** The walls
+  **IT CHANGES THE TYPE, SO EACH WALL BUILT FROM IT CHANGES TOO.** The walls
   using it are counted before anything is written, and the count is the first
   line of the answer - "used by 12 walls - every one of them changed with the
   type". To change one wall alone, DUPLICATE_TYPE first, put that wall on the
   copy with CHANGE_ELEMENT_TYPE, and set the copy.
 
-  **THE TYPE IS NAMED, NOT SELECTED.** "Curtain Wall: Storefront", or the bare
-  type name when no other wall type shares it (D-54). The change is a type
-  change, and naming the type keeps that in the request itself; a selected
-  wall would read as "this wall" and change a hundred. REPORT_CURTAIN_ELEMENTS
-  on a selected curtain wall prints its name, which for a wall is its type's.
-  A wall type that is not a curtain wall - a basic or a stacked one - is
-  refused by name and nothing is changed.
+  **THE TYPE IS NAMED IN THE REQUEST** - "Curtain Wall: Storefront", or the
+  bare type name when no other wall type shares it (D-54). The change is a type
+  change, and naming the type keeps that in the request itself; one wall
+  clicked on screen would read as "this wall" and change a hundred.
+  REPORT_CURTAIN_ELEMENTS on one curtain wall prints its name, which for a wall
+  is its type's. A wall type that is not a curtain wall - a basic or a stacked
+  one - is refused by name and nothing is changed.
 
   **WHY NOT WRITE_ELEMENT_PARAMETERS.** "Layout" and "Spacing" each appear
   twice on a curtain wall type, once per direction, and a lookup by name picks
@@ -46,14 +55,16 @@ purpose: >
   maximum spacing or minimum spacing. A spacing is MILLIMETRES (D-71), digits
   only, converted to Revit's feet once, here; at least 100 and at most 100,000,
   because below that a number typed in metres - 1.5 for 1500 - would put a line
-  every 1.5 mm on every wall of the type. A spacing is taken only with a layout
-  that uses one: under None there are no lines to space, and a spacing that
-  would change nothing is refused rather than written and reported as done.
+  every 1.5 mm on each wall built from the type. A spacing is taken only with a
+  layout that uses one: under None there are no lines to space, and a spacing
+  that would change nothing is refused rather than written and reported as
+  done. A direction's layout is written before its spacing, so a layout and a
+  spacing asked together work on a type whose layout was None.
 
   **FIXED NUMBER IS REFUSED, AND THAT IS THE BOUNDARY.** Under Fixed Number the
   COUNT is not on the type: Revit shows it as "Number" in each placed WALL's
-  own Properties, so a type change cannot say how many, and every wall of the
-  type would switch to a count nobody chose. Asking for it refuses the whole
+  own Properties, so a type change cannot say how many, and each wall built
+  from the type would switch to a count nobody chose. Asking for it refuses the whole
   request and changes nothing. Where Revit keeps that count - and each wall's
   Justification, Angle and Offset - is MEASURED on every run and printed in
   `readBack`, so the first proof records it rather than this card asserting it.
@@ -76,7 +87,7 @@ purpose: >
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16). Every
   refusal is made before the first write. If Revit refuses a write, or cannot
   rebuild the walls with it, the call stops and nothing it did is kept - a type
-  half-changed across every wall that uses it is worse than one left alone.
+  half-changed across the walls that use it is worse than one left alone.
 
 contract:
   needs:

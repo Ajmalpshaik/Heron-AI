@@ -14,14 +14,16 @@ source: OFFICIAL
 risk: READ
 
 purpose: >
-  Narrows the model to the elements whose named parameter matches a piece of
-  TEXT - "every VCD", "mark begins with AHU", "comments contain revise",
-  "type name is 300x300" - optionally bounded to a list of categories.
+  Selects the elements of one TYPE by its name, or whose named parameter
+  matches a piece of TEXT - "every curtain wall of type Atrium Glass", "every
+  door of type Office Single", "every VCD", "mark begins with AHU" - optionally
+  bounded to a list of categories.
 
   Three names are understood beyond real parameters, because they are what a
   modeller actually says: **Family**, **Type**, and **Family and Type**. The
   last one matches against `Family : Type` the way Revit's own properties
-  palette writes it.
+  palette writes it - "Curtain Wall : Storefront". So "select every curtain
+  wall of type Storefront" is Type equals Storefront, in Walls.
 
   **AN ELEMENT THAT DOES NOT CARRY THE PARAMETER IS COUNTED, NEVER MATCHED -
   not even by a "does not contain" query.** Treating a missing parameter as an
@@ -164,6 +166,12 @@ compatibility-note: >
 #                                       on fittings and rare on duct
 #   "every duct of this type"        -> FILTER_ELEMENTS_BY_TYPE - the type
 #                                       itself, not its name as text
+#   "select every wall of type curtain wall" -> here
+#                                       Type equals that name, in Walls. On
+#                                       2026-10-06 it reached
+#                                       SET_CURTAIN_WALL_GRID, a CHANGE, and
+#                                       9 of 15 such sentences reached a
+#                                       change (FRAGMENT-ISSUES 5b-329)
 #   "what is blank"                  -> DESCRIBE_BLANK_PARAMETERS - presence
 #                                       and emptiness, not a value to match
 
@@ -174,3 +182,13 @@ utterances:
   - find all elements whose type name contains
   - filter by parameter value
   - show me everything with fire rating 2hr
+  - select every wall of one type
+  - select all the curtain walls of one type
+  - select all the pipes of one type by its name
+  - select every column whose type is named
+  # The modeller's own words on 2026-10-06 (FRAGMENT-ISSUES 5b-329), declared
+  # because no wording of this card reaches them by ranking on the trained
+  # model: the type's NAME is "Curtain Wall", and the four curtain wall cards
+  # sit at 0.63 to 0.67 cosine against it where this card sits at 0.36 to
+  # 0.46. Without it the sentence reached SET_CURTAIN_WALL_GRID, a change.
+  - select every wall of type curtain wall

@@ -126,6 +126,22 @@ positive:
       the same answer. One path serves every release, and this is the release
       at the other end of the range
 
+  # VERSION 2, added 2026-10-06 - FRAGMENT-ISSUES 5b-328. The case version 1
+  # refused: a layout AND its spacing asked together on a type whose layout
+  # is None, so its Spacing starts read-only.
+  - given: >
+      a curtain wall type whose vertical and horizontal layouts are both None,
+      one wall of it placed - "Curtain Wall: Curtain Wall" in the loads test,
+      "Curtain Wall 1" in Revit's templates; grid "vertical layout=fixed
+      distance; vertical spacing=2500; horizontal layout=fixed distance;
+      horizontal spacing=4000"
+    expect: >
+      applied 4, differs empty, refused empty; readBack "vertical: layout
+      Fixed Distance [Revit's value 1], was None [Revit's value 0]", spacing
+      2500.0 mm, and the same for horizontal with 4000.0 mm. Version 1 refused
+      this with "may be held by another user in a shared model" and changed
+      nothing
+
 negative:
   - given: >
       the same arrangement and the SAME grid, "vertical layout=fixed distance;
@@ -150,7 +166,9 @@ negative:
     expect: >
       refused "A vertical spacing does nothing while the vertical layout is
       None"; applied 0. The write that would have changed nothing is refused
-      rather than reported as done
+      rather than reported as done. VERSION 2: this, not a sentence about a
+      shared model, is the reason - and on a model that is not shared no
+      refusal may say another user holds anything (5b-328)
 
   - given: the arrangement; grid "vertical layout=fixed distance; vertical spacing=1.5"
     expect: >
