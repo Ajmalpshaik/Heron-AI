@@ -7,7 +7,7 @@
 
 ## Group CH - PLACE_HOSTED_FAMILY version 4: a family into the roof, floor or ceiling at each point, and a window that faces out (2026-10-06)
 
-**Built 2026-10-06 on rows [5b-325, 5b-326 and 5b-293](../fragment-issues/section-5b-rows-176-200.md).
+**Built 2026-10-06 (PR #423) on rows [5b-325, 5b-326 and 5b-293](../fragment-issues/section-5b-rows-176-200.md).
 [`place-hosted-family`](../../brain/fragments/place-hosted-family/fragment.yaml) is DRAFT, version 4, and
 compiles on Revit 2020 to 2027.** It reads the family's own Host setting - Wall, Floor, Ceiling or Roof -
 and places into the host found at each point; a window keeps facing its wall's exterior.
