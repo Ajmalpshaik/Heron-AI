@@ -619,13 +619,14 @@ def _reach(x, y, points, k):
     return sorted(math.hypot(x - px, y - py) for _i, px, py in points)[k - 1]
 
 
-def farthest_point(pts, points, step, k=1):
+def farthest_point(pts, points, step, k=1, holes=None):
     """
     The point of the outline farthest from every given point, sampled on a
     `step` mm grid: (distance mm, x, y, samples). With k above 1, the distance
     is to each sample's k-th nearest point - "every part reached by two hose
     reels" is k = 2. A sample, not a proof - a finer step finds a corner a
-    coarse one steps over.
+    coarse one steps over. A sample inside one of `holes` (a column, a shaft)
+    is not floor, and is skipped.
     """
     step = sampling_step(pts, step, len(points))
     xs = [p[0] for p in pts]
@@ -636,7 +637,7 @@ def farthest_point(pts, points, step, k=1):
     while x < max(xs):
         y = min(ys) + step / 2.0
         while y < max(ys):
-            if inside(pts, x, y):
+            if inside(pts, x, y) and not any(inside(h, x, y) for h in holes or ()):
                 d = _reach(x, y, points, k)
                 samples.append(d)
                 if d > worst[0]:
@@ -2600,8 +2601,10 @@ def calc_temperature_rating(a):
 
 # --- spacing ---------------------------------------------------------------------
 
-def _limits(a, hazard, family="nfpa", required_wall=True):
-    """The spacing limits a layout or a check is held to - every one asked (D-33)."""
+def _limits(a, hazard, family="nfpa", required_wall=True, required_least_wall=False):
+    """The spacing limits a layout or a check is held to - every one asked (D-33). A layout
+    of any shape needs the least distance to a wall too (required_least_wall): without it a
+    head standing on a re-entrant wall measures as in the room (plan review R6)."""
     smax = a.number("max_spacing_m", "m", "the most allowed between sprinklers, along and "
                     "between branch lines", 1, 10,
                     reference=_spacing_offer(hazard, "maximum spacing and area", family))
@@ -2612,7 +2615,9 @@ def _limits(a, hazard, family="nfpa", required_wall=True):
     smin = a.number("min_spacing_m", "m", "the least allowed between two sprinklers", 0.3,
                     10, required=False)
     wmin = a.number("min_wall_distance_m", "m", "the least allowed from a sprinkler to a "
-                    "wall", 0.0, 2, required=False)
+                    "wall", 0.0, 2, required=required_least_wall,
+                    reference=(_rule("sprinkler_rules", "minimum distance to a wall")
+                               if required_least_wall and family == "nfpa" else None))
     return smax, amax, wmax, smin, wmin
 
 
@@ -2716,31 +2721,16 @@ def _side(gap, wall, tol):
     return 2.0 * (wall or 0.0), wall
 
 
-@calculation("sprinkler_spacing", "Sprinkler spacing check of a drawn layout", "layout")
-def calc_sprinkler_spacing(a):
-    """Checks sprinklers already placed in a room against the spacing limits given - each one's S along its branch line and L between lines as NFPA 13 measures them, its protection area, its distance to the walls and to its nearest neighbour - from their positions and the room's outline."""
-    outline = read_outline(a, "the room's outline in plan - READ_ROOM_GEOMETRY gives it")
-    points = read_points(a, "the sprinklers' plan positions, mm", "sprinklers")
-    axis = a.choice("branch_axis", ("x", "y"), "which way the branch lines run in plan")
-    held = project_standards(a, ("sprinkler_standard",))
-    family = figures_of(held)
-    hazard = _hazard(a, "the occupancy hazard class - only to offer its spacing figures",
-                     held, required=False)
-    smax, amax, wmax, smin, wmin = _limits(a, hazard, family)
-    tol = a.number("row_tolerance_mm", "mm", "how far off one line a sprinkler may sit and "
-                   "still be read as on it - 100 mm if not given", 1, 2000, required=False)
-    if a.incomplete():
-        return
-    if tol is None:
-        tol = 100.0
-        a.uses("sprinklers within 100 mm across the branch direction are read as one branch "
-               "line - give row_tolerance_mm to change that")
-    outside = [p[0] for p in points if not inside(outline, p[1], p[2])]
-    if outside:
-        a.refuse("these sprinklers are outside the outline: %s - check the outline and the "
-                 "points are in the same coordinates" % ", ".join(outside[:10]))
-        return
-    ax = 0 if axis == "x" else 1
+def measure_heads(outline, points, ax, smax, amax, wmax, smin, wmin, tol,
+                  stop_at_fail=False):
+    """
+    Each sprinkler measured as NFPA 13 measures it - S along its branch line,
+    L between lines, its area, its end-wall distance, its nearest neighbour -
+    against the limits given: (lines, rows, fails, per_head). The one copy of
+    the measure, read by `sprinkler_spacing` and by `sprinkler_layout_room`,
+    which stops at the first failing head (stop_at_fail) when it is only
+    asking whether a candidate passes.
+    """
     unit = (1.0, 0.0) if ax == 0 else (0.0, 1.0)
     perp = (0.0, 1.0) if ax == 0 else (1.0, 0.0)
     lines = _rows_of(points, ax, tol)
@@ -2792,6 +2782,38 @@ def calc_sprinkler_spacing(a):
                          "OK" if not bad else "FAIL: " + ", ".join(bad)])
             if bad:
                 fails.append("%s (%s)" % (pid, ", ".join(bad)))
+            if bad and stop_at_fail:
+                return lines, rows, fails, per_head
+    return lines, rows, fails, per_head
+
+
+@calculation("sprinkler_spacing", "Sprinkler spacing check of a drawn layout", "layout")
+def calc_sprinkler_spacing(a):
+    """Checks sprinklers already placed in a room against the spacing limits given - each one's S along its branch line and L between lines as NFPA 13 measures them, its protection area, its distance to the walls and to its nearest neighbour - from their positions and the room's outline."""
+    outline = read_outline(a, "the room's outline in plan - READ_ROOM_GEOMETRY gives it")
+    points = read_points(a, "the sprinklers' plan positions, mm", "sprinklers")
+    axis = a.choice("branch_axis", ("x", "y"), "which way the branch lines run in plan")
+    held = project_standards(a, ("sprinkler_standard",))
+    family = figures_of(held)
+    hazard = _hazard(a, "the occupancy hazard class - only to offer its spacing figures",
+                     held, required=False)
+    smax, amax, wmax, smin, wmin = _limits(a, hazard, family)
+    tol = a.number("row_tolerance_mm", "mm", "how far off one line a sprinkler may sit and "
+                   "still be read as on it - 100 mm if not given", 1, 2000, required=False)
+    if a.incomplete():
+        return
+    if tol is None:
+        tol = 100.0
+        a.uses("sprinklers within 100 mm across the branch direction are read as one branch "
+               "line - give row_tolerance_mm to change that")
+    outside = [p[0] for p in points if not inside(outline, p[1], p[2])]
+    if outside:
+        a.refuse("these sprinklers are outside the outline: %s - check the outline and the "
+                 "points are in the same coordinates" % ", ".join(outside[:10]))
+        return
+    ax = 0 if axis == "x" else 1
+    lines, rows, fails, per_head = measure_heads(outline, points, ax, smax, amax, wmax,
+                                                 smin, wmin, tol)
     a.result("Sprinklers", "%d, on %d branch line(s) running along %s" % (len(points),
                                                                          len(lines), axis))
     a.table("Each sprinkler, as NFPA 13 measures it", ("sprinkler", "S m", "L m", "area m2",
@@ -2823,6 +2845,223 @@ def calc_sprinkler_spacing(a):
     a.into_revit("REPORT_COVERAGE and CHECK_OBSTRUCTIONS read the same sprinklers in Revit; "
                  "a sprinkler that fails is moved with the move fragments, after the modeller "
                  "says where")
+
+
+# --- a layout for a room of any shape (docs/47 s4) ------------------------------
+
+LAYOUT_HEADS_MAX = 400       # one room's heads - as the hydraulic solver's 400 nodes
+LAYOUT_MEASURED_MAX = 200    # candidates measured before the search gives up
+LAYOUT_EXTRA_MODULES = 6     # module counts tried past the fewest, each way
+LAYOUT_SHIFTS = ((0.0, 0.0), (0.25, 0.0), (0.0, 0.25), (0.25, 0.25), (0.5, 0.0),
+                 (0.0, 0.5), (0.5, 0.5), (0.5, 0.25), (0.25, 0.5))
+
+
+def _turn(points, origin, degrees):
+    """Points turned by `degrees` about `origin` - plan, mm."""
+    r = math.radians(degrees)
+    c, s_ = math.cos(r), math.sin(r)
+    ox, oy = origin
+    return [(ox + (x - ox) * c - (y - oy) * s_, oy + (x - ox) * s_ + (y - oy) * c)
+            for x, y in points]
+
+
+def _read_holes(a, why):
+    """The holes in a room - columns, shafts: a list of outlines, each [x, y] mm. Optional."""
+    view = _view(a)
+    raw = view.raw("holes_mm")
+    if raw is None or raw == "" or raw == []:
+        view.answer.optional_input("holes_mm", "list of outlines, each [x, y] in mm", why)
+        return []
+    if not isinstance(raw, (list, tuple)):
+        view.answer.refuse("holes_mm must be a list of outlines")
+        return None
+    holes = []
+    for i, hole in enumerate(raw):
+        pts = []
+        if not isinstance(hole, (list, tuple)) or len(hole) < 3:
+            view.answer.refuse("holes_mm[%d] must list at least three [x, y] points" % i)
+            return None
+        for j, p in enumerate(hole):
+            if not isinstance(p, (list, tuple)) or len(p) != 2:
+                view.answer.refuse("holes_mm[%d][%d] must be [x, y]" % (i, j))
+                return None
+            try:
+                pts.append((BASE._to_number(p[0], "x"), BASE._to_number(p[1], "y")))
+            except Refused as why_not:
+                view.answer.refuse("holes_mm[%d][%d]: %s" % (i, j, why_not))
+                return None
+        if len(pts) > 3 and _close(pts[0], pts[-1]):
+            pts = pts[:-1]
+        holes.append(pts)
+    return holes
+
+
+def _longest_edge_deg(outline):
+    """The angle of the outline's longest edge, 0 to 180 degrees - only ever OFFERED."""
+    best = max(_edges(outline), key=lambda e: math.hypot(e[1][0] - e[0][0], e[1][1] - e[0][1]))
+    (x0, y0), (x1, y1) = best
+    return math.degrees(math.atan2(y1 - y0, x1 - x0)) % 180.0
+
+
+def layout_candidates(outline, holes, smax_mm, amax_mm2, wmin_mm, smin_mm=None):
+    """
+    Every regular grid worth measuring in an outline turned so its branch lines
+    run along x: [(heads, squareness, s, l, [(x, y)])], fewest heads first. A
+    module is kept only within the most spacing and area; each is tried at a
+    few shifts of its start (LAYOUT_SHIFTS, a fraction of a module each way);
+    a point is kept only inside the outline, outside every hole, and at least
+    the least wall distance from every edge of either.
+    """
+    xs = [p[0] for p in outline]
+    ys = [p[1] for p in outline]
+    x0, y0 = min(xs), min(ys)
+    width, depth = max(xs) - x0, max(ys) - y0
+    first_c = max(1, int(math.ceil(width / smax_mm - 1e-9)))
+    first_r = max(1, int(math.ceil(depth / smax_mm - 1e-9)))
+    found = []
+    seen = set()
+    for cols in range(first_c, first_c + LAYOUT_EXTRA_MODULES + 1):
+        for rows in range(first_r, first_r + LAYOUT_EXTRA_MODULES + 1):
+            s, l = width / cols, depth / rows
+            if s > smax_mm + 1e-6 or l > smax_mm + 1e-6 or s * l > amax_mm2 + 1e-3:
+                continue
+            if smin_mm is not None and ((cols > 1 and s < smin_mm - 1e-6)
+                                        or (rows > 1 and l < smin_mm - 1e-6)):
+                continue
+            if cols * rows > 4 * LAYOUT_HEADS_MAX:
+                continue
+            for fx, fy in LAYOUT_SHIFTS:
+                pts = []
+                for j in range(-1, rows + 1):
+                    y = y0 + (j + 0.5 + fy) * l
+                    for i in range(-1, cols + 1):
+                        x = x0 + (i + 0.5 + fx) * s
+                        if not inside(outline, x, y):
+                            continue
+                        if any(inside(h, x, y) for h in holes):
+                            continue
+                        near = min([wall_distance(outline, x, y)]
+                                   + [wall_distance(h, x, y) for h in holes])
+                        if near < wmin_mm - 1e-6:
+                            continue
+                        pts.append((round(x, 1), round(y, 1)))
+                key = tuple(pts)
+                if not pts or key in seen:
+                    continue
+                seen.add(key)
+                found.append((len(pts), abs(s - l), s, l, pts))
+    found.sort(key=lambda c: (c[0], c[1]))
+    return found
+
+
+@calculation("sprinkler_layout_room", "Sprinkler layout for a room of any shape", "layout")
+def calc_sprinkler_layout_room(a):
+    """Lays sprinklers out in a room of any shape - an L, a room with a column - on the fewest heads of a regular grid along the branch-line direction given that the same measure `sprinkler_spacing` uses passes: S, L, area, the most and the least distance to a wall, the least spacing. A layout that cannot pass is shown with its failing heads, never offered for placing."""
+    outline = read_outline(a, "the room's outline in plan, mm, in the model's coordinates")
+    holes = _read_holes(a, "columns and shafts inside the room - no head is put in one")
+    held = project_standards(a, ("sprinkler_standard",))
+    family = figures_of(held)
+    hazard = _hazard(a, "the occupancy hazard class - only to offer its spacing figures",
+                     held, required=False)
+    angle = a.number("branch_angle_deg", "degrees", "which way the branch lines run in plan, "
+                     "from the model's x axis", -360, 360,
+                     reference=("the room's longest wall runs at %s degrees - offered, never "
+                                "assumed" % _f(_longest_edge_deg(outline), 1))
+                     if outline else None)
+    smax, amax, wmax, smin, wmin = _limits(a, hazard, family, required_least_wall=True)
+    z = a.number("mounting_z_mm", "mm", "the heads' elevation in the model's coordinates - "
+                 "asked, never defaulted", -1e7, 1e7, required=False)
+    if a.incomplete() or holes is None:
+        return
+    origin = outline[0]
+    turned = _turn(outline, origin, -angle)
+    turned_holes = [_turn(h, origin, -angle) for h in holes]
+    candidates = layout_candidates(turned, turned_holes, smax * 1000.0, amax * 1e6,
+                                   wmin * 1000.0, None if smin is None else smin * 1000.0)
+    candidates = [c for c in candidates if c[0] <= LAYOUT_HEADS_MAX]
+    if not candidates:
+        a.refuse("no regular grid fits this room within %s m spacing, %s m2 and %s m from the "
+                 "walls with at most %d heads - a room this size or shape should be split"
+                 % (_g(smax), _g(amax), _g(wmin), LAYOUT_HEADS_MAX))
+        return
+
+    def measured(c, stop):
+        pts = [("N%d" % (k + 1), x, y) for k, (x, y) in enumerate(c[4])]
+        return pts, measure_heads(turned, pts, 0, smax, amax, wmax, smin, wmin, 100.0,
+                                  stop_at_fail=stop)
+
+    chosen = None
+    tried = 0
+    for c in candidates[:LAYOUT_MEASURED_MAX]:
+        tried += 1
+        pts, (lines, rows, fails, per_head) = measured(c, True)
+        if not fails:
+            chosen = c
+            break
+    passed = chosen is not None
+    if not passed:
+        best = None
+        for c in candidates[:20]:
+            got = measured(c, False)
+            if best is None or len(got[1][2]) < len(best[1][1][2]):
+                best = (c, got)
+        chosen = best[0]
+    pts, (lines, rows, fails, per_head) = measured(chosen, False)
+    count, _square, s, l, _plan = chosen
+    back = _turn([(x, y) for _i, x, y in pts], origin, angle)
+    placed = [(pts[k][0], back[k][0], back[k][1]) for k in range(len(pts))]
+    worst, wx, wy, _samples = farthest_point(turned, pts, 250.0, holes=turned_holes)
+    wx, wy = _turn([(wx, wy)], origin, angle)[0] if wx is not None else (None, None)
+    reach = math.sqrt(amax / 2.0)
+    a.result("Sprinklers", "%d, on %d branch line(s) along %s degrees" % (count, len(lines),
+                                                                          _f(angle % 180.0, 1)))
+    a.result("Module", "%s m along the branch lines x %s m between them - %s"
+             % (_f(s / 1000.0, 3), _f(l / 1000.0, 3), area_text(s * l / 1e6)))
+    a.table("Each sprinkler, as NFPA 13 measures it", ("sprinkler", "S m", "L m", "area m2",
+                                                      "end wall m", "nearest m", "result"), rows)
+    a.table("Sprinkler points (mm, the model's coordinates)", ("#", "x", "y", "z"),
+            [[pid, "%.0f" % x, "%.0f" % y, "%.0f" % z if z is not None else "ASK"]
+             for pid, x, y in placed])
+    if passed:
+        a.check("OK", "every sprinkler is within %s m, %s m2, %s m from a wall and at least %s m "
+                      "from one" % (_g(smax), _f(amax, 2), _g(wmax), _g(wmin)))
+    else:
+        a.check("FAIL", "no regular grid passes in this room - %d of %d heads of the closest "
+                        "break a limit: %s. NOT TO BE PLACED: split the room, change the branch "
+                        "angle, or place those heads by hand" % (
+                            len(fails), count, "; ".join(fails[:12])))
+    if smin is None:
+        a.check("WARN", "minimum spacing NOT CHECKED - give min_spacing_m; %s"
+                % (_least_spacing_offer(family) or "%s sets one" % FAMILIES[family][0]))
+    if worst > reach * 1000.0 + 1e-6:
+        a.check("WARN", "a point at x %s y %s mm is %s m from every sprinkler - more than "
+                        "the %s m half-diagonal of the largest square module allowed; a part "
+                        "of the room may have no sprinkler over it" % (
+                            _f(wx, 0), _f(wy, 0), _f(worst / 1000.0, 2), _f(reach, 2)))
+    if z is None:
+        a.check("WARN", "no mounting_z_mm - ask for it before placing, or every sprinkler "
+                        "lands at its level's own elevation")
+    a.data = {"passed": passed, "angle_deg": angle,
+              "points": [{"id": pid, "x_mm": x, "y_mm": y} for pid, x, y in placed],
+              "heads": per_head, "fails": list(fails), "lines": len(lines),
+              "modules": {"s_m": s / 1000.0, "l_m": l / 1000.0},
+              "farthest": {"x_mm": wx, "y_mm": wy, "distance_m": worst / 1000.0,
+                           "beyond_m": reach},
+              "measured": tried}
+    _check_standard(a, held["sprinkler_standard"], "the spacing figures offered are", family)
+    a.uses("the room turned so its branch lines run along x; regular grids over its extent, "
+           "each head centred in its module and each grid tried at shifts of 0, 1/4 and 1/2 "
+           "of a module; heads kept inside the room, outside its holes and at least the least "
+           "wall distance from every edge; the fewest heads that pass first; turned back")
+    a.uses("every head measured exactly as `sprinkler_spacing` measures it - S along its "
+           "branch line, L between lines, area, the end walls; a hole is kept clear of heads "
+           "but is not a wall in that measure")
+    a.uses("the farthest point is a warning, as in `sprinkler_spacing` - not a limit")
+    a.cite(_spacing_source(family))
+    a.into_revit("PLACE_FAMILY_INSTANCES at these points on the room's level - a level-based "
+                 "sprinkler type, at the height asked; then the heads are read back and "
+                 "`sprinkler_spacing` runs on what is really there. CHECK_OBSTRUCTIONS for the "
+                 "beams and ducts a grid cannot see")
 
 
 # --- pipe schedule ---------------------------------------------------------------
