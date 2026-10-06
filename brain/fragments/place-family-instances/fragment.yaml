@@ -9,7 +9,12 @@ semantic-identity: "place instances of one family type at these points"
 kind: action
 domain: revit.elements
 capability: PLACE_FAMILY_INSTANCES
-version: 1
+# VERSION 2 (2026-10-06, FRAGMENT-ISSUES 5b-334): a work plane-based family
+# goes on the level's own plane at the height asked, or is refused when it
+# cannot be lifted off it; every placement is read back. Version 1's proof
+# no longer described the code; version 2's tracking run in Project2 was signed
+# by Ajmal PS on 2026-10-06.
+version: 2
 source: OFFICIAL
 risk: MODIFY
 
@@ -24,6 +29,38 @@ purpose: >
 
   ASSUMES AN OPEN TRANSACTION and does not open one (Golden Rule 16), so
   twenty-four sprinklers are one undo entry rather than twenty-four.
+
+# VERSION 2, AND WHY IT IS WRITTEN HERE AND NOT IN THE PURPOSE ABOVE.
+#
+# A POINT'S Z IS ITS HEIGHT IN THE MODEL, in millimetres, like every point
+# Heron is handed - "2000,2000,6700" on a level at 4000 mm stands 2700 mm above
+# it. Revit's own call reads a level-based family's Z as its height above the
+# level and counts the level twice (a fan coil unit asked at 6700 there came
+# in at 10700, measured 2026-10-06); version 2 puts it right and reads it back.
+# This is the contract the sprinkler layout (docs/47) sends: "the heads'
+# elevation in the model's coordinates".
+#
+# EACH KIND GOES WHERE REVIT WOULD PUT IT BY HAND, AND IS READ BACK
+# (FRAGMENT-ISSUES 5b-334). A work plane-based family goes on the level's own
+# plane - Host the level, Schedule Level the level - with its height as its
+# Offset from Host. Version 1 left three ceiling diffusers asked at 3000 mm on
+# no level, at 0 mm, and said `placed 3`. One that carries no Offset from Host
+# there - M_Supply Diffuser - Circular - Round Neck - Ceiling Mounted, made for
+# a ceiling's face - cannot be lifted, so asked above the level's own height
+# the layout is refused and nothing is kept. A level-based family keeps its Level and Elevation from
+# Level. Each one is read back after the rebuild - where it stands, and its
+# level by FILTER_ELEMENTS_BY_CATEGORY's rule - and one that does not read back
+# where it was asked rolls the whole layout back. `readBack` says how each kind
+# ended up, in the Properties palette's names.
+#
+# THE PURPOSE IS VERSION 1'S, WORD FOR WORD, ON PURPOSE - and every sentence of
+# it is still true. Measured 2026-10-06 on private stores, these two paragraphs
+# written into the purpose sent "what level is this diffuser on" here on both
+# search backends, and "which level are these terminals on" here on the
+# spelling one - questions answered by a change (D-86) - and "place sprinklers
+# at these points" to COUNT_ELEMENTS. Nobody calling this reads the purpose:
+# heron_resolve prints only the values to type, and the reply's readBack says
+# "standing 3000 mm above 'Level 1'" by itself.
 
 contract:
   needs:
@@ -46,28 +83,49 @@ contract:
       # Points nothing could be placed at. Never an instance it placed (D-52).
       role: accounting
       type: int
+    - name: readBack
+      # VERSION 2. How each kind ended up, read off Revit after the rebuild and
+      # grouped - "3 x work plane-based, on 'Level 1''s own plane, standing
+      # 3000 mm above it - Host 'Level 1', Level 'Level 1', Schedule Level
+      # 'Level 1', Offset from Host 3000 mm". A STRING, because a reply cuts a
+      # list to three items. Accounting: it describes what `placed` counts.
+      role: accounting
+      type: string
 
 proof:
-  date: '2026-09-13'
+  date: '2026-10-06'
   by: Ajmal PS
-  model: test projject (3,530 elements), Revit 2024, session 40932
-  positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned failed 0, placed 5 item(s) [926491,
-    926492, 926493, ...]. inputs came symbol as given; points as given (5); level as given.
-    on test projject
+  model: Project2, Revit 2024, session 51820 - the count is NOT recorded because 1,813 elements
+    was measured on GM_PipeSupport_UBolt, the document in front, and this ran against another
+    one (row 15)
+  positive_case: 'run with points=2000,2000,3000 - the first of 4 tracked inputs - the arrangement
+    was re-made first by running load-family with this phase''s own values - run inside a
+    transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    CloseEnough 0.00164041994750656, MillimetresPerFoot 304.8, askedAt 1 item(s) [(6.561679790,
+    6.561679790, 9.842519685)], carried Func`3, described Func`2, failed 0, heightId BuiltInParameter,
+    invariant CultureInfo, kindWords work plane-based, on ''Level 1''''s own plane, levelOf
+    Func`2, levelParameterOrder 5 item(s) [FAMILY_LEVEL_PARAM, SCHEDULE_LEVEL_PARAM, LEVEL_PARAM,
+    ...], levelPlane Reference, levelZ 0, made 1 item(s) [FamilyInstance], mm Func`2, named
+    M_Supply Diffuser - Hosted: Workplane-based Supply Diffuser, onLevelPlane true, placed
+    1 item(s) [427234], placement FamilyPlacementType, readBack 1 x work plane-based, on ''Level
+    1''''s own plane, standing 3000 mm above it - Host ''Level 1'', Level ''Level 1'', Schedule
+    Level ''Level 1'', Offset from Host 3000 mm, tally 1 entry(ies). inputs came symbol as
+    given; points as given (1); level as given. on Project2'
   negative_case: "CANNOT COME BACK EMPTY, so proved by TRACKING instead (D-53). place-family-instances\
     \ describes whatever it is given, so no arrangement makes its answer empty. What D-30's\
     \ negative case exists to catch - a fragment that succeeds while doing nothing, or answers\
     \ about a set it was not given - is caught here by the answer following the input exactly\
-    \ across 4 different inputs:\n\n      1 point -> placed 1\n      2 points -> placed 2\n\
-    \      3 points -> placed 3\n      5 points -> placed 5\n\n    Different inputs, exact\
-    \ matches every time. A fragment falling back to the active view, the whole model, or\
-    \ a previous run could not do that."
+    \ across 4 different inputs:\n\n      points=2000,2000,3000 -> placed 1 item(s) [427234]\n\
+    \      points=2000,2000,3000; 4000,2000,3000 -> placed 2 item(s) [428498, 428501]\n  \
+    \    points=2000,2000,3000; 4000,2000,3000; 6000,2000,3000 -> placed 3 item(s) [429765,\
+    \ 429768, 429770]\n      points=2000,2000,3000; 4000,2000,3000; 6000,2000,3000; 8000,2000,3000;\
+    \ 10000,2000,3000 -> placed 5 item(s) [431035, 431038, 431040, ...]\n\n    Different inputs,\
+    \ exact matches every time. A fragment falling back to the active view, the whole model,\
+    \ or a previous run could not do that."
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 89b1fb020ba75d9a
-
+  fingerprint: ce5229e730b44998
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
@@ -75,8 +133,15 @@ tests: tests/
 compatibility-note: >
   One implementation for every release. The `NewFamilyInstance(XYZ, FamilySymbol,
   Level, StructuralType)` overload and `FamilySymbol.Activate()` are unchanged
-  2020 to 2027. Points arrive in Revit's internal feet - this fragment does no
-  unit arithmetic at all, which is what keeps it clear of the 2021 units move.
+  2020 to 2027. Points arrive in Revit's internal feet - this fragment converts
+  only for the words it prints, which is what keeps it clear of the 2021 units
+  move. Version 2 adds `Level.GetPlaneReference()` (since 2016),
+  `NewFamilyInstance(Reference, XYZ, XYZ, FamilySymbol)`,
+  `Family.FamilyPlacementType`, `Level.ProjectElevation`,
+  `InternalDefinition.BuiltInParameter` and the INSTANCE_FREE_HOST_OFFSET_PARAM,
+  INSTANCE_ELEVATION_PARAM and INSTANCE_SCHEDULE_ONLY_LEVEL_PARAM ids;
+  tools/check-fragments-compile.py built it against all eight releases on
+  2026-10-06. Only Revit 2024 has run it.
 
 # TRAP - OBSERVED ELSEWHERE, NOT YET PROVEN HERE. Added 2026-09-23.
 #
@@ -97,6 +162,19 @@ compatibility-note: >
 # from a default (D-33); the skills that place terminals and sprinklers are to
 # carry this as a precondition. After a placement, read the elevation back
 # rather than trusting `placed`. NEEDS-CHECKING AJ4.
+#
+# REPRODUCED 2026-10-06, AND VERSION 2 READS IT BACK ITSELF (5b-334). Three
+# work plane-based ceiling diffusers asked at 3000 mm came in at 0 mm with no
+# host. Measured the same day in a scratch project on six of Revit's own
+# families: version 1's call reads a LEVEL-BASED family's Z as the height
+# above the level (a fan coil unit asked at 6700 on a level at 4000 came in
+# with Elevation from Level 6700), gives a WORK PLANE-BASED family no host and
+# an absolute height, and cannot lift a "Ceiling Mounted" diffuser at all -
+# it carries no Offset from Host. Version 2 places each kind its own way and
+# refuses, keeping nothing, what does not read back where it was asked. The
+# DOOR half - a hosted family placed with no host - is still the note above:
+# version 2 reads back its height and level, never its host. A door goes
+# through PLACE_HOSTED_FAMILY.
 
 # ROUTING - repeated in LOAD_FAMILY and CHANGE_ELEMENT_TYPE.
 #

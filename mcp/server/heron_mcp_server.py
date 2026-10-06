@@ -1910,14 +1910,16 @@ def _asks_project(scopes):
 # switch, refused whole if any Space moved since it was read (Article 12c).
 # ---------------------------------------------------------------------------
 
-def _loads_recalculate(takeoff, inputs, identity):
+def _loads_recalculate(takeoff, inputs, identity, keep=None):
     with _revit_lock:
         moved = _moved_since(identity)
     if moved:
         return {"said": moved, "takeoff": None}
     started, clock = time.strftime("%H:%M:%S"), time.time()
+    # `keep` is the panel's: the run is kept only while no fresh read of the
+    # model has come since this Recalculate began (FRAGMENT-ISSUES 5b-333).
     answer = brain.building_loads(takeoff, inputs, project=pinned.project_key,
-                                  project_name=pinned.title)
+                                  project_name=pinned.title, keep=keep)
     if answer.get("said"):
         answer["said"] = _with_project_note(answer["said"])
     _note("companion_loads_recalculate", started, time.time() - clock, reply=answer["said"])
@@ -2108,6 +2110,22 @@ def _sprinkler_layout_place(data, result, inputs, level, identity):
                                      for r in back["rooms"]]}}
 
 
+def _schedule_names():
+    """The names of the schedules in the model this chat is pinned to - or None
+    when they cannot be read, or the answer is another model's. A read: the
+    add-in's own list_schedules, which skips schedule templates. Called under
+    _revit_lock, as every conversation with Revit is."""
+    try:
+        session = binding.resolve()
+    except NotBound:
+        return None
+    reply = session.request("list_schedules")
+    session.close()
+    if not isinstance(reply, dict) or not reply.get("ok") or pinned.check(reply):
+        return None
+    return [one.get("name") for one in reply.get("schedules") or [] if isinstance(one, dict)]
+
+
 def _loads_finalize(takeoff, result, identity):
     """
     Finalize (docs/44 s6, gate 2).
@@ -2122,15 +2140,20 @@ def _loads_finalize(takeoff, result, identity):
        _apply_table, the table's own Apply, so the model guard, the stale
        check and the one undo entry are the ones it has.
     3. The diffusers' share of each Space's flow through SET_AIR_TERMINAL_FLOW,
-       once per level of the calculated Spaces: every air terminal on the
-       level is handed over by category and the file of ids picks which are
-       written. Never by typed ids, which the add-in refuses (2026-10-05).
+       in one write: every air terminal in the model is handed over by
+       category, with NO level, and the file of ids picks which are written.
+       Never by typed ids, which the add-in refuses (2026-10-05), and never by
+       level: a diffuser placed with no level parameter was on none, and none
+       was handed over (FRAGMENT-ISSUES 5b-335). Each one not written is put
+       down to the reason SET_AIR_TERMINAL_FLOW gave (diffusers_said).
     4. Read back: the take-off read again, every written value beside what
        Revit now holds.
-    5. The Spaces schedule of what was written, made once.
-    The answer counts the undo entries actually made - the Space values, a
-    level's diffusers, the schedule - until one TransactionGroup spans them
-    all (FRAGMENT-ISSUES 5b-314).
+    5. The Spaces schedule of what was written, made once: the model's
+       schedules are looked at first, and one already there is said to be -
+       Revit refuses a second of the same name (5b-335).
+    The answer counts the undo entries actually made - the Space values, the
+    diffusers, the schedule - until one TransactionGroup spans them all
+    (FRAGMENT-ISSUES 5b-314).
     """
     import heron_building_loads as LOADS
     import heron_hvac as HVAC
@@ -2197,7 +2220,10 @@ def _loads_finalize(takeoff, result, identity):
     # NOTHING BELOW ASKS THE ADD-IN FOR AN ELEMENT BY A TYPED ID - it never
     # accepts one, and the first real Finalize (Project2, 2026-10-05) lost its
     # read-back to that, and would have lost every diffuser. Elements are found
-    # by category on the calculated Spaces' own levels instead.
+    # by category instead: the diffusers with NO level - one placed with no
+    # level parameter is on none, and on 2026-10-06 none of three was handed
+    # over (FRAGMENT-ISSUES 5b-335) - and the Spaces for the read-back on their
+    # own levels, which every Space has.
     nl = chr(10)
     steps = ["the Space values"]
     calculated = set(str(s.get("id")) for s in result.get("spaces") or []
@@ -2211,46 +2237,30 @@ def _loads_finalize(takeoff, result, identity):
         path = os.path.join(folder, "terminal-flows.csv")
         with io.open(path, "w", encoding="utf-8") as fh:
             fh.write("element_id,flow_ls" + nl + nl.join(lines) + nl)
-        changed_total, troubles = 0, []
+        out, wrote = {}, ""
         try:
-            for level in levels:
-                with _revit_lock:
-                    moved = _moved_since(identity)
-                    if moved:
-                        troubles.append(moved)
-                        break
-                    # Every air terminal on the level; the file of ids picks which
+            with _revit_lock:
+                moved = _moved_since(identity)
+                if not moved:
+                    # Every air terminal in the model; the file of ids picks which
                     # are written - SET_AIR_TERMINAL_FLOW leaves every other alone.
                     _through(revit_read, origin="companion")(
                         "FILTER_ELEMENTS_BY_CATEGORY",
-                        "category=Air Terminals" + nl + "levelId=" + level)
-                    out = {}
+                        "category=Air Terminals" + nl + "levelId=none")
                     wrote = _through(revit_change, reply_out=out, origin="companion")(
                         "SET_AIR_TERMINAL_FLOW", "csvPath=" + path,
                         "filter-elements-by-category where category=Air Terminals")
-                answer = out.get("reply") if isinstance(out.get("reply"), dict) else {}
-                done = bool(answer.get("ok"))
-                try:
-                    changed = int(((answer.get("provides") or {}) if done else {})
-                                  .get("changed") or 0)
-                except (TypeError, ValueError):
-                    changed = 0
-                if changed:
-                    entries += 1
-                    changed_total += changed
-                    steps.append("the diffusers on %s" % level)
-                elif not done and "chain_empty" not in str(answer.get("error") or wrote):
-                    # A level with no air terminal on it hands over an empty
-                    # chain, which is not a fault; anything else is said.
-                    troubles.append("%s: %s" % (level, wrote))
         finally:
             shutil.rmtree(folder, ignore_errors=True)
-        said.append("Diffusers: %d of %d written with their Space's share of the supply air%s."
-                    % (changed_total, len(lines),
-                       "" if changed_total == len(lines) else
-                       " - the rest already held that flow, sit on a level no calculated "
-                       "Space is on, or their family's flow is not tied to its connector"))
-        said.extend(troubles)
+        answer = out.get("reply") if isinstance(out.get("reply"), dict) else {}
+        if moved or not answer.get("ok"):
+            said.append("No diffuser was written: %s" % (moved or wrote))
+        else:
+            changed, told = LOADS.diffusers_said(answer.get("provides"), len(lines))
+            said.extend(told)
+            if changed:
+                entries += 1
+                steps.append("the diffusers")
     else:
         said.append("No calculated Space has an air terminal in it, so no diffuser flow was "
                     "written.")
@@ -2294,14 +2304,23 @@ def _loads_finalize(takeoff, result, identity):
         b["space"], b["parameter"], b["written"], b["reads"] or "nothing",
         "" if b["ok"] else "  <- NOT what was written") for b in back_rows] + back_text
     # THE SCHEDULE OF WHAT WAS WRITTEN (Ajmal, 2026-10-05) - made once. Revit
-    # refuses a second schedule of the same name, and that is said plainly.
+    # refuses a second schedule of the same name, so the model's schedules are
+    # looked at first: on 2026-10-06 a second Finalize let CREATE_SCHEDULE throw
+    # (FRAGMENT-ISSUES 5b-335). Only when they cannot be read is it tried blind.
     with _revit_lock:
         moved = _moved_since(identity)
+        names = None if moved else _schedule_names()
+        there = names is not None and LOADS.schedule_made(names)
         out = {}
-        made = moved or _through(revit_change, reply_out=out, origin="companion")(
-            "CREATE_SCHEDULE", "categoryId=Spaces" + nl + "fieldNames="
-            + ", ".join(LOADS.SCHEDULE_FIELDS) + nl + "scheduleName=" + LOADS.SCHEDULE_NAME)
-    if not moved and isinstance(out.get("reply"), dict) and out["reply"].get("ok"):
+        made = moved
+        if not moved and not there:
+            made = _through(revit_change, reply_out=out, origin="companion")(
+                "CREATE_SCHEDULE", "categoryId=Spaces" + nl + "fieldNames="
+                + ", ".join(LOADS.SCHEDULE_FIELDS) + nl + "scheduleName=" + LOADS.SCHEDULE_NAME)
+    if there:
+        said.append("The schedule '%s' is already in the model - it shows the values just "
+                    "written." % LOADS.SCHEDULE_NAME)
+    elif not moved and isinstance(out.get("reply"), dict) and out["reply"].get("ok"):
         entries += 1
         steps.append("the schedule")
         said.append("Made the schedule '%s' - every value just written, Space by Space."
@@ -2768,8 +2787,9 @@ def revit_building_loads(inputs: str = "", expect_from: str = "",
     read from its link. Left false, those faces read "unknown" and the model
     checks say the links were not read.
 
-    You are told only the totals; the rows are on the Companion page, with a
-    3D view of the very faces the loads were worked out from. The modeller
+    You are told the totals, and every Space that was not calculated with why;
+    the rows are on the Companion page, with a 3D view of the very faces the
+    loads were worked out from. The modeller
     checks that view and presses "The take-off is right" before the report is
     final; writing the loads back into the Spaces is the page's Finalize
     button, never this tool. A load here is a peak estimate, not an hourly
@@ -2793,6 +2813,10 @@ def revit_building_loads(inputs: str = "", expect_from: str = "",
     if pinned.check(reply):
         return said
     provides = reply.get("provides") or {}
+    # A FRESH READ OVERTAKES ANY RECALCULATE still working on the take-off the
+    # page holds - said before this run is kept, so that one cannot be kept
+    # after it, or shown over it (FRAGMENT-ISSUES 5b-333).
+    companion_page.LOADS_PANEL.reading()
     try:
         answer = brain.building_loads(provides.get("takeoffJson") or "", inputs,
                                       project=pinned.project_key, project_name=pinned.title,

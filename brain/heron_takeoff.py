@@ -30,6 +30,10 @@ FORMAT = 1
 GLAZED = ("window", "curtain_panel", "skylight")
 # What the modeller may say is beyond a face Revit could not see past.
 ANSWERS = ("outside", "unconditioned", "conditioned", "ground")
+# Under a thousandth of a face is the millimetre rounding of its outline - a
+# sliver left between its openings, or openings that overrun it by as much -
+# and nothing more.
+SLIVER = 0.001
 
 
 class TakeoffError(ValueError):
@@ -47,6 +51,7 @@ class Takeoff(object):
         self.spaces = list(d.get("spaces") or [])
         self.findings = list(d.get("findings") or [])
         self.raw = d
+        self._grid = None           # every curtain wall's panels, worked out once - _grid()
 
 
 def read(raw):
@@ -158,6 +163,148 @@ def unknowns(t, answers=None):
     return out
 
 
+def _cross(a, b):
+    return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+
+
+def _unit(v):
+    n = math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
+    return [v[0] / n, v[1] / n, v[2] / n] if n > 1e-12 else None
+
+
+def axes(normal):
+    """The two ways along a face an opening's width and height run: across it, level, and up
+    it - or None for a face with no direction. The ONE rule: the 3D view draws an opening
+    with it, and the take-off cuts a panel to its face with it."""
+    n = _unit([float(x) for x in normal])
+    if n is None:
+        return None
+    across = _unit(_cross([0.0, 0.0, 1.0], n)) or [1.0, 0.0, 0.0]
+    return across, _unit(_cross(n, across))
+
+
+def _cut(points, axis, bound, below):
+    """The part of a flat outline on one side of the line where `axis` is `bound`."""
+    def keep(p):
+        return p[axis] <= bound if below else p[axis] >= bound
+
+    def where(p, q):
+        r = (bound - p[axis]) / (q[axis] - p[axis])
+        return (p[0] + r * (q[0] - p[0]), p[1] + r * (q[1] - p[1]))
+    out = []
+    for i in range(len(points)):
+        p, q = points[i - 1], points[i]
+        if keep(q):
+            if not keep(p):
+                out.append(where(p, q))
+            out.append(q)
+        elif keep(p):
+            out.append(where(p, q))
+    return out
+
+
+def _area(points):
+    return abs(sum(points[i - 1][0] * points[i][1] - points[i][0] * points[i - 1][1]
+                   for i in range(len(points)))) / 2.0
+
+
+def share(face, opening):
+    """How much of an opening's outline lies on a face, 0 to 1 - or None when that cannot be
+    worked out: no centre, width or height for the opening, or no outline for the face.
+
+    The opening is the rectangle the 3D view draws, its width across the face and its height
+    up it; the face is its outline, the first loop Revit gives and any others holes in it.
+    """
+    loops = [lp for lp in face.get("loops") or [] if len(lp) >= 3]
+    c, w, h = opening.get("centre"), opening.get("width_m"), opening.get("height_m")
+    if not loops or not c or not w or not h or not face.get("normal"):
+        return None
+    turned = axes(face["normal"])
+    w, h = float(w) / 2.0, float(h) / 2.0
+    if turned is None or w <= 0.0 or h <= 0.0:
+        return None
+    across, up = turned
+
+    def flat(p):
+        d = [float(p[k]) - float(c[k]) for k in range(3)]
+        return (sum(d[k] * across[k] for k in range(3)), sum(d[k] * up[k] for k in range(3)))
+    parts = []
+    for lp in loops:
+        poly = [flat(p) for p in lp]
+        whole = _area(poly)
+        for axis, bound, below in ((0, w, True), (0, -w, False), (1, h, True), (1, -h, False)):
+            poly = _cut(poly, axis, bound, below)
+        parts.append((whole, _area(poly) if len(poly) >= 3 else 0.0))
+    parts.sort(reverse=True)                        # the outline first, then its holes
+    inside = (parts[0][1] - sum(p[1] for p in parts[1:])) / (4.0 * w * h)
+    return 1.0 if inside > 1.0 - 1e-9 else max(0.0, inside)
+
+
+def _grid(t):
+    """Every curtain wall's panels, by the wall: {element: [opening]}, each panel once.
+
+    A curtain wall's face gives its grid's panels and nothing else - the take-off reads a
+    wall's curtain grid INSTEAD of its windows and doors - so a wall with one curtain panel
+    in any face is a curtain wall, and everything in its faces is a panel of its grid.
+    """
+    if t._grid is None:
+        walls = set(str(f.get("element")) for s in t.spaces for f in s.get("faces") or []
+                    if f.get("element") is not None
+                    and (f.get("curtain") or any(o.get("kind") == "curtain_panel"
+                                                 for o in f.get("openings") or [])))
+        t._grid = {}
+        seen = set()
+        for s in t.spaces:
+            for f in s.get("faces") or []:
+                wall = str(f.get("element"))
+                if wall not in walls:
+                    continue
+                for o in f.get("openings") or []:
+                    if (wall, str(o.get("element"))) not in seen:
+                        seen.add((wall, str(o.get("element"))))
+                        t._grid.setdefault(wall, []).append(o)
+    return t._grid
+
+
+def curtain(t, face):
+    """Whether a face is a curtain wall's - see _grid()."""
+    return bool(face.get("curtain")) or (face.get("element") is not None
+                                         and str(face["element"]) in _grid(t))
+
+
+def counted(t, face):
+    """What counts on a face as its openings, and how much of each: [(opening, m2)].
+
+    A window or a door counts whole, as Revit gives its size: it sits by the middle of its
+    box, which a frame or a sill moves, so its outline is not exact enough to cut - and one
+    larger than its face still refuses its Space. A CURTAIN WALL'S PANELS ARE CUT TO THE FACE
+    (FRAGMENT-ISSUES 5b-330). A panel's outline is exact - its box is the grid cell it fills
+    - and a curtain wall runs past a Space's face: a storey high, past the slab edge above the
+    Space, and past the walls at its sides. Every panel of the wall is measured against the
+    face, not only those listed in it: the take-off lists a panel once, under the face its
+    middle is on, and a panel across a partition lies on the Space beside it too. Revit's own
+    area for a panel is kept, times the share of it on the face. A panel whose outline cannot
+    be worked out counts whole on the face it is listed in, and nowhere else.
+    """
+    own = face.get("openings") or []
+    if not curtain(t, face):
+        return [(o, float(o.get("area_m2") or 0.0)) for o in own]
+    listed = set(str(o.get("element")) for o in own)
+    out = []
+    for o in _grid(t).get(str(face.get("element")), own):
+        part = share(face, o)
+        if part is None:
+            part = 1.0 if str(o.get("element")) in listed else 0.0
+        area = round(float(o.get("area_m2") or 0.0) * part, 6)
+        if area > 0.0:
+            out.append((o, area))
+    return out
+
+
+def _sliver(gross):
+    return max(1e-6, SLIVER * gross)
+
+
 def surfaces(t, space, answers=None):
     """One Space's faces as the room engine's surface records, and what refused.
 
@@ -187,8 +334,7 @@ def surfaces(t, space, answers=None):
         facing = azimuth_deg(face["normal"], north) if side == "wall" else None
         gross = net = float(face.get("area_m2") or 0.0)
         panel_ua = panel_a = 0.0
-        for o in face.get("openings") or []:
-            area = float(o.get("area_m2") or 0.0)
+        for o, area in counted(t, face):
             net -= area
             okind = t.types.get(str(o.get("type"))) or {}
             if o.get("kind") == "curtain_panel" and okind.get("u_w_m2k") is not None:
@@ -221,9 +367,9 @@ def surfaces(t, space, answers=None):
                                      "absorptance": okind.get("absorptance"), "door": True})
         # What is left of a face once its openings are out - a rounding sliver
         # is nothing; on a curtain wall it is the frames between the panels.
-        if net <= max(1e-6, 0.001 * gross):
+        if net <= _sliver(gross):
             continue
-        if kind.get("u_w_m2k") is None and face.get("curtain") and panel_a > 0:
+        if kind.get("u_w_m2k") is None and curtain(t, face) and panel_a > 0:
             frames = {"name": "%s frames" % name, "area_m2": round(net, 6),
                       "u_w_m2k": round(panel_ua / panel_a, 6)}
             out["assumed"].append(
@@ -286,10 +432,10 @@ def summary(t, answers=None):
                 continue
             q = by_quarter[compass(azimuth_deg(f["normal"], north))]
             q["wall_m2"] += float(f.get("area_m2") or 0.0)
-            for o in f.get("openings") or []:
+            for o, area in counted(t, f):
                 if o.get("kind") in GLAZED:
-                    q["glass_m2"] += float(o.get("area_m2") or 0.0)
-                    glass += float(o.get("area_m2") or 0.0)
+                    q["glass_m2"] += area
+                    glass += area
     for q in by_quarter.values():
         q["glass_pct_of_wall"] = (100.0 * q["glass_m2"] / q["wall_m2"]) if q["wall_m2"] else None
     return {"levels": levels, "glass_by_facing": by_quarter, "glass_m2": glass,
@@ -356,9 +502,11 @@ def qa(t, answers=None):
                     "gets no sun - if it is on the outside of the building, set its type's "
                     "Function to Exterior" % (label, _name(t, face.get("type"),
                                                           face.get("element"))))
+            # A REAL MISMATCH, NOT A PANEL RUNNING PAST THE FACE: only what counts
+            # on it is added up (counted), and a millimetre's rounding is no excess.
             gross = float(face.get("area_m2") or 0.0)
-            holes = sum(float(o.get("area_m2") or 0.0) for o in face.get("openings") or [])
-            if holes > gross + 1e-6:
+            holes = sum(area for _o, area in counted(t, face))
+            if holes > gross + _sliver(gross):
                 add("FAIL", sid, "Space %s: openings of %.2f m2 are larger than the %.2f m2 "
                     "face of element %s" % (label, holes, gross, face.get("element")))
         for why in surfaces(t, s, answers)["refused"]:

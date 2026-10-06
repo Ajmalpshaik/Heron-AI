@@ -29,6 +29,19 @@ positive:
       `elements` unchanged from the host-only run,
       and the link's count "on a level named" that name in `linkedMatches`
 
+  # VERSION 3, added 2026-10-06 - FRAGMENT-ISSUES 5b-335. The element whose
+  # FIRST level parameter is empty and a LATER one holds the level.
+  - given: >
+      three work plane-based air terminals placed with no level of their own -
+      FAMILY_LEVEL_PARAM empty, SCHEDULE_LEVEL_PARAM Level 1, the shape
+      version 1 of PLACE_FAMILY_INSTANCES left - category Air Terminals,
+      levelId Level 1
+    category: OST_DuctTerminal
+    expect: >
+      elements 3 and unresolvedLevel 0. Version 2 answered elements 0 with
+      matching 3 here, and the loads' Finalize then wrote no flow to any of
+      them
+
 negative:
   - given: the same model, which has no air terminals
     category: OST_DuctTerminal
@@ -39,6 +52,14 @@ negative:
     expect: >
       EMPTY - and this zero is only meaningful once the positive level case
       above has passed. On its own it is indistinguishable from a broken chain
+
+  # VERSION 3, 5b-335's other half: passing an empty parameter over must not
+  # put the element on EVERY level.
+  - given: the same three air terminals, levelId Level 2
+    category: OST_DuctTerminal
+    expect: >
+      elements 0 and unresolvedLevel 0 - they are found on Level 1 and only
+      there
 
   # D-59, added 2026-09-28 with version 2. NONE OF THESE HAS BEEN RUN.
   - given: includeLinks ABSENT, on a model that HAS loaded links
