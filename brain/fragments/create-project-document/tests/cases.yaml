@@ -1,0 +1,32 @@
+positive:
+  - given: >
+      a project template that exists on this machine, named by its file name,
+      and a savePath ending .rvt in a scratch folder that exists, with a
+      document that is NOT in front named by --in
+    expect: >
+      the project saved at exactly savePath, open in a window and in front -
+      REPORT_OPEN_DOCUMENTS lists its title as the active one - and
+      templateUsed naming the full template path chosen
+
+negative:
+  - given: a savePath that already exists
+    expect: >
+      refused by name, NOTHING created - REPORT_OPEN_DOCUMENTS shows the same
+      document count - and the existing file's time stamp unchanged
+
+  - given: a family template (.rft)
+    expect: >
+      refused naming CREATE_FAMILY_DOCUMENT, nothing created
+
+  - given: a savePath ending .rfa, or in a folder that does not exist
+    expect: refused by name, nothing created, no folder made
+
+  - given: the run aimed at the document in front
+    expect: >
+      saved, NOT opened, with openNext naming the path - and
+      ACTIVATE_DOCUMENT with that path then opens it
+
+second_route:
+  - >
+      File then New then Project by hand from the same template, saved, and the
+      two projects' view and family lists compared

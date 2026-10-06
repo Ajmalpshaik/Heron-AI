@@ -5,53 +5,99 @@ heron-since: 0.1.0
 heron-layer: brain
 
 id: FRG-DOC-034
-semantic-identity: "start a brand new family from a template"
+semantic-identity: "start a brand new family from a template and save it where I say"
 kind: action
 domain: revit.document
 capability: CREATE_FAMILY_DOCUMENT
-version: 1
+version: 2
 source: OFFICIAL
 risk: ADMIN
 
 purpose: >
-  Creates a new, empty family document from a family template file and hands back
-  the open document.
+  Starts a new family from a family template, saves it to the file the caller
+  names, and opens that file in a Revit window - File > New > Family, then Save
+  As, done in one call.
 
-  **EVERY FAMILY FRAGMENT HERE ACTS ON A FAMILY THAT ALREADY EXISTS.**
-  `LOAD_FAMILY` loads one, `OPEN_FAMILY_FOR_EDITING` opens one,
-  `RENAME_FAMILY` renames one, `UPGRADE_FAMILY_FILES` upgrades a folder of them,
-  `EXPORT_FAMILIES` gets them out. Measured 2026-09-18, nothing created one, so
-  the first step of making a new component had no route.
+  **VERSION 2, 2026-10-06 - SEEN AND SAVED.** Version 1 made the family in
+  memory only. No window showed it, and nothing could save it, because
+  SAVE_DOCUMENT refuses a document with no path rather than invent one. So
+  every nested part of Rejin's pipe support was started by hand through
+  File > New > Family. Now the new family is saved to exactly `savePath`, the
+  windowless copy the API makes is closed, and the saved file is opened in a
+  window. `title` is what the next call names it by.
 
   **THE TEMPLATE DECIDES THE CATEGORY AND ALMOST EVERYTHING ELSE**, and it is
-  asked for rather than chosen. A metric generic model template and a face-based
-  one produce families that behave completely differently, and which is right is a
-  decision about the job (D-33). Nothing here guesses a template path: they live
-  in a per-installation, per-language folder, and a guessed one either fails or
-  quietly makes the wrong kind of family.
+  asked for rather than chosen (D-33). A full .rft path is used as given. A
+  name alone - "Metric Generic Model" - is looked up by EXACT file name in the
+  folder this Revit reports as its family template path, which differs by
+  version, language and installation; the full path it used is always
+  returned as `templateUsed`. Two files of that name are refused with both
+  listed, and no near match is ever taken.
+
+  **THE FILE NAME IS THE CALLER'S AND NOTHING IS OVERWRITTEN.** `savePath` must
+  be a full path ending .rfa in a folder that exists. A file already there is
+  refused and left untouched, and the save itself is told never to overwrite,
+  so a file that appears in between is still safe. No folder is created.
+
+  **WHEN HERON IS WORKING IN THE WINDOW IN FRONT, IT IS SAVED BUT NOT OPENED.**
+  Revit opens no window while the active document is modifiable, and Heron's
+  own transaction makes it so. Measured 2026-10-06, Revit 2024: refused with
+  "The active document is currently modifiable"; with only Heron's group open
+  the window opened AND Revit threw an internal error; deferred to Revit's idle
+  event it never fired. So the reply says so and gives `openNext`, the path
+  ACTIVATE_DOCUMENT opens - that runs with no transaction and opened such a
+  file the same day. Aimed (`--in`) at a document that is not in front, the
+  family opens in this one call.
+
+  **A PROJECT IS CREATE_PROJECT_DOCUMENT'S**, with the same body word for word
+  below its first lines - tests/test_new_document_twins.py holds them level.
 
   **IT MAKES AN EMPTY FAMILY AND NOTHING ELSE.** No geometry, no parameters, no
-  types, and it is not saved to disk. Those are separate jobs, and a fragment that
-  did all of them could not be re-used for any one.
-
-  **THE DOCUMENT IS LEFT OPEN AND IS THE CALLER'S RESPONSIBILITY.** An unclosed
-  family document holds memory and a file lock, and Revit will not close the
-  last one silently.
+  types. The family stays open and is the caller's, like any file opened by
+  hand.
 
   ASSUMES NOTHING ABOUT TRANSACTIONS - a new document cannot be inside the
-  current one's transaction, and this opens none.
+  current one's, and this opens none.
 
 contract:
   needs:
     - name: app
       type: Application
+    - name: uidoc
+      type: UIDocument
+    # A full .rft path, or a template's file name such as "Metric Generic
+    # Model", looked up by exact name in this Revit's FamilyTemplatePath.
     - name: templatePath
+      type: string
+      source: request
+    # The full .rfa path the new family is saved to. Named by the caller and
+    # never invented; refused if it exists or its folder does not.
+    - name: savePath
       type: string
       source: request
   provides:
     - name: created
+      # The family as it is now OPEN IN A WINDOW - the saved file reopened,
+      # never the windowless copy the API first makes.
       role: result
       type: Document
+    - name: title
+      # What the next call names it by: `fragment --in "<title>"`.
+      role: result
+      type: string
+    - name: savedTo
+      role: result
+      type: string
+    - name: templateUsed
+      # The full template path a short name resolved to, always reported.
+      role: result
+      type: string
+    - name: openNext
+      # Set only when the family was saved but could not be opened because
+      # Heron was working in the window in front: the path to hand
+      # ACTIVATE_DOCUMENT as documentPath. Empty when it opened here.
+      role: result
+      type: string
     - name: refused
       # Why it declined, in the user's words - evidence it looked and said no.
       # Never a thing it MADE (D-52).
@@ -60,40 +106,61 @@ contract:
     - name: findings
       type: IList<string>
 
+# VERSION 2 PROVED 2026-10-06 on scratch HeronNewFam_A (Revit 2024), signed by
+# Ajmal PS on his word - NEEDS-CHECKING CM5.
 proof:
-  date: '2026-10-03'
+  date: '2026-10-06'
   by: Ajmal PS
-  model: Family1 (1,929 elements), Revit 2024, session 32340
+  model: HeronNewFam_A, Revit 2024, session 51820 - the count is NOT recorded because 1,713
+    elements was measured on HeronNewFam_P1, the document in front, and this ran against another
+    one (row 15)
   positive_case: run as it would normally be run - run inside a transaction, and Revit reported
-    the transaction group ROLLED BACK afterwards. returned created Document, findings 1 item(s)
-    [New family document created from 'C:\ProgramData\Autodesk\RV...], refused (null). inputs
-    came templatePath as given. on Family1
-  negative_case: run with templatePath=C:\ProgramData\Autodesk\RVT 2024\Family Templates\English\No
-    Such Template.rft instead - chosen because it should not contain what this fragment reports
-    - run inside a transaction, and Revit reported the transaction group ROLLED BACK afterwards.
-    returned created (null), findings 1 item(s) [No template file at 'C:\ProgramData\Autodesk\RVT
-    2024\Family...], refused No template file at 'C:\ProgramData\Autodesk\RVT 2024\Family
-    Templates\English\No Such Template.rft'. Family templates are .rft files and their folder
-    differs by Revit version, by language and by installation. inputs came templatePath as
-    given. on Family1
+    the transaction group ROLLED BACK afterwards. returned article a family, created Document,
+    exampleTemplate Metric Generic Model, fileExtension .rfa, findings 1 item(s) [New family
+    'HeronNewFam_P2' made from 'C:\ProgramData\Autode...], folder C:\ProgramData\Autodesk\RVT
+    2024\Family Templates, kind family, makeNew Func`2, openNext (null), refused (null), savedTo
+    C:\Users\AjmalAlavudheen\AppData\Local\Temp\claude\D--Ajmal-Aj-Programs-Heron-Ai--claude-worktrees-heron-ii-cross-pc-python-ea73ba\0aa9df09-5163-4f5c-a55f-884182a26916\scratchpad\newdocs\HeronNewFam_P2.rfa,
+    target C:\Users\AjmalAlavudheen\AppData\Local\Temp\claude\D--Ajmal-Aj-Programs-Heron-Ai--claude-worktrees-heron-ii-cross-pc-python-ea73ba\0aa9df09-5163-4f5c-a55f-884182a26916\scratchpad\newdocs\HeronNewFam_P2.rfa,
+    targetExtension .rfa, template Metric Generic Model, templateExtension .rft, templateFolder
+    Func`1, templateUsed C:\ProgramData\Autodesk\RVT 2024\Family Templates\English\Metric
+    Generic Model.rft, title HeronNewFam_P2. inputs came templatePath as given; savePath as
+    given. on HeronNewFam_A
+  negative_case: run against 'HeronNewFam_A' with templatePath=Metric Generic Model, savePath=C:\Users\AjmalAlavudheen\AppData\Local\Temp\claude\D--Ajmal-Aj-Programs-Heron-Ai--claude-worktrees-heron-ii-cross-pc-python-ea73ba\0aa9df09-5163-4f5c-a55f-884182a26916\scratchpad\newdocs\HeronNewFam_C.rfa
+    instead - chosen because it should not contain what this fragment reports - run inside
+    a transaction, and Revit reported the transaction group ROLLED BACK afterwards. returned
+    article a family, created (null), exampleTemplate Metric Generic Model, fileExtension
+    .rfa, findings 1 item(s) ['C:\Users\AjmalAlavudheen\AppData\Local\Temp\claude\D--Ajmal...],
+    folder C:\ProgramData\Autodesk\RVT 2024\Family Templates, kind family, makeNew Func`2,
+    openNext (null), refused 'C:\Users\AjmalAlavudheen\AppData\Local\Temp\claude\D--Ajmal-Aj-Programs-Heron-Ai--claude-worktrees-heron-ii-cross-pc-python-ea73ba\0aa9df09-5163-4f5c-a55f-884182a26916\scratchpad\newdocs\HeronNewFam_C.rfa'
+    already exists. Nothing was created and the file was not touched - this never overwrites.
+    Name a new file, savedTo (null), target C:\Users\AjmalAlavudheen\AppData\Local\Temp\claude\D--Ajmal-Aj-Programs-Heron-Ai--claude-worktrees-heron-ii-cross-pc-python-ea73ba\0aa9df09-5163-4f5c-a55f-884182a26916\scratchpad\newdocs\HeronNewFam_C.rfa,
+    targetExtension .rfa, template Metric Generic Model, templateExtension .rft, templateFolder
+    Func`1, templateUsed (null), title (null). inputs came templatePath as given; savePath
+    as given. on HeronNewFam_A
   second_route: NOT ESTABLISHED - no second route was run. D-30 asks for one 'where one exists';
     whether one exists here has not been settled, and a declared absence is not the same as
     none
-  fingerprint: 783e2ae3cc728652
-
+  fingerprint: e4496168a6640651
 revit: ["2020", "2021", "2022", "2023", "2024", "2025", "2026", "2027"]
 runtime: [net472, net48, net8.0-windows, net10.0-windows]
 tests: tests/
 
 compatibility-note: >
-  `Application.NewFamilyDocument(string)` is present 2020 through 2027 - read off
-  the reference assemblies at both ends on 2026-09-18. The template path is a
-  file on disk and its location differs by Revit version, by language and by
-  installation, which is exactly why it is an input rather than a constant here.
+  `Application.NewFamilyDocument(string)`, `Application.FamilyTemplatePath`,
+  `Document.SaveAs(string, SaveAsOptions)`, `Document.Close(bool)` and
+  `UIApplication.OpenAndActivateDocument(string)` are present 2020 through 2027
+  - read off the reference assemblies at both ends on 2026-10-06, and the
+  fragment compile gate builds it against all eight. The template folder is a
+  setting of each installation, which is why it is read from Revit rather than
+  written here.
 
-# ROUTING - repeated in LOAD_FAMILY and OPEN_FAMILY_FOR_EDITING.
+# ROUTING - repeated in CREATE_PROJECT_DOCUMENT, LOAD_FAMILY and
+# OPEN_FAMILY_FOR_EDITING.
 #
 #   "start a new family"           -> here
+#   "start a new project"          -> CREATE_PROJECT_DOCUMENT - a .rte template
+#                                     and a .rvt file
+#   "open that saved family"       -> ACTIVATE_DOCUMENT - it is already a file
 #   "load this family in"          -> LOAD_FAMILY - it already exists as a file
 #   "open that family to edit it"  -> OPEN_FAMILY_FOR_EDITING - it is already
 #                                     loaded into the project
@@ -105,3 +172,6 @@ utterances:
   - start a family from a template
   - make a new family document
   - new family from this template
+  - open a new family from the generic model template
+  - new family from the metric generic model template and save it as
+  - make a new family file

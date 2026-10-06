@@ -28,8 +28,10 @@ WHAT IT PROVES
 
   5. A FRAGMENT WITH NO CONTRACT IS LISTED, never dropped.
 
-  6. AGAINST THE REAL LIBRARY: exactly two groups share a signature, and
-     BOTH are keep-separate. That is the finding this agent exists for -
+  6. AGAINST THE REAL LIBRARY: exactly three groups share a signature, and
+     ALL are keep-separate. The third arrived 2026-10-06 on purpose:
+     CREATE_FAMILY_DOCUMENT and CREATE_PROJECT_DOCUMENT take the same four
+     inputs and are two cards because a family and a project route apart. That is the finding this agent exists for -
      the answer people expect from a merge agent is the one it gives
      least.
 
@@ -166,16 +168,17 @@ def main():
     real = MRG.look(list(found.values()))
     check(real["looked"] and real["of"] == len(found),
           "all %d fragments were compared" % len(found))
-    check(len(real["decided"]) == 2,
-          "exactly two groups share a contract signature")
+    check(len(real["decided"]) == 3,
+          "exactly three groups share a contract signature")
     check(real["for_the_host"] == [],
-          "and NOT ONE of them needs the host - both are keep-separate")
+          "and NOT ONE of them needs the host - all are keep-separate")
     names = sorted(one for group in real["decided"]
                    for one in group["fragments"])
-    check(names == ["dimension-family-instances", "dimension-mep-runs",
+    check(names == ["create-family-document", "create-project-document",
+                    "dimension-family-instances", "dimension-mep-runs",
                     "transfer-materials-between-documents",
                     "transfer-view-filters-between-documents"],
-          "the four are: %s" % ", ".join(names))
+          "the six are: %s" % ", ".join(names))
     check(all(len(one["capabilities"]) == 2 for one in real["decided"]),
           "each pair declares two different capabilities - the answer "
           "people expect from a merge agent is the one it gives least")
