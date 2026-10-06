@@ -495,6 +495,10 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-cg.md`](needs-checking/group-cg.md)
 
+## Group CI - family type values: a material by its name and a URL as text (2026-10-06)
+
+**Its own file:** [`needs-checking/group-ci.md`](needs-checking/group-ci.md)
+
 ## Group CK - a project's answers kept under the model's own id, and the template's id asked about (2026-10-06)
 
 **Its own file:** [`needs-checking/group-ck.md`](needs-checking/group-ck.md)
