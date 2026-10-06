@@ -4,36 +4,36 @@
 //
 // OPENS NO TRANSACTION. A new document cannot be inside the current one's.
 //
-// VERSION 2 - SEEN AND SAVED, 2026-10-06. Version 1 made the family and left it
-// in memory: no window showed it, and nothing could save it, because
-// SAVE_DOCUMENT refuses a document with no path rather than invent one. So a
-// family "created" for the pipe support job could be neither looked at nor
-// kept, and every part was made by hand through File > New > Family. Now the
-// CALLER names the file, the new family is saved to exactly that path, the
-// hidden copy is closed, and the file is opened in a real window.
+// NOTHING IN HERON COULD START A PROJECT. Measured 2026-10-06:
+// `NewProjectDocument` appeared in no fragment, so a new model began with
+// File > New > Project by hand. This makes the project from the template the
+// caller names, saves it to exactly the path the caller names, closes the
+// windowless copy the API makes, and opens the file in a real window.
 //
-// CREATE_PROJECT_DOCUMENT IS THE SAME BODY FOR A PROJECT. Everything below the
-// line marked SHARED is identical in both, and tests/test_new_document_twins.py
-// fails the moment the two differ - the save, close and reopen are one job and
-// two drifting copies of it would be worse than either.
+// THE BODY BELOW THE SHARED LINE IS CREATE_FAMILY_DOCUMENT'S, word for word, and
+// tests/test_new_document_twins.py fails the moment the two differ. The five
+// lines above that line are the whole difference between a family and a
+// project here.
 //
-// THE TEMPLATE IS ASKED FOR AND NEVER GUESSED. A bare name such as "Metric
-// Generic Model" is looked up in the folder THIS Revit says holds its family
-// templates, and only an exact file name counts. Two matches are refused with
-// both named; the path that was used is always reported.
+// THE TEMPLATE IS ASKED FOR AND NEVER GUESSED. The office template decides the
+// units, the views, the families and the standards the model starts with, and
+// picking one is a decision about the job (D-33). A bare name is looked up in
+// the folder of THIS Revit's default project template, by exact file name.
 //
 // THE FILE NAME IS THE CALLER'S AND NEVER INVENTED. A path that already exists
-// is refused - this never overwrites anything - and so is a folder that does
+// is refused - this never overwrites a model - and so is a folder that does
 // not exist, rather than created.
 
-var kind = "family";
-var templateExtension = ".rft";
-var fileExtension = ".rfa";
-var exampleTemplate = "Metric Generic Model";
-Func<string, Document> makeNew = path => app.NewFamilyDocument(path);
-Func<string> templateFolder = () => app.FamilyTemplatePath ?? "";
+var kind = "project";
+var templateExtension = ".rte";
+var fileExtension = ".rvt";
+var exampleTemplate = "Mechanical-Default_Metric";
+Func<string, Document> makeNew = path => app.NewProjectDocument(path);
+Func<string> templateFolder = () =>
+    string.IsNullOrEmpty(app.DefaultProjectTemplate) ? ""
+        : (System.IO.Path.GetDirectoryName(app.DefaultProjectTemplate) ?? "");
 
-// ---- SHARED with create-project-document from here down ----
+// ---- SHARED with create-family-document from here down ----
 
 Document created = null;
 string title = null;
