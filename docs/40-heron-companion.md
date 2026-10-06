@@ -563,6 +563,7 @@ labels are derived from it as for every tool.
 | `heron_companion` | `READ` | none | Starts this chat's Companion if it is not running, opens it in the browser, and answers what has happened on it | *"Heron Companion is open in your browser."* or a one-line summary of applies |
 | `revit_edit_table` | `ANALYZE` | `run_fragment_read` | Runs `READ_ELEMENT_TABLE`, holds the rows for the page, opens the Companion | *"Table opened in Heron Companion: 24 ducts in Level 1 - Mechanical."* |
 | `revit_sprinkler_hydraulics` | `ANALYZE` | `run_fragment_read` | Runs `REPORT_SPRINKLER_NETWORK`, solves the system in the brain, opens the Sprinkler panel ([46](46-sprinkler-hydraulics-from-the-model.md)). Writes nothing | The demand and pressure at the source, the governing head, or what is still to ask |
+| `revit_sprinkler_layout` | `ANALYZE` | `run_fragment_read` | Runs `REPORT_SPRINKLER_LAYOUT_SPACES` on the selected rooms, lays them out in the brain, opens the Sprinkler Layout panel ([47](47-sprinkler-layout-from-the-model.md)). Places nothing - the page's Apply (`companion_sprinkler_place`, `MODIFY`) does, one level at a time | How many rooms were laid out and how many heads are ready, or what is still to ask |
 
 **The Apply action is not an MCP tool** — Claude cannot call it. Its risk is still declared in one
 place: a `COMPANION_ACTIONS` table in `heron_tools.py` with `companion_apply` at `MODIFY` through

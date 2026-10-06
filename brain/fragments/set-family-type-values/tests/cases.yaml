@@ -16,7 +16,26 @@ positive:
       two planes 900 mm apart when measured in the Family Editor - the flex a
       value write is
 
+  - given: >
+      a family with a type material parameter "Nut Material" and a URL parameter
+      "URL", the material "Steel - Galvanised" already in the family, values
+      "Nut Material=steel - galvanised; URL=https://example.com/nut"
+    expect: >
+      Nut Material reads "Steel - Galvanised" (found in another case, the one
+      material that matches) and URL reads "https://example.com/nut", both read
+      back from the type - and in the Family Types dialog with that type chosen
+
+  - given: the same family, values "Nut Material=<By Category>"
+    expect: Nut Material reads <By Category> - the parameter cleared, no material deleted
+
 negative:
+  - given: >
+      values "Nut Material=Unobtainium; URL=https://example.com/nut" - a material
+      the family does not hold
+    expect: >
+      refused naming the closest material names, nothing written - not even the
+      URL beside it - and no material "Unobtainium" made in the family
+
   - given: values "Width=600mm"
     expect: >
       refused, nothing written - digits only. A unit typed into the value is

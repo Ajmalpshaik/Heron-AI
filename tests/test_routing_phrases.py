@@ -107,6 +107,8 @@ CHANGES = [
      "5b-322: Manage > Position, part of the same job"),
     ("show cooling and heating loads in Btu/h and airflow in CFM", "SET_PROJECT_UNITS",
      "5b-322: NEEDS-CHECKING CC12 needs a model in Btu/h and CFM"),
+    ("place a skylight in the roof at a point", "PLACE_HOSTED_FAMILY",
+     "5b-326: asked by a session 2026-10-06, answered CREATE_ROOF"),
     ("create an area scheme", "SET_AREA_VOLUME_COMPUTATIONS",
      "5b-337: before the Area and Volume Computations tools, answered APPLY_COLOR_FILL_SCHEME"),
     ("rename the rentable area scheme to net lettable", "SET_AREA_VOLUME_COMPUTATIONS",
@@ -120,11 +122,11 @@ QUESTIONS = [
     ("which units does this model show cooling load in",
      "5b-322: a question about the units never reaches their setter"),
     ("does this project use daylight saving",
-     "5b-339: answered SAVE_DOCUMENT before the site's read could say it"),
+     "5b-346: answered SAVE_DOCUMENT before the site's read could say it"),
     ("is project north rotated from true north",
-     "5b-339: answered ROTATE_ELEMENTS_ABOUT_AXIS before the site's read could say it"),
+     "5b-346: answered ROTATE_ELEMENTS_ABOUT_AXIS before the site's read could say it"),
     ("are the project units metric or imperial",
-     "5b-339: answered CREATE_PIPE_SEGMENT before the units' read existed"),
+     "5b-346: answered CREATE_PIPE_SEGMENT before the units' read existed"),
     ("is volume computation switched on",
      "5b-337: a first draft of SET_AREA_VOLUME_COMPUTATIONS answered it - its card quoted the question"),
     ("check if volume calculation is enabled",
@@ -133,7 +135,7 @@ QUESTIONS = [
 
 # A question about the project's own setup reaches the tool that READS it.
 # Three site questions still reach SET_PROJECT_LOCATION and are NOT here -
-# row 5b-339 records them, measured; this guards the ones the change moved.
+# row 5b-346 records them, measured; this guards the ones the change moved.
 READS = [
     ("where is this project", "REPORT_LOCATION"),
     ("is project north rotated from true north", "REPORT_LOCATION"),

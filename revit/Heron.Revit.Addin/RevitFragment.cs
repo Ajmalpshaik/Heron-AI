@@ -1124,6 +1124,12 @@ namespace Heron.Revit.Addin
             string projectKey = null;
             try { projectKey = RevitOperations.ProjectKey(target); } catch { }
 
+            // AND THE MODEL'S OWN ID, which is what the server files a
+            // project's answers under (5b-324, D-113). projectKey above is the
+            // TEMPLATE's id, shared by every model made from it.
+            string creationGuid = null;
+            try { creationGuid = RevitOperations.CreationGuid(target); } catch { }
+
             var view = "";
             try { view = uidoc == null || uidoc.ActiveView == null ? "" : uidoc.ActiveView.Name; }
             catch { }
@@ -1162,6 +1168,7 @@ namespace Heron.Revit.Addin
                 // Null on a family document, deliberately - see ProjectKey.
                 Json.Str("documentPath", string.IsNullOrEmpty(path) ? null : path),
                 Json.Str("projectKey", projectKey),
+                Json.Str("creationGuid", creationGuid),
                 Json.Str("activeView", view),
                 Json.Bool("wasActiveDocument", inFront),
             };

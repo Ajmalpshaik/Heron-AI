@@ -154,7 +154,7 @@ compatibility-note: >
 #                                                (docs/44), which READS the
 #                                                site this sets
 #
-# THREE QUESTIONS STILL REACH THIS WRITE, MEASURED AND LEFT (row 5b-339). On the
+# THREE QUESTIONS STILL REACH THIS WRITE, MEASURED AND LEFT (row 5b-346). On the
 # trained model "what is the project's latitude", "which city is this model
 # located in" and "what latitude and time zone is the site set to" rank this
 # card first and REPORT_LOCATION second - first by MEANING for two of them; the

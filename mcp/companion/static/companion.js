@@ -1995,6 +1995,285 @@ async function sprinkler_() {
   } catch (e) { /* the state poll reports a closed page */ }
 }
 
+// --- The Sprinkler Layout panel (docs/47 s7). Every room's layout, status
+// and plan comes from brain/ (heron_sprinkler_layout); the page holds the
+// answers while they are typed and draws what it is given.
+
+let layoutShown = null;
+let layoutBusy = false;
+
+async function layoutPost(path, body, said) {
+  layoutBusy = true;
+  document.querySelectorAll("#layout button").forEach(b => { b.disabled = true; });
+  said.className = "result";
+  said.textContent = path.endsWith("place") ? "Placing in Revit, then reading the rooms back…" : "Working…";
+  let answer = null;
+  try {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, HEADER),
+      credentials: "same-origin",
+      body: JSON.stringify(body || {}),
+    });
+    answer = await res.json();
+    said.className = answer.ok ? "result ok" : "result failed";
+    said.textContent = answer.said || answer.error || (answer.ok ? "Done." : "Not done.");
+  } catch (e) {
+    said.className = "result failed";
+    said.textContent = path.endsWith("place")
+      ? "The page lost Heron's answer. Look at Revit's undo list to see whether anything was placed."
+      : "The page could not reach Heron. Nothing was changed.";
+  }
+  layoutBusy = false;
+  layoutShown = null;
+  await layout_();
+  const after = $("y-said");
+  if (after && said.textContent) { after.className = said.className; after.textContent = said.textContent; }
+  return answer;
+}
+
+function layoutState(Y) {
+  const deep = v => JSON.parse(JSON.stringify(v || {}));
+  const inputs = Y.inputs || {};
+  const plainMap = m => { const out = {}; Object.entries(m || {}).forEach(([k, v]) => { out[k] = valueOf(v); }); return out; };
+  const nested = m => { const out = {}; Object.entries(m || {}).forEach(([k, v]) => { out[k] = plainMap(v); }); return out; };
+  return { standards: plainMap(inputs.standards), job: plainMap(inputs.job),
+           limits: nested(inputs.limits), rooms: nested(deep(inputs.rooms)) };
+}
+
+// A room's plan, drawn to scale in SVG made here - the outline, its holes, the
+// heads already there in grey, each new head green when it passed, red when not.
+function layoutPlan(v) {
+  const ns = document.querySelector("svg.ico").namespaceURI;
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("class", "y-plan");
+  svg.setAttribute("role", "img");
+  if (!v || !v.outline || v.outline.length < 3) return svg;
+  const xs = v.outline.map(p => p[0]), ys = v.outline.map(p => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const span = Math.max(x1 - x0, y1 - y0, 1);
+  const pad = span * 0.04;
+  svg.setAttribute("viewBox", [x0 - pad, -(y1 + pad), (x1 - x0) + 2 * pad, (y1 - y0) + 2 * pad].join(" "));
+  const r = span * 0.012;
+  const poly = (pts, cls) => {
+    const p = document.createElementNS(ns, "polygon");
+    p.setAttribute("points", pts.map(q => q[0] + "," + (-q[1])).join(" "));
+    p.setAttribute("class", cls);
+    p.setAttribute("stroke-width", String(span * 0.004));
+    svg.append(p);
+  };
+  poly(v.outline, "y-room");
+  (v.holes || []).forEach(h => poly(h, "y-hole"));
+  const dot = (x, y, cls, title) => {
+    const c = document.createElementNS(ns, "circle");
+    c.setAttribute("cx", String(x));
+    c.setAttribute("cy", String(-y));
+    c.setAttribute("r", String(r));
+    c.setAttribute("class", cls);
+    const t = document.createElementNS(ns, "title");
+    t.textContent = title;
+    c.append(t);
+    svg.append(c);
+  };
+  (v.existing || []).forEach(p => dot(p[0], p[1], "y-old", "already in the model"));
+  (v.points || []).forEach(p => dot(p[0], p[1], p[2] ? "y-ok" : "y-fail", p[2] ? "passes" : "breaks a limit"));
+  return svg;
+}
+
+function layoutSteps(Y, state, said) {
+  const steps = el("ol", "l-steps");
+  const step = (n, title, text, done, current, controls) => {
+    const li = el("li", "l-step" + (done ? " done" : "") + (current ? " current" : ""));
+    const mark = el("span", "l-step-n");
+    if (done) mark.append(icon(ICONS.check)); else mark.textContent = String(n);
+    const t = el("div", "l-step-text");
+    t.append(el("span", "l-step-title", title), el("span", "l-step-state", text));
+    const act = el("div", "l-step-act");
+    controls.filter(Boolean).forEach(c => act.append(c));
+    li.append(mark, t, act);
+    steps.append(li);
+  };
+  const ready = Y.status === "ok";
+  const prev = button("Preview", "btn-lite", ICONS.refresh,
+    "Lays every room out with the answers below. Nothing in Revit changes.");
+  prev.addEventListener("click", () => layoutPost("/api/layout/preview", state, said));
+  step(1, "Preview", ready ? "Laid out - check each room's plan below"
+       : ((Y.asked || []).length ? (Y.asked || []).length + " thing(s) to answer below" : "Press Preview"),
+       ready, !ready, [prev]);
+  const applies = [];
+  Object.entries(Y.levels || {}).forEach(([level, lv]) => {
+    const placed = (Y.placed || {})[level];
+    const b = button(placed ? "Placed on " + level : "Apply " + level, "btn-lite", ICONS.revit,
+      "Places the heads of every room on " + level + " that passed - one undo entry in Revit. Needs the Changes switch on.");
+    b.disabled = !ready || !lv.heads || !!placed;
+    b.addEventListener("click", () => {
+      if (confirm("Place " + lv.heads + " sprinkler(s) in " + lv.ok + " room(s) on " + level +
+                  " in Revit? It is one undo entry. Heron then reads them back.")) {
+        layoutPost("/api/layout/place", { level: level }, said);
+      }
+    });
+    applies.push(b);
+  });
+  const anyPlaced = Object.keys(Y.placed || {}).length > 0;
+  step(2, "Apply, one level at a time", anyPlaced ? "Placed and read back - see below"
+       : (ready ? "Check the plans, then Apply" : "After Preview"), anyPlaced, ready && !anyPlaced, applies);
+  return steps;
+}
+
+function layoutJob(Y, state) {
+  const sec = el("section", "l-sec");
+  sec.append(el("h3", null, "The job - asked once"));
+  const std = sprinklerField(state.standards.sprinkler_standard, "sprinkler standard", v => { state.standards.sprinkler_standard = v; });
+  std.className = "y-wide";
+  const pick = el("select");
+  pick.setAttribute("aria-label", "sprinkler type");
+  pick.className = "y-wide";
+  const none = el("option", null, "— choose a sprinkler type —");
+  none.value = "";
+  pick.append(none);
+  (Y.types || []).forEach(t => {
+    const o = el("option", null, t.name + (t.usable ? "" : " (cannot be placed)"));
+    o.value = t.name;
+    o.disabled = !t.usable;
+    if (t.why) o.title = t.why;
+    if (t.name === state.job.type) o.selected = true;
+    pick.append(o);
+  });
+  pick.addEventListener("change", () => { state.job.type = pick.value; });
+  const defl = sprinklerField(state.job.deflector_mm, "deflector distance", v => { state.job.deflector_mm = v; });
+  const ask = name => ((Y.asked || []).find(a => a.input === name) || {}).why || "";
+  sec.append(sprinklerTable(["Question", "Your value", "Why"], [
+    ["Sprinkler standard", std, "which standard governs - its figures are offered, never applied"],
+    ["Sprinkler type", pick, ask("job.type") || "a level-based type - a face-based one needs a face Heron does not pick"],
+    ["Deflector below the ceiling (mm)", defl, ask("job.deflector_mm") || "the family's insertion point, measured down from the ceiling"]]));
+  return sec;
+}
+
+function layoutLimits(Y, state) {
+  const sec = el("section", "l-sec");
+  sec.append(el("h3", null, "Spacing limits - for each hazard class used"));
+  const fields = (Y.fields && Y.fields.limits) || [];
+  const offers = (Y.fields && Y.fields.limit_offers) || {};
+  const used = new Set(Object.values(state.rooms).map(r => r.hazard).filter(Boolean));
+  if (!used.size) {
+    sec.append(el("p", "small muted", "Choose a hazard class for a room below; its limits are asked here."));
+    return sec;
+  }
+  used.forEach(cls => {
+    state.limits[cls] = state.limits[cls] || {};
+    const rows = fields.map(([name, unit, label, required]) => {
+      const f = sprinklerField(state.limits[cls][name], label, v => { state.limits[cls][name] = v; });
+      const off = ((offers[cls] || {})[name]) || "";
+      return [label + " (" + unit + ")" + (required ? "" : " - optional"), f, off];
+    });
+    sec.append(el("p", "small", cls));
+    sec.append(sprinklerTable(["Limit", "Your value", "The standard's figure - offered, never applied"], rows));
+  });
+  return sec;
+}
+
+function layoutRooms(Y, state) {
+  const sec = el("section", "l-sec");
+  sec.append(el("h3", null, "The rooms"));
+  const classes = (Y.fields && Y.fields.hazard_classes) || [];
+  const views = {};
+  (Y.view || []).forEach(v => { views[v.key] = v; });
+  const rows = (Y.rooms || []).map(r => {
+    const mine = state.rooms[r.key] = state.rooms[r.key] || {};
+    const haz = el("select");
+    haz.setAttribute("aria-label", "hazard class of " + r.label);
+    haz.className = "y-mid";
+    const blank = el("option", null, "—");
+    blank.value = "";
+    haz.append(blank);
+    classes.forEach(c => { const o = el("option", null, c); o.value = c; if (c === mine.hazard) o.selected = true; haz.append(o); });
+    haz.addEventListener("change", () => { mine.hazard = haz.value; });
+    const ceil = sprinklerField(mine.ceiling_mm, "ceiling height of " + r.label, v => { mine.ceiling_mm = v; });
+    const ceilings = (r.ceilings || []).map(c => (c.type || "ceiling") + " at " + num(c.height_mm, 0) + " mm").join("; ");
+    const ceilCell = el("div");
+    ceilCell.append(ceil, el("div", "small muted", ceilings ? "model: " + ceilings : "no ceiling read - a ceiling in a link is not read"));
+    const ang = sprinklerField(mine.angle_deg, "branch angle of " + r.label, v => { mine.angle_deg = v; });
+    const angCell = el("div");
+    angCell.append(ang, el("div", "small muted", r.angle_offer_deg == null ? "" : "longest wall: " + num(r.angle_offer_deg, 1) + "°"));
+    const status = statusBadge(r.status);
+    const why = el("div");
+    why.append(status);
+    if (r.why) why.append(el("div", "small", r.why));
+    return [r.label, r.level || "—", (r.heads || []).length, haz, ceilCell, angCell,
+            r.status === "ok" || r.status === "fail" ? r.count : "—", why];
+  });
+  sec.append(sprinklerTable(["Room", "Level", "Heads there", "Hazard class", "Ceiling (mm)", "Branch angle (°)", "New heads", "Result"], rows));
+  const plans = el("div", "y-plans");
+  (Y.rooms || []).forEach(r => {
+    const v = views[r.key];
+    if (!v || !v.outline) return;
+    const fig = el("figure", "y-fig");
+    fig.append(layoutPlan(v));
+    const cap = el("figcaption", "small");
+    cap.textContent = r.label + " - " + (r.status === "ok" ? r.count + " head(s), all pass"
+      : r.status === "fail" ? "fails - not placed" : (r.why || r.status || ""));
+    if (r.z_from) cap.title = "height: " + r.z_from;
+    fig.append(cap);
+    // Every head's S, L, area and walls, and the engine's own checks - what the
+    // modeller reads before Apply (docs/47 s7), made in brain/.
+    if (r.measured || (r.checks || []).length) {
+      const more = el("details", "y-more");
+      more.append(el("summary", "small", "Each head, as NFPA 13 measures it"));
+      (r.checks || []).forEach(c => {
+        const p = el("p", "small");
+        p.append(statusBadge(String(c[0]).toLowerCase() === "ok" ? "ok" : String(c[0]).toLowerCase()), document.createTextNode(" " + c[1]));
+        more.append(p);
+      });
+      if (r.measured) more.append(sprinklerTable(r.measured.columns, r.measured.rows));
+      fig.append(more);
+    }
+    plans.append(fig);
+  });
+  sec.append(plans);
+  return sec;
+}
+
+function renderLayout(Y) {
+  const box = $("y-box");
+  box.replaceChildren();
+  $("y-empty").hidden = !!Y;
+  if (!Y) return;
+  const state = layoutState(Y);
+  const said = el("p", "result");
+  said.id = "y-said";
+  said.setAttribute("role", "status");
+  said.setAttribute("aria-live", "polite");
+  const meta = el("div", "l-meta");
+  [["Model", Y.document || "—"], ["Read from Revit", Y.read_at || Y.at || "—"],
+   ["Rooms", String((Y.rooms || []).length)]].forEach(([k, v]) => {
+    const item = el("span", "l-meta-item");
+    item.append(el("span", "l-meta-label", k), el("span", "l-meta-value", v));
+    meta.append(item);
+  });
+  meta.append(el("span", "l-meta-note", "Preview reads nothing from Revit and changes nothing. Apply places one level, as one undo entry."));
+  box.append(meta, layoutSteps(Y, state, said), said);
+  Object.entries(Y.placed || {}).forEach(([level, p]) => {
+    if (p && p.said) box.append(el("p", "small", level + ": " + p.said));
+  });
+  (Y.findings || []).forEach(f => box.append(el("p", "small muted", f)));
+  box.append(layoutJob(Y, state), layoutLimits(Y, state), layoutRooms(Y, state));
+}
+
+async function layout_() {
+  if (layoutBusy) return;
+  if (document.activeElement && document.activeElement.closest && document.activeElement.closest("#layout")) return;
+  try {
+    const res = await fetch("/api/layout", { headers: HEADER, credentials: "same-origin" });
+    if (!res.ok) return;
+    const Y = (await res.json()).layout;
+    const key = Y ? Y.at + "/" + Object.keys(Y.placed || {}).join(",") : "none";
+    if (key === layoutShown) return;
+    layoutShown = key;
+    $("layout").hidden = !Y;
+    renderLayout(Y);
+  } catch (e) { /* the state poll reports a closed page */ }
+}
+
 async function pair(code) {
   const res = await fetch("/api/pair", {
     method: "POST",
@@ -2022,6 +2301,7 @@ async function poll() {
     table_();
     loads_();
     sprinkler_();
+    layout_();
   } catch (e) {
     failures += 1;
     if (failures >= 3) {

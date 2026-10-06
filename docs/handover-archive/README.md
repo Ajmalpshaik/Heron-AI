@@ -30,6 +30,7 @@ this folder exists to remove.
 
 | Date | Sitting |
 |---|---|
+| 2026-10-06 | [SPRINKLERS LAID OUT IN ANY ROOM, PREVIEWED, THEN PLACED](2026-10-06-sprinklers-laid-out-in-any-room-previewed-then-placed.md) |
 | 2026-10-05 | [THE FIRE WATER AND THE SPACING, ON THE SPRINKLER PANEL](2026-10-05-the-fire-water-and-the-spacing-on-the-sprinkler-panel.md) |
 | 2026-10-04 | [A SPRINKLER SYSTEM'S HYDRAULICS NOW COME FROM THE MODEL](2026-10-04-a-sprinkler-system-s-hydraulics-now-come-from-the-model.md) |
 | 2026-10-02 | [HERON'S FIRE ENGINE NOW READS EN 12845, FM GLOBAL AND BS 5839](2026-10-02-heron-s-fire-engine-now-reads-en-12845-fm-global-and-bs-5839.md) |

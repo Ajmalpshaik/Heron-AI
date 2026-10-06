@@ -14,7 +14,6 @@
 > **Read [FOR-THE-OWNER.md](FOR-THE-OWNER.md) first if you are the owner.** It is the one page that
 > says what is waiting on you, across every register, without holding a list of its own.
 
-
 > ## 📌 This is a RECORD now, not a gate — 2026-08-28
 >
 > **The owner's instruction:** *"checking in Revit is not possible within 1 week, so keep the checking
@@ -36,7 +35,6 @@
 > has not. That was the owner's own instruction and this one supersedes it, which is his to do. It stays
 > below as a review to do at the PC. The reason it was wanted has not gone away: **two decisions were
 > reversed within hours of being recorded**, and Phase 2 is being built on five of that set.
-
 
 **Almost everything in this file is UNPROVEN**, and what changed on 2026-08-28 is worth stating
 precisely rather than generally.
@@ -493,10 +491,25 @@ Step 6 is finished, and not before. At that point:
 
 **Its own file:** [`needs-checking/group-cf.md`](needs-checking/group-cf.md)
 
+## Group CG - sprinkler layout from the model: the rooms read, the heads placed, and their height (2026-10-06)
+
+**Its own file:** [`needs-checking/group-cg.md`](needs-checking/group-cg.md)
+
+## Group CH - PLACE_HOSTED_FAMILY version 4: a family into the roof, floor or ceiling at each point, and a window that faces out (2026-10-06)
+
+**Its own file:** [`needs-checking/group-ch.md`](needs-checking/group-ch.md)
+
+## Group CI - family type values: a material by its name and a URL as text (2026-10-06)
+
+**Its own file:** [`needs-checking/group-ci.md`](needs-checking/group-ci.md)
+
 ## Group CJ - the project's site, True North and units: set behind the Admin switch, and read (2026-10-06)
 
 **Its own file:** [`needs-checking/group-cj.md`](needs-checking/group-cj.md)
 
+## Group CK - a project's answers kept under the model's own id, and the template's id asked about (2026-10-06)
+
+**Its own file:** [`needs-checking/group-ck.md`](needs-checking/group-ck.md)
 ## 2026-09-21 — THE INSTALLER CAN NOW INSTALL EVERY REVIT IN ONE PRESS, and the owner proved it
 
 **Not a row in this register.** Nobody wrote this down as a thing to check, which is the point: it was
